@@ -1,0 +1,1100 @@
+-- TODO: signal multiple occurrences of rules as error (currently, it skips the double rule leading to navigation mistakes in the Atlas)
+-- TODO: cyclisch verband in signalen ontdekken en verbieden (SIGNAL inzage ON ALWAYS inzage)
+
+DATA Architecture  | Arch cs:Contexts
+DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ms:Declarations cs:ConceptDefs ks:KeyDefs
+DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:ConceptDefs ks:KeyDefs
+DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
+                   | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
+                   | Gc gluePos:{FilePos} m:Morphism expr:Expression cpu:Expressions sgn:{(Concept,Concept)} nr:Int pn:String
+DATA Expression    | Tm m:Morphism
+                   | Tc c:Expression
+                   | F ts:Expressions
+                   | Fd ts:Expressions
+                   | Fu fs:Expressions
+                   | Fi fs:Expressions
+                   | K0 e:Expression
+                   | K1 e:Expression
+                   | Cp e:Expression
+DATA Declaration   | Sgn nm:String a:Concept b:Concept props:{[Prop]} prL:String prM:String prR:String content:{[Paire]} morPos:{FilePos} nr:Int sig:Bool
+                   | Isn g:Concept s:Concept
+                   | Iscompl g:Concept s:Concept
+                   | Vs g:Concept s:Concept
+DATA Morphism      | Mph nm:String pos:FilePos atts:{[Concept]} sgn:{(Concept,Concept)} yin:Bool u:Declaration
+                   | I atts:{[Concept]} g:Concept s:Concept yin:Bool -- if yin then the (source,target) is (s,g) else it is (g,s)
+                   | V atts:{[Concept]} sgn:{(Concept,Concept)}
+DATA Prop          | Uni | Tot | Inj | Sur | Sym | Asy | Trn
+DATA Gen           | G genus:Concept spec:Concept
+DATA Concept       | C c:String gE:GenR os:{[String]}
+                   | S c:String gE:GenR os:{[String]}
+                   | Anything
+                   | NOthing
+DATA KeyDef        | Kd pos:FilePos lbl:String e:Concept ms:Morphisms
+DATA ConceptDef    | Cd pos:{FilePos} nm:String def:String ref:String
+TYPE ConceptDefs   = [ConceptDef]
+TYPE Contexts      = [Context]
+TYPE Gens          = [Gen]
+TYPE Rules         = [Rule]
+TYPE Expressions   = [Expression]
+TYPE Concepts      = [Concept]
+TYPE Declarations  = [Declaration]
+TYPE Morphisms     = [Morphism]
+TYPE KeyDefs       = [KeyDef]
+TYPE Patterns      = [Pattern]
+TYPE Pairs         = [Paire]
+
+imports
+{
+import CommonClasses (  Identified(name)
+                      , Collection(isc,(>-),uni))
+import UU_Scanner
+import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort')
+import Classification
+         ( Classification(Cl)
+         ,locatesF,makeClassificationsF,preCl,mapCl)
+import Typology (Inheritance(Isa),genEq,typology)
+import CC_aux 
+         (  Architecture(Arch)
+          , Context(Ctx)
+          , Concept(Anything, NOthing, C, S)
+          , ConceptDef(Cd)
+          , Declaration(Sgn, Vs, Isn, Iscompl)
+          , Rule(Ru,Sg,Gc)
+          , Gen(G)
+          , declarations
+          , Expressions
+          , Pattern(Pat)
+          , posNone
+          , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx)  -- Han: Aut mist hier. Waarom? klopt dat?
+          , Morphic(isIdent), Gens, Declarations, GenR, Contexts
+          , showADL, source, target, idsOnly, concs, showHS
+          , Morphism(Mph,I,V)
+          , contents, put_gE, makeConceptSpace, pMeaning
+          , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
+          , FilePos(FilePos), ConceptDefs, Concepts
+          , Pairs, Paire, Rules, Morphisms, Patterns
+          , sign, anything, shSigns, gEtabG, order, flp
+          , isMph
+          , KeyDef(Kd)
+          , KeyDefs, nr, multiplicities, declaration
+          , inline
+         )
+
+diagl = 27
+diagc = 0
+}
+
+{
+chop [x]    = []
+chop (x:xs) = ([x],xs): [(x:l, r)| (l,r)<-chop xs]
+chop []     = []
+
+-- (l,r) `elem` chop xs => not (null l) && not (null r)
+-- Proof:
+-- a) The theorem holds for all xs of length <= 1.
+-- b) Suppose the theorem holds for all xs of length <= n, with xs::[C]
+--    The induction hypothesis is therefore:
+--    b.0) Assume (induction hypothesis): (l,r) `elem` chop xs && length xs<=n => not (null l) && not (null r)
+--    b.1) let x::C
+--    b.2)      (l,r)<-chop xs
+--         implies    {semantics of list comprehension}
+--              (l,r) `elem` chop xs
+--         implies    {let length xs<=n and induction hypothesis}
+--              not (null l) && not (null r)
+--    b.3)
+--              chop (x:xs) = ([x],xs): [(x:l, r)| (l,r)<-chop xs]
+--         implies    {assume length xs<=n, then by b.2}
+--              not (null l) && not (null r)
+--         implies    {The first clause in the definition of chop ensures: not (null xs)}
+--              not (null (x:l)) && not (null r) && not (null [x]) && not (null xs)
+--    b.4) TODO: finish proof.
+
+mkCtxAG :: [(Context,(Gens,Declarations))] -> String -> Classification (Context,(Gens,Declarations))
+mkCtxAG ctxs ctxName
+ = if null ctTrees
+   then error ("!Error of type 0: unknown context "++ctxName
+               ++".\ntesting: length ctxs="++show (length ctxs)
+               ++if length ctxs>1
+                 then ".\nPick one of "++chain ", " (map (name.fst) (tail ctxs))++" or "++(name.fst.head) ctxs
+                 else if null ctxs then "No context available" else ".\nPick "++(name.fst.head) ctxs
+              ) else
+   let ecl = [head cl|cl<-eqClass (==) (map (name.fst) ctxs), length cl>1] in
+   if null ecl then head ctTrees else
+   error ("!Error of type 0: multiple contexts carrying the name "++commaEng "and" ecl++".")
+   where
+    ctTrees = [t|tree<-trees, t<-locatesF ((==ctxName).name.fst) tree]
+-- multiple ctTrees may occur if contexts are used multiply in different ctTrees.
+    trees = makeClassificationsF (name.fst) tuples++[Cl s []| s<-singles]
+            where tuples = [ ((spc,(mG,mD)),(gen,(mG',mD')))
+                           | (spc@(Ctx nm on isa world dc ms cs ks),(mG,mD))<-ctxs, o<-on
+                           , (gen,(mG',mD'))<-ctxs,name gen==o]
+                  singles= [ (spc,(mG,mD))
+                           | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
+
+-- irred removes redundancy from a list of declarations.
+-- Intended for use in the type checker AGtry only.
+-- Precondition: a `gEq` a' && b `gEq` b' || a' `gEq` a && b' `gEq` b
+
+irredC :: GenR -> [Concept] -> [Concept]
+irredC gE cs = map (foldr1 lub) (eqClass order cs)
+               where a `lub` b   = if a `gE` b then b else a
+                     a `order` b = a `gE` b || b `gE` a
+irredT :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
+irredT gE ms = map (foldr1 lub) (eqClass order ms)
+               where (a,a') `lub` (b,b')   = if a `gE` b && a' `gE` b' then (b,b') else (a,a')
+                     (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
+irredS :: GenR -> [Declaration] -> [Declaration]
+irredS gE ms = map (foldr1 lub) (eqClass order ms)
+               where m `lub` m'   = if a `gE` b && a' `gE` b' then m else m'
+                                    where (a,a') = sign m; (b,b') = sign m'
+                     m `order` m' = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
+                                    where (a,a') = sign m; (b,b') = sign m'
+irredM :: Morphic a => GenR -> [a] -> [a]
+irredM gE ms = map (foldr1 lub) (eqClass order ms)
+               where m `lub` m'   = if a `gE` b && a' `gE` b' then m else m'
+                                    where (a,a') = sign m; (b,b') = sign m'
+                     m `order` m' = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
+                                    where (a,a') = sign m; (b,b') = sign m'
+}
+
+ATTR Contexts Context [ ctxs:{[(Context,(Gens,Declarations))]} | | over:{[(Context,(Gens,Declarations))]} ]
+ATTR Context [ ctxTree:{Classification (Context,(Gens,Declarations))} | | context:Context ]
+ATTR Contexts [ | | contexts:Contexts ]
+ATTR Architecture [ | | cs:Contexts]
+SEM Architecture
+  | Arch lhs.cs       = @cs.contexts
+         cs.ctxs      = @cs.over
+SEM Contexts 
+  | Cons lhs.contexts = @hd.context : @tl.contexts
+         lhs.over     = @hd.over ++ @tl.over
+         hd.ctxTree   = mkCtxAG @lhs.ctxs (name @hd.context)
+  | Nil  lhs.over     = []
+         lhs.contexts = []
+{
+renumber ss = [ Sgn nm a b props prL prM prR cs pos nr sig | (nr,Sgn nm a b props prL prM prR cs pos _ sig)<-zip [1..] ss]
+mergecontents ss = [ Sgn nm a b (rd [p|s<-cl,p<-multiplicities s])
+                                prL prM prR
+                                (sord [l|s<-cl,l<-contents s])
+                                p nr sig
+                   | (nr,cl)<-zip [1..] (eqClass (==) ss)
+                   , Sgn nm a b props prL prM prR cs p _ sig <-
+                       take 1 ([s|s@(Sgn _ _ _ _ prL prM prR _ _ _ _)<-cl
+                                 , not (null (prL++prM++prR))]++cl)
+                   ]
+
+deriveMults ks sgs
+ = [Sgn nm a b (props `uni` derived s) prL prM prR cs pos nr sig| s@(Sgn nm a b props prL prM prR cs pos nr sig)<-sgs]
+   where derived s = (rd.concat) [if inline m then [Uni,Tot] else [Sur,Inj]| Kd pos lbl c ms<-ks,  m<-ms, declaration m==s]
+}
+SEM Context
+  | Ctx loc.mD        = ({-deriveMults @keys.-} renumber.mergecontents.concat) [mD| (ctx,(mG,mD)) <- preCl @lhs.ctxTree] -- all declarations in context
+        loc.mC        = mergecontents(@ms.rawDecls ++ @dc.rawDecls)
+        loc.keys      = rd (@ks.keyDefs ++ @dc.keyDefs)
+        loc.mGen      = (rd.concat) [mG| (ctx,(mG,mD)) <- preCl @lhs.ctxTree]
+        loc.inh       = Isa [(g,s)|G g s<- @mGen] (concs @mD>-rd [c|G g s<- @mGen, c<-[g,s]])
+        loc.genE      = cmp where cmp Anything b = True
+                                  cmp a Anything = False
+                                  cmp NOthing b  = False
+                                  cmp a NOthing  = True
+                                  cmp a b        = if a==b then True else genEq (typology @inh) a b
+        loc.cD        = makeConceptSpace @genE @dc.morphisms -- (error ("diag: map contents @dc.morphisms = "++show (map contents @dc.morphisms)))
+        dc.sDef       = @mD
+        ms.sDef       = @mD
+        ks.sDef       = @mD
+        dc.gE         = @genE
+        ms.gE         = @genE
+        ks.gE         = @genE
+        lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys)
+                        , (@dc.mGen, @mC))]
+-- if stuck looping, try changing @mC ^^ <--(here) into an empty list. It has shown the way to a computational loop in the attribute evaluation before.
+        lhs.context   = put_gE @genE @cD
+                        ( Ctx @nm
+                              @on
+                              @inh
+                              [cl|Cl r cls<-[mapCl fst @lhs.ctxTree], cl<-cls]
+                              @dc.patterns
+                              (declarations @dc.patterns) -- (error (chain "\n" (map showHS @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
+                              (sort' name (rd (@cs.conDefs ++ @dc.conDefs)))
+                              @keys)
+
+-- Generation of (G g s) elements, which are the basis for a concept tree.
+ATTR Rule Rules Pattern Patterns [ | | mGen:Gens ]
+SEM Patterns 
+  | Cons lhs.mGen     = @hd.mGen ++ @tl.mGen
+  | Nil  lhs.mGen     = []
+SEM Pattern
+  | Pat lhs.mGen      = rd [G g s| G g s <- @rules.mGen ++ @gen.list, g/=s]
+SEM Rules
+  | Cons lhs.mGen     = @hd.mGen ++ @tl.mGen
+  | Nil  lhs.mGen     = []
+SEM Rule
+  | Ru lhs.mGen       = []
+  | Sg lhs.mGen       = []
+  | Gc lhs.mGen       = rd [G g s| (d,c) <- @expr.signs, m <- @m.usedDecls, G g s<-[G d (source m), G c (target m)], g/=s]
+
+ATTR Rule Rules [ | | declarations:Declarations usedDecls:Declarations ]
+ATTR Morphism Morphisms [ | | usedDecls:Declarations ]
+ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations
+     [ sDef:Declarations gE:GenR | | ]
+{
+subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
+ = (Ru c antc p cons matches expla sgn nr pn
+   , if not (null cerrs) then [showADL r++"\n"++"COMPUTING not allowed for closures (neither * nor +)."] else
+     [ 
+       if length es>1
+       then "cannot decide which occurrence of ("++showADL c++") you mean:\n"++chain "\n" [showADL e++"["++show (source e)++"*"++show (target e)++"]"| e<-es]
+       else "No match found for " ++showADL c++" in this rule."
+     | (c,es)<-cpu']
+   )
+   where
+    (matches,str) = recur ([antc|c/='A']++[cons])
+    cerrs = [] -- obsolete? map (drop 5) ([ name m| m<-mors r] `isc` map (("Clos_"++).name.head.mors.fst) cpu')
+    cpu'  = [ (c,es) | c<-cpu, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
+    recur  []    = ([],"")
+    recur (e:es) = (subexps++matches , "   recur "++showADL (e:es)++" = "++showADL (subexps++matches)++"\nbecause\n"++
+                   "("++showADL subexps++" = subexprs ("++showADL e++") and\n"++
+                   "("++showADL matches++" = recur ("++showADL es++")\n--------\n"++str'++str'')
+     where (subexps,str')  = subexprs e
+           (matches,str'') = recur es
+    subexprs e@(Tm m)    = ([e| c<-cpu, e `match` c] , "")
+    subexprs e@(Tc e')   = subexprs e'
+    subexprs e@(F ts)    = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
+                           where (matches,str) = recur ts
+    subexprs e@(Fd ts)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
+                           where (matches,str) = recur ts
+    subexprs e@(Fi fs)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
+                           where (matches,str) = recur fs
+    subexprs e@(Fu fs)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
+                           where (matches,str) = recur fs
+    subexprs e@(K0 e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+                           where (matches,str) = subexprs e'
+    subexprs e@(K1 e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+                           where (matches,str) = subexprs e'
+    subexprs e@(Cp e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+                           where (matches,str) = subexprs e'
+    match  (Tm m) (Tm m')  = name m == name m' && (sign m `order` sign m' || sign (flp m) `order` sign m')
+    match  (F ts) (F ts')  = length ms==length ms' && and [f `match` f'| (f,f')<-zip ms ms']
+                             where ms = filter isMph ts; ms' = filter isMph ts'
+    match (Fd ts) (Fd ts') = length ms==length ms' && and [f `match` f'| (f,f')<-zip ms ms']
+                             where ms = filter isMph ts; ms' = filter isMph ts'
+    match (Fi fs) (Fi fs') = and [f `match` f'|(f,f')<-zip fs fs'] -- or [ and [f `match` f'|(f,f')<-zip fs prm] | prm<-perms fs']
+    match (Fu fs) (Fu fs') = and [f `match` f'|(f,f')<-zip fs fs'] -- or [ and [f `match` f'|(f,f')<-zip fs prm] | prm<-perms fs']
+    match  (K0 e) (K0 e')  = e `match` e'
+    match  (K1 e) (K1 e')  = e `match` e'
+    match  (Cp e) (Cp e')  = e `match` e'
+    match  (Tc e) e'       = match e e'
+    match  e (Tc e')       = match e e'
+    match _ _              = False
+}
+SEM Rule
+  | Ru 
+-- inherited (i.e. downward) propagation of types
+       cpu.isign       = @is
+       cpu.septets     = []
+       cpu.pos         = @rulePos
+       antc.isign      = if null @is then @antc.signs else @is -- might be just " @is ", but this produces better error messages.
+       cons.isign      = if null @is then @cons.signs else @is -- might be just " @is ", but this produces better error messages.
+       antc.pos        = @rulePos
+       cons.pos        = @rulePos
+-- the final rules, ready for synthetic (upward) propagation.
+       lhs.rules       = [ @r ]
+-- This rule, @r, is taken from a tuple (r,cpu') = @rcpu, in which elements of cpu have been substituted for subexpressions of @r.
+       loc.r           = fst @rcpu
+-- @errcpu contains all error messages wrt cpu.
+       loc.errcpu      = snd @rcpu
+       loc.rcpu        = subExprCheck
+                         (if @c=='A'
+                         then Ru @c (error ("Reference to antecedent of 'A' Rule "++showHS @r)) @rulePos @cons.expr @cpu.raw @expl
+                                 (if null @is
+                                  then error("Fatal: null @is on "++show @rulePos++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
+                                  else head @is)
+                                  @lhs.rnr @lhs.pn
+                         else Ru @c @antc.expr @rulePos @cons.expr @cpu.raw @expl
+                                 (if null @is
+                                  then error("Fatal: null @is on "++show @rulePos++"\n@antc.expr = "++show @antc.expr++"\n@antc.signs = "++shSigns @antc.signs++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
+                                  else head @is)
+                                 @lhs.rnr @lhs.pn)
+       lhs.closRules   = @clrs
+-- If this rule has a signal, it is declared by means of a Sgn declaration.
+       lhs.usedDecls   = rd (declarations (@antc.morphisms ++ @cons.morphisms) ++ @closdecls)
+-- signal declarations
+       lhs.declarations= []
+-- closure declarations
+       loc.closdecls   = rd [s| Ru c antc p cons cpu expla (a,b) n pn <- @clrs, s<-declarations antc]
+-- closure rules
+       loc.clrs        = if @c=='A'
+                         then @cons.closRules
+                         else @antc.closRules ++ @cons.closRules
+       lhs.morphisms   = (if @c=='A' then [] else @antc.morphisms)++ @cons.morphisms
+-- this is for more precise error messages in case antc or cons have Anything for a type.
+       loc.is          = if @c=='A' then @cons.signs else
+                         if null @antc.signs 
+                         then (if null @cons.signs
+                               then []
+                               else @cons.signs)
+                         else (if null @cons.signs
+                               then @antc.signs
+                               else @s)
+-- the basic types for this rule that can be constructed from the types in declarations from antc and cons
+       loc.s           = if @c=='A' then @cons.signs else
+                         irredT @lhs.gE [ (if a `@lhs.gE` a' then a' else a, if b `@lhs.gE` b' then b' else b)
+                                        | (a,b)<- @cons.signs, (a',b')<- @antc.signs
+                                        , (a `@lhs.gE` a' || a' `@lhs.gE` a) && (b `@lhs.gE` b' || b' `@lhs.gE` b)
+                                        ]
+  | Sg
+       lhs.rules       = [ Sg p r expla sgn n pn (head @decls)
+                         | r@(Ru c antc p cons cpu expla sgn n pn)<- @rule.rules ]
+-- @errcpu contains all error messages wrt cpu.
+       lhs.closRules   = @rule.closRules
+       lhs.morphisms   = @rule.morphisms
+       lhs.usedDecls   = rd (declarations @rule.morphisms)
+-- signal declarations
+       lhs.declarations= @decls
+       loc.signalname  = if null @signal.nm then "Rule"++show @lhs.rnr else @signal.nm
+       loc.decls       = [ Sgn @signalname a b [] "" "" "" [] @pos @lhs.rnr True
+                         | (a,b) <- map sign @rule.rules]
+  | Gc 
+-- downward propagation of type information. Every type in isign will lead to a morphism.
+-- inherited (i.e. downward) propagation of types
+-- signals need the same isign information as m:
+       cpu.isign       = []
+       cpu.septets     = []
+       cpu.pos         = @gluePos
+       m.isign         = @ms
+-- all signs of expr are OK, as long as the resulting type in isign is unique. (Test is performed in the error generator).
+-- TODO: generate error message (in sErr) when isign contains types not allowed because of atts.
+       expr.isign      = @esign
+       expr.pos        = @gluePos
+-- The result: all rules derived from the GLUE statement in final form
+       lhs.rules       = [ Ru c antc pos expr cpu expla (a,b) (i + @lhs.rnr) @lhs.pn
+                         | ((Ru c antc pos expr cpu expla (a,b) _ _,cpuErrs), i)<-zip @rs [0..]]
+       lhs.morphisms   = @mors
+       loc.mors        = @m.morphism : @expr.morphisms
+       loc.rs          = [ subExprCheck (Ru 'I' (Tm @m.morphism) @gluePos @expr.expr @cpu.raw "" (a,b) @nr @pn)
+                         | (d,c) <- @expr.signs, s <- @m.usedDecls
+                         , if d `@lhs.gE` source @m.morphism && c `@lhs.gE` target @m.morphism then True else
+                           error ("Fatal: (please report this as an error in ADL)\nFalse assumption in alternative Gc of SEM Rule, that "++show (d,c)++" in @expr.signs be more general than "++ show (source @m.morphism,target @m.morphism)++".")
+                         , (a,b)<-[if null @m.atts then (source @m.morphism,target @m.morphism) else (head @m.atts,last @m.atts)]]
+       lhs.closRules   = @expr.closRules
+-- all morphisms from the GLUE statement (final pass)
+       lhs.usedDecls   = rd (declarations @mors ++ @closdecls)
+-- signal declarations
+       lhs.declarations= []
+-- closure declarations
+       loc.closdecls   = rd [s| Ru c antc p cons cpu expla (a,b) n pn <- @expr.closRules, s<-declarations antc]
+-- the final types of the Gc rule:
+       loc.ms          = irredT @lhs.gE
+                          (if null @expr.signs
+                           then [(source m,target m)| m <- @m.usedDecls]
+                           else [(source m,target m)| m <- @m.usedDecls
+                                                    , or[s `@lhs.gE` source m && t `@lhs.gE` target m
+                                                        | (s,t) <- @expr.signs ]
+                                ])
+       loc.esign       = irredT @lhs.gE @expr.signs
+
+{
+llub gE ss ss'
+ = if null ss'
+   then if null ss
+        then []
+        else ss
+   else if null ss
+        then ss'
+        else rd [ (if a `gE` a' then a' else a, if b `gE` b' then b' else b)
+                | (a,b)<-ss, (a',b')<-ss'
+                , (a `gE` a' || a' `gE` a) && (b `gE` b' || b' `gE` b)
+                ]
+tlub gE cs [] = []
+tlub gE [] cs = []
+tlub gE as bs = (map (foldr1 lub) . eqClass order) [lub a b| a<-as, b<-bs, a `order` b]
+                where lub a b = if a `gE` b then b else a
+                      order a b = a `gE` b || b `gE` a
+-- comp is bedoeld voor de typering van alle mogelijkheden bij een ;. Alle mogelijke types van l worden gematcht met alle mogelijke types van r, om alle mogelijke types van l;r te verkrijgen.
+comp gE ls rs = [(f a a' b,f b' a' b)|(a,b)<-ls, (a',b')<-rs, a' `gE` b || b `gE` a']
+                where f Anything x y | x `gE` y = y
+                                     | y `gE` x = x
+                      f a _ _ = a
+comps gE tss  = if null ss then [] else foldr1 (comp gE) ss
+                where ss=[s|s<-tss, not (null s)]
+distr pos (a,b) gE css [t] = map Tm (ids gE a (source t))++[t]++map Tm (ids gE (target t) b)
+distr pos (a,b) gE css ts
+ = if or [length cs>1|cs<-css]
+   then error ("Fatal: ambiguities "++show css)
+   else concat [map Tm (ids gE x (source t))++[t|not (eq t)]| (x,y,t)<-zip3 ([a]++cs) (cs++[b]) ts]++map Tm (ids gE (target (last ts)) b)
+   where cs  = [c|[c]<-css]
+         eq :: Expression -> Bool
+         eq t = idsOnly t && source t==target t
+-- ids creates an identity with source x and target y, but only if necessary (that is: when x and y differ)
+ids gE x y | x==y      = []
+           | x `gE` y  = [I [] x y False]
+           | otherwise = [I [] y x True]
+}
+ATTR Expression [ | | signs:{[(Concept,Concept)]} expr:Expression ]
+ATTR Expressions [ septets:{[(Concept, Expressions, [(Concept,Concept)], [Concept], [(Concept,Concept)], Expressions, Concept)]} | | signss:{[[(Concept,Concept)]]} ]
+ATTR Expression Expressions [ pos:FilePos  | | ]
+ATTR Expression Expressions Morphism Morphisms [ isign:{[(Concept,Concept)]} | | ] -- in Expression only for Tm, Tc, Fi, Fu, K0, K1, Cp
+ATTR Expression [ | | raw:Expression ]
+SEM Expression
+  | Tm lhs.signs    = let (m,ss) = @m.raw in if isMph m then (if inline m then map sign ss else map (sign.flp) ss) else [sign m]
+       lhs.expr     = Tm @m.morphism
+       lhs.closRules=[]
+       lhs.rnr      = @lhs.rnr
+       lhs.raw      = let (m,ss) = @m.raw in Tm m
+  | Tc lhs.signs    = @c.signs
+       lhs.expr     = Tc @c.expr
+       lhs.closRules= @c.closRules
+       c.rnr        = @lhs.rnr
+       lhs.rnr      = @c.rnr
+       lhs.raw      = Tc @c.raw
+  | F  lhs.signs    = @sgns
+       loc.sgns     = comps @lhs.gE @ts.signss
+       loc.trpls    = if null @sgns -- @lhs.isign
+                      then [ (head (irredC @lhs.gE [s| (s,t)<-sl]),l,sl,tlub @lhs.gE (rd(map snd sl)) (rd(map fst sr)),sr,r,head (irredC @lhs.gE [t| (s,t)<-sr]))
+                           | ((l,r),(sls,srs))<-zip (chop @ts.exprs) (chop @ts.signss) -- none of l, r, sls, srs are empty because of chop's property.
+                           , sl <- [comps @lhs.gE sls], not (null sl)
+                           , sr <- [comps @lhs.gE srs], not (null sr)
+                           ]
+                      else [ (a,l,sl,tlub @lhs.gE (rd(map snd sl)) (rd(map fst sr)),sr,r,b)
+                           | (a,b) <- take 1 @lhs.isign
+                           , ((l,r),(sls,srs))<-zip (chop @ts.exprs) (chop @ts.signss) -- none of l, r, sls, srs are empty because of chop's property.
+                           , sl <- [[(s,t)| (s,t)<-comps @lhs.gE sls,if a/=Anything then s `@lhs.gE` a else True]]
+                           , sr <- [[(s,t)| (s,t)<-comps @lhs.gE srs,if b/=Anything then t `@lhs.gE` b else True]]
+                           ]
+       lhs.expr     = @dis
+       loc.dis      = if null @lhs.isign then F (@ts.exprs) else
+                      let (s,t)= head @lhs.isign -- @lhs.isign has length 1, or else there is a type error.
+                      in F (-- if length @ts.exprs==1 then @ts.exprs else 
+                            distr @lhs.pos (s,t) @lhs.gE [cs|(a,l,sl,cs,sr,r,b)<- @trpls, s `@lhs.gE` a, t `@lhs.gE` b] @ts.exprs)
+       ts.septets   = @trpls
+       lhs.closRules= @ts.closRules
+       ts.rnr       = @lhs.rnr
+       lhs.rnr      = @ts.rnr
+       lhs.raw      = F @ts.raw
+  | Fd lhs.signs    = @sgns
+       loc.sgns     = comps @lhs.gE @ts.signss
+       loc.trpls    = if null @sgns -- @lhs.isign
+                      then [ (head (irredC @lhs.gE [s| (s,t)<-sl]),l,sl,tlub @lhs.gE (rd(map snd sl)) (rd(map fst sr)),sr,r,head (irredC @lhs.gE [t| (s,t)<-sr]))
+                           | ((l,r),(sls,srs))<-zip (chop @ts.exprs) (chop @ts.signss) -- none of l, r, sls, srs are empty because of chop's property.
+                           , sl <- [comps @lhs.gE sls], not (null sl)
+                           , sr <- [comps @lhs.gE srs], not (null sr)
+                           ]
+                      else [ (a,l,sl,tlub @lhs.gE (rd(map snd sl)) (rd(map fst sr)),sr,r,b)
+                           | (a,b) <- take 1 @lhs.isign
+                           , ((l,r),(sls,srs))<-zip (chop @ts.exprs) (chop @ts.signss) -- none of l, r, sls, srs are empty because of chop's property.
+                           , sl <- [[(s,t)| (s,t)<-comps @lhs.gE sls,if a/=Anything then s `@lhs.gE` a else True]]
+                           , sr <- [[(s,t)| (s,t)<-comps @lhs.gE srs,if b/=Anything then t `@lhs.gE` b else True]]
+                           ]
+       lhs.expr     = @dis
+       loc.dis      = if null @lhs.isign then Fd (@ts.exprs) else
+                      let (s,t)= head @lhs.isign -- @lhs.isign has length 1, or else there is a type error.
+                      in Fd (-- if length @ts.exprs==1 then @ts.exprs else 
+                             distr @lhs.pos (s,t) @lhs.gE [cs|(a,l,sl,cs,sr,r,b)<- @trpls, a==s, b==t] @ts.exprs)
+       ts.septets   = @trpls
+       lhs.closRules= @ts.closRules
+       ts.rnr       = @lhs.rnr
+       lhs.rnr      = @ts.rnr
+       lhs.raw      = Fd @ts.raw
+  | Fu lhs.signs    = if null @sgns then error("Fatal: empty @sgns in Fu-expression "++showADL (Fi @fs.raw)) else @sgns
+       loc.sgns     = if null @fs.signss then error("Fatal: empty @fs.signss in expression "++showHS (Fu @fs.exprs)) else
+                      foldr1 (llub @lhs.gE) @fs.signss
+       fs.septets   = []
+       lhs.expr     = Fu @fs.exprs
+       loc.dis      = let [(a,b)] = take 1 @lhs.isign
+                          (a',b') = (source (head @fs.exprs), target (last @fs.exprs))
+                      in Fu ( {- map Tm (ids @lhs.gE a a') ++ -} @fs.exprs {- ++ map Tm (ids @lhs.gE b' b) -} )
+       lhs.closRules= @fs.closRules
+       fs.rnr       = @lhs.rnr
+       lhs.rnr      = @fs.rnr
+       lhs.raw      = Fu @fs.raw
+  | Fi lhs.signs    = if null @sgns then error("Fatal: empty @sgns in Fi-expression "++showADL (Fi @fs.raw)) else @sgns
+       loc.sgns     = if null @fs.signss then error("Fatal: empty @fs.signss in expression "++showHS (Fi @fs.exprs)) else
+                      foldr1 (llub @lhs.gE) @fs.signss
+       fs.septets   = []
+       lhs.expr     = Fi @fs.exprs
+       loc.dis      = let [(a,b)] = take 1 @lhs.isign
+                          (a',b') = (source (head @fs.exprs), target (last @fs.exprs))
+                      in Fi ( {- map Tm (ids @lhs.gE a a') ++ -} @fs.exprs {- ++ map Tm (ids @lhs.gE b' b) -} )
+       lhs.closRules= @fs.closRules
+       fs.rnr       = @lhs.rnr
+       lhs.rnr      = @fs.rnr
+       lhs.raw      = Fi @fs.raw
+  | K0 lhs.signs    = @e.signs
+       lhs.expr     = Tm @closmor
+       lhs.closRules= let [(a,b)] = take 1 @lhs.isign
+                      in Ru 'E'             -- an equivalence rule:   n = expr* COMPUTING n
+                            (Tm @closmor)   -- n
+                            @lhs.pos        -- the position in the file
+                            (K0 @e.expr)    -- expr*
+                            [Tm @closmor]   -- expr*
+                            ""              -- the explanation
+                            (a,b)           -- the declaration
+                            @lhs.rnr        -- the rule number
+                            @lhs.pn         -- the pattern name
+                         : @e.closRules
+       e.rnr        = @lhs.rnr+1
+       lhs.rnr      = @e.rnr
+       loc.closmor  = let [(a,b)] = take 1 @lhs.isign
+                      in Mph ({-"Clos_"++-}(name.head.declarations) @e.expr) @lhs.pos [] (a,b) True (Sgn ({-"Clos_"++-}(name.head.declarations) @e.expr) a b [Trn,Rfx] "" "" "" [] @lhs.pos 0 True)
+       lhs.raw      = K0 @e.raw
+  | K1 lhs.signs    = @e.signs
+       lhs.expr     = Tm @closmor
+       lhs.closRules= let [(a,b)] = take 1 @lhs.isign
+                      in Ru 'E'             -- an equivalence rule:   n = expr* COMPUTING n
+                            (Tm @closmor)   -- n
+                            @lhs.pos        -- the position in the file
+                            (K1 @e.expr)    -- expr*
+                            [Tm @closmor]   -- expr*
+                            ""              -- the explanation
+                            (a,b)           -- the declaration
+                            @lhs.rnr        -- the rule number
+                            @lhs.pn         -- the pattern name
+                         : @e.closRules
+       e.rnr        = @lhs.rnr+1
+       lhs.rnr      = @e.rnr
+       loc.closmor  = let [(a,b)] = take 1 @lhs.isign
+                      in Mph ({-"Clos_"++-}(name.head.declarations) @e.expr) @lhs.pos [] (a,b) True (Sgn ({-"Clos_"++-}(name.head.declarations) @e.expr) a b [Trn] "" "" "" [] @lhs.pos 0 False)
+       lhs.raw      = K1 @e.raw
+  | Cp lhs.signs    = @e.signs
+       lhs.expr     = Cp @e.expr
+       lhs.closRules= @e.closRules
+       e.rnr        = @lhs.rnr
+       lhs.rnr      = @e.rnr
+       lhs.raw      = Cp @e.raw
+
+ATTR Expressions [ | | raw:Expressions ]
+SEM Expressions
+  | Cons lhs.signss = @hd.signs: @tl.signss
+         hd.isign   = if null @lhs.septets then @lhs.isign else
+                      --if null @hsgn then error ("Fatal: null @hsgn on "++show @lhs.pos++"\n@tl.exprs=="++show @tl.exprs++"\n@lhs.isign = "++show @lhs.isign++"\n@lhs.septets = \n"++chain "\n" ([show [show a,show l,show cs,show r, show b]| (a,l,sl,cs,sr,r,b)<- @lhs.septets])) else
+                      @hsgn
+         loc.hsgn   = [(a,c)| (a,l,sl,cs,sr,r,b)<- @lhs.septets, length l==1, c<-cs]
+         tl.isign   = if null @lhs.septets then @lhs.isign else
+                      [(c,b)| (a,l,sl,cs,sr,r,b)<- @lhs.septets, length l==1, c<-cs]
+         tl.septets = @septs
+         loc.septs  = [ (c',tail l,rd[(c',c)|(a,c)<-sl],cs,sr,r,b)
+                      | (a,l,sl,cs,sr,r,b)<- @lhs.septets,length l>1,(a',c')<- @hsgn]
+         lhs.raw    = @hd.raw: @tl.raw
+  | Nil  lhs.signss = []
+         lhs.raw    = []
+
+SEM Morphisms 
+  | Cons lhs.usedDecls   = @hd.usedDecls ++ @tl.usedDecls
+  | Nil  lhs.usedDecls   = []
+
+ATTR Pattern Patterns [ | | keyDefs:KeyDefs ]
+SEM Patterns 
+  | Cons lhs.keyDefs   = @hd.keyDefs ++ @tl.keyDefs
+  | Nil  lhs.keyDefs   = []
+SEM Pattern         
+  | Pat lhs.keyDefs    = @ks.keyDefs
+ATTR Expression Expressions Rule Rules Pattern Patterns [ | | morphisms:{Morphisms} ]
+SEM Patterns
+  | Cons lhs.morphisms = @hd.morphisms ++ @tl.morphisms
+  | Nil  lhs.morphisms = []
+SEM Pattern
+  | Pat lhs.morphisms  = @rules.morphisms
+SEM Rules
+  | Cons lhs.morphisms = @hd.morphisms ++ @tl.morphisms
+  | Nil  lhs.morphisms = []
+SEM Expression
+  | Tm lhs.morphisms   = [@m.morphism]
+  | Tc lhs.morphisms   = @c.morphisms
+  | F  lhs.morphisms   = @ts.morphisms
+  | Fd lhs.morphisms   = @ts.morphisms
+  | Fi lhs.morphisms   = @fs.morphisms
+  | Fu lhs.morphisms   = @fs.morphisms
+  | K0 lhs.morphisms   = @e.morphisms
+  | K1 lhs.morphisms   = @e.morphisms
+  | Cp lhs.morphisms   = @e.morphisms
+SEM Expressions
+  | Cons lhs.morphisms = @hd.morphisms ++ @tl.morphisms
+  | Nil  lhs.morphisms = []
+
+
+-- Type errors
+ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs
+     [ | | sErr: {[String]} ]
+SEM Architecture
+  | Arch lhs.sErr   = @cs.sErr
+SEM Contexts 
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
+SEM Context
+  | Ctx  lhs.sErr   = @dc.sErr ++ @ks.sErr
+SEM Patterns 
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
+SEM Pattern
+  | Pat lhs.sErr    = @rules.sErr ++ @pms.sErr ++ @ks.sErr
+SEM Rules
+  | Cons lhs.sErr         = @hd.sErr ++ @tl.sErr
+         lhs.declarations = @hd.declarations ++ @tl.declarations
+         lhs.usedDecls    = @hd.usedDecls ++ @tl.usedDecls
+  | Nil  lhs.sErr         = []
+         lhs.declarations = []
+         lhs.usedDecls    = []
+SEM Rule
+  | Ru lhs.sErr     ={-  ["Diagnose Ru on Line "++show diagl++": "++
+                       (if @c=='A' then "" else
+                        "\n@antc.signs: "++show @antc.signs++
+                        "\n@antc.raw: "++showADL @antc.raw++
+                        "\n@antc.expr: "++showADL @antc.expr)++
+                       "\n@cons.signs: "++show @cons.signs++
+                       "\n@cons.raw:   "++showADL @cons.raw++
+                       "\n@cons.expr:  "++showADL @cons.expr++
+                       "\n@is:         "++show @is++
+                       "\n"++showADL @r++
+                       "\n@r:          "++showHS @r++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @rulePos]++ -}
+                      take 1   -- tip: for diagnosis purposes, remove this `take 1' and get more messages.
+                      (@cons.sErr ++
+                        (if @c=='A' then [] else @antc.sErr ++
+                         [ "8 in "++show @rulePos++"\n   Meaningless rule.\n"
+                         | null @cons.signs&&null @antc.signs]++
+                         [ "1 in "++show @rulePos++"\n   Mismatch in rule:\n   "++
+                           show @antc.expr++ " :: "++shSigns @antc.signs ++ "\n   does not match\n   "++
+                           show @cons.expr++ " :: "++shSigns @cons.signs++"\n"
+                         | null @is && not (null @antc.signs) && not (null @cons.signs)]++
+                         [ "2 in "++show @rulePos++"\n   Ambiguous types: "++shSigns @is++
+                           "\n   in right hand side:  "++ show @cons.expr++
+                           "\n   and left hand side:  "++ show @antc.expr++"\n"
+                         | length @is>1]++
+                         [ "15 in "++show @rulePos++
+                           "\n   the right hand side: "++ show @cons.expr++" has type "++shSigns [(s,t)| (s,t) <- @is, not(s `order` t)]++
+                           "\n   and left hand side:  "++ show @antc.expr++" requires that source and target are the same.\n"
+                         | isIdent @antc.expr && or [s/=t| (s,t) <- @is] ]++
+                         [ "16 in "++show @rulePos++
+                           "\n   the left hand side:  "++ show @cons.expr++" has type "++shSigns [(s,t)| (s,t) <- @is, not(s `order` t)]++
+                           "\n   and right hand side: "++ show @antc.expr++" requires that source and target are the same.\n"
+                         | isIdent @cons.expr && or [s/=t| (s,t) <- @is] ]++
+                         [ "14 in "++show @rulePos++" rule "++show (nr @r)++":\n   "++showADL @r++"\n   "++chain "\n   " @errcpu++"\n"
+                         | not (null @errcpu)]))
+  | Sg lhs.sErr     = @rule.sErr
+  | Gc lhs.sErr     = take 1
+                       (  [ "12 in "++show @gluePos++
+                            "\n   I not allowed as left hand side of GLUE\n"
+                          | null @ms && @m.id]
+                       ++ ["13 in "++show @gluePos++
+                            "\n   I not allowed as right hand side of GLUE\n"
+                          | anything @expr.signs]
+                       ++ @m.sErr ++ @expr.sErr
+                       )
+SEM Expression
+  | Tm lhs.sErr     = @m.sErr
+  | Tc lhs.sErr     = @c.sErr
+  | F  lhs.sErr     = {- ["Diagnose F on Line "++show diagl++", composing\n   "++
+                       chain "\n   " [ show (F ls)++" :: "++shSigns sl++"  with  "++show (F rs)++" :: "++shSigns sr
+                                     | (a,ls,sl,cs,sr,rs,b)<- @trpls] ++
+                       "\n@sgns:      "++show @sgns++
+                       "\n@lhs.isign: "++show @lhs.isign++
+                       "\n@ts.signss: "++show @ts.signss++
+                       "\nchop @ts.exprs: "++show (chop @ts.exprs)++
+                       "\nchop @ts.signss: "++show (chop @ts.signss)++
+                       "\n@ts.signss: "++show @ts.signss++
+                       "\n@ts.raw:    "++showADL (F @ts.raw)++
+                       "\n@ts.exprs:    "++showADL (F @ts.exprs)++
+                       "\ncomps @lhs.gE @ts.signss: "++show (comps @lhs.gE @ts.signss)++
+                       "\n"++gEtabG @lhs.gE (rd [c|ts<- @ts.signss,(a,b)<-ts,c<-[a,b]])++
+                       "\n@trpls:     "++(if null @trpls then "[]" else chain "\n->          " [show a++"#["++chain "," (map showADL ls)++"]#"++show sl++"#"++show cs++"#"++show sr++"#["++chain "," (map showADL rs)++"]#"++show b|(a,ls,sl,cs,sr,rs,b)<- @trpls])++
+                       "\n@lhs.expr:  "++showHS @dis++
+                       "\ntypes of chop @ts.signss: "++show [(comps @lhs.gE l,comps @lhs.gE r)| (l,r)<-chop @ts.signss]++
+                       "\n@ts.exprs:   "++show @ts.exprs++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++  -}
+                      @ts.sErr++
+                      [ "5 in "++show @lhs.pos++"\n   Type error in composing\n   "++
+                        chain " and\n   " [show l++" :: "++shSigns sgnsl++" with "++show r++" :: "++shSigns sgnsr
+                                      | (l,sgnsl,r,sgnsr)<-errs]++"\n"
+                      | errs<- [[(l,sgnsl,r,sgnsr) | ((sgnsl,sgnsr),(l,r))<- zip (zip @ts.signss (tail @ts.signss)) (zip @ts.raw (tail @ts.raw))
+                                                   , correct<-[[(sl,tl,sr,tr)|(sl,tl)<-sgnsl, (sr,tr)<-sgnsr, tl `order` sr || anything tl || anything sr]]
+                                                   , null correct]]
+                      , not (null errs)
+                      ]++                      [ "6 in "++show @lhs.pos++"\n   Ambiguous composition over concepts "++show cs++" of\n   "++
+                        show (F ls)++" :: "++shSigns sl++
+                        " and\n   "++
+                        show (F rs)++" :: "++shSigns sr++"\n"
+                      |(a,ls,sl,cs,sr,rs,b)<- @trpls, length cs>1]
+  | Fd lhs.sErr     = {- ["Diagnose Fd on Line "++show diagl++", composing\n   "++
+                       chain "\n   " [ show (Fd ls)++" :: "++shSigns sl++"  with  "++show (Fd rs)++" :: "++shSigns sr
+                                     | (a,ls,sl,cs,sr,rs,b)<- @trpls] ++
+                       "\n@sgns:      "++show @sgns++
+                       "\n@lhs.isign: "++show @lhs.isign++
+                       "\n@ts.signss: "++show @ts.signss++
+                       "\n@ts.raw:    "++showADL (F @ts.raw)++
+                       "\n@ts.exprs:    "++showADL (F @ts.exprs)++
+                       "\ncomps @lhs.gE @ts.signss: "++show (comps @lhs.gE @ts.signss)++
+                       "\n"++gEtabG @lhs.gE (rd [c|ts<- @ts.signss,(a,b)<-ts,c<-[a,b]])++
+                       "\n@trpls:     "++chain "\n->          " [show a++"#"++show ls++"#"++show sl++"#"++show cs++"#"++show sr++"#"++show rs++"#"++show b|(a,ls,sl,cs,sr,rs,b)<- @trpls]++
+                       "\n@lhs.expr:  "++showHS @dis++
+                       "\ntypes of chop @ts.signss: "++show [(comps @lhs.gE l,comps @lhs.gE r)| (l,r)<-chop @ts.signss]++
+                       "\n@ts.exprs:   "++show @ts.exprs++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos, not (null @trpls)] ++ -}
+                      @ts.sErr++
+                      [ "5 in "++show @lhs.pos++"\n   Type error in composing\n   "++
+                        chain " and\n   " [show l++" :: "++shSigns sgnsl++" with "++show r++" :: "++shSigns sgnsr
+                                      | (l,sgnsl,r,sgnsr)<-errs]
+                      | errs<- [[(l,sgnsl,r,sgnsr) | ((sgnsl,sgnsr),(l,r))<- zip (zip @ts.signss (tail @ts.signss)) (zip @ts.raw (tail @ts.raw))
+                                                   , correct<-[[(sl,tl,sr,tr)|(sl,tl)<-sgnsl, (sr,tr)<-sgnsr, tl `order` sr || anything tl || anything sr]]
+                                                   , null correct]]
+                      , not (null errs)
+                      ]++
+                      [ "6 in "++show @lhs.pos++"\n   Ambiguous relative addition over concepts "++show cs++" of\n   "++
+                        show (Fd ls)++" :: "++shSigns sl++
+                        " and\n   "++
+                        show (Fd rs)++" :: "++shSigns sr++"\n"
+                      |(a,ls,sl,cs,sr,rs,b)<- @trpls, length cs>1]
+  | Fu lhs.sErr     = {- ["Diagnose Fu on Line "++show diagl++": "++
+                       "\n@sgns:        "++show @sgns++
+                       "\n@fs.signss:   "++show @fs.signss++
+                       "\nFi @fs.raw:   "++showADL (Fu @fs.raw)++
+                        "\ntypes of chop @fs.signss: "++show [(comps @lhs.gE l,comps @lhs.gE r)| (l,r)<-chop @fs.signss]++
+                       (if null @sgns then "" else
+                        "\n@lhs.isign:   "++show @lhs.isign++
+                        "\nFi @fs.exprs: "++showADL (Fu @fs.exprs)++
+                        "\nFi @fs.exprs: "++showHS (Fu @fs.exprs)++
+                        "\n@lhs.expr:    "++showADL (Fu @fs.exprs))++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++ -}
+                      if null @sgns
+                      then ["4 in "++show @lhs.pos++"\n   Incompatible types in comparing\n   "++
+                            commaEng "with\n  " [show f++" :: "++shSigns s| (f,s)<-zip @fs.raw @fs.signss]++"\n"]
+                      else @fs.sErr
+  | Fi lhs.sErr     = {- ["Diagnose Fi on Line "++show diagl++": "++
+                       "\n@sgns:        "++show @sgns++
+                       "\n@fs.signss:   "++show @fs.signss++
+                       "\nFi @fs.raw:   "++showADL (Fi @fs.raw)++
+                        "\ntypes of chop @fs.signss: "++show [(comps @lhs.gE l,comps @lhs.gE r)| (l,r)<-chop @fs.signss]++
+                       (if null @sgns then "" else
+                        "\n@lhs.isign:   "++show @lhs.isign++
+                        "\nFi @fs.exprs: "++showADL (Fi @fs.exprs)++
+                        "\nFi @fs.exprs: "++showHS (Fi @fs.exprs)++
+                        "\n@lhs.expr:    "++showADL (Fi @fs.exprs))++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++ -}
+                      if null @sgns
+                      then ["4 in "++show @lhs.pos++"\n   Incompatible types in comparing\n   "++
+                            commaEng "with\n  " [show f++" :: "++shSigns s| (f,s)<-zip @fs.raw @fs.signss]++"\n"]
+                      else @fs.sErr
+  | K0 lhs.sErr     = @e.sErr
+  | K1 lhs.sErr     = @e.sErr
+  | Cp lhs.sErr     = {- ["Diagnose Cp on Line "++show diagl++": "++
+                       "\n@e.signs:   "++show @e.signs++
+                       "\n@lhs.isign: "++show @lhs.isign++
+                       "\n@e.raw:     "++showHS @e.raw++
+                       "\n@e.expr:    "++showHS @e.expr++
+                       " = "++showADL @e.expr++"\n"++
+                       " = "++showHS @e.expr++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++ -}
+                      @e.sErr
+
+SEM Expressions
+  | Cons lhs.sErr   = {- if (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos && name @hd.expr == "u"
+                      then ["Diagnose Cons on Line "++show diagl++
+                            "\n@tl.exprs:  "++show @tl.exprs++
+                            "\n@septets:   "++chain "\n->          " [show a++"#"++show ls++"#"++show sl++"#"++show cs++"#"++show sr++"#"++show rs++"#"++show b|(a,ls,sl,cs,sr,rs,b)<- @lhs.septets]++
+                            "\n@lhs.isign: "++show @lhs.isign++"\n"] else -}
+                      @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
+SEM Declaration
+  | Sgn lhs.sErr    = if @a.nm == @b.nm then [] else
+                      let ps = @props `isc` [Trn,Rfx,Sym,Asy] in
+                      if null ps then []
+                      else ["7 in "++show @morPos++"\n   Heterogeneous relation "++
+                            @nm++"["++ @a.nm ++"*"++ @b.nm ++
+                            "]\n   may not be declared "++commaEng "and" [pMeaning p| p<-ps]++
+                            ".\n   (This relation is heterogeneous because "++ @a.nm ++" and "++ @b.nm ++
+                            "\n   are different concepts).\n"]
+  | Isn lhs.sErr     = []  -- Isn, Iscompl, Vs moeten op termijn verdwijnen, want al het rekenwerk moet met morphismen gebeuren...
+  | Iscompl lhs.sErr = []
+  | Vs lhs.sErr      = []
+SEM Declarations
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
+SEM Morphism
+  | Mph lhs.sErr    = [ "3 in "++show @pos++
+                        "\n   Relation " ++ show (Mph @nm @pos @atts (Anything, Anything) @yin (Isn Anything Anything)) ++
+                        (if null @atts then "" else show (rd @atts)) ++
+                        " is not declared.\n"
+                      | null @ss]
+  | I   lhs.sErr    = []
+  | V   lhs.sErr    = []
+SEM KeyDefs
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
+SEM KeyDef
+  | Kd lhs.sErr     = [ "10 in "++show @pos++"\n   "++
+                        "Ambiguous declaration for attribute " ++ commaEng "and" [name a|a<-as] ++ " in entity " ++ name @e.concept ++ ".\n"
+                      | as <- @ambs]++
+                      [ "11 in "++show @pos++"\n   "++
+                        "Attribute " ++ nm ++ " is incompatible with entity " ++ name @e.concept ++ ".\n"
+                      | (Mph nm pos ats _ yin _,ss) <- @ms.raw
+                      , if yin
+                        then null[source s|s<-ss, source s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` source s]
+                        else null[target s|s<-ss, target s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` target s]]
+       loc.nulls    = [a | a <- @ksgn, null a]
+       loc.ambs     = [a | a <- @ksgn, length a>1]
+
+ATTR Rule Rules Expression Expressions [ pn:{String} | | ]
+
+{-
+Rule number allocation: All rules in one context receive a unique rule number.
+This is done through attribute propagation over the rnr attribute.
+Expressions get rule numbers too, because some expressions create extra rules (K0 and K1 in particular)
+-}
+ATTR Rule Expression Expressions [ | | closRules:Rules ]
+ATTR Pattern Patterns Rule Rules Expression Expressions [ | rnr:Int | ]
+SEM Expressions
+  | Cons hd.rnr        = @lhs.rnr
+         tl.rnr        = @hd.rnr
+         lhs.rnr       = @tl.rnr
+  | Nil  lhs.rnr       = @lhs.rnr
+
+ATTR Rule Rules [ | | rules:Rules ]
+SEM Rule
+  | Ru   antc.rnr  = @lhs.rnr+1
+         cons.rnr  = if @c=='A' then @lhs.rnr+1 else @antc.rnr
+         lhs.rnr   = @cons.rnr
+  | Sg   rule.rnr  = @lhs.rnr
+         lhs.rnr   = @rule.rnr
+  | Gc   expr.rnr  = @lhs.rnr+length @rs
+         lhs.rnr   = @expr.rnr
+SEM Rules
+  | Cons lhs.rules = @hd.rules ++ @hd.closRules ++ @tl.rules
+         hd.rnr    = @lhs.rnr
+         tl.rnr    = @hd.rnr
+         lhs.rnr   = @tl.rnr
+  | Nil  lhs.rules = []
+         lhs.rnr   = @lhs.rnr
+
+SEM Context
+  | Ctx dc.rnr = 1
+ATTR Pattern Patterns [ | | patterns:Patterns usedDecls:Declarations rawDecls:Declarations conDefs:{[ConceptDef]} ]
+SEM Patterns
+  | Cons lhs.patterns      = @hd.patterns ++ @tl.patterns
+         hd.rnr            = @lhs.rnr
+         tl.rnr            = @hd.rnr
+         lhs.rnr           = @tl.rnr
+         lhs.usedDecls     = rd(@hd.usedDecls ++ @tl.usedDecls)
+         lhs.rawDecls      = @hd.rawDecls ++ @tl.rawDecls
+         lhs.conDefs       = @hd.conDefs ++ @tl.conDefs
+  | Nil  lhs.patterns      = []
+         lhs.rnr           = @lhs.rnr
+         lhs.usedDecls     = []
+         lhs.rawDecls      = []
+         lhs.conDefs       = []
+
+SEM Pattern
+  | Pat  lhs.patterns      = [Pat @nm @rules.rules ( @rules.mGen ++ @gen.list) ( @pms.declarations ++ @rules.declarations ) @cs.conDefs @ks.keyDefs]
+         rules.rnr         = @lhs.rnr
+         lhs.rnr           = @rules.rnr
+         lhs.usedDecls     = @rules.usedDecls ++declarations @ks.morphisms
+         lhs.rawDecls      = @pms.rawDecls
+         lhs.conDefs       = @cs.conDefs
+         rules.pn          = @nm
+         ks.gE             = @lhs.gE
+
+ATTR Concepts [gE:GenR | | ]
+ATTR Concept [gE:GenR | | nm:String concept:Concept ]
+SEM Concept
+  | C lhs.concept = C @c @lhs.gE []
+      lhs.nm      = @c
+  | S lhs.concept = S @c @lhs.gE []
+      lhs.nm      = @c
+  | Anything
+      lhs.concept = Anything
+      lhs.nm      = "Anything"
+  | NOthing
+      lhs.concept = NOthing
+      lhs.nm      = "NOthing"
+
+ATTR ConceptDef [ | | c:{ConceptDef} ]
+SEM ConceptDef
+  | Cd lhs.c = Cd @pos @nm @def @ref
+
+ATTR ConceptDefs [ | | conDefs:{[ConceptDef]} ]
+SEM ConceptDefs
+  | Cons lhs.conDefs = @hd.c : @tl.conDefs
+  | Nil  lhs.conDefs = []
+
+ATTR KeyDef [ sDef:Declarations gE:GenR | | kd:KeyDef morphisms:Morphisms ]
+SEM KeyDef
+  | Kd lhs.kd        = Kd @pos @lbl @e.concept @ms.morphisms
+       lhs.morphisms = @ms.morphisms
+       ms.isign      = take 1 ([(src,Anything)|src<-irredC @lhs.gE (map source (concat @ksgn))] ++ [(@e.concept, @e.concept)])
+       loc.ksgn      = [ [Mph nm pos ats (if yin then (source s,target s) else (target s,source s)) yin (error "illegal reference to 'ksgn' in semantics of Kd of KeyDef")
+                         | s<-ss
+                         ,     yin && (source s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` source s) ||
+                           not yin && (target s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` target s) ]
+                       | (Mph nm pos ats _ yin _,ss) <- @ms.raw]
+
+ATTR KeyDefs [ sDef:Declarations gE:GenR | | keyDefs:KeyDefs morphisms:Morphisms ]
+SEM KeyDefs
+  | Cons lhs.keyDefs   = @hd.kd : @tl.keyDefs
+         lhs.morphisms = @hd.morphisms ++ @tl.morphisms
+  | Nil  lhs.keyDefs   = []
+         lhs.morphisms = []
+
+ATTR Expressions [ | | exprs:Expressions ]
+SEM Expressions
+  | Cons lhs.exprs     = @hd.expr : @tl.exprs
+         lhs.closRules = @hd.closRules ++ @tl.closRules
+  | Nil  lhs.exprs     = []
+         lhs.closRules = []
+
+
+ATTR Gens [gE:GenR | | list:Gens ]
+SEM Gens
+  | Cons lhs.list = @hd.gen : @tl.list
+  | Nil  lhs.list = []
+
+ATTR Gen [gE:GenR | | gen:Gen ]
+SEM Gen
+  | G lhs.gen   = G @genus.concept @spec.concept
+
+ATTR Declarations [ | | declarations:Declarations rawDecls:Declarations ]
+SEM Declarations
+  | Cons lhs.declarations = @hd.declaration: @tl.declarations
+         lhs.rawDecls = @hd.rawDecl: @tl.rawDecls
+  | Nil  lhs.declarations = []           
+         lhs.rawDecls = []           
+
+ATTR Morphisms [ | | morphisms:Morphisms raw:{[(Morphism,Declarations)]} ]
+SEM Morphisms
+  | Cons lhs.morphisms = @hd.morphism : @tl.morphisms
+         lhs.raw       = @hd.raw : @tl.raw
+         hd.isign      = take 1 (
+                          [ (src, if yin then target s else source s)
+                          | (src,_)<- @lhs.isign, (Mph nm pos ats _ yin _,ss) <- [@hd.raw], s<-ss, (if yin then source s else target s) `@lhs.gE` src]++
+                          @lhs.isign)
+  | Nil  lhs.raw       = []
+         lhs.morphisms = []
+
+ATTR Morphism [ | | raw:{(Morphism,Declarations)} morphism:Morphism nm:String pos:FilePos atts:{[Concept]} yin:Bool id:Bool ]
+SEM Morphism
+  | Mph
+        lhs.morphism = Mph @nm @pos @ats @s @yin
+                        (if null @rel then error("Fatal: null @rel in "++ @nm++" on "++show @pos++"\n@lhs.isign = "++ show @lhs.isign++"\n@ss       = "++ show @ss++"\n@s          = "++ show @s++"\n"++ gEtabG @lhs.gE (rd ([fst @s,snd @s]++concs @ss))) else
+                         head @rel)
+        loc.s     = if null @lhs.isign
+                    then error("Fatal 2: Empty declaration allocation for "++ @nm ++" on "++show @pos++":\n  @ss="++chain "\n       " (map show @ss))
+                    else head @lhs.isign -- do not test for length @lhs.isign>1, because of GLUE
+        loc.m     = if null @rel
+                    then error("Fatal 3: Empty declaration allocation for "++show @nm++" on "++show @pos++":\n  @lhs.isign="++show @lhs.isign++":\n  @ss="++chain "\n       " (map show @ss))
+                    else if length @rel>1
+                    then error("Fatal 6: Ambiguous declaration allocation for "++show @nm++" on "++show @pos++":\n   "++
+                                                         chain "\n   " (map show @rel))
+                    else head @rel -- do not test for length @lhs.isign>1, because of GLUE
+-- All declarations from the declaration table that 'fit' as last argument of Mph:
+        loc.rel   = irredS @lhs.gE [s| s <- @ss, @nm==name s, (a,b) <- @lhs.isign
+                                     , if @yin then source s `@lhs.gE` a && target s `@lhs.gE` b else target s `@lhs.gE` a && source s `@lhs.gE` b]
+-- All declarations from the declaration table that match the name and the atts, if provided. (Second pass upwards, when sDef is known)
+        lhs.usedDecls = @ss
+        loc.ss    = let ss = [ s | s <- @lhs.sDef, name s == @nm] in
+                    if null @atts then rd ss else
+                    [ s | s <- ss, if @yin then source s == head @atts && target s == last @atts else source s == last @atts && target s == head @atts]
+        lhs.raw   = let err=error "illegal reference to 'raw' in semantics of Mph of Morphism" in
+                    if null @ats
+                    then (Mph @nm @pos @ats (Anything,Anything) @yin (Sgn @nm Anything Anything [] "" "" "" [] err 0 True), @ss)
+                    else (Mph @nm @pos @ats (if @yin then (head @ats,last @ats) else (last @ats,head @ats)) @yin (Sgn @nm (head @ats) (last @ats) [] "" "" "" [] err 0 True), @ss)
+        loc.ats   = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
+        lhs.nm    = @nm
+        lhs.pos   = @pos
+        lhs.atts  = @ats
+        lhs.yin   = @yin
+        lhs.id    = False
+  | I   lhs.usedDecls = declarations [ @rraw ]
+        lhs.raw      = ( @rraw, [])
+        loc.rraw     = if null @ats      then I [] Anything Anything True  else
+                       if length @ats==1 then I @ats (head @ats) (head @ats) True              else
+                       error ("Contact your dealer:\nADL allows only one concept in I["++show @atts++"].")
+        lhs.morphism = let (s,t) = if null @lhs.isign && null @ats then error ("Fatal: null @lhs.isign in I lhs.morphism!") else
+                                   head (@lhs.isign++[(head @ats,last @ats)])
+                           is = ids @lhs.gE s t
+                       in if null is then I @ats s t True else head is
+        lhs.nm       = "I"
+        lhs.pos      = posNone
+        lhs.atts     = @ats
+        loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
+        lhs.yin      = let I ats g s yin = @rraw in yin
+        lhs.id       = True
+  | V   lhs.usedDecls = declarations [ @rraw ]
+        lhs.raw      = ( @rraw, [])
+        loc.rraw     = V @atts @sgn
+        lhs.morphism = let (s,t) = if null @lhs.isign then error ("Fatal: null @lhs.isign in V lhs.morphism!") else
+                                   head @lhs.isign
+                       in V @ats (s,t)
+        lhs.nm       = "V"
+        lhs.pos      = posNone
+        lhs.atts     = @ats
+        loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
+        lhs.id       = True
+        lhs.yin      = True
+        
+ATTR Declaration [ | | nm:String declaration:Declaration rawDecl:Declaration]
+SEM Declaration
+  | Sgn lhs.declaration = @msignat
+        loc.msignat   = head ([ s
+                              | s <- @lhs.sDef, @nm==name s, @a.concept==source s, @b.concept==target s]++
+                              [error ("Missing "++showHS (Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @morPos 0 @sig)++" in AGtry.ag\n"++ show @lhs.sDef)])
+        lhs.rawDecl   = Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @morPos 0 @sig
+        lhs.nm        = @nm
+  | Isn lhs.declaration = Isn @g.concept @s.concept
+        lhs.rawDecl   = Isn @g.concept @s.concept
+        lhs.nm        = "I"
+  | Iscompl lhs.declaration = Iscompl @g.concept @s.concept
+        lhs.rawDecl   = Iscompl @g.concept @s.concept
+        lhs.nm        = "I"
+  | Vs  lhs.declaration = Vs @g.concept @s.concept
+        lhs.rawDecl   = Vs @g.concept @s.concept
+        lhs.nm        = "V"
+
+
+
+{-
+Declaration propagation.
+Every morphism stands for a declaration in use. The declaration defines name, source, target etc., whereas the morphism uses that information.
+The parser must therefore find out which declaration to bind to each morphism. This is how it works:
+Firstly, the names must match precisely. That leaves a number of candidate declarations.
+A morphism may be narrowed down to one particular declaration by a user who specifies atts.
+If that is the case (i.e. not (null atts)), atts determines the declaration of the morphism completely.
+Otherwise, all candidate declarations are propagated up to the rule level, where matching is done.
+At the rule level, there must be one possible assignment of declarations, or else we have an ambiguity.
+That unique assignment of declarations is propagated back in the (inherited) attribute isign.
+
+Attribute propagation goes as follows:
+1. All declarations are synthesized to one list of declarations per context.
+2. Declarations are distributed over various contexts. They are made available in an inherited attribute sDef.
+3. Morphisms are confronted with sDef, yielding a list @ms for each morphism, containing the visible declarations with the same name.
+4. For each morphism, the possible declarations are determined in synthesized attribute @lhs.signs
+5. These declarations are synthesized further until they arrive at a Rule
+6. Each Rule must have a unique declaration. If so, it is propagated downwards in @lhs.isign.
+   If not, error messages are generated.
+6.1	If isign is confronted with a morphism, the set of possibly matching declarations is determined
+	in a local field @is. If this set does not contain precisely one declaration, error messages are generated.
+6.2	The appropriate declaration of this morphism is taken from @lhs.isign.
+7. Each Gc-rule must have one or more declarations. If multiple possibilities arise, one rule is generated for each
+   possibility.
+-}
+
+{-
+ATTR Architecture Contexts Context Patterns Pattern Rules Gens [ | | pr:String ]
+SEM Architecture
+  | Arch lhs.pr = @cs.pr
+SEM Contexts
+  | Cons lhs.pr = show @hd.pr ++ "\n\n" ++ @tl.pr
+  | Nil  lhs.pr = ""
+SEM Context
+  | Ctx lhs.pr = "CONTEXT " ++ @nm ++ "\n" ++
+                 @dc.pr ++
+                 concat [name d++" :: "++name (source d)++" x "++name (target d)++"\n"| d<- @ms.declarations, not (isSgnl d) ] ++
+                 concat ["CONCEPT "++nm++" "++show def++" "++show ref++"\n"| Cd _ nm def ref<- @cs.list ] ++
+                 "ENDCONTEXT"
+SEM Patterns 
+  | Cons lhs.pr = @hd.pr ++ "\n" ++ @tl.pr
+  | Nil  lhs.pr = "" 
+SEM Pattern
+  | Pat lhs.pr  = "PATTERN " ++ @nm ++ "\n" ++ @rules.pr ++ "\n" ++ @gen.pr ++ "\n" ++ @pms.pr ++ "\nENDPATTERN"
+SEM Rules
+  | Cons lhs.pr = chain "\n" (map show) @hd.rules ++ "\n" ++ @tl.pr
+  | Nil  lhs.pr = "" 
+SEM Gens
+  | Cons lhs.pr = show @hd.gen ++ "\n" ++ @tl.pr
+  | Nil  lhs.pr = "" 
+-}
