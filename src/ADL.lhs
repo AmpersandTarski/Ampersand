@@ -1,4 +1,4 @@
-> module Main where
+> module Main where 
 >  import System (getArgs)
 >  import UU_Scanner
 >  import UU_Parsing
