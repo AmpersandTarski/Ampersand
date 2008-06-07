@@ -1,6 +1,6 @@
 > module Atlas (anal) where
 >  import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
->  import Char (isUpper,chr,ord) 
+>  import Char (isUpper,chr,ord)
 >  import CommonClasses (  Identified(name)
 >                        , Collection(empty, (>-)))
 >  import Auxiliaries (chain, eqCl, rd, sort', sord', mumble) 

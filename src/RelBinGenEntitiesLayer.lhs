@@ -496,7 +496,7 @@ It is compared to the desired state,
 >            , [' '| x<-[1..i+2]]++"}" ]
 >          | (a,_)<-as, [s]==declarations a]++
 >         " }"
->       | (s,sname,src,trg,srcAtt,trgAtt)<-relStrings]++
+>       | (s,sname,src,trg,srcAtt,trgAtt)<-relStrings, not (s `elem` comp)]++
 >-- insert derived values
 >       phpCodeUpdHornClauseEnt 8 context (c,as) []
 >        [ (fOps, e, bOp, toExpr, frExpr, rule)
@@ -512,6 +512,8 @@ It is compared to the desired state,
 >                | (a,_)<-as, s<-declarations a {-, not (s `elem` declarations dms)-}]
 >             dms = []::[Morphism] -- delMors context c
 >             i=8
+>             comp :: [Declaration]      -- all computed relations
+>             comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]
 
 >  phpCodeEntDelete (context,entities,relations,hcs) (c,as)
 >   = (chain "\n".filter (not.null))

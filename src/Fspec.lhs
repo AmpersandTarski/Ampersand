@@ -533,7 +533,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >     where
 >      cname = name context
 >      fSpec (Fspc pat units)
->       = latexChapter (firstCaps (name pat)) ("Fspec "++firstCaps (name pat))++
+>       = latexChapter ((addSlashes.name) pat) ("Fspec "++firstCaps (name pat))++
 >         latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++"_CD.png}")++
 >         captiontext language pat)++"\n"++
 >         ( if null attributes then "" else introtext language attributes++
@@ -585,9 +585,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >        where attributes = [ m | (c,mrs,fpa,ms,ers)<-car, (m,rs)<-mrs]
 >              decls = rd (map declaration attributes)
 >      captiontext English pat
->       = "\n\\caption{Data structure of "++firstCaps (name pat)++"}\n\\label{fig:"++clname (name pat)++"}"
+>       = "\n\\caption{Data structure of "++(addSlashes.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
 >      captiontext Dutch pat
->       = "\n\\caption{Gegevensstructuur van "++(firstCaps (name pat))++"}\n\\label{fig:"++clname (name pat)++"}"
+>       = "\n\\caption{Gegevensstructuur van "++((addSlashes.name) pat)++"}\n\\label{fig:"++clname (name pat)++"}"
 >      str2 | language==English = "The services are defined in the following subsections.\n"
 >           | language==Dutch   = "De services zijn in de volgende secties gedefinieerd.\n"
 >      lettext English "Other Classes"
@@ -764,13 +764,13 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   ltshow cname typ language ctx@(Ctx nm on isa world dc ms cs ks)
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
->      ["\\title{Functionele Specificatie\\\\"++cname++"}"
+>      ["\\title{Functionele Specificatie\\\\"++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , "\\tableofcontents"
 >      , latexChapter "Inleiding" "Inleiding"
->      , "\tDit document definieert de servicelaag van een systeem genaamd "++name ctx++"."
+>      , "\tDit document definieert de servicelaag van een systeem genaamd "++addSlashes cname++"."
 >      , "\tHet definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken"
->      , "\tom afspraken na te leven die gelden in de context van "++name ctx++"."
+>      , "\tom afspraken na te leven die gelden in de context van "++addSlashes cname++"."
 >      , "\tDeze afspraken worden weergegeven door bedrijfsregels."
 >      , "\tDeze regels staan beschreven in hoofdstuk \\ref{chp:Afspraken}, geordend op thema."
 >      , "\tEen gegevensanalyse volgt in hoofdstuk \\ref{chp:Gegevensanalyse}."
@@ -782,7 +782,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tof het herstellen van een regel (door automatische acties op de database uit te voeren)."
 >      , latexChapter "Afspraken" "Afspraken"
 >      , "\tDit hoofdstuk bespreekt verschillende afspraken, die in volgende hoofdstukken zijn uitgewerkt tot een volledige functionele specificatie."
->      , chain "\n\n" [ latexSection ("Afspraken over "++firstCaps (name pat)) ("Afspraken"++cname++"Pat"++firstCaps (name pat)) ++
+>      , chain "\n\n" [ latexSection ("Afspraken over "++(addSlashes.name) pat) ("Afspraken"++cname++"Pat"++firstCaps (name pat)) ++
 >                       latexEnumerate ([addSlashes (explainRule ctx language r)|r<-rules pat++signals pat, null (cpu r)]++
 >                                       [addSlashes (explainMult ctx language d)|d<-declarations pat, (not.null) (multiplicities d)])
 >                     | pat<-dc]
@@ -792,10 +792,10 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\ten elke afspraak krijgt een formele representatie."
 >      , "\n\tDe resultaten van functiepunt analyse staan vermeld in tabel \\ref{tab:FPA}"
 >      , spec2fp ctx Dutch spec
->      , chain "\n\n" [ latexSection ("Regels over "++firstCaps (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
-> --                      "Een conceptuele analyse over "++firstCaps (name pat)++" is weergegeven in figuur \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
+>      , chain "\n\n" [ latexSection ("Regels over "++(addSlashes.name) pat) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+> --                      "Een conceptuele analyse over "++(addSlashes.name) pat++" is weergegeven in figuur \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
 > --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
-> --                      "\n\\caption{Conceptuele analyse van "++firstCaps (name pat)++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}\n")++
+> --                      "\n\\caption{Conceptuele analyse van "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}\n")++
 >                       latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
 >                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt ctx language r)++"\\\\\n&Relaties:\\\\"++
 >                                          "&\\(\\begin{array}{rcl}\n"++
@@ -810,7 +810,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tDe keuzes, zoals beschreven in hoofdstuk \\ref{chp:Afspraken} zijn in een gegevensanalyse vertaald naar"
 >      , "\thet klassediagram in figuur \\ref{fig:"++cname++"CD}."
 >      , latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_CD.png}")++
->        "\n\\caption{Gegevensmodel van "++cname++"}\n\\label{fig:"++cname++"CD}")
+>        "\n\\caption{Gegevensmodel van "++addSlashes cname++"}\n\\label{fig:"++cname++"CD}")
 >      , "\tDit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties."
 >      , funcSpecLaTeX ctx (funcSpec ctx (erAnalysis ctx) Dutch) Dutch
 >      , latexChapter "Terminologie" ("typology"++cname)
@@ -826,17 +826,17 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
+>      , "\\bibliographystyle{plain}"
 >      , "\\bibliography{"++lname ctx++"}"
 >      , "\\label{bibliography"++lname ctx++"}"
->      , "\\bibliographystyle{plain}"
 >      ] else if language==English then
->      ["\\title{Functional Specification\\\\ "++cname++"}"
+>      ["\\title{Functional Specification\\\\ "++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , "\\tableofcontents"
 >      , latexChapter "Introduction" "Introduction"
->      , "\tThis document defines the service layer of a system called "++name ctx++"."
+>      , "\tThis document defines the service layer of a system called "++addSlashes cname++"."
 >      , "\tIt defines infrastructural services in a system in which people and applications collaborate"
->      , "\tto maintain agreements and commitments that apply to the context of "++name ctx++"."
+>      , "\tto maintain agreements and commitments that apply to the context of "++addSlashes cname++"."
 >      , "\tThese agreements and commitments are represented by rules."
 >      , "\tThey are presented in chapter \\ref{chp:Principles}, arranged by theme."
 >      , "\tA data analysis is presented in chapter \\ref{chp:Data Analysis}."
@@ -846,19 +846,19 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tsignalling violations (for human intervention),"
 >      , "\tor fixing the content of databases (by automatic actions) to restore a rule."
 >      , latexChapter "Principles" "Principles"
->      , "\tThis chapter introduces guiding principles of "++cname++"."
+>      , "\tThis chapter introduces guiding principles of "++addSlashes cname++"."
 >      , "\tSubsequent chapters elaborate these principles into complete formal specifications."
->      , chain "\n\n" [ latexSection ("Design choices about "++firstCaps (name pat)) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
+>      , chain "\n\n" [ latexSection ("Design choices about "++(addSlashes.name) pat) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
 >                       latexEnumerate ([addSlashes (explainRule ctx language r)|r<-rules pat++signals pat, null (cpu r)]++
 >                                       [addSlashes (explainMult ctx language d)|d<-declarations pat, (not.null) (multiplicities d)])
 >                     | pat<-dc]
 >      , latexChapter "Conceptual Analysis" "Conceptual Analysis"
 >      , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Principles}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
 >      , spec2fp ctx English spec
->      , chain "\n\n" [ latexSection ("Rules about "++firstCaps (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
-> --                      "A conceptual analysis of "++firstCaps (name pat)++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
+>      , chain "\n\n" [ latexSection ("Rules about "++(addSlashes.name) pat) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+> --                      "A conceptual analysis of "++(addSlashes.name) pat++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
 > --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
-> --                      "\n\\caption{Conceptual analysis of "++firstCaps (name pat)++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
+> --                      "\n\\caption{Conceptual analysis of "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
 >                       latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
 >                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt ctx language r)++"\\\\\n&Relations:\\\\"++
 >                                          "&\\(\\begin{array}{rcl}\n"++
@@ -873,7 +873,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tA data analysis of the principles from the previous chapter (\\ref{chp:Principles}) yields a class diagram,"
 >      , "\twhich shown in figure \\ref{fig:"++cname++"CD}."
 >      , latexFigure (latexCenter ("  \\includegraphics[scale=.4]{"++cname++"_CD.png}")++
->        "\n\\caption{Data structure of "++cname++"}\n\\label{fig:"++cname++"CD}")
+>        "\n\\caption{Data structure of "++addSlashes cname++"}\n\\label{fig:"++cname++"CD}")
 >      , "\tDetails are provided in the following sections."
 >      , funcSpecLaTeX ctx (funcSpec ctx (erAnalysis ctx) English) English
 >      , latexChapter "Glossary" ("typology"++cname)
@@ -884,9 +884,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
+>      , "\\bibliographystyle{plain}"
 >      , "\\bibliography{"++lname ctx++"}"
 >      , "\\label{bibliography"++lname ctx++"}"
->      , "\\bibliographystyle{plain}"
 >      ] else [] )
 >      where
 >       spec = funcSpec ctx (erAnalysis ctx) language
@@ -984,7 +984,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
 >      [ "\\newcommand{\\mulF}{MultiF{\\it it}}"
->      , "\\title{Woordenlijst voor "++cname++"}"
+>      , "\\title{Woordenlijst voor "++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , if null cs then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
@@ -995,11 +995,11 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
+>      , "\\bibliographystyle{plain}"
 >      , "\\bibliography{"++lname ctx++"}"
 >      , "\\label{bibliography"++lname ctx++"}"
->      , "\\bibliographystyle{plain}"
 >      ] else if language==English then
->      [ "\\title{Design of "++cname++"}"
+>      [ "\\title{Design of "++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , latexChapter "Glossary" ("typology"++cname)
 >      , if null cs then "" else
@@ -1008,9 +1008,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
+>      , "\\bibliographystyle{plain}"
 >      , "\\bibliography{"++lname ctx++"}"
 >      , "\\label{bibliography"++lname ctx++"}"
->      , "\\bibliographystyle{plain}"
 >      ] else [] )
 >      where
 >       cList = concs ctx>-rd [C nm (==) []| Cd _ nm _ _<-conceptdefs ctx]

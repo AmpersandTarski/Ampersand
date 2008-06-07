@@ -33,7 +33,7 @@
 >          if length args==0 then putStr ("Please provide a filename (.adl) and a context name") else
 >          if length dbArgs>1 then putStr (". This is confusing! please specify 1 database name only.") else
 >     do { let fn = args!!0; contextname = args!!1
->              dbName | null dbArgs = fnPrefix
+>              dbName | null dbArgs = fnOutp
 >                     | otherwise   = tail (head dbArgs)
 >              (fnPrefix,fnSuffix) = (take (length fn-4) fn, drop (length fn-4) fn)
 >              fnFull = if map Char.toLower fnSuffix /= ".adl" then (fn ++ ".adl") else fn

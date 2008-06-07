@@ -98,7 +98,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     [ "<? // generated with "++adlVersion
 >     , "$DB_daba = '"++ dbName {- was: name context -}++"';"
 >     , "$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');"
->     , "$DB_slct = mysql_select_db($DB_daba,$DB_link);"
+>     , "$DB_slct = mysql_select_db("++dbName++",$DB_link);"
 >     , ""
 >     , "// DB_display is used for the entity headers"
 >     , (let xs = sord ["\""++phpRelName context s++"\" => Array (\"Name\"=>"++phpShow (name s)++", \"Src\"=>"++phpShow (name (source s))++", \"Trg\"=>"++phpShow (name (target s))++")"
@@ -145,8 +145,8 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     , ""
 >     , "if(!$DB_slct){"
 >     , "      DB_debug( \"Warning: error connecting to database, building database\",2 );"
->     , "      mysql_query(\"CREATE DATABASE \".$DB_daba,$DB_link) or die('Could not create DB');"
->     , "      $DB_slct = mysql_select_db($DB_daba,$DB_link) or die ('Could not select DB');"
+>     , "      mysql_query(\"CREATE DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not create DB "++dbName++"');"
+>     , "      $DB_slct = mysql_select_db("++ dbName {- was: $DB_daba -} ++",$DB_link) or die ('Could not select DB "++dbName++"');"
 >     , "      $DB_errs = false;"
 >     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(300) NOT NULL default '', "++sqlExprTrg e++" varchar(300) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
 >                                    | e<-closE context]
@@ -185,7 +185,7 @@ TODO: initieel alle invarianten waar maken. (Tijdelijk uitgeschakeld)
 >     , let checkers = [ "checkRule"++show (nr r)++"()" | r<-rules context ]
 >       in "      if($DB_errs"++ (if noTrans || null checkers then "" else " || !("++chain " && " checkers++")")++")"
 >     , "      {  DB_debug( \"DB errors, removing database\",5);"
->     , "         mysql_query(\"DROP DATABASE \".$DB_daba,$DB_link) or die('Could not delete DB');"
+>     , "         mysql_query(\"DROP DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not delete DB "++dbName++"');"
 >     , "         die ('Errors creating database');"
 >     , "        } else {"
 >     , "           DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
@@ -222,7 +222,7 @@ TODO: initieel alle invarianten waar maken. (Tijdelijk uitgeschakeld)
 >     , ""
 >     , "function DB_drop(){"
 >     , "  global $DB_daba;"
->     , "  DB_doquer('DROP DATABASE '.$DB_daba);"
+>     , "  DB_doquer('DROP DATABASE "++ dbName {- was: $DB_daba -}++"');"
 >     , "}"
 >     , ""
 >     , "function closure0($table,$source,$target){"

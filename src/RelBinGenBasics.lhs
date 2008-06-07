@@ -36,7 +36,7 @@ Let op: als m geflipt is, dan moeten de twee ingetikte atomen op de juiste plaat
 >           src  = sqlExprSrc toExpr
 >           trg  = sqlExprTrg toExpr -- may not collide with src, but what if toExpr is a property (or identity)? (Bas?)
 > -- was:   trg  = noCollide [src] (sqlExprTrg toExpr)
-> -- might be?: trg  = noCollideUnlessMph toExpr [src] (sqlExprTrg toExpr)
+> -- might be?: trg  = noCollideUnlessTm toExpr [src] (sqlExprTrg toExpr)
 >           frExpr' = doSubsExpr context attrs subs frExpr
 >  sqlCodeComputeRule attrs i context subs hc@(fOp, e, "DELETE FROM", toExpr, (Cp frExpr), rule)
 >   = if null froms
@@ -142,7 +142,7 @@ The practical version of selectRule does the same, but generates code in which t
 >     where src  = sqlExprSrc e
 >           trg  = sqlExprTrg e -- may not collide with src, but what if toExpr is a property (or identity)? (Bas?)
 > -- was:   trg  = noCollide [src] (sqlExprTrg e)
-> -- might be?: trg  = noCollideUnlessMph e [src] (sqlExprTrg e)
+> -- might be?: trg  = noCollideUnlessTm e [src] (sqlExprTrg e)
 >           e    = (shrink.conjNF.Cp .normExpr) r
 >  selectRule ctx i r
 >   = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule ctx i ("++showHS r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
@@ -198,7 +198,7 @@ Opmerking: voorheen leverde het de volgende code op:
 >                          (chain ", " exprbracs) (chain " AND " (wherecl++nExistCl))
 >     where src'    = sqlExprSrc fst
 >           trgC    = sqlExprTrg fst -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
->           trg'    = noCollideUnlessMph fst [src'] trgC
+>           trg'    = noCollideUnlessTm fst [src'] trgC
 >           fst     = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
 >           posTms  = if null posTms' then map notCp (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
 >           negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
@@ -207,7 +207,7 @@ Opmerking: voorheen leverde het de volgende code op:
 >           exprbracs = [ (selectExprBrac ctx (i) src'' trg'' l) ++ " AS isect"++show n 
 >                       | (n,l)<-zip [0..] posTms
 >                       , src''<-[sqlExprSrc l]
->                       , trg''<-[noCollideUnlessMph l [src''] (sqlExprTrg l)]
+>                       , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
 >                       ]
 >           wherecl   = [if isIdent l
 >                        then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is less efficient
@@ -215,7 +215,7 @@ Opmerking: voorheen leverde het de volgende code op:
 >                        ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
 >                       | (n,l)<-tail (zip [0..] posTms) -- not empty because of definition of posTms
 >                       , src''<-[sqlExprSrc l]
->                       , trg''<-[noCollideUnlessMph l [src''] (sqlExprTrg l)]
+>                       , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
 >                       ]
 >           nExistCl  = [if isIdent l
 >                        then  "isect0."++src'++" <> isect0."++trg' -- this code will calculate ../\-I
@@ -225,7 +225,7 @@ Opmerking: voorheen leverde het de volgende code op:
 >                                           )++")"
 >                       | (n,l)<-zip [0..] negTms
 >                       , src''<-[sqlExprSrc l]
->                       , trg''<-[noCollideUnlessMph l [src''] (sqlExprTrg l)]
+>                       , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
 >                       ]
 
 More optimal F code
@@ -240,7 +240,7 @@ More optimal F code
 >                       where src' = sqlExprSrc e
 >                             mid' = sqlExprTrg e
 >                             mid2'= sqlExprSrc f
->                             trg' = noCollideUnlessMph (F (f:fx)) [mid2'] (sqlExprTrg (F (f:fx)))
+>                             trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (sqlExprTrg (F (f:fx)))
 
 Code below is basic functionality, and should be changed only when absolutely necessary.
 
@@ -252,9 +252,9 @@ Code below is basic functionality, and should be changed only when absolutely ne
 >                       ("fst."++mid'++" = snd."++mid2')
 >  --  The values of  src', mid', mid2', and trg' might be fantasies (albeit distinct), but have been chosen to be meaningful names derived from source and targets.
 >                       where src' = sqlExprSrc e
->                             mid' = noCollideUnlessMph e [src'] (sqlExprTrg e)
+>                             mid' = noCollideUnlessTm e [src'] (sqlExprTrg e)
 >                             mid2'= sqlExprSrc f
->                             trg' = noCollideUnlessMph (F (f:fx)) [mid2'] (sqlExprTrg (F (f:fx)))
+>                             trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (sqlExprTrg (F (f:fx)))
 >  selectExpr ctx i src trg (F  [e]       ) = selectExpr ctx i src trg e
 >  selectExpr ctx i src trg (Fi (e:(f:fx))) = selectGeneric i ("fst."++src',src) ("fst."++trg',trg) ((selectExprBrac ctx (i) src' trg' e)++" AS fst, "++(selectExprBrac ctx (i) src'' trg'' (Fi (f:fx)))++" AS snd") ("fst."++src'++" = snd."++src''++" AND fst."++trg'++"=snd."++trg'')
 >                       where src'  = sqlExprSrc e
@@ -285,7 +285,7 @@ Code below is basic functionality, and should be changed only when absolutely ne
 >                       where src' = sqlAttConcept ctx (source e) 
 >                             trg' = sqlAttConcept ctx (target e)
 >                             src2 = sqlExprSrc e
->                             trg2 = noCollide [src2] (sqlExprTrg e)
+>                             trg2 = noCollideUnlessTm e [src2] (sqlExprTrg e)
 >  selectExpr ctx i src trg cl@(K0 e) = selectGeneric i (sqlExprSrc cl,src) (sqlExprTrg cl,trg) (sqlRelName ctx cl) "1"
 >  selectExpr ctx i src trg cl@(K1 e) = selectGeneric i (sqlExprSrc cl,src) (sqlExprTrg cl,trg) (sqlRelName ctx cl) "1"
 >  selectExpr ctx i src trg (Fd []  ) = error ("RelBinGenBasics.lhs: Cannot create query for Fd [] because type is unknown")
@@ -337,8 +337,14 @@ daarom wordt hier op getest
 >                       where namepart str   = reverse (dropWhile isDigit str)
 >                             numberpart str = reverse (takeWhile isDigit str)
 >                             changeNr x     = decode (encode x+1)
->  noCollideUnlessMph e names name | oneMorphism e   = name
->                                  | otherwise = noCollide names name
+
+When two attributes from the same relation share the same sql column-name, they have the same value.
+In this case, it would make no sense to generate two different names. To prevent this, 'noCollideUnlessTm' is used.
+This function should return diffrent names, unless they are names originating from the same table (one term) with the same value.
+For instance: Tm I may return the same names, but cp(Tm I) should not since the values don't match.
+
+>  noCollideUnlessTm (Tm _) _ name = name
+>  noCollideUnlessTm _  names name = noCollide names name
 
 >  selectExprMorph ctx i src trg mph@(V _ _)
 >   = selectGeneric i ("vfst."++sqlAttConcept ctx (source mph),src) ("vsnd."++sqlAttConcept ctx (source mph),trg)

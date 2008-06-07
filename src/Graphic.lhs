@@ -139,11 +139,11 @@
 >                            | otherwise         = ccnotation          (uni (multiplicities m)) (tot (multiplicities m))
 >                     staart | style=="crowfoot" = dotcrowfootnotation (inj (multiplicities m)) (sur (multiplicities m))
 >                            | otherwise         = ccnotation          (inj (multiplicities m)) (sur (multiplicities m))
->                     pijl   | style=="crowfoot" = "none" --  was "normal"
+>                     pijl   | style=="crowfoot" = "normal"
 >                            | otherwise         = if      uni (multiplicities m) && tot (multiplicities m)  &&
 >                                                     not (inj (multiplicities m) && sur (multiplicities m))
 >                                                  then "none" else "onormal"
->                     lijp   | style=="crowfoot" = "none" --  was "inv"
+>                     lijp   | style=="crowfoot" = "inv"
 >                            | otherwise         = "none"
 >                     constructstyle col dothead dottail
 >                                         = "[color=" ++ col ++
