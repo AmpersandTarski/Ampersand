@@ -274,7 +274,8 @@
 >                 "\n          //  "++showADL r'++
 >--                 "\n        return DB_doquer('"++selectExpr context 10 (phpRelSrc context signal) (phpRelTrg context signal) signal ++" '.$sort);"
 >--  should be equivalent to:
->                 "\n        return DB_doquer('"++selectExpr context 10 (phpRelSrc context r) (phpRelTrg context r) r' ++" '.$sort);"
+>                 (if isFalse r' then "\n        return(Array());" else 
+>                  "\n        return DB_doquer('"++selectExpr context 10 (phpRelSrc context r) (phpRelTrg context r) r' ++" '.$sort);")
 >                 | r@(Sg p rule expla sgn nr pn signal)<-signals context
 >                 , r'<-[(shrink . disjNF . Cp . normExpr) rule] ]
 >        in (if null xs
