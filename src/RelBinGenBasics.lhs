@@ -147,6 +147,8 @@ The practical version of selectRule does the same, but generates code in which t
 >  selectRule ctx i r
 >   = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule ctx i ("++showHS r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
 
+TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie -V is.
+
 >  selectExpr ::    Context    -- current context
 >                -> Int        -- indentation
 >                -> String     -- SQL name of the source of this expression, as assigned by the environment 
