@@ -51,6 +51,13 @@ function writeCSS_blue(){
 	.button{
 		color: #0A2B5E;
 	}
+    html,body{
+      margin:0;
+      padding:0;
+      height:100%;
+      border:none
+    }
+
 	-->
 	</style>
 	<?

@@ -51,8 +51,7 @@ $object = new object("behandelaar",array
                     ); // meta information
 
 $view = new view();
-$view->assign("objname","Behandelaar");
-$view->addAction('create','New','Create a new behandelaar');
+$view->assign("objname","behandelaar");
 
 if($action=='create'){
 	$object_id=createBehandelaar($obj);
@@ -71,6 +70,7 @@ if($action=='read'){
 	$object_id=$actionValue;
 }
 
+$view->assign("action",$action);
 if(@$object_id){
 	// show the item itself
 	if($action=='read') $behandelaar = readBehandelaar($object_id);
@@ -80,10 +80,7 @@ if(@$object_id){
 	$list->assign("header",array("application"=>new viewableText("Application")));
 	$list->assign("caption",new viewableText("aanvragen",'H3'));
 	$list->assign("elements",$behandelaar->aanvragen);
-	$list->assign("emptyRow",array("aanvragen"));
-	if($action=='read' || $action=='update')
-		$view->addAction('update','Save','Save the behandelaar');
-	else $view->addAction('create','Create','Create this behandelaar');
+	$view->assign("object_id",$object_id);
 	$view->assign("contents",$list);
 }else{
 	// show a list (or search-box) of all items

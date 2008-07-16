@@ -24,11 +24,16 @@ include "htmlFunctions.inc.php";
 if(isset($_REQUEST['read'])){
 	$action='read';
 	$actionValue=$_REQUEST['read'];
+} else if(isset($_REQUEST['new'])){
+	$action='new';
 } else if(isset($_REQUEST['create'])){
 	$action='create';
 } else if(isset($_REQUEST['update'])){
 	$action='update';
 	$actionValue=$_REQUEST['update'];
+} else if(isset($_REQUEST['edit'])){ // no changes (yet)! Fake a read.
+	$action='read';
+	$actionValue=$_REQUEST['edit'];
 } else if(isset($_REQUEST['delete'])){
 	$action='delete';
 	$actionValue=$_REQUEST['delete'];
@@ -128,20 +133,25 @@ class expandableList extends viewableList{
 			$this->emptyRow=$val;
 		} else parent::assign($var,$val);
 	}
-	function display(){
+	function display($edit=false){
 		$header=$this->header;
 		$header[]=new viewableText('');
 		$this->displayheader($header);
-		foreach($this->elements as $i=>$v){
-			$this->displayRow($v);
+		if($edit){
+			
+		}else{
+			foreach($this->elements as $i=>$v){
+				$this->displayRow($v,$edit);
+			}
 		}
-		$this->displayEmptyRow($this->emptyRow);
+		if($edit) $this->displayEmptyRow($this->emptyRow);
 		echo "</TABLE>";
 	}
 	function displayRow($row){
 		echo "\r\n  <TR>";
 		foreach($this->header as $i=>$v){
 			echo "<TD>";
+			if(file_exists('./'.$i.'.php')) echo '<A HREF="JavaScript:go(\''.htmlspecialchars(addslashes($row->$i).'\',\''.addslashes($i)).'.php\');">'.htmlspecialchars($row->$i).'</A>'; else
 			echo $row->$i;
 			echo "</TD>";
 		}
@@ -163,24 +173,53 @@ class monastir Extends anyView {
 	var $iDir='infeez/';
 	var $menu=Array();
 	var $contents;
+	var $action;
 	var $actions=Array();
 	var $warning=Array();
 	var $header;
 	var $appname='Monastir Databaseviewer';
 	var $objname;
+	var $object_id;
+	var $changed=false;
+	var $succes=false;
 	function monastir(){
 	}
 	function assign($var,$val){
-		if     ($var=='menu'    ) $this->menu     =$val;
-		else if($var=='actions' ) $this->actions  =$val;
-		else if($var=='iDir'    ) $this->iDir     =$val;
-		else if($var=='appname' ) $this->appname  =$val;
-		else if($var=='objname' ) $this->objname  =$val;
-		else if($var=='contents') $this->contents =$val;
-		else if($var=='header'  ) $this->header   =$val;
+		if     ($var=='menu'      ) $this->menu      = $val;
+		else if($var=='actions'   ) $this->actions   = $val;
+		else if($var=='iDir'      ) $this->iDir      = $val;
+		else if($var=='appname'   ) $this->appname   = $val;
+		else if($var=='objname'   ) $this->objname   = $val;
+		else if($var=='object_id' ) $this->object_id = $val;
+		else if($var=='contents'  ) $this->contents  = $val;
+		else if($var=='header'    ) $this->header    = $val;
+		else if($var=='action'    ) $this->action    = $val;
+		else if($var=='changed'   ) $this->changed   = $val;
+		else if($var=='succes'    ) $this->succes    = $val;
 		else $this->warning[] = $var.' was not assigned.';
 	}
 	function display(){
+		global $_REQUEST;
+		$action=$this->action;
+		if(isset($_REQUEST['edit'])) $action = 'edit'; // was faked as read
+		if($action=='create') $action = $this->succes ? 'read' : 'new';
+		if($action=='delete') $action = $this->succes ? 'show' : 'show';
+		if($action=='update') $action = $this->succes ? 'read' : 'edit';
+		$qobj='\''.addslashes($this->object_id).'\'';
+		if($action=='read'){
+			$this->addAction('g(\'edit\','.$qobj.')','Edit','Edit '.$this->objname.' '.$this->object_id);
+			$this->addAction('g(\'delete\','.$qobj.')','Delete','Delete '.$this->objname.' '.$this->object_id);
+			$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
+			$this->addAction('g(\'show\')','Overview','Show all '.$this->objname.' objects');
+		}else if($action=='new'){
+			$this->addAction('s(\'create\')','Create','Create the '.$this->objname);
+			$this->addAction('g(\'show\')','Cancel','Don\'t create the '.$this->objname);
+		}else if($action=='edit'){
+			$this->addAction('s(\'update\')','Save','Save the '.$this->objname);
+			$this->addAction('g(\'read\','.$qobj.')','Cancel','Don\'t save the '.$this->objname);
+		}else if($action=='show'){
+			$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
+		}
 		$title=$this->appname;
 		if(isset($this->objname))
 		$title=$this->objname." - ".$title;
@@ -188,14 +227,20 @@ class monastir Extends anyView {
 		$actions=$this->actions;
 		$contents=$this->contents;
 		$iDir=$this->iDir;
+		$changed=$this->changed;
+		//
 		?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
 		<HTML><HEAD>
 		<?	writeTitle($title);
 			writeCSS_blue(); ?>
 		<SCRIPT LANGUAGE="JavaScript">
 		<!--
-			var changed=false;
-			function go(id,page){
+			var changed=<?= $changed ? 'true' : 'false' ?>;
+			<? if(isset($this->object_id)){ ?>
+			var obj='<?=addslashes($this->object_id) ?>';
+			<? } ?>
+			function go(id,page,what){ // this is actually 'read' when id is given
+				if(what==null) what='read';
 				if(changed){
 					if(confirm("Do you wish to save your changes")){
 						//document.forms['myform'].submit();
@@ -203,11 +248,22 @@ class monastir Extends anyView {
 					}else changed=false;
 				}
 				if(changed==false){
-					if(id==null)id='';
-					else id='?read='+escape(id);
-					if(page==null) page='';
-					document.location = page+id;
+					if(page==null) g(what,id);
+					else{
+						if(id==null)id='';
+						else id='?'+what+'='+escape(id);
+						document.location = page+id;
+					}
 				}
+			}
+			function g(what,id){
+				if(id==null)id='?'+what;
+				else id='?'+what+'='+escape(id);
+				document.location = id;
+			}
+			function s(what){
+				document.forms.myform.action=what;
+				document.forms.myform.submit();
 			}
 			function toggle(i){
 				item=document.getElementById(i);
@@ -228,7 +284,7 @@ class monastir Extends anyView {
 		<?
 		if(count($this->warning)) echo join('<BR>',$this->warning);
 		$this->warning=Array();
-		echo '<TABLE class="hidden" ><TR class="hidden">';
+		echo '<TABLE class="hidden" height=1><TR class="hidden" height=100%>';
 		if(count($menu)){
 			echo "\r\n<!-- menu -->\r\n  ";
 			echo '<TD class="hidden" width=20% height=100 valign=top>';
@@ -273,16 +329,17 @@ class monastir Extends anyView {
 			echo '<TD class="hidden" width=20% height=29 align="right"><IMG SRC="'.$iDir.'l/zijde_links2.png" height=29 width=24 /></TD>';
 			// use another pic for this..
 		}
-		echo '<TD class="hidden" width=80% height=100% rowspan=3 valign=top>';
-			echo '<TABLE CLASS="hidden" height=100%>';
+		echo '<TD class="hidden" width=80% bgcolor=green rowspan=3 valign=top style="height:100%" height=100%>';
+			//echo '<SPAN class="hidden" style="display:clip">';
+			echo '<TABLE CLASS="hidden" height="100%" width="100%">';
 			echo '<TR>';
 			echo '<TD class="hidden" height=36 width=33><IMG SRC="'.$iDir.'h/hoek_lboven.png" width=33 height=36/></TD>';
 			echo '<TD class="hidden" height=36 width=100% background="'.$iDir.'h/zijde_boven.png"><IMG SRC="'.$iDir.'spacer.gif" width=1 height=36/></TD>';
 			echo '<TD class="hidden" height=36 width=100% width=60><IMG SRC="'.$iDir.'h/hoek_rboven.png" width=60 height=36/></TD>';
 			echo '</TR>';
-			echo "\r\n<TR>";
-			echo '<TD class="hidden" width=33 background="'.$iDir.'h/zijde_links.png"><img src="'.$iDir.'spacer.gif" width=33 height=1 /></TD>';
-			echo '<TD class="hidden" width=100% bgcolor=white valign=top>';
+			echo "\r\n".'<TR height="100%" style="height:100%">';
+			echo '<TD class="hidden" height="100%" style="height:100%" width=33 background="'.$iDir.'h/zijde_links.png"><img src="'.$iDir.'spacer.gif" width=33 height=1 /></TD>';
+			echo '<TD class="hidden" height="100%" width=100% bgcolor=white valign=top>';
 			echo "\r\n<!-- contents -->";
 			echo "\r\n  ";
 			if(isset($this->header))
@@ -292,7 +349,7 @@ class monastir Extends anyView {
 			}
 			$contents->display();
 			echo "\r\n</TD>";
-			echo '<TD class="hidden" width=60 background="'.$iDir.'h/zijde_rechts.png"><img src="'.$iDir.'spacer.gif" width=60 height=1 /></TD>';
+			echo '<TD class="hidden" height="100%" width=60 background="'.$iDir.'h/zijde_rechts.png"><img src="'.$iDir.'spacer.gif" width=60 height=1 /></TD>';
 			echo '</TR>';
 			echo "\r\n<TR>";
 			echo '<TD class="hidden" width=33 height=73><IMG SRC="'.$iDir.'h/hoek_londer.png" border=0 width=33 height=73 /></TD>';
@@ -337,6 +394,7 @@ class monastir Extends anyView {
 			echo '<TD class="hidden" width=60 height=73><IMG SRC="'.$iDir.'h/hoek_ronder.png" border=0 width=60 height=73 />';
 			echo '</TD>';
 			echo '</TABLE>';
+			//echo '</SPAN>';
 		echo '</TD>';
 		echo '</TR>';
 		echo '<TR><TD class=hidden width=20% height=100%>';
