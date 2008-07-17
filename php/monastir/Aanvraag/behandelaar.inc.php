@@ -28,6 +28,27 @@ class behandelaar_aanvragen {
 	}
 }
 function createBehandelaar(behandelaar $obj){
+	/*
+	behandelaar Object
+	(
+		[aanvragen] => Array
+			(
+				[0] => behandelaar_aanvragen Object
+					(
+						[id] => A1
+					)
+	
+				[1] => behandelaar_aanvragen Object
+					(
+						[id] => A4 Delft Schiedam
+					)
+	
+			)
+	
+		[id] => Pietje
+	)
+	*/
+	DB_doquer('START TRANSACTION');
 	echo 'create Behandelaar';
 	return $id;
 }

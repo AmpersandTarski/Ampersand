@@ -637,7 +637,7 @@
   
   DB_doquer('SET GLOBAL TRANSACTION ISOLATION LEVEL READ COMMITTED');
   
-  if($DB_debug<=3){
+  if($DB_debug>=3){
     checkRule1();
     checkRule2();
     checkRule3();
