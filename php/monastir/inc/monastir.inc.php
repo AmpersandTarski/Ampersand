@@ -39,11 +39,11 @@ function parseRequest($object){
 }
 function recurParse($object,$traceID,$objtrace){
 	global $_REQUEST;
-	echo $traceID;
-	print_r($_REQUEST);
+	//echo $traceID;
+	//print_r($object->containing);
 	$id=@$_REQUEST[$traceID.'_'];
 	$obj = new $objtrace($id);
-	if($id==null) return $obj;
+	if($id===null) return $obj;
 	foreach($object->containing as $i=>$v){
 		$type=$v->type->name;
 		$trace=$traceID.'%'.$type;
@@ -51,8 +51,10 @@ function recurParse($object,$traceID,$objtrace){
 			if(!isset($_REQUEST[$trace.'%'.$n]) || $_REQUEST[$trace.'%'.$n] != 'remove')
 			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
 		}
-		if(isset($_REQUEST[$trace]) && $_REQUEST[$trace] == 'add')
+		if(isset($_REQUEST[$trace]) && $_REQUEST[$trace] == 'add'){
 			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
+			//echo 'add';
+		}
 	}
 	return $obj;
 }
