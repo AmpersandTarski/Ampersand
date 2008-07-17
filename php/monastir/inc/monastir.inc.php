@@ -21,11 +21,48 @@
  
 include "htmlFunctions.inc.php";
 
+function parseRequest($object){
+	global $_REQUEST;
+	global $object_id;
+	if(isset($_REQUEST['id'])){
+		$object_id=$_REQUEST['id'];
+		if(isset($_REQUEST[$object->name.'%0_'])){
+			$_REQUEST[$object->name.'%0_']=$object_id;
+		}
+	}
+	if(isset($_REQUEST[$object->name.'%0_']))
+	{
+		return recurParse($object,$object->name.'%0',$object->name);
+	} else {
+		return false;
+	}
+}
+function recurParse($object,$traceID,$objtrace){
+	global $_REQUEST;
+	echo $traceID;
+	print_r($_REQUEST);
+	$id=@$_REQUEST[$traceID.'_'];
+	$obj = new $objtrace($id);
+	if($id==null) return $obj;
+	foreach($object->containing as $i=>$v){
+		$type=$v->type->name;
+		$trace=$traceID.'%'.$type;
+		for($n=0;isset($_REQUEST[$trace.'%'.$n.'_']);$n++){
+			if(!isset($_REQUEST[$trace.'%'.$n]) || $_REQUEST[$trace.'%'.$n] != 'remove')
+			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
+		}
+		if(isset($_REQUEST[$trace]) && $_REQUEST[$trace] == 'add')
+			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
+	}
+	return $obj;
+}
+
+//global $_REQUEST;
 if(isset($_REQUEST['read'])){
 	$action='read';
 	$actionValue=$_REQUEST['read'];
 } else if(isset($_REQUEST['new'])){
-	$action='new';
+	$action='read'; // Fake a read on no object
 } else if(isset($_REQUEST['create'])){
 	$action='create';
 } else if(isset($_REQUEST['update'])){
@@ -39,21 +76,39 @@ if(isset($_REQUEST['read'])){
 	$actionValue=$_REQUEST['delete'];
 } else $action='show';
 
+if(isset($_POST['action'])){
+	$action=$_POST['action'];
+	if(isset($_POST['id'])) $actionValue=$_POST['id']; 
+}
+
 abstract class anyView {
 	function assign($var,$val){}
 	abstract function display();
 }
 class viewableText extends anyView{
 	var $text;
+	var $caption;
 	var $style;
-	function display(){
-		if(isset($this->style)) echo '<'.$this->style.'>';
-		echo htmlspecialchars($this->text);
-		if(isset($this->style)) echo '</'.$this->style.'>';
+	var $id;
+	function display($edit=false){
+		if($edit){
+			if($edit===true)$edit=$this->id;
+			if(isset($this->caption))
+			echo htmlspecialchars($this->caption).': ';
+			echo '<INPUT TYPE="TEXT" NAME="'.htmlspecialchars($edit).'" VALUE="'.$this->text.'" />';
+		}else{
+			if(isset($this->style)) echo '<'.$this->style.'>';
+			echo htmlspecialchars($this->text);
+			if(isset($this->style)) echo '</'.$this->style.'>';
+		}
 	}
 	function viewableText($text,$style=null){
 		$this->text=$text;
 		$this->style=$style;
+	}
+	function assign($var,$val){
+			 if($var=='id'      ) $this->id      = $val;
+		else if($var=='caption' ) $this->caption = $val;
 	}
 }
 class linkedText extends anyView{
@@ -71,25 +126,44 @@ class viewableList extends anyView{
 	var $elements=array();
 	var $header;
 	var $caption;
+	var $iDir;
+	var $One=false;
+	var $wrapping=true;
 	protected function displayheader($header=null){
 		if(isset($this->caption)){
 		 //if(is_object($this->caption)) 
 		 	$this->caption->display();
 		 //else echo $this->caption;
 		}
-		echo "\r\n".'<TABLE>';
+		if($this->wrapping){
+			echo '<TABLE class=hidden height=1 width=100%><TR>';
+			echo '<TD width=10   height=10 class=hidden><IMG class=hidden width=10   height=10 src="'.$this->iDir.'m/lb1.png" /></TD>';
+			echo '<TD width=100% height=10 class=hidden><IMG class=hidden width=100% height=10 src="'.$this->iDir.'m/zijde_b1.png" /></TD>';
+			echo '<TD width=10   height=10 class=hidden><IMG class=hidden width=10   height=10 src="'.$this->iDir.'m/rb1.png" /></TD>';
+			echo '</TR><TR>';
+			echo '<TD width=10 height=100% class=hidden><IMG class=hidden width=10 height=100% src="'.$this->iDir.'m/zijde_l1.png" /></TD>';
+			echo '<TD width=100% height=100% class=hidden>';
+		}
 		$colspan=0;
-		if(isset($header)){
-			echo "\r\n".'<TR>';
-			foreach($header as $j=>$h){
-				echo '<TH>';
-				//if(is_object($h))
-				$h->display();
-				//else echo '[no display object]';
-				echo '</TH>';
-				$colspan++;
+		if(!$this->One){
+			echo "\r\n".'<TABLE height=1 width=100% class=hidden>';
+			if(isset($header)){
+				echo "\r\n".'<TR>';
+				$colspan=0;
+				foreach($header as $j=>$h){
+					$colspan++;
+					echo '<TH>';
+					//if(is_object($h))
+					$h->display();
+					//else echo '[no display object]';
+					echo '</TH>';
+					$colspan++;
+				}
+				echo '</TR>';
+				if($this->wrapping){
+					echo '<TR><TD colspan='.$colspan.' class=hidden><IMG class=hidden width=100% height=10 src="'.$this->iDir.'m/zijde_b1.png" /></TD></TR>';
+				}
 			}
-			echo '</TR>';
 		}
 		return $colspan;
 	}
@@ -98,13 +172,21 @@ class viewableList extends anyView{
 		if(!isset($this->header) && count($this->elements)) $header=$this->elements[0];
 		if(count($this->elements)){
 			foreach($this->elements as $i=>$v){
-				echo "\r\n  ".'<TR>';
-				foreach($this->header as $j=>$h){
-					echo "\r\n    ".'<TD>';
-					$v[$j]->display();
-					echo '</TD>';
+				if(!$this->One){
+					echo "\r\n  ".'<TR>';
+					foreach($this->header as $j=>$h){
+						echo "\r\n    ".'<TD>';
+						$v[$j]->display();
+						echo '</TD>';
+					}
+					echo '</TR>';
+				}else{
+					foreach($this->header as $j=>$h){
+						$h->style='h4';
+						$h->display();
+						$v[$j]->display();
+					}
 				}
-				echo '</TR>';
 			}
 		}else{
 			echo '<TR><TD';
@@ -113,7 +195,22 @@ class viewableList extends anyView{
 			}
 			echo '><I>None</I></TD></TR>';
 		}
-		echo "</TABLE>";
+		$this->displaytail();
+	}
+	function displaytail(){
+		if(!$this->One){
+			echo "</TABLE>";
+		}
+		if($this->wrapping){
+			echo '</TD>';
+			echo '<TD width=10 height=100% class=hidden><IMG class=hidden width=10 height=100% src="'.$this->iDir.'m/zijde_r1.png" /></TD>';
+			echo '</TR><TR>';
+			echo '<TD width=10   height=10 class=hidden><IMG class="hidden" width=10   height=10 src="'.$this->iDir.'m/lo1.png" /></TD>';
+			echo '<TD width=100% height=10 class=hidden><IMG class="hidden" width=100% height=10 src="'.$this->iDir.'m/zijde_o1.png" /></TD>';
+			echo '<TD width=10   height=10 class=hidden><IMG class="hidden" width=10   height=10 src="'.$this->iDir.'m/ro1.png" /></TD>';
+			echo '</TR><TR>';
+			echo '</TABLE>';
+		}
 	}
 	function assign($var,$val){
 		if($var=='header'){
@@ -122,46 +219,104 @@ class viewableList extends anyView{
 			$this->elements=$val;
 		}else if($var=='caption'){
 			$this->caption=$val;
+		}else if($var=='iDir'){
+			$this->iDir=$val;
+		}else if($var=='One'){
+			$this->One=$val;
 		}
+	}
+	function viewableList(){
+		global $imageDirName;
+		$this->iDir=$imageDirName;
 	}
 }
 class expandableList extends viewableList{
-	var $emptyRow;
 	static $itemID=0;
+	var $object;
+	var $traceID;
+	//private $header;
 	function assign($var,$val){
-		if($var=='emptyRow'){
-			$this->emptyRow=$val;
-		} else parent::assign($var,$val);
+		if($var=='object'){
+			$this->object=$val;
+		}else parent::assign($var,$val);
 	}
-	function display($edit=false){
-		$header=$this->header;
-		$header[]=new viewableText('');
+	function display($edit=false,$traceID=null){
+		if(isset($traceID))
+			$this->traceID=$traceID;
+		else
+			$this->traceID=$this->object->name;
+		$header= array();
+		foreach($this->object->containing as $i=>$v){
+			$header[$i]=new viewableText($v->type->name);
+		}
+		if(count($this->object->containing) <= 1) $this->wrapping=false;
+		if(count($this->object->containing) == 0) $this->header[]=new viewableText('');
+		$this->header[]=new viewableText('');
 		$this->displayheader($header);
-		if($edit){
-			
-		}else{
-			foreach($this->elements as $i=>$v){
-				$this->displayRow($v,$edit);
-			}
+		foreach($this->elements as $i=>$v){
+			$this->displayRow($v,$edit,$i);
 		}
-		if($edit) $this->displayEmptyRow($this->emptyRow);
-		echo "</TABLE>";
+		if($edit) $this->displayEmptyRow($this->header);
+		$this->displaytail();
 	}
-	function displayRow($row){
-		echo "\r\n  <TR>";
-		foreach($this->header as $i=>$v){
-			echo "<TD>";
-			if(file_exists('./'.$i.'.php')) echo '<A HREF="JavaScript:go(\''.htmlspecialchars(addslashes($row->$i).'\',\''.addslashes($i)).'.php\');">'.htmlspecialchars($row->$i).'</A>'; else
-			echo $row->$i;
-			echo "</TD>";
+	function displayRow($row,$edit=false,$rowId=0){
+		if(!$this->One)
+			echo "\r\n  <TR>";
+		$page=@$this->object->page;
+		if($edit){
+			$rowID=$this->traceID.'%'.$rowId;
 		}
-		echo "</TR>";
+		if(count($this->object->containing)){
+			foreach($this->object->containing as $j=>$v){
+				$type=$v->type->name;
+				if(!$this->One)
+					echo "<TD>";
+				else {
+					$h=new viewableText($v->type->name);
+					$h->style='h4';
+					$h->display();
+				}
+				$myRow = new expandableList();
+				$myRow->assign('object',$v->type);
+				$myRow->assign('elements',$row->$type);
+				if($edit) $myRow->display(true,$rowID.'%'.$type);
+				else $myRow->display();
+				if(!$this->One)
+					echo "</TD>";
+			}
+			if($edit){
+				echo '<INPUT TYPE="hidden" NAME="'.htmlspecialchars($rowID).'_" VALUE="'.htmlspecialchars($row->id).'" />';
+			}
+		}else{
+			if(!$this->One)
+				echo '<TD>';
+			$myTxt = new viewableText($row->id);
+			if($edit){
+				$myTxt->assign("id",$rowID.'_');
+				//$myTxt->assign('default',$row->id);
+				$myTxt->display($edit);
+			}else{
+				if(isset($page)) echo '<A HREF="JavaScript:go(\''.htmlspecialchars(addslashes($row->id).'\',\''.addslashes($page)).'\');">';
+				$myTxt->display();
+				if(isset($page)) echo '</A>';
+			}
+			if(!$this->One)
+				echo '</TD>';
+		}
+		if($edit && !$this->One){
+			echo '<TD align=left><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" /></TD>';
+		}
+		if(!$this->One)
+			echo "</TR>";
 	}
 	function displayEmptyRow($row){
-		echo '<TR><TD>emptyRow</TD></TR>';
-	}
-	function expandableList(){
-	//	echo 'expandable';
+		if(!$this->One){ // cannot add a row if there is only one!
+			$colspan=max(1,count($this->object))+1;
+			echo '<TR><TD colspan='.$colspan.'>';
+			//echo '<button name="'.$this->traceID.'" value="add">Add</button>';
+			echo '<input type="image" name="'.htmlspecialchars($this->traceID).'" value="add" SRC="'.$this->iDir.'add.png" />';
+			echo '</TD></TR>';
+		}
 	}
 }
 class removableListRow extends anyView{
@@ -201,7 +356,11 @@ class monastir Extends anyView {
 	function display(){
 		global $_REQUEST;
 		$action=$this->action;
-		if(isset($_REQUEST['edit'])) $action = 'edit'; // was faked as read
+		$edit=false;
+		if($action=='read'){
+			if(isset($_REQUEST['edit']) || @$_REQUEST['action']=='edit') $action = 'edit'; // was faked as read
+			if(!isset($this->object_id)) $action = 'new'; // was faked as read
+		}
 		if($action=='create') $action = $this->succes ? 'read' : 'new';
 		if($action=='delete') $action = $this->succes ? 'show' : 'show';
 		if($action=='update') $action = $this->succes ? 'read' : 'edit';
@@ -212,9 +371,13 @@ class monastir Extends anyView {
 			$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
 			$this->addAction('g(\'show\')','Overview','Show all '.$this->objname.' objects');
 		}else if($action=='new'){
+			$defaultAction='create';
+			$edit=true;
 			$this->addAction('s(\'create\')','Create','Create the '.$this->objname);
 			$this->addAction('g(\'show\')','Cancel','Don\'t create the '.$this->objname);
 		}else if($action=='edit'){
+			$defaultAction='update';
+			$edit=true;
 			$this->addAction('s(\'update\')','Save','Save the '.$this->objname);
 			$this->addAction('g(\'read\','.$qobj.')','Cancel','Don\'t save the '.$this->objname);
 		}else if($action=='show'){
@@ -262,7 +425,7 @@ class monastir Extends anyView {
 				document.location = id;
 			}
 			function s(what){
-				document.forms.myform.action=what;
+				document.forms.myform.action.value=what;
 				document.forms.myform.submit();
 			}
 			function toggle(i){
@@ -329,7 +492,7 @@ class monastir Extends anyView {
 			echo '<TD class="hidden" width=20% height=29 align="right"><IMG SRC="'.$iDir.'l/zijde_links2.png" height=29 width=24 /></TD>';
 			// use another pic for this..
 		}
-		echo '<TD class="hidden" width=80% bgcolor=green rowspan=3 valign=top style="height:100%" height=100%>';
+		echo '<TD class="hidden" width=80% rowspan=3 valign=top style="height:100%" height=100%>';
 			//echo '<SPAN class="hidden" style="display:clip">';
 			echo '<TABLE CLASS="hidden" height="100%" width="100%">';
 			echo '<TR>';
@@ -342,12 +505,25 @@ class monastir Extends anyView {
 			echo '<TD class="hidden" height="100%" width=100% bgcolor=white valign=top>';
 			echo "\r\n<!-- contents -->";
 			echo "\r\n  ";
+			if($edit){
+				echo '<FORM NAME="myform" ID="myform" METHOD="POST" AUTOCOMPLETE="off" ACTION="'.$_SERVER['SCRIPT_NAME'].'">';
+				echo '<INPUT TYPE="HIDDEN" NAME="action" VALUE="'.$action.'">';
+				//echo '<INPUT TYPE="HIDDEN" NAME="defaultAction" VALUE="'.$defaultAction.'">';
+				//if($action=='new'){
+				//	echo '<INPUT TYPE="HIDDEN" NAME="id" VALUE="'.$this->object_id.'">';
+				//}
+			}
 			if(isset($this->header))
 			{
-				$this->header->display();
+				$this->header->assign("id","id");
+				if($action=='new') $this->header->display($edit);
+				else $this->header->display(false);
 				if(!isset($this->header->style)) echo '<BR />';
 			}
-			$contents->display();
+			$contents->display($edit);
+			if($edit){
+				echo '</FORM>';
+			}
 			echo "\r\n</TD>";
 			echo '<TD class="hidden" height="100%" width=60 background="'.$iDir.'h/zijde_rechts.png"><img src="'.$iDir.'spacer.gif" width=60 height=1 /></TD>';
 			echo '</TR>';

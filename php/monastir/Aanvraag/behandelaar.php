@@ -1,86 +1,65 @@
 <?
 
-/*********** file Aanvraag.adl on line 3-5:
- * OBJECT behandelaar  I[Employee]          -- 'Employee' zou betekenen: 'Employee = I[Employee]'
- * WITH aanvragen : assigned~
- * ENDOBJECT
- ***********/
-
-class behandelaar {
-	var $aanvragen;
-	function behandelaar(/* behandelaar_aanvragen */ array $aanvragen){
-		$this->aanvragen=$aanvragen;
-	}
-	function addAanvragen(behandelaar_aanvragen $aanvragen){
-		$this->aanvragen[]=$aanvragen;
-	}
-}
-class behandelaar_aanvragen {
-	var $application;
-	function behandelaar_aanvragen($value){
-		$this->application=$value;
-	}
-}
-function createBehandelaar(behandelaar $obj){
-	echo 'create Behandelaar';
-	return $id;
-}
-function readBehandelaar($id){
-	$obj = new behandelaar(array());
-	
-	$obj->addAanvragen(new behandelaar_aanvragen('Aanvraag 1'));
-	$obj->addAanvragen(new behandelaar_aanvragen('Aanvraag 2'));
-	return $obj;
-}
-function updateBehandelaar($id,behandelaar $obj){
-	$success=false;
-	return $success;
-}
-function deleteBehandelaar($id){
-	$success=false;
-	return $success;
-}
-
+require "behandelaar.inc.php";
 require "localsettings.inc.php";
 
+// meta information of behandelaar
 $object = new object("behandelaar",array
                       (new oRef( new oMulti( true,false,false,false ) // derived from assigned~
-                               , new object("aanvragen",array())
+                               , new object("aanvragen",array(),"application.php")
                                )
-                      )
-                    ); // meta information
+                      ),"behandelaar.php");
+
 
 $view = new view();
 $view->assign("objname","behandelaar");
+$obj=false;
+$obj=parseRequest($object);
 
+// do the requested action
 if($action=='create'){
 	$object_id=createBehandelaar($obj);
 }else
 if($action=='delete'){
 	if(deleteBehandelaar($actionValue)){
-		// succes!
+		$view->assign("succes",true);
 		$view->addOkMessage("Behandelaar deleted");
-	}else $object_id=$actionValue;
+	}else{
+		$object_id=$actionValue;
+		$view->assign("succes",false);
+	}
 }else
 if($action=='update'){
 	updateBehandelaar($actionValue,$obj);
 	$object_id=$actionValue;
+	if($object_id===false) $view->assign("succes",false); else $view->assign("succes",true);
 }else
 if($action=='read'){
-	$object_id=$actionValue;
+	if(isset($actionValue)){ // is not assigned for new!
+		$object_id=$actionValue;
+		$obj=readBehandelaar($object_id); // from DB
+		if($object_id===false) $view->assign("succes",false);
+	}
+	if($obj===false) {
+		echo 'empty';
+		$obj=new behandelaar(null,array()); // return an empty object
+	}
 }
 
 $view->assign("action",$action);
-if(@$object_id){
+
+
+if($obj){ // read on no valid object id: send empty object
 	// show the item itself
-	if($action=='read') $behandelaar = readBehandelaar($object_id);
-	else $behandelaar = $obj;
-	$view->assign("header",new viewableText($object_id,'H2'));
+	$behandelaar=$obj; // from POST or something
+	$header = new viewableText(@$object_id,'H2');
+	$header->assign("caption",'behandelaar');
+	$view->assign("header",$header);
 	$list=new expandableList();
-	$list->assign("header",array("application"=>new viewableText("Application")));
-	$list->assign("caption",new viewableText("aanvragen",'H3'));
-	$list->assign("elements",$behandelaar->aanvragen);
-	$view->assign("object_id",$object_id);
+	$list->assign("object",$object);
+	$list->assign("elements",array($behandelaar));
+	$list->assign("One",true);
+	if(isset($object_id)) $view->assign("object_id",$object_id);
 	$view->assign("contents",$list);
 }else{
 	// show a list (or search-box) of all items

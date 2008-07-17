@@ -15,7 +15,7 @@
 	$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');
 	$DB_slct = mysql_select_db($dbName,$DB_link);
 	
-	require "maintainDataBase.php";
+	require "maintainDataBase.inc.php";
 	
 	
 	class view Extends monastir {

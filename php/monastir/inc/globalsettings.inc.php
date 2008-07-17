@@ -56,9 +56,11 @@ if ( get_magic_quotes_gpc() ) {
 // object definition
 class object {
 	var $name;
+	var $page;
 	var $containing;
-	function object($name,array $containing=array()){
+	function object($name,array $containing=array(),$page=NULL){
 		$this->name=$name;
+		$this->page=$page;
 		$this->containing=$containing;
 	}
 	function containsObject(oRef $container){
