@@ -32,6 +32,9 @@ function parseRequest($object){
 	}
 	if(isset($_REQUEST[$object->name.'%0_']))
 	{
+		if(!isset($object_id)){
+			$object_id=$_REQUEST[$object->name.'%0_'];
+		}
 		return recurParse($object,$object->name.'%0',$object->name);
 	} else {
 		return false;
@@ -59,29 +62,6 @@ function recurParse($object,$traceID,$objtrace){
 	return $obj;
 }
 
-//global $_REQUEST;
-if(isset($_REQUEST['read'])){
-	$action='read';
-	$actionValue=$_REQUEST['read'];
-} else if(isset($_REQUEST['new'])){
-	$action='read'; // Fake a read on no object
-} else if(isset($_REQUEST['create'])){
-	$action='create';
-} else if(isset($_REQUEST['update'])){
-	$action='update';
-	$actionValue=$_REQUEST['update'];
-} else if(isset($_REQUEST['edit'])){ // no changes (yet)! Fake a read.
-	$action='read';
-	$actionValue=$_REQUEST['edit'];
-} else if(isset($_REQUEST['delete'])){
-	$action='delete';
-	$actionValue=$_REQUEST['delete'];
-} else $action='show';
-
-if(isset($_POST['action'])){
-	$action=$_POST['action'];
-	if(isset($_POST['id'])) $actionValue=$_POST['id']; 
-}
 
 abstract class anyView {
 	function assign($var,$val){}
@@ -149,7 +129,7 @@ class viewableList extends anyView{
 		$colspan=0;
 		if(!$this->One){
 			echo "\r\n".'<TABLE height=1 width=100% class=hidden>';
-			if(isset($header)){
+			if(isset($header) && count($header)){
 				echo "\r\n".'<TR>';
 				$colspan=0;
 				foreach($header as $j=>$h){
@@ -337,34 +317,123 @@ class monastir Extends anyView {
 	var $appname='Monastir Databaseviewer';
 	var $objname;
 	var $object_id;
-	var $changed=false;
-	var $succes=false;
-	function monastir(){
+	var $succes=true;
+	var $ok;
+	function monastir($menu,$obj,$object,$cObjName){
+			global $action;
+			global $imageDirName;
+			global $appName;
+			$this->appname=$appName;
+			$this->objname=$cObjName;
+			$this->iDir=$imageDirName;
+			$this->menu=$menu;
+			global $_REQUEST;
+			$changed=true;
+			
+			if(isset($_REQUEST['read'])){
+				$changed=false;
+				$action='read';
+				$object_id=$_REQUEST['read'];
+				$f='read'.$cObjName;
+				$obj= $f($object_id); // from DB
+				if($object_id===false){
+					$this->assign("succes",false);
+					$action='show';
+				}
+			} else if(isset($_REQUEST['new']) || @$_POST['action']=='new'){
+				$action='new';
+				if($obj===false) { // not false after edit!
+					$f=$object->name;
+					$obj=new $f(null,array()); // return an empty object
+				}
+				$object_id=@$_POST['id'];
+			} else if(@$_POST['action']=='create'){
+				$action='create';
+				$obj->id=$_POST['id'];
+				if(isset($obj->id) && $obj->id=='') {$obj->id=null;}
+				$f='create'.$cObjName;
+				$object_id= $f($obj);
+				if($object_id===false) {$object_id=$obj->id;$this->assign("succes",false);} else $this->assign("succes",true);
+			} else if(@$_POST['action']=='update'){
+				$action='update';
+				$f='update'.$cObjName;
+				$object_id= $f($obj);
+				if($object_id===false) {$this->assign("succes",false);
+				} else $this->assign("succes",true);
+			} else if(isset($_REQUEST['edit']) || @$_POST['action']=='edit'){ // no changes (yet)! Fake a read.
+				$action='edit';
+				if($obj==false){
+					$f='read'.$cObjName;
+					$obj= $f($_REQUEST['edit']); // from DB
+				}
+				$object_id=$obj->id;
+			} else if(isset($_REQUEST['delete'])){
+				$action='delete';
+				$f='delete'.$cObjName;
+				if($f($_REQUEST['delete'])){
+					$this->assign("succes",true);
+					$this->assign("ok",new viewableText($cObjName." deleted",'H4'));
+				}else{
+					$this->assign("succes",false);
+					$object_id=$_REQUEST['delete'];
+					$f='read'.$cObjName;
+					$obj= $f($object_id); // from DB
+				}
+			} else { $action='show'; $changed=false; }
+			$this->action=$action;
+			$this->changed=$changed;
+			if($obj){ // read on no valid object id: send empty object
+				// show the item itself
+				$header = new viewableText(@$object_id,'H2');
+				$header->assign("caption",$cObjName);
+				$this->assign("header",$header);
+				$list=new expandableList();
+				$list->assign("object",$object);
+				$list->assign("elements",array($obj));
+				$list->assign("One",true);
+				if(isset($object_id)) $this->assign("object_id",$object_id);
+				$this->assign("contents",$list);
+			}else{
+				// show a list (or search-box) of all items
+				$list=new viewableList();
+				$list->assign("header",array(new viewableText($cObjName)));
+				$f='getEach'.$cObjName;
+				$ctx = $f();
+				$elements=array();
+				foreach($ctx as $i=>$v){
+					$elements[]=array(new linkedText($v['AttE_mployee'],$v['AttE_mployee']));
+				}
+				$list->assign("elements",$elements);
+				$this->assign("contents",$list);
+			}
 	}
 	function assign($var,$val){
-		if     ($var=='menu'      ) $this->menu      = $val;
-		else if($var=='actions'   ) $this->actions   = $val;
-		else if($var=='iDir'      ) $this->iDir      = $val;
+		if     ($var=='actions'   ) $this->actions   = $val;
 		else if($var=='appname'   ) $this->appname   = $val;
 		else if($var=='objname'   ) $this->objname   = $val;
 		else if($var=='object_id' ) $this->object_id = $val;
 		else if($var=='contents'  ) $this->contents  = $val;
 		else if($var=='header'    ) $this->header    = $val;
-		else if($var=='action'    ) $this->action    = $val;
-		else if($var=='changed'   ) $this->changed   = $val;
 		else if($var=='succes'    ) $this->succes    = $val;
+		else if($var=='ok'        ) $this->ok        = $val;
 		else $this->warning[] = $var.' was not assigned.';
 	}
 	function display(){
 		global $_REQUEST;
+		global $DB_err;
+		//global $changed;
+		//$this->changed=$changed;
+		//if($changed) echo 'c';
 		$action=$this->action;
 		$edit=false;
+		if(isset($_REQUEST['action'])) $changed=true;
+		//if($changed) echo 'c'; else echo 'n';
 		if($action=='read'){
 			if(isset($_REQUEST['edit']) || @$_REQUEST['action']=='edit') $action = 'edit'; // was faked as read
 			if(!isset($this->object_id)) $action = 'new'; // was faked as read
 		}
 		if($action=='create') $action = $this->succes ? 'read' : 'new';
-		if($action=='delete') $action = $this->succes ? 'show' : 'show';
+		if($action=='delete') $action = $this->succes ? 'show' : 'read';
 		if($action=='update') $action = $this->succes ? 'read' : 'edit';
 		$qobj='\''.addslashes($this->object_id).'\'';
 		if($action=='read'){
@@ -392,8 +461,7 @@ class monastir Extends anyView {
 		$actions=$this->actions;
 		$contents=$this->contents;
 		$iDir=$this->iDir;
-		$changed=$this->changed;
-		//
+		$changed=$this->succes && $edit;
 		?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
 		<HTML><HEAD>
 		<?	writeTitle($title);
@@ -407,9 +475,9 @@ class monastir Extends anyView {
 			function go(id,page,what){ // this is actually 'read' when id is given
 				if(what==null) what='read';
 				if(changed){
-					if(confirm("Do you wish to save your changes")){
+					if(!confirm("Your changes are not saved. Do you still want to leave this page?")){
 						//document.forms['myform'].submit();
-						alert('sorry not saved');
+						return void(0);
 					}else changed=false;
 				}
 				if(changed==false){
@@ -505,6 +573,12 @@ class monastir Extends anyView {
 			echo "\r\n".'<TR height="100%" style="height:100%">';
 			echo '<TD class="hidden" height="100%" style="height:100%" width=33 background="'.$iDir.'h/zijde_links.png"><img src="'.$iDir.'spacer.gif" width=33 height=1 /></TD>';
 			echo '<TD class="hidden" height="100%" width=100% bgcolor=white valign=top>';
+			if($this->succes){
+				if(isset($this->ok)) $this->ok->display();
+			}else{
+				$err = new viewableText($DB_err,'EM');
+				$err->display();
+			}
 			echo "\r\n<!-- contents -->";
 			echo "\r\n  ";
 			if($edit){

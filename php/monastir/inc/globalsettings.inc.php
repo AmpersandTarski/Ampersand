@@ -38,6 +38,27 @@ function DB_doquer($quer,$debug=5)
 	}
 	return $rows;
 }
+function DB_plainquer($quer,&$errno,$debug=5)
+{
+	global $DB_link,$DB_errs,$DB_lastquer;
+	$DB_lastquer=$quer;
+	DB_debug($quer,$debug);
+	$result=mysql_query($quer,$DB_link);
+	if(!$result){
+	 // DB_debug('Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'"',2);
+	 // $DB_errs[]='Error '.($ernr=mysql_errno($DB_link)).' in query "'.$quer.'"';
+	  $errno=mysql_errno($DB_link);
+	  return false;
+	}else{
+		if(($p=stripos($quer,'INSERT'))!==false
+		   && (($q=stripos($quer,'UPDATE'))==false || $p<$q)
+		   && (($q=stripos($quer,'DELETE'))==false || $p<$q)
+		  )
+		{
+			return mysql_insert_id();
+		} else return mysql_affected_rows();
+	}
+}
 
 // Code from php.net, for those who have get_magic_quotes_gpc turned ON...
 if ( get_magic_quotes_gpc() ) {

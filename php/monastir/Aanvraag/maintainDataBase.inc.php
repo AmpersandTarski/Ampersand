@@ -1,5 +1,9 @@
 <?
-  function checkRule1(){
+
+
+	$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');
+	$DB_slct = mysql_select_db($dbName,$DB_link);
+    function checkRule1(){
     // No violations should occur in (leadsto~;kind -: kind COMPUTING [kind])
      // pDebug:: kind-/\leadsto~;kind
      $v=DB_doquer('
