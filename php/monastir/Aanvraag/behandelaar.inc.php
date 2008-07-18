@@ -6,11 +6,13 @@
  * ENDOBJECT
  ***********/
 
-$behandelaar_object=new object("behandelaar",array
+function getobject_behandelaar(){
+	return new object("behandelaar",array
                       (new oRef( new oMulti( true,false,false,false ) // derived from assigned~
                                , new object("aanvragen",array(),"application.php")
                                )
                       ),"behandelaar.php");
+}
 
 class behandelaar {
 	var $aanvragen;
@@ -146,6 +148,34 @@ function deleteBehandelaar($id){
 		return false;
 	}
 	
+	DB_doquer('DELETE FROM C3_A_pplication
+		  WHERE EXISTS
+		        (SELECT * FROM T4_assigned
+		          WHERE C3_A_pplication.AttA_pplication=T4_assigned.AttA_pplication
+		            AND T4_assigned.AttE_mployee=\''.addslashes($id).'\'
+		        )
+		  	AND NOT EXISTS
+		  		(SELECT * FROM T4_assigned
+		  		  WHERE C3_A_pplication.AttA_pplication=T4_assigned.AttA_pplication
+		  		    AND T4_assigned.AttE_mployee<>\''.addslashes($id).'\'
+		  		)
+		  	AND NOT EXISTS
+		  		(SELECT * FROM T2_applicant
+		  		  WHERE C3_A_pplication.AttA_pplication=T2_applicant.AttA_pplication
+		  		)
+		  	AND NOT EXISTS
+		  		(SELECT * FROM T3_checked
+		  		  WHERE C3_A_pplication.AttA_pplication=T3_checked.AttA_pplication
+		  		)
+		  	AND NOT EXISTS
+		  		(SELECT * FROM T6_kind
+		  		  WHERE C3_A_pplication.AttA_pplication=T6_kind.AttA_pplication
+		  		)
+		  	AND NOT EXISTS
+		  		(SELECT * FROM T10_leadsto
+		  		  WHERE C3_A_pplication.AttA_pplication=T10_leadsto.AttA_pplication
+		  		)
+		  		');
 	DB_doquer('DELETE FROM C4_E_mployee WHERE AttE_mployee=\''.addslashes($id).'\'');
 	DB_doquer('DELETE FROM T4_assigned WHERE AttE_mployee=\''.addslashes($id).'\'');
 	

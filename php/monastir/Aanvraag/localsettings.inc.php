@@ -1,15 +1,10 @@
 <?
-	
 	// selecting the monastir view
-	
 	$incPath = "../inc/";
-	
 	$dbName = "Aanvraag"; // mysql internal name
 	$appName = "Aanvraag"; // full text name
-	
 	require $incPath."globalsettings.inc.php";
-	require "maintainDataBase.inc.php";
-	
+	require "connectToDataBase.inc.php";
 	require $incPath."monastir.inc.php";
 	
 	class view Extends monastir {
@@ -19,8 +14,6 @@
 			global $action;
 			global $actionValue;
 			$this->action=$action;
-			// the menu is part of the view
-			
 			$menu = array(); // menuItem(url, title, class, link-caption)
 			$menu[] = array
 			  (new menuItem('behandelaar.php','Show all behandelaar objects','menuItem','behandelaar')
@@ -33,6 +26,5 @@
 			parent::monastir($menu,$obj,$object,ucfirst($object->name));
 
 		}
-	}
-		
+	}	
 ?>
