@@ -1,21 +1,25 @@
 > module Main where
->  import System (getArgs)
+>  import System
 >  import Char (toLower)
 >  import UU_Scanner
 >  import UU_Parsing
 >  import CommonClasses ( Identified(name), empty )
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS)
+>  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, concs, rules, multRules, patterns)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
->  import Calc (deriveProofs)
->  import Fspec (zed,glossary,functionalSpecText,projectSpecText)
+>  import Calc (deriveProofs,triggers)
+>  import Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints)
+>  import HtmlFilenames
+>  import Graphic
 >  import Atlas (anal)
->  import ERmodel (erModel)
->  import ClassDiagram (cdModel)  
+>  import Xml (makeXML)
+>  import ERmodel (erModel,erAnalysis)
+>  import ClassDiagram (cdModel,cdDataModel)  
 >  import RelBinGen
 
+functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 
 >  latexOpt sws = "-l" `elem` sws
 >  splitStr f (x:xs) | f x  = (x:yes, no)
@@ -69,27 +73,134 @@
 >      where build contexts switches contextname filename dbName slRes
 >             = sequence_ 
 >                ([ anal contexts contextname ("-p" `elem` switches) (if "-crowfoot" `elem` switches then "crowfoot" else "cc")
->                 | null switches || "-h" `elem` switches || "-p" `elem` switches || "-crowfoot" `elem` switches]++
+>                 | null switches || "-h" `elem` switches]++
+>                 [ makeXML contexts contextname| "-XML" `elem` switches]++
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
->                 [ zed contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-Z" `elem` switches]++
+>                 [ functionalSpecLaTeX contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-Z" `elem` switches || "-fSpec" `elem` switches]++
+>  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
+>                 [ archText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-arch" `elem` switches]++
 >                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
 >                 [ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
->                 [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-f" `elem` switches]++
 >                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]++
 >                 [ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]++
->--                 [ csvcontent contexts contextname | "-csv" `elem` switches]++
+>--               [ csvcontent contexts contextname | "-csv" `elem` switches]++
 >                 [ putStr (show slRes) | "-dump" `elem` switches ]
->                )
+>                )>>
+>                   appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length ents)++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of relations:                  "++show (length rels)++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context++multRules context, hc<-triggers rule])++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
+>                   putStr ("  nr. of classes:                    "++show (length ents)++"\n") >>
+>                   putStr ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
+>                   putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
+>                   putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
+>                   putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
+>                   putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context++multRules context, hc<-triggers rule])++"\n") >>
+>                   putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
+>                   putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
+>                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n")
+>                  where
+>                     context  = head ([c| c<-contexts, name c==contextname]++
+>                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                     (ents,rels,ruls) = erAnalysis context
+>                     spec = funcSpec context (ents,rels,ruls) (lang switches)
 >            lang switches
 >             | "-NL" `elem` switches = Dutch
 >             | "-UK" `elem` switches = English
->             | otherwise             = English
+>             | otherwise             = Dutch
 
 >  diagnose contexts contextname
 >   = putStr (showHS context)
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
 >                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] []]))
+>  projectSpecText contexts contextname language
+>   = putStrLn ("\nGenerating project plan for "++name context)                >>
+>     writeFile (name context++".csv") (projectClassic context spec language)  >>
+>     putStr ("\nMicrosoft Project file "++name context++".csv written... ")
+>     where
+>      context  = head ([c| c<-contexts, name c==contextname]++
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>      spec = funcSpec context (erAnalysis context) language
+>      (entities, relations, ruls) = erAnalysis context
+
+functionalSpecText generates a functional specification in ASCII
+
+  functionalSpecText contexts contextname graphicstyle language
+   = putStrLn ("\nGenerating functional specification for "++name context) >>
+     putStr (funcSpecText context spec language)
+     where
+      context  = head ([c| c<-contexts, name c==contextname]++
+                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+      spec = funcSpec context (entities, relations, ruls) language
+      (entities, relations, ruls) = erAnalysis context
+
+functionalSpecLaTeX generates a functional specification in LaTeX
+
+>  functionalSpecLaTeX contexts contextname graphicstyle language filename
+>   = putStr ("\nGenerating functional specification for context "++
+>             name context++" in the current directory.\n")                   >>
+>     graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
+>     sequence_ [ graphics context (fnPattern context pat) graphicstyle True pat   -- generate fully fledge (full==True) class diagram
+>               | pat<-patterns context]                                      >>
+>     writeFile (filename++".tex") (generateFspecLaTeX context language spec) >>   -- generate LaTeX code
+>     putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
+>     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
+>     where
+>      context  = head ([c| c<-contexts, name c==contextname]++
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>      spec = funcSpec context (ents,rels,ruls) language
+>      (ents,rels,ruls) = erAnalysis context
+>    -- the following is copied from Atlas.lhs. TODO: remove double code.
+
+>  archText contexts contextname graphicstyle language filename
+>   = putStr ("\nGenerating architecture document for context "++
+>             name context++" in the current directory.\n")                   >>
+>     graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
+>     writeFile (filename++".tex") (generateArchLaTeX context language spec)  >>   -- generate LaTeX code
+>     putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
+>     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
+>     where
+>      context  = head ([c| c<-contexts, name c==contextname]++
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>      spec = funcSpec context (ents,rels,ruls) language
+>      (ents,rels,ruls) = erAnalysis context
+>    -- the following is copied from Atlas.lhs. TODO: remove double code.
+
+>  glossary contexts contextname language
+>   = putStr ("\nGenerating Glossary for "++name context++" in the current directory.") >>
+>     writeFile ("gloss"++name context++".tex") (generateGlossaryLaTeX context language)           >>
+>     putStr ("\nLaTeX file "++"gloss"++name context++".tex written... ") >>
+>     processLaTeX2PDF ("gloss"++name context)
+>     where
+>      context  = head ([c| c<-contexts, name c==contextname]++
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+
+>  graphics context fnm graphicstyle full b
+>   = writeFile (fnm++"_CD.dot") (cdDataModel context full "dot" b)  >>
+>     putStrLn ("Class diagram "++fnm++"_CD.dot written... ")        >>
+>     processCdDataModelFile  (fnm ++"_CD")                          >>
+>     writeFile (fnm++".dot") (dotGraph context graphicstyle fnm b)  >>
+>     putStrLn ("Graphics specification "++fnm++".dot written... ")  >>
+>     processDotgraphFile  fnm
+
+>  processLaTeX2PDF fnm =
+>     do putStr ("\nProcessing "++fnm++".tex ... :")
+>        result <- system ("pdflatex -interaction=batchmode "++fnm++".tex")
+>        case result of
+>            ExitSuccess   -> putStrLn ("  "++fnm++".pdf created.")
+>            ExitFailure x -> putStrLn $ "Failure: " ++ show x
+>        putStr ("\nReprocessing "++fnm++".tex ... :")
+>        result <- system ("pdflatex -interaction=nonstopmode "++fnm++".tex")
+>        case result of
+>            ExitSuccess   -> putStrLn ("  "++fnm++".pdf created.")
+>            ExitFailure x -> putStrLn $ "Failure: " ++ show x

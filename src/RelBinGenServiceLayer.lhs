@@ -102,20 +102,20 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     , ""
 >     , "// DB_display is used for the entity headers"
 >     , (let xs = sord ["\""++phpRelName context s++"\" => Array (\"Name\"=>"++phpShow (name s)++", \"Src\"=>"++phpShow (name (source s))++", \"Trg\"=>"++phpShow (name (target s))++")"
->                                          | (c,as)<-entities, (a,_)<-as, s<-declarations a   {-, not (isSgnl s) -} ]++
+>                                          | o@(Obj nm pos c ats)<-objects ctx, a<-ats, s<-declarations a   {-, not (isSignal s) -} ]++
 >                                     ["\""++phpConcept context c++"\" => Array (\"Name\"=>"++phpShow (name c)++", \"Src\"=>"++phpShow (name c)++", \"Trg\"=>"++phpShow (name c)++")"
->                                     | (c,as)<-entities]
+>                                     | o@(Obj nm pos c ats)<-objects ctx]
 >        in if null xs then "$DB_display = Array();" else "$DB_display = Array\n      ( "++chain "\n      , " xs++"\n      );")
 >     , ""
 >     , "// DB_mult_cc is used by isOkRelation (entities) and by adlExport"
 >     , "$DB_mult_cc = Array"
 >     , "    ( "++chain "\n      , " [ "\""++phpRelName context s++"\"=>Array("++chain "," ["'"++show m++"'"| m<-multiplicities s, m/=Aut]++")"
->                                    | s<-declarations context]++"\n      );"
+>                                    | s<-declarations context, not (isSignal s)]++"\n      );"
 >     , ""
 >     , "//  DB_tbls is required for ADL export."
 >     , "$DB_tbls = Array"
 >     , "    ( "++chain "\n      , " [ "Array(\""++phpRelName context s++"\" , Array (\""++sqlRelSrc s++"\",\""++sqlRelTrg s++"\"))"
->                                    | s<-declarations context, not (isSgnl s)]++"\n      );"
+>                                    | s<-declarations context, not (isSignal s)]++"\n      );"
 >     , ""
 >     , "if($DB_debug>0){"
 >     , "   function DB_debug($txt,$lvl){"
@@ -148,18 +148,19 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     , "      mysql_query(\"CREATE DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not create DB "++dbName++"');"
 >     , "      $DB_slct = mysql_select_db("++ dbName {- was: $DB_daba -} ++",$DB_link) or die ('Could not select DB "++dbName++"');"
 >     , "      $DB_errs = false;"
->     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(300) NOT NULL default '', "++sqlExprTrg e++" varchar(300) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
->                                    | e<-closE context]
-> --  , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlEConcept context c++" (Eventnr INT AUTO_INCREMENT, Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, Evtype varchar(1) NOT NULL, "++sqlAttConcept context c++" varchar(300) NOT NULL default '',"++chain ", " [ sqlMorName context a++" varchar(300) NOT NULL default ''" | (a,_)<-as ]++", UNIQUE  (Eventnr) ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
-> --                                 | (c,as)<-entities]
->     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlRelName context s++" ("++sqlRelSrc s++" varchar(300) NOT NULL default '', "++sqlRelTrg s++" varchar(300) NOT NULL default '', UNIQUE  ("++sqlRelSrc s++","++sqlRelTrg s++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"++
+>     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(380) NOT NULL default '', "++sqlExprTrg e++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
+>                                    | e<-closE context, error ("clos: "++showADL e)]
+> --  , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlEConcept context c++" (Eventnr INT AUTO_INCREMENT, Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, Evtype varchar(1) NOT NULL, "++sqlAttConcept context c++" varchar(380) NOT NULL default '',"++chain ", " [ sqlMorName context a++" varchar(380) NOT NULL default ''" | a<-ats ]++", UNIQUE  (Eventnr) ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
+> --                                 | o@(Obj nm pos c ats)<-objects ctx]
+>     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlRelName context s++" ("++sqlRelSrc s++" varchar(380) NOT NULL default '', "++sqlRelTrg s++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlRelSrc s++","++sqlRelTrg s++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"++
 >                                      if null chn then "" else
 >                                      "\n        DB_doquer(\"INSERT INTO "++sqlRelName context s++" ("++sqlRelSrc s++","++sqlRelTrg s++
 >                                      ") VALUES "++chn++"\");"
->                                    | s<-rd (declarations context), chn<-[chain ", " ["("++phpShow a++","++phpShow b++")" | [a,b]<-contents s, not (null a), not (null b)]]]
+>                                    | s<-rd (declarations context), chn<-let truncate xs = if length xs>380 then take (380-if xs!!(380-1)=='\\' then 2 else 1) xs++"'" else xs
+>                                                                         in [chain ", " ["("++truncate (phpShow a)++","++truncate (phpShow b)++")" | [a,b]<-contents s, not (null a), not (null b)]]]
 >       ++if rd (declarations context)==declarations context then "" else
 >         error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS s|s<-cl]|cl<-eqClass (==) (declarations context), length cl>1])
->     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept context c++" ("++sqlAttConcept context c++" varchar(300) NOT NULL default '', UNIQUE  ("++sqlAttConcept context c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
+>     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept context c++" ("++sqlAttConcept context c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept context c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
 >                                    | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
 >     , "      "++chain "\n        " [ if null ss then "" else
 >                                      insConcept context c

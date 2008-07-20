@@ -16,18 +16,34 @@
 >              beeper          -- if True, all rules are translated as signal.
 >   = putStr ("\nGenerating MySQL Repository and PHP service layer for "++name context++"\n")>>
 >--     putStr ((chain "\n".map show.declarations) context++"\n")                        >>
->--     putStr                     (serviceLayer context noTransactions beeper dbName)                 >>
->     writeFile (filename++".php") (serviceLayer context noTransactions beeper dbName)                 >>
+>--     putStr                     csl                 >>
+>     writeFile (filename++".php") csl                 >>
 >     putStr (filename++".php written\n")                                                >>
->--     putStr                         (entitiesLayer context filename noTransactions beeper)   >>
->     writeFile (filename++".ent.php") (entitiesLayer context filename noTransactions beeper)   >>
+>--     putStr                         esl   >>
+>     writeFile (filename++".ent.php") esl   >>
 >     putStr (filename++".ent.php written\n")                                            >>
 >     writeFile (filename++".cloud.php") (dataCloud context filename)   >>
 >     putStr (filename++".cloud.php written\n")                                            >>
 >--     writeFile (filename++".entscr.php") (entityScreenLayer context filename noTransactions)     >>
 >--     putStr (filename++".entscr.php written\n")                                         >>
 >     writeFile (filename++".info") ("UI: drop,entities,vcount,adlExport,cloud\nDefaultUI: entities\nFile_entities: "++filename++".ent.php\nFile_entityScreen: "++filename++".entscr.php\nFile_vcount: "++filename++".ent.php\nFile_adlExport: "++filename++".php\nFile_drop: "++filename++".php\nFile_cloud: "++filename++".cloud.php\nName: "++name context) >>
->     putStr (filename++".info written\n")
+>     putStr (filename++".info written\n") >>
+>     qStat "CREATE TABLE" >>
+>     qStat "INSERT IGNORE INTO" >>
+>     qStat "INSERT INTO" >>
+>     qStat "DELETE FROM" >>
+>     qStat "UPDATE" >>
+>     qStat "SELECT" >>
+>     qStat "DROP" >>
+>     qStat "START TRANSACTION"
 >     where
 >      context = head ([{-recalc-} c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>      csl = serviceLayer context noTransactions beeper dbName
+>      esl = entitiesLayer context filename noTransactions beeper
+>      qStat str = putStr ("  nr. of "++str++" queries: "++ [' '|i<-[length str..17]]++show (count str (csl++esl))++"\n")
+>      count str text = c str text ""
+>       where c (s:ss) ts@(t:tx) r | s==t               = c ss tx (r++[s])
+>                                  | s/=t = c str (tail (r++ts)) ""
+>             c ""     ts        r = 1+c str ts ""
+>             c ss     ""        r = 0

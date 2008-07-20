@@ -73,7 +73,7 @@
 >     sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
->                         [Ctx (contextname++" is not defined") [] empty [] [] [] [] []]))
+>                         [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []]))
 >      cTrees   = makeTrees (Typ (map reverse pths))
 >      Typ pths = typology (isa context)
 >      gE    = genE context
@@ -340,11 +340,11 @@
 >       where a  = name (source s)
 >             b  = name (target s)
 >             cs = contents s
->             nijssenZin (Sgn _ _ _ _ [] [] [] _ _ _ _) = "No natural language meaning is assigned to this relation.<P>"
->             nijssenZin (Sgn _ _ _ _ l s r [] _ _ _)
->              = "A tuple <I>x</I>,<I>y</> in the following table means:<BR />"++l++"&lt;x&gt;"++s++"&lt;y&gt;"++r++".<P>"
->             nijssenZin (Sgn _ _ _ _ l s r (c:cs) _ _ _)
->              = "A tuple, for example <I>("++src c++","++trg c++")</I> in the following table means:<BR />"++l++src c++s++trg c++r++".<P>"
+>             nijssenZin (Sgn _ _ _ _ [] [] [] _ expla _ _ _) = "No natural language meaning is assigned to this relation. "++expla++"<P>"
+>             nijssenZin (Sgn _ _ _ _ l s r [] expla _ _ _)
+>              = expla++"A tuple <I>x</I>,<I>y</> in the following table means:<BR />"++l++"&lt;x&gt;"++s++"&lt;y&gt;"++r++".<P>"
+>             nijssenZin (Sgn _ _ _ _ l s r (c:cs) expla _ _ _)
+>              = expla++"A tuple, for example <I>("++src c++","++trg c++")</I> in the following table means:<BR />"++l++src c++s++trg c++r++".<P>"
 >             tabl = "\nThe following table displays the contents of this relation."++
 >                    htmlBlueTable "darkred" [a,b] cs++"\n\n"
 >             viol = chain "\n\n"
@@ -417,7 +417,7 @@
 >  prevRule context r = if null rs then error("Fatal: no last rule in this context") else head rs
 >    where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (rules context)++reverse (rules context)
 >  htmlRule :: Context -> Rule -> Bool -> String
->  htmlRule context@(Ctx nm on isa world dc ms cs ks) r predLogic
+>  htmlRule context@(Ctx nm on isa world dc ms cs ks os) r predLogic
 >   = htmlPage ("Code (5) for "++"Rule "++show (nr r)) ""
 >                   (htmlBody ((if emptyGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] [])
 >                               then "" else "<A HREF=#REF2Glossary>Glossary</A> ")++
@@ -518,8 +518,7 @@
 >  htmlPattern context fnm pat@(Pat nm rs parChds pms cs ks)
 >   = htmlPage ("Code (6) for "++nm) ""
 >                   (htmlBody (htmlHeadinglevel 1 ("Pattern: "++nm) []++"\n"++
->                              htmlValNumbered [(nr r,explainverder context r) | r<-rules pat]++"\n"++show ((signals pat))++"\n"++
->                              htmlValNumbered [(nr r,explainverder context r) | r<-signals pat]++"\n"++
+>                              htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (rules pat++signals pat)]++"\n"++
 >                              imageMap fnm ++
 >                              htmlHeadinglevel 1 ("Data model: "++nm) []++"\n"++
 >                              imageMap (fnPattern context pat++"_CD")++
@@ -529,8 +528,8 @@
 >  htmlContext fnm context
 >   = htmlPage ("Code (7) for "++name context) ("<SCRIPT type=\"text/javascript\">\nparent.menu.document.location.href='NAV_"++fnm++".html'\n</SCRIPT>")
 >                   (--"Test: show (rules context) = "++show (rules context)++"\n"++
->                    "explaination(s) = \n>>   "++ chain "\n>>   " [explainverder context r | r<-rules context]++"\n"++
->                    htmlBody (htmlValNumbered [(nr r,explainverder context r) | r<-rules context]
+>                    --"explaination(s) = \n>>   "++ chain "\n>>   " [explainverder context r | r<-sort' nr (rules context++signals context) ]++"\n"++
+>                    htmlBody (htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (rules context++signals context)]
 >                             ++ (if length (patterns context)<=1 then "" else
 >                                 "\n<BR>\n"++(imageMap (fnContext context++"_CD"))
 >                              )  )
@@ -538,7 +537,7 @@
 
 TODO: implement signals in the atlas, but make sure it performs (the excommented code does not perform...)
 
->  htmlSignals context@(Ctx cnm on isa world dc ms cds ks) pat
+>  htmlSignals context@(Ctx cnm on isa world dc ms cds ks os) pat
 >   = ""
 >  {- (if null nss then "" else  "\n"++htmlHeadinglevel 2 "Signals" []++
 >      "\n(At most three events are shown"++(if length nss==1 then "" else " per signal")++".)")++
@@ -552,9 +551,9 @@ TODO: implement signals in the atlas, but make sure it performs (the excommented
 >           nss = [s| s@(_,es)<-ss, not (null es)]
 >  -}
 
->  emptyGlossary (Ctx cnm on isa world dc ms cds ks) pat
+>  emptyGlossary (Ctx cnm on isa world dc ms cds ks os) pat
 >   = null [[c,cdef]| Cd _ c cdef _<-cds, C c (==) [] `elem` concs pat]
->  htmlGlossary context@(Ctx cnm on isa world dc ms cds ks) pat
+>  htmlGlossary context@(Ctx cnm on isa world dc ms cds ks os) pat
 >   = htmlHeadinglevel 2 "Glossary" []++
 >     htmlTable [[c,cdef]| Cd _ c cdef _<-cds, C c (==) [] `elem` concs pat] ""
 
@@ -594,7 +593,7 @@ the screen) points.
 >--        where cp as bs = [a++b|a<-as,b<-bs] ; single x = [x]
 
 >  htmlViewpoint :: Context -> String -> Pattern -> Concept -> Classification Concept -> Bool -> String
->  htmlViewpoint context@(Ctx cnm on isa world dc ms cs ks) fnm pat c (Cl r cls) predLogic
+>  htmlViewpoint context@(Ctx cnm on isa world dc ms cs ks os) fnm pat c (Cl r cls) predLogic
 >   = (htmlPage (name c) "" . htmlBody)
 >     (vptTitle (name c)                                                                            ++
 
@@ -629,8 +628,7 @@ Traceability (removed for now)
 >          else ""
 
 >  explainverder :: Context -> Rule -> String
->  explainverder thisCtx r = --"\nTest: explainverder\n"++
->                            explainArt thisCtx English r++" "++ htmlAnchor (fnRule thisCtx r++".html") "More..." []
+>  explainverder thisCtx r = explainArt thisCtx English r++" "++ htmlAnchor (fnRule thisCtx r++".html") "More..." []
 >  hgenR thisCtx predLogic r
 >   = (nr r, (if predLogic then (hshow.assemble.normRule) r++"\n<BR />\n" else "")++explainverder thisCtx r++"\n")
 
@@ -684,7 +682,7 @@ Obsolete?
                "<BR />specs context = "++show (specs context)
           else ""
 
-test:  recalc context@(Ctx nm on isa world dc ms cs ks) = Ctx (error (testC++"\n\n"++testD)) on isa world dc ms cs ks
+test:  recalc context@(Ctx nm on isa world dc ms cs ks os) = Ctx (error (testC++"\n\n"++testD)) on isa world dc ms cs ks os
 
 
   hsign (Sg a b) ps

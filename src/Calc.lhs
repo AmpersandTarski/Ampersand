@@ -35,7 +35,7 @@
 >             chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-rules context++multRules context, hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]) >>
 >     putStr ("\n--------------\n"++
 >             "Ontological analysis: \n  "++
->             chain "\n\n  " [name c++"("++chain ", "[name a++":"++name (target a)|a<-map fst as]++"):\n  "++
+>             chain "\n\n  " [name c++"("++chain ", "[name a++":"++name (target a)|a<-ats]++"):\n  "++
 >                             (let ms = [" every "++name(target m)++" related by "++showS (declaration m)++ "."|m<-delMors context c] in
 >                              if null ms then "No entities are triggered for deletion by "++name c else
 >                              "Deletion of an instance of "++name c++" triggers deletion of:\n     "++
@@ -43,19 +43,28 @@
 >                             let fs = [showADL clause|clause<-delFrs context c] in
 >                             if null fs then "" else
 >                             "\n  Besides multiplicities, the following rules can trigger deletion of "++name c++":\n     "++
->                             chain "\n     " fs| (c,as)<-entities]) >>
+>                             chain "\n     " fs| o@(Obj nm pos c ats)<-objects context]) >>
 >     putStr ("\n--------------\n"++
->             "Triggers from entities: \n     "++
->             chain "\n     " [name c++"("++chain ", "[name a++":"++name (target a)|a<-map (declaration.fst) as]++"):\n  "++
->                              chain "\n  " [ informalRule {-(declarations (map fst as))-} hc|hc<-( computeOrder hcs "UPDATE" . map declaration . map fst) as]| (c,as)<-entities])
+>             "Triggers from objects: \n     "++
+>             chain "\n     " [name c++"("++chain ", "[name a++":"++name (target a)|a<-ats]++"):"++
+>                              condNull ("\n  Rules for Insert transactions\n    ") (chain "\n    ") informalRule 
+>                               (computeOrder hcs "INSERT INTO" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntCreate
+>                              condNull ("\n  Rules for Update transactions\n    ") (chain "\n    ") informalRule 
+>                               (computeOrder hcs "UPDATE"              (map declaration (mors o)))++          -- taken from phpCodeEntUpdate
+>                              condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
+>                               (computeOrder hcs "DELETE FROM" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntDelete
+>                              "\n"
+>                             | o@(Obj nm pos c ats)<-objects context])
 >     where
 >      (entities, relations, ruls) = erAnalysis context
 >      hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
 >      context = head ([ c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      sh x = showHS x
 >      codeFragments :: [ECArule]
 >      codeFragments = [ eca | rule<-rules context, clause<-conjuncts rule, eca<-doClause (shrink clause) ]
+
+>  condNull header fold f xs = if null xs then "" else header++fold (map f xs)
 
 -- delMors computes the morphisms that constitute the 'delete core' of an entity.
 -- if atom a is of concept c, and m is in delMors context c, then [b| [a,b]<-m, a==c] and a are to be deleted simultaneously.
@@ -111,8 +120,7 @@
 >                                    |conjunct<-conjuncts rule, clause<-allClauses conjunct])
 >                , "")
 >              , ("\nniClauses:\n     "++
->                 chain "\n     " (rd[showHS clause
->                                    |conjunct<-conjuncts rule, clause<-niClauses conjunct])
+>                 chain "\n     " (map showHS (rd [clause|conjunct<-conjuncts rule, clause<-niClauses conjunct]))
 >                , "")
 >              , ( "\nAvailable Triggers on rule "++show (nr rule)++":\n     "++
 >                  chain "\n     " [showADL (makeRule rule clause)++ " yields"++concat
@@ -136,7 +144,7 @@
 >                                              "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showProof.lambda ev (Tm m)) r++"\n"++
 >                                              "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showProof.derivMono r ev) m++"\n"++
 >                                              "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++ -}
->                                           if (isTrue.shrink.conjNF) (Fu[Cp r,r'])
+>                                           if (isTrue.conjNF) (Fu[Cp r,r'])
 >                                           then "A reaction is not required, because  r -: r'. Proof:"++(showProof.cfProof) (Fu[Cp r,r'])++"\n"
 >                                           else if checkMono r ev m
 >                                           then "A reaction is not required, because  r -: r'. Proof:"++(showProof.derivMono r ev) m++"\n"
@@ -147,7 +155,7 @@
 >                                   , r'<-[subst (Tm m,actSem ev (Tm m) (delta (sign m))) r]
 >                                   , nr'<-[(shrink.conjNF) r']
 >                                   , viols<-[(shrink.conjNF) (Cp r')]
->                                   , True ]  -- (isTrue.shrink.conjNF) (Fu[Cp r,r'])
+>                                   , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
 >                                  |conjunct<-conjuncts rule, r<-allClauses conjunct]
 >                , "")
 >              , ("\nGenerated Triggers for: "++showADL rule++" (rule "++show (nr rule)++")\n     "++
@@ -231,16 +239,16 @@ so that is why parameter "do" is used in function "on".
 >          [ ECA (On ev m) (doCode phi Ins r)
 >          | m<-rd [m|x<-mors r, m<-[x,flp x], inline m]
 >          , ev<-[Ins,Del]
->          , r'<-[(shrink.conjNF.subst (Tm m,actSem ev (Tm m) (delta (sign m))) ) r]
->          , viols<-[(shrink.conjNF) r']
->          , phi<-[(shrink.conjNF) (Fi [Cp r,r'])]
->          , (not.isTrue) r' ]
+>          , r'<-[(conjNF.subst (Tm m,actSem ev (Tm m) (delta (sign m))) ) r]
+>          , viols<-[conjNF r']
+>          , phi<-[(Fi [Cp r,r'])]
+>       {- , (not.isTrue) r' -} ]
 
 >  actSem Ins e delta = Fu[e,delta]
 >  actSem Del e delta = Fi[e,Cp delta]
 
->  makeTm name = Tm (makeMph (Sgn name Anything Anything [] "" "" "" [] posNone 0 True))
->  delta (a,b) = Tm (makeMph (Sgn "Delta" a b [] "" "" "" [] posNone 0 True))
+>  makeTm name = Tm (makeMph (Sgn name Anything Anything [] "" "" "" [] "" posNone 0 True))
+>  delta (a,b) = Tm (makeMph (Sgn "Delta" a b [] "" "" "" [] "" posNone 0 True))
 
 >  data ECArule  = ECA Event PAclause
 >  data Event    = On InsDel Morphism
@@ -259,16 +267,16 @@ TODO: double check signature allocations to v in doCode.
 >  doCode delta tOp (F [t]) = doCode delta tOp t
 >  doCode delta Ins f@(F ts)
 >   = All
->     [ Do Ins (head ts)     (F[delta',v (target delta,source one),one]) 
->     , Do Ins (F (tail ts)) (F[one,v (source one,source delta),delta']) 
+>     [ Do Ins (head ts)     (simplify (F[delta',v (target delta,source one),one]))
+>     , Do Ins (F (tail ts)) (simplify (F[one,v (source one,source delta),delta']))
 >     ] where
 >        delta' = Fi[delta,Cp f]
 >        one  = Tm (Mph "One" posNone [] (source (F (tail ts)),target (head ts)) True d) --(error "Illegal reference to declaration of one"))
->               where d=Sgn "One" (target (head ts)) (source (F (tail ts))) [Sym,Asy,Trn] "" "" "" [] posNone 0 True
+>               where d=Sgn "One" (target (head ts)) (source (F (tail ts))) [Sym,Asy,Trn] "" "" "" [] "" posNone 0 True
 >  doCode delta Del (F ts)
 >   = Choice         
->     [ Do Del (head ts) (Fi [F[delta,v (target delta,target (head ts))], F[v (source (head ts),target (head ts)),flp (F (tail ts))]]) 
->     , Do Del (last ts) (Fi [F[flp (F (init ts)),v (target (last ts),source (last ts))], F[v (source (last ts),source delta),delta]]) 
+>     [ Do Del (head ts) (simplify (Fi [F[delta,v (target delta,target (head ts))], F[v (source (head ts),target (head ts)),flp (F (tail ts))]]))
+>     , Do Del (last ts) (simplify (Fi [F[flp (F (init ts)),v (target (last ts),source (last ts))], F[v (source (last ts),source delta),delta]]))
 >     ]
 >  doCode delta Ins (Cp x ) = doCode delta Del x
 >  doCode delta Del (Cp x ) = doCode delta Ins x
@@ -276,18 +284,25 @@ TODO: double check signature allocations to v in doCode.
 >  doCode delta Del (K0 x ) = doCode (deltaK0 delta Del x) Del x
 >  doCode delta Ins (K1 x ) = doCode (deltaK1 delta Ins x) Ins x
 >  doCode delta Del (K1 x ) = doCode (deltaK1 delta Del x) Del x
->  doCode delta Del (Fi []) = error ("Module Calc: doCode ("++showADL delta++") Del "++showADL (Fi [])) -- graag wederom verwijderen
+>  doCode delta Del (Fi []) = error ("Module Calc: doCode ("++showADL delta++") Del "++showADL (Fi []))
 >  doCode delta Del (Fi fs) = Choice [ doCode delta Del f | f<-fs ]
->  doCode delta Ins (Fi []) = error ("Module Calc: doCode ("++showADL delta++") Ins "++showADL (Fi [])) -- graag wederom verwijderen
+>  doCode delta Ins (Fi []) = error ("Module Calc: doCode ("++showADL delta++") Ins "++showADL (Fi []))
 >  doCode delta Ins (Fi fs) = All    [ doCode delta Ins f | f<-fs ]
->  doCode delta Del (Fu []) = error ("Module Calc: doCode ("++showADL delta++") Del "++showADL (Fu [])) -- graag wederom verwijderen
+>  doCode delta Del (Fu []) = error ("Module Calc: doCode ("++showADL delta++") Del "++showADL (Fu []))
 >  doCode delta Del (Fu fs) = All    [ doCode delta Del f | f<-fs ]
->  doCode delta Ins (Fu []) = error ("Module Calc: doCode ("++showADL delta++") Ins "++showADL (Fu [])) -- graag wederom verwijderen
+>  doCode delta Ins (Fu []) = error ("Module Calc: doCode ("++showADL delta++") Ins "++showADL (Fu []))
 >  doCode delta Ins (Fu fs) = Choice [ doCode delta Ins f | f<-fs ]
 >  doCode delta tOp (Tm m)  = if name m=="One"
 >                             then New (source m)
->                             else Do tOp (Tm m) (shrink (conjNF (Fi [if tOp==Ins then Cp (Tm m) else Tm m,delta])))
+>                             else if tOp==Ins 
+>                                  then Do Ins (Tm m) (f Ins (conjNF (Fi [Cp (Tm m),delta])))
+>                                  else Do Del (Tm m) (f Del (conjNF (Fi [    Tm m ,delta])))
+>                             where -- De functie f versimpelt de uitdrukking (en dus de SELECT expressie), maar nu moet wel INSERT IGNORE gebruikt worden (DELETE is al IGNORE)
+>                               f Ins (Fi fs) = simplify (Fi [f| f<-fs, not (isNeg f && notCp f==Tm m)])
+>                               f Del (Fi fs) = simplify (Fi [f| f<-fs, not (isPos f &&       (f==Tm m || (isIdent f && isIdent m)) )])
+>                               f _ e = e
 >  doCode delta tOp e = error ("Module Calc: Non-exhaustive patterns in function doCode ("++showADL delta++") "++show tOp++" ("++showHS e++")")
+
 
 TODO: Fix!
 deltaK0 delta Ins x 
@@ -339,7 +354,7 @@ A left i-clause is a clause of the form I -: p0 \/ p1 \/ .. \/ pn
 A right i-clause is a clause of the form p0 \/ p1 \/ .. \/ pn -: I
 An i-clause is a left i-clause or a right i-clause.
 
->  allClauses cl = rd [e|e<-shiftL cl++shiftR cl, not (isTrue e)]
+>  allClauses cl = rd [simplify e|e<-shiftL cl++shiftR cl, not (isTrue e)]
 >  ilClauses cl  = [ hc | hc@(Fu fus)<-allClauses cl
 >                       , and [idsOnly e| t@(Cp e)<-fus]
 >                  ]
@@ -486,7 +501,7 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >         , if not (null ts) then True else error (" in module Calc, multDerivations: null ts ")
 >         , d<-(map (add Tot) . declarations . head) ts++(map (add Sur) . declarations . last) ts
 >         ])
->     where add m (Sgn nm a b props prL prM prR cs pos nr sig) = (Sgn nm a b (rd (m:props)) prL prM prR cs pos nr sig)
+>     where add m (Sgn nm a b props prL prM prR cs expla pos nr sig) = (Sgn nm a b (rd (m:props)) prL prM prR cs expla pos nr sig)
 
 >  instance Graphic Declarations where
 >   dotGraph context style nm links
@@ -560,7 +575,7 @@ Het volgende idee is niet goed; het verzamelen van alle paden op deze manier lei
        f q (x:xs) = f (q `uni` [init ls++[x]++tail rs| ls<-q,last ls==x ,rs<-q,head rs==x]) xs
        f q []     = q
 
-If a number of relations (ss) change (onOperation), this function determines which compute rules are activated.
+If multiple relations (ss) change (onOperation), this function determines which compute rules are activated.
 The procedure is as follows:
 1. Determine which compute rules in hcs share a declaration in the frm with ss. This is the initial set of compute rules, sel.
 2. Determine the set of compute rules reachable by 'before', starting with sel. The result is clossel.
@@ -570,7 +585,7 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >  computeOrder :: [ComputeRule] -> String -> [Declaration] ->[ComputeRule]
 >  computeOrder hcs         -- hcs is the entire set of compute rules
 >               onOperation -- "INSERT INTO", "DELETE FROM", or "UPDATE".
->               ss          -- the set of declarations affected "by hand" (i.e. at the beginning of the compute-chain.
+>               ss          -- the set of declarations at the beginning of the compute-chain.
 >   = if True then paths else -- False maken voor diagnose...
 >     error ( "(diagnostic in module Calc)\ncomputeOrder hcs ["++chain "," (map showADL ss)++"] = \n"++
 >              "(hcs: \n  "++chain "\n  " [informalRule {-(declarations frExpr)-} hc++"\n  "++chain "\n  " (map showADL (declarations frExpr))
@@ -581,22 +596,35 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >      (fOps, e, bOp, toExpr, frExpr, rule) `before` (fOps', e', bOp', toExpr', frExpr', rule')
 >       -- = not (null (declarations toExpr `isc` declarations frExpr')) && bOp==fOp'
 >       = (not.null) [(fOp',r) |(fOp',r)<-fOps', bOp==fOp', r `elem` declarations toExpr]
->      sel = [ (fOps', e, bOp, toExpr, frExpr, rule)
->            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs, isTrue frExpr
->            , fOps'<-[[on|on@(fOp,s)<-fOps, s `elem` ss]], not (null fOps')
+>      sel
+>       = combineTriggers
+>           ([ (fOps', e, bOp, toExpr, frExpr, rule)
+>            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
+>            , isTrue frExpr                                                       -- waarvan de antecedent persé waar is
+>            , fOps'<-[[on|on@(fOp,s)<-fOps, elem' typeEq s ss]], not (null fOps') -- en die wordt aangetrapt
 >            , if onOperation `elem` ["INSERT INTO", "DELETE FROM"] then onOperation `elem` map fst fOps else True
 >            ]++
 >            [ if True {- debug: nr rule/=12 -} then (fOps', e, bOp, toExpr, frExpr, rule) else
->              error ( "(diagnostic in module Calc)\nfrExpr            = "++showADL frExpr ++
->                      "\nfrExpr            = "++showHS frExpr ++
->                      "\nsignatures frExpr = "++showHS (declarations frExpr) ++
->                      "\nss                = "++showHS ss  ++
+>              error ( "(diagnostic in module Calc)" ++
+>                      "\nfrExpr (showADL)    = "++showADL frExpr ++
+>                      "\nfrExpr (showHS)     = "++showHS frExpr ++
+>                      "\ndeclarations frExpr = "++showHS (declarations frExpr) ++
+>                      "\nss                  = "++showHS ss  ++
 >                      "\nnot (null (ss `isc` declarations frExpr)) = "++show(not (null (ss `isc` declarations frExpr)))
 >                    )
->            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs
->            , fOps'<-[[on|on@(fOp,s)<-fOps, s `elem` ss]], not (null fOps')
+>            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
+>            , not (isTrue frExpr)                                                 -- die een antecedent heeft die niet persé waar is
+>            , fOps'<-[[on|on@(fOp,s)<-fOps, s `elem ` ss]], not (null fOps') -- en die wordt aangetrapt
 >            , if onOperation `elem` ["INSERT INTO", "DELETE FROM"] then onOperation `elem` map fst fOps else True
->            , not (null (ss `isc` declarations frExpr)) {- , null (ss `isc` declarations toExpr) -} ]
+>            , not (null (ss `isc` declarations frExpr)) ]++
+>            [ (fOps', e, bOp, toExpr, frExpr, rule)
+>            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
+>            , isIdent frExpr                                                      -- met de identiteit als antecedent
+>            , fOps'<-[[on|on@(fOp,s)<-fOps, s `elem ` ss]], not (null fOps') -- en die wordt aangetrapt
+>            , if onOperation `elem` ["INSERT INTO", "DELETE FROM"] then onOperation `elem` map fst fOps else True
+>            ])
+>      typeEq a b | isIdent a && isIdent b = source a `order` source b
+>                 | otherwise              = a==b
 >   -- define tuples, which are paths of length 1
 >      rrs = [[x,x']| x<-clossel, x'<-clossel, x `before` x']
 >   -- taking the transitive closure means to compute paths of arbitrary length. rs is such a path
@@ -609,9 +637,21 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >       where f sel [] rs = sel
 >             f sel new rs = f (sel++new) [r|r<-rs, or [n `before` r| n<-new], not (r `elem` new)] [r|r<-rs, and [not (n `before` r)| n<-new]]
 
+>  combineTriggers hcs -- Triggers die toevallig semantisch identiek zijn worden op één hoop geveegd.
+>   = [ if length cl==1 then head cl else
+>       ( rd [fOp|(fOps, e, bOp, toExpr, frExpr, rule)<-cl, fOp<-fOps]
+>       , e, bOp, toExpr, frExpr
+>       , Ru 'I' frExpr posNone toExpr [] 
+>            (chain "; " (rd[explain rule++" ("++show (pos rule)++")"|(fOps, e, bOp, toExpr, frExpr, rule)<-cl, (not.null.explain) rule]))
+>            (sign frExpr `lub` sign toExpr) 0 ""
+>       )
+>     |cl<-eqCl f hcs, (_,e,bOp,toExpr,frExpr,_)<-[head cl]  ]
+>     where
+>      f (fOps, e, bOp, toExpr, frExpr, rule) = (bOp, toExpr, frExpr)
+
 >  informalRule :: ComputeRule -> String
 >  informalRule (fOps, e, bOp, toExpr, frExpr, rule)
->   = "ON "++commaEng "OR" [fOp++" "++show (name r)|(fOp,r)<-fOps] ++" DO "++bOp++" "++showADL toExpr++" SELECTFROM "++sh frExpr
+>   = "ON "++commaEng "OR" [fOp++" "++if isSgn r then name r else showADL r|(fOp,r)<-fOps] ++" DO "++bOp++" "++showADL toExpr++" SELECTFROM "++sh frExpr
 >     where sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
 
 The following function, recalc, is meant for use directly after a context
@@ -630,8 +670,8 @@ TODO: (july 1st, 2006) test recalc
 >     = [ if [s]==declarations toExpr then insert (calc frExpr ss) s else s
 >       | s<-ss ]
 >    insert :: Pairs -> Declaration -> Declaration
->    insert ls (Sgn nm a b props prL prM prR cs pos nr sig) = Sgn nm a b props prL prM prR (ls `uni` cs) pos nr sig
->    insert ls id                                           = id
+>    insert ls (Sgn nm a b props prL prM prR cs expla pos nr sig) = Sgn nm a b props prL prM prR (ls `uni` cs) expla pos nr sig
+>    insert ls id                                                 = id
 
 The following function, norm1Rule, normalizes a rule without changing the meaning (r equivalent to norm1Rule r).
 norm1Rule r is used to gather all violations of r.
@@ -682,7 +722,7 @@ disjNF' expr follows from expr  (expr ==> disjNF' expr)
 >   = if expr==res
 >     then [(expr,[],"<=>")]
 >     else (expr,steps,equ):nfPr eq dnf (shrink res)
->   where (res,steps,equ) = normStep eq dnf expr
+>   where (res,steps,equ) = normStep eq dnf False expr
 
 BJ: Putting the negative terms to the right is done for optimization purposes.
 
@@ -864,79 +904,21 @@ maar dat doet in het bewijs wat overdreven aan.
 >      inv Del = Ins
 >      first ((e,morphism,text,str):rest) = e
 >      first _ = error "Module Calc: wrong pattern in first"
-   
-   
-Het verhaal achter simplify.
-Elke bewijsstap wordt afzonderlijk neergezet, dus het resultaat is een lijst van bewijsstappen.
-Deze is mogelijk leeg, dan is de expressie al in normaalvorm.
-Elke stap bevat een expressie, die het resultaat is van de stap.
-Vervolgens een lijst van strings, die deze stap motiveren. Dit zijn de verwijzingen naar de gebruikte regels.
-Tenslotte een boolean, equ, die aangeeft of de stap een equivalentie (<=>) of een implicatie (==>) is.
-Allereerst worden de subexpressies vereenvoudigd (in: proofs = [(f,simplify f) |f<-fs]).
-Als alle subexpressies een leeg bewijs opleveren, is er dus niets te vereenvoudigen aan de subexpressies.
-Als dat wel het geval is, dan is er een langste bewijs die langer is dan 0 stappen.
-Door alle bewijsstappen aan te vullen met lege motivaties worden alle bewijzen even lang,
-zodat we de stappen parallel kunnen verantwoorden.
-Dat gebeurt in prfs.
-Vervolgens wordt in steps het geheel bijeengeveegd. De oorspronkelijke combinator, een Fi of Fu (die hier 'c' heet)
-wordt ervoor gezet. De bewijsmotivaties worden in één lijst geplaatst en als één van de stappen een implicatie was,
-dan wordt de hele stap een implicatie. Dat gebeurt in steps.
-Vervolgens wordt gekeken naar het voorkomen van een expressie samen met zijn complement in de lijst.
-Immers: r/\r- = V- en r\/r- = V.
-Ook geldt: V/\r = r V\/r = V
-V- /\ r = V-
-V- \/ r = r
-I;r = r
-I-!r = (I!r-)- = r-- = r
-r;s;V = r;V
 
-  simplify :: Expression -> Proof    -- dus levert op: [(Expression,[String],String)]
-  simplify e = simple e
-   where
-    simple (Fi fs) = steps++
-                     [ (Cp (v (a,b)), [showADL (ru (Fi [f,Cp f]) (Cp (v (a,b))))| f<-ints], "<=>")
-                     | not (null ints)]
-                     where (steps,ints) = simpl Fi isTrue fs
-                           a = source e; b = target e
-    simple (Fu fs) = steps++
-                     [ (v (a,b), [showADL (ru (Fu [f,Cp f]) (v (a,b)))| f<-ints], "<=>")
-                     | not (null ints)]
-                     where (steps,ints) = simpl Fu isFalse fs
-                           a = source e; b = target e
-    simple (Fd fs) = steps++[(s,["r!s!V- = r!V-"], "<=>")|s<-suff]
-                     where (steps,suff) = simpl' Fd isImin isFalse fs
-    simple (F  fs) = steps++[(s,["r!s!V = r!V"], "<=>")|s<-suff]
-                     where (steps,suff) = simpl' F isIdent isTrue fs
-    simple (Cp e)  = [(Cp e', step, equ)| (e',step,equ)<-simple e]
-    simple e = []
+>  simplify expr = e where (e,_,_) = last (simpProof expr)
+>  simpProof expr    -- dus levert op: [(Expression,[String],String)]
+>   = if expr==res
+>     then [(expr,[],"<=>")]
+>     else (expr,steps,equ):simpProof res
+>   where (res,steps,equ) = normStep True True True expr
 
-    simpl c is fs = (steps,ints)
-                    where proofs = [(f,simplify f) |f<-fs]
-                          prfs = [ prf++[ if null prf then (f,[],"<=>") else last prf
-                                        | i<-[length prf+1..maximum (map (length.snd) proofs)]]
-                                 | (f,prf)<-proofs]
-                          steps = [ ((c.rd.filter(not.is).map fst3) row, (rd.concat.map snd3) row, fEqu (map thd3 row))| row<-transpose prfs] 
-                          fs' = if null steps then rd (filter(not.is) fs) else (unF.fst3.last) steps
-                          ints = [f|Cp f<-fs'] `isc` fs'
-                          a = source e; b = target e
-    simpl' c is is' fs
-     = (steps,suff)
-       where proofs = [(f,simplify f) |f<-fs]
-             prfs = [ prf++[ if null prf then (f,[],"<=>") else last prf
-                           | i<-[length prf+1..maximum (map (length.snd) proofs)]]
-                    | (f,prf)<-proofs]
-             steps = [ ((c.rd.filter(not.is).map fst3) row, (rd.concat.map snd3) row, fEqu (map thd3 row) )| row<-transpose prfs] 
-             fs'    = if null steps then rd (filter(not.is) fs) else (unF.fst3.last) steps
-             fs''   = if is' (head fs') then [head fs',last fs'] else fs'
-             fs'''  = if is' (last fs'') then [head fs'',last fs''] else fs''
-             fs'''' = if is' (head fs') && is' (last fs'') then [head fs'] else fs'''
-             suff = [c fs''''|length fs'>1, fs'''' /= fs']
-             a = source e; b = target e -- TODO: de overgebleven V's hebben niet noodzakelijk het juiste type!
-    ru :: Expression -> Expression -> Rule
-    ru antc cons = Ru 'E' antc posNone cons [] "" (source e,target e) 0 ""
+normStep is a formula manipulator that can do equational reasoning by means of rewrite rules.
 
-
->  normStep eq dnf expr = (res,ss,equ)
+>  normStep :: Bool -> Bool -> Bool -> Expression -> (Expression,[String],String)
+>  normStep eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
+>           dnf   -- If dnf=True, the result is in disjunctive normal form. Otherwise it is in conjunctive normal form
+>           simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
+>           expr = (res,ss,equ)
 >   where
 >    (res,ss,equ) = norm (shrink expr) []
 >    norm :: Expression -> [Expression] -> (Expression,[String],String)
@@ -945,73 +927,84 @@ r;s;V = r;V
 >    norm (K1 e)       rs   = (K1 res, steps, equ)
 >                             where (res,steps,equ) = norm e []
 >    norm (Cp (Cp e))  rs   = (e, ["compl of compl"],"<=>")
->    norm (Cp (Fi fs)) rs   = (Fu (map notCp fs), ["De Morgan"], "<=>")
->    norm (Cp (Fu fs)) rs   = (Fi (map notCp fs), ["De Morgan"], "<=>")
->    norm (Cp (Fd ts)) rs   | and [isNeg t| t<-ts] = (F (map notCp ts), ["De Morgan"], "<=>")
+>    norm (Cp (Fi fs)) rs   = if simpl then (notCp res,steps,equ) else (Fu (map notCp fs), ["De Morgan"], "<=>")
+>                             where (res,steps,equ) = norm (Fi fs) []
+>    norm (Cp (Fu fs)) rs   = if simpl then (notCp res,steps,equ) else (Fi (map notCp fs), ["De Morgan"], "<=>")
+>                             where (res,steps,equ) = norm (Fu fs) []
+>    norm (Cp (Fd ts)) rs   = if not simpl && and [isNeg t| t<-ts] then (F (map notCp ts), ["De Morgan"], "<=>") else
+>                             (notCp res,steps,equ)
+>                             where (res,steps,equ) = norm (Fd ts) []
 >    norm (Cp e)       rs   = (notCp res,steps,equ)
->                              where (res,steps,equ) = norm e []
+>                             where (res,steps,equ) = norm e []
 >    norm (Tc f)       rs   = norm f []
->    norm (F (F t:ts)) rs   = norm (F (t++ts)) rs
 >    norm (F [t])      rs   = norm t []
->    norm (F (e:es))   rs   | not eq && length es>1 && isFd g && length gs>1
->                                                             = (F (Fd (F [e,head gs]:tail gs):es'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
->                           | not eq && isFd e && length ue>1 = (Fd (init ue++[F (last ue:es)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
->                           | not eq && isFi e                = (distribute F Fi isF isFi (F (e:es)), ["distribute /\\ over ;"], "==>")
->                           | isFu e                          = (distribute F Fu isF isFu (F (e:es)), ["distribute \\/ over ;"], "<=>")
->                           | and [isNeg x|x<-(e:es)]         = (notCp (Fd [notCp x| x<-(e:es)]), ["De Morgan"], "<=>")
->                           | isFu (last (e:es))              = (Fu [F (init (e:es)++[t])|Fu xs<-[last (e:es)], t<-xs], ["distribute \\/ over ;"], "<=>")
->                           | otherwise                       = (if isF f then F (t:unF f) else F [t,f], steps++steps', fEqu [equ,equ'])
+>    norm (F (e:es))   rs   | or [isF x|x<-e:es]          = norm (F [y| x<-e:es, y<-if isF x then unF x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
+>                           | or [isIdent x|x<-e:es]      = (F [x|x<-e:es,not (isIdent x)], ["x;I = x"], "<=>")
+>                           | not simpl && not eq && length es>1 && isFd g && length gs>1
+>                                                         = (F (Fd (F [e,head gs]:tail gs):es'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
+>                           | not simpl && not eq && isFd e && length ue>1
+>                                                         = (Fd (init ue++[F (last ue:es)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
+>                           | not simpl && not eq && isFi e = (distribute F Fi isF isFi (F (e:es)), ["distribute /\\ over ;"], "==>")
+>                           | not simpl && isFu e           = (distribute F Fu isF isFu (F (e:es)), ["distribute \\/ over ;"], "<=>")
+>                           | not simpl && and [isNeg x|x<-(e:es)]
+>                                                         = (notCp (Fd [notCp x| x<-(e:es)]), ["De Morgan"], "<=>")
+>                           | not simpl && isFu (last (e:es)) = (Fu [F (init (e:es)++[t])|Fu xs<-[last (e:es)], t<-xs], ["distribute \\/ over ;"], "<=>")
+>                           | otherwise                   = (if isF f then F (t:unF f) else F [t,f], steps++steps', fEqu [equ,equ'])
 >                           where (t,steps, equ)  = norm e []
 >                                 (f,steps',equ') = norm (F es) (e:rs)
 >                                 ue = unF e
 >                                 g@(Fd gs):es' = es
->    norm (Fd (Fd t:ts)) rs = norm (Fd (t++ts)) rs
 >    norm (Fd [e])    rs    = norm e []
->    norm (Fd (e:es)) rs    | not eq && isFu e                = (distribute Fd Fu isFd isFu (Fd (e:es)), ["distribute \\/ over !"], "==>")
->                           | isFi e                          = (distribute Fd Fi isFd isFi (Fd (e:es)), ["distribute /\\ over !"], "<=>")
->                           | and [isNeg x|x<-(e:es)]         = (notCp (F [notCp x| x<-(e:es)]), ["De Morgan"], "<=>")
->                           | length es>1 && isNeg e && isPos g && isFunction e
->                                                             = (F [notCp e,Fd es], ["f-!g = f;g if f is a function"], "<=>")
->                           | length es>1 && isPos e && isNeg g && isFunction (flp g)
->                                                             = (Fd ( F[e,notCp g]:es'), ["f!g- = f;g if g~ is a function"], "<=>")
->                           | otherwise                       = (if isFd f then Fd (t:unF f) else Fd [t,f], steps++steps', fEqu [equ,equ'])
+>    norm (Fd (e:es)) rs    | or [isFd x|x<-e:es]         = norm (Fd [y| x<-e:es, y<-if isFd x then unF x else [x]]) rs
+>                           | or [isNot x|x<-e:es]        = (F [x|x<-e:es,not (isNot x)], ["x!-I = x"], "<=>")
+>                           | not simpl && not eq && isFu e = (distribute Fd Fu isFd isFu (Fd (e:es)), ["distribute \\/ over !"], "==>")
+>                           | not simpl && isFi e         = (distribute Fd Fi isFd isFi (Fd (e:es)), ["distribute /\\ over !"], "<=>")
+>                           | not simpl && and [isNeg x|x<-(e:es)]
+>                                                         = (notCp (F [notCp x| x<-(e:es)]), ["De Morgan"], "<=>")
+>                           | not simpl && length es>1 && isNeg e && isPos g && isFunction e
+>                                                         = (F [notCp e,Fd es], ["f-!g = f;g if f is a function"], "<=>")
+>                           | not simpl && length es>1 && isPos e && isNeg g && isFunction (flp g)
+>                                                         = (Fd ( F[e,notCp g]:es'), ["f!g- = f;g if g~ is a function"], "<=>")
+>                           | otherwise                   = (if isFd f then Fd (t:unF f) else Fd [t,f], steps++steps', fEqu [equ,equ'])
 >                           where (t,steps, equ)  = norm e []
 >                                 (f,steps',equ') = norm (Fd es) (e:rs)
 >                                 ue = unF e
 >                                 g:es' = es
->    norm (Fi [e]) rs    = norm e []
->    norm (Fi (e:es)) rs | or [isFi x|x<-e:es]         = norm (Fi [y| x<-e:es, y<-if isFi x then unF x else [x]]) rs
->                        | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
->                        | e==Fu []                    = (Fu [], ["inconsistency"], "<=>")
-> -- this is unreachable | e==Fi []                    = (Fi es, ["x/\\V = x"], "<=>")
->                        | or[x==Fu []|x<-es]          = (Fu [], ["x/\\V- = V-"], "<=>")
->                        | isFu e && not (null absor0) = let f=head absor0 in (Fi es, ["absorb "++showADL e++" because of "++showADL f], "<=>")
->                        | isFu e && not (null absor1) = let (ts,f)=head absor1 in (Fi (ts++es), ["absorb "++showADL f], "<=>")
->                        | null es                     = norm e []
->                        | isFu e && dnf               = (distribute Fi Fu isFi isFu (Fi (e:es)), ["distribute \\/ over /\\"], "<=>")
->                        | otherwise                   = (if isFi f then Fi (t:unF f) else Fi [t,f], steps++steps', fEqu [equ,equ'])
->                        where (t,steps, equ)  = norm e []
->                              (f,steps',equ') = norm (Fi es) (e:rs)
->                              incons = [x|x<-es,x==notCp e]
->                              absor0 = [t| t<-unF e, f<-es++rs, t==f]
->                              absor1 = [(if length rest<=1 then rest else [Fu rest] , t)| t<-unF e, f<-es++rs, notCp t==f, rest<-[[x|x<-unF e,x/=t]]]
->    norm (Fu [e]) rs    = norm e []
->    norm (Fu (e:es)) rs | or [isFu x|x<-e:es]         = norm (Fu [y| x<-e:es, y<-if isFu x then unF x else [x]]) rs
->                        | not (null compl)            = (Fi [], [showADL (notCp (head compl))++"\\/"++showADL (head compl)++" = V"], "<=>")
->                        | e==Fi []                    = (Fi [], ["tautology"], "<=>")
-> -- this is unreachable | e==Fu []                    = (Fu es, ["x\\/V- = x"], "<=>")
->                        | or[x==Fi []|x<-es]          = (Fi [], ["x\\/V = V"], "<=>")
->                        | isFi e && not (null absor0) = let f=head absor0 in (Fu es, ["absorb "++showADL e++" because of "++showADL f++" ((x/\\y)\\/y = y))"], "<=>")
->                        | isFi e && not (null absor1) = let (ts,f)=head absor1 in (Fu (ts++es), ["absorb "++showADL f++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
->                        | null es                     = norm e []
->                        | isFi e && not dnf           = (distribute Fu Fi isFu isFi (Fu (e:es)), ["distribute /\\ over \\/"], "<=>")
->                        | otherwise                   = (if isFu f then Fu (t:unF f) else Fu [t,f], steps++steps', fEqu [equ,equ'])
->                        where (t,steps, equ)  = norm e []
->                              (f,steps',equ') = norm (Fu es) (e:rs)
->                              compl  = [x|x<-es,x==notCp e]
->                              absor0 = [t| t<-unF e, f<-es++rs, t==f]
->                              absor1 = [(if length rest<=1 then rest else [Fi rest] , t)| t<-unF e, f<-es++rs, notCp t==f, rest<-[[x|x<-unF e,x/=t]]]
->    norm x           rs = (x,[],"<=>")
+>    norm (Fi [e]) rs       = norm e []
+>    norm (Fi (e:es)) rs    | or [isFi x|x<-e:es]         = norm (Fi [y| x<-e:es, y<-if isFi x then unF x else [x]]) rs
+>                           | rd(e:es)/=e:es              = (Fi (rd (e:es)), ["x/\\x = x"], "<=>")
+>                           | null es                     = norm e []
+>                           | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
+>                           | e==Fu []                    = (Fu [], ["inconsistency"], "<=>")
+> -- this is unreachable    | e==Fi []                    = (Fi es, ["x/\\V = x"], "<=>")
+>                           | or[x==Fu []|x<-es]          = (Fu [], ["x/\\V- = V-"], "<=>")
+>                           | isFu e && not (null absor0) = let f=head absor0 in (Fi es, ["absorb "++showADL e++" because of "++showADL f], "<=>")
+>                           | isFu e && not (null absor1) = let (ts,f)=head absor1 in (Fi (ts++es), ["absorb "++showADL f], "<=>")
+>                           | not simpl && isFu e && dnf  = (distribute Fi Fu isFi isFu (Fi (e:es)), ["distribute \\/ over /\\"], "<=>")
+>                           | otherwise                   = (if isFi f then Fi (t:unF f) else Fi [t,f], steps++steps', fEqu [equ,equ'])
+>                           where (t,steps, equ)  = norm e []
+>                                 (f,steps',equ') = norm (Fi es) (e:rs)
+>                                 incons = [x|x<-es,x==notCp e]
+>                                 absor0 = [t| t<-unF e, f<-es++rs, t==f]
+>                                 absor1 = [(if length rest<=1 then rest else [Fu rest] , t)| t<-unF e, f<-es++rs, notCp t==f, rest<-[[x|x<-unF e,x/=t]]]
+>    norm (Fu [e]) rs       = norm e []
+>    norm (Fu (e:es)) rs    | or [isFu x|x<-e:es]         = norm (Fu [y| x<-e:es, y<-if isFu x then unF x else [x]]) rs
+>                           | rd(e:es)/=e:es              = (Fu (rd (e:es)), ["x\\/x = x"], "<=>")
+>                           | null es                     = norm e []
+>                           | not (null compl)            = (Fi [], [showADL (notCp (head compl))++"\\/"++showADL (head compl)++" = V"], "<=>")
+>                           | e==Fi []                    = (Fi [], ["tautology"], "<=>")
+> -- this is unreachable    | e==Fu []                    = (Fu es, ["x\\/V- = x"], "<=>")
+>                           | or[x==Fi []|x<-es]          = (Fi [], ["x\\/V = V"], "<=>")
+>                           | isFi e && not (null absor0) = let f=head absor0 in (Fu es, ["absorb "++showADL e++" because of "++showADL f++" ((x/\\y)\\/y = y))"], "<=>")
+>                           | isFi e && not (null absor1) = let (ts,f)=head absor1 in (Fu (ts++es), ["absorb "++showADL f++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
+>                           | not simpl && isFi e && not dnf = (distribute Fu Fi isFu isFi (Fu (e:es)), ["distribute /\\ over \\/"], "<=>")
+>                           | otherwise                   = (if isFu f then Fu (t:unF f) else Fu [t,f], steps++steps', fEqu [equ,equ'])
+>                           where (t,steps, equ)  = norm e []
+>                                 (f,steps',equ') = norm (Fu es) (e:rs)
+>                                 compl  = [x|x<-es,x==notCp e]
+>                                 absor0 = [t| t<-unF e, f<-es++rs, t==f]
+>                                 absor1 = [(if length rest<=1 then rest else [Fi rest] , t)| t<-unF e, f<-es++rs, notCp t==f, rest<-[[x|x<-unF e,x/=t]]]
+>    norm x           rs    = (x,[],"<=>")
 
 Fu [Fi [x,y],z]
 Fu [Fi [x],z]    = Fu [x,z]

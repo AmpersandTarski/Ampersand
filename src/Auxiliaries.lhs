@@ -1,7 +1,7 @@
 > module Auxiliaries 
 > (  adlVersion
 >  , encode, decode
->  , unCap
+>  , unCap, upCap
 >  , fst3, snd3, thd3
 >  , chain
 >  , rd
@@ -19,14 +19,16 @@
 >  , sort'
 >  , enc
 >  , sord'
+>  , elem'
 >  , mumble
 >  , fixSpaces
+>  , transpose
 > )
 > where
 >  import Char (isAlpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
 >  import CommonClasses (Collection(isc,uni,(>-)))
 
->  adlVersion = "ADL vs. 0.8.08"
+>  adlVersion = "ADL vs. 0.8.09"
 >  encode :: String -> Int
 >  encode  = enc.reverse
 >   where enc "" = 0
@@ -36,6 +38,7 @@
 >  decode n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else decode (n `div` 10)++[intToDigit (n `rem` 10)]
 
 >  unCap [] = [] ; unCap (h:t) = toLower h:t
+>  upCap [] = [] ; upCap (h:t) = toUpper h:t
 
 >  fst3 (a,b,c) = a
 >  snd3 (a,b,c) = b
@@ -135,6 +138,9 @@ Oppassen met sord', want er geldt niet  (voor alle f: sord' f = sort' f.rd)   !!
 >  sord' f [] = []
 >  sord' f (x:xs) = sord' f [e|e<-xs, f e<f x] ++ [x] ++ sord' f [e|e<-xs, f e>f x]
 
+>  elem' :: (a -> a -> Bool) -> a -> [a] -> Bool
+>  elem' eq e xs = not (null [x|x<-xs, eq e x])
+
 >  enc :: Bool -> String -> String
 >  enc upper (c:cs) | not (isAlphaNum c) = '_': htmlEnc c ++ enc upper cs
 >                   | isUpper c==upper   = c: enc upper cs
@@ -221,9 +227,6 @@ Spaties
   eqCls f [] = []
   eqCls f (x:xs) = eqCls f [e|e<-xs, f x<f e] ++ [x:[e|e<-xs, f x==f e]] ++ eqCls f [e|e<-xs, f x>f e]
 
-  elem' :: (a -> a -> Bool) -> a -> [a] -> Bool
-  elem' eq e xs = not (null [x|x<-xs, eq e x])
-
   fst3 :: ( a, b, c) -> a
   fst3 (a,b,c) = a
   snd3 :: ( a, b, c) -> b
@@ -257,9 +260,9 @@ Permutaties
   perms [] = [[]]
   perms (x:xs) = [ take i ps++[x]++drop i ps | i<-[0..length xs], ps<-perms xs ]
 
-  transpose :: [[e]] -> [[e]]
-  transpose (xs:yss) = [x:ys |x<-xs | ys<-transpose yss]
-  transpose []       = [[]|i<-[0..]]
+>  transpose :: [[e]] -> [[e]]
+>  transpose (xs:yss) = [x:ys |x<-xs | ys<-transpose yss]
+>  transpose []       = [[]|i<-[0..]]
 
 
 Omzetting van case sensitive naar case insensitive

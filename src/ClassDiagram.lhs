@@ -15,7 +15,7 @@
 >             , flp, multiplicities, isa, isFunction, isFlpFunction
 >             , Morphism(Mph)
 >             , Prop(Sur,Inj)
->             , posNone, cpu, isSgnl, mors, sign
+>             , posNone, cpu, isSignal, mors, sign
 >             )
 >  import HtmlFilenames (fnContext)
 >  import Graphic 
@@ -31,7 +31,7 @@
 >           -- = "dot"   -- vertical layout (default)
 >      rs      = rules context
 >      context = head ([c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      shR r   = showADL r
 >      fnm     = fnContext context++"_CD"
 
@@ -146,8 +146,8 @@
 >  -- obsolete:     ++ [     Mph (name s) posNone [] (source s,target s) True s | s<-scs, isProperty s]
 >                   
 >      comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]  -- all computed relations
->      sps = [d|d<-declarations pat, not (isSgnl d)]
->      scs = [d|d<-declarations context, not (isSgnl d)]
+>      sps = [d|d<-declarations pat, not (isSignal d)]
+>      scs = [d|d<-declarations context, not (isSignal d)]
 >      ms = mors (rules context)
 >      used :: [Concept]
 >      used = rd (concs ms ++                                                                   -- involved in aggregations

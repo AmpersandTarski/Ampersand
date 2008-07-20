@@ -17,26 +17,26 @@
 >     , "require_once \""++filename++".php\";"
 >     , ""
 >     , "// DB_titles is used for the entity headers with keys"
->     , if null entities then "$DB_titles   = Array();" else
+>     , if null (objects context) then "$DB_titles   = Array();" else
 >       "$DB_titles = Array\n  "++
 >       "    ( "++chain "\n      , " [ "\""++phpConcept context c++"\"\n        => Array ( "++chain "\n                 , "
->                                      (if c `elem` [k| (k,lbl,ms)<-keys context]
->                                       then [ "\"label\"=>"++phpShow (labelname (nm,lbl,ks))++", \"titles\"=>Array('"++
->                                              chain "','" [phpMorName context k| k<-ks++[a|(a,_)<-as,not (a `elem` ks)]]++"')"
->                                            |(nm,lbl,ks)<-[(k,lbl,ms)| (k,lbl,ms)<-keys context, k==c]]
->                                       else ["\"label\"=>"++phpShow "Unique ID"++
->                                             ", \"titles\"=>Array('"++phpConcept context c++"', '"++chain "', '" [phpMorName context a|(a,_)<-as]++"')"])++")"
->                                    | (c,as)<-entities]
+>                                      (if null (keys o)
+>                                       then ["\"label\"=>"++phpShow "Unique ID"++
+>                                             ", \"titles\"=>Array('"++phpConcept context c++"', '"++chain "', '" [phpMorName context a|a<-ats]++"')"])++")"
+>                                       else [ "\"label\"=>"++phpShow (name key)++", \"titles\"=>Array('"++
+>                                              chain "','" [phpMorName context k| k<-ks] ++"')"
+>                                            | (nm,lbl,ks)<-keys o]
+>                                    | o@(Obj nm pos c ats)<-objects ctx]
 >                                    ++"\n      );"
->     , if null entities then "$DB_entities = Array();" else "\n  "++
+>     , if null (objects context) then "$DB_entities = Array();" else "\n  "++
 >       "$DB_entities= Array\n     ( "++chain "\n     , "
 >       [ "Array\n        ( 'Name'=>"++phpShow (name c)++
 >                            "\n        , 'ID'=>'"++phpConcept context c++
 >                           "'\n        , 'Attr'=>Array('"++phpConcept context c++"'=>'"++{-addslashes-} (name c)++"','"++
->                           chain "','" [ phpMorName context a++"'=>'"++{-addslashes-}(name (target a)) | (a,_)<-as]++"')"++
+>                           chain "','" [ phpMorName context a++"'=>'"++{-addslashes-}(name (target a)) | a<-ats]++"')"++
 >                           "\n        , 'Disabled'=>Array('"++phpConcept context c++"'=>'1','"++
->                           chain "','" [ phpMorName context a++"'=>'"++(if declaration a `elem` comp then "1"  else "0") | (a,_)<-as]++"')\n        )"
->       | (c,as)<-entities ]++"\n     );"
+>                           chain "','" [ phpMorName context a++"'=>'"++(if declaration a `elem` comp then "1"  else "0") | a<-ats]++"')\n        )"
+>       | o@(Obj nm pos c ats)<-objects ctx ]++"\n     );"
 >     , ""
 >     , "$DB_concepts = Array( "++chain "\n                      , "
 >       ([ "'"++phpConcept context c++"'=>"++phpShow (name c)| c<-concs context ]++
@@ -46,10 +46,10 @@
 >        ])
 >     , "                    );"
 >     , ""
->     , if null (filter (not.isSgnl) relations) then "$DB_nonEntRels=Array();" else
+>     , if null (filter (not.isSignal) relations) then "$DB_nonEntRels=Array();" else
 >       "$DB_nonEntRels=Array( "++chain "\n                      , "
 >       [ "Array('ID'=>'"++phpRelName context r++"','Name'=>"++phpShow (name r)++",'Src'=>'"++phpRelSrc context r++"','Trg'=>'"++phpRelTrg context r++"')"
->       | r<-relations, not (isSgnl r) ]++"\n                      );"
+>       | r<-relations, not (isSignal r) ]++"\n                      );"
 >     , ""
 >     , if null (signals context) then "$DB_rules=Array();" else
 >       "$DB_rules=Array( "++chain "\n                 , "
@@ -57,7 +57,7 @@
 >               "','Name'=>'"++addslashes (name signal)++
 >               "','Src'=>'"++phpRelSrc context r++
 >               "','Trg'=>'"++phpRelTrg context r++
->               "','Fix'=>Array ('"++chain "','" ([ {- if name c=="Opdracht" then error ("(module RelBinGen) "++chain "\n" ([showHS a++"\n  "++showHS (declaration a)|(a,_)<-as])) else -} phpConcept context c | (c,as)<-entities, not (null (mors r `isc` mors [a|(a,_)<-as]))]++
+>               "','Fix'=>Array ('"++chain "','" ([ phpConcept context c | o@(Obj nm pos c ats)<-objects ctx, not (null (mors r `isc` mors ats))]++
 >                                                 [ phpRelName context s | s<-relations,     s `elem` [declaration m| m<-mors r]])++
 >               "'),'Desc'=>"++phpShow (if null (explain r) then "Artificial explanation: "++(lang English .assemble.normRule) r else explain r)++")"
 >       | r@(Sg p rule expla sgn nr pn signal)<-signals context]++"\n                 );"
@@ -155,7 +155,7 @@
 >     , " switch($ent){"
 >     , "   "++chain "\n     "
 >       [ "case '"++phpConcept context c++"':\n       return "++
->         chain "&&" [ "isOkRelation('"++phpMorName context a++"')" | (a,_)<-as]++";"| (c,as)<-entities ]
+>         chain "&&" [ "isOkRelation('"++phpMorName context a++"')" | a<-ats]++";"| o@(Obj nm pos c ats)<-objects ctx ]
 >     , " }"
 >     , " return DB_debug('Entity '.$ent.' unknown',4);"
 >     , "}"
@@ -190,7 +190,7 @@
 >     , "  switch($ent){"
 >     , chain "\n  "
 >       [ "    case '"++phpConcept context c++"':\n        "++
->         if or [Sur `elem` multiplicities a| (a,_)<-as]
+>         if or [Sur `elem` multiplicities a| a<-ats]
 >         then "return DB_doquer('"++
 >              chain (phpIndent 26++"UNION"++phpIndent 26)
 >                [ "SELECT NULL AS "++sqlConcept context c++", "++
@@ -198,17 +198,17 @@
 >                               then sqlConcept context (target a')++"."++sqlAttConcept context (target a')
 >                               else "NULL"
 >                              )++" AS "++sqlRelName context s
->                             |(a',_)<-as, s<-declarations a']++
+>                             | a'<-ats, s<-declarations a']++
 >                  phpIndent 26++
 >                  "FROM "++sqlConcept context (target a)++
 >                  phpIndent 26++
 >                  "WHERE NOT EXISTS (SELECT * FROM "++sqlRelName context t++
 >                                   " WHERE "++sqlConcept context (target a)++"."++sqlAttConcept context (target a)
 >                                            ++"="++sqlRelName context t++"."++sqlMorTrg context a++")"
->                | (a,_)<-as, t<-declarations a, Sur `elem` multiplicities a]++
+>                | a<-ats, t<-declarations a, Sur `elem` multiplicities a]++
 >              "');"
 >         else "return Array();"
->       | (c,as)<-entities]
+>       | o@(Obj nm pos c ats)<-objects ctx]
 >     , "  }"
 >     , "  return Array();"
 >     , "}"
@@ -219,14 +219,14 @@
 >       [ "case '"++phpConcept context c++"':\n        return quoteSplitArray(DB_doquer('SELECT "++
 >         chain (","++phpIndent 49) 
 >               ["group_concat( DISTINCT quote( "++sqlMorName context a++"."++sqlMorTrg context a++" ) ) AS "++sqlMorName context a
->               | (a,_)<-as ]++
+>               | a<-ats ]++
 >         ","++phpIndent 49++"group_concat( DISTINCT quote( "++sqlConcept context c++"."++sqlAttConcept context c++" ) ) AS "++sqlConcept context c++phpIndent 42++
 >         chain (phpIndent 47++"LEFT JOIN ")
 >               (["FROM "++sqlConcept context c]++
 >                [ sqlRelName context a++" ON "++sqlRelName context a++"."++sqlMorSrc context a++"="++sqlConcept context c++"."++sqlAttConcept context c
->                  | (a,_)<-as ])++
+>                  | a<-ats ])++
 >         phpIndent 42++"GROUP BY "++sqlConcept context c++"."++sqlAttConcept context c++" '.$sort));"
->       | (c,as)<-entities ]
+>       | o@(Obj nm pos c ats)<-objects ctx ]
 >     , "  }"
 >     , "  return DB_debug('Entity '.$ent.' unknown',4);"
 >     , "}  "
@@ -272,8 +272,6 @@
 >     , (let xs = [ "case '"++sqlRuleName context r++"':"++
 >                 "\n          //  "++showADL r++", so compute"++
 >                 "\n          //  "++showADL r'++
->--                 "\n        return DB_doquer('"++selectExpr context 10 (phpRelSrc context signal) (phpRelTrg context signal) signal ++" '.$sort);"
->--  should be equivalent to:
 >                 (if isFalse r' then "\n        return(Array());" else 
 >                  "\n        return DB_doquer('"++selectExpr context 10 (phpRelSrc context r) (phpRelTrg context r) r' ++" '.$sort);")
 >                 | r@(Sg p rule expla sgn nr pn signal)<-signals context
@@ -327,11 +325,11 @@ Obsolete?
          [ "function DB_get"++phpConcept context c++"($atom){"
          , "  return Array( "++chain "\n                , "
            [ "\""++phpRelName context s++"\"=>DB_doquer(\"SELECT "++sqlRelName context s++"."++sqlRelSrc a++" FROM "++sqlRelName context s++" WHERE "++sqlRelName context s++"."++sqlRelTrg a++" = '\".addslashes($atom).\"'\")"
-           | (a,_)<-as, s<-declarations a]
+           | a<-ats, s<-declarations a]
          , "              );"
          , "}"
          ]
-       | (c,as)<-entities ]
+       | o@(Obj nm pos c ats)<-objects ctx ]
      , ""
 
 >     , "// checks whether multiplicities are OK...."
@@ -354,24 +352,32 @@ Obsolete?
 >       labelname (nm,"",k:ks) = if length labels <=1
 >                                then name k
 >                                else name k++"["++name (target k)++"]"
->                                where labels = [name a++"["++name (target a)++"]"|(c,as)<-entities, nm==c, (a,_)<-as, name a==name k]
+>                                where labels = [name a++"["++name (target a)++"]"|o@(Obj nm pos c ats)<-objects ctx, nm==c, a<-ats, name a==name k]
 >       labelname (nm,lbl,ks)  = lbl
 >       comp :: [Declaration]      -- all computed relations
 >       comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]
 
 
 >  phpCodeRelCreate (context,entities,relations,hcs) r
->   = (chain "\n".filter (not.null))
+>   = (chain "\n".filter (not.null)) (
 >     [ "        if(isset($attrs['"++phpRelSrc context r++"']) && isset($attrs['"++phpRelTrg context r++"'])) {"
 >     , insConcepts context hcs 8 (source r) (sqlRelSrc r) [r]
 >     , insConcepts context hcs 8 (target r) (sqlRelTrg r) [r]
 >     , "        DB_doquer('INSERT IGNORE INTO "++sqlRelName context r++" ("++sqlRelSrc r++","++sqlRelTrg r++")"++phpIndent 19++"VALUES (\\''.addslashes($attrs['"++sqlRelSrc r++"']).'\\', \\''.addslashes($attrs['"++sqlRelTrg r++"']).'\\')');"
->     , concat [ "\n     // "++informalRule hc++(if isSgnl (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
->                phpCodeIncrHornClauseRel "$attrs" 8 context r hc
+>     ] ++ (if null triggers then ["        }"] else
+>            [ "        $someHornclausesActive=True;"
+>            , "        while($someHornclausesActive){"
+>            , "             $someHornclausesActive=False;"
+>            ] ++       triggers ++
+>            [ "        }}" ] )
+>     )
+>     where triggers
+>            = [ "          // "++informalRule hc++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>                phpCodeIncrHornClauseRel "$attrs" 13 context r hc++
+>                "\n             $someHornclausesActive=$someHornclausesActive || DB_affected();"
 >              | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "INSERT INTO" [r]
->              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
+>              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >              ]
->     , "        }" ]
 
 >  phpCodeRelUpdate (context,entities,relations,hcs) r
 >   = (chain "\n".filter (not.null)) (
@@ -395,11 +401,11 @@ Obsolete?
 >         "\n         if(DB_affected()){"++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');}"
 >       | e<-closs]
 >     , "              }" ]) ++
->     [ "     // "++informalRule ([("UPDATE",r)], e, bOp, toExpr, frExpr, rule)++(if isSgnl (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>     [ "     // "++informalRule ([("UPDATE",r)], e, bOp, toExpr, frExpr, rule)++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >       phpCodeIncrHornClauseRel attrs 15 context r hc
 >     | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "UPDATE" [r]
 >     , attrs<-[if fst (head fOps)=="DELETE FROM" then "$attrsOld" else "$attrs"]
->     , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
+>     , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >     ] ++ 
 >     [ "           if($deleted){"
 >     , dbDelConcept context 11 (source r) ("$attrsOld['"++phpRelSrc context r++"']")
@@ -418,41 +424,50 @@ Obsolete?
 >     , "           if(DB_affected()){"
 >     ] ++ (let closs=[e| e<-closE context, r `elem` declarations e] in
 >           if null closs then [] else
->     [ chain "\n"
->       [ "            DB_doquer(\"DELETE FROM "++sqlClosName context e++" WHERE True\");"++
->         "\n            DB_doquer(\"INSERT IGNORE INTO "++sqlClosName context e++" "++selectNormFiExpr "$attrs" context 14 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
->         "\n            if(DB_affected()){"++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');}"
->       | e<-closs ]]) ++
->     [ "           // "++informalRule ([("DELETE FROM",r)], e, bOp, toExpr, frExpr, rule)++(if isSgnl (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
->       phpCodeIncrHornClauseRel "$attrs" 14 context r hc
->     | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "DELETE FROM" [r]
->     , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
->     ] ++ 
+>           [ chain "\n"
+>             [ "            DB_doquer(\"DELETE FROM "++sqlClosName context e++" WHERE True\");"++
+>               "\n            DB_doquer(\"INSERT IGNORE INTO "++sqlClosName context e++" "++selectNormFiExpr "$attrs" context 14 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
+>               "\n            if(DB_affected()){"++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');}"
+>             | e<-closs ]]) ++
+>     (if null triggers then [] else
+>       [ "              $someHornclausesActive=True;"
+>       , "              while($someHornclausesActive){"
+>       , "                 $someHornclausesActive=False;"
+>       ] ++ triggers ++ 
+>       [ "              };" ])++
 >     [ dbDelConcept context 14 (source r) ("$attrs['"++phpRelSrc context r++"']")
 >     , dbDelConcept context 14 (target r) ("$attrs['"++phpRelTrg context r++"']")
 >     , "           }"
 >     , "        }" ] )
+>     where triggers
+>            = [ "              // "++informalRule ([("DELETE FROM",r)], e, bOp, toExpr, frExpr, rule)++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>                phpCodeIncrHornClauseRel "$attrs" 17 context r hc++
+>                "\n              $someHornclausesActive=$someHornclausesActive || DB_affected();"
+>              | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "DELETE FROM" [r]
+>              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>              ]
 
 >  phpCodeEntCreate (context,entities,relations,hcs) (c,as)
 >   = (chain "\n".filter (not.null))
 >     [ "        if(!isset($attrs['"++phpConcept context c++"'])) $attrs['"++phpConcept context c++"']=rand(); // random.."
 >-- insert c into the concept relation
->     , insConcepts context hcs 8 c (phpConcept context c) [s| (a,_)<-as, s<-declarations a]
+>     , insConcepts context hcs 8 c (phpConcept context c) [s| a<-ats, s<-declarations a]
 >-- insert attribute values
 >     , chain "\n"
 >       [ chain "\n"
 >         [ "        if(isset($attrs['"++phpMorName context a++"'])){"
 >         , "           DB_doquer('INSERT IGNORE INTO "++sqlMorName context a++"("++sqlMorSrc context a++","++sqlMorTrg context a++") VALUES (\\''.addslashes($attrs['"++phpConcept context c++"']).'\\',\\''.addslashes($attrs['"++phpMorName context a++"']).'\\')');"
->         , insConcepts context hcs 11 (target a) (phpMorName context a) [s| (a,_)<-as, s<-declarations a]
+>         , insConcepts context hcs 11 (target a) (phpMorName context a) [s| a<-ats, s<-declarations a]
 >         , "        }" ]
->       | (a,_)<-as, s<-declarations a]++
+>       | a<-ats, s<-declarations a]++
 >-- insert derived values
->       phpCodeIncrHornClauseEnt 8 "$attrs" context (c,as) []
->        [ hc
->        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "INSERT INTO" . map declaration . map fst) as
->        , suitable toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
->        ]
+>       phpCodeIncrHornClauseEnt 8 "$attrs" context (c,as) [] hcs'
 >     ]
+>    where
+>     hcs' = [ hc
+>            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "INSERT INTO" (Isn c c:map (declaration.fst) as)
+>            , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>            ]
 >  suitable (F ts) = True
 >  suitable e      = oneMorphism e
 
@@ -473,13 +488,13 @@ It is compared to the desired state,
 >               (["FROM "++sqlConcept context c]++
 >                [ sqlRelName context s++" ON "++
 >                  sqlRelName context s++"."++sqlRelSrc s++"="++sqlConcept context c++"."++sqlAttConcept context c
->                | (a,_)<-as, s<-declarations a {-, not (s `elem` declarations dms)-}]
+>                | a<-ats, s<-declarations a {-, not (s `elem` declarations dms)-}]
 >               )++
 >         phpIndent (i+15)++"WHERE "++sqlConcept context c++"."++sqlAttConcept context c++"=\\''.addslashes($attrs['"++phpConcept context c++"']).'\\''));"
 >     , phpCodeIncrHornClauseEnt 8 "$qa[0]" context (c,as) []
 >        [ hc
 >        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "DELETE FROM" . map declaration . map fst) as
->        , suitable toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
+>        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >        , source toExpr/=c && target toExpr/=c
 >        ]
 >     , chain "\n"
@@ -493,16 +508,16 @@ It is compared to the desired state,
 >          [ chain "\n"
 >            [ [' '| x<-[1..i+2]]++"if(isset($attrs['"++phpMorName context a++"'])){"
 >            , [' '| x<-[1..i+2]]++"   DB_doquer('INSERT IGNORE INTO "++sqlMorName context a++"("++sqlMorSrc context a++","++sqlMorTrg context a++") VALUES (\\''.addslashes($attrs['"++phpConcept context c++"']).'\\',\\''.addslashes($attrs['"++phpMorName context a++"']).'\\')');"
->            , insConcepts context hcs (i+5) (target a) (phpMorName context a) [s| (a,_)<-as, s<-declarations a]
+>            , insConcepts context hcs (i+5) (target a) (phpMorName context a) [s| a<-ats, s<-declarations a]
 >            , [' '| x<-[1..i+2]]++"}" ]
->          | (a,_)<-as, [s]==declarations a]++
+>          | a<-ats, [s]==declarations a]++
 >         " }"
 >       | (s,sname,src,trg,srcAtt,trgAtt)<-relStrings, not (s `elem` comp)]++
 >-- insert derived values
 >       phpCodeUpdHornClauseEnt 8 context (c,as) []
 >        [ (fOps, e, bOp, toExpr, frExpr, rule)
 >        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "UPDATE" . map declaration . map fst) as
->        , suitable toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
+>        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >        ]
 >     ] where relStrings
 >              = [if target s==source s
@@ -510,7 +525,7 @@ It is compared to the desired state,
 >                 else if source s==c
 >                      then (s,sqlRelName context s,source s,target s,sqlRelSrc s,sqlRelTrg s)
 >                      else (s,sqlRelName context s,target s,source s,sqlRelTrg s,sqlRelSrc s)
->                | (a,_)<-as, s<-declarations a {-, not (s `elem` declarations dms)-}]
+>                | a<-ats, s<-declarations a {-, not (s `elem` declarations dms)-}]
 >             dms = []::[Morphism] -- delMors context c
 >             i=8
 >             comp :: [Declaration]      -- all computed relations
@@ -553,7 +568,7 @@ It is compared to the desired state,
 >     , phpCodeIncrHornClauseEnt 8 "$qa[0]" context (c,as) []
 >        [ hc
 >        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "DELETE FROM" . map declaration . map fst) as
->        , suitable toExpr, null [e| e<-mors frExpr, isSgnl (declaration e)]
+>        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >        , source toExpr/=c && target toExpr/=c
 >        ]
 >     , if null dms then "" else phpIndent i++
@@ -587,17 +602,17 @@ It is compared to the desired state,
 >     , "    DB_debug('Relation '.$rel.' unknown',4);"
 >     , "    }"
 >     ]
->     where rels= [r| r<-relations, not (isSgnl r)]
+>     where rels= [r| r<-relations, not (isSignal r)]
 
 >  phpCodeEnts f (context,entities,relations,hcs)
->   = if null entities then "  DB_debug('Entity '.$ent.' unknown',4);" else
+>   = if null (objects context) then "  DB_debug('Entity '.$ent.' unknown',4);" else
 >     chain "\n"
 >     [ "  switch($ent){"
 >     , "      "++chain "\n      "
 >       [ "case '"++phpConcept context c++"':\n"++
 >         f (context,entities,relations,hcs) (c,as)++
 >         "\n        break;"
->       | (c,as)<-entities ]
+>       | o@(Obj nm pos c ats)<-objects ctx ]
 >     , "    DB_debug('Entity '.$ent.' unknown',4);"
 >     , "    }"
 >     ]
@@ -606,7 +621,7 @@ It is compared to the desired state,
 >  phpCodeIncrHornClauseEnt :: Int -> String -> Context -> (Concept,[(Morphism,r)]) -> [Morphism] -> [ComputeRule] -> String
 >  phpCodeIncrHornClauseEnt i var context (c,as) filled [] = ""
 >  phpCodeIncrHornClauseEnt i var context (c,as) filled (hc@(fOps, e, "INSERT INTO", toExpr, frExpr, rule): rest)
->   = ( phpIndent (i-3)++"// "++informalRule {-(declarations (map fst as))-} hc++(if isSgnl (declaration m) then " (SIGNAL)" else "")++
+>   = ( phpIndent (i-3)++"// "++informalRule {-(declarations (map fst as))-} hc++(if isSignal (declaration m) then " (SIGNAL)" else "")++
 >       phpIndent (i-3)++"// ("++showADL rule++".  "++explain rule++")"++
 >     (if pNoDebug then "" else
 >      phpIndent (i-3)++"// inside phpCodeIncrHornClauseEnt i {- var: -} "++show var++" context ("++name c++",as) {- filled: -} "++show filled++
@@ -614,7 +629,7 @@ It is compared to the desired state,
 >     )++
 >     ( if null issetsM then "" else phpIndent i++ "if("++chain " && " (map (phpIsset var context) issetsM)++")" )++
 >       if oneMorphism toExpr
->       then phpIndent i++"/* case 1 */ DB_doquer("++
+>       then phpIndent i++"/* case 1 */"++phpIndent i++"DB_doquer("++
 >            sqlCodeComputeRule "$attrs" (i+11) context [] hc++");"
 >       else (if null sub || null issetsM then "" else "{ /* 2 */")++
 >            phpIndent (i+3)++"$v=array(); /* case 1b */"++
@@ -643,12 +658,11 @@ It is compared to the desired state,
 >           flipper ms = ms `uni` map flp ms
 >           sub = (attributes `isc` flipper (mors frExpr))>-filled
 >  phpCodeIncrHornClauseEnt i var context (c,as) filled (hc@(fOps, e, "DELETE FROM", toExpr, frExpr, rule):rest)
->   = "\n     // "++informalRule {-(declarations (map fst as))-} hc++(if null (morlist toExpr) then "null (morlist toExpr)" else if isSgnl (declaration m) then " (SIGNAL)" else "")++
+>   = "\n     // "++informalRule {-(declarations (map fst as))-} hc++(if null (morlist toExpr) then "null (morlist toExpr)" else if isSignal (declaration m) then " (SIGNAL)" else "")++
 >     phpIndent i++
 >     (if oneMorphism toExpr
 >      then phpIndent i++"/* case 2 */ DB_doquer("++
->           sqlCodeComputeRule "$attrs" (i+11) context []
->                              hc++");"
+>           sqlCodeComputeRule "$attrs" (i+11) context [] hc++");"
 >       else "DB_doquer('not yet implemented: DELETE FROM "++showADL toExpr)++
 >     phpCodeIncrHornClauseEnt i var context (c,as) filled rest
 >     where issetsM = sub >- flipper (mors toExpr)
@@ -686,7 +700,7 @@ In dit voorbeeld wordt T8_van netjes incrementeel geupdated, maar vervolgens geb
 >  phpCodeUpdHornClauseEnt :: Int -> Context -> (Concept,[(Morphism,r)]) -> [Morphism] -> [ComputeRule] -> String
 >  phpCodeUpdHornClauseEnt i context (c,as) filled [] = ""
 >  phpCodeUpdHornClauseEnt i context (c,as) filled ((hc@(fOps, e, bOp, toExpr, frExpr, rule)): rest)
->   = ( phpIndent (i-3)++"// "++informalRule {-(declarations (map fst as))-} hc++(if isSgnl (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>   = ( phpIndent (i-3)++"// "++informalRule {-(declarations (map fst as))-} hc++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >       phpIndent (i-3)++"// ("++showADL rule++".  "++explain rule++")"++
 >       (if pNoDebug then "" else
 >        phpIndent (i-3)++"// inside phpCodeUpdHornClauseEnt i context ("++name c++",as) {- filled: -} "++show filled++
@@ -700,8 +714,8 @@ In dit voorbeeld wordt T8_van netjes incrementeel geupdated, maar vervolgens geb
 >       ( if oneMorphism toExpr
 >         then phpIndent ind++"/* case 3 */ DB_doquer("++
 >              sqlCodeComputeRule "$attrs" (ind+11) context
->                                 []
->                                 hc++");"
+>                                    []
+>                                    hc++");"
 >         else phpIndent ind++"$v=array(); /* case 3b */"++
 >              phpIndent ind++"$v=DB_doquer('"++selectExpr context (17+ind) (sqlExprSrc frExpr) (sqlExprTrg frExpr) (doSubsExpr context "$attrs" [(a,sqlConcept context c,sqlMorName context a) |a<-issetsM] frExpr)
 >                                                           ++"');"++

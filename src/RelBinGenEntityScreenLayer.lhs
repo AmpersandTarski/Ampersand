@@ -20,14 +20,14 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >     , ""
 >     , "// DB_keys is used for the entity headers with keys"
 >     , "$DB_keys = Array"
->     , "    ( "++chain "\n      , " [ "\""++phpConcept context c'++"\"\n        => Array ( "++chain "\n                 , "
->                                      (if c' `elem` [k| (k,lbl,ms)<-keys context]
+>     , "    ( "++chain "\n      , " [ "\""++phpConcept context c++"\"\n        => Array ( "++chain "\n                 , "
+>                                      (if c `elem` [k| (k,lbl,ms)<-keys context]
 >                                       then [ "Array(\"label\"=>"++phpShow (labelname (nm,lbl,ks))++", \"Attr\"=>Array('"++
 >                                              chain "', '" [phpMorName context k| k<-ks]++"'))"
 >                                            |(nm,lbl,ks)<-[(k,lbl,ks)| (k,lbl,ks)<-keys context, k==c']]
 >                                       else ["Array(\"label\"=>"++phpShow "Unique ID"++
->                                             ", 'Attr'=>Array('"++phpConcept context c'++"'))"])++")"
->                                    | (c',as)<-entities++[(c,[])| c<-concs context, not (c `elem` map fst entities)]
+>                                             ", 'Attr'=>Array('"++phpConcept context c++"'))"])++")"
+>                                    | o@(Obj nm pos c ats)<-objects ctx++[Obj (name c') posNone c' []| c'<-concs context, not (c' `elem` [e|Obj nm pos e ats<-objects ctx])]
 >                                    ]
 >                                    ++"\n      );"
 >     , ""
@@ -40,9 +40,9 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >                    then "'"++phpConcept context e++"' => array('Disp'=>'I', 'Type'=>'"++phpConcept context e++"')"
 >                    else chain "\n           , "
 >                          [ "'"++phpMorName context a++"' => array('Disp'=>'"++name (target a)++"', 'Type'=>'"++phpConcept context (target a)++"')"
->                          | (a,_)<-as])++
+>                          | a<-ats])++
 >                   "\n           ) "
->                 | (e,as)<-entities++[(c,[])|c<-concs context, not (c `elem` map fst entities)]]
+>                 | o@(Obj nm pos c ats)<-objects context++[(c,[])|c<-concs context, not (c `elem` map fst entities)]]
 >     , "    );"
 >     , ""
 >     , "$DB_entities= Array"++
@@ -72,7 +72,7 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >           then "        DB_doquer('INSERT IGNORE INTO "++sqlConcept context e++" (\\'"++sqlAttConcept context e++"\\') VALUES '.mergeForMysql($id,$new['"++sqlAttConcept context e++"']));"
 >           else chain "\n"
 >                 [ "        if(isset($new['"++phpMorName context a++"'])) DB_doquer('INSERT IGNORE INTO "++sqlMorName context a++" (\\'"++sqlMorSrc context a++"\\', \\'"++sqlMorTrg context a++"\\') VALUES '.mergeForMysql($id,$new['"++phpMorName context a++"']));"
->                 | (a,_)<-as] )++
+>                 | a<-ats] )++
 >         "\n        break;"
 >       | (e,as)<-entities++[(c,[])|c<-concs context, not (c `elem` map fst entities)]]
 >     , "      default: DB_debug('Concept '.$conc.' unknown',4);"
@@ -98,7 +98,7 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >           then "        DB_doquer('INSERT IGNORE INTO "++sqlConcept context e++" (\\'"++sqlAttConcept context e++"\\') VALUES '.mergeForMysql($id,$new['"++sqlAttConcept context e++"']));"
 >           else chain "\n"
 >                 [ "        if(isset($new['"++phpMorName context a++"'])) DB_doquer('INSERT IGNORE INTO "++sqlMorName context a++" (\\'"++sqlMorSrc context a++"\\', \\'"++sqlMorTrg context a++"\\') VALUES '.mergeForMysql($id,$new['"++phpMorName context a++"']));"
->                 | (a,_)<-as] )++
+>                 | a<-ats] )++
 >         "\n        break;"
 >       | (e,as)<-entities++[(c,[])|c<-concs context, not (c `elem` map fst entities)]]
 >     , "      default: DB_debug('Concept '.$conc.' unknown',4);"
@@ -119,7 +119,7 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >             "\n          if(isset($new['"++phpRelName context s++"'])) DB_doquer('INSERT IGNORE INTO "++phpRelName context s++" (\\'"++phpRelTrg context s++"\\', \\'"++phpRelSrc context s++"\\') VALUES '.mergeForMysql($id,$new['"++phpRelName context s++"']));"
 >            | s<-declarations context, target s==c])++
 >         "\n      break;"
->       | (c,as)<-entities ]
+>       | o@(Obj nm pos c ats)<-objects ctx ]
 >     , "        default:"
 >     , "        DB_debug('Entity '.$ent.' unknown',4);"
 >     , "    }"
@@ -138,7 +138,7 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >                                | s<-declarations context, target s==c]
 >                              )++
 >         "\n          );"
->       | (c,as)<-entities ]
+>       | o@(Obj nm pos c ats)<-objects ctx ]
 >     , "    }"
 >     , "    return DB_debug('Entity '.$ent.' unknown',4);"
 >     , "  }"
@@ -177,5 +177,5 @@ currently obsolete code: entityScreen layer (FILENAME.entscr.php) is not used fo
 >     labelname (nm,"",k:ks) = if length labels <=1
 >                              then name k
 >                              else name k++"["++name (target k)++"]"
->                              where labels = [name a++"["++name (target a)++"]"|(c,as)<-entities, nm==c, (a,_)<-as, name a==name k]
+>                              where labels = [name a++"["++name (target a)++"]"|o@(Obj nm pos c ats)<-objects ctx, nm==c, a<-ats, name a==name k]
 >     labelname (nm,lbl,ks)  = lbl

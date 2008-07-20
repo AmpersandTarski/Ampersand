@@ -1,7 +1,7 @@
->  module Fspec (zed,glossary,functionalSpecText,projectSpecText) where
+>  module Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints) where
 
->  import System
->  -- import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
+functionalSpecLaTeX,glossary,projectSpecText,archText,
+
 >  import Char
 >  import CommonClasses ( Identified(name)
 >                        ,Collection (isc,(>-),empty)  )
@@ -12,68 +12,10 @@
 >  import Calc
 >  import PredLogic
 >  import HtmlFilenames
->  import Graphic
 >  import ERmodel
->  import ClassDiagram
 
->  projectSpecText contexts contextname language
->   = putStrLn ("\nGenerating project plan for "++name context)                >>
->     writeFile (name context++".csv") (projectClassic context spec language)  >>
->     putStr ("\nMicrosoft Project file "++name context++".csv written... ")
->     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
->      spec = funcSpec context (erAnalysis context) language
->      (entities, relations, ruls) = erAnalysis context
-
->  functionalSpecText contexts contextname graphicstyle language
->   = putStrLn ("\nGenerating functional specification for "++name context) >>
->     putStr (funcSpecText context spec language)
->     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
->      spec = funcSpec context (erAnalysis context) language
->      (entities, relations, ruls) = erAnalysis context
-
->  zed contexts contextname graphicstyle language filename
->   = putStr ("\nGenerating functional specification for context "++name context++" in the current directory.\n") >>
->     graphics context (fnContext context) False context >>            -- generate abbreviated (full==False) class diagram
->     sequence_ [ graphics context (fnPattern context pat) True pat    -- generate fully fledge (full==True) class diagram
->               | pat<-patterns context] >>
->     lprint context language spec filename >>
->     putStr ("\nStatistics of "++name context++"\n") >>
->     putStr ("\n  nr. of classes:   "++show (length ents)++"\n") >>
->     putStr ("\n  nr. of relations: "++show (length rels)++"\n") >>
->     putStr ("\n  nr. of rules:     "++show (length ruls)++"\n") >>
->     putStr ("\n  nr. of services:  "++show (nServices spec)++"\n") >>
->     putStr ("\n  nr. of patterns:  "++show (nPatterns spec)++"\n")
->     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
->      spec = funcSpec context (ents,rels,ruls) language
->      (ents,rels,ruls) = erAnalysis context
->    -- the following is copied from Atlas.lhs. TODO: remove double code.
->      graphics context fnm full b
->       = cdSpecs context fnm full b >>
->         graphSpecs fnm b
->        where
->           cdSpecs context fnm full b
->            = writeFile (fnm++"_CD.dot") (cdDataModel context full "dot" b)      >>
->              putStrLn ("Class diagram "++fnm++"_CD.dot written... ")      >>
->              processCdDataModelFile  (fnm ++"_CD")
->           graphSpecs fnm b
->            = writeFile (fnm++".dot") (dotGraph context graphicstyle fnm b)         >>
->              putStrLn ("Graphics specification "++fnm++".dot written... ") >>
->              processDotgraphFile  fnm
-
->  glossary contexts contextname language
->   = putStr ("\nGenerating Glossary for "++name context++" in the current directory.") >>
->     lglossary language context
->     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
-
->  data Fspec = Fspc Pattern [Funit]
+>  data Fspec = Fspc Context [Fpat]
+>  data Fpat  = Pspc Pattern [Funit]
 >  data Funit = Uspc String Pattern
 >                    [(Concept,[(Morphism,[Rule])],FPA,[Morphism],[(Expression,Rule)])]
 >                    [ServiceSpec] -- services
@@ -84,21 +26,34 @@
 >                          [Rule]       -- Invariants
 >                          [String]     -- Preconditions
 >                          [String]     -- Postconditions
->  data ParamSpec   = Pspc String       -- name of the parameter
+>  data ParamSpec   = Aspc String       -- name of the parameter
 >                          String       -- type of the parameter
 >                   | Pbool
 
 >  class Statistics a where
 >   nServices :: a -> Int
 >   nPatterns :: a -> Int
->   nPatterns x = 0
+>   nFpoints  :: a -> Int
 >  instance Statistics Fspec where
->   nServices (Fspc p us) = nServices us
->   nPatterns (Fspc p us) = 1
+>   nServices (Fspc context ps) = nServices ps
+>   nPatterns (Fspc context ps) = nPatterns ps
+>   nFpoints  (Fspc context ps) = sum (map nFpoints ps)
+>  instance Statistics Fpat where
+>   nServices (Pspc p us) = nServices us
+>   nPatterns (Pspc p us) = 1
+>   nFpoints  (Pspc p us) = sum (map nFpoints us)
 >  instance Statistics a => Statistics [a] where
 >   nServices xs = sum (map nServices xs)
+>   nPatterns xs = sum (map nPatterns xs)
+>   nFpoints  xs = sum (map nFpoints xs)
 >  instance Statistics Funit where
 >   nServices (Uspc nm pat ents svs) = length svs
+>   nPatterns x = 0
+>   nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ fpa _ _ _ _ _<-specs]
+>  instance Statistics ServiceSpec where
+>   nServices x = 1
+>   nPatterns x = 0
+>   nFpoints (Sspc nm fpa input output rs pre post) = fPoints fpa
 
 bron van de FPA: www.nesma.nl
 
@@ -172,52 +127,39 @@ Te bepalen:
 >  nameAt a = firstCaps ((map toLower.name.target) a++"_"++name a)
 >  tt a = "{\\tt "++a++"}"
 >  nameAtt a = tt (nameAt a)
->  newEnt :: Context -> (Concept,[(Morphism,b)]) -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
->-- The first alternative is for concepts that are not entities.
->  newEnt context (c,as) [] rs
->   = Sspc (firstCaps ("new"++firstCaps (name c))) (IF Gemiddeld)
->          [ Pspc (map toLower (name c)) (name c)] [Pspc "obj" (handle context c)]
+>  newEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
+>  newEnt context o@(Obj nm pos c ats) rs
+>   = Sspc (firstCaps ("new"++firstCaps (name o))) (IF Gemiddeld)
+>          [ Aspc (varName (name a)) (handle context (target a)) | a<-ats]  -- input parameters
+>          [ Aspc "obj" (handle context c)]                                 -- results
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-rs
 >          , clause@(Fu terms)<-[lClause conj]
->          , not (null (map fst as `isc` mors [t| Cp t<-terms]))])
->--    Pre (example:) {Assume l=atom_left and r=atom_right}
->          (["\\hbox{\\tt "++map toLower (name c)++"}="++idNam (map toLower (name c))]++[tt (name a)++"="++idNam (nameAt a)|(a,_)<-as])
->--    Post (example:) {o in Pair and o left l and o right r}
->          (["{\\tt obj}="++idNam (map toLower (name c))]++
->           [tt ("obj."++name a)++"="++idNam (nameAt a)|(a,_)<-as])
->     where varName = uName (map (name.fst) as)
->  newEnt context (c,as) cs rs
->   = Sspc (firstCaps ("new"++firstCaps (name c))) (IF Gemiddeld) [ Pspc (varName (name a)) (handle context (target a)) | a<-cs] [Pspc "obj" (handle context c)]
->          (dressRules
->          [ (clause,rule)
->          | (conj,rule)<-rs
->          , clause@(Fu terms)<-[lClause conj]
->          , not (null (map fst as `isc` mors [t| Cp t<-terms]))])
->--    Pre (example:) {Assume l=atom_left and r=atom_right}
->          [ {- tt (varName (name a))++"="++idNam (nameAt a)|a<-cs -}] -- comment left behind in the code, just in case you need values for the parameters.
->--    Post (example:) {o in Pair and o left l and o right r}
->          ([tt ("obj."++name a)++"="++tt (varName (name a))|a<-cs])
->     where varName = uName (map (name.fst) as)
->  getEnt :: Context -> (Concept,[(Morphism,b)]) -> ServiceSpec
->  getEnt context (c,as)
->   = Sspc (firstCaps ("get"++name c)) (OF Eenvoudig) [Pspc "x" (handle context c)] [Pspc (varName (name a)) (handle context (target a)) | (a,_)<-as] []
+>          , not (null (mors o `isc` mors [t| Cp t<-terms]))])
+>--    Precondition
+>          []
+>--    Postcondition (example:) {o in Pair and o left l and o right r}
+>          ([tt ("obj."++name a)++"="++tt (varName (name a))|a<-ats])
+>     where varName = uName (map name ats)
+>  getEnt :: Context -> ObjectDef -> ServiceSpec
+>  getEnt context o@(Obj nm pos c ats)
+>   = Sspc (firstCaps ("get"++name o)) (OF Eenvoudig) [Aspc "x" (handle context c)] [Aspc (varName (name a)) (handle context (target a)) | a<-ats] []
 >--    Pre (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
->          ([ tt ("x."++name a)++"="++idNam (nameAt a) |(a,_)<-as])
+>          ([ tt ("x."++name a)++"="++idNam (nameAt a) |a<-ats])
 >--    Post (example:) {left=l, right=r, src=s, and trg=t}
->          [tt (varName (name a))++"="++idNam (nameAt a)|(a,_)<-as]
->     where varName = uName (map (name.fst) as)
->  keyEnt :: Context -> (Concept,[(Morphism,b)]) -> (String,[Morphism]) -> ServiceSpec
->  keyEnt context (c,as) (key,ks)
->   = Sspc (firstCaps ("sel"++name c++"_by_"++if null key then chain "_" (map name ks) else key))
+>          [tt (varName (name a))++"="++idNam (nameAt a)|a<-ats]
+>     where varName = uName (map name ats)
+>  keyEnt :: Context -> ObjectDef -> (String,[Attribute]) -> ServiceSpec
+>  keyEnt context o@(Obj nm pos c ats) (key,ats')
+>   = Sspc (firstCaps ("sel"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
 >          (OF Eenvoudig)
->          [ Pspc (varName (name a)) (handle context (target a)) | a<-ks]
->          [Pspc "obj" (handle context c)]
+>          [ Aspc (varName (name a)) (handle context (target a)) | a<-ats']
+>          [Aspc "obj" (handle context c)]
 >          []
 >--    Pre (example:) {Assume l=atom_left and r=atom_right}
->          [let args = [tt ("x."++name a)++"="++tt (varName (name a)) | a<-ks]++
->                      [tt ("x."++name a)++"="++idNam (nameAt a) | (a,_)<-as, not (a `elem` ks)]
+>          [let args = [tt ("x."++name a)++"="++tt (varName (name a)) | a<-ats] ++
+>                      [tt ("x."++name a)++"="++idNam (nameAt a)      | a<-ats, not (name a `elem` map name ats')]
 >           in
 >           "\\hbox{There is an {\\tt x}}\\in"++idName c++"\\ \\hbox{such that}"++
 >           (if length args==1 then "\\ "++concat args else
@@ -227,66 +169,67 @@ Te bepalen:
 >           )]
 >--    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
 >          ([ tt "obj"++"="++tt "x"])
->     where varName = uName (map name ks)
->  delKeyEnt :: Context -> (Concept,[(Morphism,b)]) -> (String,[Morphism]) -> [(Expression,Rule)] -> ServiceSpec
->  delKeyEnt context (c,as) (key,ks) rs
->   = Sspc (firstCaps ("del"++name c++"_by_"++if null key then chain "_" (map name ks) else key))
+>     where varName = uName (map name ats)
+>  delKeyEnt :: Context -> ObjectDef -> (String,[Attribute]) -> [(Expression,Rule)] -> ServiceSpec
+>  delKeyEnt context o@(Obj nm pos c ats) (key,ats') rs
+>   = Sspc (firstCaps ("del"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
 >          (IF Gemiddeld)
->          [ Pspc (varName (name a)) (handle context (target a)) | a<-ks]
+>          [ Aspc (varName (name a)) (handle context (target a)) | a<-ats']
 >          []
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-rs
 >          , clause@(Fu terms)<-[rClause conj]
->          , not (null (map fst as `isc` mors [t| t<-terms, isPos t]))])
+>          , not (null (mors ats `isc` mors [t| t<-terms, isPos t]))])
 >--    Pre (example:) 
 >          []
 >--    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
 >          ["\\hbox{\\tt obj}\\in"++idName c++"\\ \\hbox{implies that not}"++
->           (if length ks==1 then let a=head ks in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
+>           (if length ats==1 then let a@(Att nm pos c e)=head ats in "\\ ("++tt ("obj."++name a)++"="++showADL e++")" else
+>-- was:    (if length ats==1 then let a=head ats in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
 >           "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
->           chain "\\\\\n" ["&"++tt ("obj."++name a)++"="++tt (varName (name a))|a<-ks]++
+>           chain "\\\\\n" ["&"++tt ("obj."++name a)++"="++tt (varName (name a))|a<-ats]++
 >           "&)\n\\end{array}$"
 >           )]
->     where varName = uName (map name ks)
->  delEnt :: Context -> (Concept,[(Morphism,b)]) -> [(Expression,Rule)] -> ServiceSpec
->  delEnt context (c,as) rs
->   = Sspc (firstCaps ("del"++name c)) (IF Gemiddeld)
->          [Pspc "x" (handle context c)] []
+>     where varName = uName (map name ats)
+>  delEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
+>  delEnt context o@(Obj nm pos c ats) rs
+>   = Sspc (firstCaps ("del"++name o)) (IF Gemiddeld)
+>          [Aspc "x" (handle context c)] []
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-rs
 >          , clause@(Fu terms)<-[rClause conj]
->          , not (null (map fst as `isc` mors [t| t<-terms, isPos t]))])
+>          , not (null (mors ats `isc` mors [t| t<-terms, isPos t]))])
 >--    Pre
->          [if length as==1 then let (a,_)=head as in tt ("x."++name a)++"="++idNam (nameAt a) else
+>          [if length ats==1 then let a=head ats in tt ("x."++name a)++"="++idNam (nameAt a) else
 >           "$\\begin{array}[t]{lll}\n"++
->           chain "\\\\\nand" ["&"++tt ("x."++name a)++"="++idNam (nameAt a)|(a,_)<-as]++
+>           chain "\\\\\nand" ["&"++tt ("x."++name a)++"="++idNam (nameAt a)|a<-ats]++
 >           "&\n\\end{array}$"
->          | not (null as)]
+>          | not (null ats)]
 >--    Post 
->          [if null as then "\\hbox{\\tt x}\\not\\in"++idName c else
+>          [if null ats then "\\hbox{\\tt x}\\not\\in"++idName c else
 >           "\\hbox{\\tt obj}\\in"++idName c++"\\ \\hbox{implies that not}"++
->           (if length as==1 then let (a,_)=head as in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
+>           (if length ats==1 then let a=head ats in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
 >           "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
->           chain "\\\\\nand" ["&"++tt ("obj."++name a)++"="++idNam (nameAt a)|(a,_)<-as]++
+>           chain "\\\\\nand" ["&"++tt ("obj."++name a)++"="++idNam (nameAt a)|a<-ats]++
 >           "&)\n\\end{array}$"
 >           )]
->--   where varName = uName (map (name.fst) as)
->  updEnt :: Context -> (Concept,[(Morphism,b)]) -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
->  updEnt context (c,as) cs rs
->   = Sspc (firstCaps ("upd"++name c)) (IF Gemiddeld) (Pspc "x" (handle context c): [ Pspc (varName (name a)) (handle context (target a)) | (a,_)<-as]) []
+>--   where varName = uName (map name ats)
+>  updEnt :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
+>  updEnt context o@(Obj nm pos c ats) cs rs
+>   = Sspc (firstCaps ("upd"++name o)) (IF Gemiddeld) (Aspc "x" (handle context c): [ Aspc (varName (name a)) (handle context (target a)) | a<-ats]) []
 >          (dressRules rs)
 >--    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
 >          []
 >--    Post (example:) {x left l, x right r, x src s, and x trg t}
->          [ tt ("x."++name a)++"="++tt (varName (name a))|(a,_)<-as]
->     where varName = uName (map (name.fst) as)
+>          [ tt ("x."++name a)++"="++tt (varName (name a))|a<-ats]
+>     where varName = uName (map name ats)
 >  newPair :: Context -> [Declaration] -> [(Expression,Rule)] -> Declaration -> String -> ServiceSpec
 >  newPair context relations clauses r nm
 >   = Sspc (firstCaps ("assoc"++"_"++nm))
 >          (IF Gemiddeld)
->          [ Pspc s (handle context (source r)), Pspc t (handle context (target r))] []
+>          [ Aspc s (handle context (source r)), Aspc t (handle context (target r))] []
 >          (dressRules [ (clause,rule)
 >                      | (conj,rule)<-clauses
 >                      , clause@(Fu terms)<-[lClause conj]
@@ -298,7 +241,7 @@ Te bepalen:
 >  isPair :: Context -> [Declaration] -> Declaration -> String -> ServiceSpec
 >  isPair context relations r nm
 >   = Sspc (firstCaps ("member_"++nm)) (OF Eenvoudig)
->          [Pspc "s" (handle context (source r)),Pspc "t" (handle context (target r))] [Pbool] []
+>          [Aspc "s" (handle context (source r)),Aspc "t" (handle context (target r))] [Pbool] []
 >          [] [tt (firstCaps ("member_"++nm)++"("++s++","++t++")")++"\\ \\hbox{yields true iff}\\ ("++tt s++","++tt t++")\\in"++idName r]
 >     where varName = uName (map name [source r, target r])
 >           s = if homogeneous r then "s" else (varName.name.source) r
@@ -306,13 +249,13 @@ Te bepalen:
 >  delPair :: Context -> [Declaration] -> [(Expression,Rule)] -> Declaration -> String -> ServiceSpec
 >  delPair context relations clauses r nm
 >   = Sspc (firstCaps ("remove"++"_"++nm)) (IF Gemiddeld)
->          [Pspc s (handle context (source r)),Pspc t (handle context (target r))] []
+>          [Aspc s (handle context (source r)),Aspc t (handle context (target r))] []
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-clauses
 >          , clause@(Fu terms)<-[rClause conj]
 >          , r `elem` map declaration (mors [t| t<-terms, isPos t])])
->          [] ["("++s++","++t++")\\ \\not\\in\\ "++idName r]
+>          [] [if isIdent r then s++"\\not ="++t else "("++s++","++t++")\\ \\not\\in\\ "++idName r]
 >     where varName = uName (map name [source r, target r])
 >           s = if homogeneous r then tt "s" else (tt.varName.name.source) r
 >           t = if homogeneous r then tt "t" else (tt.varName.name.target) r
@@ -320,14 +263,14 @@ Te bepalen:
 >  srcObjs context relations r nm
 >   = Sspc srvName
 >          (OF Eenvoudig)
->          [Pspc s (handle context (source r))]
+>          [Aspc s (handle context (source r))]
 >          [if isFunction r 
->           then Pspc outName (handle context (target r))
->           else Pspc outName ("\\{"++handle context (target r)++"\\}")] []
+>           then Aspc outName (handle context (target r))
+>           else Aspc outName ("\\{"++handle context (target r)++"\\}")] []
 >          []
 >          [if isFunction r
->           then tt outName++"\\ =\\ "++t++", where ("++s++","++t++")\\in"++idName r
->           else tt outName++"\\ =\\ \\{"++t++"|\\ ("++s++","++t++")\\in"++idName r++"\\}"]
+>           then tt outName++"\\ =\\ "++t++", where "++(if isIdent r then s++"="++t else "("++s++","++t++")\\in"++idName r)
+>           else tt outName++"\\ =\\ \\{"++t++"|\\ "++(if isIdent r then s++"="++t else "("++s++","++t++")\\in"++idName r)++"\\}"]
 >     where srvName = if homogeneous(r) then firstCaps ("trg_"++nm) else
 >                     if isFunction r 
 >                     then firstCaps ((map toLower.name.target) r++"_"++nm)
@@ -342,14 +285,14 @@ Te bepalen:
 >  trgObjs context relations r nm
 >   = Sspc srvName
 >          (OF Eenvoudig)
->          [Pspc t (handle context (target r))]
+>          [Aspc t (handle context (target r))]
 >          [if isFunction (flp r) 
->           then Pspc outName (handle context (source r))
->           else Pspc outName ("\\{"++handle context (source r)++"\\}")] []
+>           then Aspc outName (handle context (source r))
+>           else Aspc outName ("\\{"++handle context (source r)++"\\}")] []
 >          []
 >          [if isFunction (flp r)
->           then tt outName++"\\ =\\ "++s++", where ("++s++","++t++")\\in"++idName r
->           else tt outName++"\\ =\\ \\{"++s++"|\\ ("++s++","++t++")\\in"++idName r++"\\}"]
+>           then tt outName++"\\ =\\ "++s++", where "++(if isIdent r then s++"="++t else "("++s++","++t++")\\in"++idName r)
+>           else tt outName++"\\ =\\ \\{"++s++"|\\ "++(if isIdent r then s++"="++t else "("++s++","++t++")\\in"++idName r)++"\\}"]
 >     where srvName = if homogeneous(r) then firstCaps ("src_"++nm) else
 >                     if isFunction r 
 >                     then firstCaps ((map toLower.name.source) r++"_"++nm)
@@ -368,10 +311,10 @@ Te bepalen:
 >  firstCaps ('_':c:str) = toUpper c:firstCaps str
 >  firstCaps (c:str) = c:firstCaps str
 
->  applyMLatex (Sgn nm _ _ _ prL prM prR _ _ _ _) d c = if null (prL++prM++prR) then "$"++d++"$\\ "++firstCaps nm++"\\ $"++c++"$" else prL++"$"++d++"$"++prM++"$"++c++"$"++prR
->  applyMLatex (Isn _ _)                          d c = "$"++d++"$ equals $"++c++"$"
->  applyMLatex (Iscompl _ _)                      d c = "$"++d++"$ differs from $"++c++"$"
->  applyMLatex (Vs _ _)                           d c = show True
+>  applyMLatex (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then "$"++d++"$\\ "++firstCaps nm++"\\ $"++c++"$" else addSlashes prL++"$"++d++"$"++addSlashes prM++"$"++c++"$"++addSlashes prR
+>  applyMLatex (Isn _ _)                            d c = "$"++d++"$ equals $"++c++"$"
+>  applyMLatex (Iscompl _ _)                        d c = "$"++d++"$ differs from $"++c++"$"
+>  applyMLatex (Vs _ _)                             d c = show True
 
 The following functional specification, funcSpec, computes which relations are may be affected by compute rules.
 Assuming that they will be computed in all cases, all other relations are treated as input parameters.
@@ -379,15 +322,15 @@ This assumption, however, is not true.
 TODO: determine which relations are affected but not computed, and report as an error.
 
 >  funcSpec context (entities,relations,ruls) language
->   = [ Fspc pat 
->            ([ Uspc (firstCaps (name c)) pat [(c,as,if null as then NO else ILGV Eenvoudig,cs,rs)]
->                    ( [ newEnt context (c,as) cs rs ] ++ [ getEnt context (c,as)]                      ++
->                      concat [ [keyEnt context (c,as) (key,ks), delKeyEnt context (c,as) (key,ks) rs]
->                             | (e,key,ks)<-keys pat, e==c]                                             ++
->                      [ delEnt context (c,as) rs ]                                                     ++
->                      [ updEnt context (c,as) cs rs| not (null cs) ]
+>   = [ Pspc pat 
+>            ([ Uspc (firstCaps (name o)) pat [(o,ILGV Eenvoudig,cs,rs)]
+>                    ( [ newEnt context o cs rs ] ++ [ getEnt context o]                           ++
+>                      concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) rs]
+>                             | (e,key,ks)<-keys pat, e==concept o]                                ++
+>                      [ delEnt context o rs ]                                                     ++
+>                      [ updEnt context o cs rs| not (null cs) ]
 >                    )
->             | (c,as,fpa,cs,rs)<-ec]++clss pat ec newConcs++asss pat newDecls)
+>             | (o,fpa,cs,rs)<-ec]++clss pat ec newConcs++asss pat newDecls)
 >     | (pat,newConcs,newDecls)<-zip3 (patterns context) (firsts [] (map concs (patterns context))) (firsts [] (map declarations (patterns context)))
 >     , car<-[definedEnts context pat], not (null car), ec<-[ents car] ]
 >     where
@@ -397,14 +340,14 @@ In elk hoofdstuk wordt een pattern behandeld.
 Elke entiteit wordt in precies één hoofdstuk behandeld.
 De overige concepten worden behandeld in het hoofdstuk waarin het voor de eerste maal voorkomt.
 c is het concept
-as zijn de attributen van dat concept
+ats zijn de attributen van dat concept
 cs zijn de vrij in te vullen relaties. Dat zijn degenen die niet 'affected' (ofwel automatisch uitgerekend) zijn.
 rs zijn de betrokken regels
 
->      ents car = [ (c,as,if null as then NO else ILGV Eenvoudig,cs,rs)
->                 | (c,as)<-car
+>      ents car = [ (o,if null ats then NO else ILGV Eenvoudig,cs,rs)
+>                 | o@(Obj nm pos c ats)<-car
 >                 , rs<-[[(conj,rule) |rule<-rules context, c `elem` concs rule, conj<-conjuncts rule]]
->                 , cs<-[[a| (a,_)<-as, not (declaration a `elem` affected)]], not (null cs)
+>                 , cs<-[[a| a<-ats, not (null (mors a `isc` affected))]], not (null cs)
 >                 ]
 >      clss pat ec new
 >       = [ Uspc (if language==English then "Other Classes" else "Andere Classes") pat car
@@ -421,7 +364,7 @@ rs zijn de betrokken regels
 >      asss pat new
 >       = [ Uspc ((if language==English then "Associations of " else "Associaties van ")++firstCaps (name pat)) pat [] ss
 >         | ss<-[[ service
->                | r<-relations, not (isSgnl r), r `elem` new
+>                | r<-relations, not (isSignal r), r `elem` new
 >                , nm <- [name r++if length [d|d<-relations, name d==name r]==1 then "" else
 >                                 name (source r)++name (target r)]
 >                , rs<-[[(conj,rule) |rule<-rules context, conj<-conjuncts rule, r `elem` declarations conj]]
@@ -440,13 +383,13 @@ rs zijn de betrokken regels
 >  funcSpecText context fspcs English
 >   = "Functional Specification:\n"++chain "\n\n" (map fSpec fspcs)
 >     where
->      fSpec (Fspc pat units)
+>      fSpec (Pspc pat units)
 >       = "Chapter "++firstCaps (name pat)++"\n\n"++chain "\n\n" (map fUnit units)
 >      fUnit unit@(Uspc unm pat car specs)
 >       = "Section "++unm++fpaUnit unit English++
 >           chain "\n\n"
 >           [ ( if null pre then "" else "\n  {Assume: "++chain " and " pre ++"}") ++
->             nm++"("++chain ";" [p++":"++c| Pspc p c<-input]++")"++chain ";" [" "++p++" "++c| Pspc p c<-output]++
+>             nm++"("++chain ";" [p++":"++c| Aspc p c<-input]++")"++chain ";" [" "++p++" "++c| Aspc p c<-output]++
 >             ( if null post then "" else "\n  {"++chain " and " post ++"}") ++
 >             ( if null rs then "" else
 >               if length rs>1
@@ -461,13 +404,13 @@ rs zijn de betrokken regels
 >  funcSpecText context fspcs Dutch
 >   = "Functionele Specificatie:\n"++chain "\n\n" (map fSpec fspcs)
 >     where
->      fSpec (Fspc pat units)
+>      fSpec (Pspc pat units)
 >       = "Hoofdstuk "++firstCaps (name pat)++"\n\n"++chain "\n\n" (map fUnit units)
 >      fUnit unit@(Uspc unm pat car specs)
 >       = "Sectie "++unm++fpaUnit unit Dutch++
 >           chain "\n\n"
 >           [ ( if null pre then "" else "\n  {Stel: "++chain " and " pre ++"}") ++
->             nm++"("++chain ";" [p++":"++c| Pspc p c<-input]++")"++chain ";" [" "++p++" "++c| Pspc p c<-output]++
+>             nm++"("++chain ";" [p++":"++c| Aspc p c<-input]++")"++chain ";" [" "++p++" "++c| Aspc p c<-output]++
 >             ( if null post then "" else "\n  {"++chain " and " post ++"}") ++
 >             ( if null rs then "" else
 >               if length rs>1
@@ -524,7 +467,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      complex | language==English = "complexity"
 >              | language==Dutch   = "complexiteit"
 >      aswhole | language==English = " as a whole is worth "
->              | language==Dutch   = " als geheel is"
+>              | language==Dutch   = " als geheel is "
 >      worth   | language==English = " function points"
 >              | language==Dutch   = " functiepunten waard"
 
@@ -532,8 +475,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   = chain "\n\n" (map fSpec fspcs)
 >     where
 >      cname = name context
->      fSpec (Fspc pat units)
->       = latexChapter ((addSlashes.name) pat) ("Fspec "++firstCaps (name pat))++
+>      fSpec (Pspc pat units)
+>       = latexChapter (firstCaps (name pat)) ("Fpat "++firstCaps (name pat))++
 >         latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++"_CD.png}")++
 >         captiontext language pat)++"\n"++
 >         ( if null attributes then "" else introtext language attributes++
@@ -557,20 +500,20 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 > --      "\\\\\\hline\n\\end{tabular}\n\n"++
 >         chain "\n\n" [fUnit u new| (u,new)<-(zip units.firsts [])
 >                                              [ [d| Sspc nm fpa input output rs pre post<-specs, d<-declarations rs
->                                                  , isSgn d && not (isSgnl d) && not (d `elem` map snd3 attributes)]
+>                                                  , isSgn d && not (isSignal d) && not (d `elem` map snd3 attributes)]
 >                                              | u@(Uspc unm pat car specs)<-units, not (null specs) ]
 >                      ]
 >         where
->           varName = uName [name c| u@(Uspc unm pat car specs)<-units, (c,as,fpa,cs,rs)<-car, not (null as)]
->           attributes = [ (a, d, varName (name c))
+>           varName = uName [name c| u@(Uspc unm pat car specs)<-units, (o,fpa,cs,rs)<-car]
+>           attributes = [ (a, d, varName (name o))
 >                        | u@(Uspc unm pat car specs)<-units 
->                        , (c,as,fpa,cs,rs')<-car, (a,_)<-as, d<-declarations a
+>                        , (o@(Obj nm pos c ats),fpa,cs,rs')<-car, a<-ats, d<-declarations a
 >                        ]
 
 >      isAttribute d = null ([Uni,Tot]>-multiplicities d) || null ([Sur,Inj]>-multiplicities d)
 >      fUnit unit@(Uspc unm pat car []) newdecs = ""
 >      fUnit unit@(Uspc unm pat car specs) newdecs
->       = latexSection (firstCaps unm) ("Fspc "++firstCaps (unm++name pat))++
+>       = latexSection (firstCaps unm) ("Pspc "++firstCaps (unm++name pat))++
 >         fpaUnit unit language++
 >         lettext language unm++
 >         ( if null decls then "" else atttext language unm attributes++
@@ -587,7 +530,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      captiontext English pat
 >       = "\n\\caption{Data structure of "++(addSlashes.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
 >      captiontext Dutch pat
->       = "\n\\caption{Gegevensstructuur van "++((addSlashes.name) pat)++"}\n\\label{fig:"++clname (name pat)++"}"
+>       = "\n\\caption{Gegevensstructuur van "++(addSlashes.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
 >      str2 | language==English = "The services are defined in the following subsections.\n"
 >           | language==Dutch   = "De services zijn in de volgende secties gedefinieerd.\n"
 >      lettext English "Other Classes"
@@ -632,8 +575,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   = latexSubsection nm nm++
 >     "{\\tt "++firstCaps nm++"}("++
 >     "\\begin{array}[t]{lr@{~:~}ll}\n"++
->     ( let pars=["{\\tt In}&{\\tt " ++firstCaps p++"}&{\\tt "++c++"}"| Pspc p c<-input]++
->                ["{\\tt Out}&{\\tt "++firstCaps p++"}&{\\tt "++c++"}"| Pspc p c<-output]
+>     ( let pars=["{\\tt In}&{\\tt " ++firstCaps p++"}&{\\tt "++c++"}"| Aspc p c<-input]++
+>                ["{\\tt Out}&{\\tt "++firstCaps p++"}&{\\tt "++c++"}"| Aspc p c<-output]
 >       in if length pars==1 then concat pars++"\\ )" else chain "&;\\\\\n" pars++"&)"
 >     )++
 >     "\n\\end{array}\n"++
@@ -696,7 +639,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >              ]
 >      ms = [ (snd (head cl), map fst cl)
 >           | cl<-eqCl snd [(r,d)| r<-rs, d<-declarations r]]
->      call = "{\\tt "++firstCaps nm++"}("++chain "," ["{\\tt "++firstCaps p++"}"| Pspc p c<-input++output]++")"
+>      call = "{\\tt "++firstCaps nm++"}("++chain "," ["{\\tt "++firstCaps p++"}"| Aspc p c<-input++output]++")"
 >      str1 | language==English = "\nWhen called, this service behaves as follows:\n\n"
 >           | language==Dutch   = "\nBij aanroep gedraagt deze service zich als volgt:\n\n"
 >      str3 | language==English = "\nFor defining invariants, we introduce:\n"
@@ -720,23 +663,6 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >    self (Fu cl)       = [e| e<-cl, isPos e] `eq` [e| Cp e<-cl]
 >    a `eq` b = length a==length b && length a==length (a `isc` b)
 
->  laGen :: String -> String -> IO()
->  laGen fnm latexcode
->   = writeFile (fnm++".tex") latexcode           >>
->     putStr ("\nLaTeX file "++fnm++".tex written... ") >>
->     processFile fnm
->  processFile fnm =
->     do putStr ("\nProcessing "++fnm++".tex ... :")
->        result <- system ("pdflatex -interaction=batchmode "++fnm++".tex")
->        case result of
->            ExitSuccess   -> putStrLn ("  "++fnm++".pdf created.")
->            ExitFailure x -> putStrLn $ "Failure: " ++ show x
->        putStr ("\nReprocessing "++fnm++".tex ... :")
->        result <- system ("pdflatex -interaction=nonstopmode "++fnm++".tex")
->        case result of
->            ExitSuccess   -> putStrLn ("  "++fnm++".pdf created.")
->            ExitFailure x -> putStrLn $ "Failure: " ++ show x
-
 >  class LATEX a where
 >   lshow  :: Lang -> a -> String
 >   ltshow :: String -> Typology Concept -> Lang -> a -> String
@@ -745,9 +671,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >  definingPattern context entities c
 >   = ( fst . head . sort' ((0-).length.snd) ) [(p,rs)| (p,(c',_),rs)<-ps, c'==c]
 >     where
->      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,(c,as),r)->(name p,c)) rs, (p,e,_)<-take 1 cl]
->      rs = [(pat,(c,as), rule)
->           | pat<-patterns context, rule<-rules pat, (c,as)<-entities, c `elem` concs rule]
+>      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,o,r)->(name p,c)) rs, (p,e,_)<-take 1 cl]
+>      rs = [(pat,o,rule)
+>           | pat<-patterns context, rule<-rules pat, o@(Obj nm pos c ats)<-objects context, c `elem` concs rule]
 >  definedEnts context pat
 >   = [ e
 >     | cl<-eqCl (\(p,(c,_),rs)->c) ps, (p,e,rs)<-take 1 (sort' (\(p,e,rs)->0-length rs) cl), p==name pat]
@@ -756,12 +682,209 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >           | cl <-eqCl (\(p,(c,_),_)->(p,c)) rs, (p,e,_)<-take 1 cl
 >           ]
 >      rs = [ (name p,e,rule)
->           | p<-patterns context, rule<-rules p, e@(c,as)<-entities, c `elem` concs rule]
+>           | p<-patterns context, rule<-rules p, e@o@(Obj nm pos c ats)<-objects context, c `elem` concs rule]
 >      (entities, relations, ruls) = erAnalysis context
 
+>  nDesignPr context = n where (_,n) = dp undef f context where undef=undef; f=f
+>  designPrinciples English context = dps
+>   where (dps,_) = dp ( {- str1  -} "Design rules"
+>                      , {- str2  -} "This chapter discusses the rules that represent agreements between stakeholders about functionality."
+>                      , {- str3  -} "about"
+>                      , {- str4  -} "Concept"
+>                      , {- str5  -} "is defined in definition"
+>                      , {- str6  -} "on page"
+>                      , {- str7  -} "This section uses the following concepts:"
+>                      , {- str8  -} "The following concepts are defined previously in this chapter:"
+>                      , {- str9  -} "is used in this section, but is not yet defined in this document."
+>                      , {- str10 -} "Concepts"
+>                      , {- str11 -} "have not been defined in this document"
+>                      , {- str12 -} "A conceptual analysis about"
+>                      , {- str13 -} "is given in figure"
+>                      , {- str14 -} "Knowledge model of"
+>                      , {- str15 -} "relation"
+>                      , {- str16 -} "between"
+>                      , {- str17 -} "and"
+>                      )
+>                      (commaEng "and") context
+>  designPrinciples Dutch context = dps
+>   where (dps,_) = dp ( {- str1  -} "Ontwerpregels"
+>                      , {- str2  -} "Dit hoofdstuk bespreekt verschillende afspraken, die in volgende hoofdstukken zijn uitgewerkt tot een volledige functionele specificatie."
+>                      , {- str3  -} "over"
+>                      , {- str4  -} "Concept"
+>                      , {- str5  -} "is gedefinieerd in definitie"
+>                      , {- str6  -} "op pg."
+>                      , {- str7  -} "Deze sectie maakt gebruik van de volgende concepten:"
+>                      , {- str8  -} "De volgende concepten zijn eerder in dit hoofdstuk gedefinieerd:"
+>                      , {- str9  -} "wordt in deze sectie gebruikt, maar heeft nog geen definitie in dit document."
+>                      , {- str10 -} "De concepten"
+>                      , {- str11 -} "zijn in dit document nog niet gedefinieerd"
+>                      , {- str12 -} "Een conceptuele analyse over"
+>                      , {- str13 -} "is weergegeven in figuur"
+>                      , {- str14 -} "Kennismodel van"
+>                      , {- str15 -} "relatie"
+>                      , {- str16 -} "tussen"
+>                      , {- str17 -} "en"
+>                      )
+>                      (commaNL "en") context
+> -- designPrinciples language = error ("Not yet implemented: designPrinciples "++show language++" (module Fpat)")
+
+>  dp strs en context
+>    = ( (chain "\n". filter (not.null))
+>        ( [ latexChapter str1 str1
+>          , "\t"++str2
+>          ] ++
+>          patSections [] [] (patterns context)
+>        )
+>      , length [d| d<-declarations context, not (isSignal d)] +    -- bereken het totaal aantal requirements
+>        length (rules context++signals context++multRules context)
+>      )
+>   where
+>    (str1,str2,str3,str4,str5,str6,str7,str8,str9,str10,str11,str12,str13,str14,str15,str16,str17) = strs
+>    patSections _ _ [] = []
+>    patSections prevWrittenConcepts prevWrittenDecls (pat:pats)
+>     = [latexSection (str1++" "++str3++" "++firstCaps (name pat)) (str1++name context++"Pat"++firstCaps (name pat))]++
+>       elaborate (rd(newConcsWithDefs>-prevWrittenConcepts))
+>                 [d| d<-declarations pat, not (isSignal d)]
+>                 (sort' nr (rules pat++signals pat))++
+> -- Zet hierna referenties neer naar alle gebruikte en eerder gedefinieerde concepten (vueConcepts)
+>       [ "\t"++if length vueConcepts==1 then str4++" "++latexEmph c++" "++str5++"~\\ref{dfn:"++c++"} "++str6++"~\\pageref{dfn:"++c++"}.\n" else
+>         (if null newConcepts
+>          then str7
+>          else str8)++"\n\t"++
+>          en [latexEmph c++ " (def.~\\ref{dfn:"++c++"}, pg.~\\pageref{dfn:"++c++"})"|c<-map (unCap.name) vueConcepts]++".\n"
+>       | not (null vueConcepts), c<-[(unCap.name.head) vueConcepts]]++
+>       [ "\t"++if length newConcsNoDefs==1 then str4++" "++(latexEmph.unCap.name) c++" "++str9 else
+>         str10++" "++en (map (latexEmph.unCap.name) newConcsNoDefs)++" "++str11++".\n"
+>       | not (null newConcsNoDefs), c<-[head newConcsNoDefs]]++
+>       [ "\t"++str12++" "++firstCaps (name pat)++" "++str12++" \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n"]++
+>       [ latexFigureHere (latexCenter ("  \\includegraphics[scale=.4]{"++name context++"_"++clname (name pat)++".png}\n"++
+>                                       "  \\caption{"++str14++" "++firstCaps (name pat)++"}\n"++
+>                                       "  \\label{fig: concAnal"++clname (firstCaps (name pat))++"}"))]++
+>       patSections (prevWrittenConcepts++newConcsWithDefs) (prevWrittenDecls++newDeclarations) pats
+>     where
+>        patDecls         = decls ++ [d| d<-declarations pat, not (d `elem` decls)] -- tbv de volgorde van declaraties!
+>                           where decls = rd [d| r<-rules pat++signals pat, d<-declarations r]
+>        patConcepts      = concpts ++ [c| c<-concs pat, not (c `elem` concpts)] -- tbv de volgorde van concepten!
+>                           where concpts = rd [c| d<-patDecls, c<-concs d]
+>        vueConcepts      = [c| c<-patConcepts,      c `elem` prevWrittenConcepts ]
+>        newConcepts      = [c| c<-patConcepts, not (c `elem` prevWrittenConcepts)]
+>        newConcsWithDefs = [c| c<-newConcepts,      name c `elem` map name (conceptdefs context) ]
+>        newConcsNoDefs   = [c| c<-newConcepts, not (name c `elem` map name (conceptdefs context))]
+>        newDeclarations  = [d| d<-patDecls, not (d `elem` prevWrittenDecls)]
+>        explDecl :: Declaration -> [String]
+>        explDecl d = [ latexDesignrule (addSlashes (str ++ " ("++str15++": "++name d++signature++")"))  | not (null str)]
+>         where
+>          str = explainDecl context Dutch d
+>          signature | length [s|s<-patDecls, name s==name d] >1  = " "++str16++" "++name (source d)++" "++str17++" "++name (target d)
+>                    | otherwise                                 = ""
+>        elaborate :: Concepts ->Declarations -> Rules -> [String]
+>        elaborate tobeWrittenConcs tobeWrittenDecls []
+>         = map (explainConcept context Dutch) tobeWrittenConcs ++
+>           concat (map explDecl tobeWrittenDecls)
+>        elaborate tobeWrittenConcs tobeWrittenDecls (r:rs)
+>         = map (explainConcept context Dutch) cConcs ++
+>           concat (map explDecl cDecls) ++
+>           [latexDesignrule (addSlashes str)|str<-[explainRule context Dutch r], not (null str)]++
+>           elaborate (tobeWrittenConcs>-cConcs) (tobeWrittenDecls>-cDecls) rs
+>         where cConcs     = [c| c<-tobeWrittenConcs, c `elem` concs r ]
+>               cDecls     = [d| d<-tobeWrittenDecls, d `elem` declarations r ]
+
+>  archShow language context = ltshow (name context) (typology (isa context)) language context
+>   where
+>   ltshow cname typ language context@(Ctx nm on isa world dc ms cs ks os)
+>    = (chain "\n". filter (not.null))
+>      (if language==Dutch then 
+>      [ "\\title{Toetsingscriteria\\\\"++addSlashes cname++"}"
+>      , "\\maketitle"
+>      , "\\tableofcontents"
+>      , latexChapter "Inleiding" "Inleiding"
+>      , "\tDit document definieert de ontwerpregels van "++name context++"."
+>      , "\tDeze regels moeten door de oplossing worden nageleefd."
+>      , "\tControle daarop vindt plaats door het architectuurteam."
+>      , "\tTezamen vormen deze regels de architectuur van "++name context++"."
+>      , designPrinciples language context
+>      , latexChapter "Terminologie" ("typology"++cname)
+>      , if null cs then "" else
+>        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
+>             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
+>                          (if null ref then "" else "~\\cite{"++ref++"}")++
+>                          "\\\\\n\\hline"
+>                         | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
+>      , if null cList then "" else
+>        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
+>        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
+>      , "\\bibliographystyle{plain}"
+>      , "\\bibliography{../"++name context++"}"
+>      , "\\label{bibliography"++name context++"}"
+>      ] else if language==English then
+>      ["\\title{Functional Specification\\\\ "++addSlashes cname++"}"
+>      , "\\maketitle"
+>      , "\\tableofcontents"
+>      , latexChapter "Introduction" "Introduction"
+>      , "\tThis document defines the service layer of a system called "++addSlashes cname++"."
+>      , "\tIt defines infrastructural services in a system in which people and applications collaborate"
+>      , "\tto maintain agreements and commitments that apply to the context of "++addSlashes cname++"."
+>      , "\tThese agreements and commitments are represented by rules."
+>      , "\tThey are presented in chapter \\ref{chp:Design rules}, arranged by theme."
+>      , "\tA data analysis is presented in chapter \\ref{chp:Data Analysis}."
+>      , "\tSubsequent chapters elaborate each theme by defining all applicable services."
+>      , "\tTogether, these services support all rules from chapter \\ref{chp:Design rules}."
+>      , "\tThis support consists of either preventing that a rule is violated,"
+>      , "\tsignalling violations (for human intervention),"
+>      , "\tor fixing the content of databases (by automatic actions) to restore a rule."
+>      , latexChapter "Principles" "Principles"
+>      , "\tThis chapter introduces guiding principles of "++addSlashes cname++"."
+>      , "\tSubsequent chapters elaborate these principles into complete formal specifications."
+>      , chain "\n\n" [ latexSection ("Design choices about "++firstCaps (name pat)) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
+>                       latexEnumerate ([addSlashes (explainRule context language r)|r<-rules pat++signals pat, null (cpu r)]++
+>                                       [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
+>                     | pat<-dc]
+>      , latexChapter "Conceptual Analysis" "Conceptual Analysis"
+>      , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Design rules}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
+>      , spec2fp context English spec
+>      , chain "\n\n" [ latexSection ("Rules about "++firstCaps (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+> --                      "A conceptual analysis of "++firstCaps (name pat)++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
+> --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
+> --                      "\n\\caption{Conceptual analysis of "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
+>                       latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
+>                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt context language r)++"\\\\\n&Relations:\\\\"++
+>                                          "&\\(\\begin{array}{rcl}\n"++
+>                                               chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
+>                                                              | d<-declarations r]++
+>                                               "\\end{array}\\)\\\\\n&Rule:\\\\"++
+>                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
+>         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
+>                              )
+>                     | pat<-dc]
+>      , latexChapter "Glossary" ("typology"++cname)
+>      , if null cs then "" else
+>        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
+>              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
+>                          | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
+>      , if null cList then "" else
+>        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
+>        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
+>      , "\\bibliographystyle{plain}"
+>      , "\\bibliography{../"++name context++"}"
+>      , "\\label{bibliography"++name context++"}"
+>      ] else [] )
+>      where
+>       spec = funcSpec context (erAnalysis context) language
+>       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptdefs context]
+>--       nav :: Classification Concept
+>--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
+>       mms  = declarations context
+>--       degree c = length [m | m<-mms, source m==c || target m==c]
+>--       c `before` c' = degree c > degree c'
+>--       caps :: Classification Concept -> [String]
+>--       caps (Cl c cls) = ["\\disjn{"++chain ", " (map (lshow language.root) cls)++"}"| length cls>1] ++ (concat . map capss) cls ++
+>--                         concat (map caps cls)
+>--       capss (Cl g cls) = ["\\super{"++lshow language g++"}{"++lshow language s++"}" | s<-map root cls]
+
+
 >  instance LATEX Context where
->   lshow language ctx = ltshow (name ctx) (typology (isa ctx)) language ctx
->   ltshow cname typ language ctx@(Ctx nm on isa world dc ms cs ks)
+>   lshow language context = ltshow (name context) (typology (isa context)) language context
+>   ltshow cname typ language context@(Ctx nm on isa world dc ms cs ks os)
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
 >      ["\\title{Functionele Specificatie\\\\"++addSlashes cname++"}"
@@ -772,32 +895,35 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tHet definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken"
 >      , "\tom afspraken na te leven die gelden in de context van "++addSlashes cname++"."
 >      , "\tDeze afspraken worden weergegeven door bedrijfsregels."
->      , "\tDeze regels staan beschreven in hoofdstuk \\ref{chp:Afspraken}, geordend op thema."
+>      , "\tDeze regels staan beschreven in hoofdstuk \\ref{chp:Ontwerpregels}, geordend op thema."
 >      , "\tEen gegevensanalyse volgt in hoofdstuk \\ref{chp:Gegevensanalyse}."
 >      , "\tIn de daarop volgende hoofdstukken is elk thema"
 >      , "\tuitgewerkt in definities van services."
->      , "\tDeze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk \\ref{chp:Afspraken}."
+>      , "\tDeze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk \\ref{chp:Ontwerpregels}."
 >      , "\tDeze ondersteuning bestaat uit het voorkomen dat een afspraak wordt overtreden,"
 >      , "\tof het signaleren van overtredingen (opdat mensen kunnen ingrijpen)"
 >      , "\tof het herstellen van een regel (door automatische acties op de database uit te voeren)."
->      , latexChapter "Afspraken" "Afspraken"
->      , "\tDit hoofdstuk bespreekt verschillende afspraken, die in volgende hoofdstukken zijn uitgewerkt tot een volledige functionele specificatie."
->      , chain "\n\n" [ latexSection ("Afspraken over "++(addSlashes.name) pat) ("Afspraken"++cname++"Pat"++firstCaps (name pat)) ++
->                       latexEnumerate ([addSlashes (explainRule ctx language r)|r<-rules pat++signals pat, null (cpu r)]++
->                                       [addSlashes (explainMult ctx language d)|d<-declarations pat, (not.null) (multiplicities d)])
->                     | pat<-dc]
+>      , designPrinciples language context
+
+      , latexChapter "Afspraken" "Afspraken"
+      , "\tDit hoofdstuk bespreekt verschillende afspraken, die in volgende hoofdstukken zijn uitgewerkt tot een volledige functionele specificatie."
+      , chain "\n\n" [ latexSection ("Afspraken over "++addSlashes (name pat)) ("Afspraken"++cname++"Pat"++firstCaps (name pat)) ++
+                       latexEnumerate ([addSlashes (explainRule context language r)|r<-rules pat++signals pat, null (cpu r)]++
+                                       [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
+                     | pat<-dc]
+
 >      , latexChapter "Conceptuele Analyse" "Conceptuele Analyse"
->      , "\tDit hoofdstuk geeft een analyse van de regels uit hoofdstuk \\ref{chp:Afspraken}."
+>      , "\tDit hoofdstuk geeft een analyse van de regels uit hoofdstuk \\ref{chp:Ontwerpregels}."
 >      , "\tIeder thema in dat hoofdstuk wordt geanalyseerd in termen van relaties"
 >      , "\ten elke afspraak krijgt een formele representatie."
 >      , "\n\tDe resultaten van functiepunt analyse staan vermeld in tabel \\ref{tab:FPA}"
->      , spec2fp ctx Dutch spec
->      , chain "\n\n" [ latexSection ("Regels over "++(addSlashes.name) pat) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
-> --                      "Een conceptuele analyse over "++(addSlashes.name) pat++" is weergegeven in figuur \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
+>      , spec2fp context Dutch spec
+>      , chain "\n\n" [ latexSection ("Regels over "++addSlashes (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+> --                      "Een conceptuele analyse over "++firstCaps (name pat)++" is weergegeven in figuur \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
 > --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
 > --                      "\n\\caption{Conceptuele analyse van "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}\n")++
 >                       latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
->                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt ctx language r)++"\\\\\n&Relaties:\\\\"++
+>                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt context language r)++"\\\\\n&Relaties:\\\\"++
 >                                          "&\\(\\begin{array}{rcl}\n"++
 >                                               chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
 >                                                              | d<-declarations r]++
@@ -807,12 +933,12 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                              )
 >                     | pat<-dc]
 >      , latexChapter "Gegevensanalyse" "Gegevensanalyse"
->      , "\tDe keuzes, zoals beschreven in hoofdstuk \\ref{chp:Afspraken} zijn in een gegevensanalyse vertaald naar"
+>      , "\tDe keuzes, zoals beschreven in hoofdstuk \\ref{chp:Ontwerpregels} zijn in een gegevensanalyse vertaald naar"
 >      , "\thet klassediagram in figuur \\ref{fig:"++cname++"CD}."
 >      , latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_CD.png}")++
 >        "\n\\caption{Gegevensmodel van "++addSlashes cname++"}\n\\label{fig:"++cname++"CD}")
 >      , "\tDit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties."
->      , funcSpecLaTeX ctx (funcSpec ctx (erAnalysis ctx) Dutch) Dutch
+>      , funcSpecLaTeX context (funcSpec context (erAnalysis context) Dutch) Dutch
 >      , latexChapter "Terminologie" ("typology"++cname)
 >--      , "De terminologie is ontleend aan het Divisie Informatieplan \\cite{TPDI},"
 >--      , "de begrippenlijst voor \\mulF{} \\cite{MultiFit} en de begrippen gebruikt in de voorstudie SBD \\cite{SBD}."
@@ -822,13 +948,13 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs ctx, C nm (==) [] `elem` concs ctx])
+>                         | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
 >      , "\\bibliographystyle{plain}"
->      , "\\bibliography{"++lname ctx++"}"
->      , "\\label{bibliography"++lname ctx++"}"
+>      , "\\bibliography{../"++name context++"}"
+>      , "\\label{bibliography"++name context++"}"
 >      ] else if language==English then
 >      ["\\title{Functional Specification\\\\ "++addSlashes cname++"}"
 >      , "\\maketitle"
@@ -838,29 +964,23 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tIt defines infrastructural services in a system in which people and applications collaborate"
 >      , "\tto maintain agreements and commitments that apply to the context of "++addSlashes cname++"."
 >      , "\tThese agreements and commitments are represented by rules."
->      , "\tThey are presented in chapter \\ref{chp:Principles}, arranged by theme."
+>      , "\tThey are presented in chapter \\ref{chp:Design rules}, arranged by theme."
 >      , "\tA data analysis is presented in chapter \\ref{chp:Data Analysis}."
 >      , "\tSubsequent chapters elaborate each theme by defining all applicable services."
->      , "\tTogether, these services support all rules from chapter \\ref{chp:Principles}."
+>      , "\tTogether, these services support all rules from chapter \\ref{chp:Design rules}."
 >      , "\tThis support consists of either preventing that a rule is violated,"
 >      , "\tsignalling violations (for human intervention),"
 >      , "\tor fixing the content of databases (by automatic actions) to restore a rule."
->      , latexChapter "Principles" "Principles"
->      , "\tThis chapter introduces guiding principles of "++addSlashes cname++"."
->      , "\tSubsequent chapters elaborate these principles into complete formal specifications."
->      , chain "\n\n" [ latexSection ("Design choices about "++(addSlashes.name) pat) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
->                       latexEnumerate ([addSlashes (explainRule ctx language r)|r<-rules pat++signals pat, null (cpu r)]++
->                                       [addSlashes (explainMult ctx language d)|d<-declarations pat, (not.null) (multiplicities d)])
->                     | pat<-dc]
+>      , designPrinciples language context
 >      , latexChapter "Conceptual Analysis" "Conceptual Analysis"
->      , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Principles}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
->      , spec2fp ctx English spec
->      , chain "\n\n" [ latexSection ("Rules about "++(addSlashes.name) pat) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
-> --                      "A conceptual analysis of "++(addSlashes.name) pat++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
+>      , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Design rules}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
+>      , spec2fp context English spec
+>      , chain "\n\n" [ latexSection ("Rules about "++addSlashes (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+> --                      "A conceptual analysis of "++addSlashes (name pat)++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
 > --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
 > --                      "\n\\caption{Conceptual analysis of "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
 >                       latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
->                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt ctx language r)++"\\\\\n&Relations:\\\\"++
+>                             (chain "\n" [show (nr r)++"&"++addSlashes (explainArt context language r)++"\\\\\n&Relations:\\\\"++
 >                                          "&\\(\\begin{array}{rcl}\n"++
 >                                               chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
 >                                                              | d<-declarations r]++
@@ -870,30 +990,30 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                              )
 >                     | pat<-dc]
 >      , latexChapter "Data Analysis" "Data Analysis"
->      , "\tA data analysis of the principles from the previous chapter (\\ref{chp:Principles}) yields a class diagram,"
+>      , "\tA data analysis of the principles from the previous chapter (\\ref{chp:Design rules}) yields a class diagram,"
 >      , "\twhich shown in figure \\ref{fig:"++cname++"CD}."
 >      , latexFigure (latexCenter ("  \\includegraphics[scale=.4]{"++cname++"_CD.png}")++
 >        "\n\\caption{Data structure of "++addSlashes cname++"}\n\\label{fig:"++cname++"CD}")
 >      , "\tDetails are provided in the following sections."
->      , funcSpecLaTeX ctx (funcSpec ctx (erAnalysis ctx) English) English
+>      , funcSpecLaTeX context (funcSpec context (erAnalysis context) English) English
 >      , latexChapter "Glossary" ("typology"++cname)
 >      , if null cs then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs ctx, C nm (==) [] `elem` concs ctx])
+>                          | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
 >      , "\\bibliographystyle{plain}"
->      , "\\bibliography{"++lname ctx++"}"
->      , "\\label{bibliography"++lname ctx++"}"
+>      , "\\bibliography{../"++name context++"}"
+>      , "\\label{bibliography"++name context++"}"
 >      ] else [] )
 >      where
->       spec = funcSpec ctx (erAnalysis ctx) language
->       cList = concs ctx>-rd [C nm (==) []| Cd pos nm def ref<-conceptdefs ctx]
+>       spec = funcSpec context (erAnalysis context) language
+>       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptdefs context]
 >--       nav :: Classification Concept
->--       nav  = sortCl before (Cl (Anything (genE ctx)) (makeTrees typ))
->       mms  = declarations ctx
+>--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
+>       mms  = declarations context
 >--       degree c = length [m | m<-mms, source m==c || target m==c]
 >--       c `before` c' = degree c > degree c'
 >--       caps :: Classification Concept -> [String]
@@ -901,13 +1021,35 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >--                         concat (map caps cls)
 >--       capss (Cl g cls) = ["\\super{"++lshow language g++"}{"++lshow language s++"}" | s<-map root cls]
 
+>  explainConcept :: Context -> Lang -> Concept -> String
+>  explainConcept thisCtx l c
+>   = latexDefinition (name c) [ "Een \\define{"++(unCap.name) c++"} is "++
+>                                (if null expla then "nog niet gedefinieerd." else addSlashes expla)++
+>                                (if null ref then ".\n" else "~\\cite{"++ref++"}.")
+>                              | Cd pos nm expla ref<-conceptdefs thisCtx, nm==name c] ++"\n"++
+>     if null gens then "" else
+>      latexDesignrule (addSlashes (upCap (plural l (name c))++" zijn "++
+>                                   commaNL "en" [unCap (plural l (name g))| g<-gens]++".\n"))
+> {- Voorbeelden toevoegen:
+>     ++addSlashes (if null examples then "" else
+>      if length examples==1 then "\nEen voorbeeld is "++"\""++head examples++"\""++"." else
+>      "Voorbeelden van "++upCap (plural l (name c))++" zijn "++commaNL "en" ["\""++e++"\""| e<-examples]++".")
+> -}
+>     where gens = [g| g<-concs thisCtx, g/=c, g `gE` c, null [e| e<-(concs thisCtx>-[g,c]), g `gE` e, e `gE` c]]
+>                  where gE = genE c
+>           examples = take 3 [e| e<-conts c, fstLetter<-take 1 e, isAlpha fstLetter]
 >  explainRule :: Context -> Lang -> Rule -> String
 >  explainRule thisCtx l r
 >   = if null (explain r)
 >     then (if l==English then "Artificial explanation: " else
 >           if l==Dutch   then "Kunstmatige uitleg: " else
 >           error("Module PredLogic: unsupported language"))++(lang l .assemble.normRule) r
->     else explain r
+>     else (if explain r=="NONE" then "" else explain r)
+>  explainDecl :: Context -> Lang -> Declaration -> String
+>  explainDecl thisCtx language d
+>   | explain d=="NONE" = ""
+>   | null (explain d)  = explainMult thisCtx language d
+>   | otherwise         = explain d
 >  explainMult :: Context -> Lang -> Declaration -> String
 >  explainMult thisCtx Dutch d
 >   | null ([Sym,Asy]         >- multiplicities d) = name d++" is een eigenschap van "++(unCap.plural Dutch .name.source) d++"."
@@ -941,7 +1083,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                                    ++applyM d "b" "a"++"."
 >   | null ([        Inj    ] >- multiplicities d) = "Er is hooguit één "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
 >                                                    ++applyM d "b" "a"++"."
->   | null ([    Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten minste een "++(unCap.name.target) d)++"."
+>   | null ([    Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste één "++(unCap.name.target) d)++"."
 >   | null ([Uni            ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("nul of één "++(unCap.name.target) d)++"."
 >   | otherwise                                    = applyM d ("een "++(unCap.name.source) d) ("een "++(unCap.name.target) d) ++"."
 >  explainMult thisCtx _ d -- default English
@@ -979,8 +1121,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   | null ([Uni            ] >- multiplicities d) = applyM d ("Every "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
 >   | otherwise                                    = applyM d ("a "++(unCap.name.source) d) ("a "++(unCap.name.target) d) ++"."
 
->  lglos language ctx = ltglos (name ctx) (typology (isa ctx)) language ctx
->  ltglos cname typ language ctx@(Ctx nm on isa world dc ms cs ks)
+>  lglos language context = ltglos (name context) (typology (isa context)) language context
+>  ltglos cname typ language context@(Ctx nm on isa world dc ms cs ks os)
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
 >      [ "\\newcommand{\\mulF}{MultiF{\\it it}}"
@@ -991,32 +1133,32 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >             (chain "\n" ["\\bf "++nm++" & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs ctx])
+>                         | Cd pos nm def ref<-conceptdefs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
 >      , "\\bibliographystyle{plain}"
->      , "\\bibliography{"++lname ctx++"}"
->      , "\\label{bibliography"++lname ctx++"}"
+>      , "\\bibliography{../"++name context++"}"
+>      , "\\label{bibliography"++name context++"}"
 >      ] else if language==English then
 >      [ "\\title{Design of "++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , latexChapter "Glossary" ("typology"++cname)
 >      , if null cs then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++nm++" & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs ctx])
+>                          | Cd pos nm def ref<-conceptdefs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
 >      , "\\bibliographystyle{plain}"
->      , "\\bibliography{"++lname ctx++"}"
->      , "\\label{bibliography"++lname ctx++"}"
+>      , "\\bibliography{../"++name context++"}"
+>      , "\\label{bibliography"++name context++"}"
 >      ] else [] )
 >      where
->       cList = concs ctx>-rd [C nm (==) []| Cd _ nm _ _<-conceptdefs ctx]
+>       cList = concs context>-rd [C nm (==) []| Cd _ nm _ _<-conceptdefs context]
 >--       nav :: Classification Concept
->--       nav  = sortCl before (Cl (Anything (genE ctx)) (makeTrees typ))
->       mms  = declarations ctx
+>--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
+>       mms  = declarations context
 >--       degree c = length [m | m<-mms, source m==c || target m==c]
 >--       c `before` c' = degree c > degree c'
 >--       caps :: Classification Concept -> [String]
@@ -1040,6 +1182,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >        , if language==Dutch then "\\usepackage[dutch]{babel}" else ""
 >        , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
 >        , "\\parindent 0em                      % Width of paragraph indentation."
+>        , "\\usepackage{theorem}"
+>        , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{"++(if language==Dutch then "Definitie" else "Definition")++"}[section]"
+>        , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{"++(if language==Dutch then "Ontwerpregel" else "Design Rule")++"}"
 >        , "\\usepackage{graphicx}"
 >        , "\\usepackage{amssymb}"
 >        , "\\usepackage{amsmath}"
@@ -1080,28 +1225,33 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >        , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
 >        , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"]
 
->  lglossary :: Lang -> Context -> IO ()
->  lglossary language context
->    = putStr ("Creating glossary for "++name context++" towards LaTeX.\n")   >>
->      laGen ("gloss"++lname context)
->       (lIntro language++concat
+>  generateGlossaryLaTeX :: Context -> Lang -> String
+>  generateGlossaryLaTeX context language
+>    = lIntro language++concat
 >        [ "\n\\begin{document}"
 >        , if language==English then "\n" else "\n\\selectlanguage{dutch}\n"
 >        , chain "\n" [lglos language c| c<-(rd' name . preCl . Cl context . wrld) context]
 >        , "\n\\end{document}"
->        ])
+>        ]
 
 
->  lprint :: Context -> Lang -> [Fspec] -> String -> IO ()
->  lprint context language spec filename
->    = putStr ("Analyzing "++name context++" towards LaTeX.\n")   >>
->      laGen filename
->       (lIntro language++concat
+>  generateFspecLaTeX :: Context -> Lang -> [Fpat] -> String
+>  generateFspecLaTeX context language spec
+>    = lIntro language++concat
 >        [ "\n\\begin{document}"
 >        , if language==English then "\n" else "\n\\selectlanguage{dutch}\n"
 >        , chain "\n" [lshow language c| c<-(rd' name . preCl . Cl context . wrld) context]
 >        , "\n\\end{document}"
->        ])
+>        ]
+
+>  generateArchLaTeX :: Context -> Lang -> [Fpat] -> String
+>  generateArchLaTeX context language spec
+>    = lIntro language++concat
+>        [ "\n\\begin{document}"
+>        , if language==English then "\n" else "\n\\selectlanguage{dutch}\n"
+>        , chain "\n" [archShow language c| c<-(rd' name . preCl . Cl context . wrld) context]
+>        , "\n\\end{document}"
+>        ]
 
 
 Latex markup for Z-schema:
@@ -1165,7 +1315,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 >  idNam c = "\\id{"++concat [if c `elem` [' ','_'] then "\\ " else [c]| c<-firstCaps c]++"}"
 
 >  instance LATEX Declaration where
->   lshow language mm@(Sgn _ _ _ _ _ _ _ _ _ _ _)
+>   lshow language mm@(Sgn _ _ _ _ _ _ _ _ _ _ _ _)
 >    = if language==Dutch then
 >       "\\label{rel:"++firstCaps (lname mm++lname (source mm)++lname (target mm))++"}\n"++
 >              wrapMath(idName mm++":: "++ lsign mm)++"\\\\\n"++
@@ -1204,7 +1354,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 >           | isNot m   = "\\cmpl{\\ident{"++name (source m)++"}}"
 >           | otherwise = if inline m then idName m else "\\flip{"++idName m++"}"
 
->  lsign (Sgn nm d c ps _ _ _ _ _ _ _)
+>  lsign (Sgn nm d c ps _ _ _ _ _ _ _ _)
 >                      | m Uni&& m Inj && m Sur && m Inj = a++"\\rel"++b
 >                      | m Uni&& m Tot                   = a++"\\rightarrow"++b
 >                      | otherwise                       = a++"\\rel"++b
@@ -1261,7 +1411,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 
 >  instance LATEX PredLogic where
 >   lshow language x = predLshow ("\\forall ", "\\exists ", implies, "\\Leftrightarrow", "=", "\\not =", "\\vee", "\\wedge", "\\neg", rel, fun, mathVars, "\\\\\n  ", "\\ ") x
->                      where rel m lhs rhs = lhs++"\\ "++idName m++"\\ "++rhs
+>                      where rel m lhs rhs = lhs++"\\ "++(if isIdent m then "=" else idName m)++"\\ "++rhs
 >                            fun m x = idName m++"("++x++")"
 >                            implies antc cons = antc++"\\ \\Rightarrow\\ "++cons
 
@@ -1277,6 +1427,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 Basic LATEX markup
 TODO: complete all accents and test
 
+>  addSlashes :: String -> String
 >  addSlashes (' ': '\"': cs) = " ``"++addSlashes cs
 >  addSlashes ('\"': ' ': cs) = "'' "++addSlashes cs
 >  addSlashes ('\\': cs) = "\\\\"++addSlashes cs
@@ -1284,12 +1435,16 @@ TODO: complete all accents and test
 >  addSlashes ('&': cs)  = "\\&"++addSlashes cs
 >  addSlashes ('é': cs) = "\\'e"++addSlashes cs
 >  addSlashes ('è': cs) = "\\`e"++addSlashes cs
+>  addSlashes ('ë': cs) = "\\\"e"++addSlashes cs
 >  addSlashes ('ï': cs) = "\\\"{\\i}"++addSlashes cs
 >  addSlashes ('á': cs) = "\\'a"++addSlashes cs
 >  addSlashes ('à': cs) = "\\`a"++addSlashes cs
 >  addSlashes ('ó': cs) = "\\'o"++addSlashes cs
 >  addSlashes ('ò': cs) = "\\`o"++addSlashes cs
->  addSlashes (c: cs)    = c:addSlashes cs
+>--  addSlashes ('“': cs) = "\\``"++addSlashes cs
+>--  addSlashes ('”': cs) = "\\''"++addSlashes cs
+>  addSlashes (c: cs)    = if ord c>127 then error("Character '"++[c]++"' (ASCII "++show (ord c)++") is not mapped correctly to LaTeX by ADL in \""++c:cs++"\".") else
+>                          c:addSlashes cs
 >  addSlashes _          = ""
 
 >  wrapMath str = "$"++str++"$"
@@ -1319,7 +1474,18 @@ TODO: complete all accents and test
 >   = if null ls then "" else
 >     chain "\n" (["\\begin{enumerate}"]++["\\item "++l|l<-ls]++["\\end{enumerate}"])
 
->  projectClassic :: Context -> [Fspec] -> Lang -> String
+>  latexDefinition nm [] = ""
+>  latexDefinition nm [def]
+>   = chain "\n" ["\\begin{definition}{"++addSlashes nm++"\\\\}", def, "\\end{definition}"]
+>  latexDefinition nm defs
+>   = chain "\n" (["\\begin{definition}{"++addSlashes nm++"}","  \\begin{itemize}"]++["  \\item "++l|l<-defs]++["  \\end{itemize}","\\end{definition}"])
+
+>  latexDesignrule str
+>   = chain "\n" ["\\begin{designrule}{}", str, "\\end{designrule}"]
+
+>  latexEmph x = "{\\em "++x++"}"
+
+>  projectClassic :: Context -> [Fpat] -> Lang -> String
 >  projectClassic context fs language
 >   = "ID;Task_Name;Duration;Type;Outline_Level;Predecessors;Milestone;Rollup\n"++
 >     (task2proj.spec2task context English) fs
@@ -1392,7 +1558,7 @@ TODO: complete all accents and test
 >     "\n\t"++str3++" "++(show.sum.map snd) us++" "++str2++"."
 >     where
 >      us= [ (unm, fps)
->          | Fspc pat units<-fspcs, Uspc unm pat car specs<-units
+>          | Pspc pat units<-fspcs, Uspc unm pat car specs<-units
 >          , fps<-[sum ([fPoints fpa| Sspc nm fpa input output rs pre post<-specs]++
 >                       [fPoints fpa| (c,_,fpa,_,_)<-car])
 >                 ], fps>0

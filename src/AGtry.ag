@@ -2,7 +2,7 @@
 -- TODO: cyclisch verband in signalen ontdekken en verbieden (SIGNAL inzage ON ALWAYS inzage)
 
 DATA Architecture  | Arch cs:Contexts
-DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ms:Declarations cs:ConceptDefs ks:KeyDefs
+DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ms:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs
 DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:ConceptDefs ks:KeyDefs
 DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
@@ -16,7 +16,7 @@ DATA Expression    | Tm m:Morphism
                    | K0 e:Expression
                    | K1 e:Expression
                    | Cp e:Expression
-DATA Declaration   | Sgn nm:String a:Concept b:Concept props:{[Prop]} prL:String prM:String prR:String content:{[Paire]} morPos:{FilePos} nr:Int sig:Bool
+DATA Declaration   | Sgn nm:String a:Concept b:Concept props:{[Prop]} prL:String prM:String prR:String content:{[Paire]} expla:String morPos:{FilePos} nr:Int sig:Bool
                    | Isn g:Concept s:Concept
                    | Iscompl g:Concept s:Concept
                    | Vs g:Concept s:Concept
@@ -29,9 +29,12 @@ DATA Concept       | C c:String gE:GenR os:{[String]}
                    | S c:String gE:GenR os:{[String]}
                    | Anything
                    | NOthing
-DATA KeyDef        | Kd pos:FilePos lbl:String e:Concept ms:Morphisms
+DATA KeyDef        | Kd pos:FilePos lbl:String e:Concept ats:Attributes
+DATA ObjectDef     | Obj nm:String pos:FilePos c:Concept ats:Attributes
+DATA Attribute     | Att nm:String pos:FilePos c:Concept e:Expression   -- Att nm pos c e
 DATA ConceptDef    | Cd pos:{FilePos} nm:String def:String ref:String
 TYPE ConceptDefs   = [ConceptDef]
+TYPE Attributes    = [Attribute]
 TYPE Contexts      = [Context]
 TYPE Gens          = [Gen]
 TYPE Rules         = [Rule]
@@ -40,6 +43,7 @@ TYPE Concepts      = [Concept]
 TYPE Declarations  = [Declaration]
 TYPE Morphisms     = [Morphism]
 TYPE KeyDefs       = [KeyDef]
+TYPE ObjDefs       = [ObjectDef]
 TYPE Patterns      = [Pattern]
 TYPE Pairs         = [Paire]
 
@@ -75,8 +79,8 @@ import CC_aux
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph
-          , KeyDef(Kd)
-          , KeyDefs, nr, multiplicities, declaration
+          , ObjectDef(Obj), ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs
+          , nr, multiplicities, declaration
           , inline
          )
 
@@ -126,7 +130,7 @@ mkCtxAG ctxs ctxName
 -- multiple ctTrees may occur if contexts are used multiply in different ctTrees.
     trees = makeClassificationsF (name.fst) tuples++[Cl s []| s<-singles]
             where tuples = [ ((spc,(mG,mD)),(gen,(mG',mD')))
-                           | (spc@(Ctx nm on isa world dc ms cs ks),(mG,mD))<-ctxs, o<-on
+                           | (spc@(Ctx nm on isa world dc ms cs ks os),(mG,mD))<-ctxs, o<-on
                            , (gen,(mG',mD'))<-ctxs,name gen==o]
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
@@ -171,20 +175,21 @@ SEM Contexts
   | Nil  lhs.over     = []
          lhs.contexts = []
 {
-renumber ss = [ Sgn nm a b props prL prM prR cs pos nr sig | (nr,Sgn nm a b props prL prM prR cs pos _ sig)<-zip [1..] ss]
+renumber ss = [ Sgn nm a b props prL prM prR cs expla pos nr sig | (nr,Sgn nm a b props prL prM prR cs expla pos _ sig)<-zip [1..] ss]
 mergecontents ss = [ Sgn nm a b (rd [p|s<-cl,p<-multiplicities s])
                                 prL prM prR
                                 (sord [l|s<-cl,l<-contents s])
-                                p nr sig
+                                expla p nr sig
                    | (nr,cl)<-zip [1..] (eqClass (==) ss)
-                   , Sgn nm a b props prL prM prR cs p _ sig <-
-                       take 1 ([s|s@(Sgn _ _ _ _ prL prM prR _ _ _ _)<-cl
+                   , Sgn nm a b props prL prM prR cs expla p _ sig <-
+                       take 1 ([s|s@(Sgn _ _ _ _ prL prM prR _ _ _ _ _)<-cl
                                  , not (null (prL++prM++prR))]++cl)
                    ]
 
 deriveMults ks sgs
- = [Sgn nm a b (props `uni` derived s) prL prM prR cs pos nr sig| s@(Sgn nm a b props prL prM prR cs pos nr sig)<-sgs]
-   where derived s = (rd.concat) [if inline m then [Uni,Tot] else [Sur,Inj]| Kd pos lbl c ms<-ks,  m<-ms, declaration m==s]
+ = error "TODO DeriveMults moet ook multipliciteiten van relaties afleiden van expressies."++
+   [Sgn nm a b (props `uni` derived s) prL prM prR cs expla pos nr sig| s@(Sgn nm a b props prL prM prR cs expla pos nr sig)<-sgs]
+   where derived s = []
 }
 SEM Context
   | Ctx loc.mD        = ({-deriveMults @keys.-} renumber.mergecontents.concat) [mD| (ctx,(mG,mD)) <- preCl @lhs.ctxTree] -- all declarations in context
@@ -201,10 +206,12 @@ SEM Context
         dc.sDef       = @mD
         ms.sDef       = @mD
         ks.sDef       = @mD
+        os.sDef       = @mD
         dc.gE         = @genE
         ms.gE         = @genE
         ks.gE         = @genE
-        lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys)
+        os.gE         = @genE
+        lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys @os.objDefs)
                         , (@dc.mGen, @mC))]
 -- if stuck looping, try changing @mC ^^ <--(here) into an empty list. It has shown the way to a computational loop in the attribute evaluation before.
         lhs.context   = put_gE @genE @cD
@@ -215,7 +222,7 @@ SEM Context
                               @dc.patterns
                               (declarations @dc.patterns) -- (error (chain "\n" (map showHS @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
                               (sort' name (rd (@cs.conDefs ++ @dc.conDefs)))
-                              @keys)
+                              @keys @os.objDefs)
 
 -- Generation of (G g s) elements, which are the basis for a concept tree.
 ATTR Rule Rules Pattern Patterns [ | | mGen:Gens ]
@@ -234,7 +241,7 @@ SEM Rule
 
 ATTR Rule Rules [ | | declarations:Declarations usedDecls:Declarations ]
 ATTR Morphism Morphisms [ | | usedDecls:Declarations ]
-ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations
+ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations Attribute Attributes KeyDef KeyDefs ObjectDef ObjDefs
      [ sDef:Declarations gE:GenR | | ]
 {
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
@@ -342,17 +349,17 @@ SEM Rule
                                         , (a `@lhs.gE` a' || a' `@lhs.gE` a) && (b `@lhs.gE` b' || b' `@lhs.gE` b)
                                         ]
   | Sg
-       lhs.rules       = [ Sg p r expla sgn n pn (head @decls)
-                         | r@(Ru c antc p cons cpu expla sgn n pn)<- @rule.rules ]
+       lhs.rules       = @ruls
 -- @errcpu contains all error messages wrt cpu.
        lhs.closRules   = @rule.closRules
        lhs.morphisms   = @rule.morphisms
        lhs.usedDecls   = rd (declarations @rule.morphisms)
 -- signal declarations
-       lhs.declarations= @decls
+       lhs.declarations= declarations @ruls
        loc.signalname  = if null @signal.nm then "Rule"++show @lhs.rnr else @signal.nm
-       loc.decls       = [ Sgn @signalname a b [] "" "" "" [] @pos @lhs.rnr True
-                         | (a,b) <- map sign @rule.rules]
+       loc.ruls        = [ Sg p r expla sgn n pn (Sgn @signalname a b [] "" "" "" [] "" @pos @lhs.rnr True)
+                         | r@(Ru c antc p cons cpu expla sgn n pn)<- @rule.rules
+                         , (a,b)<-[sign r] ]
   | Gc 
 -- downward propagation of type information. Every type in isign will lead to a morphism.
 -- inherited (i.e. downward) propagation of types
@@ -534,7 +541,7 @@ SEM Expression
        e.rnr        = @lhs.rnr+1
        lhs.rnr      = @e.rnr
        loc.closmor  = let [(a,b)] = take 1 @lhs.isign
-                      in Mph ({-"Clos_"++-}(name.head.declarations) @e.expr) @lhs.pos [] (a,b) True (Sgn ({-"Clos_"++-}(name.head.declarations) @e.expr) a b [Trn,Rfx] "" "" "" [] @lhs.pos 0 True)
+                      in Mph ({-"Clos_"++-}(name.head.declarations) @e.expr) @lhs.pos [] (a,b) True (Sgn ({-"Clos_"++-}(name.head.declarations) @e.expr) a b [Trn,Rfx] "" "" "" [] "Closure" @lhs.pos 0 True)
        lhs.raw      = K0 @e.raw
   | K1 lhs.signs    = @e.signs
        lhs.expr     = Tm @closmor
@@ -552,7 +559,7 @@ SEM Expression
        e.rnr        = @lhs.rnr+1
        lhs.rnr      = @e.rnr
        loc.closmor  = let [(a,b)] = take 1 @lhs.isign
-                      in Mph ({-"Clos_"++-}(name.head.declarations) @e.expr) @lhs.pos [] (a,b) True (Sgn ({-"Clos_"++-}(name.head.declarations) @e.expr) a b [Trn] "" "" "" [] @lhs.pos 0 False)
+                      in Mph ({-"Clos_"++-}(name.head.declarations) @e.expr) @lhs.pos [] (a,b) True (Sgn ({-"Clos_"++-}(name.head.declarations) @e.expr) a b [Trn] "" "" "" [] "Closure" @lhs.pos 0 False)
        lhs.raw      = K1 @e.raw
   | Cp lhs.signs    = @e.signs
        lhs.expr     = Cp @e.expr
@@ -612,7 +619,7 @@ SEM Expressions
 
 
 -- Type errors
-ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs
+ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjDefs Attribute Attributes
      [ | | sErr: {[String]} ]
 SEM Architecture
   | Arch lhs.sErr   = @cs.sErr
@@ -628,7 +635,7 @@ SEM Pattern
   | Pat lhs.sErr    = @rules.sErr ++ @pms.sErr ++ @ks.sErr
 SEM Rules
   | Cons lhs.sErr         = @hd.sErr ++ @tl.sErr
-         lhs.declarations = @hd.declarations ++ @tl.declarations
+         lhs.declarations = @hd.declarations ++ @tl.declarations  --rules can have declarations, if they contain closures or if they are signals.
          lhs.usedDecls    = @hd.usedDecls ++ @tl.usedDecls
   | Nil  lhs.sErr         = []
          lhs.declarations = []
@@ -819,17 +826,27 @@ SEM KeyDefs
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM KeyDef
-  | Kd lhs.sErr     = [ "10 in "++show @pos++"\n   "++
-                        "Ambiguous declaration for attribute " ++ commaEng "and" [name a|a<-as] ++ " in entity " ++ name @e.concept ++ ".\n"
-                      | as <- @ambs]++
-                      [ "11 in "++show @pos++"\n   "++
-                        "Attribute " ++ nm ++ " is incompatible with entity " ++ name @e.concept ++ ".\n"
-                      | (Mph nm pos ats _ yin _,ss) <- @ms.raw
-                      , if yin
-                        then null[source s|s<-ss, source s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` source s]
-                        else null[target s|s<-ss, target s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` target s]]
-       loc.nulls    = [a | a <- @ksgn, null a]
-       loc.ambs     = [a | a <- @ksgn, length a>1]
+  | Kd lhs.sErr     = @ats.sErr
+
+SEM Attribute   -- Att nm pos c e
+  | Att lhs.sErr    = [ "11 in "++show @pos++"\n   "++
+                        "Ambiguous declaration for attribute " ++ commaEng "and" [show s|s <- @e.signs] ++ " in key attribute " ++ show (Att @nm @pos @c.concept @e.raw) ++ ".\n"
+                      | length @e.signs>1]++
+                      [ "10 in "++show @pos++"\n   "++
+                        "Inconsistent types in key definition " ++ show (Att @nm @pos @c.concept @e.raw) ++ ".\n"
+                      | null @e.signs]++
+                      [ "9 in "++show @pos++"\n   "++
+                        "Inconsistent types in key definition " ++ show (Att @nm @pos @c.concept @e.raw) ++ ".\n"
+                      | null [a| (a,b) <- @e.signs, a `@lhs.gE` @c.concept] ]
+        e.isign     = [(@c.concept,Anything)]
+SEM Attributes 
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
+SEM ObjectDef
+  | Obj lhs.sErr    = @ats.sErr
+SEM ObjDefs 
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
 
 ATTR Rule Rules Expression Expressions [ pn:{String} | | ]
 
@@ -881,10 +898,12 @@ SEM Patterns
          lhs.conDefs       = []
 
 SEM Pattern
-  | Pat  lhs.patterns      = [Pat @nm @rules.rules ( @rules.mGen ++ @gen.list) ( @pms.declarations ++ @rules.declarations ) @cs.conDefs @ks.keyDefs]
+  | Pat  lhs.patterns      = [Pat @nm @rules.rules ( @rules.mGen ++ @gen.list)
+                                  ( @pms.declarations ++ @rules.declarations ) -- rules contain one declaration for every signal. Do they contain a declaration for every closure?
+                                  @cs.conDefs @ks.keyDefs]
          rules.rnr         = @lhs.rnr
          lhs.rnr           = @rules.rnr
-         lhs.usedDecls     = @rules.usedDecls ++declarations @ks.morphisms
+         lhs.usedDecls     = @rules.usedDecls ++declarations @ks.exprs
          lhs.rawDecls      = @pms.rawDecls
          lhs.conDefs       = @cs.conDefs
          rules.pn          = @nm
@@ -913,23 +932,59 @@ SEM ConceptDefs
   | Cons lhs.conDefs = @hd.c : @tl.conDefs
   | Nil  lhs.conDefs = []
 
-ATTR KeyDef [ sDef:Declarations gE:GenR | | kd:KeyDef morphisms:Morphisms ]
+ATTR KeyDef [ | rnr:Int | kd:KeyDef  exprs:Expressions ]
 SEM KeyDef
-  | Kd lhs.kd        = Kd @pos @lbl @e.concept @ms.morphisms
-       lhs.morphisms = @ms.morphisms
-       ms.isign      = take 1 ([(src,Anything)|src<-irredC @lhs.gE (map source (concat @ksgn))] ++ [(@e.concept, @e.concept)])
-       loc.ksgn      = [ [Mph nm pos ats (if yin then (source s,target s) else (target s,source s)) yin (error "illegal reference to 'ksgn' in semantics of Kd of KeyDef")
-                         | s<-ss
-                         ,     yin && (source s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` source s) ||
-                           not yin && (target s `@lhs.gE` @e.concept || @e.concept `@lhs.gE` target s) ]
-                       | (Mph nm pos ats _ yin _,ss) <- @ms.raw]
+  | Kd   lhs.kd      = Kd @pos @lbl @e.concept @ats.ats
+         lhs.exprs   = @ats.exprs
+         ats.rnr     = @lhs.rnr+1
+         lhs.rnr     = @ats.rnr
 
-ATTR KeyDefs [ sDef:Declarations gE:GenR | | keyDefs:KeyDefs morphisms:Morphisms ]
+ATTR KeyDefs [ | rnr:Int | keyDefs:KeyDefs exprs:Expressions ]
 SEM KeyDefs
-  | Cons lhs.keyDefs   = @hd.kd : @tl.keyDefs
-         lhs.morphisms = @hd.morphisms ++ @tl.morphisms
-  | Nil  lhs.keyDefs   = []
-         lhs.morphisms = []
+  | Cons lhs.keyDefs = @hd.kd : @tl.keyDefs
+         lhs.exprs   = @hd.exprs ++ @tl.exprs
+         hd.rnr      = @lhs.rnr
+         tl.rnr      = @hd.rnr
+         lhs.rnr     = @tl.rnr
+  | Nil  lhs.keyDefs = []
+         lhs.exprs   = []
+         lhs.rnr     = @lhs.rnr
+
+ATTR ObjectDef [ | rnr:Int | odef:ObjectDef  exprs:Expressions ]
+SEM ObjectDef
+  | Obj  lhs.odef    = Obj @nm @pos @c.concept @ats.ats
+         lhs.exprs   = @ats.exprs
+         ats.rnr     = @lhs.rnr+1
+         lhs.rnr     = @ats.rnr
+
+ATTR ObjDefs [ | rnr:Int | objDefs:ObjDefs exprs:Expressions ]
+SEM ObjDefs
+  | Cons lhs.objDefs = @hd.odef : @tl.objDefs
+         lhs.exprs   = @hd.exprs ++ @tl.exprs
+         hd.rnr      = @lhs.rnr
+         tl.rnr      = @hd.rnr
+         lhs.rnr     = @tl.rnr
+  | Nil  lhs.objDefs = []
+         lhs.exprs   = []
+         lhs.rnr     = @lhs.rnr
+
+ATTR Attribute [ | rnr:Int | att:Attribute expr:Expression ]
+SEM Attribute
+  | Att lhs.att      = Att @nm @pos @c.concept @e.expr
+        lhs.expr     = @e.expr
+        e.rnr        = @lhs.rnr+1
+        lhs.rnr      = @e.rnr
+
+ATTR Attributes   [ | rnr:Int | ats: Attributes exprs:Expressions ]
+SEM Attributes
+  | Cons lhs.ats     = @hd.att : @tl.ats
+         lhs.exprs   = @hd.expr : @tl.exprs
+         hd.rnr      = @lhs.rnr
+         tl.rnr      = @hd.rnr
+         lhs.rnr     = @tl.rnr
+  | Nil  lhs.ats     = []
+         lhs.exprs   = []
+         lhs.rnr     = @lhs.rnr
 
 ATTR Expressions [ | | exprs:Expressions ]
 SEM Expressions
@@ -991,8 +1046,8 @@ SEM Morphism
                     [ s | s <- ss, if @yin then source s == head @atts && target s == last @atts else source s == last @atts && target s == head @atts]
         lhs.raw   = let err=error "illegal reference to 'raw' in semantics of Mph of Morphism" in
                     if null @ats
-                    then (Mph @nm @pos @ats (Anything,Anything) @yin (Sgn @nm Anything Anything [] "" "" "" [] err 0 True), @ss)
-                    else (Mph @nm @pos @ats (if @yin then (head @ats,last @ats) else (last @ats,head @ats)) @yin (Sgn @nm (head @ats) (last @ats) [] "" "" "" [] err 0 True), @ss)
+                    then (Mph @nm @pos @ats (Anything,Anything) @yin (Sgn @nm Anything Anything [] "" "" "" [] "" err 0 True), @ss)
+                    else (Mph @nm @pos @ats (if @yin then (head @ats,last @ats) else (last @ats,head @ats)) @yin (Sgn @nm (head @ats) (last @ats) [] "" "" "" [] "" err 0 True), @ss)
         loc.ats   = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
         lhs.nm    = @nm
         lhs.pos   = @pos
@@ -1032,8 +1087,8 @@ SEM Declaration
   | Sgn lhs.declaration = @msignat
         loc.msignat   = head ([ s
                               | s <- @lhs.sDef, @nm==name s, @a.concept==source s, @b.concept==target s]++
-                              [error ("Missing "++showHS (Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @morPos 0 @sig)++" in AGtry.ag\n"++ show @lhs.sDef)])
-        lhs.rawDecl   = Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @morPos 0 @sig
+                              [error ("Missing "++showHS (Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @expla @morPos 0 @sig)++" in AGtry.ag\n"++ show @lhs.sDef)])
+        lhs.rawDecl   = Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @expla @morPos 0 @sig
         lhs.nm        = @nm
   | Isn lhs.declaration = Isn @g.concept @s.concept
         lhs.rawDecl   = Isn @g.concept @s.concept
@@ -1058,7 +1113,7 @@ Otherwise, all candidate declarations are propagated up to the rule level, where
 At the rule level, there must be one possible assignment of declarations, or else we have an ambiguity.
 That unique assignment of declarations is propagated back in the (inherited) attribute isign.
 
-Attribute propagation goes as follows:
+Attribute propagation works as follows:
 1. All declarations are synthesized to one list of declarations per context.
 2. Declarations are distributed over various contexts. They are made available in an inherited attribute sDef.
 3. Morphisms are confronted with sDef, yielding a list @ms for each morphism, containing the visible declarations with the same name.

@@ -4,30 +4,31 @@
 >                       , Collection(empty, (>-))) 
 >  import Auxiliaries (chain, sort',rd, eqCl)
 >  import CC_aux 
->           ( rules, Context(Ctx), src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key
+>            ( rules, Context(Ctx), src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key
 >            ,Language, Declaration, concs, source, target, isFunction, isFlpFunction, posNone
 >            , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
 >            , Expression(F,Tm)
 >            , Prop(Sur,Inj),multiplicities
->           )
+>            , ObjectDef(Obj), Attribute(Att), Object(objects)
+>            )
 >--  import Calc
 >  import HtmlFilenames (fnContext)
 
 >  csvcontent contexts contextname
->   = putStr ("\nCSV content for every entity in "++name context)>>
->     foldr1 (>>) [ writeFile (fnEntity c) (shEnts (entConts context e))>>
+>   = putStr ("\nCSV content for every object definition in "++name context)>>
+>     foldr1 (>>) [ writeFile (fnEntity c) (shEnts (entConts context o))>>
 >                   putStr ("\n"++fnEntity c++" written")
->                 | e@(c,as) <- entities ] >>
+>                 | o@(Obj nm pos c ats) <- objects context ] >>
 >     putStr ("\nwritten\n")
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      (entities,relations,ruls) = erAnalysis context
 >      fnEntity c = "list"++name c++".csv"
 >      shEnts = chain "\n" . map (chain ";")
->      entConts context (c,as)
->       = ([name c]++[name a| (a,_)<-as]) : (foldr1 mrg [[[src p,trg p]| p<-(sort' src.contents) a] | (a,_)<-as])
+>      entConts context (Obj nm pos c ats) = [] -- moet inhoud opleveren, maar moet nog worden gebouwd.
+> -- TODO: dit werkend maken:      = ([name c]++[name a| a<-ats]) : (foldr1 mrg [[[src p,trg p]| p<-(sort' src.contents) a] | a<-ats])
 >      mrg l@((x:xs):xss) r@((y:ys):yss)
 >       | x<y       = (x:xs++[""|y<-ys]) : mrg xss r
 >       | x>y       = (y:[""|x<-xs]++ys) : mrg l yss
@@ -51,7 +52,7 @@
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      shR r   = showADL r
 
 In the type definition, an entity is represented by a concept (for instance Person)
@@ -99,7 +100,7 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
                      [ "{node [label=\""++showS s++"\"] "++nameG s++"}" | s<-fullnames]++
                      [chain "; " (map nameG (shrtnames))]++
                      ["node [shape=rectangle]"]++
-                     [chain "; " (map nameG (rd [s|(c,as)<-entities, (e,rs)<-as, s<-declarations e]))]
+                     [chain "; " (map nameG (rd [s|o@(Obj nm pos c ats)<-objects ctx, (e,rs)<-as, s<-declarations e]))]
        nodes = [ "node [shape=box,height=.5,width=.1,style=filled]"
                , "{node [label=\"I\"] I_"++ chain "; I_" dI++"}"
                , "{node [label=\"D\"] D_"++ chain "; D_" dD++"}"
@@ -127,8 +128,8 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
 >       ms = declarations ctx >- map declaration (mors (closExprs ctx))
 >       (entities,relations,ruls) = erAnalysis ctx
 >       sep = "\n   ; "
->       concepts = [c| (c,as)<-entities] -- all concepts
->       attributes = rd [a| (c,as)<-entities, (a,drs)<-as]
+>       concepts = [c| Obj nm pos c ats<-objects ctx] -- all concepts
+>       attributes = rd [a| Obj nm pos c ats<-objects ctx, a<-ats]
 >       drawnatts -- are those attributes that are drawn as an ellipse
 >        = [a| [a]<-eqCl target attributes, null [ac|ac<-declarations attributes++relations, declarations a/=[ac], target a `elem` [source ac,target ac]]]
 >       drawnrels -- those attributes that are drawn as relationship
@@ -168,12 +169,12 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
 >       ms = declarations ctx >- map declaration (mors (closExprs ctx))
 >       (entities,relations,ruls) = erAnalysis ctx
 >       sep = "\n   ; "
->       concepts = [c| (c,as)<-entities] -- all concepts
->       attributes = rd [a| (c,as)<-entities, (a,drs)<-as]
+>       concepts = [c| Obj nm pos c ats<-objects ctx] -- all concepts
+>       attributes = [a| Obj nm pos c ats<-objects ctx, a<-ats]
 >       nodesPlaces = ["node [shape=box]"]++
 >                     ["{node [shape=ellipse,label=\""++name att++" : "++
->                      (name.target) att++"\"] ATT_"++nameR att++"} ; "++
->                      (show.name.source) att++" -- ATT_"++nameR att
+>                      name (target att)++"\"] ATT_"++name att++"} ; "++
+>                      (show.name.source) att++" -- ATT_"++name att
 >                     | att<-attributes]++
 >                     ["edge  [len=1.5]"]++
 >                     [ "{node [shape=diamond,style=filled,color=lightgrey,label=\""++name r++

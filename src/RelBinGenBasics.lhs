@@ -20,23 +20,27 @@ Zonder substituties rekent sqlCodeComputeRule dus met de hele relatie, en is daa
 Een substitutie (m,s,t) betekent dat de relatie m wordt vervangen door twee atomen uit de interface, aangeduid met s en t.
 Let op: als m geflipt is, dan moeten de twee ingetikte atomen op de juiste plaats komen, en dus worden verwisseld.
 
+Als Tm [m'] = frExpr dan hoeft alleen het veld uit de interface (opgeslagen in de PHP variabele attrs) te worden overgenomen
+
 >-- Pre: oneMorphism toExpr
 >  sqlCodeComputeRule :: String -> Int -> Context -> [(Morphism,String,String)] -> ComputeRule -> String
 >  sqlCodeComputeRule attrs i context subs hc@(fOp, e, "INSERT INTO", toExpr, frExpr, rule)
->   = if src==trg && not (isProperty toExpr) then error ("(Module RelBinGenBasics) Fatal: src and trg are equal ("++src++") in sqlCodeComputeRule.\n"++show hc) else
->     if oneMorphism frExpr
+>   = if srcTo==trgTo && not (isProperty toExpr) then error ("(Module RelBinGenBasics) Fatal: srcTo and trgTo are equal ("++srcTo++") in sqlCodeComputeRule.\n"++show hc) else
+>   {-if Tm [m'] == frExpr
 >     then "'INSERT IGNORE INTO "++sqlMorName context m++
->          phpIndent i ++ "VALUES (\\''.addslashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\',"++
->                                " \\''.addslashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\')'"
->     else "'INSERT IGNORE INTO "++sqlMorName context m++
->          phpIndent i++
->          selectExpr context i src trg frExpr'++"'"
+>          phpIndent i ++ "VALUES (\\''.addslashes("++attrs++"['"++srcFr++"']).'\\',"++
+>                                " \\''.addslashes("++attrs++"['"++trgFr++"']).'\\')'"
+>     else -}
+>     "'INSERT IGNORE INTO "++sqlMorName context m++
+>          selectExpr context i srcTo trgTo frExpr'++"'"
 >     where m    = head (mors toExpr)
 >           m'   = head (mors frExpr)
->           src  = sqlExprSrc toExpr
->           trg  = sqlExprTrg toExpr -- may not collide with src, but what if toExpr is a property (or identity)? (Bas?)
-> -- was:   trg  = noCollide [src] (sqlExprTrg toExpr)
-> -- might be?: trg  = noCollideUnlessTm toExpr [src] (sqlExprTrg toExpr)
+>           srcFr | isIdent frExpr     = sqlConcept context (source frExpr)
+>                 | otherwise          = if inline m' then sqlMorSrc context m else sqlMorTrg context m
+>           srcTo = sqlExprSrc toExpr
+>           trgFr | isIdent frExpr     = sqlConcept context (source frExpr)
+>                 | otherwise          = if inline m' then sqlMorTrg context m else sqlMorSrc context m
+>           trgTo = sqlExprTrg toExpr -- may not collide with srcTo, but what if toExpr is a property (or identity)? (Bas?)
 >           frExpr' = doSubsExpr context attrs subs frExpr
 >  sqlCodeComputeRule attrs i context subs hc@(fOp, e, "DELETE FROM", toExpr, (Cp frExpr), rule)
 >   = if null froms
@@ -483,7 +487,7 @@ TODO: de nummering van declaraties geschiedt niet consequent. Dus moet het maar 
 >     head ts
 >     where ts = ["T"++show i++"_"++enc False (name s)
 >                |(i,s)<-zip [1..] (declarations context), a==s]
->                -- error(chain "\n" (map showHS (filter isSgnl (declarations context)))) --
+>              -- error(chain "\n" (map showHS (filter isSgnl (declarations context)))) --
 >           as = declarations m
 >           a = head as
 
