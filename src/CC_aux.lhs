@@ -80,20 +80,23 @@ TODO:
 
 >  data ObjectDef = Obj String         -- view name of the object definition (i.e. class name) (The CSL name is in the concept, third argument)
 >                       FilePos        -- position of the object definition in the file containing the ADL sourcecode
->                       Concept        -- the concept of which objects will be an instance. (The view name is the string, first argument)
+>                       Expression     -- the subset of objects visible thru ObjectDef
 >                       [Attribute]    -- So in its entirety: Obj nm pos c ats
->                   deriving Show
->  concept (Obj nm pos c ats) = c
+>                   deriving (Eq,Show)
+>  concept (Obj nm pos e ats) = target e
+>  attributes (Obj nm pos e ats) = ats
 
 >  type ObjDefs = [ObjectDef]
 >  data Attribute = Att String         -- view name of the attribute definition
 >                       FilePos        -- position of the object definition in the file containing the ADL sourcecode
->                       Concept        -- the concept which is the target of the attribute. Must be equal to the target of the expression.
 >                       Expression     -- So in its entirety: Att nm pos c e
+>                       [Attribute]    -- So in its entirety: Obj nm pos c ats
 >                      deriving (Eq,Show)
 >  type Attributes = [Attribute]
 >  instance Identified Attribute where
 >   name (Att nm pos c e) = nm
+>  concept (Att nm pos e ats) = target e
+>  attributes (Att nm pos e ats) = ats
 
 >  data Architecture = Arch Contexts -- deriving Show
 >  data Concept      = C String GenR [String] | -- C nm gE cs represents the set of instances cs by name nm.
