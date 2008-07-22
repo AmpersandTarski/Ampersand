@@ -82,6 +82,7 @@ TODO:
 >                       FilePos        -- position of the object definition in the file containing the ADL sourcecode
 >                       Concept        -- the concept of which objects will be an instance. (The view name is the string, first argument)
 >                       [Attribute]    -- So in its entirety: Obj nm pos c ats
+>                   deriving Show
 >  concept (Obj nm pos c ats) = c
 
 >  type ObjDefs = [ObjectDef]

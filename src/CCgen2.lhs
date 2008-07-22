@@ -6,7 +6,7 @@
 >  import CommonClasses ( Identified(name), empty )
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, concs, rules, multRules, patterns)
+>  import CC_aux (Architecture, isa, Lang(English,Dutch), Context(Ctx), showHS, concs, rules, multRules, patterns)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
@@ -71,7 +71,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >               putStr (concat ["!Error of type "++err| err<-errs])>>
 >               putStr ("Nothing generated, please correct mistake(s) first.\n")
 >        }}
->      where build contexts switches contextname filename dbName slRes
+>      where build :: [Context] -> [String] -> String -> String -> String -> Architecture -> IO()
+>            build contexts switches contextname filename dbName slRes
 >             = sequence_ 
 >                ([ anal contexts contextname ("-p" `elem` switches) (if "-crowfoot" `elem` switches then "crowfoot" else "cc")
 >                 | null switches || "-h" `elem` switches]++
@@ -84,10 +85,10 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                 [ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
 >                 [ phpObjServices contexts contextname filename dbName | "-objects" `elem` switches]++
->                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]++
+>                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
 >--                 [ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]++
->--               [ csvcontent contexts contextname | "-csv" `elem` switches]++
->                 [ putStr (show slRes) | "-dump" `elem` switches ]
+>--               [ csvcontent contexts contextname | "-csv" `elem` switches]
+>--                ++[ putStr (show slRes) | "-dump" `elem` switches ]
 >                )>>
 >                   appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length ents)++"\n") >>
@@ -110,7 +111,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >--                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n")
 >                  where
 >                     context  = head ([c| c<-contexts, name c==contextname]++
->                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >                     (ents,rels,ruls) = erAnalysis context
 >--                     spec = funcSpec context (ents,rels,ruls) (lang switches)
 >            lang switches
@@ -122,14 +123,14 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >   = putStr (showHS context)
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
->                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] []]))
+>                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []]))
 >{- projectSpecText contexts contextname language
 >   = putStrLn ("\nGenerating project plan for "++name context)                >>
 >     writeFile (name context++".csv") (projectClassic context spec language)  >>
 >     putStr ("\nMicrosoft Project file "++name context++".csv written... ")
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      spec = funcSpec context (erAnalysis context) language
 >      (entities, relations, ruls) = erAnalysis context
 >-}
@@ -141,7 +142,7 @@ functionalSpecText generates a functional specification in ASCII
      putStr (funcSpecText context spec language)
      where
       context  = head ([c| c<-contexts, name c==contextname]++
-                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
       spec = funcSpec context (entities, relations, ruls) language
       (entities, relations, ruls) = erAnalysis context
 
@@ -158,7 +159,7 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
@@ -173,7 +174,7 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
@@ -186,7 +187,7 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     processLaTeX2PDF ("gloss"++name context)
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >-}
 
 >  graphics context fnm graphicstyle full b
