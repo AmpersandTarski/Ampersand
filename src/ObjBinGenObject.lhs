@@ -11,4 +11,15 @@
 >  import RelBinGenBasics
 > 
 
-> 
+>  objectServices context filename object
+>   = (chain "\n  "
+>     ([ "<?php // generated with "++adlVersion
+>      , ""
+>      , "/********* file "++filename++" on line "++(show (pos object))
+>      ] ++ (map ((++) " * ") (
+>         ("OBJECT "++(name object)++" "++(name (concept object)))
+>       :[] ++ ["ENDOBJECT"] )) ++
+>      [" *********/"
+>      , ""
+>      ]
+>     )) ++ "\n?>"

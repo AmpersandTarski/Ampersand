@@ -84,7 +84,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >--                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
 >                 [ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
->                 [ phpObjServices contexts contextname filename dbName | "-objects" `elem` switches]++
+>                 [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-objects" `elem` switches]++
 >                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
 >--                 [ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]++
 >--               [ csvcontent contexts contextname | "-csv" `elem` switches]

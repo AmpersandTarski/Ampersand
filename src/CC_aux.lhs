@@ -4,7 +4,7 @@
 >            , Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
 >            , ConceptDef(Cd)
->            , ObjectDef(Obj), ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs, Object(objects)
+>            , ObjectDef(Obj), concept, ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs, Object(objects)
 >            , Rule(Ru,Sg,Gc)
 >            , makeMph
 >            , Gen(G)
@@ -1781,6 +1781,9 @@ TODO: transform the following into  instance Collection Declaration where
 >   name (Isn _ _)                      = "I"
 >   name (Iscompl _ _)                  = "I-"
 >   name (Vs _ _)                       = "V"
+
+>  instance Identified ObjectDef where
+>   name (Obj nm _ _ _) = nm
 
 >  applyM (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then d++" "++nm++" "++c else prL++(if null prL then d else unCap d)++prM++c++prR
 >  applyM (Isn _ _)                            d c = d++" equals "++c

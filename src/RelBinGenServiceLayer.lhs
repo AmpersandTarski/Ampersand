@@ -92,7 +92,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                        )++")"
 >      chrShw r = charshow r
 
-
+>  {-
 >  serviceLayer context noTrans beeper dbName -- komt in het bestand <context>.php
 >   = chain "\n  " 
 >     [ "<? // generated with "++adlVersion
@@ -129,71 +129,9 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     , "}else{"
 >     , "        function DB_debug($txt,$lvl){return false;}"
 >     , "}"
->     , chain "\n"
->        [ "\n  function checkRule"++show (nr rule)++"(){\n    "++
->          (if isFalse rule'
->           then "// Tautology:  "++showADL rule++"\n     "
->           else "// No violations should occur in ("++showADL rule++")\n    "++
->                concat [ "//            rule':: "++(showADL rule') ++"\n    " | pDebug] ++
->                concat [ "// sqlExprSrc rule':: "++sqlExprSrc rule'++"\n     " | pDebug] ++
->                "$v=DB_doquer('"++selectExpr context 19 (sqlExprSrc rule') (sqlExprTrg rule') rule'++"');\n     "++
->                "if(count($v)) {\n    "++
->                "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++sqlExprSrc rule'++"'].'") ("'.$v[0]['"++sqlExprTrg rule'++"'].'")) ++",3);\n    "++
->                "  return false;\n    }")++
->                "return true;\n  }"
->        | rule<-rules context, rule'<-[(shrink . conjNF . Cp . normExpr) rule] ]
+>     , chain "\n" (ruleFunctions context)
 >     , ""
->     , "if(!$DB_slct){"
->     , "      DB_debug( \"Warning: error connecting to database, building database\",2 );"
->     , "      mysql_query(\"CREATE DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not create DB "++dbName++"');"
->     , "      $DB_slct = mysql_select_db("++ dbName {- was: $DB_daba -} ++",$DB_link) or die ('Could not select DB "++dbName++"');"
->     , "      $DB_errs = false;"
->     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(380) NOT NULL default '', "++sqlExprTrg e++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
->                                    | e<-closE context, error ("clos: "++showADL e)]
-> --  , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlEConcept context c++" (Eventnr INT AUTO_INCREMENT, Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, Evtype varchar(1) NOT NULL, "++sqlAttConcept context c++" varchar(380) NOT NULL default '',"++chain ", " [ sqlMorName context a++" varchar(380) NOT NULL default ''" | a<-ats ]++", UNIQUE  (Eventnr) ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
-> --                                 | o@(Obj nm pos c ats)<-objects ctx]
->     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlRelName context s++" ("++sqlRelSrc s++" varchar(380) NOT NULL default '', "++sqlRelTrg s++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlRelSrc s++","++sqlRelTrg s++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"++
->                                      if null chn then "" else
->                                      "\n        DB_doquer(\"INSERT INTO "++sqlRelName context s++" ("++sqlRelSrc s++","++sqlRelTrg s++
->                                      ") VALUES "++chn++"\");"
->                                    | s<-rd (declarations context), chn<-let truncate xs = if length xs>380 then take (380-if xs!!(380-1)=='\\' then 2 else 1) xs++"'" else xs
->                                                                         in [chain ", " ["("++truncate (phpShow a)++","++truncate (phpShow b)++")" | [a,b]<-contents s, not (null a), not (null b)]]]
->       ++if rd (declarations context)==declarations context then "" else
->         error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS s|s<-cl]|cl<-eqClass (==) (declarations context), length cl>1])
->     , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept context c++" ("++sqlAttConcept context c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept context c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
->                                    | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
->     , "      "++chain "\n        " [ if null ss then "" else
->                                      insConcept context c
->                                      ( chain " UNION " (["SELECT DISTINCT "++sqlRelSrc s++" FROM "++sqlRelName context s | s<-declarations context, not (null (contents s)), c <= source s]++
->                                                         ["SELECT DISTINCT "++sqlRelTrg s++" FROM "++sqlRelName context s | s<-declarations context, not (null (contents s)), c <= target s])
->                                      )
->                                    | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
-
-TODO: initieel alle invarianten waar maken. (Tijdelijk uitgeschakeld)
-                                    concat
-                                    [ "\n     // "++showADL rule++
-                                      "\n        DB_doquer('INSERT IGNORE INTO "++sqlMorName context m++
-                                      (if inline m
-                                       then "\n                   "++selectNormFiExpr context 18 (antecedent rule) (sqlMorSrc context m,sqlMorTrg context m) [] (antecedent rule)
-                                       else "\n                   "++selectNormFiExpr context 18 (antecedent rule) (sqlMorTrg context m,sqlMorSrc context m) [] (flp (antecedent rule)))++"');"
-                                    | rule<-computeOrder (\rule-> not (null ([s| s<-declarations context, not (null (contents s))] `isc` declarations (antecedent rule))))
-                                                         beforeI hcs
-                                    , m<-mors (consequent rule), automatic m]
-
->     , "      "++chain "\n        " [ "\n        DB_doquer(\"INSERT IGNORE INTO "++sqlClosName context e++" "++selectNormFiExpr "$attrs" context 15 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
->                                      "\n        "++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');"
->                                    | e<-closE context]
->     , let checkers = [ "checkRule"++show (nr r)++"()" | r<-rules context ]
->       in "      if($DB_errs"++ (if noTrans || null checkers then "" else " || !("++chain " && " checkers++")")++")"
->     , "      {  DB_debug( \"DB errors, removing database\",5);"
->     , "         mysql_query(\"DROP DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not delete DB "++dbName++"');"
->     , "         die ('Errors creating database');"
->     , "        } else {"
->     , "           DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
->     , "        }"
->     , "  }else{"
->     , "    DB_debug( \"Connected to database\",2 );"
->     , "  }"
+>     , chain "\n  " (createAndSelectDB context dbName noTrans)
 >     , if noTrans then "  DB_doquer('SET AUTOCOMMIT=1');" else "  DB_doquer('SET AUTOCOMMIT=0');"
 >     , ""
 >     , "if($DB_debug<=3){"
@@ -256,6 +194,7 @@ TODO: initieel alle invarianten waar maken. (Tijdelijk uitgeschakeld)
 >    where
 >     (entities, relations, ruls') = erAnalysis context
 >     hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
+>  -}
 
 >  dbDelRelation context i s srcVar trgVar
 >   = [' '| x<-[1..i-3]]++"// ON deleteEvent ("++show (source s)++","++show (target s)++") ON \""++name s++"\"["++name (source s)++"*"++name (target s)++"] DO"
@@ -265,6 +204,60 @@ TODO: initieel alle invarianten waar maken. (Tijdelijk uitgeschakeld)
 >     ++"\n"++dbDelConcept context (i+2) (target s) trgVar
 >     ++"\n"++[' '| x<-[1..i]] ++"}"
 
+>  createAndSelectDB context dbName noTrans
+>   =  [ ""
+>      , "if(!$DB_slct){"
+>      , "      DB_debug( \"Warning: error connecting to database, building database\",2 );"
+>      , "      mysql_query(\"CREATE DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not create DB "++dbName++"');"
+>      , "      $DB_slct = mysql_select_db("++ dbName {- was: $DB_daba -} ++",$DB_link) or die ('Could not select DB "++dbName++"');"
+>      , "      $DB_errs = false;"
+>      , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(380) NOT NULL default '', "++sqlExprTrg e++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
+>                                     | e<-closE context, error ("clos: "++showADL e)]
+>      , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlRelName context s++" ("++sqlRelSrc s++" varchar(380) NOT NULL default '', "++sqlRelTrg s++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlRelSrc s++","++sqlRelTrg s++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"++
+>                                       if null chn then "" else
+>                                       "\n        DB_doquer(\"INSERT INTO "++sqlRelName context s++" ("++sqlRelSrc s++","++sqlRelTrg s++
+>                                       ") VALUES "++chn++"\");"
+>                                     | s<-rd (declarations context), chn<-let truncate xs = if length xs>380 then take (380-if xs!!(380-1)=='\\' then 2 else 1) xs++"'" else xs
+>                                                                          in [chain ", " ["("++truncate (phpShow a)++","++truncate (phpShow b)++")" | [a,b]<-contents s, not (null a), not (null b)]]]
+>        ++if rd (declarations context)==declarations context then "" else
+>          error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS s|s<-cl]|cl<-eqClass (==) (declarations context), length cl>1])
+>      , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept context c++" ("++sqlAttConcept context c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept context c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
+>                                     | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
+>      , "      "++chain "\n        " [ if null ss then "" else
+>                                       insConcept context c
+>                                       ( chain " UNION " (["SELECT DISTINCT "++sqlRelSrc s++" FROM "++sqlRelName context s | s<-declarations context, not (null (contents s)), c <= source s]++
+>                                                          ["SELECT DISTINCT "++sqlRelTrg s++" FROM "++sqlRelName context s | s<-declarations context, not (null (contents s)), c <= target s])
+>                                       )
+>                                     | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
+>      , "      "++chain "\n        " [ "\n        DB_doquer(\"INSERT IGNORE INTO "++sqlClosName context e++" "++selectNormFiExpr "$attrs" context 15 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
+>                                       "\n        "++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');"
+>                                     | e<-closE context]
+>      , let checkers = [ "checkRule"++show (nr r)++"()" | r<-rules context ]
+>        in "      if($DB_errs"++ (if noTrans || null checkers then "" else " || !("++chain " && " checkers++")")++")"
+>      , "      {  DB_debug( \"DB errors, removing database\",5);"
+>      , "         mysql_query(\"DROP DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not delete DB "++dbName++"');"
+>      , "         die ('Errors creating database');"
+>      , "        } else {"
+>      , "           DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
+>      , "        }"
+>      , "  }else{"
+>      , "    DB_debug( \"Connected to database\",2 );"
+>      , "  }"
+>      ]
+
+>  ruleFunctions context
+>   = [ "\n  function checkRule"++show (nr rule)++"(){\n    "++
+>          (if isFalse rule'
+>           then "// Tautology:  "++showADL rule++"\n     "
+>           else "// No violations should occur in ("++showADL rule++")\n    "++
+>                concat [ "//            rule':: "++(showADL rule') ++"\n    " | pDebug] ++
+>                concat [ "// sqlExprSrc rule':: "++sqlExprSrc rule'++"\n     " | pDebug] ++
+>                "$v=DB_doquer('"++selectExpr context 19 (sqlExprSrc rule') (sqlExprTrg rule') rule'++"');\n     "++
+>                "if(count($v)) {\n    "++
+>                "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++sqlExprSrc rule'++"'].'") ("'.$v[0]['"++sqlExprTrg rule'++"'].'")) ++",3);\n    "++
+>                "  return false;\n    }")++
+>                "return true;\n  }"
+>        | rule<-rules context, rule'<-[(shrink . conjNF . Cp . normExpr) rule] ]
 
 Translation of rules to SQL
 

@@ -11,4 +11,15 @@
 >  import RelBinGenBasics
 > 
 
-> 
+>  objectWrapper objectName
+>   = (chain "\n  "
+>     ([ "<?php // generated with "++adlVersion
+>      , ""
+>      , "require \"localsettings.inc.php\";"
+>      , "require \""++objectName++".inc.php\";"
+>      , ""
+>      , "$view = new view(parseRequest(getObject_"++objectName++"()),getObject_"++objectName++"());"
+>      , "$view->display();"
+>      , ""
+>      ]
+>     )) ++ "?>"
