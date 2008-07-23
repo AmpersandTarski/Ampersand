@@ -42,8 +42,6 @@ function parseRequest($object){
 }
 function recurParse($object,$traceID,$objtrace){
 	global $_REQUEST;
-	//echo $traceID;
-	//print_r($object->containing);
 	$id=@$_REQUEST[$traceID.'_'];
 	$obj = new $objtrace($id);
 	if($id===null) return $obj;
@@ -56,7 +54,6 @@ function recurParse($object,$traceID,$objtrace){
 		}
 		if(isset($_REQUEST[$trace]) && $_REQUEST[$trace] == 'add'){
 			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
-			//echo 'add';
 		}
 	}
 	return $obj;
@@ -110,6 +107,7 @@ class viewableList extends anyView{
 	var $caption;
 	var $iDir;
 	var $One=false;
+	var $Tot=true;
 	var $wrapping=true;
 	protected function displayheader($header=null){
 		if(isset($this->caption)){
@@ -150,7 +148,7 @@ class viewableList extends anyView{
 		return $colspan;
 	}
 	function display(){
-		$this->displayheader($this->header);
+		$colspan=$this->displayheader($this->header);
 		if(!isset($this->header) && count($this->elements)) $header=$this->elements[0];
 		if(count($this->elements)){
 			foreach($this->elements as $i=>$v){
@@ -171,13 +169,16 @@ class viewableList extends anyView{
 				}
 			}
 		}else{
-			echo '<TR><TD';
-			if($colspan>0){
-				echo ' colspan='.$colspan;
-			}
-			echo '><I>None</I></TD></TR>';
+			$this->dispNone($colspan);
 		}
 		$this->displaytail();
+	}
+	function dispNone($colspan=0){
+		echo '<TR><TD';
+		if($colspan>0){
+			echo ' colspan='.$colspan;
+		}
+		echo '><I>None</I></TD></TR>';
 	}
 	function displaytail(){
 		if(!$this->One){
@@ -205,6 +206,8 @@ class viewableList extends anyView{
 			$this->iDir=$val;
 		}else if($var=='One'){
 			$this->One=$val;
+		}else if($var=='Tot'){
+			$this->Tot=$val;
 		}
 	}
 	function viewableList(){
@@ -227,28 +230,32 @@ class expandableList extends viewableList{
 			$this->traceID=$traceID;
 		else
 			$this->traceID=$this->object->name;
-		$header= array();
+		$this->header= array();
 		foreach($this->object->containing as $i=>$v){
-			$header[$i]=new viewableText($v->type->name);
+			$this->header[$i]=new viewableText($v->type->name);
 		}
 		if(count($this->object->containing) <= 1) $this->wrapping=false;
 		if(count($this->object->containing) == 0) $this->header[]=new viewableText('');
 		$this->header[]=new viewableText('');
-		$this->displayheader($header);
-		foreach($this->elements as $i=>$v){
-			$this->displayRow($v,$edit,$i);
+		$this->displayheader($this->header);
+		if(count($this->elements) || $this->One){
+			foreach($this->elements as $i=>$v){
+				$this->displayRow($v,$edit,$i,count($this->elements));
+			}
+		}else{
+			$this->dispNone(count($this->header));
 		}
-		if($edit) $this->displayEmptyRow($this->header);
+		if($edit && (!$this->One || !count($this->elements))) $this->displayEmptyRow($this->header);
 		$this->displaytail();
 	}
-	function displayRow($row,$edit=false,$rowId=0){
+	function displayRow($row,$edit=false,$rowId=0,$totRow=0){
 		if(!$this->One)
 			echo "\r\n  <TR>";
 		$page=@$this->object->page;
 		if($edit){
 			$rowID=$this->traceID.'%'.$rowId;
 		}
-		if(count($this->object->containing)){
+		if(count($this->object->containing)){ // if the object has sub-objects
 			foreach($this->object->containing as $j=>$v){
 				$type=$v->type->name;
 				if(!$this->One)
@@ -259,6 +266,8 @@ class expandableList extends viewableList{
 					$h->display();
 				}
 				$myRow = new expandableList();
+				$myRow->assign("One",$v->mult->uni);
+				$myRow->assign("Tot",$v->mult->tot);
 				$myRow->assign('object',$v->type);
 				$myRow->assign('elements',$row->$type);
 				if($edit) $myRow->display(true,$rowID.'%'.$type);
@@ -286,19 +295,21 @@ class expandableList extends viewableList{
 				echo '</TD>';
 		}
 		if($edit && !$this->One){
-			echo '<TD align=left><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" /></TD>';
+			if(!$this->Tot || $totRow>1){
+				echo '<TD align=left><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" /></TD>';
+			}else echo '<TD></TD>';
+		}else if($edit && (!$this->Tot || $totRow>1)){
+			echo '<input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" style="display:block" />';
 		}
 		if(!$this->One)
 			echo "</TR>";
 	}
 	function displayEmptyRow($row){
-		if(!$this->One){ // cannot add a row if there is only one!
-			$colspan=max(1,count($this->object))+1;
-			echo '<TR><TD colspan='.$colspan.'>';
-			//echo '<button name="'.$this->traceID.'" value="add">Add</button>';
-			echo '<input type="image" name="'.htmlspecialchars($this->traceID).'" value="add" SRC="'.$this->iDir.'add.png" />';
-			echo '</TD></TR>';
-		}
+		$colspan=max(1,count($this->object))+1;
+		if(!$this->One) echo '<TR><TD colspan='.$colspan.'>';
+		//echo '<button name="'.$this->traceID.'" value="add">Add</button>';
+		echo '<input type="image" name="'.htmlspecialchars($this->traceID).'" value="add" SRC="'.$this->iDir.'add.png" />';
+		if(!$this->One) echo '</TD></TR>';
 	}
 }
 class removableListRow extends anyView{
@@ -317,6 +328,7 @@ class monastir Extends anyView {
 	var $appname='Monastir Databaseviewer';
 	var $objname;
 	var $object_id;
+	var $defaultAction;
 	var $succes=true;
 	var $ok;
 	function monastir($menu,$obj,$object,$cObjName){
@@ -329,7 +341,6 @@ class monastir Extends anyView {
 			$this->menu=$menu;
 			global $_REQUEST;
 			$changed=true;
-			
 			if(isset($_REQUEST['read'])){
 				$changed=false;
 				$action='read';
@@ -342,6 +353,7 @@ class monastir Extends anyView {
 				}
 			} else if(isset($_REQUEST['new']) || @$_POST['action']=='new'){
 				$action='new';
+				$defaultAction='create';
 				if($obj===false) { // not false after edit!
 					$f=$object->name;
 					$obj=new $f(null,array()); // return an empty object
@@ -362,6 +374,7 @@ class monastir Extends anyView {
 				} else $this->assign("succes",true);
 			} else if(isset($_REQUEST['edit']) || @$_POST['action']=='edit'){ // no changes (yet)! Fake a read.
 				$action='edit';
+				$defaultAction='update';
 				if($obj==false){
 					$f='read'.$cObjName;
 					$obj= $f($_REQUEST['edit']); // from DB
@@ -380,6 +393,8 @@ class monastir Extends anyView {
 					$obj= $f($object_id); // from DB
 				}
 			} else { $action='show'; $changed=false; }
+			if(isset($defaultAction)) $this->defaultAction=$defaultAction;
+			else $this->defaultAction=$action;
 			$this->action=$action;
 			$this->changed=$changed;
 			if($obj){ // read on no valid object id: send empty object
@@ -582,7 +597,13 @@ class monastir Extends anyView {
 			echo "\r\n<!-- contents -->";
 			echo "\r\n  ";
 			if($edit){
-				echo '<FORM NAME="myform" ID="myform" METHOD="POST" AUTOCOMPLETE="off" ACTION="'.$_SERVER['SCRIPT_NAME'].'">';
+				echo '<FORM NAME="myform" ID="myform" METHOD="POST" ';
+				echo 'onkeydown="if((window.event && event.keyCode==13)||';
+					echo '(!window.event && event.which==13)){';
+						echo 'this.action.value=\''.$this->defaultAction.'\';this.submit();return true;';
+						echo '}else return void(0);"';
+				echo ' AUTOCOMPLETE="off" ACTION="'.$_SERVER['SCRIPT_NAME'].'">';
+				//echo '<DIV style="visibility:hidden;position:absolute"><INPUT TYPE="submit" name="action" value="'.$this->defaultAction.'" /></DIV>';
 				echo '<INPUT TYPE="HIDDEN" NAME="action" VALUE="'.$action.'">';
 				//echo '<INPUT TYPE="HIDDEN" NAME="defaultAction" VALUE="'.$defaultAction.'">';
 				//if($action=='new'){

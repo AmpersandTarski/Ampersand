@@ -1,8 +1,8 @@
 <?
 
 /*********** file Aanvraag.adl on line 3-5:
- * OBJECT behandelaar  I[Employee]          -- 'Employee' zou betekenen: 'Employee = I[Employee]'
- * WITH aanvragen : assigned~
+ * OBJECT behandelaar Employee          -- 'Employee' zou betekenen: 'Employee = I[Employee]'
+ *        aanvragen : assigned~
  * ENDOBJECT
  ***********/
 
@@ -80,7 +80,8 @@ function updateBehandelaar(behandelaar &$behandelaar,$new=false){
 		if(!isset($aanvragen->id)){
 			$nextNum = DB_doquer('SELECT max(1+AttA_pplication) FROM C3_A_pplication GROUP BY 1');
 			$aanvragen->id = $nextNum[0][0];
-		}else{ // check UNI of T4_assigned (Rule10)
+		}else{
+			// check UNI of T4_assigned (Rule10)
 			$taken = DB_doquer('SELECT AttE_mployee FROM T4_assigned WHERE AttA_pplication=\''.addslashes($aanvragen->id).'\'');
 			if(count($taken))
 			{
