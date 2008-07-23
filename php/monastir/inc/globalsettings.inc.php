@@ -4,7 +4,7 @@
 
 $DB_debug = 3; // 0 = show nothing except failures, 5 = show everything
 $DB_user = 'root';
-$DB_pass = 'root'; // if you wish, you can use $DB_pass = base64_decode('your_base64_encoded_password_here'); to decrease readability
+$DB_pass = ''; // if you wish, you can use $DB_pass = base64_decode('your_base64_encoded_password_here'); to decrease readability
 $DB_host = 'localhost';
 // If you wish to use other settings for each database, copy these lines to the localsettings.inc.php file just below the globalsettings.inc.php include
 
