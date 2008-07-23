@@ -973,7 +973,7 @@ SEM Attribute
         lhs.expr     = @e.expr
         e.rnr        = @lhs.rnr+1
         lhs.rnr      = @e.rnr
-        e.isign      = [(@c.concept,Anything)]
+        e.isign      = @e.signs
         e.pn         = ""
 
 ATTR Attributes   [ | rnr:Int | ats: Attributes exprs:Expressions ]

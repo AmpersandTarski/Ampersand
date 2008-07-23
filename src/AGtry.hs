@@ -276,7 +276,7 @@ sem_Attribute_Att (_nm) (_pos) (_c) (_e) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let ( _c_concept,_c_nm) =
             (_c (_lhs_gE))
         ( _e_closRules,_e_expr,_e_morphisms,_e_raw,_e_rnr,_e_sErr,_e_signs) =
-            (_e (_lhs_gE) ([(_c_concept,Anything)]) ("") (_pos) (_lhs_rnr+1) (_lhs_sDef))
+            (_e (_lhs_gE) (_e_signs) ("") (_pos) (_lhs_rnr+1) (_lhs_sDef))
     in  (Att _nm _pos _c_concept _e_expr
         ,_e_expr
         ,_e_rnr
