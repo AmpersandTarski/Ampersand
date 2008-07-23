@@ -11,6 +11,7 @@
 >  import RelBinGenBasics
 > 
 
+>  objectServices :: Context -> String -> ObjectDef -> String
 >  objectServices context filename object
 >   = (chain "\n  "
 >     ([ "<?php // generated with "++adlVersion
@@ -24,8 +25,8 @@
 >      [" *********/"
 >      , ""
 >      , "function getobject_"++(name object)++"(){"
->      , "  return new object(\""++(name object)++",array"
->      , "    (" ++ (chain "\n      ,"
+>      , "  return new object(\""++(name object)++"\",array"
+>      , "    (" {- ++ (chain "\n      ,"
 >        [ "new oRef( new oMulti( " ++ (hasm Inj m) ++ ","
 >                                   ++ (hasm Uni m) ++ ","
 >                                   ++ (hasm Sur m) ++ ","
@@ -33,7 +34,7 @@
 >           ++ "\n             , new object(\""++nm++"\",array()"++ (phpage c) ++ ")"
 >           ++ "\n             )"
 >        | att@(Att nm _ c e) <- attributes object, m <- [multiplicities e]
->        ])
+>        ]) -}
 >      , "    ),\""++(name object)++".php\");"
 >      , "}"
 >      , ""
@@ -74,20 +75,60 @@
 >           ]
 >           ) ++
 >      ["function getEach"++(capname)++"(){"
->      ,"    return DB_doquer('"++(addslashes
->                                 (selectExpr context
->                                             6
+>      ,"    return DB_doquer('"++(selectExpr context
+>                                             25
 >                                             (sqlAttConcept context (concept object))
 >                                             (sqlAttConcept context (concept object))
 >                                             (Tm (I [] (concept object) (concept object) True))
->                                 ))++"');"
+>                                 )++"');"
 >      ,"}"
 >      ,"function create"++capname++"("++(name object)++" &$obj){"
 >      ,"    return update"++capname++"($obj,true);"
 >      ,"}"
 >      ,"function read"++capname++"($id){"
+>      ,"    $ctx = DB_doquer('"++(selectExpr context
+>                                             25
+>                                             (sqlAttConcept context (concept object))
+>                                             (sqlAttConcept context (concept object))
+>                                             (Fi [ Tm (I [] (concept object) (concept object) True)
+>                                                 , Tm (Mp1 ("\\''.addslashes($id).'\\'") (concept object))
+>                                                 ]
+>                                             )
+>                                 )++"');"
+>      ,"    if(count($ctx)==0) return false;"
+>      ,"    $obj = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
+>      ] ++ (concat (map (map ((++) "    "))
+>             [ [ "$ctx = DB_doquer('');"
+>               , "foreach($tex as $i=>$v){"
+>               , "    $obj->add_"++(name a)++"(new "++(name object)++"_"++(name a)++"($v['"++(sqlAttConcept context (concept object))++"']));"
+>               , "}"
+>               ]
+>             | a <-attributes object
+>             ]
+>            )) ++
+>      ["    return $obj;"
 >      ,"}"
->      ,"function update"++capname++"($id){"
+>      ,"function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
+>      ,"    global $DB_link,$DB_err,$DB_lastquer;"
+>      ,"    $preErr= $new ? 'Cannot create new "++(addslashes (name (concept object)))++": ':'Cannot update "++(addslashes (name (concept object)))++": ';"
+>      ,"    DB_doquer('START TRANSACTION');"
+>      ,"    if($new){ // create a new object"
+>      ,"      if(!isset($"++(name object)++")){ // find a unique id"
+>      ,"         $nextNum = DB_doquer('SELECT max(1+"++(sqlAttConcept context (concept object))
+>                     ++") FROM "++(sqlConcept context (concept object))++" GROUP BY \\'1\\'');"
+>      ,"      }"
+>      ,"      if(DB_plainquer('INSERT INTO "++(sqlConcept context (concept object))++" ("
+>                 ++(sqlAttConcept context (concept object))++") VALUES (\\''.addslashes($"
+>                 ++(name object)++"->id).'\\')',$errno==false){"
+>      ,"          $DB_err=$preErr.(($errno==1062) ? '" ++(addslashes (name (concept object)))
+>                 ++" \\''.$"++(name object)++
+>                 "->id.'\\' allready exists' : 'Error '.$errno.' in query '.$DB_lastquer;"
+>      ,"          DB_doquer('ROLLBACK');"
+>      ,"          return false;"
+>      ,"      }"
+>      ,"    }else{"
+>      ,"      // destroy old attribute values"
+>      ,"    }"
 >      ,"}"
 >      ,"function delete"++capname++"($id){"
 >      ,"}"

@@ -160,52 +160,15 @@ TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie 
 >                -> Expression -- expression to be translated
 >                -> String     -- resulting SQL expression
 
-Some code to optimize the selectExpr queries, especially the Cp.
-
-Put the complements in a Fi at the end:
-
-  
-  -- this should be done from the optimizer before selectExpr
-  selectExpr ctx i src trg f@(Fi (e@(Cp ce):fx))
-     | containsPositive fx = selectExpr ctx i src trg (Fi (fx++[e]))
-     | otherwise = error ("(module RelBinGenBasics) selectExpr: no positive terms in ("++showADL (Fi fx)++") when processing "++showADL f)
-      where containsPositive es = or [ isPos e | e<-es ]
-  
-Non-recursive Fi code (requires a Fi with at least two elements, or the code would generate an empty where-clause, optimises complements):
-
-SJ 2007/9/15 (aanpassing): de code voor selectExpr ctx i src trg (Fi lst) is zó veranderd dat de expressie 
-          vreemdeling;vreemdeling~/\-I   (met vreemdeling :: Dossier -> Vreemdeling
-het volgende SQL statement oplevert:
-          SELECT DISTINCT isect0.AttD_ossier AS SrcD_ossier, isect0.AttD_ossier1 AS TrgD_ossier
-            FROM 
-              ( 
-                SELECT DISTINCT fst.AttD_ossier, snd.AttD_ossier AS AttD_ossier1
-                  FROM T1_vreemdeling AS fst, T1_vreemdeling AS snd
-                 WHERE fst.AttV_reemdeling = snd.AttV_reemdeling
-              ) AS isect0
-           WHERE isect0.AttD_ossier <> isect0.AttD_ossier1
-
-Opmerking: voorheen leverde het de volgende code op:
-          SELECT DISTINCT isect0.AttD_ossier AS SrcD_ossier, isect0.AttD_ossier1 AS TrgD_ossier
-            FROM 
-              ( 
-                SELECT DISTINCT fst.AttD_ossier, snd.AttD_ossier AS AttD_ossier1
-                  FROM T1_vreemdeling AS fst, T1_vreemdeling AS snd
-                 WHERE fst.AttV_reemdeling = snd.AttV_reemdeling
-              ) AS isect0
-           WHERE NOT EXISTS (
-                      SELECT *
-                        FROM C1_D_ossier AS cp
-                       WHERE isect0.AttD_ossier=cp.AttD_ossier AND isect0.AttD_ossier1=cp.AttD_ossier)
-
-
->  selectExpr ctx i src trg (Fi lst@(_:_:_))
+>  selectExpr ctx i src trg (Fi lst'@(_:_:_))
 >   = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
->                          (chain ", " exprbracs) (chain " AND " (wherecl++nExistCl))
+>                          (chain ", " exprbracs) (chain " AND " (wherecl))
 >     where src'    = sqlExprSrc fst
 >           trgC    = sqlExprTrg fst -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
 >           trg'    = noCollideUnlessTm fst [src'] trgC
 >           fst     = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
+>           mp1Tm   = take 1 ([t| t@(Tm (Mp1 _ _))<-lst']++[t| t@(F ((Tm (Mp1 _ _)):(Tm (V _ _)):(Tm (Mp1 _ _)):[])) <- lst'])
+>           lst     = [t|t<-lst', not (elem t mp1Tm)]
 >           posTms  = if null posTms' then map notCp (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
 >           negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
 >           posTms' = [t| t<-lst, isPos t && not (isIdent t)]++[t| t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
@@ -216,14 +179,21 @@ Opmerking: voorheen leverde het de volgende code op:
 >                       , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
 >                       ]
 >           wherecl   = [if isIdent l
->                        then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is less efficient
+>                        then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is longer
 >                        else "(isect0."++src'++" = isect"++show n++"."++src''
 >                        ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
 >                       | (n,l)<-tail (zip [0..] posTms) -- not empty because of definition of posTms
 >                       , src''<-[sqlExprSrc l]
 >                       , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
->                       ]
->           nExistCl  = [if isIdent l
+>                       ]++
+>                       [ "isect0."++src'++" = "++s -- sorce and target are equal because this is the case with Mp1
+>                       | (Tm (Mp1 s _)) <- mp1Tm
+>                       ]++
+>                       [ "isect0."++src'++" = "++s1 -- sorce and target are unequal
+>                         ++ " AND isect0."++trg'++" = "++s2 -- sorce and target are unequal
+>                       | (F ((Tm (Mp1 s1 _)):(Tm (V _ _)):(Tm (Mp1 s2 _)):[])) <- mp1Tm
+>                       ]++
+>                       [if isIdent l
 >                        then  "isect0."++src'++" <> isect0."++trg' -- this code will calculate ../\-I
 >                        else  "NOT EXISTS ("++(selectExists' (i+12)
 >                                                             ((selectExprBrac ctx (i+12) src'' trg'' l) ++ " AS cp")

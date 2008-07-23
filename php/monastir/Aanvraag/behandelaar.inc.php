@@ -57,14 +57,7 @@ function updateBehandelaar(behandelaar &$behandelaar,$new=false){
 	global $DB_link,$DB_err,$DB_lastquer;
 	$preErr= $new ? 'Cannot create new Employee: ':'Cannot update Employee: ';
 	DB_doquer('START TRANSACTION');
-	if(!$new) {
-		// destroy old T4_assigned values
-		$effected=DB_doquer('SELECT AttA_pplication FROM T4_assigned WHERE AttE_mployee=\''.addslashes($behandelaar->id).'\'');
-		$arr=array();
-		foreach($effected as $i=>$v){$arr[]='\''.addslashes($v[0]).'\'';}
-		$aanvragen_str = join(',',$arr);
-		DB_doquer('DELETE FROM T4_assigned WHERE AttE_mployee=\''.addslashes($behandelaar->id).'\'');
-	}else{
+	if($new) {
 		if(!isset($behandelaar->id))
 		{	// find a unique id for behandelaar
 			$nextNum = DB_doquer('SELECT max(1+AttE_mployee) FROM C4_E_mployee GROUP BY \'1\'');
@@ -75,6 +68,13 @@ function updateBehandelaar(behandelaar &$behandelaar,$new=false){
 			DB_doquer('ROLLBACK');
 			return false;
 		}
+	}else{
+		// destroy old T4_assigned values
+		$effected=DB_doquer('SELECT AttA_pplication FROM T4_assigned WHERE AttE_mployee=\''.addslashes($behandelaar->id).'\'');
+		$arr=array();
+		foreach($effected as $i=>$v){$arr[]='\''.addslashes($v[0]).'\'';}
+		$aanvragen_str = join(',',$arr);
+		DB_doquer('DELETE FROM T4_assigned WHERE AttE_mployee=\''.addslashes($behandelaar->id).'\'');
 	}
 	foreach($behandelaar->aanvragen as $i=>$aanvragen){
 		if(!isset($aanvragen->id)){

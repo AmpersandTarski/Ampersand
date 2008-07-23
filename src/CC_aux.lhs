@@ -1065,6 +1065,7 @@ This show is used in error messages. It should therefore not display the term's 
 >   Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
 >   I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
 >   V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
+>   Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
 >   a == b = False
 
 TODO: 3 lines above: V _ (a,b)
