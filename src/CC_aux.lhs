@@ -690,12 +690,12 @@ Transform a rule to an expression:
 >   objDefs      (Ctx nm on isa world dc ss cs ks os) = os
 
 >  instance Morphical ObjectDef where
->   concs        (Obj nm pos c ats) = rd (c: concs ats)
->   conceptdefs  (Obj nm pos c ats) = conceptdefs ats
->   mors         (Obj nm pos c ats) = rd (mors ats)
->   morlist      (Obj nm pos c ats) = morlist ats
->   declarations (Obj nm pos c ats) = []
->   closExprs    (Obj nm pos c ats) = rd (closExprs ats)
+>   concs        (Obj nm pos e ats) = rd (target c: concs ats)
+>   conceptdefs  (Obj nm pos e ats) = conceptdefs ats
+>   mors         (Obj nm pos e ats) = rd (mors ats)
+>   morlist      (Obj nm pos e ats) = morlist ats
+>   declarations (Obj nm pos e ats) = []
+>   closExprs    (Obj nm pos e ats) = rd (closExprs ats)
 >   objDefs      o              = [o]
 
 >  instance Morphical Attribute where
@@ -1164,15 +1164,22 @@ Every declaration m has cardinalities, in which
 
 >  class Object a where
 >   objects :: a -> [ObjectDef]
+>   concept :: a -> Concept
+>   attributes :: a -> [Attribute]
 
 >  instance Object Context where
 >   objects (Ctx _ _ _ _ _ _ _ _ os) =  os
+>   attributes _ = []
 
 >  instance Object ObjectDef where
 >   objects o = [o]
+>   concept (Obj nm pos e ats) = target e
+>   attributes (Obj nm pos e ats) = ats
 
 >  instance Object a => Object [a] where
 >   objects os = concat (map objects os)
+>   concept (Att nm pos e ats) = target e
+>   attributes (Att nm pos e ats) = ats
 
 
 The following definition is used to compute whether a concept may display its internal code.
