@@ -113,9 +113,9 @@
 >      ,"    $preErr= $new ? 'Cannot create new "++(addslashes (name (concept object)))++": ':'Cannot update "++(addslashes (name (concept object)))++": ';"
 >      ,"    DB_doquer('START TRANSACTION');"
 >      ,"    if($new){ // create a new object"
->      ,"      if(!isset($"++(name object)++")){ // find a unique id"
+>      ,"      if(!isset($"++(name object)++"->id)){ // find a unique id"
 >      ,"         $nextNum = DB_doquer('"++(autoIncQuer (concept object))++"');"
->      ,"         $"++(name object)++"->id = $nextNum[0][0];"
+>      ,"         $"++(name object)++"->id = @$nextNum[0][0]+0;"
 >      ,"      }"
 >      ,"      if(DB_plainquer('" ++
 >          (insertConcept (concept object) ("$"++(name object)++"->id") False)
@@ -135,7 +135,7 @@
 >               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg e)++"']).'\\'';"
 >               , "}"
 >               , "$"++(name a)++"_str=join(',',$arr);"
->               , "DB_doquer('"++(deleteExprForAttr a object)++"');"
+>               , "DB_doquer( '"++(deleteExprForAttr a object ("$"++(name object)++"->id"))++"');"
 >               ]
 >             | a@(Att _ _ _ e@(Tm _)) <- termAtts
 >             ]
@@ -145,7 +145,7 @@
 >             [ [ "foreach($"++(name object)++"->"++(name a)++" as $i=>$v){"
 >               , "  if(!isset($v->id)){"
 >               , "     $nextNum = DB_doquer('"++(autoIncQuer (concept a))++"');"
->               , "     $v->id = $nextNum[0][0];"
+>               , "     $v->id = @$nextNum[0][0]+0;"
 >               , "  }else{"
 >               , "     // check cardinalities..."
 >               , "  }"
@@ -194,7 +194,7 @@
 >               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg e)++"']).'\\'';"
 >               , "}"
 >               , "$"++(name a)++"_str=join(',',$arr);"
->               , "DB_doquer('"++(deleteExprForAttr a object)++"');"
+>               , "DB_doquer ('"++(deleteExprForAttr a object "$id")++"');"
 >               ]
 >             | a@(Att _ _ _ e@(Tm _)) <- termAtts
 >             ]
@@ -239,7 +239,7 @@
 >     andNEXISTquer e m = ["      AND NOT EXISTS (SELECT * FROM "++(sqlMorName context m)
 >                    ,"                       WHERE "
 >                     ++ (sqlConcept context (target e))++"."++(sqlAttConcept context (target e))++" = "
->                     ++ (sqlMorName context m)++"."++(sqlMorTrg context m)
+>                     ++ (sqlMorName context m)++"."++(sqlMorSrc context m)
 >                    ,"                     )"
 >                    ]
 >     prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addslashes p1) ++ s1 ++ (addslashes p2) ++ s2 ++ (addslashes p3)
@@ -253,8 +253,8 @@
 >       = selectExpr context 25 (sqlExprSrc e) (sqlExprTrg e)
 >                     (F [Tm (Mp1 ("\\''.addslashes("++id++").'\\'") cpt), e])
 >         
->     deleteExprForAttr (Att _ _ _ e@(Tm m)) parent
->       = "DELETE FROM "++(sqlMorName context m)++" WHERE "++(sqlExprSrc e)++"=\\'addslashes($id)\\'"
+>     deleteExprForAttr (Att _ _ _ e@(Tm m)) parent id
+>       = "DELETE FROM "++(sqlMorName context m)++" WHERE "++(sqlExprSrc e)++"=\\''.addslashes("++id++").'\\'"
 >     hasm m ms = if elem m ms then "true" else "false"
 >     capname = (toUpper (head (name object))):(tail (name object))
 >     termAtts = [a|a@(Att _ _ _ (Tm _)) <-attributes object]
