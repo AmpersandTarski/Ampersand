@@ -150,9 +150,11 @@
       $preErr= $new ? 'Cannot create new Application: ':'Cannot update Application: ';
       DB_doquer('START TRANSACTION');
       if($new){ // create a new object
-        if(!isset($Application)){ // find a unique id
+        if(!isset($Application->id)){ // find a unique id
+          echo 'unique';
            $nextNum = DB_doquer('SELECT max(1+AttA_pplication) FROM C3_A_pplication GROUP BY \'1\'');
-           $Application->id = $nextNum[0][0];
+           print_r($nextNum);
+           $Application->id = @$nextNum[0][0]+0;
         }
         if(DB_plainquer('INSERT INTO C3_A_pplication (AttA_pplication) VALUES (\''.addslashes($Application->id).'\')',$errno)===false){
             $DB_err=$preErr.(($errno==1062) ? 'Application \''.$Application->id.'\' allready exists' : 'Error '.$errno.' in query '.$DB_lastquer);
@@ -169,7 +171,7 @@
             $arr[]='\''.addslashes($v['AttP_erson']).'\'';
         }
         $applicant_str=join(',',$arr);
-        DB_doquer('DELETE FROM T2_applicant WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T2_applicant WHERE AttA_pplication=\''.addslashes($Application->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttID_document
                            FROM T3_checked AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($Application->id).'\'');
@@ -178,7 +180,7 @@
             $arr[]='\''.addslashes($v['AttID_document']).'\'';
         }
         $checked_str=join(',',$arr);
-        DB_doquer('DELETE FROM T3_checked WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T3_checked WHERE AttA_pplication=\''.addslashes($Application->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttP_roduct
                            FROM T6_kind AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($Application->id).'\'');
@@ -187,7 +189,7 @@
             $arr[]='\''.addslashes($v['AttP_roduct']).'\'';
         }
         $kind_str=join(',',$arr);
-        DB_doquer('DELETE FROM T6_kind WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T6_kind WHERE AttA_pplication=\''.addslashes($Application->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttE_mployee
                            FROM T4_assigned AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($Application->id).'\'');
@@ -196,7 +198,7 @@
             $arr[]='\''.addslashes($v['AttE_mployee']).'\'';
         }
         $assigned_str=join(',',$arr);
-        DB_doquer('DELETE FROM T4_assigned WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T4_assigned WHERE AttA_pplication=\''.addslashes($Application->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttD_ecision
                            FROM T10_leadsto AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($Application->id).'\'');
@@ -205,7 +207,7 @@
             $arr[]='\''.addslashes($v['AttD_ecision']).'\'';
         }
         $decision_str=join(',',$arr);
-        DB_doquer('DELETE FROM T10_leadsto WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T10_leadsto WHERE AttA_pplication=\''.addslashes($Application->id).'\'');
       }
       foreach($Application->applicant as $i=>$v){
         if(!isset($v->id)){
@@ -261,59 +263,59 @@
         DB_doquer('DELETE FROM C1_P_erson
           WHERE AttP_erson IN ('.$applicant_str.')
             AND NOT EXISTS (SELECT * FROM T8_inhabitant
-                             WHERE C1_P_erson.AttP_erson = T8_inhabitant.AttA_rea
+                             WHERE C1_P_erson.AttP_erson = T8_inhabitant.AttP_erson
                            )
             AND NOT EXISTS (SELECT * FROM T1_authentic
-                             WHERE C1_P_erson.AttP_erson = T1_authentic.AttID_document
+                             WHERE C1_P_erson.AttP_erson = T1_authentic.AttP_erson
                            )
             AND NOT EXISTS (SELECT * FROM T2_applicant
-                             WHERE C1_P_erson.AttP_erson = T2_applicant.AttA_pplication
+                             WHERE C1_P_erson.AttP_erson = T2_applicant.AttP_erson
                            )
         ');
       if(!$new && strlen($checked_str))
         DB_doquer('DELETE FROM C2_ID_document
           WHERE AttID_document IN ('.$checked_str.')
             AND NOT EXISTS (SELECT * FROM T1_authentic
-                             WHERE C2_ID_document.AttID_document = T1_authentic.AttP_erson
+                             WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
                            )
             AND NOT EXISTS (SELECT * FROM T3_checked
-                             WHERE C2_ID_document.AttID_document = T3_checked.AttA_pplication
+                             WHERE C2_ID_document.AttID_document = T3_checked.AttID_document
                            )
         ');
       if(!$new && strlen($kind_str))
         DB_doquer('DELETE FROM C5_P_roduct
           WHERE AttP_roduct IN ('.$kind_str.')
             AND NOT EXISTS (SELECT * FROM T5_auth
-                             WHERE C5_P_roduct.AttP_roduct = T5_auth.AttE_mployee
+                             WHERE C5_P_roduct.AttP_roduct = T5_auth.AttP_roduct
                            )
             AND NOT EXISTS (SELECT * FROM T6_kind
-                             WHERE C5_P_roduct.AttP_roduct = T6_kind.AttA_pplication
+                             WHERE C5_P_roduct.AttP_roduct = T6_kind.AttP_roduct
                            )
             AND NOT EXISTS (SELECT * FROM T7_kind
-                             WHERE C5_P_roduct.AttP_roduct = T7_kind.AttD_ecision
+                             WHERE C5_P_roduct.AttP_roduct = T7_kind.AttP_roduct
                            )
         ');
       if(!$new && strlen($assigned_str))
         DB_doquer('DELETE FROM C4_E_mployee
           WHERE AttE_mployee IN ('.$assigned_str.')
             AND NOT EXISTS (SELECT * FROM T4_assigned
-                             WHERE C4_E_mployee.AttE_mployee = T4_assigned.AttA_pplication
+                             WHERE C4_E_mployee.AttE_mployee = T4_assigned.AttE_mployee
                            )
             AND NOT EXISTS (SELECT * FROM T9_area
-                             WHERE C4_E_mployee.AttE_mployee = T9_area.AttA_rea
+                             WHERE C4_E_mployee.AttE_mployee = T9_area.AttE_mployee
                            )
             AND NOT EXISTS (SELECT * FROM T5_auth
-                             WHERE C4_E_mployee.AttE_mployee = T5_auth.AttP_roduct
+                             WHERE C4_E_mployee.AttE_mployee = T5_auth.AttE_mployee
                            )
         ');
       if(!$new && strlen($decision_str))
         DB_doquer('DELETE FROM C6_D_ecision
           WHERE AttD_ecision IN ('.$decision_str.')
             AND NOT EXISTS (SELECT * FROM T10_leadsto
-                             WHERE C6_D_ecision.AttD_ecision = T10_leadsto.AttA_pplication
+                             WHERE C6_D_ecision.AttD_ecision = T10_leadsto.AttD_ecision
                            )
             AND NOT EXISTS (SELECT * FROM T7_kind
-                             WHERE C6_D_ecision.AttD_ecision = T7_kind.AttP_roduct
+                             WHERE C6_D_ecision.AttD_ecision = T7_kind.AttD_ecision
                            )
         ');
     if (!checkRule1()){
@@ -374,7 +376,7 @@
             $arr[]='\''.addslashes($v['AttP_erson']).'\'';
         }
         $applicant_str=join(',',$arr);
-        DB_doquer('DELETE FROM T2_applicant WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T2_applicant WHERE AttA_pplication=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttID_document
                            FROM T3_checked AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($id).'\'');
@@ -383,7 +385,7 @@
             $arr[]='\''.addslashes($v['AttID_document']).'\'';
         }
         $checked_str=join(',',$arr);
-        DB_doquer('DELETE FROM T3_checked WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T3_checked WHERE AttA_pplication=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttP_roduct
                            FROM T6_kind AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($id).'\'');
@@ -392,7 +394,7 @@
             $arr[]='\''.addslashes($v['AttP_roduct']).'\'';
         }
         $kind_str=join(',',$arr);
-        DB_doquer('DELETE FROM T6_kind WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T6_kind WHERE AttA_pplication=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttE_mployee
                            FROM T4_assigned AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($id).'\'');
@@ -401,7 +403,7 @@
             $arr[]='\''.addslashes($v['AttE_mployee']).'\'';
         }
         $assigned_str=join(',',$arr);
-        DB_doquer('DELETE FROM T4_assigned WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T4_assigned WHERE AttA_pplication=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttA_pplication, fst.AttD_ecision
                            FROM T10_leadsto AS fst
                           WHERE fst.AttA_pplication = \''.addslashes($id).'\'');
@@ -410,65 +412,65 @@
             $arr[]='\''.addslashes($v['AttD_ecision']).'\'';
         }
         $decision_str=join(',',$arr);
-        DB_doquer('DELETE FROM T10_leadsto WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T10_leadsto WHERE AttA_pplication=\''.addslashes($id).'\'');
     DB_doquer('DELETE FROM C3_A_pplication WHERE AttA_pplication=\''.addslashes($id).'\'');
     if(strlen($applicant_str))
       DB_doquer('DELETE FROM C1_P_erson
         WHERE AttP_erson IN ('.$applicant_str.')
           AND NOT EXISTS (SELECT * FROM T8_inhabitant
-                           WHERE C1_P_erson.AttP_erson = T8_inhabitant.AttA_rea
+                           WHERE C1_P_erson.AttP_erson = T8_inhabitant.AttP_erson
                          )
           AND NOT EXISTS (SELECT * FROM T1_authentic
-                           WHERE C1_P_erson.AttP_erson = T1_authentic.AttID_document
+                           WHERE C1_P_erson.AttP_erson = T1_authentic.AttP_erson
                          )
           AND NOT EXISTS (SELECT * FROM T2_applicant
-                           WHERE C1_P_erson.AttP_erson = T2_applicant.AttA_pplication
+                           WHERE C1_P_erson.AttP_erson = T2_applicant.AttP_erson
                          )
       ');
     if(strlen($checked_str))
       DB_doquer('DELETE FROM C2_ID_document
         WHERE AttID_document IN ('.$checked_str.')
           AND NOT EXISTS (SELECT * FROM T1_authentic
-                           WHERE C2_ID_document.AttID_document = T1_authentic.AttP_erson
+                           WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
                          )
           AND NOT EXISTS (SELECT * FROM T3_checked
-                           WHERE C2_ID_document.AttID_document = T3_checked.AttA_pplication
+                           WHERE C2_ID_document.AttID_document = T3_checked.AttID_document
                          )
       ');
     if(strlen($kind_str))
       DB_doquer('DELETE FROM C5_P_roduct
         WHERE AttP_roduct IN ('.$kind_str.')
           AND NOT EXISTS (SELECT * FROM T5_auth
-                           WHERE C5_P_roduct.AttP_roduct = T5_auth.AttE_mployee
+                           WHERE C5_P_roduct.AttP_roduct = T5_auth.AttP_roduct
                          )
           AND NOT EXISTS (SELECT * FROM T6_kind
-                           WHERE C5_P_roduct.AttP_roduct = T6_kind.AttA_pplication
+                           WHERE C5_P_roduct.AttP_roduct = T6_kind.AttP_roduct
                          )
           AND NOT EXISTS (SELECT * FROM T7_kind
-                           WHERE C5_P_roduct.AttP_roduct = T7_kind.AttD_ecision
+                           WHERE C5_P_roduct.AttP_roduct = T7_kind.AttP_roduct
                          )
       ');
     if(strlen($assigned_str))
       DB_doquer('DELETE FROM C4_E_mployee
         WHERE AttE_mployee IN ('.$assigned_str.')
           AND NOT EXISTS (SELECT * FROM T4_assigned
-                           WHERE C4_E_mployee.AttE_mployee = T4_assigned.AttA_pplication
+                           WHERE C4_E_mployee.AttE_mployee = T4_assigned.AttE_mployee
                          )
           AND NOT EXISTS (SELECT * FROM T9_area
-                           WHERE C4_E_mployee.AttE_mployee = T9_area.AttA_rea
+                           WHERE C4_E_mployee.AttE_mployee = T9_area.AttE_mployee
                          )
           AND NOT EXISTS (SELECT * FROM T5_auth
-                           WHERE C4_E_mployee.AttE_mployee = T5_auth.AttP_roduct
+                           WHERE C4_E_mployee.AttE_mployee = T5_auth.AttE_mployee
                          )
       ');
     if(strlen($decision_str))
       DB_doquer('DELETE FROM C6_D_ecision
         WHERE AttD_ecision IN ('.$decision_str.')
           AND NOT EXISTS (SELECT * FROM T10_leadsto
-                           WHERE C6_D_ecision.AttD_ecision = T10_leadsto.AttA_pplication
+                           WHERE C6_D_ecision.AttD_ecision = T10_leadsto.AttD_ecision
                          )
           AND NOT EXISTS (SELECT * FROM T7_kind
-                           WHERE C6_D_ecision.AttD_ecision = T7_kind.AttP_roduct
+                           WHERE C6_D_ecision.AttD_ecision = T7_kind.AttD_ecision
                          )
       ');
     if (!checkRule1()){

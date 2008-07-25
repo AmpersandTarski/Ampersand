@@ -106,7 +106,7 @@
       $preErr= $new ? 'Cannot create new Person: ':'Cannot update Person: ';
       DB_doquer('START TRANSACTION');
       if($new){ // create a new object
-        if(!isset($Person)){ // find a unique id
+        if(!isset($Person->id)){ // find a unique id
            $nextNum = DB_doquer('SELECT max(1+AttP_erson) FROM C1_P_erson GROUP BY \'1\'');
            $Person->id = $nextNum[0][0];
         }
@@ -125,7 +125,7 @@
             $arr[]='\''.addslashes($v['AttID_document']).'\'';
         }
         $idDocument_str=join(',',$arr);
-        DB_doquer('DELETE FROM T1_authentic WHERE AttP_erson=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T1_authentic WHERE AttP_erson=\''.addslashes($Person->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
                            FROM T8_inhabitant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($Person->id).'\'');
@@ -134,7 +134,7 @@
             $arr[]='\''.addslashes($v['AttA_rea']).'\'';
         }
         $residence_str=join(',',$arr);
-        DB_doquer('DELETE FROM T8_inhabitant WHERE AttP_erson=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T8_inhabitant WHERE AttP_erson=\''.addslashes($Person->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
                            FROM T2_applicant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($Person->id).'\'');
@@ -143,7 +143,7 @@
             $arr[]='\''.addslashes($v['AttA_pplication']).'\'';
         }
         $application_str=join(',',$arr);
-        DB_doquer('DELETE FROM T2_applicant WHERE AttP_erson=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T2_applicant WHERE AttP_erson=\''.addslashes($Person->id).'\'');
       }
       foreach($Person->idDocument as $i=>$v){
         if(!isset($v->id)){
@@ -179,39 +179,39 @@
         DB_doquer('DELETE FROM C2_ID_document
           WHERE AttID_document IN ('.$idDocument_str.')
             AND NOT EXISTS (SELECT * FROM T1_authentic
-                             WHERE C2_ID_document.AttID_document = T1_authentic.AttP_erson
+                             WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
                            )
             AND NOT EXISTS (SELECT * FROM T3_checked
-                             WHERE C2_ID_document.AttID_document = T3_checked.AttA_pplication
+                             WHERE C2_ID_document.AttID_document = T3_checked.AttID_document
                            )
         ');
       if(!$new && strlen($residence_str))
         DB_doquer('DELETE FROM C7_A_rea
           WHERE AttA_rea IN ('.$residence_str.')
             AND NOT EXISTS (SELECT * FROM T8_inhabitant
-                             WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttP_erson
+                             WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttA_rea
                            )
             AND NOT EXISTS (SELECT * FROM T9_area
-                             WHERE C7_A_rea.AttA_rea = T9_area.AttE_mployee
+                             WHERE C7_A_rea.AttA_rea = T9_area.AttA_rea
                            )
         ');
       if(!$new && strlen($application_str))
         DB_doquer('DELETE FROM C3_A_pplication
           WHERE AttA_pplication IN ('.$application_str.')
             AND NOT EXISTS (SELECT * FROM T6_kind
-                             WHERE C3_A_pplication.AttA_pplication = T6_kind.AttP_roduct
+                             WHERE C3_A_pplication.AttA_pplication = T6_kind.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T2_applicant
-                             WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttP_erson
+                             WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T3_checked
-                             WHERE C3_A_pplication.AttA_pplication = T3_checked.AttID_document
+                             WHERE C3_A_pplication.AttA_pplication = T3_checked.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T4_assigned
-                             WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttE_mployee
+                             WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T10_leadsto
-                             WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttD_ecision
+                             WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
                            )
         ');
     if (!checkRule2()){
@@ -257,7 +257,7 @@
             $arr[]='\''.addslashes($v['AttID_document']).'\'';
         }
         $idDocument_str=join(',',$arr);
-        DB_doquer('DELETE FROM T1_authentic WHERE AttP_erson=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T1_authentic WHERE AttP_erson=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
                            FROM T8_inhabitant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
@@ -266,7 +266,7 @@
             $arr[]='\''.addslashes($v['AttA_rea']).'\'';
         }
         $residence_str=join(',',$arr);
-        DB_doquer('DELETE FROM T8_inhabitant WHERE AttP_erson=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T8_inhabitant WHERE AttP_erson=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
                            FROM T2_applicant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
@@ -275,45 +275,45 @@
             $arr[]='\''.addslashes($v['AttA_pplication']).'\'';
         }
         $application_str=join(',',$arr);
-        DB_doquer('DELETE FROM T2_applicant WHERE AttP_erson=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T2_applicant WHERE AttP_erson=\''.addslashes($id).'\'');
     DB_doquer('DELETE FROM C1_P_erson WHERE AttP_erson=\''.addslashes($id).'\'');
     if(strlen($idDocument_str))
       DB_doquer('DELETE FROM C2_ID_document
         WHERE AttID_document IN ('.$idDocument_str.')
           AND NOT EXISTS (SELECT * FROM T1_authentic
-                           WHERE C2_ID_document.AttID_document = T1_authentic.AttP_erson
+                           WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
                          )
           AND NOT EXISTS (SELECT * FROM T3_checked
-                           WHERE C2_ID_document.AttID_document = T3_checked.AttA_pplication
+                           WHERE C2_ID_document.AttID_document = T3_checked.AttID_document
                          )
       ');
     if(strlen($residence_str))
       DB_doquer('DELETE FROM C7_A_rea
         WHERE AttA_rea IN ('.$residence_str.')
           AND NOT EXISTS (SELECT * FROM T8_inhabitant
-                           WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttP_erson
+                           WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttA_rea
                          )
           AND NOT EXISTS (SELECT * FROM T9_area
-                           WHERE C7_A_rea.AttA_rea = T9_area.AttE_mployee
+                           WHERE C7_A_rea.AttA_rea = T9_area.AttA_rea
                          )
       ');
     if(strlen($application_str))
       DB_doquer('DELETE FROM C3_A_pplication
         WHERE AttA_pplication IN ('.$application_str.')
           AND NOT EXISTS (SELECT * FROM T6_kind
-                           WHERE C3_A_pplication.AttA_pplication = T6_kind.AttP_roduct
+                           WHERE C3_A_pplication.AttA_pplication = T6_kind.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T2_applicant
-                           WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttP_erson
+                           WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T3_checked
-                           WHERE C3_A_pplication.AttA_pplication = T3_checked.AttID_document
+                           WHERE C3_A_pplication.AttA_pplication = T3_checked.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T4_assigned
-                           WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttE_mployee
+                           WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T10_leadsto
-                           WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttD_ecision
+                           WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
                          )
       ');
     if (!checkRule2()){

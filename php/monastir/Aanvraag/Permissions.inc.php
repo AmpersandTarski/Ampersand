@@ -84,7 +84,7 @@
       $preErr= $new ? 'Cannot create new Employee: ':'Cannot update Employee: ';
       DB_doquer('START TRANSACTION');
       if($new){ // create a new object
-        if(!isset($Permissions)){ // find a unique id
+        if(!isset($Permissions->id)){ // find a unique id
            $nextNum = DB_doquer('SELECT max(1+AttE_mployee) FROM C4_E_mployee GROUP BY \'1\'');
            $Permissions->id = $nextNum[0][0];
         }
@@ -103,7 +103,7 @@
             $arr[]='\''.addslashes($v['AttP_roduct']).'\'';
         }
         $product_str=join(',',$arr);
-        DB_doquer('DELETE FROM T5_auth WHERE AttE_mployee=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T5_auth WHERE AttE_mployee=\''.addslashes($Permissions->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_rea
                            FROM T9_area AS fst
                           WHERE fst.AttE_mployee = \''.addslashes($Permissions->id).'\'');
@@ -112,7 +112,7 @@
             $arr[]='\''.addslashes($v['AttA_rea']).'\'';
         }
         $area_str=join(',',$arr);
-        DB_doquer('DELETE FROM T9_area WHERE AttE_mployee=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T9_area WHERE AttE_mployee=\''.addslashes($Permissions->id).'\'');
       }
       foreach($Permissions->product as $i=>$v){
         if(!isset($v->id)){
@@ -138,23 +138,23 @@
         DB_doquer('DELETE FROM C5_P_roduct
           WHERE AttP_roduct IN ('.$product_str.')
             AND NOT EXISTS (SELECT * FROM T5_auth
-                             WHERE C5_P_roduct.AttP_roduct = T5_auth.AttE_mployee
+                             WHERE C5_P_roduct.AttP_roduct = T5_auth.AttP_roduct
                            )
             AND NOT EXISTS (SELECT * FROM T6_kind
-                             WHERE C5_P_roduct.AttP_roduct = T6_kind.AttA_pplication
+                             WHERE C5_P_roduct.AttP_roduct = T6_kind.AttP_roduct
                            )
             AND NOT EXISTS (SELECT * FROM T7_kind
-                             WHERE C5_P_roduct.AttP_roduct = T7_kind.AttD_ecision
+                             WHERE C5_P_roduct.AttP_roduct = T7_kind.AttP_roduct
                            )
         ');
       if(!$new && strlen($area_str))
         DB_doquer('DELETE FROM C7_A_rea
           WHERE AttA_rea IN ('.$area_str.')
             AND NOT EXISTS (SELECT * FROM T8_inhabitant
-                             WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttP_erson
+                             WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttA_rea
                            )
             AND NOT EXISTS (SELECT * FROM T9_area
-                             WHERE C7_A_rea.AttA_rea = T9_area.AttE_mployee
+                             WHERE C7_A_rea.AttA_rea = T9_area.AttA_rea
                            )
         ');
     if (!checkRule2()){
@@ -193,7 +193,7 @@
             $arr[]='\''.addslashes($v['AttP_roduct']).'\'';
         }
         $product_str=join(',',$arr);
-        DB_doquer('DELETE FROM T5_auth WHERE AttE_mployee=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T5_auth WHERE AttE_mployee=\''.addslashes($id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_rea
                            FROM T9_area AS fst
                           WHERE fst.AttE_mployee = \''.addslashes($id).'\'');
@@ -202,29 +202,29 @@
             $arr[]='\''.addslashes($v['AttA_rea']).'\'';
         }
         $area_str=join(',',$arr);
-        DB_doquer('DELETE FROM T9_area WHERE AttE_mployee=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T9_area WHERE AttE_mployee=\''.addslashes($id).'\'');
     DB_doquer('DELETE FROM C4_E_mployee WHERE AttE_mployee=\''.addslashes($id).'\'');
     if(strlen($product_str))
       DB_doquer('DELETE FROM C5_P_roduct
         WHERE AttP_roduct IN ('.$product_str.')
           AND NOT EXISTS (SELECT * FROM T5_auth
-                           WHERE C5_P_roduct.AttP_roduct = T5_auth.AttE_mployee
+                           WHERE C5_P_roduct.AttP_roduct = T5_auth.AttP_roduct
                          )
           AND NOT EXISTS (SELECT * FROM T6_kind
-                           WHERE C5_P_roduct.AttP_roduct = T6_kind.AttA_pplication
+                           WHERE C5_P_roduct.AttP_roduct = T6_kind.AttP_roduct
                          )
           AND NOT EXISTS (SELECT * FROM T7_kind
-                           WHERE C5_P_roduct.AttP_roduct = T7_kind.AttD_ecision
+                           WHERE C5_P_roduct.AttP_roduct = T7_kind.AttP_roduct
                          )
       ');
     if(strlen($area_str))
       DB_doquer('DELETE FROM C7_A_rea
         WHERE AttA_rea IN ('.$area_str.')
           AND NOT EXISTS (SELECT * FROM T8_inhabitant
-                           WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttP_erson
+                           WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttA_rea
                          )
           AND NOT EXISTS (SELECT * FROM T9_area
-                           WHERE C7_A_rea.AttA_rea = T9_area.AttE_mployee
+                           WHERE C7_A_rea.AttA_rea = T9_area.AttA_rea
                          )
       ');
     if (!checkRule2()){

@@ -71,12 +71,8 @@
       foreach($ctx as $i=>$v){
           $obj->add_application(new Decision_application($v['AttA_pplication']));
       }
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttD_ecision AS AttA_pplication, fst.AttP_roduct
-                           FROM 
-                             ( SELECT DISTINCT AttA_pplication AS AttD_ecision, AttP_roduct
-                                 FROM T6_kind
-                                WHERE 1
-                             ) AS fst
+      $ctx = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
+                           FROM T7_kind AS fst
                           WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
       foreach($ctx as $i=>$v){
           $obj->add_kind(new Decision_kind($v['AttP_roduct']));
@@ -88,7 +84,7 @@
       $preErr= $new ? 'Cannot create new Decision: ':'Cannot update Decision: ';
       DB_doquer('START TRANSACTION');
       if($new){ // create a new object
-        if(!isset($Decision)){ // find a unique id
+        if(!isset($Decision->id)){ // find a unique id
            $nextNum = DB_doquer('SELECT max(1+AttD_ecision) FROM C6_D_ecision GROUP BY \'1\'');
            $Decision->id = $nextNum[0][0];
         }
@@ -107,20 +103,16 @@
             $arr[]='\''.addslashes($v['AttA_pplication']).'\'';
         }
         $application_str=join(',',$arr);
-        DB_doquer('DELETE FROM T10_leadsto WHERE AttD_ecision=\'addslashes($id)\'');
-        $effected = DB_doquer('SELECT DISTINCT fst.AttD_ecision AS AttA_pplication, fst.AttP_roduct
-                           FROM 
-                             ( SELECT DISTINCT AttA_pplication AS AttD_ecision, AttP_roduct
-                                 FROM T6_kind
-                                WHERE 1
-                             ) AS fst
+        DB_doquer( 'DELETE FROM T10_leadsto WHERE AttD_ecision=\''.addslashes($Decision->id).'\'');
+        $effected = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
+                           FROM T7_kind AS fst
                           WHERE fst.AttD_ecision = \''.addslashes($Decision->id).'\'');
         $arr=array();
         foreach($effected as $i=>$v){
             $arr[]='\''.addslashes($v['AttP_roduct']).'\'';
         }
         $kind_str=join(',',$arr);
-        DB_doquer('DELETE FROM T6_kind WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer( 'DELETE FROM T7_kind WHERE AttD_ecision=\''.addslashes($Decision->id).'\'');
       }
       foreach($Decision->application as $i=>$v){
         if(!isset($v->id)){
@@ -140,51 +132,48 @@
            // check cardinalities...
         }
         DB_doquer('INSERT IGNORE INTO C5_P_roduct (AttP_roduct) VALUES (\''.addslashes($v->id).'\')');
-        DB_doquer('INSERT IGNORE INTO T6_kind (AttA_pplication,AttP_roduct) VALUES (\''.addslashes($Decision->id).'\',\''.addslashes($v->id).'\')');
+        DB_doquer('INSERT IGNORE INTO T7_kind (AttD_ecision,AttP_roduct) VALUES (\''.addslashes($Decision->id).'\',\''.addslashes($v->id).'\')');
       }
       if(!$new && strlen($application_str))
         DB_doquer('DELETE FROM C3_A_pplication
           WHERE AttA_pplication IN ('.$application_str.')
             AND NOT EXISTS (SELECT * FROM T6_kind
-                             WHERE C3_A_pplication.AttA_pplication = T6_kind.AttP_roduct
+                             WHERE C3_A_pplication.AttA_pplication = T6_kind.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T2_applicant
-                             WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttP_erson
+                             WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T3_checked
-                             WHERE C3_A_pplication.AttA_pplication = T3_checked.AttID_document
+                             WHERE C3_A_pplication.AttA_pplication = T3_checked.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T4_assigned
-                             WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttE_mployee
+                             WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T10_leadsto
-                             WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttD_ecision
+                             WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
                            )
         ');
       if(!$new && strlen($kind_str))
         DB_doquer('DELETE FROM C5_P_roduct
           WHERE AttP_roduct IN ('.$kind_str.')
             AND NOT EXISTS (SELECT * FROM T5_auth
-                             WHERE C5_P_roduct.AttP_roduct = T5_auth.AttE_mployee
+                             WHERE C5_P_roduct.AttP_roduct = T5_auth.AttP_roduct
                            )
             AND NOT EXISTS (SELECT * FROM T6_kind
-                             WHERE C5_P_roduct.AttP_roduct = T6_kind.AttA_pplication
+                             WHERE C5_P_roduct.AttP_roduct = T6_kind.AttP_roduct
                            )
             AND NOT EXISTS (SELECT * FROM T7_kind
-                             WHERE C5_P_roduct.AttP_roduct = T7_kind.AttD_ecision
+                             WHERE C5_P_roduct.AttP_roduct = T7_kind.AttP_roduct
                            )
         ');
     if (!checkRule1()){
       $DB_err=$preErr.'\"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product.\"';
     } else
-    if (!checkRule4()){
-      $DB_err=$preErr.'\"Applications for permits are treated by authorized personnel only.\"';
+    if (!checkRule13()){
+      $DB_err=$preErr.'\"kind[Decision*Product] is univalent\"';
     } else
-    if (!checkRule11()){
-      $DB_err=$preErr.'\"kind[Application*Product] is univalent\"';
-    } else
-    if (!checkRule12()){
-      $DB_err=$preErr.'\"kind[Application*Product] is total\"';
+    if (!checkRule14()){
+      $DB_err=$preErr.'\"kind[Decision*Product] is total\"';
     } else
     if (!checkRule18()){
       $DB_err=$preErr.'\"leadsto[Application*Decision] is injective\"';
@@ -206,14 +195,6 @@
     global $DB_err;
     DB_doquer('START TRANSACTION');
     
-      $taken = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
-                           FROM T7_kind AS fst
-                          WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
-      if(count($taken)) {
-        $DB_err = 'Cannot delete Decision: Decision \''.addslashes($id).'\' is about a \''.addslashes($taken[0]['AttP_roduct']).'\'';
-        DB_doquer('ROLLBACK');
-        return false;
-      }
         $effected = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttA_pplication
                            FROM T10_leadsto AS fst
                           WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
@@ -222,64 +203,57 @@
             $arr[]='\''.addslashes($v['AttA_pplication']).'\'';
         }
         $application_str=join(',',$arr);
-        DB_doquer('DELETE FROM T10_leadsto WHERE AttD_ecision=\'addslashes($id)\'');
-        $effected = DB_doquer('SELECT DISTINCT fst.AttD_ecision AS AttA_pplication, fst.AttP_roduct
-                           FROM 
-                             ( SELECT DISTINCT AttA_pplication AS AttD_ecision, AttP_roduct
-                                 FROM T6_kind
-                                WHERE 1
-                             ) AS fst
+        DB_doquer ('DELETE FROM T10_leadsto WHERE AttD_ecision=\''.addslashes($id).'\'');
+        $effected = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
+                           FROM T7_kind AS fst
                           WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
         $arr=array();
         foreach($effected as $i=>$v){
             $arr[]='\''.addslashes($v['AttP_roduct']).'\'';
         }
         $kind_str=join(',',$arr);
-        DB_doquer('DELETE FROM T6_kind WHERE AttA_pplication=\'addslashes($id)\'');
+        DB_doquer ('DELETE FROM T7_kind WHERE AttD_ecision=\''.addslashes($id).'\'');
     DB_doquer('DELETE FROM C6_D_ecision WHERE AttD_ecision=\''.addslashes($id).'\'');
     if(strlen($application_str))
       DB_doquer('DELETE FROM C3_A_pplication
         WHERE AttA_pplication IN ('.$application_str.')
           AND NOT EXISTS (SELECT * FROM T6_kind
-                           WHERE C3_A_pplication.AttA_pplication = T6_kind.AttP_roduct
+                           WHERE C3_A_pplication.AttA_pplication = T6_kind.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T2_applicant
-                           WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttP_erson
+                           WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T3_checked
-                           WHERE C3_A_pplication.AttA_pplication = T3_checked.AttID_document
+                           WHERE C3_A_pplication.AttA_pplication = T3_checked.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T4_assigned
-                           WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttE_mployee
+                           WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T10_leadsto
-                           WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttD_ecision
+                           WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
                          )
       ');
     if(strlen($kind_str))
       DB_doquer('DELETE FROM C5_P_roduct
         WHERE AttP_roduct IN ('.$kind_str.')
           AND NOT EXISTS (SELECT * FROM T5_auth
-                           WHERE C5_P_roduct.AttP_roduct = T5_auth.AttE_mployee
+                           WHERE C5_P_roduct.AttP_roduct = T5_auth.AttP_roduct
                          )
           AND NOT EXISTS (SELECT * FROM T6_kind
-                           WHERE C5_P_roduct.AttP_roduct = T6_kind.AttA_pplication
+                           WHERE C5_P_roduct.AttP_roduct = T6_kind.AttP_roduct
                          )
           AND NOT EXISTS (SELECT * FROM T7_kind
-                           WHERE C5_P_roduct.AttP_roduct = T7_kind.AttD_ecision
+                           WHERE C5_P_roduct.AttP_roduct = T7_kind.AttP_roduct
                          )
       ');
     if (!checkRule1()){
       $DB_err=$preErr.'\"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product.\"';
     } else
-    if (!checkRule4()){
-      $DB_err=$preErr.'\"Applications for permits are treated by authorized personnel only.\"';
+    if (!checkRule13()){
+      $DB_err=$preErr.'\"kind[Decision*Product] is univalent\"';
     } else
-    if (!checkRule11()){
-      $DB_err=$preErr.'\"kind[Application*Product] is univalent\"';
-    } else
-    if (!checkRule12()){
-      $DB_err=$preErr.'\"kind[Application*Product] is total\"';
+    if (!checkRule14()){
+      $DB_err=$preErr.'\"kind[Decision*Product] is total\"';
     } else
     if (!checkRule18()){
       $DB_err=$preErr.'\"leadsto[Application*Decision] is injective\"';
