@@ -28,7 +28,7 @@
 >            , Morphic(source, target, sign, multiplicities, flp, isIdent, isMph, isNot, isTrue, isFalse, isSignal, singleton, equiv, typeUniq)
 >            , Morphical( concs, conceptdefs, mors, morlist, declarations, genE, closExprs, objDefs )
 >            , Language( rules, multRules, signals, specs, patterns, isa )
->            , inline,idsOnly,explain 
+>            , inline,idsOnly,explain , makeInline
 >            , Lang(English,Dutch)
 >            , applyM, declaration, plural, source, target
 >            , glb, lub, sur, inj, fun, tot, sign
@@ -1063,10 +1063,13 @@ This show is used in error messages. It should therefore not display the term's 
 >  instance Eq Morphism where
 >--   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
 >   Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
+>   Mph nm _ _ (a,b) yin _ == _ = False
 >   I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
+>   I _ g s yin            == _ = False
 >   V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
+>   V _ (a,b)              == _ = False
 >   Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
->   a == b = False
+>   Mp1 s c                == _ = False
 
 TODO: 3 lines above: V _ (a,b)
 V _ _ is a Morphism, Vs _ _ is a Declaration
@@ -1263,6 +1266,9 @@ Om een of andere reden stond hier eerder:
 >  single e x = length [m| m<-morlist e, m==x]==1
 >  inline (Mph _ _ _ _ yin _) = yin
 >  inline m = True
+
+>  makeInline m | inline m = m
+>  makeInline m = flp m
 
 >  instance Pop Expression where
 >   put_gE gE cs (Tm m)       = Tm (put_gE gE cs m)

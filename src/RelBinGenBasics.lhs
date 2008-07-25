@@ -206,9 +206,20 @@ TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie 
 
 More optimal F code
 
+>  selectExpr ctx i src trg (F (s1@(Tm (Mp1 _ _)):(s2@(Tm (V _ _)):(s3@(Tm (Mp1 _ _)):fx@(_:_))))) -- to make more use of the thing below
+>    =  selectExpr ctx i src trg (F ((F (s1:s2:s3:[])):fx))
+
 >  selectExpr ctx _ src trg (F ((Tm s@(Mp1 sr _)):((Tm (V _ _)):((Tm t@(Mp1 tr _)):[])))) -- this will occur quite often because of doSubsExpr
 >    = "SELECT "++sr++" AS "++src++", "++tr++" AS "++trg
->  selectExpr ctx i src trg (F (e:((Tm (V _ _)):(f:fx)))) =
+
+>  selectExpr ctx i src trg (F (e@(Tm (Mp1 sr _)):(f:fx))) = -- this will occur because of ObjBinGenObject's way of doing a read
+>       selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
+>                       (selectExprBrac ctx (i) src' trg' (F (f:fx))++" AS fst")
+>                       ("fst."++src'++" = "++sr)
+>                       where src' = sqlExprSrc e
+>                             trg' = noCollideUnlessTm (F (f:fx)) [src'] (sqlExprTrg (F (f:fx)))
+
+>  selectExpr ctx i src trg (F (e:((Tm (V _ _)):(f:fx)))) = -- prevent calculating V in this case
 >      if src==trg && not (isProperty e) then error ("(Module RelBinGenBasics: selectExpr 2) src and trg are equal ("++src++") in "++showADL e) else
 >      selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
 >                       ((selectExprBrac ctx i src' mid' e)++" AS fst, "++(selectExprBrac ctx i mid2' trg' f)++" AS snd")
@@ -335,7 +346,7 @@ For instance: Tm I may return the same names, but cp(Tm I) should not since the 
 >--   | otherwise   = selectGeneric i (sqlMorSrc ctx mph,trg) (sqlMorTrg ctx mph,src) (sqlMorName ctx mph) "1"
 
 >  selectExists' i tbl whr
->   = phpIndent i ++ "SELECT *" ++
+>   = "SELECT *" ++
 >     phpIndent i ++ "  FROM " ++ tbl ++
 >     phpIndent i ++ " WHERE " ++ whr
 >  selectGeneric :: Int -> (String,String) -> (String,String) -> String -> String -> String
@@ -343,8 +354,8 @@ For instance: Tm I may return the same names, but cp(Tm I) should not since the 
 >   = selectcl ++
 >     phpIndent i ++ "  FROM "++tbl++
 >     phpIndent i ++ " WHERE "++whr
->     where selectcl | src==trg  = phpIndent i ++ "SELECT DISTINCT " ++ selectSelItem src
->                    | otherwise = phpIndent i ++ "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
+>     where selectcl | src==trg  = "SELECT DISTINCT " ++ selectSelItem src
+>                    | otherwise = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
 >  selectSelItem (att,alias) | selectSameName (att,alias) = att
 >                            | otherwise                  = att++" AS "++alias
 >  selectSameName (att,alias) = afterPoint att == alias

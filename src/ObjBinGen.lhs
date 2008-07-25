@@ -13,19 +13,19 @@
 >                 dbName
 >                 targetDir
 >    =   putStr ("\n---------------------------\nGenerating php Object files\n---------------------------")
->     >> putStr ("\nGenerating localsettings.inc.php")
+>     >> putStr ("\n  Generating localsettings.inc.php")
 >     >> writeFile (targetDir++"localsettings.inc.php") ls
->     >> putStr ("\nGenerating connectToDataBase.inc.php")
+>     >> putStr ("\n  Generating connectToDataBase.inc.php")
 >     >> writeFile (targetDir++"connectToDataBase.inc.php") ctdb
 >     >> putStr ("\nIncludable files for all objects:")
 >     >> sequence_
->        [ putStr ("\nGenerating "++(name object)++".inc.php")
+>        [ putStr ("\n  Generating "++(name object)++".inc.php")
 >          >> writeFile (targetDir++(name object)++".inc.php") (ojs object)
 >        | object <- objects context
 >        ]
 >     >> putStr ("\nWrapper files for all objects:")
 >     >> sequence_
->        [ putStr ("\nGenerating "++(name object)++".php")
+>        [ putStr ("\n  Generating "++(name object)++".php")
 >          >> writeFile (targetDir++(name object)++".php") (wrapper object)
 >        | object <- objects context
 >        ]

@@ -15,7 +15,6 @@
 >    ] ++ (map ((++) "  ") (
 >      ["// Select the monastir view"
 >      ,"$incPath = \"../inc/\";"
->      ,"$dbName  = \"" ++ dbName ++ "\"; // mysql internal name"
 >      ,"$appName = \"" ++ (name context) ++ "\"; // full text name"
 >      ,"require $incPath.\"globalsettings.inc.php\";"
 >      ,"require \"connectToDataBase.inc.php\";"

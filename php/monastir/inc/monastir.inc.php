@@ -238,11 +238,11 @@ class expandableList extends viewableList{
 		if(count($this->object->containing) == 0) $this->header[]=new viewableText('');
 		$this->header[]=new viewableText('');
 		$this->displayheader($this->header);
-		if(count($this->elements) || $this->One){
+		if(count($this->elements)){
 			foreach($this->elements as $i=>$v){
 				$this->displayRow($v,$edit,$i,count($this->elements));
 			}
-		}else{
+		}else if(!$this->One){
 			$this->dispNone(count($this->header));
 		}
 		if($edit && (!$this->One || !count($this->elements))) $this->displayEmptyRow($this->header);
@@ -356,7 +356,7 @@ class monastir Extends anyView {
 				$defaultAction='create';
 				if($obj===false) { // not false after edit!
 					$f=$object->name;
-					$obj=new $f(null,array()); // return an empty object
+					$obj=new $f(); // return an empty object
 				}
 				$object_id=@$_POST['id'];
 			} else if(@$_POST['action']=='create'){
@@ -416,7 +416,7 @@ class monastir Extends anyView {
 				$ctx = $f();
 				$elements=array();
 				foreach($ctx as $i=>$v){
-					$elements[]=array(new linkedText($v['AttE_mployee'],$v['AttE_mployee']));
+					$elements[]=array(new linkedText($v[0],$v[0]));
 				}
 				$list->assign("elements",$elements);
 				$this->assign("contents",$list);

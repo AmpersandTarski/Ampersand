@@ -1,11 +1,10 @@
 <?php
   // Select the monastir view
   $incPath = "../inc/";
-  $dbName  = "Aanvraag"; // mysql internal name
   $appName = "Aanvraag"; // full text name
-  require $incPath."monastir.inc.php";
   require $incPath."globalsettings.inc.php";
   require "connectToDataBase.inc.php";
+  require $incPath."monastir.inc.php";
   
   class view Extends monastir {
     function view($obj,$object){

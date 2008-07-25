@@ -209,7 +209,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >      , "if(!$DB_slct){"
 >      , "      DB_debug( \"Warning: error connecting to database, building database\",2 );"
 >      , "      mysql_query(\"CREATE DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not create DB "++dbName++"');"
->      , "      $DB_slct = mysql_select_db("++ dbName {- was: $DB_daba -} ++",$DB_link) or die ('Could not select DB "++dbName++"');"
+>      , "      $DB_slct = mysql_select_db('"++ dbName {- was: $DB_daba -} ++"',$DB_link) or die ('Could not select DB "++dbName++"');"
 >      , "      $DB_errs = false;"
 >      , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(380) NOT NULL default '', "++sqlExprTrg e++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
 >                                     | e<-closE context, error ("clos: "++showADL e)]
@@ -257,7 +257,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++sqlExprSrc rule'++"'].'") ("'.$v[0]['"++sqlExprTrg rule'++"'].'")) ++",3);\n    "++
 >                "  return false;\n    }")++
 >                "return true;\n  }"
->        | rule<-rules context, rule'<-[(shrink . conjNF . Cp . normExpr) rule] ]
+>        | rule<-(rules context)++(multRules context), rule'<-[(shrink . conjNF . Cp . normExpr) rule] ]
 
 Translation of rules to SQL
 

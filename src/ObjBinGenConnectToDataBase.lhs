@@ -16,7 +16,7 @@
 >   = (chain "\n  " 
 >     ([ "<?php // generated with "++adlVersion
 >      , "$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');"
->      , "$DB_slct = mysql_select_db("++dbName++",$DB_link);"
+>      , "$DB_slct = mysql_select_db('"++dbName++"',$DB_link);"
 >      , ""
 >      ] ++ (ruleFunctions context)
 >       ++
@@ -25,7 +25,7 @@
 >      , "if($DB_debug>=3){"
 >      ] ++
 >         [ "  checkRule"++show (nr r)++"();"
->         | r<-rules context ] ++
+>         | r<-(rules context)++(multRules context) ] ++
 >      [ "}"
 >      ]
 >     )) ++ "?>"
