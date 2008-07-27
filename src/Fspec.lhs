@@ -14,10 +14,61 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >  import HtmlFilenames
 >  import ERmodel
 
->  data Fspec = Fspc Context [Fpat]
->  data Fpat  = Pspc Pattern [Funit]
+A specification is made for one context.
+A specification contains one Fobj-specification for every object it defines and one Ftheme-specification for every pattern it contains.
+
+>  data Fspec = Fctx Context [Ftheme] [Fobj]
+
+The story:
+A number of datasets for this context is identified.
+Every pattern is considered to be a theme and every object is treated as a separate object specification.
+Every dataset is discussed in precisely one theme
+Every theme will be explained in a chapter of its own.
+
+>  makeFspec :: Context -> Fspec
+>  makeFspec context
+>    = Fctx context [makeFtheme pat ds| (pat,ds)<-pats] [makeFobj o| o<-attributes context]
+>      where
+>       datasets = (makeDatasets.mors) context
+>-- next thing, we look which datasets will be discussed in which themes.
+>-- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
+>-- because we assume that the programmer found it important enough to define that concept in that pattern.
+>-- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
+>       pcsds0 = (map head.map (sort' snd3).eqCl fst3)
+>                [ (pat,length cs,d) | pat<-patterns context, d<-datasets, cs<-[roots d `isc` [c|c<-conceptdefs pat]], not (null cs)]
+>-- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
+>-- The remaining concepts and datasets are determined in pcsds1.
+>-- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
+>       pcsds1 = (map (head.sort' snd3).eqCl thd3)
+>                [ (pat,0-length [c|m<-morlist pat, c<-concs m, c `elem` cs],d)
+>                | d<-datasets>-[d|(pat,cs,d)<-pcsds0], pat<-patterns context
+>                , cs<-[roots d `isc` concs pat], not (null cs)
+>                ]
+>-- The remaining datasets will be discussed in the last theme
+>       remainingDS = datasets>-[d|(pat,cs,d)<-pcsds0++pcsds1]
+>-- The patterns with the appropriate datasets are determined:
+>       pats = [ (pat, [d| (p,_,d)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
+
+A dataset is a functional closure of relations with one concept c as root.
+The datasets of a context are those datasets whose relations are not a subset of any other dataset.
+
+>  data Dataset = DS [Declaration]   -- the relations that constitute the dataset
+>                    [Concept]       -- the roots of the dataset
+
+>  makeDatasets :: Morphisms -> [Dataset]
+>  makeDatasets msAll
+>   = [declaration m| m<-msAll, isFunctional m] ++
+
+tbd: makeFtheme, makeFobj, makeDatasets, roots
+
+Every Ftheme-spec is split in units, which are textual entities.
+Every unit specifies one dataset, but each dataset is discussed only once in the entire specification.
+
+>  data Ftheme  = Tspc Pattern [Funit]
+
+
 >  data Funit = Uspc String Pattern
->                    [(Concept,[(Morphism,[Rule])],FPA,[Morphism],[(Expression,Rule)])]
+>                    [(ObjectDef,FPA,[Morphism],[(Expression,Rule)])]
 >                    [ServiceSpec] -- services
 >  data ServiceSpec = Sspc String       -- name of the service
 >                          FPA          -- function point analysis information
@@ -35,13 +86,13 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >   nPatterns :: a -> Int
 >   nFpoints  :: a -> Int
 >  instance Statistics Fspec where
->   nServices (Fspc context ps) = nServices ps
->   nPatterns (Fspc context ps) = nPatterns ps
->   nFpoints  (Fspc context ps) = sum (map nFpoints ps)
->  instance Statistics Fpat where
->   nServices (Pspc p us) = nServices us
->   nPatterns (Pspc p us) = 1
->   nFpoints  (Pspc p us) = sum (map nFpoints us)
+>   nServices (Fctx context ps) = nServices ps
+>   nPatterns (Fctx context ps) = nPatterns ps
+>   nFpoints  (Fctx context ps) = sum (map nFpoints ps)
+>  instance Statistics Ftheme where
+>   nServices (Tspc p us) = nServices us
+>   nPatterns (Tspc p us) = 1
+>   nFpoints  (Tspc p us) = sum (map nFpoints us)
 >  instance Statistics a => Statistics [a] where
 >   nServices xs = sum (map nServices xs)
 >   nPatterns xs = sum (map nPatterns xs)
@@ -49,7 +100,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >  instance Statistics Funit where
 >   nServices (Uspc nm pat ents svs) = length svs
 >   nPatterns x = 0
->   nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ fpa _ _ _ _ _<-specs]
+>   nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ fpa _ _ _ _ _<-specs]
 >  instance Statistics ServiceSpec where
 >   nServices x = 1
 >   nPatterns x = 0
@@ -124,14 +175,14 @@ Te bepalen:
 
 >  namet :: Identified a => a -> String
 >  namet    = firstCaps.map toLower.name
->  nameAt a = firstCaps ((map toLower.name.target) a++"_"++name a)
+>  nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
 >  tt a = "{\\tt "++a++"}"
 >  nameAtt a = tt (nameAt a)
 >  newEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
->  newEnt context o@(Obj nm pos c ats) rs
+>  newEnt context o rs
 >   = Sspc (firstCaps ("new"++firstCaps (name o))) (IF Gemiddeld)
->          [ Aspc (varName (name a)) (handle context (target a)) | a<-ats]  -- input parameters
->          [ Aspc "obj" (handle context c)]                                 -- results
+>          [ Aspc (varName (name a)) (handle context a) | a<-attributes o]  -- input parameters
+>          [ Aspc "obj" (handle context o)]                                 -- results
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-rs
@@ -140,28 +191,28 @@ Te bepalen:
 >--    Precondition
 >          []
 >--    Postcondition (example:) {o in Pair and o left l and o right r}
->          ([tt ("obj."++name a)++"="++tt (varName (name a))|a<-ats])
->     where varName = uName (map name ats)
+>          ([tt ("obj."++name a)++"="++tt (varName (name a))|a<-attributes o])
+>     where varName = uName (map name (attributes o))
 >  getEnt :: Context -> ObjectDef -> ServiceSpec
->  getEnt context o@(Obj nm pos c ats)
->   = Sspc (firstCaps ("get"++name o)) (OF Eenvoudig) [Aspc "x" (handle context c)] [Aspc (varName (name a)) (handle context (target a)) | a<-ats] []
+>  getEnt context o
+>   = Sspc (firstCaps ("get"++name o)) (OF Eenvoudig) [Aspc "x" (handle context o)] [Aspc (varName (name a)) (handle context a) | a<-attributes o] []
 >--    Pre (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
->          ([ tt ("x."++name a)++"="++idNam (nameAt a) |a<-ats])
+>          ([ tt ("x."++name a)++"="++idNam (nameAt a) |a<-attributes o])
 >--    Post (example:) {left=l, right=r, src=s, and trg=t}
->          [tt (varName (name a))++"="++idNam (nameAt a)|a<-ats]
->     where varName = uName (map name ats)
->  keyEnt :: Context -> ObjectDef -> (String,[Attribute]) -> ServiceSpec
->  keyEnt context o@(Obj nm pos c ats) (key,ats')
+>          [tt (varName (name a))++"="++idNam (nameAt a)|a<-attributes o]
+>     where varName = uName (map name (attributes o))
+>  keyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> ServiceSpec
+>  keyEnt context o (key,ats')
 >   = Sspc (firstCaps ("sel"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
 >          (OF Eenvoudig)
->          [ Aspc (varName (name a)) (handle context (target a)) | a<-ats']
->          [Aspc "obj" (handle context c)]
+>          [ Aspc (varName (name a)) (handle context a) | a<-ats']
+>          [Aspc "obj" (handle context o)]
 >          []
 >--    Pre (example:) {Assume l=atom_left and r=atom_right}
->          [let args = [tt ("x."++name a)++"="++tt (varName (name a)) | a<-ats] ++
->                      [tt ("x."++name a)++"="++idNam (nameAt a)      | a<-ats, not (name a `elem` map name ats')]
+>          [let args = [tt ("x."++name a)++"="++tt (varName (name a)) | a<-attributes o] ++
+>                      [tt ("x."++name a)++"="++idNam (nameAt a)      | a<-attributes o, not (name a `elem` map name ats')]
 >           in
->           "\\hbox{There is an {\\tt x}}\\in"++idName c++"\\ \\hbox{such that}"++
+>           "\\hbox{There is an {\\tt x}}\\in"++idName (concept o)++"\\ \\hbox{such that}"++
 >           (if length args==1 then "\\ "++concat args else
 >            "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
 >            chain "\\\\\n" (map ('&':) args)++
@@ -169,67 +220,66 @@ Te bepalen:
 >           )]
 >--    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
 >          ([ tt "obj"++"="++tt "x"])
->     where varName = uName (map name ats)
->  delKeyEnt :: Context -> ObjectDef -> (String,[Attribute]) -> [(Expression,Rule)] -> ServiceSpec
->  delKeyEnt context o@(Obj nm pos c ats) (key,ats') rs
+>     where varName = uName (map name (attributes o))
+>  delKeyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> [(Expression,Rule)] -> ServiceSpec
+>  delKeyEnt context o (key,ats') rs
 >   = Sspc (firstCaps ("del"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
 >          (IF Gemiddeld)
->          [ Aspc (varName (name a)) (handle context (target a)) | a<-ats']
+>          [ Aspc (varName (name a)) (handle context a) | a<-ats']
 >          []
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-rs
 >          , clause@(Fu terms)<-[rClause conj]
->          , not (null (mors ats `isc` mors [t| t<-terms, isPos t]))])
+>          , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
 >--    Pre (example:) 
 >          []
 >--    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
->          ["\\hbox{\\tt obj}\\in"++idName c++"\\ \\hbox{implies that not}"++
->           (if length ats==1 then let a@(Att nm pos c e)=head ats in "\\ ("++tt ("obj."++name a)++"="++showADL e++")" else
->-- was:    (if length ats==1 then let a=head ats in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
+>          ["\\hbox{\\tt obj}\\in"++idName o++"\\ \\hbox{implies that not}"++
+>           (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++tt ("obj."++name a)++"="++showADL (ctx a)++")" else
 >           "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
->           chain "\\\\\n" ["&"++tt ("obj."++name a)++"="++tt (varName (name a))|a<-ats]++
+>           chain "\\\\\n" ["&"++tt ("obj."++name a)++"="++tt (varName (name a))|a<-attributes o]++
 >           "&)\n\\end{array}$"
 >           )]
->     where varName = uName (map name ats)
+>     where varName = uName (map name (attributes o))
 >  delEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
->  delEnt context o@(Obj nm pos c ats) rs
+>  delEnt context o rs
 >   = Sspc (firstCaps ("del"++name o)) (IF Gemiddeld)
->          [Aspc "x" (handle context c)] []
+>          [Aspc "x" (handle context o)] []
 >          (dressRules
 >          [ (clause,rule)
 >          | (conj,rule)<-rs
 >          , clause@(Fu terms)<-[rClause conj]
->          , not (null (mors ats `isc` mors [t| t<-terms, isPos t]))])
+>          , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
 >--    Pre
->          [if length ats==1 then let a=head ats in tt ("x."++name a)++"="++idNam (nameAt a) else
+>          [if length (attributes o)==1 then let a=head (attributes o) in tt ("x."++name a)++"="++idNam (nameAt a) else
 >           "$\\begin{array}[t]{lll}\n"++
->           chain "\\\\\nand" ["&"++tt ("x."++name a)++"="++idNam (nameAt a)|a<-ats]++
+>           chain "\\\\\nand" ["&"++tt ("x."++name a)++"="++idNam (nameAt a)|a<-(attributes o)]++
 >           "&\n\\end{array}$"
->          | not (null ats)]
+>          | not (null (attributes o))]
 >--    Post 
->          [if null ats then "\\hbox{\\tt x}\\not\\in"++idName c else
->           "\\hbox{\\tt obj}\\in"++idName c++"\\ \\hbox{implies that not}"++
->           (if length ats==1 then let a=head ats in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
+>          [if null (attributes o) then "\\hbox{\\tt x}\\not\\in"++idName (concept o) else
+>           "\\hbox{\\tt obj}\\in"++idName (concept o)++"\\ \\hbox{implies that not}"++
+>           (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
 >           "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
->           chain "\\\\\nand" ["&"++tt ("obj."++name a)++"="++idNam (nameAt a)|a<-ats]++
+>           chain "\\\\\nand" ["&"++tt ("obj."++name a)++"="++idNam (nameAt a)|a<-attributes o]++
 >           "&)\n\\end{array}$"
 >           )]
->--   where varName = uName (map name ats)
 >  updEnt :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
->  updEnt context o@(Obj nm pos c ats) cs rs
->   = Sspc (firstCaps ("upd"++name o)) (IF Gemiddeld) (Aspc "x" (handle context c): [ Aspc (varName (name a)) (handle context (target a)) | a<-ats]) []
+>  updEnt context o cs rs
+>   = Sspc (firstCaps ("upd"++name o)) (IF Gemiddeld) (Aspc "x" (handle context o): [ Aspc (varName (name a)) (handle context a) | a<-attributes o]) []
 >          (dressRules rs)
 >--    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
 >          []
 >--    Post (example:) {x left l, x right r, x src s, and x trg t}
->          [ tt ("x."++name a)++"="++tt (varName (name a))|a<-ats]
->     where varName = uName (map name ats)
+>          [ tt ("x."++name a)++"="++tt (varName (name a))|a<-attributes o]
+>     where varName = uName (map name (attributes o))
 >  newPair :: Context -> [Declaration] -> [(Expression,Rule)] -> Declaration -> String -> ServiceSpec
 >  newPair context relations clauses r nm
 >   = Sspc (firstCaps ("assoc"++"_"++nm))
 >          (IF Gemiddeld)
 >          [ Aspc s (handle context (source r)), Aspc t (handle context (target r))] []
+>--hierboven gebeurt iets grappigs. Zouden de objecten waar deze handles naar wijzen wel bestaan?
 >          (dressRules [ (clause,rule)
 >                      | (conj,rule)<-clauses
 >                      , clause@(Fu terms)<-[lClause conj]
@@ -322,9 +372,9 @@ This assumption, however, is not true.
 TODO: determine which relations are affected but not computed, and report as an error.
 
 >  funcSpec context (entities,relations,ruls) language
->   = [ Pspc pat 
+>   = [ Tspc pat 
 >            ([ Uspc (firstCaps (name o)) pat [(o,ILGV Eenvoudig,cs,rs)]
->                    ( [ newEnt context o cs rs ] ++ [ getEnt context o]                           ++
+>                    ( [ newEnt context o rs ] ++ [ getEnt context o]                           ++
 >                      concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) rs]
 >                             | (e,key,ks)<-keys pat, e==concept o]                                ++
 >                      [ delEnt context o rs ]                                                     ++
@@ -335,7 +385,6 @@ TODO: determine which relations are affected but not computed, and report as an 
 >     , car<-[definedEnts context pat], not (null car), ec<-[ents car] ]
 >     where
       
-Het verhaal:
 In elk hoofdstuk wordt een pattern behandeld.
 Elke entiteit wordt in precies één hoofdstuk behandeld.
 De overige concepten worden behandeld in het hoofdstuk waarin het voor de eerste maal voorkomt.
@@ -345,21 +394,21 @@ cs zijn de vrij in te vullen relaties. Dat zijn degenen die niet 'affected' (ofw
 rs zijn de betrokken regels
 
 >      ents car = [ (o,if null ats then NO else ILGV Eenvoudig,cs,rs)
->                 | o@(Obj nm pos c ats)<-car
->                 , rs<-[[(conj,rule) |rule<-rules context, c `elem` concs rule, conj<-conjuncts rule]]
+>                 | o@(Obj nm pos ctx ats)<-car
+>                 , rs<-[[(conj,rule) |rule<-rules context, concept o `elem` concs rule, conj<-conjuncts rule]]
 >                 , cs<-[[a| a<-ats, not (null (mors a `isc` affected))]], not (null cs)
 >                 ]
 >      clss pat ec new
 >       = [ Uspc (if language==English then "Other Classes" else "Andere Classes") pat car
 >                [ service
->                | (c,_,_,_,rs)<-car
+>                | (c,_,_,rs)<-car
 >                , service <- [ newEnt context (c,[]) [] rs ]                                                ++
 >                             [ keyEnt context (c,[]) (key,ks) | (e,key,ks)<-keys pat, e==c] ++
 >                             [ delEnt context (c,[]) rs ]
 >                ]
->         ] where car = [ (c,[],NO,[],rs)
->                       | c<-concs pat,  not (c `elem` map fst entities), c `elem` new
->                       , rs<-[[(conj,rule) |rule<-rules pat, conj<-conjuncts rule, c `elem` concs conj]]
+>         ] where car = [ (o,NO,[],rs)
+>                       | o<-objDefs pat,  not (o `elem` attributes context), o `elem` new
+>                       , rs<-[[(conj,rule) |rule<-rules pat, conj<-conjuncts rule, concept o `elem` concs conj]]
 >                       ]
 >      asss pat new
 >       = [ Uspc ((if language==English then "Associations of " else "Associaties van ")++firstCaps (name pat)) pat [] ss
@@ -383,7 +432,7 @@ rs zijn de betrokken regels
 >  funcSpecText context fspcs English
 >   = "Functional Specification:\n"++chain "\n\n" (map fSpec fspcs)
 >     where
->      fSpec (Pspc pat units)
+>      fSpec (Tspc pat units)
 >       = "Chapter "++firstCaps (name pat)++"\n\n"++chain "\n\n" (map fUnit units)
 >      fUnit unit@(Uspc unm pat car specs)
 >       = "Section "++unm++fpaUnit unit English++
@@ -404,7 +453,7 @@ rs zijn de betrokken regels
 >  funcSpecText context fspcs Dutch
 >   = "Functionele Specificatie:\n"++chain "\n\n" (map fSpec fspcs)
 >     where
->      fSpec (Pspc pat units)
+>      fSpec (Tspc pat units)
 >       = "Hoofdstuk "++firstCaps (name pat)++"\n\n"++chain "\n\n" (map fUnit units)
 >      fUnit unit@(Uspc unm pat car specs)
 >       = "Sectie "++unm++fpaUnit unit Dutch++
@@ -475,8 +524,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   = chain "\n\n" (map fSpec fspcs)
 >     where
 >      cname = name context
->      fSpec (Pspc pat units)
->       = latexChapter (firstCaps (name pat)) ("Fpat "++firstCaps (name pat))++
+>      fSpec (Tspc pat units)
+>       = latexChapter (firstCaps (name pat)) ("Ftheme "++firstCaps (name pat))++
 >         latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++"_CD.png}")++
 >         captiontext language pat)++"\n"++
 >         ( if null attributes then "" else introtext language attributes++
@@ -504,16 +553,16 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                              | u@(Uspc unm pat car specs)<-units, not (null specs) ]
 >                      ]
 >         where
->           varName = uName [name c| u@(Uspc unm pat car specs)<-units, (o,fpa,cs,rs)<-car]
+>           varName = uName [name o| u@(Uspc unm pat car specs)<-units, (o,fpa,cs,rs)<-car]
 >           attributes = [ (a, d, varName (name o))
 >                        | u@(Uspc unm pat car specs)<-units 
->                        , (o@(Obj nm pos c ats),fpa,cs,rs')<-car, a<-ats, d<-declarations a
+>                        , (o,fpa,cs,rs')<-car, a<-attributes o, d<-declarations a
 >                        ]
 
 >      isAttribute d = null ([Uni,Tot]>-multiplicities d) || null ([Sur,Inj]>-multiplicities d)
 >      fUnit unit@(Uspc unm pat car []) newdecs = ""
 >      fUnit unit@(Uspc unm pat car specs) newdecs
->       = latexSection (firstCaps unm) ("Pspc "++firstCaps (unm++name pat))++
+>       = latexSection (firstCaps unm) ("Tspc "++firstCaps (unm++name pat))++
 >         fpaUnit unit language++
 >         lettext language unm++
 >         ( if null decls then "" else atttext language unm attributes++
@@ -568,7 +617,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 
 >  firsts seen (ds:dss) = new: firsts (seen++new) dss where new = ds>-seen
 >  firsts seen [] = []
->  handle context c = firstCaps (name c)++if c `elem` (map fst entities) then "Handle" else ""
+>  handle :: Identified a => Context -> a -> String
+>  handle context c = firstCaps (name c)++if name c `elem` (map name entities) then "Handle" else ""
 >   where (entities,relations,ruls) = erAnalysis context
 
 >  srvSchema pat language cnm (Sspc nm fpa input output rs pre post) new
@@ -671,18 +721,16 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >  definingPattern context entities c
 >   = ( fst . head . sort' ((0-).length.snd) ) [(p,rs)| (p,(c',_),rs)<-ps, c'==c]
 >     where
->      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,o,r)->(name p,c)) rs, (p,e,_)<-take 1 cl]
+>      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,o,r)->(name p,name o)) rs, (p,e,_)<-take 1 cl]
 >      rs = [(pat,o,rule)
->           | pat<-patterns context, rule<-rules pat, o@(Obj nm pos c ats)<-objects context, c `elem` concs rule]
+>           | pat<-patterns context, rule<-rules pat, o<-attributes context, concept o `elem` concs rule]
 >  definedEnts context pat
 >   = [ e
 >     | cl<-eqCl (\(p,(c,_),rs)->c) ps, (p,e,rs)<-take 1 (sort' (\(p,e,rs)->0-length rs) cl), p==name pat]
 >     where
->      ps = [ (p,e,[r|(_,_,r)<-cl])
->           | cl <-eqCl (\(p,(c,_),_)->(p,c)) rs, (p,e,_)<-take 1 cl
->           ]
->      rs = [ (name p,e,rule)
->           | p<-patterns context, rule<-rules p, e@o@(Obj nm pos c ats)<-objects context, c `elem` concs rule]
+>      ps = [ (p,e,[r|(_,_,r)<-cl]) | cl <-eqCl (\(p,o,_)->(name p,name o)) rs, (p,e,_)<-take 1 cl ]
+>      rs = [ (name pat,o,rule)
+>           | pat<-patterns context, rule<-rules pat, o<-attributes context, concept o `elem` concs rule]
 >      (entities, relations, ruls) = erAnalysis context
 
 >  nDesignPr context = n where (_,n) = dp undef f context where undef=undef; f=f
@@ -726,7 +774,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                      , {- str17 -} "en"
 >                      )
 >                      (commaNL "en") context
-> -- designPrinciples language = error ("Not yet implemented: designPrinciples "++show language++" (module Fpat)")
+> -- designPrinciples language = error ("Not yet implemented: designPrinciples "++show language++" (module Ftheme)")
 
 >  dp strs en context
 >    = ( (chain "\n". filter (not.null))
@@ -1235,7 +1283,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >        ]
 
 
->  generateFspecLaTeX :: Context -> Lang -> [Fpat] -> String
+>  generateFspecLaTeX :: Context -> Lang -> [Ftheme] -> String
 >  generateFspecLaTeX context language spec
 >    = lIntro language++concat
 >        [ "\n\\begin{document}"
@@ -1244,7 +1292,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >        , "\n\\end{document}"
 >        ]
 
->  generateArchLaTeX :: Context -> Lang -> [Fpat] -> String
+>  generateArchLaTeX :: Context -> Lang -> [Ftheme] -> String
 >  generateArchLaTeX context language spec
 >    = lIntro language++concat
 >        [ "\n\\begin{document}"
@@ -1485,7 +1533,7 @@ TODO: complete all accents and test
 
 >  latexEmph x = "{\\em "++x++"}"
 
->  projectClassic :: Context -> [Fpat] -> Lang -> String
+>  projectClassic :: Context -> [Ftheme] -> Lang -> String
 >  projectClassic context fs language
 >   = "ID;Task_Name;Duration;Type;Outline_Level;Predecessors;Milestone;Rollup\n"++
 >     (task2proj.spec2task context English) fs
@@ -1558,7 +1606,7 @@ TODO: complete all accents and test
 >     "\n\t"++str3++" "++(show.sum.map snd) us++" "++str2++"."
 >     where
 >      us= [ (unm, fps)
->          | Pspc pat units<-fspcs, Uspc unm pat car specs<-units
+>          | Tspc pat units<-fspcs, Uspc unm pat car specs<-units
 >          , fps<-[sum ([fPoints fpa| Sspc nm fpa input output rs pre post<-specs]++
 >                       [fPoints fpa| (c,_,fpa,_,_)<-car])
 >                 ], fps>0

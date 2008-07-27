@@ -1,31 +1,62 @@
-> module ERmodel where  -- commented modules are required for testing
+> module ERmodel(erAnalysis) where  -- commented modules are required for testing
 >  import Char (isSpace, isAlphaNum)
 >  import CommonClasses ( Identified(name) 
 >                       , Collection(empty, (>-))) 
 >  import Auxiliaries (chain, sort',rd, eqCl)
 >  import CC_aux 
->            ( rules, Context(Ctx), src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key
->            ,Language, Declaration, concs, source, target, isFunction, isFlpFunction, posNone
+>            ( Context(Ctx), src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
+>            , Language( rules, objectdefs )
+>            , Declaration, concs, source, target, isFunction, isFlpFunction, posNone
 >            , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
->            , Expression(F,Tm)
+>            , Expression(F,Tm), v
 >            , Prop(Sur,Inj),multiplicities
->            , ObjectDef(Obj), Attribute(Att), Object(objects)
+>            , ObjectDef(Obj), Object(concept, attributes, ctx)
 >            )
 >--  import Calc
 >  import HtmlFilenames (fnContext)
 
+>  erAnalysis :: (Language a) => a -> ([ObjectDef],[Declaration],[String])
+>  erAnalysis p = (entities, rels, ruls)
+>   where
+>      entities 
+>       | null (objectdefs p) = [ Obj (name c) posNone (v (Anything,c)) [Obj ((concat.map name.mors) e) posNone (Tm e) []| e<-as]
+>                               | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
+>       | otherwise           = objectdefs p
+>      attrs :: [Morphism]
+>      attrs = [Mph (name s ++ if isFlpFunction s then "Fun" else "") posNone [] (source s,target s) True s | s<-declarations p,    isFunction s] ++
+>              [flp (Mph (name s++if isFunction s then "Inv" else "") posNone [] (source s,target s) True s)| s<-declarations p, isFlpFunction s] ++
+>              [     Mph (name s) posNone [] (source s,target s) True s | s<-declarations p, isProperty s]
+> --     ss = [d| d<-declarations p {- , take 5 (name d) /= "Clos_" -} ]
+> --     ents = [concept e| e<-entities]
+> --     rels' = [s| s<-declarations p,      s `elem` declarations [a| e<-entities, a<-attributes e]]
+>      rels  = [s| s<-declarations p, not (s `elem` declarations [a| e<-entities, a<-attributes e])]
+>      ruls = [showADL r| r<-rules p]
+
+       ruls = ["foldr f ("++showADL r++") "++show [(s,e)| (s,e)<-substitutions, s `elem` declarations r]| r<-rules p]
+       substitutions = [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source l,target s) True s)])
+                       | s<-rels', target s `elem` ents
+                       , l<-attrs, target l==source s ]++
+                       [ (s,F [Tm (Mph (name s) posNone [] (source s,source r) True s),Tm r])
+                       | s<-rels', source s `elem` ents
+                       , r<-attrs, target r==target s ]++
+                       [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source s,source r) True s),Tm r])
+                       | s<-rels'
+                       , not (source s `elem` ents) && not (target s `elem` ents)
+                       , l<-attrs, target l==source s
+                       , r<-attrs, target r==target s ]
+
 >  csvcontent contexts contextname
 >   = putStr ("\nCSV content for every object definition in "++name context)>>
->     foldr1 (>>) [ writeFile (fnEntity c) (shEnts (entConts context o))>>
->                   putStr ("\n"++fnEntity c++" written")
->                 | o@(Obj nm pos c ats) <- objects context ] >>
+>     foldr1 (>>) [ writeFile (fnObject a) (shEnts (entConts context a))>>
+>                   putStr ("\n"++fnObject a++" written")
+>                 | a@(Obj nm pos ctx ats) <- attributes context ] >>
 >     putStr ("\nwritten\n")
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
 >      (entities,relations,ruls) = erAnalysis context
->      fnEntity c = "list"++name c++".csv"
+>      fnObject c = "list"++name c++".csv"
 >      shEnts = chain "\n" . map (chain ";")
 >      entConts context (Obj nm pos c ats) = [] -- moet inhoud opleveren, maar moet nog worden gebouwd.
 > -- TODO: dit werkend maken:      = ([name c]++[name a| a<-ats]) : (foldr1 mrg [[[src p,trg p]| p<-(sort' src.contents) a] | a<-ats])
@@ -45,10 +76,11 @@
      (writeFile (fnContext context++"_Petri.dot"). dbGraph (name context)) context          >>
      putStr (fnContext context++"_Petri.dot written\n") >>
 
->     (writeFile (fnContext context++"_EARD.dot"). erdDataModel) context                    >>
->     putStr (fnContext context++"_EARD.dot written\n")                                     >>
->     (writeFile (fnContext context++"_ERD.dot"). erdConceptual) context                    >>
->     putStr (fnContext context++"_ERD.dot written\n")
+>--     (writeFile (fnContext context++"_EARD.dot"). erdDataModel) context                    >>
+>--     putStr (fnContext context++"_EARD.dot written\n")                                     >>
+>     putStr ("Entity-relation analysis temporarily out of order\n")
+>--     (writeFile (fnContext context++"_ERD.dot"). erdConceptual) context                    >>
+>--     putStr (fnContext context++"_ERD.dot written\n")
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
@@ -59,30 +91,9 @@ In the type definition, an entity is represented by a concept (for instance Pers
 together with a number of attributes (e.g. name, address, ssn). An attribute (e.g. name) consists
 of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
 
->  type Entity = (Concept,[(Morphism,[Rule])])
->  erAnalysis :: (Key a,Language a) => a -> ([Entity],[Declaration],[String])
->  erAnalysis p = (entities, rels, ruls)
->   where
->      entities   = [ (c, as) | c<-concs p, as<-[[(a,[])| a<-attributes, source a <= c]], not (null as) ]
->      attributes = [     Mph (name s++if isFlpFunction s then "Fun" else "") posNone [] (source s,target s) True s | s<-ss, isFunction s] ++
->                   [flp (Mph (name s++if isFunction s then "Inv" else "") posNone [] (source s,target s) True s)| s<-ss, isFlpFunction s] ++
->                   [     Mph (name s) posNone [] (source s,target s) True s | s<-ss, isProperty s]
->      ss = [d| d<-declarations p {- , take 5 (name d) /= "Clos_" -} ]
->      ents = [e| (e,as)<-entities ]
->      rels  = [s| s<-ss, not (s `elem` declarations (attributes))]
->      rels' = [s| s<-ss,      s `elem` declarations (attributes)]
->      substitutions = [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source l,target s) True s)])
->                      | s<-rels', target s `elem` ents
->                      , l<-attributes, target l==source s ]++
->                      [ (s,F [Tm (Mph (name s) posNone [] (source s,source r) True s),Tm r])
->                      | s<-rels', source s `elem` ents
->                      , r<-attributes, target r==target s ]++
->                      [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source s,source r) True s),Tm r])
->                      | s<-rels'
->                      , not (source s `elem` ents) && not (target s `elem` ents)
->                      , l<-attributes, target l==source s
->                      , r<-attributes, target r==target s ]
->      ruls = ["foldr f ("++showADL r++") "++show [(s,e)| (s,e)<-substitutions, s `elem` declarations r]| r<-rules p]
+Since the introduction of objects, the type Entity is obsolete:
+
+>--  type Entity = (Concept,[(Morphism,[Rule])])
 
   dbGraph :: Language a => String -> a -> String
   dbGraph nm pat
@@ -100,7 +111,7 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
                      [ "{node [label=\""++showS s++"\"] "++nameG s++"}" | s<-fullnames]++
                      [chain "; " (map nameG (shrtnames))]++
                      ["node [shape=rectangle]"]++
-                     [chain "; " (map nameG (rd [s|o@(Obj nm pos c ats)<-objects ctx, (e,rs)<-as, s<-declarations e]))]
+                     [chain "; " (map nameG (rd [s|o@(Obj nm pos c ats)<-attributes context, (e,rs)<-as, s<-declarations e]))]
        nodes = [ "node [shape=box,height=.5,width=.1,style=filled]"
                , "{node [label=\"I\"] I_"++ chain "; I_" dI++"}"
                , "{node [label=\"D\"] D_"++ chain "; D_" dD++"}"
@@ -119,35 +130,34 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
        fullnames = [s | cl<-eqCl name relations, length cl>1, s<-cl]
        shrtnames = [s | [s]<-eqCl name relations]
 
+De nu volgende analyse produceert een conceptueel datamodel.
+
 >  erdConceptual :: Context -> String
->  erdConceptual ctx
->   = "graph "++[x|x<-name ctx,not (isSpace x)]++"_ERD"++
+>  erdConceptual context
+>   = "graph "++[x|x<-name context,not (isSpace x)]++"_ERD"++
 >     chain sep (introG++nodesPlaces) ++
 >     "\n   }"
 >     where
->       ms = declarations ctx >- map declaration (mors (closExprs ctx))
->       (entities,relations,ruls) = erAnalysis ctx
+>       ms = declarations context >- map declaration (mors (closExprs context))
+>       (entities,relations,ruls) = erAnalysis context
+>       attrs = [a| e<-entities, a<-attributes e]
 >       sep = "\n   ; "
->       concepts = [c| Obj nm pos c ats<-objects ctx] -- all concepts
->       attributes = rd [a| Obj nm pos c ats<-objects ctx, a<-ats]
->       drawnatts -- are those attributes that are drawn as an ellipse
->        = [a| [a]<-eqCl target attributes, null [ac|ac<-declarations attributes++relations, declarations a/=[ac], target a `elem` [source ac,target ac]]]
->       drawnrels -- those attributes that are drawn as relationship
->        = (map head.eqCl declarations) [a| a<-attributes, not (a `elem` drawnatts)]
 >       nodesPlaces = ["node [shape=box]"]++
+> -- all attrs are to be drawn as ellipses
 >                     ["{node [shape=ellipse,label=\""++name att++" : "++
->                      (name.target) att++"\"] ATT_"++nameR att++"} ; "++
->                      (show.name.source) att++" -- ATT_"++nameR att
->                     | att<-drawnatts]++
+>                      (name.source.ctx) att++"\"] ATT_"++name att++"} ; "++
+>                      (name.target.ctx) att++" -- ATT_"++name att
+>                     | att<-attrs]++
 >                     ["edge  [len=1.5]"]++
+> -- all relations are to be drawn as diamonds
 >                     [ "{node [shape=diamond,style=filled,color=lightgrey,label=\""++name r++
 >                       "\"] REL_"++showFullRelName r++"} ; REL_"++showFullRelName r++" -- "++(show.name.target) r++" [arrowhead=\"teetee\"]"
->                     |r<-drawnrels]++
+>                     |r<-relations]++
 >                     [ "{node [shape=diamond,style=filled,color=lightgrey,label=\""++name r++
 >                       "\"] REL_"++showFullRelName r++"} ; "++
 >                       (show.name.source) r++" -- REL_"++showFullRelName r++
 >                       if null([Sur,Inj]>-multiplicities r) then " [arrowtail=\"teetee\"]" else ""
->                     |r<-drawnrels]++
+>                     |r<-relations]++
 >                     [ "{node [shape=diamond,style=filled,color=lightgrey,label=\""++name r++
 >                       "\"] REL_"++showFullRelName r++"} ; "++
 >                       (show.name.source) r++" -- REL_"++showFullRelName r++" -- "++(show.name.target) r
@@ -155,27 +165,27 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
 >       introG = [ "\n   { edge [len=1.0]"
 >                , "overlap = false"
 >--                , "splines = true"
->                , "label   = \"Entity Attribute Relationship Diagram for "++name ctx++"\"" ]
+>                , "label   = \"Entity Attribute Relationship Diagram for "++name context++"\"" ]
 >       fullnames = [m | cl<-eqCl name relations, length cl>1, m<-cl]
 >       shrtnames = [m | [m]<-eqCl name relations]
 >       nameR r = [c|c<-showFullRelName r, isAlphaNum c]
 
 >  erdDataModel :: Context -> String
->  erdDataModel ctx
->   = "graph "++[x|x<-name ctx,not (isSpace x)]++"_ERD"++
+>  erdDataModel context
+>   = "graph "++[x|x<-name context,not (isSpace x)]++"_ERD"++
 >     chain sep (introG++nodesPlaces) ++
 >     "\n   }"
 >     where
->       ms = declarations ctx >- map declaration (mors (closExprs ctx))
->       (entities,relations,ruls) = erAnalysis ctx
+>       ms = declarations context >- map declaration (mors (closExprs context))
+>       (entities,relations,ruls) = erAnalysis context
 >       sep = "\n   ; "
->       concepts = [c| Obj nm pos c ats<-objects ctx] -- all concepts
->       attributes = [a| Obj nm pos c ats<-objects ctx, a<-ats]
+>       concepts = [nm| Obj nm pos ctx ats<-attributes context] -- all concepts
+>       attrs = [a| o<-entities, a<-attributes o]
 >       nodesPlaces = ["node [shape=box]"]++
 >                     ["{node [shape=ellipse,label=\""++name att++" : "++
->                      name (target att)++"\"] ATT_"++name att++"} ; "++
->                      (show.name.source) att++" -- ATT_"++name att
->                     | att<-attributes]++
+>                      (name.source.ctx) att++"\"] ATT_"++name att++"} ; "++
+>                      (show.name.source.ctx) att++" -- ATT_"++name att
+>                     | att<-attrs]++
 >                     ["edge  [len=1.5]"]++
 >                     [ "{node [shape=diamond,style=filled,color=lightgrey,label=\""++name r++
 >                       "\"] REL_"++showFullRelName r++"} ; "++
@@ -184,7 +194,7 @@ of a morphism m. Attribute m is both Uni and Tot (i.e. a mapping).
 >       introG = [ "\n   { edge [len=1.0]"
 >                , "overlap = false"
 >--                , "splines = true"
->                , "label   = \"Entity Attribute Relationship Diagram for "++name ctx++"\"" ]
+>                , "label   = \"Entity Attribute Relationship Diagram for "++name context++"\"" ]
 >       fullnames = [m | cl<-eqCl name relations, length cl>1, m<-cl]
 >       shrtnames = [m | [m]<-eqCl name relations]
 >       nameR r = [c|c<-showFullRelName r, isAlphaNum c]

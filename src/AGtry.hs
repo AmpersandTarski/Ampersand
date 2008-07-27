@@ -31,8 +31,8 @@ import CC_aux
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph
-          , ObjectDef(Obj), ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs
-          , nr, multiplicities, declaration
+          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs
+          , nr, pos, multiplicities, declaration
           , inline
          )
 
@@ -238,104 +238,6 @@ sem_Architecture_Arch (_cs) =
     let ( _cs_contexts,_cs_over,_cs_sErr) =
             (_cs (_cs_over))
     in  (_cs_contexts,_cs_sErr)
--- Attribute ---------------------------------------------------
-{-
-   inherited attributes:
-      gE                   : GenR
-      sDef                 : Declarations
-
-   chained attributes:
-      rnr                  : Int
-
-   synthesised attributes:
-      att                  : Attribute
-      expr                 : Expression
-      sErr                 : [String]
-
--}
-{-
-   local variables for Attribute.Att:
-
--}
--- semantic domain
-type T_Attribute = (GenR) ->
-                   (Int) ->
-                   (Declarations) ->
-                   ((Attribute),(Expression),(Int),([String]))
--- cata
-sem_Attribute :: (Attribute) ->
-                 (T_Attribute)
-sem_Attribute ((Att (_nm) (_pos) (_c) (_e))) =
-    (sem_Attribute_Att (_nm) (_pos) ((sem_Concept (_c))) ((sem_Expression (_e))))
-sem_Attribute_Att :: (String) ->
-                     (FilePos) ->
-                     (T_Concept) ->
-                     (T_Expression) ->
-                     (T_Attribute)
-sem_Attribute_Att (_nm) (_pos) (_c) (_e) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _c_concept,_c_nm) =
-            (_c (_lhs_gE))
-        ( _e_closRules,_e_expr,_e_morphisms,_e_raw,_e_rnr,_e_sErr,_e_signs) =
-            (_e (_lhs_gE) (_e_signs) ("") (_pos) (_lhs_rnr+1) (_lhs_sDef))
-    in  (Att _nm _pos _c_concept _e_expr
-        ,_e_expr
-        ,_e_rnr
-        ,[ "11 in "++show _pos++"\n   "++
-           "Ambiguous declaration for attribute " ++ commaEng "and" [show s|s <- _e_signs] ++ " in key attribute " ++ show (Att _nm _pos _c_concept _e_raw) ++ ".\n"
-         | length _e_signs>1]++
-         [ "10 in "++show _pos++"\n   "++
-           "Inconsistent types in key definition " ++ show (Att _nm _pos _c_concept _e_raw) ++ ".\n"
-         | null _e_signs]++
-         [ "9 in "++show _pos++"\n   "++
-           "Inconsistent types in key definition " ++ show (Att _nm _pos _c_concept _e_raw) ++ ".\n"
-         | null [a| (a,b) <- _e_signs, a `_lhs_gE` _c_concept] ]
-        )
--- Attributes --------------------------------------------------
-{-
-   inherited attributes:
-      gE                   : GenR
-      sDef                 : Declarations
-
-   chained attributes:
-      rnr                  : Int
-
-   synthesised attributes:
-      ats                  : Attributes
-      exprs                : Expressions
-      sErr                 : [String]
-
--}
-{-
-   local variables for Attributes.Cons:
-
--}
-{-
-   local variables for Attributes.Nil:
-
--}
--- semantic domain
-type T_Attributes = (GenR) ->
-                    (Int) ->
-                    (Declarations) ->
-                    ((Attributes),(Expressions),(Int),([String]))
--- cata
-sem_Attributes :: (Attributes) ->
-                  (T_Attributes)
-sem_Attributes (list) =
-    (foldr (sem_Attributes_Cons) (sem_Attributes_Nil) ((map sem_Attribute list)))
-sem_Attributes_Cons :: (T_Attribute) ->
-                       (T_Attributes) ->
-                       (T_Attributes)
-sem_Attributes_Cons (_hd) (_tl) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _hd_att,_hd_expr,_hd_rnr,_hd_sErr) =
-            (_hd (_lhs_gE) (_lhs_rnr) (_lhs_sDef))
-        ( _tl_ats,_tl_exprs,_tl_rnr,_tl_sErr) =
-            (_tl (_lhs_gE) (_hd_rnr) (_lhs_sDef))
-    in  (_hd_att : _tl_ats,_hd_expr : _tl_exprs,_tl_rnr,_hd_sErr ++ _tl_sErr)
-sem_Attributes_Nil :: (T_Attributes)
-sem_Attributes_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let 
-    in  ([],[],_lhs_rnr,[])
 -- Concept -----------------------------------------------------
 {-
    inherited attributes:
@@ -550,13 +452,13 @@ sem_Context_Ctx :: (String) ->
                    (T_Context)
 sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_ctxTree) (_lhs_ctxs) =
     let (_mD) =
-            (                       renumber.mergecontents.concat) [mD| (ctx,(mG,mD)) <- preCl _lhs_ctxTree]
+            (                       renumber.mergecontents.concat) [mD| (context,(mG,mD)) <- preCl _lhs_ctxTree]
         (_mC) =
             mergecontents(_ms_rawDecls ++ _dc_rawDecls)
         (_keys) =
             rd (_ks_keyDefs ++ _dc_keyDefs)
         (_mGen) =
-            (rd.concat) [mG| (ctx,(mG,mD)) <- preCl _lhs_ctxTree]
+            (rd.concat) [mG| (context,(mG,mD)) <- preCl _lhs_ctxTree]
         (_inh) =
             Isa [(g,s)|G g s<- _mGen] (concs _mD>-rd [c|G g s<- _mGen, c<-[g,s]])
         (_genE) =
@@ -575,7 +477,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_
             (_cs )
         ( _ks_exprs,_ks_keyDefs,_ks_rnr,_ks_sErr) =
             (_ks (_genE) (_dc_rnr) (_mD))
-        ( _os_exprs,_os_objDefs,_os_rnr,_os_sErr) =
+        ( _os_objDefs,_os_rnr,_os_sErr) =
             (_os (_genE) (_ks_rnr) (_mD))
     in  (put_gE _genE _cD
          ( Ctx _nm
@@ -1265,19 +1167,19 @@ type T_KeyDef = (GenR) ->
 -- cata
 sem_KeyDef :: (KeyDef) ->
               (T_KeyDef)
-sem_KeyDef ((Kd (_pos) (_lbl) (_e) (_ats))) =
-    (sem_KeyDef_Kd (_pos) (_lbl) ((sem_Concept (_e))) ((sem_Attributes (_ats))))
+sem_KeyDef ((Kd (_pos) (_lbl) (_ctx) (_ats))) =
+    (sem_KeyDef_Kd (_pos) (_lbl) ((sem_Expression (_ctx))) ((sem_ObjDefs (_ats))))
 sem_KeyDef_Kd :: (FilePos) ->
                  (String) ->
-                 (T_Concept) ->
-                 (T_Attributes) ->
+                 (T_Expression) ->
+                 (T_ObjDefs) ->
                  (T_KeyDef)
-sem_KeyDef_Kd (_pos) (_lbl) (_e) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _e_concept,_e_nm) =
-            (_e (_lhs_gE))
-        ( _ats_ats,_ats_exprs,_ats_rnr,_ats_sErr) =
+sem_KeyDef_Kd (_pos) (_lbl) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
+    let ( _ctx_closRules,_ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_sErr,_ctx_signs) =
+            (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_lhs_rnr) (_lhs_sDef))
+        ( _ats_objDefs,_ats_rnr,_ats_sErr) =
             (_ats (_lhs_gE) (_lhs_rnr+1) (_lhs_sDef))
-    in  (_ats_exprs,Kd _pos _lbl _e_concept _ats_ats,_ats_rnr,_ats_sErr)
+    in  ([ expr | Obj nm pos expr ats <- _ats_objDefs],Kd _pos _lbl _ctx_expr _ats_objDefs,_ats_rnr,_ats_sErr)
 -- KeyDefs -----------------------------------------------------
 {-
    inherited attributes:
@@ -1539,7 +1441,6 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
       rnr                  : Int
 
    synthesised attributes:
-      exprs                : Expressions
       objDefs              : ObjDefs
       sErr                 : [String]
 
@@ -1556,7 +1457,7 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
 type T_ObjDefs = (GenR) ->
                  (Int) ->
                  (Declarations) ->
-                 ((Expressions),(ObjDefs),(Int),([String]))
+                 ((ObjDefs),(Int),([String]))
 -- cata
 sem_ObjDefs :: (ObjDefs) ->
                (T_ObjDefs)
@@ -1566,15 +1467,15 @@ sem_ObjDefs_Cons :: (T_ObjectDef) ->
                     (T_ObjDefs) ->
                     (T_ObjDefs)
 sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _hd_exprs,_hd_odef,_hd_rnr,_hd_sErr) =
+    let ( _hd_ats,_hd_odef,_hd_rnr,_hd_sErr) =
             (_hd (_lhs_gE) (_lhs_rnr) (_lhs_sDef))
-        ( _tl_exprs,_tl_objDefs,_tl_rnr,_tl_sErr) =
+        ( _tl_objDefs,_tl_rnr,_tl_sErr) =
             (_tl (_lhs_gE) (_hd_rnr) (_lhs_sDef))
-    in  (_hd_exprs ++ _tl_exprs,_hd_odef : _tl_objDefs,_tl_rnr,_hd_sErr ++ _tl_sErr)
+    in  (_hd_odef : _tl_objDefs,_tl_rnr,_hd_sErr ++ _tl_sErr)
 sem_ObjDefs_Nil :: (T_ObjDefs)
 sem_ObjDefs_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let 
-    in  ([],[],_lhs_rnr,[])
+    in  ([],_lhs_rnr,[])
 -- ObjectDef ---------------------------------------------------
 {-
    inherited attributes:
@@ -1585,7 +1486,7 @@ sem_ObjDefs_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
       rnr                  : Int
 
    synthesised attributes:
-      exprs                : Expressions
+      ats                  : ObjDefs
       odef                 : ObjectDef
       sErr                 : [String]
 
@@ -1598,23 +1499,32 @@ sem_ObjDefs_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
 type T_ObjectDef = (GenR) ->
                    (Int) ->
                    (Declarations) ->
-                   ((Expressions),(ObjectDef),(Int),([String]))
+                   ((ObjDefs),(ObjectDef),(Int),([String]))
 -- cata
 sem_ObjectDef :: (ObjectDef) ->
                  (T_ObjectDef)
-sem_ObjectDef ((Obj (_nm) (_pos) (_c) (_ats))) =
-    (sem_ObjectDef_Obj (_nm) (_pos) ((sem_Concept (_c))) ((sem_Attributes (_ats))))
+sem_ObjectDef ((Obj (_nm) (_pos) (_ctx) (_ats))) =
+    (sem_ObjectDef_Obj (_nm) (_pos) ((sem_Expression (_ctx))) ((sem_ObjDefs (_ats))))
 sem_ObjectDef_Obj :: (String) ->
                      (FilePos) ->
-                     (T_Concept) ->
-                     (T_Attributes) ->
+                     (T_Expression) ->
+                     (T_ObjDefs) ->
                      (T_ObjectDef)
-sem_ObjectDef_Obj (_nm) (_pos) (_c) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _c_concept,_c_nm) =
-            (_c (_lhs_gE))
-        ( _ats_ats,_ats_exprs,_ats_rnr,_ats_sErr) =
+sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
+    let ( _ctx_closRules,_ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_sErr,_ctx_signs) =
+            (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_lhs_rnr) (_lhs_sDef))
+        ( _ats_objDefs,_ats_rnr,_ats_sErr) =
             (_ats (_lhs_gE) (_lhs_rnr+1) (_lhs_sDef))
-    in  (_ats_exprs,Obj _nm _pos _c_concept _ats_ats,_ats_rnr,_ats_sErr)
+    in  (_ats_objDefs
+        ,Obj _nm _pos _ctx_expr _ats_objDefs
+        ,_ats_rnr
+        ,_ctx_sErr++
+         _ats_sErr++
+         [ "9 in "++show (CC_aux.pos a)++"\n   "++
+           "Inconsistent type in attribute " ++ name a ++ " in object " ++ _nm ++"["++name (target _ctx_expr)++"]:\n   " ++
+           "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
+         | a <- _ats_objDefs, not (source (ctx a) `_lhs_gE` target _ctx_expr || target _ctx_expr `_lhs_gE` source (ctx a))]
+        )
 -- Pairs -------------------------------------------------------
 {-
    inherited attributes:

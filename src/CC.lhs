@@ -3,13 +3,13 @@
 >  import UU_Parsing
 >  import CommonClasses ( Identified(name)
 >                       , Collection (empty,uni))
->  import Auxiliaries (rd, sort)
+>  import Auxiliaries (rd, sort, upCap)
 >  import CC_aux 
 >            ( Architecture(Arch), Context(Ctx), FilePos(FilePos)
 >            , Pattern(Pat)
 >            , Declaration(Sgn)
 >            , ConceptDef(Cd)
->            , ObjectDef(Obj), ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs
+>            , ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs
 >            , Rule(Ru,Sg,Gc)
 >            , Gen(G)
 >            , Pairs
@@ -22,7 +22,8 @@
 >            , pKey_pos
 >            , showADL
 >            , flp
->            , pVarid_val_pos)
+>            , pVarid_val_pos, pConid_val_pos
+>            , mIs)
 
 >  diagl = 52
 >  diagc = 0
@@ -36,7 +37,7 @@ VERSION, AUTHOR, PURPOSE, STAKEHOLDER
 
 >  keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
 >                      , "PATTERN", "ENDPATTERN"
->                      , "OBJECT", "ENDOBJECT"
+>                      , "OBJECT", "INITIAL"
 >                      , "POPULATION", "ENDPOPULATION"
 >                      , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX"
 >                      , "RELATION", "CONCEPT", "KEY"
@@ -221,34 +222,41 @@ There are always one or more terms in a factor. F [] cannot occur
 >  pConcept          = c <$> (pConid <|> pString)
 >                      where c str = C str (==) []
 
->  pLabel           :: Parser Token String
->  pLabel            = (pVarid <* pKey ">" ) `opt` ""
+>  pLabel           :: Parser Token (String, FilePos)
+>  pLabel            = (phpId <* pKey ">" ) `opt` ("", posNone)
+
+>  phpId            :: Parser Token (String, FilePos)
+>  phpId             = pVarid_val_pos <|> pConid_val_pos
 
 >  pConceptDef      :: Parser Token ConceptDef
->  pConceptDef       = Cd <$> pKey_pos "CONCEPT" <*> (pConid <|> pString) <*> pString <*> pString
+>  pConceptDef       = Cd <$> pKey_pos "CONCEPT" <*> (pConid <|> pString) <*> pString <*> (pString `opt` "")
 
 >  pKeyDef          :: Parser Token KeyDef
->  pKeyDef           = Kd <$> pKey_pos "KEY" <*> pLabel <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pAtt <* pSpec ')'
-
->  pAttribute        :: Parser Token Morphism
->  pAttribute        = f <$> pMorphism <*> (pKey "~" `opt` "")
->                      where f m "~" = flp m
->                            f m _   = m
+>  pKeyDef           = kd <$ pKey "KEY" <*> pLabel <* pSpec ':' <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
+>                       where kd (nm,pos) e ats = Kd pos nm e ats
 
 >  pObjDef          :: Parser Token ObjectDef
->  pObjDef           = obj <$> pKey_pos "OBJECT" <*> pConid <* pSpec '[' <*> pConcept <* pSpec ']' <*> pList pAtt <* pKey "ENDOBJECT"
->                      where obj pos nm c ats = Obj nm pos c ats
+>  pObjDef           = pKey_pos "OBJECT" *> pObj
 
->  pAtt             :: Parser Token Attribute
->  pAtt              = att <$> pVarid_val_pos <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` Anything) <* pKey ":" <*>  pExpr
->                      where att (nm,pos) c e = Att nm pos c e
+>  pObj             :: Parser Token ObjectDef
+>  pObj              = obj <$> phpId                                                  -- de naam van het object
+>                          <*> ((pSpec '[' *> pConid <* pSpec ']') `opt` "")          -- optioneel: het type van het object (een concept)
+>                          <*> ((pKey ":" *> pExpr) `opt` error("Bug in parser"))     -- de contextexpressie (default: I[c])
+>                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
+>                      where obj (nm,pos) str e ats = Obj nm pos (expr e nm str) ats
+>                            expr e nm "" = Tm (mIs (C (upCap nm) (==) []))
+>                            expr e nm c  = Tm (mIs (C c (==) []))
 
->  pDeclaration        :: Parser Token Declaration
->  pDeclaration         = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept
->                               <*> (pProps `opt` []) <*> (pPragma `opt` [])
->                               <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
->                               <*> (pContent `opt` []) <* pSpec '.'
->                       where rebuild nm pos s fun t props pragma expla content
+>  pAtt             :: Parser Token ObjectDef
+>  pAtt              = att <$> phpId <* pKey ":" <*>  pExpr
+>                      where att (nm,pos) ctx = Obj nm pos ctx []
+
+>  pDeclaration     :: Parser Token Declaration
+>  pDeclaration      = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept
+>                              <*> (pProps `opt` []) <*> (pPragma `opt` [])
+>                              <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
+>                              <*> (pContent `opt` []) <* pSpec '.'
+>                      where rebuild nm pos s fun t props pragma expla content
 >                              = Sgn nm s t (rd props `uni` if fun=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos 0 False
 >                                where pr = pragma++["","",""]
 

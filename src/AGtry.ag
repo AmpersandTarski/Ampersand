@@ -1,3 +1,4 @@
+-- TODO check bug in aanvraagbug.adl
 -- TODO: signal multiple occurrences of rules as error (currently, it skips the double rule leading to navigation mistakes in the Atlas)
 -- TODO: cyclisch verband in signalen ontdekken en verbieden (SIGNAL inzage ON ALWAYS inzage)
 
@@ -29,12 +30,10 @@ DATA Concept       | C c:String gE:GenR os:{[String]}
                    | S c:String gE:GenR os:{[String]}
                    | Anything
                    | NOthing
-DATA KeyDef        | Kd pos:FilePos lbl:String e:Concept ats:Attributes
-DATA ObjectDef     | Obj nm:String pos:FilePos c:Concept ats:Attributes
-DATA Attribute     | Att nm:String pos:FilePos c:Concept e:Expression   -- Att nm pos c e
+DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
+DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
 DATA ConceptDef    | Cd pos:{FilePos} nm:String def:String ref:String
 TYPE ConceptDefs   = [ConceptDef]
-TYPE Attributes    = [Attribute]
 TYPE Contexts      = [Context]
 TYPE Gens          = [Gen]
 TYPE Rules         = [Rule]
@@ -79,8 +78,8 @@ import CC_aux
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph
-          , ObjectDef(Obj), ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs
-          , nr, multiplicities, declaration
+          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs
+          , nr, pos, multiplicities, declaration
           , inline
          )
 
@@ -192,10 +191,10 @@ deriveMults ks sgs
    where derived s = []
 }
 SEM Context
-  | Ctx loc.mD        = ({-deriveMults @keys.-} renumber.mergecontents.concat) [mD| (ctx,(mG,mD)) <- preCl @lhs.ctxTree] -- all declarations in context
+  | Ctx loc.mD        = ({-deriveMults @keys.-} renumber.mergecontents.concat) [mD| (context,(mG,mD)) <- preCl @lhs.ctxTree] -- all declarations in context
         loc.mC        = mergecontents(@ms.rawDecls ++ @dc.rawDecls)
         loc.keys      = rd (@ks.keyDefs ++ @dc.keyDefs)
-        loc.mGen      = (rd.concat) [mG| (ctx,(mG,mD)) <- preCl @lhs.ctxTree]
+        loc.mGen      = (rd.concat) [mG| (context,(mG,mD)) <- preCl @lhs.ctxTree]
         loc.inh       = Isa [(g,s)|G g s<- @mGen] (concs @mD>-rd [c|G g s<- @mGen, c<-[g,s]])
         loc.genE      = cmp where cmp Anything b = True
                                   cmp a Anything = False
@@ -241,7 +240,7 @@ SEM Rule
 
 ATTR Rule Rules [ | | declarations:Declarations usedDecls:Declarations ]
 ATTR Morphism Morphisms [ | | usedDecls:Declarations ]
-ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations Attribute Attributes KeyDef KeyDefs ObjectDef ObjDefs
+ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations KeyDef KeyDefs ObjectDef ObjDefs
      [ sDef:Declarations gE:GenR | | ]
 {
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
@@ -619,7 +618,7 @@ SEM Expressions
 
 
 -- Type errors
-ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjDefs Attribute Attributes
+ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjDefs
      [ | | sErr: {[String]} ]
 SEM Architecture
   | Arch lhs.sErr   = @cs.sErr
@@ -828,21 +827,13 @@ SEM KeyDefs
 SEM KeyDef
   | Kd lhs.sErr     = @ats.sErr
 
-SEM Attribute   -- Att nm pos c e
-  | Att lhs.sErr    = [ "11 in "++show @pos++"\n   "++
-                        "Ambiguous declaration for attribute " ++ commaEng "and" [show s|s <- @e.signs] ++ " in key attribute " ++ show (Att @nm @pos @c.concept @e.raw) ++ ".\n"
-                      | length @e.signs>1]++
-                      [ "10 in "++show @pos++"\n   "++
-                        "Inconsistent types in key definition " ++ show (Att @nm @pos @c.concept @e.raw) ++ ".\n"
-                      | null @e.signs]++
-                      [ "9 in "++show @pos++"\n   "++
-                        "Inconsistent types in key definition " ++ show (Att @nm @pos @c.concept @e.raw) ++ ".\n"
-                      | null [a| (a,b) <- @e.signs, a `@lhs.gE` @c.concept] ]
-SEM Attributes 
-  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
-  | Nil  lhs.sErr   = []
 SEM ObjectDef
-  | Obj lhs.sErr    = @ats.sErr
+  | Obj lhs.sErr    = @ctx.sErr++
+                      @ats.sErr++
+                      [ "9 in "++show (CC_aux.pos a)++"\n   "++
+                        "Inconsistent type in attribute " ++ name a ++ " in object " ++ @nm ++"["++name (target @ctx.expr)++"]:\n   " ++
+                        "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
+                      | a <- @ats.objDefs, not (source (ctx a) `@lhs.gE` target @ctx.expr || target @ctx.expr `@lhs.gE` source (ctx a))]
 SEM ObjDefs 
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
@@ -933,10 +924,12 @@ SEM ConceptDefs
 
 ATTR KeyDef [ | rnr:Int | kd:KeyDef  exprs:Expressions ]
 SEM KeyDef
-  | Kd   lhs.kd      = Kd @pos @lbl @e.concept @ats.ats
-         lhs.exprs   = @ats.exprs
+  | Kd   lhs.kd      = Kd @pos @lbl @ctx.expr @ats.objDefs
+         lhs.exprs   = [ expr | Obj nm pos expr ats <- @ats.objDefs]
          ats.rnr     = @lhs.rnr+1
          lhs.rnr     = @ats.rnr
+         ctx.pn      = ""
+         ctx.isign   = @ctx.signs
 
 ATTR KeyDefs [ | rnr:Int | keyDefs:KeyDefs exprs:Expressions ]
 SEM KeyDefs
@@ -949,42 +942,22 @@ SEM KeyDefs
          lhs.exprs   = []
          lhs.rnr     = @lhs.rnr
 
-ATTR ObjectDef [ | rnr:Int | odef:ObjectDef  exprs:Expressions ]
+ATTR ObjectDef [ | rnr:Int | odef:ObjectDef ats:ObjDefs ]
 SEM ObjectDef
-  | Obj  lhs.odef    = Obj @nm @pos @c.concept @ats.ats
-         lhs.exprs   = @ats.exprs
+  | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
+         lhs.ats     = @ats.objDefs
          ats.rnr     = @lhs.rnr+1
          lhs.rnr     = @ats.rnr
+         ctx.pn      = ""
+         ctx.isign   = @ctx.signs
 
-ATTR ObjDefs [ | rnr:Int | objDefs:ObjDefs exprs:Expressions ]
+ATTR ObjDefs [ | rnr:Int | objDefs:ObjDefs ]
 SEM ObjDefs
   | Cons lhs.objDefs = @hd.odef : @tl.objDefs
-         lhs.exprs   = @hd.exprs ++ @tl.exprs
          hd.rnr      = @lhs.rnr
          tl.rnr      = @hd.rnr
          lhs.rnr     = @tl.rnr
   | Nil  lhs.objDefs = []
-         lhs.exprs   = []
-         lhs.rnr     = @lhs.rnr
-
-ATTR Attribute [ | rnr:Int | att:Attribute expr:Expression ]
-SEM Attribute
-  | Att lhs.att      = Att @nm @pos @c.concept @e.expr
-        lhs.expr     = @e.expr
-        e.rnr        = @lhs.rnr+1
-        lhs.rnr      = @e.rnr
-        e.isign      = @e.signs
-        e.pn         = ""
-
-ATTR Attributes   [ | rnr:Int | ats: Attributes exprs:Expressions ]
-SEM Attributes
-  | Cons lhs.ats     = @hd.att : @tl.ats
-         lhs.exprs   = @hd.expr : @tl.exprs
-         hd.rnr      = @lhs.rnr
-         tl.rnr      = @hd.rnr
-         lhs.rnr     = @tl.rnr
-  | Nil  lhs.ats     = []
-         lhs.exprs   = []
          lhs.rnr     = @lhs.rnr
 
 ATTR Expressions [ | | exprs:Expressions ]

@@ -4,7 +4,7 @@
 >            , Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
 >            , ConceptDef(Cd)
->            , ObjectDef(Obj), concept, objectOfConcept, attributes, ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs, Object(objects)
+>            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx), objectOfConcept, KeyDef(Kd), KeyDefs
 >            , Rule(Ru,Sg,Gc)
 >            , makeMph
 >            , Gen(G)
@@ -18,16 +18,16 @@
 >            , pKey_pos
 >            , showS, showADL
 >            , flp
->            , pVarid_val_pos
+>            , pVarid_val_pos, pConid_val_pos
 >            , Numbered(nr,pos)
 >            , normExpr
 >            , isSgn
 >            , fEmpty
 >            , oneMorphism
 >            , single
->            , Morphic(source, target, sign, multiplicities, flp, isIdent, isMph, isNot, isTrue, isFalse, isSignal, singleton, equiv, typeUniq)
+>            , Morphic(source, target, sign, multiplicities, flp, isIdent, isMph, isNot, isTrue, isFalse, isSignal{-, singleton-}, equiv, typeUniq)
 >            , Morphical( concs, conceptdefs, mors, morlist, declarations, genE, closExprs, objDefs )
->            , Language( rules, multRules, signals, specs, patterns, isa )
+>            , Language( rules, multRules, signals, specs, patterns, objectdefs, isa )
 >            , inline,idsOnly,explain , makeInline
 >            , Lang(English,Dutch)
 >            , applyM, declaration, plural, source, target
@@ -47,7 +47,6 @@
 >            , Paire, Rules, Morphisms, Patterns
 >            , anything, shSigns, gEtabG
 >            , KeyDefs, keys, cpu
->            , Language
 >            , isFunction, isFlpFunction
 
 >            , wrld, src, trg, uncomp
@@ -78,24 +77,25 @@ TODO:
 >  class ShowLang a where
 >   showLang :: Lang -> a -> String
 
->  data ObjectDef = Obj String         -- view name of the object definition (i.e. class name) (The CSL name is in the concept, third argument)
->                       FilePos        -- position of the object definition in the file containing the ADL sourcecode
->                       Concept        -- the concept of which objects will be an instance. (The view name is the string, first argument)
->                       [Attribute]    -- So in its entirety: Obj nm pos c ats
->                   deriving Show
+>  data KeyDef = Kd FilePos      -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number).
+>                   String       -- lbl:  the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+>                   Expression   -- ctx:  this expression describes the instances of this object, related to their context
+>                   [ObjectDef]  -- ats:  the constituent attributes (i.e. name/expression pairs) of this key.
+>                deriving (Eq,Show) -- So in its entirety: Kd pos lbl ctx ats
+>  type KeyDefs = [KeyDef]
+
+>  data ObjectDef = Obj String         -- nm:   view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+>                       FilePos        -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number)
+>                       Expression     -- ctx:  this expression describes the instances of this object, related to their context. 
+>                       [ObjectDef]    -- ats:  the attributes, which are object definitions themselves.
+>                   deriving (Eq,Show) -- So in its entirety: Obj nm pos ctx ats
 
 >  type ObjDefs = [ObjectDef]
->  data Attribute = Att String         -- view name of the attribute definition
->                       FilePos        -- position of the object definition in the file containing the ADL sourcecode
->                       Concept        -- the concept which is the target of the attribute. Must be equal to the target of the expression.
->                       Expression     -- So in its entirety: Att nm pos c e
->                      deriving (Eq,Show)
->  type Attributes = [Attribute]
->  instance Identified Attribute where
->   name (Att nm pos c e) = nm
+>  instance Identified ObjectDef where
+>   name (Obj nm pos ctx ats) = nm
 
->  objectOfConcept ctx cpt = if length os == 0 then Nothing else Just (head os)
->    where os = [o|o<-objects ctx,concept o == cpt]
+>  objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
+>    where os = [o|o<-attributes context,concept o == cpt]
 
 >  data Architecture = Arch Contexts -- deriving Show
 >  data Concept      = C String GenR [String] | -- C nm gE cs represents the set of instances cs by name nm.
@@ -182,13 +182,6 @@ which means:
 I[Person] = ssn;ssn~
 I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 
->  data KeyDef = Kd FilePos      -- the position of this definition in the text of the ADL source (filename, line number and column number).
->                   String       -- the name (or label) of this Key. The label has no meaning, but is used in the generated user interface if it is not an empty string.
->                   Concept      -- the concept, which is an entity, of which this is a key
->                   [Attribute]  -- the constituent attributes (i.e. name/expression pairs) of this key.
->                deriving (Eq,Show)
->  type KeyDefs = [KeyDef]
-
 >  data ConceptDef = Cd FilePos  -- the position of this definition in the text of the ADL source (filename, line number and column number).
 >                       String   -- the name of this concept. If there is no such concept, the conceptdefinition is ignored.
 >                       String   -- the textual definition of this concept.
@@ -241,6 +234,7 @@ I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
                    deriving Ord
 
 >  v (a,b) = Tm (V [] (a,b))
+>  mIs :: Concept -> Morphism
 >  mIs c = I [] c c True
 >  sIs c = Isn c c
 
@@ -432,9 +426,6 @@ Transform a rule to an expression:
 >   pos :: a->FilePos
 >   nr x = nr (CC_aux.pos x)
 
->  instance Numbered Attribute where
->   pos (Att _ p _ _) = p
-
 >  instance Numbered ObjectDef where
 >   pos (Obj _ p _ _) = p
 
@@ -493,7 +484,7 @@ Transform a rule to an expression:
 >   explain Anything      = "Anything"
 
 >  class Conceptual a where
->   conts      :: a -> [String]                   -- the set of all objects in a concept
+>   conts      :: a -> [String]                   -- the set of all instances in a concept
 
 >  instance Conceptual a => Conceptual [a] where
 >   conts                                         = rd . concat . map conts
@@ -513,12 +504,11 @@ Transform a rule to an expression:
 >   conceptdefs x = []
 >   mors         :: a -> [Morphism]                 -- the set of all morphisms used within data structure a
 >   morlist      :: a -> [Morphism]                 -- the list of all morphisms used within data structure a
->   morlist = mors
 >   declarations :: a -> [Declaration]
 >--   declarations x  = rd [declaration m|m<-mors x]
 >   genE         :: a -> GenR
 >   genE x        = if null cx then (==) else head cx where cx = [gE|C _ gE _<-concs x]++[gE|S _ gE _<-concs x]
->   closExprs    :: a -> [Expression]
+>   closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
 >   closExprs s   = []
 >   objDefs      :: a -> ObjDefs
 >   objDefs s     = []
@@ -535,6 +525,7 @@ Transform a rule to an expression:
 >  instance Morphical Concept where
 >   concs        c                                = [c]
 >   mors         c                                = [I [] c c True]
+>   morlist      c                                = [I [] c c True]
 >   declarations c                                = []
 >   genE         (C c gE cs)                      = gE
 >   genE         (S c gE cs)                      = gE
@@ -550,12 +541,13 @@ Transform a rule to an expression:
 >   closExprs                                     = rd . concat . map closExprs . preCl
 
 >  instance Morphical Declaration where
->   concs (Sgn _ a b _ _ _ _ _ _ _ _ _)             = rd [a,b]
+>   concs (Sgn _ a b _ _ _ _ _ _ _ _ _)           = rd [a,b]
 >   concs (Isn g s)                               = rd [g,s]
 >   concs (Iscompl g s)                           = [s]
 >   concs (Vs g s)                                = [s]
 >   mors s                                        = []
->   genE (Sgn nm a b _ _ _ _ _ _ _ _ _)             = genE a
+>   morlist s                                     = []
+>   genE (Sgn nm a b _ _ _ _ _ _ _ _ _)           = genE a
 >   genE (Isn g s)                                = genE s
 >   genE (Iscompl g s)                            = genE s
 >   genE (Vs g s)                                 = genE s
@@ -565,7 +557,8 @@ Transform a rule to an expression:
 >   concs (Mph nm pos atts (a,b) yin s)           = rd [a,b]
 >   concs (I atts g s _)                          = rd [g,s]
 >   concs (V atts (a,b))                          = rd [a,b]
->   mors m                                        = [m]
+>   mors m                                        = [makeInline m]
+>   morlist m                                     = [m]
 >   genE (Mph nm pos atts (a,b) _ s)              = genE a
 >   genE (I atts g s _)                           = genE s
 >   genE (V atts (a,b))                           = genE a
@@ -580,7 +573,16 @@ Transform a rule to an expression:
 >  instance Morphical Gen where
 >   concs (G g s)                                 = rd [g,s]
 >   mors (G g s)                                  = [I [] g s True]
+>   morlist (G g s)                               = [I [] g s True]
 >   genE (G g s)                                  = genE s
+>   declarations (G g s)                          = []
+
+>  instance Morphical KeyDef where
+>   concs        (Kd pos lbl ctx ats) = concs ctx `uni` concs ats
+>   mors         (Kd pos lbl ctx ats) = mors ctx `uni` mors ats
+>   morlist      (Kd pos lbl ctx ats) = morlist ctx ++ morlist ats
+>   genE         (Kd pos lbl ctx ats) = genE ats
+>   declarations (Kd pos lbl ctx ats) = declarations ctx `uni` declarations ats
 
 >  instance Morphical Expression where
 >   concs (Tm m)                                  = rd (concs m)
@@ -593,7 +595,7 @@ Transform a rule to an expression:
 >   concs (K1 e)                                  = rd (concs e)
 >   concs (Cp e)                                  = rd (concs e)
 
->   mors (Tm m)                                   = mors m
+>   mors (Tm m)                                   = mors (makeInline m)
 >   mors (Tc f)                                   = mors f
 >   mors (F ts)                                   = mors ts
 >   mors (Fd ts)                                  = mors ts
@@ -638,20 +640,20 @@ Transform a rule to an expression:
 >   closExprs (Fd ts)                             = (rd.concat.map closExprs) ts
 >   closExprs (Fu fs)                             = (rd.concat.map closExprs) fs
 >   closExprs (Fi fs)                             = (rd.concat.map closExprs) fs
->   closExprs (K0 e)                              = K0 e: closExprs e
->   closExprs (K1 e)                              = K1 e: closExprs e
+>   closExprs (K0 e)                              = [K0 e] `uni` closExprs e
+>   closExprs (K1 e)                              = [K1 e] `uni` closExprs e
 >   closExprs (Cp e)                              = closExprs e
 >   closExprs _                                   = []
 
 >  instance Morphical Rule where
->   concs (Ru c antc _ cons _ _ _ _ _)     = if c=='A' then rd (concs cons) else rd (concs antc++concs cons)
+>   concs (Ru c antc _ cons _ _ _ _ _)     = if c=='A' then concs cons else concs antc `uni` concs cons
 >   concs (Sg _ rule _ _ _ _ _)            = concs rule
->   concs (Gc _ m expr _ _ _ _)            = rd (concs m++concs expr)
->   concs (Fr _ d expr _)                  = rd (concs d++concs expr)
->   mors (Ru c antc _ cons _ _ _ _ _)      = if c=='A' then rd (mors cons) else rd (mors antc++mors cons)
+>   concs (Gc _ m expr _ _ _ _)            = concs m `uni` concs expr
+>   concs (Fr _ d expr _)                  = concs d `uni` concs expr
+>   mors (Ru c antc _ cons _ _ _ _ _)      = if c=='A' then mors cons else mors antc `uni` mors cons
 >   mors (Sg _ rule _ _ _ _ _)             = mors rule
->   mors (Gc _ m expr _ _ _ _)             = rd (mors m++mors expr)
->   mors (Fr _ d expr _)                   = rd (mors d++mors expr)
+>   mors (Gc _ m expr _ _ _ _)             = mors m `uni` mors expr
+>   mors (Fr _ d expr _)                   = mors d `uni` mors expr
 >   morlist (Ru c antc _ cons _ _ _ _ _)   = if c=='A' then morlist cons else morlist antc++morlist cons
 >   morlist (Sg _ rule _ _ _ _ _)          = morlist rule
 >   morlist (Gc _ m expr _ _ _ _)          = morlist m++morlist expr
@@ -661,48 +663,40 @@ Transform a rule to an expression:
 >   genE (Gc _ m expr _ _ _ _)             = genE m
 >   genE (Fr _ _ expr _)                   = genE expr
 >   declarations (Ru c antc _ cons _ _ _ _ _) = if c=='A' then declarations cons else declarations [antc,cons]
->   declarations (Sg _ rule _ _ _ _ d)        = rd (d: declarations rule)
+>   declarations (Sg _ rule _ _ _ _ d)        = [d] `uni` declarations rule
 >   declarations (Gc _ m expr _ _ _ _)        = declarations m
 >   declarations (Fr _ _ expr _)              = declarations expr
->   closExprs (Ru c antc _ cons _ _ _ _ _) = if c=='A' then rd (closExprs cons) else rd (closExprs antc++closExprs cons)
+>   closExprs (Ru c antc _ cons _ _ _ _ _) = if c=='A' then closExprs cons else closExprs antc `uni` closExprs cons
 >   closExprs (Sg _ rule _ _ _ _ _)        = closExprs rule
->   closExprs (Gc _ m expr  _ _ _ _)       = rd (closExprs expr)
+>   closExprs (Gc _ m expr  _ _ _ _)       = closExprs expr
 >   closExprs (Fr _ _ expr _)              = [expr]
 
 >  instance Morphical Pattern where
->   concs (Pat nm rs gen pms cs ks)                  = rd (concs rs++concs gen++concs pms)
+>   concs (Pat nm rs gen pms cs ks)                  = concs rs `uni` concs gen `uni` concs pms
 >   conceptdefs (Pat nm rs gen pms cs ks)            = cs
->   mors (Pat nm rs gen pms cs ks)                   = mors rs
->   morlist (Pat nm rs gen pms cs ks)                = morlist rs
+>   mors (Pat nm rs gen pms cs ks)                   = mors rs `uni` mors ks
+>   morlist (Pat nm rs gen pms cs ks)                = morlist rs++morlist ks
 >   declarations (Pat nm rs parChds pms cs ks)       = rd pms
 >   genE  (Pat nm rs parChds pms cs ks)              = genE (pms++declarations (signals rs))
->   closExprs (Pat nm rs gen pms cs ks)              = rd (closExprs rs)
+>   closExprs (Pat nm rs gen pms cs ks)              = closExprs rs
 
 >  instance Morphical Context where
->   concs        (Ctx nm on isa world dc ss cs ks os) = rd (concs ss++concs dc)
+>   concs        (Ctx nm on isa world dc ss cs ks os) = concs ss `uni` concs dc
 >   conceptdefs  (Ctx nm on isa world dc ss cs ks os) = cs
->   mors         (Ctx nm on isa world dc ss cs ks os) = rd (mors dc++mors os)
+>   mors         (Ctx nm on isa world dc ss cs ks os) = mors dc `uni` mors os
 >   morlist      (Ctx nm on isa world dc ss cs ks os) = morlist dc++morlist os
->   declarations (Ctx nm on isa world dc ss cs ks os) = rd ss
->   closExprs    (Ctx nm on isa world dc ss cs ks os) = rd (closExprs dc++closExprs os)
+>   declarations (Ctx nm on isa world dc ss cs ks os) = ss
+>   closExprs    (Ctx nm on isa world dc ss cs ks os) = closExprs dc `uni` closExprs os
 >   objDefs      (Ctx nm on isa world dc ss cs ks os) = os
 
 >  instance Morphical ObjectDef where
->   concs        (Obj nm pos c ats) = rd (c: concs ats)
->   conceptdefs  (Obj nm pos c ats) = conceptdefs ats
->   mors         (Obj nm pos c ats) = rd (mors ats)
->   morlist      (Obj nm pos c ats) = morlist ats
->   declarations (Obj nm pos c ats) = []
->   closExprs    (Obj nm pos c ats) = rd (closExprs ats)
->   objDefs      o              = [o]
-
->  instance Morphical Attribute where
->   concs        (Att nm pos c e) = rd (c: concs e)
->   conceptdefs  (Att nm pos c e) = []
->   mors         (Att nm pos c e) = mors e
->   morlist      (Att nm pos c e) = morlist e
->   declarations (Att nm pos c e) = []
->   closExprs    (Att nm pos c e) = closExprs e
+>   concs        (Obj nm pos ctx ats) = [source ctx] `uni` concs ats
+>   conceptdefs  (Obj nm pos ctx ats) = []
+>   mors         (Obj nm pos ctx ats) = mors ctx `uni` mors ats
+>   morlist      (Obj nm pos ctx ats) = morlist ctx++morlist ats
+>   declarations (Obj nm pos ctx ats) = []
+>   closExprs    (Obj nm pos ctx ats) = closExprs ctx `uni` closExprs ats
+>   objDefs      o                    = [o]
 
 >  class Substitutive a where
 >-- precondition: sign f `order` sign m
@@ -1124,8 +1118,8 @@ Every declaration m has cardinalities, in which
 >   contents (Cp e)  = [[a,b]| [a,b]<-diag [] (conts (source e)) [] (conts (target e)), not ([a,b] `elem` contents e)]
 
 >  join::[Paire]->[Paire]->[Paire]
->  join a b = rd (merge ((sort' (trg.head).eqCl trg) a)
->                       ((sort' (src.head).eqCl src) b))
+>  join a b = merge ((sort' (trg.head).eqCl trg) a)
+>                   ((sort' (src.head).eqCl src) b)
 >             where merge (xs:xss) (ys:yss)
 >                    | trg (head xs)<src (head ys) = merge xss (ys:yss)
 >                    | trg (head xs)>src (head ys) = merge (xs:xss) yss
@@ -1150,45 +1144,40 @@ Every declaration m has cardinalities, in which
 >        upd c  os = c
 
 >  class Key a where
->   keys :: a->[(Concept,String,[Attribute])]
+>   keys :: a->[(Concept,String,[ObjectDef])]
 
 >  instance Key Context where
->   keys (Ctx nm on isa world dc ss cs ks os) = (concat [keys p| p<-dc] ++ [(c,lbl,ats)|Kd pos lbl c ats<-ks])
+>   keys (Ctx nm on isa world dc ss cs ks os) = (concat [keys p| p<-dc] ++ [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks])
 
 >  instance Key Pattern where
->   keys (Pat nm rs gen pms cs ks) = [(c,lbl,ats)|Kd pos lbl c ats<-ks]
+>   keys (Pat nm rs gen pms cs ks) = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks]
 
 >  instance Key KeyDef where
->   keys (Kd pos lbl c ats) = [(c,lbl,ats)]
+>   keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
 
    instance Key ObjectDef where
-    keys (Obj nm pos c ats) = [(c,nm,ats)]
+    keys (Obj nm pos ctx ats) = [(c,nm,ats)]
 
 >  class Object a where
->   objects :: a -> [ObjectDef]
 >   concept :: a -> Concept
->   attributes :: a -> [Attribute]
+>   attributes :: a -> [ObjectDef]
+>   ctx :: a -> Expression
 
 >  instance Object Context where
->   objects (Ctx _ _ _ _ _ _ _ _ os) =  os
+>   concept _    = Anything
 >   attributes _ = []
+>   ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
 
 >  instance Object ObjectDef where
->   objects o = [o]
->   concept (Obj nm pos c ats) = c
->   attributes (Obj nm pos c ats) = ats
-
->  instance Object Attribute where
->   objects a = []
->   concept (Att nm pos c e) = target e
->   attributes (Att nm pos c e) = []
-
+>   concept (Obj nm pos ctx ats) = target ctx
+>   attributes (Obj nm pos ctx ats) = ats
+>   ctx (Obj nm pos ctx' ats) = ctx'
 
 The following definition is used to compute whether a concept may display its internal code.
-This may be done when there are no keys and no objects for this particular concept.
+This may be done when there are no keys and no instances for this particular concept.
 
->  displayInternalCode ctx@(Ctx nm on isa world dc ss cs ks os) c
->   = null [e| (e,_,ats)<-keys ctx, e==c, not (null ats)] && null[o| o<-objects ctx, c==concept o]
+>  displayInternalCode context c
+>   = null[o| o<-attributes context, c==concept o]
 
 TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concepts
 
@@ -1207,18 +1196,14 @@ TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concept
 >                        (a `glb` b) `lub` c
 
 >  instance Pop KeyDef where
->   put_gE gE cs (Kd pos lbl c ats) = Kd pos lbl (put_gE gE cs c) (map (put_gE gE cs) ats)
->   specialize (a,b) (Kd pos lbl c ats) = Kd pos lbl (specialize (a,b) c) (map (specialize (a,b)) ats)
+>   put_gE gE cs (Kd pos lbl ctx ats) = Kd pos lbl (put_gE gE cs ctx) [put_gE gE cs a| a<-ats]
+>   update ss    (Kd pos lbl ctx ats) = Kd pos lbl (update ss    ctx) [update ss    a| a<-ats]
+>   specialize t (Kd pos lbl ctx ats) = Kd pos lbl (specialize t ctx) [specialize t a| a<-ats]
 
 >  instance Pop ObjectDef where
->   put_gE gE cs (Obj nm pos c ats) = Obj nm pos (put_gE gE cs c) [put_gE gE cs a| a<-ats]
->   update ss    (Obj nm pos c ats) = Obj nm pos c [update ss    a| a<-ats]
->   specialize t (Obj nm pos c ats) = Obj nm pos c [specialize t a| a<-ats]
-
->  instance Pop Attribute where
->   put_gE gE cs (Att nm pos c e) = Att nm pos (put_gE gE cs c) (put_gE gE cs e)
->   update ss    (Att nm pos c e) = Att nm pos c (update ss    e)
->   specialize t (Att nm pos c e) = Att nm pos c (specialize t e)
+>   put_gE gE cs (Obj nm pos ctx ats) = Obj nm pos (put_gE gE cs ctx) [put_gE gE cs a| a<-ats]
+>   update ss    (Obj nm pos ctx ats) = Obj nm pos (update ss    ctx) [update ss    a| a<-ats]
+>   specialize t (Obj nm pos ctx ats) = Obj nm pos (specialize t ctx) [specialize t a| a<-ats]
 
 >  instance (Pop a,Pop b) => Pop (a,b) where
 >   put_gE gE cs (x,y) = (put_gE gE cs x, put_gE gE cs y)
@@ -1353,21 +1338,6 @@ Om een of andere reden stond hier eerder:
 >   equiv          :: a -> a -> Bool
 >   equiv m m' = source m==source m'&&target m==target m' || source m==target m'&&target m==source m'
 >   typeUniq :: a -> Bool -- this says whether the type of 'a' and all of its constituent parts is defined (i.e. not "Anything")
-
->  instance Morphic Attribute where
->   source (Att nm pos c e) = source e
->   target (Att nm pos c e) = c
->   sign   (Att nm pos c e) = (c, source e)
->   multiplicities (Att nm pos c e) = multiplicities e
->   flp a = error ("Cannot flip an attribute: "++show a)
->   isIdent   (Att nm pos c e) = isIdent   e
->   isNot     (Att nm pos c e) = isNot     e
->   isMph     (Att nm pos c e) = isMph     e
->   isTrue    (Att nm pos c e) = isTrue    e
->   isFalse   (Att nm pos c e) = isFalse   e
->   isSignal a = error ("Cannot test an attribute for being a SIGNAL: "++show a)
->   singleton (Att nm pos c e) = singleton e
->   typeUniq (Att nm pos c e) = typeUniq c && typeUniq e
 >  idsOnly x = and [isIdent m| m<-mors x]
 
 >  class Morphics a where
@@ -1798,9 +1768,6 @@ TODO: transform the following into  instance Collection Declaration where
 >   name (Iscompl _ _)                  = "I-"
 >   name (Vs _ _)                       = "V"
 
->  instance Identified ObjectDef where
->   name (Obj nm _ _ _) = nm
-
 >  applyM (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then d++" "++nm++" "++c else prL++(if null prL then d else unCap d)++prM++c++prR
 >  applyM (Isn _ _)                            d c = d++" equals "++c
 >  applyM (Iscompl _ _)                        d c = d++" differs from "++c
@@ -1819,34 +1786,38 @@ properties is achieved as a result.
 
 >  union :: Pattern -> Pattern -> Pattern
 >  union (Pat nm rs parChds pms cs ks) (Pat nm' rs' parChds' pms' cs' ks')
->    = Pat nm' (rd(rs++rs')) (rd(parChds++parChds')) (rd(pms++pms')) (rd(cs++cs')) (ks++ks')
+>    = Pat nm' (rs `uni` rs') (parChds `uni` parChds') (pms `uni` pms') (cs `uni` cs') (ks `uni` ks')
 
 >  class Morphical a => Language a where
->    rules     :: a -> [Rule] -- all rules in the language that are specified as a rule in the ADL-model, including the GLUE rules, but excluding the multiplicity rules (multRules).
->    multRules :: a -> [Rule] -- all rules in the language that are specified as declaration properties.
->    multRules  = rules.rd.declarations
->    signals   :: a -> [Rule] -- all SIGNAL rules in the language.
->    signals x  = []
->    specs     :: a -> [Rule] -- all GLUE rules in the language.
->    specs x    = []
->    patterns  :: a -> [Pattern]
->    patterns x = []
->    isa       :: a -> Inheritance Concept
->    isa x      = empty
+>    rules       :: a -> [Rule] -- all rules in the language that are specified as a rule in the ADL-model, including the GLUE rules, but excluding the multiplicity rules (multRules).
+>    multRules   :: a -> [Rule] -- all rules in the language that are specified as declaration properties.
+>    multRules    = rules.declarations
+>    signals     :: a -> [Rule] -- all SIGNAL rules in the language.
+>    signals x    = []
+>    specs       :: a -> [Rule] -- all GLUE rules in the language.
+>    specs x      = []
+>    patterns    :: a -> [Pattern]
+>    patterns x   = []
+>    objectdefs  :: a -> [ObjectDef]
+>    objectdefs x = []
+>    isa         :: a -> Inheritance Concept
+>    isa x        = empty
 
 >  instance Language a => Language [a] where
 >   rules xs   = (concat. map rules) xs
 >   signals xs = (concat. map signals) xs
 >   specs xs   = (rd. concat. map specs) xs
->   patterns   = rd' name.concat.map patterns
+>   patterns   = {- rd' name. -} concat.map patterns
+>   objectdefs = {- rd' name. -} concat.map objectdefs
 >   isa        = foldr uni empty.map isa
 
 >  instance Language a => Language (Classification a) where
->   rules cl    = rules (preCl cl)
->   signals cl  = signals (preCl cl)
->   specs cl    = specs (preCl cl)
->   patterns cl = patterns (preCl cl)
->   isa         = foldr uni empty.map isa.preCl
+>   rules cl      = rules (preCl cl)
+>   signals cl    = signals (preCl cl)
+>   specs cl      = specs (preCl cl)
+>   patterns cl   = patterns (preCl cl)
+>   objectdefs cl = objectdefs (preCl cl)
+>   isa           = foldr uni empty.map isa.preCl
 
 >  instance Language Rule where
 >   rules   r@(Gc pos m expr cpu sgn nr pn)
@@ -1859,7 +1830,7 @@ properties is achieved as a result.
 >   specs   r                        = []
 >   patterns r                       = [Pat "" [r] [] [] [] []]
 >   isa (Gc _ m expr _ _ _ _)
->     = Isa tuples (concs expr>-rd [e|(a,b)<-tuples,e<-[a,b]])
+>     = Isa tuples (concs expr>-[e|(a,b)<-tuples,e<-[a,b]])
 >       where tuples = clear [(source expr,source m),(target expr,target m)]
 >   isa r = empty
 
@@ -1871,23 +1842,23 @@ properties is achieved as a result.
 >   signals (Pat nm rs parChds pms cs ks) = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
 >   specs (Pat nm rs parChds pms cs ks)   = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
 >   patterns p                            = [p]
->   isa   (Pat nm rs parChds pms cs ks)   = Isa ts (singles>-rd [e| G g s<-parChds,e<-[g,s]])
+>   isa   (Pat nm rs parChds pms cs ks)   = Isa ts (singles>-[e| G g s<-parChds,e<-[g,s]])
 >                                           where Isa tuples singles = isa rs
 >                                                 ts = clear (tuples++[(g,s)| G g s<-parChds])
 
 >  instance Language Context where
->   rules    (Ctx nm on i world dc ss cs ks os) = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) dc)++rules world)
->   signals  (Ctx nm on i world dc ss cs ks os) = signals (foldr union (Pat "" [] [] [] [] []) dc)++signals world
->   specs    (Ctx nm on i world dc ss cs ks os) = specs (foldr union (Pat "" [] [] [] [] []) dc)++specs world
->   patterns (Ctx nm on i world dc ss cs ks os) = dc
->   isa      (Ctx nm on i world dc ss cs ks os) = i
+>   rules      (Ctx nm on i world dc ss cs ks os) = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) dc)++rules world)
+>   signals    (Ctx nm on i world dc ss cs ks os) = signals (foldr union (Pat "" [] [] [] [] []) dc)++signals world
+>   specs      (Ctx nm on i world dc ss cs ks os) = specs (foldr union (Pat "" [] [] [] [] []) dc)++specs world
+>   patterns   (Ctx nm on i world dc ss cs ks os) = dc
+>   objectdefs (Ctx nm on i world dc ss cs ks os) = os
+>   isa        (Ctx nm on i world dc ss cs ks os) = i
 >   multRules context
 >    = renumberRules (1 + (length (rules context)))
 >                     [  c
 >                      | sgn <- declarations context ,
 >                        c <- rules sgn
 >                     ]
->      
 
 >  instance Language Declaration where
 >   rules d = multRules d

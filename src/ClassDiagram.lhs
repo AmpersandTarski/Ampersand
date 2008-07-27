@@ -7,7 +7,7 @@
 >  import Typology (Inheritance(Isa))
 >  import CC_aux  
 >             ( rules, Context(Ctx)
->             , Concept
+>             , Concept, Object(concept, attributes, ctx)
 >             , showADL, Morphical
 >             , Language
 >             , isProperty, target, concs, source
@@ -120,20 +120,20 @@
 >                             (if full then ms else [])
 >                   | c<-used, c `elem` concs pat
 >                     -- all attributes:
->                   , as<-[[a| a<-attributes, source a == c, not (isProperty a)]]
+>                   , as<-[[a| a<-attrs, source a == c, not (isProperty a)]]
 >                     -- all editable attributes:
 >                   , cs<-[[ OOAttr (name a++if null [v| v<-as, name v==name a, v/=a] then "" else name (target a)) (name (target a)) | a<-as, not (declaration a `elem` comp)]]
 >                     -- all methods:
 >                   , ms<-[[ OOMethodC ("new"++name c) cs | not (null as) ] ++
 >                          [ OOMethodR ("get"++name c) [ OOAttr (if null [v| v<-as, name v==name a, v/=a] then name a else name a++name (target a)) (name (target a)) | a<-as] | not (null as) ] ++
->                          [ OOMethodR ("sel"++name c++"_by_"++key) [ OOAttr (if null [v| v<-ks, name v==name a, v/=a] then name a else name a++name (target a)) (name (target a)) | a<-ks] | (e,key,ks)<-keys context, e==c, not (null key)] ++
+>                          [ OOMethodR ("sel"++name c++"_by_"++key) [ OOAttr (if null [v| v<-ks, name v==name a, v/=a] then name a else name a++name (target (ctx a))) (name (target (ctx a))) | a<-ks] | k@(cpt,key,ks)<-keys context, cpt==c, not (null ks)] ++
 >                          [ OOMethodD ("del"++name c) | not (null as) ] ++
 >                          [ OOMethodU ("upd"++name c) cs | not (null cs) ] ++
 >                          [ OOMethod  (name s) [] "Bool" | s<-scs, isProperty s, source s == c ]]
 >                   , not (null as) || not (null ms)
 >                   ]
 >      assocs     = [ OOAssoc (name (source s)) (multiplicity s) "" (name (target s)) (multiplicity (flp s)) (name s)
->                   | s<-sps, not (s `elem` declarations attributes), s `elem` declarations pat, not (isProperty s)]
+>                   | s<-sps, not (s `elem` declarations attrs), s `elem` declarations pat, not (isProperty s)]
 >                   where
 >                    multiplicity s | Sur `elem` multiplicities s && Inj `elem` multiplicities s = "1"
 >                                   |                                Inj `elem` multiplicities s = "0..1"
@@ -141,7 +141,7 @@
 >                                   | otherwise                                                  = ""
 >      aggrs      = []
 >      geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa pat], gs<-eqCl fst pcs]
->      attributes = [     Mph (name s++if isFlpFunction s then "Fun" else "") posNone [] (source s,target s) True s | s<-scs, isFunction s] ++
+>      attrs      = [     Mph (name s++if isFlpFunction s then "Fun" else "") posNone [] (source s,target s) True s | s<-scs, isFunction s] ++
 >                   [flp (Mph (name s++if isFunction s then "Inv" else "") posNone [] (source s,target s) True s)| s<-scs, isFlpFunction s]
 >  -- obsolete:     ++ [     Mph (name s) posNone [] (source s,target s) True s | s<-scs, isProperty s]
 >                   
@@ -152,7 +152,7 @@
 >      used :: [Concept]
 >      used = rd (concs ms ++                                                                   -- involved in aggregations
 >                 [c| Isa pcs cs<-[isa pat], (a,b)<-pcs, c<-[a,b]] ++                           -- involved in generalizations
->                 [c| s<-sps, not (s `elem` declarations attributes), (a,b)<-[sign s], c<-[a,b]]  -- involved in associations
+>                 [c| s<-sps, not (s `elem` declarations attrs), (a,b)<-[sign s], c<-[a,b]]  -- involved in associations
 >                )
 
 >  shDataModel (OOclassdiagram cs as rs gs)

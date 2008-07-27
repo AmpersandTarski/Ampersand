@@ -2,7 +2,7 @@
 >  import Char
 >  import Auxiliaries
 >  import Calc(informalRule, shrink, disjNF, computeOrder, ComputeRule, triggers)
->  import CC_aux (ObjectDef(Obj), ObjDefs, Attribute(Att), Attributes, KeyDef(Kd), KeyDefs, Object(objects))
+>  import CC_aux (ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs, Object(concept, attributes, ctx))
 >  import CommonClasses (Identified(name))
 >  import PredLogic -- (for error messages by dbCorrect)
 >  import Hatml     -- (for converting error messages to HTML)
@@ -30,7 +30,7 @@
 >          ,"$menu[] = array"
 >          ,"  ("++ (chain "\n        ,"
 >           [ "new menuItem('"++objname++".php','Show all "++objname++" objects','menuItem','"++objname++"')"
->           | object<-objects context, objname <- [addslashes (name object)]
+>           | o<-attributes context, objname <- [addslashes (name o)]
 >           ])
 >          ,"  );"
 >          ,"parent::monastir($menu,$obj,$object,ucfirst($object->name));"

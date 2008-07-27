@@ -6,7 +6,7 @@
 >  import CommonClasses ( Identified(name), empty )
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (Architecture, isa, Lang(English,Dutch), Context(Ctx), showHS, concs, rules, multRules, patterns, objects)
+>  import CC_aux (Architecture, isa, Lang(English,Dutch), Context(Ctx), showHS, concs, rules, multRules, patterns, attributes)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
@@ -15,7 +15,7 @@
 >  import Graphic
 >  import Atlas (anal)
 >--  import Xml (makeXML)
->  import ERmodel (erModel,erAnalysis)
+>  import ERmodel (erAnalysis)
 >  import ClassDiagram (cdModel,cdDataModel)  
 >--  import RelBinGen
 >  import ObjBinGen
@@ -79,10 +79,9 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >--                 [ makeXML contexts contextname| "-XML" `elem` switches]++
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >--                 [ functionalSpecLaTeX contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-Z" `elem` switches || "-fSpec" `elem` switches]++
->  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
 >--                 [ archText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-arch" `elem` switches]++
 >--                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
->                 [ erModel contexts contextname | "-ER" `elem` switches]++
+>--                 [ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
 >                 [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-objects" `elem` switches]++
 >                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
@@ -98,7 +97,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context++multRules context, hc<-triggers rule])++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
->                   appendFile "\\ADL.log" ("  nr. of objects:                    "++show (length (objects context))++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of objects:                    "++show (length (attributes context))++"\n") >>
 >--                   appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
 >--                   appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
 >                   putStr ("  nr. of classes:                    "++show (length ents)++"\n") >>
@@ -108,7 +107,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
 >                   putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context++multRules context, hc<-triggers rule])++"\n") >>
 >                   putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
->                   putStr ("  nr. of objects:                    "++show (length (objects context))++"\n")
+>                   putStr ("  nr. of objects:                    "++show (length (attributes context))++"\n")
 >--                   putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
 >--                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n")
 >                  where

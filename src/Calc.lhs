@@ -33,20 +33,13 @@
 >     putStr ("\n--------------\n"++
 >             "Summarizing all compute rules: \n  "++
 >             chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-rules context++multRules context, hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]) >>
->     putStr ("\n--------------\n"++
+>     putStr ("\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
 >             "Ontological analysis: \n  "++
->             chain "\n\n  " [name c++"("++chain ", "[name a++":"++name (target a)|a<-ats]++"):\n  "++
->                             (let ms = [" every "++name(target m)++" related by "++showS (declaration m)++ "."|m<-delMors context c] in
->                              if null ms then "No entities are triggered for deletion by "++name c else
->                              "Deletion of an instance of "++name c++" triggers deletion of:\n     "++
->                              chain "\n     " ms)++
->                             let fs = [showADL clause|clause<-delFrs context c] in
->                             if null fs then "" else
->                             "\n  Besides multiplicities, the following rules can trigger deletion of "++name c++":\n     "++
->                             chain "\n     " fs| o@(Obj nm pos c ats)<-objects context]) >>
+>             chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
+>                            | o<-attributes context, c<-[concept o]]) >>
 >     putStr ("\n--------------\n"++
 >             "Triggers from objects: \n     "++
->             chain "\n     " [name c++"("++chain ", "[name a++":"++name (target a)|a<-ats]++"):"++
+>             chain "\n     " [name c++"("++chain ", "[name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):"++
 >                              condNull ("\n  Rules for Insert transactions\n    ") (chain "\n    ") informalRule 
 >                               (computeOrder hcs "INSERT INTO" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntCreate
 >                              condNull ("\n  Rules for Update transactions\n    ") (chain "\n    ") informalRule 
@@ -54,7 +47,7 @@
 >                              condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
 >                               (computeOrder hcs "DELETE FROM" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntDelete
 >                              "\n"
->                             | o@(Obj nm pos c ats)<-objects context])
+>                             | o<-attributes context, c<-[concept o]])
 >     where
 >      (entities, relations, ruls) = erAnalysis context
 >      hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
@@ -68,12 +61,6 @@
 
 -- delMors computes the morphisms that constitute the 'delete core' of an entity.
 -- if atom a is of concept c, and m is in delMors context c, then [b| [a,b]<-m, a==c] and a are to be deleted simultaneously.
--- obsolete (this was useful for uncoupling calc.lhs and RelBinGen.lhs from the rest
-
-  delSurs :: Context -> Concept -> [Morphism]
-  delSurs context e
-       = [ m| m<-rd (ms++map flp ms), source m==e, sur (multiplicities m)]
-         where ms = mors (rules context)
 
 >  delMors :: Context -> Concept -> [Morphism]
 >  delMors context e = [m| m<-rd (ms++[ m| m<-rd (ms'++map flp ms'), sur (multiplicities m)]), source m == e]
