@@ -294,8 +294,6 @@ Code below is basic functionality, and should be changed only when absolutely ne
 >                             mid2'= noCollide [trg'] (sqlExprSrc f)
 >                             trg' = sqlExprTrg (Fd (f:fx))
 
-
-
 >--  selectExpr _ _ _ _ e = error ("RelBinGenBasics.lhs: Non-exhaustive patterns in function selectExpr for "++(showADL e))
 
 selectExprBrac verkort de query van termen als deze in de FROM clause voorkomt:

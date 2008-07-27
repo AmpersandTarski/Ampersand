@@ -134,6 +134,9 @@ mkCtxAG ctxs ctxName
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
 
+lubb gE a b = if a `gE` b then b else a
+ordd gE a b = a `gE` b || b `gE` a
+
 -- irred removes redundancy from a list of declarations.
 -- Intended for use in the type checker AGtry only.
 -- Precondition: a `gEq` a' && b `gEq` b' || a' `gEq` a && b' `gEq` b
@@ -210,6 +213,7 @@ SEM Context
         ms.gE         = @genE
         ks.gE         = @genE
         os.gE         = @genE
+        os.iConcs     = [Anything]
         lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys @os.objDefs)
                         , (@dc.mGen, @mC))]
 -- if stuck looping, try changing @mC ^^ <--(here) into an empty list. It has shown the way to a computational loop in the attribute evaluation before.
@@ -831,8 +835,11 @@ SEM ObjectDef
   | Obj lhs.sErr    = @ctx.sErr++
                       @ats.sErr++
                       [ "9 in "++show (CC_aux.pos a)++"\n   "++
-                        "Inconsistent type in attribute " ++ name a ++ " in object " ++ @nm ++"["++name (target @ctx.expr)++"]:\n   " ++
-                        "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
+                        (if target @ctx.expr `elem` concs @lhs.sDef
+                         then "Inconsistent type in attribute " ++ name a ++ " in object " ++ @nm ++"["++name (target @ctx.expr)++"]:\n   " ++
+                              "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
+                         else "Object " ++ name a ++ " is of type "++name (target @ctx.expr)++", but "++name (target @ctx.expr)++
+                              " is not declared in this CONTEXT.")
                       | a <- @ats.objDefs, not (source (ctx a) `@lhs.gE` target @ctx.expr || target @ctx.expr `@lhs.gE` source (ctx a))]
 SEM ObjDefs 
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
@@ -926,6 +933,7 @@ ATTR KeyDef [ | rnr:Int | kd:KeyDef  exprs:Expressions ]
 SEM KeyDef
   | Kd   lhs.kd      = Kd @pos @lbl @ctx.expr @ats.objDefs
          lhs.exprs   = [ expr | Obj nm pos expr ats <- @ats.objDefs]
+         ats.iConcs  = rd (map snd @ctx.signs)
          ats.rnr     = @lhs.rnr+1
          lhs.rnr     = @ats.rnr
          ctx.pn      = ""
@@ -942,23 +950,29 @@ SEM KeyDefs
          lhs.exprs   = []
          lhs.rnr     = @lhs.rnr
 
-ATTR ObjectDef [ | rnr:Int | odef:ObjectDef ats:ObjDefs ]
+ATTR ObjectDef [ iConcs:{[Concept]} | rnr:Int | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]}]
 SEM ObjectDef
   | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
          lhs.ats     = @ats.objDefs
          ats.rnr     = @lhs.rnr+1
+         ats.iConcs  = @ats.sources
+         lhs.sConcs  = rd (map snd @signs)
+         loc.signs   = [(lubb @lhs.gE s sa, lubb @lhs.gE t sb)| (s,t) <- @ctx.signs, sa <- @lhs.iConcs, sa `order` s, sb <- @ats.sources, sb `order` t]
          lhs.rnr     = @ats.rnr
          ctx.pn      = ""
-         ctx.isign   = @ctx.signs
+         ctx.isign   = @signs
 
-ATTR ObjDefs [ | rnr:Int | objDefs:ObjDefs ]
+ATTR ObjDefs [ iConcs:{[Concept]} | rnr:Int | objDefs:ObjDefs sources:{[Concept]}]
 SEM ObjDefs
   | Cons lhs.objDefs = @hd.odef : @tl.objDefs
+         lhs.sources = rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src'']
+         hd.iConcs   = @lhs.iConcs
          hd.rnr      = @lhs.rnr
          tl.rnr      = @hd.rnr
          lhs.rnr     = @tl.rnr
   | Nil  lhs.objDefs = []
          lhs.rnr     = @lhs.rnr
+         lhs.sources = [Anything]
 
 ATTR Expressions [ | | exprs:Expressions ]
 SEM Expressions

@@ -1165,7 +1165,7 @@ Every declaration m has cardinalities, in which
 
 >  instance Object Context where
 >   concept _    = Anything
->   attributes _ = []
+>   attributes (Ctx nm on isa world dc ss cs ks os) = os
 >   ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
 
 >  instance Object ObjectDef where

@@ -85,6 +85,9 @@ mkCtxAG ctxs ctxName
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
 
+lubb gE a b = if a `gE` b then b else a
+ordd gE a b = a `gE` b || b `gE` a
+
 -- irred removes redundancy from a list of declarations.
 -- Intended for use in the type checker AGtry only.
 -- Precondition: a `gEq` a' && b `gEq` b' || a' `gEq` a && b' `gEq` b
@@ -477,8 +480,8 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_
             (_cs )
         ( _ks_exprs,_ks_keyDefs,_ks_rnr,_ks_sErr) =
             (_ks (_genE) (_dc_rnr) (_mD))
-        ( _os_objDefs,_os_rnr,_os_sErr) =
-            (_os (_genE) (_ks_rnr) (_mD))
+        ( _os_objDefs,_os_rnr,_os_sErr,_os_sources) =
+            (_os (_genE) ([Anything]) (_ks_rnr) (_mD))
     in  (put_gE _genE _cD
          ( Ctx _nm
                _on
@@ -1177,8 +1180,8 @@ sem_KeyDef_Kd :: (FilePos) ->
 sem_KeyDef_Kd (_pos) (_lbl) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let ( _ctx_closRules,_ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_lhs_rnr) (_lhs_sDef))
-        ( _ats_objDefs,_ats_rnr,_ats_sErr) =
-            (_ats (_lhs_gE) (_lhs_rnr+1) (_lhs_sDef))
+        ( _ats_objDefs,_ats_rnr,_ats_sErr,_ats_sources) =
+            (_ats (_lhs_gE) (rd (map snd _ctx_signs)) (_lhs_rnr+1) (_lhs_sDef))
     in  ([ expr | Obj nm pos expr ats <- _ats_objDefs],Kd _pos _lbl _ctx_expr _ats_objDefs,_ats_rnr,_ats_sErr)
 -- KeyDefs -----------------------------------------------------
 {-
@@ -1435,6 +1438,7 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
 {-
    inherited attributes:
       gE                   : GenR
+      iConcs               : [Concept]
       sDef                 : Declarations
 
    chained attributes:
@@ -1443,6 +1447,7 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
    synthesised attributes:
       objDefs              : ObjDefs
       sErr                 : [String]
+      sources              : [Concept]
 
 -}
 {-
@@ -1455,9 +1460,10 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
 -}
 -- semantic domain
 type T_ObjDefs = (GenR) ->
+                 ([Concept]) ->
                  (Int) ->
                  (Declarations) ->
-                 ((ObjDefs),(Int),([String]))
+                 ((ObjDefs),(Int),([String]),([Concept]))
 -- cata
 sem_ObjDefs :: (ObjDefs) ->
                (T_ObjDefs)
@@ -1466,20 +1472,21 @@ sem_ObjDefs (list) =
 sem_ObjDefs_Cons :: (T_ObjectDef) ->
                     (T_ObjDefs) ->
                     (T_ObjDefs)
-sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _hd_ats,_hd_odef,_hd_rnr,_hd_sErr) =
-            (_hd (_lhs_gE) (_lhs_rnr) (_lhs_sDef))
-        ( _tl_objDefs,_tl_rnr,_tl_sErr) =
-            (_tl (_lhs_gE) (_hd_rnr) (_lhs_sDef))
-    in  (_hd_odef : _tl_objDefs,_tl_rnr,_hd_sErr ++ _tl_sErr)
+sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
+    let ( _hd_ats,_hd_odef,_hd_rnr,_hd_sConcs,_hd_sErr) =
+            (_hd (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
+        ( _tl_objDefs,_tl_rnr,_tl_sErr,_tl_sources) =
+            (_tl (_lhs_gE) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
+    in  (_hd_odef : _tl_objDefs,_tl_rnr,_hd_sErr ++ _tl_sErr,rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src''])
 sem_ObjDefs_Nil :: (T_ObjDefs)
-sem_ObjDefs_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
+sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let 
-    in  ([],_lhs_rnr,[])
+    in  ([],_lhs_rnr,[],[Anything])
 -- ObjectDef ---------------------------------------------------
 {-
    inherited attributes:
       gE                   : GenR
+      iConcs               : [Concept]
       sDef                 : Declarations
 
    chained attributes:
@@ -1488,18 +1495,21 @@ sem_ObjDefs_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
    synthesised attributes:
       ats                  : ObjDefs
       odef                 : ObjectDef
+      sConcs               : [Concept]
       sErr                 : [String]
 
 -}
 {-
    local variables for ObjectDef.Obj:
+      signs
 
 -}
 -- semantic domain
 type T_ObjectDef = (GenR) ->
+                   ([Concept]) ->
                    (Int) ->
                    (Declarations) ->
-                   ((ObjDefs),(ObjectDef),(Int),([String]))
+                   ((ObjDefs),(ObjectDef),(Int),([Concept]),([String]))
 -- cata
 sem_ObjectDef :: (ObjectDef) ->
                  (T_ObjectDef)
@@ -1510,19 +1520,25 @@ sem_ObjectDef_Obj :: (String) ->
                      (T_Expression) ->
                      (T_ObjDefs) ->
                      (T_ObjectDef)
-sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
-    let ( _ctx_closRules,_ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_sErr,_ctx_signs) =
-            (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_lhs_rnr) (_lhs_sDef))
-        ( _ats_objDefs,_ats_rnr,_ats_sErr) =
-            (_ats (_lhs_gE) (_lhs_rnr+1) (_lhs_sDef))
+sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
+    let (_signs) =
+            [(lubb _lhs_gE s sa, lubb _lhs_gE t sb)| (s,t) <- _ctx_signs, sa <- _lhs_iConcs, sa `order` s, sb <- _ats_sources, sb `order` t]
+        ( _ctx_closRules,_ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_sErr,_ctx_signs) =
+            (_ctx (_lhs_gE) (_signs) ("") (_pos) (_lhs_rnr) (_lhs_sDef))
+        ( _ats_objDefs,_ats_rnr,_ats_sErr,_ats_sources) =
+            (_ats (_lhs_gE) (_ats_sources) (_lhs_rnr+1) (_lhs_sDef))
     in  (_ats_objDefs
         ,Obj _nm _pos _ctx_expr _ats_objDefs
         ,_ats_rnr
+        ,rd (map snd _signs)
         ,_ctx_sErr++
          _ats_sErr++
          [ "9 in "++show (CC_aux.pos a)++"\n   "++
-           "Inconsistent type in attribute " ++ name a ++ " in object " ++ _nm ++"["++name (target _ctx_expr)++"]:\n   " ++
-           "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
+           (if target _ctx_expr `elem` concs _lhs_sDef
+            then "Inconsistent type in attribute " ++ name a ++ " in object " ++ _nm ++"["++name (target _ctx_expr)++"]:\n   " ++
+                 "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
+            else "Object " ++ name a ++ " is of type "++name (target _ctx_expr)++", but "++name (target _ctx_expr)++
+                 " is not declared in this CONTEXT.")
          | a <- _ats_objDefs, not (source (ctx a) `_lhs_gE` target _ctx_expr || target _ctx_expr `_lhs_gE` source (ctx a))]
         )
 -- Pairs -------------------------------------------------------
