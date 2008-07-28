@@ -956,7 +956,7 @@ SEM ObjectDef
          lhs.ats     = @ats.objDefs
          ats.rnr     = @lhs.rnr+1
          ats.iConcs  = @ats.sources
-         lhs.sConcs  = rd (map snd @signs)
+         lhs.sConcs  = rd (map snd @ctx.signs)
          loc.signs   = [(lubb @lhs.gE s sa, lubb @lhs.gE t sb)| (s,t) <- @ctx.signs, sa <- @lhs.iConcs, sa `order` s, sb <- @ats.sources, sb `order` t]
          lhs.rnr     = @ats.rnr
          ctx.pn      = ""
