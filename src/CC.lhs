@@ -23,7 +23,7 @@
 >            , showADL
 >            , flp
 >            , pVarid_val_pos, pConid_val_pos
->            , mIs)
+>            , mIs, v)
 
 >  diagl = 52
 >  diagc = 0
@@ -239,13 +239,23 @@ There are always one or more terms in a factor. F [] cannot occur
 >  pObjDef           = pKey_pos "OBJECT" *> pObj
 
 >  pObj             :: Parser Token ObjectDef
->  pObj              = obj <$> phpId                                                  -- de naam van het object
->                          <*> ((pSpec '[' *> pConid <* pSpec ']') `opt` "")          -- optioneel: het type van het object (een concept)
->                          <*> ((pKey ":" *> pExpr) `opt` error("Bug in parser"))     -- de contextexpressie (default: I[c])
+>  pObj              = obj <$> pConid_val_pos                                             -- de naam van het object
+>                          <*> ((pSpec '[' *> Just pConid <* pSpec ']') `opt` Nothing)    -- optioneel: het type van het object (een concept)
+>                          <*> ((pKey ":" *> Just pExpr) `opt` Nothing)                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
->                      where obj (nm,pos) str e ats = Obj nm pos (expr e nm str) ats
->                            expr e nm "" = Tm (mIs (C (upCap nm) (==) []))
->                            expr e nm c  = Tm (mIs (C c (==) []))
+>                      <|>
+>                      vbj <$> pVarid_val_pos                                             -- de naam van het object
+>                          <*> ((pSpec '[' *> Just pConid <* pSpec ']') `opt` Nothing)    -- optioneel: het type van het object (een concept)
+>                          <*> ((pKey ":" *> Just pExpr) `opt` Nothing)                   -- de contextexpressie (default: I[c])
+>                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
+>                      where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos (v (Anything, C (nm) (==) [])) ats
+>                            obj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
+>                            obj (nm,pos) (Just c) Nothing  ats = Obj nm pos (v (Anything, C c (==) [])) ats
+>                            obj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (C c (==) []))]) ats
+>                            vbj (nm,pos) Nothing  Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (Anything,Anything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
+>                            vbj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
+>                            vbj (nm,pos) (Just c) Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (Anything,C c (==) []) True (error "CC.lhs: vbj (nm,pos) Nothing (Just c) has no declaration"))) ats
+>                            vbj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (C c (==) []))]) ats
 
 >  pAtt             :: Parser Token ObjectDef
 >  pAtt              = att <$> phpId <* pKey ":" <*>  pExpr
