@@ -1530,7 +1530,7 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
     in  (_ats_objDefs
         ,Obj _nm _pos _ctx_expr _ats_objDefs
         ,_ats_rnr
-        ,rd (map snd _signs)
+        ,rd (map snd _ctx_signs)
         ,_ctx_sErr++
          _ats_sErr++
          [ "9 in "++show (CC_aux.pos a)++"\n   "++
