@@ -238,15 +238,19 @@ There are always one or more terms in a factor. F [] cannot occur
 >  pObjDef          :: Parser Token ObjectDef
 >  pObjDef           = pKey_pos "OBJECT" *> pObj
 
+Bas: het volgende is nog incorrect....
+> -- justPars :: (Parser Token anytype) -> Token -> anytype -> Parser Token (Maybe anytype)
+>  justPars parser token expr = parser token (Just expr)
+
 >  pObj             :: Parser Token ObjectDef
->  pObj              = obj <$> pConid_val_pos                                             -- de naam van het object
->                          <*> ((pSpec '[' *> Just pConid <* pSpec ']') `opt` Nothing)    -- optioneel: het type van het object (een concept)
->                          <*> ((pKey ":" *> Just pExpr) `opt` Nothing)                   -- de contextexpressie (default: I[c])
+>  pObj              = obj <$> pConid_val_pos                                                 -- de naam van het object
+>                          <*> ((pSpec '[' *> justPars pConid <* pSpec ']') `opt` Nothing)    -- optioneel: het type van het object (een concept)
+>                          <*> ((pKey ":" *> justPars pExpr) `opt` Nothing)                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
 >                      <|>
->                      vbj <$> pVarid_val_pos                                             -- de naam van het object
->                          <*> ((pSpec '[' *> Just pConid <* pSpec ']') `opt` Nothing)    -- optioneel: het type van het object (een concept)
->                          <*> ((pKey ":" *> Just pExpr) `opt` Nothing)                   -- de contextexpressie (default: I[c])
+>                      vbj <$> pVarid_val_pos                                                 -- de naam van het object
+>                          <*> ((pSpec '[' *> justPars pConid <* pSpec ']') `opt` Nothing)    -- optioneel: het type van het object (een concept)
+>                          <*> ((pKey ":" *> justPars pExpr) `opt` Nothing)                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
 >                      where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos (v (Anything, C (nm) (==) [])) ats
 >                            obj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
