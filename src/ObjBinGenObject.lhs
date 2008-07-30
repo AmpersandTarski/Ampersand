@@ -97,7 +97,8 @@
 >                                 )++"');"
 >      ,"    if(count($ctx)==0) return false;"
 >      ,"    $obj = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
->      ] ++ (concat (map (map ((++) "    "))
+>      ]
+>      ++ (concat (map (map ((++) "    "))
 >             [ [ "$ctx = DB_doquer('"++ (selectExprForAttr a object "$id") ++"');"
 >               , "foreach($ctx as $i=>$v){"
 >               , "    $obj->add_"++(name a)++"(new "++(name object)++"_"++(name a)++"($v['"++(sqlExprTrg (ctx a))++"']));"
@@ -107,8 +108,10 @@
 >             ]
 >            )) ++
 >      ["    return $obj;"
->      ,"}"
->      ,"function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
+>      ,"}"]
+
+>{-    ++
+>      ["function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
 >      ,"    global $DB_link,$DB_err,$DB_lastquer;"
 >      ,"    $preErr= $new ? 'Cannot create new "++(addslashes (name (concept object)))++": ':'Cannot update "++(addslashes (name (concept object)))++": ';"
 >      ,"    DB_doquer('START TRANSACTION');"
@@ -215,6 +218,8 @@
 >      ,"  return false;"
 >      ,"}"
 >      ]
+> -}
+
 >     )) ++ "\n?>"
 >    where
 >     checkRuls
