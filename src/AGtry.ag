@@ -630,7 +630,7 @@ SEM Contexts
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Context
-  | Ctx  lhs.sErr   = @dc.sErr ++ @ks.sErr
+  | Ctx  lhs.sErr   = @dc.sErr ++ @ks.sErr ++ @os.sErr
 SEM Patterns 
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
@@ -834,15 +834,27 @@ SEM KeyDef
 SEM ObjectDef
   | Obj lhs.sErr    = @ctx.sErr++
                       @ats.sErr++
-                      [ "9 in "++show (CC_aux.pos a)++"\n   "++
+                      [ "9 in "++show @pos++"\n   "++
                         (if target @ctx.expr `elem` concs @lhs.sDef
                          then "Inconsistent type in attribute " ++ name a ++ " in object " ++ @nm ++"["++name (target @ctx.expr)++"]:\n   " ++
                               "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
                          else "Object " ++ name a ++ " is of type "++name (target @ctx.expr)++", but "++name (target @ctx.expr)++
                               " is not declared in this CONTEXT.")
-                      | a <- @ats.objDefs, not (source (ctx a) `@lhs.gE` target @ctx.expr || target @ctx.expr `@lhs.gE` source (ctx a))]
+                      | False,a <- @ats.objDefs, not (source (ctx a) `@lhs.gE` target @ctx.expr || target @ctx.expr `@lhs.gE` source (ctx a))] ++
+                      [ "(no number) on "++show @pos ++"\n   Unmatched "++
+                        (if (length @ats.sources) > 1 then "Attribute sources " else "Attribute source ")
+                        ++ (chain " or " (map show @ats.sources)) ++ "\n   "++
+                        "with target "++ chain " or " (map (show . snd) @ctx.signs) ++"\n"
+                      | null @signs
+                      ]
 SEM ObjDefs 
-  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Cons lhs.sErr   =
+                      [ "(no number) on "++show @hd.pos++"\n   "++
+                        "Source of following attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
+                        "Does not match " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
+                      | null (rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src''])
+                      ]
+                      ++ @tl.sErr ++ @hd.sErr
   | Nil  lhs.sErr   = []
 
 ATTR Rule Rules Expression Expressions [ pn:{String} | | ]
@@ -950,14 +962,15 @@ SEM KeyDefs
          lhs.exprs   = []
          lhs.rnr     = @lhs.rnr
 
-ATTR ObjectDef [ iConcs:{[Concept]} | rnr:Int | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]}]
+ATTR ObjectDef [ iConcs:{[Concept]} | rnr:Int | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos]
 SEM ObjectDef
   | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
          lhs.ats     = @ats.objDefs
          ats.rnr     = @lhs.rnr+1
          ats.iConcs  = @ats.sources
-         lhs.sConcs  = rd (map snd @ctx.signs)
-         loc.signs   = [(lubb @lhs.gE s sa, lubb @lhs.gE t sb)| (s,t) <- @ctx.signs, sa <- @lhs.iConcs, sa `order` s, sb <- @ats.sources, sb `order` t]
+         lhs.sConcs  = rd (map fst @ctx.signs)
+         lhs.pos     = @pos
+         loc.signs   = rd [(lubb @lhs.gE s sa, lubb @lhs.gE t sb)| (s,t) <- @ctx.signs, sa <- @lhs.iConcs, sa `order` s, sb <- @ats.sources, sb `order` t]
          lhs.rnr     = @ats.rnr
          ctx.pn      = ""
          ctx.isign   = @signs
@@ -1060,7 +1073,7 @@ SEM Morphism
   | V   lhs.usedDecls = declarations [ @rraw ]
         lhs.raw      = ( @rraw, [])
         loc.rraw     = V @atts @sgn
-        lhs.morphism = let (s,t) = if null @lhs.isign then error ("Fatal: null @lhs.isign in V lhs.morphism!") else
+        lhs.morphism = let (s,t) = if null @lhs.isign then error ("Fatal: null @lhs.isign in V lhs.morphism! "++(show @atts)) else
                                    head @lhs.isign
                        in V @ats (s,t)
         lhs.nm       = "V"

@@ -493,7 +493,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_
                _keys _os_objDefs)
         ,[( put_gE _genE _cD (Ctx _nm _on _inh [] _dc_patterns _mC _cs_conDefs _keys _os_objDefs)
          , (_dc_mGen, _mC))]
-        ,_dc_sErr ++ _ks_sErr
+        ,_dc_sErr ++ _ks_sErr ++ _os_sErr
         )
 -- Contexts ----------------------------------------------------
 {-
@@ -1373,7 +1373,7 @@ sem_Morphism_V (_atts) (_sgn) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
             rd ([C a _lhs_gE as|C a _ as<- _atts]++[S a _lhs_gE as|S a _ as<- _atts])
     in  (_ats
         ,True
-        ,let (s,t) = if null _lhs_isign then error ("Fatal: null @lhs.isign in V lhs.morphism!") else
+        ,let (s,t) = if null _lhs_isign then error ("Fatal: null @lhs.isign in V lhs.morphism! "++(show _atts)) else
                      head _lhs_isign
          in V _ats (s,t)
         ,"V"
@@ -1473,11 +1473,20 @@ sem_ObjDefs_Cons :: (T_ObjectDef) ->
                     (T_ObjDefs) ->
                     (T_ObjDefs)
 sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
-    let ( _hd_ats,_hd_odef,_hd_rnr,_hd_sConcs,_hd_sErr) =
+    let ( _hd_ats,_hd_odef,_hd_pos,_hd_rnr,_hd_sConcs,_hd_sErr) =
             (_hd (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
         ( _tl_objDefs,_tl_rnr,_tl_sErr,_tl_sources) =
             (_tl (_lhs_gE) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
-    in  (_hd_odef : _tl_objDefs,_tl_rnr,_hd_sErr ++ _tl_sErr,rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src''])
+    in  (_hd_odef : _tl_objDefs
+        ,_tl_rnr
+        ,[ "(no number) on "++show _hd_pos++"\n   "++
+           "Source of following attributes " ++ (chain " or " (map show _tl_sources)) ++ "\n   "++
+           "Does not match " ++ (chain ", " (map show _hd_sConcs)) ++ "\n"
+         | null (rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src''])
+         ]
+         ++ _tl_sErr ++ _hd_sErr
+        ,rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src'']
+        )
 sem_ObjDefs_Nil :: (T_ObjDefs)
 sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let 
@@ -1495,6 +1504,7 @@ sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
    synthesised attributes:
       ats                  : ObjDefs
       odef                 : ObjectDef
+      pos                  : FilePos
       sConcs               : [Concept]
       sErr                 : [String]
 
@@ -1509,7 +1519,7 @@ type T_ObjectDef = (GenR) ->
                    ([Concept]) ->
                    (Int) ->
                    (Declarations) ->
-                   ((ObjDefs),(ObjectDef),(Int),([Concept]),([String]))
+                   ((ObjDefs),(ObjectDef),(FilePos),(Int),([Concept]),([String]))
 -- cata
 sem_ObjectDef :: (ObjectDef) ->
                  (T_ObjectDef)
@@ -1522,24 +1532,31 @@ sem_ObjectDef_Obj :: (String) ->
                      (T_ObjectDef)
 sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let (_signs) =
-            [(lubb _lhs_gE s sa, lubb _lhs_gE t sb)| (s,t) <- _ctx_signs, sa <- _lhs_iConcs, sa `order` s, sb <- _ats_sources, sb `order` t]
+            rd [(lubb _lhs_gE s sa, lubb _lhs_gE t sb)| (s,t) <- _ctx_signs, sa <- _lhs_iConcs, sa `order` s, sb <- _ats_sources, sb `order` t]
         ( _ctx_closRules,_ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE) (_signs) ("") (_pos) (_lhs_rnr) (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_sErr,_ats_sources) =
             (_ats (_lhs_gE) (_ats_sources) (_lhs_rnr+1) (_lhs_sDef))
     in  (_ats_objDefs
         ,Obj _nm _pos _ctx_expr _ats_objDefs
+        ,_pos
         ,_ats_rnr
-        ,rd (map snd _ctx_signs)
+        ,rd (map fst _ctx_signs)
         ,_ctx_sErr++
          _ats_sErr++
-         [ "9 in "++show (CC_aux.pos a)++"\n   "++
+         [ "9 in "++show _pos++"\n   "++
            (if target _ctx_expr `elem` concs _lhs_sDef
             then "Inconsistent type in attribute " ++ name a ++ " in object " ++ _nm ++"["++name (target _ctx_expr)++"]:\n   " ++
                  "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
             else "Object " ++ name a ++ " is of type "++name (target _ctx_expr)++", but "++name (target _ctx_expr)++
                  " is not declared in this CONTEXT.")
-         | a <- _ats_objDefs, not (source (ctx a) `_lhs_gE` target _ctx_expr || target _ctx_expr `_lhs_gE` source (ctx a))]
+         | False,a <- _ats_objDefs, not (source (ctx a) `_lhs_gE` target _ctx_expr || target _ctx_expr `_lhs_gE` source (ctx a))] ++
+         [ "(no number) on "++show _pos ++"\n   Unmatched "++
+           (if (length _ats_sources) > 1 then "Attribute sources " else "Attribute source ")
+           ++ (chain " or " (map show _ats_sources)) ++ "\n   "++
+           "with target "++ chain " or " (map (show . snd) _ctx_signs) ++"\n"
+         | null _signs
+         ]
         )
 -- Pairs -------------------------------------------------------
 {-

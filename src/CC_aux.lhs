@@ -957,9 +957,9 @@ The function showHS prints structures as haskell source, which is intended for t
 >               else "C "++show (name c) -- ++" "++show (conts c)
 >   showADL c = show (name c)
 
->  instance ShowHS ObjectDef
->   showHS  (Obj nm pos ctx ats) = Bas: nog afmaken
->   showADL (Obj nm pos ctx ats) = Bas: nog afmaken
+>  instance ShowHS ObjectDef where
+>   showHS  (Obj nm pos ctx ats) = "Obj ("++nm++") (pos) ("++(showHS ctx)++") ["++chain ", " (map showHS ats)++"]"
+>   showADL (Obj nm pos ctx ats) = "OBJECT "++nm++" : "++(showADL ctx)++" = ["++chain ", " (map show ats)++"]"
 
 >  instance ShowHS Declaration where
 >   showHS (Sgn nm a b props prL prM prR cs expla pos nr sig)
