@@ -14,7 +14,7 @@
 >   (["<?php"
 >    ] ++ (map ((++) "  ") (
 >      ["// Select the monastir view"
->      ,"$incPath = \"../inc/\";"
+>      ,"$incPath = \"monastir/\";"
 >      ,"$appName = \"" ++ (name context) ++ "\"; // full text name"
 >      ,"require $incPath.\"globalsettings.inc.php\";"
 >      ,"require \"connectToDataBase.inc.php\";"
