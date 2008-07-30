@@ -1,0 +1,62 @@
+CONTEXT Aanvraag
+
+OBJECT Behandelaar [Employee]          -- 'Employee' zou betekenen: 'Employee = Employee'
+   =[  aanvragen : assigned~]
+   
+ 
+OBJECT Permissions [Employee]
+   =[  product : auth
+    , area    : area]
+    
+OBJECT Person [Person]
+   =[  idDocument  : authentic
+    , residence   : inhabitant
+    , application : applicant~]
+ 
+OBJECT Application [Application]
+   =[  applicant : applicant
+    , checked   : checked
+    , kind      : kind[Application*Product]
+    , assigned  : assigned
+    , decision  : leadsto]
+ 
+OBJECT Decision [Decision]
+   =[  application : leadsto~
+    , kind        : kind[Decision*Product]]
+ 
+{-
+OBJECT Index ['Overview'] -- called index to be the default screen
+     employee  : V[*Employee]
+     undecided : (V[*Application];(I /\ (leadsto;leadsto~)-))
+     decisions : V[*Decision]
+     person    : V[*Person]
+ENDOBJECT
+-}
+ 
+PATTERN Permits
+ 
+ leadsto~;kind -: kind COMPUTING kind[Decision*Product]
+  EXPLANATION "Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product."
+ 
+ assigned~;applicant;inhabitant -: area
+  EXPLANATION "Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."
+ 
+ applicant -: (checked;authentic~)
+  EXPLANATION "An application for a permit is accepted only from individuals whose identity is authenticated."
+ 
+ assigned -: kind;auth~
+  EXPLANATION "Applications for permits are treated by authorized personnel only."
+ 
+ authentic  :: Person * IDdocument    [INJ,SUR]     PRAGMA "Person " " has document " " as proof of identity, according to the legal authority".
+ applicant  :: Application -> Person                PRAGMA "Application " " was made by ".
+ checked    :: Application * IDdocument [TOT]       PRAGMA "Application " " has been checked with IDdocument ".
+ assigned   :: Application * Employee   [INJ]       PRAGMA "Application " " was treated by ".
+ auth       :: Employee * Product                   PRAGMA "Employee " " is authorized to treat product ".
+ kind       :: Application -> Product               PRAGMA "" " is an application for a ".
+ kind       :: Decision -> Product                  PRAGMA "Decision " " is about a ".
+ inhabitant :: Person->Area                         PRAGMA "Person " " is inhabitant of area ".
+ area       :: Employee * Area        [SUR]         PRAGMA "Employee " " treats applications from area ".
+ leadsto    :: Application * Decision [INJ,UNI,SUR] PRAGMA "Application " " has lead to Decision ".
+ 
+ENDPATTERN
+ENDCONTEXT

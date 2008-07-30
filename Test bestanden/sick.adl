@@ -53,8 +53,8 @@ PATTERN Type8Error
 I=I
 ENDPATTERN
 
-OBJECT Type9Error [Line]
- = [ send ]
+OBJECT Type9Error [A]
+ = [ t ]
 
 OBJECT Type10Error [Comp]
  = [ sees

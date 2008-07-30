@@ -850,6 +850,7 @@ SEM ObjectDef
                         chain "\n     , "
                               (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
                                    @signs)
+                        ++ "\n"
                       | length @signs > 1
                       ]
                                             

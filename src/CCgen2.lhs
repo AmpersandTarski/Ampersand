@@ -55,8 +55,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >        ; putStr "\nConcepts:\n" >>(putStr.chain "\n".map show) (makeTrees (Typ (map reverse pths)))
 >        ; if null errs 
 >          then (putStr ("\nNo type errors or cyclic specializations were found.\n")>>
->                putStr (showHS (slRes))>>
->                putStr (showHS (contexts))>>
+>--                putStr (showHS (slRes))>>
+>--                putStr (showHS (contexts))>>
 >                if length args==1 && length contexts==1
 >                then build contexts switches (name (head contexts)) fnOutp dbName slRes else
 >                if length args==1 && length contexts>1
