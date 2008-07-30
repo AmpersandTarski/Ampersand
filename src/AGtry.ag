@@ -834,20 +834,28 @@ SEM KeyDef
 SEM ObjectDef
   | Obj lhs.sErr    = @ctx.sErr++
                       @ats.sErr++
-                      [ "9 on "++show @pos ++"\n   Unmatched "++
-                        (if (length @ats.sources) > 1 then "Attribute sources " else "Attribute source ")
-                        ++ (chain " or " (map show @ats.sources)) ++ "\n   "++
-                        "with target "++ chain " or " (map (show . snd) @ctx.signs) ++"\n"
-                      | null @signs
+                      [ "9 on "++show @pos ++"\n   Cannot match "++
+                        chain "\n     or "
+                              (map (\x-> @ctx.nm ++ "["++show (fst x) ++ "*" ++ show (snd x) ++"]")
+                              @ctx.signs
+                        ++ "\n   to ["++
+                        chain "\n     or " @lhs.iConcs
+                        ++ "*"++
+                        chain "\n     or " @ats.sources
+                        ++ "]"
+                      | null @signs, not (null @ats.sources), not (null @lhs.iConcs)
                       ]
+                                            
 SEM ObjDefs 
   | Cons lhs.sErr   =
                       [ "10 on "++show @hd.pos++"\n   "++
-                        "Source of following attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
-                        "Does not match " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
+                        "Source of the rest of the attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
+                        "Does not match " ++ show @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
                       | null (rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src''])
+                      , not (null @tl.sources)
                       ]
-                      ++ @tl.sErr ++ @hd.sErr
+                      ++ @hd.sErr
+                      ++ @tl.sErr
   | Nil  lhs.sErr   = []
 
 ATTR Rule Rules Expression Expressions [ pn:{String} | | ]

@@ -53,6 +53,19 @@ PATTERN Type8Error
 I=I
 ENDPATTERN
 
+OBJECT Type9Error [Line]
+ = [ send ]
+
+OBJECT Type10Error [Comp]
+ = [ sees
+     = [ a:sees[Component*Comp]
+       , b:sees[Comp*Comp]
+       ]
+   ]
+
+OBJECT Type2Error [Comp]
+ = [ a: sees~ ]
+
 PATTERN Type15Error
 van         :: Toegangsrecht * Medewerker.
 op          :: Toegangsrecht * Document.
