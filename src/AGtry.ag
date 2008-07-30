@@ -834,14 +834,7 @@ SEM KeyDef
 SEM ObjectDef
   | Obj lhs.sErr    = @ctx.sErr++
                       @ats.sErr++
-                      [ "9 in "++show @pos++"\n   "++
-                        (if target @ctx.expr `elem` concs @lhs.sDef
-                         then "Inconsistent type in attribute " ++ name a ++ " in object " ++ @nm ++"["++name (target @ctx.expr)++"]:\n   " ++
-                              "source ("++showADL (ctx a)++") is "++show (source (ctx a)) ++ ".\n"
-                         else "Object " ++ name a ++ " is of type "++name (target @ctx.expr)++", but "++name (target @ctx.expr)++
-                              " is not declared in this CONTEXT.")
-                      | False,a <- @ats.objDefs, not (source (ctx a) `@lhs.gE` target @ctx.expr || target @ctx.expr `@lhs.gE` source (ctx a))] ++
-                      [ "(no number) on "++show @pos ++"\n   Unmatched "++
+                      [ "9 on "++show @pos ++"\n   Unmatched "++
                         (if (length @ats.sources) > 1 then "Attribute sources " else "Attribute source ")
                         ++ (chain " or " (map show @ats.sources)) ++ "\n   "++
                         "with target "++ chain " or " (map (show . snd) @ctx.signs) ++"\n"
@@ -849,7 +842,7 @@ SEM ObjectDef
                       ]
 SEM ObjDefs 
   | Cons lhs.sErr   =
-                      [ "(no number) on "++show @hd.pos++"\n   "++
+                      [ "10 on "++show @hd.pos++"\n   "++
                         "Source of following attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
                         "Does not match " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
                       | null (rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src''])
