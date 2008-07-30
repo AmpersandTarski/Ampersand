@@ -801,12 +801,17 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS  = chain "\n".map showHS
 >   showADL = chain "\n".map showADL
 
+>  instance ShowHS Architecture where
+>   showHS (Arch ctxs) = concat (map showHS ctxs)
+>   showADL (Arch ctxs) = concat (map showADL ctxs)
+
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
 >   showHS (Ctx nm on isa world dc ss cs ks os)
 >    = nlHs++"ctx_"++nm++"\n>   = Ctx "++show nm++" "++show on++" isa (genEq (typology isa)) []"++
 >      ind++showL ["pat_"++name p|p<-dc]++
 >      ind++showL ["mor_"++name s++name(source s)++name(target s)|s<-ss]++
+>      ind++showL [showHS o|o<-os]++
 >      init nlHs'++"where"++nlHs'++
 >      "isa = "++showHS isa++
 >      concat [nlHs'++showHS s|s<-ss]++"\n"++
@@ -951,6 +956,10 @@ The function showHS prints structures as haskell source, which is intended for t
 >               then "S "++show (name c) -- ++" "++show (conts c)
 >               else "C "++show (name c) -- ++" "++show (conts c)
 >   showADL c = show (name c)
+
+>  instance ShowHS ObjectDef
+>   showHS  (Obj nm pos ctx ats)
+>   showADL (Obj nm pos ctx ats)
 
 >  instance ShowHS Declaration where
 >   showHS (Sgn nm a b props prL prM prR cs expla pos nr sig)

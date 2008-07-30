@@ -245,12 +245,12 @@ Bas: het volgende is nog incorrect....
 >  optional a        = Just <$> a <|> pSucceed Nothing
 
 >  pObj             :: Parser Token ObjectDef
->  pObj              = obj <$> pConid_val_pos                                                 -- de naam van het object
+>  pObj              = obj <$> pConid_val_pos                                    -- de naam van het object
 >                          <*> (optional (pSpec '[' *> pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
 >                          <*> (optional (pKey ":" *> pExpr) )                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
 >                      <|>
->                      vbj <$> pVarid_val_pos                                                 -- de naam van het object
+>                      vbj <$> pVarid_val_pos                                     -- de naam van het object
 >                          <*> (optional (pSpec '[' *>  pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
 >                          <*> (optional (pKey ":" *>  pExpr) )                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
