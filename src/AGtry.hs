@@ -1452,6 +1452,7 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
 -}
 {-
    local variables for ObjDefs.Cons:
+      signs
 
 -}
 {-
@@ -1473,7 +1474,9 @@ sem_ObjDefs_Cons :: (T_ObjectDef) ->
                     (T_ObjDefs) ->
                     (T_ObjDefs)
 sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
-    let ( _hd_ats,_hd_nm,_hd_odef,_hd_pos,_hd_rnr,_hd_sConcs,_hd_sErr) =
+    let (_signs) =
+            rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src'']
+        ( _hd_ats,_hd_nm,_hd_odef,_hd_pos,_hd_rnr,_hd_sConcs,_hd_sErr) =
             (_hd (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
         ( _tl_objDefs,_tl_rnr,_tl_sErr,_tl_sources) =
             (_tl (_lhs_gE) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
@@ -1482,12 +1485,12 @@ sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
         ,[ "10 on "++show _hd_pos++"\n   "++
            "Source of the rest of the attributes " ++ (chain " or " (map show _tl_sources)) ++ "\n   "++
            "Does not match " ++ _hd_nm ++ " of type " ++ (chain ", " (map show _hd_sConcs)) ++ "\n"
-         | null (rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src''])
+         | null _signs
          , not (null _tl_sources)
          ]
          ++ _hd_sErr
          ++ _tl_sErr
-        ,rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src'']
+        ,_signs
         )
 sem_ObjDefs_Nil :: (T_ObjDefs)
 sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
@@ -1556,8 +1559,15 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
            chain "\n     or " (map show _lhs_iConcs)
            ++ "*"++
            chain "\n     or " (map show _ats_sources)
-           ++ "]"
+           ++ "]\n"
          | null _signs, not (null _ats_sources), not (null _lhs_iConcs)
+         ]++
+         [ "11 on "++show _pos ++"\n   Ambiguous types of "++ _nm
+           ++ "\n       "++
+           chain "\n     , "
+                 (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
+                      _signs)
+         | length _signs > 1
          ]
         )
 -- Pairs -------------------------------------------------------

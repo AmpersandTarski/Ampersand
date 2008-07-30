@@ -844,6 +844,13 @@ SEM ObjectDef
                         chain "\n     or " (map show @ats.sources)
                         ++ "]\n"
                       | null @signs, not (null @ats.sources), not (null @lhs.iConcs)
+                      ]++
+                      [ "11 on "++show @pos ++"\n   Ambiguous types of "++ @nm
+                        ++ "\n       "++
+                        chain "\n     , "
+                              (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
+                                   @signs)
+                      | length @signs > 1
                       ]
                                             
 SEM ObjDefs 
@@ -851,14 +858,8 @@ SEM ObjDefs
                       [ "10 on "++show @hd.pos++"\n   "++
                         "Source of the rest of the attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
                         "Does not match " ++ @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
-                      | null (rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src''])
+                      | null @signs
                       , not (null @tl.sources)
-                      ]++
-                      [ "11 on "++show @pos ++"\n   Ambiguous types of "++ @hd.nm ++ 
-                        ++ "\n       "++
-                        chain "\n     , "
-                              (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
-                      | length @signs > 1
                       ]
                       ++ @hd.sErr
                       ++ @tl.sErr
@@ -986,7 +987,8 @@ SEM ObjectDef
 ATTR ObjDefs [ iConcs:{[Concept]} | rnr:Int | objDefs:ObjDefs sources:{[Concept]}]
 SEM ObjDefs
   | Cons lhs.objDefs = @hd.odef : @tl.objDefs
-         lhs.sources = rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src'']
+         lhs.sources = @signs
+         loc.signs   = rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src'']
          hd.iConcs   = @lhs.iConcs
          hd.rnr      = @lhs.rnr
          tl.rnr      = @hd.rnr
