@@ -63,8 +63,12 @@ OBJECT Type10Error [Comp]
        ]
    ]
 
-OBJECT Type2Error [Comp]
+OBJECT Type11Error [Comp]
  = [ a: sees~ ]
+
+
+-- Type12Error ??
+
 
 PATTERN Type15Error
 van         :: Toegangsrecht * Medewerker.
