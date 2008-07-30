@@ -836,12 +836,12 @@ SEM ObjectDef
                       @ats.sErr++
                       [ "9 on "++show @pos ++"\n   Cannot match "++
                         chain "\n     or "
-                              (map (\x-> @ctx.nm ++ "["++show (fst x) ++ "*" ++ show (snd x) ++"]")
-                              @ctx.signs
+                              (map (\x-> "("++ @nm ++ ")["++show (fst x) ++ "*" ++ show (snd x) ++"]")
+                              @ctx.signs)
                         ++ "\n   to ["++
-                        chain "\n     or " @lhs.iConcs
+                        chain "\n     or " (map show @lhs.iConcs)
                         ++ "*"++
-                        chain "\n     or " @ats.sources
+                        chain "\n     or " (map show @ats.sources)
                         ++ "]"
                       | null @signs, not (null @ats.sources), not (null @lhs.iConcs)
                       ]
@@ -850,7 +850,7 @@ SEM ObjDefs
   | Cons lhs.sErr   =
                       [ "10 on "++show @hd.pos++"\n   "++
                         "Source of the rest of the attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
-                        "Does not match " ++ show @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
+                        "Does not match " ++ @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
                       | null (rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src''])
                       , not (null @tl.sources)
                       ]
@@ -963,7 +963,7 @@ SEM KeyDefs
          lhs.exprs   = []
          lhs.rnr     = @lhs.rnr
 
-ATTR ObjectDef [ iConcs:{[Concept]} | rnr:Int | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos]
+ATTR ObjectDef [ iConcs:{[Concept]} | rnr:Int | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos nm:String]
 SEM ObjectDef
   | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
          lhs.ats     = @ats.objDefs
@@ -971,6 +971,7 @@ SEM ObjectDef
          ats.iConcs  = @ats.sources
          lhs.sConcs  = rd (map fst @ctx.signs)
          lhs.pos     = @pos
+         lhs.nm      = @nm
          loc.signs   = rd [(lubb @lhs.gE s sa, lubb @lhs.gE t sb)| (s,t) <- @ctx.signs, sa <- @lhs.iConcs, sa `order` s, sb <- @ats.sources, sb `order` t]
          lhs.rnr     = @ats.rnr
          ctx.pn      = ""

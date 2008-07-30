@@ -1473,18 +1473,20 @@ sem_ObjDefs_Cons :: (T_ObjectDef) ->
                     (T_ObjDefs) ->
                     (T_ObjDefs)
 sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
-    let ( _hd_ats,_hd_odef,_hd_pos,_hd_rnr,_hd_sConcs,_hd_sErr) =
+    let ( _hd_ats,_hd_nm,_hd_odef,_hd_pos,_hd_rnr,_hd_sConcs,_hd_sErr) =
             (_hd (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
         ( _tl_objDefs,_tl_rnr,_tl_sErr,_tl_sources) =
             (_tl (_lhs_gE) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
     in  (_hd_odef : _tl_objDefs
         ,_tl_rnr
         ,[ "10 on "++show _hd_pos++"\n   "++
-           "Source of following attributes " ++ (chain " or " (map show _tl_sources)) ++ "\n   "++
-           "Does not match " ++ (chain ", " (map show _hd_sConcs)) ++ "\n"
+           "Source of the rest of the attributes " ++ (chain " or " (map show _tl_sources)) ++ "\n   "++
+           "Does not match " ++ _hd_nm ++ " of type " ++ (chain ", " (map show _hd_sConcs)) ++ "\n"
          | null (rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src''])
+         , not (null _tl_sources)
          ]
-         ++ _tl_sErr ++ _hd_sErr
+         ++ _hd_sErr
+         ++ _tl_sErr
         ,rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src'']
         )
 sem_ObjDefs_Nil :: (T_ObjDefs)
@@ -1503,6 +1505,7 @@ sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
 
    synthesised attributes:
       ats                  : ObjDefs
+      nm                   : String
       odef                 : ObjectDef
       pos                  : FilePos
       sConcs               : [Concept]
@@ -1519,7 +1522,7 @@ type T_ObjectDef = (GenR) ->
                    ([Concept]) ->
                    (Int) ->
                    (Declarations) ->
-                   ((ObjDefs),(ObjectDef),(FilePos),(Int),([Concept]),([String]))
+                   ((ObjDefs),(String),(ObjectDef),(FilePos),(Int),([Concept]),([String]))
 -- cata
 sem_ObjectDef :: (ObjectDef) ->
                  (T_ObjectDef)
@@ -1538,17 +1541,23 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
         ( _ats_objDefs,_ats_rnr,_ats_sErr,_ats_sources) =
             (_ats (_lhs_gE) (_ats_sources) (_lhs_rnr+1) (_lhs_sDef))
     in  (_ats_objDefs
+        ,_nm
         ,Obj _nm _pos _ctx_expr _ats_objDefs
         ,_pos
         ,_ats_rnr
         ,rd (map fst _ctx_signs)
         ,_ctx_sErr++
          _ats_sErr++
-         [ "9 on "++show _pos ++"\n   Unmatched "++
-           (if (length _ats_sources) > 1 then "Attribute sources " else "Attribute source ")
-           ++ (chain " or " (map show _ats_sources)) ++ "\n   "++
-           "with target "++ chain " or " (map (show . snd) _ctx_signs) ++"\n"
-         | null _signs
+         [ "9 on "++show _pos ++"\n   Cannot match "++
+           chain "\n     or "
+                 (map (\x-> "("++ _nm ++ ")["++show (fst x) ++ "*" ++ show (snd x) ++"]")
+                 _ctx_signs)
+           ++ "\n   to ["++
+           chain "\n     or " (map show _lhs_iConcs)
+           ++ "*"++
+           chain "\n     or " (map show _ats_sources)
+           ++ "]"
+         | null _signs, not (null _ats_sources), not (null _lhs_iConcs)
          ]
         )
 -- Pairs -------------------------------------------------------
