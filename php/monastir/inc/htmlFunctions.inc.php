@@ -11,11 +11,23 @@ function writeTitle($title){
 function writeCSS_blue(){
 	?>
 	<style type="text/css">
-	<!--
 	td,h3,a,p{
 		font-size:12pt;
 		color:black;
 		font-family: Helvetica;
+	}
+	input.text{
+		margin: 4px 4px 4px 0px;
+	}
+	p, h4{
+		margin-top: 0pt;
+		margin-bottom:12px;
+		margin-left: 4px;
+		margin-right: 4px;
+		padding: 0px;
+	}
+	h4{
+		margin-bottom: 0pt;
 	}
 	th{
 		text-align:left;
@@ -31,6 +43,17 @@ function writeCSS_blue(){
 	a {
 		text-decoration: underline;
 		color: #0A2B5E;
+	}
+	a.menuItem {
+		text-decoration: underline;
+		color: #0A2B5E;
+		width:100%;
+	}
+	a.selected{
+		text-decoration: underline;
+		color: #0A2B5E;
+		display:block;
+		padding:3pt 0pt 3pt 0pt;
 	}
 	.clickableRow:hover td, .clickableRow:hover{
 		background-color: #CCCCDD;
@@ -48,6 +71,9 @@ function writeCSS_blue(){
 		margin:0;
 		border:0;
 	}
+	.raised{
+		margin-bottom:12px;
+	}
 	.button{
 		color: #0A2B5E;
 	}
@@ -57,8 +83,6 @@ function writeCSS_blue(){
       height:100%;
       border:none
     }
-
-	-->
 	</style>
 	<?
 }

@@ -2,7 +2,7 @@
 
 // this file contains all code that is shared between both applications and views
 
-$DB_debug = 3; // 0 = show nothing except failures, 5 = show everything
+$DB_debug = 4; // 0 = show nothing except failures, 5 = show everything
 $DB_user = 'root';
 $DB_pass = 'root'; // if you wish, you can use $DB_pass = base64_decode('your_base64_encoded_password_here'); to decrease readability
 $DB_host = 'localhost';

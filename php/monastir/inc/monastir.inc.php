@@ -71,10 +71,11 @@ class viewableText extends anyView{
 	var $id;
 	function display($edit=false){
 		if($edit){
-			if($edit===true)$edit=$this->id;
+			if($edit===true) $edit=$this->id;
 			if(isset($this->caption))
-			echo htmlspecialchars($this->caption).': ';
-			echo '<INPUT TYPE="TEXT" NAME="'.htmlspecialchars($edit).'" VALUE="'.$this->text.'" />';
+			echo '<P>'.htmlspecialchars($this->caption).': ';
+			echo '<INPUT TYPE="TEXT" CLASS="text" NAME="'.htmlspecialchars($edit).'" VALUE="'.$this->text.'" />';
+			if(isset($this->caption)) echo '</P>';
 		}else{
 			if(isset($this->style)) echo '<'.$this->style.'>';
 			echo htmlspecialchars($this->text);
@@ -116,7 +117,7 @@ class viewableList extends anyView{
 		 //else echo $this->caption;
 		}
 		if($this->wrapping){
-			echo '<TABLE class=hidden height=1 width=100%><TR>';
+			echo '<TABLE class="hidden raised" height=1 width=100%><TR>';
 			echo '<TD width=10   height=10 class=hidden><IMG class=hidden width=10   height=10 src="'.$this->iDir.'m/lb1.png" /></TD>';
 			echo '<TD width=100% height=10 class=hidden><IMG class=hidden width=100% height=10 src="'.$this->iDir.'m/zijde_b1.png" /></TD>';
 			echo '<TD width=10   height=10 class=hidden><IMG class=hidden width=10   height=10 src="'.$this->iDir.'m/rb1.png" /></TD>';
@@ -126,7 +127,7 @@ class viewableList extends anyView{
 		}
 		$colspan=0;
 		if(!$this->One){
-			echo "\r\n".'<TABLE height=1 width=100% class=hidden>';
+			echo "\r\n".'<TABLE height=1 width=100% class="hidden">';
 			if(isset($header) && count($header)){
 				echo "\r\n".'<TR>';
 				$colspan=0;
@@ -164,7 +165,9 @@ class viewableList extends anyView{
 					foreach($this->header as $j=>$h){
 						$h->style='h4';
 						$h->display();
+						echo '<P>';
 						$v[$j]->display();
+						echo '</P>';
 					}
 				}
 			}
@@ -244,13 +247,16 @@ class expandableList extends viewableList{
 			}
 		}else if(!$this->One){
 			$this->dispNone(count($this->header));
+		}else if($edit){ // edit should allways be true, or this wouldn't have happened
+			$this->displayRow(null,$edit,0,count($this->elements));
 		}
-		if($edit && (!$this->One || !count($this->elements))) $this->displayEmptyRow($this->header);
+		if($edit && (!$this->One)) $this->displayEmptyRow($this->header);
 		$this->displaytail();
 	}
-	function displayRow($row,$edit=false,$rowId=0,$totRow=0){
+	function displayRow($row=null,$edit=false,$rowId=0,$totRow=0){
 		if(!$this->One)
 			echo "\r\n  <TR>";
+		if(isset($row->id))$id=$row->id; else $id='';
 		$page=@$this->object->page;
 		if($edit){
 			$rowID=$this->traceID.'%'.$rowId;
@@ -264,30 +270,34 @@ class expandableList extends viewableList{
 					$h=new viewableText($v->type->name);
 					$h->style='h4';
 					$h->display();
+					if($v->mult->uni) echo '<P>';
 				}
 				$myRow = new expandableList();
 				$myRow->assign("One",$v->mult->uni);
 				$myRow->assign("Tot",$v->mult->tot);
 				$myRow->assign('object',$v->type);
+				if(isset($row))
 				$myRow->assign('elements',$row->$type);
+				else $myRow->assign('elements',array());
 				if($edit) $myRow->display(true,$rowID.'%'.$type);
 				else $myRow->display();
 				if(!$this->One)
 					echo "</TD>";
+				else if($v->mult->uni) echo '</P>';
 			}
 			if($edit){
-				echo '<INPUT TYPE="hidden" NAME="'.htmlspecialchars($rowID).'_" VALUE="'.htmlspecialchars($row->id).'" />';
+				echo '<INPUT TYPE="hidden" NAME="'.htmlspecialchars($rowID).'_" VALUE="'.htmlspecialchars($id).'" />';
 			}
 		}else{
 			if(!$this->One)
 				echo '<TD>';
-			$myTxt = new viewableText($row->id);
+			$myTxt = new viewableText($id);
 			if($edit){
 				$myTxt->assign("id",$rowID.'_');
-				//$myTxt->assign('default',$row->id);
+				//$myTxt->assign('default',$id);
 				$myTxt->display($edit);
 			}else{
-				if(isset($page)) echo '<A HREF="JavaScript:go(\''.htmlspecialchars(addslashes($row->id).'\',\''.addslashes($page)).'\');">';
+				if(isset($page)) echo '<A HREF="JavaScript:go(\''.htmlspecialchars(addslashes($id).'\',\''.addslashes($page)).'\');">';
 				$myTxt->display();
 				if(isset($page)) echo '</A>';
 			}
@@ -420,7 +430,9 @@ class monastir Extends anyView {
 				}
 				$list->assign("elements",$elements);
 				$this->assign("contents",$list);
+				$list->wrapping=false;
 			}
+			//$list->wrapping=false;
 	}
 	function assign($var,$val){
 		if     ($var=='actions'   ) $this->actions   = $val;
@@ -551,23 +563,30 @@ class monastir Extends anyView {
 						echo '<TD class="hidden" height=8 width=24 border=0 /><IMG src="'.$iDir.'l/bar_rechts.png" height=8 width=24 border=0 /></TD></TR>';
 					}
 					echo "\r\n  ".'<TR>';
-					echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
-					echo '<TD class="hidden" bgcolor=white valign=top>';
-					if(!$first) echo '<BR />';
 					if(is_array($component)){
-						$second=false;
 						foreach($component as $i=>$v){
-							if($second){
-								echo '<TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
+							if($v->selected){
+								echo "\r\n  ".'<TR>';
+								echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links_sel.png" border=0 /><IMG src="'.$iDir.'l/zijde_links_sel.png" height=21 width=27 border=0 /></TD>';
+								echo '<TD class="hidden" background="'.$iDir.'l/bg_sel.png" valign=middle>';
+								$v->display();
+								echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts_sel.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts_sel.png" height=24 width=24 border=0 /></TD>';
 								echo '</TR>';
+							}else{
 								echo "\r\n  ".'<TR>';
 								echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
-								echo '<TD class="hidden" bgcolor=white valign=top>';							
-							} else $second=true;
-							$v->display();
+								echo '<TD class="hidden" bgcolor=white valign=middle>';		
+								$v->display();
+								echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
+								echo '</TR>';
+							}
 						}
-					}else $component->display();
-					echo '<TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
+					}else{
+						echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
+						echo '<TD class="hidden" bgcolor=white valign=middle>';
+						$component->display();
+						echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
+					}
 					echo '</TR>';
 					$first=false;
 				}
@@ -735,17 +754,23 @@ class menuItem {
 	var $link;
 	var $url;
 	var $title;
+	var $selected=false;
 	var $class;
 	var $warning=array();
 	function assign($var,$val){
 		if     ($var=='link' ) $this->link  = $val;
-		else if($var=='url'  ) $this->url   = $val;
+		else if($var=='url'  ) {
+			$this->url   = $val;
+			$pp = pathinfo($_SERVER['PHP_SELF']);
+			if($val == $_SERVER['PHP_SELF'] || $val==$pp['basename']) $this->selected=true;
+		}
 		else if($var=='title') $this->title = $val;
 		else if($var=='class') $this->class = $val;
 		else $this->warning[] = $var.' cannot be assigned.';
 	}
 	function menuItem($url="#",$title="",$class="",$link="???"){
-		$this->link=$link;$this->url=$url;$this->title=$title;$this->class=$class;
+		$this->link=$link;$this->title=$title;$this->class=$class;
+		$this->assign('url',$url);
 	}
 	function display(){
 		$url='null,\''.htmlspecialchars(addslashes($this->url)).'\'';$title=$this->title;$class=$this->class;$link=$this->link;
@@ -757,6 +782,7 @@ class menuItem {
 		$title=htmlspecialchars($title);
 		$link=$link;
 		$class=htmlspecialchars($class);
+		if($this->selected) $class.=' selected';
 		echo "<A HREF=\"JavaScript:go($url)\" TITLE=\"$title\" class=\"$class\" />$link</A>";
 	}
 }

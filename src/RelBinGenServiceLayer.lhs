@@ -207,7 +207,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >  createAndSelectDB context dbName noTrans
 >   =  [ ""
 >      , "if(!$DB_slct){"
->      , "      DB_debug( \"Warning: error connecting to database, building database\",2 );"
+>      , "      DB_debug( \"Warning: error connecting to database, building database\",3 );"
 >      , "      mysql_query(\"CREATE DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not create DB "++dbName++"');"
 >      , "      $DB_slct = mysql_select_db('"++ dbName {- was: $DB_daba -} ++"',$DB_link) or die ('Could not select DB "++dbName++"');"
 >      , "      $DB_errs = false;"
@@ -241,7 +241,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >      , "           DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
 >      , "        }"
 >      , "  }else{"
->      , "    DB_debug( \"Connected to database\",2 );"
+>      , "    DB_debug( \"Connected to database\",3 );"
 >      , "  }"
 >      ]
 

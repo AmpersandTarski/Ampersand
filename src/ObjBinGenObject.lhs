@@ -16,64 +16,15 @@
 >   = (chain "\n  "
 >     ([ "<?php // generated with "++adlVersion
 >      , ""
->      , "/********* file "++filename++" on line "++(show (pos object))
+>      , "/********* on "++(show (pos object))
 >      ] ++ (map ((++) " * ") (
->         ("OBJECT "++(name object)++"["++(name (concept object))++"]")
->       :[ "    " ++ (name a) ++ " : " ++ (showADL (ctx a))
->        | a <- attributes object
->        ] ++ ["ENDOBJECT"] )) ++
+>                showObjDef object )) ++
 >      [" *********/"
 >      , ""
->      , "function getobject_"++(name object)++"(){"
->      , "  return new object(\""++(name object)++"\",array"
->      , "    (" ++ (chain "\n      ,"
->        [ "new oRef( new oMulti( " ++ (hasm Inj m) ++ ","
->                                   ++ (hasm Uni m) ++ ","
->                                   ++ (hasm Sur m) ++ ","
->                                   ++ (hasm Tot m) ++ " ) // derived from "++(showADL (ctx a))
->           ++ "\n             , new object(\""++name a++"\",array()"++ (phpage (concept a)) ++ ") // "++(show (concept a))
->           ++ "\n             )"
->        | a <- attributes object, m <- [multiplicities (ctx a)]
->        ])
->      , "    )"++(phpage (concept object))++");"
->      , "}"
->      , ""
->      , "class "++(name object)++" {"] ++ (map ((++) "  ") (
->        ["var $id;"]
->        ++ ["var $"++(name a)++";"| a <- attributes object]++
->        ["function "++(name object)++"($id=null, "
->                                   ++  (chain ", " ["$"++(name a)++"=array()" | a<-attributes object])
->                                   ++"){"
->        ,"    $this->id=$id;"]
->        ++ ["    $this->"++(name a)++"=$"++(name a)++";"| a <- attributes object] ++
->        ["}"]
->        ++ (concat
->           [ ["function add_"++(name a)++"("++(name object)++"_"++(name a)++" $"++(name a)++"){"
->             ,"  return $this->"++(name a)++"[]=$"++(name a)++";"
->             ,"}"
->             ]
->           | a <- attributes object
->           ]
->           )++
->        ["function addGen($type,$value){"
->        ]++ [ "  if($type=='"++(name a)++"') return $this->add_"++(name a)++"($value);"
->            | a <- attributes object
->            ] ++
->        ["  else return false;"
->        ,"}"
->        ]
->        )) ++
+>      , "function getobject_"++(name object)++"(){"]
+>      ++ addFstLst "  return " ";" (map ((++) "  ") (getObject object)) ++
 >      [ "}"
->      ] ++ (concat
->           [ ["class "++(name object)++"_"++(name a)++" {"
->             ,"    var $id;"
->             ,"    function "++(name object)++"_"++(name a)++"($id) {"
->             ,"        $this->id=$id;"
->             ,"    }"
->             ,"}"]
->           |a <- attributes object
->           ]
->           ) ++
+>      , ""] ++ showClasses [] object ++
 >      ["function getEach"++(capname)++"(){"
 >      ,"    return DB_doquer('"++(selectExpr context
 >                                             25
@@ -86,6 +37,7 @@
 >      ,"    return update"++capname++"($obj,true);"
 >      ,"}"
 >      ,"function read"++capname++"($id){"
+>      ,"    // check existance of $id"
 >      ,"    $ctx = DB_doquer('"++(selectExpr context
 >                                             25
 >                                             (sqlAttConcept context (concept object))
@@ -100,17 +52,14 @@
 >      ]
 >      ++ (concat (map (map ((++) "    "))
 >             [ [ "$ctx = DB_doquer('"++ (selectExprForAttr a object "$id") ++"');"
->               , "foreach($ctx as $i=>$v){"
->               , "    $obj->add_"++(name a)++"(new "++(name object)++"_"++(name a)++"($v['"++(sqlExprTrg (ctx a))++"']));"
->               , "}"
->               ]
+>               , "foreach($ctx as $i=>$v1){"
+>               ] ++ readObject a [name object] ++ [ "}" ]
 >             | a <-attributes object
 >             ]
 >            )) ++
 >      ["    return $obj;"
 >      ,"}"]
-
->{-    ++
+>      ++
 >      ["function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
 >      ,"    global $DB_link,$DB_err,$DB_lastquer;"
 >      ,"    $preErr= $new ? 'Cannot create new "++(addslashes (name (concept object)))++": ':'Cannot update "++(addslashes (name (concept object)))++": ';"
@@ -140,7 +89,7 @@
 >               , "$"++(name a)++"_str=join(',',$arr);"
 >               , "DB_doquer( '"++(deleteExprForAttr a object ("$"++(name object)++"->id"))++"');"
 >               ]
->             | a <- termAtts -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
+>             | a <- termAtts object -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
 >             ]
 >            )) ++
 >      ["    }"
@@ -159,13 +108,13 @@
 >                 ++        ",\\''.addslashes($v->id).'\\')');"
 >               , "}"
 >               ]
->             | a <- termAtts -- De expressie ctx a bevat precies één morfisme.
+>             | a <- termAtts object -- De expressie ctx a bevat precies één morfisme.
 >             , m <- mors a   -- De morfismen uit 'mors' zijn allemaal inline.
 >             ]
 >            )) ++ (concat (map (map ((++) "    "))
 >             [ [ "if(!$new && strlen($"++(name a)++"_str))"
 >               ] ++ (do_del_quer a)
->             | a <- termAtts
+>             | a <- termAtts object
 >             ])) ++ checkRuls ++
 >      ["    if(true){ // all rules are met"
 >      ,"        DB_doquer('COMMIT');"
@@ -173,8 +122,9 @@
 >      ,"    }"
 >      ,"    DB_doquer('ROLLBACK');"
 >      ,"    return false;"
->      ,"}"
->      ,"function delete"++capname++"($id){"
+>      ,"}"]
+>      ++
+>      ["function delete"++capname++"($id){"
 >      ,"  global $DB_err;"
 >      ,"  DB_doquer('START TRANSACTION');"
 >      ,"  "] ++ concat (map (map ((++) "    "))
@@ -189,7 +139,7 @@
 >               ]
 >             | cpt <- [concept object]
 >             , m@(Mph _ _ _ _ _ d) <- morsWithCpt cpt
->             , not (elem (makeInline m) (mors termAtts))  -- mors yields all morphisms inline.
+>             , not (elem (makeInline m) (mors (termAtts object)))  -- mors yields all morphisms inline.
 >             ])
 >          ++ (concat (map (map ((++) "      "))
 >             [ [ "$effected = DB_doquer('"++ (selectExprForAttr a object "$id") ++"');"
@@ -200,7 +150,7 @@
 >               , "$"++(name a)++"_str=join(',',$arr);"
 >               , "DB_doquer ('"++(deleteExprForAttr a object "$id")++"');"
 >               ]
->             | a <- termAtts
+>             | a <- termAtts object
 >             ]
 >            )) ++
 >      ["  DB_doquer('DELETE FROM "++(sqlConcept context (concept object))
@@ -208,7 +158,7 @@
 >      ] ++ (concat (map (map ((++) "  "))
 >             [ [ "if(strlen($"++(name a)++"_str))"
 >               ] ++ (do_del_quer a)
->             | a <- termAtts
+>             | a <- termAtts object
 >             ])) ++ checkRuls ++
 >      ["  if(true) {"
 >      ,"    DB_doquer('COMMIT');"
@@ -218,10 +168,96 @@
 >      ,"  return false;"
 >      ,"}"
 >      ]
-> -}
+>
 
 >     )) ++ "\n?>"
 >    where
+>     showObjDef a | null (attributes a) =
+>      [  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
+>       ]
+>     showObjDef a =
+>      (  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
+>       ):(concat (mapHeadTail (mapHeadTail ((++) " = [ ")
+>                                           ((++) "     "))
+>                              (mapHeadTail ((++) "   , ")
+>                                           ((++) "     "))
+>                              [ (showObjDef as)
+>                              | as <- attributes a
+>                              ]
+>                 )
+>         ) ++ ["  ]"]
+
+>     getObject o | null (attributes o) = 
+>      [ "new object(\""++(name o)++"\", array()"++phpage (concept o)++")"
+>      ]
+>     getObject o =
+>      [ "new object(\""++(name o)++"\", array"
+>      ]
+>      ++ (concat(mapHeadTail  (mapHeadTail ((++) "   ( ")
+>                                           ((++) "     "))
+>                              (mapHeadTail ((++) "   , ")
+>                                           ((++) "     "))
+>                              [ concat
+>                                 [["new oRef( new oMulti( " ++ (hasm Inj m) ++ ","
+>                                                           ++ (hasm Uni m) ++ ","
+>                                                           ++ (hasm Sur m) ++ ","
+>                                                           ++ (hasm Tot m) ++ " ) // derived from "++(showADL (ctx a))
+>                                 ], (mapHeadTail ((++) "  , ") ((++) "   ") (getObject a))
+>                                  , ["  ) "]]
+>                              | a <- attributes o, m <- [multiplicities (ctx a)]
+>                              ]
+>         )       )++["   )"++phpage (concept o)++")"]
+>
+>     showClasses nm o =
+>        [ "class "++concat [n++"_"|n<-nm] ++(name o) ++" {"] ++
+>        (map ((++) "  ") (
+>         ["var $id;"]
+>         ++ ["var $"++(name a)++";"| a <- attributes o]++
+>         ["function "++concat [n++"_"|n<-nm]++(name o)++"($id=null"
+>                                    ++  (concat [", $"++(name a)++"=array()" | a<-attributes o])
+>                                    ++"){"
+>         ,"    $this->id=$id;"]
+>         ++ ["    $this->"++(name a)++"=$"++(name a)++";"| a <- attributes o] ++
+>         ["}"]
+>         ++ (concat
+>            [ ["function add_"++(name a)++"("++concat [n++"_"|n<-nm++[name o]]++(name a)++" $"++(name a)++"){"
+>              ,"  return $this->"++(name a)++"[]=$"++(name a)++";"
+>              ,"}"
+>              ]
+>            | a <- attributes o
+>            ]
+>            )++
+>         ["function addGen($type,$value){"
+>         ]++ [ "  if($type=='"++(name a)++"') return $this->add_"++(name a)++"($value);"
+>             | a <- attributes o
+>             ] ++
+>         ["  else return false;"|length (attributes o) > 0] ++
+>         ["}"
+>         ]
+>         )) ++
+>        [ "}"
+>        ] ++ (concat [ showClasses (nm++[name o]) a |a <- attributes o ] )
+
+>     readObject a nm =
+>      ["    $obj->add_"++(name a)++"(new "++concat [m++"_"|m<-nm]++(name a)++"($v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']));"
+>      ]
+>      ++ (concat (map (map ((++) "    "))
+>             [ [ "$ctx"++(show (n+1))++" = DB_doquer('"++ (selectExprForAttr as object ("$v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']")) ++"');"
+>               , "foreach($ctx"++(show (n+1))++" as $i=>$v"++(show (n+1))++"){"
+>               ] ++ readObject as (nm++[name a]) ++ [ "}" ]
+>             | as <-attributes a
+>             ]
+>            ))
+>      where n = length nm
+
+
+>     mapTail f (a:as) = a:(map f as)
+>     mapHead f (a:as) = (f a):as
+>     addFstLst f1 f2 (a:as) = (f1++a):(addLst f2 as)
+>     addLst f (a:[]) = [a++f]
+>     addLst f (a:as) = a:(addLst f (as))
+>     mapHeadTail f1 f2 (a:as) = (f1 a):(map f2 as)
+
 >     checkRuls
 >           = (concat
 >             [ ["  if (!checkRule"++show (nr rul)++"()){"
@@ -238,7 +274,7 @@
 >               , "    WHERE "++(sqlExprTrg (ctx a))++" IN ('.$"++(name a)++"_str.')"
 >               ] ++ concat (
 >                  [ andNEXISTquer (ctx a) m
->                  | m <- morsWithCpt (concept a)
+>                  | m@(Mph _ _ _ _ _ _) <- morsWithCpt (concept a)
 >                  ]
 >                  ) ++
 >               [ "  ');"]
@@ -261,10 +297,10 @@
 
 > --Precondition: ctx a bevat precies één morfisme
 >     deleteExprForAttr a parent id
->       = "DELETE FROM "++(sqlMorName context.head.mors.ctx) a++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
+>       = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
 >     hasm m ms = if elem m ms then "true" else "false"
 >     capname = (toUpper (head (name object))):(tail (name object))
->     termAtts = [a|a<-attributes object, length [m| m<-morlist (ctx a)]==1] -- Dit betekent: de expressie ctx a bevat precies één morfisme.
+>     termAtts o = [a|a<-attributes o, (Tm (Mph _ _ _ _ _ _))<-[ctx a]] -- Dit betekent: de expressie ctx a bevat precies één morfisme.
 >     morsWithCpt cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
 >     phpage c = mystr (objectOfConcept context c)
 >       where mystr Nothing = ""

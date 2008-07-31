@@ -1,7 +1,7 @@
 CONTEXT Outlook
-
-    {-OBJECT index[Anything] : V
-     = [ people : V[Anything*Person]
+	{-
+    OBJECT index : V
+     = [ people : V
          = [ person : I[Person] -- go to 'accounts [Person]'
            , account : accountOwner~
              = [ name :  boxName -- will take you to 'accountMails [Account]'
@@ -12,8 +12,8 @@ CONTEXT Outlook
 				   ]
                ]
            ]
-       ]-}
-    
+       ]
+    -}
 	OBJECT Accounts [Person]
 	 = [ account : accountOwner~ ]
 	
