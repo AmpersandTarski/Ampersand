@@ -78,44 +78,9 @@
 >      ,"          DB_doquer('ROLLBACK');"
 >      ,"          return false;"
 >      ,"      }"
->      ,"    }else{"
->      ,"      // destroy old attribute values"
->      ] ++ (concat (map (map ((++) "      "))
->             [ [ "$effected = DB_doquer('"++ (selectExprForAttr a object ("$"++(name object)++"->id")) ++"');"
->               , "$arr=array();"
->               , "foreach($effected as $i=>$v){"
->               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
->               , "}"
->               , "$"++(name a)++"_str=join(',',$arr);"
->               , "DB_doquer( '"++(deleteExprForAttr a object ("$"++(name object)++"->id"))++"');"
->               ]
->             | a <- termAtts object -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
->             ]
->            )) ++
->      ["    }"
->      ] ++ (concat (map (map ((++) "    "))
->             [ [ "foreach($"++(name object)++"->"++(name a)++" as $i=>$v){"
->               , "  if(!isset($v->id)){"
->               , "     $nextNum = DB_doquer('"++(autoIncQuer (concept a))++"');"
->               , "     $v->id = @$nextNum[0][0]+0;"
->               , "  }else{"
->               , "     // check cardinalities..."
->               , "  }"
->               , "  DB_doquer('"++(insertConcept (concept a) "$v->id" True)++"');"
->               , "  DB_doquer('INSERT IGNORE INTO "
->                 ++(sqlMorName context m)++" ("++(sqlExprSrc (ctx a))++","++(sqlExprTrg (ctx a))++")"
->                 ++" VALUES (\\''.addslashes($"++(name object)++"->id).'\\'"
->                 ++        ",\\''.addslashes($v->id).'\\')');"
->               , "}"
->               ]
->             | a <- termAtts object -- De expressie ctx a bevat precies één morfisme.
->             , m <- mors a   -- De morfismen uit 'mors' zijn allemaal inline.
->             ]
->            )) ++ (concat (map (map ((++) "    "))
->             [ [ "if(!$new && strlen($"++(name a)++"_str))"
->               ] ++ (do_del_quer a)
->             | a <- termAtts object
->             ])) ++ checkRuls ++
+>      ,"    }else"]
+>      ++ updateObject (name object) object
+>      ++ checkRuls ++
 >      ["    if(true){ // all rules are met"
 >      ,"        DB_doquer('COMMIT');"
 >      ,"        return $"++(name object)++"->id;"
@@ -124,10 +89,12 @@
 >      ,"    return false;"
 >      ,"}"]
 >      ++
+
 >      ["function delete"++capname++"($id){"
 >      ,"  global $DB_err;"
 >      ,"  DB_doquer('START TRANSACTION');"
->      ,"  "] ++ concat (map (map ((++) "    "))
+>      ,"  "] ++
+>      concat (map (map ((++) "    "))
 >             [ ["$taken = DB_doquer('"++(selectExprWithF (Tm m) cpt "$id")++"');"
 >               ,"if(count($taken)) {"
 >               ,"  $DB_err = 'Cannot delete "++(name object)++": "
@@ -141,25 +108,7 @@
 >             , m@(Mph _ _ _ _ _ d) <- morsWithCpt cpt
 >             , not (elem (makeInline m) (mors (termAtts object)))  -- mors yields all morphisms inline.
 >             ])
->          ++ (concat (map (map ((++) "      "))
->             [ [ "$effected = DB_doquer('"++ (selectExprForAttr a object "$id") ++"');"
->               , "$arr=array();"
->               , "foreach($effected as $i=>$v){"
->               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
->               , "}"
->               , "$"++(name a)++"_str=join(',',$arr);"
->               , "DB_doquer ('"++(deleteExprForAttr a object "$id")++"');"
->               ]
->             | a <- termAtts object
->             ]
->            )) ++
->      ["  DB_doquer('DELETE FROM "++(sqlConcept context (concept object))
->       ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addslashes($id).'\\'');"
->      ] ++ (concat (map (map ((++) "  "))
->             [ [ "if(strlen($"++(name a)++"_str))"
->               ] ++ (do_del_quer a)
->             | a <- termAtts object
->             ])) ++ checkRuls ++
+>      ++ deleteObject (name object) object ++ checkRuls ++
 >      ["  if(true) {"
 >      ,"    DB_doquer('COMMIT');"
 >      ,"    return true;"
@@ -250,6 +199,68 @@
 >            ))
 >      where n = length nm
 
+>--     updateObject :: String -> a -> [String]
+>     updateObject nm o =
+>      ["    if(!$new){"
+>      ,"      // destroy old attribute values"
+>      ] ++ (concat (map (map ((++) "      "))
+>             [ [ "$effected = DB_doquer('"++ (selectExprForAttr a o ("$"++nm++"->id")) ++"');"
+>               , "$arr=array();"
+>               , "foreach($effected as $i=>$v){"
+>               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
+>               , "}"
+>               , "$"++nm++"_"++(name a)++"_str=join(',',$arr);"
+>               , "DB_doquer( '"++(deleteExprForAttr a o ("$"++nm++"->id"))++"');"
+>               ]
+>             | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
+>             ]
+>            )) ++
+>      ["    }"
+>      ] ++ (concat (map (map ((++) "    "))
+>             [ [ "foreach($"++nm++"->"++(name a)++" as $i=>$"++nm++"_"++(name a)++"){"
+>               , "  if(!isset($"++nm++"_"++(name a)++"->id)){"
+>               , "     $nextNum = DB_doquer('"++(autoIncQuer (concept a))++"');"
+>               , "     $"++nm++"_"++(name a)++"->id = @$nextNum[0][0]+0;"
+>               , "  }else{"
+>               , "     // check cardinalities..."
+>               , "  }"
+>               , "  DB_doquer('"++(insertConcept (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
+>               , "  DB_doquer('INSERT IGNORE INTO "
+>                 ++(sqlMorName context (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
+>                 ++" VALUES (\\''.addslashes($"++nm++"->id).'\\'"
+>                 ++        ",\\''.addslashes($"++nm++"_"++(name a)++"->id).'\\')');"
+>               ] ++ updateObject (nm++"_"++(name a)) a ++
+>               [ "}"
+>               ]
+>             | a <- termAtts o -- De expressie ctx a bevat precies één morfisme.
+>             , m <- [ctx a]   -- De morfismen uit 'mors' zijn allemaal inline.
+>             ]
+>            )) ++ (concat (map (map ((++) "    "))
+>             [ [ "if(!$new && strlen($"++nm++"_"++(name a)++"_str))"
+>               ] ++ (do_del_quer a)
+>             | a <- termAtts o
+>             ]))
+
+>     deleteObject nm o =
+>      (concat (map (map ((++) "      "))
+>             [ [ "$effected = DB_doquer('"++ (selectExprForAttr a o "$id") ++"');"
+>               , "$arr=array();"
+>               , "foreach($effected as $i=>$v){"
+>               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
+>               , "}"
+>               , "$"++(name a)++"_str=join(',',$arr);"
+>               , "DB_doquer ('"++(deleteExprForAttr a object "$id")++"');"
+>               ]
+>             | a <- termAtts o
+>             ]
+>            )) ++
+>      ["  DB_doquer('DELETE FROM "++(sqlConcept context (concept object))
+>       ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addslashes($id).'\\'');"
+>      ] ++ (concat (map (map ((++) "  "))
+>             [ [ "if(strlen($"++(name a)++"_str))"
+>               ] ++ (do_del_quer a)
+>             | a <- termAtts object
+>             ])) 
 
 >     mapTail f (a:as) = a:(map f as)
 >     mapHead f (a:as) = (f a):as

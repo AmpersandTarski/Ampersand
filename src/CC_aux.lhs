@@ -597,13 +597,13 @@ Transform a rule to an expression:
 
 >   mors (Tm m)                                   = mors (makeInline m)
 >   mors (Tc f)                                   = mors f
->   mors (F ts)                                   = mors ts
->   mors (Fd ts)                                  = mors ts
+>   mors (F ts)                                   = mors ts -- voor a;-b;c hoeft geen extra mors rond b nodig te zijn
+>   mors (Fd ts@(h:t))                            = rd (mors ts ++ (concat) [mors (source c)|c<-t])
 >   mors (Fu fs)                                  = mors fs
->   mors (Fi fs)                                  = mors fs
+>   mors (Fi fs)                                  = mors fs -- voor a /\ -b hoeft geen extra mors rond b nodig te zijn
 >   mors (K0 e)                                   = mors e
 >   mors (K1 e)                                   = mors e
->   mors (Cp e)                                   = mors e
+>   mors (Cp e)                                   = rd (mors e ++ mors (source e)++mors (target e))
 
 >   morlist (Tm m)                                = morlist m
 >   morlist (Tc f)                                = morlist f
@@ -692,7 +692,7 @@ Transform a rule to an expression:
 >  instance Morphical ObjectDef where
 >   concs        (Obj nm pos ctx ats) = [source ctx] `uni` concs ats
 >   conceptdefs  (Obj nm pos ctx ats) = []
->   mors         (Obj nm pos ctx ats) = mors ctx `uni` mors ats
+>   mors         (Obj nm pos ctx ats) = mors ctx `uni` mors ats `uni` mors (target ctx)
 >   morlist      (Obj nm pos ctx ats) = morlist ctx++morlist ats
 >   declarations (Obj nm pos ctx ats) = []
 >   closExprs    (Obj nm pos ctx ats) = closExprs ctx `uni` closExprs ats
