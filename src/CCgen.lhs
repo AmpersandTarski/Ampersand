@@ -18,6 +18,7 @@
 >  import ERmodel (erAnalysis)
 >  import ClassDiagram (cdModel,cdDataModel)  
 >  import RelBinGen
+>  import ObjBinGen
 
 functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 
@@ -83,6 +84,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
 >  -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
+>                 [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
 >                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]++
