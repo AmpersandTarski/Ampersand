@@ -48,7 +48,7 @@
 >                                             )
 >                                 )++"');"
 >      ,"    if(count($ctx)==0) return false;"
->      ,"    $obj = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
+>      ,"    $obj1 = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
 >      ]
 >      ++ (concat (map (map ((++) "    "))
 >             [ [ "$ctx = DB_doquer('"++ (selectExprForAttr a object "$id") ++"');"
@@ -57,7 +57,7 @@
 >             | a <-attributes object
 >             ]
 >            )) ++
->      ["    return $obj;"
+>      ["    return $obj1;"
 >      ,"}"]
 >      ++
 >      ["function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
@@ -188,7 +188,7 @@
 >        ] ++ (concat [ showClasses (nm++[name o]) a |a <- attributes o ] )
 
 >     readObject a nm =
->      ["    $obj->add_"++(name a)++"(new "++concat [m++"_"|m<-nm]++(name a)++"($v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']));"
+>      ["    $obj"++(show (n+1))++"=$obj"++(show n)++"->add_"++(name a)++"(new "++concat [m++"_"|m<-nm]++(name a)++"($v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']));"
 >      ]
 >      ++ (concat (map (map ((++) "    "))
 >             [ [ "$ctx"++(show (n+1))++" = DB_doquer('"++ (selectExprForAttr as object ("$v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']")) ++"');"

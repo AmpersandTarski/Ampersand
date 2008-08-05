@@ -177,11 +177,15 @@ class viewableList extends anyView{
 		$this->displaytail();
 	}
 	function dispNone($colspan=0){
-		echo '<TR><TD';
-		if($colspan>0){
-			echo ' colspan='.$colspan;
-		}
-		echo '><I>None</I></TD></TR>';
+		if(!$this->One){
+			echo '<TR><TD';
+			if($colspan>0){
+				echo ' colspan='.$colspan;
+			}
+			echo '>';
+		} else echo '<P>';
+		echo '<I>None</I>';
+		if(!$this->One) echo '</TD></TR>'; else echo '</P>';
 	}
 	function displaytail(){
 		if(!$this->One){
@@ -245,7 +249,7 @@ class expandableList extends viewableList{
 			foreach($this->elements as $i=>$v){
 				$this->displayRow($v,$edit,$i,count($this->elements));
 			}
-		}else if(!$this->One){
+		}else if(!$this->Tot){
 			$this->dispNone(count($this->header));
 		}else if($edit){ // edit should allways be true, or this wouldn't have happened
 			$this->displayRow(null,$edit,0,count($this->elements));

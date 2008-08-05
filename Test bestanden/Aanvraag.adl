@@ -15,6 +15,10 @@ OBJECT Person [Person]
  
 OBJECT Application [Application]
    =[  applicant : applicant
+       = [ person : I[Person]
+         , idDocument : authentic
+         , residence : inhabitant
+         ]
     , checked   : checked
     , kind      : kind[Application*Product]
     , assigned  : assigned
