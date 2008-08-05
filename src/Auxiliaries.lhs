@@ -9,6 +9,7 @@
 >  , commaEng
 >  , commaNL
 >  , clos1
+>  , clos
 >  , diag
 >  , sort
 >  , sord
@@ -28,7 +29,7 @@
 >  import Char (isAlpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
 >  import CommonClasses (Collection(isc,uni,(>-)))
 
->  adlVersion = "ADL vs. 0.8.09"
+>  adlVersion = "ADL vs. 0.8.10"
 >  encode :: String -> Int
 >  encode  = enc.reverse
 >   where enc "" = 0
@@ -61,6 +62,8 @@
 ----------------------------------------------------
 Warshall's transitive closure algorithm in Haskell:
 ----------------------------------------------------
+clos1 [[1,2],[2,3],[4,5]] = [[1,2],[2,3],[4,5],[1,3]]
+clos1 [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]] = [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24],[1,3],[12,5],[6,0],[6,24],[6,5]]
 
 >  clos1 :: (Eq b) => [[b]] -> [[b]] 
 >  clos1 xs
@@ -68,6 +71,77 @@ Warshall's transitive closure algorithm in Haskell:
 >      where
 >       f q (x:xs) = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs
 >       f q []     = q
+
+----------------------------------------------------
+clos is meant to calculate all paths, truncated at the first complete cycle.
+----------------------------------------------------
+clos [[1,2],[2,3],[4,5]]
+  = [[[1,2],[2,3]]
+    ,[[4,5]]]
+clos [[1,2],[2,1]]
+  = [[[1,2],[2,1]]
+    ,[[2,1],[1,2]]]
+clos [[1,2],[2,3],[4,5],[3,4]]
+  = [[[1,2],[2,3],[3,4],[4,5]]]
+clos [[1,2],[2,3],[4,5],[5,1]]
+  = [[[4,5],[5,1],[1,2],[2,3]]]
+clos [[1,2],[2,3],[4,5],[3,4],[5,1]]
+  = [[[1,2],[2,3],[3,4],[4,5],[5,1]]
+    ,[[2,3],[3,4],[4,5],[5,1],[1,2]]
+    ,[[4,5],[5,1],[1,2],[2,3],[3,4]]
+    ,[[3,4],[4,5],[5,1],[1,2],[2,3]]
+    ,[[5,1],[1,2],[2,3],[3,4],[4,5]]]
+clos [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
+  = [[[6,12],[12,0],[0,5]]
+    ,[[1,2],[2,3]]
+    ,[[6,12],[12,24]]
+    ,[[4,5]]]
+
+>  clos :: (Eq a, Eq b) => (b->a) -> (b->a) -> [b] -> [[b]] 
+>  clos left right tuples
+>    = (unsublist.f 1) [[e]| e<-tuples]
+>      where
+>       m = length (rd [c|ts<-tuples, c<-[left ts,right ts]]) `min` length tuples  -- maximum path length possible
+>       f n pths
+>        = if n>length tuples then pths else
+>          f (2*n) (long++pths)
+>          where long = [xs++ys| xs<-pths, ys<-pths                         -- cartesian product
+>                              , n-length xs < length ys                    -- so: n < length (xs++ys)
+>                              , length ys <= (2*n `min` m)-length xs       -- so:     length (xs++ys) <=  (2*n `min` m)
+>                              , right (last xs)==left (head ys)            -- join
+>                              , not (or [t `isPrefix` xs| t<-tails ys])    -- no cycles
+>                              ]
+>       tails ts@(_:_) = ts: tails (tail ts)
+>       tails [] = []
+>       unsublist [] = []
+>       unsublist (xs:xss) = xs: unsublist[ys| ys<-xss, not (ys `isSublist` xs)]
+
+Test spul voor clos
+
+  tests = (putStr.chain "\n".map test)
+          [ [[1,2],[2,3],[4,5]]
+          , [[1,2],[2,1]]
+          , [[1,2],[2,3],[4,5],[3,4]]
+          , [[1,2],[2,3],[4,5],[5,1]]
+          , [[1,2],[2,3],[4,5],[3,4],[5,1]]
+          , [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
+          , []
+          ]
+   where
+    test c = "clos "++show c++" = "++show (clos head last c)
+
+
+>  isPrefix :: Eq a => [a] -> [a] -> Bool
+>  []     `isPrefix` _      = True
+>  (x:xs) `isPrefix` (y:ys) = x==y && xs `isPrefix` ys
+>  _      `isPrefix`  _     = False
+
+>  isSublist :: Eq a => [a] -> [a] -> Bool
+>  [] `isSublist` _  = True
+>  xs `isSublist` ys = xs `isPrefix` ys  ||  length xs<=length ys && xs `isSublist` tail ys
+
+clos [[1,2],[2,3],[4,5],[3,4]]
+f 1 [[[1,2]],[[2,3]],[[4,5]],[[3,4]]]
 
 Cartesian product by diagonalization of two (possibly infinite) lists
 
