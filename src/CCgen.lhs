@@ -75,6 +75,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                ([ anal contexts contextname ("-p" `elem` switches) (if "-crowfoot" `elem` switches then "crowfoot" else "cc")
 >                 | null switches || "-h" `elem` switches]++
 >                 [ makeXML contexts contextname| "-XML" `elem` switches]++
+>  --             [ showHaskell contexts contextname| "-Haskell" `elem` switches]++
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >                 [ functionalSpecLaTeX contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-Z" `elem` switches || "-fSpec" `elem` switches]++
 >  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
