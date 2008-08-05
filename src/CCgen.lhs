@@ -15,7 +15,7 @@
 >  import Graphic
 >  import Atlas (anal)
 >  import Xml (makeXML)
->  import ERmodel (erModel,erAnalysis)
+>  import ERmodel (erAnalysis)
 >  import ClassDiagram (cdModel,cdDataModel)  
 >  import RelBinGen
 
@@ -80,14 +80,14 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
 >                 [ archText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-arch" `elem` switches]++
 >                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
->                 [ erModel contexts contextname | "-ER" `elem` switches]++
+>  -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
 >                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]++
->                 [ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]++
->--               [ csvcontent contexts contextname | "-csv" `elem` switches]++
->                 [ putStr (show slRes) | "-dump" `elem` switches ]
+>                 [ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]
+>--               ++[ csvcontent contexts contextname | "-csv" `elem` switches]
+>--               ++[ putStr (show slRes) | "-dump" `elem` switches ]
 >                )>>
 >                   appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length ents)++"\n") >>

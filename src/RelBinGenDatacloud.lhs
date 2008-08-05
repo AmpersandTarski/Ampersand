@@ -15,7 +15,7 @@
 >     , "  require_once \""++filename++".php\";"
 >     , ""
 >     , "  // DB_titles is used for the entity headers with keys (Bas, klopt dit commentaar?)"
->     , if null (objects context) then "  $DB_conceptTypes   = Array();" else
+>     , if null (attributes context) then "  $DB_conceptTypes   = Array();" else
 >       "  $DB_conceptTypes = Array\n"++
 >       "      ( "++chain "\n      , " [ "\""++phpConcept context c++"\"\n        => Array ( "++chain ", " ["\""++phpRelName context s++"\""|s<-declarations context, source s==c || target s==c]++" )"
 >                                      | c<-concs context]

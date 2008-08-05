@@ -1597,7 +1597,7 @@ TODO: complete all accents and test
 >  latexDesignrule str
 >   = chain "\n" ["\\begin{designrule}{}", str, "\\end{designrule}"]
 
->  latexEmph x = "{\\em "++x++"}"
+>  latexEmph x = "\\emph{"++filter isAlphaNum x++"}"
 
 >  projectClassic :: Context -> [Ftheme] -> Lang -> String
 >  projectClassic context fs language

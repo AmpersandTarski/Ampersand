@@ -92,7 +92,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                        )++")"
 >      chrShw r = charshow r
 
->  {-
+
 >  serviceLayer context noTrans beeper dbName -- komt in het bestand <context>.php
 >   = chain "\n  " 
 >     [ "<? // generated with "++adlVersion
@@ -102,9 +102,9 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     , ""
 >     , "// DB_display is used for the entity headers"
 >     , (let xs = sord ["\""++phpRelName context s++"\" => Array (\"Name\"=>"++phpShow (name s)++", \"Src\"=>"++phpShow (name (source s))++", \"Trg\"=>"++phpShow (name (target s))++")"
->                                          | o@(Obj nm pos c ats)<-objects ctx, a<-ats, s<-declarations a   {-, not (isSignal s) -} ]++
->                                     ["\""++phpConcept context c++"\" => Array (\"Name\"=>"++phpShow (name c)++", \"Src\"=>"++phpShow (name c)++", \"Trg\"=>"++phpShow (name c)++")"
->                                     | o@(Obj nm pos c ats)<-objects ctx]
+>                                          | o@(Obj nm pos c ats)<-attributes context, a<-ats, s<-declarations a   {-, not (isSignal s) -} ]++
+>                                     ["\""++phpConcept context (concept o)++"\" => Array (\"Name\"=>"++phpShow (name o)++", \"Src\"=>"++phpShow (name o)++", \"Trg\"=>"++phpShow (name o)++")"
+>                                     | o<-attributes context]
 >        in if null xs then "$DB_display = Array();" else "$DB_display = Array\n      ( "++chain "\n      , " xs++"\n      );")
 >     , ""
 >     , "// DB_mult_cc is used by isOkRelation (entities) and by adlExport"
@@ -194,7 +194,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >    where
 >     (entities, relations, ruls') = erAnalysis context
 >     hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
->  -}
+
 
 >  dbDelRelation context i s srcVar trgVar
 >   = [' '| x<-[1..i-3]]++"// ON deleteEvent ("++show (source s)++","++show (target s)++") ON \""++name s++"\"["++name (source s)++"*"++name (target s)++"] DO"
