@@ -703,7 +703,7 @@ Transform a rule to an expression:
 >  instance Morphical ObjectDef where
 >   concs        (Obj nm pos ctx ats) = [source ctx] `uni` concs ats
 >   conceptdefs  (Obj nm pos ctx ats) = []
->   mors         (Obj nm pos ctx ats) = mors ats `uni` mors (target ctx)  -- opletten: de expressie ctx hoort hier niet bij.
+>   mors         (Obj nm pos ctx ats) = mors ctx `uni` mors ats `uni` mors (target ctx)  -- opletten: de expressie ctx hoort hier ook bij.
 >   morlist      (Obj nm pos ctx ats) = morlist ctx++morlist ats
 >   declarations (Obj nm pos ctx ats) = []
 >   closExprs    (Obj nm pos ctx ats) = closExprs ctx `uni` closExprs ats
