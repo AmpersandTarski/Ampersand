@@ -213,31 +213,24 @@
 >             ]
 >            )) ++
 >      ["    }"
->      ] ++ (concat (map (map ((++) "    "))
+>      ]  ++ (concat (map (map ((++) "    "))
 >             [ [ "foreach($"++nm++"->"++(name a)++" as $i=>$"++nm++"_"++(name a)++"){"
->               , "  if(!isset($"++nm++"_"++(name a)++"->id)){"
+>               ] ++ (concat (map (map ((++) "  "))
+>                     [ [ "if(isset($"++nm++"_"++(name a)++"->"++(name as)++"[0]->id)){"
+>                       , "  if(count(DB_doquer('"++doesExistQuer a ("$"++nm++"_"++(name a)++"->"++(name as)++"[0]->id")++"'))==0)"
+>                       , "    DB_doquer('"++(insertConcept (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
+>                       ] ++ updateObject (nms++[name a,name as]) as ++
+>                       [ "}"
+>                       , "$"++nm++"_"++(name a)++"->id = @$"++nm++"_"++(name a)++"->"++(name as)++"[0]->id;"
+>                       ]
+>                     | as <- attributes a -- De expressie ctx a bevat precies één morfisme.
+>                     , (Tm (I _ _ _ _)) <- [ctx as]   -- De morfismen uit 'mors' zijn allemaal inline.
+>                     ]
+>                    ))
+>                ++
+>               [ "  if(!isset($"++nm++"_"++(name a)++"->id)){"
 >               , "     $nextNum = DB_doquer('"++(autoIncQuer (concept a))++"');"
 >               , "     $"++nm++"_"++(name a)++"->id = @$nextNum[0][0]+0;"
->               , "  }else{"
->               , "     // check cardinalities..."
->               , "  }"
->               , "  if(count(DB_doquer('"++doesExistQuer a ("$"++nm++"_"++(name a)++"->id")++"'))==0)"
->               , "    DB_doquer('"++(insertConcept (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
->               ] ++ updateObject (nms++[name a]) a ++
->               [ "}"
->               , "$"++nm++"->id = $"++nm++"_"++(name a)++";"
->               ]
->             | a <- attributes o -- De expressie ctx a bevat precies één morfisme.
->             , (Tm (I _ _ _ _)) <- [ctx a]   -- De morfismen uit 'mors' zijn allemaal inline.
->             ]
->            ))
->         ++ (concat (map (map ((++) "    "))
->             [ [ "foreach($"++nm++"->"++(name a)++" as $i=>$"++nm++"_"++(name a)++"){"
->               , "  if(!isset($"++nm++"_"++(name a)++"->id)){"
->               , "     $nextNum = DB_doquer('"++(autoIncQuer (concept a))++"');"
->               , "     $"++nm++"_"++(name a)++"->id = @$nextNum[0][0]+0;"
->               , "  }else{"
->               , "     // check cardinalities..."
 >               , "  }"
 >               , "  DB_doquer('"++(insertConcept (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
 >               , "  DB_doquer('INSERT IGNORE INTO "
