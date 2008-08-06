@@ -76,7 +76,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                ([ anal contexts contextname ("-p" `elem` switches) (if "-crowfoot" `elem` switches then "crowfoot" else "cc")
 >                 | null switches || "-h" `elem` switches]++
 >                 [ makeXML contexts contextname| "-XML" `elem` switches]++
->  --             [ showHaskell contexts contextname| "-Haskell" `elem` switches]++
+>                 [ showHaskell contexts contextname| "-Haskell" `elem` switches]++
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >                 [ functionalSpecLaTeX contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-Z" `elem` switches || "-fSpec" `elem` switches]++
 >  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
@@ -126,6 +126,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
 >                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []]))
+
 >  projectSpecText contexts contextname language
 >   = putStrLn ("\nGenerating project plan for "++name context)                >>
 >     writeFile (name context++".csv") (projectClassic context spec language)  >>
@@ -135,6 +136,14 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      spec = funcSpec context (erAnalysis context) language
 >      (entities, relations, ruls) = erAnalysis context
+
+>  showHaskell contexts contextname
+>   = putStrLn ("\nGenerating Haskell source code for "++name context)                >>
+>     writeFile (name context++".lhs") (showHS context)  >>
+>     putStr ("\nHaskell file "++name context++".lhs written... ")
+>     where
+>      context  = head ([c| c<-contexts, name c==contextname]++
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 
 functionalSpecText generates a functional specification in ASCII
 

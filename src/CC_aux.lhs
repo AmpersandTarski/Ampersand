@@ -34,7 +34,7 @@
 >            , glb, lub, sur, inj, fun, tot, sign
 >            , multiplicities, ruleType, antecedent, mkVar
 >            , Calc(calc)
->            , ShowHS(showHS,showADL)
+>            , ShowHS(showHSname,showHS,showADL)
 >            , consequent, order, isNeg, isPos, isNeg, notCp
 >            , mIs
 >            , isMph, isProperty, 
@@ -787,9 +787,10 @@ Transform a rule to an expression:
 The function showHS prints structures as haskell source, which is intended for testing.
 
 >  class ShowHS a where
->   showHS, showADL :: a -> String
+>   showHSname, showHS, showADL :: a -> String
 
 >  instance ShowHS Prop where
+>   showHSname p = error ("(module CC_aux) should not showHS the name of multiplicities (Prop): "++showHS p)
 >   showHS Uni  = "Uni"
 >   showHS Inj  = "Inj"
 >   showHS Sur  = "Sur"
@@ -810,43 +811,47 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showADL Aut = "AUT"
 
 >  instance ShowHS a => ShowHS [a] where
+>   showHSname _ = error ("(module CC_aux) lists are anonymous with respect to showHS.")
 >   showHS  = chain "\n".map showHS
 >   showADL = chain "\n".map showADL
 
 >  instance ShowHS Architecture where
+>   showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
 >   showHS (Arch ctxs) = concat (map showHS ctxs)
 >   showADL (Arch ctxs) = concat (map showADL ctxs)
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
->   showHS (Ctx nm on isa world dc ss cs ks os pops)
->    = nlHs++"ctx_"++nm++nlHs++" = Ctx "++show nm++" "++show on++" isa (genEq (typology isa)) []"++
->      ind++showL ["pat_"++name p|p<-dc]++
->      ind++showL ["mor_"++name s++name(source s)++name(target s)|s<-ss]++
->      ind++showL ["pat_"++name p|p<-cs]++
+>   showHSname context = "ctx_"++name context
+>   showHS context@(Ctx nm on isa world dc ss cs ks os pops)
+>    = nlHs++showHSname context++nlHs++" = Ctx "++show nm++" "++show on++" isa (genEq (typology isa)) []"++
+>      ind++showL [showHSname p|p<-patterns context]++
+>      ind++showL [showHSname s|s<-declarations context>-declarations (patterns context)]++
+>      ind++showL [showHSname c|c<-conceptdefs context>-conceptdefs (patterns context)]++
 >      ind++showL ["key_"++name p|p<-ks]++
->      ind++showL [showHS o|o<-os]++
->      ind++showL [showHS p|p<-pops]++
+>      ind++showL [showHSname o|o<-attributes context]++
+>      ind++showL [showHSname p|p<-populations context]++
 >      init nlHs'++"where"++nlHs'++
 >      "isa = "++showHS isa++
->      concat [nlHs'++showHS s|s<-ss]++"\n"++
->      showHS dc++
->      concat ["\n\nDeclarations from "++name pat++"\n"++concat[nlHs'++showHS s|s<-declarations pat]|pat<-dc]
+>      concat [nlHs'++showHSname d++" = "++showHS d|d<-declarations context>-declarations (patterns context)]++"\n"++
+>      concat [nlHs'++showHSname pat++" = "++showHS pat|pat<-patterns context]++"\n"++
+>      concat [nlHs'++showHSname pat++" = "++showHS pat|pat<-conceptdefs context>-conceptdefs (patterns context)]
 >      where nlHs = "\n>  "; ind = nlHs++"       "; nlHs' = nlHs++"    "
->   showADL (Ctx nm on isa world dc ss cs ks os pops)
+>   showADL context@(Ctx nm on isa world dc ss cs ks os pops)
 >    = "CONTEXT\n" ++
 >      chain "\n\n" (map showADL os) ++ "\n\n" ++
->      chain "\n\n" (map showADL dc) ++ "\n\n" ++
->      chain "\n" (map showADL ss) ++ "\n\n" ++
->      chain "\n" (map showADL cs) ++ "\n\n" ++
+>      chain "\n\n" (map showADL (patterns context)) ++ "\n\n" ++
+>      chain "\n" (map showADL (declarations context>-declarations (patterns context))) ++ "\n\n" ++
+>      chain "\n" (map showADL (conceptdefs context>-conceptdefs (patterns context))) ++ "\n\n" ++
 >      chain "\n" (map showADL ks) ++ "\n\n" ++
->      chain "\n\n" (map showADL pops) ++
+>      chain "\n\n" (map showADL (populations context)) ++
 >      "\nENDCONTEXT"
 
 >  instance ShowHS Pattern where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
->   showHS (Pat nm rs gen pss cs ks)
->    = nlHs++"pat_"++nm++nlHs'++"= Pat "++show nm++
+>   showHSname pat = "pat_"++name pat
+>   showHS pat@(Pat nm rs gen pss cs ks)
+>    = nlHs++showHSname pat++nlHs'++"= Pat "++show nm++
 >      (if null rs then " []" else ind++"[ "++chain (ind++", ") [showHS r| r<-rs]++ind++"]")++
 >      (if null gen   then " []" else ind++"[ "++chain (ind++", ") [showHS g| g<-gen] ++ind++"]")++
 >      (if null gen   then " []" else ind++"[ "++chain (ind++", ") ["mor_"++name s++name(source s)++name(target s)| s<-pss] ++ind++"]")++
@@ -861,14 +866,16 @@ The function showHS prints structures as haskell source, which is intended for t
 >      "\nENDPATTERN"
 
 >  instance ShowHS Population where
->   showHS (Popu m ps)
->    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++", ") (map show ps)++nlHs'++"]"
+>   showHSname (Popu m ps) = "pop_"++name m++name (source m)++name (target m)
+>   showHS p@(Popu m ps)
+>    = nlHs++showHSname p++nlHs++" = [ "++chain (nlHs'++", ") (map show ps)++nlHs'++"]"
 >      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 >   showADL (Popu m ps)
 >    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++"; ") (map show ps)++nlHs'++"]"
 >      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 
 >  instance ShowHS Rule where
+>   showHSname r = "rule"++show (nr r)
 >   showHS r@(Ru 'A' _ p cons cpu expla sgn nr pn)
 >    = chain " " ["Ru","'A'","("++showHS (consequent r)++")","["++chain "," (map showADL cpu)++"]",show(explain r),showSgn sgn,show nr,show pn]
 >   showHS r@(Ru c antc p cons cpu expla sgn nr pn)
@@ -891,6 +898,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >                        if null (cpu r) then "" else " COMPUTING " ++ show (cpu r)
 
 >  instance ShowHS Expression where
+>   showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
 >   showHS (Tm m)   = "Tm ("++showHS m++") "
 >   showHS (Tc f)   = "Tc ("++showHS f++") "
 >   showHS (F [])   = "F [] <Id>"
@@ -904,7 +912,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS (K0 e)   = "K0 ("++showHS e++") "
 >   showHS (K1 e)   = "K1 ("++showHS e++") "
 >   showHS (Cp e)   = "Cp ("++showHS e++") "
-
 >   showADL e = show e
 
 >  showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar 0 e
@@ -935,10 +942,12 @@ The function showHS prints structures as haskell source, which is intended for t
 >  showFullRelName m = rEncode (name m++name (source m)++name (target m))
 
 >  instance ShowHS a => ShowHS (Inheritance a) where
+>   showHSname i = error ("(module CC_aux) every inheritance is anonymous with respect to showHS. Detected at: "++ showHS i)
 >   showHS (Isa ts cs) = "Isa "++showL ["("++showHS g++","++showHS s++")"|(g,s)<-ts] ++" "++ showL (map showHS cs)
 >   showADL (Isa ts cs) = ""
 
 >  instance ShowHS Concept where
+>   showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
 >   showHS Anything = "Anything"
 >   showHS NOthing  = "NOthing"
 >   showHS  c = if singleton c
@@ -947,24 +956,28 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showADL c = show (name c)
 
 >  instance ShowHS ConceptDef where
->   showHS (Cd pos nm def ref)
->    = chain " " (["Cd", "("++showHS pos++")", nm, def]++[ref|not (null ref)])
+>   showHSname (Cd pos nm def ref) = "cDef_"++nm
+>   showHS cd@(Cd pos nm def ref)
+>    = showHSname cd ++ " = Cd ("++showHS pos++") "++show nm++" "++show def++(if null ref then "" else " "++show ref)
 >   showADL (Cd pos nm def ref)
 >    = "\n  CONCEPT "++show nm++" "++show def++" "++(if null ref then "" else show ref)
 
 >  instance ShowHS KeyDef where
->   showHS (Kd pos lbl ctx ats)
->    = chain " " ["Kd", "("++showHS pos++")", lbl, "("++showHS ctx++")", showHS ats]
+>   showHSname kd = "cDef_"++name kd
+>   showHS kd@(Kd pos lbl ctx ats)
+>    = showHSname kd ++ " = Kd ("++showHS pos++") "++show lbl++" ("++showHS ctx++") "++showHS ats
 >   showADL (Kd pos lbl ctx ats)
 >    = "KEY "++lbl++">"++name (target ctx)++"("++chain "," (map showADL ats)++")"
 
 >  instance ShowHS ObjectDef where
+>   showHSname o = "cDef_"++name o
 >   showHS  (Obj nm pos ctx ats) = "Obj ("++nm++") (pos) ("++(showHS ctx)++") ["++chain ", " (map showHS ats)++"]"
 >   showADL (Obj nm pos ctx ats) = "OBJECT "++nm++" : "++(showADL ctx)++" = ["++chain ", " (map show ats)++"]"
 
 >  instance ShowHS Declaration where
->   showHS (Sgn nm a b props prL prM prR cs expla pos nr sig)
->    = chain " " ["mor_"++nm++name a++name b,"= Sgn",show nm,"("++showHS a++")","("++showHS b++")",showL(map showHS props),show prL,show prM,show prR,"[]",show expla,show pos,show nr, show sig]
+>   showHSname d = "mor_"++name d++name (source d)++name (target d)
+>   showHS d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
+>    = chain " " [showHSname d,"= Sgn",show nm,"("++showHS a++")","("++showHS b++")",showL(map showHS props),show prL,show prM,show prR,"[]",show expla,show pos,show nr, show sig]
 >   showHS (Isn g s)
 >    = "Isn ("++showHS g++") ("++showHS s++")"
 >   showHS (Iscompl g s)
@@ -986,6 +999,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >    = "V["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"
 
 >  instance ShowHS Morphism where
+>   showHSname m = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL m++"). A morphism gets no definition in Haskell code.")
 >   showHS (Mph nm pos atts sgn@(a,b) yin s)
 >    = chain " " ["Mph",show nm,(\(FilePos (_,Pos l c,_))->show (l,c)) pos,showL(map showHS atts),showSgn sgn,show yin] -- ,"mor_"++nm++name (source s)++name (target s)]
 >   showHS (I atts g s yin)
@@ -1006,14 +1020,17 @@ The function showHS prints structures as haskell source, which is intended for t
 >    = "V"++if null atts then "" else showSign atts
 >   showADL (Mp1 str sgn)
 >    = "'"++str++"'"++(showSign [sgn])
+
 >  instance ShowHS Gen where
+>   showHSname g = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
 >   showHS (G g s)  = "G ("++show s++") ("++show g++")"
 >   showADL (G g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowHS FilePos where
->    showHS (FilePos (fn,Pos l c,sym))
->      = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
->    showADL p = error ("(module CC_aux) ADL does not show positions, not even "++show p)  -- positions are not shown in ADL. This definition just keeps the compiler happy, but will not be called.
+>   showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS p++"). A position gets no definition in Haskell code.")
+>   showHS (FilePos (fn,Pos l c,sym))
+>     = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
+>   showADL p = error ("(module CC_aux) ADL does not show positions, not even "++show p)  -- positions are not shown in ADL. This definition just keeps the compiler happy, but will not be called.
 
   instance Show Pattern where
    showsPrec p (Pat nm rs gen pms cs ks)
