@@ -38,15 +38,7 @@
 >      ,"}"
 >      ,"function read"++capname++"($id){"
 >      ,"    // check existance of $id"
->      ,"    $ctx = DB_doquer('"++(selectExpr context
->                                             25
->                                             (sqlAttConcept context (concept object))
->                                             (sqlAttConcept context (concept object))
->                                             (Fi [ Tm (I [] (concept object) (concept object) True)
->                                                 , Tm (Mp1 ("\\''.addslashes($id).'\\'") (concept object))
->                                                 ]
->                                             )
->                                 )++"');"
+>      ,"    $ctx = DB_doquer('"++(doesExistQuer object "$id")++"');"
 >      ,"    if(count($ctx)==0) return false;"
 >      ,"    $obj1 = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
 >      ]
@@ -79,7 +71,7 @@
 >      ,"          return false;"
 >      ,"      }"
 >      ,"    }else"]
->      ++ updateObject (name object) object
+>      ++ updateObject [name object] object
 >      ++ checkRuls ++
 >      ["    if(true){ // all rules are met"
 >      ,"        DB_doquer('COMMIT');"
@@ -106,8 +98,13 @@
 >               ]
 >             | cpt <- [concept object]
 >             , m@(Mph _ _ _ _ _ d) <- morsWithCpt cpt
->             , not (elem (makeInline m) (mors (termAtts object)))  -- mors yields all morphisms inline.
+>             , not (elem (makeInline m) (mors (map ctx (termAtts object))))  -- mors yields all morphisms inline.
 >             ])
+>      ++["/*"]
+>      ++ map show (mors (map ctx (termAtts object)))
+>      ++["*************"]
+>      ++ map show (mors (morsWithCpt (concept object)))
+>      ++["*/"]
 >      ++ deleteObject (name object) object ++ checkRuls ++
 >      ["  if(true) {"
 >      ,"    DB_doquer('COMMIT');"
@@ -199,8 +196,8 @@
 >            ))
 >      where n = length nm
 
->--     updateObject :: String -> a -> [String]
->     updateObject nm o =
+>--     updateObject :: [String] -> a -> [String]
+>     updateObject nms o =
 >      ["    if(!$new){"
 >      ,"      // destroy old attribute values"
 >      ] ++ (concat (map (map ((++) "      "))
@@ -209,7 +206,7 @@
 >               , "foreach($effected as $i=>$v){"
 >               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
 >               , "}"
->               , "$"++nm++"_"++(name a)++"_str=join(',',$arr);"
+>               , ("$"++nm++"_"++(name a)++"_str")++"=join(',',$arr);"
 >               , "DB_doquer( '"++(deleteExprForAttr a o ("$"++nm++"->id"))++"');"
 >               ]
 >             | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
@@ -224,22 +221,43 @@
 >               , "  }else{"
 >               , "     // check cardinalities..."
 >               , "  }"
+>               , "  if(count(DB_doquer('"++doesExistQuer a ("$"++nm++"_"++(name a)++"->id")++"'))==0)"
+>               , "    DB_doquer('"++(insertConcept (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
+>               ] ++ updateObject (nms++[name a]) a ++
+>               [ "}"
+>               , "$"++nm++"->id = $"++nm++"_"++(name a)++";"
+>               ]
+>             | a <- attributes o -- De expressie ctx a bevat precies één morfisme.
+>             , (Tm (I _ _ _ _)) <- [ctx a]   -- De morfismen uit 'mors' zijn allemaal inline.
+>             ]
+>            ))
+>         ++ (concat (map (map ((++) "    "))
+>             [ [ "foreach($"++nm++"->"++(name a)++" as $i=>$"++nm++"_"++(name a)++"){"
+>               , "  if(!isset($"++nm++"_"++(name a)++"->id)){"
+>               , "     $nextNum = DB_doquer('"++(autoIncQuer (concept a))++"');"
+>               , "     $"++nm++"_"++(name a)++"->id = @$nextNum[0][0]+0;"
+>               , "  }else{"
+>               , "     // check cardinalities..."
+>               , "  }"
 >               , "  DB_doquer('"++(insertConcept (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
 >               , "  DB_doquer('INSERT IGNORE INTO "
 >                 ++(sqlMorName context (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
 >                 ++" VALUES (\\''.addslashes($"++nm++"->id).'\\'"
 >                 ++        ",\\''.addslashes($"++nm++"_"++(name a)++"->id).'\\')');"
->               ] ++ updateObject (nm++"_"++(name a)) a ++
+>               ] ++ updateObject (nms++[name a]) a ++
 >               [ "}"
 >               ]
 >             | a <- termAtts o -- De expressie ctx a bevat precies één morfisme.
 >             , m <- [ctx a]   -- De morfismen uit 'mors' zijn allemaal inline.
 >             ]
->            )) ++ (concat (map (map ((++) "    "))
->             [ [ "if(!$new && strlen($"++nm++"_"++(name a)++"_str))"
->               ] ++ (do_del_quer a)
->             | a <- termAtts o
->             ]))
+>            ))
+>      ++ concat (map (map ((++) "    "))
+>                     [ [ "if(!$new && strlen($"++nm++"_"++(name a)++"_str))"
+>                       ] ++ (do_del_quer a ("$"++nm++"_"++(name a)++"_str"))
+>                     | a <- termAtts o
+>                     ]
+>                )
+>      where nm = chain "_" nms
 
 >     deleteObject nm o =
 >      (concat (map (map ((++) "      "))
@@ -258,7 +276,7 @@
 >       ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addslashes($id).'\\'');"
 >      ] ++ (concat (map (map ((++) "  "))
 >             [ [ "if(strlen($"++(name a)++"_str))"
->               ] ++ (do_del_quer a)
+>               ] ++ (do_del_quer a ("$"++(name a)++"_str"))
 >             | a <- termAtts object
 >             ])) 
 
@@ -280,9 +298,9 @@
 >                       (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
 >                  )
 >             ])
->     do_del_quer a
+>     do_del_quer a str
 >           = [ "  DB_doquer('DELETE FROM "++(sqlConcept context (concept a))
->               , "    WHERE "++(sqlExprTrg (ctx a))++" IN ('.$"++(name a)++"_str.')"
+>               , "    WHERE "++(sqlExprTrg (ctx a))++" IN ('."++str++".')"
 >               ] ++ concat (
 >                  [ andNEXISTquer (ctx a) m
 >                  | m@(Mph _ _ _ _ _ _) <- morsWithCpt (concept a)
@@ -305,6 +323,16 @@
 >     selectExprWithF e cpt id
 >       = selectExpr context 25 (sqlExprSrc e) (sqlExprTrg e)
 >                     (F [Tm (Mp1 ("\\''.addslashes("++id++").'\\'") cpt), e])
+>     doesExistQuer object id = ( selectExpr context
+>                                            25
+>                                            (sqlAttConcept context (concept object))
+>                                            (sqlAttConcept context (concept object))
+>                                            (Fi [ Tm (I [] (concept object) (concept object) True)
+>                                                , Tm (Mp1 ("\\''.addslashes("++id++").'\\'") (concept object))
+>                                                ]
+>                                            )
+>                               )
+
 
 > --Precondition: ctx a bevat precies één morfisme
 >     deleteExprForAttr a parent id
