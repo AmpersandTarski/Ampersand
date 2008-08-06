@@ -31,7 +31,7 @@
 >           -- = "dot"   -- vertical layout (default)
 >      rs      = rules context
 >      context = head ([c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      shR r   = showADL r
 >      fnm     = fnContext context++"_CD"
 
