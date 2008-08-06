@@ -53,8 +53,8 @@ PATTERN Permits
  
  authentic  :: Person * IDdocument    [INJ,SUR]     PRAGMA "Person " " has document " " as proof of identity, according to the legal authority".
  applicant  :: Application -> Person                PRAGMA "Application " " was made by ".
- checked    :: Application * IDdocument [TOT]       PRAGMA "Application " " has been checked with IDdocument ".
- assigned   :: Application * Employee   [INJ]       PRAGMA "Application " " was treated by ".
+ checked    :: Application * IDdocument [UNI]       PRAGMA "Application " " has been checked with IDdocument ".
+ assigned   :: Application * Employee   [UNI]       PRAGMA "Application " " was treated by ".
  auth       :: Employee * Product                   PRAGMA "Employee " " is authorized to treat product ".
  kind       :: Application -> Product               PRAGMA "" " is an application for a ".
  kind       :: Decision -> Product                  PRAGMA "Decision " " is about a ".
