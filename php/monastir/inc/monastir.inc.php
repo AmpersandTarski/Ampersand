@@ -156,9 +156,9 @@ class viewableList extends anyView{
 				if(!$this->One){
 					echo "\r\n  ".'<TR>';
 					foreach($this->header as $j=>$h){
-						echo "\r\n    ".'<TD>';
+						echo "\r\n    ".'<TD><P>';
 						$v[$j]->display();
-						echo '</TD>';
+						echo '</P></TD>';
 					}
 					echo '</TR>';
 				}else{
@@ -183,9 +183,9 @@ class viewableList extends anyView{
 				echo ' colspan='.$colspan;
 			}
 			echo '>';
-		} else echo '<P>';
-		echo '<I>None</I>';
-		if(!$this->One) echo '</TD></TR>'; else echo '</P>';
+		}
+		echo '<P><I>None</I></P>';
+		if(!$this->One) echo '</TD></TR>';
 	}
 	function displaytail(){
 		if(!$this->One){
@@ -198,9 +198,10 @@ class viewableList extends anyView{
 			echo '<TD width=10   height=10 class=hidden><IMG class="hidden" width=10   height=10 src="'.$this->iDir.'m/lo1.png" /></TD>';
 			echo '<TD width=100% height=10 class=hidden><IMG class="hidden" width=100% height=10 src="'.$this->iDir.'m/zijde_o1.png" /></TD>';
 			echo '<TD width=10   height=10 class=hidden><IMG class="hidden" width=10   height=10 src="'.$this->iDir.'m/ro1.png" /></TD>';
-			echo '</TR><TR>';
+			echo '</TR>';
 			echo '</TABLE>';
 		}
+		echo '<SPACER CLASS="tail" TYPE="block" />';
 	}
 	function assign($var,$val){
 		if($var=='header'){
@@ -274,7 +275,6 @@ class expandableList extends viewableList{
 					$h=new viewableText($v->type->name);
 					$h->style='h4';
 					$h->display();
-					if($v->mult->uni) echo '<P>';
 				}
 				$myRow = new expandableList();
 				$myRow->assign("One",$v->mult->uni);
@@ -287,14 +287,14 @@ class expandableList extends viewableList{
 				else $myRow->display();
 				if(!$this->One)
 					echo "</TD>";
-				else if($v->mult->uni) echo '</P>';
 			}
 			if($edit){
-				echo '<INPUT TYPE="hidden" NAME="'.htmlspecialchars($rowID).'_" VALUE="'.htmlspecialchars($id).'" />';
+				echo '<P><INPUT TYPE="hidden" NAME="'.htmlspecialchars($rowID).'_" VALUE="'.htmlspecialchars($id).'" /></P>';
 			}
 		}else{
 			if(!$this->One)
 				echo '<TD>';
+			echo '<P>';
 			$myTxt = new viewableText($id);
 			if($edit){
 				$myTxt->assign("id",$rowID.'_');
@@ -305,6 +305,7 @@ class expandableList extends viewableList{
 				$myTxt->display();
 				if(isset($page)) echo '</A>';
 			}
+			echo '</P>';
 			if(!$this->One)
 				echo '</TD>';
 		}
@@ -313,7 +314,7 @@ class expandableList extends viewableList{
 				echo '<TD align=left><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" /></TD>';
 			}else echo '<TD></TD>';
 		}else if($edit && (!$this->Tot || $totRow>1)){
-			echo '<input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" style="display:block" />';
+			echo '<P><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" style="display:block" /></P>';
 		}
 		if(!$this->One)
 			echo "</TR>";
@@ -322,13 +323,8 @@ class expandableList extends viewableList{
 		$colspan=max(1,count($this->object))+1;
 		if(!$this->One) echo '<TR><TD colspan='.$colspan.'>';
 		//echo '<button name="'.$this->traceID.'" value="add">Add</button>';
-		echo '<input type="image" name="'.htmlspecialchars($this->traceID).'" value="add" SRC="'.$this->iDir.'add.png" />';
+		echo '<P><input type="image" name="'.htmlspecialchars($this->traceID).'" value="add" SRC="'.$this->iDir.'add.png" /></P>';
 		if(!$this->One) echo '</TD></TR>';
-	}
-}
-class removableListRow extends anyView{
-	function display(){
-		
 	}
 }
 class monastir Extends anyView {

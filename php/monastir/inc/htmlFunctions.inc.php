@@ -19,14 +19,15 @@ function writeCSS_blue(){
 	input.text{
 		margin: 4px 4px 4px 0px;
 	}
-	p, h4{
+	p,th,td,h4{
 		margin-top: 0pt;
-		margin-bottom:12px;
+		margin-bottom:0pt;
 		margin-left: 4px;
 		margin-right: 4px;
 		padding: 0px;
 	}
-	h4{
+	h1 { margin-bottom:6pt; }
+	p,h4{
 		margin-bottom: 0pt;
 	}
 	th{
@@ -72,7 +73,12 @@ function writeCSS_blue(){
 		border:0;
 	}
 	.raised{
-		margin-bottom:12px;
+	}
+	.tail{
+		display:block;
+		width:100%;
+		height:0px;
+		margin-top:4pt
 	}
 	.button{
 		color: #0A2B5E;

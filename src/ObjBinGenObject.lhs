@@ -84,6 +84,7 @@
 
 >      ["function delete"++capname++"($id){"
 >      ,"  global $DB_err;"
+>      ,"  $preErr= 'Cannot delete "++(addslashes (name (concept object)))++": ';"
 >      ,"  DB_doquer('START TRANSACTION');"
 >      ,"  "] ++
 >      concat (map (map ((++) "    "))
