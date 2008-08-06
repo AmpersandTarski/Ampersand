@@ -1,4 +1,4 @@
-<?php // generated with ADL vs. 0.8.09
+<?php // generated with ADL vs. 0.8.10
   $DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');
   $DB_slct = mysql_select_db('Aanvraag',$DB_link);
   
@@ -17,7 +17,7 @@
                                  FROM T7_kind AS cp
                                 WHERE isect0.AttD_ecision=cp.AttD_ecision AND isect0.AttP_roduct=cp.AttP_roduct)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product.\"<BR>',3);
+      DB_debug('Overtreding van de regel: "Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product."<BR>',3);
       return false;
     }return true;
   }
@@ -40,7 +40,7 @@
                                  FROM T9_area AS cp
                                 WHERE isect0.AttE_mployee=cp.AttE_mployee AND isect0.AttA_rea=cp.AttA_rea)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"<BR>',3);
+      DB_debug('Overtreding van de regel: "Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."<BR>',3);
       return false;
     }return true;
   }
@@ -59,7 +59,7 @@
                                    ) AS cp
                                 WHERE isect0.AttA_pplication=cp.AttA_pplication AND isect0.AttP_erson=cp.AttP_erson)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"An application for a permit is accepted only from individuals whose identity is authenticated.\"<BR>',3);
+      DB_debug('Overtreding van de regel: "An application for a permit is accepted only from individuals whose identity is authenticated."<BR>',3);
       return false;
     }return true;
   }
@@ -78,7 +78,7 @@
                                    ) AS cp
                                 WHERE isect0.AttA_pplication=cp.AttA_pplication AND isect0.AttE_mployee=cp.AttE_mployee)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"Applications for permits are treated by authorized personnel only.\"<BR>',3);
+      DB_debug('Overtreding van de regel: "Applications for permits are treated by authorized personnel only."<BR>',3);
       return false;
     }return true;
   }
@@ -95,7 +95,7 @@
                        ) AS isect0
                     WHERE isect0.AttP_erson <> isect0.AttP_erson1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"authentic[Person*IDdocument] is injective\"<BR>',3);
+      DB_debug('Overtreding van de regel: "authentic[Person*IDdocument] is injective"<BR>',3);
       return false;
     }return true;
   }
@@ -114,7 +114,7 @@
                                    ) AS cp
                                 WHERE isect0.AttID_document=cp.AttID_document AND isect0.AttID_document=cp.AttID_document1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"authentic[Person*IDdocument] is surjective\"<BR>',3);
+      DB_debug('Overtreding van de regel: "authentic[Person*IDdocument] is surjective"<BR>',3);
       return false;
     }return true;
   }
@@ -131,7 +131,7 @@
                        ) AS isect0
                     WHERE isect0.AttP_erson <> isect0.AttP_erson1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"applicant[Application*Person] is univalent\"<BR>',3);
+      DB_debug('Overtreding van de regel: "applicant[Application*Person] is univalent"<BR>',3);
       return false;
     }return true;
   }
@@ -150,43 +150,41 @@
                                    ) AS cp
                                 WHERE isect0.AttA_pplication=cp.AttA_pplication AND isect0.AttA_pplication=cp.AttA_pplication1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"applicant[Application*Person] is total\"<BR>',3);
+      DB_debug('Overtreding van de regel: "applicant[Application*Person] is total"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule9(){
-    // No violations should occur in (I |- checked;checked~)
-    //            rule':: I/\-(checked;checked~)
-    // sqlExprSrc rule':: AttA_pplication
-     $v=DB_doquer('SELECT DISTINCT isect0.AttA_pplication
-                     FROM C3_A_pplication AS isect0
-                    WHERE NOT EXISTS (SELECT *
-                                 FROM 
-                                   ( SELECT DISTINCT fst.AttA_pplication, snd.AttA_pplication AS AttA_pplication1
-                                       FROM T3_checked AS fst, T3_checked AS snd
-                                      WHERE fst.AttID_document = snd.AttID_document
-                                   ) AS cp
-                                WHERE isect0.AttA_pplication=cp.AttA_pplication AND isect0.AttA_pplication=cp.AttA_pplication1)');
+    // No violations should occur in (checked~;checked |- I)
+    //            rule':: checked~;checked/\-I
+    // sqlExprSrc rule':: AttID_document
+     $v=DB_doquer('SELECT DISTINCT isect0.AttID_document, isect0.AttID_document1 AS AttID_document
+                     FROM 
+                       ( SELECT DISTINCT fst.AttID_document, snd.AttID_document AS AttID_document1
+                           FROM T3_checked AS fst, T3_checked AS snd
+                          WHERE fst.AttA_pplication = snd.AttA_pplication
+                       ) AS isect0
+                    WHERE isect0.AttID_document <> isect0.AttID_document1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"checked[Application*IDdocument] is total\"<BR>',3);
+      DB_debug('Overtreding van de regel: "checked[Application*IDdocument] is univalent"<BR>',3);
       return false;
     }return true;
   }
   
   function checkRule10(){
-    // No violations should occur in (assigned;assigned~ |- I)
-    //            rule':: assigned;assigned~/\-I
-    // sqlExprSrc rule':: AttA_pplication
-     $v=DB_doquer('SELECT DISTINCT isect0.AttA_pplication, isect0.AttA_pplication1 AS AttA_pplication
+    // No violations should occur in (assigned~;assigned |- I)
+    //            rule':: assigned~;assigned/\-I
+    // sqlExprSrc rule':: AttE_mployee
+     $v=DB_doquer('SELECT DISTINCT isect0.AttE_mployee, isect0.AttE_mployee1 AS AttE_mployee
                      FROM 
-                       ( SELECT DISTINCT fst.AttA_pplication, snd.AttA_pplication AS AttA_pplication1
+                       ( SELECT DISTINCT fst.AttE_mployee, snd.AttE_mployee AS AttE_mployee1
                            FROM T4_assigned AS fst, T4_assigned AS snd
-                          WHERE fst.AttE_mployee = snd.AttE_mployee
+                          WHERE fst.AttA_pplication = snd.AttA_pplication
                        ) AS isect0
-                    WHERE isect0.AttA_pplication <> isect0.AttA_pplication1');
+                    WHERE isect0.AttE_mployee <> isect0.AttE_mployee1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"assigned[Application*Employee] is injective\"<BR>',3);
+      DB_debug('Overtreding van de regel: "assigned[Application*Employee] is univalent"<BR>',3);
       return false;
     }return true;
   }
@@ -203,7 +201,7 @@
                        ) AS isect0
                     WHERE isect0.AttP_roduct <> isect0.AttP_roduct1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"kind[Application*Product] is univalent\"<BR>',3);
+      DB_debug('Overtreding van de regel: "kind[Application*Product] is univalent"<BR>',3);
       return false;
     }return true;
   }
@@ -222,7 +220,7 @@
                                    ) AS cp
                                 WHERE isect0.AttA_pplication=cp.AttA_pplication AND isect0.AttA_pplication=cp.AttA_pplication1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"kind[Application*Product] is total\"<BR>',3);
+      DB_debug('Overtreding van de regel: "kind[Application*Product] is total"<BR>',3);
       return false;
     }return true;
   }
@@ -239,7 +237,7 @@
                        ) AS isect0
                     WHERE isect0.AttP_roduct <> isect0.AttP_roduct1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"kind[Decision*Product] is univalent\"<BR>',3);
+      DB_debug('Overtreding van de regel: "kind[Decision*Product] is univalent"<BR>',3);
       return false;
     }return true;
   }
@@ -258,7 +256,7 @@
                                    ) AS cp
                                 WHERE isect0.AttD_ecision=cp.AttD_ecision AND isect0.AttD_ecision=cp.AttD_ecision1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"kind[Decision*Product] is total\"<BR>',3);
+      DB_debug('Overtreding van de regel: "kind[Decision*Product] is total"<BR>',3);
       return false;
     }return true;
   }
@@ -275,7 +273,7 @@
                        ) AS isect0
                     WHERE isect0.AttA_rea <> isect0.AttA_rea1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"inhabitant[Person*Area] is univalent\"<BR>',3);
+      DB_debug('Overtreding van de regel: "inhabitant[Person*Area] is univalent"<BR>',3);
       return false;
     }return true;
   }
@@ -294,7 +292,7 @@
                                    ) AS cp
                                 WHERE isect0.AttP_erson=cp.AttP_erson AND isect0.AttP_erson=cp.AttP_erson1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"inhabitant[Person*Area] is total\"<BR>',3);
+      DB_debug('Overtreding van de regel: "inhabitant[Person*Area] is total"<BR>',3);
       return false;
     }return true;
   }
@@ -313,7 +311,7 @@
                                    ) AS cp
                                 WHERE isect0.AttA_rea=cp.AttA_rea AND isect0.AttA_rea=cp.AttA_rea1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"area[Employee*Area] is surjective\"<BR>',3);
+      DB_debug('Overtreding van de regel: "area[Employee*Area] is surjective"<BR>',3);
       return false;
     }return true;
   }
@@ -330,7 +328,7 @@
                        ) AS isect0
                     WHERE isect0.AttA_pplication <> isect0.AttA_pplication1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"leadsto[Application*Decision] is injective\"<BR>',3);
+      DB_debug('Overtreding van de regel: "leadsto[Application*Decision] is injective"<BR>',3);
       return false;
     }return true;
   }
@@ -347,7 +345,7 @@
                        ) AS isect0
                     WHERE isect0.AttD_ecision <> isect0.AttD_ecision1');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"leadsto[Application*Decision] is univalent\"<BR>',3);
+      DB_debug('Overtreding van de regel: "leadsto[Application*Decision] is univalent"<BR>',3);
       return false;
     }return true;
   }
@@ -366,13 +364,13 @@
                                    ) AS cp
                                 WHERE isect0.AttD_ecision=cp.AttD_ecision AND isect0.AttD_ecision=cp.AttD_ecision1)');
      if(count($v)) {
-      DB_debug('Overtreding van de regel: \"leadsto[Application*Decision] is surjective\"<BR>',3);
+      DB_debug('Overtreding van de regel: "leadsto[Application*Decision] is surjective"<BR>',3);
       return false;
     }return true;
   }
   
   if(!$DB_slct){
-        DB_debug( "Warning: error connecting to database, building database",2 );
+        DB_debug( "Warning: error connecting to database, building database",3 );
         mysql_query("CREATE DATABASE Aanvraag",$DB_link) or die('Could not create DB Aanvraag');
         $DB_slct = mysql_select_db('Aanvraag',$DB_link) or die ('Could not select DB Aanvraag');
         $DB_errs = false;
@@ -410,7 +408,7 @@
              DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
           }
     }else{
-      DB_debug( "Connected to database",2 );
+      DB_debug( "Connected to database",3 );
     }
   
   if($DB_debug>=3){

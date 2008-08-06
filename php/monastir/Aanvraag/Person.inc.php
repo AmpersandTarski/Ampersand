@@ -1,25 +1,25 @@
-<?php // generated with ADL vs. 0.8.09
+<?php // generated with ADL vs. 0.8.10
   
-  /********* file Aanvraag on line line 12, file "Aanvraag.adl"
-   * OBJECT Person Person
-   *     idDocument : authentic
-   *     residence : inhabitant
-   *     application : applicant~
-   * ENDOBJECT
+  /********* on line 11, file "Aanvraag.adl"
+   * Person[Person] : V
+   *  = [ idDocument[IDdocument] : authentic
+   *    , residence[Area] : inhabitant
+   *    , application[Application] : applicant~
+   *   ]
    *********/
   
   function getobject_Person(){
-    return new object("Person",array
-      (new oRef( new oMulti( true,false,true,false ) // derived from authentic
-             , new object("idDocument",array()) // IDdocument
-             )
-      ,new oRef( new oMulti( false,true,false,true ) // derived from inhabitant
-             , new object("residence",array()) // Area
-             )
-      ,new oRef( new oMulti( true,false,true,false ) // derived from applicant~
-             , new object("application",array(), "Application.php") // Application
-             )
-      ), "Person.php");
+    return   new object("Person", array
+       ( new oRef( new oMulti( true,false,true,false ) // derived from authentic
+           , new object("idDocument", array())
+           ) 
+       , new oRef( new oMulti( false,true,false,true ) // derived from inhabitant
+           , new object("residence", array())
+           ) 
+       , new oRef( new oMulti( true,false,true,false ) // derived from applicant~
+           , new object("application", array(), "Application.php")
+           ) 
+       ), "Person.php");
   }
   
   class Person {
@@ -50,22 +50,28 @@
     }
   }
   class Person_idDocument {
-      var $id;
-      function Person_idDocument($id) {
-          $this->id=$id;
-      }
+    var $id;
+    function Person_idDocument($id=null){
+        $this->id=$id;
+    }
+    function addGen($type,$value){
+    }
   }
   class Person_residence {
-      var $id;
-      function Person_residence($id) {
-          $this->id=$id;
-      }
+    var $id;
+    function Person_residence($id=null){
+        $this->id=$id;
+    }
+    function addGen($type,$value){
+    }
   }
   class Person_application {
-      var $id;
-      function Person_application($id) {
-          $this->id=$id;
-      }
+    var $id;
+    function Person_application($id=null){
+        $this->id=$id;
+    }
+    function addGen($type,$value){
+    }
   }
   function getEachPerson(){
       return DB_doquer('SELECT DISTINCT AttP_erson
@@ -76,30 +82,31 @@
       return updatePerson($obj,true);
   }
   function readPerson($id){
+      // check existance of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttP_erson
                            FROM C1_P_erson AS isect0
                           WHERE isect0.AttP_erson = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj = new Person($id, array(), array(), array());
+      $obj1 = new Person($id, array(), array(), array());
       $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttID_document
                            FROM T1_authentic AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-          $obj->add_idDocument(new Person_idDocument($v['AttID_document']));
+      foreach($ctx as $i=>$v1){
+          $obj2=$obj1->add_idDocument(new Person_idDocument($v1['AttID_document']));
       }
       $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
                            FROM T8_inhabitant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-          $obj->add_residence(new Person_residence($v['AttA_rea']));
+      foreach($ctx as $i=>$v1){
+          $obj2=$obj1->add_residence(new Person_residence($v1['AttA_rea']));
       }
       $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
                            FROM T2_applicant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-          $obj->add_application(new Person_application($v['AttA_pplication']));
+      foreach($ctx as $i=>$v1){
+          $obj2=$obj1->add_application(new Person_application($v1['AttA_pplication']));
       }
-      return $obj;
+      return $obj1;
   }
   function updatePerson(Person $Person,$new=false){
       global $DB_link,$DB_err,$DB_lastquer;
@@ -108,14 +115,15 @@
       if($new){ // create a new object
         if(!isset($Person->id)){ // find a unique id
            $nextNum = DB_doquer('SELECT max(1+AttP_erson) FROM C1_P_erson GROUP BY \'1\'');
-           $Person->id = $nextNum[0][0];
+           $Person->id = @$nextNum[0][0]+0;
         }
         if(DB_plainquer('INSERT INTO C1_P_erson (AttP_erson) VALUES (\''.addslashes($Person->id).'\')',$errno)===false){
             $DB_err=$preErr.(($errno==1062) ? 'Person \''.$Person->id.'\' allready exists' : 'Error '.$errno.' in query '.$DB_lastquer);
             DB_doquer('ROLLBACK');
             return false;
         }
-      }else{
+      }else
+      if(!$new){
         // destroy old attribute values
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttID_document
                            FROM T1_authentic AS fst
@@ -124,7 +132,7 @@
         foreach($effected as $i=>$v){
             $arr[]='\''.addslashes($v['AttID_document']).'\'';
         }
-        $idDocument_str=join(',',$arr);
+        $Person_idDocument_str=join(',',$arr);
         DB_doquer( 'DELETE FROM T1_authentic WHERE AttP_erson=\''.addslashes($Person->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
                            FROM T8_inhabitant AS fst
@@ -133,7 +141,7 @@
         foreach($effected as $i=>$v){
             $arr[]='\''.addslashes($v['AttA_rea']).'\'';
         }
-        $residence_str=join(',',$arr);
+        $Person_residence_str=join(',',$arr);
         DB_doquer( 'DELETE FROM T8_inhabitant WHERE AttP_erson=\''.addslashes($Person->id).'\'');
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
                            FROM T2_applicant AS fst
@@ -142,52 +150,55 @@
         foreach($effected as $i=>$v){
             $arr[]='\''.addslashes($v['AttA_pplication']).'\'';
         }
-        $application_str=join(',',$arr);
+        $Person_application_str=join(',',$arr);
         DB_doquer( 'DELETE FROM T2_applicant WHERE AttP_erson=\''.addslashes($Person->id).'\'');
       }
-      foreach($Person->idDocument as $i=>$v){
-        if(!isset($v->id)){
+      foreach($Person->idDocument as $i=>$Person_idDocument){
+        if(!isset($Person_idDocument->id)){
            $nextNum = DB_doquer('SELECT max(1+AttID_document) FROM C2_ID_document GROUP BY \'1\'');
-           $v->id = $nextNum[0][0];
-        }else{
-           // check cardinalities...
+           $Person_idDocument->id = @$nextNum[0][0]+0;
         }
-        DB_doquer('INSERT IGNORE INTO C2_ID_document (AttID_document) VALUES (\''.addslashes($v->id).'\')');
-        DB_doquer('INSERT IGNORE INTO T1_authentic (AttP_erson,AttID_document) VALUES (\''.addslashes($Person->id).'\',\''.addslashes($v->id).'\')');
+        DB_doquer('INSERT IGNORE INTO C2_ID_document (AttID_document) VALUES (\''.addslashes($Person_idDocument->id).'\')');
+        DB_doquer('INSERT IGNORE INTO T1_authentic (AttP_erson,AttID_document) VALUES (\''.addslashes($Person->id).'\',\''.addslashes($Person_idDocument->id).'\')');
+          if(!$new){
+            // destroy old attribute values
+          }
       }
-      foreach($Person->residence as $i=>$v){
-        if(!isset($v->id)){
+      foreach($Person->residence as $i=>$Person_residence){
+        if(!isset($Person_residence->id)){
            $nextNum = DB_doquer('SELECT max(1+AttA_rea) FROM C7_A_rea GROUP BY \'1\'');
-           $v->id = $nextNum[0][0];
-        }else{
-           // check cardinalities...
+           $Person_residence->id = @$nextNum[0][0]+0;
         }
-        DB_doquer('INSERT IGNORE INTO C7_A_rea (AttA_rea) VALUES (\''.addslashes($v->id).'\')');
-        DB_doquer('INSERT IGNORE INTO T8_inhabitant (AttP_erson,AttA_rea) VALUES (\''.addslashes($Person->id).'\',\''.addslashes($v->id).'\')');
+        DB_doquer('INSERT IGNORE INTO C7_A_rea (AttA_rea) VALUES (\''.addslashes($Person_residence->id).'\')');
+        DB_doquer('INSERT IGNORE INTO T8_inhabitant (AttP_erson,AttA_rea) VALUES (\''.addslashes($Person->id).'\',\''.addslashes($Person_residence->id).'\')');
+          if(!$new){
+            // destroy old attribute values
+          }
       }
-      foreach($Person->application as $i=>$v){
-        if(!isset($v->id)){
+      foreach($Person->application as $i=>$Person_application){
+        if(!isset($Person_application->id)){
            $nextNum = DB_doquer('SELECT max(1+AttA_pplication) FROM C3_A_pplication GROUP BY \'1\'');
-           $v->id = $nextNum[0][0];
-        }else{
-           // check cardinalities...
+           $Person_application->id = @$nextNum[0][0]+0;
         }
-        DB_doquer('INSERT IGNORE INTO C3_A_pplication (AttA_pplication) VALUES (\''.addslashes($v->id).'\')');
-        DB_doquer('INSERT IGNORE INTO T2_applicant (AttP_erson,AttA_pplication) VALUES (\''.addslashes($Person->id).'\',\''.addslashes($v->id).'\')');
+        DB_doquer('INSERT IGNORE INTO C3_A_pplication (AttA_pplication) VALUES (\''.addslashes($Person_application->id).'\')');
+        DB_doquer('INSERT IGNORE INTO T2_applicant (AttP_erson,AttA_pplication) VALUES (\''.addslashes($Person->id).'\',\''.addslashes($Person_application->id).'\')');
+          if(!$new){
+            // destroy old attribute values
+          }
       }
-      if(!$new && strlen($idDocument_str))
+      if(!$new && strlen($Person_idDocument_str))
         DB_doquer('DELETE FROM C2_ID_document
-          WHERE AttID_document IN ('.$idDocument_str.')
-            AND NOT EXISTS (SELECT * FROM T1_authentic
-                             WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
-                           )
+          WHERE AttID_document IN ('.$Person_idDocument_str.')
             AND NOT EXISTS (SELECT * FROM T3_checked
                              WHERE C2_ID_document.AttID_document = T3_checked.AttID_document
                            )
+            AND NOT EXISTS (SELECT * FROM T1_authentic
+                             WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
+                           )
         ');
-      if(!$new && strlen($residence_str))
+      if(!$new && strlen($Person_residence_str))
         DB_doquer('DELETE FROM C7_A_rea
-          WHERE AttA_rea IN ('.$residence_str.')
+          WHERE AttA_rea IN ('.$Person_residence_str.')
             AND NOT EXISTS (SELECT * FROM T8_inhabitant
                              WHERE C7_A_rea.AttA_rea = T8_inhabitant.AttA_rea
                            )
@@ -195,11 +206,17 @@
                              WHERE C7_A_rea.AttA_rea = T9_area.AttA_rea
                            )
         ');
-      if(!$new && strlen($application_str))
+      if(!$new && strlen($Person_application_str))
         DB_doquer('DELETE FROM C3_A_pplication
-          WHERE AttA_pplication IN ('.$application_str.')
+          WHERE AttA_pplication IN ('.$Person_application_str.')
+            AND NOT EXISTS (SELECT * FROM T10_leadsto
+                             WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
+                           )
             AND NOT EXISTS (SELECT * FROM T6_kind
                              WHERE C3_A_pplication.AttA_pplication = T6_kind.AttA_pplication
+                           )
+            AND NOT EXISTS (SELECT * FROM T4_assigned
+                             WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
                            )
             AND NOT EXISTS (SELECT * FROM T2_applicant
                              WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttA_pplication
@@ -207,36 +224,42 @@
             AND NOT EXISTS (SELECT * FROM T3_checked
                              WHERE C3_A_pplication.AttA_pplication = T3_checked.AttA_pplication
                            )
-            AND NOT EXISTS (SELECT * FROM T4_assigned
-                             WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
-                           )
-            AND NOT EXISTS (SELECT * FROM T10_leadsto
-                             WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
-                           )
         ');
     if (!checkRule2()){
-      $DB_err=$preErr.'\"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"';
+      $DB_err=$preErr.'"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."';
     } else
     if (!checkRule3()){
-      $DB_err=$preErr.'\"An application for a permit is accepted only from individuals whose identity is authenticated.\"';
+      $DB_err=$preErr.'"An application for a permit is accepted only from individuals whose identity is authenticated."';
     } else
     if (!checkRule5()){
-      $DB_err=$preErr.'\"authentic[Person*IDdocument] is injective\"';
+      $DB_err=$preErr.'"authentic[Person*IDdocument] is injective"';
     } else
     if (!checkRule6()){
-      $DB_err=$preErr.'\"authentic[Person*IDdocument] is surjective\"';
+      $DB_err=$preErr.'"authentic[Person*IDdocument] is surjective"';
     } else
     if (!checkRule7()){
-      $DB_err=$preErr.'\"applicant[Application*Person] is univalent\"';
+      $DB_err=$preErr.'"applicant[Application*Person] is univalent"';
     } else
     if (!checkRule8()){
-      $DB_err=$preErr.'\"applicant[Application*Person] is total\"';
+      $DB_err=$preErr.'"applicant[Application*Person] is total"';
+    } else
+    if (!checkRule9()){
+      $DB_err=$preErr.'"checked[Application*IDdocument] is univalent"';
+    } else
+    if (!checkRule12()){
+      $DB_err=$preErr.'"kind[Application*Product] is total"';
     } else
     if (!checkRule15()){
-      $DB_err=$preErr.'\"inhabitant[Person*Area] is univalent\"';
+      $DB_err=$preErr.'"inhabitant[Person*Area] is univalent"';
     } else
     if (!checkRule16()){
-      $DB_err=$preErr.'\"inhabitant[Person*Area] is total\"';
+      $DB_err=$preErr.'"inhabitant[Person*Area] is total"';
+    } else
+    if (!checkRule17()){
+      $DB_err=$preErr.'"area[Employee*Area] is surjective"';
+    } else
+    if (!checkRule18()){
+      $DB_err=$preErr.'"leadsto[Application*Decision] is injective"';
     } else
       if(true){ // all rules are met
           DB_doquer('COMMIT');
@@ -249,6 +272,17 @@
     global $DB_err;
     DB_doquer('START TRANSACTION');
     
+  /*
+  authentic
+  inhabitant
+  applicant
+  *************
+  inhabitant
+  authentic
+  I
+  applicant
+  V
+  */
         $effected = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttID_document
                            FROM T1_authentic AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
@@ -280,11 +314,11 @@
     if(strlen($idDocument_str))
       DB_doquer('DELETE FROM C2_ID_document
         WHERE AttID_document IN ('.$idDocument_str.')
-          AND NOT EXISTS (SELECT * FROM T1_authentic
-                           WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
-                         )
           AND NOT EXISTS (SELECT * FROM T3_checked
                            WHERE C2_ID_document.AttID_document = T3_checked.AttID_document
+                         )
+          AND NOT EXISTS (SELECT * FROM T1_authentic
+                           WHERE C2_ID_document.AttID_document = T1_authentic.AttID_document
                          )
       ');
     if(strlen($residence_str))
@@ -300,8 +334,14 @@
     if(strlen($application_str))
       DB_doquer('DELETE FROM C3_A_pplication
         WHERE AttA_pplication IN ('.$application_str.')
+          AND NOT EXISTS (SELECT * FROM T10_leadsto
+                           WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
+                         )
           AND NOT EXISTS (SELECT * FROM T6_kind
                            WHERE C3_A_pplication.AttA_pplication = T6_kind.AttA_pplication
+                         )
+          AND NOT EXISTS (SELECT * FROM T4_assigned
+                           WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
                          )
           AND NOT EXISTS (SELECT * FROM T2_applicant
                            WHERE C3_A_pplication.AttA_pplication = T2_applicant.AttA_pplication
@@ -309,36 +349,42 @@
           AND NOT EXISTS (SELECT * FROM T3_checked
                            WHERE C3_A_pplication.AttA_pplication = T3_checked.AttA_pplication
                          )
-          AND NOT EXISTS (SELECT * FROM T4_assigned
-                           WHERE C3_A_pplication.AttA_pplication = T4_assigned.AttA_pplication
-                         )
-          AND NOT EXISTS (SELECT * FROM T10_leadsto
-                           WHERE C3_A_pplication.AttA_pplication = T10_leadsto.AttA_pplication
-                         )
       ');
     if (!checkRule2()){
-      $DB_err=$preErr.'\"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"';
+      $DB_err=$preErr.'"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."';
     } else
     if (!checkRule3()){
-      $DB_err=$preErr.'\"An application for a permit is accepted only from individuals whose identity is authenticated.\"';
+      $DB_err=$preErr.'"An application for a permit is accepted only from individuals whose identity is authenticated."';
     } else
     if (!checkRule5()){
-      $DB_err=$preErr.'\"authentic[Person*IDdocument] is injective\"';
+      $DB_err=$preErr.'"authentic[Person*IDdocument] is injective"';
     } else
     if (!checkRule6()){
-      $DB_err=$preErr.'\"authentic[Person*IDdocument] is surjective\"';
+      $DB_err=$preErr.'"authentic[Person*IDdocument] is surjective"';
     } else
     if (!checkRule7()){
-      $DB_err=$preErr.'\"applicant[Application*Person] is univalent\"';
+      $DB_err=$preErr.'"applicant[Application*Person] is univalent"';
     } else
     if (!checkRule8()){
-      $DB_err=$preErr.'\"applicant[Application*Person] is total\"';
+      $DB_err=$preErr.'"applicant[Application*Person] is total"';
+    } else
+    if (!checkRule9()){
+      $DB_err=$preErr.'"checked[Application*IDdocument] is univalent"';
+    } else
+    if (!checkRule12()){
+      $DB_err=$preErr.'"kind[Application*Product] is total"';
     } else
     if (!checkRule15()){
-      $DB_err=$preErr.'\"inhabitant[Person*Area] is univalent\"';
+      $DB_err=$preErr.'"inhabitant[Person*Area] is univalent"';
     } else
     if (!checkRule16()){
-      $DB_err=$preErr.'\"inhabitant[Person*Area] is total\"';
+      $DB_err=$preErr.'"inhabitant[Person*Area] is total"';
+    } else
+    if (!checkRule17()){
+      $DB_err=$preErr.'"area[Employee*Area] is surjective"';
+    } else
+    if (!checkRule18()){
+      $DB_err=$preErr.'"leadsto[Application*Decision] is injective"';
     } else
     if(true) {
       DB_doquer('COMMIT');
