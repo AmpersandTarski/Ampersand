@@ -73,7 +73,7 @@
 >     sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
->                         [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []]))
+>                         [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []]))
 >      cTrees   = makeTrees (Typ (map reverse pths))
 >      Typ pths = typology (isa context)
 >      gE    = genE context
@@ -417,7 +417,7 @@
 >  prevRule context r = if null rs then error("Fatal: no last rule in this context") else head rs
 >    where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (rules context)++reverse (rules context)
 >  htmlRule :: Context -> Rule -> Bool -> String
->  htmlRule context@(Ctx nm on isa world dc ms cs ks os) r predLogic
+>  htmlRule context r predLogic
 >   = htmlPage ("Code (5) for "++"Rule "++show (nr r)) ""
 >                   (htmlBody ((if emptyGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] [])
 >                               then "" else "<A HREF=#REF2Glossary>Glossary</A> ")++
@@ -537,7 +537,7 @@
 
 TODO: implement signals in the atlas, but make sure it performs (the excommented code does not perform...)
 
->  htmlSignals context@(Ctx cnm on isa world dc ms cds ks os) pat
+>  htmlSignals context pat
 >   = ""
 >  {- (if null nss then "" else  "\n"++htmlHeadinglevel 2 "Signals" []++
 >      "\n(At most three events are shown"++(if length nss==1 then "" else " per signal")++".)")++
@@ -551,11 +551,11 @@ TODO: implement signals in the atlas, but make sure it performs (the excommented
 >           nss = [s| s@(_,es)<-ss, not (null es)]
 >  -}
 
->  emptyGlossary (Ctx cnm on isa world dc ms cds ks os) pat
->   = null [[c,cdef]| Cd _ c cdef _<-cds, C c (==) [] `elem` concs pat]
->  htmlGlossary context@(Ctx cnm on isa world dc ms cds ks os) pat
+>  emptyGlossary context pat
+>   = null [[c,cdef]| Cd _ c cdef _<-conceptdefs context, C c (==) [] `elem` concs pat]
+>  htmlGlossary context pat
 >   = htmlHeadinglevel 2 "Glossary" []++
->     htmlTable [[c,cdef]| Cd _ c cdef _<-cds, C c (==) [] `elem` concs pat] ""
+>     htmlTable [[c,cdef]| Cd _ c cdef _<-conceptdefs context, C c (==) [] `elem` concs pat] ""
 
 The following function makes a HTML page for one particular concept c, interpreted in the context of world.
 This page is mounted in the contents frame of the architecture page, to which the navigator (left hand side of 
@@ -593,7 +593,7 @@ the screen) points.
 >--        where cp as bs = [a++b|a<-as,b<-bs] ; single x = [x]
 
 >  htmlViewpoint :: Context -> String -> Pattern -> Concept -> Classification Concept -> Bool -> String
->  htmlViewpoint context@(Ctx cnm on isa world dc ms cs ks os) fnm pat c (Cl r cls) predLogic
+>  htmlViewpoint context fnm pat c (Cl r cls) predLogic
 >   = (htmlPage (name c) "" . htmlBody)
 >     (vptTitle (name c)                                                                            ++
 
@@ -604,7 +604,7 @@ Traceability (removed for now)
         "\n<BR />inheriting properties from "++
         commaAnd [htmlAnchor (thisCtx++name c++name g++".html") (name g) []|Cl g cls'<-cls]++".")   ++
 
->     concat ["\n<P>\n"++htmlBold "Definition"++"\n<BR />\n"++cdef| Cd _ c' cdef _<-cs, c'==name c] ++
+>     concat ["\n<P>\n"++htmlBold "Definition"++"\n<BR />\n"++cdef| Cd _ c' cdef _<-conceptdefs context, c'==name c] ++
 >      (if null atoms then "" else if length atoms==1
 >       then "\n<P>\n"++htmlBold ("This concept contains one atom: "++show (head atoms))
 >       else "\n<P>\n"++htmlBold ("This concept contains "++show (length atoms)++" atoms.")++"<BR />\n"++
@@ -682,7 +682,7 @@ Obsolete?
                "<BR />specs context = "++show (specs context)
           else ""
 
-test:  recalc context@(Ctx nm on isa world dc ms cs ks os) = Ctx (error (testC++"\n\n"++testD)) on isa world dc ms cs ks os
+test:  recalc context@(Ctx nm on isa world dc ms cs ks os pops) = Ctx (error (testC++"\n\n"++testD)) on isa world dc ms cs ks os pops
 
 
   hsign (Sg a b) ps

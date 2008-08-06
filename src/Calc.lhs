@@ -52,7 +52,7 @@
 >      (entities, relations, ruls) = erAnalysis context
 >      hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
 >      context = head ([ c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      sh x = showHS x
 >      codeFragments :: [ECArule]
 >      codeFragments = [ eca | rule<-rules context, clause<-conjuncts rule, eca<-doClause (shrink clause) ]

@@ -38,7 +38,7 @@
 >     qStat "START TRANSACTION"
 >     where
 >      context = head ([{-recalc-} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      csl = serviceLayer context noTransactions beeper dbName
 >      esl = entitiesLayer context filename noTransactions beeper
 >      qStat str = putStr ("  nr. of "++str++" queries: "++ [' '|i<-[length str..17]]++show (count str (csl++esl))++"\n")

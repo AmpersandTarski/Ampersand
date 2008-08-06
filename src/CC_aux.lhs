@@ -4,7 +4,7 @@
 >            , Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
 >            , ConceptDef(Cd)
->            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx), objectOfConcept, KeyDef(Kd), KeyDefs
+>            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx, populations), objectOfConcept, KeyDef(Kd), KeyDefs
 >            , Rule(Ru,Sg,Gc)
 >            , makeMph
 >            , Gen(G)
@@ -39,7 +39,7 @@
 >            , mIs
 >            , isMph, isProperty, 
 >            , union
-
+>            , Population(Popu), Populations
 >            , Pop(update)
 >            , Gens, Declarations, GenR, Contexts
 >            , contents, put_gE, makeConceptSpace, pMeaning
@@ -92,7 +92,10 @@ TODO:
 
 >  type ObjDefs = [ObjectDef]
 >  instance Identified ObjectDef where
->   name (Obj nm pos ctx ats) = nm
+>   name (Obj nm _ _ _) = nm
+
+>  instance Identified KeyDef where
+>   name (Kd _ lbl _ _) = lbl
 
 >  objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
 >    where os = [o|o<-attributes context,concept o == cpt]
@@ -182,15 +185,18 @@ which means:
 I[Person] = ssn;ssn~
 I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 
->  data ConceptDef = Cd FilePos  -- the position of this definition in the text of the ADL source (filename, line number and column number).
->                       String   -- the name of this concept. If there is no such concept, the conceptdefinition is ignored.
->                       String   -- the textual definition of this concept.
->                       String   -- a label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
->                    deriving Show
+>  data ConceptDef = Cd FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
+>                       String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.
+>                       String   -- def: the textual definition of this concept.
+>                       String   -- ref: a label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+>                    deriving Show    -- so, conventionally we will write: Cd pos nm def ref
 >  instance Eq ConceptDef where
->   Cd _ n _ _ == Cd _ m _ _ = n==m
+>   Cd _ nm _ _ == Cd _ nm' _ _ = nm==nm'
 >  instance Identified ConceptDef where
->   name (Cd _ n _ _) = n
+>   name (Cd _ nm _ _) = nm
+
+>  type Populations = [Population]
+>  data Population = Popu Morphism Pairs
 
 >  type ConceptDefs = [ConceptDef]
 >  data Context   = Ctx String                    -- name of this context
@@ -202,9 +208,14 @@ I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 >                       ConceptDefs               -- a list of concept definitions defined in this context, outside the scope of patterns
 >                       KeyDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
 >                       ObjDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
+>                       [Population]              -- a list of populations defined in this context
 >               --    deriving Show -- just for testing
 >--  instance Eq Context where
->--   Ctx nm _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ = nm == nm'
+>--   Ctx nm _ _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ _ = nm == nm'
+
+>  wrld :: Context -> [Classification Context]
+>  wrld (Ctx nm on i world dc ss cs ks os pops) = world
+
 >  type Contexts  = [Context]
 >  type Paire     = [String]
 >  src, trg      :: Paire -> String
@@ -681,13 +692,13 @@ Transform a rule to an expression:
 >   closExprs (Pat nm rs gen pms cs ks)              = closExprs rs
 
 >  instance Morphical Context where
->   concs        (Ctx nm on isa world dc ss cs ks os) = concs ss `uni` concs dc
->   conceptdefs  (Ctx nm on isa world dc ss cs ks os) = cs
->   mors         (Ctx nm on isa world dc ss cs ks os) = mors dc `uni` mors os
->   morlist      (Ctx nm on isa world dc ss cs ks os) = morlist dc++morlist os
->   declarations (Ctx nm on isa world dc ss cs ks os) = ss
->   closExprs    (Ctx nm on isa world dc ss cs ks os) = closExprs dc `uni` closExprs os
->   objDefs      (Ctx nm on isa world dc ss cs ks os) = os
+>   concs        (Ctx nm on isa world dc ss cs ks os pops) = concs ss `uni` concs dc
+>   conceptdefs  (Ctx nm on isa world dc ss cs ks os pops) = cs
+>   mors         (Ctx nm on isa world dc ss cs ks os pops) = mors dc `uni` mors os
+>   morlist      (Ctx nm on isa world dc ss cs ks os pops) = morlist dc++morlist os
+>   declarations (Ctx nm on isa world dc ss cs ks os pops) = ss
+>   closExprs    (Ctx nm on isa world dc ss cs ks os pops) = closExprs dc `uni` closExprs os
+>   objDefs      (Ctx nm on isa world dc ss cs ks os pops) = os
 
 >  instance Morphical ObjectDef where
 >   concs        (Obj nm pos ctx ats) = [source ctx] `uni` concs ats
@@ -763,14 +774,15 @@ Transform a rule to an expression:
 >   showsPrec p Aut = showString "AUT"
 
 >{-  instance Show Context where
->   showsPrec p (Ctx nm on isa world dc ss cs ks os)
+>   showsPrec p (Ctx nm on isa world dc ss cs ks os pops)
 >    = showString ("CONTEXT "++nm++
 >                  (if on==[] then "" else " EXTENDS "++chain ", " on)++"\n"++
 >                  chain "\n\n" (map show dc)++"\n"++
 >                  chain "\n" (map show ss)++++"\n"++
 >                  chain "\n" (map show cs)++++"\n"++
 >                  chain "\n" (map show ks)++++"\n"++
->                  chain "\n" (map show os)++"\nENDCONTEXT" ) -}
+>                  chain "\n" (map show os)++++"\n"++
+>                  chain "\n" (map show pops)++"\nENDCONTEXT" ) -}
 
 The function showHS prints structures as haskell source, which is intended for testing.
 
@@ -807,23 +819,28 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
->   showHS (Ctx nm on isa world dc ss cs ks os)
->    = nlHs++"ctx_"++nm++"\n>   = Ctx "++show nm++" "++show on++" isa (genEq (typology isa)) []"++
+>   showHS (Ctx nm on isa world dc ss cs ks os pops)
+>    = nlHs++"ctx_"++nm++nlHs++" = Ctx "++show nm++" "++show on++" isa (genEq (typology isa)) []"++
 >      ind++showL ["pat_"++name p|p<-dc]++
 >      ind++showL ["mor_"++name s++name(source s)++name(target s)|s<-ss]++
+>      ind++showL ["pat_"++name p|p<-cs]++
+>      ind++showL ["key_"++name p|p<-ks]++
 >      ind++showL [showHS o|o<-os]++
+>      ind++showL [showHS p|p<-pops]++
 >      init nlHs'++"where"++nlHs'++
 >      "isa = "++showHS isa++
 >      concat [nlHs'++showHS s|s<-ss]++"\n"++
 >      showHS dc++
 >      concat ["\n\nDeclarations from "++name pat++"\n"++concat[nlHs'++showHS s|s<-declarations pat]|pat<-dc]
 >      where nlHs = "\n>  "; ind = nlHs++"       "; nlHs' = nlHs++"    "
->   showADL (Ctx nm on isa world dc ss cs ks os)
+>   showADL (Ctx nm on isa world dc ss cs ks os pops)
 >    = "CONTEXT\n" ++
+>      chain "\n\n" (map showADL os) ++ "\n\n" ++
 >      chain "\n\n" (map showADL dc) ++ "\n\n" ++
 >      chain "\n" (map showADL ss) ++ "\n\n" ++
->--      chain "\n" (map showADL cs) ++ "\n\n" ++
->--      chain "\n" (map showADL ks) ++
+>      chain "\n" (map showADL cs) ++ "\n\n" ++
+>      chain "\n" (map showADL ks) ++ "\n\n" ++
+>      chain "\n\n" (map showADL pops) ++
 >      "\nENDCONTEXT"
 
 >  instance ShowHS Pattern where
@@ -842,6 +859,14 @@ The function showHS prints structures as haskell source, which is intended for t
 >--      chain "\n" (map showADL cs) ++ "\n\n" ++
 >--      chain "\n" (map showADL ks) ++
 >      "\nENDPATTERN"
+
+>  instance ShowHS Population where
+>   showHS (Popu m ps)
+>    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++", ") (map show ps)++nlHs'++"]"
+>      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
+>   showADL (Popu m ps)
+>    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++"; ") (map show ps)++nlHs'++"]"
+>      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 
 >  instance ShowHS Rule where
 >   showHS r@(Ru 'A' _ p cons cpu expla sgn nr pn)
@@ -882,42 +907,6 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >   showADL e = show e
 
-    showADL (Fu [Cp (F [Tm (Mph "r" <...>) ]) ,F [Tm (Mph "s" <...>) ]])
--->
-    wrap 0 4 (chain "\\/" [showchar 4 f| f<-[Cp (F [Tm (Mph "r" <...>) ])
-                                            ,F [Tm (Mph "s" <...>) ]
-                                            ]
-                          ]
-             )
-=
-    chain "\\/" [showchar 4 f| f<-[ Cp (F [Tm (Mph "r" <...>) ])
-                                  , F [Tm (Mph "s" <...>) ]
-                                  ]
-                ]
-=
-    chain "\\/" [showchar 4 (Cp (F [Tm (Mph "r" <...>) ]))
-                ,showchar 4 (F [Tm (Mph "s" <...>) ])
-                ]
-=
-    showchar 7 (F [Tm (Mph "r" <...>) ])++"-"
-    ++"\\/"++
-    showchar 4 (F [Tm (Mph "s" <...>) ])
-=
-    wrap 7 7 (chain rMul [showchar 7 t| t<-[Tm (Mph "r" <...>) ]])++"-"
-    ++"\\/"++
-    wrap 4 7 (chain rMul [showchar 7 t| t<-Tm (Mph "s" <...>) ]])
-=
-    chain rMul [showchar 7 (Tm (Mph "r" <...>))]++"-"
-    ++"\\/"++
-    chain rMul [showchar 7 (Tm (Mph "s" <...>))]
-=
-    showADL (Mph "r" <...>)++"-"
-    ++"\\/"++
-    showADL (Mph "s" <...>)
-=
-    "r" ++ "-" ++ "\\/" ++ "s"
-    
-
 >  showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar 0 e
 >    where
 >     wrap i j str = if i<=j then str else lpar++str++rpar
@@ -956,6 +945,18 @@ The function showHS prints structures as haskell source, which is intended for t
 >               then "S "++show (name c) -- ++" "++show (conts c)
 >               else "C "++show (name c) -- ++" "++show (conts c)
 >   showADL c = show (name c)
+
+>  instance ShowHS ConceptDef where
+>   showHS (Cd pos nm def ref)
+>    = chain " " (["Cd", "("++showHS pos++")", nm, def]++[ref|not (null ref)])
+>   showADL (Cd pos nm def ref)
+>    = "\n  CONCEPT "++show nm++" "++show def++" "++(if null ref then "" else show ref)
+
+>  instance ShowHS KeyDef where
+>   showHS (Kd pos lbl ctx ats)
+>    = chain " " ["Kd", "("++showHS pos++")", lbl, "("++showHS ctx++")", showHS ats]
+>   showADL (Kd pos lbl ctx ats)
+>    = "KEY "++lbl++">"++name (target ctx)++"("++chain "," (map showADL ats)++")"
 
 >  instance ShowHS ObjectDef where
 >   showHS  (Obj nm pos ctx ats) = "Obj ("++nm++") (pos) ("++(showHS ctx)++") ["++chain ", " (map showHS ats)++"]"
@@ -1008,6 +1009,11 @@ The function showHS prints structures as haskell source, which is intended for t
 >  instance ShowHS Gen where
 >   showHS (G g s)  = "G ("++show s++") ("++show g++")"
 >   showADL (G g s) = "GEN "++showADL s++" ISA "++show g
+
+>  instance ShowHS FilePos where
+>    showHS (FilePos (fn,Pos l c,sym))
+>      = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
+>    showADL p = error ("(module CC_aux) ADL does not show positions, not even "++show p)  -- positions are not shown in ADL. This definition just keeps the compiler happy, but will not be called.
 
   instance Show Pattern where
    showsPrec p (Pat nm rs gen pms cs ks)
@@ -1156,7 +1162,10 @@ Every declaration m has cardinalities, in which
 >   keys :: a->[(Concept,String,[ObjectDef])]
 
 >  instance Key Context where
->   keys (Ctx nm on isa world dc ss cs ks os) = (concat [keys p| p<-dc] ++ [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks])
+>   keys context@(Ctx nm on isa world dc ss cs ks os pops)
+>    = ( concat [keys p| p<-patterns context] ++
+>        [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks]
+>      )
 
 >  instance Key Pattern where
 >   keys (Pat nm rs gen pms cs ks) = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks]
@@ -1165,22 +1174,25 @@ Every declaration m has cardinalities, in which
 >   keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
 
    instance Key ObjectDef where
-    keys (Obj nm pos ctx ats) = [(c,nm,ats)]
+    keys (Obj nm pos ctx ats) = [(target ctx,nm,ats)]
 
 >  class Object a where
 >   concept :: a -> Concept
 >   attributes :: a -> [ObjectDef]
 >   ctx :: a -> Expression
+>   populations :: a -> [Population]
 
 >  instance Object Context where
 >   concept _    = Anything
->   attributes (Ctx nm on isa world dc ss cs ks os) = os
+>   attributes (Ctx nm on isa world dc ss cs ks os pops) = os
 >   ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
+>   populations  (Ctx nm on isa world dc ss cs ks os pops) = pops
 
 >  instance Object ObjectDef where
 >   concept (Obj nm pos ctx ats) = target ctx
 >   attributes (Obj nm pos ctx ats) = ats
 >   ctx (Obj nm pos ctx' ats) = ctx'
+>   populations  _ = []
 
 The following definition is used to compute whether a concept may display its internal code.
 This may be done when there are no keys and no instances for this particular concept.
@@ -1231,9 +1243,12 @@ Om een of andere reden stond hier eerder:
 >   specialize t (G g s) = G (specialize t g) (specialize t s)
 
 >  instance Pop Context where
->   put_gE gE cs (Ctx nm on isa world dc ss cs' ks os) = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) dc) (map (put_gE gE cs) ss) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os)
->   update ss    (Ctx nm on isa world dc ss' cs ks os) = Ctx nm on isa world (map (update ss) dc) (map (update ss) ss') cs (map (update ss) ks) (map (update ss) os)
->   specialize t (Ctx nm on isa world dc ss  cs ks os) = Ctx nm on isa world (map (specialize t) dc) (map (specialize t) ss) cs (map (specialize t) ks) (map (specialize t) os)
+>   put_gE gE cs (Ctx nm on isa world dc ss cs' ks os pops)
+>    = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) dc) (map (put_gE gE cs) ss) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os) pops
+>   update ss    (Ctx nm on isa world dc ss' cs ks os pops)
+>    = Ctx nm on isa world (map (update ss) dc) (map (update ss) ss') cs (map (update ss) ks) (map (update ss) os) pops
+>   specialize t (Ctx nm on isa world dc ss  cs ks os pops)
+>    = Ctx nm on isa world (map (specialize t) dc) (map (specialize t) ss) cs (map (specialize t) ks) (map (specialize t) os) pops
 
 >  instance Pop Pattern where
 >   put_gE gE cs (Pat nm rs gen pms cs' ks) = Pat nm (map (put_gE gE cs) rs) (map (put_gE gE cs) gen) (map (put_gE gE cs) pms) cs' (map (put_gE gE cs) ks)
@@ -1783,7 +1798,7 @@ TODO: transform the following into  instance Collection Declaration where
 >  applyM (Vs _ _)                             d c = show True
 
 >  instance Identified Context where
->   name (Ctx nm _ _ _ _ _ _ _ _) = nm
+>   name (Ctx nm _ _ _ _ _ _ _ _ _) = nm
 
 >  instance Identified Pattern where
 >   name (Pat nm _ _ _ _ _) = nm
@@ -1856,12 +1871,12 @@ properties is achieved as a result.
 >                                                 ts = clear (tuples++[(g,s)| G g s<-parChds])
 
 >  instance Language Context where
->   rules      (Ctx nm on i world dc ss cs ks os) = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) dc)++rules world)
->   signals    (Ctx nm on i world dc ss cs ks os) = signals (foldr union (Pat "" [] [] [] [] []) dc)++signals world
->   specs      (Ctx nm on i world dc ss cs ks os) = specs (foldr union (Pat "" [] [] [] [] []) dc)++specs world
->   patterns   (Ctx nm on i world dc ss cs ks os) = dc
->   objectdefs (Ctx nm on i world dc ss cs ks os) = os
->   isa        (Ctx nm on i world dc ss cs ks os) = i
+>   rules      (Ctx nm on i world dc ss cs ks os pops) = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) dc)++rules world)
+>   signals    (Ctx nm on i world dc ss cs ks os pops) = signals (foldr union (Pat "" [] [] [] [] []) dc)++signals world
+>   specs      (Ctx nm on i world dc ss cs ks os pops) = specs (foldr union (Pat "" [] [] [] [] []) dc)++specs world
+>   patterns   (Ctx nm on i world dc ss cs ks os pops) = dc
+>   objectdefs (Ctx nm on i world dc ss cs ks os pops) = os
+>   isa        (Ctx nm on i world dc ss cs ks os pops) = i
 >   multRules context
 >    = renumberRules (1 + (length (rules context)))
 >                     [  c
@@ -1891,9 +1906,6 @@ properties is achieved as a result.
 >           id'    = F [Tm (I [target d] (target d) (target d) True)]
 
   nogE a b = False
-
->  wrld :: Context -> [Classification Context]
->  wrld (Ctx nm on i world dc ss cs ks os) = world
 
 Language peculiarities
 

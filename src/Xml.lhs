@@ -27,7 +27,7 @@
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 
 Basic XML markup
 
@@ -43,7 +43,7 @@ Basic XML markup
 >   showXML xs indent = chain "\n" [showXML x indent| x<-xs]
 
 >  instance XML Context where
->   showXML ctx indent -- (Ctx nm on isa world dc ss cs ks os)
+>   showXML ctx indent -- (Ctx nm on isa world dc ss cs ks os pops)
 >    = tagLn indent "CONTEXT" ["NAME="++show (name ctx)] (\indent->chain "\n" (inhoud indent))
 >    where inhoud indent
 >           = [showXML cd  indent| cd<-conceptdefs ctx, name cd `elem` (map name.concs) ctx]++

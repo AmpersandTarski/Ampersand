@@ -3,7 +3,7 @@
 -- TODO: cyclisch verband in signalen ontdekken en verbieden (SIGNAL inzage ON ALWAYS inzage)
 
 DATA Architecture  | Arch cs:Contexts
-DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ms:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs
+DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ms:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
 DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:ConceptDefs ks:KeyDefs
 DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
@@ -33,6 +33,8 @@ DATA Concept       | C c:String gE:GenR os:{[String]}
 DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
 DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
 DATA ConceptDef    | Cd pos:{FilePos} nm:String def:String ref:String
+DATA Population    | Popu m:Morphism ps:{[Paire]}
+
 TYPE ConceptDefs   = [ConceptDef]
 TYPE Contexts      = [Context]
 TYPE Gens          = [Gen]
@@ -45,6 +47,7 @@ TYPE KeyDefs       = [KeyDef]
 TYPE ObjDefs       = [ObjectDef]
 TYPE Patterns      = [Pattern]
 TYPE Pairs         = [Paire]
+TYPE Populations   = [Population]
 
 imports
 {
@@ -78,7 +81,7 @@ import CC_aux
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph
-          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs
+          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs, Population(Popu), Populations
           , nr, pos, multiplicities, declaration
           , inline
          )
@@ -129,7 +132,7 @@ mkCtxAG ctxs ctxName
 -- multiple ctTrees may occur if contexts are used multiply in different ctTrees.
     trees = makeClassificationsF (name.fst) tuples++[Cl s []| s<-singles]
             where tuples = [ ((spc,(mG,mD)),(gen,(mG',mD')))
-                           | (spc@(Ctx nm on isa world dc ms cs ks os),(mG,mD))<-ctxs, o<-on
+                           | (spc@(Ctx nm on isa world dc ms cs ks os pops),(mG,mD))<-ctxs, o<-on
                            , (gen,(mG',mD'))<-ctxs,name gen==o]
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
@@ -209,12 +212,14 @@ SEM Context
         ms.sDef       = @mD
         ks.sDef       = @mD
         os.sDef       = @mD
+        pops.sDef     = @mD
         dc.gE         = @genE
         ms.gE         = @genE
         ks.gE         = @genE
         os.gE         = @genE
+        pops.gE       = @genE
         os.iConcs     = [Anything]
-        lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys @os.objDefs)
+        lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys @os.objDefs @pops.popus)
                         , (@dc.mGen, @mC))]
 -- if stuck looping, try changing @mC ^^ <--(here) into an empty list. It has shown the way to a computational loop in the attribute evaluation before.
         lhs.context   = put_gE @genE @cD
@@ -225,7 +230,9 @@ SEM Context
                               @dc.patterns
                               (declarations @dc.patterns) -- (error (chain "\n" (map showHS @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
                               (sort' name (rd (@cs.conDefs ++ @dc.conDefs)))
-                              @keys @os.objDefs)
+                              @keys
+                              @os.objDefs
+                              @pops.popus)
 
 -- Generation of (G g s) elements, which are the basis for a concept tree.
 ATTR Rule Rules Pattern Patterns [ | | mGen:Gens ]
@@ -244,7 +251,7 @@ SEM Rule
 
 ATTR Rule Rules [ | | declarations:Declarations usedDecls:Declarations ]
 ATTR Morphism Morphisms [ | | usedDecls:Declarations ]
-ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations KeyDef KeyDefs ObjectDef ObjDefs
+ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations KeyDef KeyDefs ObjectDef ObjDefs Population Populations
      [ sDef:Declarations gE:GenR | | ]
 {
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
@@ -622,7 +629,7 @@ SEM Expressions
 
 
 -- Type errors
-ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjDefs
+ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjDefs Population Populations
      [ | | sErr: {[String]} ]
 SEM Architecture
   | Arch lhs.sErr   = @cs.sErr
@@ -630,7 +637,7 @@ SEM Contexts
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Context
-  | Ctx  lhs.sErr   = @dc.sErr ++ @ks.sErr ++ @os.sErr
+  | Ctx  lhs.sErr   = @dc.sErr ++ @ks.sErr ++ @os.sErr ++ @pops.sErr
 SEM Patterns 
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
@@ -865,6 +872,11 @@ SEM ObjDefs
                       ++ @hd.sErr
                       ++ @tl.sErr
   | Nil  lhs.sErr   = []
+SEM Population
+  | Popu lhs.sErr   = @m.sErr
+SEM Populations
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
+  | Nil  lhs.sErr   = []
 
 ATTR Rule Rules Expression Expressions [ pn:{String} | | ]
 
@@ -984,6 +996,16 @@ SEM ObjectDef
          lhs.rnr     = @ats.rnr
          ctx.pn      = ""
          ctx.isign   = @signs
+
+ATTR Population [ | | pop:Population ]
+SEM Population
+  | Popu lhs.pop     = Popu @m.morphism @ps
+         m.isign     = let (m,ss) = @m.raw in if isMph m then (if inline m then map sign ss else map (sign.flp) ss) else [sign m]
+    
+ATTR Populations [ | | popus:Populations ]
+SEM Populations
+  | Cons lhs.popus   = @hd.pop : @tl.popus
+  | Nil  lhs.popus   = []
 
 ATTR ObjDefs [ iConcs:{[Concept]} | rnr:Int | objDefs:ObjDefs sources:{[Concept]}]
 SEM ObjDefs
@@ -1138,30 +1160,4 @@ Attribute propagation works as follows:
 6.2	The appropriate declaration of this morphism is taken from @lhs.isign.
 7. Each Gc-rule must have one or more declarations. If multiple possibilities arise, one rule is generated for each
    possibility.
--}
-
-{-
-ATTR Architecture Contexts Context Patterns Pattern Rules Gens [ | | pr:String ]
-SEM Architecture
-  | Arch lhs.pr = @cs.pr
-SEM Contexts
-  | Cons lhs.pr = show @hd.pr ++ "\n\n" ++ @tl.pr
-  | Nil  lhs.pr = ""
-SEM Context
-  | Ctx lhs.pr = "CONTEXT " ++ @nm ++ "\n" ++
-                 @dc.pr ++
-                 concat [name d++" :: "++name (source d)++" x "++name (target d)++"\n"| d<- @ms.declarations, not (isSgnl d) ] ++
-                 concat ["CONCEPT "++nm++" "++show def++" "++show ref++"\n"| Cd _ nm def ref<- @cs.list ] ++
-                 "ENDCONTEXT"
-SEM Patterns 
-  | Cons lhs.pr = @hd.pr ++ "\n" ++ @tl.pr
-  | Nil  lhs.pr = "" 
-SEM Pattern
-  | Pat lhs.pr  = "PATTERN " ++ @nm ++ "\n" ++ @rules.pr ++ "\n" ++ @gen.pr ++ "\n" ++ @pms.pr ++ "\nENDPATTERN"
-SEM Rules
-  | Cons lhs.pr = chain "\n" (map show) @hd.rules ++ "\n" ++ @tl.pr
-  | Nil  lhs.pr = "" 
-SEM Gens
-  | Cons lhs.pr = show @hd.gen ++ "\n" ++ @tl.pr
-  | Nil  lhs.pr = "" 
 -}

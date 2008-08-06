@@ -32,7 +32,7 @@
 >     >> putStr ("\n\n")
 >     where
 >      context = head ([{-recalc-} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      ls   = localsettings context dbName
 >      ctdb = connectToDataBase context dbName
 >      wrapper o = objectWrapper (name o)

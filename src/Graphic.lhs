@@ -173,7 +173,7 @@
 >        uni stefMagHierHetCommentaarVoorSchrijven = fun stefMagHierHetCommentaarVoorSchrijven
 
 >  instance Graphic Context where
->   dotGraph context style nm (Ctx cnm on isa world dc ms cs ks os)
+>   dotGraph context style nm (Ctx cnm on isa world dc ms cs ks os pops)
 >    = dotGraph context style nm (foldr union (Pat "" [] [] [] [] []) dc)
 
 >  instance Graphic Morphism where

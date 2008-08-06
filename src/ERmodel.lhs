@@ -54,7 +54,7 @@
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      (entities,relations,ruls) = erAnalysis context
 >      fnObject c = "list"++name c++".csv"
 >      shEnts = chain "\n" . map (chain ";")
@@ -84,7 +84,7 @@
 >     where
 >      rs      = rules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      shR r   = showADL r
 
 In the type definition, an entity is represented by a concept (for instance Person)

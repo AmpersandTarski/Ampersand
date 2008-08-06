@@ -76,6 +76,7 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   concept (DS c pths) = c
 >   attributes (DS c pths) = []
 >   ctx        _ = error ("Cannot evaluate the context expression of this dataset (yet)")
+>   populations (DS c pths) = []
 
 >  makeDatasets :: Morphisms -> [Dataset]
 >  makeDatasets msAll
@@ -905,7 +906,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 
 >  archShow language context = ltshow (name context) (typology (isa context)) language context
 >   where
->   ltshow cname typ language context@(Ctx nm on isa world dc ms cs ks os)
+>   ltshow cname typ language context
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
 >      [ "\\title{Toetsingscriteria\\\\"++addSlashes cname++"}"
@@ -918,7 +919,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tTezamen vormen deze regels de architectuur van "++name context++"."
 >      , designPrinciples language context
 >      , latexChapter "Terminologie" ("typology"++cname)
->      , if null cs then "" else
+>      , if null (conceptdefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
@@ -952,7 +953,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , chain "\n\n" [ latexSection ("Design choices about "++firstCaps (name pat)) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
 >                       latexEnumerate ([addSlashes (explainRule context language r)|r<-rules pat++signals pat, null (cpu r)]++
 >                                       [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
->                     | pat<-dc]
+>                     | pat<-patterns context]
 >      , latexChapter "Conceptual Analysis" "Conceptual Analysis"
 >      , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Design rules}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
 >      , spec2fp context English spec
@@ -969,9 +970,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
 >         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
 >                              )
->                     | pat<-dc]
+>                     | pat<-patterns context]
 >      , latexChapter "Glossary" ("typology"++cname)
->      , if null cs then "" else
+>      , if null (conceptdefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
 >                          | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
@@ -998,7 +999,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 
 >  instance LATEX Context where
 >   lshow language context = ltshow (name context) (typology (isa context)) language context
->   ltshow cname typ language context@(Ctx nm on isa world dc ms cs ks os)
+>   ltshow cname typ language context
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
 >      ["\\title{Functionele Specificatie\\\\"++addSlashes cname++"}"
@@ -1024,7 +1025,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
       , chain "\n\n" [ latexSection ("Afspraken over "++addSlashes (name pat)) ("Afspraken"++cname++"Pat"++firstCaps (name pat)) ++
                        latexEnumerate ([addSlashes (explainRule context language r)|r<-rules pat++signals pat, null (cpu r)]++
                                        [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
-                     | pat<-dc]
+                     | pat<-patterns context]
 
 >      , latexChapter "Conceptuele Analyse" "Conceptuele Analyse"
 >      , "\tDit hoofdstuk geeft een analyse van de regels uit hoofdstuk \\ref{chp:Ontwerpregels}."
@@ -1045,7 +1046,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
 >         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
 >                              )
->                     | pat<-dc]
+>                     | pat<-patterns context]
 >      , latexChapter "Gegevensanalyse" "Gegevensanalyse"
 >      , "\tDe keuzes, zoals beschreven in hoofdstuk \\ref{chp:Ontwerpregels} zijn in een gegevensanalyse vertaald naar"
 >      , "\thet klassediagram in figuur \\ref{fig:"++cname++"CD}."
@@ -1057,7 +1058,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >--      , "De terminologie is ontleend aan het Divisie Informatieplan \\cite{TPDI},"
 >--      , "de begrippenlijst voor \\mulF{} \\cite{MultiFit} en de begrippen gebruikt in de voorstudie SBD \\cite{SBD}."
 >--      , "In geval van conflicten gaan begrippen uit \\cite{TPDI} v\\'o\\'or \\cite{MultiFit} en begrippen uit \\cite{MultiFit} v\\'o\\'or \\cite{SBD}."
->      , if null cs then "" else
+>      , if null (conceptdefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
@@ -1102,7 +1103,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
 >         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
 >                              )
->                     | pat<-dc]
+>                     | pat<-patterns context]
 >      , latexChapter "Data Analysis" "Data Analysis"
 >      , "\tA data analysis of the principles from the previous chapter (\\ref{chp:Design rules}) yields a class diagram,"
 >      , "\twhich shown in figure \\ref{fig:"++cname++"CD}."
@@ -1111,7 +1112,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tDetails are provided in the following sections."
 >      , funcSpecLaTeX context (funcSpec context (erAnalysis context) English) English
 >      , latexChapter "Glossary" ("typology"++cname)
->      , if null cs then "" else
+>      , if null (conceptdefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
 >                          | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
@@ -1236,13 +1237,13 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   | otherwise                                    = applyM d ("a "++(unCap.name.source) d) ("a "++(unCap.name.target) d) ++"."
 
 >  lglos language context = ltglos (name context) (typology (isa context)) language context
->  ltglos cname typ language context@(Ctx nm on isa world dc ms cs ks os)
+>  ltglos cname typ language context
 >    = (chain "\n". filter (not.null))
 >      (if language==Dutch then 
 >      [ "\\newcommand{\\mulF}{MultiF{\\it it}}"
 >      , "\\title{Woordenlijst voor "++addSlashes cname++"}"
 >      , "\\maketitle"
->      , if null cs then "" else
+>      , if null (conceptdefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >             (chain "\n" ["\\bf "++nm++" & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
@@ -1258,7 +1259,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      [ "\\title{Design of "++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , latexChapter "Glossary" ("typology"++cname)
->      , if null cs then "" else
+>      , if null (conceptdefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++nm++" & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
 >                          | Cd pos nm def ref<-conceptdefs context])
 >      , if null cList then "" else
@@ -1269,7 +1270,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\\label{bibliography"++name context++"}"
 >      ] else [] )
 >      where
->       cList = concs context>-rd [C nm (==) []| Cd _ nm _ _<-conceptdefs context]
+>       cList = concs context>-rd [C (name cd) (==) []| cd<-conceptdefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context

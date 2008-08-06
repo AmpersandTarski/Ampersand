@@ -31,7 +31,7 @@ import CC_aux
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph
-          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs
+          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs, Population(Popu), Populations
           , nr, pos, multiplicities, declaration
           , inline
          )
@@ -80,7 +80,7 @@ mkCtxAG ctxs ctxName
 -- multiple ctTrees may occur if contexts are used multiply in different ctTrees.
     trees = makeClassificationsF (name.fst) tuples++[Cl s []| s<-singles]
             where tuples = [ ((spc,(mG,mD)),(gen,(mG',mD')))
-                           | (spc@(Ctx nm on isa world dc ms cs ks os),(mG,mD))<-ctxs, o<-on
+                           | (spc@(Ctx nm on isa world dc ms cs ks os pops),(mG,mD))<-ctxs, o<-on
                            , (gen,(mG',mD'))<-ctxs,name gen==o]
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
@@ -441,8 +441,8 @@ type T_Context = (Classification (Context,(Gens,Declarations))) ->
 -- cata
 sem_Context :: (Context) ->
                (T_Context)
-sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os))) =
-    (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_dc))) ((sem_Declarations (_ms))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))))
+sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_pops))) =
+    (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_dc))) ((sem_Declarations (_ms))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))) ((sem_Populations (_pops))))
 sem_Context_Ctx :: (String) ->
                    ([String]) ->
                    (Inheritance Concept) ->
@@ -452,8 +452,9 @@ sem_Context_Ctx :: (String) ->
                    (T_ConceptDefs) ->
                    (T_KeyDefs) ->
                    (T_ObjDefs) ->
+                   (T_Populations) ->
                    (T_Context)
-sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_ctxTree) (_lhs_ctxs) =
+sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_pops) (_lhs_ctxTree) (_lhs_ctxs) =
     let (_mD) =
             (                       renumber.mergecontents.concat) [mD| (context,(mG,mD)) <- preCl _lhs_ctxTree]
         (_mC) =
@@ -482,6 +483,8 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_
             (_ks (_genE) (_dc_rnr) (_mD))
         ( _os_objDefs,_os_rnr,_os_sErr,_os_sources) =
             (_os (_genE) ([Anything]) (_ks_rnr) (_mD))
+        ( _pops_popus,_pops_sErr) =
+            (_pops (_genE) (_mD))
     in  (put_gE _genE _cD
          ( Ctx _nm
                _on
@@ -490,10 +493,12 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ms) (_cs) (_ks) (_os) (_lhs_
                _dc_patterns
                (declarations _dc_patterns)
                (sort' name (rd (_cs_conDefs ++ _dc_conDefs)))
-               _keys _os_objDefs)
-        ,[( put_gE _genE _cD (Ctx _nm _on _inh [] _dc_patterns _mC _cs_conDefs _keys _os_objDefs)
+               _keys
+               _os_objDefs
+               _pops_popus)
+        ,[( put_gE _genE _cD (Ctx _nm _on _inh [] _dc_patterns _mC _cs_conDefs _keys _os_objDefs _pops_popus)
          , (_dc_mGen, _mC))]
-        ,_dc_sErr ++ _ks_sErr ++ _os_sErr
+        ,_dc_sErr ++ _ks_sErr ++ _os_sErr ++ _pops_sErr
         )
 -- Contexts ----------------------------------------------------
 {-
@@ -1567,6 +1572,7 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
            chain "\n     , "
                  (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
                       _signs)
+           ++ "\n"
          | length _signs > 1
          ]
         )
@@ -1719,6 +1725,82 @@ sem_Patterns_Nil :: (T_Patterns)
 sem_Patterns_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let 
     in  ([],[],[],[],[],[],_lhs_rnr,[],[])
+-- Population --------------------------------------------------
+{-
+   inherited attributes:
+      gE                   : GenR
+      sDef                 : Declarations
+
+   chained attributes:
+
+   synthesised attributes:
+      pop                  : Population
+      sErr                 : [String]
+
+-}
+{-
+   local variables for Population.Popu:
+
+-}
+-- semantic domain
+type T_Population = (GenR) ->
+                    (Declarations) ->
+                    ((Population),([String]))
+-- cata
+sem_Population :: (Population) ->
+                  (T_Population)
+sem_Population ((Popu (_m) (_ps))) =
+    (sem_Population_Popu ((sem_Morphism (_m))) (_ps))
+sem_Population_Popu :: (T_Morphism) ->
+                       ([Paire]) ->
+                       (T_Population)
+sem_Population_Popu (_m) (_ps) (_lhs_gE) (_lhs_sDef) =
+    let ( _m_atts,_m_id,_m_morphism,_m_nm,_m_pos,_m_raw,_m_sErr,_m_usedDecls,_m_yin) =
+            (_m (_lhs_gE) (let (m,ss) = _m_raw in if isMph m then (if inline m then map sign ss else map (sign.flp) ss) else [sign m]) (_lhs_sDef))
+    in  (Popu _m_morphism _ps,_m_sErr)
+-- Populations -------------------------------------------------
+{-
+   inherited attributes:
+      gE                   : GenR
+      sDef                 : Declarations
+
+   chained attributes:
+
+   synthesised attributes:
+      popus                : Populations
+      sErr                 : [String]
+
+-}
+{-
+   local variables for Populations.Cons:
+
+-}
+{-
+   local variables for Populations.Nil:
+
+-}
+-- semantic domain
+type T_Populations = (GenR) ->
+                     (Declarations) ->
+                     ((Populations),([String]))
+-- cata
+sem_Populations :: (Populations) ->
+                   (T_Populations)
+sem_Populations (list) =
+    (foldr (sem_Populations_Cons) (sem_Populations_Nil) ((map sem_Population list)))
+sem_Populations_Cons :: (T_Population) ->
+                        (T_Populations) ->
+                        (T_Populations)
+sem_Populations_Cons (_hd) (_tl) (_lhs_gE) (_lhs_sDef) =
+    let ( _hd_pop,_hd_sErr) =
+            (_hd (_lhs_gE) (_lhs_sDef))
+        ( _tl_popus,_tl_sErr) =
+            (_tl (_lhs_gE) (_lhs_sDef))
+    in  (_hd_pop : _tl_popus,_hd_sErr ++ _tl_sErr)
+sem_Populations_Nil :: (T_Populations)
+sem_Populations_Nil (_lhs_gE) (_lhs_sDef) =
+    let 
+    in  ([],[])
 -- Prop --------------------------------------------------------
 {-
    inherited attributes:

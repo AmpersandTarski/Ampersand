@@ -113,7 +113,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n")
 >                  where
 >                     context  = head ([c| c<-contexts, name c==contextname]++
->                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >                     (ents,rels,ruls) = erAnalysis context
 >                     spec = funcSpec context (ents,rels,ruls) (lang switches)
 >            lang switches
@@ -125,14 +125,14 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >   = putStr (showHS context)
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
->                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []]))
+>                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []]))
 >  projectSpecText contexts contextname language
 >   = putStrLn ("\nGenerating project plan for "++name context)                >>
 >     writeFile (name context++".csv") (projectClassic context spec language)  >>
 >     putStr ("\nMicrosoft Project file "++name context++".csv written... ")
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      spec = funcSpec context (erAnalysis context) language
 >      (entities, relations, ruls) = erAnalysis context
 
@@ -143,7 +143,7 @@ functionalSpecText generates a functional specification in ASCII
      putStr (funcSpecText context spec language)
      where
       context  = head ([c| c<-contexts, name c==contextname]++
-                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
       spec = funcSpec context (entities, relations, ruls) language
       (entities, relations, ruls) = erAnalysis context
 
@@ -160,7 +160,7 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
@@ -174,7 +174,7 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
@@ -186,7 +186,7 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     processLaTeX2PDF ("gloss"++name context)
 >     where
 >      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] []])
+>                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 
 >  graphics context fnm graphicstyle full b
 >   = writeFile (fnm++"_CD.dot") (cdDataModel context full "dot" b)  >>

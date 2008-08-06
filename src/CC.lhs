@@ -9,7 +9,7 @@
 >            , Pattern(Pat)
 >            , Declaration(Sgn)
 >            , ConceptDef(Cd)
->            , ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs
+>            , ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs, Population(Popu), Populations
 >            , Rule(Ru,Sg,Gc)
 >            , Gen(G)
 >            , Pairs
@@ -38,7 +38,7 @@ VERSION, AUTHOR, PURPOSE, STAKEHOLDER
 >  keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
 >                      , "PATTERN", "ENDPATTERN"
 >                      , "OBJECT", "INITIAL"
->                      , "POPULATION", "ENDPOPULATION"
+>                      , "POPULATION", "CONTAINS"
 >                      , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX"
 >                      , "RELATION", "CONCEPT", "KEY"
 >                      , "IMPORT", "GEN", "ISA", "I", "V"
@@ -60,20 +60,28 @@ This will be achieved by generating signal rules only.
 >                                 ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
 >                                 pList (pContextElement beep) <* pKey "ENDCONTEXT"
 >                      where rebuild nm on ces
->                             = Ctx nm on empty [] [p| CPat p<-ces] [m| CMor m<-ces] [c| CCon c<-ces] [k| CKey k<-ces] [o| CObj o<-ces]
+>                             = Ctx nm on empty []
+>                                   [p| CPat p<-ces]
+>                                   [m| CMor m<-ces]
+>                                   [c| CCon c<-ces]
+>                                   [k| CKey k<-ces]
+>                                   [o| CObj o<-ces]
+>                                   [Popu m ps| CPop m ps<-ces]
 
 >  data ContextElement = CPat Pattern
 >                      | CMor Declaration
 >                      | CCon ConceptDef
 >                      | CKey KeyDef
 >                      | CObj ObjectDef
+>                      | CPop Morphism Pairs
 
 >  pContextElement  :: Bool -> Parser Token ContextElement
 >  pContextElement beep = CPat <$> pPattern beep <|>
 >                         CMor <$> pDeclaration  <|>
 >                         CCon <$> pConceptDef   <|>
 >                         CKey <$> pKeyDef       <|>
->                         CObj <$> pObjDef
+>                         CObj <$> pObjDef       <|>
+>                         CPop <$ pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
 
 >  pPattern         :: Bool -> Parser Token Pattern
 >  pPattern beep     = rebuild <$ pKey "PATTERN" <*> (pConid <|> pString)
@@ -271,13 +279,13 @@ Bas: het volgende is nog incorrect....
 >  pDeclaration      = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept
 >                              <*> (pProps `opt` []) <*> (pPragma `opt` [])
 >                              <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
->                              <*> (pContent `opt` []) <* pSpec '.'
+>                              <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
 >                      where rebuild nm pos s fun t props pragma expla content
 >                              = Sgn nm s t (rd props `uni` if fun=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos 0 False
 >                                where pr = pragma++["","",""]
 
 >  pContent         :: Parser Token Pairs
->  pContent          = pKey "=" *> pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
+>  pContent          = pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
 
 >  pProps           :: Parser Token [Prop]
 >  pProps            = pSpec '['  *> pListSep (pSpec ',') pProp <* pSpec ']'
