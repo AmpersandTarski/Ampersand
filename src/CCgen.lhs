@@ -6,11 +6,11 @@
 >  import CommonClasses ( Identified(name), empty )
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, concs, rules, multRules, patterns)
+>  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, showHSname, concs, rules, multRules, patterns)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
->  import Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints)
+>  import Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec)
 >  import HtmlFilenames
 >  import Graphic
 >  import Atlas (anal)
@@ -76,7 +76,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                ([ anal contexts contextname ("-p" `elem` switches) (if "-crowfoot" `elem` switches then "crowfoot" else "cc")
 >                 | null switches || "-h" `elem` switches]++
 >                 [ makeXML contexts contextname| "-XML" `elem` switches]++
->                 [ showHaskell contexts contextname| "-Haskell" `elem` switches]++
+>                 [ showHaskell contexts contextname| "-Haskell" `elem` switches]++ -- het resultaat heeft op 7 aug 2008 succesvol gecompileerd.
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >                 [ functionalSpecLaTeX contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-Z" `elem` switches || "-fSpec" `elem` switches]++
 >  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
@@ -138,12 +138,21 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >      (entities, relations, ruls) = erAnalysis context
 
 >  showHaskell contexts contextname
->   = putStrLn ("\nGenerating Haskell source code for "++name context)                >>
->     writeFile (name context++".lhs") (showHS context)  >>
->     putStr ("\nHaskell file "++name context++".lhs written... ")
+>   = putStrLn ("\nGenerating Haskell source code for "++name context) >>
+>     writeFile (ctxNm++".lhs")
+>               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n\n"
+>                ++">  main = putStr (showHS "++ctxNm++")\n\n"
+>                ++">  "++showHSname fspec++"\n>   = "++showHS fspec++"\n\n"
+>                ++">  "++showHSname context++"\n>   = "++showHS context
+>               ) >>
+>     putStr ("\nHaskell file "++ctxNm++".lhs written...\n")
 >     where
+>      fspec = makeFspec context
+>      ctxNm = showHSname context
+>      spcNm = showHSname fspec
 >      context  = head ([c| c<-contexts, name c==contextname]++
 >                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+
 
 functionalSpecText generates a functional specification in ASCII
 

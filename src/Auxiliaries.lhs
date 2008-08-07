@@ -4,6 +4,7 @@
 >  , unCap, upCap
 >  , fst3, snd3, thd3
 >  , chain
+>  , showL
 >  , rd
 >  , rEncode
 >  , commaEng
@@ -24,6 +25,7 @@
 >  , mumble
 >  , fixSpaces
 >  , transpose
+>  , haskellIdentifier
 > )
 > where
 >  import Char (isAlpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
@@ -155,6 +157,9 @@ Cartesian product by diagonalization of two (possibly infinite) lists
 >  chain str [] = []
 >  chain str xs = foldl f (head xs) (tail xs) where f x y = x++str++y
 
+>  showL   :: [String] -> String
+>  showL xs = "["++chain "," xs++"]"
+
 >  commaEng :: String -> [String] -> String
 >  commaEng str [a,b,c]= a++", "++b++", "++str++" "++c
 >  commaEng str [a,b]  = a++" "++str++" "++b
@@ -228,6 +233,18 @@ Spaties
 >  fixSpaces :: Int -> String -> String
 >  fixSpaces n a = [' '| i<-[1..n-length str]]++str
 >   where str = show a
+
+Haskell ondersteuning
+
+maak een Haskell identifier van een willekeurige String
+TODO 7 aug 2008: checken of dit klopt met de Haskell scanner!
+
+>  haskellIdentifier "" = ""
+>  haskellIdentifier (c:cs) | isAlphaNum c || c=='\''  = c: haskellIdentifier cs
+>                           | otherwise                = haskellIdentifier (conceptForm cs)
+>   where
+>     conceptForm (c:cs) = toUpper c: map toLower cs
+>     conceptForm "" = ""
 
 > ---------Onderstaande code lijkt niet meer nodig....  ----------
 

@@ -1,4 +1,4 @@
->  module Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints) where
+>  module Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec) where
 
 functionalSpecLaTeX,glossary,projectSpecText,archText,
 
@@ -18,6 +18,17 @@ A specification is made for one context.
 A specification contains one Fobj-specification for every object it defines and one Ftheme-specification for every pattern it contains.
 
 >  data Fspec = Fctx Context [Ftheme] [Fobj]
+
+>  instance ShowHS Fspec where
+>   showHSname (Fctx context themes objects) = "f_Ctx_"++name context        
+>   showHS fctx@(Fctx context themes objects)
+>    = "Fctx "++showHSname context++"   -- (Fctx context themes objects)"++
+>      (if null themes  then " []" else ind++showL [showHSname t|t<-themes ])++
+>      (if null objects then " []" else ind++showL [showHSname o|o<-objects])++
+>      init nlHs'++"where"++
+>      (if null objects then "" else concat [nlHs'++showHSname o++" = "++showHS o|o<-objects ]++"\n")++
+>      (if null themes  then "" else concat [nlHs'++showHSname t++" = "++showHS t|t<-themes  ]++"\n")
+>      where nlHs = "\n>   "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 
 The story:
 A number of datasets for this context is identified.
@@ -83,9 +94,13 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   = ds
 >     where ms = [m| m<-msAll++[flp m|m<-msAll], isFunction m]
 >           ps = clos source target ms
->           ds = [DS c pths| c<-concs ms, pths<-[[p|p<-ps, source (head p)==c]], not (null pths) ]
+>           ds = [DS c pths| c<-concs ms, pths<-[[p|p<-ps, not (null p), source (head p)==c]], not (null pths) ]
 
 >  data Fobj  = Fobj ObjectDef
+
+>  instance ShowHS Fobj where
+>   showHSname (Fobj objd) = "f_Obj_"++name objd
+>   showHS (Fobj objd) = "Fobj ("++showHS objd++")"
 
 >  makeFobj :: ObjectDef -> [Dataset] -> Fobj
 >  makeFobj o dg = Fobj o
@@ -94,6 +109,10 @@ Every Ftheme is a specification that is split in units, which are textual entiti
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
 
 >  data Ftheme  = Tspc Pattern [Funit]
+
+>  instance ShowHS Ftheme where
+>   showHSname (Tspc pat us) = "f_Thm_"++haskellIdentifier (name pat)
+>   showHS (Tspc pat us) = "Tspc "++showHSname pat++" ["++chain ">        ," [showHS u| u<-us]++"]"
 
 Precondition: the list of datasets must contains functionally equivalent datasets.
 This means that if d,e are datasets in dgs, then there is a bijective function between root d and root e in mors pat.
@@ -109,9 +128,13 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >                    [(ObjectDef,FPA,[Morphism],[(Expression,Rule)])]
 >                    [ServiceSpec] -- services
 
+>  instance ShowHS Funit where
+>   showHSname (Uspc nm pat ents svs) = "f_Unit_"++nm
+>   showHS (Uspc nm pat ents svs) = "Uspc "++show nm++" "++showHSname pat
+
 >  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Dataset] -> [Concept] -> [ServiceSpec] -> Funit
 >  makeFunit context pat objs dg newConcs newDecls
->   = Uspc (name (head objs)) pat [(o,ILGV Eenvoudig,[] {-cs-},[] {-rs-})| o<-objs]
+>   = Uspc (if null objs then "" else name (head objs)) pat [(o,ILGV Eenvoudig,[] {-cs-},[] {-rs-})| o<-objs]
 >            (concat [ [ newEnt context o [] {-rs-} ] ++ [ getEnt context o]                           ++
 >                      concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
 >                             | (e,key,ks)<-keys pat, e==concept o]                                ++

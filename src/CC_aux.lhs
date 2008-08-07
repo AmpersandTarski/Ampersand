@@ -4,7 +4,7 @@
 >            , Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
 >            , ConceptDef(Cd)
->            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx, populations), objectOfConcept, KeyDef(Kd), KeyDefs
+>            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx, populations, extends), objectOfConcept, KeyDef(Kd), KeyDefs
 >            , Rule(Ru,Sg,Gc)
 >            , makeMph
 >            , Gen(G)
@@ -61,7 +61,7 @@
 >                        ,Collection (uni,isc,(>-),empty)  )
 >  import Auxiliaries  
 >          ( sort', chain, rd , rEncode, commaEng, clos1, diag
->           ,eqCl, sord, eqClass, rd', enumerate, unCap)
+>           ,eqCl, sord, eqClass, rd', enumerate, unCap, showL)
 >  import Classification 
 >            ( Classification(),preCl,mapCl
 >            )
@@ -822,28 +822,42 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
->   showHSname context = "ctx_"++name context
->   showHS context@(Ctx nm on isa world dc ss cs ks os pops)
->    = nlHs++showHSname context++nlHs++" = Ctx "++show nm++" "++show on++" isa (genEq (typology isa)) []"++
->      ind++showL [showHSname p|p<-patterns context]++
->      ind++showL [showHSname s|s<-declarations context>-declarations (patterns context)]++
->      ind++showL [showHSname c|c<-conceptdefs context>-conceptdefs (patterns context)]++
->      ind++showL ["key_"++name p|p<-ks]++
->      ind++showL [showHSname o|o<-attributes context]++
->      ind++showL [showHSname p|p<-populations context]++
->      init nlHs'++"where"++nlHs'++
->      "isa = "++showHS isa++
->      concat [nlHs'++showHSname d++" = "++showHS d|d<-declarations context>-declarations (patterns context)]++"\n"++
->      concat [nlHs'++showHSname pat++" = "++showHS pat|pat<-patterns context]++"\n"++
->      concat [nlHs'++showHSname pat++" = "++showHS pat|pat<-conceptdefs context>-conceptdefs (patterns context)]
+>   showHSname context = "ctx_"++name context        
+>   showHS context
+>    = "Ctx "++show (name context)++"   -- (Ctx nm on isa world dc ds cs ks os pops)"++
+>      ind++showL [show x|x<-on]++
+>      ind++"isa [ {- world is left empty -} ]"++
+>      (if null pats then " []" else ind++showL [showHSname p|p<-pats])++
+>      (if null ds   then " []" else ind++showL [showHSname d|d<-ds])++
+>      (if null cs   then " []" else ind++showL [showHSname c|c<-cs])++
+>      (if null ks   then " []" else ind++showL ["key_"++name k|k<-ks])++
+>      (if null os   then " []" else ind++showL [showHSname o|o<-os])++
+>      (if null pops then " []" else ind++showL [showHSname p|p<-pops])++
+>      init nlHs'++"where"++
+>      nlHs'++"isa = "++showHS (isa context)++
+>      nlHs'++"gE  = genEq (typology isa)"++
+>      (if null on   then "" else nlHs'++"on  = "++showL [show x|x<-on]++"\n")++
+>      (if null os   then "" else concat [nlHs'++showHSname o++" = "++showHS o|o<-os]++"\n")++
+>      (if null ds   then "" else concat [nlHs'++showHSname d++" = "++showHS d|d<-ds]++"\n")++
+>      (if null pats then "" else concat [nlHs'++showHSname pat++nlHs'++" = "++showHS pat|pat<-patterns context]++"\n")++
+>      (if null pops then "" else concat [nlHs'++showHSname p  ++nlHs'++" = "++showHS p  |p<-populations context]++"\n")++
+>      (if null cs   then "" else concat [nlHs'++showHSname c++" = "++showHS c|c<-cs]++"\n")++
+>      (if null ks   then "" else concat [nlHs'++showHSname k++" = "++showHS k|k<-ks]++"\n")
 >      where nlHs = "\n>  "; ind = nlHs++"       "; nlHs' = nlHs++"    "
->   showADL context@(Ctx nm on isa world dc ss cs ks os pops)
+>            pats = patterns context
+>            ds   = declarations context>-declarations (patterns context)
+>            cs   = conceptdefs context>-conceptdefs (patterns context)
+>            ks   = let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks'
+>            os   = attributes context
+>            pops = populations context
+>            on   = extends context
+>   showADL context
 >    = "CONTEXT\n" ++
->      chain "\n\n" (map showADL os) ++ "\n\n" ++
+>      chain "\n\n" (map showADL (attributes context)) ++ "\n\n" ++
 >      chain "\n\n" (map showADL (patterns context)) ++ "\n\n" ++
 >      chain "\n" (map showADL (declarations context>-declarations (patterns context))) ++ "\n\n" ++
 >      chain "\n" (map showADL (conceptdefs context>-conceptdefs (patterns context))) ++ "\n\n" ++
->      chain "\n" (map showADL ks) ++ "\n\n" ++
+>      chain "\n" (map showADL (let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks')) ++ "\n\n" ++
 >      chain "\n\n" (map showADL (populations context)) ++
 >      "\nENDCONTEXT"
 
@@ -851,12 +865,18 @@ The function showHS prints structures as haskell source, which is intended for t
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
 >   showHSname pat = "pat_"++name pat
 >   showHS pat@(Pat nm rs gen pss cs ks)
->    = nlHs++showHSname pat++nlHs'++"= Pat "++show nm++
->      (if null rs then " []" else ind++"[ "++chain (ind++", ") [showHS r| r<-rs]++ind++"]")++
->      (if null gen   then " []" else ind++"[ "++chain (ind++", ") [showHS g| g<-gen] ++ind++"]")++
->      (if null gen   then " []" else ind++"[ "++chain (ind++", ") ["mor_"++name s++name(source s)++name(target s)| s<-pss] ++ind++"]")++
->      init nlHs'
->      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
+>    = "Pat "++show (name pat)++
+>      (if null (rules pat)        then " []" else ind++"[" ++chain       ", "  [showHSname r| r<-rules pat       ] ++     "]")++
+>      (if null gen                then " []" else ind++"[ "++chain (ind++", ") [showHS g    | g<-gen             ] ++ind++"]")++
+>      (if null (declarations pat) then " []" else ind++"[" ++chain       ", "  [showHSname d| d<-declarations pat] ++     "]")++
+>      (if null (conceptdefs pat)  then " []" else ind++"[" ++chain       ", "  [showHSname c| c<-conceptdefs pat ] ++     "]")++
+>      (if null ks                 then " []" else ind++"[ "++chain (ind++", ") [showHS k    | k<-ks              ] ++ind++"]")++
+>      init nlHs++"where"++
+>      (if null (declarations pat) then "" else concat [nlHs++showHSname d ++" = "++ showHS d |d <-declarations pat] )++
+>      (if null (rules pat)        then "" else concat [nlHs++showHSname r ++" = "++ showHS r |r <-rules pat       ] )++
+>      (if null (conceptdefs pat)  then "" else concat [nlHs++showHSname cd++" = "++ showHS cd|cd<-conceptdefs pat ] )++
+>      (if null ks                 then "" else concat [nlHs++showHSname k ++" = "++ showHS k |k <-ks              ] )
+>      where nlHs = "\n>          "; ind = "\n>             "
 >   showADL (Pat nm rs gen pss cs ks)
 >    = "PATTERN\n" ++
 >      chain "\n" (map showADL pss) ++
@@ -868,22 +888,23 @@ The function showHS prints structures as haskell source, which is intended for t
 >  instance ShowHS Population where
 >   showHSname (Popu m ps) = "pop_"++name m++name (source m)++name (target m)
 >   showHS p@(Popu m ps)
->    = nlHs++showHSname p++nlHs++" = [ "++chain (nlHs'++", ") (map show ps)++nlHs'++"]"
->      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
+>    = "Popu ("++showHS m++")"++nlHs++"[ "++chain (nlHs++", ") (map show ps)++nlHs++"]"
+>      where nlHs = "\n>         "
 >   showADL (Popu m ps)
 >    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++"; ") (map show ps)++nlHs'++"]"
 >      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 
 >  instance ShowHS Rule where
 >   showHSname r = "rule"++show (nr r)
->   showHS r@(Ru 'A' _ p cons cpu expla sgn nr pn)
->    = chain " " ["Ru","'A'","("++showHS (consequent r)++")","["++chain "," (map showADL cpu)++"]",show(explain r),showSgn sgn,show nr,show pn]
->   showHS r@(Ru c antc p cons cpu expla sgn nr pn)
->    = chain " " ["Ru","'"++[c]++"'","("++showHS antc++")","posNone","("++showHS (consequent r)++")","["++chain "," (map showADL cpu)++"]",show(explain r),showSgn sgn,show nr,show pn]
->   showHS r@(Sg p rule expla sgn nr pn signal)
->    = chain " " ["SIGNAL",name signal,"ON",showHS rule] -- voor later, als rule wijzigt in expr: ,show(explain r),showSgn sgn,show nr,show pn]
->   showHS r@(Gc p m expr cpu sgn nr pn)
->    = chain " " ["Gc","posNone","("++showHS m++")","("++showHS (consequent r)++")","["++chain "," (map showADL cpu)++"]",showSgn sgn,show nr,show pn]
+>   showHS r@(Ru 'A' _ pos cons cpu expla sgn nr pn)
+>    = chain " " ["Ru","'A'",undef,"("++showHS pos++")","("++showHS (consequent r)++")",showL (map showHS cpu),show(explain r),showSgn sgn,show nr,show pn]
+>      where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an 'A' rule\")"
+>   showHS r@(Ru c antc pos cons cpu expla sgn nr pn)
+>    = chain " " ["Ru","'"++[c]++"'","("++showHS antc++")","("++showHS pos++")","("++showHS (consequent r)++")","["++chain "," (map showHS cpu)++"]",show(explain r),showSgn sgn,show nr,show pn]
+>   showHS r@(Sg pos rule expla sgn nr pn signal)
+>    = chain " " ["Sg","("++showHS pos++")","("++showHS rule++")",show expla,showSgn sgn,show nr,show pn,show signal]
+>   showHS r@(Gc pos m expr cpu sgn nr pn)
+>    = chain " " ["Gc","("++showHS pos++")","("++showHS m++")","("++showHS (consequent r)++")","["++chain "," (map showHS cpu)++"]",showSgn sgn,show nr,show pn]
 >   showHS r = ""
 >   showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
 >   showADL r@(Fr _ d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
@@ -938,7 +959,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >  showS m = name m++"["++show (source m)++","++show (target m)++"]"
 >  showSgn (a,b) = "("++showHS a++","++showHS b++")"
 >  showSign cs = "["++chain "*" (map name cs)++"]"
->  showL xs = "["++chain "," xs++"]"
 >  showFullRelName m = rEncode (name m++name (source m)++name (target m))
 
 >  instance ShowHS a => ShowHS (Inheritance a) where
@@ -952,20 +972,20 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS NOthing  = "NOthing"
 >   showHS  c = if singleton c
 >               then "S "++show (name c) -- ++" "++show (conts c)
->               else "C "++show (name c) -- ++" "++show (conts c)
+>               else "C "++show (name c) ++ " gE []"    -- contents not shown.
 >   showADL c = show (name c)
 
 >  instance ShowHS ConceptDef where
 >   showHSname (Cd pos nm def ref) = "cDef_"++nm
 >   showHS cd@(Cd pos nm def ref)
->    = showHSname cd ++ " = Cd ("++showHS pos++") "++show nm++" "++show def++(if null ref then "" else " "++show ref)
+>    = " Cd ("++showHS pos++") "++show nm++" "++show def++(if null ref then "" else " "++show ref)
 >   showADL (Cd pos nm def ref)
 >    = "\n  CONCEPT "++show nm++" "++show def++" "++(if null ref then "" else show ref)
 
 >  instance ShowHS KeyDef where
 >   showHSname kd = "cDef_"++name kd
 >   showHS kd@(Kd pos lbl ctx ats)
->    = showHSname kd ++ " = Kd ("++showHS pos++") "++show lbl++" ("++showHS ctx++") "++showHS ats
+>    = "Kd ("++showHS pos++") "++show lbl++" ("++showHS ctx++") "++showHS ats
 >   showADL (Kd pos lbl ctx ats)
 >    = "KEY "++lbl++">"++name (target ctx)++"("++chain "," (map showADL ats)++")"
 
@@ -977,7 +997,15 @@ The function showHS prints structures as haskell source, which is intended for t
 >  instance ShowHS Declaration where
 >   showHSname d = "mor_"++name d++name (source d)++name (target d)
 >   showHS d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
->    = chain " " [showHSname d,"= Sgn",show nm,"("++showHS a++")","("++showHS b++")",showL(map showHS props),show prL,show prM,show prR,"[]",show expla,show pos,show nr, show sig]
+>    = "Sgn "++show nm++
+>              " ("++showHS a++") ("++showHS b++") "
+>              ++showL(map showHS props)++" "
+>              ++show prL++" "++show prM++" "++show prR++" "
+>              ++(if null cs then "[]" else "[[\"Content not shown\",\"\"]]")
+>              ++" "++show expla
+>              ++" ("++showHS pos++")"
+>              ++" "++show nr
+>              ++" "++show sig
 >   showHS (Isn g s)
 >    = "Isn ("++showHS g++") ("++showHS s++")"
 >   showHS (Iscompl g s)
@@ -1000,14 +1028,14 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Morphism where
 >   showHSname m = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL m++"). A morphism gets no definition in Haskell code.")
->   showHS (Mph nm pos atts sgn@(a,b) yin s)
->    = chain " " ["Mph",show nm,(\(FilePos (_,Pos l c,_))->show (l,c)) pos,showL(map showHS atts),showSgn sgn,show yin] -- ,"mor_"++nm++name (source s)++name (target s)]
+>   showHS (Mph nm pos atts sgn@(a,b) yin d)
+>    = "Mph "++show nm++" ("++showHS pos++") "++showL(map showHS atts)++" "++showSgn sgn++" "++show yin++" ("++showHS d++")"
 >   showHS (I atts g s yin)
->    = chain " " ["I",showL(map showHS atts),name g, name s, show yin]
+>    = "I"++" "++showL(map showHS atts)++" ("++showHS g++") ("++showHS s++") "++show yin
 >   showHS (V atts sgn)
->    = chain " " ["V",showL(map showHS atts),showSgn sgn]
+>    = "V"++" "++showL(map showHS atts)++" ("++showSgn sgn++")"
 >   showHS (Mp1 str sgn)
->    = chain " " ["Mp1",show str,showHS sgn]
+>    = "Mp1"++" "++show str++" ("++showHS sgn++")"
 >   showADL m@(Mph nm pos atts sgn@(a,b) yin s)
 >    = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} nm)++
 >      (if null atts
@@ -1023,7 +1051,7 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Gen where
 >   showHSname g = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
->   showHS (G g s)  = "G ("++show s++") ("++show g++")"
+>   showHS (G g s)  = "G ("++showHS s++") ("++showHS g++")"
 >   showADL (G g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowHS FilePos where
@@ -1193,17 +1221,26 @@ Every declaration m has cardinalities, in which
    instance Key ObjectDef where
     keys (Obj nm pos ctx ats) = [(target ctx,nm,ats)]
 
+The story with objects:
+Each object has a type, which is a concept.
+It can contain objects, which are called the attributes of the object (e.g. a Person contains name, address, city)
+Each attribute is bound to its object through the context expression of the attribute.
+So if p is a Person with name Peter, and the attribute name has context expression ctx, then p ctx Peter.
+
 >  class Object a where
->   concept :: a -> Concept
->   attributes :: a -> [ObjectDef]
->   ctx :: a -> Expression
->   populations :: a -> [Population]
+>   concept :: a -> Concept                 -- the type of the object
+>   attributes :: a -> [ObjectDef]          -- the objects defined within the object
+>   ctx :: a -> Expression                  -- the context expression
+>   populations :: a -> [Population]        -- the populations in the object (for now: use for contexts only)
+>   extends :: a -> [String]                -- the objects of which this is is extension (for now: use for contexts only)
+>   extends _ = []                          -- empty unless specified otherwise.
 
 >  instance Object Context where
 >   concept _    = Anything
 >   attributes (Ctx nm on isa world dc ss cs ks os pops) = os
 >   ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
 >   populations  (Ctx nm on isa world dc ss cs ks os pops) = pops
+>   extends (Ctx nm on isa world dc ss cs ks os pops) = on
 
 >  instance Object ObjectDef where
 >   concept (Obj nm pos ctx ats) = target ctx
