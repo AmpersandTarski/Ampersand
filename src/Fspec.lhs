@@ -1,4 +1,4 @@
->  module Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec) where
+>  module Fspec where -- (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec) where
 
 functionalSpecLaTeX,glossary,projectSpecText,archText,
 
@@ -17,18 +17,20 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 A specification is made for one context.
 A specification contains one Fobj-specification for every object it defines and one Ftheme-specification for every pattern it contains.
 
->  data Fspec = Fctx Context [Ftheme] [Fobj]
+>  data Fspec = Fctx Context [Ftheme] [Dataset] [Fobj]
 
 >  instance ShowHS Fspec where
->   showHSname (Fctx context themes objects) = "f_Ctx_"++name context        
->   showHS fctx@(Fctx context themes objects)
->    = "Fctx "++showHSname context++"   -- (Fctx context themes objects)"++
->      (if null themes  then " []" else ind++showL [showHSname t|t<-themes ])++
->      (if null objects then " []" else ind++showL [showHSname o|o<-objects])++
->      init nlHs'++"where"++
->      (if null objects then "" else concat [nlHs'++showHSname o++" = "++showHS o|o<-objects ]++"\n")++
->      (if null themes  then "" else concat [nlHs'++showHSname t++" = "++showHS t|t<-themes  ]++"\n")
->      where nlHs = "\n>   "; ind = nlHs++"       "; nlHs' = nlHs++"    "
+>   showHSname (Fctx context themes datasets objects) = "f_Ctx_"++haskellIdentifier (name context)
+>   showHS fctx@(Fctx context themes datasets objects)
+>    = "Fctx "++showHSname context++"   -- context   (Fspec has this structure:  Fctx context themes datasets objects)"++
+>      (if null themes   then " []" else ind++"{- themes   -}  "++showL [showHSname t|t<-themes  ])++
+>      (if null datasets then " []" else ind++"{- datasets -}  "++showL [showHSname d|d<-datasets])++
+>      (if null objects  then " []" else ind++"{- objects  -}  "++showL [showHSname o|o<-objects ])++
+>      nlHs'++"where"++
+>      (if null objects  then "" else concat [nlHs'++showHSname o++       " = "++showHS o|o<-objects ]++"\n")++
+>      (if null datasets then "" else concat [nlHs'++showHSname d++nlHs'++" = "++showHS d|d<-datasets]++"\n")++
+>      (if null themes   then "" else concat [nlHs'++showHSname t++       " = "++showHS t|t<-themes  ]++"\n")
+>      where nlHs = "\n>   "; ind = nlHs++"       "; nlHs' = "\n>      "
 
 The story:
 A number of datasets for this context is identified.
@@ -42,9 +44,10 @@ Every theme will be explained in a chapter of its own.
 >           (  [makeFtheme context pat dgs| (pat,dgs)<-pats]                      -- one pattern yields one theme
 >           ++ [makeFtheme context others remainingDGS| not (null remainingDGS)]  -- remaining datasets are discussed at the end
 >           )
+>           datasets
 >           [(makeFobj o . rd . concat) [dg| dg<-dsGroups, d<-dg, concept o==concept d]| o<-attributes context]
 >      where
->       datasets = (makeDatasets.mors) context
+>       datasets = (makeDatasets.declarations) context
 >       dsGroups = eqClass bi datasets
 >                  where bi c d = or [isFunction m && isFunction (flp m)
 >                                    |m<-mors context, source m==concept c, target m==concept d]
@@ -80,6 +83,11 @@ The datasets of a context are those datasets whose relations are not a subset of
 >  data Dataset = DS Concept       -- the root of the dataset
 >                    [[Morphism]]  -- the paths from the root
 
+>  instance ShowHS Dataset where
+>   showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
+>   showHS (DS c pths) = "DS ("++showHS c++")"++nlHs++"[ "++chain (nlHs++", ") [showPth pth| pth<-pths]++nlHs++"]"
+>    where nlHs = "\n>            "
+>          showPth pth = "[ "++chain (nlHs++"  , ") (map showHS pth)++nlHs++"  ]"
 >  instance Eq Dataset where
 >   DS c _ == DS d _ = c==d
 
@@ -89,17 +97,17 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   ctx        _ = error ("Cannot evaluate the context expression of this dataset (yet)")
 >   populations (DS c pths) = []
 
->  makeDatasets :: Morphisms -> [Dataset]
->  makeDatasets msAll
->   = ds
->     where ms = [m| m<-msAll++[flp m|m<-msAll], isFunction m]
->           ps = clos source target ms
->           ds = [DS c pths| c<-concs ms, pths<-[[p|p<-ps, not (null p), source (head p)==c]], not (null pths) ]
+>  makeDatasets :: [Declaration] -> [Dataset]
+>  makeDatasets dsAll
+>   = dss
+>     where ds  = [d| d<-dsAll++[flp d|d<-dsAll], isFunction d]
+>           ps  = clos source target ds
+>           dss = [DS c pths| c<-concs ds, pths<-[[map makeMph p|p<-ps, not (null p), source (head p)==c]], not (null pths) ]
 
 >  data Fobj  = Fobj ObjectDef
 
 >  instance ShowHS Fobj where
->   showHSname (Fobj objd) = "f_Obj_"++name objd
+>   showHSname (Fobj objd) = "f_Obj_"++haskellIdentifier (name objd)
 >   showHS (Fobj objd) = "Fobj ("++showHS objd++")"
 
 >  makeFobj :: ObjectDef -> [Dataset] -> Fobj
@@ -112,7 +120,7 @@ Every unit specifies one dataset, and each dataset is discussed only once in the
 
 >  instance ShowHS Ftheme where
 >   showHSname (Tspc pat us) = "f_Thm_"++haskellIdentifier (name pat)
->   showHS (Tspc pat us) = "Tspc "++showHSname pat++" ["++chain ">        ," [showHS u| u<-us]++"]"
+>   showHS (Tspc pat us) = "Tspc ("++showHSname pat++" gE) ["++chain ", " [showHS u| u<-us]++"]"
 
 Precondition: the list of datasets must contains functionally equivalent datasets.
 This means that if d,e are datasets in dgs, then there is a bijective function between root d and root e in mors pat.
@@ -129,8 +137,8 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >                    [ServiceSpec] -- services
 
 >  instance ShowHS Funit where
->   showHSname (Uspc nm pat ents svs) = "f_Unit_"++nm
->   showHS (Uspc nm pat ents svs) = "Uspc "++show nm++" "++showHSname pat
+>   showHSname (Uspc nm pat ents svs) = "f_Unit_"++haskellIdentifier nm
+>   showHS (Uspc nm pat ents svs) = "Uspc "++show nm++" ("++showHSname pat++" gE)"
 
 >  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Dataset] -> [Concept] -> [ServiceSpec] -> Funit
 >  makeFunit context pat objs dg newConcs newDecls
@@ -163,9 +171,9 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   nPatterns :: a -> Int
 >   nFpoints  :: a -> Int
 >  instance Statistics Fspec where
->   nServices (Fctx context themes objects) = nServices themes+nServices objects
->   nPatterns (Fctx context themes objects) = nPatterns themes+nPatterns objects
->   nFpoints  (Fctx context themes objects) = error ("(Module Fspec) Function points TBD")
+>   nServices (Fctx context themes datasets objects) = nServices themes+nServices objects
+>   nPatterns (Fctx context themes datasets objects) = nPatterns themes+nPatterns objects
+>   nFpoints  (Fctx context themes datasets objects) = error ("(Module Fspec) Function points TBD")
 >  instance Statistics Ftheme where
 >   nServices (Tspc p us) = nServices us
 >   nPatterns (Tspc p us) = 1

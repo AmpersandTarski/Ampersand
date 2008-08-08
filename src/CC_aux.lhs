@@ -65,7 +65,7 @@
 >  import Classification 
 >            ( Classification(),preCl,mapCl
 >            )
->  import Typology ( Inheritance(Isa), Typologic)
+>  import Typology ( Inheritance(Isa), Typologic, genEq, typology)
 
 TODO:
  - Onderscheid tussen signaal en regel maken in de datastructuur van regel.
@@ -697,6 +697,7 @@ Transform a rule to an expression:
 >   mors         (Ctx nm on isa world dc ss cs ks os pops) = mors dc `uni` mors os
 >   morlist      (Ctx nm on isa world dc ss cs ks os pops) = morlist dc++morlist os
 >   declarations (Ctx nm on isa world dc ss cs ks os pops) = ss
+>   genE         (Ctx nm on isa world dc ss cs ks os pops) = genEq (typology isa)
 >   closExprs    (Ctx nm on isa world dc ss cs ks os pops) = closExprs dc `uni` closExprs os
 >   objDefs      (Ctx nm on isa world dc ss cs ks os pops) = os
 
@@ -827,7 +828,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >    = "Ctx "++show (name context)++"   -- (Ctx nm on isa world dc ds cs ks os pops)"++
 >      ind++showL [show x|x<-on]++
 >      ind++"isa [ {- world is left empty -} ]"++
->      (if null pats then " []" else ind++showL [showHSname p|p<-pats])++
+>      (if null pats then " []" else ind++showL [showHSname p++" gE"|p<-pats])++
 >      (if null ds   then " []" else ind++showL [showHSname d|d<-ds])++
 >      (if null cs   then " []" else ind++showL [showHSname c|c<-cs])++
 >      (if null ks   then " []" else ind++showL ["key_"++name k|k<-ks])++
@@ -839,10 +840,10 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null on   then "" else nlHs'++"on  = "++showL [show x|x<-on]++"\n")++
 >      (if null os   then "" else concat [nlHs'++showHSname o++" = "++showHS o|o<-os]++"\n")++
 >      (if null ds   then "" else concat [nlHs'++showHSname d++" = "++showHS d|d<-ds]++"\n")++
->      (if null pats then "" else concat [nlHs'++showHSname pat++nlHs'++" = "++showHS pat|pat<-patterns context]++"\n")++
 >      (if null pops then "" else concat [nlHs'++showHSname p  ++nlHs'++" = "++showHS p  |p<-populations context]++"\n")++
 >      (if null cs   then "" else concat [nlHs'++showHSname c++" = "++showHS c|c<-cs]++"\n")++
->      (if null ks   then "" else concat [nlHs'++showHSname k++" = "++showHS k|k<-ks]++"\n")
+>      (if null ks   then "" else concat [nlHs'++showHSname k++" = "++showHS k|k<-ks]++"\n")++
+>      (if null pats then "" else concat ["\n"++nlHs++showHSname pat++nlHs++" = "++showHS pat|pat<-patterns context]++"\n")
 >      where nlHs = "\n>  "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 >            pats = patterns context
 >            ds   = declarations context>-declarations (patterns context)
@@ -871,12 +872,12 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null (declarations pat) then " []" else ind++"[" ++chain       ", "  [showHSname d| d<-declarations pat] ++     "]")++
 >      (if null (conceptdefs pat)  then " []" else ind++"[" ++chain       ", "  [showHSname c| c<-conceptdefs pat ] ++     "]")++
 >      (if null ks                 then " []" else ind++"[ "++chain (ind++", ") [showHS k    | k<-ks              ] ++ind++"]")++
->      init nlHs++"where"++
->      (if null (declarations pat) then "" else concat [nlHs++showHSname d ++" = "++ showHS d |d <-declarations pat] )++
->      (if null (rules pat)        then "" else concat [nlHs++showHSname r ++" = "++ showHS r |r <-rules pat       ] )++
->      (if null (conceptdefs pat)  then "" else concat [nlHs++showHSname cd++" = "++ showHS cd|cd<-conceptdefs pat ] )++
->      (if null ks                 then "" else concat [nlHs++showHSname k ++" = "++ showHS k |k <-ks              ] )
->      where nlHs = "\n>          "; ind = "\n>             "
+>      nlHs++"where"++
+>      (if null (declarations pat) then "" else concat [nlHs'++showHSname d ++" = "++ showHS d |d <-declarations pat] )++
+>      (if null (rules pat)        then "" else concat [nlHs'++showHSname r ++" = "++ showHS r |r <-rules pat       ] )++
+>      (if null (conceptdefs pat)  then "" else concat [nlHs'++showHSname cd++" = "++ showHS cd|cd<-conceptdefs pat ] )++
+>      (if null ks                 then "" else concat [nlHs'++showHSname k ++" = "++ showHS k |k <-ks              ] )
+>      where nlHs = "\n>     "; ind = nlHs++"    "; nlHs' = nlHs++" "
 >   showADL (Pat nm rs gen pss cs ks)
 >    = "PATTERN\n" ++
 >      chain "\n" (map showADL pss) ++

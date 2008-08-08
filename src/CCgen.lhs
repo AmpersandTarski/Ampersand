@@ -10,7 +10,7 @@
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
->  import Fspec (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec)
+>  import Fspec (projectClassic,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec)
 >  import HtmlFilenames
 >  import Graphic
 >  import Atlas (anal)

@@ -101,7 +101,7 @@ clos [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
 
 >  clos :: (Eq a, Eq b) => (b->a) -> (b->a) -> [b] -> [[b]] 
 >  clos left right tuples
->    = (unsublist.f 1) [[e]| e<-tuples]
+>    = [[e]| e<-tuples, right e==left e]++(unsublist.f 1) [[e]| e<-tuples, right e/=left e]
 >      where
 >       m = length (rd [c|ts<-tuples, c<-[left ts,right ts]]) `min` length tuples  -- maximum path length possible
 >       f n pths
@@ -120,17 +120,18 @@ clos [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
 
 Test spul voor clos
 
-  tests = (putStr.chain "\n".map test)
-          [ [[1,2],[2,3],[4,5]]
-          , [[1,2],[2,1]]
-          , [[1,2],[2,3],[4,5],[3,4]]
-          , [[1,2],[2,3],[4,5],[5,1]]
-          , [[1,2],[2,3],[4,5],[3,4],[5,1]]
-          , [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
-          , []
-          ]
-   where
-    test c = "clos "++show c++" = "++show (clos head last c)
+>  tests = (putStr.chain "\n".map test)
+>          [ [[2,2],[1,1],[2,3],[3,4],[0,1],[5,5]]
+>          , [[1,2],[2,3],[4,5]]
+>          , [[1,2],[2,1]]
+>          , [[1,2],[2,3],[4,5],[3,4]]
+>          , [[1,2],[2,3],[4,5],[5,1]]
+>          , [[1,2],[2,3],[4,5],[3,4],[5,1]]
+>          , [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
+>          , []
+>          ]
+>   where
+>    test c = "clos "++show c++" = "++show (clos head last c)
 
 
 >  isPrefix :: Eq a => [a] -> [a] -> Bool
