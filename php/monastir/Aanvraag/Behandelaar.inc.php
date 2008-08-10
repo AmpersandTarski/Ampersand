@@ -6,14 +6,13 @@
    *   ]
    *********/
   
-  function getobject_Behandelaar(){
-    return   new object("Behandelaar", array
+  function getobject_Behandelaar(){  return   new object("Behandelaar", array
        ( new oRef( new oMulti( true,false,false,false ) // derived from assigned~
            , new object("aanvragen", array(), "Application.php")
            ) 
        ), "Behandelaar.php");
   }
-  
+
   class Behandelaar {
     var $id;
     var $aanvragen;
@@ -24,8 +23,28 @@
     function add_aanvragen(Behandelaar_aanvragen $aanvragen){
       return $this->aanvragen[]=$aanvragen;
     }
+    function read_aanvragen($id){
+      $obj = new Behandelaar_aanvragen($id);
+      $this->add_aanvragen($obj);
+      return $obj;
+    }
+    function getEach_aanvragen(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttA_pplication
+                                FROM C3_A_pplication
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttA_pplication'];
+      }
+      return $res;
+    }
     function addGen($type,$value){
       if($type=='aanvragen') return $this->add_aanvragen($value);
+      else return false;
+    }
+    function readGen($type,$value){
+      if($type=='aanvragen') return $this->read_aanvragen($value);
       else return false;
     }
   }
@@ -35,6 +54,8 @@
         $this->id=$id;
     }
     function addGen($type,$value){
+    }
+    function readGen($type,$value){
     }
   }
   function getEachBehandelaar(){
@@ -46,19 +67,19 @@
       return updateBehandelaar($obj,true);
   }
   function readBehandelaar($id){
-      // check existance of $id
+      // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttE_mployee
                            FROM C4_E_mployee AS isect0
                           WHERE isect0.AttE_mployee = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj1 = new Behandelaar($id, array());
+      $obj = new Behandelaar($id, array());
       $ctx = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_pplication
                            FROM T4_assigned AS fst
                           WHERE fst.AttE_mployee = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_aanvragen(new Behandelaar_aanvragen($v1['AttA_pplication']));
+      foreach($ctx as $i=>$v){
+        $obj->read_aanvragen($v['AttA_pplication']);
       }
-      return $obj1;
+      return $obj;
   }
   function updateBehandelaar(Behandelaar $Behandelaar,$new=false){
       global $DB_link,$DB_err,$DB_lastquer;
@@ -144,6 +165,7 @@
   }
   function deleteBehandelaar($id){
     global $DB_err;
+    $preErr= 'Cannot delete Employee: ';
     DB_doquer('START TRANSACTION');
     
       $taken = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_rea

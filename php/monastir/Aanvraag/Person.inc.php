@@ -8,8 +8,7 @@
    *   ]
    *********/
   
-  function getobject_Person(){
-    return   new object("Person", array
+  function getobject_Person(){  return   new object("Person", array
        ( new oRef( new oMulti( true,false,true,false ) // derived from authentic
            , new object("idDocument", array())
            ) 
@@ -21,7 +20,7 @@
            ) 
        ), "Person.php");
   }
-  
+
   class Person {
     var $id;
     var $idDocument;
@@ -36,16 +35,70 @@
     function add_idDocument(Person_idDocument $idDocument){
       return $this->idDocument[]=$idDocument;
     }
+    function read_idDocument($id){
+      $obj = new Person_idDocument($id);
+      $this->add_idDocument($obj);
+      return $obj;
+    }
+    function getEach_idDocument(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttID_document
+                                FROM C2_ID_document
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttID_document'];
+      }
+      return $res;
+    }
     function add_residence(Person_residence $residence){
       return $this->residence[]=$residence;
     }
+    function read_residence($id){
+      $obj = new Person_residence($id);
+      $this->add_residence($obj);
+      return $obj;
+    }
+    function getEach_residence(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttA_rea
+                                FROM C7_A_rea
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttA_rea'];
+      }
+      return $res;
+    }
     function add_application(Person_application $application){
       return $this->application[]=$application;
+    }
+    function read_application($id){
+      $obj = new Person_application($id);
+      $this->add_application($obj);
+      return $obj;
+    }
+    function getEach_application(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttA_pplication
+                                FROM C3_A_pplication
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttA_pplication'];
+      }
+      return $res;
     }
     function addGen($type,$value){
       if($type=='idDocument') return $this->add_idDocument($value);
       if($type=='residence') return $this->add_residence($value);
       if($type=='application') return $this->add_application($value);
+      else return false;
+    }
+    function readGen($type,$value){
+      if($type=='idDocument') return $this->read_idDocument($value);
+      if($type=='residence') return $this->read_residence($value);
+      if($type=='application') return $this->read_application($value);
       else return false;
     }
   }
@@ -56,6 +109,8 @@
     }
     function addGen($type,$value){
     }
+    function readGen($type,$value){
+    }
   }
   class Person_residence {
     var $id;
@@ -64,6 +119,8 @@
     }
     function addGen($type,$value){
     }
+    function readGen($type,$value){
+    }
   }
   class Person_application {
     var $id;
@@ -71,6 +128,8 @@
         $this->id=$id;
     }
     function addGen($type,$value){
+    }
+    function readGen($type,$value){
     }
   }
   function getEachPerson(){
@@ -82,31 +141,31 @@
       return updatePerson($obj,true);
   }
   function readPerson($id){
-      // check existance of $id
+      // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttP_erson
                            FROM C1_P_erson AS isect0
                           WHERE isect0.AttP_erson = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj1 = new Person($id, array(), array(), array());
+      $obj = new Person($id, array(), array(), array());
       $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttID_document
                            FROM T1_authentic AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_idDocument(new Person_idDocument($v1['AttID_document']));
+      foreach($ctx as $i=>$v){
+        $obj->read_idDocument($v['AttID_document']);
       }
       $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
                            FROM T8_inhabitant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_residence(new Person_residence($v1['AttA_rea']));
+      foreach($ctx as $i=>$v){
+        $obj->read_residence($v['AttA_rea']);
       }
       $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
                            FROM T2_applicant AS fst
                           WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_application(new Person_application($v1['AttA_pplication']));
+      foreach($ctx as $i=>$v){
+        $obj->read_application($v['AttA_pplication']);
       }
-      return $obj1;
+      return $obj;
   }
   function updatePerson(Person $Person,$new=false){
       global $DB_link,$DB_err,$DB_lastquer;
@@ -270,6 +329,7 @@
   }
   function deletePerson($id){
     global $DB_err;
+    $preErr= 'Cannot delete Person: ';
     DB_doquer('START TRANSACTION');
     
   /*

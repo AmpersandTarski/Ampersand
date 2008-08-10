@@ -7,8 +7,7 @@
    *   ]
    *********/
   
-  function getobject_Permissions(){
-    return   new object("Permissions", array
+  function getobject_Permissions(){  return   new object("Permissions", array
        ( new oRef( new oMulti( false,false,false,false ) // derived from auth
            , new object("product", array())
            ) 
@@ -17,7 +16,7 @@
            ) 
        ), "Behandelaar.php");
   }
-  
+
   class Permissions {
     var $id;
     var $product;
@@ -30,12 +29,49 @@
     function add_product(Permissions_product $product){
       return $this->product[]=$product;
     }
+    function read_product($id){
+      $obj = new Permissions_product($id);
+      $this->add_product($obj);
+      return $obj;
+    }
+    function getEach_product(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttP_roduct
+                                FROM C5_P_roduct
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttP_roduct'];
+      }
+      return $res;
+    }
     function add_area(Permissions_area $area){
       return $this->area[]=$area;
+    }
+    function read_area($id){
+      $obj = new Permissions_area($id);
+      $this->add_area($obj);
+      return $obj;
+    }
+    function getEach_area(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttA_rea
+                                FROM C7_A_rea
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttA_rea'];
+      }
+      return $res;
     }
     function addGen($type,$value){
       if($type=='product') return $this->add_product($value);
       if($type=='area') return $this->add_area($value);
+      else return false;
+    }
+    function readGen($type,$value){
+      if($type=='product') return $this->read_product($value);
+      if($type=='area') return $this->read_area($value);
       else return false;
     }
   }
@@ -46,6 +82,8 @@
     }
     function addGen($type,$value){
     }
+    function readGen($type,$value){
+    }
   }
   class Permissions_area {
     var $id;
@@ -53,6 +91,8 @@
         $this->id=$id;
     }
     function addGen($type,$value){
+    }
+    function readGen($type,$value){
     }
   }
   function getEachPermissions(){
@@ -64,25 +104,25 @@
       return updatePermissions($obj,true);
   }
   function readPermissions($id){
-      // check existance of $id
+      // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttE_mployee
                            FROM C4_E_mployee AS isect0
                           WHERE isect0.AttE_mployee = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj1 = new Permissions($id, array(), array());
+      $obj = new Permissions($id, array(), array());
       $ctx = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttP_roduct
                            FROM T5_auth AS fst
                           WHERE fst.AttE_mployee = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_product(new Permissions_product($v1['AttP_roduct']));
+      foreach($ctx as $i=>$v){
+        $obj->read_product($v['AttP_roduct']);
       }
       $ctx = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_rea
                            FROM T9_area AS fst
                           WHERE fst.AttE_mployee = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_area(new Permissions_area($v1['AttA_rea']));
+      foreach($ctx as $i=>$v){
+        $obj->read_area($v['AttA_rea']);
       }
-      return $obj1;
+      return $obj;
   }
   function updatePermissions(Permissions $Permissions,$new=false){
       global $DB_link,$DB_err,$DB_lastquer;
@@ -195,6 +235,7 @@
   }
   function deletePermissions($id){
     global $DB_err;
+    $preErr= 'Cannot delete Employee: ';
     DB_doquer('START TRANSACTION');
     
       $taken = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_pplication

@@ -7,8 +7,7 @@
    *   ]
    *********/
   
-  function getobject_Decision(){
-    return   new object("Decision", array
+  function getobject_Decision(){  return   new object("Decision", array
        ( new oRef( new oMulti( true,true,false,true ) // derived from leadsto~
            , new object("application", array(), "Application.php")
            ) 
@@ -17,7 +16,7 @@
            ) 
        ), "Decision.php");
   }
-  
+
   class Decision {
     var $id;
     var $application;
@@ -30,12 +29,49 @@
     function add_application(Decision_application $application){
       return $this->application[]=$application;
     }
+    function read_application($id){
+      $obj = new Decision_application($id);
+      $this->add_application($obj);
+      return $obj;
+    }
+    function getEach_application(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttA_pplication
+                                FROM C3_A_pplication
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttA_pplication'];
+      }
+      return $res;
+    }
     function add_kind(Decision_kind $kind){
       return $this->kind[]=$kind;
+    }
+    function read_kind($id){
+      $obj = new Decision_kind($id);
+      $this->add_kind($obj);
+      return $obj;
+    }
+    function getEach_kind(){
+      // currently, this returns all concepts.. why not let it return only the valid ones?
+      $v = DB_doquer('SELECT DISTINCT AttP_roduct
+                                FROM C5_P_roduct
+                               WHERE 1');
+      $res = array();
+      foreach($v as $i=>$j){
+        $res[]=$j['AttP_roduct'];
+      }
+      return $res;
     }
     function addGen($type,$value){
       if($type=='application') return $this->add_application($value);
       if($type=='kind') return $this->add_kind($value);
+      else return false;
+    }
+    function readGen($type,$value){
+      if($type=='application') return $this->read_application($value);
+      if($type=='kind') return $this->read_kind($value);
       else return false;
     }
   }
@@ -46,6 +82,8 @@
     }
     function addGen($type,$value){
     }
+    function readGen($type,$value){
+    }
   }
   class Decision_kind {
     var $id;
@@ -53,6 +91,8 @@
         $this->id=$id;
     }
     function addGen($type,$value){
+    }
+    function readGen($type,$value){
     }
   }
   function getEachDecision(){
@@ -64,25 +104,25 @@
       return updateDecision($obj,true);
   }
   function readDecision($id){
-      // check existance of $id
+      // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttD_ecision
                            FROM C6_D_ecision AS isect0
                           WHERE isect0.AttD_ecision = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj1 = new Decision($id, array(), array());
+      $obj = new Decision($id, array(), array());
       $ctx = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttA_pplication
                            FROM T10_leadsto AS fst
                           WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_application(new Decision_application($v1['AttA_pplication']));
+      foreach($ctx as $i=>$v){
+        $obj->read_application($v['AttA_pplication']);
       }
       $ctx = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
                            FROM T7_kind AS fst
                           WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v1){
-          $obj2=$obj1->add_kind(new Decision_kind($v1['AttP_roduct']));
+      foreach($ctx as $i=>$v){
+        $obj->read_kind($v['AttP_roduct']);
       }
-      return $obj1;
+      return $obj;
   }
   function updateDecision(Decision $Decision,$new=false){
       global $DB_link,$DB_err,$DB_lastquer;
@@ -210,6 +250,7 @@
   }
   function deleteDecision($id){
     global $DB_err;
+    $preErr= 'Cannot delete Decision: ';
     DB_doquer('START TRANSACTION');
     
   /*
