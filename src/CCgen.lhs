@@ -122,7 +122,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >             | otherwise             = Dutch
 
 >  diagnose contexts contextname
->   = putStr (showHS context)
+>   = putStr (showHS "\n>  " context)
 >     where
 >      context  = (head ([c| c<-contexts, name c==contextname]++
 >                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []]))
@@ -140,10 +140,10 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >  showHaskell contexts contextname
 >   = putStrLn ("\nGenerating Haskell source code for "++name context) >>
 >     writeFile (ctxNm++".lhs")
->               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n\n"
->                ++">  main = putStr (showHS "++ctxNm++")\n\n"
->                ++">  "++showHSname fspec++"\n>   = "++showHS fspec++"\n\n"
->                ++">  "++showHSname context++"\n>   = "++showHS context
+>               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n>  import Fspec\n\n"
+>                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")\n\n"
+>                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>  " fspec++"\n\n"
+>                ++">  "++showHSname context++"\n>   = "++showHS "\n>  " context
 >               ) >>
 >     putStr ("\nHaskell file "++ctxNm++".lhs written...\n")
 >     where

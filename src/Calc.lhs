@@ -53,7 +53,7 @@
 >      hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
 >      context = head ([ c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
->      sh x = showHS x
+>      sh x = showHS "" x
 >      codeFragments :: [ECArule]
 >      codeFragments = [ eca | rule<-rules context, clause<-conjuncts rule, eca<-doClause (shrink clause) ]
 
@@ -71,7 +71,7 @@
 >                 , conjunct<-conjuncts rule
 >                 , Fu terms<-ilClauses conjunct
 >                 , F ts<-terms, ts'<-[[t| t<-ts, length (morlist t)==1]]
->                 , if null ts' then error(" module Calc "++show (nr rule)++" ("++show (pos rule)++") in "++showADL rule++"\nterms = "++showHS (Fu terms)++"\nts = "++showHS (F ts)) else True
+>                 , if null ts' then error(" module Calc "++show (nr rule)++" ("++show (pos rule)++") in "++showADL rule++"\nterms = "++showHS "" (Fu terms)++"\nts = "++showHS "" (F ts)) else True
 >                 , term<-[flp (head ts'), last ts']--, term `elem` cpu rule
 >                 ]
 
@@ -107,7 +107,7 @@
 >                                    |conjunct<-conjuncts rule, clause<-allClauses conjunct])
 >                , "")
 >              , ("\nniClauses:\n     "++
->                 chain "\n     " (map showHS (rd [clause|conjunct<-conjuncts rule, clause<-niClauses conjunct]))
+>                 chain "\n     " (map (showHS "") (rd [clause|conjunct<-conjuncts rule, clause<-niClauses conjunct]))
 >                , "")
 >              , ( "\nAvailable Triggers on rule "++show (nr rule)++":\n     "++
 >                  chain "\n     " [showADL (makeRule rule clause)++ " yields"++concat
@@ -210,7 +210,7 @@ so that is why parameter "do" is used in function "on".
 >  doClause r
 >   = {- if error("Diagnostic: \n"++
 >              showADL r++"\n"++
->              showHS r++"\n"++
+>              showHS "   " r++"\n"++
 >              "mors r = "++show (mors r)++"\n"++
 >              "subst r =\n   "++chain "\n   " ([ "m="++showADL m++"\nsubst ("++showADL m++","++showADL (Fu[m,delta (sign m)])++") ("++showADL r++") = "++showADL (subst (m,Fu[m,delta (sign m)]) r)++" <=> (r') "++showADL r'++"\n phi: "++showADL phi++" <=> "++(showADL.conjNF) phi++"\n (Fu[Cp r,r']): "++showADL (Fu[Cp r,r'])++" <=> "++(disjNF) (Fu[Cp r,r'])
 >                                               | m <-rd [Tm m|x<-mors r, m<-[x,flp x], inline m]
@@ -288,7 +288,7 @@ TODO: double check signature allocations to v in doCode.
 >                               f Ins (Fi fs) = simplify (Fi [f| f<-fs, not (isNeg f && notCp f==Tm m)])
 >                               f Del (Fi fs) = simplify (Fi [f| f<-fs, not (isPos f &&       (f==Tm m || (isIdent f && isIdent m)) )])
 >                               f _ e = e
->  doCode delta tOp e = error ("Module Calc: Non-exhaustive patterns in function doCode ("++showADL delta++") "++show tOp++" ("++showHS e++")")
+>  doCode delta tOp e = error ("Module Calc: Non-exhaustive patterns in function doCode ("++showADL delta++") "++show tOp++" ("++showHS "" e++")")
 
 
 TODO: Fix!
@@ -404,13 +404,13 @@ precondition: works only for expressions of the form Fu fus in which there are n
 >                    error ("(module Calc) Failure in hornCs rule f@(Fu fus) with\n"++
 >                           "Rule : "++showADL rule++"\n"++
 >                           "t    : "++showADL t++"\n"++
->                           "t    : "++showHS t++"\n"++
+>                           "t    : "++showHS "" t++"\n"++
 >                           "f    : "++showADL f++"\n"++
->                           "f    : "++showHS f++"\n"
+>                           "f    : "++showHS "" f++"\n"
 >                          )
 >           hdl l | null (declarations l) = error("Module Calc: empty list of declarations in hornCs")
 >                 | otherwise             = head (declarations l)
->  hornCs rule e = error("Module Calc: erroneous call of hornCs ("++showHS e++") in rule "++show (nr rule)++":\n  "++showADL rule)
+>  hornCs rule e = error("Module Calc: erroneous call of hornCs ("++showHS "" e++") in rule "++show (nr rule)++":\n  "++showADL rule)
 
 De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel r-) er in een expressie zitten.
 
@@ -424,7 +424,7 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >    lvs (Tm r)  = [Tm r]
 >    lvs (K0 e)  = lvs e
 >    lvs (K1 e)  = lvs e
->    lvs e = error("module Calc: illegal pattern in leaves ("++showADL e++")\ne = "++showHS e)
+>    lvs e = error("module Calc: illegal pattern in leaves ("++showADL e++")\ne = "++showHS "" e)
 
 >  type ComputeRule = ([(String,Declaration)],Expression,String,Expression,Expression,Rule)
 >  instance Show ComputeRule where
@@ -594,9 +594,9 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >            [ if True {- debug: nr rule/=12 -} then (fOps', e, bOp, toExpr, frExpr, rule) else
 >              error ( "(diagnostic in module Calc)" ++
 >                      "\nfrExpr (showADL)    = "++showADL frExpr ++
->                      "\nfrExpr (showHS)     = "++showHS frExpr ++
->                      "\ndeclarations frExpr = "++showHS (declarations frExpr) ++
->                      "\nss                  = "++showHS ss  ++
+>                      "\nfrExpr (showHS)     = "++showHS "" frExpr ++
+>                      "\ndeclarations frExpr = "++showHS "" (declarations frExpr) ++
+>                      "\nss                  = "++showHS "" ss  ++
 >                      "\nnot (null (ss `isc` declarations frExpr)) = "++show(not (null (ss `isc` declarations frExpr)))
 >                    )
 >            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
@@ -696,7 +696,7 @@ So, conjNF' (a/\b);c  yields a;c /\ b;c.
 >  showProof ((e,ss,equ):prf) = "\n      "++showADL e++
 >                               "\n"++(if null ss then "\n   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain "; " ss++" }")++
 >                               showProof prf
->                               where e'= if null prf then "" else let (e,ss,equ):_ = prf in showHS e 
+>                               where e'= if null prf then "" else let (e,ss,equ):_ = prf in showHS "" e 
 >  showProof []               = ""
 
 conjNF expr is equal to expr    (expr ==  conjNF  expr)
@@ -1072,7 +1072,7 @@ shiftL moet een expressie opleveren van de vorm Fu fs, zonder dubbele voorkomens
 
 >  shiftL :: Expression -> [Expression]
 >  shiftL r
->   | length antss+length conss /= length fus = error ("(module Calc) shiftL will not handle argument of the form "++showHS r)
+>   | length antss+length conss /= length fus = error ("(module Calc) shiftL will not handle argument of the form "++showHS "" r)
 >   | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
 >   | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F conss)]
 >   | otherwise                               = [Fu ([ Cp (F (if null ts then id css else ts))
@@ -1088,12 +1088,12 @@ shiftL moet een expressie opleveren van de vorm Fu fs, zonder dubbele voorkomens
 >    fus = filter (not.isIdent) fs
 >    antss = [ts | Cp (F ts)<-fus]
 >    conss = [ts | F ts<-fus]
->    srcA = -- if null antss  then error ("(module Calc) empty antecedent in shiftL ("++showHS r++")") else
->           if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("(module Calc) shiftL ("++showHS r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
+>    srcA = -- if null antss  then error ("(module Calc) empty antecedent in shiftL ("++showHS "" r++")") else
+>           if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("(module Calc) shiftL ("++showHS "" r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
 >           foldr1 lub [ source (head ants) | ants<-antss]
 >    id ass = [Tm (mIs c)]
 >     where a = (source.head.head) ass
->           c = if not (a `order` b) then error ("(module Calc) shiftL ("++showHS r++")\n"++showADL r++"\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
+>           c = if not (a `order` b) then error ("(module Calc) shiftL ("++showHS "" r++")\n"++showADL r++"\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
 >               a `lub` b
 >           b = (target.last.last) ass
 >  -- It is imperative that both ass and css are not empty.
@@ -1113,7 +1113,7 @@ shiftL moet een expressie opleveren van de vorm Fu fs, zonder dubbele voorkomens
 
 >  shiftR :: Expression -> [Expression]
 >  shiftR r
->   | length antss+length conss /= length fus = error ("(module Calc) shiftR will not handle argument of the form "++showHS r)
+>   | length antss+length conss /= length fus = error ("(module Calc) shiftR will not handle argument of the form "++showHS "" r)
 >   | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
 >   | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F antss)]
 >   | otherwise                               = [Fu ([ Cp (F (if null ts then id css else ts))
@@ -1126,12 +1126,12 @@ shiftL moet een expressie opleveren van de vorm Fu fs, zonder dubbele voorkomens
 >    fus = filter (not.isIdent) fs
 >    antss = [ts | Cp (F ts)<-fus]
 >    conss = [ts | F ts<-fus]
->    srcA = if null conss then error ("(module Calc) empty consequent in shiftR ("++showHS r++")") else
->           if length (eqClass order [ source (head cons) | cons<-conss])>1 then error ("(module Calc) shiftR ("++showHS r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss])) else
+>    srcA = if null conss then error ("(module Calc) empty consequent in shiftR ("++showHS "" r++")") else
+>           if length (eqClass order [ source (head cons) | cons<-conss])>1 then error ("(module Calc) shiftR ("++showHS "" r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss])) else
 >           foldr1 lub [ source (head cons) | cons<-conss]
 >    id css = [Tm (mIs c)]
 >     where a = (source.head.head) css
->           c = if not (a `order` b) then error ("(module Calc) shiftR ("++showHS r++")\n"++showADL r++"\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
+>           c = if not (a `order` b) then error ("(module Calc) shiftR ("++showHS "" r++")\n"++showADL r++"\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
 >               a `lub` b
 >           b = (target.last.last) css
 >    move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
@@ -1241,11 +1241,11 @@ For testing purposes
 >                       "Unexpected: "++showADL (norm1Rule r)++"\nAnalysis:\n"++analRule r
 >  analExpr r = "normExpr r                        = "++(showADL.normExpr) r++"\n"++
 >               "(shrink.normExpr) r               = "++(showADL.shrink.normExpr) r++"\n"++
->               "(shrink.normExpr) r               = "++(showHS.shrink.normExpr) r++"\n"++
+>               "(shrink.normExpr) r               = "++(showHS "".shrink.normExpr) r++"\n"++
 >               "(normFu.shrink.normExpr) r        = "++(showADL.normFu.shrink.normExpr) r++"\n"++
->               "(normFu.shrink.normExpr) r        = "++(showHS.normFu.shrink.normExpr) r++"\n"++
+>               "(normFu.shrink.normExpr) r        = "++(showHS "".normFu.shrink.normExpr) r++"\n"++
 >               "(shrink.normFu.shrink.normExpr) r = "++(showADL.shrink.normFu.shrink.normExpr) r++"\n"++
->               "(shrink.normFu.shrink.normExpr) r = "++(showHS.shrink.normFu.shrink.normExpr) r
+>               "(shrink.normFu.shrink.normExpr) r = "++(showHS "".shrink.normFu.shrink.normExpr) r
 >  analRule r@(Ru 'E' antc p cons cpu expla (a,b) nr pn signal strict)
 >   = "Ru 'E' ("++showADL as++") p ("++showADL cs++") cpu expla (a,b) nr pn signal strict\n"++
 >     "antc                              = "++showADL (antecedent r)++"\n"++
@@ -1296,7 +1296,7 @@ For testing purposes
 >      antc = [t|t<-terms, isNeg t]
 >      cons = [t|t<-terms, isPos t]
 >      sh str es = chain str (map showADL es)
->  showClause e = error ("(module Calc: function showClause) '"++showADL e++"' has the wrong form and should never occur\nshowHS: "++showHS e)
+>  showClause e = error ("(module Calc: function showClause) '"++showADL e++"' has the wrong form and should never occur\nshowHS: "++showHS "" e)
 
 >  showMLink (Deduce clause (Dn pl l) (Dn pr r))           = "Deduce ("++showADL clause++")  "++showNode (Dn pl l)++" implies "++showNode (Dn pr r)
 >  showMLink (DedAnd clause (Dn pl l) (Dn pr r) (Dn pc c)) = "Deduce ("++showADL clause++")  "++showNode (Dn pl l)++" and "++showNode (Dn pr r)++" implies "++showNode (Dn pc c)

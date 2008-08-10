@@ -21,16 +21,18 @@ A specification contains one Fobj-specification for every object it defines and 
 
 >  instance ShowHS Fspec where
 >   showHSname (Fctx context themes datasets objects) = "f_Ctx_"++haskellIdentifier (name context)
->   showHS fctx@(Fctx context themes datasets objects)
+>   showHS indent fctx@(Fctx context themes datasets objects)
 >    = "Fctx "++showHSname context++"   -- context   (Fspec has this structure:  Fctx context themes datasets objects)"++
 >      (if null themes   then " []" else ind++"{- themes   -}  "++showL [showHSname t|t<-themes  ])++
 >      (if null datasets then " []" else ind++"{- datasets -}  "++showL [showHSname d|d<-datasets])++
 >      (if null objects  then " []" else ind++"{- objects  -}  "++showL [showHSname o|o<-objects ])++
->      nlHs'++"where"++
->      (if null objects  then "" else concat [nlHs'++showHSname o++       " = "++showHS o|o<-objects ]++"\n")++
->      (if null datasets then "" else concat [nlHs'++showHSname d++nlHs'++" = "++showHS d|d<-datasets]++"\n")++
->      (if null themes   then "" else concat [nlHs'++showHSname t++       " = "++showHS t|t<-themes  ]++"\n")
->      where nlHs = "\n>   "; ind = nlHs++"       "; nlHs' = "\n>      "
+>      indent++"where"++
+>      indent++" gE = genE "++showHSname context++
+>      (if null objects            then "" else concat [indent++" "++showHSname o++indent++"  = "++showHS (indent++"    ") o|o<-objects ]++"\n")++
+>      (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
+>      (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
+>      (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
+>      where ind = indent++"     "
 
 The story:
 A number of datasets for this context is identified.
@@ -40,7 +42,7 @@ Every theme will be explained in a chapter of its own.
 
 >  makeFspec :: Context -> Fspec
 >  makeFspec context
->    = Fctx context
+>    = Fctx context'
 >           (  [makeFtheme context pat dgs| (pat,dgs)<-pats]                      -- one pattern yields one theme
 >           ++ [makeFtheme context others remainingDGS| not (null remainingDGS)]  -- remaining datasets are discussed at the end
 >           )
@@ -71,9 +73,20 @@ Every theme will be explained in a chapter of its own.
 >        = Pat "Other topics" rs gen pms cs ks
 >          where rs  = []
 >                gen = []
->                pms = []
+>                pms = rd [d| dg<-remainingDGS, DS c pths<-{- take 1 -} dg, pth<-pths, d<-declarations pth]
 >                cs  = []
 >                ks  = []
+>       context' = Ctx nm on i world pats ds cs ks os pops
+>          where nm    = name context
+>                on    = extends context
+>                i     = isa context
+>                world = wrld context
+>                pats  = patterns context ++ if null remainingDGS then [] else [others]
+>                ds    = declarations context
+>                cs    = conceptdefs context
+>                ks    = []
+>                os    = attributes context
+>                pops  = populations context
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
@@ -81,13 +94,11 @@ A dataset is a functional closure of relations with one concept c as root.
 The datasets of a context are those datasets whose relations are not a subset of any other dataset.
 
 >  data Dataset = DS Concept       -- the root of the dataset
->                    [[Morphism]]  -- the paths from the root
+>                    [Expression]  -- the paths from the root
 
 >  instance ShowHS Dataset where
 >   showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
->   showHS (DS c pths) = "DS ("++showHS c++")"++nlHs++"[ "++chain (nlHs++", ") [showPth pth| pth<-pths]++nlHs++"]"
->    where nlHs = "\n>            "
->          showPth pth = "[ "++chain (nlHs++"  , ") (map showHS pth)++nlHs++"  ]"
+>   showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS "" pth| pth<-pths]++indent++"   ]"
 >  instance Eq Dataset where
 >   DS c _ == DS d _ = c==d
 
@@ -102,13 +113,13 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   = dss
 >     where ds  = [d| d<-dsAll++[flp d|d<-dsAll], isFunction d]
 >           ps  = clos source target ds
->           dss = [DS c pths| c<-concs ds, pths<-[[map makeMph p|p<-ps, not (null p), source (head p)==c]], not (null pths) ]
+>           dss = [DS c pths| c<-concs ds, pths<-[[F (map (Tm . makeMph) p)|p<-ps, not (null p), source (head p)==c]], not (null pths) ]
 
 >  data Fobj  = Fobj ObjectDef
 
 >  instance ShowHS Fobj where
 >   showHSname (Fobj objd) = "f_Obj_"++haskellIdentifier (name objd)
->   showHS (Fobj objd) = "Fobj ("++showHS objd++")"
+>   showHS indent (Fobj objd) = "Fobj ("++showHS (indent++"      ") objd++")"
 
 >  makeFobj :: ObjectDef -> [Dataset] -> Fobj
 >  makeFobj o dg = Fobj o
@@ -120,7 +131,7 @@ Every unit specifies one dataset, and each dataset is discussed only once in the
 
 >  instance ShowHS Ftheme where
 >   showHSname (Tspc pat us) = "f_Thm_"++haskellIdentifier (name pat)
->   showHS (Tspc pat us) = "Tspc ("++showHSname pat++" gE) ["++chain ", " [showHS u| u<-us]++"]"
+>   showHS indent (Tspc pat us) = "Tspc ("++showHSname pat++" gE) ["++chain ", " [showHS "" u| u<-us]++"]"
 
 Precondition: the list of datasets must contains functionally equivalent datasets.
 This means that if d,e are datasets in dgs, then there is a bijective function between root d and root e in mors pat.
@@ -138,7 +149,10 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 
 >  instance ShowHS Funit where
 >   showHSname (Uspc nm pat ents svs) = "f_Unit_"++haskellIdentifier nm
->   showHS (Uspc nm pat ents svs) = "Uspc "++show nm++" ("++showHSname pat++" gE)"
+>   showHS indent (Uspc nm pat ents svs)
+>    = "Uspc "++show nm++" ("++showHSname pat++" gE)"
+>      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") o| (o,fpa,cs,rs)<-ents]++indent++"     ]"
+>      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-svs ]++indent++"     ]"
 
 >  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Dataset] -> [Concept] -> [ServiceSpec] -> Funit
 >  makeFunit context pat objs dg newConcs newDecls
@@ -156,6 +170,8 @@ This assumption, however, is not true.
 TODO: determine which relations are affected but not computed, and report as an error.
 
 >  data ServiceSpec = Sspc String       -- name of the service
+>                          [Morphism]   -- the list of relations this service may see
+>                          [Morphism]   -- the list of relations this service may change
 >                          FPA          -- function point analysis information
 >                          [ParamSpec]  -- parameters
 >                          [ParamSpec]  -- results
@@ -165,6 +181,24 @@ TODO: determine which relations are affected but not computed, and report as an 
 >  data ParamSpec   = Aspc String       -- name of the parameter
 >                          String       -- type of the parameter
 >                   | Pbool
+
+>  instance ShowHS ServiceSpec where
+>   showHSname (Sspc nm sees changes fpa input output rs pre post) = "f_svc_"++haskellIdentifier nm
+>   showHS indent (Sspc nm sees changes fpa input output rs pre post)
+>    = "Sspc "++nm
+>      ++indent++"     [" ++chain "," (map (showHS "") sees   )++"]"
+>      ++indent++"     [" ++chain "," (map (showHS "") changes)++"]"
+>      ++indent++"     (" ++show fpa++")"
+>      ++indent++"     [" ++chain "," (map (showHS "") input )++"]"
+>      ++indent++"     [" ++chain "," (map (showHS "") output)++"]"
+>      ++indent++"     [ "++chain (indent++"     , ") (map (showHS "") rs  )++indent++"     ]"
+>      ++indent++"     [ "++chain (indent++"     , ") pre ++indent++"     ]"
+>      ++indent++"     [ "++chain (indent++"     , ") post++indent++"     ]"
+
+>  instance ShowHS ParamSpec where
+>   showHSname a@(Aspc nm typ) = error ("(module Fspec) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
+>   showHS indent (Aspc nm typ)
+>    = "Aspc "++show nm++" "++show typ
 
 >  class Statistics a where
 >   nServices :: a -> Int
@@ -193,11 +227,11 @@ TODO: determine which relations are affected but not computed, and report as an 
 >  instance Statistics Funit where
 >   nServices (Uspc nm pat ents svs) = length svs
 >   nPatterns x = 0
->   nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ fpa _ _ _ _ _<-specs]
+>   nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ _ _ fpa _ _ _ _ _<-specs]
 >  instance Statistics ServiceSpec where
 >   nServices x = 1
 >   nPatterns x = 0
->   nFpoints (Sspc nm fpa input output rs pre post) = fPoints fpa
+>   nFpoints (Sspc nm sees changes fpa input output rs pre post) = fPoints fpa
 
 bron van de FPA: www.nesma.nl
 
@@ -207,8 +241,8 @@ bron van de FPA: www.nesma.nl
 >           | UF   FPcompl -- presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
 >           | OF   FPcompl -- is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
 >           | NO           -- een onderdeel waaraan geen functiepunten worden toegekend.
->             deriving Eq
->  data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving Eq
+>             deriving (Eq, Show)
+>  data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
 
 >  instance ShowLang FPcompl where
 >   showLang Dutch Eenvoudig   = "Eenvoudig"
@@ -273,7 +307,10 @@ Te bepalen:
 >  nameAtt a = tt (nameAt a)
 >  newEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
 >  newEnt context o rs
->   = Sspc (firstCaps ("new"++firstCaps (name o))) (IF Gemiddeld)
+>   = Sspc (firstCaps ("new"++firstCaps (name o)))
+>          (mors context)     -- see everything
+>          (mors context)     -- change everything
+>          (IF Gemiddeld)
 >          [ Aspc (varName (name a)) (handle context a) | a<-attributes o]  -- input parameters
 >          [ Aspc "obj" (handle context o)]                                 -- results
 >          (dressRules
@@ -288,7 +325,13 @@ Te bepalen:
 >     where varName = uName (map name (attributes o))
 >  getEnt :: Context -> ObjectDef -> ServiceSpec
 >  getEnt context o
->   = Sspc (firstCaps ("get"++name o)) (OF Eenvoudig) [Aspc "x" (handle context o)] [Aspc (varName (name a)) (handle context a) | a<-attributes o] []
+>   = Sspc (firstCaps ("get"++name o))
+>          (mors context) -- see everything
+>          []             -- change nothing
+>          (OF Eenvoudig)
+>          [Aspc "x" (handle context o)]
+>          [Aspc (varName (name a)) (handle context a) | a<-attributes o]
+>          []
 >--    Pre (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
 >          ([ tt ("x."++name a)++"="++idNam (nameAt a) |a<-attributes o])
 >--    Post (example:) {left=l, right=r, src=s, and trg=t}
@@ -297,6 +340,8 @@ Te bepalen:
 >  keyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> ServiceSpec
 >  keyEnt context o (key,ats')
 >   = Sspc (firstCaps ("sel"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
+>          (mors context) -- see everything
+>          []             -- change nothing
 >          (OF Eenvoudig)
 >          [ Aspc (varName (name a)) (handle context a) | a<-ats']
 >          [Aspc "obj" (handle context o)]
@@ -317,6 +362,8 @@ Te bepalen:
 >  delKeyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> [(Expression,Rule)] -> ServiceSpec
 >  delKeyEnt context o (key,ats') rs
 >   = Sspc (firstCaps ("del"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
+>          (mors context)     -- see everything
+>          (mors context)     -- change everything
 >          (IF Gemiddeld)
 >          [ Aspc (varName (name a)) (handle context a) | a<-ats']
 >          []
@@ -337,7 +384,10 @@ Te bepalen:
 >     where varName = uName (map name (attributes o))
 >  delEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
 >  delEnt context o rs
->   = Sspc (firstCaps ("del"++name o)) (IF Gemiddeld)
+>   = Sspc (firstCaps ("del"++name o))
+>          (mors context)     -- see everything
+>          (mors context)     -- change everything
+>          (IF Gemiddeld)
 >          [Aspc "x" (handle context o)] []
 >          (dressRules
 >          [ (clause,rule)
@@ -360,7 +410,12 @@ Te bepalen:
 >           )]
 >  updEnt :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
 >  updEnt context o cs rs
->   = Sspc (firstCaps ("upd"++name o)) (IF Gemiddeld) (Aspc "x" (handle context o): [ Aspc (varName (name a)) (handle context a) | a<-attributes o]) []
+>   = Sspc (firstCaps ("upd"++name o))
+>          (mors context)     -- see everything
+>          (mors context)     -- change everything
+>          (IF Gemiddeld)
+>          (Aspc "x" (handle context o): [ Aspc (varName (name a)) (handle context a) | a<-attributes o])
+>          []
 >          (dressRules rs)
 >--    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
 >          []
@@ -370,6 +425,8 @@ Te bepalen:
 >  newPair :: Context -> [Declaration] -> [(Expression,Rule)] -> Declaration -> String -> ServiceSpec
 >  newPair context relations clauses r nm
 >   = Sspc (firstCaps ("assoc"++"_"++nm))
+>          (mors context)     -- see everything
+>          [makeMph r]        -- change r
 >          (IF Gemiddeld)
 >          [ Aspc s (handle context (source r)), Aspc t (handle context (target r))] []
 >--hierboven gebeurt iets grappigs. Zouden de objecten waar deze handles naar wijzen wel bestaan?
@@ -383,7 +440,10 @@ Te bepalen:
 >           t = if homogeneous r then tt "t" else (tt.varName.name.target) r
 >  isPair :: Context -> [Declaration] -> Declaration -> String -> ServiceSpec
 >  isPair context relations r nm
->   = Sspc (firstCaps ("member_"++nm)) (OF Eenvoudig)
+>   = Sspc (firstCaps ("member_"++nm))
+>          (mors context)     -- see everything
+>          []                 -- change nothing
+>          (OF Eenvoudig)
 >          [Aspc "s" (handle context (source r)),Aspc "t" (handle context (target r))] [Pbool] []
 >          [] [tt (firstCaps ("member_"++nm)++"("++s++","++t++")")++"\\ \\hbox{yields true iff}\\ ("++tt s++","++tt t++")\\in"++idName r]
 >     where varName = uName (map name [source r, target r])
@@ -391,7 +451,10 @@ Te bepalen:
 >           t = if homogeneous r then "t" else (varName.name.target) r
 >  delPair :: Context -> [Declaration] -> [(Expression,Rule)] -> Declaration -> String -> ServiceSpec
 >  delPair context relations clauses r nm
->   = Sspc (firstCaps ("remove"++"_"++nm)) (IF Gemiddeld)
+>   = Sspc (firstCaps ("remove"++"_"++nm))
+>          (mors context)     -- see everything
+>          [makeMph r]        -- change r
+>          (IF Gemiddeld)
 >          [Aspc s (handle context (source r)),Aspc t (handle context (target r))] []
 >          (dressRules
 >          [ (clause,rule)
@@ -405,6 +468,8 @@ Te bepalen:
 >  srcObjs :: Context -> [Declaration] -> Declaration -> String -> ServiceSpec
 >  srcObjs context relations r nm
 >   = Sspc srvName
+>          (mors context)     -- see everything
+>          []                 -- change nothing
 >          (OF Eenvoudig)
 >          [Aspc s (handle context (source r))]
 >          [if isFunction r 
@@ -427,6 +492,8 @@ Te bepalen:
 >  trgObjs :: Context -> [Declaration] -> Declaration -> String -> ServiceSpec
 >  trgObjs context relations r nm
 >   = Sspc srvName
+>          (mors context)     -- see everything
+>          []                 -- change nothing
 >          (OF Eenvoudig)
 >          [Aspc t (handle context (target r))]
 >          [if isFunction (flp r) 
@@ -540,7 +607,7 @@ rs zijn de betrokken regels
 >             )++
 >             if fpa==NO then "" else
 >             "\n\n\tThis service is qualified in the FPA as "++showLang English (complexity fpa)++"."
->           | Sspc nm fpa input output rs pre post<-specs
+>           | Sspc nm sees changes fpa input output rs pre post<-specs
 >           ]
 
 >  funcSpecText context fspcs Dutch
@@ -560,7 +627,7 @@ rs zijn de betrokken regels
 >               else "\n\tInvariant: "++showOO (head rs) ++ "(Rule "++show (nr (head rs))++")"
 >             )++
 >             "\n\n\tDeze service is gekwalificeerd in de FPA als "++showLang Dutch (complexity fpa)++"."
->           | Sspc nm fpa input output rs pre post<-specs
+>           | Sspc nm sees changes fpa input output rs pre post<-specs
 >           ]
 
   data Funit = Uspc String Pattern
@@ -580,7 +647,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >           "\\begin{tabular}{|l|l|r|}\\hline concept&type&fp\\\\\\hline\n  "++
 >           chain "\\\\\n"
 >           [nm++"&"++showLang language fpa++"&"++show (fPoints fpa)
->           | Sspc nm fpa input output rs pre post<-specs]++
+>           | Sspc nm sees changes fpa input output rs pre post<-specs]++
 >           "\\\\\\hline\n\\end{tabular}\n\n"
 >      else "\tFPA "++complex++":\n\n"++
 >           "\\begin{tabular}{|l|l|r|}\\hline concept&type&fp\\\\\\hline\n  "++
@@ -588,12 +655,12 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >           ([name o++"&"++showLang language fpa++"&"++show (fPoints fpa)
 >            | (o,fpa,_,_) <- car]++
 >            [nm++"&"++showLang language fpa++"&"++show (fPoints fpa)
->            | Sspc nm fpa input output rs pre post<-specs])++
+>            | Sspc nm sees changes fpa input output rs pre post<-specs])++
 >           "\\\\\\hline\n\\end{tabular}\n\n"
 >     )++
 >     (if length car+length specs<=1 then "" else
 >      "\t"++unm++aswhole++
->      show (sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc nm fpa input output rs pre post<-specs])++
+>      show (sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc nm sees changes fpa input output rs pre post<-specs])++
 >      worth++".\n\n"
 >     )
 >     where
@@ -644,7 +711,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 > --                     | d<-declarations new, v<-[tt.uName [name (source d),name (target d)].name] ]++
 > --      "\\\\\\hline\n\\end{tabular}\n\n"++
 >         chain "\n\n" [fUnit u new| (u,new)<-(zip units.firsts [])
->                                              [ [d| Sspc nm fpa input output rs pre post<-specs, d<-declarations rs
+>                                              [ [d| Sspc nm sees changes fpa input output rs pre post<-specs, d<-declarations rs
 >                                                  , isSgn d && not (isSignal d) && not (d `elem` map snd3 attrs)]
 >                                              | u@(Uspc unm pat car specs)<-units, not (null specs) ]
 >                      ]
@@ -669,7 +736,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
          chain "\n\n"
            [ srvSchema pat language (name pat) spc [m|m<-new, not (m `elem` attrs), declaration m `elem` newdecs]
            | (spc,new)<-zip specs (firsts [] [ [m|m<-mors rs, isMph m]
-                                             | Sspc nm fpa input output rs pre post<-specs ])
+                                             | Sspc nm sees changes fpa input output rs pre post<-specs ])
            ]
         where attrs = [ a | (o,fpa,ms,ers)<-car, a<-attributes o]
               decls = (rd .map declaration.mors) attrs
@@ -719,7 +786,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >  handle context c = firstCaps (name c)++if name c `elem` (map name entities) then "Handle" else ""
 >   where (entities,relations,ruls) = erAnalysis context
 
->  srvSchema pat language cnm (Sspc nm fpa input output rs pre post) new
+>  srvSchema pat language cnm (Sspc nm sees changes fpa input output rs pre post) new
 >   = latexSubsection nm nm++
 >     "{\\tt "++firstCaps nm++"}("++
 >     "\\begin{array}[t]{lr@{~:~}ll}\n"++
@@ -1705,7 +1772,7 @@ TODO: complete all accents and test
 >     where
 >      us= [ (unm, fps)
 >          | Tspc pat units<-fspcs, Uspc unm pat car specs<-units
->          , fps<-[sum ([fPoints fpa| Sspc nm fpa input output rs pre post<-specs]++
+>          , fps<-[sum ([fPoints fpa| Sspc nm sees changes fpa input output rs pre post<-specs]++
 >                       [fPoints fpa| (_,fpa,_,_)<-car])
 >                 ], fps>0
 >          ]

@@ -624,7 +624,7 @@ sem_Declaration_Sgn (_nm) (_a) (_b) (_props) (_prL) (_prM) (_prR) (_content) (_e
     let (_msignat) =
             head ([ s
                   | s <- _lhs_sDef, _nm==name s, _a_concept==source s, _b_concept==target s]++
-                  [error ("Missing "++showHS (Sgn _nm _a_concept _b_concept _props _prL _prM _prR _content _expla _morPos 0 _sig)++" in AGtry.ag\n"++ show _lhs_sDef)])
+                  [error ("Missing "++showHS "" (Sgn _nm _a_concept _b_concept _props _prL _prM _prR _content _expla _morPos 0 _sig)++" in AGtry.ag\n"++ show _lhs_sDef)])
         ( _a_concept,_a_nm) =
             (_a (_lhs_gE))
         ( _b_concept,_b_nm) =
@@ -893,7 +893,7 @@ sem_Expression_Fi :: (T_Expressions) ->
                      (T_Expression)
 sem_Expression_Fi (_fs) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
     let (_sgns) =
-            if null _fs_signss then error("Fatal: empty @fs.signss in expression "++showHS (Fi _fs_exprs)) else
+            if null _fs_signss then error("Fatal: empty @fs.signss in expression "++showHS "" (Fi _fs_exprs)) else
             foldr1 (llub _lhs_gE) _fs_signss
         (_dis) =
             let [(a,b)] = take 1 _lhs_isign
@@ -916,7 +916,7 @@ sem_Expression_Fu :: (T_Expressions) ->
                      (T_Expression)
 sem_Expression_Fu (_fs) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
     let (_sgns) =
-            if null _fs_signss then error("Fatal: empty @fs.signss in expression "++showHS (Fu _fs_exprs)) else
+            if null _fs_signss then error("Fatal: empty @fs.signss in expression "++showHS "" (Fu _fs_exprs)) else
             foldr1 (llub _lhs_gE) _fs_signss
         (_dis) =
             let [(a,b)] = take 1 _lhs_isign
@@ -2017,7 +2017,7 @@ sem_Rule_Ru (_c) (_antc) (_rulePos) (_cons) (_cpu) (_expl) (_sgn) (_nr) (_pn) (_
         (_rcpu) =
             subExprCheck
             (if _c=='A'
-            then Ru _c (error ("Reference to antecedent of 'A' Rule "++showHS _r)) _rulePos _cons_expr _cpu_raw _expl
+            then Ru _c (error ("Reference to antecedent of 'A' Rule "++showHS "" _r)) _rulePos _cons_expr _cpu_raw _expl
                     (if null _is
                      then error("Fatal: null @is on "++show _rulePos++"\n@cons.expr = "++show _cons_expr++"\n@cons.signs = "++shSigns _cons_signs)
                      else head _is)

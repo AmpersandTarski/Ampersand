@@ -65,7 +65,7 @@
 >     writeFile "index.html" (indexcode (fnContext context++".html"))                         >>
 >     putStr ("index.html written,\n")                                                        >>
 > -- writing the content for all contexts in ctxTree
->     (if testing then (writeFile "test.txt".showHS.preCl) (Cl context world) else
+>     (if testing then (writeFile "test.txt".showHS "".preCl) (Cl context world) else
 >      putStr "")                                                                             >>
 >     putStr "\nStarting generation of navigators\n"                                          >>
 >     sequence_ [navigators cTrees c predLogic graphicstyle| c<-preCl (Cl context world)]     >>
@@ -438,7 +438,7 @@
 >                                    "Predicate logic representation<BR />\n<BLOCKQUOTE>"++(hshow.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"++
 >                                    "Object oriented representation<BR />\n<BLOCKQUOTE>"++(objOrShow.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
 >                               else "") ++
->                              (if testing then "Test\n<P>\n"++showHS r++"\n<P>\n"++show r++"\n<P>\n" else "") ++
+>                              (if testing then "Test\n<P>\n"++showHS "" r++"\n<P>\n"++show r++"\n<P>\n" else "") ++
 >                              imageMap (fnRule context r)++"\n<P>\n"++
 >                              (if null ruleviol then "" else
 >                               htmlHeadinglevel 2 ("Rule "++show (nr r)++" is not satisfied in the following cases") []++"\n"++ruleviol++"\n<P>\n"
@@ -462,7 +462,7 @@
 >-}
 >                              ){- ++
 >                              htmlHeadinglevel 2 "Relations" []++"\n"++
->                              (if nr r==2 then error (showHS (declarations r)) else "")++
+>                              (if nr r==2 then error (showHS "" (declarations r)) else "")++
 >                              htmlDeclarations context (declarations r)++"\n<P>\n"++
 >                              if emptyGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] []) then ""
 >                              else htmlGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] []) -}

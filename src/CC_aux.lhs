@@ -61,7 +61,7 @@
 >                        ,Collection (uni,isc,(>-),empty)  )
 >  import Auxiliaries  
 >          ( sort', chain, rd , rEncode, commaEng, clos1, diag
->           ,eqCl, sord, eqClass, rd', enumerate, unCap, showL)
+>           ,eqCl, sord, eqClass, rd', enumerate, unCap, showL, haskellIdentifier)
 >  import Classification 
 >            ( Classification(),preCl,mapCl
 >            )
@@ -209,7 +209,7 @@ I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 >                       KeyDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
 >                       ObjDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
 >                       [Population]              -- a list of populations defined in this context
->               --    deriving Show -- just for testing
+>               --    deriving Show -- just for testing. pattern:  Ctx nm on i world dc ss cs ks os pops
 >--  instance Eq Context where
 >--   Ctx nm _ _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ _ = nm == nm'
 
@@ -430,7 +430,7 @@ Transform a rule to an expression:
 >   | ruleType rule=='I' = Fu [Cp (antecedent rule), consequent rule]
 >   | ruleType rule=='E' = Fi [ Fu [antecedent rule, Cp (consequent rule)]
 >                             , Fu [Cp (antecedent rule), consequent rule]]
->   | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++showHS rule)
+>   | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++showHS "" rule)
 
 >  class Numbered a where
 >   nr :: a->Int
@@ -753,7 +753,7 @@ Transform a rule to an expression:
 >   subst (m,f) r@(Ru c antc pos cons cpu expla sgn nr pn)
 >    = if sign antc' `order` sign cons'
 >      then Ru c antc' pos cons' cpu expla (sign antc' `lub` sign cons') nr pn
->      else r -- error ("(module CC_aux) Fatal: cannot execute:   subst (m,f) r\nwith m="++show m++"\n     f="++show f++"\nand  r="++showADL r++"\n"++showHS r++"\nbecause "++show (sign antc')++" `order` "++show (sign cons')++" is False.\n"++gEtabG gEq [c| (a,b)<-[sign antc',sign cons'], c<-[a,b]])
+>      else r -- error ("(module CC_aux) Fatal: cannot execute:   subst (m,f) r\nwith m="++show m++"\n     f="++show f++"\nand  r="++showADL r++"\n"++showHS "" r++"\nbecause "++show (sign antc')++" `order` "++show (sign cons')++" is False.\n"++gEtabG gEq [c| (a,b)<-[sign antc',sign cons'], c<-[a,b]])
 >      where antc' = subst (m,f) antc
 >            cons' = subst (m,f) cons
 >   subst (m,f) (Sg p rule expla sgn nr pn signal)
@@ -788,19 +788,20 @@ Transform a rule to an expression:
 The function showHS prints structures as haskell source, which is intended for testing.
 
 >  class ShowHS a where
->   showHSname, showHS, showADL :: a -> String
+>   showHSname, showADL :: a -> String
+>   showHS              :: String -> a -> String
 
 >  instance ShowHS Prop where
->   showHSname p = error ("(module CC_aux) should not showHS the name of multiplicities (Prop): "++showHS p)
->   showHS Uni  = "Uni"
->   showHS Inj  = "Inj"
->   showHS Sur  = "Sur"
->   showHS Tot  = "Tot"
->   showHS Sym  = "Sym"
->   showHS Asy  = "Asy"
->   showHS Trn  = "Trn"
->   showHS Rfx  = "Rfx"
->   showHS Aut  = "AUT"
+>   showHSname p = error ("(module CC_aux) should not showHS the name of multiplicities (Prop): "++showHS "" p)
+>   showHS indent Uni = "Uni"
+>   showHS indent Inj = "Inj"
+>   showHS indent Sur = "Sur"
+>   showHS indent Tot = "Tot"
+>   showHS indent Sym = "Sym"
+>   showHS indent Asy = "Asy"
+>   showHS indent Trn = "Trn"
+>   showHS indent Rfx = "Rfx"
+>   showHS indent Aut = "AUT"
 >   showADL Uni = "UNI"
 >   showADL Inj = "INJ"
 >   showADL Sur = "SUR"
@@ -813,39 +814,39 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS a => ShowHS [a] where
 >   showHSname _ = error ("(module CC_aux) lists are anonymous with respect to showHS.")
->   showHS  = chain "\n".map showHS
+>   showHS indent = chain "\n".map (showHS indent)
 >   showADL = chain "\n".map showADL
 
 >  instance ShowHS Architecture where
 >   showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
->   showHS (Arch ctxs) = concat (map showHS ctxs)
+>   showHS indent (Arch ctxs) = concat (map (showHS indent) ctxs)
 >   showADL (Arch ctxs) = concat (map showADL ctxs)
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
->   showHSname context = "ctx_"++name context        
->   showHS context
+>   showHSname context = "ctx_"++haskellIdentifier (name context)
+>   showHS indent context
 >    = "Ctx "++show (name context)++"   -- (Ctx nm on isa world dc ds cs ks os pops)"++
->      ind++showL [show x|x<-on]++
->      ind++"isa [ {- world is left empty -} ]"++
->      (if null pats then " []" else ind++showL [showHSname p++" gE"|p<-pats])++
->      (if null ds   then " []" else ind++showL [showHSname d|d<-ds])++
->      (if null cs   then " []" else ind++showL [showHSname c|c<-cs])++
->      (if null ks   then " []" else ind++showL ["key_"++name k|k<-ks])++
->      (if null os   then " []" else ind++showL [showHSname o|o<-os])++
->      (if null pops then " []" else ind++showL [showHSname p|p<-pops])++
->      init nlHs'++"where"++
->      nlHs'++"isa = "++showHS (isa context)++
->      nlHs'++"gE  = genEq (typology isa)"++
->      (if null on   then "" else nlHs'++"on  = "++showL [show x|x<-on]++"\n")++
->      (if null os   then "" else concat [nlHs'++showHSname o++" = "++showHS o|o<-os]++"\n")++
->      (if null ds   then "" else concat [nlHs'++showHSname d++" = "++showHS d|d<-ds]++"\n")++
->      (if null pops then "" else concat [nlHs'++showHSname p  ++nlHs'++" = "++showHS p  |p<-populations context]++"\n")++
->      (if null cs   then "" else concat [nlHs'++showHSname c++" = "++showHS c|c<-cs]++"\n")++
->      (if null ks   then "" else concat [nlHs'++showHSname k++" = "++showHS k|k<-ks]++"\n")++
->      (if null pats then "" else concat ["\n"++nlHs++showHSname pat++nlHs++" = "++showHS pat|pat<-patterns context]++"\n")
->      where nlHs = "\n>  "; ind = nlHs++"       "; nlHs' = nlHs++"    "
->            pats = patterns context
+>      (if null on   then " []" else indent++"    "++showL [show x|x<-on])++
+>      (if null on   then   ""  else indent++"    ")++
+>      "isa [ {- world is left empty -} ]"++
+>      (if null pats then " []" else indent++"    "++showL [showHSname p++" gE"|p<-pats])++
+>      (if null ds   then " []" else indent++"    "++showL [showHSname d|d<-ds])++
+>      (if null cs   then " []" else indent++"    "++showL [showHSname c|c<-cs])++
+>      (if null ks   then " []" else indent++"    "++showL ["key_"++name k|k<-ks])++
+>      (if null os   then " []" else indent++"    "++showL [showHSname o|o<-os])++
+>      (if null pops then " []" else indent++"    "++showL [showHSname p|p<-pops])++
+>      indent++"where"++
+>      indent++" isa = "++showHS (indent++"       ") (isa context)++
+>      indent++" gE  = genEq (typology isa)"++
+>      (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
+>      (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o|o<-os]++"\n")++
+>      (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d|d<-ds]++"\n")++
+>      (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
+>      (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c|c<-cs]++"\n")++
+>      (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k|k<-ks]++"\n")
+>   -- patterns will be shown in  (showHS indent Fspec)
+>      where pats = patterns context
 >            ds   = declarations context>-declarations (patterns context)
 >            cs   = conceptdefs context>-conceptdefs (patterns context)
 >            ks   = let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks'
@@ -864,20 +865,19 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Pattern where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
->   showHSname pat = "pat_"++name pat
->   showHS pat@(Pat nm rs gen pss cs ks)
+>   showHSname pat = "pat_"++haskellIdentifier (name pat)
+>   showHS indent pat@(Pat nm rs gen pss cs ks)
 >    = "Pat "++show (name pat)++
->      (if null (rules pat)        then " []" else ind++"[" ++chain       ", "  [showHSname r| r<-rules pat       ] ++     "]")++
->      (if null gen                then " []" else ind++"[ "++chain (ind++", ") [showHS g    | g<-gen             ] ++ind++"]")++
->      (if null (declarations pat) then " []" else ind++"[" ++chain       ", "  [showHSname d| d<-declarations pat] ++     "]")++
->      (if null (conceptdefs pat)  then " []" else ind++"[" ++chain       ", "  [showHSname c| c<-conceptdefs pat ] ++     "]")++
->      (if null ks                 then " []" else ind++"[ "++chain (ind++", ") [showHS k    | k<-ks              ] ++ind++"]")++
->      nlHs++"where"++
->      (if null (declarations pat) then "" else concat [nlHs'++showHSname d ++" = "++ showHS d |d <-declarations pat] )++
->      (if null (rules pat)        then "" else concat [nlHs'++showHSname r ++" = "++ showHS r |r <-rules pat       ] )++
->      (if null (conceptdefs pat)  then "" else concat [nlHs'++showHSname cd++" = "++ showHS cd|cd<-conceptdefs pat ] )++
->      (if null ks                 then "" else concat [nlHs'++showHSname k ++" = "++ showHS k |k <-ks              ] )
->      where nlHs = "\n>     "; ind = nlHs++"    "; nlHs' = nlHs++" "
+>      (if null (rules pat)        then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-rules pat       ] ++            "]")++
+>      (if null gen                then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") g| g<-gen             ] ++indent++"    ]")++
+>      (if null (declarations pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-declarations pat] ++            "]")++
+>      (if null (conceptdefs pat)  then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-conceptdefs pat ] ++            "]")++
+>      (if null ks                 then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") k| k<-ks              ] ++indent++"    ]")++
+>      indent++"where"++
+>      (if null (declarations pat) then "" else concat [indent++" "++showHSname d ++" = "++ showHS (indent++"   ") d |d <-declarations pat] )++
+>      (if null (rules pat)        then "" else concat [indent++" "++showHSname r ++" = "++ showHS (indent++"   ") r |r <-rules pat       ] )++
+>      (if null (conceptdefs pat)  then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptdefs pat ] )++
+>      (if null ks                 then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks              ] )
 >   showADL (Pat nm rs gen pss cs ks)
 >    = "PATTERN\n" ++
 >      chain "\n" (map showADL pss) ++
@@ -887,26 +887,25 @@ The function showHS prints structures as haskell source, which is intended for t
 >      "\nENDPATTERN"
 
 >  instance ShowHS Population where
->   showHSname (Popu m ps) = "pop_"++name m++name (source m)++name (target m)
->   showHS p@(Popu m ps)
->    = "Popu ("++showHS m++")"++nlHs++"[ "++chain (nlHs++", ") (map show ps)++nlHs++"]"
->      where nlHs = "\n>         "
+>   showHSname (Popu m ps) = "pop_"++haskellIdentifier (name m++name (source m)++name (target m))
+>   showHS indent p@(Popu m ps)
+>    = "Popu ("++showHS "" m++")"++indent++"     [ "++chain (indent++"     , ") (map show ps)++indent++"     ]"
 >   showADL (Popu m ps)
 >    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++"; ") (map show ps)++nlHs'++"]"
 >      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
 
 >  instance ShowHS Rule where
 >   showHSname r = "rule"++show (nr r)
->   showHS r@(Ru 'A' _ pos cons cpu expla sgn nr pn)
->    = chain " " ["Ru","'A'",undef,"("++showHS pos++")","("++showHS (consequent r)++")",showL (map showHS cpu),show(explain r),showSgn sgn,show nr,show pn]
+>   showHS indent r@(Ru 'A' _ pos cons cpu expla sgn nr pn)
+>    = chain " " ["Ru","'A'",undef,"("++showHS "" pos++")","("++showHS "" (consequent r)++")",showL (map (showHS "") cpu),show(explain r),showSgn sgn,show nr,show pn]
 >      where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an 'A' rule\")"
->   showHS r@(Ru c antc pos cons cpu expla sgn nr pn)
->    = chain " " ["Ru","'"++[c]++"'","("++showHS antc++")","("++showHS pos++")","("++showHS (consequent r)++")","["++chain "," (map showHS cpu)++"]",show(explain r),showSgn sgn,show nr,show pn]
->   showHS r@(Sg pos rule expla sgn nr pn signal)
->    = chain " " ["Sg","("++showHS pos++")","("++showHS rule++")",show expla,showSgn sgn,show nr,show pn,show signal]
->   showHS r@(Gc pos m expr cpu sgn nr pn)
->    = chain " " ["Gc","("++showHS pos++")","("++showHS m++")","("++showHS (consequent r)++")","["++chain "," (map showHS cpu)++"]",showSgn sgn,show nr,show pn]
->   showHS r = ""
+>   showHS indent r@(Ru c antc pos cons cpu expla sgn nr pn)
+>    = chain " " ["Ru","'"++[c]++"'","("++showHS "" antc++")","("++showHS "" pos++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",show(explain r),showSgn sgn,show nr,show pn]
+>   showHS indent r@(Sg pos rule expla sgn nr pn signal)
+>    = chain " " ["Sg","("++showHS "" pos++")","("++showHS "" rule++")",show expla,showSgn sgn,show nr,show pn,show signal]
+>   showHS indent r@(Gc pos m expr cpu sgn nr pn)
+>    = chain " " ["Gc","("++showHS "" pos++")","("++showHS "" m++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",showSgn sgn,show nr,show pn]
+>   showHS indent r = ""
 >   showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
 >   showADL r@(Fr _ d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
 >   showADL r
@@ -921,19 +920,19 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Expression where
 >   showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
->   showHS (Tm m)   = "Tm ("++showHS m++") "
->   showHS (Tc f)   = "Tc ("++showHS f++") "
->   showHS (F [])   = "F [] <Id>"
->   showHS (Fd [])  = "Fd [] <nId>"
->   showHS (Fu [])  = "Fu [] <False>"
->   showHS (Fi [])  = "Fi [] <True>"
->   showHS (F ts)   = chain " " ["F",showL (map showHS ts)]
->   showHS (Fd ts)  = chain " " ["Fd",showL (map showHS ts)]
->   showHS (Fu fs)  = chain " " ["Fu",showL (map showHS fs)]
->   showHS (Fi fs)  = chain " " ["Fi",showL (map showHS fs)]
->   showHS (K0 e)   = "K0 ("++showHS e++") "
->   showHS (K1 e)   = "K1 ("++showHS e++") "
->   showHS (Cp e)   = "Cp ("++showHS e++") "
+>   showHS indent (Tm m)   = "Tm ("++showHS (indent++"    ") m++") "
+>   showHS indent (Tc f)   = "Tc ("++showHS (indent++"    ") f++") "
+>   showHS indent (F [])   = "F [] <Id>"
+>   showHS indent (Fd [])  = "Fd [] <nId>"
+>   showHS indent (Fu [])  = "Fu [] <False>"
+>   showHS indent (Fi [])  = "Fi [] <True>"
+>   showHS indent (F ts)   = chain " " ["F" ,showL (map (showHS (indent++"   ")) ts)]
+>   showHS indent (Fd ts)  = chain " " ["Fd",showL (map (showHS (indent++"   ")) ts)]
+>   showHS indent (Fu fs)  = chain " " ["Fu",showL (map (showHS (indent++"   ")) fs)]
+>   showHS indent (Fi fs)  = chain " " ["Fi",showL (map (showHS (indent++"   ")) fs)]
+>   showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
+>   showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
+>   showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
 >   showADL e = show e
 
 >  showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar 0 e
@@ -958,61 +957,63 @@ The function showHS prints structures as haskell source, which is intended for t
 >  isFactor _ = False
 
 >  showS m = name m++"["++show (source m)++","++show (target m)++"]"
->  showSgn (a,b) = "("++showHS a++","++showHS b++")"
+>  showSgn (a,b) = "("++showHS "" a++","++showHS "" b++")"
 >  showSign cs = "["++chain "*" (map name cs)++"]"
 >  showFullRelName m = rEncode (name m++name (source m)++name (target m))
 
 >  instance ShowHS a => ShowHS (Inheritance a) where
->   showHSname i = error ("(module CC_aux) every inheritance is anonymous with respect to showHS. Detected at: "++ showHS i)
->   showHS (Isa ts cs) = "Isa "++showL ["("++showHS g++","++showHS s++")"|(g,s)<-ts] ++" "++ showL (map showHS cs)
+>   showHSname i = error ("(module CC_aux) every inheritance is anonymous with respect to showHS. Detected at: "++ showHS "" i)
+>   showHS indent (Isa ts cs) = "Isa "++showL ["("++showHS "" g++","++showHS "" s++")"|(g,s)<-ts] ++indent++"    "++ showL (map (showHS "") cs)
 >   showADL (Isa ts cs) = ""
 
 >  instance ShowHS Concept where
 >   showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
->   showHS Anything = "Anything"
->   showHS NOthing  = "NOthing"
->   showHS  c = if singleton c
->               then "S "++show (name c) -- ++" "++show (conts c)
->               else "C "++show (name c) ++ " gE []"    -- contents not shown.
+>   showHS indent Anything = "Anything"
+>   showHS indent NOthing  = "NOthing"
+>   showHS indent  c       = if singleton c
+>                            then "S "++show (name c) -- ++" "++show (conts c)
+>                            else "C "++show (name c) ++ " gE []"    -- contents not shown.
 >   showADL c = show (name c)
 
 >  instance ShowHS ConceptDef where
->   showHSname (Cd pos nm def ref) = "cDef_"++nm
->   showHS cd@(Cd pos nm def ref)
->    = " Cd ("++showHS pos++") "++show nm++" "++show def++(if null ref then "" else " "++show ref)
+>   showHSname cd = "cDef_"++haskellIdentifier (name cd)
+>   showHS indent cd@(Cd pos nm def ref)
+>    = " Cd ("++showHS "" pos++") "++show nm++" "++show def++(if null ref then "" else " "++show ref)
 >   showADL (Cd pos nm def ref)
 >    = "\n  CONCEPT "++show nm++" "++show def++" "++(if null ref then "" else show ref)
 
 >  instance ShowHS KeyDef where
->   showHSname kd = "cDef_"++name kd
->   showHS kd@(Kd pos lbl ctx ats)
->    = "Kd ("++showHS pos++") "++show lbl++" ("++showHS ctx++") "++showHS ats
+>   showHSname kd = "kDef_"++haskellIdentifier (name kd)
+>   showHS indent kd@(Kd pos lbl ctx ats)
+>    = "Kd ("++showHS "" pos++") "++show lbl++" ("++showHS "" ctx++")"
+>      ++indent++"[ "++chain (indent++", ") [showHS (indent++"  ") a|a<-ats]++indent++"]"
 >   showADL (Kd pos lbl ctx ats)
 >    = "KEY "++lbl++">"++name (target ctx)++"("++chain "," (map showADL ats)++")"
 
 >  instance ShowHS ObjectDef where
->   showHSname o = "cDef_"++name o
->   showHS  (Obj nm pos ctx ats) = "Obj ("++nm++") (pos) ("++(showHS ctx)++") ["++chain ", " (map showHS ats)++"]"
+>   showHSname o = "oDef_"++haskellIdentifier (name o)
+>   showHS indent (Obj nm pos ctx [])  = "Obj "++show nm++" ("++showHS "" pos++") ("++showHS "" ctx++") []"
+>   showHS indent (Obj nm pos ctx ats) = "Obj "++show nm++" ("++showHS "" pos++") ("++showHS "" ctx++")"++indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) ats)++indent++"    ]"
 >   showADL (Obj nm pos ctx ats) = "OBJECT "++nm++" : "++(showADL ctx)++" = ["++chain ", " (map show ats)++"]"
 
 >  instance ShowHS Declaration where
->   showHSname d = "mor_"++name d++name (source d)++name (target d)
->   showHS d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
+>   showHSname d = "rel_"++haskellIdentifier (name d++name (source d)++name (target d))
+>   showHS indent d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
 >    = "Sgn "++show nm++
->              " ("++showHS a++") ("++showHS b++") "
->              ++showL(map showHS props)++" "
+>              " ("++showHS "" a++") ("++showHS "" b++") "
+>              ++showL(map (showHS "") props)++" "
 >              ++show prL++" "++show prM++" "++show prR++" "
 >              ++(if null cs then "[]" else "[[\"Content not shown\",\"\"]]")
 >              ++" "++show expla
->              ++" ("++showHS pos++")"
+>              ++" ("++showHS "" pos++")"
 >              ++" "++show nr
 >              ++" "++show sig
->   showHS (Isn g s)
->    = "Isn ("++showHS g++") ("++showHS s++")"
->   showHS (Iscompl g s)
->    = "Iscompl ("++showHS g++") ("++showHS s++")"
->   showHS (Vs g s)
->    = "Vs ("++showHS g++") ("++showHS s++")"
+>   showHS indent (Isn g s)
+>    = "Isn ("++showHS "" g++") ("++showHS "" s++")"
+>   showHS indent (Iscompl g s)
+>    = "Iscompl ("++showHS "" g++") ("++showHS "" s++")"
+>   showHS indent (Vs g s)
+>    = "Vs ("++showHS "" g++") ("++showHS "" s++")"
 >   showADL decl@(Sgn nm a b props prL prM prR cs expla _ _ sig)
 >    = if isSignal decl then "SIGNAL "++nm++" ON ("++name a++" * "++name b++")" else
 >      nm++" :: "++name a++" * "++name b++
@@ -1029,14 +1030,14 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Morphism where
 >   showHSname m = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL m++"). A morphism gets no definition in Haskell code.")
->   showHS (Mph nm pos atts sgn@(a,b) yin d)
->    = "Mph "++show nm++" ("++showHS pos++") "++showL(map showHS atts)++" "++showSgn sgn++" "++show yin++" ("++showHS d++")"
->   showHS (I atts g s yin)
->    = "I"++" "++showL(map showHS atts)++" ("++showHS g++") ("++showHS s++") "++show yin
->   showHS (V atts sgn)
->    = "V"++" "++showL(map showHS atts)++" ("++showSgn sgn++")"
->   showHS (Mp1 str sgn)
->    = "Mp1"++" "++show str++" ("++showHS sgn++")"
+>   showHS indent (Mph nm pos atts sgn@(a,b) yin d)
+>    = "Mph "++show nm++" ("++showHS "" pos++") "++showL(map (showHS "") atts)++" "++showSgn sgn++" "++show yin++" ("++showHS "" d++")"
+>   showHS indent (I atts g s yin)
+>    = "I"++" "++showL(map (showHS "") atts)++" ("++showHS "" g++") ("++showHS "" s++") "++show yin
+>   showHS indent (V atts sgn)
+>    = "V"++" "++showL(map (showHS "") atts)++" ("++showSgn sgn++")"
+>   showHS indent (Mp1 str sgn)
+>    = "Mp1"++" "++show str++" ("++showHS "" sgn++")"
 >   showADL m@(Mph nm pos atts sgn@(a,b) yin s)
 >    = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} nm)++
 >      (if null atts
@@ -1052,12 +1053,12 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Gen where
 >   showHSname g = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
->   showHS (G g s)  = "G ("++showHS s++") ("++showHS g++")"
+>   showHS indent (G g s)  = "G ("++showHS "" s++") ("++showHS "" g++")"
 >   showADL (G g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowHS FilePos where
->   showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS p++"). A position gets no definition in Haskell code.")
->   showHS (FilePos (fn,Pos l c,sym))
+>   showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
+>   showHS indent (FilePos (fn,Pos l c,sym))
 >     = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
 >   showADL p = error ("(module CC_aux) ADL does not show positions, not even "++show p)  -- positions are not shown in ADL. This definition just keeps the compiler happy, but will not be called.
 
@@ -1160,15 +1161,15 @@ Every declaration m has cardinalities, in which
 >   contents (Tc f)        = contents f
 >   contents f@(F ts)
 >    | idsOnly ts
->       = if not (source f `order` target f) then error ("(module CC_aux) Fatal: no order in "++showHS f) else
+>       = if not (source f `order` target f) then error ("(module CC_aux) Fatal: no order in "++showHS "" f) else
 >                            [[e,e]|e<-os]
 >    | otherwise
->       = if null css then error ("(module CC_aux) Fatal: no terms in F "++showHS ts) else
+>       = if null css then error ("(module CC_aux) Fatal: no terms in F "++showHS "" ts) else
 >                            foldr1 join css
 >                            where os = conts (source f `lub` target f)
 >                                  css = [contents t|t<-ts, not (idsOnly t)]
 >   contents f@(Fd ts)
->     = if null ts then error ("(module CC_aux) Fatal: no terms in Fd "++showHS ts) else joinD ts
+>     = if null ts then error ("(module CC_aux) Fatal: no terms in Fd "++showHS "" ts) else joinD ts
 >   contents (Fu fs) = if null fs then [] else
 >                      (foldr1 uni .map contents) fs
 >   contents (Fi fs) = if null fs then [] else
@@ -1268,7 +1269,7 @@ TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concept
 >                        where h (C c gEq os) = C c gE os
 >                              h (S c gEq os) = S c gE os
 >                              h x = x
->   specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("(module CC_aux) Fatal: specialize 1 ("++show a++","++show b++") "++showHS c) else
+>   specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("(module CC_aux) Fatal: specialize 1 ("++show a++","++show b++") "++showHS "" c) else
 >                        (a `glb` b) `lub` c
 
 >  instance Pop KeyDef where
@@ -1396,8 +1397,8 @@ Om een of andere reden stond hier eerder:
 >   update ss s                                  = s
 >   specialize (x,y) (Sgn nm a b props prL prM prR ls expla pos nr sig)
 >                                                = Sgn nm x y props prL prM prR [[d,e]|[d,e]<-ls,d `elem` conts a, e `elem` conts b] expla pos nr sig
->   specialize (x,y) sg@(Isn g s)                = if x <= y then Isn x y else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS s)
->   specialize (x,y) sg@(Iscompl g s)            = if x <= y then Iscompl x y else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS s)
+>   specialize (x,y) sg@(Isn g s)                = if x <= y then Isn x y else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS "" s)
+>   specialize (x,y) sg@(Iscompl g s)            = if x <= y then Iscompl x y else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS "" s)
 
 >  class Morphic a where
 >   source, target :: a -> Concept
@@ -1558,10 +1559,10 @@ Om een of andere reden stond hier eerder:
 
 >   sign (Tm m)            = sign m
 >   sign (Tc f)            = sign f
->   sign (F ts)            = if null ts then error ("(module CC_aux) Fatal: no terms in sign (F "++showHS ts++")") else
+>   sign (F ts)            = if null ts then error ("(module CC_aux) Fatal: no terms in sign (F "++showHS "" ts++")") else
 >                            foldr1 jnSign (map sign ts)
 >                            where (s,t) `jnSign` (s',t') = (s,t')
->   sign (Fd ts)           = if null ts then error ("(module CC_aux) Fatal: no terms in sign (Fd "++showHS ts++")") else
+>   sign (Fd ts)           = if null ts then error ("(module CC_aux) Fatal: no terms in sign (Fd "++showHS "" ts++")") else
 >                            foldr1 jnSign (map sign ts)
 >                            where (s,t) `jnSign` (s',t') = (s,t')
 >   sign (Fu fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fu fs) not defined\nwith map sign fs="++show (map sign fs)) else
@@ -1696,13 +1697,13 @@ Om een of andere reden stond hier eerder:
 >            | otherwise       = snd (sign r)
 >   sign r   | ruleType r=='A' = sign (consequent r)
 >            | otherwise       = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
->                                error ("(module CC_aux) Fatal: incompatible signs in "++showHS r)
+>                                error ("(module CC_aux) Fatal: incompatible signs in "++showHS "" r)
 >   multiplicities r           = []
 >   isMph r  | ruleType r=='A' = isMph (consequent r)
 >            | otherwise       = False
 >   flp r@(Ru 'A' antc pos expr cpu expla (a,b) nr pn) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in flp ("++showADL r++")")) pos (flp expr) cpu expla (b,a) nr pn
 >   flp (Ru c antc pos cons cpu expla (a,b) nr pn)   = Ru c (flp antc) pos (flp cons) cpu expla (b,a) nr pn
-> --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS r)
+> --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS "" r)
 >   typeUniq r | ruleType r=='A' = typeUniq (antecedent r)
 >              | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 >   isIdent r = isIdent (normExpr r)
@@ -1787,14 +1788,14 @@ TODO: transform the following into  instance Collection Declaration where
 >          lim (a,b) (x:xs) = [limit (a,c) x]++lim (c,b) xs
 >                             where c = if null xs then target x else
 >                                       if target x `order` source (head xs) then target x `lub` source (head xs) else
->                                       error ("(module CC_aux) Fatal: limit sgn ("++showHS (F ts)++") has incompatible types inside...")
+>                                       error ("(module CC_aux) Fatal: limit sgn ("++showHS "" (F ts)++") has incompatible types inside...")
 >   limit sgn (Fd ts)   = Fd (lim sgn ts)
 >    where lim sgn  [x] = [limit sgn x]
 >          lim sgn   [] = []
 >          lim (a,b) (x:xs) = [limit (a,c) x]++lim (c,b) xs
 >                             where c = if null xs then target x else
 >                                       if target x `order` source (head xs) then target x `lub` source (head xs) else
->                                       error ("(module CC_aux) Fatal: limit sgn ("++showHS (Fd ts)++") has incompatible types inside...")
+>                                       error ("(module CC_aux) Fatal: limit sgn ("++showHS "" (Fd ts)++") has incompatible types inside...")
 >   limit sgn (Fu fs)   = Fu (map (limit sgn) fs)
 >   limit sgn (Fi fs)   = Fi (map (limit sgn) fs)
 >   limit sgn' (K0 e)   = K0 (limit sgn' e)
@@ -1803,14 +1804,14 @@ TODO: transform the following into  instance Collection Declaration where
 
 >   calc (Tm m) ss      = calc m ss
 >   calc (Tc f) ss      = calc f ss
->   calc (F  ts) ss     = if null ts then error ("(module CC_aux) Fatal: no terms in calc (F "++showHS ts++")") else
+>   calc (F  ts) ss     = if null ts then error ("(module CC_aux) Fatal: no terms in calc (F "++showHS "" ts++")") else
 >                         foldr1 join [calc t ss| t<-ts ]
 
-   calc (Fd ts) ss     = if null ts then error ("(module CC_aux) Fatal: no terms in calc (Fd "++showHS ts++")") else
+   calc (Fd ts) ss     = if null ts then error ("(module CC_aux) Fatal: no terms in calc (Fd "++showHS "" ts++")") else
                          foldr1 joinD [calc t ss| t<-ts ]
 
 >   calc (Fu fs) ss     = foldr uni [] [calc f ss| f<-fs ]
->   calc (Fi fs) ss     = if null fs then error ("(module CC_aux) Fatal: no factors in calc (Fi "++showHS fs++")") else
+>   calc (Fi fs) ss     = if null fs then error ("(module CC_aux) Fatal: no factors in calc (Fi "++showHS "" fs++")") else
 >                         foldr1 isc  [calc f ss| f<-fs ]
 >   calc (K0 e) ss      = clos1 (calc e ss) `uni` [[a,a]|a <-conts (source e `lub` target e)]
 >   calc (K1 e) ss      = clos1 (calc e ss)

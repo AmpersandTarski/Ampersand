@@ -149,7 +149,7 @@ The practical version of selectRule does the same, but generates code in which t
 > -- might be?: trg  = noCollideUnlessTm e [src] (sqlExprTrg e)
 >           e    = (shrink.conjNF.Cp .normExpr) r
 >  selectRule ctx i r
->   = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule ctx i ("++showHS r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
+>   = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule ctx i ("++showHS "" r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
 
 TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie -V is.
 
@@ -384,11 +384,11 @@ Temporary class 'IsClos'. The types Expression and Morphism ought to be unified 
 >   isClos _      = False
 >   sqlClosName context (K0 e)
 >    = head (["Clos"++show i++"_"++enc False (name s)| (c,i)<-zip (closE context) [0..], K0 e == c, s<-take 1 (declarations e)]++
->            [error ("(module RelBinGenBasics) Illegal closure expression in \"sqlClosName context ("++showHS (K0 e)++")\"\n with closE context = "++showHS (closE context))]
+>            [error ("(module RelBinGenBasics) Illegal closure expression in \"sqlClosName context ("++showHS "" (K0 e)++")\"\n with closE context = "++showHS "" (closE context))]
 >           )
 >   sqlClosName context (K1 e)
 >    = head (["Clos"++show i++"_"++enc False (name s)| (c,i)<-zip (closE context) [0..], K1 e == c, s<-take 1 (declarations e)]++
->            [error ("(module RelBinGenBasics) Illegal closure expression in \"sqlClosName context ("++showHS (K1 e)++")\"")]
+>            [error ("(module RelBinGenBasics) Illegal closure expression in \"sqlClosName context ("++showHS "" (K1 e)++")\"")]
 >           )
 >   sqlClosName context (F [e])  = sqlClosName context e
 >   sqlClosName context (Fu [e]) = sqlClosName context e
@@ -459,14 +459,14 @@ TODO: de nummering van declaraties geschiedt niet consequent. Dus moet het maar 
 >   = if isIdent m then sqlConcept context (source m) else
 >     if isClos m then sqlClosName context m else
 >     if isTrue m then "V" else
->     if null as then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): No declarations in "++showHS m) else
->     if length as>1 then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): Multiple declarations in "++showHS m) else
->     if null ts then error ("(module RelBinGenBasics) Declaration \""++showHS m++"\" does not occur in context \""++name context++"\" (sqlRelName in module RelBinGenBasics)\n"++showHS (declarations (closExprs context) ++ declarations context)) else
+>     if null as then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): No declarations in "++showHS "" m) else
+>     if length as>1 then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): Multiple declarations in "++showHS "" m) else
+>     if null ts then error ("(module RelBinGenBasics) Declaration \""++showHS "" m++"\" does not occur in context \""++name context++"\" (sqlRelName in module RelBinGenBasics)\n"++showHS "" (declarations (closExprs context) ++ declarations context)) else
 > --  if length ts>1 then error ("(module RelBinGenBasics) Declaration \""++show a++"\" is not unique in context \""++name context++"\" (sqlRelName in module RelBinGenBasics) "++show ts) else
 >     head ts
 >     where ts = ["T"++show i++"_"++enc False (name s)
 >                |(i,s)<-zip [1..] (declarations context), a==s]
->              -- error(chain "\n" (map showHS (filter isSgnl (declarations context)))) --
+>              -- error(chain "\n" (map (showHS "") (filter isSgnl (declarations context)))) --
 >           as = declarations m
 >           a = head as
 
@@ -496,7 +496,7 @@ However, we provide slightly more meaningful names, in order to facilitate readi
 >  sqlExprSrc (Tm (Mp1 _ t)) = "Att"++phpEncode (name t)
 >  sqlExprSrc (Tm m) | inline m  = sqlRelSrc (declaration m)
 >                    | otherwise = sqlRelTrg (declaration m)
->  sqlExprSrc e        = error ("unexhaustive pattern in RelBinGenBasics.lhs in sqlExprSrc for "++showHS e)
+>  sqlExprSrc e        = error ("unexhaustive pattern in RelBinGenBasics.lhs in sqlExprSrc for "++showHS "" e)
 
 >  sqlExprTrg :: Expression -> String
 >  sqlExprTrg e = sqlExprSrc (flp e)
@@ -521,7 +521,7 @@ However, we provide slightly more meaningful names, in order to facilitate readi
 >  sqlMorName :: Context -> Morphism -> String
 >  sqlMorName context (Mph nm pos atts sgn yin s) = sqlRelName context s
 >  sqlMorName context (I atts g s yin)            = sqlConcept context s
->  sqlMorName context m = error ("(module RelBinGenBasics) sqlMorName: illegal argument: "++showHS m)
+>  sqlMorName context m = error ("(module RelBinGenBasics) sqlMorName: illegal argument: "++showHS "" m)
 
 sqlMorSrc and sqlMorTrg are exclusively meant to generate code
 

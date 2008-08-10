@@ -751,7 +751,7 @@ It is compared to the desired state,
 >           phpIndent (i-3)++"// calling selectNormFiExpr \""++attrs++"\" context "++show (10+i)++" frExpr "++
 >           phpIndent i++       "//            "++show (sqlMorSrc context m,sqlMorTrg context m)++
 >     --      phpIndent i++       "// substitutions: "++show substitutions++
->           phpIndent i++       "//   frExpr:  "++take 2(showHS frExpr)++":  ("++showADL frExpr++")"
+>           phpIndent i++       "//   frExpr:  "++take 2(showHS "" frExpr)++":  ("++showADL frExpr++")"
 >     --    ++phpIndent (i-3)++"// replacement: "++(showADL (doSubsExpr context "$" substitutions frExpr))
 >          )++
 >           phpIndent i++"/* case 5 */"++phpIndent i

@@ -198,7 +198,7 @@ The following function prints a PredLogic in OO notation.
 >              "exclVars = "++show exclVars++"\n          "++
 >              "ics = "++show ics++"\n          "++
 >              "ivs = "++show ivs++"\n         "++
->              "(F ts) = "++showHS (F ts)++"\n        "++
+>              "(F ts) = "++showHS "" (F ts)++"\n        "++
 >              "yields: "++show (Exists (zip ivs ics) (Conj (frels "alpha" "omega"))::PredLogic)) then error ("") else -}
 >     if null ics then (head (frels s t), exclVars) else
 >     (Exists (zip ivs ics) (Conj (frels s t)), ivs++exclVars)
@@ -220,7 +220,7 @@ nav -: bezoekrapport~ ; verzondenAan- ! veroorzaker~
 >              "ics cons = "++show icscons++"\n          "++
 >              (if null antc then "" else "ivsantc = "++show ivsantc++"\n         ")++
 >              "ivscons = "++show ivscons++"\n         "++
->              "(Fd ts) = "++showHS (Fd ts)++"\n        "++
+>              "(Fd ts) = "++showHS "" (Fd ts)++"\n        "++
 >              "yields: "++show res) then error ("") else -}
 >     res
 >     where
@@ -257,7 +257,7 @@ nav -: bezoekrapport~ ; verzondenAan- ! veroorzaker~
 >   = (Not  (fst (assembleF exclVars e s t)), exclVars)
 >  assembleF exclVars e s t
 >   = if length (morlist e)==1 then (res, exclVars) else
->     error ("Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showHS e++")")
+>     error ("Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showHS "" e++")")
 >     where
 >      res | denote e==Flr = Rel (Funs s (mors e)) (mIs (target e)) (Funs t [])
 >          | denote e==Frl = Rel (Funs s []) (mIs (source e)) (Funs t (map flp (mors e)))

@@ -228,7 +228,7 @@ SEM Context
                               @inh
                               [cl|Cl r cls<-[mapCl fst @lhs.ctxTree], cl<-cls]
                               @dc.patterns
-                              (declarations @dc.patterns) -- (error (chain "\n" (map showHS @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
+                              (declarations @dc.patterns) -- (error (chain "\n" (map (showHS "") @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
                               (sort' name (rd (@cs.conDefs ++ @dc.conDefs)))
                               @keys
                               @os.objDefs
@@ -321,7 +321,7 @@ SEM Rule
        loc.errcpu      = snd @rcpu
        loc.rcpu        = subExprCheck
                          (if @c=='A'
-                         then Ru @c (error ("Reference to antecedent of 'A' Rule "++showHS @r)) @rulePos @cons.expr @cpu.raw @expl
+                         then Ru @c (error ("Reference to antecedent of 'A' Rule "++showHS "" @r)) @rulePos @cons.expr @cpu.raw @expl
                                  (if null @is
                                   then error("Fatal: null @is on "++show @rulePos++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
                                   else head @is)
@@ -512,7 +512,7 @@ SEM Expression
        lhs.rnr      = @ts.rnr
        lhs.raw      = Fd @ts.raw
   | Fu lhs.signs    = if null @sgns then error("Fatal: empty @sgns in Fu-expression "++showADL (Fi @fs.raw)) else @sgns
-       loc.sgns     = if null @fs.signss then error("Fatal: empty @fs.signss in expression "++showHS (Fu @fs.exprs)) else
+       loc.sgns     = if null @fs.signss then error("Fatal: empty @fs.signss in expression "++showHS "" (Fu @fs.exprs)) else
                       foldr1 (llub @lhs.gE) @fs.signss
        fs.septets   = []
        lhs.expr     = Fu @fs.exprs
@@ -524,7 +524,7 @@ SEM Expression
        lhs.rnr      = @fs.rnr
        lhs.raw      = Fu @fs.raw
   | Fi lhs.signs    = if null @sgns then error("Fatal: empty @sgns in Fi-expression "++showADL (Fi @fs.raw)) else @sgns
-       loc.sgns     = if null @fs.signss then error("Fatal: empty @fs.signss in expression "++showHS (Fi @fs.exprs)) else
+       loc.sgns     = if null @fs.signss then error("Fatal: empty @fs.signss in expression "++showHS "" (Fi @fs.exprs)) else
                       foldr1 (llub @lhs.gE) @fs.signss
        fs.septets   = []
        lhs.expr     = Fi @fs.exprs
@@ -661,7 +661,7 @@ SEM Rule
                        "\n@cons.expr:  "++showADL @cons.expr++
                        "\n@is:         "++show @is++
                        "\n"++showADL @r++
-                       "\n@r:          "++showHS @r++"\n"
+                       "\n@r:          "++showHS "" @r++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @rulePos]++ -}
                       take 1   -- tip: for diagnosis purposes, remove this `take 1' and get more messages.
                       (@cons.sErr ++
@@ -713,7 +713,7 @@ SEM Expression
                        "\ncomps @lhs.gE @ts.signss: "++show (comps @lhs.gE @ts.signss)++
                        "\n"++gEtabG @lhs.gE (rd [c|ts<- @ts.signss,(a,b)<-ts,c<-[a,b]])++
                        "\n@trpls:     "++(if null @trpls then "[]" else chain "\n->          " [show a++"#["++chain "," (map showADL ls)++"]#"++show sl++"#"++show cs++"#"++show sr++"#["++chain "," (map showADL rs)++"]#"++show b|(a,ls,sl,cs,sr,rs,b)<- @trpls])++
-                       "\n@lhs.expr:  "++showHS @dis++
+                       "\n@lhs.expr:  "++showHS "" @dis++
                        "\ntypes of chop @ts.signss: "++show [(comps @lhs.gE l,comps @lhs.gE r)| (l,r)<-chop @ts.signss]++
                        "\n@ts.exprs:   "++show @ts.exprs++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++  -}
@@ -741,7 +741,7 @@ SEM Expression
                        "\ncomps @lhs.gE @ts.signss: "++show (comps @lhs.gE @ts.signss)++
                        "\n"++gEtabG @lhs.gE (rd [c|ts<- @ts.signss,(a,b)<-ts,c<-[a,b]])++
                        "\n@trpls:     "++chain "\n->          " [show a++"#"++show ls++"#"++show sl++"#"++show cs++"#"++show sr++"#"++show rs++"#"++show b|(a,ls,sl,cs,sr,rs,b)<- @trpls]++
-                       "\n@lhs.expr:  "++showHS @dis++
+                       "\n@lhs.expr:  "++showHS "" @dis++
                        "\ntypes of chop @ts.signss: "++show [(comps @lhs.gE l,comps @lhs.gE r)| (l,r)<-chop @ts.signss]++
                        "\n@ts.exprs:   "++show @ts.exprs++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos, not (null @trpls)] ++ -}
@@ -767,7 +767,7 @@ SEM Expression
                        (if null @sgns then "" else
                         "\n@lhs.isign:   "++show @lhs.isign++
                         "\nFi @fs.exprs: "++showADL (Fu @fs.exprs)++
-                        "\nFi @fs.exprs: "++showHS (Fu @fs.exprs)++
+                        "\nFi @fs.exprs: "++showHS "" (Fu @fs.exprs)++
                         "\n@lhs.expr:    "++showADL (Fu @fs.exprs))++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++ -}
                       if null @sgns
@@ -782,7 +782,7 @@ SEM Expression
                        (if null @sgns then "" else
                         "\n@lhs.isign:   "++show @lhs.isign++
                         "\nFi @fs.exprs: "++showADL (Fi @fs.exprs)++
-                        "\nFi @fs.exprs: "++showHS (Fi @fs.exprs)++
+                        "\nFi @fs.exprs: "++showHS "" (Fi @fs.exprs)++
                         "\n@lhs.expr:    "++showADL (Fi @fs.exprs))++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++ -}
                       if null @sgns
@@ -794,10 +794,10 @@ SEM Expression
   | Cp lhs.sErr     = {- ["Diagnose Cp on Line "++show diagl++": "++
                        "\n@e.signs:   "++show @e.signs++
                        "\n@lhs.isign: "++show @lhs.isign++
-                       "\n@e.raw:     "++showHS @e.raw++
-                       "\n@e.expr:    "++showHS @e.expr++
+                       "\n@e.raw:     "++showHS "" @e.raw++
+                       "\n@e.expr:    "++showHS "" @e.expr++
                        " = "++showADL @e.expr++"\n"++
-                       " = "++showHS @e.expr++"\n"
+                       " = "++showHS "" @e.expr++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @lhs.pos] ++ -}
                       @e.sErr
 
@@ -1121,7 +1121,7 @@ SEM Declaration
   | Sgn lhs.declaration = @msignat
         loc.msignat   = head ([ s
                               | s <- @lhs.sDef, @nm==name s, @a.concept==source s, @b.concept==target s]++
-                              [error ("Missing "++showHS (Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @expla @morPos 0 @sig)++" in AGtry.ag\n"++ show @lhs.sDef)])
+                              [error ("Missing "++showHS "" (Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @expla @morPos 0 @sig)++" in AGtry.ag\n"++ show @lhs.sDef)])
         lhs.rawDecl   = Sgn @nm @a.concept @b.concept @props @prL @prM @prR @content @expla @morPos 0 @sig
         lhs.nm        = @nm
   | Isn lhs.declaration = Isn @g.concept @s.concept

@@ -220,7 +220,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                                     | s<-rd (declarations context), chn<-let truncate xs = if length xs>380 then take (380-if xs!!(380-1)=='\\' then 2 else 1) xs++"'" else xs
 >                                                                          in [chain ", " ["("++truncate (phpShow a)++","++truncate (phpShow b)++")" | [a,b]<-contents s, not (null a), not (null b)]]]
 >        ++if rd (declarations context)==declarations context then "" else
->          error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS s|s<-cl]|cl<-eqClass (==) (declarations context), length cl>1])
+>          error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS "" s|s<-cl]|cl<-eqClass (==) (declarations context), length cl>1])
 >      , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept context c++" ("++sqlAttConcept context c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept context c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1\");"
 >                                     | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
 >      , "      "++chain "\n        " [ if null ss then "" else
