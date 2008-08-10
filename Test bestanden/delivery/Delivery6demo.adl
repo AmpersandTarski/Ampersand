@@ -1,0 +1,52 @@
+CONTEXT Deliveries
+PATTERN Deliveries
+ issuedTo    :: Order    -> Provider           PRAGMA "" " was issued to ".
+ of          :: Delivery -> Order    [SUR]     PRAGMA "" " is based on ".
+ provider    :: Delivery -> Provider           PRAGMA "" " has delivered ".
+ accepted    :: Provider  * Order    [INJ,SUR] PRAGMA "" " has accepted ".
+ delivery    :: Invoice  -> Delivery [SUR]     PRAGMA "" " covers ".
+ deliveredto :: Delivery -> Client             PRAGMA "" " has been delivered to ".
+ from        :: Order    -> Client             PRAGMA "" " was issued by ".
+ sent        :: Invoice  -> Client             PRAGMA "" " has been sent to ".
+ sentBy      :: Invoice  -> Provider           PRAGMA "" " has been sent by ".
+ paid        :: Client    * Invoice  [SUR,INJ] PRAGMA "" " has paid ".
+
+  SIGNAL order ON issuedTo~ |- accepted
+ EXPLANATION "orders received."
+-- All orders issued to a provider must be accepted by that provider. The provider must be signalled of orders waiting to be accepted.
+
+accepted |- issuedTo~ 
+ EXPLANATION "This provider is not allowed to accept this order"
+-- A provider can only accept orders that have been issued to him earlier. (More literally: If a provider accepts an order, that order must have been issued to that provider.)
+
+ provider |- of;accepted~
+  EXPLANATION "No delivery is made to a client without an order accepted by the provider."
+-- A delivery is made only if there is an order, which is accepted by the provider.
+
+ SIGNAL deliver ON accepted |- provider~;of
+  EXPLANATION "deliverable orders"
+-- Ultimately, each order accepted must be delivered by the provider who has accepted that order. The provider will be signalled of orders waiting to be delivered.
+
+ of;accepted~ |- provider COMPUTING provider
+ EXPLANATION "An order that has been accepted by the provider must be delivered by that provider."
+
+ of;from |- deliveredto COMPUTING deliveredto
+  EXPLANATION "Deliveries are made to the client who ordered the delivery."
+
+ delivery~;sent |- deliveredto
+  EXPLANATION "A client accepts invoices for delivered orders only."
+
+ sentBy = delivery;of;issuedTo COMPUTING sentBy
+  EXPLANATION "An invoice must sent by the provider to whom an order was issued."
+
+ SIGNAL pending ON provider = delivery~;sentBy
+  EXPLANATION "invoices to be sent"
+
+ paid~ |- delivery;of;from
+  EXPLANATION "Invoices must be paid by the client who ordered the delivery"
+
+ SIGNAL payable ON delivery;of;from |- paid~
+  EXPLANATION "Accept payments only for invoices sent."
+ sent = delivery;of;from COMPUTING sent
+ENDPATTERN
+ENDCONTEXT

@@ -1,20 +1,25 @@
 CONTEXT Aanvraag
 
 OBJECT Behandelaar [Employee]          -- 'Employee' zou betekenen: 'Employee = Employee'
-   =[  aanvragen : assigned~]
-   
+  = [  aanvragen : assigned~ 
+       = [applicant : applicant
+         , checked   : checked
+         , kind      : kind[Application*Product]
+         , assigned  : assigned
+         , decision  : leadsto]
+     ]
  
 OBJECT Permissions [Employee]
-   =[  product : auth
+  = [ product : auth
     , area    : area]
     
 OBJECT Person [Person]
-   =[  idDocument  : authentic
+  = [ idDocument  : authentic
     , residence   : inhabitant
     , application : applicant~]
  
 OBJECT Application [Application]
-   =[  applicant : applicant
+  = [  applicant : applicant
        = [ person : I[Person]
          , idDocument : authentic
          , residence : inhabitant
@@ -25,7 +30,7 @@ OBJECT Application [Application]
     , decision  : leadsto]
  
 OBJECT Decision [Decision]
-   =[  application : leadsto~
+  = [  application : leadsto~
     , kind        : kind[Decision*Product]]
  
 {-
