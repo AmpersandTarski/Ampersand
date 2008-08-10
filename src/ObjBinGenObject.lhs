@@ -249,17 +249,20 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >  prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addslashes p1) ++ s1 ++ (addslashes p2) ++ s2 ++ (addslashes p3)
 >  morsWithCpt context cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
 
-> --Precondition: ctx a  contains precisely one morphism.
+> --Precondition: ctx a  contains precisely one morphism and it is not V.
 >  deleteExprForAttr context a parent id
->   = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
+>   | isTrue (ctx a)  = error "Fatal: DELETE FROM V is no valid SQL"
+>   | isIdent (ctx a) = "DELETE FROM "++sqlConcept context ((target.head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
+>   | otherwise       = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
 
 >  andNEXISTquer context e m
->   = [ "      AND NOT EXISTS (SELECT * FROM "++(sqlMorName context m)
->     , "                       WHERE "
->       ++ (sqlConcept context (target e))++"."++(sqlAttConcept context (target e))++" = "
->       ++ (sqlMorName context m)++"."++(sqlMorSrc context m)
->     , "                     )"
->     ]
+>   | isTrue m  = [ "      AND FALSE" ]
+>   | otherwise = [ "      AND NOT EXISTS (SELECT * FROM "++(sqlMorName context m)
+>                 , "                       WHERE "
+>                   ++ (sqlConcept context (target e))++"."++(sqlAttConcept context (target e))++" = "
+>                   ++ (sqlMorName context m)++"."++(sqlMorSrc context m)
+>                 , "                     )"
+>                 ]
 
 >  autoIncQuer context cpt
 >   = "SELECT max(1+"++(sqlAttConcept context cpt)
@@ -301,7 +304,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >                  ]
 >                  ) ++
 >               [ "  ');"]
->  termAtts o = [a|a<-attributes o, (Tm (Mph _ _ _ _ _ _))<-[ctx a]] -- Dit betekent: de expressie ctx a bevat precies één morfisme.
+>  termAtts o = [a|a<-attributes o, Tm (Mph _ _ _ _ _ _)<-[ctx a]] -- Dit betekent: de expressie ctx a bevat precies één morfisme.
 >  selectExprForAttr context a parent id
 >    = selectExprWithF context (ctx a) (concept parent) id
 >  selectExprWithF context e cpt id

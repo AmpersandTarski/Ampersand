@@ -862,15 +862,14 @@ SEM ObjectDef
                       ]
                                             
 SEM ObjDefs 
-  | Cons lhs.sErr   =
+  | Cons lhs.sErr   ={-
                       [ "10 on "++show @hd.pos++"\n   "++
                         "Source of the rest of the attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
                         "Does not match " ++ @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
                       | null @signs
                       , not (null @tl.sources)
-                      ]
-                      ++ @hd.sErr
-                      ++ @tl.sErr
+                      ] ++
+                      -} @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Population
   | Popu lhs.sErr   = @m.sErr

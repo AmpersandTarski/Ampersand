@@ -1485,18 +1485,7 @@ sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
             (_hd (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
         ( _tl_objDefs,_tl_rnr,_tl_sErr,_tl_sources) =
             (_tl (_lhs_gE) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
-    in  (_hd_odef : _tl_objDefs
-        ,_tl_rnr
-        ,[ "10 on "++show _hd_pos++"\n   "++
-           "Source of the rest of the attributes " ++ (chain " or " (map show _tl_sources)) ++ "\n   "++
-           "Does not match " ++ _hd_nm ++ " of type " ++ (chain ", " (map show _hd_sConcs)) ++ "\n"
-         | null _signs
-         , not (null _tl_sources)
-         ]
-         ++ _hd_sErr
-         ++ _tl_sErr
-        ,_signs
-        )
+    in  (_hd_odef : _tl_objDefs,_tl_rnr,_hd_sErr ++ _tl_sErr,_signs)
 sem_ObjDefs_Nil :: (T_ObjDefs)
 sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let 
