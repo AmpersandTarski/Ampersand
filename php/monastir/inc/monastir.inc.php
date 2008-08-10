@@ -52,8 +52,12 @@ function recurParse($object,$traceID,$objtrace){
 			if(!isset($_REQUEST[$trace.'%'.$n]) || $_REQUEST[$trace.'%'.$n] != 'remove')
 			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
 		}
-		if(isset($_REQUEST[$trace]) && $_REQUEST[$trace] == 'add'){
-			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
+		if(isset($_REQUEST[$trace]) && substr($_REQUEST[$trace],0,3) == 'add'){
+			$nms=split('_',$_REQUEST[$trace],2);
+			if(count($nms)==1)
+				$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
+			else
+				$obj->readGen($type,$nms[1]);
 		}
 	}
 	return $obj;
@@ -227,8 +231,12 @@ class expandableList extends viewableList{
 	static $itemID=0;
 	var $object;
 	var $traceID;
+	var $options;
 	//private $header;
 	function assign($var,$val){
+		if($var=='options'){
+			$this->options=$val;
+		}else
 		if($var=='object'){
 			$this->object=$val;
 		}else parent::assign($var,$val);
@@ -242,18 +250,26 @@ class expandableList extends viewableList{
 		foreach($this->object->containing as $i=>$v){
 			$this->header[$i]=new viewableText($v->type->name);
 		}
+		if(count($this->elements)<1 && $edit){
+			echo '<P>';
+			$this->displayOptions();
+			echo '</P>';
+		}
 		if(count($this->object->containing) <= 1) $this->wrapping=false;
 		if(count($this->object->containing) == 0) $this->header[]=new viewableText('');
 		$this->header[]=new viewableText('');
 		$this->displayheader($this->header);
 		if(count($this->elements)){
-			foreach($this->elements as $i=>$v){
-				$this->displayRow($v,$edit,$i,count($this->elements));
+			if($this->One) $this->displayRow($this->elements[count($this->elements)-1],$edit,0,1);
+			else{
+				foreach($this->elements as $i=>$v){
+					$this->displayRow($v,$edit,$i,count($this->elements));
+				}
 			}
 		}else if(!$this->Tot){
 			$this->dispNone(count($this->header));
-		}else if($edit){ // edit should allways be true, or this wouldn't have happened
-			$this->displayRow(null,$edit,0,count($this->elements));
+		}else if($edit){ // edit should allways be true, or this couldn't have happened
+			$this->displayRow(null,true,0,count($this->elements));
 		}
 		if($edit && (!$this->One)) $this->displayEmptyRow($this->header);
 		$this->displaytail();
@@ -280,6 +296,9 @@ class expandableList extends viewableList{
 				$myRow->assign("One",$v->mult->uni);
 				$myRow->assign("Tot",$v->mult->tot);
 				$myRow->assign('object',$v->type);
+				$f='getEach_'.$type;
+				if(isset($row))
+					$myRow->assign('options',$row->$f());
 				if(isset($row))
 				$myRow->assign('elements',$row->$type);
 				else $myRow->assign('elements',array());
@@ -319,12 +338,34 @@ class expandableList extends viewableList{
 		if(!$this->One)
 			echo "</TR>";
 	}
-	function displayEmptyRow($row){
+	function displayEmptyRow(){
+		if($this->Tot && count($this->elements)==0) $force=true; else $force=false;
 		$colspan=max(1,count($this->object))+1;
 		if(!$this->One) echo '<TR><TD colspan='.$colspan.'>';
-		//echo '<button name="'.$this->traceID.'" value="add">Add</button>';
-		echo '<P><input type="image" name="'.htmlspecialchars($this->traceID).'" value="add" SRC="'.$this->iDir.'add.png" /></P>';
+		echo '<P>';
+		if(!$this->displayOptions()){
+			if(!$force)
+				echo '<input type="image" name="'.$this->traceID.'" value="add" src="'.$this->iDir.'add.png" title="Add" />';
+			else
+			$this->displayRow(null,true,0,count($this->elements));
+		}
+		echo '</P>';
 		if(!$this->One) echo '</TD></TR>';
+	}
+	function displayOptions(){
+		if(isset($this->options)){
+			if($this->Tot && count($this->elements)==0) $force=true; else $force=false;
+			echo '<select name="'.htmlspecialchars($this->traceID).'" onChange="submit();">';
+			if(!$force) echo '<OPTION VALUE="" style="font-style:italic">Select to '.(($this->One&&count($this->elements))?'change':'add').'</OPTION>';
+			echo '<OPTION VALUE="add" style="font-style:italic">New</OPTION>';
+			if(isset($this->options)){
+				foreach($this->options as $i=>$option){
+					echo '<OPTION VALUE="add_'.$option.'">'.$option.'</OPTION>';
+				}
+			}
+			echo '</select>';
+			return true;
+		}else return false;
 	}
 }
 class monastir Extends anyView {
