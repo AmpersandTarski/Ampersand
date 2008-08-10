@@ -129,52 +129,6 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >      ,"    return false;"
 >      ,"}"])
 
-The service "delete<concept>" deletes the instance of <concept> with identity $id from the CSL.
-
->  generateService_delete :: Context -> String -> ObjectDef -> String
->  generateService_delete context capname object
->   = chain "\n  "
->     (["function delete"++capname++"($id){"
->      ,"  global $DB_err;"
->      ,"  $preErr= 'Cannot delete "++(addslashes (name (concept object)))++": ';"
->      ,"  DB_doquer('START TRANSACTION');"
->      ,"  "] ++
->      concat (map (map ((++) "    "))
->             [ ["$taken = DB_doquer('"++(selectExprWithF context (Tm m) cpt "$id")++"');"
->               ,"if(count($taken)) {"
->               ,"  $DB_err = 'Cannot delete "++(name object)++": "
->                ++(prag d "\\''.addslashes($id).'\\'" "\\''.addslashes($taken[0]['"
->                ++(sqlExprTrg (Tm m))++"']).'\\'" )++"';" -- pragma
->               ,"  DB_doquer('ROLLBACK');"
->               ,"  return false;"
->               ,"}"
->               ]
->             | cpt <- [concept object]
->             , m@(Mph _ _ _ _ _ d) <- morsWithCpt context cpt
->             , not (elem (makeInline m) (mors (map ctx (termAtts object))))  -- mors yields all morphisms inline.
->             ])
->      ++["/*"]
->      ++ map show (mors (map ctx (termAtts object)))
->      ++["*************"]
->      ++ map show (mors (morsWithCpt context (concept object)))
->      ++["*/"]
->      ++ deleteObject context object ++ checkRuls context object ++
->      ["  if(true) {"
->      ,"    DB_doquer('COMMIT');"
->      ,"    return true;"
->      ,"  }"
->      ,"  DB_doquer('ROLLBACK');"
->      ,"  return false;"
->      ,"}"
->      ])
-
->  prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addslashes p1) ++ s1 ++ (addslashes p2) ++ s2 ++ (addslashes p3)
->  morsWithCpt context cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
-
-> --Precondition: ctx a  contains precisely one morphism.
->  deleteExprForAttr context a parent id
->   = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
-
 >  updateObject :: Object a => Context -> [String] -> a -> [String]
 >  updateObject context nms o =
 >      ["    if(!$new){"
@@ -231,6 +185,45 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >                )
 >      where nm = chain "_" nms
 
+The service "delete<concept>" deletes the instance of <concept> with identity $id from the CSL.
+
+>  generateService_delete :: Context -> String -> ObjectDef -> String
+>  generateService_delete context capname object
+>   = chain "\n  "
+>     (["function delete"++capname++"($id){"
+>      ,"  global $DB_err;"
+>      ,"  $preErr= 'Cannot delete "++(addslashes (name (concept object)))++": ';"
+>      ,"  DB_doquer('START TRANSACTION');"
+>      ,"  "] ++
+>      concat (map (map ((++) "    "))
+>             [ ["$taken = DB_doquer('"++(selectExprWithF context (Tm m) cpt "$id")++"');"
+>               ,"if(count($taken)) {"
+>               ,"  $DB_err = 'Cannot delete "++(name object)++": "
+>                ++(prag d "\\''.addslashes($id).'\\'" "\\''.addslashes($taken[0]['"
+>                ++(sqlExprTrg (Tm m))++"']).'\\'" )++"';" -- pragma
+>               ,"  DB_doquer('ROLLBACK');"
+>               ,"  return false;"
+>               ,"}"
+>               ]
+>             | cpt <- [concept object]
+>             , m@(Mph _ _ _ _ _ d) <- morsWithCpt context cpt
+>             , not (elem (makeInline m) (mors (map ctx (termAtts object))))  -- mors yields all morphisms inline.
+>             ])
+>      ++["/*"]
+>      ++ map show (mors (map ctx (termAtts object)))
+>      ++["*************"]
+>      ++ map show (mors (morsWithCpt context (concept object)))
+>      ++["*/"]
+>      ++ deleteObject context object ++ checkRuls context object ++
+>      ["  if(true) {"
+>      ,"    DB_doquer('COMMIT');"
+>      ,"    return true;"
+>      ,"  }"
+>      ,"  DB_doquer('ROLLBACK');"
+>      ,"  return false;"
+>      ,"}"
+>      ])
+
 >--  deleteObject :: Context -> a -> [String]
 >  deleteObject context object =
 >      (concat (map (map ((++) "      "))
@@ -252,6 +245,13 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >               ] ++ (do_del_quer context a ("$"++(name a)++"_str"))
 >             | a <- termAtts object
 >             ])) 
+
+>  prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addslashes p1) ++ s1 ++ (addslashes p2) ++ s2 ++ (addslashes p3)
+>  morsWithCpt context cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
+
+> --Precondition: ctx a  contains precisely one morphism.
+>  deleteExprForAttr context a parent id
+>   = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
 
 >  andNEXISTquer context e m
 >   = [ "      AND NOT EXISTS (SELECT * FROM "++(sqlMorName context m)
