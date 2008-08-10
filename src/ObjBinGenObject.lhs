@@ -40,16 +40,17 @@
 >      ,"    // check existance of $id"
 >      ,"    $ctx = DB_doquer('"++(doesExistQuer object "$id")++"');"
 >      ,"    if(count($ctx)==0) return false;"
->      ,"    $obj1 = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
+>      ,"    $obj = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
 >      ]
 >      ++ (concat (map (map ((++) "    "))
 >             [ [ "$ctx = DB_doquer('"++ (selectExprForAttr a object "$id") ++"');"
->               , "foreach($ctx as $i=>$v1){"
->               ] ++ readObject a [name object] ++ [ "}" ]
+>               , "foreach($ctx as $i=>$v){"
+>               , "  $obj->read_"++name a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
+>               , "}"]
 >             | a <-attributes object
 >             ]
 >            )) ++
->      ["    return $obj1;"
+>      ["    return $obj;"
 >      ,"}"]
 >      ++
 >      ["function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
@@ -170,6 +171,32 @@
 >            [ ["function add_"++(name a)++"("++concat [n++"_"|n<-nm++[name o]]++(name a)++" $"++(name a)++"){"
 >              ,"  return $this->"++(name a)++"[]=$"++(name a)++";"
 >              ,"}"
+>              ,"function read_"++(name a)++"($id){"
+>              ,"  $obj = new "++concat [n++"_"|n<-nm++[name o]]++(name a)++"($id" ++ (concat [", array()" | as<-attributes a]) ++ ");"
+>              ] ++ concat [ [ "  $ctx = DB_doquer('"++ (selectExprForAttr as a "$id") ++"');"
+>                            , "  foreach($ctx as $i=>$v){"
+>                            , "    $obj->read_"++name as++"($v['" ++ sqlExprTrg (ctx as) ++ "']);"
+>                            , "  }"
+>                            ]
+>                          | as <-attributes a
+>                          ] ++
+>              ["  $this->add_"++(name a)++"($obj);"
+>              ,"  return $obj;"
+>              ,"}"
+>              ,"function getEach_"++(name a)++"(){"
+>              ,"  // currently, this returns all concepts.. why not let it return only the valid ones?"
+>              ,"  $v = DB_doquer('"++(selectExpr context
+>                                             30
+>                                             (sqlAttConcept context (concept a))
+>                                             (sqlAttConcept context (concept a))
+>                                             (Tm (I [] (concept a) (concept a) True))
+>                                         )++"');"
+>              ,"  $res = array();"
+>              ,"  foreach($v as $i=>$j){"
+>              ,"    $res[]=$j['"++addslashes (sqlAttConcept context (concept a))++"'];"
+>              ,"  }"
+>              ,"  return $res;"
+>              ,"}"
 >              ]
 >            | a <- attributes o
 >            ]
@@ -180,22 +207,16 @@
 >             ] ++
 >         ["  else return false;"|length (attributes o) > 0] ++
 >         ["}"
+>         ,"function readGen($type,$value){"
+>         ]++ [ "  if($type=='"++(name a)++"') return $this->read_"++(name a)++"($value);"
+>             | a <- attributes o
+>             ] ++
+>         ["  else return false;"|length (attributes o) > 0] ++
+>         ["}"
 >         ]
 >         )) ++
 >        [ "}"
 >        ] ++ (concat [ showClasses (nm++[name o]) a |a <- attributes o ] )
-
->     readObject a nm =
->      ["    $obj"++(show (n+1))++"=$obj"++(show n)++"->add_"++(name a)++"(new "++concat [m++"_"|m<-nm]++(name a)++"($v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']));"
->      ]
->      ++ (concat (map (map ((++) "    "))
->             [ [ "$ctx"++(show (n+1))++" = DB_doquer('"++ (selectExprForAttr as object ("$v"++(show n)++"['"++(sqlExprTrg (ctx a))++"']")) ++"');"
->               , "foreach($ctx"++(show (n+1))++" as $i=>$v"++(show (n+1))++"){"
->               ] ++ readObject as (nm++[name a]) ++ [ "}" ]
->             | as <-attributes a
->             ]
->            ))
->      where n = length nm
 
 >--     updateObject :: [String] -> a -> [String]
 >     updateObject nms o =
