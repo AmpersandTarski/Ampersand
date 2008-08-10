@@ -10,13 +10,50 @@
 >  import Atlas     -- (for converting error messages to HTML)
 >  import RelBinGenBasics
 
-The service "getobject" communicatese metadata to the interface.
+The service "getobject" communicates metadata to the interface.
 
 >  generateService_getobject :: Context -> ObjectDef -> String
 >  generateService_getobject context object
 >   = "function getobject_"++ name object ++"(){\n  "
 >     ++ chain "\n  " (addFstLst "  return " ";" (map ((++) "  ") (getObject context object))) ++
 >     "\n  }\n"
+
+>  objectServices :: Context -> String -> ObjectDef -> String
+>  objectServices context filename object
+>   = (chain "\n  "
+>     ([ "<?php // generated with "++adlVersion
+>      , ""
+>      , "/********* on "++(show (pos object))
+>      ] ++ (map ((++) " * ") (
+>                showObjDef object )) ++
+>      [" *********/"
+>      , ""
+>      , generateService_getobject context object   -- generate metadata for "object"
+>      ] ++ showClasses context [] object ++
+>      [ generateService_getEach context capname object
+>      , generateService_create  context capname object
+>      , generateService_read    context capname object
+>      , generateService_update  context capname object
+>      , generateService_delete  context capname object]
+>     )) ++ "\n?>"
+>    where
+>     showObjDef a | null (attributes a) =
+>      [  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
+>       ]
+>     showObjDef a =
+>      (  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
+>       ):(concat (mapHeadTail (mapHeadTail ((++) " = [ ")
+>                                           ((++) "     "))
+>                              (mapHeadTail ((++) "   , ")
+>                                           ((++) "     "))
+>                              [ (showObjDef as)
+>                              | as <- attributes a
+>                              ]
+>                 )
+>         ) ++ ["  ]"]
+>     capname = (toUpper (head (name object))):(tail (name object))
+
+The service "getEach<concept>" returns the set of all instances of <concept> that are in the CSL.
 
 >  generateService_getEach :: Context -> String -> ObjectDef -> String
 >  generateService_getEach context capname object
@@ -28,10 +65,14 @@ The service "getobject" communicatese metadata to the interface.
 >                                            (Tm (I [] (concept object) (concept object) True))
 >                                )++"');\n  }"
 
+The service "create<concept>" creates a new instance of <concept> in the CSL.
+
 >  generateService_create :: Context -> String -> ObjectDef -> String
 >  generateService_create context capname object
 >   = "function create"++capname++"("++(name object)++" &$obj){\n  "++
 >     "    return update"++capname++"($obj,true);\n  }"
+
+The service "read<concept>" reads the instance of <concept> with identity $id from the CSL.
 
 >  generateService_read :: Context -> String -> ObjectDef -> String
 >  generateService_read context capname object
@@ -52,6 +93,9 @@ The service "getobject" communicatese metadata to the interface.
 >            )) ++
 >      ["    return $obj;"
 >      ,"}"])
+
+The service "update<concept>" reads the instance of <concept> with identity $id from the CSL,
+interacts with the user to update the concept, and writes the result to the CSL.
 
 >  generateService_update :: Context -> String -> ObjectDef -> String
 >  generateService_update context capname object
@@ -84,6 +128,8 @@ The service "getobject" communicatese metadata to the interface.
 >      ,"    DB_doquer('ROLLBACK');"
 >      ,"    return false;"
 >      ,"}"])
+
+The service "delete<concept>" deletes the instance of <concept> with identity $id from the CSL.
 
 >  generateService_delete :: Context -> String -> ObjectDef -> String
 >  generateService_delete context capname object
@@ -122,46 +168,10 @@ The service "getobject" communicatese metadata to the interface.
 >      ,"}"
 >      ])
 
->  objectServices :: Context -> String -> ObjectDef -> String
->  objectServices context filename object
->   = (chain "\n  "
->     ([ "<?php // generated with "++adlVersion
->      , ""
->      , "/********* on "++(show (pos object))
->      ] ++ (map ((++) " * ") (
->                showObjDef object )) ++
->      [" *********/"
->      , ""
->      , generateService_getobject context object   -- generate metadata for "object"
->      ] ++ showClasses context [] object ++
->      [ generateService_getEach context capname object
->      , generateService_create  context capname object
->      , generateService_read    context capname object
->      , generateService_update  context capname object
->      , generateService_delete  context capname object]
->     )) ++ "\n?>"
->    where
->     showObjDef a | null (attributes a) =
->      [  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
->       ]
->     showObjDef a =
->      (  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
->       ):(concat (mapHeadTail (mapHeadTail ((++) " = [ ")
->                                           ((++) "     "))
->                              (mapHeadTail ((++) "   , ")
->                                           ((++) "     "))
->                              [ (showObjDef as)
->                              | as <- attributes a
->                              ]
->                 )
->         ) ++ ["  ]"]
-
-> --Precondition: ctx a bevat precies één morfisme
->     capname = (toUpper (head (name object))):(tail (name object))
-
 >  prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addslashes p1) ++ s1 ++ (addslashes p2) ++ s2 ++ (addslashes p3)
 >  morsWithCpt context cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
 
+> --Precondition: ctx a  contains precisely one morphism.
 >  deleteExprForAttr context a parent id
 >   = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
 
