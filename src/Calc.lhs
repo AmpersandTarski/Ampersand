@@ -962,9 +962,8 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >                           | rd(e:es)/=e:es              = (Fi (rd (e:es)), ["x/\\x = x"], "<=>")
 >                           | null es                     = norm e []
 >                           | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
->                           | e==Fu []                    = (Fu [], ["inconsistency"], "<=>")
-> -- this is unreachable    | e==Fi []                    = (Fi es, ["x/\\V = x"], "<=>")
->                           | or[x==Fu []|x<-es]          = (Fu [], ["x/\\V- = V-"], "<=>")
+>                           | or[isTrue  x|x<-e:es]       = (Fi [x|x<-e:es, not (isTrue x)], ["x/\\V = x"], "<=>")
+>                           | or[isFalse x|x<-e:es]       = (Fu [], ["x/\\V- = V- (inconsistency)"], "<=>")
 >                           | isFu e && not (null absor0) = let f=head absor0 in (Fi es, ["absorb "++showADL e++" because of "++showADL f], "<=>")
 >                           | isFu e && not (null absor1) = let (ts,f)=head absor1 in (Fi (ts++es), ["absorb "++showADL f], "<=>")
 >                           | not simpl && isFu e && dnf  = (distribute Fi Fu isFi isFu (Fi (e:es)), ["distribute \\/ over /\\"], "<=>")
@@ -979,9 +978,8 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >                           | rd(e:es)/=e:es              = (Fu (rd (e:es)), ["x\\/x = x"], "<=>")
 >                           | null es                     = norm e []
 >                           | not (null compl)            = (Fi [], [showADL (notCp (head compl))++"\\/"++showADL (head compl)++" = V"], "<=>")
->                           | e==Fi []                    = (Fi [], ["tautology"], "<=>")
-> -- this is unreachable    | e==Fu []                    = (Fu es, ["x\\/V- = x"], "<=>")
->                           | or[x==Fi []|x<-es]          = (Fi [], ["x\\/V = V"], "<=>")
+>                           | or[isFalse x|x<-e:es]       = (Fu [x|x<-e:es, not (isFalse x)], ["x\\/V- = x"], "<=>")
+>                           | or[isTrue  x|x<-e:es]       = (Fi [], ["x\\/V = V (tautology)"], "<=>")
 >                           | isFi e && not (null absor0) = let f=head absor0 in (Fu es, ["absorb "++showADL e++" because of "++showADL f++" ((x/\\y)\\/y = y))"], "<=>")
 >                           | isFi e && not (null absor1) = let (ts,f)=head absor1 in (Fu (ts++es), ["absorb "++showADL f++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
 >                           | not simpl && isFi e && not dnf = (distribute Fu Fi isFu isFi (Fu (e:es)), ["distribute /\\ over \\/"], "<=>")
