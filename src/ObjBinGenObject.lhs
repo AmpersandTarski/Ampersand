@@ -81,7 +81,7 @@ The service "read<concept>" reads the instance of <concept> with identity $id fr
 >      ,"    // check existence of $id"
 >      ,"    $ctx = DB_doquer('"++(doesExistQuer context object "$id")++"');"
 >      ,"    if(count($ctx)==0) return false;"
->      ,"    $obj = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
+>      ,"    $obj = new "++(name object)++"($id);"
 >      ,"    return $obj;"
 >      ,"}"])
 

@@ -334,7 +334,7 @@ For instance: Tm I may return the same names, but cp(Tm I) should not since the 
 >  noCollideUnlessTm _  names name = noCollide names name
 
 >  selectExprMorph ctx i src trg mph@(V _ _)
->   = selectGeneric i ("vfst."++sqlAttConcept ctx (source mph),src) ("vsnd."++sqlAttConcept ctx (source mph),trg)
+>   = selectGeneric i ("vfst."++sqlAttConcept ctx (source mph),src) ("vsnd."++sqlAttConcept ctx (target mph),trg)
 >                     (sqlConcept ctx (source mph) ++ " AS vfst, "++sqlConcept ctx (target mph) ++ " AS vsnd")
 >                     "1"
 >  selectExprMorph ctx i src trg mph@(Mp1 str _)
