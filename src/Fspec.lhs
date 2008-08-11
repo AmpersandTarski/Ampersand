@@ -47,9 +47,9 @@ Every theme will be explained in a chapter of its own.
 >           ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
 >           )
 >           datasets
->           [ Fobj (makeDataset context (concept o)) o | o <-attributes context]
+>           [ makeFobj context o | o <-attributes context]
 >      where
->       datasets = rd [ds| c<-concs context, ds<-[makeDataset context c]]
+>       datasets = rd [ds| c<-concs context, ds<-[dataset context c]]
 >-- next thing, we look which datasets will be discussed in which themes.
 >-- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
 >-- because we assume that the programmer found it important enough to define that concept in that pattern.
@@ -110,8 +110,8 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   ctx        _ = error ("Cannot evaluate the context expression of this dataset (yet)")
 >   populations (DS c pths) = []
 
->  makeDataset :: Context -> Concept -> Dataset
->  makeDataset context c
+>  dataset :: Context -> Concept -> Dataset
+>  dataset context c
 >   = if null ds then error ("Fatal: cannot determine a dataset for concept "++show c) else
 >     head ds
 >     where ds = sort' len [ds| ds<-dss, c `elem` map source (mors ds) ]  -- the largest one!
@@ -132,14 +132,23 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   genE         (DS c pths) = genE c
 >   closExprs    (DS c pths) = closExprs pths
 
->  data Fobj  = Fobj Dataset ObjectDef
+>  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec]
 
 >  instance ShowHS Fobj where
->   showHSname (Fobj dataset objd) = "f_Obj_"++haskellIdentifier (name objd)
->   showHS indent (Fobj dataset objd) = "Fobj "++showHSname dataset++indent++"     ("++showHS (indent++"      ") objd++")"
+>   showHSname (Fobj dset objd svcs) = "f_Obj_"++haskellIdentifier (name objd)
+>   showHS indent (Fobj dset objd svcs)
+>    = "Fobj "++showHSname dset
+>      ++indent++"     ("++showHS (indent++"      ") objd++")"
+>      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
 
-  makeFobj :: ObjectDef -> Dataset -> Fobj
-  makeFobj o ds = Fobj ds o
+>  makeFobj :: Context -> ObjectDef -> Fobj
+>  makeFobj context o
+>   = Fobj (dataset context (concept o)) o
+>          ([ getEach context o
+>           , createObj context o [] {-rs-}
+>           , readObj context o
+>           , deleteObj context o [] {-rs-} ] ++
+>           [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ])
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
@@ -158,7 +167,7 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >  makeFtheme context pat dss
 >   = Tspc pat [makeFunit context pat (objs ds) [] []| ds<-dss]
 >     where
->      objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
+>      objs ds = [o| o<-attributes context, dataset context (concept o)==ds]
 
 >  data Funit = Uspc String Pattern
 >                    [(ObjectDef,FPA,[Morphism],[(Expression,Rule)])]
@@ -174,11 +183,11 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
 >  makeFunit context pat objs newConcs newDecls
 >   = Uspc (if null objs then "" else name (head objs)) pat [(o,ILGV Eenvoudig,[] {-cs-},[] {-rs-})| o<-objs]
->            (concat [ [ newEnt context o [] {-rs-} ] ++ [ getEnt context o]                           ++
+>            (concat [ [ createObj context o [] {-rs-} ] ++ [ readObj context o]                           ++
 >                      concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
 >                             | (e,key,ks)<-keys pat, e==concept o]                                ++
->                      [ delEnt context o [] {-rs-} ]                                                     ++
->                      [ updEnt context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
+>                      [ deleteObj context o [] {-rs-} ]                                                     ++
+>                      [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
 >                    | o<-objs ])
 
 The following functional specification, funcSpec, computes which relations are may be affected by compute rules.
@@ -203,14 +212,14 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   showHSname (Sspc nm sees changes fpa input output rs pre post) = "f_svc_"++haskellIdentifier nm
 >   showHS indent (Sspc nm sees changes fpa input output rs pre post)
 >    = "Sspc "++nm
->      ++indent++"     [" ++chain "," (map (showHS "") sees   )++"]"
->      ++indent++"     [" ++chain "," (map (showHS "") changes)++"]"
+>      ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) sees   )++indent++"     ] -- these are the visible morphisms: <sees> "
+>      ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
 >      ++indent++"     (" ++show fpa++")"
->      ++indent++"     [" ++chain "," (map (showHS "") input )++"]"
->      ++indent++"     [" ++chain "," (map (showHS "") output)++"]"
->      ++indent++"     [ "++chain (indent++"     , ") (map (showHS "") rs  )++indent++"     ]"
->      ++indent++"     [ "++chain (indent++"     , ") pre ++indent++"     ]"
->      ++indent++"     [ "++chain (indent++"     , ") post++indent++"     ]"
+>      ++indent++"     [" ++(if null input   then "]   -- there are no input parameters" else chain "," (map (showHS "") input )++"] -- these are the input parameters: <input>")
+>      ++indent++"     [" ++(if null output  then "]   -- no output parameters"          else chain "," (map (showHS "") output)++"] -- these are the output parameters: <output> ")
+>      ++indent++"     [" ++(if null rs      then "]   -- there are no rules"            else indent++"     [ "++chain (indent++"     , ") (map (showHS (indent++"       ")) rs  )++indent++"     ]")
+>      ++indent++"     [" ++(if null pre     then "]   -- there are no preconditions"    else indent++"     [ "++chain (indent++"     , ") pre ++indent++"     ] -- preconditions")
+>      ++indent++"     [" ++(if null post    then "]   -- there are no postconditions"   else indent++"     [ "++chain (indent++"     , ") post++indent++"     ] -- postconditions")
 
 >  instance ShowHS ParamSpec where
 >   showHSname a@(Aspc nm typ) = error ("(module Fspec) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
@@ -230,9 +239,9 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   nPatterns (Tspc p us) = 1
 >   nFpoints  (Tspc p us) = sum (map nFpoints us)
 >  instance Statistics Fobj where
->   nServices (Fobj dataset o) = nServices o
->   nPatterns (Fobj dataset o) = 1
->   nFpoints  (Fobj dataset o) = nFpoints o
+>   nServices (Fobj dset o svcs) = length svcs
+>   nPatterns (Fobj dset o svcs) = 1
+>   nFpoints  (Fobj dset o svcs) = nFpoints o
 >  instance Statistics ObjectDef where
 >   nServices o = 4+sum [nServices a| a<-attributes o]
 >   nPatterns o = 0
@@ -322,11 +331,23 @@ Te bepalen:
 >  nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
 >  tt a = "{\\tt "++a++"}"
 >  nameAtt a = tt (nameAt a)
->  newEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
->  newEnt context o rs
->   = Sspc (firstCaps ("new"++firstCaps (name o)))
->          (mors context)     -- see everything
->          (mors context)     -- change everything
+>  getEach :: Context -> ObjectDef -> ServiceSpec 
+>  getEach context o
+>   = Sspc (firstCaps ("getEach"++firstCaps (name o)))
+>          [mIs (concept o)]  -- see  concept o  only.
+>          []                 -- change nothing
+>          (IF Eenvoudig)
+>          [ ]                                          -- input parameters
+>          [ Aspc "objs" ("["++handle context o++"]")]  -- results
+>          []                                           -- rules
+>          []                                           -- Precondition
+>          ([tt "objs"++"= I["++name (concept o)++"]"]) -- Postcondition
+>     where varName = uName (map name (attributes o))
+>  createObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
+>  createObj context o rs
+>   = Sspc (firstCaps ("create"++firstCaps (name o)))
+>          ([mIs (concept o)]++mors o)  -- see the morphisms touched by this object
+>          (mors o)                     -- change these morphisms
 >          (IF Gemiddeld)
 >          [ Aspc (varName (name a)) (handle context a) | a<-attributes o]  -- input parameters
 >          [ Aspc "obj" (handle context o)]                                 -- results
@@ -340,11 +361,11 @@ Te bepalen:
 >--    Postcondition (example:) {o in Pair and o left l and o right r}
 >          ([tt ("obj."++name a)++"="++tt (varName (name a))|a<-attributes o])
 >     where varName = uName (map name (attributes o))
->  getEnt :: Context -> ObjectDef -> ServiceSpec
->  getEnt context o
->   = Sspc (firstCaps ("get"++name o))
->          (mors context) -- see everything
->          []             -- change nothing
+>  readObj :: Context -> ObjectDef -> ServiceSpec
+>  readObj context o
+>   = Sspc (firstCaps ("read"++name o))
+>          ([mIs (concept o)]++mors o) -- sees
+>          []                          -- change nothing
 >          (OF Eenvoudig)
 >          [Aspc "x" (handle context o)]
 >          [Aspc (varName (name a)) (handle context a) | a<-attributes o]
@@ -399,11 +420,27 @@ Te bepalen:
 >           "&)\n\\end{array}$"
 >           )]
 >     where varName = uName (map name (attributes o))
->  delEnt :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
->  delEnt context o rs
->   = Sspc (firstCaps ("del"++name o))
->          (mors context)     -- see everything
->          (mors context)     -- change everything
+
+>  updateObj :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
+>  updateObj context o cs rs
+>   = Sspc (firstCaps ("update"++name o))
+>          (mors o)     -- sees
+>          (mors o)     -- changes
+>          (IF Gemiddeld)
+>          (Aspc "x" (handle context o): [ Aspc (varName (name a)) (handle context a) | a<-attributes o])
+>          []
+>          (dressRules rs)
+>--    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
+>          []
+>--    Post (example:) {x left l, x right r, x src s, and x trg t}
+>          [ tt ("x."++name a)++"="++tt (varName (name a))|a<-attributes o]
+>     where varName = uName (map name (attributes o))
+
+>  deleteObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
+>  deleteObj context o rs
+>   = Sspc (firstCaps ("delete"++name o))
+>          [mIs (concept o)]     -- see everything
+>          (mors o)              -- change everything
 >          (IF Gemiddeld)
 >          [Aspc "x" (handle context o)] []
 >          (dressRules
@@ -425,20 +462,7 @@ Te bepalen:
 >           chain "\\\\\nand" ["&"++tt ("obj."++name a)++"="++idNam (nameAt a)|a<-attributes o]++
 >           "&)\n\\end{array}$"
 >           )]
->  updEnt :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
->  updEnt context o cs rs
->   = Sspc (firstCaps ("upd"++name o))
->          (mors context)     -- see everything
->          (mors context)     -- change everything
->          (IF Gemiddeld)
->          (Aspc "x" (handle context o): [ Aspc (varName (name a)) (handle context a) | a<-attributes o])
->          []
->          (dressRules rs)
->--    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
->          []
->--    Post (example:) {x left l, x right r, x src s, and x trg t}
->          [ tt ("x."++name a)++"="++tt (varName (name a))|a<-attributes o]
->     where varName = uName (map name (attributes o))
+
 >  newPair :: Context -> [Declaration] -> [(Expression,Rule)] -> Declaration -> String -> ServiceSpec
 >  newPair context relations clauses r nm
 >   = Sspc (firstCaps ("assoc"++"_"++nm))
@@ -551,11 +575,11 @@ TODO: determine which relations are affected but not computed, and report as an 
 >  funcSpec context (entities,relations,ruls) language
 >   = [ Tspc pat 
 >            ([ Uspc (firstCaps (name o)) pat [ {- (o,ILGV Eenvoudig,cs,rs) -} ]
->                    ({- [ newEnt context o rs ] ++ [ getEnt context o]                           ++
+>                    ({- [ createObj context o rs ] ++ [ readObj context o]                           ++
 >                        concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) rs]
 >                               | (e,key,ks)<-keys pat, e==concept o]                                ++
->                        [ delEnt context o rs ]                                                     ++
->                        [ updEnt context o cs rs| not (null cs) ] -} []
+>                        [ deleteObj context o rs ]                                                     ++
+>                        [ updateObj context o cs rs| not (null cs) ] -} []
 >                    )
 >             | (o,fpa,cs,rs)<-ec])-- ++clss pat ec newConcs++asss pat newDecls)
 >     | (pat,newConcs,newDecls)<-zip3 (patterns context) (firsts [] (map concs (patterns context))) (firsts [] (map declarations (patterns context)))
@@ -579,9 +603,9 @@ rs zijn de betrokken regels
 >       = [ Uspc (if language==English then "Other Classes" else "Andere Classes") pat car
 >                [ service
 >                | (o,_,_,rs)<-car
->                , service <- [ newEnt context o rs ]                                                ++
+>                , service <- [ createObj context o rs ]                                                ++
 >                             [ keyEnt context o (key,ks) | (e,key,ks)<-keys pat, e==concept o] ++
->                             [ delEnt context o rs ]
+>                             [ deleteObj context o rs ]
 >                ]
 >         ] where car = [ (o,NO,[],rs)
 >                       | o<-objDefs pat,  not (o `elem` attributes context), o `elem` new
