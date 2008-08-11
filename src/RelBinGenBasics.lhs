@@ -152,7 +152,7 @@ The practical version of selectRule does the same, but generates code in which t
 >  selectRule ctx i r
 >   = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule ctx i ("++showHS "" r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
 
-TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie -V is.
+TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie Fu [] is.
 
 >  selectExpr ::    Context    -- current context
 >                -> Int        -- indentation
@@ -253,7 +253,7 @@ Code below is basic functionality, and should be changed only when absolutely ne
 >  selectExpr ctx i src trg (Fi [] ) = error ("RelBinGenBasics.lhs: Cannot create query for Fi [] because type is unknown")
 >--src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
 >--het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
->  selectExpr ctx i src trg (Fu [] ) = selectGeneric i ("''",src) ("''",trg) ("(SELECT 1) AS a") ("0")
+>  selectExpr ctx i src trg (Fu [] ) = selectGeneric i ("\\'\\'",src) ("\\'\\'",trg) ("(SELECT 1) AS a") ("0")
 >  selectExpr ctx i src trg (Fu es ) = (phpIndent i) ++ "(" ++ (selectExprInUnion ctx (i) src trg (Fu es)) ++ (phpIndent i) ++ ")"
 >    where  -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
 >      selectExprInUnion ctx i src trg (Tc e         ) = selectExprInUnion ctx i src trg e
@@ -262,16 +262,17 @@ Code below is basic functionality, and should be changed only when absolutely ne
 >      selectExprInUnion ctx i src trg (Fu (e:(f:fx))) = (selectExprInUnion ctx (i) src trg e) ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion ctx (i) src trg (Fu (f:fx))) ++ (phpIndent i) ++ ""
 >      selectExprInUnion ctx i src trg (Fu [e]       ) = selectExprInUnion ctx i src trg e
 >      selectExprInUnion ctx i src trg e               = selectExpr ctx (i+4) src trg e
+>  selectExpr ctx i src trg (Cp (Tm (V _ _))) = selectExpr ctx i src trg (Fu [])
 >  selectExpr ctx i src trg (Cp e  ) =
 >       selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
->                       (sqlConcept ctx (source e) ++ " AS cfst, "++sqlConcept ctx (target e) ++ " AS csnd")
+>                       (sqlConcept ctx (source e) ++ " AS cfst, "++selectExprBrac ctx (i) trg' trg' (Tm (mIs (target e)))++" AS csnd")
 >                       ("NOT EXISTS ("++ (selectExists' (i+12)
 >                                                        ((selectExprBrac ctx (i+12) src2 trg2 e) ++ " AS cp")
 >                                                        ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
 >                                         ) ++ ")"
 >                       )
 >                       where src' = sqlAttConcept ctx (source e) 
->                             trg' = sqlAttConcept ctx (target e)
+>                             trg' = noCollide [src'] (sqlAttConcept ctx (target e))
 >                             src2 = sqlExprSrc e
 >                             trg2 = noCollideUnlessTm e [src2] (sqlExprTrg e)
 >  selectExpr ctx i src trg cl@(K0 e) = selectGeneric i (sqlExprSrc cl,src) (sqlExprTrg cl,trg) (sqlRelName ctx cl) "1"

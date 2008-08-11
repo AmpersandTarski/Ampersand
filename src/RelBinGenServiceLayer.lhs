@@ -251,13 +251,13 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >           then "// Tautology:  "++showADL rule++"\n     "
 >           else "// No violations should occur in ("++showADL rule++")\n    "++
 >                concat [ "//            rule':: "++(showADL rule') ++"\n    " | pDebug] ++
->                concat [ "// sqlExprSrc rule':: "++sqlExprSrc rule'++"\n     " | pDebug] ++
->                "$v=DB_doquer('"++selectExpr context 19 (sqlExprSrc rule') (sqlExprTrg rule') rule'++"');\n     "++
+>                concat [ "// sqlExprSrc rule':: "++src++"\n     " | pDebug] ++
+>                "$v=DB_doquer('"++selectExpr context 19 src trg rule'++"');\n     "++
 >                "if(count($v)) {\n    "++
->                "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++sqlExprSrc rule'++"'].'") ("'.$v[0]['"++sqlExprTrg rule'++"'].'")) ++",3);\n    "++
+>                "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++src++"'].'") ("'.$v[0]['"++trg++"'].'")) ++",3);\n    "++
 >                "  return false;\n    }")++
 >                "return true;\n  }"
->        | rule<-(rules context)++(multRules context), rule'<-[(shrink . conjNF . Cp . normExpr) rule] ]
+>        | rule<-(rules context)++(multRules context), rule'<-[(shrink . conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
 
 Translation of rules to SQL
 
@@ -268,3 +268,4 @@ Translation of rules to SQL
 >                    | otherwise = x: mknew (ex++[x]) xs
 
 TODO: Uitsluitend genormaliseerde expressies (zowel Fu- als Fi-normaal) afdwingen in datastructuur
+? waarom ?
