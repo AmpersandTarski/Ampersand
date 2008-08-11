@@ -3,13 +3,13 @@ CONTEXT Deliveries
 OBJECT Bestelling : I[Order]
  = [ van : from
    , aan : issuedTo
-   , betaald[Order] : from;paid;delivery;of /\ I
+   , betaald[Order] : from;paid;delivery;of;V[Order*ONE]
    ]
 
 OBJECT Levering : I[Delivery]
  = [ leverancier : provider
    , klant : deliveredto
-   , betaald : deliveredto;paid;delivery /\ I
+   , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
    ]
 
 
@@ -17,7 +17,7 @@ OBJECT Bestellijst : I[ONE]
  = [ LijstItem : V[ONE*Delivery]
       = [ leverancier : provider
         , klant : deliveredto
-        , betaald : deliveredto;paid;delivery /\ I
+        , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
    ]    ]
 
 PATTERN Deliveries

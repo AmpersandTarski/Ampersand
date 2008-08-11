@@ -104,7 +104,8 @@ Reason: prevent double code.
 >           sub (Cp e) = Cp (sub e)
 >           sub (K0 e) = K0 (sub e)
 >           sub (K1 e) = K1 (sub e)
->           sub (Tm m) = subMorph [ x | x@(r,_,_)<-s, sqlMorName ctx m == sqlMorName ctx r] m
+>           sub (Tm m@(Mph _ _ _ _ _ _)) = subMorph [ x | x@(r,_,_)<-s, sqlMorName ctx m == sqlMorName ctx r] m
+>           sub (Tm m) = Tm m
 >           sub (Tc e) = Tc (sub e)
 >           subMorph trs m | isIdent m = mp1 to (head [a|(r,a,_)<-s,sqlMorName ctx m == sqlMorName ctx r]) (source m)
 >           subMorph []  m             = Tm m -- nothing to replace
@@ -308,7 +309,7 @@ daarom wordt hier op getest
 >  selectExprBrac ctx i src trg (F  [e])                             = selectExprBrac ctx i src trg e
 >  selectExprBrac ctx i src trg (Fi [e])                             = selectExprBrac ctx i src trg e
 >  selectExprBrac ctx i src trg (Fu [e])                             = selectExprBrac ctx i src trg e
->  selectExprBrac ctx i src trg (Tm m)
+>  selectExprBrac ctx i src trg (Tm m@(Mph _ _ _ _ _ _))
 >   | (sqlMorSrc ctx m,sqlMorTrg ctx m)==(src,trg) = sqlMorName ctx m
 >  selectExprBrac ctx i src trg (K0 e)
 >   | (sqlExprSrc e,sqlExprTrg e)==(src,trg)                         = sqlRelName ctx (K0 e)
@@ -338,7 +339,7 @@ For instance: Tm I may return the same names, but cp(Tm I) should not since the 
 >  selectExprMorph ctx i src trg mph@(Mp1 str _)
 >   | src == trg = "SELECT "++str++" AS "++src
 >   | otherwise  = "SELECT "++str++" AS "++src++", "++str++" AS "++trg
->  selectExprMorph ctx i src trg mph
+>  selectExprMorph ctx i src trg mph -- made for both Mph and I
 >   | isIdent mph = selectGeneric i (sqlAttConcept ctx (source mph),src) (sqlAttConcept ctx (target mph),trg) (sqlConcept ctx (source mph)) "1"
 >   | otherwise   = selectGeneric i (sqlMorSrc ctx mph,src) (sqlMorTrg ctx mph,trg) (sqlMorName ctx mph) "1"
 >--   | otherwise   = selectGeneric i (sqlMorSrc ctx mph,trg) (sqlMorTrg ctx mph,src) (sqlMorName ctx mph) "1"
@@ -582,17 +583,19 @@ sqlMorTrg (r~:A*B) = "AttA"
 >  sqlEConcept = sqlConc "E"
 
 >  sqlConc prefix context c
->   = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
->     if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
->     head cs
->     where cs = [prefix++show i++"_"++phpEncode (name c')|(c',i)<-zip (concs context) [1..], c==c']
+>   | name c == "ONE" = "ConcONE"
+>   | otherwise = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
+>                 if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
+>                 head cs
+>                 where cs = [prefix++show i++"_"++phpEncode (name c')|(c',i)<-zip (concs context) [1..], c==c']
 
 >  sqlAttConcept :: Context -> Concept -> String
 >  sqlAttConcept context c
->   = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
->     if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
->     head cs
->     where cs = ["Att"++phpEncode (name c')|(c',i)<-zip (concs context) [1..], c==c']
+>   | name c == "ONE" = "AttONE" -- eventually, this concept should be implemented by other means
+>   | otherwise = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
+>                 if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
+>                 head cs
+>                 where cs = ["Att"++phpEncode (name c')|(c',i)<-zip (concs context) [1..], c==c']
 
 >  ifAs str str' = if str == str' then str else str'++" AS "++str
 
