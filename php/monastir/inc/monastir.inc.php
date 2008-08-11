@@ -43,23 +43,32 @@ function parseRequest($object){
 function recurParse($object,$traceID,$objtrace){
 	global $_REQUEST;
 	$id=@$_REQUEST[$traceID.'_'];
-	$obj = new $objtrace($id);
-	if($id===null) return $obj;
-	foreach($object->containing as $i=>$v){
-		$type=$v->type->name;
-		$trace=$traceID.'%'.$type;
-		for($n=0;isset($_REQUEST[$trace.'%'.$n.'_']);$n++){
-			if(!isset($_REQUEST[$trace.'%'.$n]) || $_REQUEST[$trace.'%'.$n] != 'remove')
-			$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
-		}
-		if(isset($_REQUEST[$trace]) && substr($_REQUEST[$trace],0,3) == 'add'){
-			$nms=split('_',$_REQUEST[$trace],2);
-			if(count($nms)==1)
-				$obj->addGen($type,recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type));
-			else
-				$obj->readGen($type,$nms[1]);
+	$vars=array();
+	$vars[]=$id;
+	$obj = new $objtrace();
+	if($id!==null){
+		foreach($object->containing as $i=>$v){
+			$type=$v->type->name;
+			$trace=$traceID.'%'.$type;
+			$typ=array();
+			for($n=0;isset($_REQUEST[$trace.'%'.$n.'_']);$n++){
+				if(!(isset($_REQUEST[$trace.'%'.$n]) && $_REQUEST[$trace.'%'.$n] == 'remove'))
+				$typ[]=recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type);
+			}
+			if(isset($_REQUEST[$trace]) && substr($_REQUEST[$trace],0,3) == 'add'){
+				$nms=split('_',$_REQUEST[$trace],2);
+				if($v->mult->uni) $typ = array();
+				if(count($nms)==1)
+					$typ[]=recurParse($v->type,$trace.'%'.$n,$objtrace.'_'.$type);
+				else{
+					$f=$objtrace.'_'.$type;
+					$typ[]=new $f($nms[1]);
+				}
+			}
+			$vars[]=$typ;
 		}
 	}
+	call_user_func_array(array($obj,$objtrace),$vars);
 	return $obj;
 }
 
@@ -250,7 +259,7 @@ class expandableList extends viewableList{
 		foreach($this->object->containing as $i=>$v){
 			$this->header[$i]=new viewableText($v->type->name);
 		}
-		if(count($this->elements)<1 && $edit){
+		if($this->One && $edit){
 			echo '<P>';
 			$this->displayOptions();
 			echo '</P>';
@@ -267,7 +276,7 @@ class expandableList extends viewableList{
 				}
 			}
 		}else if(!$this->Tot){
-			$this->dispNone(count($this->header));
+			if(!$edit) $this->dispNone(count($this->header));
 		}else if($edit){ // edit should allways be true, or this couldn't have happened
 			$this->displayRow(null,true,0,count($this->elements));
 		}

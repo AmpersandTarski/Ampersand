@@ -82,16 +82,7 @@ The service "read<concept>" reads the instance of <concept> with identity $id fr
 >      ,"    $ctx = DB_doquer('"++(doesExistQuer context object "$id")++"');"
 >      ,"    if(count($ctx)==0) return false;"
 >      ,"    $obj = new "++(name object)++"($id" ++ (concat [", array()" | a<-attributes object]) ++ ");"
->      ]
->      ++ (concat (map (map ((++) "    "))
->             [ [ "$ctx = DB_doquer('"++ (selectExprForAttr context a object "$id") ++"');"
->               , "foreach($ctx as $i=>$v){"
->               , "  $obj->read_"++name a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
->               , "}"]
->             | a <-attributes object
->             ]
->            )) ++
->      ["    return $obj;"
+>      ,"    return $obj;"
 >      ,"}"])
 
 The service "update<concept>" reads the instance of <concept> with identity $id from the CSL,
@@ -319,37 +310,34 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >   = [ "class "++concat [n++"_"|n<-nm] ++(name o) ++" {"] ++
 >     (map ((++) "  ") (
 >      ["var $id;"]
->      ++ ["var $"++(name a)++";"| a <- attributes o]++
->      ["function "++concat [n++"_"|n<-nm]++(name o)++"($id=null"
->                                 ++  (concat [", $"++(name a)++"=array()" | a<-attributes o])
+>      ++ ["var $"++name a++";"| a <- attributes o]++
+>      ["function "++concat [n++"_"|n<-nm]++name o++"($id=null"
+>                                 ++  (concat [", $"++name a++"=null" | a<-attributes o])
 >                                 ++"){"
 >      ,"    $this->id=$id;"]
->      ++ ["    $this->"++(name a)++"=$"++(name a)++";"| a <- attributes o] ++
+>      ++ ["    $this->"++name a++"=$"++name a++";"| a <- attributes o]
+>      ++ (concat (map (map ((++) "    "))
+>             [ [ "if(isset($id) && !isset($"++name a++")){"
+>               , "  $this->"++name a++" = array();"
+>               , "  foreach(DB_doquer('"++ selectExprForAttr context a o "$id" ++"') as $i=>$v){"
+>               , "    $this->"++name a++"[]=new "++concat [n++"_"|n<-(nm++[name o])]++name a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
+>               , "  }"
+>               , "}"]
+>             | a <-attributes o
+>             ]
+>            )) ++
 >      ["}"]
 >      ++ (concat
 >         [ ["function add_"++(name a)++"("++concat [n++"_"|n<-nm++[name o]]++(name a)++" $"++(name a)++"){"
 >           ,"  return $this->"++(name a)++"[]=$"++(name a)++";"
 >           ,"}"
->           ,"function read_"++(name a)++"($id){"
->           ,"  $obj = new "++concat [n++"_"|n<-nm++[name o]]++(name a)++"($id" ++ (concat [", array()" | as<-attributes a]) ++ ");"
->           ] ++ concat [ [ "  $ctx = DB_doquer('"++ (selectExprForAttr context as a "$id") ++"');"
->                         , "  foreach($ctx as $i=>$v){"
->                         , "    $obj->read_"++name as++"($v['" ++ sqlExprTrg (ctx as) ++ "']);"
->                         , "  }"
->                         ]
->                       | as <-attributes a
->                       ] ++
->           ["  $this->add_"++(name a)++"($obj);"
->           ,"  return $obj;"
->           ,"}"
 >           ,"function getEach_"++(name a)++"(){"
 >           ,"  // currently, this returns all concepts.. why not let it return only the valid ones?"
->           ,"  $v = DB_doquer('"++(selectExpr context
+>           ,"  $v = DB_doquer('"++selectExpr context
 >                                          30
 >                                          (sqlAttConcept context (concept a))
 >                                          (sqlAttConcept context (concept a))
->                                          (Tm (I [] (concept a) (concept a) True))
->                                      )++"');"
+>                                          (Tm (I [] (concept a) (concept a) True))++"');"
 >           ,"  $res = array();"
 >           ,"  foreach($v as $i=>$j){"
 >           ,"    $res[]=$j['"++addslashes (sqlAttConcept context (concept a))++"'];"
@@ -366,14 +354,16 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >          ] ++
 >      ["  else return false;"|length (attributes o) > 0] ++
 >      ["}"
->      ,"function readGen($type,$value){"
->      ]++ [ "  if($type=='"++(name a)++"') return $this->read_"++(name a)++"($value);"
->          | a <- attributes o
->          ] ++
->      ["  else return false;"|length (attributes o) > 0] ++
->      ["}"
->      ]
->      )) ++
+
+       ,"function readGen($type,$value){"
+       ]++ [ "  if($type=='"++(name a)++"') return $this->read_"++(name a)++"($value);"
+           | a <- attributes o
+           ] ++
+       ["  else return false;"|length (attributes o) > 0] ++
+       ["}"
+
+>     ]
+>     )) ++
 >     [ "}"
 >     ] ++ (concat [ showClasses context (nm++[name o]) a |a <- attributes o ] )
 
@@ -408,18 +398,6 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >  mystr Nothing  = ""
 >  mystr (Just o) = ", \""++(name o)++".php\""
 >  phpString b = if b then "true" else "false"
-
-Wat doet addLst?
-
-  addLst [8] [[5], [6], [7]]
-=
-  [5]: addLst [8] [[6], [7]]
-=
-  [5]: [6]: addLst [8] [[7]]
-=
-  [5]: [6]: [[7]++[8]]
-=
-  [[5], [6], [7,8]]
 
 Hypothese addLst ls lss = init lss++[last lss++ls]
 
