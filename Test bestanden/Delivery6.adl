@@ -21,7 +21,6 @@ OBJECT Bestellijst : I[ONE]
    ]    ]
 
 PATTERN Deliveries
-I[ONE] = V[ONE*ONE]
 {-
  item :: Order * Product
   = [ ("C45666"                  , "Jelly beans"  )

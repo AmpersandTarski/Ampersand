@@ -17,7 +17,7 @@
 >            , consequent, antecedent
 >            , inline
 >            , Declaration(Sgn), isSignal
->            , patterns, conceptdefs
+>            , patterns, conceptDefs
 >           )
 
 >  makeXML contexts contextname
@@ -46,8 +46,8 @@ Basic XML markup
 >   showXML ctx indent -- (Ctx nm on isa world dc ss cs ks os pops)
 >    = tagLn indent "CONTEXT" ["NAME="++show (name ctx)] (\indent->chain "\n" (inhoud indent))
 >    where inhoud indent
->           = [showXML cd  indent| cd<-conceptdefs ctx, name cd `elem` (map name.concs) ctx]++
->             [showXML cd  indent| c<-concs ctx, cd<-[Cd posNone (name c) "" ""], not (name c `elem` map name (conceptdefs ctx))]++
+>           = [showXML cd  indent| cd<-conceptDefs ctx, name cd `elem` (map name.concs) ctx]++
+>             [showXML cd  indent| c<-concs ctx, cd<-[Cd posNone (name c) "" ""], not (name c `elem` map name (conceptDefs ctx))]++
 >             [showXML pat indent| pat<-patterns ctx]
 
 >  instance XML Pattern where

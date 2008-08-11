@@ -1,4 +1,4 @@
-> module CC_aux 
+> module CC_aux
 >            ( ShowLang(showLang)
 >            , Architecture(Arch),Context(Ctx)
 >            , Pattern(Pat)
@@ -26,7 +26,7 @@
 >            , oneMorphism
 >            , single
 >            , Morphic(source, target, sign, multiplicities, flp, isIdent, isMph, isNot, isTrue, isFalse, isSignal{-, singleton-}, equiv, typeUniq)
->            , Morphical( concs, conceptdefs, mors, morlist, declarations, genE, closExprs, objDefs )
+>            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
 >            , Language( rules, multRules, signals, specs, patterns, objectdefs, isa )
 >            , inline,idsOnly,explain , makeInline
 >            , Lang(English,Dutch)
@@ -511,8 +511,8 @@ Transform a rule to an expression:
 
 >  class Morphical a where
 >   concs        :: a -> [Concept]                  -- the set of all concepts used in data structure a
->   conceptdefs  :: a -> [ConceptDef]               -- the set of all concept definitions in the data structure
->   conceptdefs x = []
+>   conceptDefs  :: a -> [ConceptDef]               -- the set of all concept definitions in the data structure
+>   conceptDefs x = []
 >   mors         :: a -> [Morphism]                 -- the set of all morphisms used within data structure a
 >   morlist      :: a -> [Morphism]                 -- the list of all morphisms used within data structure a
 >   declarations :: a -> [Declaration]
@@ -523,15 +523,18 @@ Transform a rule to an expression:
 >   closExprs s   = []
 >   objDefs      :: a -> ObjDefs
 >   objDefs s     = []
+>   keyDefs      :: a -> KeyDefs
+>   keyDefs s     = []
 
 >  instance Morphical a => Morphical [a] where
 >   concs                                         = rd . concat . map concs
->   conceptdefs                                   = rd . concat . map conceptdefs
+>   conceptDefs                                   = rd . concat . map conceptDefs
 >   mors                                          = rd . concat . map mors
 >   morlist                                       =      concat . map morlist
 >   declarations                                  = rd . concat . map declarations
 >   closExprs                                     = rd . concat . map closExprs
 >   objDefs                                       =      concat . map objDefs
+>   keyDefs                                       =      concat . map keyDefs
 
 >  instance Morphical Concept where
 >   concs        c                                = [c]
@@ -545,7 +548,7 @@ Transform a rule to an expression:
 
 >  instance Morphical a => Morphical (Classification a) where
 >   concs                                         = rd . concat . map concs . preCl
->   conceptdefs                                   = rd . concat . map conceptdefs . preCl
+>   conceptDefs                                   = rd . concat . map conceptDefs . preCl
 >   mors                                          = rd . concat . map mors . preCl
 >   morlist                                       =      concat . map morlist . preCl
 >   declarations                                  = rd . concat . map declarations . preCl
@@ -587,13 +590,6 @@ Transform a rule to an expression:
 >   morlist (G g s)                               = [I [] g s True]
 >   genE (G g s)                                  = genE s
 >   declarations (G g s)                          = []
-
->  instance Morphical KeyDef where
->   concs        (Kd pos lbl ctx ats) = concs ctx `uni` concs ats
->   mors         (Kd pos lbl ctx ats) = mors ctx `uni` mors ats
->   morlist      (Kd pos lbl ctx ats) = morlist ctx ++ morlist ats
->   genE         (Kd pos lbl ctx ats) = genE ats
->   declarations (Kd pos lbl ctx ats) = declarations ctx `uni` declarations ats
 
 >  instance Morphical Expression where
 >   concs (Tm m)                                  = rd (concs m)
@@ -683,27 +679,36 @@ Transform a rule to an expression:
 >   closExprs (Fr _ _ expr _)              = [expr]
 
 >  instance Morphical Pattern where
->   concs (Pat nm rs gen pms cs ks)                  = concs rs `uni` concs gen `uni` concs pms
->   conceptdefs (Pat nm rs gen pms cs ks)            = cs
->   mors (Pat nm rs gen pms cs ks)                   = mors rs `uni` mors ks
->   morlist (Pat nm rs gen pms cs ks)                = morlist rs++morlist ks
->   declarations (Pat nm rs parChds pms cs ks)       = rd pms
->   genE  (Pat nm rs parChds pms cs ks)              = genE (pms++declarations (signals rs))
->   closExprs (Pat nm rs gen pms cs ks)              = closExprs rs
+>   concs        (Pat nm rs gen pms cs ks) = concs rs `uni` concs gen `uni` concs pms
+>   conceptDefs  (Pat nm rs gen pms cs ks) = cs
+>   mors         (Pat nm rs gen pms cs ks) = mors rs `uni` mors ks
+>   morlist      (Pat nm rs gen pms cs ks) = morlist rs++morlist ks
+>   declarations (Pat nm rs gen pms cs ks) = rd pms
+>   genE         (Pat nm rs gen pms cs ks) = genE (pms++declarations (signals rs))
+>   closExprs    (Pat nm rs gen pms cs ks) = closExprs rs
 
 >  instance Morphical Context where
->   concs        (Ctx nm on isa world dc ss cs ks os pops) = concs ss `uni` concs dc
->   conceptdefs  (Ctx nm on isa world dc ss cs ks os pops) = cs
->   mors         (Ctx nm on isa world dc ss cs ks os pops) = mors dc `uni` mors os
->   morlist      (Ctx nm on isa world dc ss cs ks os pops) = morlist dc++morlist os
->   declarations (Ctx nm on isa world dc ss cs ks os pops) = ss
->   genE         (Ctx nm on isa world dc ss cs ks os pops) = genEq (typology isa)
->   closExprs    (Ctx nm on isa world dc ss cs ks os pops) = closExprs dc `uni` closExprs os
->   objDefs      (Ctx nm on isa world dc ss cs ks os pops) = os
+>   concs        (Ctx nm on isa world pats ds cs ks os pops) = concs ds `uni` concs pats
+>   conceptDefs  (Ctx nm on isa world pats ds cs ks os pops) = cs
+>   mors         (Ctx nm on isa world pats ds cs ks os pops) = mors pats `uni` mors os
+>   morlist      (Ctx nm on isa world pats ds cs ks os pops) = morlist pats++morlist os
+>   declarations (Ctx nm on isa world pats ds cs ks os pops) = rd (ds++[d| pat<-pats, d<-declarations pat])
+>   genE         (Ctx nm on isa world pats ds cs ks os pops) = genEq (typology isa)
+>   closExprs    (Ctx nm on isa world pats ds cs ks os pops) = closExprs pats `uni` closExprs os
+>   objDefs      (Ctx nm on isa world pats ds cs ks os pops) = os
+>   keyDefs      (Ctx nm on isa world pats ds cs ks os pops) = ks
+
+>  instance Morphical KeyDef where
+>   concs        (Kd pos lbl ctx ats) = concs ctx `uni` concs ats
+>   mors         (Kd pos lbl ctx ats) = mors ctx `uni` mors ats
+>   morlist      (Kd pos lbl ctx ats) = morlist ctx ++ morlist ats
+>   genE         (Kd pos lbl ctx ats) = genE ats
+>   declarations (Kd pos lbl ctx ats) = declarations ctx `uni` declarations ats
+>   keyDefs      k                    = [k]
 
 >  instance Morphical ObjectDef where
 >   concs        (Obj nm pos ctx ats) = [source ctx] `uni` concs ats
->   conceptdefs  (Obj nm pos ctx ats) = []
+>   conceptDefs  (Obj nm pos ctx ats) = []
 >   mors         (Obj nm pos ctx ats) = mors ctx `uni` mors ats `uni` mors (target ctx)  -- opletten: de expressie ctx hoort hier ook bij.
 >   morlist      (Obj nm pos ctx ats) = morlist ctx++morlist ats
 >   declarations (Obj nm pos ctx ats) = []
@@ -827,28 +832,30 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHSname context = "ctx_"++haskellIdentifier (name context)
 >   showHS indent context
 >    = "Ctx "++show (name context)++"   -- (Ctx nm on isa world dc ds cs ks os pops)"++
->      (if null on   then " []" else indent++"    "++showL [show x|x<-on])++
->      (if null on   then   ""  else indent++"    ")++
->      "isa [ {- world is left empty -} ]"++
->      (if null pats then " []" else indent++"    "++showL [showHSname p++" gE"|p<-pats])++
->      (if null ds   then " []" else indent++"    "++showL [showHSname d|d<-ds])++
->      (if null cs   then " []" else indent++"    "++showL [showHSname c|c<-cs])++
->      (if null ks   then " []" else indent++"    "++showL ["key_"++name k|k<-ks])++
->      (if null os   then " []" else indent++"    "++showL [showHSname o|o<-os])++
->      (if null pops then " []" else indent++"    "++showL [showHSname p|p<-pops])++
+>      indent++"       "++(if null on   then "[]" else showL [show x|x<-on])++
+>      (if null on   then " " else indent++"       ")++"isa [ {- world is left empty -} ]"++
+>      (if null pats then " []" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
+>      (if null ds   then " []" else indent++"       "++showL [showHSname d       | d<-ds  ])++
+>--    (if null rs   then " []" else indent++"       "++showL [showHSname r       | r<-rs  ])++
+>      (if null cs   then " []" else indent++"       "++showL [showHSname c       | c<-cs  ])++
+>      (if null ks   then " []" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
+>      (if null os   then " []" else indent++"       "++showL [showHSname o       | o<-os  ])++
+>      (if null pops then " []" else indent++"       "++showL [showHSname p       | p<-pops])++
 >      indent++"where"++
 >      indent++" isa = "++showHS (indent++"       ") (isa context)++
 >      indent++" gE  = genEq (typology isa)"++
 >      (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
->      (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o|o<-os]++"\n")++
->      (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d|d<-ds]++"\n")++
+>      (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
+>      (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
+>--    (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
 >      (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
->      (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c|c<-cs]++"\n")++
->      (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k|k<-ks]++"\n")
+>      (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
+>      (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
 >   -- patterns will be shown in  (showHS indent Fspec)
 >      where pats = patterns context
 >            ds   = declarations context>-declarations (patterns context)
->            cs   = conceptdefs context>-conceptdefs (patterns context)
+>--          rs   = rules context>-rules (patterns context)
+>            cs   = conceptDefs context>-conceptDefs (patterns context)
 >            ks   = let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks'
 >            os   = attributes context
 >            pops = populations context
@@ -858,7 +865,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >      chain "\n\n" (map showADL (attributes context)) ++ "\n\n" ++
 >      chain "\n\n" (map showADL (patterns context)) ++ "\n\n" ++
 >      chain "\n" (map showADL (declarations context>-declarations (patterns context))) ++ "\n\n" ++
->      chain "\n" (map showADL (conceptdefs context>-conceptdefs (patterns context))) ++ "\n\n" ++
+>      chain "\n" (map showADL (conceptDefs context>-conceptDefs (patterns context))) ++ "\n\n" ++
 >      chain "\n" (map showADL (let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks')) ++ "\n\n" ++
 >      chain "\n\n" (map showADL (populations context)) ++
 >      "\nENDCONTEXT"
@@ -871,12 +878,12 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null (rules pat)        then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-rules pat       ] ++            "]")++
 >      (if null gen                then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") g| g<-gen             ] ++indent++"    ]")++
 >      (if null (declarations pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-declarations pat] ++            "]")++
->      (if null (conceptdefs pat)  then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-conceptdefs pat ] ++            "]")++
+>      (if null (conceptDefs pat)  then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-conceptDefs pat ] ++            "]")++
 >      (if null ks                 then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") k| k<-ks              ] ++indent++"    ]")++
 >      indent++"where"++
 >      (if null (declarations pat) then "" else concat [indent++" "++showHSname d ++" = "++ showHS (indent++"   ") d |d <-declarations pat] )++
 >      (if null (rules pat)        then "" else concat [indent++" "++showHSname r ++" = "++ showHS (indent++"   ") r |r <-rules pat       ] )++
->      (if null (conceptdefs pat)  then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptdefs pat ] )++
+>      (if null (conceptDefs pat)  then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptDefs pat ] )++
 >      (if null ks                 then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks              ] )
 >   showADL (Pat nm rs gen pss cs ks)
 >    = "PATTERN\n" ++
@@ -920,16 +927,20 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Expression where
 >   showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
->   showHS indent (Tm m)   = "Tm ("++showHS (indent++"    ") m++") "
->   showHS indent (Tc f)   = "Tc ("++showHS (indent++"    ") f++") "
+>   showHS indent (Tm m)   = "Tm ("++showHS "" m++") "
+>   showHS indent (Tc f)   = showHS indent f
 >   showHS indent (F [])   = "F [] <Id>"
 >   showHS indent (Fd [])  = "Fd [] <nId>"
 >   showHS indent (Fu [])  = "Fu [] <False>"
 >   showHS indent (Fi [])  = "Fi [] <True>"
->   showHS indent (F ts)   = chain " " ["F" ,showL (map (showHS (indent++"   ")) ts)]
->   showHS indent (Fd ts)  = chain " " ["Fd",showL (map (showHS (indent++"   ")) ts)]
->   showHS indent (Fu fs)  = chain " " ["Fu",showL (map (showHS (indent++"   ")) fs)]
->   showHS indent (Fi fs)  = chain " " ["Fi",showL (map (showHS (indent++"   ")) fs)]
+>   showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
+>   showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
+>   showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
+>   showHS indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS (indent++"     ") t| t<-ts]++indent++"   ]"
+>   showHS indent (Fu [f]) = "Fu ["++showHS (indent++"    ") f++"]"
+>   showHS indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
+>   showHS indent (Fi [f]) = "Fi ["++showHS (indent++"    ") f++"]"
+>   showHS indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
 >   showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
 >   showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
 >   showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
@@ -992,8 +1003,9 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS ObjectDef where
 >   showHSname o = "oDef_"++haskellIdentifier (name o)
->   showHS indent (Obj nm pos ctx [])  = "Obj "++show nm++" ("++showHS "" pos++") ("++showHS "" ctx++") []"
->   showHS indent (Obj nm pos ctx ats) = "Obj "++show nm++" ("++showHS "" pos++") ("++showHS "" ctx++")"++indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) ats)++indent++"    ]"
+>   showHS indent (Obj nm pos ctx [])  = "Obj "++show nm++" ("++showHS "" pos++")"++indent++"    ("++showHS (indent++"     ") ctx++indent++"    ) []"
+>   showHS indent (Obj nm pos ctx ats) = "Obj "++show nm++" ("++showHS "" pos++")"++indent++"    ("++showHS (indent++"     ") ctx++indent++"    )"
+>                                        ++indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) ats)++indent++"    ]"
 >   showADL (Obj nm pos ctx ats) = "OBJECT "++nm++" : "++(showADL ctx)++" = ["++chain ", " (map show ats)++"]"
 
 >  instance ShowHS Declaration where
@@ -1209,13 +1221,13 @@ Every declaration m has cardinalities, in which
 >   keys :: a->[(Concept,String,[ObjectDef])]
 
 >  instance Key Context where
->   keys context@(Ctx nm on isa world dc ss cs ks os pops)
+>   keys context
 >    = ( concat [keys p| p<-patterns context] ++
->        [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks]
+>        [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs context]
 >      )
 
 >  instance Key Pattern where
->   keys (Pat nm rs gen pms cs ks) = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-ks]
+>   keys pat = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs pat]
 
 >  instance Key KeyDef where
 >   keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
@@ -1927,9 +1939,9 @@ properties is achieved as a result.
 >                                                 ts = clear (tuples++[(g,s)| G g s<-parChds])
 
 >  instance Language Context where
->   rules      (Ctx nm on i world dc ss cs ks os pops) = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) dc)++rules world)
->   signals    (Ctx nm on i world dc ss cs ks os pops) = signals (foldr union (Pat "" [] [] [] [] []) dc)++signals world
->   specs      (Ctx nm on i world dc ss cs ks os pops) = specs (foldr union (Pat "" [] [] [] [] []) dc)++specs world
+>   rules context = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) (patterns context))++rules (wrld context))
+>   signals    context = signals (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals (wrld context)
+>   specs      context = specs (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs (wrld context)
 >   patterns   (Ctx nm on i world dc ss cs ks os pops) = dc
 >   objectdefs (Ctx nm on i world dc ss cs ks os pops) = os
 >   isa        (Ctx nm on i world dc ss cs ks os pops) = i

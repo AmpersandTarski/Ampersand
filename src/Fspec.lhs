@@ -43,37 +43,37 @@ Every theme will be explained in a chapter of its own.
 >  makeFspec :: Context -> Fspec
 >  makeFspec context
 >    = Fctx context'
->           (  [makeFtheme context pat dgs| (pat,dgs)<-pats]                      -- one pattern yields one theme
->           ++ [makeFtheme context others remainingDGS| not (null remainingDGS)]  -- remaining datasets are discussed at the end
+>           (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
+>           ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
 >           )
 >           datasets
->           [(makeFobj o . rd . concat) [dg| dg<-dsGroups, d<-dg, concept o==concept d]| o<-attributes context]
+>           [ Fobj (makeDataset context (concept o)) o | o <-attributes context]
 >      where
->       datasets = (makeDatasets.declarations) context
->       dsGroups = eqClass bi datasets
->                  where bi c d = or [isFunction m && isFunction (flp m)
->                                    |m<-mors context, source m==concept c, target m==concept d]
+>       datasets = rd [ds| c<-concs context, ds<-[makeDataset context c]]
 >-- next thing, we look which datasets will be discussed in which themes.
 >-- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
 >-- because we assume that the programmer found it important enough to define that concept in that pattern.
 >-- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
 >       pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
->                [ (pat,length cns,dg)
->                | pat<-patterns context, dg<-dsGroups, cns<-[name (concept d)|d<-dg] `isc` [name c|c<-conceptdefs pat], not (null cns)]
+>                [ (pat,length cns,ds)
+>                | pat<-patterns context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
 >-- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
 >-- The remaining concepts and datasets are determined in pcsds1.
 >-- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
 >       pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
->                [ (pat,0-length [c|m<-morlist pat, c<-concs m, c `elem` (map concept dg `isc` concs pat)],dg)
->                | pat<-patterns context, dg<-dsGroups>-[dg|(_,_,dg)<-pcsds0]
+>                [ (pat,0-length cs,ds)
+>                | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
+>                , cs<-[[c|m<-morlist pat, c<-concs m, concept ds<=c]], not (null cs)
 >                ]
 >-- The remaining datasets will be discussed in the last theme
->       remainingDGS = [ dg | dg<-dsGroups, or [null (map concept dg `isc` map concept dg')|(_,_,dg')<-pcsds0++pcsds1] ]
+>       remainingDS = [ ds | ds@(DS c pths)<-datasets
+>                          , not (null pths)
+>                          , not (ds `elem` [ds'|(_,_,ds')<-pcsds0++pcsds1]) ]
 >       others
 >        = Pat "Other topics" rs gen pms cs ks
 >          where rs  = []
 >                gen = []
->                pms = rd [d| dg<-remainingDGS, DS c pths<-{- take 1 -} dg, pth<-pths, d<-declarations pth]
+>                pms = rd [d| ds@(DS c pths)<-remainingDS, d<-declarations pths]
 >                cs  = []
 >                ks  = []
 >       context' = Ctx nm on i world pats ds cs ks os pops
@@ -81,14 +81,16 @@ Every theme will be explained in a chapter of its own.
 >                on    = extends context
 >                i     = isa context
 >                world = wrld context
->                pats  = patterns context ++ if null remainingDGS then [] else [others]
+>                pats  = patterns context ++ if null remainingDS then [] else [others]
 >                ds    = declarations context
->                cs    = conceptdefs context
+>                cs    = conceptDefs context
 >                ks    = []
 >                os    = attributes context
 >                pops  = populations context
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
+>       ms   = [m| m<-[makeMph d|d<-declarations context]++[flp (makeMph d)|d<-declarations context], isFunction m]
+>       ps   = clos source target ms
 
 A dataset is a functional closure of relations with one concept c as root.
 The datasets of a context are those datasets whose relations are not a subset of any other dataset.
@@ -98,7 +100,7 @@ The datasets of a context are those datasets whose relations are not a subset of
 
 >  instance ShowHS Dataset where
 >   showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
->   showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS "" pth| pth<-pths]++indent++"   ]"
+>   showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
 >  instance Eq Dataset where
 >   DS c _ == DS d _ = c==d
 
@@ -108,21 +110,36 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   ctx        _ = error ("Cannot evaluate the context expression of this dataset (yet)")
 >   populations (DS c pths) = []
 
->  makeDatasets :: [Declaration] -> [Dataset]
->  makeDatasets dsAll
->   = dss
->     where ds  = [d| d<-dsAll++[flp d|d<-dsAll], isFunction d]
->           ps  = clos source target ds
->           dss = [DS c pths| c<-concs ds, pths<-[[F (map (Tm . makeMph) p)|p<-ps, not (null p), source (head p)==c]], not (null pths) ]
+>  makeDataset :: Context -> Concept -> Dataset
+>  makeDataset context c
+>   = if null ds then error ("Fatal: cannot determine a dataset for concept "++show c) else
+>     head ds
+>     where ds = sort' len [ds| ds<-dss, c `elem` map source (mors ds) ]  -- the largest one!
+>           len (DS c pths) = 0-length pths
+>           bi (DS c pths) (DS c' pths')
+>              = not (null (mors pths `isc` mors pths'))
+>           ms  = rd [m| m<-mors context++map flp (mors context), isFunction m]
+>           ps  = clos source target ms
+>-- dss bevat voor elk concept 'e'en dataset. De paden ervan zijn leeg als het een niet-entiteit betreft.
+>           dss = [DS c pths| c<-concs ms, pths<-[[F (map Tm p)|p<-ps, not (null p), source (head p)==c]] ]
 
->  data Fobj  = Fobj ObjectDef
+>  instance Morphical Dataset where
+>   concs        (DS c pths) = rd [source d| d<-declarations pths]
+>   conceptDefs  (DS c pths) = []
+>   mors         (DS c pths) = mors pths
+>   morlist      (DS c pths) = morlist pths
+>   declarations (DS c pths) = declarations pths
+>   genE         (DS c pths) = genE c
+>   closExprs    (DS c pths) = closExprs pths
+
+>  data Fobj  = Fobj Dataset ObjectDef
 
 >  instance ShowHS Fobj where
->   showHSname (Fobj objd) = "f_Obj_"++haskellIdentifier (name objd)
->   showHS indent (Fobj objd) = "Fobj ("++showHS (indent++"      ") objd++")"
+>   showHSname (Fobj dataset objd) = "f_Obj_"++haskellIdentifier (name objd)
+>   showHS indent (Fobj dataset objd) = "Fobj "++showHSname dataset++indent++"     ("++showHS (indent++"      ") objd++")"
 
->  makeFobj :: ObjectDef -> [Dataset] -> Fobj
->  makeFobj o dg = Fobj o
+  makeFobj :: ObjectDef -> Dataset -> Fobj
+  makeFobj o ds = Fobj ds o
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
@@ -137,11 +154,11 @@ Precondition: the list of datasets must contains functionally equivalent dataset
 This means that if d,e are datasets in dgs, then there is a bijective function between root d and root e in mors pat.
 Motivation: we want to make one textual unit per dataset, but equivalent datasets are discussed in the same unit.
 
->  makeFtheme :: Context -> Pattern -> [[Dataset]] -> Ftheme
->  makeFtheme context pat dgs
->   = Tspc pat [makeFunit context pat (objs dg) dg [] []| dg<-dgs]
+>  makeFtheme :: Context -> Pattern -> [Dataset] -> Ftheme
+>  makeFtheme context pat dss
+>   = Tspc pat [makeFunit context pat (objs ds) [] []| ds<-dss]
 >     where
->      objs dg = [o| o<-attributes context, concept o `elem` map concept dg]
+>      objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
 
 >  data Funit = Uspc String Pattern
 >                    [(ObjectDef,FPA,[Morphism],[(Expression,Rule)])]
@@ -154,8 +171,8 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") o| (o,fpa,cs,rs)<-ents]++indent++"     ]"
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-svs ]++indent++"     ]"
 
->  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Dataset] -> [Concept] -> [ServiceSpec] -> Funit
->  makeFunit context pat objs dg newConcs newDecls
+>  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
+>  makeFunit context pat objs newConcs newDecls
 >   = Uspc (if null objs then "" else name (head objs)) pat [(o,ILGV Eenvoudig,[] {-cs-},[] {-rs-})| o<-objs]
 >            (concat [ [ newEnt context o [] {-rs-} ] ++ [ getEnt context o]                           ++
 >                      concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
@@ -213,9 +230,9 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   nPatterns (Tspc p us) = 1
 >   nFpoints  (Tspc p us) = sum (map nFpoints us)
 >  instance Statistics Fobj where
->   nServices (Fobj o) = nServices o
->   nPatterns (Fobj o) = 1
->   nFpoints  (Fobj o) = nFpoints o
+>   nServices (Fobj dataset o) = nServices o
+>   nPatterns (Fobj dataset o) = 1
+>   nFpoints  (Fobj dataset o) = nFpoints o
 >  instance Statistics ObjectDef where
 >   nServices o = 4+sum [nServices a| a<-attributes o]
 >   nPatterns o = 0
@@ -981,8 +998,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                           where concpts = rd [c| d<-patDecls, c<-concs d]
 >        vueConcepts      = [c| c<-patConcepts,      c `elem` prevWrittenConcepts ]
 >        newConcepts      = [c| c<-patConcepts, not (c `elem` prevWrittenConcepts)]
->        newConcsWithDefs = [c| c<-newConcepts,      name c `elem` map name (conceptdefs context) ]
->        newConcsNoDefs   = [c| c<-newConcepts, not (name c `elem` map name (conceptdefs context))]
+>        newConcsWithDefs = [c| c<-newConcepts,      name c `elem` map name (conceptDefs context) ]
+>        newConcsNoDefs   = [c| c<-newConcepts, not (name c `elem` map name (conceptDefs context))]
 >        newDeclarations  = [d| d<-patDecls, not (d `elem` prevWrittenDecls)]
 >        explDecl :: Declaration -> [String]
 >        explDecl d = [ latexDesignrule (addSlashes (str ++ " ("++str15++": "++name d++signature++")"))  | not (null str)]
@@ -1017,12 +1034,12 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tTezamen vormen deze regels de architectuur van "++name context++"."
 >      , designPrinciples language context
 >      , latexChapter "Terminologie" ("typology"++cname)
->      , if null (conceptdefs context) then "" else
+>      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
+>                         | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -1070,10 +1087,10 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                              )
 >                     | pat<-patterns context]
 >      , latexChapter "Glossary" ("typology"++cname)
->      , if null (conceptdefs context) then "" else
+>      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
+>                          | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -1083,7 +1100,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      ] else [] )
 >      where
 >       spec = funcSpec context (erAnalysis context) language
->       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptdefs context]
+>       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptDefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context
@@ -1156,12 +1173,12 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >--      , "De terminologie is ontleend aan het Divisie Informatieplan \\cite{TPDI},"
 >--      , "de begrippenlijst voor \\mulF{} \\cite{MultiFit} en de begrippen gebruikt in de voorstudie SBD \\cite{SBD}."
 >--      , "In geval van conflicten gaan begrippen uit \\cite{TPDI} v\\'o\\'or \\cite{MultiFit} en begrippen uit \\cite{MultiFit} v\\'o\\'or \\cite{SBD}."
->      , if null (conceptdefs context) then "" else
+>      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
+>                         | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -1210,10 +1227,10 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tDetails are provided in the following sections."
 >      , funcSpecLaTeX context (funcSpec context (erAnalysis context) English) English
 >      , latexChapter "Glossary" ("typology"++cname)
->      , if null (conceptdefs context) then "" else
+>      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs context, C nm (==) [] `elem` concs context])
+>                          | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -1223,7 +1240,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      ] else [] )
 >      where
 >       spec = funcSpec context (erAnalysis context) language
->       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptdefs context]
+>       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptDefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context
@@ -1239,7 +1256,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   = latexDefinition (name c) [ "Een \\define{"++(unCap.name) c++"} is "++
 >                                (if null expla then "nog niet gedefinieerd." else addSlashes expla)++
 >                                (if null ref then ".\n" else "~\\cite{"++ref++"}.")
->                              | Cd pos nm expla ref<-conceptdefs thisCtx, nm==name c] ++"\n"++
+>                              | Cd pos nm expla ref<-conceptDefs thisCtx, nm==name c] ++"\n"++
 >     if null gens then "" else
 >      latexDesignrule (addSlashes (upCap (plural l (name c))++" zijn "++
 >                                   commaNL "en" [unCap (plural l (name g))| g<-gens]++".\n"))
@@ -1341,12 +1358,12 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      [ "\\newcommand{\\mulF}{MultiF{\\it it}}"
 >      , "\\title{Woordenlijst voor "++addSlashes cname++"}"
 >      , "\\maketitle"
->      , if null (conceptdefs context) then "" else
+>      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >             (chain "\n" ["\\bf "++nm++" & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs context])
+>                         | Cd pos nm def ref<-conceptDefs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -1357,9 +1374,9 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      [ "\\title{Design of "++addSlashes cname++"}"
 >      , "\\maketitle"
 >      , latexChapter "Glossary" ("typology"++cname)
->      , if null (conceptdefs context) then "" else
+>      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++nm++" & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs context])
+>                          | Cd pos nm def ref<-conceptDefs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -1368,7 +1385,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\\label{bibliography"++name context++"}"
 >      ] else [] )
 >      where
->       cList = concs context>-rd [C (name cd) (==) []| cd<-conceptdefs context]
+>       cList = concs context>-rd [C (name cd) (==) []| cd<-conceptDefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context

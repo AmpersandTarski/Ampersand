@@ -30,7 +30,7 @@
 >            , contents
 >            , Declaration(Sgn)
 >            , genE, wrld, patterns, src, trg, uncomp, isSignal
->            , conts, cod, signals, clearG, conceptdefs, dom, subst
+>            , conts, cod, signals, clearG, conceptDefs, dom, subst
 >           )
 >--  import Calc  -- only because of two calls of subst
 >  import Hatml
@@ -552,10 +552,10 @@ TODO: implement signals in the atlas, but make sure it performs (the excommented
 >  -}
 
 >  emptyGlossary context pat
->   = null [[c,cdef]| Cd _ c cdef _<-conceptdefs context, C c (==) [] `elem` concs pat]
+>   = null [[c,cdef]| Cd _ c cdef _<-conceptDefs context, C c (==) [] `elem` concs pat]
 >  htmlGlossary context pat
 >   = htmlHeadinglevel 2 "Glossary" []++
->     htmlTable [[c,cdef]| Cd _ c cdef _<-conceptdefs context, C c (==) [] `elem` concs pat] ""
+>     htmlTable [[c,cdef]| Cd _ c cdef _<-conceptDefs context, C c (==) [] `elem` concs pat] ""
 
 The following function makes a HTML page for one particular concept c, interpreted in the context of world.
 This page is mounted in the contents frame of the architecture page, to which the navigator (left hand side of 
@@ -569,7 +569,7 @@ the screen) points.
 >         rulesV
 >         (clearG [G g s| Isa ts ss<-[isa context], (g,s)<-ts, g `elem` concsV, s `elem` concsV])
 >         (declarations rulesV)
->         [c| c@(Cd pos nm def ref)<-conceptdefs context, C nm (==) [] `elem` concsV]
+>         [c| c@(Cd pos nm def ref)<-conceptDefs context, C nm (==) [] `elem` concsV]
 >         []
 >     where rulesV = [r| r<-rules context, c `elem` concs r]
 >           concsV = concs rulesV
@@ -580,7 +580,7 @@ the screen) points.
 >         (rs++[s| s<-sc, Isa ts ss<-[isa s], and[b `elem` concs rs| (a,b)<-ts]])
 >         (clearG [G g s| Isa ts ss<-[isa context], (g,s)<-ts, g==gen, s `elem` concs rs])
 >         (declarations rs)
->         [c| c@(Cd pos nm def ref)<-conceptdefs context, C nm (==) [] `elem` rd [c|r<-rs, c<-concs r]]
+>         [c| c@(Cd pos nm def ref)<-conceptDefs context, C nm (==) [] `elem` rd [c|r<-rs, c<-concs r]]
 >         []
 >     where
 >       rs     = rd [sr | r<-rules world, gen `elem` concs r, Gc _ m expr _ _ _ _<-sc
@@ -604,7 +604,7 @@ Traceability (removed for now)
         "\n<BR />inheriting properties from "++
         commaAnd [htmlAnchor (thisCtx++name c++name g++".html") (name g) []|Cl g cls'<-cls]++".")   ++
 
->     concat ["\n<P>\n"++htmlBold "Definition"++"\n<BR />\n"++cdef| Cd _ c' cdef _<-conceptdefs context, c'==name c] ++
+>     concat ["\n<P>\n"++htmlBold "Definition"++"\n<BR />\n"++cdef| Cd _ c' cdef _<-conceptDefs context, c'==name c] ++
 >      (if null atoms then "" else if length atoms==1
 >       then "\n<P>\n"++htmlBold ("This concept contains one atom: "++show (head atoms))
 >       else "\n<P>\n"++htmlBold ("This concept contains "++show (length atoms)++" atoms.")++"<BR />\n"++

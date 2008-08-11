@@ -2,7 +2,7 @@
 >  import UU_Scanner
 >  import UU_Parsing
 >  import CommonClasses ( Identified(name)
->                       , Collection (empty,uni))
+>                       , Collection(empty,uni,(>-)))
 >  import Auxiliaries (rd, sort, upCap)
 >  import CC_aux 
 >            ( Architecture(Arch), Context(Ctx), FilePos(FilePos)
@@ -13,7 +13,8 @@
 >            , Rule(Ru,Sg,Gc)
 >            , Gen(G)
 >            , Pairs
->            , Morphism(Mph,I,V),
+>            , Morphism(Mph,I,V)
+>            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
 >            , Concept(Anything,C)
 >            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
 >            , Expressions
@@ -59,17 +60,25 @@ This will be achieved by generating signal rules only.
 >  pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
 >                                 ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
 >                                 pList (pContextElement beep) <* pKey "ENDCONTEXT"
->                      where rebuild nm on ces
->                             = Ctx nm on empty []
->                                   [p| CPat p<-ces]
->                                   [m| CMor m<-ces]
->                                   [c| CCon c<-ces]
->                                   [k| CKey k<-ces]
->                                   [o| CObj o<-ces]
->                                   [Popu m ps| CPop m ps<-ces]
+>                      where rebuild nm on ces = Ctx nm on empty [] pats ds cs ks os pops
+>                             where
+>                              ps   = [p| CPat p<-ces]
+>                              ds   = [d| CDcl d<-ces]
+>                              cs   = [c| CCon c<-ces]
+>                              ks   = [k| CKey k<-ces]
+>                              os   = [o| CObj o<-ces]
+>                              pops = [Popu m ps| CPop m ps<-ces]
+>                              pats = ps++[Pat "CONTEXT" rs [] ds' cs' ks'| not (null ds' && null rs && null cs' && null ks')]
+>                               where
+>                                ds' = ds>-declarations ps
+>                                rs  = [one| "ONE" `elem` [name c| c<-concs ps++concs os++concs ks++concs ds]]
+>                                cs' = cs>-conceptDefs ps
+>                                ks' = ks>-keyDefs ps
+>                                one = Ru 'E' (Tm (I [] c c True) ) posNone (Tm (V [c] ((c,c))) ) [] "" (c,c) 0 "CONTEXT"
+>                                      where c = C "ONE" (==) [nm]
 
 >  data ContextElement = CPat Pattern
->                      | CMor Declaration
+>                      | CDcl Declaration
 >                      | CCon ConceptDef
 >                      | CKey KeyDef
 >                      | CObj ObjectDef
@@ -77,7 +86,7 @@ This will be achieved by generating signal rules only.
 
 >  pContextElement  :: Bool -> Parser Token ContextElement
 >  pContextElement beep = CPat <$> pPattern beep <|>
->                         CMor <$> pDeclaration  <|>
+>                         CDcl <$> pDeclaration  <|>
 >                         CCon <$> pConceptDef   <|>
 >                         CKey <$> pKeyDef       <|>
 >                         CObj <$> pObjDef       <|>

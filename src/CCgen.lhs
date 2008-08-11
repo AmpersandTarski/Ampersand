@@ -141,9 +141,9 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >   = putStrLn ("\nGenerating Haskell source code for "++name context) >>
 >     writeFile (ctxNm++".lhs")
 >               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n>  import Fspec\n\n"
->                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")\n\n"
->                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>  " fspec++"\n\n"
->                ++">  "++showHSname context++"\n>   = "++showHS "\n>  " context
+>                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
+>                ++">  "++showHSname context++"\n>   = "++showHS "\n>  " context++"\n\n"
+>                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>  " fspec
 >               ) >>
 >     putStr ("\nHaskell file "++ctxNm++".lhs written...\n")
 >     where
