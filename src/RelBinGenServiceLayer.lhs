@@ -1,7 +1,7 @@
 > module RelBinGenServiceLayer where
 >  import Char
 >  import Auxiliaries
->  import Calc(shrink, conjNF, triggers)
+>  import Calc(conjNF, triggers)
 >  import CC_aux
 >  import CommonClasses
 >  import ERmodel
@@ -16,8 +16,8 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >  dbError rule x y
 >   = "Overtreding van de regel: \""++(if null (explain rule) then "Artificial explanation: "++showADL rule else explain rule)++"\"<BR>"
 >      {-++
->      (charshow (dbCorrect ( Fu [ shrink ( disjNF (Fu [f| f<-fr, f/=t]))
->                                          |Fi frs<-[conjNF (normExpr rule)], Fu fr<-frs, t<-fr]) x y))
+>      (charshow (dbCorrect ( Fu [ disjNF (Fu [f| f<-fr, f/=t])
+>                                | Fi frs<-[conjNF (normExpr rule)], Fu fr<-frs, t<-fr]) x y))
 >      -}
 >     where
 >      charshow (Forall vars restr)

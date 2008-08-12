@@ -1,7 +1,7 @@
 > module RelBinGenDatacloud where
 >  import Char
 >  import Auxiliaries
->  import Calc(shrink, conjNF, triggers)
+>  import Calc(conjNF, triggers)
 >  import CC_aux
 >  import CommonClasses
 >  import ERmodel

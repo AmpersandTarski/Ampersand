@@ -145,7 +145,7 @@ The following function prints a PredLogic in OO notation.
   objOrShow (Funs x [])     = x
   objOrShow (Funs x (m:ms)) = if isIdent m then objOrShow (Funs x ms) else objOrShow (Funs (x++"."++name m) ms)
 
->  normRL r = normRule r -- try this (not quite OK, though...): head [ (makeRule r) c| c <- (shrink . shiftL . normExpr) r]
+>  normRL r = normRule r -- try this (not quite OK, though...): head [ (makeRule r) c| c <- (simplify . shiftL . normExpr) r]
 
 >  ruleToPL :: Rule -> PredLogic
 >  ruleToPL = assemble . normRule

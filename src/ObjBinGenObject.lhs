@@ -1,7 +1,7 @@
 > module ObjBinGenObject where
 >  import Char
 >  import Auxiliaries
->  import Calc(informalRule, shrink, disjNF, computeOrder, ComputeRule, triggers)
+>  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import CC_aux
 >  import CommonClasses
 >  import ERmodel
