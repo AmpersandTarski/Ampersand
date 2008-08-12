@@ -403,7 +403,7 @@ rs zijn de betrokken regels
 
 >      ents car = [ (c,as,if null as then NO else ILGV Eenvoudig,cs,rs)
 >                 | (c,as)<-car
->                 , rs<-[[(conj,rule) |rule<-rules context, c `elem` concs rule, conj<-conjuncts rule]]
+>                 , rs<-[[(conj,rule) |rule<-declaredRules context, c `elem` concs rule, conj<-conjuncts rule]]
 >                 , cs<-[[a| (a,_)<-as, not (declaration a `elem` affected)]], not (null cs)
 >                 ]
 >      clss pat ec new
@@ -416,7 +416,7 @@ rs zijn de betrokken regels
 >                ]
 >         ] where car = [ (c,[],NO,[],rs)
 >                       | c<-concs pat,  not (c `elem` map fst entities), c `elem` new
->                       , rs<-[[(conj,rule) |rule<-rules pat, conj<-conjuncts rule, c `elem` concs conj]]
+>                       , rs<-[[(conj,rule) |rule<-declaredRules pat, conj<-conjuncts rule, c `elem` concs conj]]
 >                       ]
 >      asss pat new
 >       = [ Uspc ((if language==English then "Associations of " else "Associaties van ")++firstCaps (name pat)) pat [] ss
@@ -424,7 +424,7 @@ rs zijn de betrokken regels
 >                | r<-relations, not (isSgnl r), r `elem` new
 >                , nm <- [name r++if length [d|d<-relations, name d==name r]==1 then "" else
 >                                 name (source r)++name (target r)]
->                , rs<-[[(conj,rule) |rule<-rules context, conj<-conjuncts rule, r `elem` declarations conj]]
+>                , rs<-[[(conj,rule) |rule<-declaredRules context, conj<-conjuncts rule, r `elem` declarations conj]]
 >                , service <- [ newPair context relations rs r nm
 >                             , isPair context relations r nm
 >                             , delPair context relations rs r nm
@@ -433,7 +433,7 @@ rs zijn de betrokken regels
 >                ]]
 >         , not (null ss)
 >         ]
->      hcs = [hc| rule<-rules context, hc<-triggers rule ]
+>      hcs = [hc| rule<-declaredRules context, hc<-triggers rule ]
 >      affected :: [Declaration]
 >      affected = rd[s| hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs, s<-declarations toExpr]
 
@@ -747,7 +747,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >     where
 >      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,(c,as),r)->(name p,c)) rs, (p,e,_)<-take 1 cl]
 >      rs = [(pat,(c,as), rule)
->           | pat<-patterns context, rule<-rules pat, (c,as)<-entities, c `elem` concs rule]
+>           | pat<-patterns context, rule<-declaredRules pat, (c,as)<-entities, c `elem` concs rule]
 >  definedEnts context pat
 >   = [ e
 >     | cl<-eqCl (\(p,(c,_),rs)->c) ps, (p,e,rs)<-take 1 (sort' (\(p,e,rs)->0-length rs) cl), p==name pat]
@@ -756,7 +756,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >           | cl <-eqCl (\(p,(c,_),_)->(p,c)) rs, (p,e,_)<-take 1 cl
 >           ]
 >      rs = [ (name p,e,rule)
->           | p<-patterns context, rule<-rules p, e@(c,as)<-entities, c `elem` concs rule]
+>           | p<-patterns context, rule<-declaredRules p, e@(c,as)<-entities, c `elem` concs rule]
 >      (entities, relations, ruls) = erAnalysis context
 
 >  instance LATEX Context where

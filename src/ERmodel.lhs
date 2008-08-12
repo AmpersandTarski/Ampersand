@@ -5,7 +5,7 @@
 >  import Auxiliaries (chain, sort',rd, eqCl)
 >  import CC_aux 
 >            ( Context(Ctx), src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
->            , Language( rules, objectdefs )
+>            , Language( rules, declaredRules, objectdefs )
 >            , Declaration, concs, source, target, isFunction, isFlpFunction, posNone
 >            , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
 >            , Expression(F,Tm), v
@@ -30,9 +30,9 @@
 > --     ents = [concept e| e<-entities]
 > --     rels' = [s| s<-declarations p,      s `elem` declarations [a| e<-entities, a<-attributes e]]
 >      rels  = [s| s<-declarations p, not (s `elem` declarations [a| e<-entities, a<-attributes e])]
->      ruls = [showADL r| r<-rules p]
+>      ruls = [showADL r| r<-declaredRules p]
 
-       ruls = ["foldr f ("++showADL r++") "++show [(s,e)| (s,e)<-substitutions, s `elem` declarations r]| r<-rules p]
+       ruls = ["foldr f ("++showADL r++") "++show [(s,e)| (s,e)<-substitutions, s `elem` declarations r]| r<-declaredRules p]
        substitutions = [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source l,target s) True s)])
                        | s<-rels', target s `elem` ents
                        , l<-attrs, target l==source s ]++
@@ -52,7 +52,7 @@
 >                 | a@(Obj nm pos ctx ats) <- attributes context ] >>
 >     putStr ("\nwritten\n")
 >     where
->      rs      = rules context
+>      rs      = declaredRules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      (entities,relations,ruls) = erAnalysis context
@@ -82,7 +82,7 @@
 >--     (writeFile (fnContext context++"_ERD.dot"). erdConceptual) context                    >>
 >--     putStr (fnContext context++"_ERD.dot written\n")
 >     where
->      rs      = rules context
+>      rs      = declaredRules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      shR r   = showADL r

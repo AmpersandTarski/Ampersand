@@ -1897,6 +1897,7 @@ properties is achieved as a result.
 
 >  instance Language a => Language [a] where
 >   declaredRules xs = (concat. map declaredRules) xs
+>   multRules xs     = (concat. map multRules) xs
 >   signals xs       = (concat. map signals) xs
 >   specs xs         = (rd. concat. map specs) xs
 >   patterns         = {- rd' name. -} concat.map patterns
@@ -1905,6 +1906,7 @@ properties is achieved as a result.
 
 >  instance Language a => Language (Classification a) where
 >   declaredRules cl = declaredRules (preCl cl)
+>   multRules cl     = multRules (preCl cl)
 >   signals cl       = signals (preCl cl)
 >   specs cl         = specs (preCl cl)
 >   patterns cl      = patterns (preCl cl)
@@ -1916,11 +1918,11 @@ properties is achieved as a result.
 >    = [Ru 'E' (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
 >   declaredRules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
 >   declaredRules   r                        = []
->   signals r@(Sg _ _ _ _ _ _ _)     = [r]
->   signals r                        = []
->   specs   r@(Gc _ _ _ _ _ _ _)     = [r]
->   specs   r                        = []
->   patterns r                       = [Pat "" [r] [] [] [] []]
+>   signals r@(Sg _ _ _ _ _ _ _)             = [r]
+>   signals r                                = []
+>   specs   r@(Gc _ _ _ _ _ _ _)             = [r]
+>   specs   r                                = []
+>   patterns r                               = [Pat "" [r] [] [] [] []]
 >   isa (Gc _ m expr _ _ _ _)
 >     = Isa tuples (concs expr>-[e|(a,b)<-tuples,e<-[a,b]])
 >       where tuples = clear [(source expr,source m),(target expr,target m)]
@@ -1930,28 +1932,28 @@ properties is achieved as a result.
 >  clearG abs = rd [G g s| G g s<-abs, g/=s]
 
 >  instance Language Pattern where
->   declaredRules (Pat nm rs parChds pms cs ks)   = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
->   signals (Pat nm rs parChds pms cs ks) = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
->   specs (Pat nm rs parChds pms cs ks)   = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
->   patterns p                            = [p]
->   isa   (Pat nm rs parChds pms cs ks)   = Isa ts (singles>-[e| G g s<-parChds,e<-[g,s]])
->                                           where Isa tuples singles = isa rs
->                                                 ts = clear (tuples++[(g,s)| G g s<-parChds])
+>   declaredRules (Pat nm rs parChds pms cs ks) = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
+>   signals (Pat nm rs parChds pms cs ks)       = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
+>   specs (Pat nm rs parChds pms cs ks)         = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
+>   patterns p                                  = [p]
+>   isa   (Pat nm rs parChds pms cs ks)         = Isa ts (singles>-[e| G g s<-parChds,e<-[g,s]])
+>                                                 where Isa tuples singles = isa rs
+>                                                       ts = clear (tuples++[(g,s)| G g s<-parChds])
 
 >  instance Language Context where
 >   declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (wrld context)
->   signals    context = signals (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals (wrld context)
->   specs      context = specs (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs (wrld context)
->   patterns   (Ctx nm on i world dc ss cs ks os pops) = dc
->   objectdefs (Ctx nm on i world dc ss cs ks os pops) = os
->   isa        (Ctx nm on i world dc ss cs ks os pops) = i
->   multRules  context = multRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules (wrld context)
+>   multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules     (wrld context)
+>   signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals       (wrld context)
+>   specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs         (wrld context)
+>   patterns      (Ctx nm on i world dc ss cs ks os pops) = dc
+>   objectdefs    (Ctx nm on i world dc ss cs ks os pops) = os
+>   isa           (Ctx nm on i world dc ss cs ks os pops) = i
 
 >  instance Language Declaration where
 >   multRules d
 >    = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
 >          , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
->             error ("(module CC_aux) !Err: Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
+>             error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
 >     where h Sym = Ru 'E' (F [Tm r]) (CC_aux.pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
 >           h Asy = Ru 'I' (Fi [F [Tm r], F [Tm r']]) (CC_aux.pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
 >           h Trn = Ru 'I' (F [Tm r, Tm r]) (CC_aux.pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""

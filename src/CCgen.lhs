@@ -6,7 +6,7 @@
 >  import CommonClasses ( Identified(name), empty )
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, showHSname, concs, rules, multRules, patterns)
+>  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
@@ -87,30 +87,31 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                 [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
 >                 [ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
->                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]++
->                 [ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]
+>                 [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
+>--               ++[ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]
 >--               ++[ csvcontent contexts contextname | "-csv" `elem` switches]
 >--               ++[ putStr (show slRes) | "-dump" `elem` switches ]
->                )>>
+>                ) >>
+>                   putStr ("\nwriting to \\ADL.log:\nADL "++filename++" "++chain " " switches++"\n") >>
+>                   putStr ("  nr. of classes:                    "++show (length ents)++"\n") >>
+>                   putStr ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
+>                   putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
+>                   putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
+>                   putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
+>                   putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
+>                   putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
+>                   putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
+>                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
 >                   appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length ents)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of relations:                  "++show (length rels)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
->                   appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context, hc<-triggers rule])++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
->                   appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
->                   putStr ("  nr. of classes:                    "++show (length ents)++"\n") >>
->                   putStr ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
->                   putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
->                   putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
->                   putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
->                   putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context, hc<-triggers rule])++"\n") >>
->                   putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
->                   putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
->                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n")
+>                   appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n")
 >                  where
 >                     context  = head ([c| c<-contexts, name c==contextname]++
 >                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])

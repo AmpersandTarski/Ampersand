@@ -6,10 +6,10 @@
 >  import Auxiliaries (rd, chain, eqCl, enc)
 >  import Typology (Inheritance(Isa))
 >  import CC_aux  
->             ( rules, Context(Ctx)
+>             ( Context(Ctx)
 >             , Concept, Object(concept, attributes, ctx)
 >             , showADL, Morphical
->             , Language
+>             , Language( rules, declaredRules )
 >             , isProperty, target, concs, source
 >             , declaration, declarations, keys
 >             , flp, multiplicities, isa, isFunction, isFlpFunction
@@ -29,7 +29,7 @@
 >     where
 >      layout  = "neato" -- nongravitational layout
 >           -- = "dot"   -- vertical layout (default)
->      rs      = rules context
+>      rs      = declaredRules context
 >      context = head ([c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      shR r   = showADL r
@@ -145,10 +145,10 @@
 >                   [flp (Mph (name s++if isFunction s then "Inv" else "") posNone [] (source s,target s) True s)| s<-scs, isFlpFunction s]
 >  -- obsolete:     ++ [     Mph (name s) posNone [] (source s,target s) True s | s<-scs, isProperty s]
 >                   
->      comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]  -- all computed relations
+>      comp = rd [s| rule<-declaredRules context, toExpr<-cpu rule, s<-declarations toExpr]  -- all computed relations
 >      sps = [d|d<-declarations pat, not (isSignal d)]
 >      scs = [d|d<-declarations context, not (isSignal d)]
->      ms = mors (rules context)
+>      ms = mors (declaredRules context)
 >      used :: [Concept]
 >      used = rd (concs ms ++                                                                   -- involved in aggregations
 >                 [c| Isa pcs cs<-[isa pat], (a,b)<-pcs, c<-[a,b]] ++                           -- involved in generalizations

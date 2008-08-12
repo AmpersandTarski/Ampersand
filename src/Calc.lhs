@@ -13,7 +13,7 @@
 >   = putStr ("\nSignals for "++name context++"\n--------------\n")>>
 >     putStr (proof (signals context))>>
 >     putStr ("\nRules for "++name context++"\n--------------\n")>>
->     putStr (proof (rules context))>>
+>     putStr (proof (declaredRules context))>>
 >     ( if not multiplicityAnalysis then putStr "" else
 >       let fnm = "MULT"++contextname in
 >       putStr ("\n--------------\n"++
@@ -32,7 +32,7 @@
 >     ) >>
 >     putStr ("\n--------------\n"++
 >             "Summarizing all compute rules: \n  "++
->             chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-rules context++multRules context, hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]) >>
+>             chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-declaredRules context, hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]) >>
 >     putStr ("\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
 >             "Ontological analysis: \n  "++
 >             chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
@@ -47,15 +47,16 @@
 >                              condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
 >                               (computeOrder hcs "DELETE FROM" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntDelete
 >                              "\n"
->                             | o<-attributes context, c<-[concept o]])
+>                             | o<-attributes context, c<-[concept o]]) >>
+>     putStr "\n--------------\n"
 >     where
 >      (entities, relations, ruls) = erAnalysis context
->      hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
+>      hcs = [hc| rule<-declaredRules context++multRules context, hc<-triggers rule ]
 >      context = head ([ c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      sh x = showHS "" x
 >      codeFragments :: [ECArule]
->      codeFragments = [ eca | rule<-rules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
+>      codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
 
 >  condNull header fold f xs = if null xs then "" else header++fold (map f xs)
 
@@ -481,7 +482,7 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >  multDerivations context
 >   = rd ([d| d<-declarations context, not (null ([Tot,Sur] `isc` multiplicities d))]++
 >         [ d
->         | rule<-rules context, conjunct<-conjuncts rule, clause<-ilClauses conjunct
+>         | rule<-declaredRules context, conjunct<-conjuncts rule, clause<-ilClauses conjunct
 >         , Fi fs<-[conjNF clause], Fu fus<-fs
 >         , if and [isIdent c| c<-fus, isNeg c] then True else error (" in module Calc, multDerivations "++showADL clause)
 >         , F ts<-fus -- t<-fus, isPos t
@@ -961,8 +962,9 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >    norm (Fi (e:es)) rs    | or [isFi x|x<-e:es]         = norm (Fi [y| x<-e:es, y<-if isFi x then unF x else [x]]) rs
 >                           | rd(e:es)/=e:es              = (Fi (rd (e:es)), ["x/\\x = x"], "<=>")
 >                           | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
->                           | or[isTrue  x|x<-e:es]       = (Fi [x|x<-e:es, not (isTrue x)], ["x/\\V = x"], "<=>")
->                           | or[isFalse x|x<-e:es]       = (Fu [], ["x/\\V- = V- (inconsistency)"], "<=>")
+>                           | e==Fu []                    = (Fu [], ["inconsistency"], "<=>")
+> -- this is unreachable    | e==Fi []                    = (Fi es, ["x/\\V = x"], "<=>")
+>                           | or[x==Fu []|x<-es]          = (Fu [], ["x/\\V- = V-"], "<=>")
 >                           | isFu e && not (null absor0) = let f=head absor0 in (Fi es, ["absorb "++showADL e++" because of "++showADL f], "<=>")
 >                           | isFu e && not (null absor1) = let (ts,f)=head absor1 in (Fi (ts++es), ["absorb "++showADL f], "<=>")
 >                           | not simpl && isFu e && dnf  = (distribute Fi Fu isFi isFu (Fi (e:es)), ["distribute \\/ over /\\"], "<=>")
@@ -976,8 +978,9 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >    norm (Fu (e:es)) rs    | or [isFu x|x<-e:es]         = norm (Fu [y| x<-e:es, y<-if isFu x then unF x else [x]]) rs
 >                           | rd(e:es)/=e:es              = (Fu (rd (e:es)), ["x\\/x = x"], "<=>")
 >                           | not (null compl)            = (Fi [], [showADL (notCp (head compl))++"\\/"++showADL (head compl)++" = V"], "<=>")
->                           | or[isFalse x|x<-e:es]       = (Fu [x|x<-e:es, not (isFalse x)], ["x\\/V- = x"], "<=>")
->                           | or[isTrue  x|x<-e:es]       = (Fi [], ["x\\/V = V (tautology)"], "<=>")
+>                           | e==Fi []                    = (Fi [], ["tautology"], "<=>")
+> -- this is unreachable    | e==Fu []                    = (Fu es, ["x\\/V- = x"], "<=>")
+>                           | or[x==Fi []|x<-es]          = (Fi [], ["x\\/V = V"], "<=>")
 >                           | isFi e && not (null absor0) = let f=head absor0 in (Fu es, ["absorb "++showADL e++" because of "++showADL f++" ((x/\\y)\\/y = y))"], "<=>")
 >                           | isFi e && not (null absor1) = let (ts,f)=head absor1 in (Fu (ts++es), ["absorb "++showADL f++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
 >                           | not simpl && isFi e && not dnf = (distribute Fu Fi isFu isFi (Fu (e:es)), ["distribute /\\ over \\/"], "<=>")

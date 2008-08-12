@@ -148,7 +148,7 @@ The datasets of a context are those datasets whose relations are not a subset of
 >           , readObj context o
 >           , deleteObj context o [] {-rs-}
 >           , updateObj context o [] {-cs-} [] {-rs-} ])
->          [r| r<-rules context, not (null (mors r `isc` mors o))]
+>          [r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
@@ -594,11 +594,15 @@ ats zijn de attributen van dat concept
 cs zijn de vrij in te vullen relaties. Dat zijn degenen die niet 'affected' (ofwel automatisch uitgerekend) zijn.
 rs zijn de betrokken regels
 
->      ents car = [ (o,if null ats then NO else ILGV Eenvoudig,cs,rs)
->                 | o@(Obj nm pos ctx ats)<-car
->                 , rs<-[[(conj,rule) |rule<-rules context, concept o `elem` concs rule, conj<-conjuncts rule]]
->                 , cs<-[[a| a<-ats, not (null (declarations a `isc` affected))]], not (null cs)
+>      ents car = [ (o,if null (attributes o) then NO else ILGV Eenvoudig,cs,rs)
+>                 | o<-car
+>-- selecteer alle geldende regels, die relevant zijn voor o. Bepaal daarvan de conjuncts, omdat elke conjunct waar moet blijven.
+>                 , rs<-[[(conj,rule) |rule<-rules context, not (null (mors o `isc` mors rule)), conj<-conjuncts rule]]
+>-- selecteer de verzameling cs van attributen van o, die door functionele afhankelijkheden (ook genoemd: triggers) kunnen veranderen.
+>                 , cs<-[[a| a<-attributes o, not (null (declarations (ctx a) `isc` declarations affected))]], not (null cs)
 >                 ]
+>      affected :: [Morphism]
+>      affected = rd[m| hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs, m<-mors toExpr]
 >      clss pat ec new
 >       = [ Uspc (if language==English then "Other Classes" else "Andere Classes") pat car
 >                [ service
@@ -627,8 +631,6 @@ rs zijn de betrokken regels
 >         , not (null ss)
 >         ]
 >      hcs = [hc| rule<-rules context, hc<-triggers rule ]
->      affected :: [Declaration]
->      affected = rd[s| hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs, s<-declarations toExpr]
 
 >  funcSpecText context fspcs English
 >   = "Functional Specification:\n"++chain "\n\n" (map fSpec fspcs)
