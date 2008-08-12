@@ -1,7 +1,7 @@
 > module RelBinGenEntitiesLayer where
 >  import Char
 >  import Auxiliaries
->  import Calc(informalRule, shrink, disjNF, computeOrder, ComputeRule, triggers)
+>  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import CC_aux
 >  import CommonClasses
 >  import ERmodel
@@ -273,7 +273,7 @@
 >                 (if isFalse r' then "\n        return(Array());" else 
 >                  "\n        return DB_doquer('"++selectExpr context 10 (phpRelSrc context r) (phpRelTrg context r) r' ++" '.$sort);")
 >                 | r@(Sg p rule expla sgn nr pn signal)<-signals context
->                 , r'<-[(shrink . disjNF . Cp . normExpr) rule] ]
+>                 , r'<-[(disjNF . Cp . normExpr) rule] ]
 >        in (if null xs
 >            then ""
 >            else "  switch($rul){\n      "++chain "\n      " xs ++"\n  }\n")++
@@ -346,7 +346,7 @@ Obsolete?
 >     , "" ] ++ "\n?>"
 >   where
 >       (entities, relations, erruls) = erAnalysis context
->       hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
+>       hcs = [hc| rule<-rules context, hc<-triggers rule ]
 >       labelname (nm,"",k:ks) = if length labels <=1
 >                                then name k
 >                                else name k++"["++name (target k)++"]"

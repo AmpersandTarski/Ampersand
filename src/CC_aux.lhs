@@ -27,7 +27,7 @@
 >            , single
 >            , Morphic(source, target, sign, multiplicities, flp, isIdent, isMph, isNot, isTrue, isFalse, isSignal{-, singleton-}, equiv, typeUniq)
 >            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
->            , Language( rules, multRules, signals, specs, patterns, objectdefs, isa )
+>            , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
 >            , inline,idsOnly,explain , makeInline
 >            , Lang(English,Dutch)
 >            , applyM, declaration, plural, source, target
@@ -69,7 +69,7 @@
 
 TODO:
  - Onderscheid tussen signaal en regel maken in de datastructuur van regel.
- - rules alleen regels op laten leveren, dus geen signalen.
+ - rules alleen regels op laten leveren, dus geen signalen en w'el multipliciteiten.
  - declarations geeft precies de gedeclareerde relaties
  - toestaan van signalen met namen van declraties en met dubbele namen (grondig testen!).
 
@@ -371,17 +371,17 @@ There are 4 types of rule:
 renumberRule gives back the rule in the second argument, only numbered by the first
 renumberRules gives back an array of rules as specified by the second argument, renumbered from n to n+length(r:rs)
 
->  renumberRule n r@(Ru 'A' b c d e f g _ h) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL r++")")) c d e f g n h
->  renumberRule n (Ru a b c d e f g _ h)   = Ru a b c d e f g n h
->  renumberRule n (Sg p rule c d _ f g)    = Sg p (renumberRule n rule) c d n f g
->  renumberRule n (Gc a b c d e _ f)       = Gc a b c d e n f
->  renumberRule n r                        = r
->  renumberRules n (r:rs) = (renumberRule n r):renumberRules (n+1) rs
->  renumberRules _ [] = []
+  renumberRule n r@(Ru 'A' b c d e f g _ h) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL r++")")) c d e f g n h
+  renumberRule n (Ru a b c d e f g _ h)     = Ru a b c d e f g n h
+  renumberRule n (Sg p rule c d _ f g)      = Sg p (renumberRule n rule) c d n f g
+  renumberRule n (Gc a b c d e _ f)         = Gc a b c d e n f
+  renumberRule n r                          = r
+  renumberRules n (r:rs) = (renumberRule n r):renumberRules (n+1) rs
+  renumberRules _ [] = []
 
 >  type Rules     = [Rule]
 >  data Pattern   = Pat String             -- name of this pattern
->                       Rules              -- list of rules defined in this pattern
+>                       Rules              -- list of rules declared in this pattern
 >                       Gens               -- list of generalizations defined in this pattern
 >                       Declarations       -- list of declarations defined in this pattern
 >                       ConceptDefs        -- list of concept definitions defined in this pattern
@@ -836,7 +836,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null on   then " " else indent++"       ")++"isa [ {- world is left empty -} ]"++
 >      (if null pats then " []" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
 >      (if null ds   then " []" else indent++"       "++showL [showHSname d       | d<-ds  ])++
->--    (if null rs   then " []" else indent++"       "++showL [showHSname r       | r<-rs  ])++
 >      (if null cs   then " []" else indent++"       "++showL [showHSname c       | c<-cs  ])++
 >      (if null ks   then " []" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
 >      (if null os   then " []" else indent++"       "++showL [showHSname o       | o<-os  ])++
@@ -847,14 +846,12 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
 >      (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
 >      (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
->--    (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
 >      (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
 >      (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
 >      (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
 >   -- patterns will be shown in  (showHS indent Fspec)
 >      where pats = patterns context
 >            ds   = declarations context>-declarations (patterns context)
->--          rs   = rules context>-rules (patterns context)
 >            cs   = conceptDefs context>-conceptDefs (patterns context)
 >            ks   = let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks'
 >            os   = attributes context
@@ -875,16 +872,16 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHSname pat = "pat_"++haskellIdentifier (name pat)
 >   showHS indent pat@(Pat nm rs gen pss cs ks)
 >    = "Pat "++show (name pat)++
->      (if null (rules pat)        then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-rules pat       ] ++            "]")++
->      (if null gen                then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") g| g<-gen             ] ++indent++"    ]")++
->      (if null (declarations pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-declarations pat] ++            "]")++
->      (if null (conceptDefs pat)  then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-conceptDefs pat ] ++            "]")++
->      (if null ks                 then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") k| k<-ks              ] ++indent++"    ]")++
+>      (if null (declaredRules pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-declaredRules pat] ++            "]")++
+>      (if null gen                 then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") g| g<-gen              ] ++indent++"    ]")++
+>      (if null (declarations pat)  then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-declarations  pat] ++            "]")++
+>      (if null (conceptDefs pat)   then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-conceptDefs   pat] ++            "]")++
+>      (if null ks                  then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") k| k<-ks               ] ++indent++"    ]")++
 >      indent++"where"++
->      (if null (declarations pat) then "" else concat [indent++" "++showHSname d ++" = "++ showHS (indent++"   ") d |d <-declarations pat] )++
->      (if null (rules pat)        then "" else concat [indent++" "++showHSname r ++" = "++ showHS (indent++"   ") r |r <-rules pat       ] )++
->      (if null (conceptDefs pat)  then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptDefs pat ] )++
->      (if null ks                 then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks              ] )
+>      (if null (declarations pat)  then "" else concat [indent++" "++showHSname d ++" = "++ showHS (indent++"   ") d |d <-declarations  pat] )++
+>      (if null (declaredRules pat) then "" else concat [indent++" "++showHSname r ++" = "++ showHS (indent++"   ") r |r <-declaredRules pat] )++
+>      (if null (conceptDefs pat)   then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptDefs   pat] )++
+>      (if null ks                  then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks               ] )
 >   showADL (Pat nm rs gen pss cs ks)
 >    = "PATTERN\n" ++
 >      chain "\n" (map showADL pss) ++
@@ -1881,41 +1878,44 @@ properties is achieved as a result.
 >    = Pat nm' (rs `uni` rs') (parChds `uni` parChds') (pms `uni` pms') (cs `uni` cs') (ks `uni` ks')
 
 >  class Morphical a => Language a where
->    rules       :: a -> [Rule] -- all rules in the language that are specified as a rule in the ADL-model, including the GLUE rules, but excluding the multiplicity rules (multRules).
->    multRules   :: a -> [Rule] -- all rules in the language that are specified as declaration properties.
->    multRules    = rules.declarations
->    signals     :: a -> [Rule] -- all SIGNAL rules in the language.
->    signals x    = []
->    specs       :: a -> [Rule] -- all GLUE rules in the language.
->    specs x      = []
->    patterns    :: a -> [Pattern]
->    patterns x   = []
->    objectdefs  :: a -> [ObjectDef]
->    objectdefs x = []
->    isa         :: a -> Inheritance Concept
->    isa x        = empty
+>    declaredRules  :: a -> [Rule] -- all rules in the language that are specified as a rule in the ADL-model, including the GLUE rules, but excluding the multiplicity rules (multRules).
+>    declaredRules x = []
+>    multRules      :: a -> [Rule] -- all rules in the language that are specified as declaration properties.
+>    multRules       = multRules.declarations
+>    rules          :: a -> [Rule] -- all rules in the language that hold within the language
+>    rules x         = declaredRules x++multRules x++specs x
+>    signals        :: a -> [Rule] -- all SIGNAL rules in the language.
+>    signals x       = []
+>    specs          :: a -> [Rule] -- all GLUE rules in the language.
+>    specs x         = []
+>    patterns       :: a -> [Pattern]
+>    patterns x      = []
+>    objectdefs     :: a -> [ObjectDef]
+>    objectdefs x    = []
+>    isa            :: a -> Inheritance Concept
+>    isa x           = empty
 
 >  instance Language a => Language [a] where
->   rules xs   = (concat. map rules) xs
->   signals xs = (concat. map signals) xs
->   specs xs   = (rd. concat. map specs) xs
->   patterns   = {- rd' name. -} concat.map patterns
->   objectdefs = {- rd' name. -} concat.map objectdefs
->   isa        = foldr uni empty.map isa
+>   declaredRules xs = (concat. map declaredRules) xs
+>   signals xs       = (concat. map signals) xs
+>   specs xs         = (rd. concat. map specs) xs
+>   patterns         = {- rd' name. -} concat.map patterns
+>   objectdefs       = {- rd' name. -} concat.map objectdefs
+>   isa              = foldr uni empty.map isa
 
 >  instance Language a => Language (Classification a) where
->   rules cl      = rules (preCl cl)
->   signals cl    = signals (preCl cl)
->   specs cl      = specs (preCl cl)
->   patterns cl   = patterns (preCl cl)
->   objectdefs cl = objectdefs (preCl cl)
->   isa           = foldr uni empty.map isa.preCl
+>   declaredRules cl = declaredRules (preCl cl)
+>   signals cl       = signals (preCl cl)
+>   specs cl         = specs (preCl cl)
+>   patterns cl      = patterns (preCl cl)
+>   objectdefs cl    = objectdefs (preCl cl)
+>   isa              = foldr uni empty.map isa.preCl
 
 >  instance Language Rule where
->   rules   r@(Gc pos m expr cpu sgn nr pn)
+>   declaredRules r@(Gc pos m expr cpu sgn nr pn)
 >    = [Ru 'E' (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
->   rules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
->   rules   r                        = []
+>   declaredRules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
+>   declaredRules   r                        = []
 >   signals r@(Sg _ _ _ _ _ _ _)     = [r]
 >   signals r                        = []
 >   specs   r@(Gc _ _ _ _ _ _ _)     = [r]
@@ -1930,7 +1930,7 @@ properties is achieved as a result.
 >  clearG abs = rd [G g s| G g s<-abs, g/=s]
 
 >  instance Language Pattern where
->   rules (Pat nm rs parChds pms cs ks)   = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
+>   declaredRules (Pat nm rs parChds pms cs ks)   = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
 >   signals (Pat nm rs parChds pms cs ks) = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
 >   specs (Pat nm rs parChds pms cs ks)   = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
 >   patterns p                            = [p]
@@ -1939,21 +1939,15 @@ properties is achieved as a result.
 >                                                 ts = clear (tuples++[(g,s)| G g s<-parChds])
 
 >  instance Language Context where
->   rules context = renumberRules 1 (rules (foldr union (Pat "" [] [] [] [] []) (patterns context))++rules (wrld context))
+>   declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (wrld context)
 >   signals    context = signals (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals (wrld context)
 >   specs      context = specs (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs (wrld context)
 >   patterns   (Ctx nm on i world dc ss cs ks os pops) = dc
 >   objectdefs (Ctx nm on i world dc ss cs ks os pops) = os
 >   isa        (Ctx nm on i world dc ss cs ks os pops) = i
->   multRules context
->    = renumberRules (1 + (length (rules context)))
->                     [  c
->                      | sgn <- declarations context ,
->                        c <- rules sgn
->                     ]
+>   multRules  context = multRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules (wrld context)
 
 >  instance Language Declaration where
->   rules d = multRules d
 >   multRules d
 >    = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
 >          , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else

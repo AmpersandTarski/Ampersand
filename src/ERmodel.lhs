@@ -102,7 +102,7 @@ Since the introduction of objects, the type Entity is obsolete:
      "\n   }"
      where
        (entities,relations,ruls) = erAnalysis pat
-       rs = rules pat
+       rs = declaredRules pat
        dbrs = dbIns rs++dbDel rs
        sep = "\n   ; "
        dI = rd[nameG (declaration fr)| d@(DBR 'I' _ _ _)<-dbrs, fr<-frMorph d]

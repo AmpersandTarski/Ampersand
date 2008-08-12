@@ -3,7 +3,7 @@
 >  import Auxiliaries
 >  import CC_aux
 >  import CommonClasses
->  import Calc(shrink, conjNF, informalRule, computeOrder, homogeneous, ComputeRule)
+>  import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule)
 >--  import MultRules
 
 >  pDebug   = True
@@ -148,7 +148,7 @@ The practical version of selectRule does the same, but generates code in which t
 >           trg  = sqlExprTrg e -- may not collide with src, but what if toExpr is a property (or identity)? (Bas?)
 > -- was:   trg  = noCollide [src] (sqlExprTrg e)
 > -- might be?: trg  = noCollideUnlessTm e [src] (sqlExprTrg e)
->           e    = (shrink.conjNF.Cp .normExpr) r
+>           e    = (conjNF.Cp .normExpr) r
 >  selectRule ctx i r
 >   = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule ctx i ("++showHS "" r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
 
@@ -367,7 +367,7 @@ For instance: Tm I may return the same names, but cp(Tm I) should not since the 
 >  selectNormFiExpr :: String -> Context -> Int -> Expression -> (String,String) -> [(Morphism,String,String)] -> Expression -> String
 >  selectNormFiExpr var ctx i expr (src,trg) subs e
 >   = selectExpr ctx i src trg expr'
->     where expr' = doSubsExpr ctx var subs (shrink (conjNF e))
+>     where expr' = doSubsExpr ctx var subs (conjNF e)
 
 
 Temporary class 'IsClos'. The types Expression and Morphism ought to be unified in one type, so this monstrum can be resolved.
@@ -410,7 +410,7 @@ Auxiliaries:
 
 >  phpIndent i = "\n"++[' '|n<-[1..i]]
 
->  closE = map (shrink.conjNF) . closExprs
+>  closE = map conjNF . closExprs
 >  clos0 (K0 e) = True
 >  clos0 _ = False
 
@@ -644,7 +644,7 @@ For the following functions, enc and dec, we have:
 >               , "  return("++okVar++");"
 >               ]
 >        else chain "\n   "
->               [ "if(" ++ (chain " && " [ "checkRule"++show (nr r)++"()" | r<-rules context {-TODO: ++multRules context -} ])  ++ "){"
+>               [ "if(" ++ (chain " && " [ "checkRule"++show (nr r)++"()" | r<-rules context ])  ++ "){"
 >               , "     DB_doquer('COMMIT');"
 >               , "  // DB_doquer('UNLOCK TABLES');"
 >               , "     return("++okVar++");"

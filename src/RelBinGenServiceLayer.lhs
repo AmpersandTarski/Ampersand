@@ -193,7 +193,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     ]
 >    where
 >     (entities, relations, ruls') = erAnalysis context
->     hcs = [hc| rule<-rules context++multRules context, hc<-triggers rule ]
+>     hcs = [hc| rule<-rules context, hc<-triggers rule ]
 
 
 >  dbDelRelation context i s srcVar trgVar
@@ -257,7 +257,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++src++"'].'") ("'.$v[0]['"++trg++"'].'")) ++",3);\n    "++
 >                "  return false;\n    }")++
 >                "return true;\n  }"
->        | rule<-(rules context)++(multRules context), rule'<-[(shrink . conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
+>        | rule<-rules context, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
 
 Translation of rules to SQL
 

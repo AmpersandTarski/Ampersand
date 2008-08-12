@@ -269,8 +269,8 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >       ,"    $DB_err=$preErr.'"++(addslashes (show(explain rul)))++"';"
 >       ,"  } else"
 >       ]
->     | rul <- (rules context)++(multRules context),
->       or (map (\m -> elem m (mors rul)) -- rule contains an element
+>     | rul <- rules context
+>     , or (map (\m -> elem m (mors rul)) -- rule contains an element
 >               (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
 >          )
 >     ])

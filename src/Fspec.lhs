@@ -89,8 +89,6 @@ Every theme will be explained in a chapter of its own.
 >                pops  = populations context
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
->       ms   = [m| m<-[makeMph d|d<-declarations context]++[flp (makeMph d)|d<-declarations context], isFunction m]
->       ps   = clos source target ms
 
 A dataset is a functional closure of relations with one concept c as root.
 The datasets of a context are those datasets whose relations are not a subset of any other dataset.
@@ -132,14 +130,15 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   genE         (DS c pths) = genE c
 >   closExprs    (DS c pths) = closExprs pths
 
->  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec]
+>  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Rule]
 
 >  instance ShowHS Fobj where
->   showHSname (Fobj dset objd svcs) = "f_Obj_"++haskellIdentifier (name objd)
->   showHS indent (Fobj dset objd svcs)
+>   showHSname (Fobj dset objd svcs rs) = "f_Obj_"++haskellIdentifier (name objd)
+>   showHS indent (Fobj dset objd svcs rs)
 >    = "Fobj "++showHSname dset
 >      ++indent++"     ("++showHS (indent++"      ") objd++")"
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
+>      ++indent++"     ["++chain ", " [showHSname r| r<-rs]++"]"
 
 >  makeFobj :: Context -> ObjectDef -> Fobj
 >  makeFobj context o
@@ -147,8 +146,9 @@ The datasets of a context are those datasets whose relations are not a subset of
 >          ([ getEach context o
 >           , createObj context o [] {-rs-}
 >           , readObj context o
->           , deleteObj context o [] {-rs-} ] ++
->           [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ])
+>           , deleteObj context o [] {-rs-}
+>           , updateObj context o [] {-cs-} [] {-rs-} ])
+>          [r| r<-rules context, not (null (mors r `isc` mors o))]
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
@@ -239,9 +239,9 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   nPatterns (Tspc p us) = 1
 >   nFpoints  (Tspc p us) = sum (map nFpoints us)
 >  instance Statistics Fobj where
->   nServices (Fobj dset o svcs) = length svcs
->   nPatterns (Fobj dset o svcs) = 1
->   nFpoints  (Fobj dset o svcs) = nFpoints o
+>   nServices (Fobj dset o svcs rs) = length svcs
+>   nPatterns (Fobj dset o svcs rs) = 1
+>   nFpoints  (Fobj dset o svcs rs) = nFpoints o
 >  instance Statistics ObjectDef where
 >   nServices o = 4+sum [nServices a| a<-attributes o]
 >   nPatterns o = 0
@@ -609,7 +609,7 @@ rs zijn de betrokken regels
 >                ]
 >         ] where car = [ (o,NO,[],rs)
 >                       | o<-objDefs pat,  not (o `elem` attributes context), o `elem` new
->                       , rs<-[[(conj,rule) |rule<-rules pat, conj<-conjuncts rule, concept o `elem` concs conj]]
+>                       , rs<-[[(conj,rule) |rule<-declaredRules pat, conj<-conjuncts rule, concept o `elem` concs conj]]
 >                       ]
 >      asss pat new
 >       = [ Uspc ((if language==English then "Associations of " else "Associaties van ")++firstCaps (name pat)) pat [] ss
@@ -929,14 +929,14 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >     where
 >      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,o,r)->(name p,name o)) rs, (p,e,_)<-take 1 cl]
 >      rs = [(pat,o,rule)
->           | pat<-patterns context, rule<-rules pat, o<-attributes context, concept o `elem` concs rule]
+>           | pat<-patterns context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
 >  definedEnts context pat
 >   = [ e
 >     | cl<-eqCl (\(p,o,rs)->concept o) ps, (p,e,rs)<-take 1 (sort' (\(p,e,rs)->0-length rs) cl), p==name pat]
 >     where
 >      ps = [ (p,e,[r|(_,_,r)<-cl]) | cl <-eqCl (\(p,o,_)->(p,name o)) rs, (p,e,_)<-take 1 cl ]
 >      rs = [ (name pat,o,rule)
->           | pat<-patterns context, rule<-rules pat, o<-attributes context, concept o `elem` concs rule]
+>           | pat<-patterns context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
 >      (entities, relations, ruls) = erAnalysis context
 
 >  nDesignPr context = n where (_,n) = dp undef f context where undef=undef; f=f
@@ -990,7 +990,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >          patSections [] [] (patterns context)
 >        )
 >      , length [d| d<-declarations context, not (isSignal d)] +    -- bereken het totaal aantal requirements
->        length (rules context++signals context++multRules context)
+>        length (rules context++signals context)
 >      )
 >   where
 >    (str1,str2,str3,str4,str5,str6,str7,str8,str9,str10,str11,str12,str13,str14,str15,str16,str17) = strs
@@ -1090,7 +1090,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\tThis chapter introduces guiding principles of "++addSlashes cname++"."
 >      , "\tSubsequent chapters elaborate these principles into complete formal specifications."
 >      , chain "\n\n" [ latexSection ("Design choices about "++firstCaps (name pat)) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
->                       latexEnumerate ([addSlashes (explainRule context language r)|r<-rules pat++signals pat, null (cpu r)]++
+>                       latexEnumerate ([addSlashes (explainRule context language r)|r<-declaredRules pat++signals pat, null (cpu r)]++
 >                                       [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
 >                     | pat<-patterns context]
 >      , latexChapter "Conceptual Analysis" "Conceptual Analysis"
@@ -1106,8 +1106,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                               chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
 >                                                              | d<-declarations r]++
 >                                               "\\end{array}\\)\\\\\n&Rule:\\\\"++
->                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
->         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
+>                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-declaredRules pat]
+>         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-declaredRules pat]
 >                              )
 >                     | pat<-patterns context]
 >      , latexChapter "Glossary" ("typology"++cname)
@@ -1162,7 +1162,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
       , latexChapter "Afspraken" "Afspraken"
       , "\tDit hoofdstuk bespreekt verschillende afspraken, die in volgende hoofdstukken zijn uitgewerkt tot een volledige functionele specificatie."
       , chain "\n\n" [ latexSection ("Afspraken over "++addSlashes (name pat)) ("Afspraken"++cname++"Pat"++firstCaps (name pat)) ++
-                       latexEnumerate ([addSlashes (explainRule context language r)|r<-rules pat++signals pat, null (cpu r)]++
+                       latexEnumerate ([addSlashes (explainRule context language r)|r<-declaredRules pat++signals pat, null (cpu r)]++
                                        [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
                      | pat<-patterns context]
 
@@ -1182,8 +1182,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                               chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
 >                                                              | d<-declarations r]++
 >                                               "\\end{array}\\)\\\\\n&Regel:\\\\"++
->                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
->         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
+>                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-declaredRules pat]
+>         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-declaredRules pat]
 >                              )
 >                     | pat<-patterns context]
 >      , latexChapter "Gegevensanalyse" "Gegevensanalyse"
@@ -1239,8 +1239,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >                                               chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
 >                                                              | d<-declarations r]++
 >                                               "\\end{array}\\)\\\\\n&Rule:\\\\"++
->                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-rules pat]
->         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-rules pat]
+>                                          "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-declaredRules pat]
+>         -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-declaredRules pat]
 >                              )
 >                     | pat<-patterns context]
 >      , latexChapter "Data Analysis" "Data Analysis"
@@ -1532,10 +1532,10 @@ lpattern gets the complete typology of the context, in order to produce the righ
 >     (latexSchema nm . filter (not.null))
 >     [ {- "  "++cname++" Concepts"
 >     , "\\where"
->     , -} chain "\n" ["  "++(ltshow cname (Typ pths) language.assemble.normRule) r++"\\\\" | r <- rules pat]
+>     , -} chain "\n" ["  "++(ltshow cname (Typ pths) language.assemble.normRule) r++"\\\\" | r <- declaredRules pat]
 >     , chain "\n" ["  "++(ltshow cname (Typ pths) language.assemble.normRule) s++"\\\\" | s <- specs pat]
 >     ] ++ "\n" ++
->     (chain "\n\n" . map (addSlashes.explain) . rules) pat
+>     (chain "\n\n" . map (addSlashes.explain) . declaredRules) pat
 >     where
 >      parents c = f [C (name p) (==) []| [p,s]<-pths, name s==name c]
 >      f []  = "Anything"
@@ -1543,11 +1543,10 @@ lpattern gets the complete typology of the context, in order to produce the righ
 >      f cs  = "("++chain "\\cup" [concat [if c==' ' then "\\ " else [c]| c<-name c] | c<-cs]++")"
 
 
->-- TODO: kijk naar de definities van rules en specs (in CC_aux) om dubbele code te vermijden
 >  contDef cname typ language pat@(Pat nm rs gen pms cs ks)
 >   = lschema cname
 >             typ language
->             (Pat (nm++" "++show (length (rules pat)+1))
+>             (Pat (nm++" "++show (length (declaredRules pat)+1))
 >                  [Ru 'E' (F [Tm m]) pos expr cpu "" sgn nr pn
 >                  | Gc pos m expr cpu sgn nr pn<-specs pat] [] [] [] [])
 

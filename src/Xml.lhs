@@ -7,7 +7,7 @@
 >  import CC_aux 
 >           (  Context(Ctx), Concept(C), Pattern(Pat), Rule(Ru,Sg,Gc)
 >            , isa, concs
->            , rules, source, target, multiplicities, Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut), flp
+>            , declaredRules, rules, source, target, multiplicities, Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut), flp
 >            , showADL, explain
 >            , ConceptDef(Cd)
 >            , posNone
@@ -25,7 +25,7 @@
 >     writeFile (contextname++".xml") (showXML context "")>>
 >     putStr ("\n"++contextname++".xml written\n")
 >     where
->      rs      = rules context
+>      rs      = declaredRules context
 >      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 

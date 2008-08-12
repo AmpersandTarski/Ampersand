@@ -15,7 +15,7 @@
 >           (  Context(Ctx), Concept(C), Pattern(Pat)
 >            , Morphism
 >            , isa, showHS, concs, declarations
->            , rules, nr, source, target
+>            , declaredRules, rules, nr, source, target
 >            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx)
 >            , Rule(Gc)
 >            , showADL, explain
@@ -121,7 +121,7 @@
 >                     putStr ("Graph for Rule "++show (nr r)++": "++fnRule context r++" written\n")      >>
 >                     writeFile (fnRule context r++".html") (htmlRule context r predLogic)                       >>
 >                     putStr ("HTML code for rule "++show (nr r)++": "++fnRule context r++".html written\n")
->                   | r<-rules context]              >>
+>                   | r<-declaredRules context]              >>
 > -- Part 2: Generate the html code and pictures for each concept in this context
 >         sequence_ [ graphSpecs (fnConcept context c) cPat                                              >>
 >                     writeFile (fnConcept context c++".html")
@@ -191,7 +191,7 @@
 >              where ms = [( "value="++show(fnRelation context decl)
 >                          , name decl++"["++name (source decl)++"*"++name (target decl)++"]"
 >                          )
->                         | decl<-sord' name (declarations (rules context)++declarations context)]
+>                         | decl<-sord' name (declarations (declaredRules context)++declarations context)]
 >                    thisCtx = fnContext context
 >           navCodeVp context cPat
 >            = htmlPage ("Code (2) for "++name context++" concepts navigator")
@@ -223,7 +223,7 @@
 >              where ms = [( "value="++show(fnRelation context decl)
 >                          , name decl++"["++name (source decl)++"*"++name (target decl)++"]"
 >                          )
->                         | decl<-sord' name (declarations (rules cPat)++declarations cPat)]
+>                         | decl<-sord' name (declarations (declaredRules cPat)++declarations cPat)]
 >                    thisCtx = fnContext context
 >                    thisPat = htmlNm cPat
 >           navCodePat :: Context -> Pattern -> String
@@ -250,7 +250,7 @@
 >              where ms = [( "value="++show(fnRelation context decl)
 >                          , name decl++"["++name (source decl)++"*"++name (target decl)++"]"
 >                          )
->                         | decl<-sord' name (declarations (rules cPat)++declarations cPat)]
+>                         | decl<-sord' name (declarations (declaredRules cPat)++declarations cPat)]
 >                    thisCtx = fnContext context
 >                    thisPat = htmlNm cPat
 >           navCodePop :: Context -> Pattern -> Concept -> String
@@ -276,7 +276,7 @@
 >                            ["onChange=\"SwitchPat(this.value)\" onClick=\"SwitchView(this.value)\""]
 >                            [("value="++show(fnPatConcept context cPat c')++
 >                              if name c==name c' then " selected" else "",name c')
->                            | c'<-(sort' name.concs.declarations.rules) cPat]  -- might be 'grules' rather than 'rules'
+>                            | c'<-(sort' name.concs.declarations.declaredRules) cPat]  -- might be 'grules' rather than 'declaredRules'
 >                          )++
 >--                          "\n<P>\n"++htmlAnchor ("ANAL"++htmlname (name context)++".html")  "Analysis" ["TARGET=concepts"]++
 >                          "\n"
@@ -284,7 +284,7 @@
 >              where ms = [( "value="++show(fnRelation context decl)
 >                          , name decl++"["++name (source decl)++"*"++name (target decl)++"]"
 >                          )
->                         | decl<-(sord' name.declarations) [r|r<-rules context, c `elem` concs r]]
+>                         | decl<-(sord' name.declarations) [r|r<-declaredRules context, c `elem` concs r]]
 
 >  genAnalysis context predLogic
 >   = sequence_ (map (genRel context) (declarations context))>>
@@ -518,7 +518,7 @@
 >  htmlPattern context fnm pat@(Pat nm rs parChds pms cs ks)
 >   = htmlPage ("Code (6) for "++nm) ""
 >                   (htmlBody (htmlHeadinglevel 1 ("Pattern: "++nm) []++"\n"++
->                              htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (rules pat++signals pat)]++"\n"++
+>                              htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (declaredRules pat++signals pat)]++"\n"++
 >                              imageMap fnm ++
 >                              htmlHeadinglevel 1 ("Data model: "++nm) []++"\n"++
 >                              imageMap (fnPattern context pat++"_CD")++
@@ -653,11 +653,11 @@ Obsolete?
                   if testing then "\n<BR />\nconcS = "++show (map name concS)++"\n<BR />\nconcG = "++show (map name concG) else ""
                  ,dotGraph context graphicstyle (name c) (I [] c c True))
    where
-       ruleconc rules c
-        = if null rules then "" else
+       ruleconc rs c
+        = if null rs then "" else
           "\n<FONT color=\"#AA0000\"><HR color=#AA0000></FONT>\n"++tests++
           htmlHeadinglevel 2 ("Rules applicable to "++show c) []++"\n"++
-          htmlValNumbered (map (hgenR context predLogic) rules)++htmlImage (fnm++".png")
+          htmlValNumbered (map (hgenR context predLogic) rs)++htmlImage (fnm++".png")
        c'    = if null trace then c else head trace
        concS = concs context
        ruleS = [r| r<-rules context, c `elem` concs r]

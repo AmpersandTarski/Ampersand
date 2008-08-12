@@ -1,4 +1,4 @@
-> module Calc (ComputeRule, deriveProofs, triggers, shrink, disjNF, conjNF, homogeneous, computeOrder, lClause, rClause, conjuncts, makeRule, informalRule ) where  -- commented modules are required for testing
+> module Calc (ComputeRule, deriveProofs, triggers, disjNF, conjNF, homogeneous, computeOrder, lClause, rClause, conjuncts, makeRule, informalRule ) where  -- commented modules are required for testing
 >  import Char ( isSpace )
 >  import CommonClasses ( Collection (uni,isc), Identified(name), empty )
 >  import Auxiliaries
@@ -55,7 +55,7 @@
 >                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
 >      sh x = showHS "" x
 >      codeFragments :: [ECArule]
->      codeFragments = [ eca | rule<-rules context, clause<-conjuncts rule, eca<-doClause (shrink clause) ]
+>      codeFragments = [ eca | rule<-rules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
 
 >  condNull header fold f xs = if null xs then "" else header++fold (map f xs)
 
@@ -95,7 +95,7 @@
 >              , (showProof prf         , "")
 >              ]++
 >              if c=='A' then [] else
->              [ ("\nViolations are computed by (shrink . conjNF . Cp . normexpr) rule:\n     "++
+>              [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
 >                 (showProof.cfProof. Cp . normExpr) rule++"\n"
 >                , "")
 >              , ("\nConjuncts:\n     "++
@@ -121,10 +121,10 @@
 >                                     showADL r++"["++showADL m++":="++showADL (actSem ev (Tm m) (delta (sign m)))++"] = r'\n"++
 >                                     "r'    = "++(showProof.cfProof) r'++"\n"++
 >                                     "viols = r'-"++(showProof.cfProof) (Cp r')++"\n"++
->                               --      "reaction? evaluate r -: r' ("++(showADL.shrink.conjNF) (Fu[Cp r,r'])++")"++
+>                               --      "reaction? evaluate r -: r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
 >                               --         (showProof.cfProof) (Fu[Cp r,r'])++"\n"++
 >                               --      "delta: r-/\\r' = "++(showProof.cfProof) (Fi[notCp r,r'])++
->                               --      "\nNow compute a reaction\n(isTrue.shrink.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.shrink.conjNF) (Fu[Cp r,r']))++"\n"++
+>                               --      "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
 >                                     (if null (lambda ev (Tm m) r)
 >                                      then "lambda "++showADL m++" ("++showADL r++") = empty\n"
 >                                      else {- for debug purposes:
@@ -140,18 +140,18 @@
 >                                   | m<-rd [m|x<-mors r, m<-[x,flp x], inline m]
 >                                   , ev<-[Ins,Del]
 >                                   , r'<-[subst (Tm m,actSem ev (Tm m) (delta (sign m))) r]
->                                   , nr'<-[(shrink.conjNF) r']
->                                   , viols<-[(shrink.conjNF) (Cp r')]
+>                                   , nr'<-[conjNF r']
+>                                   , viols<-[conjNF (Cp r')]
 >                                   , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
 >                                  |conjunct<-conjuncts rule, r<-allClauses conjunct]
 >                , "")
 >              , ("\nGenerated Triggers for: "++showADL rule++" (rule "++show (nr rule)++")\n     "++
 >                  chain "\n     " ([ informalRule {-(declarations frExpr)-} hc | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]), "")
 >              ] where prf = nfProof (normExpr rule)
->                      cfProof expr = nfPr True False (shrink expr)
->                      dfProof expr = nfPr True True (shrink expr)
->                      checkMono expr ev m = shrink expr == shrink (antecedent conclusion) &&
->                                            shrink (subst (Tm m,actSem ev (Tm m) (delta (sign m))) expr) == shrink (consequent conclusion)
+>                      cfProof expr = nfPr True False (simplify expr)
+>                      dfProof expr = nfPr True True (simplify expr)
+>                      checkMono expr ev m = simplify expr == simplify (antecedent conclusion) &&
+>                                            simplify (subst (Tm m,actSem ev (Tm m) (delta (sign m))) expr) == simplify (consequent conclusion)
 >                        where (conclusion,_,_) = last (derivMono expr ev m)
 >           derivation r@(Sg p rule expla sgn _ pn signal)
 >            = [ (showADL r          , if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
@@ -212,9 +212,9 @@ so that is why parameter "do" is used in function "on".
 >              showADL r++"\n"++
 >              showHS "   " r++"\n"++
 >              "mors r = "++show (mors r)++"\n"++
->              "subst r =\n   "++chain "\n   " ([ "m="++showADL m++"\nsubst ("++showADL m++","++showADL (Fu[m,delta (sign m)])++") ("++showADL r++") = "++showADL (subst (m,Fu[m,delta (sign m)]) r)++" <=> (r') "++showADL r'++"\n phi: "++showADL phi++" <=> "++(showADL.conjNF) phi++"\n (Fu[Cp r,r']): "++showADL (Fu[Cp r,r'])++" <=> "++(disjNF) (Fu[Cp r,r'])
+>              "subst r =\n   "++chain "\n   " ([ "m="++showADL m++"\nsubst ("++showADL m++","++showADL (Fu[m,delta (sign m)])++") ("++showADL r++") = "++showADL (subst (m,Fu[m,delta (sign m)]) r)++" <=> (r') "++showADL r'++"\n phi: "++showADL phi++" <=> "++(showADL.conjNF) phi++"\n (Fu[Cp r,r']): "++showADL (Fu[Cp r,r'])++" <=> "++disjNF (Fu[Cp r,r'])
 >                                               | m <-rd [Tm m|x<-mors r, m<-[x,flp x], inline m]
->                                               , r'<-[(shrink.conjNF.subst (m,Fu[m,delta (sign m)])) r]
+>                                               , r'<-[(conjNF.subst (m,Fu[m,delta (sign m)])) r]
 >                                               , phi<-[Fi[Cp r',r]]
 >                                               ])++"\n"
 >             ) then res else -} res
@@ -305,7 +305,7 @@ deltaK0 delta Ins x
 
 >  fragmentProof clause (ECA (On fOp frm) (Do dOp toExpr phi))
 >   = (clause',[motivate fOp (delta (sign frm)) frm],""):
->     (clause'',[motivate dOp ((shrink.conjNF. Cp) clause) toExpr],""):
+>     (clause'',[motivate dOp ((conjNF. Cp) clause) toExpr],""):
 >     (definiens,["Now prove that precondition -: postcondition = V"],""):
 >     nfp'
 >     where
@@ -368,36 +368,36 @@ precondition: works only for expressions of the form Fu fus in which there are n
 >     [ ( [("INSERT INTO", Vs (source t) (target t))]        -- fOps
 >       , v (sign t)                                         -- e
 >       , "INSERT INTO"                                      -- bOp
->       , shrink t                                           -- toExpr
+>       , simplify t                                           -- toExpr
 >       , v (sign t)                                         -- frm
 >       , rule)
 >     | and (map isPos fus), t<-fus, not (isIdent t)]++  -- (ignore generating to I, because both I and V are derived from C-tables.)
 >     [ ( [("DELETE FROM",hdl l)]                 -- fOps
 >       , if isPos t' then t' else notCp t'       -- e
 >       , "DELETE FROM"                           -- bOp
->       , (shrink.conjNF.Cp) t                    -- toExpr
->       , (shrink.disjNF.Cp) (Fu (rest t))        -- frExpr
+>       , (conjNF.Cp) t                    -- toExpr
+>       , (disjNF.Cp) (Fu (rest t))        -- frExpr
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isPos l, isNeg t]++
 >     [ ( [("INSERT INTO",hdl l)]
 >       , if isPos t' then t' else notCp t'
 >       , "DELETE FROM"
->       , (shrink.conjNF.Cp) t
->       , (shrink.disjNF.Cp) (Fu (rest t))
+>       , (conjNF.Cp) t
+>       , (disjNF.Cp) (Fu (rest t))
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isNeg t]++
 >     [ ( [("DELETE FROM",hdl l)] 
 >       , if isPos t' then t' else notCp t'
 >       , "INSERT INTO"
->       , (shrink.conjNF) t   
->       , (shrink.disjNF.Cp) (Fu (rest t))
+>       , conjNF t   
+>       , (disjNF.Cp) (Fu (rest t))
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isPos l, isPos t]++
 >     [ ( [("INSERT INTO",hdl l)] 
 >       , if isPos t' then t' else notCp t'
 >       , "INSERT INTO"
->       , (shrink.conjNF) t   
->       , (shrink.disjNF.Cp) (Fu (rest t))
+>       , conjNF t   
+>       , (disjNF.Cp) (Fu (rest t))
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isPos t]
 >     where rest t = if length [e|e<-fus, t /= e] == length fus-1 then [e|e<-fus, t /= e] else
@@ -462,7 +462,7 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >      (fOps, e, bOp, toExpr, frExpr, rule) `eqHC` (fOps', e', bOp', toExpr', frExpr', rule')
 >        =      (bOp, toExpr, frExpr)         ==              (bOp', toExpr', frExpr')
 >      collect :: [ComputeRule] -> ComputeRule
->      collect cl = ((rd.concat)[fOps| (fOps, e, bOp, toExpr, frExpr, rule)<-cl], shrink (Fu [e| (fOps, e, bOp, toExpr, frExpr, rule)<-cl]), bOp, toExpr, frExpr, rule)
+>      collect cl = ((rd.concat)[fOps| (fOps, e, bOp, toExpr, frExpr, rule)<-cl], simplify (Fu [e| (fOps, e, bOp, toExpr, frExpr, rule)<-cl]), bOp, toExpr, frExpr, rule)
 >       where (fOps, e, bOp, toExpr, frExpr, rule) = head cl
 >      splitInsDel (fOps, e, bOp, toExpr, frExpr, rule)
 > --      = [ ([(f,r)|(f,(r, e, bOp, toExpr, frExpr, rule))<-cl], e, bOp, toExpr, if f=="DELETE FROM" then (notCp frExpr) else frExpr, rule)
@@ -474,7 +474,7 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >      (fOps, e, bOp, toExpr, frExpr, r) `eq2expr` (fOps', e', bOp', toExpr', frExpr', r') = toExpr == toExpr'
 >      bop (fOps, e, bOp, toExpr, frExpr, r) = bOp
 >  -- alleen "COMPUTING" termen opleveren
->      computing rule hc@(fOps, e, bOp, toExpr, frExpr, r) = toExpr `elem` map shrink (cpu rule)
+>      computing rule hc@(fOps, e, bOp, toExpr, frExpr, r) = toExpr `elem` map simplify (cpu rule)
 >  -- debug:    computing rule e = error ("(module Calc diagnostic) rule: "++showADL rule++"\e: "++show e++"\ncpu rule : "++ show (e `elem` cpu rule))
 
 >  multDerivations :: Language pat => pat -> Declarations
@@ -664,7 +664,7 @@ The following function, norm1Rule, normalizes a rule without changing the meanin
 norm1Rule r is used to gather all violations of r.
 
 >  norm1Rule :: Rule -> Expression
->  norm1Rule = shrink.conjNF.normExpr
+>  norm1Rule = conjNF.normExpr
 >  makeRule :: Rule -> Expression -> Rule
 >  makeRule rule (Fu []) = error ("(module Calc:) erroneous call to function makeRule rule ("++showADL (Fu [])++").")
 >  makeRule rule@(Ru _ _ p _ cpu expla (a,b) nr pn) (Fu ts)
@@ -673,7 +673,7 @@ norm1Rule r is used to gather all violations of r.
 >  makeRule rule@(Ru _ _ p _ cpu expla (a,b) nr pn) e
 >   | isFu e'   = makeRule rule e'
 >   | otherwise = Ru 'A' (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL e)) p e [] expla (a,b) nr pn
->   where e' = (shrink.disjNF) e
+>   where e' = disjNF e
 
 The functions conjNF' and disjNF' distribute /\ over ; , whereas conjNF and disjNF don't.
 The semantics of conjNF' and disjNF' are: x implies conjNF' x and x implies disjNF' x,
@@ -708,7 +708,7 @@ disjNF' expr follows from expr  (expr ==> disjNF' expr)
 >  nfPr eq dnf expr
 >   = if expr==res
 >     then [(expr,[],"<=>")]
->     else (expr,steps,equ):nfPr eq dnf (shrink res)
+>     else (expr,steps,equ):nfPr eq dnf (simplify res)
 >   where (res,steps,equ) = normStep eq dnf False expr
 
 BJ: Putting the negative terms to the right is done for optimization purposes.
@@ -907,7 +907,7 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >           simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
 >           expr = (res,ss,equ)
 >   where
->    (res,ss,equ) = norm (shrink expr) []
+>    (res,ss,equ) = norm expr []
 >    norm :: Expression -> [Expression] -> (Expression,[String],String)
 >    norm (K0 e)       rs   = (K0 res, steps, equ)
 >                             where (res,steps,equ) = norm e []
@@ -960,7 +960,6 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >    norm (Fi [e]) rs       = norm e []
 >    norm (Fi (e:es)) rs    | or [isFi x|x<-e:es]         = norm (Fi [y| x<-e:es, y<-if isFi x then unF x else [x]]) rs
 >                           | rd(e:es)/=e:es              = (Fi (rd (e:es)), ["x/\\x = x"], "<=>")
->                           | null es                     = norm e []
 >                           | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
 >                           | or[isTrue  x|x<-e:es]       = (Fi [x|x<-e:es, not (isTrue x)], ["x/\\V = x"], "<=>")
 >                           | or[isFalse x|x<-e:es]       = (Fu [], ["x/\\V- = V- (inconsistency)"], "<=>")
@@ -976,7 +975,6 @@ normStep is a formula manipulator that can do equational reasoning by means of r
 >    norm (Fu [e]) rs       = norm e []
 >    norm (Fu (e:es)) rs    | or [isFu x|x<-e:es]         = norm (Fu [y| x<-e:es, y<-if isFu x then unF x else [x]]) rs
 >                           | rd(e:es)/=e:es              = (Fu (rd (e:es)), ["x\\/x = x"], "<=>")
->                           | null es                     = norm e []
 >                           | not (null compl)            = (Fi [], [showADL (notCp (head compl))++"\\/"++showADL (head compl)++" = V"], "<=>")
 >                           | or[isFalse x|x<-e:es]       = (Fu [x|x<-e:es, not (isFalse x)], ["x\\/V- = x"], "<=>")
 >                           | or[isTrue  x|x<-e:es]       = (Fi [], ["x\\/V = V (tautology)"], "<=>")
@@ -1031,28 +1029,29 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
 >                e:es = xs
 >                ys = unF e
 
->  normR r@(Ru 'A' antc pos cons cpu expla sgn nr pn) = Ru 'A' err pos (shrink (conjNF cons)) cpu expla sgn nr pn
+>  normR r@(Ru 'A' antc pos cons cpu expla sgn nr pn) = Ru 'A' err pos (conjNF cons) cpu expla sgn nr pn
 >   where err = error ("Module Calc: erroneous reference to antc of rule "++showADL r)
->  normR (Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (shrink (disjNF antc)) pos (shrink (conjNF cons)) cpu expla sgn nr pn
+>  normR (Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (disjNF antc) pos (conjNF cons) cpu expla sgn nr pn
 >  normR (Sg p rule expla sgn nr pn signal)         = Sg p (normR rule) expla sgn nr pn signal
->  normR (Gc pos m expr cpu sgn nr pn)              = error "Calc.lhs: normR op glue regel. Gc pos m (shrink (conjNF expr)) cpu sgn nr pn"
+>  normR (Gc pos m expr cpu sgn nr pn)              = error "Calc.lhs: normR op glue regel. Gc pos m (conjNF expr) cpu sgn nr pn"
 
->  shrink :: Expression -> Expression
->  shrink e = shr e
->   where
->    shr (Fi [e]) = shr e
->    shr (Fi es)  = Fi [e'| e<-map shr es, e'<-if isFi e then unF e else [e]]
->    shr (Fu [e]) = shr e
->    shr (Fu es)  = Fu [e'| e<-map shr es, e'<-if isFu e then unF e else [e]]
->    shr (F [t])  = shr t
->    shr (F fs)   = F [e'| e<-map shr fs, e'<-if isF e then unF e else [e]]
->    shr (Fd [t]) = shr t
->    shr (Fd fs)  = Fd [e'| e<-map shr fs, e'<-if isFd e then unF e else [e]]
->    shr (Tc e)   = shr e
->    shr (Cp e)   = Cp (shr e)
->    shr (K0 e)   = K0 (shr e)
->    shr (K1 e)   = K1 (shr e)
->    shr e        = e
+Obsolete: shrink has been replaced by simplify
+  shrink :: Expression -> Expression
+  shrink e = shr e
+   where
+    shr (Fi [e]) = shr e
+    shr (Fi es)  = Fi [e'| e<-map shr es, e'<-if isFi e then unF e else [e]]
+    shr (Fu [e]) = shr e
+    shr (Fu es)  = Fu [e'| e<-map shr es, e'<-if isFu e then unF e else [e]]
+    shr (F [t])  = shr t
+    shr (F fs)   = F [e'| e<-map shr fs, e'<-if isF e then unF e else [e]]
+    shr (Fd [t]) = shr t
+    shr (Fd fs)  = Fd [e'| e<-map shr fs, e'<-if isFd e then unF e else [e]]
+    shr (Tc e)   = shr e
+    shr (Cp e)   = Cp (shr e)
+    shr (K0 e)   = K0 (shr e)
+    shr (K1 e)   = K1 (shr e)
+    shr e        = e
 
 >  unVee (Fi es) | or [ x==Cp y | x<-es, y<-es ] = Cp (v (sign (Fi es)))
 >                | or [ isFalse x | x<-es ]      = Cp (v (sign (Fi es)))
@@ -1192,87 +1191,6 @@ shiftL moet een expressie opleveren van de vorm Fu fs, zonder dubbele voorkomens
 >         )
 >      where lastEq x = (showADL (last x),sign (last x))
 
-
-For testing purposes
-
-> {-
->  splitStr f (x:xs) | f x  = (x:yes, no)
->                    | True = (yes, x:no)
->                    where (yes,no) = splitStr f xs
->  splitStr f [] = ([],[])
->  main
->   = do { a <- getArgs
->        ; let (switches,args) = splitStr ((=="-").take 1) a
->        ; putStr ("Arguments: "++chain ", " args++"\nSwitches: "++chain ", " switches)
->        ; if length args==0 then putStr ("Please provide a filename (.adl) and a context name") else
->     do { let fn = args!!0; contextname = args!!1
->              (fnPrefix,fnSuffix) = break ('.' ==) fn
->              fnFull = if null fnSuffix then (fn ++ ".adl") else fn
->        ; inp<-readFile fnFull
->        ; putStr ("\n"++fnFull++" is read.")
->        ; slRes <- parseIO pArchitecture (scan keywordstxt keywordsops specialchars opchars fnFull initPos inp)
->        ; putStr ("\n"++fnFull++" has been parsed.")
->        ; let (contexts,errs) = sem_Architecture slRes
->        ; if null errs 
->          then putStr ("\nNo type errors or cyclic specializations were found.\n")>>
->               putStr ((('\n':) . analC switches . rules. head) contexts)
->          else putStr ("\nThe type analysis of "++fnFull++" yields errors.\n")>>
->               putStr (concat ["!Error of type "++err| err<-errs])
->        }}
->  analC switches rs
->   = if null rnrs
->     then chain "\n\n" [ sh r| r<-rs, showADL r /= showADL (norm1Rule r)]
->     else chain "\n\n" [ analRule r| r<-rs, nr r `elem` rnrs]
->     where sh r = showADL r++" (rule "++show (nr r)++")\n  "++showADL (norm1Rule r)
->           rnrs :: [Int]
->           rnrs = [read (tail s)| s<-switches, and (map isDigit (tail s))]
-
-  analP switches rs
-   = if null rnrs
-     then chain "\n\n" [ proof r| r<-rs]
-     else chain "\n\n" [ proof r| r<-rs, nr r `elem` rnrs]
-     where rnrs :: [Int]
-           rnrs = [read (tail s)| s<-switches, and (map isDigit (tail s))]
-
->  analN = chain "\n\n" . map sh
->          where sh r = showADL r++"\n  "++if explain r==showADL (norm1Rule r) then showADL (norm1Rule r)++" (as expected)" else
->                       "Unexpected: "++showADL (norm1Rule r)++"\nAnalysis:\n"++analRule r
->  analExpr r = "normExpr r                        = "++(showADL.normExpr) r++"\n"++
->               "(shrink.normExpr) r               = "++(showADL.shrink.normExpr) r++"\n"++
->               "(shrink.normExpr) r               = "++(showHS "".shrink.normExpr) r++"\n"++
->               "(normFu.shrink.normExpr) r        = "++(showADL.normFu.shrink.normExpr) r++"\n"++
->               "(normFu.shrink.normExpr) r        = "++(showHS "".normFu.shrink.normExpr) r++"\n"++
->               "(shrink.normFu.shrink.normExpr) r = "++(showADL.shrink.normFu.shrink.normExpr) r++"\n"++
->               "(shrink.normFu.shrink.normExpr) r = "++(showHS "".shrink.normFu.shrink.normExpr) r
->  analRule r@(Ru 'E' antc p cons cpu expla (a,b) nr pn signal strict)
->   = "Ru 'E' ("++showADL as++") p ("++showADL cs++") cpu expla (a,b) nr pn signal strict\n"++
->     "antc                              = "++showADL (antecedent r)++"\n"++
->     "shrink antc                       = "++showADL (shrink (antecedent r))++"\n"++
->     "(normFi.shrink) antc              = "++showADL ((normFi.shrink.antecedent) r)++"\n"++
->     "(shrink.normFi.shrink) antc       = "++showADL ((shrink.normFi.shrink.antecedent) r)++"\n"++
->     "(normFu.shrink) antc              = "++showADL ((normFu.shrink.antecedent) r)++"\n"++
->     "(shrink.normFu.shrink) antc       = "++showADL ((shrink.normFu.shrink.antecedent) r)++"\n"++
->     "cons                              = "++showADL (consequent r)++"\n"++
->     "shrink cons                       = "++showADL (shrink (consequent r))++"\n"++
->     "(normFi.shrink) cons              = "++showADL ((normFi.shrink.consequent) r)++"\n"++
->     "(shrink.normFi.shrink) cons       = "++showADL ((shrink.normFi.shrink.consequent) r)++"\n"++
->     "(normFu.shrink) cons              = "++showADL ((normFu.shrink.consequent) r)++"\n"++
->     "(shrink.normFu.shrink) cons       = "++showADL ((shrink.normFu.shrink.consequent) r)
->     where as=if isFi antcFi then antcFi else antcFu
->           antcFi = (shrink.normFi.shrink.antecedent) r
->           antcFu = (shrink.normFu.shrink.antecedent) r
->           cs=if isFu consFu then consFu else consFi
->           consFi = (shrink.normFi.shrink.consequent) r
->           consFu = (shrink.normFu.shrink.consequent) r
->  analRule r@(Ru c antc p cons cpu expla (a,b) nr pn signal strict)
->   = if null ans
->     then "Ru 'A' (Fi []) p ("++showADL (Fu con)++") cpu expla (a,b) nr pn signal strict"
->     else "Ru 'I' ("++showADL (Fi ans)++") p ("++showADL (Fu con)++") cpu expla (a,b) nr pn signal strict"
->     where as  = if c=='A' then [] else rd [shrink t| Fi ts <-[(normFi.shrink.antecedent) r], t<-ts, t/=Fu []]
->           cs  = rd [shrink t| Fu ts <-[(normFu.shrink.consequent) r], t<-ts, t/=Fi []]
->           ans = [t| t<-as, positive t]++[t| Cp b t<-cs]
->           con = [t| t<-cs, positive t]++[t| Cp b t<-as]
-> -}
 
 > {- Wat gebeurt hier precies???
 

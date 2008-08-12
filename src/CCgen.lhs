@@ -98,7 +98,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   appendFile "\\ADL.log" ("  nr. of relations:                  "++show (length rels)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
->                   appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context++multRules context, hc<-triggers rule])++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context, hc<-triggers rule])++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
@@ -107,7 +107,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
 >                   putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
 >                   putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
->                   putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context++multRules context, hc<-triggers rule])++"\n") >>
+>                   putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-rules context, hc<-triggers rule])++"\n") >>
 >                   putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
 >                   putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
 >                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n")
@@ -142,8 +142,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >     writeFile (ctxNm++".lhs")
 >               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n>  import Fspec\n\n"
 >                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
->                ++">  "++showHSname context++"\n>   = "++showHS "\n>  " context++"\n\n"
->                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>  " fspec
+>                ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
+>                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
 >               ) >>
 >     putStr ("\nHaskell file "++ctxNm++".lhs written...\n")
 >     where
