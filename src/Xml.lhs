@@ -129,7 +129,7 @@ Basic XML markup
 >    = tag indent "C" ["NAME="++show (name c)] ""
 
 >  instance XML Gen where
->   showXML (G g s) indent
+>   showXML (G pos g s) indent
 >    = tag indent "GEN" ["GENERIC=\""++show g++"\"", "SPECIFIC=\""++show s++"\""] ""
 
 >  instance XML Expression where

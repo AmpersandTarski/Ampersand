@@ -19,7 +19,7 @@
 >--            , showS
 >            , flp
 >            , pVarid_val_pos, pConid_val_pos
->            , Numbered(nr,pos)
+>            , Numbered(nr,pos), renumberRules
 >            , normExpr
 >            , isSgn
 >            , fEmpty
@@ -223,7 +223,8 @@ I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 >  src xs         = if null xs then error ("(module CC_aux) Fatal: src []") else head xs
 >  trg xs         = if null xs then error ("(module CC_aux) Fatal: trg []") else last xs
 >  type Pairs     = [Paire]
->  data Gen       = G Concept             -- generic concept
+>  data Gen       = G FilePos             -- the position of the GEN-rule
+>                     Concept             -- generic concept
 >                     Concept             -- specific concept
 >                   deriving Eq
 >  type Gens      = [Gen]
@@ -372,13 +373,13 @@ There are 4 types of rule:
 renumberRule gives back the rule in the second argument, only numbered by the first
 renumberRules gives back an array of rules as specified by the second argument, renumbered from n to n+length(r:rs)
 
-  renumberRule n r@(Ru 'A' b c d e f g _ h) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL r++")")) c d e f g n h
-  renumberRule n (Ru a b c d e f g _ h)     = Ru a b c d e f g n h
-  renumberRule n (Sg p rule c d _ f g)      = Sg p (renumberRule n rule) c d n f g
-  renumberRule n (Gc a b c d e _ f)         = Gc a b c d e n f
-  renumberRule n r                          = r
-  renumberRules n (r:rs) = (renumberRule n r):renumberRules (n+1) rs
-  renumberRules _ [] = []
+>  renumberRule n r@(Ru 'A' b c d e f g _ h) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL r++")")) c d e f g n h
+>  renumberRule n (Ru a b c d e f g _ h)     = Ru a b c d e f g n h
+>  renumberRule n (Sg p rule c d _ f g)      = Sg p (renumberRule n rule) c d n f g
+>  renumberRule n (Gc a b c d e _ f)         = Gc a b c d e n f
+>  renumberRule n r                          = r
+>  renumberRules n (r:rs) = (renumberRule n r):renumberRules (n+1) rs
+>  renumberRules _ [] = []
 
 >  type Rules     = [Rule]
 >  data Pattern   = Pat String             -- name of this pattern
@@ -586,11 +587,11 @@ Transform a rule to an expression:
 >  declaration (Mp1 s c)         = Isn c c
 
 >  instance Morphical Gen where
->   concs (G g s)                                 = rd [g,s]
->   mors (G g s)                                  = [I [] g s True]
->   morlist (G g s)                               = [I [] g s True]
->   genE (G g s)                                  = genE s
->   declarations (G g s)                          = []
+>   concs (G pos g s)                             = rd [g,s]
+>   mors (G pos g s)                              = [I [] g s True]
+>   morlist (G pos g s)                           = [I [] g s True]
+>   genE (G pos g s)                              = genE s
+>   declarations (G pos g s)                      = []
 
 >  instance Morphical Expression where
 >   concs (Tm m)                                  = rd (concs m)
@@ -835,7 +836,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent (Arch ctxs) = concat (map (showHS indent) ctxs)
 
 >  instance ShowADL Architecture where
->   showADL (Arch ctxs) = concat (map showADL ctxs)
+>   showADL (Arch ctxs) = chain "\n" (map showADL ctxs)
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
@@ -863,21 +864,24 @@ The function showHS prints structures as haskell source, which is intended for t
 >      where pats = patterns context
 >            ds   = declarations context>-declarations (patterns context)
 >            cs   = conceptDefs context>-conceptDefs (patterns context)
->            ks   = let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks'
+>            ks   = keyDefs context
 >            os   = attributes context
 >            pops = populations context
 >            on   = extends context
 
 >  instance ShowADL Context where
 >   showADL context
->    = "CONTEXT\n" ++
->      chain "\n\n" (map showADL (attributes context)) ++ "\n\n" ++
->      chain "\n\n" (map showADL (patterns context)) ++ "\n\n" ++
->      chain "\n" (map showADL (declarations context>-declarations (patterns context))) ++ "\n\n" ++
->      chain "\n" (map showADL (conceptDefs context>-conceptDefs (patterns context))) ++ "\n\n" ++
->      chain "\n" (map showADL (let Ctx _ _ _ _ _ _ _ ks' _ _ =context in ks')) ++ "\n\n" ++
->      chain "\n\n" (map showADL (populations context)) ++
->      "\nENDCONTEXT"
+>    = "CONTEXT " ++name context
+>      ++ (if null (extends context)     then "" else "EXTENDS "++chain ", "   (extends context)                   ++ "\n")
+>      ++ (if null (attributes context)  then "" else "\n"      ++chain "\n\n" (map showADL (attributes context))  ++ "\n")
+>      ++ (if null cdefs                 then "" else "\n"      ++chain "\n"   (map showADL cdefs)                 ++ "\n")
+>      ++ (if null decls                 then "" else "\n"      ++chain "\n"   (map showADL decls)                 ++ "\n")
+>      ++ (if null (keyDefs context)     then "" else "\n"      ++chain "\n"   (map showADL (keyDefs context))     ++ "\n")
+>      ++ (if null (patterns context)    then "" else "\n"      ++chain "\n\n" (map showADL (patterns context))    ++ "\n")
+>      ++ (if null (populations context) then "" else "\n"      ++chain "\n\n" (map showADL (populations context)) ++ "\n")
+>      ++ "\n\nENDCONTEXT"
+>      where decls = declarations context>-declarations (patterns context)
+>            cdefs = conceptDefs context>-conceptDefs (patterns context)
 
 >  instance ShowHS Pattern where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
@@ -896,13 +900,14 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null ks                  then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks               ] )
 
 >  instance ShowADL Pattern where
->   showADL (Pat nm rs gen pss cs ks)
->    = "PATTERN\n" ++
->      chain "\n" (map showADL pss) ++
->      chain "\n\n" (map showADL rs) ++ "\n\n" ++
->--      chain "\n" (map showADL cs) ++ "\n\n" ++
->--      chain "\n" (map showADL ks) ++
->      "\nENDPATTERN"
+>   showADL pat@(Pat nm rs gen pss cs ks)
+>    = "PATTERN " ++ name pat 
+>      ++ (if null (conceptDefs pat)     then "" else "\n  " ++chain "\n  "   (map showADL (conceptDefs pat))   ++ "\n")
+>      ++ (if null gen                   then "" else "\n  " ++chain "\n  "   (map showADL gen)                 ++ "\n")
+>      ++ (if null (keyDefs pat)         then "" else "\n  " ++chain "\n  "   (map showADL (keyDefs pat))       ++ "\n")
+>      ++ (if null (declarations pat)    then "" else "\n  " ++chain "\n  "   (map showADL (declarations pat))  ++ "\n")
+>      ++ (if null (declaredRules pat)   then "" else "\n  " ++chain "\n  "   (map showADL (declaredRules pat)) ++ "\n")
+>      ++ "ENDPATTERN"
 
 >  instance ShowHS Population where
 >   showHSname (Popu m ps) = "pop_"++haskellIdentifier (name m++name (source m)++name (target m))
@@ -911,8 +916,8 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowADL Population where
 >   showADL (Popu m ps)
->    = nlHs++"pop_"++name m++name (source m)++name (target m)++nlHs++" = [ "++chain (nlHs'++"; ") (map show ps)++nlHs'++"]"
->      where nlHs = "\n>      "; ind = nlHs++"       "; nlHs' = nlHs++"    "
+>    = nlIndent++"pop_"++name m++name (source m)++name (target m)++nlIndent++" = [ "++chain (nlIndent'++"; ") (map show ps)++nlIndent'++"]"
+>      where nlIndent = "\n      "; nlIndent' = nlIndent++"    "
 
 >  instance ShowHS Rule where
 >   showHSname r = "rule"++show (nr r)
@@ -1096,10 +1101,10 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Gen where
 >   showHSname g = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
->   showHS indent (G g s)  = "G ("++showHS "" s++") ("++showHS "" g++")"
+>   showHS indent (G pos g s)  = "G ("++showHS "" pos++") ("++showHS "" s++") ("++showHS "" g++")"
 
 >  instance ShowADL Gen where
->   showADL (G g s) = "GEN "++showADL s++" ISA "++show g
+>   showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowHS FilePos where
 >   showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
@@ -1156,7 +1161,7 @@ This show is used in error messages. It should therefore not display the morphis
 This show is used in error messages. It should therefore not display the term's type
 
 >  instance Show Gen where
->   showsPrec p (G g s) = showString ("GEN "++show s++" ISA "++show g)
+>   showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)
 
 >  instance Eq Declaration where
 >   s == s' = name s==name s' && source s==source s' && target s==target s'
@@ -1338,9 +1343,9 @@ Om een of andere reden stond hier eerder:
                              (a `lub` s, b `lub` t)
 
 >  instance Pop Gen where
->   put_gE gE cs (G g s) = G (put_gE gE cs g) (put_gE gE cs s)
->   update ss (G g s)    = G (update ss g)    (update ss s)
->   specialize t (G g s) = G (specialize t g) (specialize t s)
+>   put_gE gE cs (G pos g s) = G pos (put_gE gE cs g) (put_gE gE cs s)
+>   update ss    (G pos g s) = G pos (update ss g)    (update ss s)
+>   specialize t (G pos g s) = G pos (specialize t g) (specialize t s)
 
 >  instance Pop Context where
 >   put_gE gE cs (Ctx nm on isa world dc ss cs' ks os pops)
@@ -1964,16 +1969,16 @@ properties is achieved as a result.
 >   isa r = empty
 
 >  clear abs = rd [(a,b)| (a,b)<-abs, a/=b]
->  clearG abs = rd [G g s| G g s<-abs, g/=s]
+>  clearG abs = rd [G pos g s| G pos g s<-abs, g/=s]
 
 >  instance Language Pattern where
 >   declaredRules (Pat nm rs parChds pms cs ks) = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
 >   signals (Pat nm rs parChds pms cs ks)       = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
 >   specs (Pat nm rs parChds pms cs ks)         = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
 >   patterns p                                  = [p]
->   isa   (Pat nm rs parChds pms cs ks)         = Isa ts (singles>-[e| G g s<-parChds,e<-[g,s]])
+>   isa   (Pat nm rs parChds pms cs ks)         = Isa ts (singles>-[e| G pos g s<-parChds,e<-[g,s]])
 >                                                 where Isa tuples singles = isa rs
->                                                       ts = clear (tuples++[(g,s)| G g s<-parChds])
+>                                                       ts = clear (tuples++[(g,s)| G pos g s<-parChds])
 
 >  instance Language Context where
 >   declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (wrld context)

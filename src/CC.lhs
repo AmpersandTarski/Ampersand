@@ -154,8 +154,8 @@ to achieve that is to arrange that in the parser: All Ru-rules are wrapped in Sg
 >                      where f ms = ms
 
 >  pGen             :: Parser Token Gen
->  pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <* pKey "ISA" <*> (pConid <|> pString)
->                      where rebuild spec genus = G (C genus (==) []) (C spec (==) [])
+>  pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
+>                      where rebuild spec pos genus = G pos (C genus (==) []) (C spec (==) [])
 
 >  postStr          :: Parser Token String
 >  postStr           = f <$> pList1 (pKey "~" <|> pKey "+" <|> pKey "-" <|> pKey "*")

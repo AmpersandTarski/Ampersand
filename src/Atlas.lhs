@@ -16,7 +16,7 @@
 >            , Morphism
 >            , isa, showHS, concs, declarations
 >            , declaredRules, rules, nr, source, target
->            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx)
+>            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx), posNone
 >            , Rule(Gc)
 >            , showADL, explain
 >            , Paire, Pairs
@@ -567,7 +567,7 @@ the screen) points.
 >  viewpoint context c
 >   = Pat (name c)
 >         rulesV
->         (clearG [G g s| Isa ts ss<-[isa context], (g,s)<-ts, g `elem` concsV, s `elem` concsV])
+>         (clearG [G posNone g s| Isa ts ss<-[isa context], (g,s)<-ts, g `elem` concsV, s `elem` concsV])
 >         (declarations rulesV)
 >         [c| c@(Cd pos nm def ref)<-conceptDefs context, C nm (==) [] `elem` concsV]
 >         []
@@ -578,7 +578,7 @@ the screen) points.
 >  inhViewpoint (Cl context world) specific gen
 >   = Pat ("Concept "++name specific++" inherited from "++name gen)
 >         (rs++[s| s<-sc, Isa ts ss<-[isa s], and[b `elem` concs rs| (a,b)<-ts]])
->         (clearG [G g s| Isa ts ss<-[isa context], (g,s)<-ts, g==gen, s `elem` concs rs])
+>         (clearG [G posNone g s| Isa ts ss<-[isa context], (g,s)<-ts, g==gen, s `elem` concs rs])
 >         (declarations rs)
 >         [c| c@(Cd pos nm def ref)<-conceptDefs context, C nm (==) [] `elem` rd [c|r<-rs, c<-concs r]]
 >         []
@@ -619,7 +619,7 @@ Traceability (removed for now)
 >       C nm gE atoms = c
 >       thisCtx = fnContext context
 >       gen = name r
->--       inheriting =  [G g s|G g s<-parChds, s==c]
+>--       inheriting =  [G pos g s|G pos g s<-parChds, s==c]
 >       tests
 >        = if testing
 >          then "Testing:"++

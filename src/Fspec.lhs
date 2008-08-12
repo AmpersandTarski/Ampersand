@@ -49,7 +49,7 @@ Every theme will be explained in a chapter of its own.
 >           datasets
 >           [ makeFobj context o | o <-attributes context]
 >      where
->       datasets = rd [ds| c<-concs context, ds<-[dataset context c]]
+>       datasets = rd [datasetMor context m| m<-mors context]
 >-- next thing, we look which datasets will be discussed in which themes.
 >-- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
 >-- because we assume that the programmer found it important enough to define that concept in that pattern.
@@ -61,19 +61,17 @@ Every theme will be explained in a chapter of its own.
 >-- The remaining concepts and datasets are determined in pcsds1.
 >-- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
 >       pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
->                [ (pat,0-length cs,ds)
+>                [ (pat,0-length ms,ds)
 >                | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
->                , cs<-[[c|m<-morlist pat, c<-concs m, concept ds<=c]], not (null cs)
+>                , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
 >                ]
 >-- The remaining datasets will be discussed in the last theme
->       remainingDS = [ ds | ds@(DS c pths)<-datasets
->                          , not (null pths)
->                          , not (ds `elem` [ds'|(_,_,ds')<-pcsds0++pcsds1]) ]
+>       remainingDS = datasets>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
 >       others
 >        = Pat "Other topics" rs gen pms cs ks
 >          where rs  = []
 >                gen = []
->                pms = rd [d| ds@(DS c pths)<-remainingDS, d<-declarations pths]
+>                pms = rd [d| ds<-remainingDS, d<-declarations ds]
 >                cs  = []
 >                ks  = []
 >       context' = Ctx nm on i world pats ds cs ks os pops
@@ -95,40 +93,78 @@ The datasets of a context are those datasets whose relations are not a subset of
 
 >  data Dataset = DS Concept       -- the root of the dataset
 >                    [Expression]  -- the paths from the root
+>               | BR Morphism      -- for every m that is not (isFunction m || isFunction (flp m))
 
 >  instance ShowHS Dataset where
 >   showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
+>   showHSname (BR m)      = "f_BR_"++haskellIdentifier (name m++name (source m)++name(target m))
+>   showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
 >   showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
->  instance Eq Dataset where
+>   showHS indent (BR m     ) = "BR ("++showHS "" m++")"
+>  instance Eq Dataset where  -- opletten: een dataset moet één vast concept hebben waaraan het wordt herkend.
 >   DS c _ == DS d _ = c==d
+>   BR m   == BR m'  = m==m'
+>   _      == _      = False
 
->  instance Object Dataset where
->   concept (DS c pths) = c
->   attributes (DS c pths) = []
->   ctx        _ = error ("Cannot evaluate the context expression of this dataset (yet)")
->   populations (DS c pths) = []
+De functie 'dataset' is een leuke. Voor veel concepten geldt dat het kan worden afgebeeld op een zgn. 'rechthoekige n-aire relatie'.
+Dat noemen we een dataset.
+Als een concept een specialisatie is van een generiek concept, dan wordt het in de generieke tabel afgebeeld.
+De functie dataset berekent in welke dataset een concept wordt geadministreerd.
 
 >  dataset :: Context -> Concept -> Dataset
 >  dataset context c
->   = if null ds then error ("Fatal: cannot determine a dataset for concept "++show c) else
->     head ds
->     where ds = sort' len [ds| ds<-dss, c `elem` map source (mors ds) ]  -- the largest one!
->           len (DS c pths) = 0-length pths
->           bi (DS c pths) (DS c' pths')
->              = not (null (mors pths `isc` mors pths'))
->           ms  = rd [m| m<-mors context++map flp (mors context), isFunction m]
->           ps  = clos source target ms
->-- dss bevat voor elk concept 'e'en dataset. De paden ervan zijn leeg als het een niet-entiteit betreft.
->           dss = [DS c pths| c<-concs ms, pths<-[[F (map Tm p)|p<-ps, not (null p), source (head p)==c]] ]
+>   = DS (minimum [g|g<-concs context,g<=head cl]) dss
+>     where
+>      cl   = head ([cl| cl<-eCls, c `elem` cl]++error ("!Fatal (module Fspec>dataset): cannot determine dataset for concept "++name c))
+>      eCls = eqClass bi (concs context)
+>      c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
+>                              , source m<=c && target m<=c'  ||  source m<=c' && target m<=c])
+>      dss = [(Tm .       makeMph) d| d<-declarations context, isFunction      d , source d `elem` cl]++
+>            [(Tm . flp . makeMph) d| d<-declarations context, isFunction (flp d), target d `elem` cl]
+
+Het verhaal:
+Alle concepten waar een bijectie tussen ligt kunnen in dezelfde dataset terecht komen.
+Ook specialisaties van die concepten mogen daarin terechtkomen, mits herkenbaar als specialisatie door een eigenschap (genaamd I<Concept>).
+De equivalentierelatie `bi` geeft aan of twee concepten in dezelfde dataset komen.
+De dataset wordt gekenmerkt door één van de concepten, en wel een grondconcept.
+Hiervoor kiezen we (minimum [g|g<-concs context,g<=head eCls]). Van deze keuze is head eCls arbitrair.
+Hiermee heeft elke dataset één vast concept waaraan het wordt herkend.
+
+Een eerdere poging ging nogal fout. De closure in het volgende algoritme zorgt voor vreselijk redundante datasets.
+  dataset :: Context -> Concept -> Dataset
+  dataset context c
+   = head (ds++[DS (cGen c) []])
+     where ds = sort' len [ds| ds<-dss, cGen c `elem` map source (mors ds) ]  -- the largest one!
+           cGen c = minimum [g|g<-concs context,g<=c]
+           len (DS c pths) = 0-length pths
+           ps  = (clos source target.rd)
+                  [d| d<-declarations context++map flp (declarations context), isFunction d]
+-- dss bevat voor elk concept één dataset. De paden ervan zijn leeg als het een niet-entiteit betreft.
+           dss = [DS c pths| c<-concs context, pths<-[[F (map (Tm . makeMph) p)|p<-ps, not (null p), source (head p)==cGen c]] ]
+
+Dan moeten de relaties worden opgeslagen.
+Als deze relatie een functie is, 
+
+>  datasetMor :: Context -> Morphism -> Dataset
+>  datasetMor context m | isFunction      m  = dataset context (source m)
+>                       | isFunction (flp m) = dataset context (target m)
+>                       | otherwise          = BR m
 
 >  instance Morphical Dataset where
->   concs        (DS c pths) = rd [source d| d<-declarations pths]
+>   concs        (DS c pths) = concs pths
+>   concs        (BR m     ) = concs m
 >   conceptDefs  (DS c pths) = []
+>   conceptDefs  (BR m     ) = []
 >   mors         (DS c pths) = mors pths
+>   mors         (BR m     ) = [m]
 >   morlist      (DS c pths) = morlist pths
+>   morlist      (BR m     ) = [m]
 >   declarations (DS c pths) = declarations pths
+>   declarations (BR m     ) = declarations m
 >   genE         (DS c pths) = genE c
+>   genE         (BR m     ) = genE m
 >   closExprs    (DS c pths) = closExprs pths
+>   closExprs    (BR m     ) = []
 
 >  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Rule]
 
