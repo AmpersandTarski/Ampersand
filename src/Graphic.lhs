@@ -7,7 +7,7 @@
 >            , Expression(F,Tm)
 >            , multiplicities, tot, inj, sur, fun, sign
 >            , inline, posNone, source, target, mors, declaration, flp
->            , concs, isa, specs, isMph, isProperty, 
+>            , concs, isa, specs, isMph, isProperty 
 >            , declarations, union
 >            , order
 >            )

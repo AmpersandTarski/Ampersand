@@ -38,7 +38,7 @@
 >            , ShowADL(showADL)
 >            , consequent, order, isNeg, isPos, isNeg, notCp
 >            , mIs
->            , isMph, isProperty, 
+>            , isMph, isProperty 
 >            , union
 >            , Population(Popu), Populations
 >            , Pop(update)

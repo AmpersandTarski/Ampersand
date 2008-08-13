@@ -117,7 +117,8 @@ Fast, Error Correcting Parser Combinators;See version history in same directory.
 >  where
 >  import Maybe
 >  --import PrelGHC
->  import IOExts
+>  --import IOExts
+>  import System.IO.Unsafe
 
 >  btLookup :: BinSearchTree (a -> Ordering) (Maybe b) -> a -> Maybe b
 >  tab2tree :: Ord a => [(SymbolR a,b)] -> BinSearchTree (a -> Ordering) b

@@ -10,17 +10,17 @@
 >  pNoDebug = not pDebug
 
 
-sqlCodeComputeRule: 4th argument is (as of sept 25th 07) empty. It used to be:
-           substitutions = [ if inline m
-                             then (m,phpMorSrc context m,phpMorTrg context m)
-                             else (m,phpMorTrg context m,phpMorSrc context m)
-                           | m<-mors e, declaration m==r]
-Het substitueren van een hele relatie met de ingetikte atomen vanuit de interface mag alleen maar onder condities, die we nog niet begrijpen. Vandaar.
-Zonder substituties rekent sqlCodeComputeRule dus met de hele relatie, en is daardoor minder efficient (maar wel correct).
-Een substitutie (m,s,t) betekent dat de relatie m wordt vervangen door twee atomen uit de interface, aangeduid met s en t.
-Let op: als m geflipt is, dan moeten de twee ingetikte atomen op de juiste plaats komen, en dus worden verwisseld.
-
-Als Tm [m'] = frExpr dan hoeft alleen het veld uit de interface (opgeslagen in de PHP variabele attrs) te worden overgenomen
+>--sqlCodeComputeRule: 4th argument is (as of sept 25th 07) empty. It used to be:
+>--           substitutions = [ if inline m
+>--                             then (m,phpMorSrc context m,phpMorTrg context m)
+>--                             else (m,phpMorTrg context m,phpMorSrc context m)
+>--                           | m<-mors e, declaration m==r]
+>--Het substitueren van een hele relatie met de ingetikte atomen vanuit de interface mag alleen maar onder condities, die we nog niet begrijpen. Vandaar.
+>--Zonder substituties rekent sqlCodeComputeRule dus met de hele relatie, en is daardoor minder efficient (maar wel correct).
+>--Een substitutie (m,s,t) betekent dat de relatie m wordt vervangen door twee atomen uit de interface, aangeduid met s en t.
+>--Let op: als m geflipt is, dan moeten de twee ingetikte atomen op de juiste plaats komen, en dus worden verwisseld.
+>--
+>--Als Tm [m'] = frExpr dan hoeft alleen het veld uit de interface (opgeslagen in de PHP variabele attrs) te worden overgenomen
 
 >-- Pre: oneMorphism toExpr
 >  sqlCodeComputeRule :: String -> Int -> Context -> [(Morphism,String,String)] -> ComputeRule -> String

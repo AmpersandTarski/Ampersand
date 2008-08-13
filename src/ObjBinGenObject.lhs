@@ -10,7 +10,7 @@
 >  import Atlas     -- (for converting error messages to HTML)
 >  import RelBinGenBasics
 
-The service "getobject" communicates metadata to the interface.
+>-- The service "getobject" communicates metadata to the interface.
 
 >  generateService_getobject :: Context -> ObjectDef -> String
 >  generateService_getobject context object

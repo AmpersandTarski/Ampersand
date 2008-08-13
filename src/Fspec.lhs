@@ -32,13 +32,13 @@ A specification contains one Fobj-specification for every object it defines and 
 >      (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
 >      (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
 >      (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
->      where ind = indent++"     "
+>--      where ind = indent++"     "
 
-The story:
-A number of datasets for this context is identified.
-Every pattern is considered to be a theme and every object is treated as a separate object specification.
-Every dataset is discussed in precisely one theme
-Every theme will be explained in a chapter of its own.
+>-- The story:
+>-- A number of datasets for this context is identified.
+>-- Every pattern is considered to be a theme and every object is treated as a separate object specification.
+>-- Every dataset is discussed in precisely one theme
+>-- Every theme will be explained in a chapter of its own.
 
 >  makeFspec :: Context -> Fspec
 >  makeFspec context
