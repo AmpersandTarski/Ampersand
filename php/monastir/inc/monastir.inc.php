@@ -417,7 +417,7 @@ class monastir Extends anyView {
 				if($obj===false) { // not false after edit!
 					$f=$object->name;
 					$obj=new $f(); // return an empty object
-				}else $obj=$read($_POST['id']); // from DB
+				}
 				$object_id=@$_POST['id'];
 			} else if(@$_POST['action']=='create'){
 				$action='create';
