@@ -1970,6 +1970,7 @@ properties is achieved as a result.
 >    = [Ru 'E' (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
 >   declaredRules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
 >   declaredRules   r                        = []
+>   rules r                                  = []
 >   signals r@(Sg _ _ _ _ _ _ _)             = [r]
 >   signals r                                = []
 >   specs   r@(Gc _ _ _ _ _ _ _)             = [r]
@@ -1985,6 +1986,7 @@ properties is achieved as a result.
 
 >  instance Language Pattern where
 >   declaredRules (Pat nm rs parChds pms cs ks) = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
+>   rules r                                     = []
 >   signals (Pat nm rs parChds pms cs ks)       = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
 >   specs (Pat nm rs parChds pms cs ks)         = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
 >   patterns p                                  = [p]
@@ -1995,7 +1997,7 @@ properties is achieved as a result.
 >  instance Language Context where
 >   declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (wrld context)
 >   multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules     (wrld context)
->   rules         (Ctx nm on i world pats rs ds cs ks os pops) = rs
+>   rules         (Ctx nm on i world pats rs ds cs ks os pops) = [r| r<-rs, not (isSignal r)]
 >   signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals       (wrld context)
 >   specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs         (wrld context)
 >   patterns      (Ctx nm on i world pats rs ds cs ks os pops) = pats
