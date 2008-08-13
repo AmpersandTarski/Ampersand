@@ -52,8 +52,8 @@
 >     where
 >      (entities, relations, ruls) = erAnalysis context
 >      hcs = [hc| rule<-declaredRules context++multRules context, hc<-triggers rule ]
->      context = head ([ c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs = [ c| c<-contexts, name c==contextname]
 >      sh x = showHS "" x
 >      codeFragments :: [ECArule]
 >      codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]

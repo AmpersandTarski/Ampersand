@@ -6,8 +6,7 @@
 >  import Auxiliaries (rd, chain, eqCl, enc)
 >  import Typology (Inheritance(Isa))
 >  import CC_aux  
->             ( Context(Ctx)
->             , Concept, Object(concept, attributes, ctx)
+>             ( Context, Concept, Object(concept, attributes, ctx)
 >             , showADL, Morphical
 >             , Language( rules, declaredRules )
 >             , isProperty, target, concs, source
@@ -30,8 +29,8 @@
 >      layout  = "neato" -- nongravitational layout
 >           -- = "dot"   -- vertical layout (default)
 >      rs      = declaredRules context
->      context = head ([c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      shR r   = showADL r
 >      fnm     = fnContext context++"_CD"
 

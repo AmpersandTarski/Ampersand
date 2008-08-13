@@ -6,7 +6,7 @@
 >  import CommonClasses ( Identified(name), empty )
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (isa, Lang(English,Dutch), Context(Ctx), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
+>  import CC_aux (isa, Lang(English,Dutch), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
@@ -113,8 +113,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n")
 >                  where
->                     context  = head ([c| c<-contexts, name c==contextname]++
->                                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>                     context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>                     ctxs    = [c| c<-contexts, name c==contextname]
 >                     (ents,rels,ruls) = erAnalysis context
 >                     spec = funcSpec context (ents,rels,ruls) (lang switches)
 >            lang switches
@@ -125,16 +125,16 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >  diagnose contexts contextname
 >   = putStr (showHS "\n>  " context)
 >     where
->      context  = (head ([c| c<-contexts, name c==contextname]++
->                        [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []]))
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 
 >  projectSpecText contexts contextname language
 >   = putStrLn ("\nGenerating project plan for "++name context)                >>
 >     writeFile (name context++".csv") (projectClassic context spec language)  >>
 >     putStr ("\nMicrosoft Project file "++name context++".csv written... ")
 >     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      spec = funcSpec context (erAnalysis context) language
 >      (entities, relations, ruls) = erAnalysis context
 
@@ -151,8 +151,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >      fspec = makeFspec context
 >      ctxNm = showHSname context
 >      spcNm = showHSname fspec
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 
 
 functionalSpecText generates a functional specification in ASCII
@@ -161,8 +161,8 @@ functionalSpecText generates a functional specification in ASCII
    = putStrLn ("\nGenerating functional specification for "++name context) >>
      putStr (funcSpecText context spec language)
      where
-      context  = head ([c| c<-contexts, name c==contextname]++
-                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+      ctxs    = [c| c<-contexts, name c==contextname]
       spec = funcSpec context (entities, relations, ruls) language
       (entities, relations, ruls) = erAnalysis context
 
@@ -178,8 +178,8 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
 >     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
 >     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
@@ -192,8 +192,8 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
 >     processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
 >     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
@@ -204,8 +204,8 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     putStr ("\nLaTeX file "++"gloss"++name context++".tex written... ") >>
 >     processLaTeX2PDF ("gloss"++name context)
 >     where
->      context  = head ([c| c<-contexts, name c==contextname]++
->                       [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 
 >  graphics context fnm graphicstyle full b
 >   = writeFile (fnm++"_CD.dot") (cdDataModel context full "dot" b)  >>

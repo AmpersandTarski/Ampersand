@@ -35,7 +35,7 @@ import CC_aux
           , isMph, mIs
           , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs, Population(Popu), Populations
           , nr, pos, multiplicities, declaration, renumberRules
-          , inline
+          , inline, extends
          )
 
 diagl = 27
@@ -82,7 +82,7 @@ mkCtxAG ctxs ctxName
 -- multiple ctTrees may occur if contexts are used multiply in different ctTrees.
     trees = makeClassificationsF (name.fst) tuples++[Cl s []| s<-singles]
             where tuples = [ ((spc,(mG,mD)),(gen,(mG',mD')))
-                           | (spc@(Ctx nm on isa world dc ds cs ks os pops),(mG,mD))<-ctxs, o<-on
+                           | (spc,(mG,mD))<-ctxs, o<-extends spc
                            , (gen,(mG',mD'))<-ctxs,name gen==o]
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
@@ -429,6 +429,7 @@ sem_Concepts_Nil (_lhs_gE) =
 -}
 {-
    local variables for Context.Ctx:
+      ctx
       cD
       genE
       inh
@@ -445,20 +446,21 @@ type T_Context = (Classification (Context,(Gens,Declarations))) ->
 -- cata
 sem_Context :: (Context) ->
                (T_Context)
-sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ds) (_cs) (_ks) (_os) (_pops))) =
-    (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_dc))) ((sem_Declarations (_ds))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))) ((sem_Populations (_pops))))
+sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) (_pops))) =
+    (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_dc))) ((sem_Rules (_rs))) ((sem_Declarations (_ds))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))) ((sem_Populations (_pops))))
 sem_Context_Ctx :: (String) ->
                    ([String]) ->
                    (Inheritance Concept) ->
                    ([Classification Context]) ->
                    (T_Patterns) ->
+                   (T_Rules) ->
                    (T_Declarations) ->
                    (T_ConceptDefs) ->
                    (T_KeyDefs) ->
                    (T_ObjDefs) ->
                    (T_Populations) ->
                    (T_Context)
-sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ds) (_cs) (_ks) (_os) (_pops) (_lhs_ctxTree) (_lhs_ctxs) =
+sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) (_pops) (_lhs_ctxTree) (_lhs_ctxs) =
     let (_mD) =
             (                       renumber.mergecontents.concat) [mD| (context,(mG,mD)) <- preCl _lhs_ctxTree]
         (_mC) =
@@ -477,8 +479,23 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ds) (_cs) (_ks) (_os) (_pops
                       cmp a b        = if a==b then True else genEq (typology _inh) a b
         (_cD) =
             makeConceptSpace _genE _dc_morphisms
+        (_ctx) =
+            put_gE _genE _cD
+            ( Ctx _nm
+                  _on
+                  _inh
+                  [cl|Cl r cls<-[mapCl fst _lhs_ctxTree], cl<-cls]
+                  _dc_patterns
+                  (_dc_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
+                  (declarations _dc_patterns)
+                  (sort' name (rd (_cs_conDefs ++ _dc_conDefs)))
+                  _keys
+                  _os_objDefs
+                  _pops_popus)
         ( _dc_conDefs,_dc_keyDefs,_dc_mGen,_dc_morphisms,_dc_patterns,_dc_rawDecls,_dc_rnr,_dc_rules,_dc_sErr,_dc_usedDecls) =
             (_dc (_genE) (1) (_mD))
+        ( _rs_declarations,_rs_mGen,_rs_morphisms,_rs_rnr,_rs_rules,_rs_sErr,_rs_usedDecls) =
+            (_rs (_genE) ("") (_dc_rnr) (_mD))
         ( _ds_declarations,_ds_rawDecls,_ds_rnr,_ds_rules,_ds_sErr) =
             (_ds (_genE) (_os_rnr) (_mD))
         ( _cs_conDefs) =
@@ -489,19 +506,20 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_ds) (_cs) (_ks) (_os) (_pops
             (_os (_genE) ([Anything]) (_dc_rnr) (_mD))
         ( _pops_popus,_pops_sErr) =
             (_pops (_genE) (_mD))
-    in  (put_gE _genE _cD
-         ( Ctx _nm
-               _on
-               _inh
-               [cl|Cl r cls<-[mapCl fst _lhs_ctxTree], cl<-cls]
-               _dc_patterns
-               (declarations _dc_patterns)
-               (sort' name (rd (_cs_conDefs ++ _dc_conDefs)))
-               _keys
-               _os_objDefs
-               _pops_popus)
+    in  (_ctx
         ,_ks_rnr-1
-        ,[( put_gE _genE _cD (Ctx _nm _on _inh [] _dc_patterns _mC _cs_conDefs _keys _os_objDefs _pops_popus)
+        ,[( put_gE _genE _cD
+            (Ctx _nm
+                 _on
+                 _inh
+                 []
+                 _dc_patterns
+                 (_dc_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
+                 _mC
+                 _cs_conDefs
+                 _keys
+                 _os_objDefs
+                 _pops_popus)
          , (_dc_mGen, _mC))]
         ,_dc_rules ++ _os_rules ++ _ds_rules ++ _ks_rules
         ,_dc_sErr ++ _ks_sErr ++ _os_sErr ++ _pops_sErr

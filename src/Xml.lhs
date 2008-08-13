@@ -5,9 +5,9 @@
 >  import Auxiliaries
 >         ( rd, chain, sort') 
 >  import CC_aux 
->           (  Context(Ctx), Concept(C), Pattern(Pat), Rule(Ru,Sg,Gc)
+>           (  Context, Concept(C), Pattern(Pat), Rule(Ru,Sg,Gc)
 >            , isa, concs
->            , declaredRules, rules, source, target, multiplicities, Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut), flp
+>            , rules, declaredRules, source, target, multiplicities, Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut), flp
 >            , showADL, explain
 >            , ConceptDef(Cd)
 >            , posNone
@@ -24,10 +24,10 @@
 >   = putStr ("\nXML representation of "++name context++"\n")>>
 >     writeFile (contextname++".xml") (showXML context "")>>
 >     putStr ("\n"++contextname++".xml written\n")
->     where
->      rs      = declaredRules context
->      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>   where
+>      rs      = rules (head ctxs)
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 
 Basic XML markup
 
@@ -43,7 +43,7 @@ Basic XML markup
 >   showXML xs indent = chain "\n" [showXML x indent| x<-xs]
 
 >  instance XML Context where
->   showXML ctx indent -- (Ctx nm on isa world dc ss cs ks os pops)
+>   showXML ctx indent -- (Ctx nm on isa world pats rs ds cs ks os pops)
 >    = tagLn indent "CONTEXT" ["NAME="++show (name ctx)] (\indent->chain "\n" (inhoud indent))
 >    where inhoud indent
 >           = [showXML cd  indent| cd<-conceptDefs ctx, name cd `elem` (map name.concs) ctx]++

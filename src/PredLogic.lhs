@@ -154,14 +154,14 @@ The following function prints a PredLogic in OO notation.
 >  normRule r@(Ru 'A' _ pos cons cpu expla sgn nr pn)
 >   = Ru 'A' (error ("(Module PredLogic:) illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn nr pn
 >  normRule (Ru 'I' a@(F ants) pos c@(F cons) cpu expla sgn nr pn)
->   | idsOnly ants = Ru 'I' (F [Tm (I [] idA idA True)]) pos (F cons) cpu expla (idC,idC) nr pn
+>   | idsOnly ants = Ru 'I' (F [Tm (mIs idA)]) pos (F cons) cpu expla (idC,idC) nr pn
 >   | otherwise    = Ru 'I' (F as) pos (F cs) cpu expla (sac,tac) nr pn
 >   where
 >    idC = source c `lub` target c `lub` idA
 >    idA = foldr lub (target (last ants)) (map source ants)
 >    (as,cs) = move ants cons
 >    (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
->    move [] cs = ([Tm (I [] (source (head cs)) (source (head cs)) True)],cs)
+>    move [] cs = ([(Tm . mIs . source . head) cs],cs)
 >    move as cs
 >     | sur (multiplicities h) && inj (multiplicities h) = move (tail as) ([flp h]++cs)
 >     | fun (multiplicities l) && tot (multiplicities l) = move (init as) (cs++[flp l])

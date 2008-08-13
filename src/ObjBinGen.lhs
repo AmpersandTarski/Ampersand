@@ -31,8 +31,8 @@
 >        ]
 >     >> putStr ("\n\n")
 >     where
->      context = head ([{-recalc-} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      ls   = localsettings context dbName
 >      ctdb = connectToDataBase context dbName
 >      wrapper o = objectWrapper (name o)

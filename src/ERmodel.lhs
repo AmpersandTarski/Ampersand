@@ -4,7 +4,7 @@
 >                       , Collection(empty, (>-))) 
 >  import Auxiliaries (chain, sort',rd, eqCl)
 >  import CC_aux 
->            ( Context(Ctx), src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
+>            ( Context, src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
 >            , Language( rules, declaredRules, objectdefs )
 >            , Declaration, concs, source, target, isFunction, isFlpFunction, posNone
 >            , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
@@ -53,8 +53,8 @@
 >     putStr ("\nwritten\n")
 >     where
 >      rs      = declaredRules context
->      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      (entities,relations,ruls) = erAnalysis context
 >      fnObject c = "list"++name c++".csv"
 >      shEnts = chain "\n" . map (chain ";")
@@ -83,8 +83,8 @@
 >--     putStr (fnContext context++"_ERD.dot written\n")
 >     where
 >      rs      = declaredRules context
->      context = head ([{- recalc -} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      shR r   = showADL r
 
 In the type definition, an entity is represented by a concept (for instance Person)

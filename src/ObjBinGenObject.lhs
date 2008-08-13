@@ -62,7 +62,7 @@ The service "getEach<concept>" returns the set of all instances of <concept> tha
 >                                            25
 >                                            (sqlAttConcept context (concept object))
 >                                            (sqlAttConcept context (concept object))
->                                            (Tm (I [] (concept object) (concept object) True))
+>                                            (Tm (mIs (concept object)))
 >                                )++"');\n  }"
 
 The service "create<concept>" creates a new instance of <concept> in the CSL.
@@ -280,7 +280,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >                  25
 >                  (sqlAttConcept context (concept object))
 >                  (sqlAttConcept context (concept object))
->                  (Fi [ Tm (I [] (concept object) (concept object) True)
+>                  (Fi [ Tm (mIs (concept object))
 >                      , Tm (Mp1 ("\\''.addslashes("++id++").'\\'") (concept object))
 >                      ]
 >                  )
@@ -349,7 +349,7 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >                                          30
 >                                          (sqlAttConcept context (concept a))
 >                                          (sqlAttConcept context (concept a))
->                                          (Tm (I [] (concept a) (concept a) True))++"');"
+>                                          (Tm (mIs (concept a)))++"');"
 >           ,"  $res = array();"
 >           ,"  foreach($v as $i=>$j){"
 >           ,"    $res[]=$j['"++addslashes (sqlAttConcept context (concept a))++"'];"

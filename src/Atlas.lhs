@@ -12,7 +12,7 @@
 >            ,Typology(Typ), Typologic(typology)
 >            ,makeTrees)
 >  import CC_aux 
->           (  Context(Ctx), Concept(C), Pattern(Pat)
+>           (  Context, Concept(C), Pattern(Pat)
 >            , Morphism
 >            , isa, showHS, concs, declarations
 >            , declaredRules, rules, nr, source, target
@@ -52,28 +52,29 @@
 >  testing = False
 
 >  anal contexts contextname predLogic graphicstyle
->   = putStr ("\nGenerating Atlas for "++name context++" in the current directory."++
->             "\n  (current directory must already contain the directory \"treemenutils\""++
->             " with its complete contents)\n")                                               >>
-> -- writing the large rhs frame (concept) with empty contents
->     writeFile "Concept.html" (htmlPage "Concept" leader (htmlBody introtext))               >>
->     putStr ("Concept.html written,\n")                                                      >>
-> -- writing context switching (top left)
->     writeFile ("CTX_"++fnContext context++".html") (contextFrame (Cl context world))        >>
->     putStr("HTML code for context tree "++fnContext context++".html written\n")             >>
-> -- writing the main html page, containing the required frames
->     writeFile "index.html" (indexcode (fnContext context++".html"))                         >>
->     putStr ("index.html written,\n")                                                        >>
-> -- writing the content for all contexts in ctxTree
->     (if testing then (writeFile "test.txt".showHS "".preCl) (Cl context world) else
->      putStr "")                                                                             >>
->     putStr "\nStarting generation of navigators\n"                                          >>
->     sequence_ [navigators cTrees c predLogic graphicstyle| c<-preCl (Cl context world)]     >>
->     putStr "\nStarting generation of analysis\n"                                            >>
->     sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
+>   | null ctxs = putStr ("!Mistake: "++contextname++" not encountered in input file.\n")
+>   | otherwise =  putStr ("\nGenerating Atlas for "++name context++" in the current directory."++
+>                          "\n  (current directory must already contain the directory \"treemenutils\""++
+>                          " with its complete contents)\n")                                               >>
+> --              writing the large rhs frame (concept) with empty contents
+>                  writeFile "Concept.html" (htmlPage "Concept" leader (htmlBody introtext))               >>
+>                  putStr ("Concept.html written,\n")                                                      >>
+> --              writing context switching (top left)
+>                  writeFile ("CTX_"++fnContext context++".html") (contextFrame (Cl context world))        >>
+>                  putStr("HTML code for context tree "++fnContext context++".html written\n")             >>
+> --              writing the main html page, containing the required frames
+>                  writeFile "index.html" (indexcode (fnContext context++".html"))                         >>
+>                  putStr ("index.html written,\n")                                                        >>
+> --              writing the content for all contexts in ctxTree
+>                  (if testing then (writeFile "test.txt".showHS "".preCl) (Cl context world) else
+>                   putStr "")                                                                             >>
+>                  putStr "\nStarting generation of navigators\n"                                          >>
+>                  sequence_ [navigators cTrees c predLogic graphicstyle| c<-preCl (Cl context world)]     >>
+>                  putStr "\nStarting generation of analysis\n"                                            >>
+>                  sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
 >     where
->      context  = (head ([c| c<-contexts, name c==contextname]++
->                         [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []]))
+>      ctxs     = [{- recalc -} c| c<-contexts, name c==contextname]
+>      context  = head ctxs
 >      cTrees   = makeTrees (Typ (map reverse pths))
 >      Typ pths = typology (isa context)
 >      gE    = genE context
@@ -682,7 +683,7 @@ Obsolete?
                "<BR />specs context = "++show (specs context)
           else ""
 
-test:  recalc context@(Ctx nm on isa world dc ms cs ks os pops) = Ctx (error (testC++"\n\n"++testD)) on isa world dc ms cs ks os pops
+test:  recalc context@(Ctx nm on isa world pats rs ds cs ks os pops) = Ctx (error (testC++"\n\n"++testD)) on isa world pats rs ds cs ks os pops
 
 
   hsign (Sg a b) ps

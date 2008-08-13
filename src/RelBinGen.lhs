@@ -37,8 +37,8 @@
 >     qStat "DROP" >>
 >     qStat "START TRANSACTION"
 >     where
->      context = head ([{-recalc-} c| c<-contexts, name c==contextname]++
->                      [Ctx (contextname++" is not defined") [] empty [] [] [] [] [] [] []])
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 >      csl = serviceLayer context noTransactions beeper dbName
 >      esl = entitiesLayer context filename noTransactions beeper
 >      qStat str = putStr ("  nr. of "++str++" queries: "++ [' '|i<-[length str..17]]++show (count str (csl++esl))++"\n")

@@ -60,7 +60,7 @@ This will be achieved by generating signal rules only.
 >  pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
 >                                 ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
 >                                 pList (pContextElement beep) <* pKey "ENDCONTEXT"
->                      where rebuild nm on ces = Ctx nm on empty [] pats ds cs ks os pops
+>                      where rebuild nm on ces = Ctx nm on empty [] pats [] ds cs ks os pops
 >                             where
 >                              ps   = [p| CPat p<-ces]
 >                              ds   = [d| CDcl d<-ces]

@@ -205,17 +205,18 @@ I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 >                       (Inheritance Concept)     -- a data structure containing the generalization structure of concepts
 >                       [Classification Context]  -- a tree, being the transitive closure of the 'extends' (see formal definition) relation.
 >                       Patterns                  -- a list of patterns defined in this context
+>                       Rules                     -- a list of all rules that are valid within this context
 >                       Declarations              -- a list of declarations defined in this context, outside the scope of patterns
 >                       ConceptDefs               -- a list of concept definitions defined in this context, outside the scope of patterns
 >                       KeyDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
 >                       ObjDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
 >                       [Population]              -- a list of populations defined in this context
->               --    deriving Show -- just for testing. pattern:  Ctx nm on i world dc ss cs ks os pops
+>               --    deriving Show -- just for testing. pattern:  Ctx nm on i world pats rs ds cs ks os pops
 >--  instance Eq Context where
->--   Ctx nm _ _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ _ = nm == nm'
+>--   Ctx nm _ _ _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ _ _ = nm == nm'
 
 >  wrld :: Context -> [Classification Context]
->  wrld (Ctx nm on i world dc ss cs ks os pops) = world
+>  wrld (Ctx nm on i world pats rs ds cs ks os pops) = world
 
 >  type Contexts  = [Context]
 >  type Paire     = [String]
@@ -342,6 +343,9 @@ There are 4 types of rule:
     | nr==0 || nr'==0 = sgn==sgn' && m==m' && expr==expr'
     | otherwise       = nr==nr' && pn==pn
    _ == _ = False
+
+>  instance Identified Rule where
+>   name r = "Rule"++show (nr r)
 
 >  ruleType    (Ru c _ _ _ _ _ _ _ _) = c
 >  ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
@@ -690,15 +694,15 @@ Transform a rule to an expression:
 >   closExprs    (Pat nm rs gen pms cs ks) = closExprs rs
 
 >  instance Morphical Context where
->   concs        (Ctx nm on isa world pats ds cs ks os pops) = concs ds `uni` concs pats
->   conceptDefs  (Ctx nm on isa world pats ds cs ks os pops) = cs
->   mors         (Ctx nm on isa world pats ds cs ks os pops) = mors pats `uni` mors os
->   morlist      (Ctx nm on isa world pats ds cs ks os pops) = morlist pats++morlist os
->   declarations (Ctx nm on isa world pats ds cs ks os pops) = rd (ds++[d| pat<-pats, d<-declarations pat])
->   genE         (Ctx nm on isa world pats ds cs ks os pops) = genEq (typology isa)
->   closExprs    (Ctx nm on isa world pats ds cs ks os pops) = closExprs pats `uni` closExprs os
->   objDefs      (Ctx nm on isa world pats ds cs ks os pops) = os
->   keyDefs      (Ctx nm on isa world pats ds cs ks os pops) = ks
+>   concs        (Ctx nm on isa world pats rs ds cs ks os pops) = concs ds `uni` concs pats
+>   conceptDefs  (Ctx nm on isa world pats rs ds cs ks os pops) = cs
+>   mors         (Ctx nm on isa world pats rs ds cs ks os pops) = mors pats `uni` mors os
+>   morlist      (Ctx nm on isa world pats rs ds cs ks os pops) = morlist pats++morlist os
+>   declarations (Ctx nm on isa world pats rs ds cs ks os pops) = rd (ds++[d| pat<-pats, d<-declarations pat])
+>   genE         (Ctx nm on isa world pats rs ds cs ks os pops) = genEq (typology isa)
+>   closExprs    (Ctx nm on isa world pats rs ds cs ks os pops) = closExprs pats `uni` closExprs os
+>   objDefs      (Ctx nm on isa world pats rs ds cs ks os pops) = os
+>   keyDefs      (Ctx nm on isa world pats rs ds cs ks os pops) = ks
 
 >  instance Morphical KeyDef where
 >   concs        (Kd pos lbl ctx ats) = concs ctx `uni` concs ats
@@ -782,15 +786,16 @@ Transform a rule to an expression:
 >   showsPrec p Aut = showString "AUT"
 
 >{-  instance Show Context where
->   showsPrec p (Ctx nm on isa world dc ss cs ks os pops)
+>   showsPrec p context  -- (Ctx nm on isa world pats rs ds cs ks os pops)
 >    = showString ("CONTEXT "++nm++
->                  (if on==[] then "" else " EXTENDS "++chain ", " on)++"\n"++
->                  chain "\n\n" (map show dc)++"\n"++
->                  chain "\n" (map show ss)++++"\n"++
->                  chain "\n" (map show cs)++++"\n"++
->                  chain "\n" (map show ks)++++"\n"++
->                  chain "\n" (map show os)++++"\n"++
->                  chain "\n" (map show pops)++"\nENDCONTEXT" ) -}
+>                  (if null (extends context) then "" else " EXTENDS "++chain ", " (extends context))++"\n"++
+>                  chain "\n\n" (map show (patterns context))++"\n"++
+>                  chain "\n" (map show (rules context))++"\n"++
+>                  chain "\n" (map show (declarations context))++"\n"++
+>                  chain "\n" (map show (conceptDefs context))++"\n"++
+>                  chain "\n" (map show (keyDefs context))++"\n"++
+>                  chain "\n" (map show (objectDefs context))++"\n"++
+>                  chain "\n" (map show (populations context))++"\nENDCONTEXT" ) -}
 
 The function showHS prints structures as haskell source, which is intended for testing.
 
@@ -842,10 +847,11 @@ The function showHS prints structures as haskell source, which is intended for t
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
 >   showHSname context = "ctx_"++haskellIdentifier (name context)
 >   showHS indent context
->    = "Ctx "++show (name context)++"   -- (Ctx nm on isa world dc ds cs ks os pops)"++
+>    = "Ctx "++show (name context)++"   -- (Ctx nm on isa world pats rs ds cs ks os pops)"++
 >      indent++"       "++(if null on   then "[]" else showL [show x|x<-on])++
 >      (if null on   then " " else indent++"       ")++"isa [ {- world is left empty -} ]"++
 >      (if null pats then " []" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
+>      (if null rs   then " []" else indent++"       "++showL [showHSname r       | r<-rs  ])++
 >      (if null ds   then " []" else indent++"       "++showL [showHSname d       | d<-ds  ])++
 >      (if null cs   then " []" else indent++"       "++showL [showHSname c       | c<-cs  ])++
 >      (if null ks   then " []" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
@@ -856,12 +862,14 @@ The function showHS prints structures as haskell source, which is intended for t
 >      indent++" gE  = genEq (typology isa)"++
 >      (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
 >      (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
+>      (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
 >      (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
 >      (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
 >      (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
 >      (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
 >   -- patterns will be shown in  (showHS indent Fspec)
 >      where pats = patterns context
+>            rs   = rules context
 >            ds   = declarations context>-declarations (patterns context)
 >            cs   = conceptDefs context>-conceptDefs (patterns context)
 >            ks   = keyDefs context
@@ -1033,9 +1041,13 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS ObjectDef where
 >   showHSname o = "oDef_"++haskellIdentifier (name o)
->   showHS indent (Obj nm pos ctx [])  = "Obj "++show nm++" ("++showHS "" pos++")"++indent++"    ("++showHS (indent++"     ") ctx++indent++"    ) []"
->   showHS indent (Obj nm pos ctx ats) = "Obj "++show nm++" ("++showHS "" pos++")"++indent++"    ("++showHS (indent++"     ") ctx++indent++"    )"
->                                        ++indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) ats)++indent++"    ]"
+>   showHS indent (Obj nm pos ctx ats) 
+>    = "Obj "++show nm++" ("++showHS "" pos++")"++ctxStr++
+>      (if null ats
+>       then " []"
+>       else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) ats)++indent++"    ]")
+>    where ctxStr | length (morlist ctx) >1 = indent++"    ("++showHS (indent++"     ") ctx++indent++"    )"
+>                 | otherwise               = indent++"    ("++showHS "" ctx++")"
 
 >  instance ShowADL ObjectDef where
 >   showADL (Obj nm pos ctx ats) = "OBJECT "++nm++" : "++(showADL ctx)++" = ["++chain ", " (map show ats)++"]"
@@ -1288,10 +1300,10 @@ So if p is a Person with name Peter, and the attribute name has context expressi
 
 >  instance Object Context where
 >   concept _    = Anything
->   attributes (Ctx nm on isa world dc ss cs ks os pops) = os
+>   attributes (Ctx nm on isa world pats rs ds cs ks os pops) = os
 >   ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
->   populations  (Ctx nm on isa world dc ss cs ks os pops) = pops
->   extends (Ctx nm on isa world dc ss cs ks os pops) = on
+>   populations  (Ctx nm on isa world pats rs ds cs ks os pops) = pops
+>   extends (Ctx nm on isa world pats rs ds cs ks os pops) = on
 
 >  instance Object ObjectDef where
 >   concept (Obj nm pos ctx ats) = target ctx
@@ -1348,12 +1360,12 @@ Om een of andere reden stond hier eerder:
 >   specialize t (G pos g s) = G pos (specialize t g) (specialize t s)
 
 >  instance Pop Context where
->   put_gE gE cs (Ctx nm on isa world dc ss cs' ks os pops)
->    = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) dc) (map (put_gE gE cs) ss) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os) pops
->   update ss    (Ctx nm on isa world dc ss' cs ks os pops)
->    = Ctx nm on isa world (map (update ss) dc) (map (update ss) ss') cs (map (update ss) ks) (map (update ss) os) pops
->   specialize t (Ctx nm on isa world dc ss  cs ks os pops)
->    = Ctx nm on isa world (map (specialize t) dc) (map (specialize t) ss) cs (map (specialize t) ks) (map (specialize t) os) pops
+>   put_gE gE cs (Ctx nm on isa world pats rs dw cs' ks os pops)
+>    = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) pats) (map (put_gE gE cs) rs) (map (put_gE gE cs) dw) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os) pops
+>   update ss    (Ctx nm on isa world pats rs ds cs  ks os pops)
+>    = Ctx nm on isa world (map (update ss) pats) (map (update ss) rs) (map (update ss) ds) cs (map (update ss) ks) (map (update ss) os) pops
+>   specialize t (Ctx nm on isa world pats rs ds cs  ks os pops)
+>    = Ctx nm on isa world (map (specialize t) pats) (map (specialize t) rs) (map (specialize t) ds) cs (map (specialize t) ks) (map (specialize t) os) pops
 
 >  instance Pop Pattern where
 >   put_gE gE cs (Pat nm rs gen pms cs' ks) = Pat nm (map (put_gE gE cs) rs) (map (put_gE gE cs) gen) (map (put_gE gE cs) pms) cs' (map (put_gE gE cs) ks)
@@ -1903,7 +1915,7 @@ TODO: transform the following into  instance Collection Declaration where
 >  applyM (Vs _ _)                             d c = show True
 
 >  instance Identified Context where
->   name (Ctx nm _ _ _ _ _ _ _ _ _) = nm
+>   name (Ctx nm _ _ _ _ _ _ _ _ _ _) = nm
 
 >  instance Identified Pattern where
 >   name (Pat nm _ _ _ _ _) = nm
@@ -1983,11 +1995,12 @@ properties is achieved as a result.
 >  instance Language Context where
 >   declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (wrld context)
 >   multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules     (wrld context)
+>   rules         (Ctx nm on i world pats rs ds cs ks os pops) = rs
 >   signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals       (wrld context)
 >   specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs         (wrld context)
->   patterns      (Ctx nm on i world dc ss cs ks os pops) = dc
->   objectdefs    (Ctx nm on i world dc ss cs ks os pops) = os
->   isa           (Ctx nm on i world dc ss cs ks os pops) = i
+>   patterns      (Ctx nm on i world pats rs ds cs ks os pops) = pats
+>   objectdefs    (Ctx nm on i world pats rs ds cs ks os pops) = os
+>   isa           (Ctx nm on i world pats rs ds cs ks os pops) = i
 
 >  instance Language Declaration where
 >   multRules d

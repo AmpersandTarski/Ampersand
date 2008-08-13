@@ -17,18 +17,20 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 A specification is made for one context.
 A specification contains one Fobj-specification for every object it defines and one Ftheme-specification for every pattern it contains.
 
->  data Fspec = Fctx Context [Ftheme] [Dataset] [Fobj]
+>  data Fspec = Fctx Context [Ftheme] [Dataset] [Fobj] [Frule]
 
 >  instance ShowHS Fspec where
->   showHSname (Fctx context themes datasets objects) = "f_Ctx_"++haskellIdentifier (name context)
->   showHS indent fctx@(Fctx context themes datasets objects)
->    = "Fctx "++showHSname context++"   -- context   (Fspec has this structure:  Fctx context themes datasets objects)"++
->      (if null themes   then " []" else ind++"{- themes   -}  "++showL [showHSname t|t<-themes  ])++
->      (if null datasets then " []" else ind++"{- datasets -}  "++showL [showHSname d|d<-datasets])++
->      (if null objects  then " []" else ind++"{- objects  -}  "++showL [showHSname o|o<-objects ])++
+>   showHSname (Fctx context themes datasets objects vrules) = "f_Ctx_"++haskellIdentifier (name context)
+>   showHS indent fctx@(Fctx context themes datasets objects vrules)
+>    = "Fctx "++showHSname context++"   -- context   (Fspec has this structure:  Fctx context themes datasets objects vrules)"++
+>      (if null themes   then " []" else indent++"{- themes   -}  "++showL [showHSname t|t<-themes  ])++
+>      (if null datasets then " []" else indent++"{- datasets -}  "++showL [showHSname d|d<-datasets])++
+>      (if null objects  then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-objects ])++
+>      (if null vrules   then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-vrules  ])++
 >      indent++"where"++
 >      indent++" gE = genE "++showHSname context++
 >      (if null objects            then "" else concat [indent++" "++showHSname o++indent++"  = "++showHS (indent++"    ") o|o<-objects ]++"\n")++
+>      (if null vrules             then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-vrules  ]++"\n")++
 >      (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
 >      (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
 >      (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
@@ -47,7 +49,8 @@ A specification contains one Fobj-specification for every object it defines and 
 >           ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
 >           )
 >           datasets
->           [ makeFobj context o | o <-attributes context]
+>           [ makeFobj context o  | o <-attributes context]
+>           [ makeFrule context r | r <-rules context]
 >      where
 >       datasets = rd [datasetMor context m| m<-mors context]
 >-- next thing, we look which datasets will be discussed in which themes.
@@ -74,12 +77,13 @@ A specification contains one Fobj-specification for every object it defines and 
 >                pms = rd [d| ds<-remainingDS, d<-declarations ds]
 >                cs  = []
 >                ks  = []
->       context' = Ctx nm on i world pats ds cs ks os pops
+>       context' = Ctx nm on i world pats rs ds cs ks os pops
 >          where nm    = name context
 >                on    = extends context
 >                i     = isa context
 >                world = wrld context
 >                pats  = patterns context ++ if null remainingDS then [] else [others]
+>                rs    = rules context
 >                ds    = declarations context
 >                cs    = conceptDefs context
 >                ks    = []
@@ -88,12 +92,23 @@ A specification contains one Fobj-specification for every object it defines and 
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
-A dataset is a functional closure of relations with one concept c as root.
-The datasets of a context are those datasets whose relations are not a subset of any other dataset.
+>  data Frule = Frul Rule
 
->  data Dataset = DS Concept       -- the root of the dataset
->                    [Expression]  -- the paths from the root
->               | BR Morphism      -- for every m that is not (isFunction m || isFunction (flp m))
+>  instance ShowHS Frule where
+>   showHSname (Frul r)    = "f_rule_"++haskellIdentifier (name r)
+>   showHS indent (Frul r) = "Frul ("++showHS "" r++")"
+
+>  makeFrule :: Context -> Rule -> Frule
+>  makeFrule context r = Frul r
+
+Very often, concepts can be represented in rectangular relation (n-ary rather than binary).
+For this purpose we introduce datasets.
+Alternative DS represents a dataset as an identity (the concept) with an arbitrary number of attributes (morphisms, which are functions). 
+Alternative BR represents a dataset as a binary relation. This contains morphisms m which are not a function in either direction.
+
+>  data Dataset = DS Concept     -- the root of the dataset
+>                    [Morphism]  -- the functions from the root
+>               | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
 
 >  instance ShowHS Dataset where
 >   showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
@@ -106,10 +121,8 @@ The datasets of a context are those datasets whose relations are not a subset of
 >   BR m   == BR m'  = m==m'
 >   _      == _      = False
 
-De functie 'dataset' is een leuke. Voor veel concepten geldt dat het kan worden afgebeeld op een zgn. 'rechthoekige n-aire relatie'.
-Dat noemen we een dataset.
-Als een concept een specialisatie is van een generiek concept, dan wordt het in de generieke tabel afgebeeld.
-De functie dataset berekent in welke dataset een concept wordt geadministreerd.
+Any concept that is a specialisation of a generic concept will be represented in the table of the generic concept.
+De function dataset computes in which dataset a concept is represented.
 
 >  dataset :: Context -> Concept -> Dataset
 >  dataset context c
@@ -119,8 +132,8 @@ De functie dataset berekent in welke dataset een concept wordt geadministreerd.
 >      eCls = eqClass bi (concs context)
 >      c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
 >                              , source m<=c && target m<=c'  ||  source m<=c' && target m<=c])
->      dss = [(Tm .       makeMph) d| d<-declarations context, isFunction      d , source d `elem` cl]++
->            [(Tm . flp . makeMph) d| d<-declarations context, isFunction (flp d), target d `elem` cl]
+>      dss = [     makeMph d | d<-declarations context, isFunction      d , source d `elem` cl]++
+>            [flp (makeMph d)| d<-declarations context, isFunction (flp d), target d `elem` cl]
 
 Het verhaal:
 Alle concepten waar een bijectie tussen ligt kunnen in dezelfde dataset terecht komen.
@@ -131,6 +144,8 @@ Hiervoor kiezen we (minimum [g|g<-concs context,g<=head eCls]). Van deze keuze i
 Hiermee heeft elke dataset één vast concept waaraan het wordt herkend.
 
 Een eerdere poging ging nogal fout. De closure in het volgende algoritme zorgt voor vreselijk redundante datasets.
+Deze poging werkte pths (uit DS c pths) as lijst van expressies in plaats van een lijst van morfismen.
+
   dataset :: Context -> Concept -> Dataset
   dataset context c
    = head (ds++[DS (cGen c) []])
@@ -155,15 +170,15 @@ Als deze relatie een functie is,
 >   concs        (BR m     ) = concs m
 >   conceptDefs  (DS c pths) = []
 >   conceptDefs  (BR m     ) = []
->   mors         (DS c pths) = mors pths
+>   mors         (DS c pths) = pths
 >   mors         (BR m     ) = [m]
->   morlist      (DS c pths) = morlist pths
+>   morlist      (DS c pths) = pths
 >   morlist      (BR m     ) = [m]
 >   declarations (DS c pths) = declarations pths
 >   declarations (BR m     ) = declarations m
 >   genE         (DS c pths) = genE c
 >   genE         (BR m     ) = genE m
->   closExprs    (DS c pths) = closExprs pths
+>   closExprs    (DS c pths) = []
 >   closExprs    (BR m     ) = []
 
 >  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Rule]
@@ -193,7 +208,7 @@ Every unit specifies one dataset, and each dataset is discussed only once in the
 
 >  instance ShowHS Ftheme where
 >   showHSname (Tspc pat us) = "f_Thm_"++haskellIdentifier (name pat)
->   showHS indent (Tspc pat us) = "Tspc ("++showHSname pat++" gE) ["++chain ", " [showHS "" u| u<-us]++"]"
+>   showHS indent (Tspc pat us) = "Tspc ("++showHSname pat++" gE)"++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-us]++indent++"     ]"
 
 Precondition: the list of datasets must contains functionally equivalent datasets.
 This means that if d,e are datasets in dgs, then there is a bijective function between root d and root e in mors pat.
@@ -249,13 +264,13 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   showHS indent (Sspc nm sees changes fpa input output rs pre post)
 >    = "Sspc "++nm
 >      ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) sees   )++indent++"     ] -- these are the visible morphisms: <sees> "
->      ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
+>      ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
 >      ++indent++"     (" ++show fpa++")"
->      ++indent++"     [" ++(if null input   then "]   -- there are no input parameters" else chain "," (map (showHS "") input )++"] -- these are the input parameters: <input>")
->      ++indent++"     [" ++(if null output  then "]   -- no output parameters"          else chain "," (map (showHS "") output)++"] -- these are the output parameters: <output> ")
->      ++indent++"     [" ++(if null rs      then "]   -- there are no rules"            else indent++"     [ "++chain (indent++"     , ") (map (showHS (indent++"       ")) rs  )++indent++"     ]")
->      ++indent++"     [" ++(if null pre     then "]   -- there are no preconditions"    else indent++"     [ "++chain (indent++"     , ") pre ++indent++"     ] -- preconditions")
->      ++indent++"     [" ++(if null post    then "]   -- there are no postconditions"   else indent++"     [ "++chain (indent++"     , ") post++indent++"     ] -- postconditions")
+>      ++indent++"     [" ++(if null input   then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") input )++"] -- these are the input parameters: <input>")
+>      ++indent++"     [" ++(if null output  then "]   -- no output parameters"          else " "++chain "," (map (showHS "") output)++"] -- these are the output parameters: <output> ")
+>      ++indent++"     [" ++(if null rs      then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) rs  )++indent++"     ]")
+>      ++indent++"     [" ++(if null pre     then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        pre )++indent++"     ] -- preconditions")
+>      ++indent++"     [" ++(if null post    then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        post)++indent++"     ] -- postconditions")
 
 >  instance ShowHS ParamSpec where
 >   showHSname a@(Aspc nm typ) = error ("(module Fspec) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
@@ -267,9 +282,9 @@ TODO: determine which relations are affected but not computed, and report as an 
 >   nPatterns :: a -> Int
 >   nFpoints  :: a -> Int
 >  instance Statistics Fspec where
->   nServices (Fctx context themes datasets objects) = nServices themes+nServices objects
->   nPatterns (Fctx context themes datasets objects) = nPatterns themes+nPatterns objects
->   nFpoints  (Fctx context themes datasets objects) = error ("(Module Fspec) Function points TBD")
+>   nServices (Fctx context themes datasets objects vrules) = nServices themes+nServices objects
+>   nPatterns (Fctx context themes datasets objects vrules) = nPatterns themes+nPatterns objects
+>   nFpoints  (Fctx context themes datasets objects vrules) = error ("(Module Fspec) Function points TBD")
 >  instance Statistics Ftheme where
 >   nServices (Tspc p us) = nServices us
 >   nPatterns (Tspc p us) = 1

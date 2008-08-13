@@ -3,7 +3,7 @@
 -- TODO: cyclisch verband in signalen ontdekken en verbieden (SIGNAL inzage ON ALWAYS inzage)
 
 DATA Architecture  | Arch cs:Contexts
-DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
+DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} pats:Patterns rs:Rules ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
 DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:ConceptDefs ks:KeyDefs
 DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
@@ -85,7 +85,7 @@ import CC_aux
           , isMph, mIs
           , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs, Population(Popu), Populations
           , nr, pos, multiplicities, declaration, renumberRules
-          , inline
+          , inline, extends
          )
 
 diagl = 27
@@ -134,7 +134,7 @@ mkCtxAG ctxs ctxName
 -- multiple ctTrees may occur if contexts are used multiply in different ctTrees.
     trees = makeClassificationsF (name.fst) tuples++[Cl s []| s<-singles]
             where tuples = [ ((spc,(mG,mD)),(gen,(mG',mD')))
-                           | (spc@(Ctx nm on isa world dc ds cs ks os pops),(mG,mD))<-ctxs, o<-on
+                           | (spc,(mG,mD))<-ctxs, o<-extends spc
                            , (gen,(mG',mD'))<-ctxs,name gen==o]
                   singles= [ (spc,(mG,mD))
                            | (spc,(mG,mD))<-ctxs, not (name spc `elem` rd [name c|(s,g)<-tuples, (c,m)<-[s,g]])]
@@ -200,8 +200,8 @@ deriveMults ks sgs
 }
 SEM Context
   | Ctx loc.mD        = ({-deriveMults @keys.-} renumber.mergecontents.concat) [mD| (context,(mG,mD)) <- preCl @lhs.ctxTree] -- all declarations in context
-        loc.mC        = mergecontents(@ds.rawDecls ++ @dc.rawDecls)
-        loc.keys      = rd (@ks.keyDefs ++ @dc.keyDefs)
+        loc.mC        = mergecontents(@ds.rawDecls ++ @pats.rawDecls)
+        loc.keys      = rd (@ks.keyDefs ++ @pats.keyDefs)
         loc.mGen      = (rd.concat) [mG| (context,(mG,mD)) <- preCl @lhs.ctxTree]
         loc.inh       = Isa [(g,s)|G pos g s<- @mGen] (concs @mD>-rd [c|G pos g s<- @mGen, c<-[g,s]])
         loc.genE      = cmp where cmp Anything b = True
@@ -209,29 +209,45 @@ SEM Context
                                   cmp NOthing b  = False
                                   cmp a NOthing  = True
                                   cmp a b        = if a==b then True else genEq (typology @inh) a b
-        loc.cD        = makeConceptSpace @genE @dc.morphisms -- (error ("diag: map contents @dc.morphisms = "++show (map contents @dc.morphisms)))
-        dc.sDef       = @mD
+        loc.cD        = makeConceptSpace @genE @pats.morphisms -- (error ("diag: map contents @pats.morphisms = "++show (map contents @pats.morphisms)))
+        pats.sDef     = @mD
+        rs.sDef       = @mD -- not used
         ds.sDef       = @mD
         ks.sDef       = @mD
         os.sDef       = @mD
         pops.sDef     = @mD
-        dc.gE         = @genE
+        pats.gE       = @genE
+        rs.gE         = @genE -- not used
         ds.gE         = @genE
         ks.gE         = @genE
         os.gE         = @genE
+        rs.pn         = "" -- not used
         pops.gE       = @genE
         os.iConcs     = [Anything]
-        lhs.over      = [( put_gE @genE @cD (Ctx @nm @on @inh [] @dc.patterns @mC @cs.conDefs @keys @os.objDefs @pops.popus)
-                        , (@dc.mGen, @mC))]
+        lhs.over      = [( put_gE @genE @cD
+                           (Ctx @nm
+                                @on
+                                @inh
+                                []
+                                @pats.patterns
+                                (@pats.rules ++ @os.rules ++ @ds.rules ++ @ks.rules)
+                                @mC
+                                @cs.conDefs
+                                @keys
+                                @os.objDefs
+                                @pops.popus)
+                        , (@pats.mGen, @mC))]
 -- if stuck looping, try changing @mC ^^ <--(here) into an empty list. It has shown the way to a computational loop in the attribute evaluation before.
-        lhs.context   = put_gE @genE @cD
+        lhs.context   = @loc.ctx
+        loc.ctx       = put_gE @genE @cD
                         ( Ctx @nm
                               @on
                               @inh
                               [cl|Cl r cls<-[mapCl fst @lhs.ctxTree], cl<-cls]
-                              @dc.patterns
-                              (declarations @dc.patterns) -- (error (chain "\n" (map (showHS "") @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
-                              (sort' name (rd (@cs.conDefs ++ @dc.conDefs)))
+                              @pats.patterns
+                              (@pats.rules ++ @os.rules ++ @ds.rules ++ @ks.rules)
+                              (declarations @pats.patterns) -- (error (chain "\n" (map (showHS "") @mD))) TODO: @mD may contain erroneous types for signal declarations!! fix!!!
+                              (sort' name (rd (@cs.conDefs ++ @pats.conDefs)))
                               @keys
                               @os.objDefs
                               @pops.popus)
@@ -593,7 +609,7 @@ SEM Contexts
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Context
-  | Ctx  lhs.sErr   = @dc.sErr ++ @ks.sErr ++ @os.sErr ++ @pops.sErr
+  | Ctx  lhs.sErr   = @pats.sErr ++ @ks.sErr ++ @os.sErr ++ @pops.sErr
 SEM Patterns 
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
@@ -846,13 +862,13 @@ Expressions get rule numbers too, because some expressions create extra rules (K
 ATTR Patterns Pattern ObjDefs ObjectDef KeyDefs KeyDef Rules Rule Expression Expressions Declarations Declaration Gens Gen [ | rnr:Int | rules:Rules ]
 ATTR Context [ | | rules:Rules nRules:Int ]
 
-SEM Context -- DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} dc:Patterns ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
-  | Ctx  dc.rnr     = 1
-         os.rnr     = @dc.rnr
+SEM Context -- DATA Context  | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} pats:Patterns rs:Rules ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
+  | Ctx  pats.rnr   = 1
+         os.rnr     = @pats.rnr
          ds.rnr     = @os.rnr
          ks.rnr     = @ds.rnr
          lhs.nRules = @ks.rnr-1
-         lhs.rules  = @dc.rules ++ @os.rules ++ @ds.rules ++ @ks.rules
+         lhs.rules  = @pats.rules ++ @os.rules ++ @ds.rules ++ @ks.rules
 
 SEM Patterns
   | Cons hd.rnr     = @lhs.rnr

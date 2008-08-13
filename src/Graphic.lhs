@@ -7,7 +7,7 @@
 >            , Expression(F,Tm)
 >            , multiplicities, tot, inj, sur, fun, sign
 >            , inline, posNone, source, target, mors, declaration, flp
->            , concs, isa, specs, isMph, isProperty 
+>            , concs, isa, specs, isMph, isProperty
 >            , declarations, union
 >            , order
 >            )
@@ -173,8 +173,8 @@
 >        uni stefMagHierHetCommentaarVoorSchrijven = fun stefMagHierHetCommentaarVoorSchrijven
 
 >  instance Graphic Context where
->   dotGraph context style nm (Ctx cnm on isa world dc ms cs ks os pops)
->    = dotGraph context style nm (foldr union (Pat "" [] [] [] [] []) dc)
+>   dotGraph context style nm (Ctx cnm on isa world pats rs ms cs ks os pops)
+>    = dotGraph context style nm (foldr union (Pat "" [] [] [] [] []) pats)
 
 >  instance Graphic Morphism where
 >   dotGraph context style nm m -- @(Mph nm' _ atts sgn yin m')
