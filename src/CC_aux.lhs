@@ -1454,6 +1454,8 @@ Om een of andere reden stond hier eerder:
 >                                                = Sgn nm (put_gE gE cs a) (put_gE gE cs b) props prL prM prR cs' expla pos nr sig
 >   put_gE gE cs (Isn g s)                       = Isn (put_gE gE cs g) (put_gE gE cs s)
 >   put_gE gE cs (Iscompl g s)                   = Iscompl (put_gE gE cs g) (put_gE gE cs s)
+>   put_gE gE cs (Vs g s)                        = Vs (put_gE gE cs g) (put_gE gE cs s)
+
 >   update ss s@(Sgn _ _ _ _ _ _ _ _ _ _ _ _)    = head ([c|c<-ss, s==c]++[s])
 >   update ss s                                  = s
 >   specialize (x,y) (Sgn nm a b props prL prM prR ls expla pos nr sig)
