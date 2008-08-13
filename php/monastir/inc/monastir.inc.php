@@ -401,13 +401,13 @@ class monastir Extends anyView {
 			$this->menu=$menu;
 			global $_REQUEST;
 			$changed=true;
+			$read='read'.$cObjName;
 			if(isset($_REQUEST['read'])){
 				$changed=false;
 				$action='read';
 				$object_id=$_REQUEST['read'];
-				$f='read'.$cObjName;
-				$obj= $f($object_id); // from DB
-				if($object_id===false){
+				$obj= $read($object_id); // from DB
+				if($obj->id===false){
 					$this->assign("succes",false);
 					$action='show';
 				}
@@ -417,7 +417,7 @@ class monastir Extends anyView {
 				if($obj===false) { // not false after edit!
 					$f=$object->name;
 					$obj=new $f(); // return an empty object
-				}
+				}else $obj=$read($_POST['id']); // from DB
 				$object_id=@$_POST['id'];
 			} else if(@$_POST['action']=='create'){
 				$action='create';
@@ -431,13 +431,15 @@ class monastir Extends anyView {
 				$f='update'.$cObjName;
 				$object_id= $f($obj);
 				if($object_id===false) {$this->assign("succes",false);
-				} else $this->assign("succes",true);
+				} else {
+					$this->assign("succes",true);
+					$obj=$read($object_id); // from DB
+				}
 			} else if(isset($_REQUEST['edit']) || @$_POST['action']=='edit'){ // no changes (yet)! Fake a read.
 				$action='edit';
 				$defaultAction='update';
 				if($obj==false){
-					$f='read'.$cObjName;
-					$obj= $f($_REQUEST['edit']); // from DB
+					$obj= $read($_REQUEST['edit']); // from DB
 				}
 				$object_id=$obj->id;
 			} else if(isset($_REQUEST['delete'])){
@@ -449,8 +451,7 @@ class monastir Extends anyView {
 				}else{
 					$this->assign("succes",false);
 					$object_id=$_REQUEST['delete'];
-					$f='read'.$cObjName;
-					$obj= $f($object_id); // from DB
+					$obj= $read($object_id); // from DB
 				}
 			} else { $action='show'; $changed=false; }
 			if(isset($defaultAction)) $this->defaultAction=$defaultAction;

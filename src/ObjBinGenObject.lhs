@@ -317,19 +317,31 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >      ,"    $this->id=$id;"]
 >      ++ ["    $this->"++name a++"=$"++name a++";"| a <- attributes o]
 >      ++ (concat (map (map ((++) "    "))
->             [ [ "if(isset($id) && !isset($"++name a++")){"
->               , "  $this->"++name a++" = array();"
->               , "  foreach(DB_doquer('"++ selectExprForAttr context a o "$id" ++"') as $i=>$v){"
->               , "    $this->"++name a++"[]=new "++concat [n++"_"|n<-(nm++[name o])]++name a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
->               , "  }"
->               , "}"]
+>             [ [ "if(!isset($"++name a++")){"
+>               , "  if(isset($id)){"
+>               , "    $this->"++name a++" = array();"
+>               , "    foreach(DB_doquer('"++ selectExprForAttr context a o "$id" ++"') as $i=>$v){"
+>               , "      $this->"++name a++"[]=new "++concat [n++"_"|n<-(nm++[name o])]++name a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
+>               , "    }"
+>               , "  } else $this->"++name a++"=array();"
+>               , "}"] ++
+>               concat [ ["if(count($this->"++name a++")==0) $this->"++name a++"[] = new "++concat [n++"_"|n<-(nm++[name o])]++name a++"();"]
+>                      | tot (multiplicities (ctx a))
+>                      ] ++
+>               concat [ ["if(count($this->"++name a++")>1){"
+>                        , "  $last=$this->"++name a++"[count($this->"++name a++")-1];"
+>                        , "  $this->"++name a++" = array();"
+>                        , "  $this->"++name a++"[] = $last;"
+>                        , "}"]
+>                      | fun (multiplicities (ctx a))
+>                      ]
 >             | a <-attributes o
 >             ]
 >            )) ++
 >      ["}"]
 >      ++ (concat
 >         [ ["function add_"++(name a)++"("++concat [n++"_"|n<-nm++[name o]]++(name a)++" $"++(name a)++"){"
->           ,"  return $this->"++(name a)++"[]=$"++(name a)++";"
+>           ,"  return $this->"++(name a)++(if (fun (multiplicities (ctx a))) then "[0]" else "[]")++"=$"++(name a)++";"
 >           ,"}"
 >           ,"function getEach_"++(name a)++"(){"
 >           ,"  // currently, this returns all concepts.. why not let it return only the valid ones?"
@@ -354,14 +366,6 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >          ] ++
 >      ["  else return false;"|length (attributes o) > 0] ++
 >      ["}"
-
-       ,"function readGen($type,$value){"
-       ]++ [ "  if($type=='"++(name a)++"') return $this->read_"++(name a)++"($value);"
-           | a <- attributes o
-           ] ++
-       ["  else return false;"|length (attributes o) > 0] ++
-       ["}"
-
 >     ]
 >     )) ++
 >     [ "}"
