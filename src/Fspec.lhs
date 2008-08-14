@@ -34,7 +34,6 @@ A specification contains one Fobj-specification for every object it defines and 
 >      (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
 >      (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
 >      (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
->--      where ind = indent++"     "
 
 >-- The story:
 >-- A number of datasets for this context is identified.
@@ -116,7 +115,7 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >   showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
 >   showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
 >   showHS indent (BR m     ) = "BR ("++showHS "" m++")"
->  instance Eq Dataset where  -- opletten: een dataset moet één vast concept hebben waaraan het wordt herkend.
+>  instance Eq Dataset where  -- opletten: een dataset moet Ã©Ã©n vast concept hebben waaraan het wordt herkend.
 >   DS c _ == DS d _ = c==d
 >   BR m   == BR m'  = m==m'
 >   _      == _      = False
@@ -139,9 +138,9 @@ Het verhaal:
 Alle concepten waar een bijectie tussen ligt kunnen in dezelfde dataset terecht komen.
 Ook specialisaties van die concepten mogen daarin terechtkomen, mits herkenbaar als specialisatie door een eigenschap (genaamd I<Concept>).
 De equivalentierelatie `bi` geeft aan of twee concepten in dezelfde dataset komen.
-De dataset wordt gekenmerkt door één van de concepten, en wel een grondconcept.
+De dataset wordt gekenmerkt door Ã©Ã©n van de concepten, en wel een grondconcept.
 Hiervoor kiezen we (minimum [g|g<-concs context,g<=head eCls]). Van deze keuze is head eCls arbitrair.
-Hiermee heeft elke dataset één vast concept waaraan het wordt herkend.
+Hiermee heeft elke dataset Ã©Ã©n vast concept waaraan het wordt herkend.
 
 Een eerdere poging ging nogal fout. De closure in het volgende algoritme zorgt voor vreselijk redundante datasets.
 Deze poging werkte pths (uit DS c pths) as lijst van expressies in plaats van een lijst van morfismen.
@@ -154,7 +153,7 @@ Deze poging werkte pths (uit DS c pths) as lijst van expressies in plaats van ee
            len (DS c pths) = 0-length pths
            ps  = (clos source target.rd)
                   [d| d<-declarations context++map flp (declarations context), isFunction d]
--- dss bevat voor elk concept één dataset. De paden ervan zijn leeg als het een niet-entiteit betreft.
+-- dss bevat voor elk concept Ã©Ã©n dataset. De paden ervan zijn leeg als het een niet-entiteit betreft.
            dss = [DS c pths| c<-concs context, pths<-[[F (map (Tm . makeMph) p)|p<-ps, not (null p), source (head p)==cGen c]] ]
 
 Dan moeten de relaties worden opgeslagen.
@@ -363,12 +362,12 @@ bron van de FPA: www.nesma.nl
 De volgende functie vult een procedure in voor een bepaalde rol.
 Aanpak:
 1. Alle relaties, die in de regels van deze service genoemd worden, zijn zichtbaar voor deze rol.
-2. Een conjunct kan in stand gehouden worden als één van de termen ervan door deze rol geedit kan worden.
+2. Een conjunct kan in stand gehouden worden als Ã©Ã©n van de termen ervan door deze rol geedit kan worden.
 3. Alle conjuncts uit de service moeten door deze rol in deze service in stand gehouden worden.
 4. Als een conjunct automatisch in stand gehouden wordt, is er geen eis aan de service
 5. Als een conjunct handmatig in stand gehouden wordt:
 5.a. moet overtreding ervan aan deze rol worden gesignaleerd;
-5.b. moet één van de termen van deze conjunct editbaar zijn door deze rol.
+5.b. moet Ã©Ã©n van de termen van deze conjunct editbaar zijn door deze rol.
 Te bepalen:
  - welke velden zijn zichtbaar?
  - welke velden zijn editbaar?
@@ -638,7 +637,7 @@ TODO: determine which relations are affected but not computed, and report as an 
 >     where
       
 In elk hoofdstuk wordt een pattern behandeld.
-Elke entiteit wordt in precies één hoofdstuk behandeld.
+Elke entiteit wordt in precies Ã©Ã©n hoofdstuk behandeld.
 De overige concepten worden behandeld in het hoofdstuk waarin het voor de eerste maal voorkomt.
 c is het concept
 ats zijn de attributen van dat concept
@@ -653,7 +652,7 @@ rs zijn de betrokken regels
 >                 , cs<-[[a| a<-attributes o, not (null (declarations (ctx a) `isc` declarations affected))]], not (null cs)
 >                 ]
 >      affected :: [Morphism]
->      affected = rd[m| hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs, m<-mors toExpr]
+>      affected = rd[m| hc@(CR (fOps, e, bOp, toExpr, frExpr, rule))<-hcs, m<-mors toExpr]
 >      clss pat ec new
 >       = [ Uspc (if language==English then "Other Classes" else "Andere Classes") pat car
 >                [ service
@@ -1363,35 +1362,35 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is een equivalentierelatie tussen "++(unCap.plural Dutch .name.source) d++"."
 >   | null ([Asy,Trn]         >- multiplicities d) = name d++" is een ordeningsrelatie tussen "++(unCap.plural Dutch .name.source) d++"."
 >   | null ([Sym,Asy]         >- multiplicities d) = name d++" is een eigenschap van "++(unCap.plural Dutch .name.source) d++"."
->   | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies één "++(unCap.name.target) d)
+>   | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies Ã©Ã©n "++(unCap.name.target) d)
 >                                                    ++" en vice versa."
->   | null ([Uni,Tot,Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies één "++(unCap.name.target) d)
+>   | null ([Uni,Tot,Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies Ã©Ã©n "++(unCap.name.target) d)
 >                                                    ++", maar niet voor elke "++(unCap.name.target) d++" hoeft er een "++(unCap.name.source) d++" te zijn."
->   | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies één "++(unCap.name.target) d)
->                                                    ++", maar elke "++(unCap.name.target) d++" is gerelateerd aan één of meer "++(unCap.plural Dutch .name.source) d++"."
->   | null ([Uni,    Inj,Sur] >- multiplicities d) = "Er is precies één "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+>   | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies Ã©Ã©n "++(unCap.name.target) d)
+>                                                    ++", maar elke "++(unCap.name.target) d++" is gerelateerd aan Ã©Ã©n of meer "++(unCap.plural Dutch .name.source) d++"."
+>   | null ([Uni,    Inj,Sur] >- multiplicities d) = "Er is precies Ã©Ã©n "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
 >                                                    ++applyM d "b" "a"
 >                                                    ++", maar niet voor elke "++(unCap.name.source) d++" hoeft er een "++(unCap.name.target) d++" te zijn."
->   | null ([    Tot,Inj,Sur] >- multiplicities d) = "Er is precies één "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+>   | null ([    Tot,Inj,Sur] >- multiplicities d) = "Er is precies Ã©Ã©n "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
 >                                                    ++applyM d "b" "a"
 >                                                    ++", maar elke "++(unCap.name.source) d++" mag gerelateerd zijn aan meerdere "++(unCap.plural Dutch .name.target) d++"."
->   | null ([Uni,Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies één "++(unCap.name.target) d)++"."
->   | null ([Uni,    Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten hoogste één "++(unCap.name.target) d)
->                                                    ++" en elke "++(unCap.name.target) d++" is gerelateerd aan ten hoogste één "++(unCap.name.source) d++"."
->   | null ([Uni,        Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten hoogste één "++(unCap.name.target) d)
->                                                    ++", terwijl elke "++(unCap.name.target) d++" is gerelateerd aan tenminste één "++(unCap.name.source) d++"."
->   | null ([    Tot,Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste één "++(unCap.name.target) d)
->                                                    ++", terwijl elke "++(unCap.name.target) d++" is gerelateerd aan ten hoogste één "++(unCap.name.source) d++"."
->   | null ([    Tot,    Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste één "++(unCap.name.target) d)
->                                                    ++" en elke "++(unCap.name.target) d++" is gerelateerd aan tenminste één "++(unCap.name.source) d++"."
->   | null ([        Inj,Sur] >- multiplicities d) = "Er is precies één "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+>   | null ([Uni,Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies Ã©Ã©n "++(unCap.name.target) d)++"."
+>   | null ([Uni,    Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten hoogste Ã©Ã©n "++(unCap.name.target) d)
+>                                                    ++" en elke "++(unCap.name.target) d++" is gerelateerd aan ten hoogste Ã©Ã©n "++(unCap.name.source) d++"."
+>   | null ([Uni,        Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten hoogste Ã©Ã©n "++(unCap.name.target) d)
+>                                                    ++", terwijl elke "++(unCap.name.target) d++" is gerelateerd aan tenminste Ã©Ã©n "++(unCap.name.source) d++"."
+>   | null ([    Tot,Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste Ã©Ã©n "++(unCap.name.target) d)
+>                                                    ++", terwijl elke "++(unCap.name.target) d++" is gerelateerd aan ten hoogste Ã©Ã©n "++(unCap.name.source) d++"."
+>   | null ([    Tot,    Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste Ã©Ã©n "++(unCap.name.target) d)
+>                                                    ++" en elke "++(unCap.name.target) d++" is gerelateerd aan tenminste Ã©Ã©n "++(unCap.name.source) d++"."
+>   | null ([        Inj,Sur] >- multiplicities d) = "Er is precies Ã©Ã©n "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
 >                                                    ++applyM d "b" "a"++"."
->   | null ([            Sur] >- multiplicities d) = "Er is tenminste één "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+>   | null ([            Sur] >- multiplicities d) = "Er is tenminste Ã©Ã©n "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
 >                                                    ++applyM d "b" "a"++"."
->   | null ([        Inj    ] >- multiplicities d) = "Er is hooguit één "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+>   | null ([        Inj    ] >- multiplicities d) = "Er is hooguit Ã©Ã©n "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
 >                                                    ++applyM d "b" "a"++"."
->   | null ([    Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste één "++(unCap.name.target) d)++"."
->   | null ([Uni            ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("nul of één "++(unCap.name.target) d)++"."
+>   | null ([    Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste Ã©Ã©n "++(unCap.name.target) d)++"."
+>   | null ([Uni            ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("nul of Ã©Ã©n "++(unCap.name.target) d)++"."
 >   | otherwise                                    = applyM d ("een "++(unCap.name.source) d) ("een "++(unCap.name.target) d) ++"."
 >  explainMult thisCtx _ d -- default English
 >   | null ([Sym,Asy]         >- multiplicities d) = name d++" is a property of "++(unCap.plural English .name.source) d++"."
@@ -1739,16 +1738,16 @@ TODO: complete all accents and test
 >  addSlashes ('\\': cs) = "\\\\"++addSlashes cs
 >  addSlashes ('_': cs) = "\\_"++addSlashes cs
 >  addSlashes ('&': cs)  = "\\&"++addSlashes cs
->  addSlashes ('é': cs) = "\\'e"++addSlashes cs
->  addSlashes ('è': cs) = "\\`e"++addSlashes cs
->  addSlashes ('ë': cs) = "\\\"e"++addSlashes cs
->  addSlashes ('ï': cs) = "\\\"{\\i}"++addSlashes cs
->  addSlashes ('á': cs) = "\\'a"++addSlashes cs
->  addSlashes ('à': cs) = "\\`a"++addSlashes cs
->  addSlashes ('ó': cs) = "\\'o"++addSlashes cs
->  addSlashes ('ò': cs) = "\\`o"++addSlashes cs
->--  addSlashes ('“': cs) = "\\``"++addSlashes cs
->--  addSlashes ('”': cs) = "\\''"++addSlashes cs
+>  addSlashes ('Ã©': cs) = "\\'e"++addSlashes cs
+>  addSlashes ('Ã¨': cs) = "\\`e"++addSlashes cs
+>  addSlashes ('Ã«': cs) = "\\\"e"++addSlashes cs
+>  addSlashes ('Ã¯': cs) = "\\\"{\\i}"++addSlashes cs
+>  addSlashes ('Ã¡': cs) = "\\'a"++addSlashes cs
+>  addSlashes ('Ã ': cs) = "\\`a"++addSlashes cs
+>  addSlashes ('Ã³': cs) = "\\'o"++addSlashes cs
+>  addSlashes ('Ã²': cs) = "\\`o"++addSlashes cs
+>--  addSlashes ('``': cs) = "\\``"++addSlashes cs
+>--  addSlashes ('''': cs) = "\\''"++addSlashes cs
 >  addSlashes (c: cs)    = if ord c>127 then error("Character '"++[c]++"' (ASCII "++show (ord c)++") is not mapped correctly to LaTeX by ADL in \""++c:cs++"\".") else
 >                          c:addSlashes cs
 >  addSlashes _          = ""

@@ -1,4 +1,4 @@
-> module Calc (ComputeRule, deriveProofs, triggers, disjNF, conjNF, homogeneous, computeOrder, lClause, rClause, conjuncts, makeRule, informalRule ) where  -- commented modules are required for testing
+> module Calc (ComputeRule(CR), deriveProofs, triggers, disjNF, conjNF, homogeneous, computeOrder, lClause, rClause, conjuncts, makeRule, informalRule ) where  -- commented modules are required for testing
 >  import Char ( isSpace )
 >  import CommonClasses ( Collection (uni,isc), Identified(name), empty )
 >  import Auxiliaries
@@ -32,7 +32,7 @@
 >     ) >>
 >     putStr ("\n--------------\n"++
 >             "Summarizing all compute rules: \n  "++
->             chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-declaredRules context, hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]) >>
+>             chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-declaredRules context, hc@(CR (fOps, e, bOp, toExpr, frExpr, rule))<-triggers rule]) >>
 >     putStr ("\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
 >             "Ontological analysis: \n  "++
 >             chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
@@ -147,7 +147,7 @@
 >                                  |conjunct<-conjuncts rule, r<-allClauses conjunct]
 >                , "")
 >              , ("\nGenerated Triggers for: "++showADL rule++" (rule "++show (nr rule)++")\n     "++
->                  chain "\n     " ([ informalRule {-(declarations frExpr)-} hc | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-triggers rule]), "")
+>                  chain "\n     " ([ informalRule {-(declarations frExpr)-} hc | hc@ (CR (fOps, e, bOp, toExpr, frExpr, rule))<-triggers rule]), "")
 >              ] where prf = nfProof (normExpr rule)
 >                      cfProof expr = nfPr True False (simplify expr)
 >                      dfProof expr = nfPr True True (simplify expr)
@@ -184,7 +184,7 @@
 >            = [ "\ntoExpr                : "++showADL toExpr++
 >                "\ncpu rule              : "++show (cpu rule)++
 >                "\ntoExpr `elem` cpu rule: "++show ((map name.morlist) toExpr `elem` map (map name.morlist) (cpu rule))
->              | (fOps, e, bOp, toExpr, frExpr, r)<-hornCs rule clause ]
+>              | (CR (fOps, e, bOp, toExpr, frExpr, r))<-hornCs rule clause ]
 
 Deriving code fragments. This occurs in three steps.
 The clause itself is the "engine" that sparks the code.
@@ -366,35 +366,35 @@ precondition: works only for expressions of the form Fu fus in which there are n
 >   = 
 > -- the following inserts new atoms in positive terms. Deletion of new atoms from negative terms cannot occur,
 > -- because an atom which is new in V is not in t in the first place (t-:V)
->     [ ( [("INSERT INTO", Vs (source t) (target t))]        -- fOps
+>     [ CR ( [("INSERT INTO", Vs (source t) (target t))]     -- fOps
 >       , v (sign t)                                         -- e
 >       , "INSERT INTO"                                      -- bOp
 >       , simplify t                                           -- toExpr
 >       , v (sign t)                                         -- frm
 >       , rule)
 >     | and (map isPos fus), t<-fus, not (isIdent t)]++  -- (ignore generating to I, because both I and V are derived from C-tables.)
->     [ ( [("DELETE FROM",hdl l)]                 -- fOps
+>     [ CR ( [("DELETE FROM",hdl l)]              -- fOps
 >       , if isPos t' then t' else notCp t'       -- e
 >       , "DELETE FROM"                           -- bOp
 >       , (conjNF.Cp) t                    -- toExpr
 >       , (disjNF.Cp) (Fu (rest t))        -- frExpr
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isPos l, isNeg t]++
->     [ ( [("INSERT INTO",hdl l)]
+>     [ CR ( [("INSERT INTO",hdl l)]
 >       , if isPos t' then t' else notCp t'
 >       , "DELETE FROM"
 >       , (conjNF.Cp) t
 >       , (disjNF.Cp) (Fu (rest t))
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isNeg t]++
->     [ ( [("DELETE FROM",hdl l)] 
+>     [ CR ( [("DELETE FROM",hdl l)] 
 >       , if isPos t' then t' else notCp t'
 >       , "INSERT INTO"
 >       , conjNF t   
 >       , (disjNF.Cp) (Fu (rest t))
 >       , rule)
 >     | t<-fus, t'<-rest t, l<-leaves t', isPos l, isPos t]++
->     [ ( [("INSERT INTO",hdl l)] 
+>     [ CR ( [("INSERT INTO",hdl l)] 
 >       , if isPos t' then t' else notCp t'
 >       , "INSERT INTO"
 >       , conjNF t   
@@ -427,9 +427,9 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >    lvs (K1 e)  = lvs e
 >    lvs e = error("module Calc: illegal pattern in leaves ("++showADL e++")\ne = "++showHS "" e)
 
->  type ComputeRule = ([(String,Declaration)],Expression,String,Expression,Expression,Rule)
+>  data ComputeRule = CR ([(String,Declaration)],Expression,String,Expression,Expression,Rule) deriving (Eq)
 >  instance Show ComputeRule where
->   showsPrec p (fOps, e, bOp, toExpr, frExpr, rule)
+>   showsPrec p (CR (fOps, e, bOp, toExpr, frExpr, rule))
 >    = showString ("("++show fOps++", "++show e++", "++show bOp++", "++show toExpr++", "++show frExpr++", "++show rule++")")
 >  instance Show ECArule where
 >   showsPrec p (ECA event pa) = showString (show event++" "++show pa)
@@ -453,29 +453,30 @@ De volgende functie bepaalt welke positieve of negatieve termen (dus r, dan wel 
 >  triggers :: Rule -> [ComputeRule]
 >  triggers rule
 >   = (concat.map (sort' bop).eqClass eq2expr)          --  < ---  bij gelijke targets: eerst DELETE dan INSERT
->     [ hc
+>     [ hc ::ComputeRule
 >     | conjunct<-conjuncts rule, clause<-allClauses conjunct
 >     , hcID<-(map collect.eqClass eqHC.hornCs rule) clause  --  < ---  alle gelijke horn clauses op hoopjes vegen.
 >     , hc<-splitInsDel hcID
 >     , computing rule hc]
 >     where
 >  -- eerst alle gelijke horn clauses op hoopjes vegen.
->      (fOps, e, bOp, toExpr, frExpr, rule) `eqHC` (fOps', e', bOp', toExpr', frExpr', rule')
->        =      (bOp, toExpr, frExpr)         ==              (bOp', toExpr', frExpr')
+>      ( CR (fOps, e, bOp, toExpr, frExpr, rule)) `eqHC` (CR (fOps', e', bOp', toExpr', frExpr', rule'))
+>             =      (bOp, toExpr, frExpr)          ==                  (bOp', toExpr', frExpr')
 >      collect :: [ComputeRule] -> ComputeRule
->      collect cl = ((rd.concat)[fOps| (fOps, e, bOp, toExpr, frExpr, rule)<-cl], simplify (Fu [e| (fOps, e, bOp, toExpr, frExpr, rule)<-cl]), bOp, toExpr, frExpr, rule)
->       where (fOps, e, bOp, toExpr, frExpr, rule) = head cl
->      splitInsDel (fOps, e, bOp, toExpr, frExpr, rule)
-> --      = [ ([(f,r)|(f,(r, e, bOp, toExpr, frExpr, rule))<-cl], e, bOp, toExpr, if f=="DELETE FROM" then (notCp frExpr) else frExpr, rule)
-> --        | cl<-eqCl fst [(f,(r, e, bOp, toExpr, frExpr, rule))| (f,r)<-fOps]
+>      collect cl = CR ((rd.concat)[fOps| CR (fOps, e, bOp, toExpr, frExpr, rule) <-cl], simplify (Fu [e| CR (fOps, e, bOp, toExpr, frExpr, rule)<-cl]), bOp, toExpr, frExpr, rule)
+>       where CR (fOps, e, bOp, toExpr, frExpr, rule) = head cl
+>      splitInsDel :: ComputeRule -> [ComputeRule]
+>      splitInsDel (CR (fOps, e, bOp, toExpr, frExpr, rule))
+> --      = [ ([(f,r)|(f, CR (r, e, bOp, toExpr, frExpr, rule))<-cl], e, bOp, toExpr, if f=="DELETE FROM" then (notCp frExpr) else frExpr, rule)
+> --        | cl<-eqCl fst [(f, CR (r, e, bOp, toExpr, frExpr, rule))| (f,r)<-fOps]
 > --        ]
->       = [ ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("DELETE FROM",r)<-fOps]++
->         [ ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("INSERT INTO",r)<-fOps]
+>       = [ CR ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("DELETE FROM",r)<-fOps]++
+>         [ CR ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("INSERT INTO",r)<-fOps]
 >  -- volgorde aanbrengen in hornclauses met gelijke toExpr: eerst DELETE dan INSERT
->      (fOps, e, bOp, toExpr, frExpr, r) `eq2expr` (fOps', e', bOp', toExpr', frExpr', r') = toExpr == toExpr'
->      bop (fOps, e, bOp, toExpr, frExpr, r) = bOp
+>      CR (fOps, e, bOp, toExpr, frExpr, r) `eq2expr` CR (fOps', e', bOp', toExpr', frExpr', r') = toExpr == toExpr'
+>      bop (CR (fOps, e, bOp, toExpr, frExpr, r)) = bOp
 >  -- alleen "COMPUTING" termen opleveren
->      computing rule hc@(fOps, e, bOp, toExpr, frExpr, r) = toExpr `elem` map simplify (cpu rule)
+>      computing rule hc@(CR (fOps, e, bOp, toExpr, frExpr, r)) = toExpr `elem` map simplify (cpu rule)
 >  -- debug:    computing rule e = error ("(module Calc diagnostic) rule: "++showADL rule++"\e: "++show e++"\ncpu rule : "++ show (e `elem` cpu rule))
 
 >  multDerivations :: Language pat => pat -> Declarations
@@ -577,22 +578,22 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >   = if True then paths else -- False maken voor diagnose...
 >     error ( "(diagnostic in module Calc)\ncomputeOrder hcs ["++chain "," (map showADL ss)++"] = \n"++
 >              "(hcs: \n  "++chain "\n  " [informalRule {-(declarations frExpr)-} hc++"\n  "++chain "\n  " (map showADL (declarations frExpr))
->                                         | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs]++"\n\nsel: "++
->              "\n  "++chain "\n  " [informalRule {-(declarations frExpr)-} hc| hc@(fOps, e, bOp, toExpr, frExpr, rule)<-sel]++"\n)\n\npaths:"++
->              "\n  "++chain "\n  " [informalRule {-(declarations frExpr)-} hc| hc@(fOps, e, bOp, toExpr, frExpr, rule)<-paths] )
+>                                         | hc@(CR (fOps, e, bOp, toExpr, frExpr, rule))<-hcs]++"\n\nsel: "++
+>              "\n  "++chain "\n  " [informalRule {-(declarations frExpr)-} hc| hc@ (CR (fOps, e, bOp, toExpr, frExpr, rule))<-sel]++"\n)\n\npaths:"++
+>              "\n  "++chain "\n  " [informalRule {-(declarations frExpr)-} hc| hc@ (CR (fOps, e, bOp, toExpr, frExpr, rule))<-paths] )
 >     where
->      (fOps, e, bOp, toExpr, frExpr, rule) `before` (fOps', e', bOp', toExpr', frExpr', rule')
+>      (CR (fOps, e, bOp, toExpr, frExpr, rule)) `before` (CR (fOps', e', bOp', toExpr', frExpr', rule'))
 >       -- = not (null (declarations toExpr `isc` declarations frExpr')) && bOp==fOp'
 >       = (not.null) [(fOp',r) |(fOp',r)<-fOps', bOp==fOp', r `elem` declarations toExpr]
 >      sel
 >       = combineTriggers
->           ([ (fOps', e, bOp, toExpr, frExpr, rule)
->            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
->            , isTrue frExpr                                                       -- waarvan de antecedent persé waar is
+>           ([ CR (fOps', e, bOp, toExpr, frExpr, rule)
+>            | hc@ (CR (fOps, e, bOp, toExpr, frExpr, rule))<-hcs                        -- men neme een kandidaatregel, hc
+>            , isTrue frExpr                                                       -- waarvan de antecedent persÃ© waar is
 >            , fOps'<-[[on|on@(fOp,s)<-fOps, elem' typeEq s ss]], not (null fOps') -- en die wordt aangetrapt
 >            , if onOperation `elem` ["INSERT INTO", "DELETE FROM"] then onOperation `elem` map fst fOps else True
 >            ]++
->            [ if True {- debug: nr rule/=12 -} then (fOps', e, bOp, toExpr, frExpr, rule) else
+>            [ if True {- debug: nr rule/=12 -} then (CR (fOps', e, bOp, toExpr, frExpr, rule)) else
 >              error ( "(diagnostic in module Calc)" ++
 >                      "\nfrExpr (showADL)    = "++showADL frExpr ++
 >                      "\nfrExpr (showHS)     = "++showHS "" frExpr ++
@@ -600,13 +601,13 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >                      "\nss                  = "++showHS "" ss  ++
 >                      "\nnot (null (ss `isc` declarations frExpr)) = "++show(not (null (ss `isc` declarations frExpr)))
 >                    )
->            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
->            , not (isTrue frExpr)                                                 -- die een antecedent heeft die niet persé waar is
+>            | hc@ (CR (fOps, e, bOp, toExpr, frExpr, rule))<-hcs                        -- men neme een kandidaatregel, hc
+>            , not (isTrue frExpr)                                                 -- die een antecedent heeft die niet persÃ© waar is
 >            , fOps'<-[[on|on@(fOp,s)<-fOps, s `elem ` ss]], not (null fOps') -- en die wordt aangetrapt
 >            , if onOperation `elem` ["INSERT INTO", "DELETE FROM"] then onOperation `elem` map fst fOps else True
 >            , not (null (ss `isc` declarations frExpr)) ]++
->            [ (fOps', e, bOp, toExpr, frExpr, rule)
->            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-hcs                        -- men neme een kandidaatregel, hc
+>            [ CR (fOps', e, bOp, toExpr, frExpr, rule)
+>            | hc@ (CR (fOps, e, bOp, toExpr, frExpr, rule))<-hcs                        -- men neme een kandidaatregel, hc
 >            , isIdent frExpr                                                      -- met de identiteit als antecedent
 >            , fOps'<-[[on|on@(fOp,s)<-fOps, s `elem ` ss]], not (null fOps') -- en die wordt aangetrapt
 >            , if onOperation `elem` ["INSERT INTO", "DELETE FROM"] then onOperation `elem` map fst fOps else True
@@ -620,25 +621,26 @@ For now, compute cycles are ignored. TODO: analyze and correct this mistake.
 >      isin a b = if null rrs then False else [a,b] `elem` closRule rrs
 >      sort f [] = []
 >      sort f (x:xs) = sort f [e|e<-xs, f e x] ++ [x] ++ sort f [e|e<-xs, not (f e x)]
->      identifies (fOps, e, bOp, toExpr, frExpr, r) = (bOp, toExpr, frExpr)
+>      identifies (CR (fOps, e, bOp, toExpr, frExpr, r)) = (bOp, toExpr, frExpr)
 >      clossel = f [] sel [hc| hc<-hcs, not (identifies hc `elem` map identifies sel)]
 >       where f sel [] rs = sel
 >             f sel new rs = f (sel++new) [r|r<-rs, or [n `before` r| n<-new], not (r `elem` new)] [r|r<-rs, and [not (n `before` r)| n<-new]]
 
->  combineTriggers hcs -- Triggers die toevallig semantisch identiek zijn worden op één hoop geveegd.
+>  combineTriggers :: [ComputeRule] -> [ComputeRule]
+>  combineTriggers hcs -- Triggers die toevallig semantisch identiek zijn worden op Ã©Ã©n hoop geveegd.
 >   = [ if length cl==1 then head cl else
->       ( rd [fOp|(fOps, e, bOp, toExpr, frExpr, rule)<-cl, fOp<-fOps]
->       , e, bOp, toExpr, frExpr
->       , Ru 'I' frExpr posNone toExpr [] 
->            (chain "; " (rd[explain rule++" ("++show (pos rule)++")"|(fOps, e, bOp, toExpr, frExpr, rule)<-cl, (not.null.explain) rule]))
->            (sign frExpr `lub` sign toExpr) 0 ""
+>       CR( rd [fOp|(CR (fOps, e, bOp, toExpr, frExpr, rule))<-cl, fOp<-fOps]
+>         , e, bOp, toExpr, frExpr
+>         , Ru 'I' frExpr posNone toExpr [] 
+>             (chain "; " (rd[explain rule++" ("++show (pos rule)++")"|(CR (fOps, e, bOp, toExpr, frExpr, rule))<-cl, (not.null.explain) rule]))
+>             (sign frExpr `lub` sign toExpr) 0 ""
 >       )
->     |cl<-eqCl f hcs, (_,e,bOp,toExpr,frExpr,_)<-[head cl]  ]
+>     |cl<-eqCl f hcs, CR (_,e,bOp,toExpr,frExpr,_)<-[head cl]  ]
 >     where
->      f (fOps, e, bOp, toExpr, frExpr, rule) = (bOp, toExpr, frExpr)
+>      f (CR (fOps, e, bOp, toExpr, frExpr, rule)) = (bOp, toExpr, frExpr)
 
 >  informalRule :: ComputeRule -> String
->  informalRule (fOps, e, bOp, toExpr, frExpr, rule)
+>  informalRule (CR (fOps, e, bOp, toExpr, frExpr, rule))
 >   = "ON "++commaEng "OR" [fOp++" "++if isSgn r then name r else showADL r|(fOp,r)<-fOps] ++" DO "++bOp++" "++showADL toExpr++" SELECTFROM "++sh frExpr
 >     where sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
 
@@ -653,8 +655,8 @@ TODO: (july 1st, 2006) test recalc
 >  recalc :: Context -> Context
 >  recalc context = update (foldr subst (declarations context) calcrules) context
 >   where
->    calcrules = computeOrder [hc| rule<-rules context, hc@(fOps, e, "INSERT INTO", toExpr, frExpr, rule)<-triggers rule, "INSERT INTO" `elem` [fOp|(fOp,r)<-fOps] ] "UPDATE" (declarations context)
->    subst hc@(fOp, e, bOp, toExpr, frExpr, rule) ss
+>    calcrules = computeOrder [hc| rule<-rules context, hc@ (CR (fOps, e, "INSERT INTO", toExpr, frExpr, rule))<-triggers rule, "INSERT INTO" `elem` [fOp|(fOp,r)<-fOps] ] "UPDATE" (declarations context)
+>    subst hc@(CR (fOp, e, bOp, toExpr, frExpr, rule)) ss
 >     = [ if [s]==declarations toExpr then insert (calc frExpr ss) s else s
 >       | s<-ss ]
 >    insert :: Pairs -> Declaration -> Declaration
@@ -791,7 +793,7 @@ then  fold id (.) lambdas d = expr
   lambda contractSvc (F [contractSvc , (I/\svcPortfolio;svcPortfolio~) ])
 =
 
-Toelichting: lambda tOp e expr geeft één of nul reeksen van expressies, waarin twee opeenvolgende expressies via een monotone functie
+Toelichting: lambda tOp e expr geeft Ã©Ã©n of nul reeksen van expressies, waarin twee opeenvolgende expressies via een monotone functie
 (of tussendoor via een gelijkheid)
 in elkaar worden omgezet. De reeks begint met expr en eindigt met e.
 Voorbeeld:  svcPortfolio --> svcPortfolio;svcPortfolio~ --> I/\svcPortfolio;svcPortfolio~ --> contractSvc;(I/\svcPortfolio;svcPortfolio~)
@@ -893,7 +895,9 @@ maar dat doet in het bewijs wat overdreven aan.
 >      first ((e,morphism,text,str):rest) = e
 >      first _ = error "Module Calc: wrong pattern in first"
 
+>  simplify :: Expression -> Expression
 >  simplify expr = e where (e,_,_) = last (simpProof expr)
+>  
 >  simpProof expr    -- dus levert op: [(Expression,[String],String)]
 >   = if expr==res
 >     then [(expr,[],"<=>")]

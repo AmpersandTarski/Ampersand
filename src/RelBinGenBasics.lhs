@@ -3,7 +3,7 @@
 >  import Auxiliaries
 >  import CC_aux
 >  import CommonClasses
->  import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule)
+>  import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule(CR))
 >--  import MultRules
 
 >  pDebug   = True
@@ -24,7 +24,7 @@
 
 >-- Pre: oneMorphism toExpr
 >  sqlCodeComputeRule :: String -> Int -> Context -> [(Morphism,String,String)] -> ComputeRule -> String
->  sqlCodeComputeRule attrs i context subs hc@(fOp, e, "INSERT INTO", toExpr, frExpr, rule)
+>  sqlCodeComputeRule attrs i context subs hc@(CR (fOp, e, "INSERT INTO", toExpr, frExpr, rule))
 >   = if srcTo==trgTo && not (isProperty toExpr) then error ("(Module RelBinGenBasics) Fatal: srcTo and trgTo are equal ("++srcTo++") in sqlCodeComputeRule.\n"++show hc) else
 >   {-if Tm [m'] == frExpr
 >     then "'INSERT IGNORE INTO "++sqlMorName context m++
@@ -42,7 +42,7 @@
 >                 | otherwise          = if inline m' then sqlMorTrg context m else sqlMorSrc context m
 >           trgTo = sqlExprTrg toExpr -- may not collide with srcTo, but what if toExpr is a property (or identity)? (Bas?)
 >           frExpr' = doSubsExpr context attrs subs frExpr
->  sqlCodeComputeRule attrs i context subs hc@(fOp, e, "DELETE FROM", toExpr, (Cp frExpr), rule)
+>  sqlCodeComputeRule attrs i context subs hc@(CR(fOp, e, "DELETE FROM", toExpr, (Cp frExpr), rule))
 >   = if null froms
 >     then "'DELETE FROM "++tbl++phpIndent i++
 >          "WHERE "++tbl++"."++src++"<>"++doSubSrc context subs "$qa[0]" m (sqlMorName context m') (sqlMorSrc context m')++
@@ -61,7 +61,7 @@
 >           trg   = sqlMorTrg context m
 >           frExpr' = doSubsExpr context attrs subs frExpr
 >           froms = [m| m<-mors frExpr, not (isSub context subs (sqlMorName context m))]
->  sqlCodeComputeRule attrs i context subs hc@(fOp, e, "DELETE FROM", toExpr, frExpr, rule)
+>  sqlCodeComputeRule attrs i context subs hc@(CR(fOp, e, "DELETE FROM", toExpr, frExpr, rule))
 >   = if null froms
 >     then "'DELETE FROM "++tbl++phpIndent i++
 >          "WHERE "++tbl++"."++src++"="++doSubSrc context subs "$qa[0]" m (sqlMorName context m') (sqlMorSrc context m')++
@@ -664,10 +664,10 @@ For the following functions, enc and dec, we have:
 >      [ "DB_doquer('INSERT IGNORE INTO "++sqlConcept context c'++" ("++sqlAttConcept context c'++") VALUES (\\''.addslashes($attrs['"++str++"']).'\\')');"
 >      | c'<-concs context, c' <= c]++
 >     concat
->      [ "\n"++[' '|i<-[1..n-3]]++"// "++informalRule {-[sIs c]-} (fOp, Tm (mIs c), bOp, toExpr, frExpr, rule)++"\n"++[' '|i<-[1..n]]++
+>      [ "\n"++[' '|i<-[1..n-3]]++"// "++informalRule {-[sIs c]-} (CR(fOp, Tm (mIs c), bOp, toExpr, frExpr, rule))++"\n"++[' '|i<-[1..n]]++
 >        "if(isset($attrs['"++str++"']))" ++
 >        "DB_doquer('INSERT IGNORE INTO "++sqlMorName context s++" VALUES (\\''.addslashes($attrs['"++str++"']).'\\', \\''.addslashes($attrs['"++str++"']).'\\')');"
->      | (fOp, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "INSERT INTO" [sIs c], isIdent toExpr
+>      | (CR(fOp, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [sIs c], isIdent toExpr
 >      , sign frExpr <= sign c
 >      , oneMorphism toExpr
 >      , s<-mors toExpr, not (declaration s `elem` excludeRels)]

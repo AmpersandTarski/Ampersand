@@ -1,7 +1,7 @@
 > module RelBinGenEntitiesLayer where
 >  import Char
 >  import Auxiliaries
->  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
+>  import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
 >  import CC_aux
 >  import CommonClasses
 >  import ERmodel
@@ -373,7 +373,7 @@ Obsolete?
 >            = [ "          // "++informalRule hc++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >                phpCodeIncrHornClauseRel "$attrs" 13 context r hc++
 >                "\n             $someHornclausesActive=$someHornclausesActive || DB_affected();"
->              | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "INSERT INTO" [r]
+>              | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [r]
 >              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >              ]
 
@@ -399,9 +399,9 @@ Obsolete?
 >         "\n         if(DB_affected()){"++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');}"
 >       | e<-closs]
 >     , "              }" ]) ++
->     [ "     // "++informalRule ([("UPDATE",r)], e, bOp, toExpr, frExpr, rule)++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>     [ "     // "++informalRule (CR([("UPDATE",r)], e, bOp, toExpr, frExpr, rule))++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >       phpCodeIncrHornClauseRel attrs 15 context r hc
->     | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "UPDATE" [r]
+>     | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "UPDATE" [r]
 >     , attrs<-[if fst (head fOps)=="DELETE FROM" then "$attrsOld" else "$attrs"]
 >     , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >     ] ++ 
@@ -438,10 +438,10 @@ Obsolete?
 >     , "           }"
 >     , "        }" ] )
 >     where triggers
->            = [ "              // "++informalRule ([("DELETE FROM",r)], e, bOp, toExpr, frExpr, rule)++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>            = [ "              // "++informalRule (CR([("DELETE FROM",r)], e, bOp, toExpr, frExpr, rule))++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >                phpCodeIncrHornClauseRel "$attrs" 17 context r hc++
 >                "\n              $someHornclausesActive=$someHornclausesActive || DB_affected();"
->              | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "DELETE FROM" [r]
+>              | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "DELETE FROM" [r]
 >              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >              ]
 
@@ -464,7 +464,7 @@ Obsolete?
 >    where
 >     phpCname = phpConcept context (concept o)
 >     hcs' = [ hc
->            | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-computeOrder hcs "INSERT INTO" (Isn (concept o) (concept o):declarations o)
+>            | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" (Isn (concept o) (concept o):declarations o)
 >            , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >            ]
 >  suitable (F ts) = True
@@ -492,7 +492,7 @@ It is compared to the desired state,
 >         phpIndent (i+15)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addslashes($attrs['"++phpCname++"']).'\\''));"
 >     , phpCodeIncrHornClauseEnt 8 "$qa[0]" context o []
 >        [ hc
->        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "DELETE FROM" . declarations) o
+>        | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "DELETE FROM" . declarations) o
 >        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >        , source toExpr/=concept o && target toExpr/=concept o
 >        ]
@@ -514,8 +514,8 @@ It is compared to the desired state,
 >       | (s,sname,src,trg,srcAtt,trgAtt)<-relStrings, not (s `elem` comp)]++
 >-- insert derived values
 >       phpCodeUpdHornClauseEnt 8 context o []
->        [ (fOps, e, bOp, toExpr, frExpr, rule)
->        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "UPDATE" . declarations) o
+>        [ (CR(fOps, e, bOp, toExpr, frExpr, rule))
+>        | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "UPDATE" . declarations) o
 >        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >        ]
 >     ] where relStrings
@@ -567,7 +567,7 @@ It is compared to the desired state,
 >         phpIndent (i+15)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addslashes($handle).'\\'');"
 >     , phpCodeIncrHornClauseEnt 8 "$qa[0]" context o []
 >        [ hc
->        | hc@(fOps, e, bOp, toExpr, frExpr, rule)<-( computeOrder hcs "DELETE FROM" . declarations) o
+>        | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "DELETE FROM" . declarations) o
 >        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
 >        , source toExpr/=concept o && target toExpr/=concept o
 >        ]
@@ -620,7 +620,7 @@ It is compared to the desired state,
 
 >  phpCodeIncrHornClauseEnt :: Int -> String -> Context -> ObjectDef -> [Morphism] -> [ComputeRule] -> String
 >  phpCodeIncrHornClauseEnt i var context o filled [] = ""
->  phpCodeIncrHornClauseEnt i var context o filled (hc@(fOps, e, "INSERT INTO", toExpr, frExpr, rule): rest)
+>  phpCodeIncrHornClauseEnt i var context o filled (hc@(CR(fOps, e, "INSERT INTO", toExpr, frExpr, rule)): rest)
 >   = ( phpIndent (i-3)++"// "++informalRule hc++(if isSignal (declaration m) then " (SIGNAL)" else "")++
 >       phpIndent (i-3)++"// ("++showADL rule++".  "++explain rule++")"++
 >     (if pNoDebug then "" else
@@ -656,7 +656,7 @@ It is compared to the desired state,
 >       -- bereken welke invulvelden er zijn. Die kunnen immers mogelijk leeggelaten worden door de gebruiker
 >           flipper ms = ms `uni` map flp ms
 >           sub = (mors o `isc` flipper (mors frExpr))>-filled
->  phpCodeIncrHornClauseEnt i var context o filled (hc@(fOps, e, "DELETE FROM", toExpr, frExpr, rule):rest)
+>  phpCodeIncrHornClauseEnt i var context o filled (hc@(CR(fOps, e, "DELETE FROM", toExpr, frExpr, rule)):rest)
 >   = "\n     // "++informalRule hc++(if null (morlist toExpr) then "null (morlist toExpr)" else if isSignal (declaration m) then " (SIGNAL)" else "")++
 >     phpIndent i++
 >     (if oneMorphism toExpr
@@ -673,7 +673,7 @@ It is compared to the desired state,
 
 >  phpCodeUpdHornClauseEnt :: Int -> Context -> ObjectDef -> [Morphism] -> [ComputeRule] -> String
 >  phpCodeUpdHornClauseEnt i context o filled [] = ""
->  phpCodeUpdHornClauseEnt i context o filled ((hc@(fOps, e, bOp, toExpr, frExpr, rule)): rest)
+>  phpCodeUpdHornClauseEnt i context o filled (hc@(CR(fOps, e, bOp, toExpr, frExpr, rule)): rest)
 >   = ( phpIndent (i-3)++"// "++informalRule hc++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >       phpIndent (i-3)++"// ("++showADL rule++".  "++explain rule++")"++
 >       (if pNoDebug then "" else
@@ -721,7 +721,7 @@ It is compared to the desired state,
 >           ind = if null issetsM then i else i+3
 
 >  phpCodeIncrHornClauseRel :: String -> Int -> Context -> Declaration -> ComputeRule -> String
->  phpCodeIncrHornClauseRel attrs i context r hc@(fOps, e, "INSERT INTO", toExpr, frExpr, rule) 
+>  phpCodeIncrHornClauseRel attrs i context r hc@(CR(fOps, e, "INSERT INTO", toExpr, frExpr, rule)) 
 >   = if isTrue frExpr
 >     then phpIndent i++"DB_doquer('INSERT IGNORE INTO T1_r"++
 >          phpIndent (i+11)++      "SELECT "++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++", \\''.addslashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\' FROM C1_A WHERE NOT EXISTS (SELECT * FROM T2_s WHERE T2_s."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=C1_A."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++" AND T2_s."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=\\''.addslashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\')');"++
@@ -738,7 +738,7 @@ It is compared to the desired state,
 >     where m = head (mors toExpr)
 >           m' = head (mors frExpr)
 
->  phpCodeIncrHornClauseRel attrs i context r hc@(fOps, e, "DELETE FROM", toExpr, frExpr, rule)
+>  phpCodeIncrHornClauseRel attrs i context r hc@(CR(fOps, e, "DELETE FROM", toExpr, frExpr, rule))
 >   = (if pNoDebug then "" else
 >      phpIndent (i-3)++"// inside phpCodeIncrHornClauseRel:"++
 >   -- phpIndent (i-3)++"// r="++show (name r)++"; substitutions="++show [(m,phpMorSrc context m,phpMorTrg context m)| m<-mors e, declaration m==r]++";"++

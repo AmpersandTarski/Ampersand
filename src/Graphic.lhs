@@ -27,7 +27,7 @@
 >            -- Vervolgens alle relaties definieren als verbindingen tussen die nodes:
 >            ++ chain ""
 >                 (
->                  [ morf2dot m | cl<-eqClass order arcs, m <-take 1 (sort cl)]++  -- Let op: rare resultaten kunnen ontstaan door cyclische ISA relaties. Wie voorkomt dat source m <=source m' en target m'<=target m binnen één equivalentieklasse?
+>                  [ morf2dot m | cl<-eqClass order arcs, m <-take 1 (sort cl)]++  -- Let op: rare resultaten kunnen ontstaan door cyclische ISA relaties. Wie voorkomt dat source m <=source m' en target m'<=target m binnen Ã©Ã©n equivalentieklasse?
 >            -- and finally the ISA relations:
 >                  [ "\n   ; "++quote(conceptname c)++" -> "++quote(conceptname p)++" [arrowhead=onormal,arrowsize=1.2]"
 >                  | (p,c)<-isas ]
@@ -100,7 +100,7 @@
          getekend, alsook Px. Beide lijnen moeten echter wel op een verschillende manier worden
          getekend, want de symbooltjes die op beide lijnen worden aangebracht, kunnen verschillend
          zijn.
-         2) Indien de twee concepten gelijk zijn, voldoet één tussenpunt niet, want dan zouden beide
+         2) Indien de twee concepten gelijk zijn, voldoet Ã©Ã©n tussenpunt niet, want dan zouden beide
          te tekenen lijnen altijd over elkaar heen vallen. Er wordt voor gekozen om drie tussenpunten
          te gebruiken, waardoor er vier lijnstukken nodig zijn. De drie punten Px, Py en Pz zullen
          alle drie onzichtbaar worden gemaakt. De vier lijnen (Pa,Py);(Py,Px);(Px,Pz) en (Pz,Pb)

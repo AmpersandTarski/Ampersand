@@ -7,7 +7,7 @@
 >           (  Concept(Anything), Context, Rule(Ru,Sg) 
 >            , showADL
 >            , Morphic(isIdent)
->            , Morphism(I,V),
+>            , Morphism(I,V)
 >            , Expression(Fu,Fi,Fd,F,Tm,Cp)
 >            , Prop(Uni,Tot,Inj,Sur)
 >            , inline,idsOnly,isNot,explain 

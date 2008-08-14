@@ -133,7 +133,7 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >               , ("$"++nm++"_"++(name a)++"_str")++"=join(',',$arr);"
 >               , "DB_doquer( '"++(deleteExprForAttr context a o ("$"++nm++"->id"))++"');"
 >               ]
->             | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
+>             | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies Ã©Ã©n morfisme.
 >             ]
 >            )) ++
 >      ["    }"
@@ -147,7 +147,7 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >                       [ "}"
 >                       , "$"++nm++"_"++(name a)++"->id = @$"++nm++"_"++(name a)++"->"++(name as)++"[0]->id;"
 >                       ]
->                     | as <- attributes a -- De expressie ctx a bevat precies één morfisme.
+>                     | as <- attributes a -- De expressie ctx a bevat precies Ã©Ã©n morfisme.
 >                     , (Tm (I _ _ _ _)) <- [ctx as]   -- De morfismen uit 'mors' zijn allemaal inline.
 >                     ]
 >                    ))
@@ -164,7 +164,7 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >               ] ++ updateObject context (nms++[name a]) a ++
 >               [ "}"
 >               ]
->             | a <- termAtts o -- De expressie ctx a bevat precies één morfisme.
+>             | a <- termAtts o -- De expressie ctx a bevat precies Ã©Ã©n morfisme.
 >             , m <- [ctx a]   -- De morfismen uit 'mors' zijn allemaal inline.
 >             ]
 >            ))
@@ -295,7 +295,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >                  ]
 >                  ) ++
 >               [ "  ');"]
->  termAtts o = [a|a<-attributes o, Tm (Mph _ _ _ _ _ _)<-[ctx a]] -- Dit betekent: de expressie ctx a bevat precies één morfisme.
+>  termAtts o = [a|a<-attributes o, Tm (Mph _ _ _ _ _ _)<-[ctx a]] -- Dit betekent: de expressie ctx a bevat precies Ã©Ã©n morfisme.
 >  selectExprForAttr context a parent id
 >    = selectExprWithF context (ctx a) (concept parent) id
 >  selectExprWithF context e cpt id

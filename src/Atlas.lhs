@@ -35,8 +35,8 @@
 >--  import Calc  -- only because of two calls of subst
 >  import Hatml
 >           ( htmlPage,htmlBody,htmlDropDown,htmlname,htmlHeadinglevel
->            ,htmlAnchor,htmlBold,htmlBlueTable,htmlItalic,htmlHead,
->            ,hshow,htmlImageMap,htmlTable,htmlNumbered,htmlValNumbered,
+>            ,htmlAnchor,htmlBold,htmlBlueTable,htmlItalic,htmlHead
+>            ,hshow,htmlImageMap,htmlTable,htmlNumbered,htmlValNumbered
 >            ,avoidJSreservedwords,HTML)
 >  import HtmlFilenames
 >           ( fnContext,fnPatConcept,fnPattern,fnRule,fnConcept
