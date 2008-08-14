@@ -176,11 +176,13 @@ class viewableList extends anyView{
 					echo '</TR>';
 				}else{
 					foreach($this->header as $j=>$h){
+						echo '<TABLE class="hidden" align="left"><TR><TD>';
 						$h->style='h4';
 						$h->display();
 						echo '<P>';
 						$v[$j]->display();
 						echo '</P>';
+						echo '</TD></TR></TABLE>';
 					}
 				}
 			}
@@ -286,6 +288,7 @@ class expandableList extends viewableList{
 	function displayRow($row=null,$edit=false,$rowId=0,$totRow=0){
 		if(!$this->One)
 			echo "\r\n  <TR>";
+		//else echo '<DIV align="left" style="float:left;text-align:left;margin-right:10px;">';
 		if(isset($row->id))$id=$row->id; else $id='';
 		$page=@$this->object->page;
 		if($edit){
@@ -340,12 +343,13 @@ class expandableList extends viewableList{
 		if($edit && !$this->One){
 			if(!$this->Tot || $totRow>1){
 				echo '<TD align=left><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" /></TD>';
-			}else echo '<TD></TD>';
+			}
 		}else if($edit && (!$this->Tot || $totRow>1)){
-			echo '<P><input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" style="display:block" /></P>';
+			echo '<input type="image" name="'.htmlspecialchars($rowID).'" value="remove" src="'.$this->iDir.'remove.png" style="display:block" />';
 		}
 		if(!$this->One)
 			echo "</TR>";
+		//else echo '</DIV>';
 	}
 	function displayEmptyRow(){
 		if($this->Tot && count($this->elements)==0) $force=true; else $force=false;
@@ -391,6 +395,7 @@ class monastir Extends anyView {
 	var $defaultAction;
 	var $succes=true;
 	var $ok;
+	var $zoom=false;
 	function monastir($menu,$obj,$object,$cObjName){
 			global $action;
 			global $imageDirName;
@@ -400,6 +405,15 @@ class monastir Extends anyView {
 			$this->iDir=$imageDirName;
 			$this->menu=$menu;
 			global $_REQUEST;
+			if(isset($_GET['ZOOM'])){
+				$_REQUEST['edit']=$_REQUEST['ZOOM'];
+				$this->zoom=true;
+			} else
+			if(isset($_REQUEST['ZOOM'])) $this->zoom=true;
+			if(isset($_REQUEST['zoom'])) {
+				$_REQUEST['read']=$_REQUEST['zoom'];
+				$this->zoom=true;
+			}
 			$changed=true;
 			$read='read'.$cObjName;
 			if(isset($_REQUEST['read'])){
@@ -425,7 +439,9 @@ class monastir Extends anyView {
 				if(isset($obj->id) && $obj->id=='') {$obj->id=null;}
 				$f='create'.$cObjName;
 				$object_id= $f($obj);
-				if($object_id===false) {$object_id=$obj->id;$this->assign("succes",false);} else $this->assign("succes",true);
+				if($object_id===false) {$object_id=$obj->id;$this->assign("succes",false);} else{
+					$this->assign("succes",true);
+				}
 			} else if(@$_POST['action']=='update'){
 				$action='update';
 				$f='update'.$cObjName;
@@ -515,7 +531,7 @@ class monastir Extends anyView {
 		if($action=='update') $action = $this->succes ? 'read' : 'edit';
 		$qobj='\''.addslashes($this->object_id).'\'';
 		if($action=='read'){
-			$this->addAction('g(\'edit\','.$qobj.')','Edit','Edit '.$this->objname.' '.$this->object_id);
+			$this->addAction('g(\''.($this->zoom?'ZOOM':'edit').'\','.$qobj.')','Edit','Edit '.$this->objname.' '.$this->object_id);
 			$this->addAction('g(\'delete\','.$qobj.')','Delete','Delete '.$this->objname.' '.$this->object_id);
 			$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
 			$this->addAction('g(\'show\')','Overview','Show all '.$this->objname.' objects');
@@ -528,10 +544,11 @@ class monastir Extends anyView {
 			$defaultAction='update';
 			$edit=true;
 			$this->addAction('s(\'update\')','Save','Save the '.$this->objname);
-			$this->addAction('g(\'read\','.$qobj.')','Cancel','Don\'t save the '.$this->objname);
+			$this->addAction('g(\''.($this->zoom?'zoom':'read').'\','.$qobj.')','Cancel','Don\'t save the '.$this->objname);
 		}else if($action=='show'){
 			$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
 		}
+		$changed=$this->changed && $edit;
 		$title=$this->appname;
 		if(isset($this->objname))
 		$title=$this->objname." - ".$title;
@@ -539,7 +556,6 @@ class monastir Extends anyView {
 		$actions=$this->actions;
 		$contents=$this->contents;
 		$iDir=$this->iDir;
-		$changed=$this->succes && $edit;
 		?><!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd">
 		<HTML><HEAD>
 		<?	writeTitle($title);
@@ -588,66 +604,67 @@ class monastir Extends anyView {
 			}
 		//-->
 		</SCRIPT>
-		</HEAD><BODY STYLE="height:100%;width:100%;" background="<?=$iDir ?>blue.png" marginwidth="0" marginheight="0"<?
+		</HEAD><BODY STYLE="height:100%;width:100%;" <? if(!$this->zoom){ ?> background="<?=$iDir ?>blue.png" marginwidth="0" marginheight="0"<?
 		if(isset($focusField)&&$focusField!='') echo ' onload="document.forms.'.$focusField.'.focus();"';
-		?> topmargin="0" leftmargin="0" bottommargin="0" rightmargin="0"><TABLE CLASS="hidden" HEIGHT=100% WIDTH=100%><TR><TD VALIGN=MIDDLE ALIGN=CENTER height=100% style="height:100%">
+		?> topmargin="0" leftmargin="0" bottommargin="0" rightmargin="0" <? } else { ?> bgcolor=white <? } ?>><TABLE CLASS="hidden" HEIGHT=100% WIDTH=100%><TR><TD VALIGN=MIDDLE ALIGN=CENTER height=100% style="height:100%">
 		
 		<?
 		if(count($this->warning)) echo join('<BR>',$this->warning);
 		$this->warning=Array();
-		echo '<TABLE class="hidden" height=1><TR class="hidden" height=100%>';
-		if(count($menu)){
-			echo "\r\n<!-- menu -->\r\n  ";
-			echo '<TD class="hidden" width=20% height=100 valign=top>';
-				echo '<TABLE WIDTH=100% HEIGHT=100% class="hidden">';
-				echo '<TR>';
-				echo '<TD class="hidden" height=60 width=27><IMG src="'.$iDir.'l/hoek_lboven.png" height=60 width=27 border=0 /></TD>';
-				echo '<TD class="hidden" height=60 width=100% background="'.$iDir.'l/zijde_boven.png"><IMG src="'.$iDir.'l/zijde_boven.png" height=60 width=38 border=0 /></TD>';
-				echo '<TD class="hidden" height=60 width=24><IMG src="'.$iDir.'l/hoek_rboven.png" height=60 width=24 border=0 /></TD>';
-				echo '</TR>';
-				$first=true;
-				foreach($menu as $i=>$component){
-					if(!$first){
-						echo "\r\n  ".'<TR>';
-						echo '<TD class="hidden" height=8 width=27 border=0 /><IMG src="'.$iDir.'l/bar_links.png" height=8 width=27 border=0 /></TD>';
-						echo '<TD class="hidden" height=8 background="'.$iDir.'l/bar_midden.png" ><IMG src="'.$iDir.'l/bar_midden.png" height=8 width=38 border=0 /></TD>';
-						echo '<TD class="hidden" height=8 width=24 border=0 /><IMG src="'.$iDir.'l/bar_rechts.png" height=8 width=24 border=0 /></TD></TR>';
-					}
-					echo "\r\n  ".'<TR>';
-					if(is_array($component)){
-						foreach($component as $i=>$v){
-							if($v->selected){
-								echo "\r\n  ".'<TR>';
-								echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links_sel.png" border=0 /><IMG src="'.$iDir.'l/zijde_links_sel.png" height=21 width=27 border=0 /></TD>';
-								echo '<TD class="hidden" background="'.$iDir.'l/bg_sel.png" valign=middle>';
-								$v->display();
-								echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts_sel.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts_sel.png" height=24 width=24 border=0 /></TD>';
-								echo '</TR>';
-							}else{
-								echo "\r\n  ".'<TR>';
-								echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
-								echo '<TD class="hidden" bgcolor=white valign=middle>';		
-								$v->display();
-								echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
-								echo '</TR>';
-							}
-						}
-					}else{
-						echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
-						echo '<TD class="hidden" bgcolor=white valign=middle>';
-						$component->display();
-						echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
-					}
+		if(!$this->zoom){
+			echo '<TABLE class="hidden" height=1><TR class="hidden" height=100%>';
+			if(count($menu)){
+				echo "\r\n<!-- menu -->\r\n  ";
+				echo '<TD class="hidden" width=20% height=100 valign=top>';
+					echo '<TABLE WIDTH=100% HEIGHT=100% class="hidden">';
+					echo '<TR>';
+					echo '<TD class="hidden" height=60 width=27><IMG src="'.$iDir.'l/hoek_lboven.png" height=60 width=27 border=0 /></TD>';
+					echo '<TD class="hidden" height=60 width=100% background="'.$iDir.'l/zijde_boven.png"><IMG src="'.$iDir.'l/zijde_boven.png" height=60 width=38 border=0 /></TD>';
+					echo '<TD class="hidden" height=60 width=24><IMG src="'.$iDir.'l/hoek_rboven.png" height=60 width=24 border=0 /></TD>';
 					echo '</TR>';
-					$first=false;
-				}
-				echo '</TABLE>';
-			echo '</TD>'."\r\n";
-		}else{
-			echo '<TD class="hidden" width=20% height=29 align="right"><IMG SRC="'.$iDir.'l/zijde_links2.png" height=29 width=24 /></TD>';
-			// use another pic for this..
-		}
-		echo '<TD class="hidden" width=80% rowspan=3 valign=top style="height:100%" height=100%>';
+					$first=true;
+					foreach($menu as $i=>$component){
+						if(!$first){
+							echo "\r\n  ".'<TR>';
+							echo '<TD class="hidden" height=8 width=27 border=0 /><IMG src="'.$iDir.'l/bar_links.png" height=8 width=27 border=0 /></TD>';
+							echo '<TD class="hidden" height=8 background="'.$iDir.'l/bar_midden.png" ><IMG src="'.$iDir.'l/bar_midden.png" height=8 width=38 border=0 /></TD>';
+							echo '<TD class="hidden" height=8 width=24 border=0 /><IMG src="'.$iDir.'l/bar_rechts.png" height=8 width=24 border=0 /></TD></TR>';
+						}
+						echo "\r\n  ".'<TR>';
+						if(is_array($component)){
+							foreach($component as $i=>$v){
+								if($v->selected){
+									echo "\r\n  ".'<TR>';
+									echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links_sel.png" border=0 /><IMG src="'.$iDir.'l/zijde_links_sel.png" height=21 width=27 border=0 /></TD>';
+									echo '<TD class="hidden" background="'.$iDir.'l/bg_sel.png" valign=middle>';
+									$v->display();
+									echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts_sel.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts_sel.png" height=24 width=24 border=0 /></TD>';
+									echo '</TR>';
+								}else{
+									echo "\r\n  ".'<TR>';
+									echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
+									echo '<TD class="hidden" bgcolor=white valign=middle>';		
+									$v->display();
+									echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
+									echo '</TR>';
+								}
+							}
+						}else{
+							echo '<TD class="hidden" width=27 background="'.$iDir.'l/zijde_links.png" border=0 /><IMG src="'.$iDir.'l/zijde_links.png" height=21 width=27 border=0 /></TD>';
+							echo '<TD class="hidden" bgcolor=white valign=middle>';
+							$component->display();
+							echo '</TD><TD class="hidden" width=24 background="'.$iDir.'l/zijde_rechts.png" border=0 /><IMG src="'.$iDir.'l/zijde_rechts.png" height=24 width=24 border=0 /></TD>';
+						}
+						echo '</TR>';
+						$first=false;
+					}
+					echo '</TABLE>';
+				echo '</TD>'."\r\n";
+			}else{
+				echo '<TD class="hidden" width=20% height=29 align="right"><IMG SRC="'.$iDir.'l/zijde_links2.png" height=29 width=24 /></TD>';
+				// use another pic for this..
+			}
+			echo '<TD class="hidden" width=80% rowspan=3 valign=top style="height:100%" height=100%>';
 			//echo '<SPAN class="hidden" style="display:clip">';
 			echo '<TABLE CLASS="hidden" height="100%" width="100%">';
 			echo '<TR>';
@@ -665,32 +682,46 @@ class monastir Extends anyView {
 				$err->display();
 			}
 			echo "\r\n<!-- contents -->";
-			echo "\r\n  ";
-			if($edit){
-				echo '<FORM NAME="myform" ID="myform" METHOD="POST" ';
-				echo 'onkeydown="if((window.event && event.keyCode==13)||';
-					echo '(!window.event && event.which==13)){';
-						echo 'this.action.value=\''.$this->defaultAction.'\';this.submit();return true;';
-						echo '}else return void(0);"';
-				echo ' AUTOCOMPLETE="off" ACTION="'.$_SERVER['SCRIPT_NAME'].'">';
-				//echo '<DIV style="visibility:hidden;position:absolute"><INPUT TYPE="submit" name="action" value="'.$this->defaultAction.'" /></DIV>';
-				echo '<INPUT TYPE="HIDDEN" NAME="action" VALUE="'.$action.'">';
-				//echo '<INPUT TYPE="HIDDEN" NAME="defaultAction" VALUE="'.$defaultAction.'">';
-				//if($action=='new'){
-				//	echo '<INPUT TYPE="HIDDEN" NAME="id" VALUE="'.$this->object_id.'">';
-				//}
+		}
+		echo "\r\n  ";
+		if($edit){
+			echo '<FORM NAME="myform" ID="myform" METHOD="POST" ';
+			echo 'onkeydown="if((window.event && event.keyCode==13)||';
+				echo '(!window.event && event.which==13)){';
+					echo 'this.action.value=\''.$this->defaultAction.'\';this.submit();return true;';
+					echo '}else return void(changed=true);"';
+			echo ' AUTOCOMPLETE="off" ACTION="'.$_SERVER['SCRIPT_NAME'].'">';
+			//echo '<DIV style="visibility:hidden;position:absolute"><INPUT TYPE="submit" name="action" value="'.$this->defaultAction.'" /></DIV>';
+			echo '<INPUT TYPE="HIDDEN" NAME="action" VALUE="'.$action.'">';
+			if($this->zoom)
+				echo '<INPUT TYPE="HIDDEN" NAME="ZOOM" VALUE="1">';
+			//echo '<INPUT TYPE="HIDDEN" NAME="defaultAction" VALUE="'.$defaultAction.'">';
+			//if($action=='new'){
+			//	echo '<INPUT TYPE="HIDDEN" NAME="id" VALUE="'.$this->object_id.'">';
+			//}
+		}
+		if(isset($this->header))
+		{
+			echo '<TABLE class="hidden" width=100%><TR><TD valign=top>';
+			$this->header->assign("id","id");
+			if($action=='new') $this->header->display($edit);
+			else $this->header->display(false);
+			echo '</TD>';
+			if(!isset($_REQUEST['ZOOM']) && isset($this->object_id) && !$edit){
+				echo '<TD ALIGN="right" valign=top>';
+				$act = new action('go(\''.addslashes($this->object_id).'\',null,\'ZOOM\')'
+								 ,'<IMG SRC="'.$iDir.'zoom.png" border=0 />'
+								 ,'Show this '.$this->objname.' only');
+				$act->display();
+				echo '</TD>';
 			}
-			if(isset($this->header))
-			{
-				$this->header->assign("id","id");
-				if($action=='new') $this->header->display($edit);
-				else $this->header->display(false);
-				if(!isset($this->header->style)) echo '<BR />';
-			}
-			$contents->display($edit);
-			if($edit){
-				echo '</FORM>';
-			}
+			echo '</TR></TABLE>';
+		}
+		$contents->display($edit);
+		if($edit){
+			echo '</FORM>';
+		}
+		if(!$this->zoom){
 			echo "\r\n</TD>";
 			echo '<TD class="hidden" height="100%" width=60 background="'.$iDir.'h/zijde_rechts.png"><img src="'.$iDir.'spacer.gif" width=60 height=1 /></TD>';
 			echo '</TR>';
@@ -738,26 +769,31 @@ class monastir Extends anyView {
 			echo '</TD>';
 			echo '</TABLE>';
 			//echo '</SPAN>';
-		echo '</TD>';
-		echo '</TR>';
-		echo '<TR><TD class=hidden width=20% height=100%>';
-			echo '<TABLE class="hidden" height=100% width=100%>';
-			echo '<TD class="hidden" width=27 height=100% background="'.$iDir.'blue.png" valign=top><IMG SRC="'.$iDir.'l/hoek_londer.png" border=0 width=27 height=40 /></TD>';
-			echo '<TD class="hidden" background="'.$iDir.'blue.png" valign=top height=100%>';
-			echo '<TABLE height=100% width=100% class="hidden">';
-			echo '<TR><TD height=40 background="'.$iDir.'l/zijde_onder.png" class="hidden">';
-			echo '<IMG SRC="'.$iDir.'l/zijde_onder.png" height=40 /></TD>';
-			echo '</TR><TR><TD height=100% width=100% class="hidden" background="'.$iDir.'blue.png"><img src="'.$iDir.'spacer.gif" height=1 width=1 border=0 />';
-			echo '</TD></TR></TABLE>';
 			echo '</TD>';
-			echo '<TD class="hidden" height=100% width=24 valign=top background="'.$iDir.'h/zijde_links2.png"><IMG SRC="'.$iDir.'l/koppel_onder.png" border=0 width=24 height=40 /></TD>';
 			echo '</TR>';
+			echo '<TR><TD class=hidden width=20% height=100%>';
+				echo '<TABLE class="hidden" height=100% width=100%>';
+				echo '<TD class="hidden" width=27 height=100% background="'.$iDir.'blue.png" valign=top><IMG SRC="'.$iDir.'l/hoek_londer.png" border=0 width=27 height=40 /></TD>';
+				echo '<TD class="hidden" background="'.$iDir.'blue.png" valign=top height=100%>';
+				echo '<TABLE height=100% width=100% class="hidden">';
+				echo '<TR><TD height=40 background="'.$iDir.'l/zijde_onder.png" class="hidden">';
+				echo '<IMG SRC="'.$iDir.'l/zijde_onder.png" height=40 /></TD>';
+				echo '</TR><TR><TD height=100% width=100% class="hidden" background="'.$iDir.'blue.png"><img src="'.$iDir.'spacer.gif" height=1 width=1 border=0 />';
+				echo '</TD></TR></TABLE>';
+				echo '</TD>';
+				echo '<TD class="hidden" height=100% width=24 valign=top background="'.$iDir.'h/zijde_links2.png"><IMG SRC="'.$iDir.'l/koppel_onder.png" border=0 width=24 height=40 /></TD>';
+				echo '</TR>';
+				echo '</TABLE>';
+			echo '</TD></TR>';
+			echo '<TR><TD class="hidden" background="'.$iDir.'blue.png" align="right" valign=bottom>';
+				echo '<TABLE WIDTH=100% height=100% class="hidden"><TR><TD></TD><TD class="hidden" background="'.$iDir.'h/zijde_links2.png" height=100%></TD></TR>';
+				echo '<TR><TD></TD><TD height=73 width=24 class="hidden"><IMG SRC="'.$iDir.'h/zijde_linksonder2.png" width=24 height=73 /></TD></TR></TABLE>';
 			echo '</TABLE>';
-		echo '</TD></TR>';
-		echo '<TR><TD class="hidden" background="'.$iDir.'blue.png" align="right" valign=bottom>';
-			echo '<TABLE WIDTH=100% height=100% class="hidden"><TR><TD></TD><TD class="hidden" background="'.$iDir.'h/zijde_links2.png" height=100%></TD></TR>';
-			echo '<TR><TD></TD><TD height=73 width=24 class="hidden"><IMG SRC="'.$iDir.'h/zijde_linksonder2.png" width=24 height=73 /></TD></TR></TABLE>';
-		echo '</TABLE>';
+		}else{
+			foreach($actions as $i=>$component){
+				echo '<input type="button" style="cursor:pointer" title="'.$component->description.'" onClick="'.$component->jsaction.';" value="'.htmlspecialchars($component->caption).'" />';
+			}
+		}
 		?>
 		<CENTER>
 		<small><a class="cNotice" title="&copy; Sebastiaan JC Joosten 2005-2008">Layout V1.3.0 alpha</A></small>
