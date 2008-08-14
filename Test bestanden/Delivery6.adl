@@ -1,21 +1,28 @@
 CONTEXT Deliveries
 
-OBJECT Leverancier : I[Provider]
+OBJECT Leveranciers : I[Provider]
  = [ besteller : issuedTo~;from
    , opdracht:accepted
-   , leverantie: provider~ = [ Leverantie: I, order:of=[Ordernummer:I[Order],klant:from], klant:deliveredto ]
+   , leverantie: provider~ = [ Leverantie: I[Delivery], order:of=[Ordernummer:I[Order],klant:from], klant:deliveredto ]
    , rekening: sentBy~=[klant:sent,leverantie: delivery]
    ]
 
-OBJECT Klant : I[Client]
+OBJECT Klanten : I[Client]
  = [ opdracht: from~ = [opdrachtnummer:I[Order], leverancier:issuedTo]
    , rekening: sent~=[rekeningnummer:I[Invoice],betaalddoor:paid~, betaald:paid~;paid]
    ]
 
-OBJECT Bestelling : I[Order]
+OBJECT Bestellingen : I[Order]
  = [ van : from
    , aan : issuedTo
    , betaald[Order] : from;paid;delivery;of;V[Order*ONE]
+   ]
+
+OBJECT Rekeningen : I[Invoice]
+ = [ leverancier : sentBy
+   , leverantie : delivery
+   , klant : sent
+   , betaald[Order] : paid~;paid
    ]
 
 OBJECT Levering : I[Delivery]
