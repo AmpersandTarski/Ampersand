@@ -1,13 +1,14 @@
 <?php // generated with ADL vs. 0.8.10
   
-  /********* on line 7, file "Aanvraag.adl"
+  /********* on line 12, file "..\\..\\prive\\myeclipseworkspace\\ADL\\Test bestanden\\Aanvraag.adl"
    * Permissions[Employee] : V
    *  = [ product[Product] : auth
    *    , area[Area] : area
    *   ]
    *********/
   
-  function getobject_Permissions(){  return   new object("Permissions", array
+  function getobject_Permissions(){
+    return   new object("Permissions", array
        ( new oRef( new oMulti( false,false,false,false ) // derived from auth
            , new object("product", array())
            ) 
@@ -21,18 +22,33 @@
     var $id;
     var $product;
     var $area;
-    function Permissions($id=null, $product=array(), $area=array()){
+    function Permissions($id=null, $product=null, $area=null){
         $this->id=$id;
         $this->product=$product;
         $this->area=$area;
+        if(!isset($product)){
+          if(isset($id)){
+            $this->product = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttP_roduct
+                           FROM T5_auth AS fst
+                          WHERE fst.AttE_mployee = \''.addslashes($id).'\'') as $i=>$v){
+              $this->product[]=new Permissions_product($v['AttP_roduct']);
+            }
+          } else $this->product=array();
+        }
+        if(!isset($area)){
+          if(isset($id)){
+            $this->area = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_rea
+                           FROM T9_area AS fst
+                          WHERE fst.AttE_mployee = \''.addslashes($id).'\'') as $i=>$v){
+              $this->area[]=new Permissions_area($v['AttA_rea']);
+            }
+          } else $this->area=array();
+        }
     }
     function add_product(Permissions_product $product){
       return $this->product[]=$product;
-    }
-    function read_product($id){
-      $obj = new Permissions_product($id);
-      $this->add_product($obj);
-      return $obj;
     }
     function getEach_product(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -47,11 +63,6 @@
     }
     function add_area(Permissions_area $area){
       return $this->area[]=$area;
-    }
-    function read_area($id){
-      $obj = new Permissions_area($id);
-      $this->add_area($obj);
-      return $obj;
     }
     function getEach_area(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -69,11 +80,6 @@
       if($type=='area') return $this->add_area($value);
       else return false;
     }
-    function readGen($type,$value){
-      if($type=='product') return $this->read_product($value);
-      if($type=='area') return $this->read_area($value);
-      else return false;
-    }
   }
   class Permissions_product {
     var $id;
@@ -82,8 +88,6 @@
     }
     function addGen($type,$value){
     }
-    function readGen($type,$value){
-    }
   }
   class Permissions_area {
     var $id;
@@ -91,8 +95,6 @@
         $this->id=$id;
     }
     function addGen($type,$value){
-    }
-    function readGen($type,$value){
     }
   }
   function getEachPermissions(){
@@ -106,22 +108,14 @@
   function readPermissions($id){
       // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttE_mployee
-                           FROM C4_E_mployee AS isect0
+                           FROM 
+                             ( SELECT DISTINCT AttE_mployee
+                                 FROM C4_E_mployee
+                                WHERE 1
+                             ) AS isect0
                           WHERE isect0.AttE_mployee = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj = new Permissions($id, array(), array());
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttP_roduct
-                           FROM T5_auth AS fst
-                          WHERE fst.AttE_mployee = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_product($v['AttP_roduct']);
-      }
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttE_mployee, fst.AttA_rea
-                           FROM T9_area AS fst
-                          WHERE fst.AttE_mployee = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_area($v['AttA_rea']);
-      }
+      $obj = new Permissions($id);
       return $obj;
   }
   function updatePermissions(Permissions $Permissions,$new=false){
@@ -206,25 +200,25 @@
                            )
         ');
     if (!checkRule2()){
-      $DB_err=$preErr.'"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."';
+      $DB_err=$preErr.'\"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"';
     } else
     if (!checkRule4()){
-      $DB_err=$preErr.'"Applications for permits are treated by authorized personnel only."';
+      $DB_err=$preErr.'\"Applications for permits are treated by authorized personnel only.\"';
     } else
     if (!checkRule10()){
-      $DB_err=$preErr.'"assigned[Application*Employee] is univalent"';
+      $DB_err=$preErr.'\"assigned[Application*Employee] is univalent\"';
     } else
     if (!checkRule11()){
-      $DB_err=$preErr.'"kind[Application*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Application*Product] is univalent\"';
     } else
     if (!checkRule13()){
-      $DB_err=$preErr.'"kind[Decision*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Decision*Product] is univalent\"';
     } else
     if (!checkRule15()){
-      $DB_err=$preErr.'"inhabitant[Person*Area] is univalent"';
+      $DB_err=$preErr.'\"inhabitant[Person*Area] is univalent\"';
     } else
     if (!checkRule17()){
-      $DB_err=$preErr.'"area[Employee*Area] is surjective"';
+      $DB_err=$preErr.'\"area[Employee*Area] is surjective\"';
     } else
       if(true){ // all rules are met
           DB_doquer('COMMIT');
@@ -299,25 +293,25 @@
                          )
       ');
     if (!checkRule2()){
-      $DB_err=$preErr.'"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."';
+      $DB_err=$preErr.'\"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"';
     } else
     if (!checkRule4()){
-      $DB_err=$preErr.'"Applications for permits are treated by authorized personnel only."';
+      $DB_err=$preErr.'\"Applications for permits are treated by authorized personnel only.\"';
     } else
     if (!checkRule10()){
-      $DB_err=$preErr.'"assigned[Application*Employee] is univalent"';
+      $DB_err=$preErr.'\"assigned[Application*Employee] is univalent\"';
     } else
     if (!checkRule11()){
-      $DB_err=$preErr.'"kind[Application*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Application*Product] is univalent\"';
     } else
     if (!checkRule13()){
-      $DB_err=$preErr.'"kind[Decision*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Decision*Product] is univalent\"';
     } else
     if (!checkRule15()){
-      $DB_err=$preErr.'"inhabitant[Person*Area] is univalent"';
+      $DB_err=$preErr.'\"inhabitant[Person*Area] is univalent\"';
     } else
     if (!checkRule17()){
-      $DB_err=$preErr.'"area[Employee*Area] is surjective"';
+      $DB_err=$preErr.'\"area[Employee*Area] is surjective\"';
     } else
     if(true) {
       DB_doquer('COMMIT');

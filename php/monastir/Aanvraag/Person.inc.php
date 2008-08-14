@@ -1,6 +1,6 @@
 <?php // generated with ADL vs. 0.8.10
   
-  /********* on line 11, file "Aanvraag.adl"
+  /********* on line 16, file "..\\..\\prive\\myeclipseworkspace\\ADL\\Test bestanden\\Aanvraag.adl"
    * Person[Person] : V
    *  = [ idDocument[IDdocument] : authentic
    *    , residence[Area] : inhabitant
@@ -8,7 +8,8 @@
    *   ]
    *********/
   
-  function getobject_Person(){  return   new object("Person", array
+  function getobject_Person(){
+    return   new object("Person", array
        ( new oRef( new oMulti( true,false,true,false ) // derived from authentic
            , new object("idDocument", array())
            ) 
@@ -26,19 +27,50 @@
     var $idDocument;
     var $residence;
     var $application;
-    function Person($id=null, $idDocument=array(), $residence=array(), $application=array()){
+    function Person($id=null, $idDocument=null, $residence=null, $application=null){
         $this->id=$id;
         $this->idDocument=$idDocument;
         $this->residence=$residence;
         $this->application=$application;
+        if(!isset($idDocument)){
+          if(isset($id)){
+            $this->idDocument = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttID_document
+                           FROM T1_authentic AS fst
+                          WHERE fst.AttP_erson = \''.addslashes($id).'\'') as $i=>$v){
+              $this->idDocument[]=new Person_idDocument($v['AttID_document']);
+            }
+          } else $this->idDocument=array();
+        }
+        if(!isset($residence)){
+          if(isset($id)){
+            $this->residence = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
+                           FROM T8_inhabitant AS fst
+                          WHERE fst.AttP_erson = \''.addslashes($id).'\'') as $i=>$v){
+              $this->residence[]=new Person_residence($v['AttA_rea']);
+            }
+          } else $this->residence=array();
+        }
+        if(count($this->residence)==0) $this->residence[] = new Person_residence();
+        if(count($this->residence)>1){
+          $last=$this->residence[count($this->residence)-1];
+          $this->residence = array();
+          $this->residence[] = $last;
+        }
+        if(!isset($application)){
+          if(isset($id)){
+            $this->application = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
+                           FROM T2_applicant AS fst
+                          WHERE fst.AttP_erson = \''.addslashes($id).'\'') as $i=>$v){
+              $this->application[]=new Person_application($v['AttA_pplication']);
+            }
+          } else $this->application=array();
+        }
     }
     function add_idDocument(Person_idDocument $idDocument){
       return $this->idDocument[]=$idDocument;
-    }
-    function read_idDocument($id){
-      $obj = new Person_idDocument($id);
-      $this->add_idDocument($obj);
-      return $obj;
     }
     function getEach_idDocument(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -52,12 +84,7 @@
       return $res;
     }
     function add_residence(Person_residence $residence){
-      return $this->residence[]=$residence;
-    }
-    function read_residence($id){
-      $obj = new Person_residence($id);
-      $this->add_residence($obj);
-      return $obj;
+      return $this->residence[0]=$residence;
     }
     function getEach_residence(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -72,11 +99,6 @@
     }
     function add_application(Person_application $application){
       return $this->application[]=$application;
-    }
-    function read_application($id){
-      $obj = new Person_application($id);
-      $this->add_application($obj);
-      return $obj;
     }
     function getEach_application(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -95,12 +117,6 @@
       if($type=='application') return $this->add_application($value);
       else return false;
     }
-    function readGen($type,$value){
-      if($type=='idDocument') return $this->read_idDocument($value);
-      if($type=='residence') return $this->read_residence($value);
-      if($type=='application') return $this->read_application($value);
-      else return false;
-    }
   }
   class Person_idDocument {
     var $id;
@@ -108,8 +124,6 @@
         $this->id=$id;
     }
     function addGen($type,$value){
-    }
-    function readGen($type,$value){
     }
   }
   class Person_residence {
@@ -119,8 +133,6 @@
     }
     function addGen($type,$value){
     }
-    function readGen($type,$value){
-    }
   }
   class Person_application {
     var $id;
@@ -128,8 +140,6 @@
         $this->id=$id;
     }
     function addGen($type,$value){
-    }
-    function readGen($type,$value){
     }
   }
   function getEachPerson(){
@@ -143,28 +153,14 @@
   function readPerson($id){
       // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttP_erson
-                           FROM C1_P_erson AS isect0
+                           FROM 
+                             ( SELECT DISTINCT AttP_erson
+                                 FROM C1_P_erson
+                                WHERE 1
+                             ) AS isect0
                           WHERE isect0.AttP_erson = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj = new Person($id, array(), array(), array());
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttID_document
-                           FROM T1_authentic AS fst
-                          WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_idDocument($v['AttID_document']);
-      }
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_rea
-                           FROM T8_inhabitant AS fst
-                          WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_residence($v['AttA_rea']);
-      }
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttP_erson, fst.AttA_pplication
-                           FROM T2_applicant AS fst
-                          WHERE fst.AttP_erson = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_application($v['AttA_pplication']);
-      }
+      $obj = new Person($id);
       return $obj;
   }
   function updatePerson(Person $Person,$new=false){
@@ -285,40 +281,40 @@
                            )
         ');
     if (!checkRule2()){
-      $DB_err=$preErr.'"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."';
+      $DB_err=$preErr.'\"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"';
     } else
     if (!checkRule3()){
-      $DB_err=$preErr.'"An application for a permit is accepted only from individuals whose identity is authenticated."';
+      $DB_err=$preErr.'\"An application for a permit is accepted only from individuals whose identity is authenticated.\"';
     } else
     if (!checkRule5()){
-      $DB_err=$preErr.'"authentic[Person*IDdocument] is injective"';
+      $DB_err=$preErr.'\"authentic[Person*IDdocument] is injective\"';
     } else
     if (!checkRule6()){
-      $DB_err=$preErr.'"authentic[Person*IDdocument] is surjective"';
+      $DB_err=$preErr.'\"authentic[Person*IDdocument] is surjective\"';
     } else
     if (!checkRule7()){
-      $DB_err=$preErr.'"applicant[Application*Person] is univalent"';
+      $DB_err=$preErr.'\"applicant[Application*Person] is univalent\"';
     } else
     if (!checkRule8()){
-      $DB_err=$preErr.'"applicant[Application*Person] is total"';
+      $DB_err=$preErr.'\"applicant[Application*Person] is total\"';
     } else
     if (!checkRule9()){
-      $DB_err=$preErr.'"checked[Application*IDdocument] is univalent"';
+      $DB_err=$preErr.'\"checked[Application*IDdocument] is univalent\"';
     } else
     if (!checkRule12()){
-      $DB_err=$preErr.'"kind[Application*Product] is total"';
+      $DB_err=$preErr.'\"kind[Application*Product] is total\"';
     } else
     if (!checkRule15()){
-      $DB_err=$preErr.'"inhabitant[Person*Area] is univalent"';
+      $DB_err=$preErr.'\"inhabitant[Person*Area] is univalent\"';
     } else
     if (!checkRule16()){
-      $DB_err=$preErr.'"inhabitant[Person*Area] is total"';
+      $DB_err=$preErr.'\"inhabitant[Person*Area] is total\"';
     } else
     if (!checkRule17()){
-      $DB_err=$preErr.'"area[Employee*Area] is surjective"';
+      $DB_err=$preErr.'\"area[Employee*Area] is surjective\"';
     } else
     if (!checkRule18()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is injective"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is injective\"';
     } else
       if(true){ // all rules are met
           DB_doquer('COMMIT');
@@ -411,40 +407,40 @@
                          )
       ');
     if (!checkRule2()){
-      $DB_err=$preErr.'"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."';
+      $DB_err=$preErr.'\"Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only.\"';
     } else
     if (!checkRule3()){
-      $DB_err=$preErr.'"An application for a permit is accepted only from individuals whose identity is authenticated."';
+      $DB_err=$preErr.'\"An application for a permit is accepted only from individuals whose identity is authenticated.\"';
     } else
     if (!checkRule5()){
-      $DB_err=$preErr.'"authentic[Person*IDdocument] is injective"';
+      $DB_err=$preErr.'\"authentic[Person*IDdocument] is injective\"';
     } else
     if (!checkRule6()){
-      $DB_err=$preErr.'"authentic[Person*IDdocument] is surjective"';
+      $DB_err=$preErr.'\"authentic[Person*IDdocument] is surjective\"';
     } else
     if (!checkRule7()){
-      $DB_err=$preErr.'"applicant[Application*Person] is univalent"';
+      $DB_err=$preErr.'\"applicant[Application*Person] is univalent\"';
     } else
     if (!checkRule8()){
-      $DB_err=$preErr.'"applicant[Application*Person] is total"';
+      $DB_err=$preErr.'\"applicant[Application*Person] is total\"';
     } else
     if (!checkRule9()){
-      $DB_err=$preErr.'"checked[Application*IDdocument] is univalent"';
+      $DB_err=$preErr.'\"checked[Application*IDdocument] is univalent\"';
     } else
     if (!checkRule12()){
-      $DB_err=$preErr.'"kind[Application*Product] is total"';
+      $DB_err=$preErr.'\"kind[Application*Product] is total\"';
     } else
     if (!checkRule15()){
-      $DB_err=$preErr.'"inhabitant[Person*Area] is univalent"';
+      $DB_err=$preErr.'\"inhabitant[Person*Area] is univalent\"';
     } else
     if (!checkRule16()){
-      $DB_err=$preErr.'"inhabitant[Person*Area] is total"';
+      $DB_err=$preErr.'\"inhabitant[Person*Area] is total\"';
     } else
     if (!checkRule17()){
-      $DB_err=$preErr.'"area[Employee*Area] is surjective"';
+      $DB_err=$preErr.'\"area[Employee*Area] is surjective\"';
     } else
     if (!checkRule18()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is injective"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is injective\"';
     } else
     if(true) {
       DB_doquer('COMMIT');

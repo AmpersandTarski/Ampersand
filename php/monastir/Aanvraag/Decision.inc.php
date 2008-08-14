@@ -1,13 +1,14 @@
 <?php // generated with ADL vs. 0.8.10
   
-  /********* on line 27, file "Aanvraag.adl"
+  /********* on line 32, file "..\\..\\prive\\myeclipseworkspace\\ADL\\Test bestanden\\Aanvraag.adl"
    * Decision[Decision] : V
    *  = [ application[Application] : leadsto~
    *    , kind[Product] : kind
    *   ]
    *********/
   
-  function getobject_Decision(){  return   new object("Decision", array
+  function getobject_Decision(){
+    return   new object("Decision", array
        ( new oRef( new oMulti( true,true,false,true ) // derived from leadsto~
            , new object("application", array(), "Application.php")
            ) 
@@ -21,18 +22,45 @@
     var $id;
     var $application;
     var $kind;
-    function Decision($id=null, $application=array(), $kind=array()){
+    function Decision($id=null, $application=null, $kind=null){
         $this->id=$id;
         $this->application=$application;
         $this->kind=$kind;
+        if(!isset($application)){
+          if(isset($id)){
+            $this->application = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttA_pplication
+                           FROM T10_leadsto AS fst
+                          WHERE fst.AttD_ecision = \''.addslashes($id).'\'') as $i=>$v){
+              $this->application[]=new Decision_application($v['AttA_pplication']);
+            }
+          } else $this->application=array();
+        }
+        if(count($this->application)==0) $this->application[] = new Decision_application();
+        if(count($this->application)>1){
+          $last=$this->application[count($this->application)-1];
+          $this->application = array();
+          $this->application[] = $last;
+        }
+        if(!isset($kind)){
+          if(isset($id)){
+            $this->kind = array();
+            foreach(DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
+                           FROM T7_kind AS fst
+                          WHERE fst.AttD_ecision = \''.addslashes($id).'\'') as $i=>$v){
+              $this->kind[]=new Decision_kind($v['AttP_roduct']);
+            }
+          } else $this->kind=array();
+        }
+        if(count($this->kind)==0) $this->kind[] = new Decision_kind();
+        if(count($this->kind)>1){
+          $last=$this->kind[count($this->kind)-1];
+          $this->kind = array();
+          $this->kind[] = $last;
+        }
     }
     function add_application(Decision_application $application){
-      return $this->application[]=$application;
-    }
-    function read_application($id){
-      $obj = new Decision_application($id);
-      $this->add_application($obj);
-      return $obj;
+      return $this->application[0]=$application;
     }
     function getEach_application(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -46,12 +74,7 @@
       return $res;
     }
     function add_kind(Decision_kind $kind){
-      return $this->kind[]=$kind;
-    }
-    function read_kind($id){
-      $obj = new Decision_kind($id);
-      $this->add_kind($obj);
-      return $obj;
+      return $this->kind[0]=$kind;
     }
     function getEach_kind(){
       // currently, this returns all concepts.. why not let it return only the valid ones?
@@ -69,11 +92,6 @@
       if($type=='kind') return $this->add_kind($value);
       else return false;
     }
-    function readGen($type,$value){
-      if($type=='application') return $this->read_application($value);
-      if($type=='kind') return $this->read_kind($value);
-      else return false;
-    }
   }
   class Decision_application {
     var $id;
@@ -82,8 +100,6 @@
     }
     function addGen($type,$value){
     }
-    function readGen($type,$value){
-    }
   }
   class Decision_kind {
     var $id;
@@ -91,8 +107,6 @@
         $this->id=$id;
     }
     function addGen($type,$value){
-    }
-    function readGen($type,$value){
     }
   }
   function getEachDecision(){
@@ -106,22 +120,14 @@
   function readDecision($id){
       // check existence of $id
       $ctx = DB_doquer('SELECT DISTINCT isect0.AttD_ecision
-                           FROM C6_D_ecision AS isect0
+                           FROM 
+                             ( SELECT DISTINCT AttD_ecision
+                                 FROM C6_D_ecision
+                                WHERE 1
+                             ) AS isect0
                           WHERE isect0.AttD_ecision = \''.addslashes($id).'\'');
       if(count($ctx)==0) return false;
-      $obj = new Decision($id, array(), array());
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttA_pplication
-                           FROM T10_leadsto AS fst
-                          WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_application($v['AttA_pplication']);
-      }
-      $ctx = DB_doquer('SELECT DISTINCT fst.AttD_ecision, fst.AttP_roduct
-                           FROM T7_kind AS fst
-                          WHERE fst.AttD_ecision = \''.addslashes($id).'\'');
-      foreach($ctx as $i=>$v){
-        $obj->read_kind($v['AttP_roduct']);
-      }
+      $obj = new Decision($id);
       return $obj;
   }
   function updateDecision(Decision $Decision,$new=false){
@@ -215,31 +221,31 @@
                            )
         ');
     if (!checkRule1()){
-      $DB_err=$preErr.'"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product."';
+      $DB_err=$preErr.'\"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product.\"';
     } else
     if (!checkRule8()){
-      $DB_err=$preErr.'"applicant[Application*Person] is total"';
+      $DB_err=$preErr.'\"applicant[Application*Person] is total\"';
     } else
     if (!checkRule11()){
-      $DB_err=$preErr.'"kind[Application*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Application*Product] is univalent\"';
     } else
     if (!checkRule12()){
-      $DB_err=$preErr.'"kind[Application*Product] is total"';
+      $DB_err=$preErr.'\"kind[Application*Product] is total\"';
     } else
     if (!checkRule13()){
-      $DB_err=$preErr.'"kind[Decision*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Decision*Product] is univalent\"';
     } else
     if (!checkRule14()){
-      $DB_err=$preErr.'"kind[Decision*Product] is total"';
+      $DB_err=$preErr.'\"kind[Decision*Product] is total\"';
     } else
     if (!checkRule18()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is injective"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is injective\"';
     } else
     if (!checkRule19()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is univalent"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is univalent\"';
     } else
     if (!checkRule20()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is surjective"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is surjective\"';
     } else
       if(true){ // all rules are met
           DB_doquer('COMMIT');
@@ -314,31 +320,31 @@
                          )
       ');
     if (!checkRule1()){
-      $DB_err=$preErr.'"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product."';
+      $DB_err=$preErr.'\"Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product.\"';
     } else
     if (!checkRule8()){
-      $DB_err=$preErr.'"applicant[Application*Person] is total"';
+      $DB_err=$preErr.'\"applicant[Application*Person] is total\"';
     } else
     if (!checkRule11()){
-      $DB_err=$preErr.'"kind[Application*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Application*Product] is univalent\"';
     } else
     if (!checkRule12()){
-      $DB_err=$preErr.'"kind[Application*Product] is total"';
+      $DB_err=$preErr.'\"kind[Application*Product] is total\"';
     } else
     if (!checkRule13()){
-      $DB_err=$preErr.'"kind[Decision*Product] is univalent"';
+      $DB_err=$preErr.'\"kind[Decision*Product] is univalent\"';
     } else
     if (!checkRule14()){
-      $DB_err=$preErr.'"kind[Decision*Product] is total"';
+      $DB_err=$preErr.'\"kind[Decision*Product] is total\"';
     } else
     if (!checkRule18()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is injective"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is injective\"';
     } else
     if (!checkRule19()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is univalent"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is univalent\"';
     } else
     if (!checkRule20()){
-      $DB_err=$preErr.'"leadsto[Application*Decision] is surjective"';
+      $DB_err=$preErr.'\"leadsto[Application*Decision] is surjective\"';
     } else
     if(true) {
       DB_doquer('COMMIT');
