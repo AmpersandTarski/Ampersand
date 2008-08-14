@@ -1,5 +1,17 @@
 CONTEXT Deliveries
 
+OBJECT Leverancier : I[Provider]
+ = [ besteller : issuedTo~;from
+   , opdracht:accepted
+   , leverantie: provider~ = [ Leverantie: I, order:of=[Ordernummer:I[Order],klant:from], klant:deliveredto ]
+   , rekening: sentBy~=[klant:sent,leverantie: delivery]
+   ]
+
+OBJECT Klant : I[Client]
+ = [ opdracht: from~ = [opdrachtnummer:I[Order], leverancier:issuedTo]
+   , rekening: sent~=[rekeningnummer:I[Invoice],betaalddoor:paid~, betaald:paid~;paid]
+   ]
+
 OBJECT Bestelling : I[Order]
  = [ van : from
    , aan : issuedTo
@@ -11,7 +23,6 @@ OBJECT Levering : I[Delivery]
    , klant : deliveredto
    , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
    ]
-
 
 OBJECT Bestellijst : I[ONE]
  = [ LijstItem : V[ONE*Delivery]
@@ -37,22 +48,35 @@ PATTERN Deliveries
  of;item |- item[Delivery*Product] COMPUTING item[Delivery*Product]
   EXPLANATION "All items ordered must be delivered."
 -}
- issuedTo :: Order -> Provider PRAGMA "Order " " was issued to provider "
+
+-- Upon creation of a new order, the provider must be known. Therefore every order always has precisely one provider.
+
+ issuedTo :: Order -> Provider PRAGMA "" " has been issued to "
   = [ ("Order 22/09/2006 Cookies", "Candy's candy")
     ; ("C45666"                  , "Carter"       )
     ; ("C45683"                  , "Carter"       )
     ].
- of :: Delivery -> Order [SUR]
+
+-- Since there can be orders, which have not (yet) been delivered, the relation of must not be surjective.
+-- However, for every delivery, there is always precisely one order.
+
+ of :: Delivery -> Order [] PRAGMA "" " was made upon order "
   = [ ("Cookies #0382"      , "Order 22/09/2006 Cookies")
     ; ("Jelly beans #4921"  , "C45666"                  )
     ; ("Peanut butter #1993", "C45683"                  )
     ].
- provider :: Delivery -> Provider PRAGMA "Provider " " has delivered delivery "
+
+-- To allow that deliveries exist, which have not yet been delivered, the relation provider cannot be total.
+
+ provider :: Delivery * Provider [UNI,TOT] PRAGMA "" " has been delivered by "
   = [ ("Cookies #0382"      , "Candy's candy")
     ; ("Jelly beans #4921"  , "Carter"       )
     ; ("Peanut butter #1993", "Carter"       )
     ].
- accepted :: Provider * Order [INJ,SUR] PRAGMA "Provider " " has accepted order "
+
+-- To allow that orders exist, which are not yet accepted, the relation accepted may not be surjective.
+
+ accepted :: Provider * Order [INJ] PRAGMA "Provider " " has accepted order "
   = [ ("Candy's candy", "Order 22/09/2006 Cookies")
     ; ("Carter"       , "C45666"                  )
     ; ("Carter"       , "C45683"                  )
@@ -87,7 +111,7 @@ PATTERN Deliveries
     ; ("721i" , "Brown"    )
     ; ("9443a", "Conway"   )
     ].
- delivery :: Invoice -> Delivery [SUR] PRAGMA "Invoice " " covers delivery "
+ delivery :: Invoice -> Delivery [] PRAGMA "Invoice " " covers delivery "
   = [ ("5362a", "Jelly beans #4921")
     ; ("721i" , "Cookies #0382"    )
     ; ("9443a", "Peanut butter #1993"   )
@@ -104,7 +128,10 @@ PATTERN Deliveries
 SIGNAL pending ON provider = delivery~;sentBy
  EXPLANATION "invoices to be sent (1.40)"
 
- paid :: Client * Invoice [SUR,INJ] PRAGMA "Client " " has paid invoice "
+-- Since invoices can exist that are not (yet) paid, the relation paid cannot be surjective.
+-- Since clients can exist that have not (yet) paid their invoice, the relation paid cannot be total.
+
+ paid :: Client * Invoice [INJ] PRAGMA "Client " " has paid invoice "
   = [ ("Applegate", "5362a")
     ; ("Brown", "721i")
     ; ("Conway", "9443a")
