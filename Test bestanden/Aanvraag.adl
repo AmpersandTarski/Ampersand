@@ -1,6 +1,6 @@
 CONTEXT Aanvraag
 
-OBJECT Behandelaar [Employee]          -- 'Employee' zou betekenen: 'Employee = Employee'
+VIEW Behandelaar [Employee]          -- 'Employee' zou betekenen: 'Employee = Employee'
   = [  aanvragen : assigned~ 
        = [applicant : applicant
          , checked   : checked
@@ -9,16 +9,16 @@ OBJECT Behandelaar [Employee]          -- 'Employee' zou betekenen: 'Employee = 
          , decision  : leadsto]
      ]
  
-OBJECT Permissions [Employee]
+VIEW Permissions [Employee]
   = [ product : auth
     , area    : area]
     
-OBJECT Person [Person]
+VIEW Person [Person]
   = [ idDocument  : authentic
     , residence   : inhabitant
     , application : applicant~]
  
-OBJECT Application [Application]
+VIEW Application [Application]
   = [  applicant : applicant
        = [ person : I[Person]
          , idDocument : authentic
@@ -29,17 +29,17 @@ OBJECT Application [Application]
     , assigned  : assigned
     , decision  : leadsto]
  
-OBJECT Decision [Decision]
+VIEW Decision [Decision]
   = [  application : leadsto~
     , kind        : kind[Decision*Product]]
  
 {-
-OBJECT Index ['Overview'] -- called index to be the default screen
+VIEW Index ['Overview'] -- called index to be the default screen
      employee  : V[*Employee]
      undecided : (V[*Application];(I /\ (leadsto;leadsto~)-))
      decisions : V[*Decision]
      person    : V[*Person]
-ENDOBJECT
+ENDVIEW
 -}
  
 PATTERN Permits
