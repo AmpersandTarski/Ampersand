@@ -532,8 +532,10 @@ class monastir Extends anyView {
 		$qobj='\''.addslashes($this->object_id).'\'';
 		if($action=='read'){
 			$this->addAction('g(\''.($this->zoom?'ZOOM':'edit').'\','.$qobj.')','Edit','Edit '.$this->objname.' '.$this->object_id);
-			$this->addAction('g(\'delete\','.$qobj.')','Delete','Delete '.$this->objname.' '.$this->object_id);
-			$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
+			if(!$this->zoom){
+				$this->addAction('g(\'delete\','.$qobj.')','Delete','Delete '.$this->objname.' '.$this->object_id);
+				$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
+			}
 			$this->addAction('g(\'show\')','Overview','Show all '.$this->objname.' objects');
 		}else if($action=='new'){
 			$defaultAction='create';
