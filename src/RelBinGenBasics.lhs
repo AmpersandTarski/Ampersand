@@ -420,6 +420,7 @@ phpShow adds backslashes to quotes in order to make a string readable for MySQL
 >  phpShow str = "'" ++ addslashes str ++ "'"
 
 >  addslashes ('\'': cs) = "\\'"++addslashes cs
+>  addslashes ('"': cs) = "\\\""++addslashes cs
 >  addslashes ('\\': cs) = "\\\\"++addslashes cs
 >  addslashes (c:cs) = c:addslashes cs
 >  addslashes "" = ""

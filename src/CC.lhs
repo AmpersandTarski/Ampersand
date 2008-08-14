@@ -38,7 +38,7 @@ VERSION, AUTHOR, PURPOSE, STAKEHOLDER
 
 >  keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
 >                      , "PATTERN", "ENDPATTERN"
->                      , "OBJECT", "INITIAL"
+>                      , "VIEW", "INITIAL"
 >                      , "POPULATION", "CONTAINS"
 >                      , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX"
 >                      , "RELATION", "CONCEPT", "KEY"
@@ -253,7 +253,7 @@ There are always one or more terms in a factor. F [] cannot occur
 >                       where kd (nm,pos) e ats = Kd pos nm e ats
 
 >  pObjDef          :: Parser Token ObjectDef
->  pObjDef           = pKey_pos "OBJECT" *> pObj
+>  pObjDef           = pKey_pos "VIEW" *> pObj
 
 Bas: het volgende is nog incorrect....
  -- justPars :: (Parser Token anytype) -> Token -> anytype -> Parser Token (Maybe anytype)

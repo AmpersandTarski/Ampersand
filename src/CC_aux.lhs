@@ -16,8 +16,6 @@
 >            , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
 >            , posNone
 >            , pKey_pos
->--            , showS
->            , flp
 >            , pVarid_val_pos, pConid_val_pos
 >            , Numbered(nr,pos), renumberRules
 >            , normExpr
@@ -30,15 +28,14 @@
 >            , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
 >            , inline,idsOnly,explain , makeInline
 >            , Lang(English,Dutch)
->            , applyM, declaration, plural, source, target
+>            , applyM, declaration, plural
 >            , glb, lub, sur, inj, fun, tot, sign
->            , multiplicities, ruleType, antecedent, mkVar
+>            , ruleType, antecedent, mkVar
 >            , Calc(calc)
 >            , ShowHS(showHSname,showHS)
 >            , ShowADL(showADL)
 >            , consequent, order, isNeg, isPos, isNeg, notCp
->            , mIs
->            , isMph, isProperty 
+>            , isProperty 
 >            , union
 >            , Population(Popu), Populations
 >            , Pop(update)
@@ -47,7 +44,7 @@
 >            , FilePos(FilePos), ConceptDefs, Concepts
 >            , Paire, Rules, Morphisms, Patterns
 >            , anything, shSigns, gEtabG
->            , KeyDefs, keys, cpu
+>            , keys, cpu
 >            , isFunction, isFlpFunction
 
 >            , wrld, src, trg, uncomp

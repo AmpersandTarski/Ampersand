@@ -1,4 +1,5 @@
 > module ObjBinGen where
+>  import Directory
 >  import Auxiliaries
 >  import CC_aux
 >  import CommonClasses
@@ -14,6 +15,10 @@
 >                 targetDir
 >    =   putStr ("\n---------------------------\nGenerating php Object files with ADL version "++adlVersion++"\n---------------------------")
 >     >> putStr ("\n  Generating localsettings.inc.php")
+>     >> do { d <- doesDirectoryExist targetDir
+>           ; if d
+>             then putStr ""
+>             else createDirectory (targetDir) }
 >     >> writeFile (targetDir++"localsettings.inc.php") ls
 >     >> putStr ("\n  Generating connectToDataBase.inc.php")
 >     >> writeFile (targetDir++"connectToDataBase.inc.php") ctdb
