@@ -373,7 +373,7 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 
 
 >  getObject context o | null (attributes o) = 
->   [ "new object(\""++(name o)++"\", array()"++mystr (objectOfConcept context (concept o))++")"
+>   [ "new object(\""++(name o)++"\", array()"++mystrs (objectOfConcept context (concept o)) (isOne o)++")"
 >   ]
 >  getObject context o =
 >   [ "new object(\""++(name o)++"\", array"
@@ -391,16 +391,19 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >                               , ["  ) "]]
 >                           | a <- attributes o, m <- [multiplicities (ctx a)]
 >                           ]
->      )       )++["   )"++mystr (objectOfConcept context (concept o))++")"]
+>      )       )++["   )"++mystrs (objectOfConcept context (concept o)) (isOne o) ++")"]
 
+>  isOne o = (fun.multiplicities.disjNF.F) [v (source (ctx o),source (ctx o)),ctx o]
 >  mapTail f (a:as) = a:(map f as)
 >  mapHead f (a:as) = (f a):as
 >  addFstLst f1 f2 (a:as) = (f1++a):(addLst f2 as)
 >  addLst f (a:[]) = [a++f]
 >  addLst f (a:as) = a: addLst f as
 >  mapHeadTail f1 f2 (a:as) = (f1 a):(map f2 as)
->  mystr Nothing  = ""
->  mystr (Just o) = ", \""++(name o)++".php\""
+>  mystrs Nothing False = ""
+>  mystrs (Just o) False = ", \""++(name o)++".php\""
+>  mystrs Nothing True = ", null, true"
+>  mystrs (Just o) True = ", \""++(name o)++".php\", true"
 >  phpString b = if b then "true" else "false"
 
 Hypothese addLst ls lss = init lss++[last lss++ls]

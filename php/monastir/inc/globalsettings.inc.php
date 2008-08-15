@@ -79,10 +79,12 @@ class object {
 	var $name;
 	var $page;
 	var $containing;
-	function object($name,array $containing=array(),$page=NULL){
+	var $id;
+	function object($name,array $containing=array(),$page=NULL,$id=NULL){
 		$this->name=$name;
 		$this->page=$page;
 		$this->containing=$containing;
+		$this->id=$id;
 	}
 	function containsObject(oRef $container){
 		$this->containing[]=$container;

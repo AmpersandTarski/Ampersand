@@ -24,12 +24,13 @@ include "htmlFunctions.inc.php";
 function parseRequest($object){
 	global $_REQUEST;
 	global $object_id;
+	/*
 	if(isset($_REQUEST['id'])){
 		$object_id=$_REQUEST['id'];
 		if(isset($_REQUEST[$object->name.'%0_'])){
 			$_REQUEST[$object->name.'%0_']=$object_id;
 		}
-	}
+	}*/
 	if(isset($_REQUEST[$object->name.'%0_']))
 	{
 		if(!isset($object_id)){
@@ -37,6 +38,7 @@ function parseRequest($object){
 		}
 		return recurParse($object,$object->name.'%0',$object->name);
 	} else {
+		if(isset($object->id)) return new $object->name($object->id);
 		return false;
 	}
 }
@@ -395,11 +397,13 @@ class monastir Extends anyView {
 	var $defaultAction;
 	var $succes=true;
 	var $ok;
+	var $only_object;
 	var $zoom=false;
 	function monastir($menu,$obj,$object,$cObjName){
 			global $action;
 			global $imageDirName;
 			global $appName;
+			if(isset($object->id)) $object_id=$object->id;
 			$this->appname=$appName;
 			$this->objname=$cObjName;
 			$this->iDir=$imageDirName;
@@ -416,16 +420,7 @@ class monastir Extends anyView {
 			}
 			$changed=true;
 			$read='read'.$cObjName;
-			if(isset($_REQUEST['read'])){
-				$changed=false;
-				$action='read';
-				$object_id=$_REQUEST['read'];
-				$obj= $read($object_id); // from DB
-				if($obj->id===false){
-					$this->assign("succes",false);
-					$action='show';
-				}
-			} else if(isset($_REQUEST['new']) || @$_POST['action']=='new'){
+			if(isset($_REQUEST['new']) || @$_POST['action']=='new'){
 				$action='new';
 				$defaultAction='create';
 				if($obj===false) { // not false after edit!
@@ -469,6 +464,16 @@ class monastir Extends anyView {
 					$object_id=$_REQUEST['delete'];
 					$obj= $read($object_id); // from DB
 				}
+			} else if(isset($_REQUEST['read']) || isset($this->only_object)){
+				$changed=false;
+				$action='read';
+				if(isset($this->only_object)) $object_id=$this->only_object; else
+				$object_id=$_REQUEST['read'];
+				$obj= $read($object_id); // from DB
+				if($obj->id===false){
+					$this->assign("succes",false);
+					$action='show';
+				}
 			} else { $action='show'; $changed=false; }
 			if(isset($defaultAction)) $this->defaultAction=$defaultAction;
 			else $this->defaultAction=$action;
@@ -476,6 +481,7 @@ class monastir Extends anyView {
 			$this->changed=$changed;
 			if($obj){ // read on no valid object id: send empty object
 				// show the item itself
+				if($this->action=='show') $this->action='read';
 				$header = new viewableText(@$object_id,'H2');
 				$header->assign("caption",$cObjName);
 				$this->assign("header",$header);
@@ -524,7 +530,9 @@ class monastir Extends anyView {
 		//if($changed) echo 'c'; else echo 'n';
 		if($action=='read'){
 			if(isset($_REQUEST['edit']) || @$_REQUEST['action']=='edit') $action = 'edit'; // was faked as read
-			if(!isset($this->object_id)) $action = 'new'; // was faked as read
+			if(!isset($this->object_id)){
+				$action = 'new'; // was faked as read
+			}
 		}
 		if($action=='create') $action = $this->succes ? 'read' : 'new';
 		if($action=='delete') $action = $this->succes ? 'show' : 'read';
@@ -532,10 +540,11 @@ class monastir Extends anyView {
 		$qobj='\''.addslashes($this->object_id).'\'';
 		if($action=='read'){
 			$this->addAction('g(\''.($this->zoom?'ZOOM':'edit').'\','.$qobj.')','Edit','Edit '.$this->objname.' '.$this->object_id);
-			if(!$this->zoom){
+			if(!$this->zoom && !isset($this->contents->object->id)){
 				$this->addAction('g(\'delete\','.$qobj.')','Delete','Delete '.$this->objname.' '.$this->object_id);
 				$this->addAction('g(\'new\')','New','Create a new '.$this->objname);
 			}
+			if(!isset($this->contents->object->id))
 			$this->addAction('g(\'show\')','Overview','Show all '.$this->objname.' objects');
 		}else if($action=='new'){
 			$defaultAction='create';
