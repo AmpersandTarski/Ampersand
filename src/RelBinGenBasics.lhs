@@ -207,6 +207,7 @@ TODO: de volgende functie, selectExpr, geeft een fout antwoord als de expressie 
 
 More optimal F code
 
+>  selectExpr ctx i src trg (F (Tm (V _ (S,t)):fs)) = selectExpr ctx i src trg (F (Tm (Mp1 "'1'" t):fs))
 >  selectExpr ctx i src trg (F (s1@(Tm (Mp1 _ _)):(s2@(Tm (V _ _)):(s3@(Tm (Mp1 _ _)):fx@(_:_))))) -- to make more use of the thing below
 >    =  selectExpr ctx i src trg (F ((F (s1:s2:s3:[])):fx))
 
@@ -232,6 +233,33 @@ More optimal F code
 
 Code below is basic functionality, and should be changed only when absolutely necessary.
 
+
+>  selectExpr ctx i src trg (Tm (V _ (S,S))   ) = 
+>       selectGeneric i ("1",src) ("1",trg)
+>                       ("(SELECT 1) AS csnd")
+>                       ("1"
+>                       )
+>  selectExpr ctx i src trg (Tm (V _ (s,S))   ) = 
+>       selectGeneric i ("cfst."++src',src) ("1",trg)
+>                       (sqlConcept ctx s ++ " AS cfst")
+>                       ("1"
+>                       )
+>                       where src' = sqlAttConcept ctx s
+>  selectExpr ctx i src trg (Tm (V _ (S,t))   ) = 
+>       selectGeneric i ("1",src) ("csnd."++trg',trg) 
+>                       (sqlConcept ctx t ++ " AS csnd")
+>                       ("1"
+>                       )
+>                       where trg' = sqlAttConcept ctx t
+>  selectExpr ctx i src trg (Tm (I _ S _ _)   ) = selectExpr ctx i src trg (Tm (V [] (S,S)))
+
+>  selectExpr ctx i src trg (Tm (V _ (s,t))   ) = 
+>       selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
+>                       (sqlConcept ctx s ++ " AS cfst, "++selectExprBrac ctx (i) trg' trg' (Tm (mIs t))++" AS csnd")
+>                       ("1"
+>                       )
+>                       where src' = sqlAttConcept ctx s
+>                             trg' = noCollide [src'] (sqlAttConcept ctx t)
 >  selectExpr ctx i src trg (Tm mrph      ) = selectExprMorph ctx i src trg mrph
 >  selectExpr ctx i src trg (Tc expr      ) = selectExpr ctx i src trg expr
 >  selectExpr ctx i src trg (F  (e:(f:fx))) =
@@ -445,6 +473,7 @@ phpShow adds backslashes to quotes in order to make a string readable for MySQL
 >  phpMorTrg  = sqlMorTrg
 
 >  phpConcept :: Context -> Concept -> String
+>  phpConcept _ S = "ONE"
 >  phpConcept context c
 >   = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (phpConcept in module RelBinGenBasics)") else
 >     if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (phpConcept in module RelBinGenBasics)") else
@@ -584,6 +613,8 @@ sqlMorTrg (r~:A*B) = "AttA"
 >  sqlEConcept :: Context -> Concept -> String
 >  sqlEConcept = sqlConc "E"
 
+
+>  sqlConc prefix context S = "ONE"
 >  sqlConc prefix context c
 >               = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
 >                 if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
@@ -591,6 +622,7 @@ sqlMorTrg (r~:A*B) = "AttA"
 >                 where cs = [prefix++show i++"_"++phpEncode (name c')|(c',i)<-zip (concs context) [1..], c==c']
 
 >  sqlAttConcept :: Context -> Concept -> String
+>  sqlAttConcept context S = "ONE"
 >  sqlAttConcept context c
 >               = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
 >                 if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else

@@ -118,7 +118,7 @@ TODO:
 >   Anything <= b = True
 >   a <= Anything = False
 >   a@(C _ gE _) <= b = a `gE` b
->   _ <= _ = False
+>   a <= b = a==b
 
 >  class Ord a => ABoolAlg a where
 >   glb,lub :: a -> a -> a
