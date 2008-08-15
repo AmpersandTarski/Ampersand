@@ -60,9 +60,9 @@ The service "getEach<concept>" returns the set of all instances of <concept> tha
 >   = "function getEach"++capname++"(){"++
 >     "\n      return DB_doquer('"++(selectExpr context
 >                                            25
->                                            (sqlAttConcept context (concept object))
->                                            (sqlAttConcept context (concept object))
->                                            (Tm (mIs (concept object)))
+>                                            (sqlExprTrg (ctx object)) -- was:  (sqlAttConcept context (concept object))
+>                                            (sqlExprSrc (ctx object)) -- was:  (sqlAttConcept context (concept object))
+>                                            (flp (ctx object)) -- was: (Tm (mIs (concept object)))
 >                                )++"');\n  }"
 
 The service "create<concept>" creates a new instance of <concept> in the CSL.
