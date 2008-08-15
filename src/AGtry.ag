@@ -27,7 +27,7 @@ DATA Morphism      | Mph nm:String pos:FilePos atts:{[Concept]} sgn:{(Concept,Co
 DATA Prop          | Uni | Tot | Inj | Sur | Sym | Asy | Trn
 DATA Gen           | G pos:FilePos genus:Concept spec:Concept
 DATA Concept       | C c:String gE:GenR os:{[String]}
-                   | S c:String gE:GenR os:{[String]}
+                   | S
                    | Anything
                    | NOthing
 DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
@@ -1061,8 +1061,8 @@ ATTR Concept [gE:GenR | | nm:String concept:Concept ]
 SEM Concept
   | C lhs.concept = C @c @lhs.gE []
       lhs.nm      = @c
-  | S lhs.concept = S @c @lhs.gE []
-      lhs.nm      = @c
+  | S lhs.concept = S
+      lhs.nm      = "ONE"
   | Anything
       lhs.concept = Anything
       lhs.nm      = "Anything"
@@ -1185,7 +1185,7 @@ SEM Morphism
                     if null @ats
                     then (Mph @nm @pos @ats (Anything,Anything) @yin (Sgn @nm Anything Anything [] "" "" "" [] "" err 0 True), @ss)
                     else (Mph @nm @pos @ats (if @yin then (head @ats,last @ats) else (last @ats,head @ats)) @yin (Sgn @nm (head @ats) (last @ats) [] "" "" "" [] "" err 0 True), @ss)
-        loc.ats   = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
+        loc.ats   = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S|S<- @atts])
         lhs.nm    = @nm
         lhs.pos   = @pos
         lhs.atts  = @ats
@@ -1204,7 +1204,7 @@ SEM Morphism
         lhs.nm       = "I"
         lhs.pos      = posNone
         lhs.atts     = @ats
-        loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
+        loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S|S<- @atts])
         lhs.yin      = let I ats g s yin = @rraw in yin
         lhs.id       = True
   | V   lhs.usedDecls = declarations [ @rraw ]
@@ -1216,7 +1216,7 @@ SEM Morphism
         lhs.nm       = "V"
         lhs.pos      = posNone
         lhs.atts     = @ats
-        loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S a @lhs.gE as|S a _ as<- @atts])
+        loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S|S<- @atts])
         lhs.id       = True
         lhs.yin      = True
         

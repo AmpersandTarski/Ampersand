@@ -100,14 +100,14 @@ TODO:
 
 >  data Architecture = Arch Contexts -- deriving Show
 >  data Concept      = C String GenR [String] | -- C nm gE cs represents the set of instances cs by name nm.
->                      S String GenR [String] | -- S nm gE cs is a singleton concept: I[nm]=V[nm]
+>                      S | -- the universal singleton: I[S]=V[S]
 >                      Anything               |
 >                      NOthing
 
 >  type Concepts  = [Concept]
 >  instance Eq Concept where
 >   C a _ _ == C b _ _ = a==b
->   S a _ _ == S b _ _ = a==b
+>   S == S = True
 >   Anything == Anything = True
 >   NOthing == NOthing = True
 >   _ == _ = False
@@ -118,7 +118,7 @@ TODO:
 >   Anything <= b = True
 >   a <= Anything = False
 >   a@(C _ gE _) <= b = a `gE` b
->   a@(S _ gE _) <= b = a `gE` b 
+>   _ <= _ = False
 
 >  class Ord a => ABoolAlg a where
 >   glb,lub :: a -> a -> a
@@ -493,7 +493,7 @@ Transform a rule to an expression:
 
 >  instance Explained Concept where
 >   explain (C expla _ _) = expla
->   explain (S expla _ _) = expla
+>   explain (S)           = "ONE"
 >   explain NOthing       = "Nothing"
 >   explain Anything      = "Anything"
 
@@ -508,7 +508,7 @@ Transform a rule to an expression:
 
 >  instance Conceptual Concept where
 >   conts (C _ _ os) = os
->   conts (S _ _ os) = os
+>   conts (S)        = error ("(module CC_aux) Fatal: ONE has exactly one concept, but it is not te be referred to")
 >   conts Anything   = error ("(module CC_aux) Fatal: Anything is Everything...")
 >   conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
 
@@ -521,7 +521,7 @@ Transform a rule to an expression:
 >   declarations :: a -> [Declaration]
 >--   declarations x  = rd [declaration m|m<-mors x]
 >   genE         :: a -> GenR
->   genE x        = if null cx then (==) else head cx where cx = [gE|C _ gE _<-concs x]++[gE|S _ gE _<-concs x]
+>   genE x        = if null cx then (==) else head cx where cx = [gE|C _ gE _<-concs x]
 >   closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
 >   closExprs s   = []
 >   objDefs      :: a -> ObjDefs
@@ -545,7 +545,7 @@ Transform a rule to an expression:
 >   morlist      c                                = [I [] c c True]
 >   declarations c                                = []
 >   genE         (C c gE cs)                      = gE
->   genE         (S c gE cs)                      = gE
+>   genE         (S)                              = (<=)::Concept->Concept->Bool
 >   genE         Anything                         = (<=)::Concept->Concept->Bool
 >   genE         NOthing                          = (<=)::Concept->Concept->Bool
 
@@ -1011,7 +1011,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent Anything = "Anything"
 >   showHS indent NOthing  = "NOthing"
 >   showHS indent  c       = if singleton c
->                            then "S "++show (name c) -- ++" "++show (conts c)
+>                            then "S"
 >                            else "C "++show (name c) ++ " gE []"    -- contents not shown.
 
 >  instance ShowADL Concept where
@@ -1260,7 +1260,6 @@ Every declaration m has cardinalities, in which
 >                       ]
 >     ] where
 >        upd (C c gEq os) os' = C c gEq os'
->        upd (S c gEq os) os' = S c gEq os'
 >        upd c  os = c
 
 >  class Key a where
@@ -1325,7 +1324,6 @@ TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concept
 >  instance Pop Concept where
 >   put_gE gE cs c     = h (head ([c'|c'<-cs, c==c']++[c]))
 >                        where h (C c gEq os) = C c gE os
->                              h (S c gEq os) = S c gE os
 >                              h x = x
 >   specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("(module CC_aux) Fatal: specialize 1 ("++show a++","++show b++") "++showHS "" c) else
 >                        (a `glb` b) `lub` c
@@ -1505,7 +1503,7 @@ Om een of andere reden stond hier eerder:
 >   isTrue c = singleton c
 >   isFalse c = False
 >   isSignal c = False
->   singleton (S _ _ _) = True
+>   singleton (S) = True
 >   singleton _ = False
 >   typeUniq Anything = False
 >   typeUniq _ = True
@@ -1918,7 +1916,7 @@ TODO: transform the following into  instance Collection Declaration where
 >  instance Typologic Concept
 >  instance Identified Concept where
 >   name (C nm _ _) = nm
->   name (S nm _ _) = nm
+>   name (S) = "ONE"
 >   name Anything   = "Anything"
 >   name NOthing    = "NOthing"
 >  instance Identified Morphism where

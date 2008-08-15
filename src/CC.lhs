@@ -15,7 +15,7 @@
 >            , Pairs
 >            , Morphism(Mph,I,V)
 >            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
->            , Concept(Anything,C)
+>            , Concept(Anything,C,S)
 >            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
 >            , Expressions
 >            , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
@@ -44,6 +44,7 @@ VERSION, AUTHOR, PURPOSE, STAKEHOLDER
 >                      , "RELATION", "CONCEPT", "KEY"
 >                      , "IMPORT", "GEN", "ISA", "I", "V"
 >                      , "PRAGMA", "EXPLANATION", "SIGNAL", "ON", "COMPUTING", "INSERTING", "DELETING"
+>                      , "ONE"
 >                      ]
 >  keywordsops       = [ "-|", "|-", ":-", "-:", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\" ]
 >  specialchars      = "()[].,"
@@ -68,14 +69,7 @@ This will be achieved by generating signal rules only.
 >                              ks   = [k| CKey k<-ces]
 >                              os   = [o| CObj o<-ces]
 >                              pops = [Popu m ps| CPop m ps<-ces]
->                              pats = ps++[Pat "CONTEXT" rs [] ds' cs' ks'| not (null ds' && null rs && null cs' && null ks')]
->                               where
->                                ds' = ds>-declarations ps
->                                rs  = [one| "ONE" `elem` [name c| c<-concs ps++concs os++concs ks++concs ds]]
->                                cs' = cs>-conceptDefs ps
->                                ks' = ks>-keyDefs ps
->                                one = Ru 'E' (Tm (I [] c c True) ) posNone (Tm (V [c] ((c,c))) ) [] "" (c,c) 0 "CONTEXT"
->                                      where c = C "ONE" (==) [nm]
+>                              pats = ps++[Pat "CONTEXT" [] [] ds cs ks| not (null ds && null cs && null ks)]
 
 >  data ContextElement = CPat Pattern
 >                      | CDcl Declaration
@@ -236,7 +230,7 @@ There are always one or more terms in a factor. F [] cannot occur
 >                                         two c c' = [c,c']
 
 >  pConcept         :: Parser Token Concept
->  pConcept          = c <$> (pConid <|> pString)
+>  pConcept          = (S <$ (pKey "ONE")) <|> (c <$> (pConid <|> pString))
 >                      where c str = C str (==) []
 
 >  pLabel           :: Parser Token (String, FilePos)

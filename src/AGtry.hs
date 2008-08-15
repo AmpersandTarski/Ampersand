@@ -283,8 +283,8 @@ sem_Concept ((C (_c) (_gE) (_os))) =
     (sem_Concept_C (_c) (_gE) (_os))
 sem_Concept ((NOthing )) =
     (sem_Concept_NOthing )
-sem_Concept ((S (_c) (_gE) (_os))) =
-    (sem_Concept_S (_c) (_gE) (_os))
+sem_Concept ((S )) =
+    (sem_Concept_S )
 sem_Concept_Anything :: (T_Concept)
 sem_Concept_Anything (_lhs_gE) =
     let 
@@ -300,13 +300,10 @@ sem_Concept_NOthing :: (T_Concept)
 sem_Concept_NOthing (_lhs_gE) =
     let 
     in  (NOthing,"NOthing")
-sem_Concept_S :: (String) ->
-                 (GenR) ->
-                 ([String]) ->
-                 (T_Concept)
-sem_Concept_S (_c) (_gE) (_os) (_lhs_gE) =
+sem_Concept_S :: (T_Concept)
+sem_Concept_S (_lhs_gE) =
     let 
-    in  (S _c _lhs_gE [],_c)
+    in  (S,"ONE")
 -- ConceptDef --------------------------------------------------
 {-
    inherited attributes:
@@ -446,8 +443,8 @@ type T_Context = (Classification (Context,(Gens,Declarations))) ->
 -- cata
 sem_Context :: (Context) ->
                (T_Context)
-sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) (_pops))) =
-    (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_dc))) ((sem_Rules (_rs))) ((sem_Declarations (_ds))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))) ((sem_Populations (_pops))))
+sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os) (_pops))) =
+    (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_pats))) ((sem_Rules (_rs))) ((sem_Declarations (_ds))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))) ((sem_Populations (_pops))))
 sem_Context_Ctx :: (String) ->
                    ([String]) ->
                    (Inheritance Concept) ->
@@ -460,13 +457,13 @@ sem_Context_Ctx :: (String) ->
                    (T_ObjDefs) ->
                    (T_Populations) ->
                    (T_Context)
-sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) (_pops) (_lhs_ctxTree) (_lhs_ctxs) =
+sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os) (_pops) (_lhs_ctxTree) (_lhs_ctxs) =
     let (_mD) =
             (                       renumber.mergecontents.concat) [mD| (context,(mG,mD)) <- preCl _lhs_ctxTree]
         (_mC) =
-            mergecontents(_ds_rawDecls ++ _dc_rawDecls)
+            mergecontents(_ds_rawDecls ++ _pats_rawDecls)
         (_keys) =
-            rd (_ks_keyDefs ++ _dc_keyDefs)
+            rd (_ks_keyDefs ++ _pats_keyDefs)
         (_mGen) =
             (rd.concat) [mG| (context,(mG,mD)) <- preCl _lhs_ctxTree]
         (_inh) =
@@ -478,24 +475,24 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) 
                       cmp a NOthing  = True
                       cmp a b        = if a==b then True else genEq (typology _inh) a b
         (_cD) =
-            makeConceptSpace _genE _dc_morphisms
+            makeConceptSpace _genE _pats_morphisms
         (_ctx) =
             put_gE _genE _cD
             ( Ctx _nm
                   _on
                   _inh
                   [cl|Cl r cls<-[mapCl fst _lhs_ctxTree], cl<-cls]
-                  _dc_patterns
-                  (_dc_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
-                  (declarations _dc_patterns)
-                  (sort' name (rd (_cs_conDefs ++ _dc_conDefs)))
+                  _pats_patterns
+                  (_pats_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
+                  (declarations _pats_patterns)
+                  (sort' name (rd (_cs_conDefs ++ _pats_conDefs)))
                   _keys
                   _os_objDefs
                   _pops_popus)
-        ( _dc_conDefs,_dc_keyDefs,_dc_mGen,_dc_morphisms,_dc_patterns,_dc_rawDecls,_dc_rnr,_dc_rules,_dc_sErr,_dc_usedDecls) =
-            (_dc (_genE) (1) (_mD))
+        ( _pats_conDefs,_pats_keyDefs,_pats_mGen,_pats_morphisms,_pats_patterns,_pats_rawDecls,_pats_rnr,_pats_rules,_pats_sErr,_pats_usedDecls) =
+            (_pats (_genE) (1) (_mD))
         ( _rs_declarations,_rs_mGen,_rs_morphisms,_rs_rnr,_rs_rules,_rs_sErr,_rs_usedDecls) =
-            (_rs (_genE) ("") (_dc_rnr) (_mD))
+            (_rs (_genE) ("") (_pats_rnr) (_mD))
         ( _ds_declarations,_ds_rawDecls,_ds_rnr,_ds_rules,_ds_sErr) =
             (_ds (_genE) (_os_rnr) (_mD))
         ( _cs_conDefs) =
@@ -503,7 +500,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) 
         ( _ks_exprs,_ks_keyDefs,_ks_rnr,_ks_rules,_ks_sErr) =
             (_ks (_genE) (_ds_rnr) (_mD))
         ( _os_objDefs,_os_rnr,_os_rules,_os_sErr,_os_sources) =
-            (_os (_genE) ([Anything]) (_dc_rnr) (_mD))
+            (_os (_genE) ([Anything]) (_pats_rnr) (_mD))
         ( _pops_popus,_pops_sErr) =
             (_pops (_genE) (_mD))
     in  (_ctx
@@ -513,16 +510,16 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_dc) (_rs) (_ds) (_cs) (_ks) (_os) 
                  _on
                  _inh
                  []
-                 _dc_patterns
-                 (_dc_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
+                 _pats_patterns
+                 (_pats_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
                  _mC
                  _cs_conDefs
                  _keys
                  _os_objDefs
                  _pops_popus)
-         , (_dc_mGen, _mC))]
-        ,_dc_rules ++ _os_rules ++ _ds_rules ++ _ks_rules
-        ,_dc_sErr ++ _ks_sErr ++ _os_sErr ++ _pops_sErr
+         , (_pats_mGen, _mC))]
+        ,_pats_rules ++ _os_rules ++ _ds_rules ++ _ks_rules
+        ,_pats_sErr ++ _ks_sErr ++ _os_sErr ++ _pops_sErr
         )
 -- Contexts ----------------------------------------------------
 {-
@@ -1358,7 +1355,7 @@ sem_Morphism_I (_atts) (_g) (_s) (_yin) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
             if length _ats==1 then I _ats (head _ats) (head _ats) True              else
             error ("Contact your dealer:\nADL allows only one concept in I["++show _atts++"].")
         (_ats) =
-            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S a _lhs_gE as|S a _ as<- _atts])
+            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
         ( _g_concept,_g_nm) =
             (_g (_lhs_gE))
         ( _s_concept,_s_nm) =
@@ -1403,7 +1400,7 @@ sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_u) (_lhs_gE) (_lhs_isign) 
             if null _atts then rd ss else
             [ s | s <- ss, if _yin then source s == head _atts && target s == last _atts else source s == last _atts && target s == head _atts]
         (_ats) =
-            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S a _lhs_gE as|S a _ as<- _atts])
+            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
         ( _u_declaration,_u_nm,_u_rawDecl,_u_rnr,_u_rules,_u_sErr) =
             (_u (_lhs_gE) (-999999) (_lhs_sDef))
     in  (_ats
@@ -1432,7 +1429,7 @@ sem_Morphism_V (_atts) (_sgn) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
     let (_rraw) =
             V _atts _sgn
         (_ats) =
-            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S a _lhs_gE as|S a _ as<- _atts])
+            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
     in  (_ats
         ,True
         ,let (s,t) = if null _lhs_isign then error ("Fatal: null @lhs.isign in V lhs.morphism! "++(show _atts)) else
