@@ -23,18 +23,18 @@
 >            , fEmpty
 >            , oneMorphism
 >            , single
->            , Morphic(source, target, sign, multiplicities, flp, isIdent, isMph, isNot, isTrue, isFalse, isSignal{-, singleton-}, equiv, typeUniq)
+>            , Morphic(source, target, sign, multiplicities, flp, isIdent, isProp, isMph, isNot, isTrue, isFalse, isSignal{-, singleton-}, equiv, typeUniq)
 >            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
 >            , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
 >            , inline,idsOnly,explain , makeInline
 >            , Lang(English,Dutch)
 >            , applyM, declaration, plural
->            , glb, lub, sur, inj, fun, tot, sign
+>            , glb, lub, sur, inj, fun, tot
 >            , ruleType, antecedent, mkVar
 >            , Calc(calc)
 >            , ShowHS(showHSname,showHS)
 >            , ShowADL(showADL)
->            , consequent, order, isNeg, isPos, isNeg, notCp
+>            , consequent, order, isNeg, isPos, notCp
 >            , isProperty 
 >            , union
 >            , Population(Popu), Populations
@@ -1468,13 +1468,14 @@ Om een of andere reden stond hier eerder:
 >   multiplicities m = []
 >   flp            :: a -> a
 >   isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
+>   isProp         :: a -> Bool  -- > tells whether the argument is a property
 >   isNot          :: a -> Bool  -- > tells whether the argument is equivalent to I-
 >   isMph          :: a -> Bool
 >   isTrue         :: a -> Bool  -- > tells whether the argument is equivalent to V
 >   isFalse        :: a -> Bool  -- > tells whether the argument is equivalent to V-
 >   isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
 >   singleton      :: a -> Bool  -- > tells whether V=I
->   singleton e     = isIdent e && isTrue e
+>   singleton e     = isProp e && isTrue e
 >   equiv          :: a -> a -> Bool
 >   equiv m m' = source m==source m'&&target m==target m' || source m==target m'&&target m==source m'
 >   typeUniq :: a -> Bool -- this says whether the type of 'a' and all of its constituent parts is defined (i.e. not "Anything")
@@ -1498,6 +1499,7 @@ Om een of andere reden stond hier eerder:
 >   multiplicities c = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
 >   flp c = c
 >   isIdent c = True    -- > tells whether the argument is equivalent to I
+>   isProp c = True    -- > tells whether the argument is equivalent to I
 >   isNot c   = False   -- > tells whether the argument is equivalent to I-
 >   isMph c = False
 >   isTrue c = singleton c
@@ -1533,6 +1535,10 @@ Om een of andere reden stond hier eerder:
 >   isIdent (I _ _ _ _)               = True                    -- > tells whether the argument is equivalent to I
 >   isIdent (V _ (a,b))               = a==b && singleton a
 >   isIdent _                         = False
+>   isProp (I _ _ _ _)                = True                    -- > tells whether the argument is equivalent to I
+>   isProp (V _ (a,b))                = a==b && singleton a
+>   isProp (Mp1 _ _)                  = True
+>   isProp m                          = null ([Asy,Sym]>-multiplicities m)
 >   isNot m                           = isNot (declaration m)   -- > tells whether the argument is equivalent to I-
 >   isMph (Mph _ _ _ _ _ _)           = True
 >   isMph _                           = False
@@ -1574,6 +1580,10 @@ Om een of andere reden stond hier eerder:
 >   flp    i                                     = i
 >   isIdent (Isn _ _)                            = True   -- > tells whether the argument is equivalent to I
 >   isIdent _                                    = False
+>   isProp (Isn _ _)                             = True                    -- > tells whether the argument is equivalent to I
+>   isProp (Iscompl g s)                         = False
+>   isProp (Vs a b)                              = a==b && singleton a
+>   isProp d                                     = null ([Asy,Sym]>-multiplicities d)
 >   isNot (Iscompl _ _)                          = True   -- > tells whether the argument is equivalent to I-
 >   isNot _                                      = False
 >   isTrue (Vs _ _)                              = True
@@ -1723,6 +1733,17 @@ Om een of andere reden stond hier eerder:
 >   isIdent (Tm m)       = isIdent m
 >   isIdent (Tc f)       = isIdent f
 
+>   isProp (F ts)       = null ([Asy,Sym]>-multiplicities (F ts)) || and [null ([Asy,Sym]>-multiplicities t)| t<-ts]
+>   isProp (Fd [e])     = isProp e
+>   isProp (Fd as)      = isProp (F (map notCp as))
+>   isProp (Fu fs)      = and [isProp f| f<-fs]
+>   isProp (Fi fs)      = or [isProp f| f<-fs]
+>   isProp (K0 e)       = isProp e
+>   isProp (K1 e)       = isProp e
+>   isProp (Cp e)       = isTrue e
+>   isProp (Tm m)       = isProp m
+>   isProp (Tc f)       = isProp f
+
 >  fEmpty (F [])  = True
 >  fEmpty (Fd []) = True
 >  fEmpty (Fu []) = True
@@ -1767,6 +1788,7 @@ Om een of andere reden stond hier eerder:
 >   typeUniq r | ruleType r=='A' = typeUniq (antecedent r)
 >              | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 >   isIdent r = isIdent (normExpr r)
+>   isProp r = isProp (normExpr r)
 >   isTrue r | ruleType r=='A'  = isTrue (consequent r)
 >            | otherwise        = isTrue (consequent r) || isFalse (consequent r)
 >   isFalse r| ruleType r=='A'  = isFalse (consequent r)
