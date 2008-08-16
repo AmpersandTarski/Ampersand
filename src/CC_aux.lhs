@@ -38,9 +38,9 @@
 >            , isProperty 
 >            , union
 >            , Population(Popu), Populations
->            , Pop(update)
+>            , Pop(update, put_gE)
 >            , Gens, Declarations, GenR, Contexts
->            , contents, put_gE, makeConceptSpace, pMeaning
+>            , contents, makeConceptSpace, pMeaning
 >            , FilePos(FilePos), ConceptDefs, Concepts
 >            , Paire, Rules, Morphisms, Patterns
 >            , anything, shSigns, gEtabG

@@ -5,7 +5,7 @@ import Char (isDigit) -- more from this module: Alpha,chr,ord,digitToInt,intToDi
 import CommonClasses (  Identified(name)
                       , Collection(isc,(>-),uni))
 import UU_Scanner
-import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort')
+import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort', eqCl)
 import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
@@ -29,7 +29,7 @@ import CC_aux
           , Morphism(Mph,I,V)
           , contents, put_gE, makeConceptSpace, pMeaning
           , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
-          , FilePos(FilePos), ConceptDefs, Concepts
+          , FilePos(FilePos), ConceptDefs, Concepts, concept
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph, mIs
@@ -1600,27 +1600,44 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
         ,_ctx_rnr
         ,_ats_rules ++ _ctx_rules
         ,rd (map fst _ctx_signs)
-        ,_ctx_sErr++
-         _ats_sErr++
-         [ "9 on "++show _pos ++"\n   Cannot match "++
-           chain "\n     or "
-                 (map (\x-> "("++ _nm ++ ")["++show (fst x) ++ "*" ++ show (snd x) ++"]")
-                 _ctx_signs)
-           ++ "\n   to ["++
-           chain "\n     or " (map show _lhs_iConcs)
-           ++ "*"++
-           chain "\n     or " (map show _ats_sources)
-           ++ "]\n"
-         | null _signs, not (null _ats_sources), not (null _lhs_iConcs)
-         ]++
-         [ "11 on "++show _pos ++"\n   Ambiguous types of "++ _nm
-           ++ "\n       "++
-           chain "\n     , "
-                 (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
-                      _signs)
-           ++ "\n"
-         | length _signs > 1
-         ]
+        ,let ls  = (concs _ats_objDefs)
+             ls' c = [g| g<-ls, g `_lhs_gE` c || c `_lhs_gE` g]
+             ground c = if null (ls' c)
+                        then Nothing
+                        else Just (minimum (ls' c))
+         in
+         take 1
+         (_ctx_sErr++
+          _ats_sErr++
+          [ "9 on \n"++show _pos ++" in the definition of VIEW "++ _nm ++ "\n   Cannot match the right hand side of "++showADL _ctx_expr
+            ++"\n   with the left hand side of "
+            ++commaEng "and" [ showADL (ctx o) | o <- nqos ]
+            ++"\nDetails of this mistake:"
+            ++"\n   target("++showADL _ctx_expr++ ") is "++name t++","
+            ++"\n   "++(if null eqcs
+                        then "which does not match " ++ commaEng "or" (rd [name c| c<-nqcs])
+                        else "but "++commaEng "\n   and" [ "source("++showADL (ctx o)++ ") is "++(name.source.ctx) o | o<-nqos ]
+                       )
+            ++".\n"
+          | null _signs, t<-map snd _ctx_signs
+          , eqcs<-[[(source.ctx) o| o<- _ats_objDefs, (source.ctx) o==t ]]
+          , nqos<-[[o| o<- _ats_objDefs, (source.ctx) o/=t ]]
+          , nqcs<-[[(source.ctx) c| cl<-eqCl (source.ctx) nqos, c<-cl]]
+          , not (null nqos)]++
+          [ "17 on "++show _pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
+            ++(showADL.ctx) e++ " on " ++(show . CC_aux.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . CC_aux.pos . ctx) e'
+            ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
+            ++ "\n (" ++(showADL.ctx) e++ " and " ++(showADL.ctx) e'++ " do not match."
+            ++ "\n"
+          | eqcls<-[[cl| cl<-eqCl (ground.source.ctx) _ats_objDefs]], length eqcls>1
+          , [e,e']<-[[o| cl<-take 2 eqcls, o<-take 1 (sort' (ground.source.ctx) cl)]]
+          ]++
+          [ "11 on "++show _pos ++"\n   Ambiguous types of "++ _nm
+            ++ "\n       "++
+            chain "\n     , " [ "["++show a ++ "*" ++ show b ++"]" | (a,b) <- _signs]
+            ++ "\n"
+          | length _signs > 1
+          ])
         )
 -- Pairs -------------------------------------------------------
 {-

@@ -55,7 +55,7 @@ import Char (isDigit) -- more from this module: Alpha,chr,ord,digitToInt,intToDi
 import CommonClasses (  Identified(name)
                       , Collection(isc,(>-),uni))
 import UU_Scanner
-import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort')
+import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort', eqCl)
 import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
@@ -79,7 +79,7 @@ import CC_aux
           , Morphism(Mph,I,V)
           , contents, put_gE, makeConceptSpace, pMeaning
           , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
-          , FilePos(FilePos), ConceptDefs, Concepts
+          , FilePos(FilePos), ConceptDefs, Concepts, concept
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
           , isMph, mIs
@@ -811,30 +811,53 @@ SEM KeyDef
   | Kd lhs.sErr     = @ats.sErr
 
 SEM ObjectDef
-  | Obj lhs.sErr    = @ctx.sErr++
-                      @ats.sErr++
-                      [ "9 on "++show @pos ++"\n   Cannot match "++
-                        chain "\n     or "
-                              (map (\x-> "("++ @nm ++ ")["++show (fst x) ++ "*" ++ show (snd x) ++"]")
-                              @ctx.signs)
-                        ++ "\n   to ["++
-                        chain "\n     or " (map show @lhs.iConcs)
-                        ++ "*"++
-                        chain "\n     or " (map show @ats.sources)
-                        ++ "]\n"
-                      | null @signs, not (null @ats.sources), not (null @lhs.iConcs)
-                      ]++
-                      [ "11 on "++show @pos ++"\n   Ambiguous types of "++ @nm
-                        ++ "\n       "++
-                        chain "\n     , "
-                              (map (\x -> "["++show (fst x)++"*"++show (snd x)++"]")
-                                   @signs)
-                        ++ "\n"
-                      | length @signs > 1
-                      ]
-                                            
+  | Obj lhs.sErr    = let ls  = (concs @ats.objDefs)
+                          ls' c = [g| g<-ls, g `@lhs.gE` c || c `@lhs.gE` g]
+                          ground c = if null (ls' c)
+                                     then Nothing
+                                  {- then error ("\n!Fatal (module AGtry.ag):"
+                                                 ++"\n c                         =  "++show c
+                                                 ++"\n concs @ats.objDefs        = "++show (concs @ats.objDefs)
+                                                 ++"\n ls                        = "++show ls
+                                                 ++"\n [g| g<-ls, g `@lhs.gE` c] = "++show (ls' c)
+                                                 ++"\n  "++chain "\n  " (map (showHS "\n  ") @ats.objDefs) )   -}
+                                     else Just (minimum (ls' c))
+                      in
+                      take 1
+                      (@ctx.sErr++
+                       @ats.sErr++
+                       [ "9 on \n"++show @pos ++" in the definition of VIEW "++ @nm ++ "\n   Cannot match the right hand side of "++showADL @ctx.expr
+                         ++"\n   with the left hand side of "
+                         ++commaEng "and" [ showADL (ctx o) | o <- nqos ]
+                         ++"\nDetails of this mistake:"
+                         ++"\n   target("++showADL @ctx.expr++ ") is "++name t++","
+                         ++"\n   "++(if null eqcs
+                                     then "which does not match " ++ commaEng "or" (rd [name c| c<-nqcs])
+                                     else "but "++commaEng "\n   and" [ "source("++showADL (ctx o)++ ") is "++(name.source.ctx) o | o<-nqos ]
+                                    )
+                         ++".\n"
+                       | null @signs, t<-map snd @ctx.signs
+                       , eqcs<-[[(source.ctx) o| o<- @ats.objDefs, (source.ctx) o==t ]]
+                       , nqos<-[[o| o<- @ats.objDefs, (source.ctx) o/=t ]]
+                       , nqcs<-[[(source.ctx) c| cl<-eqCl (source.ctx) nqos, c<-cl]]
+                       , not (null nqos)]++
+                       [ "17 on "++show @pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
+                         ++(showADL.ctx) e++ " on " ++(show . CC_aux.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . CC_aux.pos . ctx) e'
+                         ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
+                         ++ "\n (" ++(showADL.ctx) e++ " and " ++(showADL.ctx) e'++ " do not match."
+                         ++ "\n"
+                       | eqcls<-[[cl| cl<-eqCl (ground.source.ctx) @ats.objDefs]], length eqcls>1
+                       , [e,e']<-[[o| cl<-take 2 eqcls, o<-take 1 (sort' (ground.source.ctx) cl)]]
+                       ]++
+                       [ "11 on "++show @pos ++"\n   Ambiguous types of "++ @nm
+                         ++ "\n       "++
+                         chain "\n     , " [ "["++show a ++ "*" ++ show b ++"]" | (a,b) <- @signs]
+                         ++ "\n"
+                       | length @signs > 1
+                       ])
+
 SEM ObjDefs 
-  | Cons lhs.sErr   ={-
+  | Cons lhs.sErr   = {-
                       [ "10 on "++show @hd.pos++"\n   "++
                         "Source of the rest of the attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
                         "Does not match " ++ @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
