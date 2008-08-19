@@ -1,9 +1,8 @@
 > module ClassDiagram where
 >  import Char (toUpper)
->  import CommonClasses (  Identified(name)
->                        , Collection(empty, (>-)) 
->                       )
->  import Auxiliaries (rd, chain, eqCl, enc)
+>  import CommonClasses (  Identified(name))
+>  import Collection ( Collection(empty, (>-),rd) )
+>  import Auxiliaries (chain, eqCl, enc)
 >  import Typology (Inheritance(Isa))
 >  import CC_aux  
 >             ( Context, Concept, Object(concept, attributes, ctx)

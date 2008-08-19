@@ -1,9 +1,9 @@
 > module Xml where
 >  import Char (isAlphaNum, isSpace)
->  import CommonClasses (  Identified(name)
->                        , Collection(empty, (>-)))
+>  import CommonClasses (  Identified(name))
+>  import Collection (Collection(empty, (>-),rd))
 >  import Auxiliaries
->         ( rd, chain, sort') 
+>         ( chain, sort') 
 >  import CC_aux 
 >           (  Context, Concept(C), Pattern(Pat), Rule(Ru,Sg,Gc)
 >            , isa, concs

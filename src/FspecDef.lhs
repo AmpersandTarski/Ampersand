@@ -1,5 +1,5 @@
 
-> module FspecDef 
+> module FspecDef
   
     This module contains the structure definition of Fspec. It should
     not contain anything, but the structure of the Fspc together with 
@@ -75,7 +75,7 @@ Every unit specifies one dataset, and each dataset is discussed only once in the
 
 >  data Funit = Uspc String Pattern
 >                    [ ( ObjectDef
->--                     ,FPA
+>            --         ,FPA
 >                       , [Morphism]
 >                       ,[(Expression,Rule)])]
 >                    [ServiceSpec] -- services

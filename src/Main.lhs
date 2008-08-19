@@ -3,7 +3,8 @@
 >  import Char (toLower)
 >  import UU_Scanner
 >  import UU_Parsing
->  import CommonClasses ( Identified(name), empty )
+>  import CommonClasses ( Identified(name))
+>  import Collection( Collection( empty ))
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
 >  import CC_aux (isa, Lang(English,Dutch), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)

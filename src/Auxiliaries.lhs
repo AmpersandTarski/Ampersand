@@ -1,11 +1,11 @@
-> module Auxiliaries 
+> module Auxiliaries
 > (  adlVersion
 >  , encode, decode
 >  , unCap, upCap
 >  , fst3, snd3, thd3
 >  , chain
 >  , showL
->  , rd
+> -- Verplaatst naar CommonClasses , rd
 >  , rEncode
 >  , commaEng
 >  , commaNL
@@ -29,7 +29,7 @@
 > )
 > where
 >  import Char (isAlpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
->  import CommonClasses (Collection(isc,uni,(>-)))
+>  import Collection (Collection(isc,uni,(>-),rd))
 
 >  adlVersion = "ADL vs. 0.8.10"
 >  encode :: String -> Int
@@ -212,10 +212,6 @@ Cartesian product by diagonalization of two (possibly infinite) lists
 >  eqCl :: Eq b => (a -> b) -> [a] -> [[a]]
 >  eqCl f [] = []
 >  eqCl f (x:xs) = (x:[e|e<-xs, f x==f e]) : eqCl f [e|e<-xs, f x/=f e]
-
->  rd :: (Eq e) => [e] -> [e]
->  rd [] = []
->  rd (x:xs) = x: rd [e|e<-xs, e/=x]
 
 >  rd' ::  Eq e => ( a -> e ) -> [a] -> [a]
 >  rd' f [] = []

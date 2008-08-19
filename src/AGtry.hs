@@ -2,10 +2,10 @@
 module AGtry where
 
 import Char (isDigit) -- more from this module: Alpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
-import CommonClasses (  Identified(name)
-                      , Collection(isc,(>-),uni))
+import CommonClasses (  Identified(name))
+import Collection (Collection(isc,(>-),uni,rd))
 import UU_Scanner
-import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort', eqCl)
+import Auxiliaries (chain, eqClass, commaEng, sord, sort', eqCl)
 import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)

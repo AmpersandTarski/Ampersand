@@ -1,9 +1,9 @@
 > module CC where
 >  import UU_Scanner
 >  import UU_Parsing
->  import CommonClasses ( Identified(name)
->                       , Collection(empty,uni,(>-)))
->  import Auxiliaries (rd, sort, upCap)
+>  import CommonClasses ( Identified(name))
+>  import Collection (Collection(empty,uni,(>-),rd))
+>  import Auxiliaries (sort, upCap)
 >  import CC_aux 
 >            ( Architecture(Arch), Context(Ctx), FilePos(FilePos)
 >            , Pattern(Pat)

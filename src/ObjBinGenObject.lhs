@@ -1,9 +1,10 @@
 > module ObjBinGenObject where
->  import Char
->  import Auxiliaries
+>  import Char(toUpper)
+>  import Auxiliaries(chain, adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import CC_aux
 >  import CommonClasses
+>  import Collection (Collection(rd))
 >  import ERmodel
 >  import PredLogic -- (for error messages by dbCorrect)
 >  import Hatml     -- (for converting error messages to HTML)

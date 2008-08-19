@@ -55,10 +55,10 @@
 >  import Char (toLower)
 >  import UU_Scanner
 >  import UU_Parsing
->  import CommonClasses ( Identified(name)
->                        ,Collection (uni,isc,(>-),empty)  )
+>  import CommonClasses ( Identified(name))
+>  import Collection (Collection (uni,isc,(>-),empty,rd)  )
 >  import Auxiliaries  
->          ( sort', chain, rd , rEncode, commaEng, clos1, diag
+>          ( sort', chain, rEncode, commaEng, clos1, diag
 >           ,eqCl, sord, eqClass, rd', enumerate, unCap, showL, haskellIdentifier)
 >  import Classification 
 >            ( Classification(),preCl,mapCl

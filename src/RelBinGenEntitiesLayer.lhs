@@ -1,9 +1,9 @@
 > module RelBinGenEntitiesLayer where
->  import Char
->  import Auxiliaries
+>  import Auxiliaries(chain,adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
 >  import CC_aux
 >  import CommonClasses
+>  import Collection (Collection(isc,(>-),rd,uni))
 >  import ERmodel
 >  import PredLogic -- (for error messages by dbCorrect)
 >  import Hatml     -- (for converting error messages to HTML)

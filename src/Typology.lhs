@@ -3,9 +3,9 @@
 >         , Typology(Typ), Typologic(typology), makeIsa, genEq
 >         , compress, makeTrees, makeTypo) where
 >  import Auxiliaries
->         ( rd, chain, eqCl )
->  import CommonClasses 
->         ( Collection(elems, isc, (>-)),eleM,empty,uni)
+>         ( chain, eqCl )
+>  import Collection 
+>         ( Collection(elems, isc, (>-)),eleM,empty,uni,rd)
 >  import Classification 
 >         (Classification(Cl),root,makeClassifications)
 

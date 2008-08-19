@@ -1,7 +1,18 @@
->  module PredLogic (normRule, normRL, assemble, PredLogic(Forall, Exists, Implies, Equiv, Conj, Disj, Not, Pred, Rel, Funs), predLshow, mathVars, lang, objOrShow, explainArt) where
+>  module PredLogic 
+>             ( normRule
+>             , normRL
+>             , assemble
+>             , PredLogic(Forall, Exists, Implies, Equiv, Conj, Disj, Not, Pred, Rel, Funs)
+>             , predLshow
+>             , mathVars
+>             , lang
+>             , objOrShow
+>             , explainArt
+>             )
+>  where
 
->  import CommonClasses ( Identified(name)
->                        ,Collection((>-)))
+>  import CommonClasses ( Identified(name))
+>  import Collection (Collection((>-)))
 >  import Auxiliaries (chain, eqCl)
 >  import CC_aux 
 >           (  Concept(Anything), Context, Rule(Ru,Sg) 

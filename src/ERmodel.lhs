@@ -1,8 +1,8 @@
 > module ERmodel(erAnalysis) where  -- commented modules are required for testing
 >  import Char (isSpace, isAlphaNum)
->  import CommonClasses ( Identified(name) 
->                       , Collection(empty, (>-))) 
->  import Auxiliaries (chain, sort',rd, eqCl)
+>  import CommonClasses ( Identified(name)) 
+>  import Collection (Collection(empty, (>-),rd)) 
+>  import Auxiliaries (chain, sort', eqCl)
 >  import CC_aux 
 >            ( Context, src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
 >            , Language( rules, declaredRules, objectdefs )

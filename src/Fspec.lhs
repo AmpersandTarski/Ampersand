@@ -3,16 +3,61 @@
 functionalSpecLaTeX,glossary,projectSpecText,archText,
 
 >  import Char
->  import CommonClasses ( Identified(name)
->                        ,Collection (isc,(>-),empty)  )
+>  import CommonClasses ( Identified(name))
+>  import Collection (Collection (isc,(>-),empty, rd))
 >  import Auxiliaries
+>         (  --adlVersion
+>  --      , encode, decode
+>            unCap, upCap
+>          , fst3, snd3
+>  --      , thd3
+>          , chain
+>          , showL
+>  --      , rEncode
+>          , commaEng
+>          , commaNL
+>  --      , clos1
+>  --      , clos
+>  --      , diag
+>          , sort
+>  --      , sord
+>          , eqCl 
+>          , eqClass
+>          , rd'
+>  --      , enumerate
+>          , sort'
+>  --      , enc
+>          , sord'
+>  --      , elem'
+>  --      , mumble
+>          , fixSpaces
+>  --      , transpose
+>          , haskellIdentifier
+>         )
 >  import Classification
+>   (  Classification(Cl, Bottom)
+> --  , root
+> --  , subs
+> --  , isBot
+> --  , recur
+> --  , restrict
+> --  , sortCl
+> --  , isDefinedIn
+> --  , makeClassifications
+> --  , makeClassificationsF
+> --  , locates
+> --  , locatesF
+>     , preCl
+> --  , postCl
+> --  , mapCl
+> --  , index
+>    )
 >  import Typology
 >  import CC_aux
 >  import Calc
 >  import PredLogic
 >  import HtmlFilenames
->  import ERmodel
+>  import ERmodel (erAnalysis)
 
 A specification is made for one context.
 A specification contains one Fobj-specification for every object it defines and one Ftheme-specification for every pattern it contains.
@@ -378,7 +423,9 @@ Te bepalen:
 
 >  namet :: Identified a => a -> String
 >  namet    = firstCaps.map toLower.name
+>  nameAt :: (Identified a, Object a) => a -> String
 >  nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
+>  tt :: String -> String
 >  tt a = "{\\tt "++a++"}"
 >  nameAtt a = tt (nameAt a)
 >  getEach :: Context -> ObjectDef -> ServiceSpec 
@@ -1617,6 +1664,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 
 >  idName :: Identified a => a -> String
 >  idName c = idNam (name c)
+>  idNam :: String -> String
 >  idNam c = "\\id{"++concat [if c `elem` [' ','_'] then "\\ " else [c]| c<-firstCaps c]++"}"
 
 >  instance LATEX Declaration where

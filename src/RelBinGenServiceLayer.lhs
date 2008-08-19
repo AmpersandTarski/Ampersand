@@ -1,9 +1,10 @@
 > module RelBinGenServiceLayer where
->  import Char
->  import Auxiliaries
+>  import Char(toLower)
+>  import Auxiliaries(commaNL,chain,eqCl,adlVersion,sord,eqClass)
 >  import Calc(conjNF, triggers)
 >  import CC_aux
 >  import CommonClasses
+>  import Collection(Collection(rd))
 >  import ERmodel
 >  import PredLogic -- (for error messages by dbCorrect)
 >  import RelBinGenBasics

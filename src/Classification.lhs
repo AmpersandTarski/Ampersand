@@ -1,10 +1,24 @@
 >  module Classification
->  ( Classification(Cl, Bottom), root, subs, isBot, recur, restrict, sortCl
->  , isDefinedIn, makeClassifications, makeClassificationsF, locates, locatesF, preCl, postCl, mapCl, index
+>  (  Classification(Cl, Bottom)
+>   , root
+>   , subs
+>   , isBot
+>   , recur
+>   , restrict
+>   , sortCl
+>   , isDefinedIn
+>   , makeClassifications
+>   , makeClassificationsF
+>   , locates
+>   , locatesF
+>   , preCl
+>   , postCl
+>   , mapCl
+>   , index
 >  ) where
->  import CommonClasses ( Identified(name) 
->                        ,Collection(eleM,elems,isc,(>-),uni,empty))
->  import Auxiliaries (chain, rd, eqCl) 
+>  import CommonClasses ( Identified(name)) 
+>  import Collection (Collection(eleM,elems,isc,(>-),uni,empty,rd))
+>  import Auxiliaries (chain, eqCl) 
 
 Classifications
 All elements of a classification tree can occur once only.

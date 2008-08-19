@@ -1,7 +1,8 @@
 > module Graphic where
 >  import Char (isSpace)
 >  import CommonClasses ( Identified(name) )
->  import Auxiliaries (chain, rd, eqClass, sort)
+>  import Collection (Collection(rd))
+>  import Auxiliaries (chain, eqClass, sort)
 >  import CC_aux
 >            ( Context(Ctx), Pattern(Pat), Morphic(isSignal), Morphism(Mph), Rule(Ru)
 >            , Expression(F,Tm)

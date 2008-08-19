@@ -1,6 +1,19 @@
-> module Calc (ComputeRule(CR), deriveProofs, triggers, disjNF, conjNF, homogeneous, computeOrder, lClause, rClause, conjuncts, makeRule, informalRule ) where  -- commented modules are required for testing
+> module Calc ( ComputeRule(CR)
+>             , deriveProofs
+>             , triggers
+>             , disjNF
+>             , conjNF
+>             , homogeneous
+>             , computeOrder
+>             , lClause
+>             , rClause
+>             , conjuncts
+>             , makeRule
+>             , informalRule ) 
+> where  -- commented modules are required for testing
 >  import Char ( isSpace )
->  import CommonClasses ( Collection (uni,isc), Identified(name), empty )
+>  import CommonClasses (Identified(name) )
+>  import Collection (Collection (uni,isc,empty,rd))
 >  import Auxiliaries
 >  import Classification
 >  import CC_aux
@@ -355,7 +368,9 @@ An i-clause is a left i-clause or a right i-clause.
 >  niClauses cl  = [ hc | hc@(Fu fus)<-allClauses cl
 >                       , not (and [idsOnly e| t@(Cp e)<-fus] || and [idsOnly t| t@(F fs)<-fus])
 >                  ]
+>  lClause :: Expression -> Expression
 >  lClause cl    = head (niClauses cl++[cl])
+>  rClause :: Expression -> Expression
 >  rClause cl    = last ([cl]++niClauses cl)
 
 hornCs generates all compute rules from one clause, yielding an error if the 2nd argument is not a proper clause.
