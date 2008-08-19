@@ -1,6 +1,7 @@
 > module CommonClasses
 > (  Identified(name)
 >  , Collection (eleM,uni,isc,(>-),empty,elems)
+>  , DataStruct(showStruct)
 > )
 > where
 >  ----------------------------------------------
@@ -30,3 +31,6 @@
 >   xs >- ys    = [x| x<-xs, not (x `elem` ys)]
 >   empty       = []
 >   elems       = id
+
+>  class DataStruct a where
+>   showStruct ::  a->String

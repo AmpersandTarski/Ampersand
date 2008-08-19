@@ -48,7 +48,7 @@ A specification contains one Fobj-specification for every object it defines and 
 >           ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
 >           )
 >           datasets
->           [ makeFobj context o  | o <-attributes context]
+>           [ makeFview context o  | o <-attributes context]
 >           [ makeFrule context r | r <-rules context]
 >      where
 >       datasets = rd [datasetMor context m| m<-mors context]
@@ -190,8 +190,8 @@ Als deze relatie een functie is,
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
 >      ++indent++"     ["++chain ", " [showHSname r| r<-rs]++"]"
 
->  makeFobj :: Context -> ObjectDef -> Fobj
->  makeFobj context o
+>  makeFview :: Context -> ObjectDef -> Fobj
+>  makeFview context o
 >   = Fobj (dataset context (concept o)) o
 >          ([ getEach context o
 >           , createObj context o [] {-rs-}
