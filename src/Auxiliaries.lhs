@@ -374,7 +374,7 @@ Permutaties
   perms (x:xs) = [ take i ps++[x]++drop i ps | i<-[0..length xs], ps<-perms xs ]
 
 >  transpose :: [[e]] -> [[e]]
->  transpose (xs:yss) = [x:ys |x<-xs | ys<-transpose yss]
+>  transpose (xs:yss) = [x:ys |x<-xs , ys<-transpose yss]
 >  transpose []       = [[]|i<-[0..]]
 
 

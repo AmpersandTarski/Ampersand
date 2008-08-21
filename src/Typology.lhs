@@ -3,7 +3,7 @@
 >         , Typology(Typ), Typologic(typology), makeIsa, genEq
 >         , compress, makeTrees, makeTypo) where
 >  import Auxiliaries
->         ( chain, eqCl )
+>         ( chain, eqCl, clos )
 >  import Collection 
 >         ( Collection(elems, isc, (>-)),eleM,empty,uni,rd)
 >  import Classification 
@@ -76,6 +76,11 @@ The function typology creates all typological sequences. For example:
  mul must satisfy:
     p `mul` p' == pth  implies that length p+length p' == 1+length pth
 
+>   typology :: Inheritance a -> Typology a
+>   typology (Isa rs cs)
+>    = Typ ([fst (head pth): map snd pth| pth<-clos fst snd rs, not (null pth)] ++ [[c]| c<-cs])
+
+> {- was:
 >   typology :: Show a => Inheritance a -> Typology a
 >   typology (Isa rs cs)
 >    = Typ (compress akin [p|p<-f 1 [] (singles rs) []]
@@ -88,6 +93,7 @@ The function typology creates all typological sequences. For example:
 >                                  cands = [p|p<-pn `combine` pn,n<length p-1]
 >       f n paths new errs = error("cyclic specialization\n " ++ (chain "\n ".map show) [head e:takeWhile (/=head e) (tail e)| e<-errs])
 >       combine rs rs'     = [r `mul` r'| r<-rs, r'<-rs', last r `match` head r']
+> -}
 
 Todo: try this, to get rid of combine
         f n paths new  = f (2*n) pn [p `mul` p'| p<-pn, p'<-pn, last p==head p',n<length p+length p'-2]
@@ -130,6 +136,7 @@ Comment
 >   Isa rx cx `uni` Isa ry cy = Isa (rd (rx++ry)) (rd (cx++cy))
 >   Isa rx cx `isc` Isa ry cy = Isa (rx `isc` ry) (cx `isc` cy)
 >   Isa rx cx >- Isa ry cy = Isa (rx>-ry) (cx>-cy)
+>   rd (Isa ts es)            = Isa (rd ts) (rd es)
 
 >  instance Collection Typology where
 >   eleM e (Typ pths) = or [e `elem` p| p<-pths]
@@ -138,6 +145,7 @@ Comment
 >   Typ px `uni` Typ py = Typ (compress akin (px++py++[init r++r'| r<-px, r'<-py, last r==head r']))
 >   Typ pxs `isc` Typ pys = error "intersection of Typology not yet implemented"
 >   Typ pxs >- Typ pys = error "set difference of Typology not yet implemented"
+>   rd (Typ pths) = Typ (rd pths)
 
 (makeTrees maakt gebruik van een polynomiaal algoritme, en is voor praktische bomen te traag.)
 

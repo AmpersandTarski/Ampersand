@@ -21,11 +21,6 @@
 >   elems    :: Eq b => a b -> [b]
 >   rd       :: Eq b => a b -> a b
 
->  --rd :: (Eq e) => [e] -> [e]
->  --rd [] = []
->  --rd (x:xs) = x: rd [e|e<-xs, e/=x]
-
-
 >  instance Collection [] where
 >   eleM        = any . (==)
 >   xs `uni` ys = xs++(ys>-xs)
