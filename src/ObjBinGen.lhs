@@ -8,6 +8,14 @@
 >  import ObjBinGenObject
 >  import ObjBinGenObjectWrapper
 
+This module is the controller, which creates the architectural framework for the generated code.
+It follows the well known Model-View-Control pattern, in which the Compliant Services Layer (CSL) acts as model.
+The foundation for all views is laid by the component "localsettings.inc.php",
+supplemented by one component for every view (called <view name>.php).
+The foudation for the model (the CSL) is the component "connectToDataBase.inc.php",
+which creates a consistent CSL.
+It is supplemented by a set of services for each view, each placed in a component called <view name>.inc.php
+
 >  phpObjServices contexts
 >                 contextname
 >                 filename

@@ -21,7 +21,7 @@ DATA Declaration   | Sgn nm:String a:Concept b:Concept props:{[Prop]} prL:String
                    | Isn g:Concept s:Concept
                    | Iscompl g:Concept s:Concept
                    | Vs g:Concept s:Concept
-DATA Morphism      | Mph nm:String pos:FilePos atts:{[Concept]} sgn:{(Concept,Concept)} yin:Bool u:Declaration
+DATA Morphism      | Mph nm:String pos:FilePos atts:{[Concept]} sgn:{(Concept,Concept)} yin:Bool decl:Declaration
                    | I atts:{[Concept]} g:Concept s:Concept yin:Bool -- if yin then the (source,target) is (s,g) else it is (g,s)
                    | V atts:{[Concept]} sgn:{(Concept,Concept)}
 DATA Prop          | Uni | Tot | Inj | Sur | Sym | Asy | Trn
@@ -52,10 +52,10 @@ TYPE Populations   = [Population]
 imports
 {
 import Char (isDigit) -- more from this module: Alpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
-import CommonClasses (  Identified(name)
-                      , Collection(isc,(>-),uni))
+import CommonClasses ( Identified(name))
+import Collection ( Collection(isc,(>-),uni, rd))
 import UU_Scanner
-import Auxiliaries (chain, eqClass, commaEng, rd, sord, sort', eqCl)
+import Auxiliaries (chain, eqClass, commaEng, sord, sort', eqCl)
 import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
@@ -88,7 +88,7 @@ import CC_aux
           , inline, extends
          )
 
-diagl = 27
+diagl = 17
 diagc = 0
 }
 
@@ -154,8 +154,8 @@ irredT :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
 irredT gE ccs = map (foldr1 lub) (eqClass order ccs)
                 where (a,a') `lub` (b,b')   = if a `gE` b && a' `gE` b' then (b,b') else (a,a')
                       (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
-irredS :: GenR -> [Declaration] -> [Declaration]
-irredS gE ds = map (foldr1 lub) (eqClass order ds)
+irredD :: GenR -> [Declaration] -> [Declaration]
+irredD gE ds = map (foldr1 lub) (eqClass order ds)
                where m `lub` m'   = if a `gE` b && a' `gE` b' then m else m'
                                     where (a,a') = sign m; (b,b') = sign m'
                      m `order` m' = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
@@ -223,7 +223,7 @@ SEM Context
         os.gE         = @genE
         rs.pn         = "" -- not used
         pops.gE       = @genE
-        os.iConcs     = [Anything]
+        os.iConcs     = []
         lhs.over      = [( put_gE @genE @cD
                            (Ctx @nm
                                 @on
@@ -811,7 +811,14 @@ SEM KeyDef
   | Kd lhs.sErr     = @ats.sErr
 
 SEM ObjectDef
-  | Obj lhs.sErr    = let ls  = (concs @ats.objDefs)
+  | Obj lhs.sErr    = {- ["Diagnose Objectdef on Line "++show diagl++""++
+                       "\n @ctx.signs:   "++show @ctx.signs++
+                       "\n @signs:       "++show @signs++
+                       "\n @ats.sources: "++show @ats.sources++
+                       "\n @ctx:         "++showADL @ctx.expr++
+                       "\n @ctx.expr:    "++showHS "" @ctx.expr++"\n"
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @pos] ++ -}
+                      let ls  = (concs @ats.objDefs)
                           ls' c = [g| g<-ls, g `@lhs.gE` c || c `@lhs.gE` g]
                           ground c = if null (ls' c)
                                      then Nothing
@@ -841,6 +848,10 @@ SEM ObjectDef
                        , nqos<-[[o| o<- @ats.objDefs, (source.ctx) o/=t ]]
                        , nqcs<-[[(source.ctx) c| cl<-eqCl (source.ctx) nqos, c<-cl]]
                        , not (null nqos)]++
+                       [ "10 on \n"++show @pos ++" in the definition of VIEW "++ @nm ++ "\n   Cannot match the left hand side of "++showADL @ctx.expr
+                         ++"\n   with "++show t
+                         ++".\n"
+                       | null @signs, t<-map snd @ctx.signs ]++
                        [ "17 on "++show @pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
                          ++(showADL.ctx) e++ " on " ++(show . CC_aux.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . CC_aux.pos . ctx) e'
                          ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
@@ -857,14 +868,7 @@ SEM ObjectDef
                        ])
 
 SEM ObjDefs 
-  | Cons lhs.sErr   = {-
-                      [ "10 on "++show @hd.pos++"\n   "++
-                        "Source of the rest of the attributes " ++ (chain " or " (map show @tl.sources)) ++ "\n   "++
-                        "Does not match " ++ @hd.nm ++ " of type " ++ (chain ", " (map show @hd.sConcs)) ++ "\n"
-                      | null @signs
-                      , not (null @tl.sources)
-                      ] ++
-                      -} @hd.sErr ++ @tl.sErr
+  | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Population
   | Popu lhs.sErr   = @m.sErr
@@ -1053,6 +1057,9 @@ SEM Gen  -- G pos:FilePos genus:Concept spec:Concept;       'GEN Elephant ISA An
                             @lhs.pn                                            -- the pattern name
                       ]
 
+SEM Morphism
+  | Mph  decl.rnr   = -999999
+
 {---------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------}
 
@@ -1106,7 +1113,6 @@ ATTR KeyDef [ | | kd:KeyDef  exprs:Expressions ]
 SEM KeyDef
   | Kd   lhs.kd      = Kd @pos @lbl @ctx.expr @ats.objDefs
          lhs.exprs   = [ expr | Obj nm pos expr ats <- @ats.objDefs]
-         ats.iConcs  = rd (map snd @ctx.signs)
          ctx.pn      = ""
          ctx.isign   = @ctx.signs
 
@@ -1119,16 +1125,28 @@ SEM KeyDefs
 
 ATTR ObjectDef [ iConcs:{[Concept]} | | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos nm:String]
 SEM ObjectDef
+  | Obj  ats.iConcs  = irredC @lhs.gE (map snd @signs)  -- was: (map snd @ctx.signs ++ @ats.sources)>-[Anything] )
+SEM ObjDefs
+  | Cons hd.iConcs   = @lhs.iConcs
+SEM KeyDef
+  | Kd   ats.iConcs  = rd (map snd @ctx.signs ++ @ats.sources)>-[Anything]
+
+SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
   | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
          lhs.ats     = @ats.objDefs
-         ats.iConcs  = @ats.sources
          lhs.sConcs  = rd (map fst @ctx.signs)
          lhs.pos     = @pos
          lhs.nm      = @nm
-         loc.signs   = rd [(lubb @lhs.gE s sa, lubb @lhs.gE t sb)| (s,t) <- @ctx.signs, sa <- @lhs.iConcs, sa `order` s, sb <- @ats.sources, sb `order` t]
+         loc.signs   = rd [( lubb @lhs.gE c s, lubb @lhs.gE t t')
+                          | (s,t) <- @ctx.signs
+                          , c <- if null @lhs.iConcs then [Anything] else @lhs.iConcs, ordd @lhs.gE s c
+                          , t' <- irredC @lhs.gE ( (t: @ats.sources)>-[Anything]) -- all possible signatures for ctx
+                          , ordd @lhs.gE t t']
          ctx.pn      = ""
-         ctx.isign   = @signs
-
+         ctx.isign   = [ ( lubb @lhs.gE c s,t)
+                       | (s,t) <- @signs++[(Anything,Anything)|null @signs]
+                       , c <- if null @lhs.iConcs then [Anything] else @lhs.iConcs ]
+                       
 ATTR Population [ | | pop:Population ]
 SEM Population
   | Popu lhs.pop     = Popu @m.morphism @ps
@@ -1144,7 +1162,6 @@ SEM ObjDefs
   | Cons lhs.objDefs = @hd.odef : @tl.objDefs
          lhs.sources = @signs
          loc.signs   = rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src'']
-         hd.iConcs   = @lhs.iConcs
   | Nil  lhs.objDefs = []
          lhs.sources = [Anything]
 
@@ -1197,8 +1214,10 @@ SEM Morphism
                                                          chain "\n   " (map show @rel))
                     else head @rel -- do not test for length @lhs.isign>1, because of GLUE
 -- All declarations from the declaration table that 'fit' as last argument of Mph:
-        loc.rel   = irredS @lhs.gE [s| s <- @ss, @nm==name s, (a,b) <- @lhs.isign
-                                     , if @yin then source s `@lhs.gE` a && target s `@lhs.gE` b else target s `@lhs.gE` a && source s `@lhs.gE` b]
+        loc.rel   = irredD @lhs.gE [s| s <- @ss, @nm==name s, (a,b) <- @lhs.isign
+                                     , if @yin then test s (a,b) else test s (b,a)]
+                    where test s (a,b) = (source s `@lhs.gE` a) &&
+                                         (target s `@lhs.gE` b)
 -- All declarations from the declaration table that match the name and the atts, if provided. (Second pass upwards, when sDef is known)
         lhs.usedDecls = @ss
         loc.ss    = let ss = [ s | s <- @lhs.sDef, name s == @nm] in
@@ -1214,7 +1233,6 @@ SEM Morphism
         lhs.atts  = @ats
         lhs.yin   = @yin
         lhs.id    = False
-        u.rnr     = -999999
   | I   lhs.usedDecls = declarations [ @rraw ]
         lhs.raw      = ( @rraw, [])
         loc.rraw     = if null @ats      then I [] Anything Anything True  else
@@ -1222,8 +1240,9 @@ SEM Morphism
                        error ("Contact your dealer:\nADL allows only one concept in I["++show @atts++"].")
         lhs.morphism = let (s,t) = if null @lhs.isign && null @ats then error ("Fatal: null @lhs.isign in I lhs.morphism!") else
                                    head (@lhs.isign++[(head @ats,last @ats)])
-                           is = ids @lhs.gE s t
-                       in if null is then I @ats s t True else head is
+                           s' = if s==Anything then t else s; t'= if t==Anything then s else t
+                           is = ids @lhs.gE s' t'
+                       in if null is then I @ats s' t' True else head is
         lhs.nm       = "I"
         lhs.pos      = posNone
         lhs.atts     = @ats

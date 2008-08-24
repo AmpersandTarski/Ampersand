@@ -2,8 +2,8 @@
 module AGtry where
 
 import Char (isDigit) -- more from this module: Alpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
-import CommonClasses (  Identified(name))
-import Collection (Collection(isc,(>-),uni,rd))
+import CommonClasses ( Identified(name))
+import Collection ( Collection(isc,(>-),uni, rd))
 import UU_Scanner
 import Auxiliaries (chain, eqClass, commaEng, sord, sort', eqCl)
 import Classification
@@ -38,7 +38,7 @@ import CC_aux
           , inline, extends
          )
 
-diagl = 27
+diagl = 17
 diagc = 0
 
 chop [x]    = []
@@ -102,8 +102,8 @@ irredT :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
 irredT gE ccs = map (foldr1 lub) (eqClass order ccs)
                 where (a,a') `lub` (b,b')   = if a `gE` b && a' `gE` b' then (b,b') else (a,a')
                       (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
-irredS :: GenR -> [Declaration] -> [Declaration]
-irredS gE ds = map (foldr1 lub) (eqClass order ds)
+irredD :: GenR -> [Declaration] -> [Declaration]
+irredD gE ds = map (foldr1 lub) (eqClass order ds)
                where m `lub` m'   = if a `gE` b && a' `gE` b' then m else m'
                                     where (a,a') = sign m; (b,b') = sign m'
                      m `order` m' = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
@@ -500,7 +500,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os
         ( _ks_exprs,_ks_keyDefs,_ks_rnr,_ks_rules,_ks_sErr) =
             (_ks (_genE) (_ds_rnr) (_mD))
         ( _os_objDefs,_os_rnr,_os_rules,_os_sErr,_os_sources) =
-            (_os (_genE) ([Anything]) (_pats_rnr) (_mD))
+            (_os (_genE) ([]) (_pats_rnr) (_mD))
         ( _pops_popus,_pops_sErr) =
             (_pops (_genE) (_mD))
     in  (_ctx
@@ -1239,7 +1239,7 @@ sem_KeyDef_Kd (_pos) (_lbl) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_ats_rnr) (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_rules,_ats_sErr,_ats_sources) =
-            (_ats (_lhs_gE) (rd (map snd _ctx_signs)) (_lhs_rnr) (_lhs_sDef))
+            (_ats (_lhs_gE) (rd (map snd _ctx_signs ++ _ats_sources)>-[Anything]) (_lhs_rnr) (_lhs_sDef))
     in  ([ expr | Obj nm pos expr ats <- _ats_objDefs],Kd _pos _lbl _ctx_expr _ats_objDefs,_ctx_rnr,_ats_rules ++ _ctx_rules,_ats_sErr)
 -- KeyDefs -----------------------------------------------------
 {-
@@ -1340,8 +1340,8 @@ sem_Morphism :: (Morphism) ->
                 (T_Morphism)
 sem_Morphism ((I (_atts) (_g) (_s) (_yin))) =
     (sem_Morphism_I (_atts) ((sem_Concept (_g))) ((sem_Concept (_s))) (_yin))
-sem_Morphism ((Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_u))) =
-    (sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) ((sem_Declaration (_u))))
+sem_Morphism ((Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_decl))) =
+    (sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) ((sem_Declaration (_decl))))
 sem_Morphism ((V (_atts) (_sgn))) =
     (sem_Morphism_V (_atts) (_sgn))
 sem_Morphism_I :: ([Concept]) ->
@@ -1364,8 +1364,9 @@ sem_Morphism_I (_atts) (_g) (_s) (_yin) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
         ,True
         ,let (s,t) = if null _lhs_isign && null _ats then error ("Fatal: null @lhs.isign in I lhs.morphism!") else
                      head (_lhs_isign++[(head _ats,last _ats)])
-             is = ids _lhs_gE s t
-         in if null is then I _ats s t True else head is
+             s' = if s==Anything then t else s; t'= if t==Anything then s else t
+             is = ids _lhs_gE s' t'
+         in if null is then I _ats s' t' True else head is
         ,"I"
         ,posNone
         ,( _rraw, [])
@@ -1380,7 +1381,7 @@ sem_Morphism_Mph :: (String) ->
                     (Bool) ->
                     (T_Declaration) ->
                     (T_Morphism)
-sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_u) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
+sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_decl) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
     let (_s) =
             if null _lhs_isign
             then error("Fatal 2: Empty declaration allocation for "++ _nm ++" on "++show _pos++":\n  @ss="++chain "\n       " (map show _ss))
@@ -1393,16 +1394,18 @@ sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_u) (_lhs_gE) (_lhs_isign) 
                                                  chain "\n   " (map show _rel))
             else head _rel
         (_rel) =
-            irredS _lhs_gE [s| s <- _ss, _nm==name s, (a,b) <- _lhs_isign
-                             , if _yin then source s `_lhs_gE` a && target s `_lhs_gE` b else target s `_lhs_gE` a && source s `_lhs_gE` b]
+            irredD _lhs_gE [s| s <- _ss, _nm==name s, (a,b) <- _lhs_isign
+                             , if _yin then test s (a,b) else test s (b,a)]
+            where test s (a,b) = (source s `_lhs_gE` a) &&
+                                 (target s `_lhs_gE` b)
         (_ss) =
             let ss = [ s | s <- _lhs_sDef, name s == _nm] in
             if null _atts then rd ss else
             [ s | s <- ss, if _yin then source s == head _atts && target s == last _atts else source s == last _atts && target s == head _atts]
         (_ats) =
             rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
-        ( _u_declaration,_u_nm,_u_rawDecl,_u_rnr,_u_rules,_u_sErr) =
-            (_u (_lhs_gE) (-999999) (_lhs_sDef))
+        ( _decl_declaration,_decl_nm,_decl_rawDecl,_decl_rnr,_decl_rules,_decl_sErr) =
+            (_decl (_lhs_gE) (-999999) (_lhs_sDef))
     in  (_ats
         ,False
         ,Mph _nm _pos _ats _s _yin
@@ -1588,11 +1591,22 @@ sem_ObjectDef_Obj :: (String) ->
                      (T_ObjectDef)
 sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let (_signs) =
-            rd [(lubb _lhs_gE s sa, lubb _lhs_gE t sb)| (s,t) <- _ctx_signs, sa <- _lhs_iConcs, sa `order` s, sb <- _ats_sources, sb `order` t]
+            rd [( lubb _lhs_gE c s, lubb _lhs_gE t t')
+               | (s,t) <- _ctx_signs
+               , c <- if null _lhs_iConcs then [Anything] else _lhs_iConcs, ordd _lhs_gE s c
+               , t' <- irredC _lhs_gE ( (t: _ats_sources)>-[Anything])
+               , ordd _lhs_gE t t']
         ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
-            (_ctx (_lhs_gE) (_signs) ("") (_pos) (_ats_rnr) (_lhs_sDef))
+            (_ctx (_lhs_gE)
+                  ([ ( lubb _lhs_gE c s,t)
+                   | (s,t) <- _signs++[(Anything,Anything)|null _signs]
+                   , c <- if null _lhs_iConcs then [Anything] else _lhs_iConcs ])
+                  ("")
+                  (_pos)
+                  (_ats_rnr)
+                  (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_rules,_ats_sErr,_ats_sources) =
-            (_ats (_lhs_gE) (_ats_sources) (_lhs_rnr) (_lhs_sDef))
+            (_ats (_lhs_gE) (irredC _lhs_gE (map snd _signs)) (_lhs_rnr) (_lhs_sDef))
     in  (_ats_objDefs
         ,_nm
         ,Obj _nm _pos _ctx_expr _ats_objDefs
@@ -1624,6 +1638,10 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
           , nqos<-[[o| o<- _ats_objDefs, (source.ctx) o/=t ]]
           , nqcs<-[[(source.ctx) c| cl<-eqCl (source.ctx) nqos, c<-cl]]
           , not (null nqos)]++
+          [ "10 on \n"++show _pos ++" in the definition of VIEW "++ _nm ++ "\n   Cannot match the left hand side of "++showADL _ctx_expr
+            ++"\n   with "++show t
+            ++".\n"
+          | null _signs, t<-map snd _ctx_signs ]++
           [ "17 on "++show _pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
             ++(showADL.ctx) e++ " on " ++(show . CC_aux.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . CC_aux.pos . ctx) e'
             ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
