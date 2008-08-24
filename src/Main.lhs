@@ -1,29 +1,41 @@
 > module Main where
->  import System
+>  import System (getArgs,system, ExitCode(ExitSuccess,ExitFailure))
 >  import Char (toLower)
->  import UU_Scanner
->  import UU_Parsing
+>  import UU_Scanner(scan,initPos)
+>  import UU_Parsing(parseIO)
 >  import CommonClasses ( Identified(name))
 >  import Collection( Collection( empty ))
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (isa, Lang(English,Dutch), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
+>  import CC_aux (Context(Ctx),isa, Lang(English,Dutch), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
->  import Fspec (projectClassic,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec)
->  import HtmlFilenames
->  import Graphic
+>  import Fspec (
+>                 projectClassic
+>               ,generateFspecLaTeX
+>               ,generateArchLaTeX
+>               ,generateGlossaryLaTeX
+>               ,funcSpec
+>               ,nDesignPr
+>               ,nServices
+>               ,nFpoints
+>               ,makeFspec
+>               )
+>  import HtmlFilenames(fnContext,fnPattern)
+>  import Graphic(processCdDataModelFile,dotGraph,processDotgraphFile)
 >  import Atlas (anal)
 >  import Xml (makeXML)
 >  import ERmodel (erAnalysis)
 >  import ClassDiagram (cdModel,cdDataModel)  
->  import RelBinGen
->  import ObjBinGen
+>  import RelBinGen(phpServices)
+>  import ObjBinGen(phpObjServices)
+>  import MakeFspec (makeFspecNew2,Fspc)
 
 functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 
 >  latexOpt sws = "-l" `elem` sws
+>  splitStr :: (String -> Bool) -> [String] -> ([String], [String])
 >  splitStr f (x:xs) | f x  = (x:yes, no)
 >                    | True = (yes, x:no)
 >                    where (yes,no) = splitStr f xs
@@ -74,14 +86,15 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >        }}
 >      where build contexts switches contextname filename dbName slRes
 >             = sequence_ 
->                ([ anal contexts contextname ("-p" `elem` switches) (if "-crowfoot" `elem` switches then "crowfoot" else "cc")
+>                ([ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
 >                 | null switches || "-h" `elem` switches]++
 >                 [ makeXML contexts contextname| "-XML" `elem` switches]++
->                 [ showHaskell contexts contextname| "-Haskell" `elem` switches]++ -- het resultaat heeft op 7 aug 2008 succesvol gecompileerd.
+>                 [ showHaskell_old contexts contextname| "-Haskell" `elem` switches]++ -- het resultaat heeft op 7 aug 2008 succesvol gecompileerd.
+>                 [ showHaskell_new fspec | "-Haskell" `elem` switches]++ -- het resultaat moet nog worden gecontroleerd!
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
->                 [ functionalSpecLaTeX contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-fSpec" `elem` switches]++
->  -- obsolete     [ functionalSpecText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) | "-fText" `elem` switches]++
->                 [ archText contexts contextname (if "-crowfoot" `elem` switches then "crowfoot" else "cc") (lang switches) filename| "-arch" `elem` switches]++
+>                 [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+>  -- obsolete     [ functionalSpecText contexts contextname (lineStyle switches) (lang switches) | "-fText" `elem` switches]++
+>                 [ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
 >                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
 >  -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
 >                 [ cdModel contexts contextname | "-CD" `elem` switches]++
@@ -118,6 +131,10 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                     ctxs    = [c| c<-contexts, name c==contextname]
 >                     (ents,rels,ruls) = erAnalysis context
 >                     spec = funcSpec context (ents,rels,ruls) (lang switches)
+>                     fspec = makeFspecNew2 context
+>            lineStyle switches
+>             | "-crowfoot" `elem` switches = "crowfoot"
+>             | otherwise                   = "cc"
 >            lang switches
 >             | "-NL" `elem` switches = Dutch
 >             | "-UK" `elem` switches = English
@@ -139,22 +156,41 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >      spec = funcSpec context (erAnalysis context) language
 >      (entities, relations, ruls) = erAnalysis context
 
->  showHaskell contexts contextname
+>  showHaskell_old :: [Context] -> String -> IO ()
+>  showHaskell_old contexts contextname
 >   = putStrLn ("\nGenerating Haskell source code for "++name context) >>
->     writeFile (ctxNm++".lhs")
+>     writeFile (ctxNm++".lhs_old")
 >               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n>  import Fspec\n\n"
 >                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
 >                ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
 >                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
 >               ) >>
->     putStr ("\nHaskell file "++ctxNm++".lhs written...\n")
+>     putStr ("\nHaskell file "++ctxNm++".lhs_old written...\n")
 >     where
 >      fspec = makeFspec context
 >      ctxNm = showHSname context
 >      spcNm = showHSname fspec
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
-
+>  showHaskell_new :: Fspc -> IO ()
+>  showHaskell_new fspec
+>   = putStrLn ("\nGenerating Haskell source code for "++name fspec) >>
+>     writeFile (baseName++".lhs")
+>               ("> module Main where"
+>            ++"\n>  import UU_Scanner"
+>            ++"\n>  import Classification"
+>            ++"\n>  import Typology"
+>            ++"\n>  import CC_aux"
+>            ++"\n>  import FspecDef"
+>            ++"\n>"
+>            ++"\n>  main = putStr (showHS \"\\n>  \""++baseName++")"
+>            ++"\n\n"
+>                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
+>               ) >>
+>     putStr ("\nHaskell file "++baseName++".lhs written...\n")
+>     where
+>      baseName = showHSname fspec
+ 
 
 functionalSpecText generates a functional specification in ASCII
 

@@ -1,4 +1,4 @@
-> module CC where
+> module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 >  import UU_Scanner
 >  import UU_Parsing
 >  import CommonClasses ( Identified(name))

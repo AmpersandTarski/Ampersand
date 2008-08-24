@@ -1,4 +1,16 @@
->  module Fspec where -- (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec) where
+>  module Fspec ( projectClassic
+>               , fnContext
+>               , generateFspecLaTeX
+>               , generateArchLaTeX
+>               , generateGlossaryLaTeX
+>               , funcSpec
+>               , nDesignPr
+>               , nServices
+>               , nFpoints
+>               , makeFspec
+>               ) where
+
+where -- (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec) where
 
 functionalSpecLaTeX,glossary,projectSpecText,archText,
 
