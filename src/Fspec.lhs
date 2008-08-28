@@ -1,14 +1,16 @@
->  module Fspec ( projectClassic
->               , fnContext
->               , generateFspecLaTeX
->               , generateArchLaTeX
->               , generateGlossaryLaTeX
->               , funcSpec
->               , nDesignPr
->               , nServices
->               , nFpoints
->               , makeFspec
->               ) where
+>  module Fspec --( projectClassic
+>               --, fnContext
+>               --, generateFspecLaTeX
+>               --, generateArchLaTeX
+>               --, generateGlossaryLaTeX
+>               --, funcSpec
+>               --, nDesignPr
+>               --, nServices
+>               --, nFpoints
+>               --, makeFspec
+>               --, Fspec(..),Fobj(..),Frule(..),Dataset(..),Ftheme(..)  -- Moet worden geexporteerd om gegenereerde bestanden te kunnen parsen..
+>               --)
+> where
 
 where -- (projectClassic,fnContext,generateFspecLaTeX,generateArchLaTeX,generateGlossaryLaTeX,funcSpec,nDesignPr,nServices,nFpoints,makeFspec) where
 
@@ -151,8 +153,8 @@ A specification contains one Fobj-specification for every object it defines and 
 >  data Frule = Frul Rule
 
 >  instance ShowHS Frule where
->   showHSname (Frul r)    = "f_rule_"++haskellIdentifier (name r)
->   showHS indent (Frul r) = "Frul ("++showHS "" r++")"
+>   showHSname (Frul r)    = "frule_"++showHSname r     -- (name r)
+>   showHS indent (Frul r) = "Frul (" ++showHS "" r++")"
 
 >  makeFrule :: Context -> Rule -> Frule
 >  makeFrule context r = Frul r
@@ -237,15 +239,24 @@ Als deze relatie een functie is,
 >   closExprs    (DS c pths) = []
 >   closExprs    (BR m     ) = []
 
->  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Rule]
+>  data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Frule]
 
 >  instance ShowHS Fobj where
 >   showHSname (Fobj dset objd svcs rs) = "f_Obj_"++haskellIdentifier (name objd)
 >   showHS indent (Fobj dset objd svcs rs)
 >    = "Fobj "++showHSname dset
+>      ++indent++" -- objectdef NOG UIT TE WERKEN IN FspecDef.lhs " 
 >      ++indent++"     ("++showHS (indent++"      ") objd++")"
+>      ++indent++" -- services NOG UIT TE WERKEN IN FspecDef.lhs "
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
+>      ++indent++" -- rules NOG UIT TE WERKEN IN FspecDef.lhs " 
 >      ++indent++"     ["++chain ", " [showHSname r| r<-rs]++"]"
+>      ++indent++" -- Einde Fobj "++showHSname dset
+
+    = "Fobj "++showHSname dset
+      ++indent++"     ("++showHS (indent++"      ") objd++")"
+      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
+      ++indent++"     ["++chain ", " [showHSname r| r<-rs]++"]"
 
 >  makeFview :: Context -> ObjectDef -> Fobj
 >  makeFview context o
@@ -255,7 +266,7 @@ Als deze relatie een functie is,
 >           , readObj context o
 >           , deleteObj context o [] {-rs-}
 >           , updateObj context o [] {-cs-} [] {-rs-} ])
->          [r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+>          [Frul r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
@@ -284,18 +295,25 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >   showHSname (Uspc nm pat ents svs) = "f_Unit_"++haskellIdentifier nm
 >   showHS indent (Uspc nm pat ents svs)
 >    = "Uspc "++show nm++" ("++showHSname pat++" gE)"
->      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") o| (o,fpa,cs,rs)<-ents]++indent++"     ]"
+>      ++indent++"     [ "++chain (indent++"     , ") ["(" ++ showHS (indent++"       ") o ++ ", ILGV Eenvoudig, [] {-cs-},[] {-rs-}) "     | (o,fpa,cs,rs)<-ents]++indent++"     ]"
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-svs ]++indent++"     ]"
 
 >  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
 >  makeFunit context pat objs newConcs newDecls
->   = Uspc (if null objs then "" else name (head objs)) pat [(o,ILGV Eenvoudig,[] {-cs-},[] {-rs-})| o<-objs]
->            (concat [ [ createObj context o [] {-rs-} ] ++ [ readObj context o]                           ++
->                      concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
->                             | (e,key,ks)<-keys pat, e==concept o]                                ++
->                      [ deleteObj context o [] {-rs-} ]                                                     ++
->                      [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
->                    | o<-objs ])
+>   = Uspc (if null objs then "" else name (head objs)) pat 
+>         objDefs
+>         servicespecs
+>           where
+>             mkobjdf :: ObjectDef -> (ObjectDef,FPA,[Morphism],[(Expression,Rule)])
+>             objDefs = [mkobjdf o| o<-objs]
+>             mkobjdf o = (o, ILGV Eenvoudig,  [] {-cs-},[] {-rs-})
+>             servicespecs = []
+>          --  (concat [ [ createObj context o [] {-rs-} ] ++ [ readObj context o]                           ++
+>          --            concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
+>          --                   | (e,key,ks)<-keys pat, e==concept o]                                ++
+>          --            [ deleteObj context o [] {-rs-} ]                                                     ++
+>          --            [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
+>          --          | o<-objs ])
 
 The following functional specification, funcSpec, computes which relations are may be affected by compute rules.
 Assuming that they will be computed in all cases, all other relations are treated as input parameters.
@@ -318,7 +336,7 @@ TODO: determine which relations are affected but not computed, and report as an 
 >  instance ShowHS ServiceSpec where
 >   showHSname (Sspc nm sees changes fpa input output rs pre post) = "f_svc_"++haskellIdentifier nm
 >   showHS indent (Sspc nm sees changes fpa input output rs pre post)
->    = "Sspc "++nm
+>    = "Sspc "++show nm
 >      ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) sees   )++indent++"     ] -- these are the visible morphisms: <sees> "
 >      ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
 >      ++indent++"     (" ++show fpa++")"

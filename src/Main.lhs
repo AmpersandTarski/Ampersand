@@ -159,13 +159,13 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >  showHaskell_old :: [Context] -> String -> IO ()
 >  showHaskell_old contexts contextname
 >   = putStrLn ("\nGenerating Haskell source code for "++name context) >>
->     writeFile (ctxNm++".lhs_old")
+>     writeFile (ctxNm++"_old.lhs")
 >               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n>  import Fspec\n\n"
 >                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
 >                ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
 >                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
 >               ) >>
->     putStr ("\nHaskell file "++ctxNm++".lhs_old written...\n")
+>     putStr ("\nHaskell file "++ctxNm++"_old.lhs written...\n")
 >     where
 >      fspec = makeFspec context
 >      ctxNm = showHSname context
@@ -173,23 +173,23 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
 >  showHaskell_new :: Fspc -> IO ()
->  showHaskell_new fspec
->   = putStrLn ("\nGenerating Haskell source code for "++name fspec) >>
->     writeFile (baseName++".lhs")
+>  showHaskell_new fspc
+>   = putStrLn ("\nGenerating Haskell source code for "++name fspc) >>
+>     writeFile (baseName++"_new.lhs")
 >               ("> module Main where"
 >            ++"\n>  import UU_Scanner"
 >            ++"\n>  import Classification"
 >            ++"\n>  import Typology"
 >            ++"\n>  import CC_aux"
 >            ++"\n>  import FspecDef"
->            ++"\n>"
+>            ++"\n"
 >            ++"\n>  main = putStr (showHS \"\\n>  \""++baseName++")"
 >            ++"\n\n"
->                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
+>                ++">  "++baseName++"\n>   = "++showHS "\n>     " fspc
 >               ) >>
->     putStr ("\nHaskell file "++baseName++".lhs written...\n")
+>     putStr ("\nHaskell file "++baseName++"_new.lhs written...\n")
 >     where
->      baseName = showHSname fspec
+>      baseName = (showHSname fspc)
  
 
 functionalSpecText generates a functional specification in ASCII
