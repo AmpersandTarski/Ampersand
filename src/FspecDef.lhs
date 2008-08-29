@@ -20,19 +20,23 @@
 >                , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs )
 >                , Expression
 >                )
->  import CommonClasses
+>  import CommonClasses(DataStruct(..),Identified(name))
 >  import Auxiliaries
 
->  data Fspc = Fspc 
->               String        -- The name of the specification
+>  data Fspc = Fspc -- Fctx 
+>               FSid          -- The name of the specification
 >               [Ftheme]      -- One for every pattern
 >               [Dataset]     -- One for every (group of) relations
 >               [Fview]       -- One for every view 
 >               [Frule]       -- One for every rule
 >  instance DataStruct Fspc where
 >   showStruct fspec =  "   -- context   (Fspc has this structure:  Fspc name themes datasets views vrules)"
+
 >  instance Identified Fspc where
->   name    (Fspc nm _ _ _ _) = nm
+>    name fspc = name (fsid fspc)
+>      
+>  instance Fidentified Fspc where
+>   fsid    (Fspc fid _ _ _ _) = fid
 
 >  themes   :: Fspc -> [Ftheme]
 >  themes  (Fspc _ fthemes _ _ _)   = fthemes
@@ -44,9 +48,9 @@
 >  vrules  (Fspc _ _ _ _ frules)    = frules
 
 >  instance ShowHS Fspc where
->   showHSname fspec = "f_Ctx_"++haskellIdentifier (name fspec) 
+>   showHSname fspec = "f_Ctx_"++showHS "" (fsid fspec) 
 >   showHS indent fspec
->    = "Fspc "++showHSname fspec++showStruct fspec++
+>    = "Fctx "++showHSname fspec++showStruct fspec++
 >      (if null (themes   fspec) then " []" else indent++"{- themes:   -}  "++showL [showHSname t|t<-themes   fspec ])++
 >      (if null (datasets fspec) then " []" else indent++"{- datasets: -}  "++showL [showHSname d|d<-datasets fspec ])++
 >      (if null (views    fspec) then " []" else indent++"{- views:    -}  "++showL [showHSname o|o<-views    fspec ])++
@@ -68,17 +72,17 @@ Every unit specifies one dataset, and each dataset is discussed only once in the
 
 
 >  data Ftheme  = Tspc     -- The constructor
->                 String   -- The name of the theme (aka pattern)
+>                 FSid     -- The name of the theme (aka pattern)
 >                 [Funit]  -- The units of the theme
 >  instance DataStruct Ftheme where
 >   showStruct theme =  "   -- context   (Ftheme has this structure:  Tspc name funits)"
->  instance Identified Ftheme where
->   name (Tspc nm _) = nm 
+>  instance Fidentified Ftheme where
+>   fsid (Tspc fid _) = fid 
 
 >  units :: Ftheme -> [Funit]
 >  units (Tspc _ funits) = funits
 >  instance ShowHS Ftheme where
->   showHSname ftheme = "pat_"++haskellIdentifier (name ftheme) -- XXX Moet worden f_Thm
+>   showHSname ftheme = "pat_"++showHS "" (fsid ftheme) -- XXX Moet worden f_Thm
 >   showHS indent ftheme
 >    = "Tspc ("++showHSname ftheme++" gE)"++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-units(ftheme)]++indent++"     ]"
 
@@ -109,9 +113,19 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >   closExprs    (BR m     ) = []
 >  -- Is dit een ommissie hier? objDefs, keyDefs zijn niet gedefinieerd voor DataSet...
 
+>  instance Fidentified Dataset where
+>    fsid (DS c pths) = fsid c
+>    fsid (BR m) = fsid m
+>  instance Fidentified Morphism where
+>    fsid m = FS_id (name m++name (source m)++name(target m))  --Hier moet nog goed naar worden gekeken....
+>  instance Fidentified Concept where
+>    fsid c = FS_id (name c)
+>  instance Fidentified ObjectDef where
+>    fsid o = FS_id (name o)
+
 >  instance ShowHS Dataset where
->   showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
->   showHSname (BR m)      = "f_BR_"++haskellIdentifier (name m++name (source m)++name(target m))
+>   showHSname dset@(DS c pths) = "f_DS_"++showHS "" (fsid dset)
+>   showHSname dset@(BR m)      = "f_BR_"++showHS "" (fsid dset)
 >   showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
 >   showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
 >   showHS indent (BR m     ) = "BR ("++showHS "" m++")"
@@ -124,8 +138,8 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 
 
 >  data Fview  = Fview Dataset ObjectDef [ServiceSpec] [Frule]
->  instance Identified Fview where
->   name fview = name (objectdef(fview))
+>  instance Fidentified Fview where
+>   fsid fview = fsid (objectdef(fview))
 
 >  dataset   (Fview dset _ _ _) = dset
 >  objectdef (Fview _ objd _ _) = objd
@@ -133,7 +147,7 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >  frules    (Fview _ _ _ frls) = frls
 >  
 >  instance ShowHS Fview where
->   showHSname fview = "f_Obj_"++haskellIdentifier (name fview)  -- XXX moet f_View worden
+>   showHSname fview = "f_Obj_"++showHS "" (fsid fview)  -- XXX moet f_View worden
 >   showHS indent fview
 >    = "Fobj "  --LATER NOG VERVANGEN DOOR Fview
 >      ++ datasetSection
@@ -146,7 +160,7 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >         objdefSection   = indent++" -- objectdef NOG UIT TE WERKEN IN FspecDef.lhs " 
 >                         ++indent++"     ("++showHS (indent++"      ") (objectdef fview)++")"
 >         servicesSection = indent++" -- services NOG UIT TE WERKEN IN FspecDef.lhs "
->           --              ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-services(fview)]++indent++"     ]"
+>                         ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-services(fview)]++indent++"     ]"
 >         rulesSection    = indent++" -- rules NOG UIT TE WERKEN IN FspecDef.lhs " 
 >                         ++indent++"     ["++chain ", " [showHSname fr| fr<-frules(fview)]++"]"
 
@@ -154,8 +168,8 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 
 
 >  data Frule = Frul Rule
->  instance Identified Frule where
->   name frul = name (rule frul)
+>  instance Fidentified Frule where
+>   fsid frul = FS_id (name (rule frul))   
 >  rule:: Frule -> Rule
 >  rule (Frul r) = r
 
@@ -165,21 +179,21 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 
 
 
->  data Funit = Uspc String Pattern
+>  data Funit = Uspc FSid Pattern
 >                    [ ( ObjectDef
 >            --         ,FPA
 >                       , [Morphism]
 >                       ,[(Expression,Rule)])]
 >                    [ServiceSpec] -- services
->  instance Identified Funit where
->   name (Uspc nm _ _ _) = nm 
+>  instance Fidentified Funit where
+>   fsid (Uspc fid _ _ _) = fid 
 
 >  instance ShowHS Funit where
->   showHSname funit = "f_Unit_"++haskellIdentifier (name funit)
+>   showHSname funit = "f_Unit_"++showHS "" (fsid funit)
 >   showHS indent funit
->    = "Uspc "++show (name funit)++" ("++showHSname (pattern funit)++" gE)"
+>    = "Uspc "++showHS "" (fsid funit)++" ("++showHSname (pattern funit)++" gE)"
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") o| o<-objDefs(funit)]++indent++"     ]"
->   --   ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
+>      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
 
 >  pattern  (Uspc _ pat _ _) = pat
 >  viewDefs (Uspc _ _ vwdefs _) = vwdefs
@@ -192,7 +206,7 @@ Assuming that they will be computed in all cases, all other relations are treate
 This assumption, however, is not true.
 TODO: determine which relations are affected but not computed, and report as an error.
 
->  data ServiceSpec = Sspc String       -- name of the service
+>  data ServiceSpec = Sspc FSid         -- name of the service
 >                          [Morphism]   -- the list of relations this service may see
 >                          [Morphism]   -- the list of relations this service may change
 >            -- Hoort hier niet meer thuis             FPA          -- function point analysis information
@@ -201,27 +215,46 @@ TODO: determine which relations are affected but not computed, and report as an 
 >                          [Rule]       -- Invariants
 >                          [String]     -- Preconditions
 >                          [String]     -- Postconditions
->  --instance ShowHS ServiceSpec where
->  -- showHSname (Sspc nm sees changes input output rs pre post) = "f_svc_"++haskellIdentifier nm
->  -- showHS indent (Sspc nm sees changes input output rs pre post)
->  --  = "Sspc "++nm
->  --    ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) sees   )++indent++"     ] -- these are the visible morphisms: <sees> "
->  --    ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
->  --    ++indent++"     [" ++(if null input   then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") input )++"] -- rrrrrs: <input>")
->  --    ++indent++"     [" ++(if null output  then "]   -- no output parameters"          else " "++chain "," (map (showHS "") output)++"] -- these are the output parameters: <output> ")
->  --    ++indent++"     [" ++(if null rs      then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) rs  )++indent++"     ]")
->  --    ++indent++"     [" ++(if null pre     then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        pre )++indent++"     ] -- preconditions")
->  --    ++indent++"     [" ++(if null post    then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        post)++indent++"     ] -- postconditions")
+>  instance Fidentified ServiceSpec where
+>     fsid (Sspc fid _ _ _ _ _ _ _) = fid  
 
->  data ParamSpec   = Aspc String       -- name of the parameter
+>  sees    (Sspc _ x _ _ _ _ _ _) = x
+>  changes (Sspc _ _ x _ _ _ _ _) = x
+>  input   (Sspc _ _ _ x _ _ _ _) = x
+>  output  (Sspc _ _ _ _ x _ _ _) = x
+>  rs      (Sspc _ _ _ _ _ x _ _) = x
+>  pre     (Sspc _ _ _ _ _ _ x _) = x
+>  post    (Sspc _ _ _ _ _ _ _ x) = x
+
+>  instance ShowHS ServiceSpec where
+>   showHSname sspc  = "f_svc_"++showHS "" (fsid sspc)
+>   showHS indent sspc
+>     =            "Sspc " ++ showHS "" (fsid sspc)
+>      ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) (sees sspc)  )++indent++"     ] -- these are the visible morphisms: <sees> "
+>      ++indent++"     [" ++(if null (changes sspc) then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) (changes sspc))++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
+>      ++indent++"     [" ++(if null (input   sspc) then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") (input sspc) )++"] -- rrrrrs: <input>")
+>      ++indent++"     [" ++(if null (output  sspc) then "]   -- no output parameters"          else " "++chain "," (map (showHS "") (output sspc) )++"] -- these are the output parameters: <output> ")
+>      ++indent++"     [" ++(if null (rs      sspc) then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) (rs sspc) )++indent++"     ]")
+>      ++indent++"     [" ++(if null (pre     sspc) then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        (pre sspc))++indent++"     ] -- preconditions")
+>      ++indent++"     [" ++(if null (post    sspc) then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        (post sspc))++indent++"     ] -- postconditions")
+
+
+>  data ParamSpec   = Aspc FSid         -- name of the parameter
 >                          String       -- type of the parameter
 >                   | Pbool
 >  instance ShowHS ParamSpec where
->   showHSname a@(Aspc nm typ) = error ("(module Fspec) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
->   showHS indent (Aspc nm typ)
->    = "Aspc "++show nm++" "++show typ
+>   showHSname a@(Aspc fid typ) = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
+>   showHS indent (Aspc fid typ)
+>    = "Aspc "++showHS "" fid++" "++show typ
 
-
-
-
-
+>  class Fidentified a where
+>    fsid :: a -> FSid
+>  data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
+>            | NoName           -- some identified objects have no name...
+>  instance Identified FSid where
+>   name (FS_id nm) = nm
+>  instance ShowHS FSid where
+>   showHSname a@(FS_id nm ) = error ("(module FspecDef) should not showHSname the identifier (FSid): "++showHS "" a)
+>   showHS indent (FS_id nm)
+>    = "FS_id " ++ nm
+>   showHS indent NoName = ""
