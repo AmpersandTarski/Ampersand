@@ -189,7 +189,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >               ) >>
 >     putStr ("\nHaskell file "++baseName++"_new.lhs written...\n")
 >     where
->      baseName = (showHSname fspc)
+>      baseName = "F_Ctx_"++(name fspc)
  
 
 functionalSpecText generates a functional specification in ASCII

@@ -4,7 +4,7 @@
 
   This module is for the purpose of translating a Concept into a Fspec
 
->  import CommonClasses ( Identified(name, idName))
+>  import CommonClasses ( Identified(name))
 >  import Collection    ( Collection (isc,(>-),rd) )
 >  import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass,chain)
 >  import Char(toLower)
@@ -345,6 +345,6 @@ Te bepalen:
 
 >  nameAt :: (Identified a, Object a) => a -> String
 >  nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
-
+>  idName c = name c
 >  makeFSid :: String -> FSid
 >  makeFSid s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
