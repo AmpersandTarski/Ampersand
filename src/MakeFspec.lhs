@@ -25,7 +25,7 @@
 >  makeFspecNew2 :: Context -> Fspc
 >  makeFspecNew2 context
 >    = Fspc fid themes datasets fviews frules where
->       fid      = makeFSid (name context)
+>       fid      = makeFSid1 (name context)
 >       themes   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
 >                  ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
 >                  )
@@ -82,7 +82,7 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >  makeFtheme context pat dss
 >   = Tspc fid units 
 >     where
->       fid = makeFSid (name pat)
+>       fid = makeFSid1 (name pat)
 >       units = [makeFunit context pat (objs ds) [] []| ds<-dss]
 >        where
 >         objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
@@ -109,7 +109,7 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >  makeFunit context pat objs newConcs newDecls
 >   = Uspc fid pat ents svs
 >       where
->         fid  = (if null objs then NoName else makeFSid(name (head objs))) 
+>         fid  = (if null objs then NoName else makeFSid1(name (head objs))) 
 >         ents = [(o
 >               -- ,ILGV Eenvoudig
 >                  ,[] {-cs-}
@@ -159,11 +159,11 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("getEach_"++name o)
+>         fid         = makeFSid1 ("getEach_"++name o)
 >         maySee      = [mIs (concept o)]  -- see  concept o  only.
 >         mayChange   = []                 -- change nothing
 >         params      = []                 -- input parameters
->         results     = [ Aspc (makeFSid "objs") ("["++handle context o++"]")]  -- results
+>         results     = [ Aspc (makeFSid1 "objs") ("["++handle context o++"]")]  -- results
 >         invariants  = []                 -- rules
 >         preconds    = []                 -- Precondition
 >         postconds   = ([tt "objs"++"= I["++name (concept o)++"]"]) -- Postcondition
@@ -174,12 +174,12 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("create_"++name o)
+>         fid         = makeFSid1 ("create_"++name o)
 >         maySee      = ([mIs (concept o)]++mors o)      -- see the morphisms touched by this object
 >         mayChange   = (mors o)                         -- change these morphisms
 >     --     (IF Gemiddeld)
->         params      = [ Aspc (makeFSid(varName (name a))) (handle context a) | a<-attributes o]  -- input parameters
->         results     = [ Aspc (makeFSid("obj")) (handle context o)] -- results
+>         params      = [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-attributes o]  -- input parameters
+>         results     = [ Aspc (makeFSid1("obj")) (handle context o)] -- results
 >         invariants  = (dressRules
 >                        [ (clause,rule)
 >                        | (conj,rule)<-rs
@@ -196,12 +196,12 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("read_"++name o)
+>         fid         = makeFSid1 ("read_"++name o)
 >         maySee      = ([mIs (concept o)]++mors o) -- sees
 >         mayChange   = []                          -- change nothing
 >      --    (OF Eenvoudig)
->         params      = [Aspc (makeFSid "x") (handle context o)]
->         results     = [Aspc (makeFSid (varName (name a))) (handle context a) | a<-attributes o]
+>         params      = [Aspc (makeFSid1 "x") (handle context o)]
+>         results     = [Aspc (makeFSid1 (varName (name a))) (handle context a) | a<-attributes o]
 >         invariants  = []
 >--    Pre (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
 >         preconds    = ([ tt ("x."++name a)++"="++idNam (nameAt a) |a<-attributes o])
@@ -216,13 +216,13 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("sel_"++name o++"_by_"++if null key then chain "_" (map name ats') else key)
+>         fid         = makeFSid1 ("sel_"++name o++"_by_"++if null key then chain "_" (map name ats') else key)
 >    --     serviceName = (firstCaps ("sel"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
 >         maySee      = (mors context) -- see everything
 >         mayChange   = []             -- change nothing
 >     --     (OF Eenvoudig)
->         params      = [ Aspc (makeFSid(varName (name a))) (handle context a) | a<-ats']
->         results     = [Aspc (makeFSid "obj") (handle context o)]
+>         params      = [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-ats']
+>         results     = [Aspc (makeFSid1 "obj") (handle context o)]
 >         invariants  = []
 >--    Pre (example:) {Assume l=atom_left and r=atom_right}
 >         preconds    = [let args = [tt ("x."++name a)++"="++tt (varName (name a)) | a<-attributes o] ++
@@ -245,12 +245,12 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("del_"++name o++"_by_"++if null key then chain "_" (map name ats') else key)
+>         fid         = makeFSid1 ("del_"++name o++"_by_"++if null key then chain "_" (map name ats') else key)
 >      --   serviceName = (firstCaps ("del"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
 >         maySee      = (mors context)     -- see everything
 >         mayChange   = (mors context)     -- change everything
 >      --    (IF Gemiddeld)
->         params      = [ Aspc (makeFSid(varName (name a))) (handle context a) | a<-ats']
+>         params      = [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-ats']
 >         results     = []
 >         invariants  = (dressRules
 >                       [ (clause,rule)
@@ -275,11 +275,11 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("update_"++name o)
+>         fid         = makeFSid1 ("update_"++name o)
 >         maySee      = (mors o)     -- see everything
 >         mayChange   = (mors o)     -- change everything
 >      --    (IF Gemiddeld)
->         params      = (Aspc (makeFSid "x") (handle context o): [ Aspc (makeFSid(varName (name a))) (handle context a) | a<-attributes o])
+>         params      = (Aspc (makeFSid1 "x") (handle context o): [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-attributes o])
 >         results     = []
 >         invariants  = (dressRules rs)
 >--    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
@@ -295,11 +295,11 @@ Te bepalen:
 >          -- No more FPA here
 >          params results invariants preconds postconds 
 >       where
->         fid         = makeFSid ("delete_"++name o)
+>         fid         = makeFSid1 ("delete_"++name o)
 >         maySee      = [mIs (concept o)]     -- see everything
 >         mayChange   = (mors o)              -- change everything
 >      --    (IF Gemiddeld)
->         params      = [Aspc (makeFSid "x") (handle context o)] 
+>         params      = [Aspc (makeFSid1 "x") (handle context o)] 
 >         results     = []
 >         invariants  = (dressRules
 >                       [ (clause,rule)
@@ -346,5 +346,7 @@ Te bepalen:
 >  nameAt :: (Identified a, Object a) => a -> String
 >  nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
 >  idName c = name c
->  makeFSid :: String -> FSid
->  makeFSid s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
+
+>  makeFSid1 :: String -> FSid
+>  makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
+

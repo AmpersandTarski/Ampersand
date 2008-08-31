@@ -183,13 +183,13 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >            ++"\n>  import CC_aux"
 >            ++"\n>  import FspecDef"
 >            ++"\n"
->            ++"\n>  main = putStr (showHS \"\\n>  \""++baseName++")"
+>            ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName++")"
 >            ++"\n\n"
 >                ++">  "++baseName++"\n>   = "++showHS "\n>     " fspc
 >               ) >>
 >     putStr ("\nHaskell file "++baseName++"_new.lhs written...\n")
 >     where
->      baseName = "F_Ctx_"++(name fspc)
+>      baseName = "f_Ctx_"++(name fspc)
  
 
 functionalSpecText generates a functional specification in ASCII
