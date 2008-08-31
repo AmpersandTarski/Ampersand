@@ -7,12 +7,12 @@
 >  import Collection( Collection( empty ))
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (Context(Ctx),isa, Lang(English,Dutch), showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
+>  import CC_aux (Context(Ctx),isa, showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
+>  import Languages( Lang(English,Dutch))
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
->  import Fspec (
->                 projectClassic
+>  import Fspec (projectClassic
 >               ,generateFspecLaTeX
 >               ,generateArchLaTeX
 >               ,generateGlossaryLaTeX

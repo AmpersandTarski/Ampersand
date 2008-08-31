@@ -25,13 +25,13 @@
 >            , Gen(G)
 >            , ruleType, specs, idsOnly, isNot, applyM, declaration
 >            , consequent, antecedent, mors, isIdent
->            , multiplicities, plural
->            , Lang(English)
+>            , multiplicities
 >            , contents
 >            , Declaration(Sgn)
 >            , genE, wrld, patterns, src, trg, uncomp, isSignal
 >            , conts, cod, signals, clearG, conceptDefs, dom, subst
 >           )
+>  import Languages(Lang(English), plural)
 >--  import Calc  -- only because of two calls of subst
 >  import Hatml
 >           ( htmlPage,htmlBody,htmlDropDown,htmlname,htmlHeadinglevel

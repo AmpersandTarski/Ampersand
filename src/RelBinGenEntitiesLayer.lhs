@@ -2,6 +2,7 @@
 >  import Auxiliaries(chain,adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
 >  import CC_aux
+>  import Languages(Lang(English), plural)
 >  import CommonClasses
 >  import Collection (Collection(isc,(>-),rd,uni))
 >  import ERmodel

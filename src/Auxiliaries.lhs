@@ -28,7 +28,7 @@
 >  , haskellIdentifier
 > )
 > where
->  import Char (isAlpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
+>  import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper,digitToInt,intToDigit)
 >  import Collection (Collection(isc,uni,(>-),rd))
 
 >  adlVersion = "ADL vs. 0.8.10"

@@ -22,13 +22,13 @@
 >            , Expression(Fu,Fi,Fd,F,Tm,Cp)
 >            , Prop(Uni,Tot,Inj,Sur)
 >            , inline,idsOnly,isNot,explain 
->            , Lang(English,Dutch)
->            , applyM, declaration, plural, source, target
+>            , applyM, declaration, source, target
 >            , lub, sur, inj, fun, tot, sign
 >            , multiplicities, ruleType, antecedent, mkVar
 >            , consequent, order, isNeg, notCp, morlist, showHS
 >            , mors, mIs, flp
 >           )
+>  import Languages (Lang(English,Dutch), plural)
 >--  import Calc
 
   import Hatml

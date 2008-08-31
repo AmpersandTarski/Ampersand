@@ -66,6 +66,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 > --  , mapCl
 > --  , index
 >    )
+>  import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
 >  import Typology
 >  import CC_aux
 >  import Calc

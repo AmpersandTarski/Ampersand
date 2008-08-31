@@ -1,6 +1,5 @@
 > module CC_aux
->            ( ShowLang(showLang)
->            , Architecture(Arch),Context(Ctx)
+>            ( Architecture(Arch),Context(Ctx)
 >            , Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
 >            , ConceptDef(Cd)
@@ -27,8 +26,7 @@
 >            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
 >            , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
 >            , inline,idsOnly,explain , makeInline
->            , Lang(English,Dutch)
->            , applyM, declaration, plural
+>            , applyM, declaration
 >            , glb, lub, sur, inj, fun, tot
 >            , ruleType, antecedent, mkVar
 >            , Calc(calc)
@@ -57,6 +55,7 @@
 >  import UU_Parsing
 >  import CommonClasses ( Identified(name))
 >  import Collection (Collection (uni,isc,(>-),empty,rd)  )
+>  import Languages (Lang,ShowLang,plural)
 >  import Auxiliaries  
 >          ( sort', chain, rEncode, commaEng, clos1, diag
 >           ,eqCl, sord, eqClass, rd', enumerate, unCap, showL, haskellIdentifier)
@@ -71,9 +70,6 @@ TODO:
  - declarations geeft precies de gedeclareerde relaties
  - toestaan van signalen met namen van declraties en met dubbele namen (grondig testen!).
 
->  data Lang = Dutch | English deriving (Show, Eq)
->  class ShowLang a where
->   showLang :: Lang -> a -> String
 
 >  data KeyDef = Kd FilePos      -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number).
 >                   String       -- lbl:  the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -2045,41 +2041,6 @@ properties is achieved as a result.
 
   nogE a b = False
 
-Language peculiarities
-
->  plural English str
->   | null str = str
->   | last str=='y' = init str++"ies"
->   | last str=='s' = str++"es"
->   | last str=='x' = str++"es"
->   | last str=='f' = init str++"ves"
->   | otherwise     = head ([p|(s,p) <-exceptions, s==str]++[str++"s"])
->   where exceptions = [("mouse","mice"),("sheep","sheep"),("Mouse","Mice"),("Sheep","Sheep")]
->  plural Dutch str
->   | null str = str
->   | not (null matches)         = head (matches++[str++"en"])
->   | take 2 (reverse str)=="ei" = str++"s"
->   | take 2 (reverse str)=="ji" = str++"en"
->   | take 2 (reverse str)=="oi" = str++"'s"
->   | last str `elem` "aeiou" = str++"s"
->   | (take 2.drop 1.reverse) str `elem` ["aa","oo","ee","uu"] = (reverse.drop 2.reverse) str++mede (drop (length str-1) str)++"en"
->   | otherwise                  = str++"en"
->   where mede "f" = "v"
->         mede "s" = "z"
->         mede x = x
->         matches = [(reverse.drop (length s).reverse) str++p|(s,p) <-exceptions, (map toLower.reverse.take (length s).reverse) str==s]
->         exceptions = [ ("aanbod", "aanbiedingen")
->                      , ("beleg", "belegeringen")
->                      , ("dank", "dankbetuigingen")
->                      , ("gedrag", "gedragingen")
->                      , ("genot", "genietingen")
->                      , ("lof", "loftuitingen")
->                      , ("rede", "redenen")
->                      , ("lende", "lendenen")
->                      , ("onderzoek", "onderzoekingen")
->                      , ("archiefstuk", "archiefbescheiden")
->                      , ("titel", "titels")
->                      ]
 
 Calculation of positions of symbols (both terminal and nonterminal) in the source code, to be performed by the parser
 
