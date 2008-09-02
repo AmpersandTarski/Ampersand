@@ -2,9 +2,11 @@
 
 >  import System
 >  -- import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
+>  import ADLdef
 >  import Char
->  import CommonClasses ( Identified(name)
->                        ,Collection (isc,(>-),empty)  )
+>  import CommonClasses ( Identified(name))
+>  import Collection (Collection (isc,(>-),empty) ,rd )
+>  import Languages
 >  import Auxiliaries
 >  import Classification
 >  import Typology
@@ -15,6 +17,7 @@
 >  import Graphic
 >  import ERmodel
 >  import ClassDiagram
+
 
 >  projectSpecText contexts contextname language
 >   = putStrLn ("\nGenerating project plan for "++name context)                >>
@@ -797,10 +800,10 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >--      , "In geval van conflicten gaan begrippen uit \\cite{TPDI} v\\'o\\'or \\cite{MultiFit} en begrippen uit \\cite{MultiFit} v\\'o\\'or \\cite{SBD}."
 >      , if null cs then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
->             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
->                          (if null ref then "" else "~\\cite{"++ref++"}")++
+>             (chain "\n" ["\\textbf{"++name cd++"} & "++addSlashes (cddef cd)++
+>                          (if null (cdref cd) then "" else "~\\cite{"++cdref cd++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs ctx, C nm (==) [] `elem` concs ctx])
+>                         | cd<-conceptDefs ctx, cptnew(name cd) `elem` concs ctx])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -837,8 +840,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , spec2fp ctx English spec
 >      , latexChapter "Terminology" ("typology"++cname)
 >      , if null cs then "" else
->        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs ctx, C nm (==) [] `elem` concs ctx])
+>        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\textbf{"++name cd++"} & "++addSlashes (cddef cd)++"~\\cite{"++cdref cd++"}\\\\\n\\hline"
+>                          | cd<-conceptDefs ctx, cptnew(name cd) `elem` concs ctx])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -848,7 +851,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      ] else [] )
 >      where
 >       spec = funcSpec ctx (erAnalysis ctx) language
->       cList = concs ctx>-rd [C nm (==) []| Cd pos nm def ref<-conceptdefs ctx]
+>       cList = concs ctx>-rd [cptnew(name cd)| cd<-conceptDefs ctx]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE ctx)) (makeTrees typ))
 >       mms  = declarations ctx
@@ -914,10 +917,10 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\\maketitle"
 >      , if null cs then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
->             (chain "\n" ["\\bf "++nm++" & "++addSlashes def++
->                          (if null ref then "" else "~\\cite{"++ref++"}")++
+>             (chain "\n" ["\\bf "++name cd++" & "++addSlashes (cddef cd)++
+>                          (if null (cdref cd) then "" else "~\\cite{"++cdref cd++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptdefs ctx])
+>                         | cd<-conceptDefs ctx])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -929,8 +932,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\\maketitle"
 >      , latexChapter "Glossary" ("typology"++cname)
 >      , if null cs then "" else
->        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++nm++" & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptdefs ctx])
+>        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++name cd++" & "++addSlashes (cddef cd)++"~\\cite{"++cdref cd++"}\\\\\n\\hline"
+>                          | cd<-conceptDefs ctx])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -939,7 +942,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\\bibliographystyle{plain}"
 >      ] else [] )
 >      where
->       cList = concs ctx>-rd [C nm (==) []| Cd _ nm _ _<-conceptdefs ctx]
+>       cList = concs ctx>-rd [cptnew(name cd)| cd<-conceptDefs ctx]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE ctx)) (makeTrees typ))
 >       mms  = declarations ctx
@@ -1201,6 +1204,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 Basic LATEX markup
 TODO: complete all accents and test
 -- HJO: Let op: AddSlashes wordt ook elders gedefinieerd! (Moet t.z.t opgeschoond worden!)
+
 >  addSlashes (' ': '\"': cs) = " ``"++addSlashes cs
 >  addSlashes ('\"': ' ': cs) = "'' "++addSlashes cs
 >  addSlashes ('\\': cs) = "\\\\"++addSlashes cs

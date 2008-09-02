@@ -7,6 +7,7 @@
 >  import ADLdef ( Architecture(..)
 >                , Context(..)
 >                , Concept,cptAnything,cptC, cptS, cptnew
+>                , ConceptDef(Cd)
 >                )
 >  import CC_aux 
 >            ( -- Architecture(Arch), 
@@ -14,7 +15,7 @@
 >              FilePos(FilePos)
 >            , Pattern(Pat)
 >            , Declaration(Sgn)
->            , ConceptDef(Cd)
+>            , ConceptDef()
 >            , ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs, Population(Popu), Populations
 >            , Rule(Ru,Sg,Gc)
 >            , Gen(G)

@@ -35,9 +35,9 @@
 
 >  type Concepts  = [Concept]
 >  data Concept      = C { cptnm   :: String
->                           , cptgE   :: GenR 
->                           , cptos   :: [String]  -- atoms
->                           }  -- C nm gE cs represents the set of instances cs by name nm.
+>                        , cptgE   :: GenR 
+>                        , cptos   :: [String]  -- atoms
+>                        }  -- C nm gE cs represents the set of instances cs by name nm.
 >                    | S  -- the universal singleton: I[S]=V[S]
 >                    | Anything
 >                    | NOthing
@@ -104,15 +104,15 @@
 
 
 >  type ConceptDefs = [ConceptDef]
->  data ConceptDef = Cd FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
->                       String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.
->                       String   -- def: the textual definition of this concept.
->                       String   -- ref: a label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
->                    deriving Show    -- so, conventionally we will write: Cd pos nm def ref
+>  data ConceptDef = Cd { cdpos :: FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
+>                       , cdnm  :: String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.
+>                       , cddef :: String   -- def: the textual definition of this concept.
+>                       , cdref :: String   -- ref: a label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+>                       } deriving Show    -- so, conventionally we will write: Cd pos nm def ref
 >  instance Eq ConceptDef where
->   Cd _ nm _ _ == Cd _ nm' _ _ = nm==nm'
+>   cd == cd' = cdnm cd == cdnm cd
 >  instance Identified ConceptDef where
->   name (Cd _ nm _ _) = nm
+>   name cd = cdnm cd
 
 >  type ObjDefs = [ObjectDef]
 >  data ObjectDef = Obj String         -- nm:   view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.

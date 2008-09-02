@@ -1,9 +1,8 @@
 > module CC_aux
 >            ( --Architecture,archContexts
->          --  , Context(Ctx)
 >             Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
->            , ConceptDef(Cd)
+>            , ConceptDef()
 >            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx, populations, extends), objectOfConcept, KeyDef(Kd), KeyDefs
 >            , Rule(Ru,Sg,Gc)
 >            , Gen(G)
@@ -236,12 +235,12 @@ Transform a rule to an expression:
 >   conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
 
 >  class Morphical a where
->   concs        :: a -> [Concept]                  -- the set of all concepts used in data structure a
->   conceptDefs  :: a -> [ConceptDef]               -- the set of all concept definitions in the data structure
+>   concs        :: a -> Concepts                  -- the set of all concepts used in data structure a
+>   conceptDefs  :: a -> ConceptDefs               -- the set of all concept definitions in the data structure
 >   conceptDefs x = []
->   mors         :: a -> [Morphism]                 -- the set of all morphisms used within data structure a
->   morlist      :: a -> [Morphism]                 -- the list of all morphisms used within data structure a
->   declarations :: a -> [Declaration]
+>   mors         :: a -> Morphisms                 -- the set of all morphisms used within data structure a
+>   morlist      :: a -> Morphisms                 -- the list of all morphisms used within data structure a
+>   declarations :: a -> Declarations
 >--   declarations x  = rd [declaration m|m<-mors x]
 >   genE         :: a -> GenR
 >   genE x        = if null cx then (==) else head cx where cx = [gE|C {cptgE = gE } <-concs x]
@@ -253,32 +252,32 @@ Transform a rule to an expression:
 >   keyDefs s     = []
 
 >  instance Morphical a => Morphical [a] where
->   concs                                         = rd . concat . map concs
->   conceptDefs                                   = rd . concat . map conceptDefs
->   mors                                          = rd . concat . map mors
->   morlist                                       =      concat . map morlist
->   declarations                                  = rd . concat . map declarations
->   closExprs                                     = rd . concat . map closExprs
->   objDefs                                       =      concat . map objDefs
->   keyDefs                                       =      concat . map keyDefs
+>   concs             = rd . concat . map concs
+>   conceptDefs       = rd . concat . map conceptDefs
+>   mors              = rd . concat . map mors
+>   morlist           =      concat . map morlist
+>   declarations      = rd . concat . map declarations
+>   closExprs         = rd . concat . map closExprs
+>   objDefs           =      concat . map objDefs
+>   keyDefs           =      concat . map keyDefs
 
 >  instance Morphical Concept where
->   concs        c                                = [c]
->   mors         c                                = [I [] c c True]
->   morlist      c                                = [I [] c c True]
->   declarations c                                = []
->   genE         (C {cptgE = gE})              = gE
->   genE         (S)                           = (<=)::Concept->Concept->Bool
->   genE         Anything                      = (<=)::Concept->Concept->Bool
->   genE         NOthing                       = (<=)::Concept->Concept->Bool
+>   concs        c                    = [c]
+>   mors         c                    = [I [] c c True]
+>   morlist      c                    = [I [] c c True]
+>   declarations c                    = []
+>   genE         (C {cptgE = gE})     = gE
+>   genE         (S)                  = (<=)::Concept->Concept->Bool
+>   genE         Anything             = (<=)::Concept->Concept->Bool
+>   genE         NOthing              = (<=)::Concept->Concept->Bool
 
 >  instance Morphical a => Morphical (Classification a) where
->   concs                                         = rd . concat . map concs . preCl
->   conceptDefs                                   = rd . concat . map conceptDefs . preCl
->   mors                                          = rd . concat . map mors . preCl
->   morlist                                       =      concat . map morlist . preCl
->   declarations                                  = rd . concat . map declarations . preCl
->   closExprs                                     = rd . concat . map closExprs . preCl
+>   concs            = rd . concat . map concs . preCl
+>   conceptDefs      = rd . concat . map conceptDefs . preCl
+>   mors             = rd . concat . map mors . preCl
+>   morlist          =      concat . map morlist . preCl
+>   declarations     = rd . concat . map declarations . preCl
+>   closExprs        = rd . concat . map closExprs . preCl
 
 >  instance Morphical Declaration where
 >   concs (Sgn _ a b _ _ _ _ _ _ _ _ _)           = rd [a,b]
@@ -714,12 +713,12 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS ConceptDef where
 >   showHSname cd = "cDef_"++haskellIdentifier (name cd)
->   showHS indent cd@(Cd pos nm def ref)
->    = " Cd ("++showHS "" pos++") "++show nm++" "++show def++(if null ref then "" else " "++show ref)
+>   showHS indent cd
+>    = " Cd ("++showHS "" (cdpos cd)++") "++show (name cd)++" "++show (cddef cd)++(if null (cdref cd) then "" else " "++show (cdref cd))
 
 >  instance ShowADL ConceptDef where
->   showADL (Cd pos nm def ref)
->    = "\n  CONCEPT "++show nm++" "++show def++" "++(if null ref then "" else show ref)
+>   showADL cd
+>    = "\n  CONCEPT "++show (name cd)++" "++show (cddef cd)++" "++(if null (cdref cd) then "" else show (cdref cd))
 
 >  instance ShowHS KeyDef where
 >   showHSname kd = "kDef_"++haskellIdentifier (name kd)
