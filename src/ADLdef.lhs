@@ -10,11 +10,11 @@
 >  import UU_Scanner (Pos(Pos),Token(Tok),noPos)
 >  import Auxiliaries (chain) 
 
->  data Architecture = ZZZArch { archContexts :: Contexts} -- deriving Show
+>  data Architecture = Arch { archContexts :: Contexts} -- deriving Show
 >
 
 >  type Contexts  = [Context]
->  data Context   = ZZZCtx { ctxnm         :: String     -- name of this context
+>  data Context   = Ctx { ctxnm         :: String     -- name of this context
 >                       , ctxon           :: [String]   -- the list of context names of contexts whose rules are imported
 >                       , ctxisa          :: (Inheritance Concept)     -- a data structure containing the generalization structure of concepts
 >                       , wrld            :: [Classification Context]  -- a tree, being the transitive closure of the 'extends' (see formal definition) relation.
@@ -34,31 +34,31 @@
 >    name c = ctxnm c
 
 >  type Concepts  = [Concept]
->  data Concept      = ZZZC { cptnm   :: String
+>  data Concept      = C { cptnm   :: String
 >                           , cptgE   :: GenR 
 >                           , cptos   :: [String]  -- atoms
 >                           }  -- C nm gE cs represents the set of instances cs by name nm.
->                    | ZZZS  -- the universal singleton: I[S]=V[S]
->                    | ZZZAnything
->                    | ZZZNOthing
->  cptC nm gE os = ZZZC nm gE os
+>                    | S  -- the universal singleton: I[S]=V[S]
+>                    | Anything
+>                    | NOthing
+>  cptC nm gE os = C nm gE os  -- constructor
+>  cptS = S                    -- constructor
+>  cptAnything = Anything      -- constructor
+>  cptNothing = NOthing        -- constructor
 >  cptnew nm = cptC nm (==) []
->  cptAnything = ZZZAnything -- constructor
->  cptNothing = ZZZNOthing   -- constructor
->  cptS = ZZZS
 
 >  instance Eq Concept where
->   ZZZC a _ _ == ZZZC b _ _ = a==b
->   ZZZS == ZZZS = True
->   ZZZAnything == ZZZAnything = True
->   ZZZNOthing == ZZZNOthing = True
+>   C a _ _ == C b _ _ = a==b
+>   S == S = True
+>   Anything == Anything = True
+>   NOthing == NOthing = True
 >   _ == _ = False
 
 >  instance Identified Concept where
->   name (ZZZC {cptnm = nm}) = nm
->   name (ZZZS) = "ONE"
->   name ZZZAnything   = "Anything"
->   name ZZZNOthing    = "NOthing"
+>   name (C {cptnm = nm}) = nm
+>   name S = "ONE"
+>   name Anything   = "Anything"
+>   name NOthing    = "NOthing"
 
 >  instance Morphic Concept where
 >   source c = c
@@ -73,17 +73,17 @@
 >   isTrue c = singleton c
 >   isFalse c = False
 >   isSignal c = False
->   singleton (ZZZS) = True
+>   singleton (S) = True
 >   singleton _ = False
->   typeUniq ZZZAnything = False
+>   typeUniq Anything = False
 >   typeUniq _ = True
 
 >  instance Ord Concept where
->   ZZZNOthing <= b  = False
->   a <= ZZZNOthing  = True
->   ZZZAnything <= b = True
->   a <= ZZZAnything = False
->   a@(ZZZC _ gE _) <= b = a `gE` b
+>   NOthing <= b  = False
+>   a <= NOthing  = True
+>   Anything <= b = True
+>   a <= Anything = False
+>   a@(C _ gE _) <= b = a `gE` b
 >   a <= b = a==b
 >   --TODO: ORD is niet gedefinieerd op Singelton.... Is dat erg?
 
@@ -95,8 +95,14 @@
 >               | otherwise        = False
 >  isAnything c | c == cptAnything = True
 >               | otherwise        = False
->  isC ZZZC{} = True
+>  isC C{} = True
 >  isC c   = False
+
+
+----------------- HIERBOVEN ZIJN FIELD LABELS EN FUNCTIES TOEGEVOEGD. ------------
+----------------- Hieronder nog niet.....
+
+
 >  type ConceptDefs = [ConceptDef]
 >  data ConceptDef = Cd FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
 >                       String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.

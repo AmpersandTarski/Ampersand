@@ -230,10 +230,10 @@ Transform a rule to an expression:
 >   conts                                         = rd . concat . map conts . preCl
 
 >  instance Conceptual Concept where
->   conts (ZZZC {cptos = os}) = os
->   conts (ZZZS)        = error ("(module CC_aux) Fatal: ONE has exactly one concept, but it is not te be referred to")
->   conts ZZZAnything   = error ("(module CC_aux) Fatal: Anything is Everything...")
->   conts ZZZNOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
+>   conts (C {cptos = os}) = os
+>   conts (S)        = error ("(module CC_aux) Fatal: ONE has exactly one concept, but it is not te be referred to")
+>   conts Anything   = error ("(module CC_aux) Fatal: Anything is Everything...")
+>   conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
 
 >  class Morphical a where
 >   concs        :: a -> [Concept]                  -- the set of all concepts used in data structure a
@@ -244,7 +244,7 @@ Transform a rule to an expression:
 >   declarations :: a -> [Declaration]
 >--   declarations x  = rd [declaration m|m<-mors x]
 >   genE         :: a -> GenR
->   genE x        = if null cx then (==) else head cx where cx = [gE|ZZZC {cptgE = gE } <-concs x]
+>   genE x        = if null cx then (==) else head cx where cx = [gE|C {cptgE = gE } <-concs x]
 >   closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
 >   closExprs s   = []
 >   objDefs      :: a -> ObjDefs
@@ -267,10 +267,10 @@ Transform a rule to an expression:
 >   mors         c                                = [I [] c c True]
 >   morlist      c                                = [I [] c c True]
 >   declarations c                                = []
->   genE         (ZZZC {cptgE = gE})              = gE
->   genE         (ZZZS)                           = (<=)::Concept->Concept->Bool
->   genE         ZZZAnything                      = (<=)::Concept->Concept->Bool
->   genE         ZZZNOthing                       = (<=)::Concept->Concept->Bool
+>   genE         (C {cptgE = gE})              = gE
+>   genE         (S)                           = (<=)::Concept->Concept->Bool
+>   genE         Anything                      = (<=)::Concept->Concept->Bool
+>   genE         NOthing                       = (<=)::Concept->Concept->Bool
 
 >  instance Morphical a => Morphical (Classification a) where
 >   concs                                         = rd . concat . map concs . preCl

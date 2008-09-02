@@ -61,13 +61,13 @@ No automatic computation rules will be derived.
 This will be achieved by generating signal rules only.
 
 >  pArchitecture    :: Bool -> Parser Token Architecture
->  pArchitecture beep = ZZZArch <$> pList1 (pContext beep)
+>  pArchitecture beep = Arch <$> pList1 (pContext beep)
 
 >  pContext         :: Bool -> Parser Token Context
 >  pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
 >                                 ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
 >                                 pList (pContextElement beep) <* pKey "ENDCONTEXT"
->                      where rebuild nm on ces = ZZZCtx nm on empty [] pats [] ds cs ks os pops
+>                      where rebuild nm on ces = Ctx nm on empty [] pats [] ds cs ks os pops
 >                             where
 >                              ps   = [p| CPat p<-ces]
 >                              ds   = [d| CDcl d<-ces]

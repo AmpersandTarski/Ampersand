@@ -63,7 +63,7 @@
 >                pms = rd [d| ds<-remainingDS, d<-declarations ds]
 >                cs  = []
 >                ks  = []
->   --    context' = ZZZCtx nm on i world pats rs ds cs ks os pops
+>   --    context' = Ctx nm on i world pats rs ds cs ks os pops
 >   --       where nm    = name context
 >   --             on    = extends context
 >   --             i     = isa context

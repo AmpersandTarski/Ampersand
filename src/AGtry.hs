@@ -11,7 +11,7 @@ import Classification
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
 import ADLdef (Architecture(..)
-               ,Context(ZZZCtx)
+               ,Context(Ctx)
                ,Concept(..)
                )
 import CC_aux 
@@ -52,10 +52,10 @@ chop []     = []
 -- (l,r) `elem` chop xs => not (null l) && not (null r)
 -- Proof:
 -- a) The theorem holds for all xs of length <= 1.
--- b) Suppose the theorem holds for all xs of length <= n, with xs::[ZZZC]
+-- b) Suppose the theorem holds for all xs of length <= n, with xs::[C]
 --    The induction hypothesis is therefore:
 --    b.0) Assume (induction hypothesis): (l,r) `elem` chop xs && length xs<=n => not (null l) && not (null r)
---    b.1) let x::ZZZC
+--    b.1) let x::C
 --    b.2)      (l,r)<-chop xs
 --         implies    {semantics of list comprehension}
 --              (l,r) `elem` chop xs
@@ -202,7 +202,7 @@ tlub gE as bs = (map (foldr1 lub) . eqClass order) [lub a b| a<-as, b<-bs, a `or
                       order a b = a `gE` b || b `gE` a
 -- comp is bedoeld voor de typering van alle mogelijkheden bij een ;. Alle mogelijke types van l worden gematcht met alle mogelijke types van r, om alle mogelijke types van l;r te verkrijgen.
 comp gE ls rs = [(f a a' b,f b' a' b)|(a,b)<-ls, (a',b')<-rs, a' `gE` b || b `gE` a']
-                where f ZZZAnything x y | x `gE` y = y
+                where f Anything x y | x `gE` y = y
                                      | y `gE` x = x
                       f a _ _ = a
 comps gE tss  = if null ss then [] else foldr1 (comp gE) ss
@@ -239,7 +239,7 @@ type T_Architecture = ((Contexts),([String]))
 -- cata
 sem_Architecture :: (Architecture) ->
                     (T_Architecture)
-sem_Architecture ((ZZZArch (_cs))) =
+sem_Architecture ((Arch (_cs))) =
     (sem_Architecture_Arch ((sem_Contexts (_cs))))
 sem_Architecture_Arch :: (T_Contexts) ->
                          (T_Architecture)
@@ -260,19 +260,19 @@ sem_Architecture_Arch (_cs) =
 
 -}
 {-
-   local variables for Concept.ZZZAnything:
+   local variables for Concept.Anything:
 
 -}
 {-
-   local variables for Concept.ZZZC:
+   local variables for Concept.C:
 
 -}
 {-
-   local variables for Concept.ZZZNOthing:
+   local variables for Concept.NOthing:
 
 -}
 {-
-   local variables for Concept.ZZZS:
+   local variables for Concept.S:
 
 -}
 -- semantic domain
@@ -281,33 +281,33 @@ type T_Concept = (GenR) ->
 -- cata
 sem_Concept :: (Concept) ->
                (T_Concept)
-sem_Concept ((ZZZAnything )) =
+sem_Concept ((Anything )) =
     (sem_Concept_Anything )
-sem_Concept ((ZZZC (_c) (_gE) (_os))) =
+sem_Concept ((C (_c) (_gE) (_os))) =
     (sem_Concept_C (_c) (_gE) (_os))
-sem_Concept ((ZZZNOthing )) =
+sem_Concept ((NOthing )) =
     (sem_Concept_NOthing )
-sem_Concept ((ZZZS )) =
+sem_Concept ((S )) =
     (sem_Concept_S )
 sem_Concept_Anything :: (T_Concept)
 sem_Concept_Anything (_lhs_gE) =
     let 
-    in  (ZZZAnything,"ZZZAnything")
+    in  (Anything,"Anything")
 sem_Concept_C :: (String) ->
                  (GenR) ->
                  ([String]) ->
                  (T_Concept)
 sem_Concept_C (_c) (_gE) (_os) (_lhs_gE) =
     let 
-    in  (ZZZC _c _lhs_gE [],_c)
+    in  (C _c _lhs_gE [],_c)
 sem_Concept_NOthing :: (T_Concept)
 sem_Concept_NOthing (_lhs_gE) =
     let 
-    in  (ZZZNOthing,"ZZZNOthing")
+    in  (NOthing,"NOthing")
 sem_Concept_S :: (T_Concept)
 sem_Concept_S (_lhs_gE) =
     let 
-    in  (ZZZS,"ONE")
+    in  (S,"ONE")
 -- ConceptDef --------------------------------------------------
 {-
    inherited attributes:
@@ -447,7 +447,7 @@ type T_Context = (Classification (Context,(Gens,Declarations))) ->
 -- cata
 sem_Context :: (Context) ->
                (T_Context)
-sem_Context ((ZZZCtx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os) (_pops))) =
+sem_Context ((Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os) (_pops))) =
     (sem_Context_Ctx (_nm) (_on) (_isa) (_world) ((sem_Patterns (_pats))) ((sem_Rules (_rs))) ((sem_Declarations (_ds))) ((sem_ConceptDefs (_cs))) ((sem_KeyDefs (_ks))) ((sem_ObjDefs (_os))) ((sem_Populations (_pops))))
 sem_Context_Ctx :: (String) ->
                    ([String]) ->
@@ -473,16 +473,16 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os
         (_inh) =
             Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
         (_genE) =
-            cmp where cmp ZZZAnything b = True
-                      cmp a ZZZAnything = False
-                      cmp ZZZNOthing b  = False
-                      cmp a ZZZNOthing  = True
+            cmp where cmp Anything b = True
+                      cmp a Anything = False
+                      cmp NOthing b  = False
+                      cmp a NOthing  = True
                       cmp a b        = if a==b then True else genEq (typology _inh) a b
         (_cD) =
             makeConceptSpace _genE _pats_morphisms
         (_ctx) =
             put_gE _genE _cD
-            ( ZZZCtx _nm
+            ( Ctx _nm
                   _on
                   _inh
                   [cl|Cl r cls<-[mapCl fst _lhs_ctxTree], cl<-cls]
@@ -510,7 +510,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os
     in  (_ctx
         ,_ks_rnr-1
         ,[( put_gE _genE _cD
-            (ZZZCtx _nm
+            (Ctx _nm
                  _on
                  _inh
                  []
@@ -846,8 +846,8 @@ sem_Expression_F (_ts) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_
             else [ (a,l,sl,tlub _lhs_gE (rd(map snd sl)) (rd(map fst sr)),sr,r,b)
                  | (a,b) <- take 1 _lhs_isign
                  , ((l,r),(sls,srs))<-zip (chop _ts_exprs) (chop _ts_signss)
-                 , sl <- [[(s,t)| (s,t)<-comps _lhs_gE sls,if a/=ZZZAnything then s `_lhs_gE` a else True]]
-                 , sr <- [[(s,t)| (s,t)<-comps _lhs_gE srs,if b/=ZZZAnything then t `_lhs_gE` b else True]]
+                 , sl <- [[(s,t)| (s,t)<-comps _lhs_gE sls,if a/=Anything then s `_lhs_gE` a else True]]
+                 , sr <- [[(s,t)| (s,t)<-comps _lhs_gE srs,if b/=Anything then t `_lhs_gE` b else True]]
                  ]
         (_dis) =
             if null _lhs_isign then F (_ts_exprs) else
@@ -891,8 +891,8 @@ sem_Expression_Fd (_ts) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (
             else [ (a,l,sl,tlub _lhs_gE (rd(map snd sl)) (rd(map fst sr)),sr,r,b)
                  | (a,b) <- take 1 _lhs_isign
                  , ((l,r),(sls,srs))<-zip (chop _ts_exprs) (chop _ts_signss)
-                 , sl <- [[(s,t)| (s,t)<-comps _lhs_gE sls,if a/=ZZZAnything then s `_lhs_gE` a else True]]
-                 , sr <- [[(s,t)| (s,t)<-comps _lhs_gE srs,if b/=ZZZAnything then t `_lhs_gE` b else True]]
+                 , sl <- [[(s,t)| (s,t)<-comps _lhs_gE sls,if a/=Anything then s `_lhs_gE` a else True]]
+                 , sr <- [[(s,t)| (s,t)<-comps _lhs_gE srs,if b/=Anything then t `_lhs_gE` b else True]]
                  ]
         (_dis) =
             if null _lhs_isign then Fd (_ts_exprs) else
@@ -1243,7 +1243,7 @@ sem_KeyDef_Kd (_pos) (_lbl) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_ats_rnr) (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_rules,_ats_sErr,_ats_sources) =
-            (_ats (_lhs_gE) (rd (map snd _ctx_signs ++ _ats_sources)>-[ZZZAnything]) (_lhs_rnr) (_lhs_sDef))
+            (_ats (_lhs_gE) (rd (map snd _ctx_signs ++ _ats_sources)>-[Anything]) (_lhs_rnr) (_lhs_sDef))
     in  ([ expr | Obj nm pos expr ats <- _ats_objDefs],Kd _pos _lbl _ctx_expr _ats_objDefs,_ctx_rnr,_ats_rules ++ _ctx_rules,_ats_sErr)
 -- KeyDefs -----------------------------------------------------
 {-
@@ -1355,11 +1355,11 @@ sem_Morphism_I :: ([Concept]) ->
                   (T_Morphism)
 sem_Morphism_I (_atts) (_g) (_s) (_yin) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
     let (_rraw) =
-            if null _ats      then I [] ZZZAnything ZZZAnything True  else
+            if null _ats      then I [] Anything Anything True  else
             if length _ats==1 then I _ats (head _ats) (head _ats) True              else
             error ("Contact your dealer:\nADL allows only one concept in I["++show _atts++"].")
         (_ats) =
-            rd ([ZZZC a _lhs_gE as|ZZZC a _ as<- _atts]++[ZZZS|ZZZS<- _atts])
+            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
         ( _g_concept,_g_nm) =
             (_g (_lhs_gE))
         ( _s_concept,_s_nm) =
@@ -1368,7 +1368,7 @@ sem_Morphism_I (_atts) (_g) (_s) (_yin) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
         ,True
         ,let (s,t) = if null _lhs_isign && null _ats then error ("Fatal: null @lhs.isign in I lhs.morphism!") else
                      head (_lhs_isign++[(head _ats,last _ats)])
-             s' = if s==ZZZAnything then t else s; t'= if t==ZZZAnything then s else t
+             s' = if s==Anything then t else s; t'= if t==Anything then s else t
              is = ids _lhs_gE s' t'
          in if null is then I _ats s' t' True else head is
         ,"I"
@@ -1407,7 +1407,7 @@ sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_decl) (_lhs_gE) (_lhs_isig
             if null _atts then rd ss else
             [ s | s <- ss, if _yin then source s == head _atts && target s == last _atts else source s == last _atts && target s == head _atts]
         (_ats) =
-            rd ([ZZZC a _lhs_gE as|ZZZC a _ as<- _atts]++[ZZZS|ZZZS<- _atts])
+            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
         ( _decl_declaration,_decl_nm,_decl_rawDecl,_decl_rnr,_decl_rules,_decl_sErr) =
             (_decl (_lhs_gE) (-999999) (_lhs_sDef))
     in  (_ats
@@ -1419,10 +1419,10 @@ sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_decl) (_lhs_gE) (_lhs_isig
         ,_pos
         ,let err=error "illegal reference to 'raw' in semantics of Mph of Morphism" in
          if null _ats
-         then (Mph _nm _pos _ats (ZZZAnything,ZZZAnything) _yin (Sgn _nm ZZZAnything ZZZAnything [] "" "" "" [] "" err 0 True), _ss)
+         then (Mph _nm _pos _ats (Anything,Anything) _yin (Sgn _nm Anything Anything [] "" "" "" [] "" err 0 True), _ss)
          else (Mph _nm _pos _ats (if _yin then (head _ats,last _ats) else (last _ats,head _ats)) _yin (Sgn _nm (head _ats) (last _ats) [] "" "" "" [] "" err 0 True), _ss)
         ,[ "3 in "++show _pos++
-           "\n   Relation " ++ show (Mph _nm _pos _atts (ZZZAnything, ZZZAnything) _yin (Isn ZZZAnything ZZZAnything)) ++
+           "\n   Relation " ++ show (Mph _nm _pos _atts (Anything, Anything) _yin (Isn Anything Anything)) ++
            (if null _atts then "" else show (rd _atts)) ++
            " is not declared.\n"
          | null _ss]
@@ -1436,7 +1436,7 @@ sem_Morphism_V (_atts) (_sgn) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
     let (_rraw) =
             V _atts _sgn
         (_ats) =
-            rd ([ZZZC a _lhs_gE as|ZZZC a _ as<- _atts]++[ZZZS|ZZZS<- _atts])
+            rd ([C a _lhs_gE as|C a _ as<- _atts]++[S|S<- _atts])
     in  (_ats
         ,True
         ,let (s,t) = if null _lhs_isign then error ("Fatal: null @lhs.isign in V lhs.morphism! "++(show _atts)) else
@@ -1551,7 +1551,7 @@ sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
 sem_ObjDefs_Nil :: (T_ObjDefs)
 sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let 
-    in  ([],_lhs_rnr,[],[],[ZZZAnything])
+    in  ([],_lhs_rnr,[],[],[Anything])
 -- ObjectDef ---------------------------------------------------
 {-
    inherited attributes:
@@ -1597,14 +1597,14 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
     let (_signs) =
             rd [( lubb _lhs_gE c s, lubb _lhs_gE t t')
                | (s,t) <- _ctx_signs
-               , c <- if null _lhs_iConcs then [ZZZAnything] else _lhs_iConcs, ordd _lhs_gE s c
-               , t' <- irredC _lhs_gE ( (t: _ats_sources)>-[ZZZAnything])
+               , c <- if null _lhs_iConcs then [Anything] else _lhs_iConcs, ordd _lhs_gE s c
+               , t' <- irredC _lhs_gE ( (t: _ats_sources)>-[Anything])
                , ordd _lhs_gE t t']
         ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE)
                   ([ ( lubb _lhs_gE c s,t)
-                   | (s,t) <- _signs++[(ZZZAnything,ZZZAnything)|null _signs]
-                   , c <- if null _lhs_iConcs then [ZZZAnything] else _lhs_iConcs ])
+                   | (s,t) <- _signs++[(Anything,Anything)|null _signs]
+                   , c <- if null _lhs_iConcs then [Anything] else _lhs_iConcs ])
                   ("")
                   (_pos)
                   (_ats_rnr)
