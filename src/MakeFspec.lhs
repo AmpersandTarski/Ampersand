@@ -9,8 +9,13 @@
 >  import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass,chain)
 >  import Char(toLower)
 >  import Strings(firstCaps,tt,idNam)
-
->  import CC_aux    -- t.z.t. vervangen door een module met alléén de taaldef van CC
+>  import ADLdef
+>  import CC_aux ( mors, attributes, rules,patterns
+>                , concs, conceptDefs, morlist
+>                , declarations, extends
+>                , isa, populations, concept, isFunction
+>                , keys, mIs, isPos, showADL, ctx
+>                , Object)
 >  import FspecDef
 
 >  import Calc(lClause,rClause,makeRule)
@@ -58,18 +63,18 @@
 >                pms = rd [d| ds<-remainingDS, d<-declarations ds]
 >                cs  = []
 >                ks  = []
->       context' = Ctx nm on i world pats rs ds cs ks os pops
->          where nm    = name context
->                on    = extends context
->                i     = isa context
->                world = wrld context
->                pats  = patterns context ++ if null remainingDS then [] else [others]
->                rs    = rules context
->                ds    = declarations context
->                cs    = conceptDefs context
->                ks    = []
->                os    = attributes context
->                pops  = populations context
+>   --    context' = ZZZCtx nm on i world pats rs ds cs ks os pops
+>   --       where nm    = name context
+>   --             on    = extends context
+>   --             i     = isa context
+>   --             world = wrld context
+>   --             pats  = patterns context ++ if null remainingDS then [] else [others]
+>   --             rs    = rules context
+>   --             ds    = declarations context
+>   --             cs    = conceptDefs context
+>   --             ks    = []
+>   --             os    = attributes context
+>   --             pops  = populations context
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 

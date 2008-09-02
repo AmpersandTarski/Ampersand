@@ -1,6 +1,6 @@
 > module HtmlFilenames where
 >  import CommonClasses ( Identified(name) )
->  import CC_aux ( Context, Declaration, source, target, Context, Rule, nr
+>  import ADLdef ( Context, Declaration, source, target, Context, Rule, nr
 >                 ,Concept, Pattern)
 >  import Hatml  (htmlname)
 

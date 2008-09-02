@@ -11,26 +11,15 @@
 >           ( Inheritance(Isa)
 >            ,Typology(Typ), Typologic(typology)
 >            ,makeTrees)
->  import CC_aux 
->           (  Context, Concept(C), Pattern(Pat)
->            , Morphism
->            , isa, showHS, concs, declarations
->            , declaredRules, rules, nr, source, target
->            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx), posNone
->            , Rule(Gc)
->            , showADL, explain
->            , Paire, Pairs
->            , ConceptDef(Cd)
->            , Expression( Tm,Cp)
->            , Gen(G)
->            , ruleType, specs, idsOnly, isNot, applyM, declaration
->            , consequent, antecedent, mors, isIdent
->            , multiplicities
->            , contents
->            , Declaration(Sgn)
->            , genE, wrld, patterns, src, trg, uncomp, isSignal
->            , conts, cod, signals, clearG, conceptDefs, dom, subst
->           )
+>  import ADLdef
+>  import CC_aux ( showHS
+>                , isa, genE, concs, declarations
+>                , patterns, declaredRules, rules
+>                , contents, explain, showADL
+>                , conts, dom, cod
+>                , signals, conceptDefs, clearG
+>                , subst, specs, idsOnly, applyM, mors
+>                )
 >  import Languages(Lang(English), plural)
 >--  import Calc  -- only because of two calls of subst
 >  import Hatml
@@ -553,10 +542,10 @@ TODO: implement signals in the atlas, but make sure it performs (the excommented
 >  -}
 
 >  emptyGlossary context pat
->   = null [[c,cdef]| Cd _ c cdef _<-conceptDefs context, C c (==) [] `elem` concs pat]
+>   = null [[c,cdef]| Cd _ c cdef _<-conceptDefs context, cptnew c `elem` concs pat]
 >  htmlGlossary context pat
 >   = htmlHeadinglevel 2 "Glossary" []++
->     htmlTable [[c,cdef]| Cd _ c cdef _<-conceptDefs context, C c (==) [] `elem` concs pat] ""
+>     htmlTable [[c,cdef]| Cd _ c cdef _<-conceptDefs context, cptnew c `elem` concs pat] ""
 
 The following function makes a HTML page for one particular concept c, interpreted in the context of world.
 This page is mounted in the contents frame of the architecture page, to which the navigator (left hand side of 
@@ -570,7 +559,7 @@ the screen) points.
 >         rulesV
 >         (clearG [G posNone g s| Isa ts ss<-[isa context], (g,s)<-ts, g `elem` concsV, s `elem` concsV])
 >         (declarations rulesV)
->         [c| c@(Cd pos nm def ref)<-conceptDefs context, C nm (==) [] `elem` concsV]
+>         [c| c@(Cd pos nm def ref)<-conceptDefs context, cptnew nm `elem` concsV]
 >         []
 >     where rulesV = [r| r<-rules context, c `elem` concs r]
 >           concsV = concs rulesV
@@ -581,7 +570,7 @@ the screen) points.
 >         (rs++[s| s<-sc, Isa ts ss<-[isa s], and[b `elem` concs rs| (a,b)<-ts]])
 >         (clearG [G posNone g s| Isa ts ss<-[isa context], (g,s)<-ts, g==gen, s `elem` concs rs])
 >         (declarations rs)
->         [c| c@(Cd pos nm def ref)<-conceptDefs context, C nm (==) [] `elem` rd [c|r<-rs, c<-concs r]]
+>         [c| c@(Cd pos nm def ref)<-conceptDefs context, cptnew nm `elem` rd [c|r<-rs, c<-concs r]]
 >         []
 >     where
 >       rs     = rd [sr | r<-rules world, gen `elem` concs r, Gc _ m expr _ _ _ _<-sc
@@ -617,7 +606,9 @@ Traceability (removed for now)
 >      )
 
 >     where
->       C nm gE atoms = c
+>       nm = name c
+>       gE = cptgE c
+>       atoms = cptos c
 >       thisCtx = fnContext context
 >       gen = name r
 >--       inheriting =  [G pos g s|G pos g s<-parChds, s==c]

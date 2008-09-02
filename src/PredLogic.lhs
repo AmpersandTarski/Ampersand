@@ -14,8 +14,10 @@
 >  import CommonClasses ( Identified(name))
 >  import Collection (Collection((>-)))
 >  import Auxiliaries (chain, eqCl)
+
+>  import ADLdef
 >  import CC_aux 
->           (  Concept(Anything), Context, Rule(Ru,Sg) 
+>           (  Concept, Rule(Ru,Sg)-- , Context
 >            , showADL
 >            , Morphic(isIdent)
 >            , Morphism(I,V)
@@ -249,7 +251,7 @@ nav -: bezoekrapport~ ; verzondenAan- ! veroorzaker~
 >      rnegs = (reverse . takeWhile isNeg . reverse) ts; lpos = (reverse . dropWhile isNeg . reverse) ts
 >      (antc,cons,ca,cc) | not (null lnegs) && not (null rpos) = ((pars3 exclVars.split.map notCp) lnegs,pars3 exclVars (split rpos),target (last lnegs),source (head rpos))
 >                        | not (null rnegs) && not (null lpos) = ((pars3 exclVars.split.map notCp) rnegs,pars3 exclVars (split lpos),source (head rnegs),target (last lpos))
->                        | otherwise = ([],pars3 exclVars (split ts),Anything,Anything)
+>                        | otherwise = ([],pars3 exclVars (split ts),cptAnything,cptAnything)
 >      frels res ivs s t = [r v w|((r,_,_),v,w)<-zip3 res ([s]++ivs) (ivs++[t]) ]
 >      ics res   = if null res then [] else
 >                  [unite v w |(v,w)<-zip [s|(_,s,_)<-tail res] [t|(_,_,t)<-init res]]

@@ -4,21 +4,9 @@
 >  import Collection (Collection(empty, (>-),rd))
 >  import Auxiliaries
 >         ( chain, sort') 
->  import CC_aux 
->           (  Context, Concept(C), Pattern(Pat), Rule(Ru,Sg,Gc)
->            , isa, concs
->            , rules, declaredRules, source, target, multiplicities, Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut), flp
->            , showADL, explain
->            , ConceptDef(Cd)
->            , posNone
->            , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
->            , Gen(G)
->            , ruleType, declaration
->            , consequent, antecedent
->            , inline
->            , Declaration(Sgn), isSignal
->            , patterns, conceptDefs
->           )
+>  import ADLdef
+>  import CC_aux ( rules, conceptDefs, concs, patterns
+>                , explain, showADL)
 
 >  makeXML contexts contextname
 >   = putStr ("\nXML representation of "++name context++"\n")>>

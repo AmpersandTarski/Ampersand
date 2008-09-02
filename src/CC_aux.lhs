@@ -1,18 +1,20 @@
 > module CC_aux
->            ( Architecture(Arch),Context(Ctx)
->            , Pattern(Pat)
+>            ( --Architecture,archContexts
+>          --  , Context(Ctx)
+>             Pattern(Pat)
 >            , Declaration(Sgn, Vs, Isn, Iscompl)
 >            , ConceptDef(Cd)
 >            , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx, populations, extends), objectOfConcept, KeyDef(Kd), KeyDefs
 >            , Rule(Ru,Sg,Gc)
->            , makeMph
 >            , Gen(G)
 >            , Pairs
->            , Morphism(Mph,I,V,Mp1), v, mIs, sIs
->            , Concept(Anything,NOthing,C,S)
+>            , Morphism(Mph,I,V,Mp1)
+>            , Concept()
 >            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
 >            , Expressions
 >            , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
+>            , v, mIs, sIs
+>            , makeMph
 >            , posNone
 >            , pKey_pos
 >            , pVarid_val_pos, pConid_val_pos
@@ -63,6 +65,7 @@
 >            ( Classification(),preCl,mapCl
 >            )
 >  import Typology ( Inheritance(Isa), Typologic, genEq, typology)
+>  import ADLdef
 
 TODO:
  - Onderscheid tussen signaal en regel maken in de datastructuur van regel.
@@ -71,50 +74,9 @@ TODO:
  - toestaan van signalen met namen van declraties en met dubbele namen (grondig testen!).
 
 
->  data KeyDef = Kd FilePos      -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number).
->                   String       -- lbl:  the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
->                   Expression   -- ctx:  this expression describes the instances of this object, related to their context
->                   [ObjectDef]  -- ats:  the constituent attributes (i.e. name/expression pairs) of this key.
->                deriving (Eq,Show) -- So in its entirety: Kd pos lbl ctx ats
->  type KeyDefs = [KeyDef]
-
->  data ObjectDef = Obj String         -- nm:   view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
->                       FilePos        -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number)
->                       Expression     -- ctx:  this expression describes the instances of this object, related to their context. 
->                       [ObjectDef]    -- ats:  the attributes, which are object definitions themselves.
->                   deriving (Eq,Show) -- So in its entirety: Obj nm pos ctx ats
-
->  type ObjDefs = [ObjectDef]
->  instance Identified ObjectDef where
->   name (Obj nm _ _ _) = nm
-
->  instance Identified KeyDef where
->   name (Kd _ lbl _ _) = lbl
 
 >  objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
 >    where os = [o|o<-attributes context,concept o == cpt]
-
->  data Architecture = Arch Contexts -- deriving Show
->  data Concept      = C String GenR [String] | -- C nm gE cs represents the set of instances cs by name nm.
->                      S | -- the universal singleton: I[S]=V[S]
->                      Anything               |
->                      NOthing
-
->  type Concepts  = [Concept]
->  instance Eq Concept where
->   C a _ _ == C b _ _ = a==b
->   S == S = True
->   Anything == Anything = True
->   NOthing == NOthing = True
->   _ == _ = False
-
->  instance Ord Concept where
->   NOthing <= b  = False
->   a <= NOthing  = True
->   Anything <= b = True
->   a <= Anything = False
->   a@(C _ gE _) <= b = a `gE` b
->   a <= b = a==b
 
 >  class Ord a => ABoolAlg a where
 >   glb,lub :: a -> a -> a
@@ -140,8 +102,6 @@ TODO:
 >                 [f l (name c')++" |"++chain "|"[f 6 (show (c <= c'))|c<-cs]| c'<-cs])
 >     where l = maximum (map (length.name) cs); f n str = take n (str++forever ' ')
 >           forever c = c:forever c
-
->  type GenR = Concept->Concept->Bool
 
 >  instance ABoolAlg Concept where
 >   glb a b | b <= a = b
@@ -179,106 +139,18 @@ which means:
 I[Person] = ssn;ssn~
 I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 
->  data ConceptDef = Cd FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
->                       String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.
->                       String   -- def: the textual definition of this concept.
->                       String   -- ref: a label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
->                    deriving Show    -- so, conventionally we will write: Cd pos nm def ref
->  instance Eq ConceptDef where
->   Cd _ nm _ _ == Cd _ nm' _ _ = nm==nm'
->  instance Identified ConceptDef where
->   name (Cd _ nm _ _) = nm
 
->  type Populations = [Population]
->  data Population = Popu Morphism Pairs
 
->  type ConceptDefs = [ConceptDef]
->  data Context   = Ctx String                    -- name of this context
->                       [String]                  -- the list of context names of contexts whose rules are imported
->                       (Inheritance Concept)     -- a data structure containing the generalization structure of concepts
->                       [Classification Context]  -- a tree, being the transitive closure of the 'extends' (see formal definition) relation.
->                       Patterns                  -- a list of patterns defined in this context
->                       Rules                     -- a list of all rules that are valid within this context
->                       Declarations              -- a list of declarations defined in this context, outside the scope of patterns
->                       ConceptDefs               -- a list of concept definitions defined in this context, outside the scope of patterns
->                       KeyDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
->                       ObjDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
->                       [Population]              -- a list of populations defined in this context
->               --    deriving Show -- just for testing. pattern:  Ctx nm on i world pats rs ds cs ks os pops
->--  instance Eq Context where
->--   Ctx nm _ _ _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ _ _ = nm == nm'
-
->  wrld :: Context -> [Classification Context]
->  wrld (Ctx nm on i world pats rs ds cs ks os pops) = world
-
->  type Contexts  = [Context]
->  type Paire     = [String]
->  src, trg      :: Paire -> String
->  src xs         = if null xs then error ("(module CC_aux) Fatal: src []") else head xs
->  trg xs         = if null xs then error ("(module CC_aux) Fatal: trg []") else last xs
->  type Pairs     = [Paire]
->  data Gen       = G FilePos             -- the position of the GEN-rule
->                     Concept             -- generic concept
->                     Concept             -- specific concept
->                   deriving Eq
->  type Gens      = [Gen]
->  data Morphism  = Mph String            -- the name of the morphism. This is the same name as
->                                         --     the relation that is bound to the morphism.
->                       FilePos           -- the position of the rule in which the morphism occurs
->                       [Concept]         -- the attributes specified inline
->                       (Concept,Concept) -- the allocated type. Together with the name, this forms the declaration.
->                       Bool              -- the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
->                       Declaration       -- the declaration bound to this morphism.
->                 | I   [Concept]         -- the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
->                       Concept           -- the generic concept
->                       Concept           -- the specific concept
->                       Bool              -- the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
->                 | V   [Concept]         -- the (optional) attributes specified inline.
->                       (Concept,Concept) -- the allocated type.
->                 | Mp1 String            -- the value of the one morphism
->                       Concept           -- the allocated type.
-
-                   deriving Ord
-
+>  v :: (Concept, Concept) -> Expression
 >  v (a,b) = Tm (V [] (a,b))
 >  mIs :: Concept -> Morphism
 >  mIs c = I [] c c True
 >  sIs c = Isn c c
 
->  type Morphisms = [Morphism]
->  data Declaration = Sgn String  -- the name of the declaration
->                       Concept -- the source concept of the declaration
->                       Concept -- the target concept of the declaration
->                       [Prop]  -- the multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
->                       String  -- three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
->                       String  --    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
->                       String
->                       [Paire] -- the list of tuples, of which the relation consists.
->                       String  -- the explanation
->                       FilePos -- the position in the ADL source file where this declaration is declared.
->                       Int     -- a unique number that can be used to identify the relation
->                       Bool    -- if true, this is a signal relation; otherwise it is an ordinary relation.
->                 | Isn Concept Concept
->                 | Iscompl Concept Concept
->                 | Vs Concept Concept
-
-                   deriving Ord
-
 >  dom, cod :: Declaration -> [String]
 >  dom s = rd [src l| l<-contents s]
 >  cod s = rd [trg l| l<-contents s]
->  type Declarations = [Declaration]
->  type Patterns  = [Pattern]
->  data Prop      = Uni          -- univalent
->                 | Inj          -- injective
->                 | Sur          -- surjective
->                 | Tot          -- total
->                 | Sym          -- symmetric
->                 | Asy          -- antisymmetric
->                 | Trn          -- transitive
->                 | Rfx          -- reflexive
->                 | Aut          -- calculate contents automatically if possible
->                   deriving (Eq,Ord)
+
 >  pMeaning Uni   = "univalent"
 >  pMeaning Inj   = "injective"
 >  pMeaning Sur   = "surjective"
@@ -295,77 +167,6 @@ I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 -- Chapter: Rules
 There are 4 types of rule: 
 
-> -- Ru c antc p cons cpu expla sgn nr pn
->  data Rule      = Ru Char              -- 'I' if this is an implication, 'E' if this is an equivalence, 'A' if this is an ALWAYS expression.
->                      Expression        -- antecedent
->                      FilePos           -- position in the ADL file
->                      Expression        -- consequent
->                      Expressions       -- cpu. This is a list of subexpressions, which must be computed.
->                      String            -- explanation
->                      (Concept,Concept) -- type
->                      Int               -- rule number
->                      String            -- name of pattern in which it was defined.
-> -- Sg p rule expla sgn nr pn signal
->                 | Sg FilePos           -- position in the ADL file
->                      Rule              -- the rule to be signalled
->                      String            -- explanation
->                      (Concept,Concept) -- type
->                      Int               -- rule number
->                      String            -- name of pattern in which it was defined.
->                      Declaration       -- the signal relation
->                 | Gc FilePos           -- position in the ADL file
->                      Morphism          -- specific
->                      Expression        -- generic
->                      Expressions       -- cpu. This is a list of subexpressions, which must be computed.
->                      (Concept,Concept) -- declaration
->                      Int               -- rule number
->                      String            -- name of pattern in which it was defined.
-> -- Fr t d expr pn  -- represents an automatic computation, such as * or +.
->                 | Fr AutType           -- the type of automatic computation
->                      Declaration       -- where the result is to be stored
->                      Expression        -- expression to be computed
->                      String            -- name of pattern in which it was defined.
->                   deriving (Eq,Show)
->  data AutType = Clos0 | Clos1 deriving (Eq,Show)
-
-  instance Eq Rule where
-   Ru c antc _ cons _ sgn nr pn == Ru c' antc' _ cons' _ sgn' nr' pn'
-    | nr==0 || nr'==0 = c==c' && sgn==sgn' && (if c=='A'&&c'=='A' then True else antc==antc') && cons==cons'
-    | otherwise       = nr==nr' && pn==pn
-   Gc _ m expr sgn nr pn _ _ == Gc _ m' expr' sgn' nr' pn'
-    | nr==0 || nr'==0 = sgn==sgn' && m==m' && expr==expr'
-    | otherwise       = nr==nr' && pn==pn
-   _ == _ = False
-
->  instance Identified Rule where
->   name r = "Rule"++show (nr r)
-
->  ruleType    (Ru c _ _ _ _ _ _ _ _) = c
->  ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
->  ruleType    (Gc _ _ _ _ _ _ _)     = 'g'
->  ruleType    (Fr _ _ _ _)           = 'f'
->  antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module CC_aux:) illegal call to antecedent of rule "++showADL r)
->  antecedent  (Ru _ a _ _ _ _ _ _ _) = a
->  antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
->  antecedent  (Gc _ d _ _ _ _ _)     = Tm d
->  antecedent  (Fr _ _ e _)           = e
->  consequent  (Ru _ _ _ c _ _ _ _ _) = c
->  consequent  (Sg _ rule _ _ _ _ _)  = consequent rule
->  consequent  (Gc _ _ e _ _ _ _)     = e
->  consequent  (Fr _ d _ _)           = Tm (makeMph d)
->  cpu         (Ru _ _ _ _ c _ _ _ _) = c
->  cpu         (Sg _ _ _ _ _ _ _)     = [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
->  cpu         (Gc _ _ _ c _ _ _)     = c
->  cpu         (Fr _ d _ _)           = [Tm (makeMph d)]
->  patternName (Ru _ _ _ _ _ _ _ _ p) = p
->  patternName (Sg _ _ _ _ _ p _)     = p
->  patternName (Gc _ _ _ _ _ _ p)     = p
->  patternName (Fr _ _ _ p)           = p
->  uncomp (Ru a b c d e f (g,g') h i) = Ru a b c d [] f (g,g') h i
->  uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
->  uncomp s                           = s
-
->  makeMph d = Mph (name d) (CC_aux.pos d) [] (sign d) True d
 
 renumberRule gives back the rule in the second argument, only numbered by the first
 renumberRules gives back an array of rules as specified by the second argument, renumbered from n to n+length(r:rs)
@@ -378,38 +179,6 @@ renumberRules gives back an array of rules as specified by the second argument, 
 >  renumberRules n (r:rs) = (renumberRule n r):renumberRules (n+1) rs
 >  renumberRules _ [] = []
 
->  type Rules     = [Rule]
->  data Pattern   = Pat String             -- name of this pattern
->                       Rules              -- list of rules declared in this pattern
->                       Gens               -- list of generalizations defined in this pattern
->                       Declarations       -- list of declarations defined in this pattern
->                       ConceptDefs        -- list of concept definitions defined in this pattern
->                       KeyDefs            -- list of key definitions defined in this pattern
->                   deriving Show
->  data Expression  = Tm Morphism          -- simple morphism, possibly conversed     ~
->                   | Tc Expression        -- bracketed expression                 ( ... )
->                   | F Expressions        -- composition                             ;
->                   | Fd Expressions       -- relative addition                       !
->                   | Fi Expressions       -- intersection                            /\
->                   | Fu Expressions       -- union                                   \/
->                   | K0 Expression        -- Reflexive and transitive closure        *
->                   | K1 Expression        -- Transitive closure                      +
->                   | Cp Expression        -- Complement                              -
-
->  instance Eq Expression where
->   F  ts == F  ts' = ts==ts'
->   Fd ts == Fd ts' = ts==ts'
->   Fu fs == Fu fs' = rd fs==rd fs'
->   Fi fs == Fi fs' = rd fs==rd fs'
->   Cp e  == Cp e'  = e==e'
->   K0 e  == K0 e'  = e==e'
->   K1 e  == K1 e'  = e==e'
->   Tm m  == Tm m'  = m==m'
->   Tc e  == e'     = e==e'
->   e     == Tc e'  = e==e'
->   _     == _      = False
-
->  type Expressions = [Expression]
 
 The following code is used in transforming expressions into clauses
 
@@ -431,49 +200,6 @@ Transform a rule to an expression:
 >                             , Fu [Cp (antecedent rule), consequent rule]]
 >   | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++showHS "" rule)
 
->  class Numbered a where
->   nr :: a->Int
->   pos :: a->FilePos
->   nr x = nr (CC_aux.pos x)
-
->  instance Numbered ObjectDef where
->   pos (Obj _ p _ _) = p
-
->  instance Numbered FilePos where
->   nr (FilePos (fn,Pos l c,sym)) = l
->   pos p = p
-
->  instance Numbered Rule where
->   pos (Ru _ _ p _ _ _ _ _ _) = p
->   pos (Sg p _ _ _ _ _ _)     = p
->   pos (Gc p _ _ _ _ _ _)     = p
->   pos r = posNone
->   nr  (Ru _ _ _ _ _ _ _ n _) = n
->   nr  (Sg _ _ _ _ n _ _)     = n
->   nr  (Gc _ _ _ _ _ n _)     = n
->   nr  r = 0
-
->  instance Numbered Morphism where
->   pos (Mph _ p _ _ _ _) = p
->   pos m                 = posNone
->   nr m = nr (declaration m)
-
->  instance Numbered Declaration where
->   pos (Sgn _ _ _ _ _ _ _ _ _ p _ _) = p
->   pos d                             = posNone
->   nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
->   nr d                              = 0
-
->  instance Numbered Expression where
->   pos (Tm m)  = CC_aux.pos m
->   pos (Tc f)  = CC_aux.pos f
->   pos (F ts)  = if not (null ts) then CC_aux.pos (head ts) else error "(module CC_aux) !!Software error 813. Please submit a complete bug report to your dealer"
->   pos (Fd ts) = if not (null ts) then CC_aux.pos (head ts) else error "(module CC_aux) !!Software error 814. Please submit a complete bug report to your dealer"
->   pos (Fu fs) = if not (null fs) then CC_aux.pos (head fs) else error "(module CC_aux) !!Software error 815. Please submit a complete bug report to your dealer"
->   pos (Fi fs) = if not (null fs) then CC_aux.pos (head fs) else error "(module CC_aux) !!Software error 816. Please submit a complete bug report to your dealer"
->   pos (K0 e)  = CC_aux.pos e
->   pos (K1 e)  = CC_aux.pos e
->   pos (Cp e)  = CC_aux.pos e
 
 >  class Explained a where
 >   explain :: a -> String
@@ -488,10 +214,11 @@ Transform a rule to an expression:
 >   explain d                                 = ""
 
 >  instance Explained Concept where
->   explain (C expla _ _) = expla
->   explain (S)           = "ONE"
->   explain NOthing       = "Nothing"
->   explain Anything      = "Anything"
+>   explain c = name c   
+>   --explain (C expla _ _) = expla
+>   --explain (S)           = "ONE"
+>   --explain NOthing       = "Nothing"
+>   --explain Anything      = "Anything"
 
 >  class Conceptual a where
 >   conts      :: a -> [String]                   -- the set of all instances in a concept
@@ -503,10 +230,10 @@ Transform a rule to an expression:
 >   conts                                         = rd . concat . map conts . preCl
 
 >  instance Conceptual Concept where
->   conts (C _ _ os) = os
->   conts (S)        = error ("(module CC_aux) Fatal: ONE has exactly one concept, but it is not te be referred to")
->   conts Anything   = error ("(module CC_aux) Fatal: Anything is Everything...")
->   conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
+>   conts (ZZZC {cptos = os}) = os
+>   conts (ZZZS)        = error ("(module CC_aux) Fatal: ONE has exactly one concept, but it is not te be referred to")
+>   conts ZZZAnything   = error ("(module CC_aux) Fatal: Anything is Everything...")
+>   conts ZZZNOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
 
 >  class Morphical a where
 >   concs        :: a -> [Concept]                  -- the set of all concepts used in data structure a
@@ -517,7 +244,7 @@ Transform a rule to an expression:
 >   declarations :: a -> [Declaration]
 >--   declarations x  = rd [declaration m|m<-mors x]
 >   genE         :: a -> GenR
->   genE x        = if null cx then (==) else head cx where cx = [gE|C _ gE _<-concs x]
+>   genE x        = if null cx then (==) else head cx where cx = [gE|ZZZC {cptgE = gE } <-concs x]
 >   closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
 >   closExprs s   = []
 >   objDefs      :: a -> ObjDefs
@@ -540,10 +267,10 @@ Transform a rule to an expression:
 >   mors         c                                = [I [] c c True]
 >   morlist      c                                = [I [] c c True]
 >   declarations c                                = []
->   genE         (C c gE cs)                      = gE
->   genE         (S)                              = (<=)::Concept->Concept->Bool
->   genE         Anything                         = (<=)::Concept->Concept->Bool
->   genE         NOthing                          = (<=)::Concept->Concept->Bool
+>   genE         (ZZZC {cptgE = gE})              = gE
+>   genE         (ZZZS)                           = (<=)::Concept->Concept->Bool
+>   genE         ZZZAnything                      = (<=)::Concept->Concept->Bool
+>   genE         ZZZNOthing                       = (<=)::Concept->Concept->Bool
 
 >  instance Morphical a => Morphical (Classification a) where
 >   concs                                         = rd . concat . map concs . preCl
@@ -576,12 +303,6 @@ Transform a rule to an expression:
 >   genE (I atts g s _)                           = genE s
 >   genE (V atts (a,b))                           = genE a
 >   declarations m                                = [declaration m]
-
->  declaration :: Morphism -> Declaration
->  declaration (Mph _ _ _ _ _ s) = s
->  declaration (I atts g s yin)  = Isn g s
->  declaration (V atts (a,b))    = Vs a b
->  declaration (Mp1 s c)         = Isn c c
 
 >  instance Morphical Gen where
 >   concs (G pos g s)                             = rd [g,s]
@@ -687,15 +408,15 @@ Transform a rule to an expression:
 >   closExprs    (Pat nm rs gen pms cs ks) = closExprs rs
 
 >  instance Morphical Context where
->   concs        (Ctx nm on isa world pats rs ds cs ks os pops) = concs ds `uni` concs pats
->   conceptDefs  (Ctx nm on isa world pats rs ds cs ks os pops) = cs
->   mors         (Ctx nm on isa world pats rs ds cs ks os pops) = mors pats `uni` mors os
->   morlist      (Ctx nm on isa world pats rs ds cs ks os pops) = morlist pats++morlist os
->   declarations (Ctx nm on isa world pats rs ds cs ks os pops) = rd (ds++[d| pat<-pats, d<-declarations pat])
->   genE         (Ctx nm on isa world pats rs ds cs ks os pops) = genEq (typology isa)
->   closExprs    (Ctx nm on isa world pats rs ds cs ks os pops) = closExprs pats `uni` closExprs os
->   objDefs      (Ctx nm on isa world pats rs ds cs ks os pops) = os
->   keyDefs      (Ctx nm on isa world pats rs ds cs ks os pops) = ks
+>   concs        ctx = concs (ctxds ctx) `uni` concs (ctxpats ctx)
+>   conceptDefs  ctx = ctxcs ctx
+>   mors         ctx = mors (ctxpats ctx) `uni` mors (ctxos ctx)
+>   morlist      ctx = morlist (ctxpats ctx)++morlist (ctxos ctx)
+>   declarations ctx = rd (ctxds ctx ++[d| pat<-(ctxpats ctx), d<-declarations pat])
+>   genE         ctx = genEq (typology (ctxisa ctx))
+>   closExprs    ctx = closExprs (ctxpats ctx) `uni` closExprs (ctxos ctx)
+>   objDefs      ctx = ctxos ctx
+>   keyDefs      ctx = ctxks ctx
 
 >  instance Morphical KeyDef where
 >   concs        (Kd pos lbl ctx ats) = concs ctx `uni` concs ats
@@ -767,17 +488,6 @@ Transform a rule to an expression:
 >    = Gc pos m' expr' cpu (sign expr') nr pn
 >      where expr' = subst (m,f) expr
 
->  instance Show Prop where
->   showsPrec p Uni = showString "UNI"
->   showsPrec p Inj = showString "INJ"
->   showsPrec p Sur = showString "SUR"
->   showsPrec p Tot = showString "TOT"
->   showsPrec p Sym = showString "SYM"
->   showsPrec p Asy = showString "ASY"
->   showsPrec p Trn = showString "TRN"
->   showsPrec p Rfx = showString "RFX"
->   showsPrec p Aut = showString "AUT"
-
 >{-  instance Show Context where
 >   showsPrec p context  -- (Ctx nm on isa world pats rs ds cs ks os pops)
 >    = showString ("CONTEXT "++nm++
@@ -831,10 +541,10 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Architecture where
 >   showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
->   showHS indent (Arch ctxs) = concat (map (showHS indent) ctxs)
+>   showHS indent arch = concat (map (showHS indent) (archContexts arch))
 
 >  instance ShowADL Architecture where
->   showADL (Arch ctxs) = chain "\n" (map showADL ctxs)
+>   showADL arch = chain "\n" (map showADL (archContexts arch))
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
@@ -969,22 +679,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >  instance ShowADL Expression where
 >   showADL e = show e
 
->  showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar 0 e
->    where
->     wrap i j str = if i<=j then str else lpar++str++rpar
->     showchar i (Tm m)  = name m++if inline m then "" else "~"
->     showchar i (Fu []) = "-V"
->     showchar i (Fu fs) = wrap i 4 (chain union [showchar 4 f| f<-fs])
->     showchar i (Fi []) = "V"
->     showchar i (Fi fs) = wrap i 5 (chain inter [showchar 5 f| f<-fs])
->     showchar i (Fd []) = "-I"
->     showchar i (Fd ts) = wrap i 6 (chain rAdd [showchar 6 t| t<-ts])
->     showchar i (F [])  = "I"
->     showchar i (F ts)  = wrap i 7 (chain rMul [showchar 7 t| t<-ts])
->     showchar i (K0 e)  = showchar 8 e++clos0
->     showchar i (K1 e)  = showchar 8 e++clos1
->     showchar i (Cp e)  = compl++showchar 8 e
->     showchar i (Tc f)  = showchar i f
 
 >  isFactor (Fu fs) = True
 >  isFactor (Fi fs) = True
@@ -1004,11 +698,16 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Concept where
 >   showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
->   showHS indent Anything = "Anything"
->   showHS indent NOthing  = "NOthing"
->   showHS indent  c       = if singleton c
->                            then "S"
->                            else "C "++show (name c) ++ " gE []"    -- contents not shown.
+>   showHS indent c |  isAnything c = name c
+>                   |  isNothing  c = name c
+>                   |  singleton  c = "S"
+>                   |  otherwise    = "C "++show (name c) ++ " gE []"    -- contents not shown. 
+
+> --XXXVERVANGEN  showHS indent Anything = "Anything"
+> --  showHS indent NOthing  = "NOthing"
+> --  showHS indent  c       = if singleton c
+> --                           then "S"
+> --                           else "C "++show (name c) ++ " gE []"    -- contents not shown.
 
 >  instance ShowADL Concept where
 >   showADL c = show (name c)
@@ -1136,66 +835,14 @@ The function showHS prints structures as haskell source, which is intended for t
     | otherwise       = showString ("GLUE "++show (antecedent r)++" = "++show (consequent r)++"\n("++show (pos r)++")")
 
 
->  instance Show Expression where
->   showsPrec p e  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") e)
-
 The following shSigns is intendes for error messages
 
 >  shSigns [(a,b)] = "["++show a++"*"++show b++"]"
 >  shSigns ss = commaEng "or" ["["++show a++"*"++show b++"]"|(a,b)<-ss]
    
->  instance Show Concept where
->   showsPrec p c = showString (name c)
-
 This show is used in error messages. It should therefore not display the morphism's type
 
->  instance Show Morphism where
->   showsPrec p (Mph nm pos  []  sgn yin m) = showString (nm  {- ++"("++show a++"*"++show b++")" where (a,b)=sgn -} ++if yin then "" else "~")
->   showsPrec p (Mph nm pos atts sgn yin m) = showString (nm  {- ++"["++chain "*" (map name (rd atts))++"]" -}      ++if yin then "" else "~")
->   showsPrec p (I atts g s yin)            = showString ("I"++ (if null atts then {- ++"["++name g, (if s/=g then ","++name s else "")++"]" -} "" else show atts))
->   showsPrec p (V atts (a,b))              = showString ("V"++ (if null atts then "" else show atts))
 
->  instance Show Declaration where
->   showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ False)
->    = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
->   showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ True)
->    = showString (chain " " ["SIGNAL",nm,"ON (",name a,"*",name b,")"])
->   showsPrec p _
->    = showString ""
-
-This show is used in error messages. It should therefore not display the term's type
-
->  instance Show Gen where
->   showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)
-
->  instance Eq Declaration where
->   s == s' = name s==name s' && source s==source s' && target s==target s'
->  instance Eq Morphism where
->--   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
->   Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
->   Mph nm _ _ (a,b) yin _ == _ = False
->   I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
->   I _ g s yin            == _ = False
->   V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
->   V _ (a,b)              == _ = False
->   Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
->   Mp1 s c                == _ = False
-
-TODO: 3 lines above: V _ (a,b)
-V _ _ is a Morphism, Vs _ _ is a Declaration
-
-A declaration stands for a relation between two concepts. Mathematically, we
-interpret a declaration as a relation, i.e. a subset of the cartesian product of two sets.
-m::declaration  means interpret m `subsetEq` interpret (source m) x interpret (target m).
-Every declaration m has cardinalities, in which
-  Uni:    forall x,y,y': x m y & x m y' => y==y'           (~m;m `subsetEq` I[target m])
-  Tot:    forall x: exists y: x m y                        (I[source m] `subsetEq` m;~m)
-  Inj:    forall x,x',y: x m y & x' m y => x==x'           (m;~m `subsetEq` I[source m])
-  Sur:    forall y: exists x: x m y                        (I[target m] `subsetEq` ~m;m)
-  Trn:    forall x,y,z: x m y & y m z => x m z             (m;m `subsetEq` m)
-  Asy:    forall x,y: x m y & y m x => x==y                (m & ~m `subsetEq` I)
-  Sym:    forall x,y: x m y <=> y m x                      (m = ~m)
-  Rfx:    forall x: x m x                                  (I `subsetEq` m)
 
 >  class Populated a where
 >   contents  :: a -> [Paire]
@@ -1255,8 +902,10 @@ Every declaration m has cardinalities, in which
 >                              , (c,os) <- [(s',dom sgn),(t',cod sgn)]
 >                       ]
 >     ] where
->        upd (C c gEq os) os' = C c gEq os'
->        upd c  os = c
+>        upd c os | isC c     = c{cptos=os}
+>                 | otherwise = c
+>  -- XXXVERVANGEN:      upd (C c gEq os) os' = C c gEq os'
+>  --                    upd c  os = c
 
 >  class Key a where
 >   keys :: a->[(Concept,String,[ObjectDef])]
@@ -1291,11 +940,11 @@ So if p is a Person with name Peter, and the attribute name has context expressi
 >   extends _ = []                          -- empty unless specified otherwise.
 
 >  instance Object Context where
->   concept _    = Anything
->   attributes (Ctx nm on isa world pats rs ds cs ks os pops) = os
+>   concept _    = cptAnything
+>   attributes ctx = ctxos ctx
 >   ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
->   populations  (Ctx nm on isa world pats rs ds cs ks os pops) = pops
->   extends (Ctx nm on isa world pats rs ds cs ks os pops) = on
+>   populations  ctx = ctxpops ctx
+>   extends ctx = ctxon ctx
 
 >  instance Object ObjectDef where
 >   concept (Obj nm pos ctx ats) = target ctx
@@ -1318,9 +967,13 @@ TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concept
 >   update ss c = c
 
 >  instance Pop Concept where
->   put_gE gE cs c     = h (head ([c'|c'<-cs, c==c']++[c]))
->                        where h (C c gEq os) = C c gE os
->                              h x = x
+>--XXXisVERVANGEN   put_gE gE cs c     = h (head ([c'|c'<-cs, c==c']++[c]))
+>--                               where h (C c gEq os) = C c gE os
+>--                                    h x = x
+>   put_gE gE cs c = h (head ([c'|c'<-cs, c==c']++[c]))
+>           where h x | isC x = x{cptgE = gE}
+>                     | otherwise = x
+
 >   specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("(module CC_aux) Fatal: specialize 1 ("++show a++","++show b++") "++showHS "" c) else
 >                        (a `glb` b) `lub` c
 
@@ -1351,12 +1004,34 @@ Om een of andere reden stond hier eerder:
 >   specialize t (G pos g s) = G pos (specialize t g) (specialize t s)
 
 >  instance Pop Context where
->   put_gE gE cs (Ctx nm on isa world pats rs dw cs' ks os pops)
->    = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) pats) (map (put_gE gE cs) rs) (map (put_gE gE cs) dw) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os) pops
->   update ss    (Ctx nm on isa world pats rs ds cs  ks os pops)
->    = Ctx nm on isa world (map (update ss) pats) (map (update ss) rs) (map (update ss) ds) cs (map (update ss) ks) (map (update ss) os) pops
->   specialize t (Ctx nm on isa world pats rs ds cs  ks os pops)
->    = Ctx nm on isa world (map (specialize t) pats) (map (specialize t) rs) (map (specialize t) ds) cs (map (specialize t) ks) (map (specialize t) os) pops
+>--XXXisVERVANGEN   put_gE gE cs (Ctx nm on isa world pats rs dw cs' ks os pops)
+>--                       = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) pats) (map (put_gE gE cs) rs) (map (put_gE gE cs) dw) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os) pops
+>     put_gE gE cs context
+>                 = context { wrld    = map (mapCl (put_gE gE cs)) (wrld context)
+>                           , ctxpats = map (put_gE gE cs) (ctxpats context)
+>                           , ctxrs   = map (put_gE gE cs) (ctxrs context)
+>                           , ctxds   = map (put_gE gE cs) (ctxds context)
+>                           , ctxks   = map (put_gE gE cs) (ctxks context)
+>                           , ctxos   = map (put_gE gE cs) (ctxos context)
+>                           }
+>--XXXisVERVANGEN   update ss    (Ctx nm on isa world pats rs ds cs  ks os pops)
+>--                       = Ctx nm on isa world (map (update ss) pats) (map (update ss) rs) (map (update ss) ds) cs (map (update ss) ks) (map (update ss) os) pops
+>     update ss context
+>                 = context { ctxpats = map (update ss) (ctxpats context)
+>                           , ctxrs   = map (update ss) (ctxrs context)
+>                           , ctxds   = map (update ss) (ctxds context)
+>                           , ctxks   = map (update ss) (ctxks context)
+>                           , ctxos   = map (update ss) (ctxos context)
+>                           }
+>--XXXisVERVANGEN   specialize t (Ctx nm on isa world pats rs ds cs  ks os pops)
+>--                       = Ctx nm on isa world (map (specialize t) pats) (map (specialize t) rs) (map (specialize t) ds) cs (map (specialize t) ks) (map (specialize t) os) pops
+>     specialize t context
+>                 = context { ctxpats = map (specialize t) (ctxpats context)
+>                           , ctxrs   = map (specialize t) (ctxrs context)
+>                           , ctxds   = map (specialize t) (ctxds context)
+>                           , ctxks   = map (specialize t) (ctxks context)
+>                           , ctxos   = map (specialize t) (ctxos context)
+>                           }
 
 >  instance Pop Pattern where
 >   put_gE gE cs (Pat nm rs gen pms cs' ks) = Pat nm (map (put_gE gE cs) rs) (map (put_gE gE cs) gen) (map (put_gE gE cs) pms) cs' (map (put_gE gE cs) ks)
@@ -1381,8 +1056,6 @@ Om een of andere reden stond hier eerder:
 >   specialize t' r@(Fr t d expr pn)                          = Fr t (specialize t' d) (specialize t' expr) pn
 
 >  single e x = length [m| m<-morlist e, m==x]==1
->  inline (Mph _ _ _ _ yin _) = yin
->  inline m = True
 
 >  makeInline m | inline m = m
 >  makeInline m = flp m
@@ -1454,25 +1127,6 @@ Om een of andere reden stond hier eerder:
 >   specialize (x,y) sg@(Isn g s)                = if x <= y then Isn x y else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS "" s)
 >   specialize (x,y) sg@(Iscompl g s)            = if x <= y then Iscompl x y else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS "" s)
 
->  class Morphic a where
->   source, target :: a -> Concept
->   sign           :: a -> (Concept,Concept)
->   sign x = (source x,target x)
->   multiplicities :: a -> [Prop]
->   multiplicities m = []
->   flp            :: a -> a
->   isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
->   isProp         :: a -> Bool  -- > tells whether the argument is a property
->   isNot          :: a -> Bool  -- > tells whether the argument is equivalent to I-
->   isMph          :: a -> Bool
->   isTrue         :: a -> Bool  -- > tells whether the argument is equivalent to V
->   isFalse        :: a -> Bool  -- > tells whether the argument is equivalent to V-
->   isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
->   singleton      :: a -> Bool  -- > tells whether V=I
->   singleton e     = isProp e && isTrue e
->   equiv          :: a -> a -> Bool
->   equiv m m' = source m==source m'&&target m==target m' || source m==target m'&&target m==source m'
->   typeUniq :: a -> Bool -- this says whether the type of 'a' and all of its constituent parts is defined (i.e. not "Anything")
 >  idsOnly x = and [isIdent m| m<-mors x]
 
 >  class Morphics a where
@@ -1481,28 +1135,10 @@ Om een of andere reden stond hier eerder:
 >  instance Morphics a => Morphics [a] where
 >   anything xs = and (map anything xs)
 >  instance Morphics Concept where
->   anything Anything = True
->   anything _ = False
+>   anything c = isAnything c
+
 >  instance (Morphics a,Morphics b) => Morphics (a,b) where
 >   anything (x,y) = anything x && anything y
-
->  instance Morphic Concept where
->   source c = c
->   target c = c
->--   sign c = (c,c)
->   multiplicities c = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
->   flp c = c
->   isIdent c = True    -- > tells whether the argument is equivalent to I
->   isProp c = True    -- > tells whether the argument is equivalent to I
->   isNot c   = False   -- > tells whether the argument is equivalent to I-
->   isMph c = False
->   isTrue c = singleton c
->   isFalse c = False
->   isSignal c = False
->   singleton (S) = True
->   singleton _ = False
->   typeUniq Anything = False
->   typeUniq _ = True
 
 >  instance Morphic Morphism where
 >   source (Mph nm pos atts (a,b) _ s) = a
@@ -1551,46 +1187,6 @@ Om een of andere reden stond hier eerder:
 >  isSgn (Sgn _ _ _ _ _ _ _ _ _ _ _ _) = True
 >  isSgn _ = False
 
->  instance Morphic Declaration where
->   source (Sgn _ a b _ _ _ _ _ _ _ _ _)         = a
->   source (Isn g s)                             = s
->   source (Iscompl g s)                         = s
->   source (Vs a b)                              = a
->   target (Sgn _ a b _ _ _ _ _ _ _ _ _)         = b
->   target (Isn g s)                             = g
->   target (Iscompl g s)                         = g
->   target (Vs a b)                              = b
->   sign   (Sgn _ a b _ _ _ _ _ _ _ _ _)         = (a,b)
->   sign   (Isn g s)                             = (s,g)
->   sign   (Iscompl g s)                         = (s,g)
->   sign   (Vs g s)                              = (s,g)
->   multiplicities (Sgn _ _ _ ps _ _ _ _ _ _ _ _)= ps
->   multiplicities (Isn g s)         | g==s      = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
->                                    | otherwise = [Uni,Tot,    Inj,Sym,Trn,Rfx]
->   multiplicities (Iscompl g s)                 = [Sym]
->   multiplicities (Vs g s)                      = [Tot,Sur]
->   flp(Sgn nm a b props prL prM prR cs expla pos nr sig)
->                                                = Sgn nm b a (flipProps props) "" "" "" (map reverse cs) expla pos nr sig
->   flp    i                                     = i
->   isIdent (Isn _ _)                            = True   -- > tells whether the argument is equivalent to I
->   isIdent _                                    = False
->   isProp (Isn _ _)                             = True                    -- > tells whether the argument is equivalent to I
->   isProp (Iscompl g s)                         = False
->   isProp (Vs a b)                              = a==b && singleton a
->   isProp d                                     = null ([Asy,Sym]>-multiplicities d)
->   isNot (Iscompl _ _)                          = True   -- > tells whether the argument is equivalent to I-
->   isNot _                                      = False
->   isTrue (Vs _ _)                              = True
->   isTrue _                                     = False
->   isFalse _                                    = False
->   isSignal (Sgn _ _ _ _ _ _ _ _ _ _ _ s)       = s
->   isSignal _                                   = False
->   isMph (Sgn _ a b _ _ _ _ _ _ _ _ _)          = True
->   isMph _                                      = False
->   typeUniq (Sgn _ a b _ _ _ _ _ _ _ _ _)       = typeUniq a && typeUniq a
->   typeUniq (Isn g s)                           = typeUniq g && typeUniq s
->   typeUniq (Iscompl g s)                       = typeUniq g && typeUniq s
->   typeUniq (Vs g s)                            = typeUniq g && typeUniq s
 
 >  instance Morphic Expression where
 >   source (Tm m)          = source m
@@ -1630,10 +1226,10 @@ Om een of andere reden stond hier eerder:
 >                            foldr1 jnSign (map sign ts)
 >                            where (s,t) `jnSign` (s',t') = (s,t')
 >   sign (Fu fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fu fs) not defined\nwith map sign fs="++show (map sign fs)) else
->                            if null fs then (Anything, Anything) else
+>                            if null fs then (cptAnything, cptAnything) else
 >                            foldr1 lub (map sign fs)
 >   sign (Fi fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fi fs) not defined\nwith map sign fs="++show (map sign fs)) else
->                            if null fs then (Anything, Anything) else
+>                            if null fs then (cptAnything, cptAnything) else
 >                            foldr1 lub (map sign fs)
 >   sign (K0 e)            = sign e
 >   sign (K1 e)            = sign e
@@ -1900,37 +1496,13 @@ TODO: transform the following into  instance Collection Declaration where
 >  inj = elem Inj
 >  sur = elem Sur
 >  automatic m = Aut `elem` multiplicities m
->  flipProps :: [Prop] -> [Prop]
->  flipProps ps = [flipProp p| p<-ps]
-
->  flipProp Uni = Inj
->  flipProp Tot = Sur
->  flipProp Sur = Tot
->  flipProp Inj = Uni
->  flipProp x = x
-
 >  instance Typologic Concept
->  instance Identified Concept where
->   name (C nm _ _) = nm
->   name (S) = "ONE"
->   name Anything   = "Anything"
->   name NOthing    = "NOthing"
->  instance Identified Morphism where
->   name (Mph nm _ _ _ _ _) = nm
->   name i = name (declaration i)
->  instance Identified Declaration where
->   name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
->   name (Isn _ _)                      = "I"
->   name (Iscompl _ _)                  = "I-"
->   name (Vs _ _)                       = "V"
 
 >  applyM (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then d++" "++nm++" "++c else prL++(if null prL then d else unCap d)++prM++c++prR
 >  applyM (Isn _ _)                            d c = d++" equals "++c
 >  applyM (Iscompl _ _)                        d c = d++" differs from "++c
 >  applyM (Vs _ _)                             d c = show True
 
->  instance Identified Context where
->   name (Ctx nm _ _ _ _ _ _ _ _ _ _) = nm
 
 >  instance Identified Pattern where
 >   name (Pat nm _ _ _ _ _) = nm
@@ -2012,30 +1584,31 @@ properties is achieved as a result.
 >  instance Language Context where
 >   declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (wrld context)
 >   multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules     (wrld context)
->   rules         (Ctx nm on i world pats rs ds cs ks os pops) = [r| r<-rs, not (isSignal r)]
+>   rules         context = [r| r<-(ctxrs context), not (isSignal r)]
+>  -- rules         (Ctx nm on i world pats rs ds cs ks os pops) = [r| r<-rs, not (isSignal r)]
 >   signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals       (wrld context)
 >   specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs         (wrld context)
->   patterns      (Ctx nm on i world pats rs ds cs ks os pops) = pats
->   objectdefs    (Ctx nm on i world pats rs ds cs ks os pops) = os
->   isa           (Ctx nm on i world pats rs ds cs ks os pops) = i
+>   patterns      context     = ctxpats context
+>   objectdefs    context     = ctxos   context
+>   isa           context     = ctxisa  context
 
 >  instance Language Declaration where
 >   multRules d
 >    = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
 >          , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
 >             error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
->     where h Sym = Ru 'E' (F [Tm r]) (CC_aux.pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
->           h Asy = Ru 'I' (Fi [F [Tm r], F [Tm r']]) (CC_aux.pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
->           h Trn = Ru 'I' (F [Tm r, Tm r]) (CC_aux.pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
->           h Rfx = Ru 'I' id (CC_aux.pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
->           h Uni = Ru 'I' (F [Tm r',Tm r]) (CC_aux.pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
->           h Sur = Ru 'I' id' (CC_aux.pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
->           h Inj = Ru 'I' (F [Tm r,Tm r']) (CC_aux.pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
->           h Tot = Ru 'I' id (CC_aux.pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
+>     where h Sym = Ru 'E' (F [Tm r]) (ADLdef.pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
+>           h Asy = Ru 'I' (Fi [F [Tm r], F [Tm r']]) (ADLdef.pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
+>           h Trn = Ru 'I' (F [Tm r, Tm r]) (ADLdef.pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
+>           h Rfx = Ru 'I' id (ADLdef.pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
+>           h Uni = Ru 'I' (F [Tm r',Tm r]) (ADLdef.pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
+>           h Sur = Ru 'I' id' (ADLdef.pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
+>           h Inj = Ru 'I' (F [Tm r,Tm r']) (ADLdef.pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
+>           h Tot = Ru 'I' id (ADLdef.pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
 >           sgn   = (source d,source d)
->           r     = Mph (name d)                (CC_aux.pos d) [] (source d,target d) True d
+>           r     = Mph (name d)                (ADLdef.pos d) [] (source d,target d) True d
 >           r'    = flp (r ) 
->           r'' t = Mph (t++"["++(name d)++"]") (CC_aux.pos d) [] (source d,target d) True d
+>           r'' t = Mph (t++"["++(name d)++"]") (ADLdef.pos d) [] (source d,target d) True d
 >           id    = F [Tm (I [source d] (source d) (source d) True)]
 >           id'    = F [Tm (I [target d] (target d) (target d) True)]
 
@@ -2044,25 +1617,6 @@ properties is achieved as a result.
 
 Calculation of positions of symbols (both terminal and nonterminal) in the source code, to be performed by the parser
 
->  newtype FilePos = FilePos (String, Pos, String)                        deriving (Eq,Ord)
->  posNone         = FilePos ("",noPos,"")
-
->  instance Show Pos where
->    show (Pos l c)
->      = "line " ++ show l
->        ++ ", column " ++ show c
->  instance Ord Pos where
->    a >= b = (show a) >= (show b)
->    a <= b = (show a) <= (show b)
-
->  instance Show FilePos where
->    show (FilePos (fn,Pos l c,sym))
->      = "line " ++ show l
->--        ++ ", column " ++ show c
->        ++ ", file " ++ show fn
-
->  get_tok_pos     (Tok _ _ s l f) = FilePos (f,l,s)
->  get_tok_val_pos (Tok _ _ s l f) = (s,FilePos (f,l,s))
 
 >  gsym_pos :: IsParser p Token => TokenType -> String -> String -> p FilePos
 >  gsym_pos kind val val2 = get_tok_pos <$> pSym (Tok kind val val2 noPos "")
@@ -2112,3 +1666,12 @@ Calculation of positions of symbols (both terminal and nonterminal) in the sourc
 >  mor2filename m = "Atlas"++rEncode (name m)++".html"
 
   relName [r,d,c] = strip(r++conceptForm d++conceptForm c)
+
+  
+  
+  
+  
+  
+  
+  
+  

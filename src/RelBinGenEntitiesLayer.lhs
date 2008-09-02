@@ -1,7 +1,16 @@
 > module RelBinGenEntitiesLayer where
 >  import Auxiliaries(chain,adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
->  import CC_aux
+>  import ADLdef
+>  import CC_aux( attributes, concept, ctx
+>               , declarations, concs, rules
+>               , signals, mors, explain
+>               , showHS, showADL
+>               , normExpr
+>               , inj, fun
+>               , oneMorphism
+>               , morlist
+>               )
 >  import Languages(Lang(English), plural)
 >  import CommonClasses
 >  import Collection (Collection(isc,(>-),rd,uni))

@@ -7,7 +7,12 @@
 >  import Collection( Collection( empty ))
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
->  import CC_aux (Context(Ctx),isa, showHS, showHSname, concs, declaredRules, rules, multRules, patterns)
+>  import ADLdef
+>  import CC_aux ( isa, concs, multRules
+>                , declaredRules
+>                , patterns, concs
+>                , showHS, showHSname
+>                )
 >  import Languages( Lang(English,Dutch))
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)

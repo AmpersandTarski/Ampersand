@@ -3,7 +3,8 @@
 >  import CommonClasses ( Identified(name) )
 >  import Auxiliaries
 >         ( chain, sort') 
->  import CC_aux  ( Concept(C), Morphism, isIdent, isNot)
+>  import ADLdef
+>  import CC_aux  ( Concept, Morphism, isIdent, isNot)
 
 Basic HTML markup
 
@@ -128,7 +129,8 @@ The following requires data structures from CC_aux
 >   hshow :: a -> String
 
 >  instance HTML Concept where
->   hshow (C nm _ _) = htmlAnchor (htmlname nm++".html") nm []
+> --XXXVervangen:  hshow (C nm _ _) = htmlAnchor (htmlname nm++".html") nm []
+>   hshow c = htmlAnchor (htmlname (name c)++".html") (name c) []
 
 >  instance HTML Morphism where
 >   hshow m | isIdent m = "="

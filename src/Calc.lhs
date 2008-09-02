@@ -16,6 +16,7 @@
 >  import Collection (Collection (uni,isc,empty,rd))
 >  import Auxiliaries
 >  import Classification
+>  import ADLdef
 >  import CC_aux
 >  import ERmodel
 >  import Graphic
@@ -210,8 +211,8 @@ so that is why parameter "do" is used in function "on".
 >  data InsDel     = Ins | Del
 >                    deriving (Eq,Show)
 
->  ca = C "A" (==) []
->  cb = C "B" (==) []
+>  ca = cptC "A" (==) []
+>  cb = cptC "B" (==) []
 
 >  r = Mph "r" posNone [] (ca,cb) True (error "Illegal reference to r")
 >  s = Mph "s" posNone [] (ca,cb) True (error "Illegal reference to s")
@@ -248,7 +249,7 @@ so that is why parameter "do" is used in function "on".
 >  actSem Ins e delta = Fu[e,delta]
 >  actSem Del e delta = Fi[e,Cp delta]
 
->  makeTm name = Tm (makeMph (Sgn name Anything Anything [] "" "" "" [] "" posNone 0 True))
+>  makeTm name = Tm (makeMph (Sgn name cptAnything cptAnything [] "" "" "" [] "" posNone 0 True))
 >  delta (a,b) = Tm (makeMph (Sgn "Delta" a b [] "" "" "" [] "" posNone 0 True))
 
 >  data ECArule  = ECA Event PAclause

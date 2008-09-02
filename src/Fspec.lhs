@@ -68,7 +68,20 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >    )
 >  import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
 >  import Typology
->  import CC_aux
+>  import ADLdef
+>  import CC_aux ( ShowHS(showHSname, showHS)
+>                , Object() 
+>                , patterns, rules, mors, concs
+>                , conceptDefs, attributes, morlist
+>                , declarations, extends, isa
+>                , populations, isFunction
+>                , Morphical(genE,closExprs), concept
+>                , ctx, mIs, isPos, showADL
+>                , keys, objDefs, declaredRules, isSgn
+>                , applyM
+>                , signals, conts, explain
+>                , specs, contents, fEmpty
+>                )
 >  import Calc
 >  import PredLogic
 >  import HtmlFilenames
@@ -103,7 +116,14 @@ A specification contains one Fobj-specification for every object it defines and 
 
 >  makeFspec :: Context -> Fspec
 >  makeFspec context
->    = Fctx context'
+>    = Fctx ( context { ctxpats = patterns context ++ if null remainingDS then [] else [others]
+>                     , ctxrs   = rules context
+>                     , ctxds   = declarations context
+>                     , ctxcs   = conceptDefs context
+>                     , ctxks   = []
+>                     , ctxos   = attributes context
+>                     }
+>           ) 
 >           (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
 >           ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
 >           )
@@ -136,18 +156,18 @@ A specification contains one Fobj-specification for every object it defines and 
 >                pms = rd [d| ds<-remainingDS, d<-declarations ds]
 >                cs  = []
 >                ks  = []
->       context' = Ctx nm on i world pats rs ds cs ks os pops
->          where nm    = name context
->                on    = extends context
->                i     = isa context
->                world = wrld context
->                pats  = patterns context ++ if null remainingDS then [] else [others]
->                rs    = rules context
->                ds    = declarations context
->                cs    = conceptDefs context
->                ks    = []
->                os    = attributes context
->                pops  = populations context
+>  --     context' = Ctx nm on i world pats rs ds cs ks os pops
+>  --        where nm    = name context
+>  --              on    = extends context
+>  --              i     = isa context
+>  --              world = wrld context
+>  --              pats  = patterns context ++ if null remainingDS then [] else [others]
+>  --              rs    = rules context
+>  --              ds    = declarations context
+>  --              cs    = conceptDefs context
+>  --              ks    = []
+>  --              os    = attributes context
+>  --              pops  = populations context
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
@@ -1193,7 +1213,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
+>                         | Cd pos nm def ref<-conceptDefs context, cptnew nm  `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -1244,7 +1264,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
+>                          | Cd pos nm def ref<-conceptDefs context, cptnew nm `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -1254,7 +1274,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      ] else [] )
 >      where
 >       spec = funcSpec context (erAnalysis context) language
->       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptDefs context]
+>       cList = concs context>-rd [cptnew nm| Cd pos nm def ref<-conceptDefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context
@@ -1332,7 +1352,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >             (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
 >                          (if null ref then "" else "~\\cite{"++ref++"}")++
 >                          "\\\\\n\\hline"
->                         | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
+>                         | Cd pos nm def ref<-conceptDefs context, cptnew nm `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tHet concept "++idName(head cList)++" heeft geen tekstuele definitie in sectie \\ref{typology"++cname++"}." else
 >        "\tDe volgende concepten zijn (nog) niet opgenomen in de woordenlijst: "++commaNL "en" (map idName (sord' name cList))++"."
@@ -1384,7 +1404,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , if null (conceptDefs context) then "" else
 >        latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
 >              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
->                          | Cd pos nm def ref<-conceptDefs context, C nm (==) [] `elem` concs context])
+>                          | Cd pos nm def ref<-conceptDefs context, cptnew nm `elem` concs context])
 >      , if null cList then "" else
 >        if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
 >        "\tThe following concepts are not described in the glossary: "++commaEng "and" (map idName (sord' name cList))++"."
@@ -1394,7 +1414,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      ] else [] )
 >      where
 >       spec = funcSpec context (erAnalysis context) language
->       cList = concs context>-rd [C nm (==) []| Cd pos nm def ref<-conceptDefs context]
+>       cList = concs context>-rd [cptnew nm| Cd pos nm def ref<-conceptDefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context
@@ -1539,7 +1559,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      , "\\label{bibliography"++name context++"}"
 >      ] else [] )
 >      where
->       cList = concs context>-rd [C (name cd) (==) []| cd<-conceptDefs context]
+>       cList = concs context>-rd [cptnew (name cd)| cd<-conceptDefs context]
 >--       nav :: Classification Concept
 >--       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
 >       mms  = declarations context
@@ -1667,7 +1687,7 @@ lpattern gets the complete typology of the context, in order to produce the righ
 >     ] ++ "\n" ++
 >     (chain "\n\n" . map (addSlashes.explain) . declaredRules) pat
 >     where
->      parents c = f [C (name p) (==) []| [p,s]<-pths, name s==name c]
+>      parents c = f [cptnew (name p) | [p,s]<-pths, name s==name c]
 >      f []  = "Anything"
 >      f [c] = concat [if c==' ' then "\\ " else [c]| c<-name c]
 >      f cs  = "("++chain "\\cup" [concat [if c==' ' then "\\ " else [c]| c<-name c] | c<-cs]++")"
@@ -2006,3 +2026,4 @@ TODO: complete all accents and test
 >         , Tsk "after care" "3 mons" "" ["Transfer"]
 >         ]
 >      (entities, relations, ruls) = erAnalysis context
+

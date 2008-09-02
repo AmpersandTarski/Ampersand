@@ -4,17 +4,18 @@
 >  import Collection ( Collection(empty, (>-),rd) )
 >  import Auxiliaries (chain, eqCl, enc)
 >  import Typology (Inheritance(Isa))
+>  import ADLdef
 >  import CC_aux  
->             ( Context, Concept, Object(concept, attributes, ctx)
->             , showADL, Morphical
->             , Language( rules, declaredRules )
->             , isProperty, target, concs, source
->             , declaration, declarations, keys
->             , flp, multiplicities, isa, isFunction, isFlpFunction
->             , Morphism(Mph)
->             , Prop(Sur,Inj)
->             , posNone, cpu, isSignal, mors, sign
->             )
+>        --     ( Context, Concept, Object(concept, attributes, ctx)
+>        --     , showADL, Morphical
+>        --     , Language( rules, declaredRules )
+>        --     , isProperty, target, concs, source
+>        --     , declaration, declarations, keys
+>        --     , flp, multiplicities, isa, isFunction, isFlpFunction
+>        --     , Morphism(Mph)
+>        --     , Prop(Sur,Inj)
+>        --     , posNone, cpu, isSignal, mors, sign
+>        --     )
 >  import HtmlFilenames (fnContext)
 >  import Graphic 
 >           ( genGraphics)

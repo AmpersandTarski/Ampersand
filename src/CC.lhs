@@ -4,8 +4,14 @@
 >  import CommonClasses ( Identified(name))
 >  import Collection (Collection(empty,uni,(>-),rd))
 >  import Auxiliaries (sort, upCap)
+>  import ADLdef ( Architecture(..)
+>                , Context(..)
+>                , Concept,cptAnything,cptC, cptS, cptnew
+>                )
 >  import CC_aux 
->            ( Architecture(Arch), Context(Ctx), FilePos(FilePos)
+>            ( -- Architecture(Arch), 
+>              -- Context(Ctx)
+>              FilePos(FilePos)
 >            , Pattern(Pat)
 >            , Declaration(Sgn)
 >            , ConceptDef(Cd)
@@ -15,7 +21,7 @@
 >            , Pairs
 >            , Morphism(Mph,I,V)
 >            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
->            , Concept(Anything,C,S)
+>         --   , Concept(Anything,C,S)
 >            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
 >            , Expressions
 >            , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
@@ -55,13 +61,13 @@ No automatic computation rules will be derived.
 This will be achieved by generating signal rules only.
 
 >  pArchitecture    :: Bool -> Parser Token Architecture
->  pArchitecture beep = Arch <$> pList1 (pContext beep)
+>  pArchitecture beep = ZZZArch <$> pList1 (pContext beep)
 
 >  pContext         :: Bool -> Parser Token Context
 >  pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
 >                                 ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
 >                                 pList (pContextElement beep) <* pKey "ENDCONTEXT"
->                      where rebuild nm on ces = Ctx nm on empty [] pats [] ds cs ks os pops
+>                      where rebuild nm on ces = ZZZCtx nm on empty [] pats [] ds cs ks os pops
 >                             where
 >                              ps   = [p| CPat p<-ces]
 >                              ds   = [d| CDcl d<-ces]
@@ -107,7 +113,7 @@ This will be achieved by generating signal rules only.
 >                      Pk <$> pKeyDef
 
 >  pSignal          :: Parser Token Morphism
->  pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" posNone [] (Anything,Anything) True (Sgn "" Anything Anything [] "" "" "" [] "" posNone 0 False))
+>  pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" posNone [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" posNone 0 False))
 
 For a beep-machine, all rules are interpreted as signals. For this reason, a boolean 'beep' is used.
 Beep means that only signal rules are used, and no automatic computation is done. The most effective way
@@ -123,18 +129,18 @@ to achieve that is to arrange that in the parser: All Ru-rules are wrapped in Sg
 >                      gc <$> pSignal <*> pKey_pos "GLUE" <*> pMorphism <* pKey "=" <*> pExpr <*> pComputing 
 >                      where
 >                       hc m antc pos cons cpu expl
->                        | not beep && name m=="" = Ru 'I' antc pos cons (if beep then [] else cpu) expl (Anything,Anything) 0 ""
->                        | otherwise  = Sg pos (Ru 'I' antc pos cons (if beep then [] else cpu) expl (Anything,Anything) 0 "") expl (Anything,Anything) 0 "" (Sgn (name m) Anything Anything [] "" "" "" [] expl pos 0 True)
+>                        | not beep && name m=="" = Ru 'I' antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+>                        | otherwise  = Sg pos (Ru 'I' antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] expl pos 0 True)
 >                       kc m cons pos antc cpu expl = hc m antc pos cons cpu expl
 >                       dc m defd pos expr cpu expl
->  {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos = error ("Diag: "++showADL (Ru 'E' defd pos expr cpu expl (Anything,Anything) 0 ""))  -}
->                        | not beep && name m=="" = Ru 'E' defd pos expr (if beep then [] else cpu) expl (Anything,Anything) 0 ""
->                        | otherwise  = Sg pos (Ru 'E' defd pos expr (if beep then [] else cpu) expl (Anything,Anything) 0 "") expl (Anything,Anything) 0 "" (Sgn (name m) Anything Anything [] "" "" "" [] "" pos 0 True)
+>  {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos = error ("Diag: "++showADL (Ru 'E' defd pos expr cpu expl (cptAnything,cptAnything) 0 ""))  -}
+>                        | not beep && name m=="" = Ru 'E' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+>                        | otherwise  = Sg pos (Ru 'E' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
 >                       ac m      pos expr cpu expl
->                        | not beep && name m=="" = Ru 'A' defd pos expr (if beep then [] else cpu) expl (Anything,Anything) 0 ""
->                        | otherwise  = Sg pos (Ru 'A' defd pos expr (if beep then [] else cpu) expl (Anything,Anything) 0 "") expl (Anything,Anything) 0 "" (Sgn (name m) Anything Anything [] "" "" "" [] "" pos 0 True)
+>                        | not beep && name m=="" = Ru 'A' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+>                        | otherwise  = Sg pos (Ru 'A' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
 >                        where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
->                       gc m      pos pm pf cpu     = Gc pos pm pf (if beep then [] else cpu) (Anything,Anything) 0 ""
+>                       gc m      pos pm pf cpu     = Gc pos pm pf (if beep then [] else cpu) (cptAnything,cptAnything) 0 ""
 
 >  data PCompu       = Uc [Morphism]
 >                    | Ui [Morphism]
@@ -149,7 +155,7 @@ to achieve that is to arrange that in the parser: All Ru-rules are wrapped in Sg
 
 >  pGen             :: Parser Token Gen
 >  pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
->                      where rebuild spec pos genus = G pos (C genus (==) []) (C spec (==) [])
+>                      where rebuild spec pos genus = G pos (cptnew genus ) (cptnew spec )
 
 >  postStr          :: Parser Token String
 >  postStr           = f <$> pList1 (pKey "~" <|> pKey "+" <|> pKey "-" <|> pKey "*")
@@ -211,18 +217,18 @@ There are always one or more terms in a factor. F [] cannot occur
 >                       f t []       = t
 
 >  pMorphism        :: Parser Token Morphism
->  pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` Anything)                <|>
+>  pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)                <|>
 >                      v    <$ pKey "V" <*> pTwo                                                                 <|>
 >                      rebuild <$> pVarid_val_pos <*> pTwo
->                      where rebuild (nm,pos) atts = Mph nm pos (take 2 (atts++atts)) (Anything,Anything) True
->                                                     (Sgn nm Anything Anything [] "" "" "" [] "" posNone 0 (nm/=""))
->                            iden Anything         = I [] Anything Anything True
->                            iden a                = I [c|c/=Anything] c c True where c=emp a
->                            v []                  = V [] (Anything, Anything)
->                            v [a]                 = V [c|c/=Anything] (c,c) where c=emp a
->                            v [a,b]               = V [c|c<-[emp a,emp b],c/=Anything] (emp a,emp b)
->                            emp (C "" _ _)        = Anything
->                            emp c                 = c
+>                      where rebuild (nm,pos) atts = Mph nm pos (take 2 (atts++atts)) (cptAnything,cptAnything) True
+>                                                     (Sgn nm cptAnything cptAnything [] "" "" "" [] "" posNone 0 (nm/=""))
+>                            iden cptAnything      = I [] cptAnything cptAnything True
+>                            iden a                = I [c|c/=cptAnything] c c True where c=emp a
+>                            v []                  = V [] (cptAnything, cptAnything)
+>                            v [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
+>                            v [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
+>                            emp c | c == cptnew ""     = cptAnything
+>                                  | otherwise          = c
 >                            pTwo = (one <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>
 >                                    two <$ pSpec '[' <*> pConcept <* pKey "*" <*> pConcept <* pSpec ']')
 >                                    `opt` []
@@ -230,8 +236,8 @@ There are always one or more terms in a factor. F [] cannot occur
 >                                         two c c' = [c,c']
 
 >  pConcept         :: Parser Token Concept
->  pConcept          = (S <$ (pKey "ONE")) <|> (c <$> (pConid <|> pString))
->                      where c str = C str (==) []
+>  pConcept          = (cptS <$ (pKey "ONE")) <|> (cptnew <$> (pConid <|> pString))
+>                     -- where c str = C str (==) []
 
 >  pLabel           :: Parser Token (String, FilePos)
 >  pLabel            = (phpId <* pKey ">" ) `opt` ("", posNone)
@@ -265,14 +271,14 @@ Bas: het volgende is nog incorrect....
 >                          <*> (optional (pSpec '[' *>  pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
 >                          <*> (optional (pKey ":" *>  pExpr) )                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
->                      where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos (v (Anything, C (nm) (==) [])) ats
+>                      where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos (v (cptAnything, cptnew (nm))) ats
 >                            obj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
->                            obj (nm,pos) (Just c) Nothing  ats = Obj nm pos (v (Anything, C c (==) [])) ats
->                            obj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (C c (==) []))]) ats
->                            vbj (nm,pos) Nothing  Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (Anything,Anything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
+>                            obj (nm,pos) (Just c) Nothing  ats = Obj nm pos (v (cptAnything, cptnew c )) ats
+>                            obj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
+>                            vbj (nm,pos) Nothing  Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptAnything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
 >                            vbj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
->                            vbj (nm,pos) (Just c) Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (Anything,C c (==) []) True (error "CC.lhs: vbj (nm,pos) Nothing (Just c) has no declaration"))) ats
->                            vbj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (C c (==) []))]) ats
+>                            vbj (nm,pos) (Just c) Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptnew c ) True (error "CC.lhs: vbj (nm,pos) Nothing (Just c) has no declaration"))) ats
+>                            vbj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
 
 >  pAtt             :: Parser Token ObjectDef
 >  pAtt              = att <$> phpId <* pKey ":" <*>  pExpr

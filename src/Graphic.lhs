@@ -3,15 +3,21 @@
 >  import CommonClasses ( Identified(name) )
 >  import Collection (Collection(rd))
 >  import Auxiliaries (chain, eqClass, sort)
->  import CC_aux
->            ( Context(Ctx), Pattern(Pat), Morphic(isSignal), Morphism(Mph), Rule(Ru)
->            , Expression(F,Tm)
->            , multiplicities, tot, inj, sur, fun, sign
->            , inline, posNone, source, target, mors, declaration, flp
->            , concs, isa, specs, isMph, isProperty
->            , declarations, union
->            , order
->            )
+>  import ADLdef --( Context, Pattern
+>                --, isMph, isSignal, declaration
+>                --, flp, inline, posNone
+>                --, source, target
+>                --, multiplicities
+>                --)
+>  import CC_aux ( order
+>                , concs
+>                , declarations
+>                , mors
+>                , specs
+>                , isProperty
+>                , tot, inj, sur, fun
+>                , union
+>                )
 >  import Typology ( Inheritance(Isa) )
 >  import HtmlFilenames (fnConcept,fnRelation)
 >  import System (system, ExitCode(ExitSuccess,ExitFailure))
@@ -174,8 +180,8 @@
 >        uni stefMagHierHetCommentaarVoorSchrijven = fun stefMagHierHetCommentaarVoorSchrijven
 
 >  instance Graphic Context where
->   dotGraph context style nm (Ctx cnm on isa world pats rs ms cs ks os pops)
->    = dotGraph context style nm (foldr union (Pat "" [] [] [] [] []) pats)
+>   dotGraph context style nm context' 
+>    = dotGraph context style nm (foldr union (Pat "" [] [] [] [] []) (ctxpats context'))
 
 >  instance Graphic Morphism where
 >   dotGraph context style nm m -- @(Mph nm' _ atts sgn yin m')

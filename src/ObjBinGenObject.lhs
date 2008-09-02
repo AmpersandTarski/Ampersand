@@ -2,7 +2,16 @@
 >  import Char(toUpper)
 >  import Auxiliaries(chain, adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
->  import CC_aux
+>  import ADLdef
+>  import CC_aux (
+>                  attributes, concept, ctx
+>                , showADL
+>                , Object()
+>                , mors, makeInline
+>                , explain, rules, mIs
+>                , tot, fun, v
+>                , objectOfConcept
+>                )
 >  import CommonClasses
 >  import Collection (Collection(rd))
 >  import ERmodel

@@ -3,15 +3,16 @@
 >  import CommonClasses ( Identified(name)) 
 >  import Collection (Collection(empty, (>-),rd)) 
 >  import Auxiliaries (chain, sort', eqCl)
+>  import ADLdef
 >  import CC_aux 
->            ( Context, src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
->            , Language( rules, declaredRules, objectdefs )
->            , Declaration, concs, source, target, isFunction, isFlpFunction, posNone
->            , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
->            , Expression(F,Tm), v
->            , Prop(Sur,Inj),multiplicities
->            , ObjectDef(Obj), Object(concept, attributes, ctx)
->            )
+>        --    ( Context, src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
+>        --    , Language( rules, declaredRules, objectdefs )
+>        --    , Declaration, concs, source, target, isFunction, isFlpFunction, posNone
+>        --    , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
+>        --    , Expression(F,Tm), v
+>        --    , Prop(Sur,Inj),multiplicities
+>        --    , ObjectDef(Obj), Object(concept, attributes, ctx)
+>        --    )
 >--  import Calc
 >  import HtmlFilenames (fnContext)
 
@@ -19,7 +20,7 @@
 >  erAnalysis p = (entities, rels, ruls)
 >   where
 >      entities 
->       | null (objectdefs p) = [ Obj (name c) posNone (v (Anything,c)) [Obj ((concat.map name.mors) e) posNone (Tm e) []| e<-as]
+>       | null (objectdefs p) = [ Obj (name c) posNone (v (cptAnything,c)) [Obj ((concat.map name.mors) e) posNone (Tm e) []| e<-as]
 >                               | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
 >       | otherwise           = objectdefs p
 >      attrs :: [Morphism]

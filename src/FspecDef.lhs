@@ -7,19 +7,10 @@
 
 > where
 
->  import CC_aux (ShowHS(showHS), showHSname
->            -- Onderstaande zijn taalconcepten uit ADL, en zijn één op een 
->            -- overgenomen in Fspec. Als de taal Fspec uitgebreid wordt, zal
->            -- dit waarschijnlijk onafhankelijker moeten gebeuren... 
->                , Concept
->                , Pattern
-> 				 , Rule
->                , ObjectDef
->                , Morphism
->                , Morphic(source, target) 
->                , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs )
->                , Expression
->                )
+>  import ADLdef
+>  import CC_aux ( ShowHS(showHS,showHSname)
+>                , Morphical(conceptDefs, mors,morlist, declarations,genE,closExprs)
+>                , concs)
 >  import CommonClasses(DataStruct(..),Identified(name))
 >  import Auxiliaries
 

@@ -3,7 +3,13 @@
 >  import Auxiliaries
 >  import Collection
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
->  import CC_aux
+>  import ADLdef
+>  import CC_aux( rules
+>               , showADL, showHS
+>               , declarations, contents
+>               , concs, normExpr, explain
+>               , applyM
+>               )
 >  import CommonClasses
 >  import ERmodel
 >  import PredLogic -- (for error messages by dbCorrect)
