@@ -99,10 +99,6 @@
 >  isC c   = False
 
 
------------------ HIERBOVEN ZIJN FIELD LABELS EN FUNCTIES TOEGEVOEGD. ------------
------------------ Hieronder nog niet.....
-
-
 >  type ConceptDefs = [ConceptDef]
 >  data ConceptDef = Cd { cdpos :: FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
 >                       , cdnm  :: String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.
@@ -114,20 +110,23 @@
 >  instance Identified ConceptDef where
 >   name cd = cdnm cd
 
+----------------- HIERBOVEN ZIJN FIELD LABELS EN FUNCTIES TOEGEVOEGD. ------------
+----------------- Hieronder nog niet.....
+
 >  type ObjDefs = [ObjectDef]
->  data ObjectDef = Obj String         -- nm:   view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
->                       FilePos        -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number)
->                       Expression     -- ctx:  this expression describes the instances of this object, related to their context. 
->                       [ObjectDef]    -- ats:  the attributes, which are object definitions themselves.
->                   deriving (Eq,Show) -- So in its entirety: Obj nm pos ctx ats
->  --data ObjectDef = Obj { nm :: String      -- view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
->  --                     , pos ::FilePos     -- position of this definition in the text of the ADL source file (filename, line number and column number)
->  --                     , ctx :: Expression -- this expression describes the instances of this object, related to their context. 
->  --                     , ats :: ObjDefs    -- the attributes, which are object definitions themselves.
->  --                     } deriving (Eq,Show)
+>  data ObjectDef = Obj { objnm  :: String         -- nm:   view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+>                       , objpos :: FilePos        -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number)
+>                       , objctx :: Expression     -- ctx:  this expression describes the instances of this object, related to their context. 
+>                       , objats :: ObjDefs        -- ats:  the attributes, which are object definitions themselves.
+>                       } deriving (Eq,Show) -- So in its entirety: Obj nm pos ctx ats
 
 >  instance Identified ObjectDef where
->   name (Obj nm _ _ _) = nm
+>   name obj = objnm obj
+
+>  instance Numbered ObjectDef where
+>   pos obj = objpos obj
+
+>  objdefNew e = Obj "" posNone e []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
 
 >  type KeyDefs = [KeyDef]
 >  data KeyDef = Kd FilePos      -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number).
@@ -163,7 +162,7 @@
 
 >  inline::Morphism -> Bool
 >  inline (Mph _ _ _ _ yin _) = yin
->  inline (I _ _ _ yin )      = yin
+>  inline (I _ _ _ _ )        = True
 >  inline (V _ _)             = True
 >  inline (Mp1 _ _)           = True
 
@@ -495,9 +494,6 @@ Every declaration m has cardinalities, in which
 >   nr :: a->Int
 >   pos :: a->FilePos
 >   nr x = nr (ADLdef.pos x)
-
->  instance Numbered ObjectDef where
->   pos (Obj _ p _ _) = p
 
 >  instance Numbered FilePos where
 >   nr (FilePos (fn,Pos l c,sym)) = l

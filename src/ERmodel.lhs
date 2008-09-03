@@ -20,9 +20,15 @@
 >  erAnalysis p = (entities, rels, ruls)
 >   where
 >      entities 
->       | null (objectdefs p) = [ Obj (name c) posNone (v (cptAnything,c)) [Obj ((concat.map name.mors) e) posNone (Tm e) []| e<-as]
+>       | null (objectdefs p) = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
+>                                                                 , objats = [ (objdefNew (Tm e)) { objnm = (concat.map name.mors) e
+>                                                                                                 } | e<-as ]
+>                                                                 }
 >                               | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
 >       | otherwise           = objectdefs p
+> -- XXXVervangingVan      | null (objectdefs p) = [ Obj (name c) posNone (v (cptAnything,c)) [Obj ((concat.map name.mors) e) posNone (Tm e) []| e<-as]
+> --                                               | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
+> --                       | otherwise           = objectdefs p
 >      attrs :: [Morphism]
 >      attrs = [Mph (name s ++ if isFlpFunction s then "Fun" else "") posNone [] (source s,target s) True s | s<-declarations p,    isFunction s] ++
 >              [flp (Mph (name s++if isFunction s then "Inv" else "") posNone [] (source s,target s) True s)| s<-declarations p, isFlpFunction s] ++

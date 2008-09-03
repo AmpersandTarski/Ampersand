@@ -426,13 +426,13 @@ Transform a rule to an expression:
 >   keyDefs      k                    = [k]
 
 >  instance Morphical ObjectDef where
->   concs        (Obj nm pos ctx ats) = [source ctx] `uni` concs ats
->   conceptDefs  (Obj nm pos ctx ats) = []
->   mors         (Obj nm pos ctx ats) = mors ctx `uni` mors ats `uni` mors (target ctx)  -- opletten: de expressie ctx hoort hier ook bij.
->   morlist      (Obj nm pos ctx ats) = morlist ctx++morlist ats
->   declarations (Obj nm pos ctx ats) = []
->   closExprs    (Obj nm pos ctx ats) = closExprs ctx `uni` closExprs ats
->   objDefs      o                    = [o]
+>   concs        obj = [source (objctx obj)] `uni` concs (objats obj)
+>   conceptDefs  obj = []
+>   mors         obj = mors (objctx obj) `uni` mors (objats obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
+>   morlist      obj = morlist (objctx obj)++morlist (objats obj)
+>   declarations obj = []
+>   closExprs    obj = closExprs (objctx obj) `uni` closExprs (objats obj)
+>   objDefs      obj = [obj]
 
 >  class Substitutive a where
 >-- precondition: sign f `order` sign m
@@ -731,17 +731,17 @@ The function showHS prints structures as haskell source, which is intended for t
 >    = "KEY "++lbl++">"++name (target ctx)++"("++chain "," (map showADL ats)++")"
 
 >  instance ShowHS ObjectDef where
->   showHSname o = "oDef_"++haskellIdentifier (name o)
->   showHS indent (Obj nm pos ctx ats) 
->    = "Obj "++show nm++" ("++showHS "" pos++")"++ctxStr++
->      (if null ats
+>   showHSname obj = "oDef_"++haskellIdentifier (name obj)
+>   showHS indent obj 
+>    = "Obj "++show (name obj)++" ("++showHS "" (objpos obj)++")"++ctxStr++
+>      (if null (objats obj)
 >       then " []"
->       else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) ats)++indent++"    ]")
->    where ctxStr | length (morlist ctx) >1 = indent++"    ("++showHS (indent++"     ") ctx++indent++"    )"
->                 | otherwise               = indent++"    ("++showHS "" ctx++")"
+>       else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")
+>    where ctxStr | length (morlist (objctx obj)) >1 = indent++"    ("++showHS (indent++"     ") (objctx obj)++indent++"    )"
+>                 | otherwise               = indent++"    ("++showHS "" (objctx obj)++")"
 
 >  instance ShowADL ObjectDef where
->   showADL (Obj nm pos ctx ats) = "OBJECT "++nm++" : "++(showADL ctx)++" = ["++chain ", " (map show ats)++"]"
+>   showADL obj = "OBJECT "++name obj++" : "++(showADL (objctx obj))++" = ["++chain ", " (map show (objats obj))++"]"
 
 >  instance ShowHS Declaration where
 >   showHSname d = "rel_"++haskellIdentifier (name d++name (source d)++name (target d))
@@ -922,7 +922,7 @@ This show is used in error messages. It should therefore not display the morphis
 >   keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
 
    instance Key ObjectDef where
-    keys (Obj nm pos ctx ats) = [(target ctx,nm,ats)]
+    keys obj = [(target (objctx obj),name obj,objats obj)]
 
 The story with objects:
 Each object has a type, which is a concept.
@@ -946,9 +946,9 @@ So if p is a Person with name Peter, and the attribute name has context expressi
 >   extends ctx = ctxon ctx
 
 >  instance Object ObjectDef where
->   concept (Obj nm pos ctx ats) = target ctx
->   attributes (Obj nm pos ctx ats) = ats
->   ctx (Obj nm pos ctx' ats) = ctx'
+>   concept obj = target (objctx obj)
+>   attributes obj = objats obj
+>   ctx obj = objctx obj
 >   populations  _ = []
 
 The following definition is used to compute whether a concept may display its internal code.
@@ -982,9 +982,16 @@ TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concept
 >   specialize t (Kd pos lbl ctx ats) = Kd pos lbl (specialize t ctx) [specialize t a| a<-ats]
 
 >  instance Pop ObjectDef where
->   put_gE gE cs (Obj nm pos ctx ats) = Obj nm pos (put_gE gE cs ctx) [put_gE gE cs a| a<-ats]
->   update ss    (Obj nm pos ctx ats) = Obj nm pos (update ss    ctx) [update ss    a| a<-ats]
->   specialize t (Obj nm pos ctx ats) = Obj nm pos (specialize t ctx) [specialize t a| a<-ats]
+>   put_gE gE cs obj = obj { objctx = (put_gE gE cs (objctx obj))
+>                          , objats = [put_gE gE cs a| a<-objats obj]
+>                          }
+>   update ss    obj = obj { objctx = (update ss    (objctx obj))
+>                          , objats = [update ss    a| a<-objats obj]
+>                          }
+>   specialize t obj = obj { objctx = (specialize t (objctx obj))
+>                          , objats = [specialize t a| a<-objats obj]
+>                          }
+
 
 >  instance (Pop a,Pop b) => Pop (a,b) where
 >   put_gE gE cs (x,y) = (put_gE gE cs x, put_gE gE cs y)

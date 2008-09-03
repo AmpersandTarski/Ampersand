@@ -237,31 +237,29 @@ More optimal F code
 Code below is basic functionality, and should be changed only when absolutely necessary.
 
 
->  selectExpr ctx i src trg (Tm (V _ (s,cptS))   ) 
->        | s == cptS = selectGeneric i ("1",src) ("1",trg)
->                                      ("(SELECT 1) AS csnd")
->                                      ("1"
->                                      )
->        | otherwise = selectGeneric i ("cfst."++src',src) ("1",trg)
->                                      (sqlConcept ctx s ++ " AS cfst")
->                                      ("1"
->                                      )
->                       where src' = sqlAttConcept ctx s
->  selectExpr ctx i src trg (Tm (V _ (cptS,t))   ) = 
->       selectGeneric i ("1",src) ("csnd."++trg',trg) 
->                       (sqlConcept ctx t ++ " AS csnd")
->                       ("1"
->                       )
->                       where trg' = sqlAttConcept ctx t
->  selectExpr ctx i src trg (Tm (I _ cptS _ _)   ) = selectExpr ctx i src trg (Tm (V [] (cptS,cptS)))
+>  selectExpr ctx i src trg (Tm (V _ (s,t))   ) 
+>        | s==cptS && t==cptS = selectGeneric i ("1",src) ("1",trg)
+>                                               ("(SELECT 1) AS csnd")
+>                                               ("1"
+>                                               )
+>        | s==cptS            = selectGeneric i ("1",src) ("csnd."++trg',trg) 
+>                                               (sqlConcept ctx t ++ " AS csnd")
+>                                               ("1"
+>                                               )
+>        | t==cptS            = selectGeneric i ("cfst."++src',src) ("1",trg)
+>                                               (sqlConcept ctx s ++ " AS cfst")
+>                                               ("1"
+>                                               )
+>        | otherwise          = selectGeneric i ("cfst."++src',src) ("csnd."++trg'',trg)
+>                                               (sqlConcept ctx s ++ " AS cfst, "++selectExprBrac ctx (i) trg'' trg'' (Tm (mIs t))++" AS csnd")
+>                                               ("1"
+>                                               )
+>                       where src'  = sqlAttConcept ctx s
+>                             trg'  = sqlAttConcept ctx t
+>                             trg'' = noCollide [src'] trg'
 
->  selectExpr ctx i src trg (Tm (V _ (s,t))   ) = 
->       selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
->                       (sqlConcept ctx s ++ " AS cfst, "++selectExprBrac ctx (i) trg' trg' (Tm (mIs t))++" AS csnd")
->                       ("1"
->                       )
->                       where src' = sqlAttConcept ctx s
->                             trg' = noCollide [src'] (sqlAttConcept ctx t)
+>  selectExpr ctx i src trg (Tm (I _ s _ _)   ) | s == cptS = selectExpr ctx i src trg (Tm (V [] (s,s)))
+
 >  selectExpr ctx i src trg (Tm mrph      ) = selectExprMorph ctx i src trg mrph
 >  selectExpr ctx i src trg (Tc expr      ) = selectExpr ctx i src trg expr
 >  selectExpr ctx i src trg (F  (e:(f:fx))) =
