@@ -473,8 +473,8 @@ phpShow adds backslashes to quotes in order to make a string readable for MySQL
 >  phpMorTrg  = sqlMorTrg
 
 >  phpConcept :: Context -> Concept -> String
->  phpConcept _ cptS = "ONE"
->  phpConcept context c
+>  phpConcept context c | c == cptS = "ONE"
+>                       | otherwise 
 >   = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (phpConcept in module RelBinGenBasics)") else
 >     if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (phpConcept in module RelBinGenBasics)") else
 >     head cs
@@ -614,16 +614,16 @@ sqlMorTrg (r~:A*B) = "AttA"
 >  sqlEConcept = sqlConc "E"
 
 
->  sqlConc prefix context cptS = "ONE"
->  sqlConc prefix context c
+>  sqlConc prefix context c | c==cptS = "ONE"
+>                           | otherwise
 >               = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
 >                 if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlConcept in module RelBinGenBasics)") else
 >                 head cs
 >                 where cs = [prefix++show i++"_"++phpEncode (name c')|(c',i)<-zip (concs context) [1..], c==c']
 
 >  sqlAttConcept :: Context -> Concept -> String
->  sqlAttConcept context cptS = "ONE"
->  sqlAttConcept context c
+>  sqlAttConcept context c | c==cptS = "ONE"
+>                          | otherwise
 >               = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
 >                 if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in context \""++name context++"\" (sqlAttConcept in module RelBinGenBasics)") else
 >                 head cs

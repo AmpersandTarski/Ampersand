@@ -44,6 +44,7 @@ Upon success, it yields a CSL with no violation of any of the rules.
 >      ]
 >     )) ++ "?>"
 
+>  createAndSelectDB :: Context -> String -> Bool -> [String] 
 >  createAndSelectDB context dbName noTrans
 >   =  [ ""
 >      , "if(!$DB_slct){"
