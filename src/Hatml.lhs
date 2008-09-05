@@ -4,7 +4,7 @@
 >  import Auxiliaries
 >         ( chain, sort') 
 >  import ADLdef
->  import CC_aux  ( Concept, Morphism, isIdent, isNot)
+>  import CC_aux  ( Morphism, isIdent, isNot)
 
 Basic HTML markup
 

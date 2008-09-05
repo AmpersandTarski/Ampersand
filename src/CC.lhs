@@ -223,8 +223,8 @@ There are always one or more terms in a factor. F [] cannot occur
 >                      rebuild <$> pVarid_val_pos <*> pTwo
 >                      where rebuild (nm,pos) atts = Mph nm pos (take 2 (atts++atts)) (cptAnything,cptAnything) True
 >                                                     (Sgn nm cptAnything cptAnything [] "" "" "" [] "" posNone 0 (nm/=""))
->                            iden cptAnything      = I [] cptAnything cptAnything True
->                            iden a                = I [c|c/=cptAnything] c c True where c=emp a
+>                            iden a | a ==cptAnything = I [] cptAnything cptAnything True
+>                                   | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
 >                            v []                  = V [] (cptAnything, cptAnything)
 >                            v [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
 >                            v [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)

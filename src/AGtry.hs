@@ -10,17 +10,18 @@ import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
-import ADLdef (Architecture(..)
-               ,Context(Ctx)
-               ,Concept(..)
-               ,ConceptDef(Cd)
-               )
-import CC_aux 
-         (  --Architecture,archContexts
-            --Context(Ctx)
-            Concept()
-          , ConceptDef()
-          , Declaration(Sgn, Vs, Isn, Iscompl)
+import ADLdef (
+			Architecture(Arch)
+          , Context(Ctx)
+          , Concept(Anything, NOthing, C, S)
+          , ConceptDef(Cd)
+          )
+import CC_aux ( 
+     --    (  Architecture(Arch)
+     --     , Context(Ctx)
+     --     , Concept(Anything, NOthing, C, S)
+     --     , ConceptDef(Cd)
+           Declaration(Sgn, Vs, Isn, Iscompl)
           , Rule(Ru,Sg,Gc)
           , Gen(G)
           , declarations
