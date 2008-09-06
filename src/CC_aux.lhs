@@ -834,7 +834,7 @@ The function showHS prints structures as haskell source, which is intended for t
     | otherwise       = showString ("GLUE "++show (antecedent r)++" = "++show (consequent r)++"\n("++show (pos r)++")")
 
 
-The following shSigns is intendes for error messages
+The following shSigns is intended for error messages
 
 >  shSigns [(a,b)] = "["++show a++"*"++show b++"]"
 >  shSigns ss = commaEng "or" ["["++show a++"*"++show b++"]"|(a,b)<-ss]
@@ -1197,28 +1197,28 @@ Om een of andere reden stond hier eerder:
 >  instance Morphic Expression where
 >   source (Tm m)          = source m
 >   source (Tc f)          = source f
->   source (F  [])         = error ("(module CC_aux) Fatal: source (F [])")
+>   source (F  [])         = Anything -- error ("(module CC_aux) Fatal: source (F [])")
 >   source (F  ts)         = source (head ts)
->   source (Fd [])         = error ("(module CC_aux) Fatal: source (Fd [])")
+>   source (Fd [])         = Anything -- error ("(module CC_aux) Fatal: source (Fd [])")
 >   source (Fd ts)         = source (head ts)
->   source (Fu [])         = error ("(module CC_aux) Fatal: source (Fu [])")
->   source (Fu fs)         = source (head fs) -- should be most generic of (map source fs) (TODO)
->   source (Fi [])         = error ("(module CC_aux) Fatal: source (Fi [])")
->   source (Fi fs)         = source (head fs) -- should be most specific of (map source fs) (TODO)
+>   source (Fu fs)         = if length (eqClass order (map source fs))==1 then minimum (map source fs)
+>                            else Anything -- error ("(module CC_aux) Fatal: source ("++showHS "" (Fu fs)++")")
+>   source (Fi fs)         = if length (eqClass order (map source fs))==1 then maximum (map source fs)
+>                            else Anything -- error ("(module CC_aux) Fatal: source ("++showHS "" (Fi fs)++")")
 >   source (K0 e)          = source e
 >   source (K1 e)          = source e
 >   source (Cp e)          = source e
 
 >   target (Tm m)          = target m
 >   target (Tc f)          = target f
->   target (F  [])         = error ("(module CC_aux) Fatal: target (F [])")
+>   target (F  [])         = Anything -- error ("(module CC_aux) Fatal: target (F [])")
 >   target (F  ts)         = target (last ts)
->   target (Fd [])         = error ("(module CC_aux) Fatal: target (Fd [])")
+>   target (Fd [])         = Anything -- error ("(module CC_aux) Fatal: target (Fd [])")
 >   target (Fd ts)         = target (last ts)
->   target (Fu [])         = error ("(module CC_aux) Fatal: target (Fu [])")
->   target (Fu fs)         = target (last fs) -- should be most generic of (map source fs) (TODO)
->   target (Fi [])         = error ("(module CC_aux) Fatal: target (Fi [])")
->   target (Fi fs)         = target (last fs) -- should be most specific of (map source fs) (TODO)
+>   target (Fu fs)         = if length (eqClass order (map target fs))==1 then minimum (map target fs)
+>                            else Anything -- error ("(module CC_aux) Fatal: target ("++showADL (Fu fs)++")")
+>   target (Fi fs)         = if length (eqClass order (map target fs))==1 then maximum (map target fs)
+>                            else Anything -- error ("(module CC_aux) Fatal: target ("++showADL (Fi fs)++")")
 >   target (K0 e)          = target e
 >   target (K1 e)          = target e
 >   target (Cp e)          = target e

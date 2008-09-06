@@ -38,7 +38,7 @@
 >                        , cptgE   :: GenR 
 >                        , cptos   :: [String]  -- atoms
 >                        }  -- C nm gE cs represents the set of instances cs by name nm.
->                    | S  -- the universal singleton: I[S]=V[S]
+>                    | S  -- the universal singleton: I[Anything]=V[Anything]
 >                    | Anything
 >                    | NOthing
 >  cptC nm gE os = C nm gE os  -- constructor
@@ -73,7 +73,7 @@
 >   isTrue c = singleton c
 >   isFalse c = False
 >   isSignal c = False
->   singleton (S) = True
+>   singleton S = True
 >   singleton _ = False
 >   typeUniq Anything = False
 >   typeUniq _ = True

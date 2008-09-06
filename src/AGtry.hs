@@ -10,18 +10,9 @@ import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
-import ADLdef (
-			Architecture(Arch)
-          , Context(Ctx)
-          , Concept(Anything, NOthing, C, S)
-          , ConceptDef(Cd)
-          )
-import CC_aux ( 
-     --    (  Architecture(Arch)
-     --     , Context(Ctx)
-     --     , Concept(Anything, NOthing, C, S)
-     --     , ConceptDef(Cd)
-           Declaration(Sgn, Vs, Isn, Iscompl)
+import ADLdef
+import CC_aux 
+         (  Declaration(Sgn, Vs, Isn, Iscompl)
           , Rule(Ru,Sg,Gc)
           , Gen(G)
           , declarations
@@ -34,7 +25,6 @@ import CC_aux (
           , showADL, source, target, idsOnly, concs, showHS
           , Morphism(Mph,I,V)
           , contents, put_gE, makeConceptSpace, pMeaning
-          , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
           , FilePos(FilePos), ConceptDefs, Concepts, concept
           , Pairs, Paire, Rules, Morphisms, Patterns
           , sign, anything, shSigns, gEtabG, order, flp
@@ -791,6 +781,14 @@ sem_Declarations_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
 
 -}
 {-
+   local variables for Expression.Re:
+
+-}
+{-
+   local variables for Expression.Ri:
+
+-}
+{-
    local variables for Expression.Tc:
 
 -}
@@ -1022,6 +1020,24 @@ sem_Expression_K1 (_e) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_
         ,_e_sErr
         ,_e_signs
         )
+sem_Expression_Re :: (T_Expression) ->
+                     (T_Expression) ->
+                     (T_Expression)
+sem_Expression_Re (_l) (_r) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
+    let ( _l_expr,_l_morphisms,_l_raw,_l_rnr,_l_rules,_l_sErr,_l_signs) =
+            (_l (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef))
+        ( _r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs) =
+            (_r (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_l_rnr) (_lhs_sDef))
+    in  (_r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs)
+sem_Expression_Ri :: (T_Expression) ->
+                     (T_Expression) ->
+                     (T_Expression)
+sem_Expression_Ri (_l) (_r) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
+    let ( _l_expr,_l_morphisms,_l_raw,_l_rnr,_l_rules,_l_sErr,_l_signs) =
+            (_l (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef))
+        ( _r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs) =
+            (_r (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_l_rnr) (_lhs_sDef))
+    in  (_r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs)
 sem_Expression_Tc :: (T_Expression) ->
                      (T_Expression)
 sem_Expression_Tc (_c) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
