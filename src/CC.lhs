@@ -272,9 +272,9 @@ Bas: het volgende is nog incorrect....
 >                          <*> (optional (pSpec '[' *>  pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
 >                          <*> (optional (pKey ":" *>  pExpr) )                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
->                      where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos (v (cptAnything, cptnew (nm))) ats
+>                      where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos ((Tm . mIs . cptnew) nm) ats
 >                            obj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
->                            obj (nm,pos) (Just c) Nothing  ats = Obj nm pos (v (cptAnything, cptnew c )) ats
+>                            obj (nm,pos) (Just c) Nothing  ats = Obj nm pos ((Tm . mIs . cptnew) c) ats
 >                            obj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
 >                            vbj (nm,pos) Nothing  Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptAnything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
 >                            vbj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
