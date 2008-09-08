@@ -253,7 +253,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 > --Precondition: ctx a  contains precisely one morphism and it is not V.
 >  deleteExprForAttr context a parent id
 >   | isTrue (ctx a)  = error "Fatal: DELETE FROM V is no valid SQL"
->   | isIdent (ctx a) = "DELETE FROM "++sqlConcept context ((target.head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
+>   | isIdent (ctx a) = "DELETE FROM "++sqlConcept context ((target.head.mors.ctx) a)++" WHERE "++sqlAttConcept context ((target.head.mors.ctx) a)++"=\\''.addslashes("++id++").'\\'"
 >   | otherwise       = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
 
 >  andNEXISTquer context e m
@@ -298,7 +298,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 
 >  do_del_quer context a str
 >           = [ "  DB_doquer('DELETE FROM "++(sqlConcept context (concept a))
->               , "    WHERE "++(sqlExprTrg (ctx a))++" IN ('."++str++".')"
+>               , "    WHERE "++(sqlAttConcept context (concept a))++" IN ('."++str++".')"
 >               ] ++ concat (
 >                  [ andNEXISTquer context (ctx a) m
 >                  | m@(Mph _ _ _ _ _ _) <- morsWithCpt context (concept a)
