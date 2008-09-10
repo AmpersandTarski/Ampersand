@@ -10,12 +10,7 @@
 >  import Char(toLower)
 >  import Strings(firstCaps,tt,idNam)
 >  import ADLdef
->  import CC_aux ( mors, attributes, rules,patterns
->                , concs, conceptDefs, morlist
->                , declarations, extends
->                , isa, populations, concept, isFunction
->                , keys, mIs, isPos, showADL, ctx
->                , Object)
+>  import CC_aux (mIs,showADL)
 >  import FspecDef
 
 >  import Calc(lClause,rClause,makeRule)

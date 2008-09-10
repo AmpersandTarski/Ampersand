@@ -16,7 +16,9 @@
 >   , mapCl
 >   , index
 >  ) where
->  import CommonClasses ( Identified(name)) 
+>  import CommonClasses ( Identified(name)
+>                       , Conceptual(conts)
+>                       ) 
 >  import Collection (Collection(eleM,elems,isc,(>-),uni,empty,rd))
 >  import Auxiliaries (chain, eqCl) 
 
@@ -292,3 +294,9 @@ Fast Lookups using classification:
 
 De volgende expressie levert True op??
    allezaken == invmakeCly (Cly "" (makeCly allezaken))
+   
+
+>  instance Conceptual a => Conceptual (Classification a) where
+>   conts                                         = rd . concat . map conts . preCl
+
+   

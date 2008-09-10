@@ -4,34 +4,30 @@
 >  import CommonClasses ( Identified(name))
 >  import Collection (Collection(empty,uni,(>-),rd))
 >  import Auxiliaries (sort, upCap)
->  import ADLdef ( Architecture(..)
->                , Context(..)
->                , Concept,cptAnything,cptC, cptS, cptnew
->                , ConceptDef(Cd)
->                )
+>  import ADLdef 
 >  import CC_aux 
->            ( -- Architecture(Arch), 
->              -- Context(Ctx)
->              FilePos(FilePos)
->            , Pattern(Pat)
->            , Declaration(Sgn)
->            , ConceptDef()
->            , ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs, Population(Popu), Populations
->            , Rule(Ru,Sg,Gc)
->            , Gen(G)
->            , Pairs
->            , Morphism(Mph,I,V)
->            , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
->         --   , Concept(Anything,C,S)
->            , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
->            , Expressions
->            , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
->            , posNone
->            , pKey_pos
->            , showADL
->            , flp
->            , pVarid_val_pos, pConid_val_pos
->            , mIs, v)
+>            ( showADL 
+>    --          -- Context(Ctx)
+>    --          FilePos(FilePos)
+>    --        , Pattern(Pat)
+>    --        , Declaration(Sgn)
+>    --        , ConceptDef()
+>     --       , ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs, Population(Popu), Populations
+>     --       , Rule(Ru,Sg,Gc)
+>     --       , Gen(G)
+>     --       , Pairs
+>     --       , Morphism(Mph,I,V)
+>     --       , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
+>     --    --   , Concept(Anything,C,S)
+>     --       , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
+>     --       , Expressions
+>     --       , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
+>             , pKey_pos
+>     --       , 
+>     --       , flp
+>             , pVarid_val_pos, pConid_val_pos
+>             , mIs
+>             )
 
 >  diagl = 52
 >  diagc = 0

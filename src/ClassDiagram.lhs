@@ -121,7 +121,7 @@
 >                     -- all attributes:
 >                   , as<-[[a| a<-attrs, source a == c, not (isProperty a)]]
 >                     -- all editable attributes:
->                   , cs<-[[ OOAttr (name a++if null [v| v<-as, name v==name a, v/=a] then "" else name (target a)) (name (target a)) | a<-as, not (declaration a `elem` comp)]]
+>                   , cs<-[[ OOAttr (name a++if null [v| v<-as, name v==name a, v/=a] then "" else name (target a)) (name (target a)) | a<-as, not (makeDeclaration a `elem` comp)]]
 >                     -- all methods:
 >                   , ms<-[[ OOMethodC ("new"++name c) cs | not (null as) ] ++
 >                          [ OOMethodR ("get"++name c) [ OOAttr (if null [v| v<-as, name v==name a, v/=a] then name a else name a++name (target a)) (name (target a)) | a<-as] | not (null as) ] ++

@@ -2,14 +2,9 @@
 >  import Auxiliaries(chain,adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
 >  import ADLdef
->  import CC_aux( attributes, concept, ctx
->               , declarations, concs, rules
->               , signals, mors, explain
->               , showHS, showADL
->               , normExpr
+>  import CC_aux( showHS, showADL
 >               , inj, fun
 >               , oneMorphism
->               , morlist
 >               )
 >  import Languages(Lang(English), plural)
 >  import CommonClasses
@@ -65,7 +60,7 @@
 >               "','Src'=>'"++phpRelSrc context r++
 >               "','Trg'=>'"++phpRelTrg context r++
 >               "','Fix'=>Array ('"++chain "','" ([ phpConcept context (concept o) | o<-attributes context, not (null (mors r `isc` mors o))]++
->                                                 [ phpRelName context s | s<-relations,     s `elem` [declaration m| m<-mors r]])++
+>                                                 [ phpRelName context s | s<-relations,     s `elem` [makeDeclaration m| m<-mors r]])++
 >               "'),'Desc'=>"++phpShow (if null (explain r) then "Artificial explanation: "++(lang English .assemble.normRule) r else explain r)++")"
 >       | r@(Sg p rule expla sgn nr pn signal)<-signals context]++"\n                 );"
 >     , ""
@@ -380,11 +375,11 @@ Obsolete?
 >            [ "        }}" ] )
 >     )
 >     where triggers
->            = [ "          // "++informalRule hc++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>            = [ "          // "++informalRule hc++(if isSignal (makeDeclaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >                phpCodeIncrHornClauseRel "$attrs" 13 context r hc++
 >                "\n             $someHornclausesActive=$someHornclausesActive || DB_affected();"
 >              | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [r]
->              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >              ]
 
 >  phpCodeRelUpdate (context,entities,relations,hcs) r
@@ -409,11 +404,11 @@ Obsolete?
 >         "\n         if(DB_affected()){"++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');}"
 >       | e<-closs]
 >     , "              }" ]) ++
->     [ "     // "++informalRule (CR([("UPDATE",r)], e, bOp, toExpr, frExpr, rule))++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>     [ "     // "++informalRule (CR([("UPDATE",r)], e, bOp, toExpr, frExpr, rule))++(if isSignal (makeDeclaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >       phpCodeIncrHornClauseRel attrs 15 context r hc
 >     | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "UPDATE" [r]
 >     , attrs<-[if fst (head fOps)=="DELETE FROM" then "$attrsOld" else "$attrs"]
->     , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>     , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >     ] ++ 
 >     [ "           if($deleted){"
 >     , dbDelConcept context 11 (source r) ("$attrsOld['"++phpRelSrc context r++"']")
@@ -448,11 +443,11 @@ Obsolete?
 >     , "           }"
 >     , "        }" ] )
 >     where triggers
->            = [ "              // "++informalRule (CR([("DELETE FROM",r)], e, bOp, toExpr, frExpr, rule))++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>            = [ "              // "++informalRule (CR([("DELETE FROM",r)], e, bOp, toExpr, frExpr, rule))++(if isSignal (makeDeclaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >                phpCodeIncrHornClauseRel "$attrs" 17 context r hc++
 >                "\n              $someHornclausesActive=$someHornclausesActive || DB_affected();"
 >              | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "DELETE FROM" [r]
->              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >              ]
 
 >  phpCodeEntCreate (context,entities,relations,hcs) o
@@ -475,7 +470,7 @@ Obsolete?
 >     phpCname = phpConcept context (concept o)
 >     hcs' = [ hc
 >            | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" (Isn (concept o) (concept o):declarations o)
->            , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>            , suitable toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >            ]
 >  suitable (F ts) = True
 >  suitable e      = oneMorphism e
@@ -503,7 +498,7 @@ It is compared to the desired state,
 >     , phpCodeIncrHornClauseEnt 8 "$qa[0]" context o []
 >        [ hc
 >        | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "DELETE FROM" . declarations) o
->        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>        , suitable toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >        , source toExpr/=concept o && target toExpr/=concept o
 >        ]
 >     , chain "\n"
@@ -526,7 +521,7 @@ It is compared to the desired state,
 >       phpCodeUpdHornClauseEnt 8 context o []
 >        [ (CR(fOps, e, bOp, toExpr, frExpr, rule))
 >        | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "UPDATE" . declarations) o
->        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>        , suitable toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >        ]
 >     ] where relStrings
 >              = [if target s==source s
@@ -578,7 +573,7 @@ It is compared to the desired state,
 >     , phpCodeIncrHornClauseEnt 8 "$qa[0]" context o []
 >        [ hc
 >        | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "DELETE FROM" . declarations) o
->        , suitable toExpr, null [e| e<-mors frExpr, isSignal (declaration e)]
+>        , suitable toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >        , source toExpr/=concept o && target toExpr/=concept o
 >        ]
 >     , if null dms then "" else phpIndent i++
@@ -631,7 +626,7 @@ It is compared to the desired state,
 >  phpCodeIncrHornClauseEnt :: Int -> String -> Context -> ObjectDef -> [Morphism] -> [ComputeRule] -> String
 >  phpCodeIncrHornClauseEnt i var context o filled [] = ""
 >  phpCodeIncrHornClauseEnt i var context o filled (hc@(CR(fOps, e, "INSERT INTO", toExpr, frExpr, rule)): rest)
->   = ( phpIndent (i-3)++"// "++informalRule hc++(if isSignal (declaration m) then " (SIGNAL)" else "")++
+>   = ( phpIndent (i-3)++"// "++informalRule hc++(if isSignal (makeDeclaration m) then " (SIGNAL)" else "")++
 >       phpIndent (i-3)++"// ("++showADL rule++".  "++explain rule++")"++
 >     (if pNoDebug then "" else
 >      phpIndent (i-3)++"// inside phpCodeIncrHornClauseEnt i {- var: -} "++show var++" context "++name (concept o)++" {- filled: -} "++show filled++
@@ -667,7 +662,7 @@ It is compared to the desired state,
 >           flipper ms = ms `uni` map flp ms
 >           sub = (mors o `isc` flipper (mors frExpr))>-filled
 >  phpCodeIncrHornClauseEnt i var context o filled (hc@(CR(fOps, e, "DELETE FROM", toExpr, frExpr, rule)):rest)
->   = "\n     // "++informalRule hc++(if null (morlist toExpr) then "null (morlist toExpr)" else if isSignal (declaration m) then " (SIGNAL)" else "")++
+>   = "\n     // "++informalRule hc++(if null (morlist toExpr) then "null (morlist toExpr)" else if isSignal (makeDeclaration m) then " (SIGNAL)" else "")++
 >     phpIndent i++
 >     (if oneMorphism toExpr
 >      then phpIndent i++"/* case 2 */ DB_doquer("++
@@ -684,7 +679,7 @@ It is compared to the desired state,
 >  phpCodeUpdHornClauseEnt :: Int -> Context -> ObjectDef -> [Morphism] -> [ComputeRule] -> String
 >  phpCodeUpdHornClauseEnt i context o filled [] = ""
 >  phpCodeUpdHornClauseEnt i context o filled (hc@(CR(fOps, e, bOp, toExpr, frExpr, rule)): rest)
->   = ( phpIndent (i-3)++"// "++informalRule hc++(if isSignal (declaration (head (mors toExpr))) then " (SIGNAL)" else "")++
+>   = ( phpIndent (i-3)++"// "++informalRule hc++(if isSignal (makeDeclaration (head (mors toExpr))) then " (SIGNAL)" else "")++
 >       phpIndent (i-3)++"// ("++showADL rule++".  "++explain rule++")"++
 >       (if pNoDebug then "" else
 >        phpIndent (i-3)++"// inside phpCodeUpdHornClauseEnt i context "++name (concept o)++" {- filled: -} "++show filled++
@@ -751,7 +746,7 @@ It is compared to the desired state,
 >  phpCodeIncrHornClauseRel attrs i context r hc@(CR(fOps, e, "DELETE FROM", toExpr, frExpr, rule))
 >   = (if pNoDebug then "" else
 >      phpIndent (i-3)++"// inside phpCodeIncrHornClauseRel:"++
->   -- phpIndent (i-3)++"// r="++show (name r)++"; substitutions="++show [(m,phpMorSrc context m,phpMorTrg context m)| m<-mors e, declaration m==r]++";"++
+>   -- phpIndent (i-3)++"// r="++show (name r)++"; substitutions="++show [(m,phpMorSrc context m,phpMorTrg context m)| m<-mors e, makeDeclaration m==r]++";"++
 >      phpIndent (i-3)++"// fOps="++show fOps++"; e="++showADL e++"; bOp=INSERT INTO; toExpr="++showADL toExpr++"; frExpr="++showADL frExpr++
 >      phpIndent (i-3)++"// m = "++showADL m++", m' = "++showADL m')++
 >     if oneMorphism frExpr

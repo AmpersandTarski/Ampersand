@@ -11,28 +11,10 @@ import Classification
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
 import ADLdef
-import CC_aux 
-         (  Declaration(Sgn, Vs, Isn, Iscompl)
-          , Rule(Ru,Sg,Gc)
-          , Gen(G)
-          , declarations
-          , Expressions
-          , Pattern(Pat)
-          , posNone
-          , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx)
-          , Morphic(isIdent), Gens, Declarations, GenR, Contexts
-          , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
-          , showADL, source, target, idsOnly, concs, showHS
-          , Morphism(Mph,I,V)
-          , contents, put_gE, makeConceptSpace, pMeaning
-          , FilePos(FilePos), ConceptDefs, Concepts, concept
-          , Pairs, Paire, Rules, Morphisms, Patterns
-          , sign, anything, shSigns, gEtabG, order, flp
-          , isMph, mIs
-          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs, Population(Popu), Populations
-          , nr, pos, multiplicities, declaration, renumberRules
-          , inline, extends
-         )
+import CC_aux (showADL, showHS,order,makeConceptSpace, put_gE
+              , renumberRules,pMeaning,shSigns,anything
+              , mIs,gEtabG)
+
 
 diagl = 17
 diagc = 0
@@ -1665,7 +1647,7 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
             ++".\n"
           | null _signs, t<-map snd _ctx_signs ]++
           [ "17 on "++show _pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
-            ++(showADL.ctx) e++ " on " ++(show . CC_aux.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . CC_aux.pos . ctx) e'
+            ++(showADL.ctx) e++ " on " ++(show . ADLdef.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . ADLdef.pos . ctx) e'
             ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
             ++ "\n (" ++(showADL.ctx) e++ " and " ++(showADL.ctx) e'++ " do not match."
             ++ "\n"

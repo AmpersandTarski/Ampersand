@@ -2,7 +2,7 @@
 >  import Char
 >  import Auxiliaries
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
->  import CC_aux (ObjectDef(Obj), ObjDefs, KeyDef(Kd), KeyDefs, Object(concept, attributes, ctx))
+>  import ADLdef (Object(attributes))
 >  import CommonClasses (Identified(name))
 >  import PredLogic -- (for error messages by dbCorrect)
 >  import Hatml     -- (for converting error messages to HTML)

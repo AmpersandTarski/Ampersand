@@ -16,19 +16,13 @@
 >  import Auxiliaries (chain, eqCl)
 
 >  import ADLdef
->  import CC_aux 
->           (  Concept, Rule(Ru,Sg)-- , Context
->            , showADL
->            , Morphic(isIdent)
->            , Morphism(I,V)
->            , Expression(Fu,Fi,Fd,F,Tm,Cp)
->            , Prop(Uni,Tot,Inj,Sur)
->            , inline,idsOnly,isNot,explain 
->            , applyM, declaration, source, target
->            , lub, sur, inj, fun, tot, sign
->            , multiplicities, ruleType, antecedent, mkVar
->            , consequent, order, isNeg, notCp, morlist, showHS
->            , mors, mIs, flp
+>  import CC_aux ( showADL
+>                , explain 
+>                , applyM 
+>                , lub, sur, inj, fun, tot 
+>                , mkVar
+>                , order, showHS
+>                , mIs 
 >           )
 >  import Languages (Lang(English,Dutch), plural)
 >--  import Calc
@@ -104,11 +98,11 @@ Het opmaken van regels in predikaatlogica
 
 >  lang :: Lang -> PredLogic -> String
 >  lang English x = predLshow ("For all", "There exists", implies, "is equivalent to", "equals", "is unequal to", "or", "and", "not", rel, fun, langVars English, "\n  ", " ") x
->                   where rel m lhs rhs = applyM (declaration m) lhs rhs
+>                   where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
 >                         fun m x = name m++"("++x++")"
 >                         implies antc cons = "If "++antc++", then "++cons
 >  lang Dutch   x = predLshow ("Voor elke", "Er is een", implies, "is equivalent met", "gelijk aan", "is ongelijk aan", "of", "en", "niet", rel, fun, langVars Dutch, "\n  ", " ") x
->                   where rel m lhs rhs = applyM (declaration m) lhs rhs
+>                   where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
 >                         fun m x = name m++"("++x++")"
 >                         implies antc cons = "Als "++antc++", dan "++cons
 
@@ -131,7 +125,7 @@ The following function prints a PredLogic in OO notation.
 
 >  objOrShow :: PredLogic -> String
 >  objOrShow = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars English, "\n", " ")
->              where rel m lhs rhs = applyM (declaration m) lhs rhs
+>              where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
 >                    fun m x = x++"."++name m
 >                    implies antc cons = "IF "++antc++" THEN "++cons
 
@@ -153,8 +147,8 @@ The following function prints a PredLogic in OO notation.
   objOrShow (Pred nm v) = v++"."++nm
   objOrShow (Rel lhs m rhs)
    = if inline m
-     then applyM (declaration m) (objOrShow lhs) (objOrShow rhs)
-     else applyM (declaration m) (objOrShow rhs) (objOrShow lhs)
+     then applyM (makeDeclaration m) (objOrShow lhs) (objOrShow rhs)
+     else applyM (makeDeclaration m) (objOrShow rhs) (objOrShow lhs)
   objOrShow (Funs x [])     = x
   objOrShow (Funs x (m:ms)) = if isIdent m then objOrShow (Funs x ms) else objOrShow (Funs (x++"."++name m) ms)
 

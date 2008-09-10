@@ -145,7 +145,7 @@ De nu volgende analyse produceert een conceptueel datamodel.
 >     chain sep (introG++nodesPlaces) ++
 >     "\n   }"
 >     where
->       ms = declarations context >- map declaration (mors (closExprs context))
+>       ms = declarations context >- map makeDeclaration (mors (closExprs context))
 >       (entities,relations,ruls) = erAnalysis context
 >       attrs = [a| e<-entities, a<-attributes e]
 >       sep = "\n   ; "
@@ -183,7 +183,7 @@ De nu volgende analyse produceert een conceptueel datamodel.
 >     chain sep (introG++nodesPlaces) ++
 >     "\n   }"
 >     where
->       ms = declarations context >- map declaration (mors (closExprs context))
+>       ms = declarations context >- map makeDeclaration (mors (closExprs context))
 >       (entities,relations,ruls) = erAnalysis context
 >       sep = "\n   ; "
 >       concepts = [nm| Obj nm pos ctx ats<-attributes context] -- all concepts

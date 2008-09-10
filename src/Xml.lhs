@@ -5,8 +5,7 @@
 >  import Auxiliaries
 >         ( chain, sort') 
 >  import ADLdef
->  import CC_aux ( rules, conceptDefs, concs, patterns
->                , explain, showADL)
+>  import CC_aux ( explain, showADL)
 
 >  makeXML contexts contextname
 >   = putStr ("\nXML representation of "++name context++"\n")>>
@@ -126,7 +125,7 @@ Basic XML markup
 >     (union,inter,rAdd,rMul,clos0,clos1,compl,flip,rel)
 >      = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
 >     showX (Tm m) ind  = if inline m then t ind else tagLn ind flip [] t
->                         where d = declaration m
+>                         where d = makeDeclaration m
 >                               t ind = tag ind rel [ "NAME="++show (name d), "SRC="++(show.name.source) d, "TRG="++(show.name.target) d ] ""
 >     showX (Fu []) ind = tagLn ind compl [] (\ind->tag ind rel [ "NAME=V" ] "")
 >     showX (Fu[f]) ind = showX f ind

@@ -8,9 +8,8 @@
 > where
 
 >  import ADLdef
->  import CC_aux ( ShowHS(showHS,showHSname)
->                , Morphical(conceptDefs, mors,morlist, declarations,genE,closExprs)
->                , concs)
+>  import CC_aux ( ShowHS (showHS,showHSname)
+>                )
 >  import CommonClasses(DataStruct(..),Identified(name))
 >  import Auxiliaries
 
@@ -189,7 +188,7 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >   showHSname funit = typ funit ++ "_" ++ showHS "" (fsid funit) --"f_Unit_"++showHS "" (fsid funit)
 >   showHS indent funit
 >    = "Uspc "++showHS "" (fsid funit)++" ("++showHSname (pattern funit)++" gE)"
->      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") o| o<-objDefs(funit)]++indent++"     ]"
+>      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") o| o<-FspecDef.objDefs(funit)]++indent++"     ]"
 >      ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
 
 >  pattern  (Uspc _ pat _ _) = pat

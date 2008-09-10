@@ -1,7 +1,7 @@
 > module ObjBinGen where
 >  import Directory
 >  import Auxiliaries
->  import CC_aux
+>  import ADLdef
 >  import CommonClasses
 >  import ObjBinGenLocalsettings
 >  import ObjBinGenConnectToDataBase

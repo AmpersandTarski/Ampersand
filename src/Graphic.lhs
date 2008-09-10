@@ -3,21 +3,21 @@
 >  import CommonClasses ( Identified(name) )
 >  import Collection (Collection(rd))
 >  import Auxiliaries (chain, eqClass, sort)
->  import ADLdef --( Context, Pattern
->                --, isMph, isSignal, declaration
->                --, flp, inline, posNone
->                --, source, target
->                --, multiplicities
->                --)
->  import CC_aux ( order
+>  import ADLdef ( Context,Pattern(..),ctxpats
+>                , Rule(Ru),sign
+>                , Expression(..)
+>                , isMph, isSignal, makeDeclaration
+>                , flp, inline, posNone
+>                , source, target
+>                , multiplicities
+>                , union
+>                , Morphism(..)
 >                , concs
 >                , declarations
 >                , mors
 >                , specs
->                , isProperty
->                , tot, inj, sur, fun
->                , union
 >                )
+>  import CC_aux (order,isProperty,tot,inj,sur,fun)
 >  import Typology ( Inheritance(Isa) )
 >  import HtmlFilenames (fnConcept,fnRelation)
 >  import System (system, ExitCode(ExitSuccess,ExitFailure))
@@ -44,7 +44,7 @@
 >      where
 >        cpts = rd(concs pat++concs (declarations (mors pat))) -- SJ: 2007/9/14: when ISA's are treated as first class relations, remove the concs (declarations pat)
 >        isas = [(p,c)| p<-cpts, c<-cpts, p<c ]
->        arcs = rd ([m'|m<-mors pat++mors(specs pat), isMph m, not (isSignal (declaration m)), not (isProperty m)
+>        arcs = rd ([m'|m<-mors pat++mors(specs pat), isMph m, not (isSignal (makeDeclaration m)), not (isProperty m)
 >                   {- , take 5(name m)/="Clos_"  -}
 >                      , m'<-[m,flp m], inline m']++
 >                   [Mph (name d) posNone [source d,target d] (source d,target d) True d
@@ -122,15 +122,15 @@
 >                                            line 2 py px "0.5" "" ++ newline ++
 >                                            line 3 px pz "0.5" "" ++ newline ++
 >                                            line 4 pz pb "0.7" ""
->                   | style=="crowfoot"    = newline ++ line 0 pa pb "2.7" (relatielabel (declaration m))
+>                   | style=="crowfoot"    = newline ++ line 0 pa pb "2.7" (relatielabel (makeDeclaration m))
 >                   | otherwise            = newline ++
 >                                            point 1 px   ++ newline ++
 >                                            line 5 pa px "1.3" "" ++ newline ++
 >                                            line 6 px pb "1.3" ""
 >             where
 >                --- Definities van de namen van de diverse punten:
->                s  = source (declaration m)
->                t  = target (declaration m)
+>                s  = source (makeDeclaration m)
+>                t  = target (makeDeclaration m)
 >                pa = name s
 >                pb = name t
 >                px = name m ++ name s ++ name t
@@ -138,7 +138,7 @@
 >                pz = name m ++ name s ++ name t ++ "*z*"
 >                --- Definities van de diverse soorten styles voor punten:
 >                point 1 p =  quote p ++ onzichtbaarpuntje ++ newline ++
->                             quote (p++"*x*") ++ " [" ++ relatielabel (declaration m) ++ "]" ++ newline ++
+>                             quote (p++"*x*") ++ " [" ++ relatielabel (makeDeclaration m) ++ "]" ++ newline ++
 >                             quote p ++ edgearrow ++ quote (p++"*x*") ++ onzichtbaarlijntje 50
 >                point 2 p =  quote p ++ onzichtbaarpuntje
 >                line s p1 p2 len lbl = quote p1 ++ edgearrow ++ quote p2 ++ linestyle s len lbl

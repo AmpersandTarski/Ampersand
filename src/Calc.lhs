@@ -55,11 +55,11 @@
 >             "Triggers from objects: \n     "++
 >             chain "\n     " [name c++"("++chain ", "[name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):"++
 >                              condNull ("\n  Rules for Insert transactions\n    ") (chain "\n    ") informalRule 
->                               (computeOrder hcs "INSERT INTO" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntCreate
+>                               (computeOrder hcs "INSERT INTO" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntCreate
 >                              condNull ("\n  Rules for Update transactions\n    ") (chain "\n    ") informalRule 
->                               (computeOrder hcs "UPDATE"              (map declaration (mors o)))++          -- taken from phpCodeEntUpdate
+>                               (computeOrder hcs "UPDATE"              (map makeDeclaration (mors o)))++          -- taken from phpCodeEntUpdate
 >                              condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
->                               (computeOrder hcs "DELETE FROM" (Isn c c:map declaration (mors o)))++          -- taken from phpCodeEntDelete
+>                               (computeOrder hcs "DELETE FROM" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntDelete
 >                              "\n"
 >                             | o<-attributes context, c<-[concept o]]) >>
 >     putStr "\n--------------\n"
@@ -1350,7 +1350,7 @@ Warshall's algorithm to construct deductions:
 >            ++ "\n   }"
 >      where
 >        introG = "\n   { bgcolor=transparent"++newline
->              ++ " { node [shape=box,fontsize=18,font=helvetica] "++chain "; " [quote(showNode (Dn p e))| (Dn p e)<-nodes links, oneMorphism e, m<-mors e, inline m, p `elem` multiplicities (declaration m)]++" }"++newline
+>              ++ " { node [shape=box,fontsize=18,font=helvetica] "++chain "; " [quote(showNode (Dn p e))| (Dn p e)<-nodes links, oneMorphism e, m<-mors e, inline m, p `elem` multiplicities (makeDeclaration m)]++" }"++newline
 >              ++ "node [shape=plaintext,fontsize=18,font=helvetica]"++newline
 >              ++ "edge [fontsize=12,arrowsize=0.8]"
 >        nodes links = rd ([ Dn pa antc | Deduce clause (Dn pa antc) (Dn pc cons)<-links]++

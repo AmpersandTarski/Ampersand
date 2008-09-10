@@ -69,18 +69,9 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >  import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
 >  import Typology
 >  import ADLdef
->  import CC_aux ( ShowHS(showHSname, showHS)
->                , Object() 
->                , patterns, rules, mors, concs
->                , conceptDefs, attributes, morlist
->                , declarations, extends, isa
->                , populations, isFunction
->                , Morphical(genE,closExprs), concept
->                , ctx, mIs, isPos, showADL
->                , keys, objDefs, declaredRules, isSgn
->                , applyM
->                , signals, conts, explain
->                , specs, contents, fEmpty
+>  import CC_aux( ShowHS(showHSname, showHS)
+>                , mIs, showADL, isSgn
+>                , applyM ,conts, explain, fEmpty
 >                )
 >  import Calc
 >  import PredLogic
@@ -622,7 +613,7 @@ Te bepalen:
 >          (dressRules [ (clause,rule)
 >                      | (conj,rule)<-clauses
 >                      , clause@(Fu terms)<-[lClause conj]
->                      , r `elem` map declaration (mors [t| Cp t<-terms])])
+>                      , r `elem` map makeDeclaration (mors [t| Cp t<-terms])])
 >          [] ["("++s++","++t++")\\ \\in\\ "++idName r]
 >     where varName = uName (map name [source r, target r])
 >           s = if homogeneous r then tt "s" else (tt.varName.name.source) r
@@ -649,7 +640,7 @@ Te bepalen:
 >          [ (clause,rule)
 >          | (conj,rule)<-clauses
 >          , clause@(Fu terms)<-[rClause conj]
->          , r `elem` map declaration (mors [t| t<-terms, isPos t])])
+>          , r `elem` map makeDeclaration (mors [t| t<-terms, isPos t])])
 >          [] [if isIdent r then s++"\\not ="++t else "("++s++","++t++")\\ \\not\\in\\ "++idName r]
 >     where varName = uName (map name [source r, target r])
 >           s = if homogeneous r then tt "s" else (tt.varName.name.source) r
@@ -925,12 +916,12 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
             ["\\ref{sgn:"++firstCaps(name pat++":"++name d++name (source d)++name (target d))++"}" | d<-decls]++".\n"
          )++str2++
          chain "\n\n"
-           [ srvSchema pat language (name pat) spc [m|m<-new, not (m `elem` attrs), declaration m `elem` newdecs]
+           [ srvSchema pat language (name pat) spc [m|m<-new, not (m `elem` attrs), makeDeclaration m `elem` newdecs]
            | (spc,new)<-zip specs (firsts [] [ [m|m<-mors rs, isMph m]
                                              | Sspc nm sees changes fpa input output rs pre post<-specs ])
            ]
         where attrs = [ a | (o,fpa,ms,ers)<-car, a<-attributes o]
-              decls = (rd .map declaration.mors) attrs
+              decls = (rd .map makeDeclaration.mors) attrs
 
 >      captiontext English pat
 >       = "\n\\caption{Data structure of "++(addSlashes.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
@@ -1038,7 +1029,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >     where
 >      facts = [ (d,s,t,tt.uName [s,t]
 >                )
->              | (d,ms)<-[(declaration (head cl), cl)| cl<-eqCl declaration new]
+>              | (d,ms)<-[(makeDeclaration (head cl), cl)| cl<-eqCl makeDeclaration new]
 >              , applyM d "" "" /= ""
 >              , s<-[if homogeneous d then "src_"++name (source d) else name (source d)]
 >              , t<-[if homogeneous d then "trg_"++name (target d) else name (target d)]
@@ -1634,7 +1625,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >    = lIntro language++concat
 >        [ "\n\\begin{document}"
 >        , if language==English then "\n" else "\n\\selectlanguage{dutch}\n"
->        , chain "\n" [lglos language c| c<-(rd' name . preCl . Cl context . wrld) context]
+>        , chain "\n" [lglos language c| c<-(rd' name . preCl . Cl context . ctxwrld) context]
 >        , "\n\\end{document}"
 >        ]
 
@@ -1644,7 +1635,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >    = lIntro language++concat
 >        [ "\n\\begin{document}"
 >        , if language==English then "\n" else "\n\\selectlanguage{dutch}\n"
->        , chain "\n" [lshow language c| c<-(rd' name . preCl . Cl context . wrld) context]
+>        , chain "\n" [lshow language c| c<-(rd' name . preCl . Cl context . ctxwrld) context]
 >        , "\n\\end{document}"
 >        ]
 
@@ -1653,7 +1644,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >    = lIntro language++concat
 >        [ "\n\\begin{document}"
 >        , if language==English then "\n" else "\n\\selectlanguage{dutch}\n"
->        , chain "\n" [archShow language c| c<-(rd' name . preCl . Cl context . wrld) context]
+>        , chain "\n" [archShow language c| c<-(rd' name . preCl . Cl context . ctxwrld) context]
 >        , "\n\\end{document}"
 >        ]
 

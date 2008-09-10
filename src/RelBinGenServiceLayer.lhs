@@ -2,7 +2,8 @@
 >  import Char(toLower)
 >  import Auxiliaries(commaNL,chain,eqCl,adlVersion,sord,eqClass)
 >  import Calc(conjNF, triggers)
->  import CC_aux
+>  import ADLdef
+>  import CC_aux(showADL,applyM,showHS)
 >  import CommonClasses
 >  import Collection(Collection(rd))
 >  import ERmodel
@@ -53,8 +54,8 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                     ++ ", door (\\'"++d++"\\',\\'"++c++"\\') te wijzigen of te verwijderen"
 >         else "Maak de zin \\'"++
 >              ( if inline m
->                then applyM (declaration m) (charshow lhs) (charshow rhs)
->                else applyM (declaration m) (charshow rhs) (charshow lhs)
+>                then applyM (makeDeclaration m) (charshow lhs) (charshow rhs)
+>                else applyM (makeDeclaration m) (charshow rhs) (charshow lhs)
 >              )++ "\\' onwaar, door (\\'"++d++"\\',\\'"++c++"\\') te verwijderen uit "++name m
 >         -}
 >      charshow (Rel lhs m rhs)
@@ -64,8 +65,8 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >              charshow (Funs d [m| t<-lhs, m<-mors t])++" gelijk wordt aan "++charshow rhs
 >         else "Maak de zin \\'"++
 >              ( if inline m
->                then applyM (declaration m) (charshow lhs) (charshow rhs)
->                else applyM (declaration m) (charshow rhs) (charshow lhs)
+>                then applyM (makeDeclaration m) (charshow lhs) (charshow rhs)
+>                else applyM (makeDeclaration m) (charshow rhs) (charshow lhs)
 >              )++ "\\' waar door (\\'"++c++"\\',\\'"++d++"\\') toe te voegen aan "++name m
 >          -}
 >      charshow (Not rs) = "niet ("++charshow rs++")"
@@ -82,14 +83,14 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >       = if False -- nog corrigeren. was:   isIdent e
 >         then chrShw lhs++" is gelijk aan "++chrShw rhs
 >         else if inline m
->              then applyM (declaration m) (chrShw lhs) (chrShw rhs)
->              else applyM (declaration m) (chrShw rhs) (chrShw lhs)
+>              then applyM (makeDeclaration m) (chrShw lhs) (chrShw rhs)
+>              else applyM (makeDeclaration m) (chrShw rhs) (chrShw lhs)
 >      chrShw (Not (Rel lhs m rhs))
 >       = if False -- nog corrigeren. was:   isIdent e
 >         then chrShw lhs++" is ongelijk aan "++chrShw rhs
 >         else "niet ("++(if inline m
->                         then applyM (declaration m) (chrShw lhs) (chrShw rhs)
->                         else applyM (declaration m) (chrShw rhs) (chrShw lhs)
+>                         then applyM (makeDeclaration m) (chrShw lhs) (chrShw rhs)
+>                         else applyM (makeDeclaration m) (chrShw rhs) (chrShw lhs)
 >                        )++")"
 >      chrShw r = charshow r
 

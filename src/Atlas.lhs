@@ -12,13 +12,10 @@
 >            ,Typology(Typ), Typologic(typology)
 >            ,makeTrees)
 >  import ADLdef
->  import CC_aux ( showHS
->                , isa, genE, concs, declarations
->                , patterns, declaredRules, rules
->                , contents, explain, showADL
+>  import CC_aux ( showHS, explain, showADL
 >                , conts, dom, cod
->                , signals, conceptDefs, clearG
->                , subst, specs, idsOnly, applyM, mors
+>                , clearG
+>                , applyM
 >                )
 >  import Languages(Lang(English), plural)
 >--  import Calc  -- only because of two calls of subst
@@ -67,7 +64,7 @@
 >      cTrees   = makeTrees (Typ (map reverse pths))
 >      Typ pths = typology (isa context)
 >      gE    = genE context
->      world = wrld context
+>      world = ctxwrld context
 >      contextFrame ctxTree@(Cl context cls)
 >       = htmlPage ("Code (0) for "++name context++" navigator")
 >                  (wrapCode (name context)
@@ -147,7 +144,7 @@
 >              sequence_ [traverse (trace++[r]) cl| cl<-nav]
 >              where fnm     = thisCtx++htmlNm e++htmlNm r
 >                    h       = htmlViewpoint context thisVpt vptPat e c predLogic
->                    vptPat  = inhViewpoint (Cl context (wrld context)) e r
+>                    vptPat  = inhViewpoint (Cl context (ctxwrld context)) e r
 >                    thisVpt = thisCtx++htmlNm e++htmlNm r
 >           thisCtx = fnContext context
 >           navCodeCtx :: Context -> String
@@ -779,7 +776,7 @@ test:  recalc context@(Ctx nm on isa world pats rs ds cs ks os pops) = Ctx (erro
 >  helptext a ams e b bms | idsOnly e = funnotate a ams ++ " "++hshow e++" " ++ funnotate b bms
 >                         | otherwise = applyM s (funnotate a ams) (funnotate b bms)++shCard s
 >   where
->     s = declaration (head (mors e))
+>     s = makeDeclaration (head (mors e))
 >     shCard s
 >      | null (multiplicities s) = ""
 >      | otherwise               = "\n(Properties: "++(chain ", " . map show ) (multiplicities s)++")"

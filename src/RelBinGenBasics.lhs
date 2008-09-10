@@ -2,9 +2,7 @@
 >  import Char
 >  import Auxiliaries
 >  import ADLdef
->  import CC_aux (Concept,isProperty
->                , mors, v, showADL,normExpr,ShowHS(showHS),notCp,isPos,isNeg,mIs,declarations
->                , closExprs,concs,Morphical,lub,rules,sIs,oneMorphism)
+>  import CC_aux ( isProperty, showADL,ShowHS(showHS),mIs,sIs,oneMorphism)
 >  import CommonClasses
 >  import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule(CR))
 >--  import MultRules
@@ -17,7 +15,7 @@
 >--           substitutions = [ if inline m
 >--                             then (m,phpMorSrc context m,phpMorTrg context m)
 >--                             else (m,phpMorTrg context m,phpMorSrc context m)
->--                           | m<-mors e, declaration m==r]
+>--                           | m<-mors e, makeDeclaration m==r]
 >--Het substitueren van een hele relatie met de ingetikte atomen vanuit de interface mag alleen maar onder condities, die we nog niet begrijpen. Vandaar.
 >--Zonder substituties rekent sqlCodeComputeRule dus met de hele relatie, en is daardoor minder efficient (maar wel correct).
 >--Een substitutie (m,s,t) betekent dat de relatie m wordt vervangen door twee atomen uit de interface, aangeduid met s en t.
@@ -526,8 +524,8 @@ However, we provide slightly more meaningful names, in order to facilitate readi
 >  sqlExprSrc (K0 e)   = sqlExprSrc e
 >  sqlExprSrc (K1 e)   = sqlExprSrc e
 >  sqlExprSrc (Tm (Mp1 _ t)) = "Att"++phpEncode (name t)
->  sqlExprSrc (Tm m) | inline m  = sqlRelSrc (declaration m)
->                    | otherwise = sqlRelTrg (declaration m)
+>  sqlExprSrc (Tm m) | inline m  = sqlRelSrc (makeDeclaration m)
+>                    | otherwise = sqlRelTrg (makeDeclaration m)
 >  sqlExprSrc e        = error ("unexhaustive pattern in RelBinGenBasics.lhs in sqlExprSrc for "++showHS "" e)
 
 >  sqlExprTrg :: Expression -> String
@@ -587,7 +585,7 @@ sqlMorTrg (r~:A*B) = "AttA"
 >   | homogeneous d             = "Trg"++phpEncode (name (target d))
 >   | inline m                  = "Att"++phpEncode (name (source d))
 >   | otherwise                 = "Att"++phpEncode (name (target d))
->   where d = declaration m
+>   where d = makeDeclaration m
 
 sqlMorSrc (r :A*A) = "SrcA"
 sqlMorSrc (r~:A*A) = "TrgA"
@@ -605,7 +603,7 @@ sqlMorTrg (r~:A*B) = "AttA"
 >   | homogeneous d             = "Src"++phpEncode (name (source d))
 >   | inline m                  = "Att"++phpEncode (name (target d))
 >   | otherwise                 = "Att"++phpEncode (name (source d))
->   where d = declaration m
+>   where d = makeDeclaration m
 
 
 >  sqlConcept :: Context -> Concept -> String
@@ -703,7 +701,7 @@ For the following functions, enc and dec, we have:
 >      | (CR(fOp, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [sIs c], isIdent toExpr
 >      , sign frExpr <= sign c
 >      , oneMorphism toExpr
->      , s<-mors toExpr, not (declaration s `elem` excludeRels)]
+>      , s<-mors toExpr, not (makeDeclaration s `elem` excludeRels)]
 
 >  dbDelConcept context i c atomVar
 >   = [' '| x<-[1..i]]++"DB_doquer('DELETE FROM "++sqlConcept context c++" WHERE "++sqlAttConcept context c++"=\\''.addslashes("++atomVar++").'\\' AND NOT EXISTS ("++chain " UNION " (["SELECT "++sqlRelSrc s++" FROM "++sqlRelName context s++" WHERE "++sqlRelSrc s++"=\\''.addslashes("++atomVar++").'\\'" | s<-declarations context, source s==c]++["SELECT "++sqlRelTrg s++" FROM "++sqlRelName context s++" WHERE "++sqlRelTrg s++"=\\''.addslashes("++atomVar++").'\\'" | s<-declarations context, target s==c])++")');"

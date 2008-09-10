@@ -1,7 +1,7 @@
 > module RelBinGenDatacloud where
 >  import Auxiliaries(chain,adlVersion)
 >  import Calc(conjNF, triggers)
->  import CC_aux
+>  import ADLdef
 >  import CommonClasses
 >  import Collection (Collection(rd))
 >  import ERmodel
