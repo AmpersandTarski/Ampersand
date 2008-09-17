@@ -16,6 +16,10 @@
 >  tt :: String -> String
 >  tt a = "{\\tt "++a++"}"
 
+>  chain :: String -> [String] -> String
+>  chain str [] = []
+>  chain str xs = foldl f (head xs) (tail xs) where f x y = x++str++y
+
 
 >  idNam :: String -> String
 >  idNam c = "\\id{"++concat [if c `elem` [' ','_'] then "\\ " else [c]| c<-firstCaps c]++"}"

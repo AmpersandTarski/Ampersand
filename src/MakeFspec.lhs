@@ -6,11 +6,11 @@
 
 >  import CommonClasses ( Identified(name))
 >  import Collection    ( Collection (isc,(>-),rd) )
->  import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass,chain)
+>  import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass)
 >  import Char(toLower)
->  import Strings(firstCaps,tt,idNam)
+>  import Strings(firstCaps,tt,idNam,chain)
 >  import ADLdef
->  import CC_aux (mIs,showADL)
+>  import CC_aux (showADL)
 >  import FspecDef
 
 >  import Calc(lClause,rClause,makeRule)
@@ -40,14 +40,14 @@
 >-- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
 >       pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
 >                [ (pat,length cns,ds)
->                | pat<-patterns context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
+>                | pat<-patterns context, ds<-datasets, cns<-map name (concsDS ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
 >-- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
 >-- The remaining concepts and datasets are determined in pcsds1.
 >-- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
 >       pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
 >                [ (pat,0-length ms,ds)
 >                | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
->                , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
+>                , ms<-[[m|m<-morlist pat, m `elem` morsDS ds || flp m `elem` morsDS ds]], not (null ms)
 >                ]
 >-- The remaining datasets will be discussed in the last theme
 >       remainingDS = datasets>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
@@ -55,9 +55,10 @@
 >        = Pat "Other topics" rs gen pms cs ks
 >          where rs  = []
 >                gen = []
->                pms = rd [d| ds<-remainingDS, d<-declarations ds]
+>                pms = rd [d| ds<-remainingDS, d<-declarationsDS ds]
 >                cs  = []
 >                ks  = []
+
 >   --    context' = Ctx nm on i world pats rs ds cs ks os pops
 >   --       where nm    = name context
 >   --             on    = extends context
@@ -73,6 +74,15 @@
 >-- The patterns with the appropriate datasets are determined:
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
+
+> -- Dataset cannot be made Morphical, because it would make it too dependant from ADL. For this reason the functions are defined as follows: 
+>  declarationsDS :: Dataset -> Declarations
+>  declarationsDS ds = declarations (morsDS ds)
+>  morsDS :: Dataset -> Morphisms 
+>  morsDS (DS c pths) = pths
+>  morsDS (BR m     ) = [m]
+>  concsDS :: Dataset ->  Concepts
+>  concsDS ds = concs (morsDS ds)
 
 Precondition: the list of datasets must contains functionally equivalent datasets.
 This means that if d,e are datasets in dgs, then there is a bijective function between root d and root e in mors pat.

@@ -50,27 +50,13 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >         )
 >  import Classification
 >   (  Classification(Cl, Bottom)
-> --  , root
-> --  , subs
-> --  , isBot
-> --  , recur
-> --  , restrict
-> --  , sortCl
-> --  , isDefinedIn
-> --  , makeClassifications
-> --  , makeClassificationsF
-> --  , locates
-> --  , locatesF
 >     , preCl
-> --  , postCl
-> --  , mapCl
-> --  , index
 >    )
 >  import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
 >  import Typology
 >  import ADLdef
 >  import CC_aux( ShowHS(showHSname, showHS)
->                , mIs, showADL, isSgn
+>                , showADL, isSgn
 >                , applyM ,conts, explain, fEmpty
 >                )
 >  import Calc

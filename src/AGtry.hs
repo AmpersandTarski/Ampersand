@@ -13,7 +13,7 @@ import Typology (Inheritance(Isa),genEq,typology)
 import ADLdef
 import CC_aux (showADL, showHS,order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
-              , mIs,gEtabG)
+              , gEtabG)
 
 
 diagl = 17

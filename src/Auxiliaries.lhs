@@ -3,9 +3,8 @@
 >  , encode, decode
 >  , unCap, upCap
 >  , fst3, snd3, thd3
->  , chain
+
 >  , showL
-> -- Verplaatst naar CommonClasses , rd
 >  , rEncode
 >  , commaEng
 >  , commaNL
@@ -26,10 +25,14 @@
 >  , fixSpaces
 >  , transpose
 >  , haskellIdentifier
+
+> -- transfer vanuit String:
+>  , chain
 > )
 > where
 >  import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper,digitToInt,intToDigit)
 >  import Collection (Collection(isc,uni,(>-),rd))
+>  import Strings (chain)
 
 >  adlVersion = "ADL vs. 0.8.10"
 >  encode :: String -> Int
@@ -178,10 +181,6 @@ Cartesian product by diagonalization of two (possibly infinite) lists
 >   = [x,y]: [[x,t]|t<-yt]++[[t,y]|t<-xt]++diag (x:xt) xs (y:yt) ys
 >  diag xt [] yt ys = [[t,y]|y<-ys, t<-xt]
 >  diag xt xs yt [] = [[x,t]|x<-xs, t<-yt]
-
->  chain :: String -> [String] -> String
->  chain str [] = []
->  chain str xs = foldl f (head xs) (tail xs) where f x y = x++str++y
 
 >  showL   :: [String] -> String
 >  showL xs = "["++chain "," xs++"]"

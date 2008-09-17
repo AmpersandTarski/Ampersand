@@ -1,59 +1,25 @@
 > module CC_aux ( explain
 >               ,  ShowADL(..)
 >               ,  ShowHS(..)
->    --        ( --Architecture,archContexts
->    --         Pattern(Pat)
->    --        , Declaration(Sgn, Vs, Isn, Iscompl)
->    --        , ConceptDef()
->    --        , ObjectDef(Obj), ObjDefs, Object(concept, attributes, ctx, populations, extends), KeyDef(Kd), KeyDefs
->    --        , Rule(Ru,Sg,Gc)
->    --        , Gen(G)
->    --        , Pairs
->    --        , Morphism(Mph,I,V,Mp1)
->    --        , Concept
->    --        , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx,Aut)
->    --        , Expressions
->    --        , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
->              , mIs
->              , sIs
->              , objectOfConcept
->              , pKey_pos
->              , pVarid_val_pos, pConid_val_pos
->    --        , Numbered(nr,pos)
->            , renumberRules
->            , isSgn
->            , fEmpty
->            , oneMorphism
->    --        , single
->    --        , Morphic(source, target, sign, multiplicities, flp, isIdent, isProp, isMph, isNot, isTrue, isFalse, isSignal{-, singleton-}, equiv, typeUniq)
->    --        , Morphical( concs, conceptDefs, mors, morlist, declarations, genE, closExprs, objDefs, keyDefs )
->    --        , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
->    --        , idsOnly,explain 
->              , applyM
->              , glb, lub
->              , sur, inj, fun, tot
->    --        , ruleType, antecedent
->              , mkVar
->              , Calc(calc)
->    --        , ShowHS(showHSname,showHS)
->    --        , ShowADL(showADL)
->    --        , consequent
->              , order
->              , isProperty 
->    --        , Population(Popu), Populations
->              , Pop(update, put_gE)
->    --        , Gens, Declarations, GenR, Contexts
->    --        , contents
->              , makeConceptSpace , pMeaning
->    --        , FilePos(FilePos), ConceptDefs, Concepts
->    --        , Paire, Rules, Morphisms, Patterns
->              , anything, shSigns, gEtabG
->    --        , cpu
-
->    --        , src, trg
->            , conts , cod, clearG, dom
-
->            , showFullRelName
+>               , objectOfConcept
+>               , pKey_pos
+>               , pVarid_val_pos, pConid_val_pos
+>               , renumberRules
+>               , isSgn
+>               , fEmpty
+>               , oneMorphism
+>               , applyM
+>               , glb, lub
+>               , sur, inj, fun, tot
+>               , mkVar
+>               , Calc(calc)
+>               , order
+>               , isProperty 
+>               , Pop(update, put_gE)
+>               , makeConceptSpace , pMeaning
+>               , anything, shSigns, gEtabG
+>               , conts , cod, clearG, dom
+>               , showFullRelName
 >  ) where
 >  import Char (toLower)
 >  import UU_Scanner
@@ -73,6 +39,7 @@
 >            ( Classification(),preCl,mapCl
 >            )
 >  import Typology ( Inheritance(Isa), Typologic, genEq, typology)
+>  import ADLdataDef
 >  import ADLdef
 
 TODO:
@@ -114,10 +81,6 @@ I[Person] = ssn;ssn~
 I[Person] = name;name~ /\ birthDate;birthDate~ /\ cityOfBirth;cityOfBirth~
 
 
-
->  mIs :: Concept -> Morphism
->  mIs c = I [] c c True
->  sIs c = Isn c c
 
 >  dom, cod :: Declaration -> [String]
 >  dom s = rd [src l| l<-contents s]

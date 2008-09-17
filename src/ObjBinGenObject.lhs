@@ -4,7 +4,6 @@
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import ADLdef
 >  import CC_aux ( showADL
->                , mIs
 >                , tot, fun
 >                , objectOfConcept
 >                )

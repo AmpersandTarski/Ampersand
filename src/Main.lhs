@@ -161,7 +161,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >  showHaskell_old contexts contextname
 >   = putStrLn ("\nGenerating Haskell source code for "++name context) >>
 >     writeFile (ctxNm++"_old.lhs")
->               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import CC_aux\n>  import Fspec\n\n"
+>               ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import ADLdef\n>  import CC_aux (showHS)\n>  import Fspec\n\n"
 >                ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
 >                ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
 >                ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
@@ -173,6 +173,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >      spcNm = showHSname fspec
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
+
 >  showHaskell_new :: Fspc -> IO ()
 >  showHaskell_new fspc
 >   = putStrLn ("\nGenerating Haskell source code for "++name fspc) >>
@@ -181,7 +182,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >            ++"\n>  import UU_Scanner"
 >            ++"\n>  import Classification"
 >            ++"\n>  import Typology"
->            ++"\n>  import CC_aux"
+>            ++"\n>  import ADLdef"
+>            ++"\n>  import CC_aux (showHS)"
 >            ++"\n>  import FspecDef"
 >            ++"\n"
 >            ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName++")"

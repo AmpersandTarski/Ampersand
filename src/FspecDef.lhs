@@ -7,11 +7,12 @@
 
 > where
 
->  import ADLdef
+>  import ADLdataDef
 >  import CC_aux ( ShowHS (showHS,showHSname)
 >                )
 >  import CommonClasses(DataStruct(..),Identified(name))
->  import Auxiliaries
+>  import Auxiliaries(showL,haskellIdentifier)
+>  import Strings(chain)
 
 >  data Fspc = Fspc -- Fctx 
 >               FSid          -- The name of the specification
@@ -88,21 +89,22 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >                    [Morphism]  -- the functions from the root
 >               | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
 
->  instance Morphical Dataset where
->   concs        (DS c pths) = concs pths
->   concs        (BR m     ) = concs m
->   conceptDefs  (DS c pths) = []
->   conceptDefs  (BR m     ) = []
->   mors         (DS c pths) = pths
->   mors         (BR m     ) = [m]
->   morlist      (DS c pths) = pths
->   morlist      (BR m     ) = [m]
->   declarations (DS c pths) = declarations pths
->   declarations (BR m     ) = declarations m
->   genE         (DS c pths) = genE c
->   genE         (BR m     ) = genE m
->   closExprs    (DS c pths) = []
->   closExprs    (BR m     ) = []
+> --XXX Dataset moet niet Morphical zijn, want dan heeft het te veel verwevenheid met ADL.
+> -- instance Morphical Dataset where
+> --  concs        (DS c pths) = concs pths
+> --  concs        (BR m     ) = concs m
+> --  conceptDefs  (DS c pths) = []
+> --  conceptDefs  (BR m     ) = []
+> --  mors         (DS c pths) = pths
+> --  mors         (BR m     ) = [m]
+> --  morlist      (DS c pths) = pths
+> --  morlist      (BR m     ) = [m]
+> --  declarations (DS c pths) = declarations pths
+> --  declarations (BR m     ) = declarations m
+> --  genE         (DS c pths) = genE c
+> --  genE         (BR m     ) = genE m
+> --  closExprs    (DS c pths) = []
+> --  closExprs    (BR m     ) = []
 >  -- Is dit een ommissie hier? objDefs, keyDefs zijn niet gedefinieerd voor DataSet...
 
 >  instance Fidentified Dataset where
@@ -113,6 +115,11 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 
 >  instance Fidentified Morphism where
 >    fsid m = FS_id (name m++name (source m)++name(target m))  --Hier moet nog goed naar worden gekeken....
+>        where 
+>          source (Mph nm pos atts (a,b) _ s) = a
+>          source m = error ("FspecDef.lhs : Cannot evaluate the source expression of the current morphism (yet)")
+>          target (Mph nm pos atts (a,b) _ s) = b    
+>          target m = error ("FspecDef.lhs : Cannot evaluate the target expression of the current morphism (yet)")
 >    typ m  = "f_morph"
 >  instance Fidentified Concept where
 >    fsid c = FS_id (name c)

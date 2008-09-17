@@ -34,9 +34,12 @@
 >               , Numbered(..)
 >               , FilePos(..),posNone
 >               , Substitutive(..)
+>               , mIs
+>               , sIs
 >               ) 
 > where
 >
+>  import ADLdataDef
 >  import CommonClasses ( Identified(name)
 >                       , ABoolAlg(glb,lub,order)
 >                       , Explained(explain)
@@ -46,33 +49,10 @@
 >  import Typology ( Inheritance(Isa), Typologic(typology), genEq)
 >  import Classification ( Classification(),preCl,mapCl)
 >  import Collection (Collection (uni,isc,(>-),empty,rd))
->  import UU_Scanner (Pos(Pos),Token(Tok),noPos)
+>  import UU_Scanner (Pos(Pos))
 >  import Auxiliaries (chain, eqClass, enumerate, sort', clos1,diag,eqCl) 
 
 
->  data Architecture = Arch { archContexts :: Contexts} -- deriving Show
->
-
->  type Contexts  = [Context]
->  data Context   
->     = Ctx { ctxnm    :: String     -- name of this context
->           , ctxon    :: [String]   -- the list of context names of contexts whose rules are imported
->           , ctxisa   :: (Inheritance Concept)     -- a data structure containing the generalization structure of concepts
->           , ctxwrld  :: [Classification Context]  -- a tree, being the transitive closure of the 'extends' (see formal definition) relation.
->           , ctxpats  :: Patterns                  -- a list of patterns defined in this context
->           , ctxrs    :: Rules                     -- a list of all rules that are valid within this context
->           , ctxds    :: Declarations              -- a list of declarations defined in this context, outside the scope of patterns
->           , ctxcs    :: ConceptDefs               -- a list of concept definitions defined in this context, outside the scope of patterns
->           , ctxks    :: KeyDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
->           , ctxos    :: ObjDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
->           , ctxpops  :: Populations               -- a list of populations defined in this context
->           } 
-
->               --    deriving Show -- just for testing. pattern:  Ctx nm on i world pats rs ds cs ks os pops
->--  instance Eq Context where
->--   Ctx nm _ _ _ _ _ _ _ _ _ _ == Ctx nm' _ _ _ _ _ _ _ _ _ _ = nm == nm'
->  instance Identified Context where
->    name c = ctxnm c
 
 >  instance Key Context where
 >   keys context
@@ -113,14 +93,10 @@
 >   extends ctx = ctxon ctx
 
 
->  type Concepts  = [Concept]
->  data Concept      = C { cptnm   :: String
->                        , cptgE   :: GenR 
->                        , cptos   :: [String]  -- atoms
->                        }  -- C nm gE cs represents the set of instances cs by name nm.
->                    | S  -- the universal singleton: I[Anything]=V[Anything]
->                    | Anything
->                    | NOthing
+>  mIs :: Concept -> Morphism
+>  mIs c = I [] c c True
+>  sIs c = Isn c c
+
 >  cptC nm gE os = C nm gE os  -- constructor
 >  cptS = S                    -- constructor
 >  cptAnything = Anything      -- constructor
@@ -141,25 +117,12 @@
 >   conts Anything   = error ("(module CC_aux) Fatal: Anything is Everything...")
 >   conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
 
->  instance Eq Concept where
->   C a _ _ == C b _ _ = a==b
->   S == S = True
->   Anything == Anything = True
->   NOthing == NOthing = True
->   _ == _ = False
-
 >  instance Explained Concept where
 >   explain c = name c   
 >   --explain (C expla _ _) = expla
 >   --explain (S)           = "ONE"
 >   --explain NOthing       = "Nothing"
 >   --explain Anything      = "Anything"
-
->  instance Identified Concept where
->   name (C {cptnm = nm}) = nm
->   name S = "ONE"
->   name Anything   = "Anything"
->   name NOthing    = "NOthing"
 
 >  instance Morphic Concept where
 >   source c = c
@@ -201,9 +164,6 @@
 >   a <= b = a==b
 >   --TODO?: ORD is niet gedefinieerd op Singelton.... Is dat erg?
 
->  instance Show Concept where
->   showsPrec p c = showString (name c)
-
 >  instance Typologic Concept
 
 >  isNothing, isAnything :: Concept -> Bool
@@ -214,30 +174,6 @@
 >  isC C{} = True
 >  isC c   = False
 
-
->  type ConceptDefs = [ConceptDef]
->  data ConceptDef = Cd { cdpos :: FilePos  -- pos: the position of this definition in the text of the ADL source (filename, line number and column number).
->                       , cdnm  :: String   -- nm:  the name of this concept. If there is no such concept, the conceptdefinition is ignored.
->                       , cddef :: String   -- def: the textual definition of this concept.
->                       , cdref :: String   -- ref: a label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
->                       } deriving Show    -- so, conventionally we will write: Cd pos nm def ref
->  instance Eq ConceptDef where
->   cd == cd' = cdnm cd == cdnm cd
->  instance Identified ConceptDef where
->   name cd = cdnm cd
-
------------------ HIERBOVEN ZIJN FIELD LABELS EN FUNCTIES TOEGEVOEGD. ------------
------------------ Hieronder nog niet.....
-
->  type ObjDefs = [ObjectDef]
->  data ObjectDef = Obj { objnm  :: String         -- nm:   view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
->                       , objpos :: FilePos        -- pos:  position of this definition in the text of the ADL source file (filename, line number and column number)
->                       , objctx :: Expression     -- ctx:  this expression describes the instances of this object, related to their context. 
->                       , objats :: ObjDefs        -- ats:  the attributes, which are object definitions themselves.
->                       } deriving (Eq,Show) -- So in its entirety: Obj nm pos ctx ats
-
->  instance Identified ObjectDef where
->   name obj = objnm obj
 
    instance Key ObjectDef where
     keys obj = [(target (objctx obj),name obj,objats obj)]
@@ -264,18 +200,8 @@
 >  objdefNew e = Obj "" posNone e []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
 
 
->  type KeyDefs = [KeyDef]
->  data KeyDef = Kd { kdpos :: FilePos      -- position of this definition in the text of the ADL source file (filename, line number and column number).
->                   , kdlbl :: String       -- the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
->                   , kdctx :: Expression   -- this expression describes the instances of this object, related to their context
->                   , kdats :: ObjDefs      -- the constituent attributes (i.e. name/expression pairs) of this key.
->                   } deriving (Eq,Show) 
-
 >  instance Key KeyDef where
 >   keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
-
->  instance Identified KeyDef where
->   name kd = kdlbl kd
 
 >  instance Morphical KeyDef where
 >   concs        kd = concs (kdctx kd)`uni` concs (kdats kd)
@@ -286,50 +212,9 @@
 >   keyDefs      kd = [kd]
 
 
->  type Populations = [Population]
->  data Population = Popu Morphism Pairs
-
->  type Morphisms = [Morphism]
->  data Morphism  = Mph String            -- the name of the morphism. This is the same name as
->                                         --     the relation that is bound to the morphism.
->                       FilePos           -- the position of the rule in which the morphism occurs
->                       [Concept]         -- the attributes specified inline
->                       (Concept,Concept) -- the allocated type. Together with the name, this forms the declaration.
->                       Bool              -- the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
->                       Declaration       -- the declaration bound to this morphism.
->                 | I   [Concept]         -- the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
->                       Concept           -- the generic concept
->                       Concept           -- the specific concept
->                       Bool              -- the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
->                 | V   [Concept]         -- the (optional) attributes specified inline.
->                       (Concept,Concept) -- the allocated type.
->                 | Mp1 String            -- the value of the one morphism
->                       Concept           -- the allocated type.
-
->  inline::Morphism -> Bool
->  inline (Mph _ _ _ _ yin _) = yin
->  inline (I _ _ _ _ )        = True
->  inline (V _ _)             = True
->  inline (Mp1 _ _)           = True
 
 >  instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
 
-
-
-
->  instance Eq Morphism where
->--   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
->   Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
->   Mph nm _ _ (a,b) yin _ == _ = False
->   I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
->   I _ g s yin            == _ = False
->   V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
->   V _ (a,b)              == _ = False
->   Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
->   Mp1 s c                == _ = False
-
-TODO: 3 lines above: V _ (a,b)
-V _ _ is a Morphism, Vs _ _ is a Declaration
 
 A declaration stands for a relation between two concepts. Mathematically, we
 interpret a declaration as a relation, i.e. a subset of the cartesian product of two sets.
@@ -343,10 +228,6 @@ Every declaration m has cardinalities, in which
   Asy:    forall x,y: x m y & y m x => x==y                (m & ~m `subsetEq` I)
   Sym:    forall x,y: x m y <=> y m x                      (m = ~m)
   Rfx:    forall x: x m x                                  (I `subsetEq` m)
-
->  instance Identified Morphism where
->   name (Mph nm _ _ _ _ _) = nm
->   name i = name (makeDeclaration i)
 
 >  instance Morphic Morphism where
 >   source (Mph nm pos atts (a,b) _ s) = a
@@ -415,49 +296,10 @@ Every declaration m has cardinalities, in which
 >  makeInline m | inline m = m
 >  makeInline m = flp m
 
->  instance Show Morphism where
->   showsPrec p (Mph nm pos  []  sgn yin m) = showString (nm  {- ++"("++show a++"*"++show b++")" where (a,b)=sgn -} ++if yin then "" else "~")
->   showsPrec p (Mph nm pos atts sgn yin m) = showString (nm  {- ++"["++chain "*" (map name (rd atts))++"]" -}      ++if yin then "" else "~")
->   showsPrec p (I atts g s yin)            = showString ("I"++ (if null atts then {- ++"["++name g, (if s/=g then ","++name s else "")++"]" -} "" else show atts))
->   showsPrec p (V atts (a,b))              = showString ("V"++ (if null atts then "" else show atts))
-
-
->  makeDeclaration :: Morphism -> Declaration
->  makeDeclaration (Mph _ _ _ _ _ s) = s
->  makeDeclaration (I atts g s yin)  = Isn g s
->  makeDeclaration (V atts (a,b))    = Vs a b
->  makeDeclaration (Mp1 s c)         = Isn c c
-
-
->  type Declarations = [Declaration]
->  data Declaration = Sgn String  -- the name of the declaration
->                       Concept -- the source concept of the declaration
->                       Concept -- the target concept of the declaration
->                       [Prop]  -- the multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
->                       String  -- three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
->                       String  --    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
->                       String
->                       [Paire] -- the list of tuples, of which the relation consists.
->                       String  -- the explanation
->                       FilePos -- the position in the ADL source file where this declaration is declared.
->                       Int     -- a unique number that can be used to identify the relation
->                       Bool    -- if true, this is a signal relation; otherwise it is an ordinary relation.
->                 | Isn Concept Concept
->                 | Iscompl Concept Concept
->                 | Vs Concept Concept
-
->  instance Eq Declaration where
->   s == s' = name s==name s' && source s==source s' && target s==target s'
 
 >  instance Explained Declaration where
 >   explain (Sgn _ _ _ _ _ _ _ _ expla _ _ _) = expla
 >   explain d                                 = ""
-
->  instance Identified Declaration where
->   name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
->   name (Isn _ _)                      = "I"
->   name (Iscompl _ _)                  = "I-"
->   name (Vs _ _)                       = "V"
 
 >  instance Language Declaration where
 >   multRules d
@@ -543,27 +385,6 @@ Every declaration m has cardinalities, in which
 >   contents (Iscompl g s)                  = [[o,o']| o<-conts s,o'<-conts s,o/=o']
 >   contents (Vs g s)                       = [[o,o']| o<-conts s,o'<-conts s]
 
->  instance Show Declaration where
->   showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ False)
->    = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
->   showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ True)
->    = showString (chain " " ["SIGNAL",nm,"ON (",name a,"*",name b,")"])
->   showsPrec p _
->    = showString ""
-
-
->  type Patterns  = [Pattern]
->  data Pattern   = Pat String             -- name of this pattern
->                       Rules              -- list of rules declared in this pattern
->                       Gens               -- list of generalizations defined in this pattern
->                       Declarations       -- list of declarations defined in this pattern
->                       ConceptDefs        -- list of concept definitions defined in this pattern
->                       KeyDefs            -- list of key definitions defined in this pattern
->                   deriving Show
-
->  instance Identified Pattern where
->   name (Pat nm _ _ _ _ _) = nm
-
 >  instance Key Pattern where
 >   keys pat = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs pat]
 
@@ -591,18 +412,6 @@ Every declaration m has cardinalities, in which
 >    = Pat nm' (rs `uni` rs') (parChds `uni` parChds') (pms `uni` pms') (cs `uni` cs') (ks `uni` ks')
 
 
-
-
->  type Expressions = [Expression]
->  data Expression  = Tm Morphism          -- simple morphism, possibly conversed     ~
->                   | Tc Expression        -- bracketed expression                 ( ... )
->                   | F Expressions        -- composition                             ;
->                   | Fd Expressions       -- relative addition                       !
->                   | Fi Expressions       -- intersection                            /\
->                   | Fu Expressions       -- union                                   \/
->                   | K0 Expression        -- Reflexive and transitive closure        *
->                   | K1 Expression        -- Transitive closure                      +
->                   | Cp Expression        -- Complement                              -
 
 >  instance Morphic Expression where
 >   source (Tm m)          = source m
@@ -867,60 +676,6 @@ Every declaration m has cardinalities, in which
 >      Cp e  `match` Cp e'   = True
 >      _     `match` _       = False
 
->  instance Show Expression where
->   showsPrec p e  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") e)
->  showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar 0 e
->    where
->     wrap i j str = if i<=j then str else lpar++str++rpar
->     showchar i (Tm m)  = name m++if inline m then "" else "~"
->     showchar i (Fu []) = "-V"
->     showchar i (Fu fs) = wrap i 4 (chain union [showchar 4 f| f<-fs])
->     showchar i (Fi []) = "V"
->     showchar i (Fi fs) = wrap i 5 (chain inter [showchar 5 f| f<-fs])
->     showchar i (Fd []) = "-I"
->     showchar i (Fd ts) = wrap i 6 (chain rAdd [showchar 6 t| t<-ts])
->     showchar i (F [])  = "I"
->     showchar i (F ts)  = wrap i 7 (chain rMul [showchar 7 t| t<-ts])
->     showchar i (K0 e)  = showchar 8 e++clos0
->     showchar i (K1 e)  = showchar 8 e++clos1
->     showchar i (Cp e)  = compl++showchar 8 e
->     showchar i (Tc f)  = showchar i f
-
->  instance Eq Expression where
->   F  ts == F  ts' = ts==ts'
->   Fd ts == Fd ts' = ts==ts'
->   Fu fs == Fu fs' = rd fs==rd fs'
->   Fi fs == Fi fs' = rd fs==rd fs'
->   Cp e  == Cp e'  = e==e'
->   K0 e  == K0 e'  = e==e'
->   K1 e  == K1 e'  = e==e'
->   Tm m  == Tm m'  = m==m'
->   Tc e  == e'     = e==e'
->   e     == Tc e'  = e==e'
->   _     == _      = False
-
->  type Rules     = [Rule]
-
->  data Prop      = Uni          -- univalent
->                 | Inj          -- injective
->                 | Sur          -- surjective
->                 | Tot          -- total
->                 | Sym          -- symmetric
->                 | Asy          -- antisymmetric
->                 | Trn          -- transitive
->                 | Rfx          -- reflexive
->                 | Aut          -- calculate contents automatically if possible
->                   deriving (Eq,Ord)
->  instance Show Prop where
->   showsPrec p Uni = showString "UNI"
->   showsPrec p Inj = showString "INJ"
->   showsPrec p Sur = showString "SUR"
->   showsPrec p Tot = showString "TOT"
->   showsPrec p Sym = showString "SYM"
->   showsPrec p Asy = showString "ASY"
->   showsPrec p Trn = showString "TRN"
->   showsPrec p Rfx = showString "RFX"
->   showsPrec p Aut = showString "AUT"
 >  flipProps :: [Prop] -> [Prop]
 >  flipProps ps = [flipProp p| p<-ps]
 
@@ -931,56 +686,12 @@ Every declaration m has cardinalities, in which
 >  flipProp x = x
 
 
-
->  data Gen       = G FilePos             -- the position of the GEN-rule
->                     Concept             -- generic concept
->                     Concept             -- specific concept
->                   deriving Eq
->  type Gens      = [Gen]
-
 >  instance Morphical Gen where
 >   concs (G pos g s)                             = rd [g,s]
 >   mors (G pos g s)                              = [I [] g s True]
 >   morlist (G pos g s)                           = [I [] g s True]
 >   genE (G pos g s)                              = genE s
 >   declarations (G pos g s)                      = []
-
->  instance Show Gen where
->   -- This show is used in error messages. It should therefore not display the term's type
->   showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)
-
-
-> -- Ru c antc p cons cpu expla sgn nr pn
->  data Rule      = Ru Char              -- 'I' if this is an implication, 'E' if this is an equivalence, 'A' if this is an ALWAYS expression.
->                      Expression        -- antecedent
->                      FilePos           -- position in the ADL file
->                      Expression        -- consequent
->                      Expressions       -- cpu. This is a list of subexpressions, which must be computed.
->                      String            -- explanation
->                      (Concept,Concept) -- type
->                      Int               -- rule number
->                      String            -- name of pattern in which it was defined.
-> -- Sg p rule expla sgn nr pn signal
->                 | Sg FilePos           -- position in the ADL file
->                      Rule              -- the rule to be signalled
->                      String            -- explanation
->                      (Concept,Concept) -- type
->                      Int               -- rule number
->                      String            -- name of pattern in which it was defined.
->                      Declaration       -- the signal relation
->                 | Gc FilePos           -- position in the ADL file
->                      Morphism          -- specific
->                      Expression        -- generic
->                      Expressions       -- cpu. This is a list of subexpressions, which must be computed.
->                      (Concept,Concept) -- declaration
->                      Int               -- rule number
->                      String            -- name of pattern in which it was defined.
-> -- Fr t d expr pn  -- represents an automatic computation, such as * or +.
->                 | Fr AutType           -- the type of automatic computation
->                      Declaration       -- where the result is to be stored
->                      Expression        -- expression to be computed
->                      String            -- name of pattern in which it was defined.
->                   deriving (Eq,Show)
 
 >  instance Explained Rule where
 >   explain (Ru _ _ _ _ _ expla _ _ _) = expla
@@ -1073,21 +784,6 @@ Every declaration m has cardinalities, in which
 >    = Gc pos m' expr' cpu (sign expr') nr pn
 >      where expr' = subst (m,f) expr
 
-
-
-
-
->  data AutType = Clos0 | Clos1 deriving (Eq,Show)
-
-  instance Eq Rule where
-   Ru c antc _ cons _ sgn nr pn == Ru c' antc' _ cons' _ sgn' nr' pn'
-    | nr==0 || nr'==0 = c==c' && sgn==sgn' && (if c=='A'&&c'=='A' then True else antc==antc') && cons==cons'
-    | otherwise       = nr==nr' && pn==pn
-   Gc _ m expr sgn nr pn _ _ == Gc _ m' expr' sgn' nr' pn'
-    | nr==0 || nr'==0 = sgn==sgn' && m==m' && expr==expr'
-    | otherwise       = nr==nr' && pn==pn
-   _ == _ = False
-
 >  instance Identified Rule where
 >   name r = "Rule"++show (nr r)
 
@@ -1095,7 +791,7 @@ Every declaration m has cardinalities, in which
 >  ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
 >  ruleType    (Gc _ _ _ _ _ _ _)     = 'g'
 >  ruleType    (Fr _ _ _ _)           = 'f'
-> --XXXnog terugzetten in definitie: antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++showADL r)
+>  antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++showADLX r)
 >  antecedent  (Ru _ a _ _ _ _ _ _ _) = a
 >  antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
 >  antecedent  (Gc _ d _ _ _ _ _)     = Tm d
@@ -1116,26 +812,8 @@ Every declaration m has cardinalities, in which
 >  uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
 >  uncomp s                           = s
 
->  type GenR = Concept->Concept->Bool
 
->  newtype FilePos = FilePos (String, Pos, String)                        deriving (Eq,Ord)
->  posNone         = FilePos ("",noPos,"")
 
->  instance Show Pos where
->    show (Pos l c)
->      = "line " ++ show l
->        ++ ", column " ++ show c
->  instance Ord Pos where
->    a >= b = (show a) >= (show b)
->    a <= b = (show a) <= (show b)
-
->  instance Show FilePos where
->    show (FilePos (fn,Pos l c,sym))
->      = "line " ++ show l
->--        ++ ", column " ++ show c
->        ++ ", file " ++ show fn
-
->  type Paire     = [String]
 >  src, trg      :: Paire -> String
 >  src xs         = if null xs then error ("(module ADLdef) Fatal: src []") else head xs
 >  trg xs         = if null xs then error ("(module ADLdef) Fatal: trg []") else last xs
@@ -1147,8 +825,6 @@ Every declaration m has cardinalities, in which
 >                    | trg (head xs)>src (head ys) = merge (xs:xss) yss
 >                    | otherwise = [[x,y]|[x,i]<-xs,[j,y]<-ys]++ merge xss yss
 >                   merge _ _ = []
->  type Pairs     = [Paire]
-
 
 >  class Populated a where
 >   contents  :: a -> Pairs

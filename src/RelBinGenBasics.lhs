@@ -2,7 +2,7 @@
 >  import Char
 >  import Auxiliaries
 >  import ADLdef
->  import CC_aux ( isProperty, showADL,ShowHS(showHS),mIs,sIs,oneMorphism)
+>  import CC_aux ( isProperty, showADL,ShowHS(showHS),oneMorphism)
 >  import CommonClasses
 >  import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule(CR))
 >--  import MultRules

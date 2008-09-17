@@ -16,13 +16,12 @@
 >  import Auxiliaries (chain, eqCl)
 
 >  import ADLdef
->  import CC_aux ( showADL
+>  import CC_aux ( showADL, showHS
 >                , explain 
 >                , applyM 
 >                , lub, sur, inj, fun, tot 
 >                , mkVar
->                , order, showHS
->                , mIs 
+>                , order
 >           )
 >  import Languages (Lang(English,Dutch), plural)
 >--  import Calc
