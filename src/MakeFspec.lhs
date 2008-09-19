@@ -24,7 +24,7 @@
 
 >  makeFspecNew2 :: Context -> Fspc
 >  makeFspecNew2 context
->    = Fspc fid themes datasets fviews frules where
+>    = Fspc fid themes datasets fviews frules isa where
 >       fid      = makeFSid1 (name context)
 >       themes   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
 >                  ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
@@ -32,7 +32,7 @@
 >       datasets = rd [datasetMor context m| m<-mors context]
 >       fviews   = [ makeFview context a | a <-attributes context]
 >       frules   = [ makeFrule context r | r <-rules context]
-
+>       isa      = ctxisa context
 
 >-- next thing, we look which datasets will be discussed in which themes.
 >-- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
@@ -75,7 +75,7 @@
 >       pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
 
-> -- Dataset cannot be made Morphical, because it would make it too dependant from ADL. For this reason the functions are defined as follows: 
+> -- Dataset should not be made Morphical, because it would make it too dependant from ADL. For this reason the functions are defined as follows: 
 >  declarationsDS :: Dataset -> Declarations
 >  declarationsDS ds = declarations (morsDS ds)
 >  morsDS :: Dataset -> Morphisms 
@@ -90,7 +90,7 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 
 >  makeFtheme :: Context -> Pattern -> [Dataset] -> Ftheme
 >  makeFtheme context pat dss
->   = Tspc fid units 
+>   = Tspc fid units pat
 >     where
 >       fid = makeFSid1 (name pat)
 >       units = [makeFunit context pat (objs ds) [] []| ds<-dss]
@@ -120,11 +120,11 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 >   = Uspc fid pat ents svs
 >       where
 >         fid  = (if null objs then NoName else makeFSid1(name (head objs))) 
->         ents = [(o
+>         ents = [ Vdef o
 >               -- ,ILGV Eenvoudig
->                  ,[] {-cs-}
->                  ,[] {-rs-}
->                 )| o<-objs]
+>                  [] {-cs-}
+>                  [] {-rs-}
+>                  | o<-objs]
 >         svs  = (concat [   [ createObj context o [] {-rs-} ]
 >                         ++ [ readObj context o]
 >                         ++ concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]

@@ -79,10 +79,15 @@ A specification contains one Fobj-specification for every object it defines and 
 >      (if null vrules   then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-vrules  ])++
 >      indent++"where"++
 >      indent++" gE = genE "++showHSname context++
+>      "\n>-- ***VIEWS***: " ++
 >      (if null objects            then "" else concat [indent++" "++showHSname o++indent++"  = "++showHS (indent++"    ") o|o<-objects ]++"\n")++
+>       "\n>-- ***RULES***: "++
 >      (if null vrules             then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-vrules  ]++"\n")++
+>       "\n>-- ***DATASETS***: "++
 >      (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
+>       "\n>-- ***THEMES***: "++
 >      (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
+>       "\n>-- ***PATTERNS***: "++
 >      (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
 
 >-- The story:
