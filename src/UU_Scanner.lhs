@@ -1,3 +1,4 @@
+> {-# OPTIONS -XFlexibleContexts #-}
 >  module UU_Scanner where
 
 >  import Char

@@ -1,3 +1,5 @@
+> {-# OPTIONS -fglasgow-exts -fallow-undecidable-instances #-}
+
 Fast, Error Correcting Parser Combinators;See version history in same directory.
  - Copyright:  S. Doaitse Swierstra
                Department of Computer Science

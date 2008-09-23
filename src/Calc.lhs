@@ -1,3 +1,4 @@
+> {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
 > module Calc ( ComputeRule(CR)
 >             , deriveProofs
 >             , triggers

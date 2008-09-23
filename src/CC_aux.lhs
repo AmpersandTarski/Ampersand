@@ -1,3 +1,4 @@
+> {-# OPTIONS -XFlexibleContexts #-}
 > module CC_aux ( explain
 >               ,  ShowADL(..)
 >               ,  ShowHS(..)
