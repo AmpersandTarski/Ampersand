@@ -3,7 +3,7 @@
 >  import Auxiliaries(commaNL,chain,eqCl,adlVersion,sord,eqClass)
 >  import Calc(conjNF, triggers)
 >  import ADLdef
->  import CC_aux(showADL,applyM,showHS)
+>  import CC_aux(applyM,showHS)
 >  import CommonClasses
 >  import Collection(Collection(rd))
 >  import ERmodel

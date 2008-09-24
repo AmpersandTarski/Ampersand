@@ -11,7 +11,7 @@ import Classification
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
 import ADLdef
-import CC_aux (showADL, showHS,order,makeConceptSpace, put_gE
+import CC_aux ( showHS,order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 

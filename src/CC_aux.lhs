@@ -1,6 +1,6 @@
 > {-# OPTIONS -XFlexibleContexts #-}
 > module CC_aux ( explain
->               ,  ShowADL(..)
+>         --      ,  ShowADL(..)
 >               ,  ShowHS(..)
 >               , objectOfConcept
 >               , pKey_pos
@@ -129,9 +129,6 @@ renumberRules gives back an array of rules as specified by the second argument, 
 
 The function showHS prints structures as haskell source, which is intended for testing.
 
->  class ShowADL a where
->   showADL :: a -> String
-
 >  class ShowHS a where
 >   showHSname :: a -> String
 >   showHS     :: String -> a -> String
@@ -148,30 +145,13 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent Rfx = "Rfx"
 >   showHS indent Aut = "AUT"
 
->  instance ShowADL Prop where
->   showADL Uni = "UNI"
->   showADL Inj = "INJ"
->   showADL Sur = "SUR"
->   showADL Tot = "TOT"
->   showADL Sym = "SYM"
->   showADL Asy = "ASY"
->   showADL Trn = "TRN"
->   showADL Rfx = "RFX"
->   showADL Aut = "AUT"
-
 >  instance ShowHS a => ShowHS [a] where
 >   showHSname _ = error ("(module CC_aux) lists are anonymous with respect to showHS.")
 >   showHS indent = chain "\n".map (showHS indent)
 
->  instance ShowADL a => ShowADL [a] where
->   showADL = chain "\n".map showADL
-
 >  instance ShowHS Architecture where
 >   showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
 >   showHS indent arch = concat (map (showHS indent) (archContexts arch))
-
->  instance ShowADL Architecture where
->   showADL arch = chain "\n" (map showADL (archContexts arch))
 
 >  instance ShowHS Context where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
@@ -207,20 +187,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >            pops = populations context
 >            on   = extends context
 
->  instance ShowADL Context where
->   showADL context
->    = "CONTEXT " ++name context
->      ++ (if null (extends context)     then "" else "EXTENDS "++chain ", "   (extends context)                   ++ "\n")
->      ++ (if null (attributes context)  then "" else "\n"      ++chain "\n\n" (map showADL (attributes context))  ++ "\n")
->      ++ (if null cdefs                 then "" else "\n"      ++chain "\n"   (map showADL cdefs)                 ++ "\n")
->      ++ (if null decls                 then "" else "\n"      ++chain "\n"   (map showADL decls)                 ++ "\n")
->      ++ (if null (keyDefs context)     then "" else "\n"      ++chain "\n"   (map showADL (keyDefs context))     ++ "\n")
->      ++ (if null (patterns context)    then "" else "\n"      ++chain "\n\n" (map showADL (patterns context))    ++ "\n")
->      ++ (if null (populations context) then "" else "\n"      ++chain "\n\n" (map showADL (populations context)) ++ "\n")
->      ++ "\n\nENDCONTEXT"
->      where decls = declarations context>-declarations (patterns context)
->            cdefs = conceptDefs context>-conceptDefs (patterns context)
-
 >  instance ShowHS Pattern where
 >-- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
 >   showHSname pat = "pat_"++haskellIdentifier (name pat)
@@ -237,25 +203,10 @@ The function showHS prints structures as haskell source, which is intended for t
 >      (if null (conceptDefs pat)   then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptDefs   pat] )++
 >      (if null ks                  then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks               ] )
 
->  instance ShowADL Pattern where
->   showADL pat@(Pat nm rs gen pss cs ks)
->    = "PATTERN " ++ name pat 
->      ++ (if null (conceptDefs pat)     then "" else "\n  " ++chain "\n  "   (map showADL (conceptDefs pat))   ++ "\n")
->      ++ (if null gen                   then "" else "\n  " ++chain "\n  "   (map showADL gen)                 ++ "\n")
->      ++ (if null (keyDefs pat)         then "" else "\n  " ++chain "\n  "   (map showADL (keyDefs pat))       ++ "\n")
->      ++ (if null (declarations pat)    then "" else "\n  " ++chain "\n  "   (map showADL (declarations pat))  ++ "\n")
->      ++ (if null (declaredRules pat)   then "" else "\n  " ++chain "\n  "   (map showADL (declaredRules pat)) ++ "\n")
->      ++ "ENDPATTERN"
-
 >  instance ShowHS Population where
 >   showHSname (Popu m ps) = "pop_"++haskellIdentifier (name m++name (source m)++name (target m))
 >   showHS indent p@(Popu m ps)
 >    = "Popu ("++showHS "" m++")"++indent++"     [ "++chain (indent++"     , ") (map show ps)++indent++"     ]"
-
->  instance ShowADL Population where
->   showADL (Popu m ps)
->    = nlIndent++"pop_"++name m++name (source m)++name (target m)++nlIndent++" = [ "++chain (nlIndent'++"; ") (map show ps)++nlIndent'++"]"
->      where nlIndent = "\n      "; nlIndent' = nlIndent++"    "
 
 >  instance ShowHS Rule where
 >   showHSname r = "rule"++show (nr r)
@@ -269,19 +220,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent r@(Gc pos m expr cpu sgn nr pn)
 >    = chain " " ["Gc","("++showHS "" pos++")","("++showHS "" m++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",showSgn sgn,show nr,show pn]
 >   showHS indent r = ""
-
->  instance ShowADL Rule where
->   showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
->   showADL r@(Fr _ d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
->   showADL r
->    | ruleType r=='A' = "ALWAYS "++showADL (consequent r)++
->                        if null (cpu r) then "" else " COMPUTING " ++ show (cpu r)
->    | ruleType r=='I' = showADL (antecedent r)++" |- "++showADL (consequent r)++
->                        if null (cpu r) then "" else " COMPUTING " ++ show (cpu r)
->    | ruleType r=='E' = showADL (antecedent r)++" = "++showADL (consequent r)++
->                        if null (cpu r) then "" else " COMPUTING " ++ show (cpu r)
->    | otherwise       = "GLUE "++showADL (antecedent r)++" = "++showADL (consequent r)++
->                        if null (cpu r) then "" else " COMPUTING " ++ show (cpu r)
 
 >  instance ShowHS Expression where
 >   showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
@@ -303,9 +241,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
 >   showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
 
->  instance ShowADL Expression where
->   showADL e = show e
-
 
 >  isFactor (Fu fs) = True
 >  isFactor (Fi fs) = True
@@ -313,7 +248,6 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  showS m = name m++"["++show (source m)++","++show (target m)++"]"
 >  showSgn (a,b) = "("++showHS "" a++","++showHS "" b++")"
->  showSign cs = "["++chain "*" (map name cs)++"]"
 >  showFullRelName m = rEncode (name m++name (source m)++name (target m))
 
 >  instance ShowHS a => ShowHS (Inheritance a) where
@@ -336,27 +270,16 @@ The function showHS prints structures as haskell source, which is intended for t
 > --                           then "S"
 > --                           else "C "++show (name c) ++ " gE []"    -- contents not shown.
 
->  instance ShowADL Concept where
->   showADL c = show (name c)
-
 >  instance ShowHS ConceptDef where
 >   showHSname cd = "cDef_"++haskellIdentifier (name cd)
 >   showHS indent cd
 >    = " Cd ("++showHS "" (cdpos cd)++") "++show (name cd)++" "++show (cddef cd)++(if null (cdref cd) then "" else " "++show (cdref cd))
-
->  instance ShowADL ConceptDef where
->   showADL cd
->    = "\n  CONCEPT "++show (name cd)++" "++show (cddef cd)++" "++(if null (cdref cd) then "" else show (cdref cd))
 
 >  instance ShowHS KeyDef where
 >   showHSname kd = "kDef_"++haskellIdentifier (name kd)
 >   showHS indent kd@(Kd pos lbl ctx ats)
 >    = "Kd ("++showHS "" pos++") "++show lbl++" ("++showHS "" ctx++")"
 >      ++indent++"[ "++chain (indent++", ") [showHS (indent++"  ") a|a<-ats]++indent++"]"
-
->  instance ShowADL KeyDef where
->   showADL (Kd pos lbl ctx ats)
->    = "KEY "++lbl++">"++name (target ctx)++"("++chain "," (map showADL ats)++")"
 
 >  instance ShowHS ObjectDef where
 >   showHSname obj = "oDef_"++haskellIdentifier (name obj)
@@ -367,9 +290,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >       else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")
 >    where ctxStr | length (morlist (objctx obj)) >1 = indent++"    ("++showHS (indent++"     ") (objctx obj)++indent++"    )"
 >                 | otherwise               = indent++"    ("++showHS "" (objctx obj)++")"
-
->  instance ShowADL ObjectDef where
->   showADL obj = "OBJECT "++name obj++" : "++(showADL (objctx obj))++" = ["++chain ", " (map show (objats obj))++"]"
 
 >  instance ShowHS Declaration where
 >   showHSname d = "rel_"++haskellIdentifier (name d++name (source d)++name (target d))
@@ -390,21 +310,6 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent (Vs g s)
 >    = "Vs ("++showHS "" g++") ("++showHS "" s++")"
 
->  instance ShowADL Declaration where
->   showADL decl@(Sgn nm a b props prL prM prR cs expla _ _ sig)
->    = if isSignal decl then "SIGNAL "++nm++" ON ("++name a++" * "++name b++")" else
->      nm++" :: "++name a++" * "++name b++
->      (if null props then "" else showL(map showADL props))++
->      (if null(prL++prM++prR) then "" else " PRAGMA "++chain " " (map show [prL,prM,prR]))++
->      (if null expla then "" else " EXPLANATION \""++expla++"\"")
->      ++"."
->   showADL (Isn g s)
->    = "I["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"
->   showADL (Iscompl g s)
->    = "-I["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"
->   showADL (Vs g s)
->    = "V["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"
-
 >  instance ShowHS Morphism where
 >   showHSname m = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL m++"). A morphism gets no definition in Haskell code.")
 >   showHS indent (Mph nm pos atts sgn@(a,b) yin d)
@@ -416,26 +321,9 @@ The function showHS prints structures as haskell source, which is intended for t
 >   showHS indent (Mp1 str sgn)
 >    = "Mp1"++" "++show str++" ("++showHS "" sgn++")"
 
->  instance ShowADL Morphism where
->   showADL m@(Mph nm pos atts sgn@(a,b) yin s)
->    = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} nm)++
->      (if null atts
->           then (if yin && sign m==sign s || not yin && sign m==sign (flp s) then "" else showSign [a,b])
->           else showSign atts)++
->      if yin then "" else "~"
->   showADL (I atts g s yin)
->    = "I"++if null atts then "" else showSign atts++if g==s then "" else if yin then "" else "~"
->   showADL (V atts (a,b))
->    = "V"++if null atts then "" else showSign atts
->   showADL (Mp1 str sgn)
->    = "'"++str++"'"++(showSign [sgn])
-
 >  instance ShowHS Gen where
 >   showHSname g = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
 >   showHS indent (G pos g s)  = "G ("++showHS "" pos++") ("++showHS "" s++") ("++showHS "" g++")"
-
->  instance ShowADL Gen where
->   showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowHS FilePos where
 >   showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")

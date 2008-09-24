@@ -10,7 +10,7 @@
 >  import ADLdataDef
 >  import CC_aux ( ShowHS (showHS,showHSname)
 >                )
->  import CommonClasses(DataStruct(..),Identified(name))
+>  import CommonClasses(Identified(name))
 >  import Auxiliaries(showL,haskellIdentifier)
 >  import Strings(chain)
 >  import Typology ( Inheritance(Isa), Typologic(typology), genEq)
@@ -25,9 +25,6 @@
 >             , vrules   :: [Frule]       -- One for every rule
 >             , isa      :: (Inheritance Concept) -- The data structure containing the generalization structure of concepts
 >             }
->  instance DataStruct Fspc where
->   showStruct fspec =  "   -- context   (Fspc has this structure:  Fspc name themes datasets views vrules)"
-
 >  instance Identified Fspc where
 >    name fspc = name (fsid fspc)
 >  
@@ -72,17 +69,13 @@ Every unit specifies one dataset, and each dataset is discussed only once in the
 
 >  data Ftheme  = Tspc     -- The constructor
 >                { ftsid  :: FSid     -- The name of the theme (aka pattern)
->                , ftunts :: [Funit]  -- The units of the theme
+>                , units :: [Funit]  -- The units of the theme
 >                , ftpat   ::  Pattern  -- Het pattern van de unit -- Obsolete
 >                }
->  instance DataStruct Ftheme where
->   showStruct theme =  "   -- context   (Ftheme has this structure:  Tspc name funits)"
 >  instance Fidentified Ftheme where
 >   fsid theme = ftsid theme
 >   typ  f = "f_Thm"
 >  
->  units :: Ftheme -> [Funit]
->  units theme = ftunts theme
 >  instance ShowHS Ftheme where
 >   showHSname ftheme = typ ftheme ++ "_" ++ showHSname (fsid ftheme) --showHS "" (pfixFSid "f_Theeeeeeeem_" (fsid ftheme))
 >   showHS indent ftheme

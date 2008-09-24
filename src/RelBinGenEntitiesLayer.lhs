@@ -2,7 +2,7 @@
 >  import Auxiliaries(chain,adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
 >  import ADLdef
->  import CC_aux( showHS, showADL
+>  import CC_aux( showHS
 >               , inj, fun
 >               , oneMorphism
 >               )

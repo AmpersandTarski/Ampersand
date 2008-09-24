@@ -1,6 +1,5 @@
 > module CommonClasses
 > (  Identified(name)
->  , DataStruct(showStruct)
 >  , ABoolAlg(glb,lub,order)
 >  , Explained(explain)
 >  , Conceptual(conts)
@@ -19,9 +18,6 @@
 >   name [] = ""
 >   name (i:is) = name i
 >   -- idName c = idNam (name c)
-
->  class DataStruct a where
->   showStruct ::  a->String
 
 >  class Ord a => ABoolAlg a where
 >   glb,lub :: a -> a -> a

@@ -36,7 +36,7 @@
 >               , Substitutive(..)
 >               , mIs
 >               , sIs
->               ) 
+>               , showADL  ) 
 > where
 >
 >  import ADLdataDef
@@ -51,7 +51,6 @@
 >  import Collection (Collection (uni,isc,(>-),empty,rd))
 >  import UU_Scanner (Pos(Pos))
 >  import Auxiliaries (chain, eqClass, enumerate, sort', clos1,diag,eqCl) 
-
 
 
 >  instance Key Context where
@@ -92,10 +91,6 @@
 >   populations  ctx = ctxpops ctx
 >   extends ctx = ctxon ctx
 
-
->  mIs :: Concept -> Morphism
->  mIs c = I [] c c True
->  sIs c = Isn c c
 
 >  cptC nm gE os = C nm gE os  -- constructor
 >  cptS = S                    -- constructor
@@ -175,8 +170,11 @@
 >  isC c   = False
 
 
-   instance Key ObjectDef where
-    keys obj = [(target (objctx obj),name obj,objats obj)]
+
+>  mIs :: Concept -> Morphism
+>  mIs c = I [] c c True
+>  sIs c = Isn c c
+
 
 >  instance Morphical ObjectDef where
 >   concs        obj = [source (objctx obj)] `uni` concs (objats obj)
@@ -994,6 +992,8 @@ So if p is a Person with name Peter, and the attribute name has context expressi
 >   patterns cl      = patterns (preCl cl)
 >   objectdefs cl    = objectdefs (preCl cl)
 >   isa              = foldr uni empty.map isa.preCl
+
+
 
 
 The following code is used in transforming expressions into clauses

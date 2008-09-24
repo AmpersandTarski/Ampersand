@@ -6,8 +6,7 @@
 >  import Auxiliaries (sort, upCap)
 >  import ADLdef 
 >  import CC_aux 
->            ( showADL 
->             , pKey_pos
+>            (  pKey_pos
 >             , pVarid_val_pos, pConid_val_pos
 >             )
 

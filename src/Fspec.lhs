@@ -56,7 +56,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >  import Typology
 >  import ADLdef
 >  import CC_aux( ShowHS(showHSname, showHS)
->                , showADL, isSgn
+>                , isSgn
 >                , applyM ,conts, explain, fEmpty
 >                )
 >  import Calc

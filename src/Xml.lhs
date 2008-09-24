@@ -5,7 +5,7 @@
 >  import Auxiliaries
 >         ( chain, sort') 
 >  import ADLdef
->  import CC_aux ( explain, showADL)
+>  import CC_aux ( explain)
 
 >  makeXML contexts contextname
 >   = putStr ("\nXML representation of "++name context++"\n")>>

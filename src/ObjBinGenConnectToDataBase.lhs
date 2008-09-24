@@ -4,7 +4,7 @@
 >  import Collection
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import ADLdef
->  import CC_aux( showADL, showHS
+>  import CC_aux( showHS
 >               , applyM
 >               )
 >  import CommonClasses

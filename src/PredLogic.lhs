@@ -16,7 +16,7 @@
 >  import Auxiliaries (chain, eqCl)
 
 >  import ADLdef
->  import CC_aux ( showADL, showHS
+>  import CC_aux ( showHS
 >                , explain 
 >                , applyM 
 >                , lub, sur, inj, fun, tot 
