@@ -3,8 +3,7 @@
 
   This module is ment for all kind of string handling functionality
 
->  import Char (toUpper, toLower)
->  -- import CommonClasses(Collection(rd))  
+>  import Char (toUpper)
 
 >  firstCaps :: String -> String
 >  firstCaps "" = ""

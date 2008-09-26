@@ -1,7 +1,7 @@
   Deze module bevat de datadefinitie van ADL. Daarnaast bevat het een minimale
   set aan eigenschappen (Eq, Show , Identified) van deze structuren.
   
-> module ADLdataDef 
+> module ADLdataDef
 >               ( Architecture(..)
 >               , Contexts
 >               , Context(..)
@@ -29,12 +29,12 @@
 >               , FilePos(..),posNone
 >               , ShowADL(..)
 >               ) where
->  import Typology ( Inheritance(Isa), Typologic(typology), genEq)
->  import Classification ( Classification(),preCl,mapCl)
->  import UU_Scanner (Pos(Pos),Token(Tok),noPos)
+>  import Typology ( Inheritance())
+>  import Classification ( Classification())
+>  import UU_Scanner (Pos(Pos),noPos)
 >  import Strings(chain)
 >  import CommonClasses(Identified(name))
->  import Collection (Collection (uni,isc,(>-),empty,rd))
+>  import Collection (Collection (rd))
 >  import Auxiliaries(showL)
 
 >  data Architecture = Arch { archContexts :: Contexts} -- deriving Show

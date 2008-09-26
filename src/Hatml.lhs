@@ -128,7 +128,6 @@ The following requires data structures from CC_aux
 >   hshow :: a -> String
 
 >  instance HTML Concept where
-> --XXXVervangen:  hshow (C nm _ _) = htmlAnchor (htmlname nm++".html") nm []
 >   hshow c = htmlAnchor (htmlname (name c)++".html") (name c) []
 
 >  instance HTML Morphism where

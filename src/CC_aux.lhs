@@ -259,16 +259,10 @@ The function showHS prints structures as haskell source, which is intended for t
 
 >  instance ShowHS Concept where
 >   showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
->   showHS indent c |  isAnything c = name c
->                   |  isNothing  c = name c
+>   showHS indent c |  isAnything c = "Anything"
+>                   |  isNothing  c = "NOthing"
 >                   |  singleton  c = "S"
 >                   |  otherwise    = "C "++show (name c) ++ " gE []"    -- contents not shown. 
-
-> --XXXVERVANGEN  showHS indent Anything = "Anything"
-> --  showHS indent NOthing  = "NOthing"
-> --  showHS indent  c       = if singleton c
-> --                           then "S"
-> --                           else "C "++show (name c) ++ " gE []"    -- contents not shown.
 
 >  instance ShowHS ConceptDef where
 >   showHSname cd = "cDef_"++haskellIdentifier (name cd)
@@ -378,8 +372,6 @@ This show is used in error messages. It should therefore not display the morphis
 >     ] where
 >        upd c os | isC c     = c{cptos=os}
 >                 | otherwise = c
->  -- XXXVERVANGEN:      upd (C c gEq os) os' = C c gEq os'
->  --                    upd c  os = c
 
 The following definition is used to compute whether a concept may display its internal code.
 This may be done when there are no keys and no instances for this particular concept.
@@ -396,9 +388,6 @@ TODO: transform makeConceptSpace to makeConceptSpace :: [Declaration] -> Concept
 >   update ss c = c
 
 >  instance Pop Concept where
->--XXXisVERVANGEN   put_gE gE cs c     = h (head ([c'|c'<-cs, c==c']++[c]))
->--                               where h (C c gEq os) = C c gE os
->--                                    h x = x
 >   put_gE gE cs c = h (head ([c'|c'<-cs, c==c']++[c]))
 >           where h x | isC x = x{cptgE = gE}
 >                     | otherwise = x
@@ -440,8 +429,6 @@ Om een of andere reden stond hier eerder:
 >   specialize t (G pos g s) = G pos (specialize t g) (specialize t s)
 
 >  instance Pop Context where
->--XXXisVERVANGEN   put_gE gE cs (Ctx nm on isa world pats rs dw cs' ks os pops)
->--                       = Ctx nm on isa (map (mapCl (put_gE gE cs)) world) (map (put_gE gE cs) pats) (map (put_gE gE cs) rs) (map (put_gE gE cs) dw) cs' (map (put_gE gE cs) ks) (map (put_gE gE cs) os) pops
 >     put_gE gE cs context
 >                 = context { ctxwrld = map (mapCl (put_gE gE cs)) (ctxwrld context)
 >                           , ctxpats = map (put_gE gE cs) (ctxpats context)
@@ -450,8 +437,6 @@ Om een of andere reden stond hier eerder:
 >                           , ctxks   = map (put_gE gE cs) (ctxks context)
 >                           , ctxos   = map (put_gE gE cs) (ctxos context)
 >                           }
->--XXXisVERVANGEN   update ss    (Ctx nm on isa world pats rs ds cs  ks os pops)
->--                       = Ctx nm on isa world (map (update ss) pats) (map (update ss) rs) (map (update ss) ds) cs (map (update ss) ks) (map (update ss) os) pops
 >     update ss context
 >                 = context { ctxpats = map (update ss) (ctxpats context)
 >                           , ctxrs   = map (update ss) (ctxrs context)
@@ -459,8 +444,7 @@ Om een of andere reden stond hier eerder:
 >                           , ctxks   = map (update ss) (ctxks context)
 >                           , ctxos   = map (update ss) (ctxos context)
 >                           }
->--XXXisVERVANGEN   specialize t (Ctx nm on isa world pats rs ds cs  ks os pops)
->--                       = Ctx nm on isa world (map (specialize t) pats) (map (specialize t) rs) (map (specialize t) ds) cs (map (specialize t) ks) (map (specialize t) os) pops
+
 >     specialize t context
 >                 = context { ctxpats = map (specialize t) (ctxpats context)
 >                           , ctxrs   = map (specialize t) (ctxrs context)

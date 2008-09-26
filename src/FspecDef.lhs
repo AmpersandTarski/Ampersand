@@ -53,12 +53,9 @@
 >       "\n>-- ***DATASETS***: "++
 >      (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
 >       "\n>-- ***THEMES***: "++
->      (if null (themes fspec) then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")
->  -- XXX Deze regel met Stef bespreken. Patterns zitten nu in themes, maar daar zit méér in dan alleen patterns.
->    --  (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
->      ++   "\n>-- ***PATTERNS***: "
->    --     (if null (themes fspec) then "" else concat ["\n>\n>  "++showHSname (theme)++" gE"++"\n>   = "++showHS "\n>     " theme|theme<-themes fspec]++"\n")
->      ++(if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++"\n")        
+>      (if null (themes fspec) then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+>       "\n>-- ***PATTERNS***: "++
+>      (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++"\n")        
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
@@ -91,24 +88,6 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >  data Dataset = DS Concept     -- the root of the dataset
 >                    [Morphism]  -- the functions from the root
 >               | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
-
-> --XXX Dataset moet niet Morphical zijn, want dan heeft het te veel verwevenheid met ADL.
-> -- instance Morphical Dataset where
-> --  concs        (DS c pths) = concs pths
-> --  concs        (BR m     ) = concs m
-> --  conceptDefs  (DS c pths) = []
-> --  conceptDefs  (BR m     ) = []
-> --  mors         (DS c pths) = pths
-> --  mors         (BR m     ) = [m]
-> --  morlist      (DS c pths) = pths
-> --  morlist      (BR m     ) = [m]
-> --  declarations (DS c pths) = declarations pths
-> --  declarations (BR m     ) = declarations m
-> --  genE         (DS c pths) = genE c
-> --  genE         (BR m     ) = genE m
-> --  closExprs    (DS c pths) = []
-> --  closExprs    (BR m     ) = []
->  -- Is dit een ommissie hier? objDefs, keyDefs zijn niet gedefinieerd voor DataSet...
 
 >  instance Fidentified Dataset where
 >    fsid (DS c pths) = fsid c
@@ -156,9 +135,9 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >   typ fview = "f_View"
 >  
 >  instance ShowHS Fview where
->   showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))  -- XXX moet f_View worden
+>   showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))
 >   showHS indent fview
->    = "Fview "  --LATER NOG VERVANGEN DOOR Fview
+>    = "Fview "
 >      ++ datasetSection
 >      ++ objdefSection
 >      ++ servicesSection
@@ -181,7 +160,7 @@ Alternative BR represents a dataset as a binary relation. This contains morphism
 >  rule (Frul r) = r
 
 >  instance ShowHS Frule where
->   showHSname frul  = typ frul ++ "_" ++ showHSname (fsid frul) -- showHSname (rule frul) -- XXX moet worden: "f_rule_"++haskellIdentifier (name frul)
+>   showHSname frul  = typ frul ++ "_" ++ showHSname (fsid frul) -- showHSname (rule frul)
 >   showHS indent (Frul r) = "Frul ("++showHS "" r++")"
 
 

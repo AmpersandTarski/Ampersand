@@ -47,10 +47,10 @@
 >                       , Morphics(anything)
 >                       )
 >  import Typology ( Inheritance(Isa), Typologic(typology), genEq)
->  import Classification ( Classification(),preCl,mapCl)
+>  import Classification ( Classification(),preCl)
 >  import Collection (Collection (uni,isc,(>-),empty,rd))
 >  import UU_Scanner (Pos(Pos))
->  import Auxiliaries (chain, eqClass, enumerate, sort', clos1,diag,eqCl) 
+>  import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
 
 
 >  instance Key Context where
@@ -355,7 +355,7 @@ Every declaration m has cardinalities, in which
 >   isSignal _                                   = False
 >   isMph (Sgn _ a b _ _ _ _ _ _ _ _ _)          = True
 >   isMph _                                      = False
->   typeUniq (Sgn _ a b _ _ _ _ _ _ _ _ _)       = typeUniq a && typeUniq b    -- XXX Check en dubbel check: Stef vragen of dit een verbetering is. (er stond namelijk :typeUniq (Sgn _ a b _ _ _ _ _ _ _ _ _)       = typeUniq a && typeUniq a  
+>   typeUniq (Sgn _ a b _ _ _ _ _ _ _ _ _)       = typeUniq a && typeUniq b
 >   typeUniq (Isn g s)                           = typeUniq g && typeUniq s
 >   typeUniq (Iscompl g s)                       = typeUniq g && typeUniq s
 >   typeUniq (Vs g s)                            = typeUniq g && typeUniq s
@@ -905,9 +905,9 @@ So if p is a Person with name Peter, and the attribute name has context expressi
 >   equiv          :: a -> a -> Bool
 >   equiv m m' = source m==source m'&&target m==target m' || source m==target m'&&target m==source m'
 >   typeUniq :: a -> Bool -- this says whether the type of 'a' and all of its constituent parts is defined (i.e. not "Anything")
->   isFunction :: a -> Bool     -- XXXHJ: Toegevoegd aan class Morphic (Was een gewone functie)
+>   isFunction :: a -> Bool     
+>   isFunction m   = null ([Uni,Tot]>-multiplicities m)
 >   isFlpFunction :: a -> Bool
->   isFunction m   = null ([Uni,Tot]>-multiplicities m) -- XXXHJ: Toegevoegd aan class Morphic (Was een gewone functie)
 >   isFlpFunction m = null ([Sur,Inj]>-multiplicities m)
 
 

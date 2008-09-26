@@ -4,7 +4,6 @@
 >  import UU_Scanner(scan,initPos)
 >  import UU_Parsing(parseIO)
 >  import CommonClasses ( Identified(name))
->  import Collection( Collection( empty ))
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
 >  import ADLdef
@@ -18,7 +17,7 @@
 >               ,generateArchLaTeX
 >               ,generateGlossaryLaTeX
 >               ,funcSpec
->               ,nDesignPr
+>             --  ,nDesignPr
 >               ,nServices
 >               ,nFpoints
 >               ,makeFspec
@@ -35,13 +34,15 @@
 
 functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 
+>  latexOpt :: [String] -> Bool
 >  latexOpt sws = "-l" `elem` sws
 >  splitStr :: (String -> Bool) -> [String] -> ([String], [String])
 >  splitStr f (x:xs) | f x  = (x:yes, no)
 >                    | True = (yes, x:no)
 >                    where (yes,no) = splitStr f xs
->  splitStr f [] = ([],[])
+>  splitStr _ [] = ([],[])
 
+>  main :: IO ()
 >  main
 >   = do { a <- getArgs
 >        ; putStr (chain ", " a++"\n")
@@ -54,7 +55,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >     do { let fn = args!!0; contextname = args!!1
 >              dbName | null dbArgs = fnOutp
 >                     | otherwise   = tail (head dbArgs)
->              (fnPrefix,fnSuffix) = (take (length fn-4) fn, drop (length fn-4) fn)
+>              ( _ ,fnSuffix) = (take (length fn-4) fn, drop (length fn-4) fn)
 >              fnFull = if map Char.toLower fnSuffix /= ".adl" then (fn ++ ".adl") else fn
 >              fnOutp = take (length fnFull-4) fnFull
 >        ; inp<-readFile fnFull
