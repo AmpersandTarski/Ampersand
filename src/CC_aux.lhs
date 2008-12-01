@@ -307,7 +307,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >  instance ShowHS Morphism where
 >   showHSname m = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL m++"). A morphism gets no definition in Haskell code.")
 >   showHS indent (Mph nm pos atts sgn@(a,b) yin d)
->    = "Mph "++show nm++" ("++showHS "" pos++") "++showL(map (showHS "") atts)++" "++showSgn sgn++" "++show yin++" ("++showHS "" d++")"
+>    = "Mph "++show nm++" ("++showHS "" pos++") "++showL(map (showHS "") atts)++" "++showSgn sgn++" "++show yin++" "++showHSname d
 >   showHS indent (I atts g s yin)
 >    = "I"++" "++showL(map (showHS "") atts)++" ("++showHS "" g++") ("++showHS "" s++") "++show yin
 >   showHS indent (V atts sgn)

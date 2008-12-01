@@ -361,11 +361,18 @@ TODO: determine which relations are affected but not computed, and report as an 
 >  instance Statistics Fspec where
 >   nServices (Fctx context themes datasets objects vrules) = nServices themes+nServices objects
 >   nPatterns (Fctx context themes datasets objects vrules) = nPatterns themes+nPatterns objects
->   nFpoints  (Fctx context themes datasets objects vrules) = error ("(Module Fspec) Function points TBD")
+>   nFpoints  (Fctx context themes datasets objects vrules) = nFpoints datasets + nFpoints objects
 >  instance Statistics Ftheme where
 >   nServices (Tspc p us) = nServices us
 >   nPatterns (Tspc p us) = 1
 >   nFpoints  (Tspc p us) = sum (map nFpoints us)
+>  instance Statistics Dataset where
+>   nServices (DS c pths) = 4
+>   nServices (BR m)      = 2
+>   nPatterns (DS c pths) = 0
+>   nPatterns (BR m)      = 0
+>   nFpoints  (DS c pths) = fPoints (ILGV Eenvoudig)
+>   nFpoints  (BR m)      = fPoints (ILGV Eenvoudig)
 >  instance Statistics Fobj where
 >   nServices (Fobj dset o svcs rs) = length svcs
 >   nPatterns (Fobj dset o svcs rs) = 1

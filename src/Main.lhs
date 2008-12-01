@@ -91,7 +91,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                ([ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
 >                 | null switches || "-h" `elem` switches]++
 >                 [ makeXML contexts contextname| "-XML" `elem` switches]++
->                 [ showHaskell_old contexts contextname| "-Haskell" `elem` switches]++ -- het resultaat heeft op 7 aug 2008 succesvol gecompileerd.
+>  -- obsolete?   [ showHaskell_old contexts contextname| "-Haskell" `elem` switches]++ -- het resultaat heeft op 7 aug 2008 succesvol gecompileerd.
 >                 [ showHaskell_new fspec | "-Haskell" `elem` switches]++ -- het resultaat moet nog worden gecontroleerd!
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >                 [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++

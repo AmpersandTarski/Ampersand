@@ -23,7 +23,7 @@
 
 >  makeFspecNew2 :: Context -> Fspc
 >  makeFspecNew2 context
->    = Fspc fid themes datasets fviews frules isa where
+>    = Fspc fid themes datasets fviews frules frels isa where
 >       fid      = makeFSid1 (name context)
 >       themes   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
 >                  ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
@@ -31,6 +31,7 @@
 >       datasets = rd [datasetMor context m| m<-mors context]
 >       fviews   = [ makeFview context a | a <-attributes context]
 >       frules   = [ makeFrule context r | r <-rules context]
+>       frels    = declarations context
 >       isa      = ctxisa context
 
 >-- next thing, we look which datasets will be discussed in which themes.

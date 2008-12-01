@@ -23,6 +23,7 @@
 >             , datasets :: [Dataset]     -- One for every (group of) relations
 >             , views    :: [Fview]       -- One for every view 
 >             , vrules   :: [Frule]       -- One for every rule
+>             , vrels    :: [Declaration] -- One for every declaration
 >             , isa      :: (Inheritance Concept) -- The data structure containing the generalization structure of concepts
 >             }
 >  instance Identified Fspc where
@@ -38,10 +39,11 @@
 >   showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS "" (pfixFSid "f_Ctx_" (fsid fspec)) 
 >   showHS indent fspec
 >    = "Fspc"++showHS " " (fsid fspec)++
->      (if null (themes   fspec) then " []" else indent++"{- themes:   -}  "++showL [showHSname t|t<-themes   fspec ])++
->      (if null (datasets fspec) then " []" else indent++"{- datasets: -}  "++showL [showHSname d|d<-datasets fspec ])++
->      (if null (views    fspec) then " []" else indent++"{- views:    -}  "++showL [showHSname o|o<-views    fspec ])++
->      (if null (vrules   fspec) then " []" else indent++"{- rules:    -}  "++showL [showHSname o|o<-vrules   fspec ])++
+>      (if null (themes   fspec) then " []" else indent++"{- themes:    -}  "++showL [showHSname t|t<-themes   fspec ])++
+>      (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
+>      (if null (views    fspec) then " []" else indent++"{- views:     -}  "++showL [showHSname v|v<-views    fspec ])++
+>      (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
+>      (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
 >      indent++" isa "++
 >      indent++"where"++
 >      indent++" isa = "++ showHS (indent ++ "       ") (isa fspec)++
@@ -53,9 +55,11 @@
 >       "\n>-- ***DATASETS***: "++
 >      (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
 >       "\n>-- ***THEMES***: "++
->      (if null (themes fspec) then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+>      (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+>       "\n>-- ***DECLARATIONS OF RELATIONS***: "++
+>      (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
 >       "\n>-- ***PATTERNS***: "++
->      (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++"\n")        
+>      (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++"\n")
 
 Every Ftheme is a specification that is split in units, which are textual entities.
 Every unit specifies one dataset, and each dataset is discussed only once in the entire specification.
