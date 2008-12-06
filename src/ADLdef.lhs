@@ -78,7 +78,12 @@
 >   conceptDefs  ctx = ctxcs ctx
 >   mors         ctx = mors (ctxpats ctx) `uni` mors (ctxos ctx)
 >   morlist      ctx = morlist (ctxpats ctx)++morlist (ctxos ctx)
->   declarations ctx = rd (ctxds ctx ++[d| pat<-(ctxpats ctx), d<-declarations pat])
+>   declarations ctx = (map (makeFdecl ctx).rd) (ctxds ctx ++[d| pat<-ctxpats ctx, d<-declarations pat])
+>    where makeFdecl context d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
+>           = (Sgn nm a b props prL prM prR cs' expla pos nr sig)
+>             where cs' = rd ([link| Popu m ps<-populations context, makeDeclaration m==d, link<-ps]++cs)
+>          makeFdecl context d = d
+> -- TODO: is dit wel de juiste plek om makeFdecl aan te roepen? Dat zou eigenlijk in MakeFspec moeten, maar alleen als de populatie voor de generator uit Fspc wordt gegenereerd.
 >   genE         ctx = genEq (typology (ctxisa ctx))
 >   closExprs    ctx = closExprs (ctxpats ctx) `uni` closExprs (ctxos ctx)
 >   objDefs      ctx = ctxos ctx

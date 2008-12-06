@@ -292,7 +292,7 @@ The function showHS prints structures as haskell source, which is intended for t
 >              " ("++showHS "" a++") ("++showHS "" b++") "
 >              ++showL(map (showHS "") props)++" "
 >              ++show prL++" "++show prM++" "++show prR++" "
->              ++(if null cs then "[]" else "[[\"Content not shown\",\"\"]]")
+>              ++show cs -- (if null cs then "[]" else "[[\"Content not shown\",\"\"]]")
 >              ++" "++show expla
 >              ++" ("++showHS "" pos++")"
 >              ++" "++show nr

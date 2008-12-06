@@ -55,6 +55,7 @@
 >           , ctxos    :: ObjDefs                   -- a list of attributes defined in this context, outside the scope of patterns
 >           , ctxpops  :: Populations               -- a list of populations defined in this context
 >           } 
+
 >  instance Identified Context where
 >   name ctx = ctxnm ctx
 >  instance ShowADL Context where
@@ -249,12 +250,12 @@ Every declaration m has cardinalities, in which
   Rfx:    forall x: x m x                                  (I `subsetEq` m)
 
 >  instance Eq Declaration where
->     s == s' = name s==name s' && decsrc s==decsrc s' && dectgt s==dectgt s'
+>     d == d' = name d==name d' && decsrc d==decsrc d' && dectgt d==dectgt d'
 
 >  instance Identified Declaration where
 >   name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
 >   name (Isn _ _)                      = "I"
->   name (Iscompl _ _)                  = "I-"
+>   name (Iscompl _ _)                  = "-I"
 >   name (Vs _ _)                       = "V"
 
 

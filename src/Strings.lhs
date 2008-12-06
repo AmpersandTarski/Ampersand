@@ -1,7 +1,6 @@
-
 > module Strings where
 
-  This module is ment for all kind of string handling functionality
+  This module is meant for all kind of string handling functionality
 
 >  import Char (toUpper)
 

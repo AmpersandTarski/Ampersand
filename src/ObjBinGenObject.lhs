@@ -18,9 +18,18 @@
 
 >  generateService_getobject :: Context -> ObjectDef -> String
 >  generateService_getobject context object
->   = "function getobject_"++ name object ++"(){\n  "
->     ++ chain "\n  " (addFstLst "  return " ";" (map ((++) "  ") (getObject context object))) ++
+>   = -- vastgesteld op 2008/12/6: gos/=[] dus is de volgende regel overbodig en uitgecommentarieerd:
+>     -- if null gos then error("Fail (Module ObjBinGenObject): unexpected pattern in generateService_getobject ("++show object++")") else
+>     "function getobject_"++ name object ++"(){\n  "
+>     ++ chain "\n  " (("  return "++a):(addLst ";" as)) ++
 >     "\n  }\n"
+>      where a:as = [str++"  "| str<-gos]
+>            gos  = getObject context object
+>            addLst f (a:[]) = [a++f]
+>            addLst f (a:as) = a: addLst f as
+>            addLst f [] = []
+
+           Hypothese: addLst ls lss = init lss++[last lss++ls]
 
 >  objectServices :: Context -> String -> ObjectDef -> String
 >  objectServices context filename object
@@ -400,15 +409,9 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >  isOne o = (fun.multiplicities.disjNF.F) [v (source (ctx o),source (ctx o)),ctx o]
 >  mapTail f (a:as) = a:(map f as)
 >  mapHead f (a:as) = (f a):as
->  addFstLst f1 f2 (a:as) = (f1++a):(addLst f2 as)
->  addLst f (a:[]) = [a++f]
->  addLst f (a:as) = a: addLst f as
 >  mapHeadTail f1 f2 (a:as) = (f1 a):(map f2 as)
 >  mystrs Nothing False = ""
 >  mystrs (Just o) False = ", \""++(name o)++".php\""
 >  mystrs Nothing True = ", null, true"
 >  mystrs (Just o) True = ", \""++(name o)++".php\", true"
 >  phpString b = if b then "true" else "false"
-
-Hypothese addLst ls lss = init lss++[last lss++ls]
-

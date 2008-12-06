@@ -329,9 +329,15 @@
 >             cs = contents s
 >             nijssenZin (Sgn _ _ _ _ [] [] [] _ expla _ _ _) = "No natural language meaning is assigned to this relation. "++expla++"<P>"
 >             nijssenZin (Sgn _ _ _ _ l s r [] expla _ _ _)
->              = expla++"A tuple <I>x</I>,<I>y</> in the following table means:<BR />"++l++"&lt;x&gt;"++s++"&lt;y&gt;"++r++".<P>"
+>              = expla++"A tuple <I>x</I>,<I>y</I> in the following table means:<BR />"++l++"&lt;x&gt;"++s++"&lt;y&gt;"++r++".<P>"
 >             nijssenZin (Sgn _ _ _ _ l s r (c:cs) expla _ _ _)
 >              = expla++"A tuple, for example <I>("++src c++","++trg c++")</I> in the following table means:<BR />"++l++src c++s++trg c++r++".<P>"
+>             nijssenZin (Isn g s)
+>              = "A tuple <I>x</I>,<I>y</I> in relation I means:<BR />x&eq;y.<P>"
+>             nijssenZin (Iscompl g s)
+>              = "A tuple <I>x</I>,<I>y</I> in relation -I means:<BR />x&ne;y.<P>"
+>             nijssenZin (Vs g s)
+>              = "Every tuple <I>x</I>,<I>y</I> is in relation V.<P>"
 >             tabl = "\nThe following table displays the contents of this relation."++
 >                    htmlBlueTable "darkred" [a,b] cs++"\n\n"
 >             viol = chain "\n\n"

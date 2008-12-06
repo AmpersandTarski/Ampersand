@@ -1,4 +1,3 @@
-
 > module MakeFspec (makeFspecNew2,Fspc)
 > where
 
@@ -31,7 +30,7 @@
 >       datasets = rd [datasetMor context m| m<-mors context]
 >       fviews   = [ makeFview context a | a <-attributes context]
 >       frules   = [ makeFrule context r | r <-rules context]
->       frels    = declarations context
+>       frels    = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
 >       isa      = ctxisa context
 
 >-- next thing, we look which datasets will be discussed in which themes.
@@ -114,6 +113,12 @@ Motivation: we want to make one textual unit per dataset, but equivalent dataset
 
 >  makeFrule :: Context -> Rule -> Frule
 >  makeFrule context r = Frul r
+
+>  makeFdecl :: Context -> Declaration -> Declaration
+>  makeFdecl context d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
+>   = (Sgn nm a b props prL prM prR cs' expla pos nr sig)
+>     where cs' = rd ([link| Popu m ps<-populations context, makeDeclaration m==d, link<-ps]++cs)
+>  makeFdecl context d = d
 
 >  makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
 >  makeFunit context pat objs newConcs newDecls
