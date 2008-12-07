@@ -27,7 +27,7 @@
 >            gos  = getObject context object
 >            addLst f (a:[]) = [a++f]
 >            addLst f (a:as) = a: addLst f as
->            addLst f [] = []
+>            addLst f [] = [f]
 
            Hypothese: addLst ls lss = init lss++[last lss++ls]
 
