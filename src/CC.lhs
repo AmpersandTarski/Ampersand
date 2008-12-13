@@ -5,6 +5,7 @@
 >  import Collection (Collection(empty,uni,(>-),rd))
 >  import Auxiliaries (sort, upCap)
 >  import ADLdef 
+>  import ShowADL
 >  import CC_aux 
 >            (  pKey_pos
 >             , pVarid_val_pos, pConid_val_pos

@@ -4,16 +4,8 @@
 >  import Collection (Collection(empty, (>-),rd)) 
 >  import Auxiliaries (chain, sort', eqCl)
 >  import ADLdef
->  import CC_aux 
->        --    ( Context, src, contents, trg, showADL, Concept, Morphism(Mph), Rule, Key, Concept(Anything {- ,NOthing,C,S -})
->        --    , Language( rules, declaredRules, objectdefs )
->        --    , Declaration, concs, source, target, isFunction, isFlpFunction, posNone
->        --    , flp, isProperty, declarations, declaration, mors, closExprs, showFullRelName
->        --    , Expression(F,Tm), v
->        --    , Prop(Sur,Inj),multiplicities
->        --    , ObjectDef(Obj), Object(concept, attributes, ctx)
->        --    )
->--  import Calc
+>  import ShowADL
+>  import CC_aux
 >  import HtmlFilenames (fnContext)
 
 >  erAnalysis :: (Language a) => a -> ([ObjectDef],[Declaration],[String])

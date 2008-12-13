@@ -35,8 +35,7 @@
 >               , FilePos(..),posNone
 >               , Substitutive(..)
 >               , mIs
->               , sIs
->               , showADL  ) 
+>               , sIs )
 > where
 >
 >  import ADLdataDef
@@ -438,9 +437,9 @@ Every declaration m has cardinalities, in which
 >   target (Fd [])         = Anything -- error ("(module CC_aux) Fatal: target (Fd [])")
 >   target (Fd ts)         = target (last ts)
 >   target (Fu fs)         = if length (eqClass order (map target fs))==1 then minimum (map target fs)
->                            else Anything -- error ("(module CC_aux) Fatal: target ("++showADL (Fu fs)++")")
+>                            else Anything
 >   target (Fi fs)         = if length (eqClass order (map target fs))==1 then maximum (map target fs)
->                            else Anything -- error ("(module CC_aux) Fatal: target ("++showADL (Fi fs)++")")
+>                            else Anything
 >   target (K0 e)          = target e
 >   target (K1 e)          = target e
 >   target (Cp e)          = target e
@@ -728,7 +727,7 @@ Every declaration m has cardinalities, in which
 >   multiplicities r           = []
 >   isMph r  | ruleType r=='A' = isMph (consequent r)
 >            | otherwise       = False
->   flp r@(Ru 'A' antc pos expr cpu expla (a,b) nr pn) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in flp ("++showADLX r++")")) pos (flp expr) cpu expla (b,a) nr pn
+>   flp r@(Ru 'A' antc pos expr cpu expla (a,b) nr pn) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in flp ("++show r++")")) pos (flp expr) cpu expla (b,a) nr pn
 >   flp (Ru c antc pos cons cpu expla (a,b) nr pn)   = Ru c (flp antc) pos (flp cons) cpu expla (b,a) nr pn
 > --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS "" r)
 >   typeUniq r | ruleType r=='A' = typeUniq (antecedent r)
@@ -772,12 +771,12 @@ Every declaration m has cardinalities, in which
 
 >  instance Substitutive Rule where
 >   subst (m,f) r@(Ru 'A' antc pos cons cpu expla sgn nr pn)
->    = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in subst ("++showADLX m++","++showADLX f++") ("++showADLX r++")")) pos cons' cpu expla (sign cons') nr pn
+>    = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in subst ("++show m++","++show f++") ("++show r++")")) pos cons' cpu expla (sign cons') nr pn
 >      where cons' = subst (m,f) cons
 >   subst (m,f) r@(Ru c antc pos cons cpu expla sgn nr pn)
 >    = if sign antc' `order` sign cons'
 >      then Ru c antc' pos cons' cpu expla (sign antc' `lub` sign cons') nr pn
->      else r -- error ("(module CC_aux) Fatal: cannot execute:   subst (m,f) r\nwith m="++show m++"\n     f="++show f++"\nand  r="++showADL r++"\n"++showHS "" r++"\nbecause "++show (sign antc')++" `order` "++show (sign cons')++" is False.\n"++gEtabG gEq [c| (a,b)<-[sign antc',sign cons'], c<-[a,b]])
+>      else r -- error ("(module CC_aux) Fatal: cannot execute:   subst (m,f) r\nwith m="++show m++"\n     f="++show f++"\nand  r="++show r++"\n"++showHS "" r++"\nbecause "++show (sign antc')++" `order` "++show (sign cons')++" is False.\n"++gEtabG gEq [c| (a,b)<-[sign antc',sign cons'], c<-[a,b]])
 >      where antc' = subst (m,f) antc
 >            cons' = subst (m,f) cons
 >   subst (m,f) (Sg p rule expla sgn nr pn signal)
@@ -794,7 +793,7 @@ Every declaration m has cardinalities, in which
 >  ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
 >  ruleType    (Gc _ _ _ _ _ _ _)     = 'g'
 >  ruleType    (Fr _ _ _ _)           = 'f'
->  antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++showADLX r)
+>  antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
 >  antecedent  (Ru _ a _ _ _ _ _ _ _) = a
 >  antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
 >  antecedent  (Gc _ d _ _ _ _ _)     = Tm d
@@ -1045,4 +1044,3 @@ Transform a rule to an expression:
 
 >  --Onderstaande functies zijn bedoeld voor foutmeldingen:
 >  misbruiktShowHS indent e = "showHS \""++indent++show e
->  showADLX x = show x

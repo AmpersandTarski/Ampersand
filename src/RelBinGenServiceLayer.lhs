@@ -3,6 +3,7 @@
 >  import Auxiliaries(commaNL,chain,eqCl,adlVersion,sord,eqClass)
 >  import Calc(conjNF, triggers)
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux(applyM,showHS)
 >  import CommonClasses
 >  import Collection(Collection(rd))

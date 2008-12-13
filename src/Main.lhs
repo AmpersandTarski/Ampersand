@@ -12,6 +12,7 @@
 >  import AGtry (sem_Architecture)
 >  import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
 >  import Calc (deriveProofs,triggers)
+>  import Views (viewEstimate)
 >  import Fspec (projectClassic
 >               ,generateFspecLaTeX
 >               ,generateArchLaTeX
@@ -95,6 +96,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                 [ showHaskell_new fspec | "-Haskell" `elem` switches]++ -- het resultaat moet nog worden gecontroleerd!
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >                 [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+>                 [ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-views" `elem` switches]++
 >  -- obsolete     [ functionalSpecText contexts contextname (lineStyle switches) (lang switches) | "-fText" `elem` switches]++
 >                 [ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
 >                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
@@ -223,7 +225,12 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >      ctxs    = [c| c<-contexts, name c==contextname]
 >      spec = funcSpec context (ents,rels,ruls) language
 >      (ents,rels,ruls) = erAnalysis context
->    -- the following is copied from Atlas.lhs. TODO: remove double code.
+
+>  viewEstimates contexts contextname graphicstyle language filename
+>   = putStr (viewEstimate (makeFspec context))
+>     where
+>      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+>      ctxs    = [c| c<-contexts, name c==contextname]
 
 >  archText contexts contextname graphicstyle language filename
 >   = putStr ("\nGenerating architecture document for context "++

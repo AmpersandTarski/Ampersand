@@ -55,6 +55,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,
 >  import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
 >  import Typology
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux( ShowHS(showHSname, showHS)
 >                , isSgn
 >                , applyM ,conts, explain, fEmpty

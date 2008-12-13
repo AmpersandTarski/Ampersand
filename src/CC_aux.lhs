@@ -42,6 +42,7 @@
 >  import Typology ( Inheritance(Isa), Typologic, genEq, typology)
 >  import ADLdataDef
 >  import ADLdef
+>  import ShowADL
 
 TODO:
  - Onderscheid tussen signaal en regel maken in de datastructuur van regel.

@@ -60,33 +60,11 @@ import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
-import CC_aux 
-         (  Architecture(Arch)
-          , Context(Ctx)
-          , Concept(Anything, NOthing, C, S)
-          , ConceptDef(Cd)
-          , Declaration(Sgn, Vs, Isn, Iscompl)
-          , Rule(Ru,Sg,Gc)
-          , Gen(G)
-          , declarations
-          , Expressions
-          , Pattern(Pat)
-          , posNone
-          , Prop(Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx)
-          , Morphic(isIdent), Gens, Declarations, GenR, Contexts
-          , Language( declaredRules, multRules, rules, signals, specs, patterns, objectdefs, isa )
-          , showADL, source, target, idsOnly, concs, showHS
-          , Morphism(Mph,I,V)
-          , contents, put_gE, makeConceptSpace, pMeaning
-          , Expression(Fu,Fi,Fd,Tc,F,Tm,K0,K1,Cp)
-          , FilePos(FilePos), ConceptDefs, Concepts, concept
-          , Pairs, Paire, Rules, Morphisms, Patterns
-          , sign, anything, shSigns, gEtabG, order, flp
-          , isMph, mIs
-          , ObjectDef(Obj), ObjDefs, ctx, KeyDef(Kd), KeyDefs, Population(Popu), Populations
-          , nr, pos, multiplicities, declaration, renumberRules
-          , inline, extends
-         )
+import ADLdef
+import ShowADL
+import CC_aux ( showHS,order,makeConceptSpace, put_gE
+              , renumberRules,pMeaning,shSigns,anything
+              , gEtabG)
 
 diagl = 17
 diagc = 0

@@ -4,6 +4,7 @@
 >  import Collection
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux( showHS
 >               , applyM
 >               )
@@ -79,11 +80,13 @@ Upon success, it yields a CSL with no violation of any of the rules.
 >        in "      if($DB_errs"++ (if noTrans || null checkers then "" else " || !("++chain " && " checkers++")")++")"
 >      , "      {  DB_debug( \"DB errors, removing database\",5);"
 >      , "         mysql_query(\"DROP DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not delete DB "++dbName++"');"
+>      , "         set_time_limit(30);"
 >      , "         die ('Errors creating database');"
 >      , "        } else {"
 >      , "           DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"
 >      , "        }"
 >      , "  }else{"
+>      , "    set_time_limit(30);"
 >      , "    DB_debug( \"Connected to database\",3 );"
 >      , "  }"
 >      ]

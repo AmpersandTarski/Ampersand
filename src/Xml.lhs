@@ -5,6 +5,7 @@
 >  import Auxiliaries
 >         ( chain, sort') 
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux ( explain)
 
 >  makeXML contexts contextname

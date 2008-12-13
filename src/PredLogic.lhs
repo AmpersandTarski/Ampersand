@@ -16,6 +16,7 @@
 >  import Auxiliaries (chain, eqCl)
 
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux ( showHS
 >                , explain 
 >                , applyM 

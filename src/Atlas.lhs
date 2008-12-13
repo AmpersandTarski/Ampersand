@@ -12,6 +12,7 @@
 >            ,Typology(Typ), Typologic(typology)
 >            ,makeTrees)
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux ( showHS, explain
 >                , conts, dom, cod
 >                , clearG

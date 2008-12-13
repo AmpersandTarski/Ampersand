@@ -9,6 +9,7 @@
 >  import Char(toLower)
 >  import Strings(firstCaps,tt,idNam,chain)
 >  import ADLdef
+>  import ShowADL
 >  import FspecDef
 
 >  import Calc(lClause,rClause,makeRule)

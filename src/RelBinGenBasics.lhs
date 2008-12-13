@@ -2,6 +2,7 @@
 >  import Char
 >  import Auxiliaries
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux ( isProperty, ShowHS(showHS),oneMorphism)
 >  import CommonClasses
 >  import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule(CR))

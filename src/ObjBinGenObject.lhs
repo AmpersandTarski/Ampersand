@@ -3,6 +3,7 @@
 >  import Auxiliaries(chain, adlVersion)
 >  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux ( tot, fun
 >                , objectOfConcept
 >                )

@@ -5,6 +5,7 @@
 >  import Auxiliaries (chain, eqCl, enc)
 >  import Typology (Inheritance(Isa))
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux  
 >        --     ( Context, Concept, Object(concept, attributes, ctx)
 >        --     , showADL, Morphical
