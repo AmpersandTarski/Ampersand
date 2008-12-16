@@ -7,6 +7,7 @@
 >  import Auxiliaries (chain, commaEng, adlVersion)
 >  import Typology (Typology(Typ), typology, makeTrees)
 >  import ADLdef
+>  import ShowADL
 >  import CC_aux (showHS, showHSname)
 >  import Languages( Lang(English,Dutch))
 >  import AGtry (sem_Architecture)
@@ -111,7 +112,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >--               ++[ putStr (show slRes) | "-dump" `elem` switches ]
 >                ) >>
 >                   putStr ("\nwriting to \\ADL.log:\nADL "++filename++" "++chain " " switches++"\n") >>
->                   putStr ("  nr. of classes:                    "++show (length ents)++"\n") >>
+>                   putStr ("  nr. of classes:                    "++show (length datasets)++"\n") >>
 >                   putStr ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
 >                   putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
 >                   putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
@@ -121,7 +122,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                   putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
 >                   putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
 >                   appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
->                   appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length ents)++"\n") >>
+>                   appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length datasets)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of relations:                  "++show (length rels)++"\n") >>
 >                   appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
@@ -133,8 +134,8 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >                  where
 >                     context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >                     ctxs    = [c| c<-contexts, name c==contextname]
->                     (ents,rels,ruls) = erAnalysis context
->                     spec = funcSpec context (ents,rels,ruls) (lang switches)
+>                     (datasets,viewEsts,rels,ruls) = erAnalysis context
+>                     spec = funcSpec context (datasets,viewEsts,rels,ruls) (lang switches)
 >                     fspec = makeFspecNew2 context
 >            lineStyle switches
 >             | "-crowfoot" `elem` switches = "crowfoot"
@@ -158,7 +159,7 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
 >      spec = funcSpec context (erAnalysis context) language
->      (entities, relations, ruls) = erAnalysis context
+>      (datasets,viewEsts, relations, ruls) = erAnalysis context
 
 >  showHaskell_old :: [Context] -> String -> IO ()
 >  showHaskell_old contexts contextname
@@ -206,8 +207,8 @@ functionalSpecText generates a functional specification in ASCII
      where
       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
       ctxs    = [c| c<-contexts, name c==contextname]
-      spec = funcSpec context (entities, relations, ruls) language
-      (entities, relations, ruls) = erAnalysis context
+      spec = funcSpec context (datasets,viewEsts, relations, ruls) language
+      (datasets,viewEsts, relations, ruls) = erAnalysis context
 
 functionalSpecLaTeX generates a functional specification in LaTeX
 
@@ -223,14 +224,15 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     where
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
->      spec = funcSpec context (ents,rels,ruls) language
->      (ents,rels,ruls) = erAnalysis context
+>      spec = funcSpec context (datasets,viewEsts,rels,ruls) language
+>      (datasets,viewEsts,rels,ruls) = erAnalysis context
 
 >  viewEstimates contexts contextname graphicstyle language filename
->   = putStr (viewEstimate (makeFspec context))
+>   = putStr (chain "\n\n" (map showADL viewEsts))
 >     where
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
+>      (datasets,viewEsts,rels,ruls) = erAnalysis context
 
 >  archText contexts contextname graphicstyle language filename
 >   = putStr ("\nGenerating architecture document for context "++
@@ -242,8 +244,8 @@ functionalSpecLaTeX generates a functional specification in LaTeX
 >     where
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
->      spec = funcSpec context (ents,rels,ruls) language
->      (ents,rels,ruls) = erAnalysis context
+>      spec = funcSpec context (datasets,viewEsts,rels,ruls) language
+>      (datasets,viewEsts,rels,ruls) = erAnalysis context
 >    -- the following is copied from Atlas.lhs. TODO: remove double code.
 
 >  glossary contexts contextname language

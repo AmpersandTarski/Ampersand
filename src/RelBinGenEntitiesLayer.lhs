@@ -288,37 +288,37 @@
 >     , ""
 >     , "function DB_createRelation($rel,$attrs){"
 >     , phpCodeTransactionStart context noTransactions
->     , phpCodeRels phpCodeRelCreate (context,entities,relations,hcs)
+>     , phpCodeRels phpCodeRelCreate (context,datasets,relations,hcs)
 >     , phpCodeTransactionClose context noTransactions "true"
 >     , "}"
 >     , ""
 >     , "function DB_updateRelation($rel,$attrsOld,$attrs){"
 >     , phpCodeTransactionStart context noTransactions
->     , phpCodeRels phpCodeRelUpdate (context,entities,relations,hcs)
+>     , phpCodeRels phpCodeRelUpdate (context,datasets,relations,hcs)
 >     , phpCodeTransactionClose context noTransactions "true"
 >     , "}"
 >     , ""
 >     , "function DB_deleteRelation($rel,$attrs){"
 >     , phpCodeTransactionStart context noTransactions
->     , phpCodeRels phpCodeRelDelete (context,entities,relations,hcs)
+>     , phpCodeRels phpCodeRelDelete (context,datasets,relations,hcs)
 >     , phpCodeTransactionClose context noTransactions "true"
 >     , "}"
 >     , ""
 >     , "function DB_createEntity($ent,$attrs){"
 >     , phpCodeTransactionStart context noTransactions
->     , phpCodeEnts phpCodeEntCreate (context,entities,relations,hcs)
+>     , phpCodeEnts phpCodeEntCreate (context,datasets,relations,hcs)
 >     , phpCodeTransactionClose context noTransactions "$attrs"
 >     , "}"
 >     , ""
 >     , "function DB_updateEntity($ent,$attrs){"
 >     , phpCodeTransactionStart context noTransactions
->     , phpCodeEnts phpCodeEntUpdate (context,entities,relations,hcs)
+>     , phpCodeEnts phpCodeEntUpdate (context,datasets,relations,hcs)
 >     , phpCodeTransactionClose context noTransactions "$attrs"
 >     , "}"
 >     , ""
 >     , "function DB_deleteEntity($ent,$handle){"
 >     , phpCodeTransactionStart context noTransactions
->     , phpCodeEnts phpCodeEntDelete (context,entities,relations,hcs)
+>     , phpCodeEnts phpCodeEntDelete (context,datasets,relations,hcs)
 >     , phpCodeTransactionClose context noTransactions "true"
 >     , "}"
 >     , ""
@@ -351,7 +351,7 @@ Obsolete?
 >     , "}"
 >     , "" ] ++ "\n?>"
 >   where
->       (entities, relations, erruls) = erAnalysis context
+>       (datasets, viewEsts, relations, erruls) = erAnalysis context
 >       hcs = [hc| rule<-rules context, hc<-triggers rule ]
 >       labelname (nm,"",k:ks) = if length labels <=1
 >                                then name k
@@ -362,7 +362,7 @@ Obsolete?
 >       comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]
 
 
->  phpCodeRelCreate (context,entities,relations,hcs) r
+>  phpCodeRelCreate (context,datasets,relations,hcs) r
 >   = (chain "\n".filter (not.null)) (
 >     [ "        if(isset($attrs['"++phpRelSrc context r++"']) && isset($attrs['"++phpRelTrg context r++"'])) {"
 >     , insConcepts context hcs 8 (source r) (sqlRelSrc r) [r]
@@ -383,7 +383,7 @@ Obsolete?
 >              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >              ]
 
->  phpCodeRelUpdate (context,entities,relations,hcs) r
+>  phpCodeRelUpdate (context,datasets,relations,hcs) r
 >   = (chain "\n".filter (not.null)) (
 >     [ "        if(isset($attrs['"++phpRelSrc context r++"']) && isset($attrs['"++phpRelTrg context r++"'])) {"
 >     , "           $deleted=0;"
@@ -421,7 +421,7 @@ Obsolete?
 >     , "           }"
 >     , "        }" ] )
 
->  phpCodeRelDelete (context,entities,relations,hcs) r
+>  phpCodeRelDelete (context,datasets,relations,hcs) r
 >   = (chain "\n".filter (not.null)) (
 >     [ "        if(isset($attrs['"++phpRelSrc context r++"']) && isset($attrs['"++phpRelTrg context r++"'])) {"
 >     , "           DB_doquer('DELETE FROM "++sqlRelName context r++" WHERE "++sqlRelSrc r++"=\\''.addslashes($attrs['"++phpRelSrc context r++"']).'\\' AND "++sqlRelTrg r++"=\\''.addslashes($attrs['"++phpRelTrg context r++"']).'\\'');"
@@ -451,7 +451,7 @@ Obsolete?
 >              , suitable toExpr, m<-mors toExpr, null [e| e<-mors frExpr, isSignal (makeDeclaration e)]
 >              ]
 
->  phpCodeEntCreate (context,entities,relations,hcs) o
+>  phpCodeEntCreate (context,datasets,relations,hcs) o
 >   = (chain "\n".filter (not.null))
 >     [ "        if(!isset($attrs['"++phpCname++"'])) $attrs['"++phpCname++"']=rand(); // random.."
 >-- insert c into the concept relation
@@ -480,7 +480,7 @@ Approach for updates:
 $qa contains the current state of the entity.
 It is compared to the desired state,
 
->  phpCodeEntUpdate (context,entities,relations,hcs) o
+>  phpCodeEntUpdate (context,datasets,relations,hcs) o
 >   = (chain "\n".filter (not.null))
 >     [ "        $qa=quoteSplitArray(DB_doquer('SELECT "++
 >         chain (","++phpIndent (i+22)) 
@@ -537,7 +537,7 @@ It is compared to the desired state,
 >             comp :: [Declaration]      -- all computed relations
 >             comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]
 
->  phpCodeEntDelete (context,entities,relations,hcs) o
+>  phpCodeEntDelete (context,datasets,relations,hcs) o
 >   = (chain "\n".filter (not.null))
 >     [ if null dms then "" else
 >       "        $core=DB_doquer('SELECT "++
@@ -596,13 +596,13 @@ It is compared to the desired state,
 >             dms = []::[Morphism] -- delMors context (concept o)
 >             i=8
 
->  phpCodeRels f (context,entities,relations,hcs)
+>  phpCodeRels f (context,datasets,relations,hcs)
 >   = if null rels then "  DB_debug('Relation '.$rel.' unknown',4);" else
 >     chain "\n"
 >     [ "  switch($rel){"
 >     , "      "++chain "\n      "
 >         [ "case '"++phpRelName context r++"':\n"++
->           f (context,entities,relations,hcs) r
+>           f (context,datasets,relations,hcs) r
 >           ++"\n        break;"
 >         | r<-rels]
 >     , "    DB_debug('Relation '.$rel.' unknown',4);"
@@ -610,13 +610,13 @@ It is compared to the desired state,
 >     ]
 >     where rels= [r| r<-relations, not (isSignal r)]
 
->  phpCodeEnts f (context,entities,relations,hcs)
+>  phpCodeEnts f (context,datasets,relations,hcs)
 >   = if null (attributes context) then "  DB_debug('Entity '.$ent.' unknown',4);" else
 >     chain "\n"
 >     [ "  switch($ent){"
 >     , "      "++chain "\n      "
 >       [ "case '"++phpConcept context (concept o)++"':\n"++
->         f (context,entities,relations,hcs) o++
+>         f (context,datasets,relations,hcs) o++
 >         "\n        break;"
 >       | o<-attributes context ]
 >     , "    DB_debug('Entity '.$ent.' unknown',4);"

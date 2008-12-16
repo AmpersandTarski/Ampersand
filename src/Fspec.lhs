@@ -710,7 +710,7 @@ Assuming that they will be computed in all cases, all other relations are treate
 This assumption, however, is not true.
 TODO: determine which relations are affected but not computed, and report as an error.
 
->  funcSpec context (entities,relations,ruls) language
+>  funcSpec context (datasets,viewEsts,relations,ruls) language
 >   = [ Tspc pat 
 >            ([ Uspc (firstCaps (name o)) pat [ {- (o,ILGV Eenvoudig,cs,rs) -} ]
 >                    ({- [ createObj context o rs ] ++ [ readObj context o]                           ++
@@ -964,8 +964,8 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >  firsts seen (ds:dss) = new: firsts (seen++new) dss where new = ds>-seen
 >  firsts seen [] = []
 >  handle :: Identified a => Context -> a -> String
->  handle context c = firstCaps (name c)++if name c `elem` (map name entities) then "Handle" else ""
->   where (entities,relations,ruls) = erAnalysis context
+>  handle context c = firstCaps (name c)++if name c `elem` (map name datasets) then "Handle" else ""
+>   where (datasets,viewEsts,relations,ruls) = erAnalysis context
 
 >  srvSchema pat language cnm (Sspc nm sees changes fpa input output rs pre post) new
 >   = latexSubsection nm nm++
@@ -1064,7 +1064,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >   ltshow :: String -> Typology Concept -> Lang -> a -> String
 >   ltshow nm typ = lshow
 
->  definingPattern context entities c
+>  definingPattern context datasets c
 >   = ( fst . head . sort' ((0-).length.snd) ) [(p,rs)| (p,o,rs)<-ps, concept o==c]
 >     where
 >      ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,o,r)->(name p,name o)) rs, (p,e,_)<-take 1 cl]
@@ -1077,7 +1077,7 @@ Alle overige relaties worden voor het eerste gebruik gedefinieerd.
 >      ps = [ (p,e,[r|(_,_,r)<-cl]) | cl <-eqCl (\(p,o,_)->(p,name o)) rs, (p,e,_)<-take 1 cl ]
 >      rs = [ (name pat,o,rule)
 >           | pat<-patterns context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
->      (entities, relations, ruls) = erAnalysis context
+>      (datasets,viewEsts, relations, ruls) = erAnalysis context
 
 >  nDesignPr context = n where (_,n) = dp undef f context where undef=undef; f=f
 >  designPrinciples English context = dps
@@ -2015,5 +2015,5 @@ TODO: complete all accents and test
 >         , Tsk "Transfer" "1 mon" "" ["Roll-out"]
 >         , Tsk "after care" "3 mons" "" ["Transfer"]
 >         ]
->      (entities, relations, ruls) = erAnalysis context
+>      (datasets,viewEsts, relations, ruls) = erAnalysis context
 

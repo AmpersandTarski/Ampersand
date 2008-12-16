@@ -110,7 +110,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >                                     | o<-attributes context]
 >        in if null xs then "$DB_display = Array();" else "$DB_display = Array\n      ( "++chain "\n      , " xs++"\n      );")
 >     , ""
->     , "// DB_mult_cc is used by isOkRelation (entities) and by adlExport"
+>     , "// DB_mult_cc is used by isOkRelation (datasets) and by adlExport"
 >     , "$DB_mult_cc = Array"
 >     , "    ( "++chain "\n      , " [ "\""++phpRelName context s++"\"=>Array("++chain "," ["'"++show m++"'"| m<-multiplicities s, m/=Aut]++")"
 >                                    | s<-declarations context, not (isSignal s)]++"\n      );"
@@ -195,7 +195,7 @@ dbError generates the text to be printed when 'rule' is violated. Parameters x a
 >     , "?>"
 >     ]
 >    where
->     (entities, relations, ruls') = erAnalysis context
+>     (datasets, viewEsts, relations, ruls') = erAnalysis context
 >     hcs = [hc| rule<-rules context, hc<-triggers rule ]
 
 

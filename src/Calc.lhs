@@ -66,7 +66,7 @@
 >                             | o<-attributes context, c<-[concept o]]) >>
 >     putStr "\n--------------\n"
 >     where
->      (entities, relations, ruls) = erAnalysis context
+>      (datasets,viewEsts, relations, ruls) = erAnalysis context
 >      hcs = [hc| rule<-declaredRules context++multRules context, hc<-triggers rule ]
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs = [ c| c<-contexts, name c==contextname]

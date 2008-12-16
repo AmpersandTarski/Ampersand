@@ -51,14 +51,15 @@
 >  import ERmodel (erAnalysis)
 >  import Fspec
 
->  viewEstimate :: Fspec -> String
->  viewEstimate fspec
->   = chain "\n\n" [showADL vd| d<-datasets, vd<-[makeView d], not (null (objats vd))]
+>  viewEstimate :: Context -> String
+>  viewEstimate context
+>   = chain "\n\n" [showADL d| d<-datasets]
 >     where
->      Fctx context themes datasets objects vrules = fspec
 >      makeView (DS c pths)
 >            = Obj (haskellIdentifier (name c))
 >                  posNone
 >                  (Tm (mIs c))
 >                  [ Obj (name m) posNone (Tm m) [] | m<-pths ]
 >      makeView (BR m) = Obj (name m) posNone (Tm m) []
+>      (datasets, viewEsts, relations, ruls) = erAnalysis context
+

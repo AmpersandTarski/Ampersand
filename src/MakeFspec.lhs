@@ -338,8 +338,8 @@ Te bepalen:
 >                        )]
 
 >  handle :: Identified a => Context -> a -> String
->  handle context c = firstCaps (name c)++if name c `elem` (map name entities) then "Handle" else ""
->   where (entities,relations,ruls) = erAnalysis context
+>  handle context c = firstCaps (name c)++if name c `elem` (map name datasets) then "Handle" else ""
+>   where (datasets,viewEsts,relations,ruls) = erAnalysis context
 
 >  dressRules :: [(Expression,Rule)] -> [Rule]
 >  dressRules clauses = [ if length cl>1 then rule else makeRule rule clause | cl<-(map rd.eqCl snd) clauses, (clause,rule)<-take 1 cl]

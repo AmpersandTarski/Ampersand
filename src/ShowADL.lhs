@@ -58,7 +58,7 @@
 >   showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowADL ObjectDef where
->   showADL obj = "  OBJECT "++name obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
+>   showADL obj = "  VIEW "++name obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
 >                 "\n   = [ "++chain "\n     , " (map (showADL.objctx) (objats obj))++"]"
 
 >  instance ShowADL KeyDef where

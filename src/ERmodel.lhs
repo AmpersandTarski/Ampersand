@@ -1,4 +1,4 @@
-> module ERmodel(erAnalysis) where  -- commented modules are required for testing
+> module ERmodel(erAnalysis) where
 >  import Char (isSpace, isAlphaNum)
 >  import CommonClasses ( Identified(name)) 
 >  import Collection (Collection(empty, (>-),rd)) 
@@ -8,36 +8,42 @@
 >  import CC_aux
 >  import HtmlFilenames (fnContext)
 
->  erAnalysis :: (Language a) => a -> ([ObjectDef],[Declaration],[String])
->  erAnalysis p = (entities, rels, ruls)
+>  erAnalysis :: (Language a) => a -> ([ObjectDef],[ObjectDef],[Declaration],[String])
+>  erAnalysis p = (datasets, viewEsts, rels, ruls)
 >   where
->      entities 
->       | null (objectdefs p) = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
->                                                                 , objats = [ (objdefNew (Tm e)) { objnm = (concat.map name.mors) e
->                                                                                                 } | e<-as ]
->                                                                 }
->                               | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
->       | otherwise           = objectdefs p
+>      datasets 
+>       = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
+>                                           , objats = [ (objdefNew (Tm e)) { objnm = (concat.map name.mors) e
+>                                                                           } | e<-as ]
+>                                           }
+>         | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
+>      viewEsts
+>       = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
+>                                           , objats = [ (objdefNew (Tm e)) { objnm = (concat.map name.mors) e
+>                                                                           } | e<-as ]
+>                                           }
+>         | c<-concs p, as<-[[Mph (name d) posNone [] (source d,target d) True d| d<-declarations p, source d == c]++
+>                            [flp (Mph (name d) posNone [] (source d,target d) True d)| d<-declarations p, target d == c]]
+>         , not (null as) ]
 >      attrs :: [Morphism]
->      attrs = [Mph (name s ++ if isFlpFunction s then "Fun" else "") posNone [] (source s,target s) True s | s<-declarations p,    isFunction s] ++
->              [flp (Mph (name s++if isFunction s then "Inv" else "") posNone [] (source s,target s) True s)| s<-declarations p, isFlpFunction s] ++
->              [     Mph (name s) posNone [] (source s,target s) True s | s<-declarations p, isProperty s]
+>      attrs = [Mph (name d ++ if isFlpFunction d then "Fun" else "") posNone [] (source d,target d) True d | d<-declarations p,    isFunction d] ++
+>              [flp (Mph (name d++if isFunction d then "Inv" else "") posNone [] (source d,target d) True d)| d<-declarations p, isFlpFunction d] ++
+>              [     Mph (name d) posNone [] (source d,target d) True d | d<-declarations p, isProperty d]
 > --     ss = [d| d<-declarations p {- , take 5 (name d) /= "Clos_" -} ]
-> --     ents = [concept e| e<-entities]
-> --     rels' = [s| s<-declarations p,      s `elem` declarations [a| e<-entities, a<-attributes e]]
->      rels  = [s| s<-declarations p, not (s `elem` declarations [a| e<-entities, a<-attributes e])]
+> --     rels' = [d| d<-declarations p,      d `elem` declarations [a| e<-datasets, a<-attributes e]]
+>      rels  = [d| d<-declarations p, not (d `elem` declarations [a| e<-datasets, a<-attributes e])]
 >      ruls = [showADL r| r<-declaredRules p]
 
        ruls = ["foldr f ("++showADL r++") "++show [(s,e)| (s,e)<-substitutions, s `elem` declarations r]| r<-declaredRules p]
        substitutions = [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source l,target s) True s)])
-                       | s<-rels', target s `elem` ents
+                       | s<-rels', target s `elem` datasets
                        , l<-attrs, target l==source s ]++
                        [ (s,F [Tm (Mph (name s) posNone [] (source s,source r) True s),Tm r])
-                       | s<-rels', source s `elem` ents
+                       | s<-rels', source s `elem` datasets
                        , r<-attrs, target r==target s ]++
                        [ (s,F [Tm (flp l),Tm (Mph (name s) posNone [] (source s,source r) True s),Tm r])
                        | s<-rels'
-                       , not (source s `elem` ents) && not (target s `elem` ents)
+                       , not (source s `elem` datasets) && not (target s `elem` datasets)
                        , l<-attrs, target l==source s
                        , r<-attrs, target r==target s ]
 
@@ -51,7 +57,7 @@
 >      rs      = declaredRules context
 >      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
 >      ctxs    = [c| c<-contexts, name c==contextname]
->      (entities,relations,ruls) = erAnalysis context
+>      (datasets,viewEsts,relations,ruls) = erAnalysis context
 >      fnObject c = "list"++name c++".csv"
 >      shEnts = chain "\n" . map (chain ";")
 >      entConts context (Obj nm pos c ats) = [] -- moet inhoud opleveren, maar moet nog worden gebouwd.
@@ -97,7 +103,7 @@ Since the introduction of objects, the type Entity is obsolete:
      chain sep (introG++nodesPlaces++nodes++arcsPT++concat arcsTP) ++
      "\n   }"
      where
-       (entities,relations,ruls) = erAnalysis pat
+       (datasets,viewEsts,relations,ruls) = erAnalysis pat
        rs = declaredRules pat
        dbrs = dbIns rs++dbDel rs
        sep = "\n   ; "
@@ -135,8 +141,8 @@ De nu volgende analyse produceert een conceptueel datamodel.
 >     "\n   }"
 >     where
 >       ms = declarations context >- map makeDeclaration (mors (closExprs context))
->       (entities,relations,ruls) = erAnalysis context
->       attrs = [a| e<-entities, a<-attributes e]
+>       (datasets,viewEsts,relations,ruls) = erAnalysis context
+>       attrs = [a| e<-datasets, a<-attributes e]
 >       sep = "\n   ; "
 >       nodesPlaces = ["node [shape=box]"]++
 > -- all attrs are to be drawn as ellipses
@@ -173,10 +179,10 @@ De nu volgende analyse produceert een conceptueel datamodel.
 >     "\n   }"
 >     where
 >       ms = declarations context >- map makeDeclaration (mors (closExprs context))
->       (entities,relations,ruls) = erAnalysis context
+>       (datasets,viewEsts,relations,ruls) = erAnalysis context
 >       sep = "\n   ; "
 >       concepts = [nm| Obj nm pos ctx ats<-attributes context] -- all concepts
->       attrs = [a| o<-entities, a<-attributes o]
+>       attrs = [a| o<-datasets, a<-attributes o]
 >       nodesPlaces = ["node [shape=box]"]++
 >                     ["{node [shape=ellipse,label=\""++name att++" : "++
 >                      (name.source.ctx) att++"\"] ATT_"++name att++"} ; "++

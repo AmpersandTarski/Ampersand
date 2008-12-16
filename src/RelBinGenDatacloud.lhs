@@ -123,4 +123,4 @@ Voorbeeld:
 
 >     , "" ] ++ "\n?>"
 >   where
->       (entities, relations, erruls) = erAnalysis context
+>       (datasets, viewEsts, relations, erruls) = erAnalysis context
