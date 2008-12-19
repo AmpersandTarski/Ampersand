@@ -1,5 +1,3 @@
-{-# LINE 1 "Main.lhs" #-}
-#line 1 "Main.lhs"
   module Main where
    import System (getArgs,system, ExitCode(ExitSuccess,ExitFailure))
    import Char (toLower)

@@ -1,15 +1,7 @@
 {-# LINE 1 "UU_Parsing.lhs" #-}
 #line 1 "UU_Parsing.lhs"
-  {-# OPTIONS -fglasgow-exts -fallow-undecidable-instances #-}
-
-
-
-
-
-
-
-
-
+  {-# OPTIONS -fglasgow-exts  #-}
+  {-# LANGUAGE UndecidableInstances #-}
 
    module UU_Parsing
    (
