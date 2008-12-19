@@ -88,17 +88,16 @@ functionalSpecLaTeX,glossary,projectSpecText,archText,funcSpec
 >               putStr (concat ["!Error of type "++err| err<-errs])>>
 >               putStr ("Nothing generated, please correct mistake(s) first.\n")
 >        }}
->      where build contexts switches contextname filename dbName slRes
+>      where build :: [Context] -> [String] -> String -> String -> String -> whatever -> IO ()
+>            build contexts switches contextname filename dbName hierGebeurtNietsMee
 >             = sequence_ 
 >                ([ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
 >                 | null switches || "-h" `elem` switches]++
 >                 [ makeXML contexts contextname| "-XML" `elem` switches]++
->  -- obsolete?   [ showHaskell_old contexts contextname| "-Haskell" `elem` switches]++ -- het resultaat heeft op 7 aug 2008 succesvol gecompileerd.
->                 [ showHaskell_new fspec | "-Haskell" `elem` switches]++ -- het resultaat moet nog worden gecontroleerd!
+>                 [ showHaskell_new fspec | "-Haskell" `elem` switches]++ 
 >                 [ diagnose contexts contextname| "-diag" `elem` switches]++
 >                 [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
 >                 [ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-views" `elem` switches]++
->  -- obsolete     [ functionalSpecText contexts contextname (lineStyle switches) (lang switches) | "-fText" `elem` switches]++
 >                 [ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
 >                 [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
 >  -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
