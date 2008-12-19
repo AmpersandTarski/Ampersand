@@ -18,7 +18,7 @@
 >      , "require \"localsettings.inc.php\";"
 >      , "require \""++objectName++".inc.php\";"
 >      , ""
->      , "$view = new view(parseRequest(getObject_"++objectName++"()),getObject_"++objectName++"());"
+>      , "$view = new view(parseRequest(getObject_"++phpIdentifier objectName++"()),getObject_"++phpIdentifier objectName++"());"
 >      , "$view->display();"
 >      , ""
 >      ]

@@ -3,6 +3,7 @@
   
 > module ShowADL ( ShowADL(..) )
 > where
+>  import Char  (isAlpha,isUpper)
 >  import CommonClasses(Identified(name))
 >  import ADLdataDef
 >  import ADLdef (mIs, Morphic(..))
@@ -58,8 +59,24 @@
 >   showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
 >  instance ShowADL ObjectDef where
->   showADL obj = "  VIEW "++name obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
->                 "\n   = [ "++chain "\n     , " (map (showADL.objctx) (objats obj))++"]"
+>   showADL obj = "  VIEW "++str obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
+>                 "\n   = [ "++chain "\n     , " (zipWith f [1..] atts)++"\n     ]"
+>    where f i m | length [ a| a<-atts, name a==name m ]>1 = name m++show i++" : "++showtyped m
+>                | inline m                                = name m
+>                | otherwise                               = name m++" : "++name m++['~'| not (inline m)]
+>          showtyped m
+>                | inline m  =  name m++"["++str (source m)++"*"++str (target m)++"]"
+>                | otherwise =  name m++"["++str (target m)++"*"++str (source m)++"]~"
+>          atts = [ m | a<-objats obj, Tm m<-[objctx a] ]
+>          str obj | and [isAlpha c| c<-name obj] && isUpper (head (name obj)) = name obj
+>                  | otherwise                                                 = adlString (name obj)
+
+>  adlString str= "\""++as str++"\""
+>   where
+>    as "" = ""
+>    as (c:cs) | c=='\t'   = "\t"++as cs
+>              | c=='\n'   = "\n"++as cs
+>              | otherwise = c: as cs
 
 >  instance ShowADL KeyDef where
 >   showADL kd 

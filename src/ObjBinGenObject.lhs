@@ -21,7 +21,7 @@
 >  generateService_getobject context object
 >   = -- vastgesteld op 2008/12/6: gos/=[] dus is de volgende regel overbodig en uitgecommentarieerd:
 >     -- if null gos then error("Fail (Module ObjBinGenObject): unexpected pattern in generateService_getobject ("++show object++")") else
->     "function getobject_"++ name object ++"(){\n  "
+>     "function getobject_"++ phpIdentifier (name object) ++"(){\n  "
 >     ++ chain "\n  " (("  return "++a):(addLst ";" as)) ++
 >     "\n  }\n"
 >      where a:as = [str++"  "| str<-gos]
@@ -52,10 +52,10 @@
 >     )) ++ "\n?>"
 >    where
 >     showObjDef a | null (attributes a) =
->      [  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
+>      [  phpIdentifier (name a)++"["++phpIdentifier (name (concept a))++"] : "++ (showADL (ctx a))
 >       ]
 >     showObjDef a =
->      (  (name a)++"["++(name (concept a))++"] : "++ (showADL (ctx a))
+>      (  phpIdentifier (name a)++"["++phpIdentifier (name (concept a))++"] : "++ (showADL (ctx a))
 >       ):(concat (mapHeadTail (mapHeadTail ((++) " = [ ")
 >                                           ((++) "     "))
 >                              (mapHeadTail ((++) "   , ")
@@ -65,13 +65,15 @@
 >                              ]
 >                 )
 >         ) ++ ["  ]"]
->     capname = (toUpper (head (name object))):(tail (name object))
+>     capname = if null (name object)
+>               then error ("!Fail: (Module ObjBinGenObject) empty name in object:\n"++show object)
+>               else (toUpper (head (name object))):(tail (name object))
 
 The service "getEach<concept>" returns the set of all instances of <concept> that are in the CSL.
 
 >  generateService_getEach :: Context -> String -> ObjectDef -> String
 >  generateService_getEach context capname object
->   = "function getEach"++capname++"(){"++
+>   = "function getEach"++phpIdentifier capname++"(){"++
 >     "\n      return DB_doquer('"++(selectExpr context
 >                                            25
 >                                            (sqlExprTrg (ctx object)) -- was:  (sqlAttConcept context (concept object))
@@ -83,42 +85,45 @@ The service "create<concept>" creates a new instance of <concept> in the CSL.
 
 >  generateService_create :: Context -> String -> ObjectDef -> String
 >  generateService_create context capname object
->   = "function create"++capname++"("++(name object)++" &$obj){\n  "++
->     "    return update"++capname++"($obj,true);\n  }"
+>   = "function create"++phpIdentifier capname++"("++phpIdentifier (name object)++" &$obj){\n  "++
+>     "    return update"++phpIdentifier capname++"($obj,true);\n  }"
 
 The service "read<concept>" reads the instance of <concept> with identity $id from the CSL.
 
 >  generateService_read :: Context -> String -> ObjectDef -> String
 >  generateService_read context capname object
 >   = chain "\n  "
->     (["function read"++capname++"($id){"
+>     (["function read"++phpIdentifier capname++"($id){"
 >      ,"    // check existence of $id"
 >      ,"    $ctx = DB_doquer('"++(doesExistQuer context object "$id")++"');"
 >      ,"    if(count($ctx)==0) return false;"
->      ,"    $obj = new "++(name object)++"($id);"
+>      ,"    $obj = new "++phpIdentifier (name object)++"($id);"
 >      ,"    return $obj;"
 >      ,"}"])
 
 The service "update<concept>" reads the instance of <concept> with identity $id from the CSL,
 interacts with the user to update the concept, and writes the result to the CSL.
 
+>  phpVar :: String -> String
+>  phpVar x = "$"++phpIdentifier x
+
 >  generateService_update :: Context -> String -> ObjectDef -> String
 >  generateService_update context capname object
 >   = chain "\n  "
->     (["function update"++capname++"("++(name object)++" $"++(name object)++",$new=false){"
+>     (["function update"++phpIdentifier capname++"("++phpIdentifier (name object)++" "++(phpVar (name object))++",$new=false){"
 >      ,"    global $DB_link,$DB_err,$DB_lastquer;"
 >      ,"    $preErr= $new ? 'Cannot create new "++(addslashes (name (concept object)))++": ':'Cannot update "++(addslashes (name (concept object)))++": ';"
 >      ,"    DB_doquer('START TRANSACTION');"
 >      ,"    if($new){ // create a new object"
->      ,"      if(!isset($"++(name object)++"->id)){ // find a unique id"
+>      ,"      if(!isset("++phpVar (name object)++"->id)){ // find a unique id"
 >      ,"         $nextNum = DB_doquer('"++(autoIncQuer context (concept object))++"');"
->      ,"         $"++(name object)++"->id = @$nextNum[0][0]+0;"
+>      ,"         "++phpVar (name object)++"->id = @$nextNum[0][0]+0;"
 >      ,"      }"
 >      ,"      if(DB_plainquer('" ++
->          (insertConcept context (concept object) ("$"++(name object)++"->id") False)
+>          (insertConcept context (concept object) (phpVar (name object)++"->id") False)
 >                               ++"',$errno)===false){"
 >      ,"          $DB_err=$preErr.(($errno==1062) ? '"
->         ++(addslashes (name (concept object))) ++" \\''.$"++(name object)++
+>         ++(addslashes (name (concept object))) ++" \\''."++phpVar (name object)++
 >         "->id.'\\' allready exists' : 'Error '.$errno.' in query '.$DB_lastquer);"
 >      ,"          DB_doquer('ROLLBACK');"
 >      ,"          return false;"
@@ -128,7 +133,7 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >      ++ checkRuls context object ++
 >      ["    if(true){ // all rules are met"
 >      ,"        DB_doquer('COMMIT');"
->      ,"        return $"++(name object)++"->id;"
+>      ,"        return "++phpVar (name object)++"->id;"
 >      ,"    }"
 >      ,"    DB_doquer('ROLLBACK');"
 >      ,"    return false;"
@@ -139,42 +144,42 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >      ["    if(!$new){"
 >      ,"      // destroy old attribute values"
 >      ] ++ (concat (map (map ((++) "      "))
->             [ [ "$effected = DB_doquer('"++ (selectExprForAttr context a o ("$"++nm++"->id")) ++"');"
+>             [ [ "$effected = DB_doquer('"++ (selectExprForAttr context a o (phpVar nm++"->id")) ++"');"
 >               , "$arr=array();"
 >               , "foreach($effected as $i=>$v){"
 >               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
 >               , "}"
->               , ("$"++nm++"_"++(name a)++"_str")++"=join(',',$arr);"
->               , "DB_doquer( '"++(deleteExprForAttr context a o ("$"++nm++"->id"))++"');"
+>               , phpVar (nm++"_"++name a++"_str")++"=join(',',$arr);"
+>               , "DB_doquer( '"++(deleteExprForAttr context a o (phpVar nm++"->id"))++"');"
 >               ]
 >             | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
 >             ]
 >            )) ++
 >      ["    }"
 >      ]  ++ (concat (map (map ((++) "    "))
->             [ [ "foreach($"++nm++"->"++(name a)++" as $i=>$"++nm++"_"++(name a)++"){"
+>             [ [ "foreach("++phpVar nm++"->"++phpIdentifier (name a)++" as $i=>"++phpVar (nm++"_"++name a)++"){"
 >               ] ++ (concat (map (map ((++) "  "))
->                     [ [ "if(isset($"++nm++"_"++(name a)++"->"++(name as)++"[0]->id)){"
->                       , "  if(count(DB_doquer('"++doesExistQuer context a ("$"++nm++"_"++(name a)++"->"++(name as)++"[0]->id")++"'))==0)"
->                       , "    DB_doquer('"++(insertConcept context (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
+>                     [ [ "if(isset("++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id)){"
+>                       , "  if(count(DB_doquer('"++doesExistQuer context a (phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id")++"'))==0)"
+>                       , "    DB_doquer('"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
 >                       ] ++ updateObject context (nms++[name a,name as]) as ++
 >                       [ "}"
->                       , "$"++nm++"_"++(name a)++"->id = @$"++nm++"_"++(name a)++"->"++(name as)++"[0]->id;"
+>                       , phpVar (nm++"_"++name a)++"->id = @"++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id;"
 >                       ]
 >                     | as <- attributes a -- De expressie ctx a bevat precies één morfisme.
 >                     , (Tm (I _ _ _ _)) <- [ctx as]   -- De morfismen uit 'mors' zijn allemaal inline.
 >                     ]
 >                    ))
 >                ++
->               [ "  if(!isset($"++nm++"_"++(name a)++"->id)){"
+>               [ "  if(!isset("++phpVar (nm++"_"++name a)++"->id)){"
 >               , "     $nextNum = DB_doquer('"++autoIncQuer context (concept a)++"');"
->               , "     $"++nm++"_"++(name a)++"->id = @$nextNum[0][0]+0;"
+>               , "     "++phpVar (nm++"_"++name a)++"->id = @$nextNum[0][0]+0;"
 >               , "  }"
->               , "  DB_doquer('"++(insertConcept context (concept a) ("$"++nm++"_"++(name a)++"->id") True)++"');"
+>               , "  DB_doquer('"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
 >               , "  DB_doquer('INSERT IGNORE INTO "
 >                 ++(sqlMorName context (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
->                 ++" VALUES (\\''.addslashes($"++nm++"->id).'\\'"
->                 ++        ",\\''.addslashes($"++nm++"_"++(name a)++"->id).'\\')');"
+>                 ++" VALUES (\\''.addslashes("++phpVar nm++"->id).'\\'"
+>                 ++        ",\\''.addslashes("++phpVar (nm++"_"++name a)++"->id).'\\')');"
 >               ] ++ updateObject context (nms++[name a]) a ++
 >               [ "}"
 >               ]
@@ -183,8 +188,8 @@ interacts with the user to update the concept, and writes the result to the CSL.
 >             ]
 >            ))
 >      ++ concat (map (map ((++) "    "))
->                     [ [ "if(!$new && strlen($"++nm++"_"++(name a)++"_str))"
->                       ] ++ (do_del_quer context a ("$"++nm++"_"++(name a)++"_str"))
+>                     [ [ "if(!$new && strlen("++phpVar (nm++"_"++name a)++"_str))"
+>                       ] ++ (do_del_quer context a (phpVar (nm++"_"++name a)++"_str"))
 >                     | a <- termAtts o
 >                     ]
 >                )
@@ -195,7 +200,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >  generateService_delete :: Context -> String -> ObjectDef -> String
 >  generateService_delete context capname object
 >   = chain "\n  "
->     (["function delete"++capname++"($id){"
+>     (["function delete"++phpIdentifier capname++"($id){"
 >      ,"  global $DB_err;"
 >      ,"  $preErr= 'Cannot delete "++(addslashes (name (concept object)))++": ';"
 >      ,"  DB_doquer('START TRANSACTION');"
@@ -237,7 +242,7 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >               , "foreach($effected as $i=>$v){"
 >               , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
 >               , "}"
->               , "$"++(name a)++"_str=join(',',$arr);"
+>               , phpVar (name a)++"_str=join(',',$arr);"
 >               , "DB_doquer ('"++(deleteExprForAttr context a object "$id")++"');"
 >               ]
 >             | a <- termAtts object
@@ -246,8 +251,8 @@ The service "delete<concept>" deletes the instance of <concept> with identity $i
 >      ["  DB_doquer('DELETE FROM "++(sqlConcept context (concept object))
 >       ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addslashes($id).'\\'');"
 >      ] ++ (concat (map (map ((++) "  "))
->             [ [ "if(strlen($"++(name a)++"_str))"
->               ] ++ (do_del_quer context a ("$"++(name a)++"_str"))
+>             [ [ "if(strlen("++phpVar (name a++"_str")++"))"
+>               ] ++ (do_del_quer context a (phpVar (name a++"_str")))
 >             | a <- termAtts object
 >             ])) 
 
@@ -321,31 +326,31 @@ These classes define the PHP-objects, which are used as intermediate objects in 
 A PHP-object stores information from the CSL as long as the user interacts with it.
 
 >  showClasses context nm o
->   = [ "class "++concat [n++"_"|n<-nm] ++(name o) ++" {"] ++
+>   = [ "class "++phpIdentifier (concat [n++"_"|n<-nm] ++name o) ++" {"] ++
 >     (map ((++) "  ") (
 >      ["var $id;"]
->      ++ ["var $"++name a++";"| a <- attributes o]++
->      ["function "++concat [n++"_"|n<-nm]++name o++"($id=null"
->                                 ++  (concat [", $"++name a++"=null" | a<-attributes o])
+>      ++ ["var "++phpVar (name a)++";"| a <- attributes o]++
+>      ["function "++phpIdentifier (concat [n++"_"|n<-nm] ++name o)++"($id=null"
+>                                 ++  (concat [", "++phpVar (name a)++"=null" | a<-attributes o])
 >                                 ++"){"
 >      ,"    $this->id=$id;"]
->      ++ ["    $this->"++name a++"=$"++name a++";"| a <- attributes o]
+>      ++ ["    $this->"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
 >      ++ (concat (map (map ((++) "    "))
->             [ [ "if(!isset($"++name a++")){"
+>             [ [ "if(!isset("++phpVar (name a)++")){"
 >               , "  if(isset($id)){"
->               , "    $this->"++name a++" = array();"
+>               , "    $this->"++phpIdentifier (name a)++" = array();"
 >               , "    foreach(DB_doquer('"++ selectExprForAttr context a o "$id" ++"') as $i=>$v){"
->               , "      $this->"++name a++"[]=new "++concat [n++"_"|n<-(nm++[name o])]++name a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
+>               , "      $this->"++phpIdentifier (name a)++"[]=new "++phpObjRelName nm o a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
 >               , "    }"
->               , "  } else $this->"++name a++"=array();"
+>               , "  } else $this->"++phpIdentifier (name a)++"=array();"
 >               , "}"] ++
->               concat [ ["if(count($this->"++name a++")==0) $this->"++name a++"[] = new "++concat [n++"_"|n<-(nm++[name o])]++name a++"();"]
+>               concat [ ["if(count($this->"++phpIdentifier (name a)++")==0) $this->"++phpIdentifier (name a)++"[] = new "++phpObjRelName nm o a++"();"]
 >                      | tot (multiplicities (ctx a))
 >                      ] ++
->               concat [ ["if(count($this->"++name a++")>1){"
->                        , "  $last=$this->"++name a++"[count($this->"++name a++")-1];"
->                        , "  $this->"++name a++" = array();"
->                        , "  $this->"++name a++"[] = $last;"
+>               concat [ ["if(count($this->"++phpIdentifier (name a)++")>1){"
+>                        , "  $last=$this->"++phpIdentifier (name a)++"[count($this->"++phpIdentifier (name a)++")-1];"
+>                        , "  $this->"++phpIdentifier (name a)++" = array();"
+>                        , "  $this->"++phpIdentifier (name a)++"[] = $last;"
 >                        , "}"]
 >                      | fun (multiplicities (ctx a))
 >                      ]
@@ -354,10 +359,10 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >            )) ++
 >      ["}"]
 >      ++ (concat
->         [ ["function add_"++(name a)++"("++concat [n++"_"|n<-nm++[name o]]++(name a)++" $"++(name a)++"){"
->           ,"  return $this->"++(name a)++(if (fun (multiplicities (ctx a))) then "[0]" else "[]")++"=$"++(name a)++";"
+>         [ ["function add_"++phpIdentifier (name a)++"("++phpObjRelName nm o a++" "++phpVar (name a)++"){"
+>           ,"  return $this->"++phpIdentifier (name a)++(if (fun (multiplicities (ctx a))) then "[0]" else "[]")++"="++phpVar (name a)++";"
 >           ,"}"
->           ,"function getEach_"++(name a)++"(){"
+>           ,"function getEach_"++phpIdentifier (name a)++"(){"
 >           ,"  // currently, this returns all concepts.. why not let it return only the valid ones?"
 >           ,"  $v = DB_doquer('"++selectExpr context
 >                                          30
@@ -375,7 +380,7 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >         ]
 >         )++
 >      ["function addGen($type,$value){"
->      ]++ [ "  if($type=='"++(name a)++"') return $this->add_"++(name a)++"($value);"
+>      ]++ [ "  if($type=='"++phpIdentifier (name a)++"') return $this->add_"++phpIdentifier (name a)++"($value);"
 >          | a <- attributes o
 >          ] ++
 >      ["  else return false;"|length (attributes o) > 0] ++
@@ -384,23 +389,24 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >     )) ++
 >     [ "}"
 >     ] ++ (concat [ showClasses context (nm++[name o]) a |a <- attributes o ] )
+>   where phpObjRelName pth o r = phpIdentifier (concat [n++"_"|n<-pth++[name o]]++"_"++name r)
 
 
 >  getObject context o | null (attributes o) = 
->   [ "new object(\""++(name o)++"\", array()"++mystrs (objectOfConcept context (concept o)) (isOne o)++")"
+>   [ "new object(\""++phpIdentifier (name o)++"\", array()"++mystrs (objectOfConcept context (concept o)) (isOne o)++")"
 >   ]
 >  getObject context o =
->   [ "new object(\""++(name o)++"\", array"
+>   [ "new object(\""++phpIdentifier (name o)++"\", array"
 >   ]
 >   ++ (concat(mapHeadTail  (mapHeadTail ((++) "   ( ")
 >                                        ((++) "     "))
 >                           (mapHeadTail ((++) "   , ")
 >                                        ((++) "     "))
 >                           [ concat
->                              [["new oRef( new oMulti( " ++ phpString (Inj `elem` m) ++ ","
->                                                         ++ phpString (Uni `elem` m) ++ ","
->                                                         ++ phpString (Sur `elem` m) ++ ","
->                                                         ++ phpString (Tot `elem` m) ++ " ) // derived from "++(showADL (ctx a))
+>                              [["new oRef( new oMulti( " ++ phpBool (Inj `elem` m) ++ ","
+>                                                         ++ phpBool (Uni `elem` m) ++ ","
+>                                                         ++ phpBool (Sur `elem` m) ++ ","
+>                                                         ++ phpBool (Tot `elem` m) ++ " ) // derived from "++(showADL (ctx a))
 >                              ], (mapHeadTail ((++) "  , ") ((++) "   ") (getObject context a))
 >                               , ["  ) "]]
 >                           | a <- attributes o, m <- [multiplicities (ctx a)]
@@ -412,7 +418,7 @@ A PHP-object stores information from the CSL as long as the user interacts with 
 >  mapHead f (a:as) = (f a):as
 >  mapHeadTail f1 f2 (a:as) = (f1 a):(map f2 as)
 >  mystrs Nothing False = ""
->  mystrs (Just o) False = ", \""++(name o)++".php\""
+>  mystrs (Just o) False = ", \""++name o++".php\""
 >  mystrs Nothing True = ", null, true"
->  mystrs (Just o) True = ", \""++(name o)++".php\", true"
->  phpString b = if b then "true" else "false"
+>  mystrs (Just o) True = ", \""++name o++".php\", true"
+>  phpBool b = if b then "true" else "false"

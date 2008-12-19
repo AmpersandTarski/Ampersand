@@ -4,6 +4,7 @@
 >               ,  ShowHS(..)
 >               , objectOfConcept
 >               , pKey_pos
+>               , pString_val_pos
 >               , pVarid_val_pos, pConid_val_pos
 >               , renumberRules
 >               , isSgn

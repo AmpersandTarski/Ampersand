@@ -7,7 +7,7 @@
 >  import ADLdef 
 >  import ShowADL
 >  import CC_aux 
->            (  pKey_pos
+>            (  pKey_pos, pString_val_pos
 >             , pVarid_val_pos, pConid_val_pos
 >             )
 
@@ -241,7 +241,7 @@ Bas: het volgende is nog incorrect....
 >  optional a        = Just <$> a <|> pSucceed Nothing
 
 >  pObj             :: Parser Token ObjectDef
->  pObj              = obj <$> pConid_val_pos                                    -- de naam van het object
+>  pObj              = obj <$> (pConid_val_pos <|> pString_val_pos)              -- de naam van het object
 >                          <*> (optional (pSpec '[' *> pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
 >                          <*> (optional (pKey ":" *> pExpr) )                   -- de contextexpressie (default: I[c])
 >                          <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten

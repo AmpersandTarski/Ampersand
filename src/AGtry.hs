@@ -16,8 +16,7 @@ import CC_aux ( showHS,order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 
-
-diagl = 17
+diagl = 24
 diagc = 0
 
 chop [x]    = []
@@ -479,7 +478,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os
         ( _ks_exprs,_ks_keyDefs,_ks_rnr,_ks_rules,_ks_sErr) =
             (_ks (_genE) (_ds_rnr) (_mD))
         ( _os_objDefs,_os_rnr,_os_rules,_os_sErr,_os_sources) =
-            (_os (_genE) ([]) (_pats_rnr) (_mD))
+            (_os (_genE) (Anything) ([]) (_pats_rnr) (_mD))
         ( _pops_popus,_pops_sErr) =
             (_pops (_genE) (_mD))
     in  (_ctx
@@ -764,14 +763,6 @@ sem_Declarations_Nil (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
 
 -}
 {-
-   local variables for Expression.Re:
-
--}
-{-
-   local variables for Expression.Ri:
-
--}
-{-
    local variables for Expression.Tc:
 
 -}
@@ -1003,24 +994,6 @@ sem_Expression_K1 (_e) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_
         ,_e_sErr
         ,_e_signs
         )
-sem_Expression_Re :: (T_Expression) ->
-                     (T_Expression) ->
-                     (T_Expression)
-sem_Expression_Re (_l) (_r) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
-    let ( _l_expr,_l_morphisms,_l_raw,_l_rnr,_l_rules,_l_sErr,_l_signs) =
-            (_l (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef))
-        ( _r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs) =
-            (_r (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_l_rnr) (_lhs_sDef))
-    in  (_r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs)
-sem_Expression_Ri :: (T_Expression) ->
-                     (T_Expression) ->
-                     (T_Expression)
-sem_Expression_Ri (_l) (_r) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
-    let ( _l_expr,_l_morphisms,_l_raw,_l_rnr,_l_rules,_l_sErr,_l_signs) =
-            (_l (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef))
-        ( _r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs) =
-            (_r (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_l_rnr) (_lhs_sDef))
-    in  (_r_expr,_r_morphisms,_r_raw,_r_rnr,_r_rules,_r_sErr,_r_signs)
 sem_Expression_Tc :: (T_Expression) ->
                      (T_Expression)
 sem_Expression_Tc (_c) (_lhs_gE) (_lhs_isign) (_lhs_pn) (_lhs_pos) (_lhs_rnr) (_lhs_sDef) =
@@ -1244,7 +1217,7 @@ sem_KeyDef_Kd (_pos) (_lbl) (_ctx) (_ats) (_lhs_gE) (_lhs_rnr) (_lhs_sDef) =
     let ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE) (_ctx_signs) ("") (_pos) (_ats_rnr) (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_rules,_ats_sErr,_ats_sources) =
-            (_ats (_lhs_gE) (rd (map snd _ctx_signs ++ _ats_sources)>-[Anything]) (_lhs_rnr) (_lhs_sDef))
+            (_ats (_lhs_gE) (head (rd (map snd _ctx_signs))) (rd (map snd _ctx_signs ++ _ats_sources)>-[Anything]) (_lhs_rnr) (_lhs_sDef))
     in  ([ expr | Obj nm pos expr ats <- _ats_objDefs],Kd _pos _lbl _ctx_expr _ats_objDefs,_ctx_rnr,_ats_rules ++ _ctx_rules,_ats_sErr)
 -- KeyDefs -----------------------------------------------------
 {-
@@ -1505,6 +1478,7 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
 {-
    inherited attributes:
       gE                   : GenR
+      iConc                : Concept
       iConcs               : [Concept]
       sDef                 : Declarations
 
@@ -1529,6 +1503,7 @@ sem_Morphisms_Nil (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
 -}
 -- semantic domain
 type T_ObjDefs = (GenR) ->
+                 (Concept) ->
                  ([Concept]) ->
                  (Int) ->
                  (Declarations) ->
@@ -1541,22 +1516,23 @@ sem_ObjDefs (list) =
 sem_ObjDefs_Cons :: (T_ObjectDef) ->
                     (T_ObjDefs) ->
                     (T_ObjDefs)
-sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
+sem_ObjDefs_Cons (_hd) (_tl) (_lhs_gE) (_lhs_iConc) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let (_signs) =
             rd [lubb _lhs_gE src' src''|src''<- _tl_sources, src'<- _hd_sConcs, src' `order` src'']
         ( _hd_ats,_hd_nm,_hd_odef,_hd_pos,_hd_rnr,_hd_rules,_hd_sConcs,_hd_sErr) =
-            (_hd (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
+            (_hd (_lhs_gE) (_lhs_iConc) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef))
         ( _tl_objDefs,_tl_rnr,_tl_rules,_tl_sErr,_tl_sources) =
-            (_tl (_lhs_gE) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
+            (_tl (_lhs_gE) (_lhs_iConc) (_lhs_iConcs) (_hd_rnr) (_lhs_sDef))
     in  (_hd_odef : _tl_objDefs,_tl_rnr,_hd_rules ++ _tl_rules,_hd_sErr ++ _tl_sErr,_signs)
 sem_ObjDefs_Nil :: (T_ObjDefs)
-sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
+sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConc) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let 
     in  ([],_lhs_rnr,[],[],[Anything])
 -- ObjectDef ---------------------------------------------------
 {-
    inherited attributes:
       gE                   : GenR
+      iConc                : Concept
       iConcs               : [Concept]
       sDef                 : Declarations
 
@@ -1576,10 +1552,12 @@ sem_ObjDefs_Nil (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
 {-
    local variables for ObjectDef.Obj:
       signs
+      concpt
 
 -}
 -- semantic domain
 type T_ObjectDef = (GenR) ->
+                   (Concept) ->
                    ([Concept]) ->
                    (Int) ->
                    (Declarations) ->
@@ -1594,24 +1572,24 @@ sem_ObjectDef_Obj :: (String) ->
                      (T_Expression) ->
                      (T_ObjDefs) ->
                      (T_ObjectDef)
-sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
-    let (_signs) =
-            rd [( lubb _lhs_gE c s, lubb _lhs_gE t t')
+sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConc) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
+    let (_concpt) =
+            head (irredC _lhs_gE (map snd _signs))
+        (_signs) =
+            rd [( lubb _lhs_gE _lhs_iConc s, lubb _lhs_gE t t')
                | (s,t) <- _ctx_signs
-               , c <- if null _lhs_iConcs then [Anything] else _lhs_iConcs, ordd _lhs_gE s c
-               , t' <- irredC _lhs_gE ( (t: _ats_sources)>-[Anything])
+               , t' <- if null _ats_sources then [t] else irredC _lhs_gE _ats_sources
                , ordd _lhs_gE t t']
         ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
             (_ctx (_lhs_gE)
-                  ([ ( lubb _lhs_gE c s,t)
-                   | (s,t) <- _signs++[(Anything,Anything)|null _signs]
-                   , c <- if null _lhs_iConcs then [Anything] else _lhs_iConcs ])
+                  ([ ( lubb _lhs_gE _lhs_iConc s,t)
+                   | (s,t) <- _signs++[(Anything,Anything)|null _signs] ])
                   ("")
                   (_pos)
                   (_ats_rnr)
                   (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_rules,_ats_sErr,_ats_sources) =
-            (_ats (_lhs_gE) (irredC _lhs_gE (map snd _signs)) (_lhs_rnr) (_lhs_sDef))
+            (_ats (_lhs_gE) (head (irredC _lhs_gE (map snd _signs))) (irredC _lhs_gE (map snd _signs)) (_lhs_rnr) (_lhs_sDef))
     in  (_ats_objDefs
         ,_nm
         ,Obj _nm _pos _ctx_expr _ats_objDefs
@@ -1628,6 +1606,18 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
          take 1
          (_ctx_sErr++
           _ats_sErr++
+          [ "11 on \n"++show _pos ++" in the definition of '"++ _nm ++
+            "'\n   Ambiguous type, because the target of '"++showADL _ctx_expr++"'\n   might be "
+            ++commaEng "or" [name c|c<-css]++".\n"
+          | css<-[rd [snd cs|cs<- _ctx_signs, (snd cs) `order` _lhs_iConc]], length css>1]++
+          [ "18 on \n"++show _pos ++" in the definition of '"++ _nm ++
+            "'\n   Undefined type, because the target of '"++showADL _ctx_expr
+            ++"' might be anything.\n"
+          | css<-[rd [snd cs|cs<- _ctx_signs, (fst cs) `order` _lhs_iConc]], null css]++
+          [ "19 on \n"++show _pos ++" in the definition of '"++ _nm ++
+            "'\n   use of '"++nm
+            ++"' should be unique.\n   It occurs on lines "++commaEng "and" [show l| o<- _ats_objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
+          | nm<-map name _ats_objDefs, length [o| o<- _ats_objDefs, name o==nm]>1 ]++
           [ "9 on \n"++show _pos ++" in the definition of VIEW "++ _nm ++ "\n   Cannot match the right hand side of "++showADL _ctx_expr
             ++"\n   with the left hand side of "
             ++commaEng "and" [ showADL (ctx o) | o <- nqos ]
@@ -1654,12 +1644,6 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConcs) (_lhs_rnr) 
             ++ "\n"
           | eqcls<-[[cl| cl<-eqCl (ground.source.ctx) _ats_objDefs]], length eqcls>1
           , [e,e']<-[[o| cl<-take 2 eqcls, o<-take 1 (sort' (ground.source.ctx) cl)]]
-          ]++
-          [ "11 on "++show _pos ++"\n   Ambiguous types of "++ _nm
-            ++ "\n       "++
-            chain "\n     , " [ "["++show a ++ "*" ++ show b ++"]" | (a,b) <- _signs]
-            ++ "\n"
-          | length _signs > 1
           ])
         )
 -- Pairs -------------------------------------------------------

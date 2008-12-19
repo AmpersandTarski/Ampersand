@@ -66,7 +66,7 @@ import CC_aux ( showHS,order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 
-diagl = 17
+diagl = 24
 diagc = 0
 }
 
@@ -202,6 +202,7 @@ SEM Context
         rs.pn         = "" -- not used
         pops.gE       = @genE
         os.iConcs     = []
+        os.iConc      = Anything
         lhs.over      = [( put_gE @genE @cD
                            (Ctx @nm
                                 @on
@@ -811,6 +812,18 @@ SEM ObjectDef
                       take 1
                       (@ctx.sErr++
                        @ats.sErr++
+                       [ "11 on \n"++show @pos ++" in the definition of '"++ @nm ++
+                         "'\n   Ambiguous type, because the target of '"++showADL @ctx.expr++"'\n   might be "
+                         ++commaEng "or" [name c|c<-css]++".\n"
+                       | css<-[rd [snd cs|cs<- @ctx.signs, (snd cs) `order` @lhs.iConc]], length css>1]++
+                       [ "18 on \n"++show @pos ++" in the definition of '"++ @nm ++
+                         "'\n   Undefined type, because the target of '"++showADL @ctx.expr
+                         ++"' might be anything.\n"
+                       | css<-[rd [snd cs|cs<- @ctx.signs, (fst cs) `order` @lhs.iConc]], null css]++
+                       [ "19 on \n"++show @pos ++" in the definition of '"++ @nm ++
+                         "'\n   use of '"++nm
+                         ++"' should be unique.\n   It occurs on lines "++commaEng "and" [show l| o<- @ats.objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
+                       | nm<-map name @ats.objDefs, length [o| o<- @ats.objDefs, name o==nm]>1 ]++
                        [ "9 on \n"++show @pos ++" in the definition of VIEW "++ @nm ++ "\n   Cannot match the right hand side of "++showADL @ctx.expr
                          ++"\n   with the left hand side of "
                          ++commaEng "and" [ showADL (ctx o) | o <- nqos ]
@@ -831,18 +844,12 @@ SEM ObjectDef
                          ++".\n"
                        | null @signs, t<-map snd @ctx.signs ]++
                        [ "17 on "++show @pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
-                         ++(showADL.ctx) e++ " on " ++(show . CC_aux.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . CC_aux.pos . ctx) e'
+                         ++(showADL.ctx) e++ " on " ++(show . ADLdef.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . ADLdef.pos . ctx) e'
                          ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
                          ++ "\n (" ++(showADL.ctx) e++ " and " ++(showADL.ctx) e'++ " do not match."
                          ++ "\n"
                        | eqcls<-[[cl| cl<-eqCl (ground.source.ctx) @ats.objDefs]], length eqcls>1
                        , [e,e']<-[[o| cl<-take 2 eqcls, o<-take 1 (sort' (ground.source.ctx) cl)]]
-                       ]++
-                       [ "11 on "++show @pos ++"\n   Ambiguous types of "++ @nm
-                         ++ "\n       "++
-                         chain "\n     , " [ "["++show a ++ "*" ++ show b ++"]" | (a,b) <- @signs]
-                         ++ "\n"
-                       | length @signs > 1
                        ])
 
 SEM ObjDefs 
@@ -1101,13 +1108,13 @@ SEM KeyDefs
   | Nil  lhs.keyDefs = []
          lhs.exprs   = []
 
-ATTR ObjectDef [ iConcs:{[Concept]} | | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos nm:String]
-SEM ObjectDef
-  | Obj  ats.iConcs  = irredC @lhs.gE (map snd @signs)  -- was: (map snd @ctx.signs ++ @ats.sources)>-[Anything] )
+ATTR ObjectDef [ iConcs:{[Concept]} iConc:Concept | | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos nm:String]
 SEM ObjDefs
   | Cons hd.iConcs   = @lhs.iConcs
+         hd.iConc    = @lhs.iConc
 SEM KeyDef
   | Kd   ats.iConcs  = rd (map snd @ctx.signs ++ @ats.sources)>-[Anything]
+         ats.iConc   = head (rd (map snd @ctx.signs))
 
 SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
   | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
@@ -1115,15 +1122,16 @@ SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
          lhs.sConcs  = rd (map fst @ctx.signs)
          lhs.pos     = @pos
          lhs.nm      = @nm
-         loc.signs   = rd [( lubb @lhs.gE c s, lubb @lhs.gE t t')
+         ats.iConcs  = irredC @lhs.gE (map snd @signs)
+         ats.iConc   = head (irredC @lhs.gE (map snd @signs))
+         ctx.isign   = [ ( lubb @lhs.gE @lhs.iConc s,t)
+                       | (s,t) <- @signs++[(Anything,Anything)|null @signs] ]
+         loc.concpt  = head (irredC @lhs.gE (map snd @signs))
+         loc.signs   = rd [( lubb @lhs.gE @lhs.iConc s, lubb @lhs.gE t t')
                           | (s,t) <- @ctx.signs
-                          , c <- if null @lhs.iConcs then [Anything] else @lhs.iConcs, ordd @lhs.gE s c
-                          , t' <- irredC @lhs.gE ( (t: @ats.sources)>-[Anything]) -- all possible signatures for ctx
+                          , t' <- if null @ats.sources then [t] else irredC @lhs.gE @ats.sources -- all possible signatures for ctx
                           , ordd @lhs.gE t t']
          ctx.pn      = ""
-         ctx.isign   = [ ( lubb @lhs.gE c s,t)
-                       | (s,t) <- @signs++[(Anything,Anything)|null @signs]
-                       , c <- if null @lhs.iConcs then [Anything] else @lhs.iConcs ]
                        
 ATTR Population [ | | pop:Population ]
 SEM Population
@@ -1135,7 +1143,7 @@ SEM Populations
   | Cons lhs.popus   = @hd.pop : @tl.popus
   | Nil  lhs.popus   = []
 
-ATTR ObjDefs [ iConcs:{[Concept]} | | objDefs:ObjDefs sources:{[Concept]}]
+ATTR ObjDefs [ iConcs:{[Concept]} iConc:Concept | | objDefs:ObjDefs sources:{[Concept]}]
 SEM ObjDefs
   | Cons lhs.objDefs = @hd.odef : @tl.objDefs
          lhs.sources = @signs

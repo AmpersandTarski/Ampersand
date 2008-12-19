@@ -441,6 +441,11 @@ Auxiliaries:
 >  clos0 (K0 e) = True
 >  clos0 _ = False
 
+phpIdentifier turns an arbitrary string into a single PHP identifier (TODO: check with PHP syntax. Current version is probably incorrect)
+
+>  phpIdentifier :: String -> String
+>  phpIdentifier str = [if c==' ' then '_' else c| c<-str, isAlphaNum c]
+
 phpShow adds backslashes to quotes in order to make a string readable for MySQL
 
 >  phpShow :: String -> String
