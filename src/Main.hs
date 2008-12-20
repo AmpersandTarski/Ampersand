@@ -144,12 +144,14 @@
               | "-UK" `elem` switches = English
               | otherwise             = Dutch
 
+   diagnose :: Contexts -> String -> IO()
    diagnose contexts contextname
     = putStr (showHS "\n>  " context)
       where
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
 
+   projectSpecText :: Contexts -> String -> Lang -> IO()
    projectSpecText contexts contextname language
     = putStrLn ("\nGenerating project plan for "++name context)                >>
       writeFile (name context++".csv") (projectClassic context spec language)  >>
@@ -160,22 +162,22 @@
        spec = funcSpec context (erAnalysis context) language
        (datasets,viewEsts, relations, ruls) = erAnalysis context
 
-   showHaskell_old :: [Context] -> String -> IO ()
-   showHaskell_old contexts contextname
-    = putStrLn ("\nGenerating Haskell source code for "++name context) >>
-      writeFile (ctxNm++"_old.lhs")
-                ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import ADLdef\n>  import CC_aux (showHS)\n>  import Fspec\n\n"
-                 ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
-                 ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
-                 ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
-                ) >>
-      putStr ("\nHaskell file "++ctxNm++"_old.lhs written...\n")
-      where
-       fspec = makeFspec context
-       ctxNm = showHSname context
-       spcNm = showHSname fspec
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
+   --showHaskell_old :: [Context] -> String -> IO ()
+   --showHaskell_old contexts contextname
+   -- = putStrLn ("\nGenerating Haskell source code for "++name context) >>
+   --   writeFile (ctxNm++"_old.lhs")
+   --             ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import ADLdef\n>  import CC_aux (showHS)\n>  import Fspec\n\n"
+   --              ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
+   --              ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
+   --              ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
+   --             ) >>
+   --   putStr ("\nHaskell file "++ctxNm++"_old.lhs written...\n")
+   --   where
+   --    fspec = makeFspec context
+   --    ctxNm = showHSname context
+   --    spcNm = showHSname fspec
+   --    context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+   --    ctxs    = [c| c<-contexts, name c==contextname]
 
    showHaskell_new :: Fspc -> IO ()
    showHaskell_new fspc
@@ -198,20 +200,8 @@
        baseName = "f_Ctx_"++(name fspc)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-   functionalSpecLaTeX contexts contextname graphicstyle language filename
+   functionalSpecLaTeX :: Contexts -> String ->   String ->    Lang ->  String -> IO()
+   functionalSpecLaTeX    contexts    contextname graphicstyle language filename
     = putStr ("\nGenerating functional specification for context "++
               name context++" in the current directory.\n")                   >>
       graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
@@ -226,14 +216,16 @@
        spec = funcSpec context (datasets,viewEsts,rels,ruls) language
        (datasets,viewEsts,rels,ruls) = erAnalysis context
 
-   viewEstimates contexts contextname graphicstyle language filename
+   viewEstimates :: Contexts -> String ->   String ->    Lang ->  String -> IO()
+   viewEstimates    contexts    contextname graphicstyle language filename
     = putStr (chain "\n\n" (map showADL viewEsts))
       where
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
        (datasets,viewEsts,rels,ruls) = erAnalysis context
 
-   archText contexts contextname graphicstyle language filename
+   archText :: Contexts -> String ->   String ->    Lang ->  String -> IO()
+   archText    contexts    contextname graphicstyle language filename
     = putStr ("\nGenerating architecture document for context "++
               name context++" in the current directory.\n")                   >>
       graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
@@ -247,7 +239,8 @@
        (datasets,viewEsts,rels,ruls) = erAnalysis context
      -- the following is copied from Atlas.lhs. TODO: remove double code.
 
-   glossary contexts contextname language
+   glossary :: Contexts -> String -> Lang -> IO()
+   glossary    contexts contextname language
     = putStr ("\nGenerating Glossary for "++name context++" in the current directory.") >>
       writeFile ("gloss"++name context++".tex") (generateGlossaryLaTeX context language)           >>
       putStr ("\nLaTeX file "++"gloss"++name context++".tex written... ") >>
@@ -256,6 +249,7 @@
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
 
+  --  graphics ::  Context -> String -> String -> Bool ->  { Pattern of Context ??? } -> IO()
    graphics context fnm graphicstyle full b
     = writeFile (fnm++"_CD.dot") (cdDataModel context full "dot" b)  >>
       putStrLn ("Class diagram "++fnm++"_CD.dot written... ")        >>

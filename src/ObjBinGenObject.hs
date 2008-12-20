@@ -114,7 +114,7 @@
     = chain "\n  "
       (["function update"++phpIdentifier capname++"("++phpIdentifier (name object)++" "++(phpVar (name object))++",$new=false){"
        ,"    global $DB_link,$DB_err,$DB_lastquer;"
-       ,"    $preErr= $new ? 'Cannot create new "++(addslashes (name (concept object)))++": ':'Cannot update "++(addslashes (name (concept object)))++": ';"
+       ,"    $preErr= $new ? 'Cannot create new "++(addSlashes (name (concept object)))++": ':'Cannot update "++(addSlashes (name (concept object)))++": ';"
        ,"    DB_doquer('START TRANSACTION');"
        ,"    if($new){ // create a new object"
        ,"      if(!isset("++phpVar (name object)++"->id)){ // find a unique id"
@@ -125,7 +125,7 @@
            (insertConcept context (concept object) (phpVar (name object)++"->id") False)
                                 ++"',$errno)===false){"
        ,"          $DB_err=$preErr.(($errno==1062) ? '"
-          ++(addslashes (name (concept object))) ++" \\''."++phpVar (name object)++
+          ++(addSlashes (name (concept object))) ++" \\''."++phpVar (name object)++
           "->id.'\\' allready exists' : 'Error '.$errno.' in query '.$DB_lastquer);"
        ,"          DB_doquer('ROLLBACK');"
        ,"          return false;"
@@ -149,7 +149,7 @@
               [ [ "$effected = DB_doquer('"++ (selectExprForAttr context a o (phpVar nm++"->id")) ++"');"
                 , "$arr=array();"
                 , "foreach($effected as $i=>$v){"
-                , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
+                , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (nm++"_"++name a++"_str")++"=join(',',$arr);"
                 , "DB_doquer( '"++(deleteExprForAttr context a o (phpVar nm++"->id"))++"');"
@@ -180,8 +180,8 @@
                 , "  DB_doquer('"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
                 , "  DB_doquer('INSERT IGNORE INTO "
                   ++(sqlMorName context (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
-                  ++" VALUES (\\''.addslashes("++phpVar nm++"->id).'\\'"
-                  ++        ",\\''.addslashes("++phpVar (nm++"_"++name a)++"->id).'\\')');"
+                  ++" VALUES (\\''.addSlashes("++phpVar nm++"->id).'\\'"
+                  ++        ",\\''.addSlashes("++phpVar (nm++"_"++name a)++"->id).'\\')');"
                 ] ++ updateObject context (nms++[name a]) a ++
                 [ "}"
                 ]
@@ -204,14 +204,14 @@
     = chain "\n  "
       (["function delete"++phpIdentifier capname++"($id){"
        ,"  global $DB_err;"
-       ,"  $preErr= 'Cannot delete "++(addslashes (name (concept object)))++": ';"
+       ,"  $preErr= 'Cannot delete "++(addSlashes (name (concept object)))++": ';"
        ,"  DB_doquer('START TRANSACTION');"
        ,"  "] ++
        concat (map (map ((++) "    "))
               [ ["$taken = DB_doquer('"++(selectExprWithF context (Tm m) cpt "$id")++"');"
                 ,"if(count($taken)) {"
                 ,"  $DB_err = 'Cannot delete "++(name object)++": "
-                 ++(prag d "\\''.addslashes($id).'\\'" "\\''.addslashes($taken[0]['"
+                 ++(prag d "\\''.addSlashes($id).'\\'" "\\''.addSlashes($taken[0]['"
                  ++(sqlExprTrg (Tm m))++"']).'\\'" )++"';" -- pragma
                 ,"  DB_doquer('ROLLBACK');"
                 ,"  return false;"
@@ -242,7 +242,7 @@
               [ [ "$effected = DB_doquer('"++ (selectExprForAttr context a object "$id") ++"');"
                 , "$arr=array();"
                 , "foreach($effected as $i=>$v){"
-                , "    $arr[]='\\''.addslashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
+                , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (name a)++"_str=join(',',$arr);"
                 , "DB_doquer ('"++(deleteExprForAttr context a object "$id")++"');"
@@ -251,21 +251,21 @@
               ]
              )) ++
        ["  DB_doquer('DELETE FROM "++(sqlConcept context (concept object))
-        ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addslashes($id).'\\'');"
+        ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addSlashes($id).'\\'');"
        ] ++ (concat (map (map ((++) "  "))
               [ [ "if(strlen("++phpVar (name a++"_str")++"))"
                 ] ++ (do_del_quer context a (phpVar (name a++"_str")))
               | a <- termAtts object
               ])) 
 
-   prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addslashes p1) ++ s1 ++ (addslashes p2) ++ s2 ++ (addslashes p3)
+   prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addSlashes p1) ++ s1 ++ (addSlashes p2) ++ s2 ++ (addSlashes p3)
    morsWithCpt context cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
 
   --Precondition: ctx a  contains precisely one morphism and it is not V.
    deleteExprForAttr context a parent id
     | isTrue (ctx a)  = error "Fatal: DELETE FROM V is no valid SQL"
-    | isIdent (ctx a) = "DELETE FROM "++sqlConcept context ((target.head.mors.ctx) a)++" WHERE "++sqlAttConcept context ((target.head.mors.ctx) a)++"=\\''.addslashes("++id++").'\\'"
-    | otherwise       = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addslashes("++id++").'\\'"
+    | isIdent (ctx a) = "DELETE FROM "++sqlConcept context ((target.head.mors.ctx) a)++" WHERE "++sqlAttConcept context ((target.head.mors.ctx) a)++"=\\''.addSlashes("++id++").'\\'"
+    | otherwise       = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addSlashes("++id++").'\\'"
 
    andNEXISTquer context e m
     | isTrue m  = [ "      AND FALSE" ]
@@ -282,12 +282,12 @@
 
    insertConcept context cpt var ignore
     = "INSERT "++(if ignore then "IGNORE " else "") ++ "INTO "++(sqlConcept context cpt)++" ("
-      ++(sqlAttConcept context cpt)++") VALUES (\\''.addslashes("++var++").'\\')"
+      ++(sqlAttConcept context cpt)++") VALUES (\\''.addSlashes("++var++").'\\')"
 
    checkRuls context object
     = (concat
       [ ["  if (!checkRule"++show (nr rul)++"()){"
-        ,"    $DB_err=$preErr.'"++(addslashes (show(explain rul)))++"';"
+        ,"    $DB_err=$preErr.'"++(addSlashes (show(explain rul)))++"';"
         ,"  } else"
         ]
       | rul <- rules context
@@ -302,7 +302,7 @@
                    (sqlAttConcept context (concept object))
                    (sqlAttConcept context (concept object))
                    (Fi [ Tm (mIs (concept object))
-                       , Tm (Mp1 ("\\''.addslashes("++id++").'\\'") (concept object))
+                       , Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") (concept object))
                        ]
                    )
       )
@@ -321,7 +321,7 @@
      = selectExprWithF context (ctx a) (concept parent) id
    selectExprWithF context e cpt id
      = selectExpr context 25 (sqlExprSrc e) (sqlExprTrg e)
-                   (F [Tm (Mp1 ("\\''.addslashes("++id++").'\\'") cpt), e])
+                   (F [Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") cpt), e])
 
 
 
@@ -373,7 +373,7 @@
                                            (Tm (mIs (concept a)))++"');"
             ,"  $res = array();"
             ,"  foreach($v as $i=>$j){"
-            ,"    $res[]=$j['"++addslashes (sqlAttConcept context (concept a))++"'];"
+            ,"    $res[]=$j['"++addSlashes (sqlAttConcept context (concept a))++"'];"
             ,"  }"
             ,"  return $res;"
             ,"}"

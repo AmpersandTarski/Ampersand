@@ -1,8 +1,5 @@
-{-# LINE 1 "Languages.lhs" #-}
-#line 1 "Languages.lhs"
-
-
-  module Languages
+ -- | This module does some string manipulation based on natural languages
+   module Languages
               (  Lang(English,Dutch)
                , ShowLang(showLang)
                , plural
@@ -14,7 +11,8 @@
     showLang :: Lang -> a -> String
 
 
-
+   -- | Returns the plural of a given word based on a specific language
+   plural :: Lang -> String -> String
    plural English str
     | null str = str
     | last str=='y' = init str++"ies"

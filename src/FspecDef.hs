@@ -239,8 +239,10 @@
        ++indent++"     [" ++(if null (post    sspc) then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        (post sspc))++indent++"     ] -- postconditions")
 
 
-   data ParamSpec   = Aspc FSid         -- name of the parameter
-                           String       -- type of the parameter
+   data ParamSpec   = Aspc 
+                      {pname :: FSid         -- name of the parameter
+                      ,ptype :: String }     -- type of the parameter
+                    -- | HJO: Wat moet die Pbool hier??
                     | Pbool
    instance ShowHS ParamSpec where
     showHSname a@(Aspc fid typ) = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)

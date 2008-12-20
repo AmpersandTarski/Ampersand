@@ -23,6 +23,11 @@
    import Graphic 
             ( genGraphics)
 
+   -- |   'cdModel' generates a 'Graphic' for a named 'Context'. 
+   cdModel :: Contexts   -- ^ Contexts that contains the specific context
+           -> String     -- ^ Identifier of the contexts to generate a graphic for
+           -> IO()		 -- ^ Good old system to put the results...
+ 
    cdModel contexts contextname
     = putStr ("\nObject oriented analysis for "++name context++"\n")           >>
       (writeFile (fnm++".dot"). cdDataModel context False layout) context >>   -- generate abbreviated class diagram  (pick True for full class diagram)
@@ -40,11 +45,11 @@
    class CdNode a where
     nodes :: a->[String]
 
-   data ClassDiag      = OOclassdiagram [Class]            --
-                                        [Association]      --
-                                        [Aggregation]      --
-                                        [Generalization]   --
-                                    deriving Show
+   data ClassDiag = OOclassdiagram [Class]            --
+                                   [Association]      --
+                                   [Aggregation]      --
+                                   [Generalization]   --
+                               deriving Show
    instance CdNode ClassDiag where
     nodes (OOclassdiagram cs as rs gs) = rd (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
 

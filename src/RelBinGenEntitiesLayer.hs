@@ -37,8 +37,8 @@
         "$DB_entities= Array\n     ( "++chain "\n     , "
         [ "Array\n        ( 'Name'=>"++phpShow (name o)++
                              "\n        , 'ID'=>'"++phpConcept context (concept o)++
-                            "'\n        , 'Attr'=>Array('"++phpConcept context (concept o)++"'=>'"++{-addslashes-} (phpShow (name o))++"','"++
-                            chain "','" [ name a++"'=>'"++{-addslashes-}phpShow (name a) | a<-attributes o]++"')"++
+                            "'\n        , 'Attr'=>Array('"++phpConcept context (concept o)++"'=>'"++{-addSlashes-} (phpShow (name o))++"','"++
+                            chain "','" [ name a++"'=>'"++{-addSlashes-}phpShow (name a) | a<-attributes o]++"')"++
                             "\n        , 'Disabled'=>Array('"++phpConcept context (concept o)++"'=>'1','"++
                             chain "','" [ name a++"'=>'"++(if null (declarations a `isc` comp) then "0"  else "1") | a<-attributes o]++"')\n        )"
         | o<-attributes context ]++"\n     );"
@@ -59,7 +59,7 @@
       , if null (signals context) then "$DB_rules=Array();" else
         "$DB_rules=Array( "++chain "\n                 , "
         [ "Array('ID'=>'"++sqlRuleName context r++
-                "','Name'=>'"++addslashes (name signal)++
+                "','Name'=>'"++addSlashes (name signal)++
                 "','Src'=>'"++phpRelSrc context r++
                 "','Trg'=>'"++phpRelTrg context r++
                 "','Fix'=>Array ('"++chain "','" ([ phpConcept context (concept o) | o<-attributes context, not (null (mors r `isc` mors o))]++
@@ -369,7 +369,7 @@
       [ "        if(isset($attrs['"++phpRelSrc context r++"']) && isset($attrs['"++phpRelTrg context r++"'])) {"
       , insConcepts context hcs 8 (source r) (sqlRelSrc r) [r]
       , insConcepts context hcs 8 (target r) (sqlRelTrg r) [r]
-      , "        DB_doquer('INSERT IGNORE INTO "++sqlRelName context r++" ("++sqlRelSrc r++","++sqlRelTrg r++")"++phpIndent 19++"VALUES (\\''.addslashes($attrs['"++sqlRelSrc r++"']).'\\', \\''.addslashes($attrs['"++sqlRelTrg r++"']).'\\')');"
+      , "        DB_doquer('INSERT IGNORE INTO "++sqlRelName context r++" ("++sqlRelSrc r++","++sqlRelTrg r++")"++phpIndent 19++"VALUES (\\''.addSlashes($attrs['"++sqlRelSrc r++"']).'\\', \\''.addSlashes($attrs['"++sqlRelTrg r++"']).'\\')');"
       ] ++ (if null triggers then ["        }"] else
              [ "        $someHornclausesActive=True;"
              , "        while($someHornclausesActive){"
@@ -392,11 +392,11 @@
       , "           if(isset($attrsOld['"++phpRelSrc context r++"']) && isset($attrsOld['"++phpRelTrg context r++"'])) {"
       , "              if($attrsOld['"++phpRelSrc context r++"']!=$attrs['"++phpRelSrc context r++"'] ||"
       , "                 $attrsOld['"++phpRelTrg context r++"']!=$attrs['"++phpRelTrg context r++"']) {"
-      , "                DB_doquer('DELETE FROM "++sqlRelName context r++" WHERE "++sqlRelSrc r++"=\\''.addslashes($attrsOld['"++phpRelSrc context r++"']).'\\' AND "++sqlRelTrg r++"=\\''.addslashes($attrsOld['"++phpRelTrg context r++"']).'\\'');"
+      , "                DB_doquer('DELETE FROM "++sqlRelName context r++" WHERE "++sqlRelSrc r++"=\\''.addSlashes($attrsOld['"++phpRelSrc context r++"']).'\\' AND "++sqlRelTrg r++"=\\''.addSlashes($attrsOld['"++phpRelTrg context r++"']).'\\'');"
       , "                $deleted=DB_affected();"
       , "              }"
       , "           }"
-      , "           DB_doquer('INSERT IGNORE INTO "++sqlRelName context r++" ("++sqlRelSrc r++","++sqlRelTrg r++")"++phpIndent 19++"VALUES (\\''.addslashes($attrs['"++sqlRelSrc r++"']).'\\', \\''.addslashes($attrs['"++sqlRelTrg r++"']).'\\')');"
+      , "           DB_doquer('INSERT IGNORE INTO "++sqlRelName context r++" ("++sqlRelSrc r++","++sqlRelTrg r++")"++phpIndent 19++"VALUES (\\''.addSlashes($attrs['"++sqlRelSrc r++"']).'\\', \\''.addSlashes($attrs['"++sqlRelTrg r++"']).'\\')');"
       , "           $inserted=DB_affected();"
       ] ++ (let closs=[e| e<-closE context, r `elem` declarations e] in
             if null closs then [] else
@@ -426,7 +426,7 @@
    phpCodeRelDelete (context,datasets,relations,hcs) r
     = (chain "\n".filter (not.null)) (
       [ "        if(isset($attrs['"++phpRelSrc context r++"']) && isset($attrs['"++phpRelTrg context r++"'])) {"
-      , "           DB_doquer('DELETE FROM "++sqlRelName context r++" WHERE "++sqlRelSrc r++"=\\''.addslashes($attrs['"++phpRelSrc context r++"']).'\\' AND "++sqlRelTrg r++"=\\''.addslashes($attrs['"++phpRelTrg context r++"']).'\\'');"
+      , "           DB_doquer('DELETE FROM "++sqlRelName context r++" WHERE "++sqlRelSrc r++"=\\''.addSlashes($attrs['"++phpRelSrc context r++"']).'\\' AND "++sqlRelTrg r++"=\\''.addSlashes($attrs['"++phpRelTrg context r++"']).'\\'');"
       , "           if(DB_affected()){"
       ] ++ (let closs=[e| e<-closE context, r `elem` declarations e] in
             if null closs then [] else
@@ -462,7 +462,7 @@
       , chain "\n"
         [ chain "\n"
           [ "        if(isset($attrs['"++name a++"'])){"
-          , "           DB_doquer('INSERT IGNORE INTO <sqlMorName context a> ( <sqlMorSrc context a> , <sqlMorTrg context a> ) VALUES (\\''.addslashes($attrs['"++phpCname++"']).'\\',\\''.addslashes($attrs['"++name a++"']).'\\')');"
+          , "           DB_doquer('INSERT IGNORE INTO <sqlMorName context a> ( <sqlMorSrc context a> , <sqlMorTrg context a> ) VALUES (\\''.addSlashes($attrs['"++phpCname++"']).'\\',\\''.addSlashes($attrs['"++name a++"']).'\\')');"
           , insConcepts context hcs 11 (target (ctx a)) (name a) [s| a<-attributes o, s<-declarations a]
           , "        }" ]
         | a<-attributes o, s<-declarations a]++
@@ -497,7 +497,7 @@
                    sqlRelName context s++"."++sqlRelSrc s++"="++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)
                  | a<-attributes o, s<-declarations a {-, not (s `elem` declarations dms)-}]
                 )++
-          phpIndent (i+15)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addslashes($attrs['"++phpCname++"']).'\\''));"
+          phpIndent (i+15)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addSlashes($attrs['"++phpCname++"']).'\\''));"
       , phpCodeIncrHornClauseEnt 8 "$qa[0]" context o []
          [ hc
          | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "DELETE FROM" . declarations) o
@@ -509,12 +509,12 @@
           [' '| x<-[1..i]]++"if($attr!=$qa[0]['"++sqlRelName context s++"']){\n"++
           [' '| x<-[1..i]]++
           "  DB_doquer(\"DELETE FROM "++sqlRelName context s++
-                     " WHERE "++srcAtt++"='\".addslashes($attrs['"++phpCname++"']).\"'"++
-                     (if src==trg then " AND "++trgAtt++"<>'\".addslashes($attrs['"++phpCname++"']).\"'" else "")++"\");\n"++
+                     " WHERE "++srcAtt++"='\".addSlashes($attrs['"++phpCname++"']).\"'"++
+                     (if src==trg then " AND "++trgAtt++"<>'\".addSlashes($attrs['"++phpCname++"']).\"'" else "")++"\");\n"++
           chain "\n"
            [ chain "\n"
              [ [' '| x<-[1..i+2]]++"if(isset($attrs['"++name a++"'])){"
-             , [' '| x<-[1..i+2]]++"   DB_doquer('INSERT IGNORE INTO <sqlMorName context a> ( <sqlMorSrc context a>, <sqlMorTrg context a> ) VALUES (\\''.addslashes($attrs['"++phpCname++"']).'\\',\\''.addslashes($attrs['"++name a++"']).'\\')');"
+             , [' '| x<-[1..i+2]]++"   DB_doquer('INSERT IGNORE INTO <sqlMorName context a> ( <sqlMorSrc context a>, <sqlMorTrg context a> ) VALUES (\\''.addSlashes($attrs['"++phpCname++"']).'\\',\\''.addSlashes($attrs['"++name a++"']).'\\')');"
              , insConcepts context hcs (i+5) (target (ctx a)) (name a) [s| a<-attributes o, s<-declarations a]
              , [' '| x<-[1..i+2]]++"}" ]
            | a<-attributes o, [s]==declarations a]++
@@ -554,7 +554,7 @@
                    sqlMorName context m++"."++sqlMorSrc context m++"="++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)
                  | m<-dms {- delMors context (concept o) -}]
                 )++
-          phpIndent (i+17)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addslashes($handle).'\\'');"
+          phpIndent (i+17)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addSlashes($handle).'\\'');"
       , "        $qa=DB_doquer('SELECT "++
           chain (","++phpIndent (i+22)) 
                 (["group_concat( DISTINCT quote( "++sqlRelName context s++"."++trgAtt++" ) ) AS "++sname
@@ -572,7 +572,7 @@
                                 )
                  | s<-declarations context, source s==concept o || target s==concept o, not (s `elem` declarations dms)]
                 )++
-          phpIndent (i+15)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addslashes($handle).'\\'');"
+          phpIndent (i+15)++"WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"=\\''.addSlashes($handle).'\\'');"
       , phpCodeIncrHornClauseEnt 8 "$qa[0]" context o []
          [ hc
          | hc@(CR(fOps, e, bOp, toExpr, frExpr, rule))<-( computeOrder hcs "DELETE FROM" . declarations) o
@@ -588,7 +588,7 @@
                , "}"
                ]
               | m<-dms {- delMors context (concept o) -}]
-      , "        DB_doquer(\"DELETE FROM "++sqlConcept context (concept o)++" WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"='\".addslashes($handle).\"'\");"
+      , "        DB_doquer(\"DELETE FROM "++sqlConcept context (concept o)++" WHERE "++sqlConcept context (concept o)++"."++sqlAttConcept context (concept o)++"='\".addSlashes($handle).\"'\");"
       , chain "\n"
         [ dbDelEntAtt context i (concept o) "$handle" (s, sname, src, trg, srcAtt, trgAtt)
         | (s,sname,src,trg,srcAtt,trgAtt)<-relStrings]
@@ -647,13 +647,13 @@
              concat
              [ phpIndent (i+6)++"$v[$i]["++show j++"]=rand();"++
                concat
-               [ phpIndent (i+6)++"DB_doquer('INSERT IGNORE INTO "++sqlConcept context c++" ("++sqlAttConcept context c++") VALUES (\\''.addslashes($v[$i]["++show j++"]).'\\')');"
+               [ phpIndent (i+6)++"DB_doquer('INSERT IGNORE INTO "++sqlConcept context c++" ("++sqlAttConcept context c++") VALUES (\\''.addSlashes($v[$i]["++show j++"]).'\\')');"
                | c<-rd [target l,source r]
                ]
              | F tos<-[toExpr]
              , (l,j,r)<-zip3 (init tos) [2..length tos] (tail tos)]++
              concat
-             [ phpIndent (i+6)++"DB_doquer('INSERT IGNORE INTO "++sqlMorName context m++" ("++sqlMorSrc context m++","++sqlMorTrg context m++") VALUES (\\''.addslashes($v[$i]["++l++"]).'\\',\\''.addslashes($v[$i]["++r++"]).'\\')');"
+             [ phpIndent (i+6)++"DB_doquer('INSERT IGNORE INTO "++sqlMorName context m++" ("++sqlMorSrc context m++","++sqlMorTrg context m++") VALUES (\\''.addSlashes($v[$i]["++l++"]).'\\',\\''.addSlashes($v[$i]["++r++"]).'\\')');"
              | F tos<-[toExpr]
              , vs<-[["'"++sqlExprSrc frExpr++"'"]++map show [2..length tos]++["'"++sqlExprTrg frExpr++"'" ]]
              , (l,t,r)<-zip3 (init vs) tos (tail vs), m<-mors t ] ++phpIndent (i+3)++"} /* 3 */"++
@@ -705,13 +705,13 @@
                concat
                [ phpIndent (ind+3)++"$v[$i]["++show j++"]=rand();"++
                  concat
-                 [ phpIndent (ind+3)++"DB_doquer('INSERT IGNORE INTO "++sqlConcept context c++" ("++sqlAttConcept context c++") VALUES (\\''.addslashes($v[$i]["++show j++"]).'\\')');"
+                 [ phpIndent (ind+3)++"DB_doquer('INSERT IGNORE INTO "++sqlConcept context c++" ("++sqlAttConcept context c++") VALUES (\\''.addSlashes($v[$i]["++show j++"]).'\\')');"
                  | c<-rd [target l,source r]
                  ]
                | F tos<-[toExpr]
                , (l,j,r)<-zip3 (init tos) [2..length tos] (tail tos)]++
                concat
-               [ phpIndent (ind+3)++"DB_doquer('INSERT IGNORE INTO "++sqlMorName context m++" ("++sqlMorSrc context m++","++sqlMorTrg context m++") VALUES (\\''.addslashes($v[$i]["++l++"]).'\\',\\''.addslashes($v[$i]["++r++"]).'\\')');"
+               [ phpIndent (ind+3)++"DB_doquer('INSERT IGNORE INTO "++sqlMorName context m++" ("++sqlMorSrc context m++","++sqlMorTrg context m++") VALUES (\\''.addSlashes($v[$i]["++l++"]).'\\',\\''.addSlashes($v[$i]["++r++"]).'\\')');"
                | F tos<-[toExpr]
                , vs<-[["'"++sqlExprSrc frExpr++"'"]++map show [2..length tos]++["'"++sqlExprTrg frExpr++"'" ]]
                , (l,t,r)<-zip3 (init vs) tos (tail vs), m<-mors t ]
@@ -732,9 +732,9 @@
    phpCodeIncrHornClauseRel attrs i context r hc@(CR(fOps, e, "INSERT INTO", toExpr, frExpr, rule)) 
     = if isTrue frExpr
       then phpIndent i++"DB_doquer('INSERT IGNORE INTO T1_r"++
-           phpIndent (i+11)++      "SELECT "++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++", \\''.addslashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\' FROM C1_A WHERE NOT EXISTS (SELECT * FROM T2_s WHERE T2_s."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=C1_A."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++" AND T2_s."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=\\''.addslashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\')');"++
+           phpIndent (i+11)++      "SELECT "++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++", \\''.addSlashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\' FROM C1_A WHERE NOT EXISTS (SELECT * FROM T2_s WHERE T2_s."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=C1_A."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++" AND T2_s."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=\\''.addSlashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\')');"++
            phpIndent i++"DB_doquer('INSERT IGNORE INTO T1_r"++
-           phpIndent (i+11)++      "SELECT \\''.addslashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\', "++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++" FROM C2_B WHERE NOT EXISTS (SELECT * FROM T2_s WHERE T2_s."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=\\''.addslashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\' AND T2_s."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=C2_B."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++")');"
+           phpIndent (i+11)++      "SELECT \\''.addSlashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\', "++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++" FROM C2_B WHERE NOT EXISTS (SELECT * FROM T2_s WHERE T2_s."++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=\\''.addSlashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\' AND T2_s."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=C2_B."++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++")');"
       else (if pNoDebug then "" else
             phpIndent (i-3)++"// inside phpCodeIncrHornClauseRel i context:"++
         --    phpIndent (i-3)++"// r="++show (name r)++"; substitutions="++show substitutions++";"++
@@ -754,7 +754,7 @@
        phpIndent (i-3)++"// m = "++showADL m++", m' = "++showADL m')++
       if oneMorphism frExpr
       then phpIndent i++"DB_doquer('DELETE FROM "++sqlMorName context m++
-           phpIndent (i+11)++      "WHERE "++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=\\''.addslashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\' AND "++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=\\''.addslashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\'');"
+           phpIndent (i+11)++      "WHERE "++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"=\\''.addSlashes("++attrs++"['"++(if inline m' then sqlMorSrc context m else sqlMorTrg context m)++"']).'\\' AND "++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"=\\''.addSlashes("++attrs++"['"++(if inline m' then sqlMorTrg context m else sqlMorSrc context m)++"']).'\\'');"
       else (if pNoDebug then "" else
             phpIndent (i-3)++"// calling selectNormFiExpr \""++attrs++"\" context "++show (10+i)++" frExpr "++
             phpIndent i++       "//            "++show (sqlMorSrc context m,sqlMorTrg context m)++
@@ -770,8 +770,8 @@
    dbDelEntAtt context i c entVar (s, sname, src, trg, srcAtt, trgAtt)
     = [' '| x<-[1..i]]++
       "DB_doquer(\"DELETE FROM "++sqlRelName context s++
-                 " WHERE "++srcAtt++"='\".addslashes("++entVar++").\"'"++
-                 (if src==trg then " AND "++trgAtt++"<>'\".addslashes("++entVar++").\"'" else "")++"\");"
+                 " WHERE "++srcAtt++"='\".addSlashes("++entVar++").\"'"++
+                 (if src==trg then " AND "++trgAtt++"<>'\".addSlashes("++entVar++").\"'" else "")++"\");"
       ++"\n"++[' '| x<-[1..i]]++
       concat
        [chain ("\n"++[' '| x<-[1..i+4]])

@@ -702,6 +702,7 @@
    firstCaps ('_':c:str) = toUpper c:firstCaps str
    firstCaps (c:str) = c:firstCaps str
 
+   applyMLatex :: Declaration -> String -> String -> String
    applyMLatex (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then "$"++d++"$\\ "++firstCaps nm++"\\ $"++c++"$" else addSlashes prL++"$"++d++"$"++addSlashes prM++"$"++c++"$"++addSlashes prR
    applyMLatex (Isn _ _)                            d c = "$"++d++"$ equals $"++c++"$"
    applyMLatex (Iscompl _ _)                        d c = "$"++d++"$ differs from $"++c++"$"
@@ -1185,6 +1186,7 @@
           where cConcs     = [c| c<-tobeWrittenConcs, c `elem` concs r ]
                 cDecls     = [d| d<-tobeWrittenDecls, d `elem` declarations r ]
 
+   archShow :: Lang -> Context -> String 
    archShow language context = ltshow (name context) (typology (isa context)) language context
     where
     ltshow cname typ language context
@@ -1569,6 +1571,7 @@
   -- lname and clname clean strings
    lname :: Identified a => a -> String
    lname  = clname . name
+   clname :: String -> String
    clname str = [if isAlphaNum c then c else if c `elem` "/\\" then c else '_'| c<- str]
 
    lIntro :: Lang -> String
@@ -1685,6 +1688,7 @@
        f cs  = "("++chain "\\cup" [concat [if c==' ' then "\\ " else [c]| c<-name c] | c<-cs]++")"
 
 
+   contDef :: String -> Typology Concept -> Lang -> Pattern -> String
    contDef cname typ language pat@(Pat nm rs gen pms cs ks)
     = lschema cname
               typ language
@@ -1828,9 +1832,9 @@
    addSlashes ('\"': ' ': cs) = "'' "++addSlashes cs
    addSlashes ('\\': cs) = "\\\\"++addSlashes cs
    addSlashes ('_': cs) = "\\_"++addSlashes cs
-   addSlashes ('&': cs)  = "\\&"++addSlashes cs
-   addSlashes ('é': cs) = "\\'e"++addSlashes cs
-   addSlashes ('è': cs) = "\\`e"++addSlashes cs
+   addSlashes ('&': cs)  = "\\&"++addSlashes cs        -- HJO, 20 dec 2008:
+   addSlashes ('é': cs) = "\\'e"++addSlashes cs       --TODO: LaTeX extentie inbouwen. Unicode moet gewoon werken in LaTeX: Zie http://gunnarwrobel.de/wiki/Unicode.html of nog beter: http://en.wikibooks.org/wiki/LaTeX/Internationalization
+   addSlashes ('è': cs) = "\\`e"++addSlashes cs       --      Anders is hiernaast een manier om unicode te gebruiken in Haskell. Wat een gedoe!
    addSlashes ('ë': cs) = "\\\"e"++addSlashes cs
    addSlashes ('ï': cs) = "\\\"{\\i}"++addSlashes cs
    addSlashes ('á': cs) = "\\'a"++addSlashes cs

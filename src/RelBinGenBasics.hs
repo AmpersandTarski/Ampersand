@@ -32,8 +32,8 @@
     = if srcTo==trgTo && not (isProperty toExpr) then error ("(Module RelBinGenBasics) Fatal: srcTo and trgTo are equal ("++srcTo++") in sqlCodeComputeRule.\n"++show hc) else
     {-if Tm [m'] == frExpr
       then "'INSERT IGNORE INTO "++sqlMorName context m++
-           phpIndent i ++ "VALUES (\\''.addslashes("++attrs++"['"++srcFr++"']).'\\',"++
-                                 " \\''.addslashes("++attrs++"['"++trgFr++"']).'\\')'"
+           phpIndent i ++ "VALUES (\\''.addSlashes("++attrs++"['"++srcFr++"']).'\\',"++
+                                 " \\''.addSlashes("++attrs++"['"++trgFr++"']).'\\')'"
       else -}
       "'INSERT IGNORE INTO "++sqlMorName context m++
            selectExpr context i srcTo trgTo frExpr'++"'"
@@ -116,7 +116,7 @@
   --          subMorph ((_,p,q):trs)   m = F [mp1 to p (source m),v (source m,target m),mp1 to q (target m)]
             subMorph ((r,p,q):trs)   m | inline m  = F [mp1 to p (source m),v (source m,target m),mp1 to q (target m)]
                                        | otherwise = F [mp1 to q (source m),v (source m,target m),mp1 to p (target m)]
-            mp1 var a = Tm . Mp1 ("\\''.addslashes("++var++"['"++a++"']).'\\'")
+            mp1 var a = Tm . Mp1 ("\\''.addSlashes("++var++"['"++a++"']).'\\'")
 
 
 
@@ -451,13 +451,14 @@
 
 
    phpShow :: String -> String
-   phpShow str = "'" ++ addslashes str ++ "'"
+   phpShow str = "'" ++ addSlashes str ++ "'"
 
-   addslashes ('\'': cs) = "\\'"++addslashes cs
-   addslashes ('"': cs) = "\\\""++addslashes cs
-   addslashes ('\\': cs) = "\\\\"++addslashes cs
-   addslashes (c:cs) = c:addslashes cs
-   addslashes "" = ""
+   addSlashes :: String -> String
+   addSlashes ('\'': cs) = "\\'"++addSlashes cs
+   addSlashes ('"': cs) = "\\\""++addSlashes cs
+   addSlashes ('\\': cs) = "\\\\"++addSlashes cs
+   addSlashes (c:cs) = c:addSlashes cs
+   addSlashes "" = ""
 
    phpRelName :: Context -> Declaration -> String
    phpRelName context s
@@ -647,10 +648,10 @@
    phpIsnet var context m = "!isset("++var++"['"++sqlMorName context m++"'])"
 
    isSub ctx subs a               = a `elem` [sqlMorName ctx r| (r,x,y)<-subs]
-   doSubSrc ctx subs var x a t    = if isSub ctx subs a then "\\''.addslashes("++var++"['"++doSrc ctx subs x a++"']).'\\'"         else a++"."++t
-   doSubTrg ctx subs var x a t    = if isSub ctx subs a then "\\''.addslashes("++var++"['"++doTrg ctx subs x a++"']).'\\'"         else a++"."++t
-   dASubSrc ctx subs var x a as t = if isSub ctx subs a then "\\''.addslashes("++var++"['"++doSrc ctx subs x a++"']).'\\' AS "++as else a++"."++ifAs as t
-   dASubTrg ctx subs var x a as t = if isSub ctx subs a then "\\''.addslashes("++var++"['"++doTrg ctx subs x a++"']).'\\' AS "++as else a++"."++ifAs as t
+   doSubSrc ctx subs var x a t    = if isSub ctx subs a then "\\''.addSlashes("++var++"['"++doSrc ctx subs x a++"']).'\\'"         else a++"."++t
+   doSubTrg ctx subs var x a t    = if isSub ctx subs a then "\\''.addSlashes("++var++"['"++doTrg ctx subs x a++"']).'\\'"         else a++"."++t
+   dASubSrc ctx subs var x a as t = if isSub ctx subs a then "\\''.addSlashes("++var++"['"++doSrc ctx subs x a++"']).'\\' AS "++as else a++"."++ifAs as t
+   dASubTrg ctx subs var x a as t = if isSub ctx subs a then "\\''.addSlashes("++var++"['"++doTrg ctx subs x a++"']).'\\' AS "++as else a++"."++ifAs as t
    doSrc ctx subs x a             = head [if inline x then p else q| (r,p,q)<-subs, a==sqlMorName ctx r]
    doTrg ctx subs x a             = head [if inline x then q else p| (r,p,q)<-subs, a==sqlMorName ctx r]
 
@@ -700,17 +701,17 @@
    insConcepts context hcs n c str excludeRels
     = [' '|i<-[1..n]]++
       chain ("\n"++[' '|i<-[1..n]])
-       [ "DB_doquer('INSERT IGNORE INTO "++sqlConcept context c'++" ("++sqlAttConcept context c'++") VALUES (\\''.addslashes($attrs['"++str++"']).'\\')');"
+       [ "DB_doquer('INSERT IGNORE INTO "++sqlConcept context c'++" ("++sqlAttConcept context c'++") VALUES (\\''.addSlashes($attrs['"++str++"']).'\\')');"
        | c'<-concs context, c' <= c]++
       concat
        [ "\n"++[' '|i<-[1..n-3]]++"// "++informalRule {-[sIs c]-} (CR(fOp, Tm (mIs c), bOp, toExpr, frExpr, rule))++"\n"++[' '|i<-[1..n]]++
          "if(isset($attrs['"++str++"']))" ++
-         "DB_doquer('INSERT IGNORE INTO "++sqlMorName context s++" VALUES (\\''.addslashes($attrs['"++str++"']).'\\', \\''.addslashes($attrs['"++str++"']).'\\')');"
+         "DB_doquer('INSERT IGNORE INTO "++sqlMorName context s++" VALUES (\\''.addSlashes($attrs['"++str++"']).'\\', \\''.addSlashes($attrs['"++str++"']).'\\')');"
        | (CR(fOp, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [sIs c], isIdent toExpr
        , sign frExpr <= sign c
        , oneMorphism toExpr
        , s<-mors toExpr, not (makeDeclaration s `elem` excludeRels)]
 
    dbDelConcept context i c atomVar
-    = [' '| x<-[1..i]]++"DB_doquer('DELETE FROM "++sqlConcept context c++" WHERE "++sqlAttConcept context c++"=\\''.addslashes("++atomVar++").'\\' AND NOT EXISTS ("++chain " UNION " (["SELECT "++sqlRelSrc s++" FROM "++sqlRelName context s++" WHERE "++sqlRelSrc s++"=\\''.addslashes("++atomVar++").'\\'" | s<-declarations context, source s==c]++["SELECT "++sqlRelTrg s++" FROM "++sqlRelName context s++" WHERE "++sqlRelTrg s++"=\\''.addslashes("++atomVar++").'\\'" | s<-declarations context, target s==c])++")');"
+    = [' '| x<-[1..i]]++"DB_doquer('DELETE FROM "++sqlConcept context c++" WHERE "++sqlAttConcept context c++"=\\''.addSlashes("++atomVar++").'\\' AND NOT EXISTS ("++chain " UNION " (["SELECT "++sqlRelSrc s++" FROM "++sqlRelName context s++" WHERE "++sqlRelSrc s++"=\\''.addSlashes("++atomVar++").'\\'" | s<-declarations context, source s==c]++["SELECT "++sqlRelTrg s++" FROM "++sqlRelName context s++" WHERE "++sqlRelTrg s++"=\\''.addSlashes("++atomVar++").'\\'" | s<-declarations context, target s==c])++")');"
 

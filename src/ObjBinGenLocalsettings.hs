@@ -62,7 +62,7 @@
            ,"$menu[] = array"
            ,"  ("++ (chain "\n        ,"
             [ "new menuItem('"++objname++".php','Show all "++objname++" objects','menuItem','"++objname++"')"
-            | o<-attributes context, objname <- [addslashes (name o)]
+            | o<-attributes context, objname <- [addSlashes (name o)]
             ])
            ,"  );"
            ,"parent::monastir($menu,$obj,$object,ucfirst($object->name));"

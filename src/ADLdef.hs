@@ -2,42 +2,27 @@
 #line 1 "ADLdef.lhs"
 
 
-  module ADLdef ( Architecture(..)
-                , Contexts 
-                , Context(..)
-                , Concepts 
-                , Concept(..),cptC,cptS,cptAnything,cptNothing
-                     , cptnew,isAnything,isNothing,isC
-                , ConceptDef(..),ConceptDefs
-                , ObjectDef(..), objdefNew
-                , ObjDefs
-                , KeyDef(..),KeyDefs
-                , Population(..), Populations
-                , Morphism(..),Morphisms,inline,makeDeclaration,makeInline
-                , Declaration(..),makeMph
-                , Declarations
-                , Pattern(..),union
-                , Patterns
-                , Expression(..),isPos,isNeg,notCp
-                , Expressions
-                , Prop(..)
-                , Gen(..), Gens
-                , Rule(..),ruleType,consequent,cpu,antecedent,normExpr,uncomp
-                , Rules
-                , Paire,src, trg,v
-                , Pairs
-                , GenR
-                , Object(..)
-                , Populated(..)
-                , Morphic(..)
-                , Key(..)
-                , Language(..)
-                , Morphical(..)
-                , Numbered(..)
-                , FilePos(..),posNone
-                , Substitutive(..)
-                , mIs
-                , sIs )
+  module ADLdef (   cptC,cptS,cptAnything,cptNothing
+                  , cptnew,isAnything,isNothing,isC
+                  , objdefNew
+                  , makeInline
+                  , makeMph
+                  , union
+                  , isPos,isNeg,notCp
+                  , ruleType
+                  , consequent,cpu,antecedent,normExpr,uncomp
+                  , src, trg,v
+                  , Object(..)
+                  , Populated(..)
+                  , Morphic(..)
+                  , Key(..)
+                  , Language(..)
+                  , Morphical(..)
+                  , Numbered(..)
+                  , Substitutive(..)
+                  , mIs
+                  , sIs 
+                  , module ADLdataDef)
   where
  
    import ADLdataDef
@@ -218,19 +203,6 @@
 
 
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
    instance Morphic Morphism where

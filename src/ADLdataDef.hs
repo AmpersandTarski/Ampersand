@@ -42,17 +42,17 @@
 
    type Contexts  = [Context]
    data Context   
-      = Ctx { ctxnm    :: String     -- name of this context
-            , ctxon    :: [String]   -- the list of extends (= context names of contexts) whose rules are imported
-            , ctxisa   :: (Inheritance Concept)     -- a data structure containing the generalization structure of concepts
-            , ctxwrld  :: [Classification Context]  -- a tree, being the transitive closure of the 'extends' (see formal definition) relation.
-            , ctxpats  :: Patterns                  -- a list of patterns defined in this context
-            , ctxrs    :: Rules                     -- a list of all rules that are valid within this context
-            , ctxds    :: Declarations              -- a list of declarations defined in this context, outside the scope of patterns
-            , ctxcs    :: ConceptDefs               -- a list of concept definitions defined in this context, outside the scope of patterns
-            , ctxks    :: KeyDefs                   -- a list of key definitions defined in this context, outside the scope of patterns
-            , ctxos    :: ObjDefs                   -- a list of attributes defined in this context, outside the scope of patterns
-            , ctxpops  :: Populations               -- a list of populations defined in this context
+      = Ctx { ctxnm    :: String                    -- ^the name of this context
+            , ctxon    :: [String]                  -- ^the list of extends (= context names of contexts) whose rules are imported
+            , ctxisa   :: (Inheritance Concept)     -- ^ a data structure containing the generalization structure of concepts
+            , ctxwrld  :: [Classification Context]  -- ^ a tree, being the transitive closure of the 'extends' (see formal definition) relation.
+            , ctxpats  :: Patterns                  -- ^ a list of patterns defined in this context
+            , ctxrs    :: Rules                     -- ^ a list of all rules that are valid within this context
+            , ctxds    :: Declarations              -- ^ a list of declarations defined in this context, outside the scope of patterns
+            , ctxcs    :: ConceptDefs               -- ^ a list of concept definitions defined in this context, outside the scope of patterns
+            , ctxks    :: KeyDefs                   -- ^ a list of key definitions defined in this context, outside the scope of patterns
+            , ctxos    :: ObjDefs                   -- ^ a list of attributes defined in this context, outside the scope of patterns
+            , ctxpops  :: Populations               -- ^ a list of populations defined in this context
             } 
 
    instance Identified Context where
@@ -60,11 +60,11 @@
 
    type Concepts = [Concept]
    data Concept
-      = C   { cptnm :: String
+      = C   { cptnm :: String    -- ^the name of this Concept
             , cptgE :: GenR 
-            , cptos :: [String]  -- atoms
-            }  -- C nm gE cs represents the set of instances cs by name nm.
-      | S  -- the universal singleton: I[Anything]=V[Anything]
+            , cptos :: [String]  -- ^atoms
+            }  -- ^C nm gE cs represents the set of instances cs by name nm.
+      | S  -- ^the universal Singleton: 'I'['Anything'] = 'V'['Anything']
       | Anything
       | NOthing
    instance Eq Concept where
