@@ -1,6 +1,4 @@
-{-# LINE 1 "Xml.lhs" #-}
-#line 1 "Xml.lhs"
-  module Xml where
+  module Fspec2Xml where
    import Char (isAlphaNum, isSpace)
    import CommonClasses (  Identified(name))
    import Collection (Collection(empty, (>-),rd))
@@ -10,7 +8,7 @@
    import ShowADL
    import CC_aux ( explain)
 
-   makeXML contexts contextname
+   makeXML_depreciated contexts contextname
     = putStr ("\nXML representation of "++name context++"\n")>>
       writeFile (contextname++".xml") (showXML context "")>>
       putStr ("\n"++contextname++".xml written\n")

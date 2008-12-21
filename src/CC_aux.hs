@@ -1,5 +1,3 @@
-{-# LINE 1 "CC_aux.lhs" #-}
-#line 1 "CC_aux.lhs"
   {-# OPTIONS -XFlexibleContexts #-}
   module CC_aux ( explain
           --      ,  ShowADL(..)
@@ -38,7 +36,8 @@
    import Languages (Lang,ShowLang,plural)
    import Auxiliaries  
            ( sort', chain, rEncode, commaEng, clos1, diag
-            ,eqCl, sord, eqClass, rd', enumerate, unCap, showL, haskellIdentifier)
+            ,eqCl, sord, eqClass, rd', enumerate,  showL, haskellIdentifier
+            ,unCap)
    import Classification 
              ( Classification(),preCl,mapCl
              )

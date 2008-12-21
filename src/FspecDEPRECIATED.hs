@@ -1,6 +1,4 @@
-{-# LINE 1 "Fspec.lhs" #-}
-#line 1 "Fspec.lhs"
-   module Fspec --( projectClassic
+   module FspecDEPRECIATED --( projectClassic
                 --, fnContext
                 --, generateFspecLaTeX
                 --, generateArchLaTeX
@@ -13,41 +11,24 @@
                 --, Fspec(..),Fobj(..),Frule(..),Dataset(..),Ftheme(..)  -- Moet worden geexporteerd om gegenereerde bestanden te kunnen parsen..
                 --)
   where
-
-
-
-
-
    import Char
    import CommonClasses ( Identified(name))
    import Collection (Collection (isc,(>-),empty, rd))
    import Auxiliaries
           (  --adlVersion
-   --      , encode, decode
-             unCap, upCap
+             unCap, upCap, firstCaps
            , fst3, snd3
-   --      , thd3
            , chain
            , showL
-   --      , rEncode
            , commaEng
            , commaNL
-   --      , clos1
-   --      , clos
-   --      , diag
            , sort
-   --      , sord
            , eqCl 
            , eqClass
            , rd'
-   --      , enumerate
            , sort'
-   --      , enc
            , sord'
-   --      , elem'
-   --      , mumble
            , fixSpaces
-   --      , transpose
            , haskellIdentifier
           )
    import Classification
@@ -66,7 +47,7 @@
    import PredLogic
    import HtmlFilenames
    import ERmodel (erAnalysis)
-
+   import LaTeX
 
 
 
@@ -468,8 +449,6 @@
    namet    = firstCaps.map toLower.name
    nameAt :: (Identified a, Object a) => a -> String
    nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
-   tt :: String -> String
-   tt a = "{\\tt "++a++"}"
    nameAtt a = tt (nameAt a)
    getEach :: Context -> ObjectDef -> ServiceSpec 
    getEach context o
@@ -695,19 +674,11 @@
             s = if homogeneous r then tt "s" else (tt.varName.name.source) r
             t = if homogeneous r then tt "t" else (tt.varName.name.target) r
 
-   firstCaps :: String -> String
-   firstCaps "" = ""
-   firstCaps "_" = ""
-   firstCaps ('_':'_':str) = firstCaps ('_':str)
-   firstCaps ('_':c:str) = toUpper c:firstCaps str
-   firstCaps (c:str) = c:firstCaps str
-
    applyMLatex :: Declaration -> String -> String -> String
-   applyMLatex (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then "$"++d++"$\\ "++firstCaps nm++"\\ $"++c++"$" else addSlashes prL++"$"++d++"$"++addSlashes prM++"$"++c++"$"++addSlashes prR
+   applyMLatex (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then "$"++d++"$\\ "++firstCaps nm++"\\ $"++c++"$" else latexWord prL++"$"++d++"$"++latexWord prM++"$"++c++"$"++latexWord prR
    applyMLatex (Isn _ _)                            d c = "$"++d++"$ equals $"++c++"$"
    applyMLatex (Iscompl _ _)                        d c = "$"++d++"$ differs from $"++c++"$"
    applyMLatex (Vs _ _)                             d c = show True
-
 
 
 
@@ -926,9 +897,9 @@
 
 
        captiontext English pat
-        = "\n\\caption{Data structure of "++(addSlashes.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
+        = "\n\\caption{Data structure of "++(latexWord.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
        captiontext Dutch pat
-        = "\n\\caption{Gegevensstructuur van "++(addSlashes.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
+        = "\n\\caption{Gegevensstructuur van "++(latexWord.name) pat++"}\n\\label{fig:"++clname (name pat)++"}"
        str2 | language==English = "The services are defined in the following subsections.\n"
             | language==Dutch   = "De services zijn in de volgende secties gedefinieerd.\n"
        lettext English "Other Classes"
@@ -1169,7 +1140,7 @@
          newConcsNoDefs   = [c| c<-newConcepts, not (name c `elem` map name (conceptDefs context))]
          newDeclarations  = [d| d<-patDecls, not (d `elem` prevWrittenDecls)]
          explDecl :: Declaration -> [String]
-         explDecl d = [ latexDesignrule (addSlashes (str ++ " ("++str15++": "++name d++signature++")"))  | not (null str)]
+         explDecl d = [ latexDesignrule (latexWord (str ++ " ("++str15++": "++name d++signature++")"))  | not (null str)]
           where
            str = explainDecl context Dutch d
            signature | length [s|s<-patDecls, name s==name d] >1  = " "++str16++" "++name (source d)++" "++str17++" "++name (target d)
@@ -1181,7 +1152,7 @@
          elaborate tobeWrittenConcs tobeWrittenDecls (r:rs)
           = map (explainConcept context Dutch) cConcs ++
             concat (map explDecl cDecls) ++
-            [latexDesignrule (addSlashes str)|str<-[explainRule context Dutch r], not (null str)]++
+            [latexDesignrule (latexWord str)|str<-[explainRule context Dutch r], not (null str)]++
             elaborate (tobeWrittenConcs>-cConcs) (tobeWrittenDecls>-cDecls) rs
           where cConcs     = [c| c<-tobeWrittenConcs, c `elem` concs r ]
                 cDecls     = [d| d<-tobeWrittenDecls, d `elem` declarations r ]
@@ -1192,7 +1163,7 @@
     ltshow cname typ language context
      = (chain "\n". filter (not.null))
        (if language==Dutch then 
-       [ "\\title{Toetsingscriteria\\\\"++addSlashes cname++"}"
+       [ "\\title{Toetsingscriteria\\\\"++latexWord cname++"}"
        , "\\maketitle"
        , "\\tableofcontents"
        , latexChapter "Inleiding" "Inleiding"
@@ -1204,7 +1175,7 @@
        , latexChapter "Terminologie" ("typology"++cname)
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
-              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
+              (chain "\n" ["\\textbf{"++nm++"} & "++latexWord def++
                            (if null ref then "" else "~\\cite{"++ref++"}")++
                            "\\\\\n\\hline"
                           | Cd pos nm def ref<-conceptDefs context, cptnew nm  `elem` concs context])
@@ -1215,13 +1186,13 @@
        , "\\bibliography{../"++name context++"}"
        , "\\label{bibliography"++name context++"}"
        ] else if language==English then
-       ["\\title{Functional Specification\\\\ "++addSlashes cname++"}"
+       ["\\title{Functional Specification\\\\ "++latexWord cname++"}"
        , "\\maketitle"
        , "\\tableofcontents"
        , latexChapter "Introduction" "Introduction"
-       , "\tThis document defines the service layer of a system called "++addSlashes cname++"."
+       , "\tThis document defines the service layer of a system called "++latexWord cname++"."
        , "\tIt defines infrastructural services in a system in which people and applications collaborate"
-       , "\tto maintain agreements and commitments that apply to the context of "++addSlashes cname++"."
+       , "\tto maintain agreements and commitments that apply to the context of "++latexWord cname++"."
        , "\tThese agreements and commitments are represented by rules."
        , "\tThey are presented in chapter \\ref{chp:Design rules}, arranged by theme."
        , "\tA data analysis is presented in chapter \\ref{chp:Data Analysis}."
@@ -1231,11 +1202,11 @@
        , "\tsignalling violations (for human intervention),"
        , "\tor fixing the content of databases (by automatic actions) to restore a rule."
        , latexChapter "Principles" "Principles"
-       , "\tThis chapter introduces guiding principles of "++addSlashes cname++"."
+       , "\tThis chapter introduces guiding principles of "++latexWord cname++"."
        , "\tSubsequent chapters elaborate these principles into complete formal specifications."
        , chain "\n\n" [ latexSection ("Design choices about "++firstCaps (name pat)) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
-                        latexEnumerate ([addSlashes (explainRule context language r)|r<-declaredRules pat++signals pat, null (cpu r)]++
-                                        [addSlashes (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
+                        latexEnumerate ([latexWord (explainRule context language r)|r<-declaredRules pat++signals pat, null (cpu r)]++
+                                        [latexWord (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
                       | pat<-patterns context]
        , latexChapter "Conceptual Analysis" "Conceptual Analysis"
        , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Design rules}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
@@ -1243,9 +1214,9 @@
        , chain "\n\n" [ latexSection ("Rules about "++firstCaps (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
   --                      "A conceptual analysis of "++firstCaps (name pat)++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
   --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
-  --                      "\n\\caption{Conceptual analysis of "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
+  --                      "\n\\caption{Conceptual analysis of "++(latexWord.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
                         latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-                              (chain "\n" [show (nr r)++"&"++addSlashes (explainArt context language r)++"\\\\\n&Relations:\\\\"++
+                              (chain "\n" [show (nr r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relations:\\\\"++
                                            "&\\(\\begin{array}{rcl}\n"++
                                                 chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
                                                                | d<-declarations r]++
@@ -1257,7 +1228,7 @@
        , latexChapter "Glossary" ("typology"++cname)
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
-               (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
+               (chain "\n" ["\\textbf{"++nm++"} & "++latexWord def++"~\\cite{"++ref++"}\\\\\n\\hline"
                            | Cd pos nm def ref<-conceptDefs context, cptnew nm `elem` concs context])
        , if null cList then "" else
          if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
@@ -1285,13 +1256,13 @@
     ltshow cname typ language context
      = (chain "\n". filter (not.null))
        (if language==Dutch then 
-       ["\\title{Functionele Specificatie\\\\"++addSlashes cname++"}"
+       ["\\title{Functionele Specificatie\\\\"++latexWord cname++"}"
        , "\\maketitle"
        , "\\tableofcontents"
        , latexChapter "Inleiding" "Inleiding"
-       , "\tDit document definieert de servicelaag van een systeem genaamd "++addSlashes cname++"."
+       , "\tDit document definieert de servicelaag van een systeem genaamd "++latexWord cname++"."
        , "\tHet definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken"
-       , "\tom afspraken na te leven die gelden in de context van "++addSlashes cname++"."
+       , "\tom afspraken na te leven die gelden in de context van "++latexWord cname++"."
        , "\tDeze afspraken worden weergegeven door bedrijfsregels."
        , "\tDeze regels staan beschreven in hoofdstuk \\ref{chp:Ontwerpregels}, geordend op thema."
        , "\tEen gegevensanalyse volgt in hoofdstuk \\ref{chp:Gegevensanalyse}."
@@ -1316,12 +1287,12 @@
        , "\ten elke afspraak krijgt een formele representatie."
        , "\n\tDe resultaten van functiepunt analyse staan vermeld in tabel \\ref{tab:FPA}"
        , spec2fp context Dutch spec
-       , chain "\n\n" [ latexSection ("Regels over "++addSlashes (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+       , chain "\n\n" [ latexSection ("Regels over "++latexWord (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
   --                      "Een conceptuele analyse over "++firstCaps (name pat)++" is weergegeven in figuur \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
   --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
-  --                      "\n\\caption{Conceptuele analyse van "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}\n")++
+  --                      "\n\\caption{Conceptuele analyse van "++(latexWord.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}\n")++
                         latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-                              (chain "\n" [show (nr r)++"&"++addSlashes (explainArt context language r)++"\\\\\n&Relaties:\\\\"++
+                              (chain "\n" [show (nr r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relaties:\\\\"++
                                            "&\\(\\begin{array}{rcl}\n"++
                                                 chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
                                                                | d<-declarations r]++
@@ -1334,7 +1305,7 @@
        , "\tDe keuzes, zoals beschreven in hoofdstuk \\ref{chp:Ontwerpregels} zijn in een gegevensanalyse vertaald naar"
        , "\thet klassediagram in figuur \\ref{fig:"++cname++"CD}."
        , latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_CD.png}")++
-         "\n\\caption{Gegevensmodel van "++addSlashes cname++"}\n\\label{fig:"++cname++"CD}")
+         "\n\\caption{Gegevensmodel van "++latexWord cname++"}\n\\label{fig:"++cname++"CD}")
        , "\tDit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties."
        , funcSpecLaTeX context (funcSpec context (erAnalysis context) Dutch) Dutch
        , latexChapter "Terminologie" ("typology"++cname)
@@ -1343,7 +1314,7 @@
  --      , "In geval van conflicten gaan begrippen uit \\cite{TPDI} v\\'o\\'or \\cite{MultiFit} en begrippen uit \\cite{MultiFit} v\\'o\\'or \\cite{SBD}."
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
-              (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++
+              (chain "\n" ["\\textbf{"++nm++"} & "++latexWord def++
                            (if null ref then "" else "~\\cite{"++ref++"}")++
                            "\\\\\n\\hline"
                           | Cd pos nm def ref<-conceptDefs context, cptnew nm `elem` concs context])
@@ -1354,13 +1325,13 @@
        , "\\bibliography{../"++name context++"}"
        , "\\label{bibliography"++name context++"}"
        ] else if language==English then
-       ["\\title{Functional Specification\\\\ "++addSlashes cname++"}"
+       ["\\title{Functional Specification\\\\ "++latexWord cname++"}"
        , "\\maketitle"
        , "\\tableofcontents"
        , latexChapter "Introduction" "Introduction"
-       , "\tThis document defines the service layer of a system called "++addSlashes cname++"."
+       , "\tThis document defines the service layer of a system called "++latexWord cname++"."
        , "\tIt defines infrastructural services in a system in which people and applications collaborate"
-       , "\tto maintain agreements and commitments that apply to the context of "++addSlashes cname++"."
+       , "\tto maintain agreements and commitments that apply to the context of "++latexWord cname++"."
        , "\tThese agreements and commitments are represented by rules."
        , "\tThey are presented in chapter \\ref{chp:Design rules}, arranged by theme."
        , "\tA data analysis is presented in chapter \\ref{chp:Data Analysis}."
@@ -1373,12 +1344,12 @@
        , latexChapter "Conceptual Analysis" "Conceptual Analysis"
        , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Design rules}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
        , spec2fp context English spec
-       , chain "\n\n" [ latexSection ("Rules about "++addSlashes (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
-  --                      "A conceptual analysis of "++addSlashes (name pat)++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
+       , chain "\n\n" [ latexSection ("Rules about "++latexWord (name pat)) ("Rules"++cname++"Pat"++firstCaps (name pat)) ++
+  --                      "A conceptual analysis of "++latexWord (name pat)++" is represented in figure \\ref{fig: concAnal"++clname (firstCaps (name pat))++"}.\n\n"++
   --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
-  --                      "\n\\caption{Conceptual analysis of "++(addSlashes.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
+  --                      "\n\\caption{Conceptual analysis of "++(latexWord.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
                         latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-                              (chain "\n" [show (nr r)++"&"++addSlashes (explainArt context language r)++"\\\\\n&Relations:\\\\"++
+                              (chain "\n" [show (nr r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relations:\\\\"++
                                            "&\\(\\begin{array}{rcl}\n"++
                                                 chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
                                                                | d<-declarations r]++
@@ -1391,13 +1362,13 @@
        , "\tA data analysis of the principles from the previous chapter (\\ref{chp:Design rules}) yields a class diagram,"
        , "\twhich shown in figure \\ref{fig:"++cname++"CD}."
        , latexFigure (latexCenter ("  \\includegraphics[scale=.4]{"++cname++"_CD.png}")++
-         "\n\\caption{Data structure of "++addSlashes cname++"}\n\\label{fig:"++cname++"CD}")
+         "\n\\caption{Data structure of "++latexWord cname++"}\n\\label{fig:"++cname++"CD}")
        , "\tDetails are provided in the following sections."
        , funcSpecLaTeX context (funcSpec context (erAnalysis context) English) English
        , latexChapter "Glossary" ("typology"++cname)
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
-               (chain "\n" ["\\textbf{"++nm++"} & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
+               (chain "\n" ["\\textbf{"++nm++"} & "++latexWord def++"~\\cite{"++ref++"}\\\\\n\\hline"
                            | Cd pos nm def ref<-conceptDefs context, cptnew nm `elem` concs context])
        , if null cList then "" else
          if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
@@ -1422,14 +1393,14 @@
    explainConcept :: Context -> Lang -> Concept -> String
    explainConcept thisCtx l c
     = latexDefinition (name c) [ "Een \\define{"++(unCap.name) c++"} is "++
-                                 (if null expla then "nog niet gedefinieerd." else addSlashes expla)++
+                                 (if null expla then "nog niet gedefinieerd." else latexWord expla)++
                                  (if null ref then ".\n" else "~\\cite{"++ref++"}.")
                                | Cd pos nm expla ref<-conceptDefs thisCtx, nm==name c] ++"\n"++
       if null gens then "" else
-       latexDesignrule (addSlashes (upCap (plural l (name c))++" zijn "++
+       latexDesignrule (latexWord (upCap (plural l (name c))++" zijn "++
                                     commaNL "en" [unCap (plural l (name g))| g<-gens]++".\n"))
   {- Voorbeelden toevoegen:
-      ++addSlashes (if null examples then "" else
+      ++latexWord (if null examples then "" else
        if length examples==1 then "\nEen voorbeeld is "++"\""++head examples++"\""++"." else
        "Voorbeelden van "++upCap (plural l (name c))++" zijn "++commaNL "en" ["\""++e++"\""| e<-examples]++".")
   -}
@@ -1524,11 +1495,11 @@
      = (chain "\n". filter (not.null))
        (if language==Dutch then 
        [ "\\newcommand{\\mulF}{MultiF{\\it it}}"
-       , "\\title{Woordenlijst voor "++addSlashes cname++"}"
+       , "\\title{Woordenlijst voor "++latexWord cname++"}"
        , "\\maketitle"
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
-              (chain "\n" ["\\bf "++nm++" & "++addSlashes def++
+              (chain "\n" ["\\bf "++nm++" & "++latexWord def++
                            (if null ref then "" else "~\\cite{"++ref++"}")++
                            "\\\\\n\\hline"
                           | Cd pos nm def ref<-conceptDefs context])
@@ -1539,11 +1510,11 @@
        , "\\bibliography{../"++name context++"}"
        , "\\label{bibliography"++name context++"}"
        ] else if language==English then
-       [ "\\title{Design of "++addSlashes cname++"}"
+       [ "\\title{Design of "++latexWord cname++"}"
        , "\\maketitle"
        , latexChapter "Glossary" ("typology"++cname)
        , if null (conceptDefs context) then "" else
-         latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++nm++" & "++addSlashes def++"~\\cite{"++ref++"}\\\\\n\\hline"
+         latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"] (chain "\n" ["\\bf "++nm++" & "++latexWord def++"~\\cite{"++ref++"}\\\\\n\\hline"
                            | Cd pos nm def ref<-conceptDefs context])
        , if null cList then "" else
          if length cList==1 then "\tThe concept "++idName(head cList)++" has no textual definition in the glossary (section \\ref{typology"++cname++"})." else
@@ -1680,7 +1651,7 @@
       , -} chain "\n" ["  "++(ltshow cname (Typ pths) language.assemble.normRule) r++"\\\\" | r <- declaredRules pat]
       , chain "\n" ["  "++(ltshow cname (Typ pths) language.assemble.normRule) s++"\\\\" | s <- specs pat]
       ] ++ "\n" ++
-      (chain "\n\n" . map (addSlashes.explain) . declaredRules) pat
+      (chain "\n\n" . map (latexWord.explain) . declaredRules) pat
       where
        parents c = f [cptnew (name p) | [p,s]<-pths, name s==name c]
        f []  = "Anything"
@@ -1827,63 +1798,6 @@
 
 
 
-   addSlashes :: String -> String
-   addSlashes (' ': '\"': cs) = " ``"++addSlashes cs
-   addSlashes ('\"': ' ': cs) = "'' "++addSlashes cs
-   addSlashes ('\\': cs) = "\\\\"++addSlashes cs
-   addSlashes ('_': cs) = "\\_"++addSlashes cs
-   addSlashes ('&': cs)  = "\\&"++addSlashes cs        -- HJO, 20 dec 2008:
-   addSlashes ('é': cs) = "\\'e"++addSlashes cs       --TODO: LaTeX extentie inbouwen. Unicode moet gewoon werken in LaTeX: Zie http://gunnarwrobel.de/wiki/Unicode.html of nog beter: http://en.wikibooks.org/wiki/LaTeX/Internationalization
-   addSlashes ('è': cs) = "\\`e"++addSlashes cs       --      Anders is hiernaast een manier om unicode te gebruiken in Haskell. Wat een gedoe!
-   addSlashes ('ë': cs) = "\\\"e"++addSlashes cs
-   addSlashes ('ï': cs) = "\\\"{\\i}"++addSlashes cs
-   addSlashes ('á': cs) = "\\'a"++addSlashes cs
-   addSlashes ('à': cs) = "\\`a"++addSlashes cs
-   addSlashes ('ó': cs) = "\\'o"++addSlashes cs
-   addSlashes ('ò': cs) = "\\`o"++addSlashes cs
- --  addSlashes ('``': cs) = "\\``"++addSlashes cs
- --  addSlashes ('''': cs) = "\\''"++addSlashes cs
-   addSlashes (c: cs)    = if ord c>127 then error("Character '"++[c]++"' (ASCII "++show (ord c)++") is not mapped correctly to LaTeX by ADL in \""++c:cs++"\".") else
-                           c:addSlashes cs
-   addSlashes _          = ""
-
-   wrapMath str = "$"++str++"$"
-
-   latexCenter = latex "center" []
-   latexFigure = latex "figure" ["[htb]"]
-   latexFigureHere = latex "figure" ["[h]"]
-
-   latex :: String -> [String] -> String -> String
-   latex command params content
-    = "\\begin{"++command++"}"++chain "," params++"\n"++content++"\n\\end{"++command++"}"
-
-   latexSubsection title reference
-    = "\n\\subsection*{"++title++"}\n" ++"\\label{ssct:"++reference++"}\n"
-
-   latexSection title reference
-    = "\n\\section{"++title++"}\n" ++"\\label{sct:"++reference++"}\n"
-
-   latexChapter title reference
-    = "\n\\chapter{"++title++"}\n" ++"\\label{chp:"++reference++"}\n"
-
-   latexDotted ls
-    = if null ls then "" else
-      "\n"++chain "\n" (["\\begin{itemize}"]++["\\item "++l|l<-ls]++["\\end{itemize}"])
-
-   latexEnumerate ls
-    = if null ls then "" else
-      chain "\n" (["\\begin{enumerate}"]++["\\item "++l|l<-ls]++["\\end{enumerate}"])
-
-   latexDefinition nm [] = ""
-   latexDefinition nm [def]
-    = chain "\n" ["\\begin{definition}{"++addSlashes nm++"\\\\}", def, "\\end{definition}"]
-   latexDefinition nm defs
-    = chain "\n" (["\\begin{definition}{"++addSlashes nm++"}","  \\begin{itemize}"]++["  \\item "++l|l<-defs]++["  \\end{itemize}","\\end{definition}"])
-
-   latexDesignrule str
-    = chain "\n" ["\\begin{designrule}{}", str, "\\end{designrule}"]
-
-   latexEmph x = "\\emph{"++filter isAlphaNum x++"}"
 
    projectClassic :: Context -> [Ftheme] -> Lang -> String
    projectClassic context fs language

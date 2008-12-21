@@ -1,12 +1,8 @@
-{-# LINE 1 "Hatml.lhs" #-}
-#line 1 "Hatml.lhs"
   module Hatml where
    import Char (isAlphaNum, isSpace)
    import CommonClasses ( Identified(name) )
    import Auxiliaries
           ( chain, sort') 
-   import ADLdef
-
 
 
    htmlItalic str = "<I>"++str++"</I>"
@@ -88,8 +84,10 @@
 
 
 
+   avoidJSreservedwords :: String -> String
    avoidJSreservedwords str = "JS_"++str
 
+   minispace :: String -> String
    minispace x = if null x || and(map isSpace x) then "&nbsp;" else x
 
 
@@ -129,11 +127,4 @@
    class HTML a where
     hshow :: a -> String
 
-   instance HTML Concept where
-    hshow c = htmlAnchor (htmlname (name c)++".html") (name c) []
-
-   instance HTML Morphism where
-    hshow m | isIdent m = "="
-            | isNot m   = "&neq;"
-            | otherwise = name m
 

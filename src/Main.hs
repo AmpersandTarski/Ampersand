@@ -14,7 +14,7 @@
    import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
    import Calc (deriveProofs,triggers)
    import Views (viewEstimate)
-   import Fspec (projectClassic
+   import FspecDEPRECIATED (projectClassic
                 ,generateFspecLaTeX
                 ,generateArchLaTeX
                 ,generateGlossaryLaTeX
@@ -27,12 +27,12 @@
    import HtmlFilenames(fnContext,fnPattern)
    import Graphic(processCdDataModelFile,dotGraph,processDotgraphFile)
    import Atlas (anal)
-   import Xml (makeXML)
+   import Fspec2Xml (makeXML_depreciated)
    import ERmodel (erAnalysis)
    import ClassDiagram (cdModel,cdDataModel)  
    import RelBinGen(phpServices)
    import ObjBinGen(phpObjServices)
-   import MakeFspec (makeFspecNew2,Fspc)
+   import ADL2Fspec (makeFspecNew2,Fspc)
 
 
 
@@ -46,14 +46,20 @@
 
    main :: IO ()
    main
-    = do { a <- getArgs
+    = do { -- First, parse the options from the command line:
+           a <- getArgs
          ; putStr (chain ", " a++"\n")
          ; let (switches,args') = splitStr ((=="-").take 1) a
          ; let (dbArgs,args) = splitStr ((=="+").take 1) args'
          ; putStr (adlVersion++"\nArguments: "++chain ", " args++"\nSwitches: "++chain ", " switches++"\nDatabase: "++chain ", " (map tail dbArgs))
+           
+           -- Next, do some checking of commandline options:
          ; if "-checker" `elem` switches && "-beeper" `elem` switches then putStr ("incompatible switches: -checker and -beeper") else
            if length args==0 then putStr ("Please provide a filename (.adl) and a context name") else
            if length dbArgs>1 then putStr (". This is confusing! please specify 1 database name only.") else
+
+           -- If no errors in the commandline options are found, continue with
+           -- parsing of the import file.
       do { let fn = args!!0; contextname = args!!1
                dbName | null dbArgs = fnOutp
                       | otherwise   = tail (head dbArgs)
@@ -64,21 +70,29 @@
          ; putStr ("\n"++fnFull++" is read.")
          ; slRes <- parseIO (pArchitecture ("-beeper" `elem` switches))(scan keywordstxt keywordsops specialchars opchars fnFull initPos inp)
          ; putStr ("\n"++fnFull++" has been parsed.")
+         
+           -- Now continue with typechecking of the parsetree:
          ; let (contexts,errs) = sem_Architecture slRes
          ; let Typ pths = if null contexts then Typ [] else
                           if length args>1 && contextname `elem` map name contexts
                           then typology (isa (head [c| c<-contexts,name c==contextname]))
                           else typology (isa (head contexts))
          ; putStr "\nConcepts:\n" >>(putStr.chain "\n".map show) (makeTrees (Typ (map reverse pths)))
+
+           -- Now we have Contexts with or without errors in it. If there are no errors,
+           -- AND the argument matches the context name, then the build is done for that 
+           -- context
          ; if null errs 
            then (putStr ("\nNo type errors or cyclic specializations were found.\n")>>
                  if length args==1 && length contexts==1
-                 then build contexts switches (name (head contexts)) fnOutp dbName slRes else
+                 then (( build_DEPRECEATED contexts switches (name (head contexts)) fnOutp dbName slRes ) >>
+                       ( build_NewStyle (map makeFspecNew2 contexts) switches (name (head contexts)) fnOutp dbName slRes )) else
                  if length args==1 && length contexts>1
                  then putStr ("\nPlease specify the name of a context."++
                               "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
                  if length args>1 && contextname `elem` map name contexts
-                 then build contexts switches contextname fnOutp dbName slRes
+                 then (( build_DEPRECEATED contexts switches contextname fnOutp dbName slRes ) >>
+                       ( build_NewStyle (map makeFspecNew2 contexts) switches contextname fnOutp dbName slRes ))
                  else putStr ("\nContext "++contextname++" not defined."++
                               "\nPlease specify the name of an available context."++
                               "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
@@ -88,13 +102,16 @@
                 putStr (concat ["!Error of type "++err| err<-errs])>>
                 putStr ("Nothing generated, please correct mistake(s) first.\n")
          }}
-       where build :: [Context] -> [String] -> String -> String -> String -> whatever -> IO ()
-             build contexts switches contextname filename dbName hierGebeurtNietsMee
+       where 
+             -- TODO: De volgende build moet worden 'uitgekleed' door de verschillende 
+             --       vertaalslagen via Fspec te laten verlopen. Hiervoor is een functie build_NewStyle gemaakt.
+             build_DEPRECEATED :: [Context] -> [String] -> String -> String -> String -> whatever -> IO ()
+             build_DEPRECEATED contexts switches contextname filename dbName hierGebeurtNietsMee
               = sequence_ 
                  ([ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
                   | null switches || "-h" `elem` switches]++
-                  [ makeXML contexts contextname| "-XML" `elem` switches]++
-                  [ showHaskell_new fspec | "-Haskell" `elem` switches]++ 
+                  [ makeXML_depreciated contexts contextname| "-XML" `elem` switches]++
+   --               [ showHaskell_new fspec | "-Haskell" `elem` switches]++ 
                   [ diagnose contexts contextname| "-diag" `elem` switches]++
                   [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
                   [ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-views" `elem` switches]++
@@ -135,7 +152,31 @@
                       ctxs    = [c| c<-contexts, name c==contextname]
                       (datasets,viewEsts,rels,ruls) = erAnalysis context
                       spec = funcSpec context (datasets,viewEsts,rels,ruls) (lang switches)
-                      fspec = makeFspecNew2 context
+                      
+              
+             build_NewStyle :: [Fspc] -> [String] -> String -> String -> String -> whatever -> IO ()
+             build_NewStyle fspecs switches contextname filename dbName hierGebeurtNietsMee
+              = sequence_ 
+                 (--[ anal contexts contextname ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
+                  --[ makeXML_depreciated contexts contextname| "-XML" `elem` switches]++
+                  [ showHaskell_new fspecs | "-Haskell" `elem` switches]  -- ++ 
+                  --[ diagnose contexts contextname| "-diag" `elem` switches]++
+                  --[ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+                  --[ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-views" `elem` switches]++
+                  --[ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
+                  --[ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
+   -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
+                  --[ cdModel contexts contextname | "-CD" `elem` switches]++
+                  --[ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
+                  --[ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
+                  --[ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
+                  --[ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
+ --               ++[ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]
+ --               ++[ csvcontent contexts contextname | "-csv" `elem` switches]
+ --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
+                 ) 
+                where 
+                   fspec = [f| f<-fspecs, name f==contextname]
              lineStyle switches
               | "-crowfoot" `elem` switches = "crowfoot"
               | otherwise                   = "cc"
@@ -179,8 +220,20 @@
    --    context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
    --    ctxs    = [c| c<-contexts, name c==contextname]
 
-   showHaskell_new :: Fspc -> IO ()
-   showHaskell_new fspc
+   showHaskell_new :: [Fspc] -> IO()
+ --  showHaskell_new [] = []
+ --  showHaskell_new f:fs = do {  (showHaskell f) 
+ --                             ; (showHaskell_new fs)
+ --                            }
+ --  showHaskell_new f:fs = 
+ --       sequence_ ( [ showHaskell f ] ++
+ --                   [ showHaskell_new fs]
+ --                 )                         
+   showHaskell_new fs = showHaskell (head fs) --TODO Bovenstaande probeersels aan de praat krijgen.
+   
+   
+   showHaskell :: Fspc -> IO ()
+   showHaskell fspc
     = putStrLn ("\nGenerating Haskell source code for "++name fspc) >>
       writeFile (baseName++"_new.lhs")
                 ("> module Main where"

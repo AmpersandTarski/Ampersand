@@ -51,7 +51,7 @@
    import PredLogic
    import HtmlFilenames
    import ERmodel (erAnalysis)
-   import Fspec
+   import FspecDEPRECIATED
 
    viewEstimate :: Context -> String
    viewEstimate context

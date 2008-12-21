@@ -1,7 +1,7 @@
   -- | Deze module bevat operaties op strings.
   module Strings where
 
-   import Char (toUpper)
+   import Char (toUpper, toLower)
 
    -- | firstCaps verwijdert spaties uit een string, en maakt van elk eerste letter van een woord een hoofdletter.
    firstCaps :: String -> String
@@ -11,9 +11,9 @@
    firstCaps ('_':c:str) = toUpper c:firstCaps str
    firstCaps (c:str) = c:firstCaps str
 
-   -- | Een LaTeX definitie! Toe maar!
-   tt :: String -> String
-   tt a = "{\\tt "++a++"}"
+   unCap [] = [] ; unCap (h:t) = toLower h:t
+   upCap [] = [] ; upCap (h:t) = toUpper h:t
+
 
    chain :: String -> [String] -> String
    chain str [] = []

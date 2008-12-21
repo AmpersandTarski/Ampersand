@@ -1,9 +1,6 @@
-{-# LINE 1 "Auxiliaries.lhs" #-}
-#line 1 "Auxiliaries.lhs"
   module Auxiliaries
   (  adlVersion
-   , encode, decode
-   , unCap, upCap
+ --  , unCap, upCap
    , fst3, snd3, thd3
 
    , showL
@@ -25,29 +22,16 @@
    , elem'
    , mumble
    , fixSpaces
-   , transpose
    , haskellIdentifier
 
-  -- transfer vanuit String:
-   , chain
+   , module Strings
   )
   where
    import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper,digitToInt,intToDigit)
    import Collection (Collection(isc,uni,(>-),rd))
-   import Strings (chain)
+   import Strings (chain, unCap, upCap,firstCaps)
 
    adlVersion = "ADL vs. 0.8.10"
-   encode :: String -> Int
-   encode  = enc.reverse
-    where enc "" = 0
-          enc (c:cs) = digitToInt c + 10* enc cs
-   decode :: Int -> String
-   decode 0 = "0"
-   decode n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else decode (n `div` 10)++[intToDigit (n `rem` 10)]
-
-   unCap [] = [] ; unCap (h:t) = toLower h:t
-   upCap [] = [] ; upCap (h:t) = toUpper h:t
-
    fst3 (a,b,c) = a
    snd3 (a,b,c) = b
    thd3 (a,b,c) = c
@@ -66,63 +50,12 @@
    mumble :: String -> String
    mumble str  = concat [if c==' ' then "_" else [c]| c<-str]
 
-
-
-
-
-
-
    clos1 :: (Eq b) => [[b]] -> [[b]] 
    clos1 xs
      = f xs (rd (map head xs) `isc` rd (map last xs))
        where
         f q (x:xs) = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs
         f q []     = q
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -259,148 +192,11 @@
 
 
 
-
-
-
+   haskellIdentifier :: String -> String
    haskellIdentifier "" = ""
    haskellIdentifier (c:cs) | isAlphaNum c || c=='\''  = c: haskellIdentifier cs
                             | otherwise                = haskellIdentifier (conceptForm cs)
     where
       conceptForm (c:cs) = toUpper c: map toLower cs
       conceptForm "" = ""
-
-  ---------Onderstaande code lijkt niet meer nodig....  ----------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   transpose :: [[e]] -> [[e]]
-   transpose (xs:yss) = [x:ys |x<-xs , ys<-transpose yss]
-   transpose []       = [[]|i<-[0..]]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -352,8 +352,8 @@
                         | otherwise = name
                         where namepart str   = reverse (dropWhile isDigit str)
                               numberpart str = reverse (takeWhile isDigit str)
-                              changeNr x     = decode (encode x+1)
-
+                          --    changeNr x     = decode (encode x+1)
+                              changeNr x = show (read x +1)
 
 
 

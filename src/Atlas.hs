@@ -800,3 +800,12 @@
 
    htmlNm :: Identified a => a->String
    htmlNm = htmlname.name
+
+   instance HTML Concept where
+    hshow c = htmlAnchor (htmlname (name c)++".html") (name c) []
+
+   instance HTML Morphism where
+    hshow m | isIdent m = "="
+            | isNot m   = "&neq;"
+            | otherwise = name m
+   

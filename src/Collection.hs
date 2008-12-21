@@ -1,7 +1,4 @@
-{-# LINE 1 "Collection.lhs" #-}
-#line 1 "Collection.lhs"
-
-  module Collection 
+  module Collection
   (  Collection ( eleM
                 , uni
                 , isc
@@ -30,5 +27,5 @@
     xs >- ys    = [x| x<-xs, not (x `elem` ys)]
     empty       = []
     elems       = id
-    rd []       = []
+    rd []       = empty
     rd (x:xs)   = x: rd [e|e<-xs, e/=x]

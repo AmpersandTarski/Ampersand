@@ -1,19 +1,14 @@
-{-# LINE 1 "MakeFspec.lhs" #-}
-#line 1 "MakeFspec.lhs"
-  module MakeFspec (makeFspecNew2,Fspc)
+  module ADL2Fspec (makeFspecNew2,Fspc)
   where
-
-
-
    import CommonClasses ( Identified(name))
    import Collection    ( Collection (isc,(>-),rd) )
    import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass)
    import Char(toLower)
-   import Strings(firstCaps,tt,idNam,chain)
+   import Strings(firstCaps,idNam,chain)
    import ADLdef
    import ShowADL
    import FspecDef
-
+   import LaTeX (tt)   -- Dat is hier natuurlijk helemaal niet op z'n plaats! (TODO opruimen)
    import Calc(lClause,rClause,makeRule)
    import ERmodel(erAnalysis)
 
