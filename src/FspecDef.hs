@@ -1,8 +1,5 @@
-{-# LINE 1 "FspecDef.lhs" #-}
-#line 1 "FspecDef.lhs"
-
   module FspecDef
-
+         ( Module Data.Fspec )
 
 
 
@@ -15,19 +12,10 @@
    import CommonClasses(Identified(name))
    import Auxiliaries(showL,haskellIdentifier)
    import Strings(chain)
-   import Typology ( Inheritance(Isa), Typologic(typology), genEq)
+   --import Typology ( Inheritance(Isa), Typologic(typology), genEq)
+   import Data.Fspec
 
 
-
-   data Fspc = Fspc -- Fctx 
-              { fsfsid   :: FSid  -- The name of the specification
-              , themes   :: [Ftheme]      -- One for every pattern
-              , datasets :: [Dataset]     -- One for every (group of) relations
-              , views    :: [Fview]       -- One for every view 
-              , vrules   :: [Frule]       -- One for every rule
-              , vrels    :: [Declaration] -- One for every declaration
-              , isa      :: (Inheritance Concept) -- The data structure containing the generalization structure of concepts
-              }
    instance Identified Fspc where
      name fspc = name (fsid fspc)
    
@@ -70,11 +58,6 @@
    themesOfPatterns themes = [ftpat tm | tm <-themes]
 
 
-   data Ftheme  = Tspc     -- The constructor
-                 { ftsid  :: FSid     -- The name of the theme (aka pattern)
-                 , units :: [Funit]  -- The units of the theme
-                 , ftpat   ::  Pattern  -- Het pattern van de unit -- Obsolete
-                 }
    instance Fidentified Ftheme where
     fsid theme = ftsid theme
     typ  f = "f_Thm"
@@ -90,10 +73,6 @@
 
 
 
-
-   data Dataset = DS Concept     -- the root of the dataset
-                     [Morphism]  -- the functions from the root
-                | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
 
    instance Fidentified Dataset where
      fsid (DS c pths) = fsid c
@@ -128,14 +107,12 @@
     BR m   == BR m'  = m==m'
     _      == _      = False
 
+   instance Fidentified Frule where
+    fsid frul = FS_id (name (rule frul))   
+    typ frul = "f_rule"
+   rule:: Frule -> Rule
+   rule (Frul r) = r
 
-
-   data Fview  = Fview 
-               { dataset   :: Dataset
-               , objectdef :: ObjectDef
-               , services  :: [ServiceSpec]
-               , frules    :: [Frule]
-               }
    instance Fidentified Fview where
     fsid fview = fsid (objectdef(fview))
     typ fview = "f_View"
@@ -158,25 +135,11 @@
 
 
 
-   data Frule = Frul Rule
-   instance Fidentified Frule where
-    fsid frul = FS_id (name (rule frul))   
-    typ frul = "f_rule"
-   rule:: Frule -> Rule
-   rule (Frul r) = r
-
    instance ShowHS Frule where
     showHSname frul  = typ frul ++ "_" ++ showHSname (fsid frul) -- showHSname (rule frul)
     showHS indent (Frul r) = "Frul ("++showHS "" r++")"
 
 
-
-   data Funit = Uspc 
-                  { fusid    :: FSid
-                  , pattern  :: Pattern
-                  , viewDefs :: [FViewDef]
-                  , servDefs :: [ServiceSpec] -- services
-                  }
    instance Fidentified Funit where
     fsid funit = fusid funit 
     typ funit = "f_Unit"
@@ -189,12 +152,6 @@
        ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
 
    -- objDefs  funit = [o | (o,cs,rs)<-viewDefs(funit)]
-
-   data FViewDef = Vdef
-                  { vdobjdef :: ObjectDef
-                  , vdmorphs :: [Morphism]
-                  , vdExprRules :: [(Expression,Rule)]
-                  }
    instance ShowHS FViewDef where
     showHSname fvd = error ("(module FspecDef) should not showHSname the FViewDef (Vdef): "++showHS "" fvd)
     showHS indent fvd
@@ -210,18 +167,6 @@
 
 
 
-
-   data ServiceSpec = Sspc 
-                       { ssid    :: FSid         -- name of the service
-                       , sees    :: [Morphism]   -- the list of relations this service may see
-                       , changes :: [Morphism]   -- the list of relations this service may change
-             -- Hoort hier niet meer thuis             FPA          -- function point analysis information
-                       , input   :: [ParamSpec]  -- parameters
-                       , output  :: [ParamSpec]  -- results
-                       , rs      :: [Rule]       -- Invariants
-                       , pre     :: [String]     -- Preconditions
-                       , post    :: [String]     -- Postconditions
-                       }
    instance Fidentified ServiceSpec where
       fsid (Sspc fid _ _ _ _ _ _ _) = fid  
       typ sspc = "f_svc"
@@ -238,12 +183,6 @@
        ++indent++"     [" ++(if null (pre     sspc) then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        (pre sspc))++indent++"     ] -- preconditions")
        ++indent++"     [" ++(if null (post    sspc) then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        (post sspc))++indent++"     ] -- postconditions")
 
-
-   data ParamSpec   = Aspc 
-                      {pname :: FSid         -- name of the parameter
-                      ,ptype :: String }     -- type of the parameter
-                    -- | HJO: Wat moet die Pbool hier??
-                    | Pbool
    instance ShowHS ParamSpec where
     showHSname a@(Aspc fid typ) = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
     showHS indent (Aspc fid typ)
@@ -254,8 +193,6 @@
      typ  :: a -> String
 
 
-   data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
-             | NoName           -- some identified objects have no name...
    instance Identified FSid where
     name (FS_id nm) = nm
    instance ShowHS FSid where

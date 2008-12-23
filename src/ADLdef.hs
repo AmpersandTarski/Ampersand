@@ -1,7 +1,3 @@
-{-# LINE 1 "ADLdef.lhs" #-}
-#line 1 "ADLdef.lhs"
-
-
   module ADLdef (   cptC,cptS,cptAnything,cptNothing
                   , cptnew,isAnything,isNothing,isC
                   , objdefNew

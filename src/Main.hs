@@ -203,23 +203,6 @@
        spec = funcSpec context (erAnalysis context) language
        (datasets,viewEsts, relations, ruls) = erAnalysis context
 
-   --showHaskell_old :: [Context] -> String -> IO ()
-   --showHaskell_old contexts contextname
-   -- = putStrLn ("\nGenerating Haskell source code for "++name context) >>
-   --   writeFile (ctxNm++"_old.lhs")
-   --             ("> module Main where\n>  import UU_Scanner\n>  import Classification\n>  import Typology\n>  import ADLdef\n>  import CC_aux (showHS)\n>  import Fspec\n\n"
-   --              ++">  main = putStr (showHS \"\\n>  \""++ctxNm++")"++"\n\n"
-   --              ++">  "++showHSname context++"\n>   = "++showHS "\n>     " context++"\n\n"
-   --              ++">  "++showHSname fspec++"\n>   = "++showHS "\n>     " fspec
-   --             ) >>
-   --   putStr ("\nHaskell file "++ctxNm++"_old.lhs written...\n")
-   --   where
-   --    fspec = makeFspec context
-   --    ctxNm = showHSname context
-   --    spcNm = showHSname fspec
-   --    context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-   --    ctxs    = [c| c<-contexts, name c==contextname]
-
    showHaskell_new :: [Fspc] -> IO()
  --  showHaskell_new [] = []
  --  showHaskell_new f:fs = do {  (showHaskell f) 

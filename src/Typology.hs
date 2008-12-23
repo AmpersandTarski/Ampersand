@@ -1,6 +1,6 @@
-{-# LINE 1 "Typology.lhs" #-}
-#line 1 "Typology.lhs"
-   module Typology
+-- | Taxonomy is the practice and science of classification. The word comes from the Greek taxis (meaning 'order', 'arrangement') and nomos ('law' or 'science'). Taxonomies, or taxonomic schemes, are composed of taxonomic units known as taxa (singular taxon), or kinds of things that are arranged frequently in a hierarchical structure. Typically they are related by subtype-supertype relationships, also called parent-child relationships. In such a subtype-supertype relationship the subtype kind of thing has by definition the same constraints as the supertype kind of thing plus one or more additional constraints. For example, car is a subtype of vehicle. So any car is also a vehicle, but not every vehicle is a car. Therefore, a thing needs to satisfy more constraints to be a car than to be a vehicle.
+--   (Source: <en.wikipedia.org/wiki/Taxonomy> )
+module Typology
           ( Inheritance(Isa), IsaPath, akin, kin, sub
           , Typology(Typ), Typologic(typology), makeIsa, genEq
           , compress, makeTrees, makeTypo) where
@@ -10,13 +10,6 @@
           ( Collection(elems, isc, (>-)),eleM,empty,uni,rd)
    import Classification 
           (Classification(Cl),root,makeClassifications)
-
-
-
-
-
-
-
 
    data Inheritance a = Isa [(a,a)] [a] deriving Show
 

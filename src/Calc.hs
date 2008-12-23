@@ -1,5 +1,3 @@
-{-# LINE 1 "Calc.lhs" #-}
-#line 1 "Calc.lhs"
   {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
   module Calc ( ComputeRule(CR)
               , deriveProofs
@@ -13,7 +11,7 @@
               , conjuncts
               , makeRule
               , informalRule ) 
-  where  -- commented modules are required for testing
+  where 
    import Char ( isSpace )
    import CommonClasses (Identified(name) )
    import Collection (Collection (uni,isc,empty,rd))
