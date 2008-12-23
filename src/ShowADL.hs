@@ -61,7 +61,7 @@
     showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
    instance ShowADL ObjectDef where
-    showADL obj = "  VIEW "++str obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
+    showADL obj = "  SERVICE "++str obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
                   "\n   = [ "++chain "\n     , " (zipWith f [1..] atts)++"\n     ]"
      where f i m | length [ a| a<-atts, name a==name m ]>1 = name m++show i++" : "++showtyped m
                  | inline m                                = name m

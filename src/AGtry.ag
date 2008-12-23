@@ -66,7 +66,7 @@ import CC_aux ( showHS,order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 
-diagl = 24
+diagl = 31
 diagc = 0
 }
 
@@ -132,6 +132,10 @@ irredT :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
 irredT gE ccs = map (foldr1 lub) (eqClass order ccs)
                 where (a,a') `lub` (b,b')   = if a `gE` b && a' `gE` b' then (b,b') else (a,a')
                       (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
+irredT' :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
+irredT' gE ccs = map (foldr1 glb) (eqClass order ccs)
+                 where (a,a') `glb` (b,b')   = if a `gE` b && a' `gE` b' then (a,a') else (b,b')
+                       (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
 irredD :: GenR -> [Declaration] -> [Declaration]
 irredD gE ds = map (foldr1 lub) (eqClass order ds)
                where m `lub` m'   = if a `gE` b && a' `gE` b' then m else m'
@@ -790,12 +794,13 @@ SEM KeyDef
   | Kd lhs.sErr     = @ats.sErr
 
 SEM ObjectDef
-  | Obj lhs.sErr    = {- ["Diagnose Objectdef on Line "++show diagl++""++
+  | Obj lhs.sErr    = {- ["Diagnose Objectdef on Line "++show diagl++
                        "\n @ctx.signs:   "++show @ctx.signs++
+                       "\n @lhs.iConc:   "++show @lhs.iConc++
+                       "\n @lhs.iConcs:  "++show @lhs.iConcs++
                        "\n @signs:       "++show @signs++
                        "\n @ats.sources: "++show @ats.sources++
-                       "\n @ctx:         "++showADL @ctx.expr++
-                       "\n @ctx.expr:    "++showHS "" @ctx.expr++"\n"
+                       "\n @ctx:         "++showADL @ctx.expr++"\n"
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @pos] ++ -}
                       let ls  = (concs @ats.objDefs)
                           ls' c = [g| g<-ls, g `@lhs.gE` c || c `@lhs.gE` g]
@@ -812,19 +817,19 @@ SEM ObjectDef
                       take 1
                       (@ctx.sErr++
                        @ats.sErr++
-                       [ "11 on \n"++show @pos ++" in the definition of '"++ @nm ++
-                         "'\n   Ambiguous type, because the target of '"++showADL @ctx.expr++"'\n   might be "
-                         ++commaEng "or" [name c|c<-css]++".\n"
-                       | css<-[rd [snd cs|cs<- @ctx.signs, (snd cs) `order` @lhs.iConc]], length css>1]++
                        [ "18 on \n"++show @pos ++" in the definition of '"++ @nm ++
-                         "'\n   Undefined type, because the target of '"++showADL @ctx.expr
-                         ++"' might be anything.\n"
-                       | css<-[rd [snd cs|cs<- @ctx.signs, (fst cs) `order` @lhs.iConc]], null css]++
+                         "'\n   Undefined type, because there is no relation '"++showADL @ctx.expr
+                         ++"' with source '"++showADL @lhs.iConc++"'.\n"
+                       | null @signs]++
+                       [ "11 on \n"++show @pos ++" in the definition of '"++ @nm ++
+                         "'\n   Ambiguous type for '"++showADL @ctx.expr++"', because the target can be any of "
+                         ++commaEng "or" [name t|(s,t)<- @signs]++".\n"
+                       | length @signs>1]++
                        [ "19 on \n"++show @pos ++" in the definition of '"++ @nm ++
-                         "'\n   use of '"++nm
-                         ++"' should be unique.\n   It occurs on lines "++commaEng "and" [show l| o<- @ats.objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
+                         "'\n   the label '"++nm
+                         ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- @ats.objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
                        | nm<-map name @ats.objDefs, length [o| o<- @ats.objDefs, name o==nm]>1 ]++
-                       [ "9 on \n"++show @pos ++" in the definition of VIEW "++ @nm ++ "\n   Cannot match the right hand side of "++showADL @ctx.expr
+                       [ "9 on \n"++show @pos ++" in the definition of SERVICE "++ @nm ++ "\n   Cannot match the right hand side of "++showADL @ctx.expr
                          ++"\n   with the left hand side of "
                          ++commaEng "and" [ showADL (ctx o) | o <- nqos ]
                          ++"\nDetails of this mistake:"
@@ -839,7 +844,7 @@ SEM ObjectDef
                        , nqos<-[[o| o<- @ats.objDefs, (source.ctx) o/=t ]]
                        , nqcs<-[[(source.ctx) c| cl<-eqCl (source.ctx) nqos, c<-cl]]
                        , not (null nqos)]++
-                       [ "10 on \n"++show @pos ++" in the definition of VIEW "++ @nm ++ "\n   Cannot match the left hand side of "++showADL @ctx.expr
+                       [ "10 on \n"++show @pos ++" in the definition of SERVICE "++ @nm ++ "\n   Cannot match the left hand side of "++showADL @ctx.expr
                          ++"\n   with "++show t
                          ++".\n"
                        | null @signs, t<-map snd @ctx.signs ]++
@@ -1117,20 +1122,31 @@ SEM KeyDef
          ats.iConc   = head (rd (map snd @ctx.signs))
 
 SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
-  | Obj  lhs.odef    = Obj @nm @pos @ctx.expr @ats.objDefs
+  | Obj  lhs.odef    = if and [sgn==(Anything,Anything)|sgn<- @ctx.signs]
+                       then Obj @nm @pos (Tm (mIs (C @nm @lhs.gE []))) @ats.objDefs
+                       else Obj @nm @pos @ctx.expr @ats.objDefs
          lhs.ats     = @ats.objDefs
          lhs.sConcs  = rd (map fst @ctx.signs)
          lhs.pos     = @pos
          lhs.nm      = @nm
          ats.iConcs  = irredC @lhs.gE (map snd @signs)
-         ats.iConc   = head (irredC @lhs.gE (map snd @signs))
-         ctx.isign   = [ ( lubb @lhs.gE @lhs.iConc s,t)
-                       | (s,t) <- @signs++[(Anything,Anything)|null @signs] ]
-         loc.concpt  = head (irredC @lhs.gE (map snd @signs))
-         loc.signs   = rd [( lubb @lhs.gE @lhs.iConc s, lubb @lhs.gE t t')
-                          | (s,t) <- @ctx.signs
-                          , t' <- if null @ats.sources then [t] else irredC @lhs.gE @ats.sources -- all possible signatures for ctx
-                          , ordd @lhs.gE t t']
+         ats.iConc   = if null @ctx.signs then C @nm @lhs.gE [] else @concpt
+         ctx.isign   = @signs
+         loc.concpt  = if null @signs
+                       then error ("Fatal (module AGtry): no target for '"++showADL @ctx.expr++"'."++
+                                   "\n@pos       : "++show @pos++
+                                   "\n@nm        : "++show @nm++
+                                   "\n@ctx.signs : "++show @ctx.signs
+                                  )
+                       else head (map snd @signs)
+            -- loc.signs berekent welke types voor ctx als mogelijkheid overblijven
+         loc.signs   = irredT' @lhs.gE
+                          ([( lubb @lhs.gE @lhs.iConc s, t) -- lubb @lhs.gE t t')
+                           | (s,t) <- @ctx.signs, not (s==Anything && t==Anything)
+                           , ordd @lhs.gE @lhs.iConc s]++
+                           [(C @nm @lhs.gE [], C @nm @lhs.gE [])| and [sgn==(Anything,Anything)|sgn<- @ctx.signs]])
+                       --    , t' <- if null @ats.sources then [t] else irredC @lhs.gE @ats.sources -- all possible signatures for ctx
+                       --    , ordd @lhs.gE t t'])
          ctx.pn      = ""
                        
 ATTR Population [ | | pop:Population ]
@@ -1188,7 +1204,7 @@ ATTR Morphism [ | | raw:{(Morphism,Declarations)} morphism:Morphism nm:String po
 SEM Morphism
   | Mph
         lhs.morphism = Mph @nm @pos @ats @s @yin
-                        (if null @rel then error("Fatal: null @rel in "++ @nm++" on "++show @pos++"\n@lhs.isign = "++ show @lhs.isign++"\n@ss       = "++ show @ss++"\n@s          = "++ show @s++"\n"++ gEtabG @lhs.gE (rd ([fst @s,snd @s]++concs @ss))) else
+                        (if null @rel then error("Fatal (module AGtry): null @rel in "++ @nm++" on "++show @pos++"\n@lhs.isign = "++ show @lhs.isign++"\n@ss       = "++ show @ss++"\n@s          = "++ show @s++"\n"++ gEtabG @lhs.gE (rd ([fst @s,snd @s]++concs @ss))) else
                          head @rel)
         loc.s     = if null @lhs.isign
                     then error("Fatal 2: Empty declaration allocation for "++ @nm ++" on "++show @pos++":\n  @ss="++chain "\n       " (map show @ss))

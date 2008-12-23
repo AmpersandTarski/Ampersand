@@ -16,7 +16,7 @@ import CC_aux ( showHS,order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 
-diagl = 24
+diagl = 31
 diagc = 0
 
 chop [x]    = []
@@ -80,6 +80,10 @@ irredT :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
 irredT gE ccs = map (foldr1 lub) (eqClass order ccs)
                 where (a,a') `lub` (b,b')   = if a `gE` b && a' `gE` b' then (b,b') else (a,a')
                       (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
+irredT' :: GenR -> [(Concept,Concept)] -> [(Concept,Concept)]
+irredT' gE ccs = map (foldr1 glb) (eqClass order ccs)
+                 where (a,a') `glb` (b,b')   = if a `gE` b && a' `gE` b' then (a,a') else (b,b')
+                       (a,a') `order` (b,b') = (a `gE` b && a' `gE` b') || (b `gE` a && b' `gE` a')
 irredD :: GenR -> [Declaration] -> [Declaration]
 irredD gE ds = map (foldr1 lub) (eqClass order ds)
                where m `lub` m'   = if a `gE` b && a' `gE` b' then m else m'
@@ -1387,7 +1391,7 @@ sem_Morphism_Mph (_nm) (_pos) (_atts) (_sgn) (_yin) (_decl) (_lhs_gE) (_lhs_isig
     in  (_ats
         ,False
         ,Mph _nm _pos _ats _s _yin
-          (if null _rel then error("Fatal: null @rel in "++ _nm++" on "++show _pos++"\n@lhs.isign = "++ show _lhs_isign++"\n@ss       = "++ show _ss++"\n@s          = "++ show _s++"\n"++ gEtabG _lhs_gE (rd ([fst _s,snd _s]++concs _ss))) else
+          (if null _rel then error("Fatal (module AGtry): null @rel in "++ _nm++" on "++show _pos++"\n@lhs.isign = "++ show _lhs_isign++"\n@ss       = "++ show _ss++"\n@s          = "++ show _s++"\n"++ gEtabG _lhs_gE (rd ([fst _s,snd _s]++concs _ss))) else
            head _rel)
         ,_nm
         ,_pos
@@ -1574,25 +1578,28 @@ sem_ObjectDef_Obj :: (String) ->
                      (T_ObjectDef)
 sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConc) (_lhs_iConcs) (_lhs_rnr) (_lhs_sDef) =
     let (_concpt) =
-            head (irredC _lhs_gE (map snd _signs))
+            if null _signs
+            then error ("Fatal (module AGtry): no target for '"++showADL _ctx_expr++"'."++
+                        "\n@pos       : "++show _pos++
+                        "\n@nm        : "++show _nm++
+                        "\n@ctx.signs : "++show _ctx_signs
+                       )
+            else head (map snd _signs)
         (_signs) =
-            rd [( lubb _lhs_gE _lhs_iConc s, lubb _lhs_gE t t')
-               | (s,t) <- _ctx_signs
-               , t' <- if null _ats_sources then [t] else irredC _lhs_gE _ats_sources
-               , ordd _lhs_gE t t']
+            irredT' _lhs_gE
+               ([( lubb _lhs_gE _lhs_iConc s, t)
+                | (s,t) <- _ctx_signs, not (s==Anything && t==Anything)
+                , ordd _lhs_gE _lhs_iConc s]++
+                [(C _nm _lhs_gE [], C _nm _lhs_gE [])| and [sgn==(Anything,Anything)|sgn<- _ctx_signs]])
         ( _ctx_expr,_ctx_morphisms,_ctx_raw,_ctx_rnr,_ctx_rules,_ctx_sErr,_ctx_signs) =
-            (_ctx (_lhs_gE)
-                  ([ ( lubb _lhs_gE _lhs_iConc s,t)
-                   | (s,t) <- _signs++[(Anything,Anything)|null _signs] ])
-                  ("")
-                  (_pos)
-                  (_ats_rnr)
-                  (_lhs_sDef))
+            (_ctx (_lhs_gE) (_signs) ("") (_pos) (_ats_rnr) (_lhs_sDef))
         ( _ats_objDefs,_ats_rnr,_ats_rules,_ats_sErr,_ats_sources) =
-            (_ats (_lhs_gE) (head (irredC _lhs_gE (map snd _signs))) (irredC _lhs_gE (map snd _signs)) (_lhs_rnr) (_lhs_sDef))
+            (_ats (_lhs_gE) (if null _ctx_signs then C _nm _lhs_gE [] else _concpt) (irredC _lhs_gE (map snd _signs)) (_lhs_rnr) (_lhs_sDef))
     in  (_ats_objDefs
         ,_nm
-        ,Obj _nm _pos _ctx_expr _ats_objDefs
+        ,if and [sgn==(Anything,Anything)|sgn<- _ctx_signs]
+         then Obj _nm _pos (Tm (mIs (C _nm _lhs_gE []))) _ats_objDefs
+         else Obj _nm _pos _ctx_expr _ats_objDefs
         ,_pos
         ,_ctx_rnr
         ,_ats_rules ++ _ctx_rules
@@ -1606,19 +1613,19 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConc) (_lhs_iConcs
          take 1
          (_ctx_sErr++
           _ats_sErr++
-          [ "11 on \n"++show _pos ++" in the definition of '"++ _nm ++
-            "'\n   Ambiguous type, because the target of '"++showADL _ctx_expr++"'\n   might be "
-            ++commaEng "or" [name c|c<-css]++".\n"
-          | css<-[rd [snd cs|cs<- _ctx_signs, (snd cs) `order` _lhs_iConc]], length css>1]++
           [ "18 on \n"++show _pos ++" in the definition of '"++ _nm ++
-            "'\n   Undefined type, because the target of '"++showADL _ctx_expr
-            ++"' might be anything.\n"
-          | css<-[rd [snd cs|cs<- _ctx_signs, (fst cs) `order` _lhs_iConc]], null css]++
+            "'\n   Undefined type, because there is no relation '"++showADL _ctx_expr
+            ++"' with source '"++showADL _lhs_iConc++"'.\n"
+          | null _signs]++
+          [ "11 on \n"++show _pos ++" in the definition of '"++ _nm ++
+            "'\n   Ambiguous type for '"++showADL _ctx_expr++"', because the target can be any of "
+            ++commaEng "or" [name t|(s,t)<- _signs]++".\n"
+          | length _signs>1]++
           [ "19 on \n"++show _pos ++" in the definition of '"++ _nm ++
-            "'\n   use of '"++nm
-            ++"' should be unique.\n   It occurs on lines "++commaEng "and" [show l| o<- _ats_objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
+            "'\n   the label '"++nm
+            ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- _ats_objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
           | nm<-map name _ats_objDefs, length [o| o<- _ats_objDefs, name o==nm]>1 ]++
-          [ "9 on \n"++show _pos ++" in the definition of VIEW "++ _nm ++ "\n   Cannot match the right hand side of "++showADL _ctx_expr
+          [ "9 on \n"++show _pos ++" in the definition of SERVICE "++ _nm ++ "\n   Cannot match the right hand side of "++showADL _ctx_expr
             ++"\n   with the left hand side of "
             ++commaEng "and" [ showADL (ctx o) | o <- nqos ]
             ++"\nDetails of this mistake:"
@@ -1633,7 +1640,7 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_lhs_gE) (_lhs_iConc) (_lhs_iConcs
           , nqos<-[[o| o<- _ats_objDefs, (source.ctx) o/=t ]]
           , nqcs<-[[(source.ctx) c| cl<-eqCl (source.ctx) nqos, c<-cl]]
           , not (null nqos)]++
-          [ "10 on \n"++show _pos ++" in the definition of VIEW "++ _nm ++ "\n   Cannot match the left hand side of "++showADL _ctx_expr
+          [ "10 on \n"++show _pos ++" in the definition of SERVICE "++ _nm ++ "\n   Cannot match the left hand side of "++showADL _ctx_expr
             ++"\n   with "++show t
             ++".\n"
           | null _signs, t<-map snd _ctx_signs ]++

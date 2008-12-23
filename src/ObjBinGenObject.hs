@@ -328,11 +328,11 @@
 
 
    showClasses context nm o
-    = [ "class "++phpIdentifier (concat [n++"_"|n<-nm] ++name o) ++" {"] ++
+    = [ "class "++phpIdentifier (chain "_" (nm++[name o])) ++" {"] ++
       (map ((++) "  ") (
        ["var $id;"]
        ++ ["var "++phpVar (name a)++";"| a <- attributes o]++
-       ["function "++phpIdentifier (concat [n++"_"|n<-nm] ++name o)++"($id=null"
+       ["function "++phpIdentifier (chain "_" (nm++[name o]))++"($id=null"
                                   ++  (concat [", "++phpVar (name a)++"=null" | a<-attributes o])
                                   ++"){"
        ,"    $this->id=$id;"]
@@ -391,7 +391,7 @@
       )) ++
       [ "}"
       ] ++ (concat [ showClasses context (nm++[name o]) a |a <- attributes o ] )
-    where phpObjRelName pth o r = phpIdentifier (concat [n++"_"|n<-pth++[name o]]++"_"++name r)
+    where phpObjRelName pth o r = phpIdentifier (chain "_" (pth++[name o,name r]))
 
 
    getObject context o | null (attributes o) = 

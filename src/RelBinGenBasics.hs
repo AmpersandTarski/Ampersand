@@ -446,7 +446,7 @@
 
 
    phpIdentifier :: String -> String
-   phpIdentifier str = [if c==' ' then '_' else c| c<-str, isAlphaNum c]
+   phpIdentifier str = [if c==' ' then '_' else c| c<-str, isAlphaNum c || c==' ' || c=='_']
 
 
 

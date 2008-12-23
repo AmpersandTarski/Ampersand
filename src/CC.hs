@@ -25,7 +25,7 @@
 
    keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"
-                       , "VIEW", "INITIAL"
+                       , "SERVICE", "INITIAL"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX"
                        , "RELATION", "CONCEPT", "KEY"
@@ -234,7 +234,7 @@
                         where kd (nm,pos) e ats = Kd pos nm e ats
 
    pObjDef          :: Parser Token ObjectDef
-   pObjDef           = pKey_pos "VIEW" *> pObj
+   pObjDef           = pKey_pos "SERVICE" *> pObj
 
 
 
