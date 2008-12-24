@@ -1,8 +1,5 @@
   module FspecDef
-         ( Module Data.Fspec )
-
-
-
+         ( module Data.Fspec )
 
   where
 
@@ -12,7 +9,7 @@
    import CommonClasses(Identified(name))
    import Auxiliaries(showL,haskellIdentifier)
    import Strings(chain)
-   --import Typology ( Inheritance(Isa), Typologic(typology), genEq)
+
    import Data.Fspec
 
 
