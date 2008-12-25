@@ -350,11 +350,18 @@
    noCollide :: [String] -> String -> String
    noCollide names name | name `elem` names = noCollide names (namepart (reverse name) ++ changeNr (numberpart (reverse name)))
                         | otherwise = name
-                        where namepart str   = reverse (dropWhile isDigit str)
-                              numberpart str = reverse (takeWhile isDigit str)
-                          --    changeNr x     = decode (encode x+1)
-                              changeNr x = show (read x +1)
-
+    where
+      namepart str   = reverse (dropWhile isDigit str)
+      numberpart str = reverse (takeWhile isDigit str)
+      changeNr x     = decode (encode x+1)
+      --  changeNr x = show (read x +1)
+      encode :: String -> Int
+      encode  = enc.reverse
+       where enc "" = 0
+             enc (c:cs) = digitToInt c + 10* enc cs
+      decode :: Int -> String
+      decode 0 = "0"
+      decode n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else decode (n `div` 10)++[intToDigit (n `rem` 10)]
 
 
 
