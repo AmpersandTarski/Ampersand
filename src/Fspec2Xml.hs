@@ -4,10 +4,14 @@
    import Collection (Collection(empty, (>-),rd))
    import Auxiliaries
           ( chain, sort') 
+ -- TODO: ADLdef en ShowADL hoort hier niet thuis! Deze module moet nog worden aangepast op de nieuwe architectuur. 
    import ADLdef
    import ShowADL
-   import CC_aux ( explain)
 
+
+   import CC_aux ( explain)
+   import FspecDef
+   
    makeXML_depreciated contexts contextname
     = putStr ("\nXML representation of "++name context++"\n")>>
       writeFile (contextname++".xml") (showXML context "")>>

@@ -1,10 +1,11 @@
-{-# LINE 1 "HtmlFilenames.lhs" #-}
-#line 1 "HtmlFilenames.lhs"
   module HtmlFilenames where
    import CommonClasses ( Identified(name) )
    import ADLdef ( Context, Declaration, source, target, Context, Rule, nr
                   ,Concept, Pattern)
    import Hatml  (htmlname)
+   import Data.Fspec
+   --TODO : Er is géén nut meer voor een ADL2Html, maar alleen een Fspec2Html. 
+   --       hierdoor zullen veel van onderstaande spullen kunnen/moeten verdwijnen.
 
    fnContext :: Context -> String
    fnContext context

@@ -1,5 +1,3 @@
-{-# LINE 1 "Classification.lhs" #-}
-#line 1 "Classification.lhs"
    module Classification
    (  Classification(Cl, Bottom)
     , root
@@ -18,20 +16,11 @@
     , mapCl
     , index
    ) where
-   import CommonClasses ( Identified(name)
+   import CommonClasses ( Identified(name,typ)
                         , Conceptual(conts)
                         ) 
    import Collection (Collection(eleM,elems,isc,(>-),uni,empty,rd))
    import Auxiliaries (chain, eqCl) 
-
-
-
-
-
-
-
-
-
 
 
    data Classification a = Cl a [Classification a] | Bottom
@@ -61,7 +50,7 @@
    instance Identified a => Identified (Classification a) where
     name (Cl r cls) = name r
     name Bottom = "Bottom"
-
+    typ (Cl r cls) = "Classification_of_" ++ typ r
 
 
 
@@ -84,7 +73,7 @@
     empty = Bottom
     elems Bottom = []
     elems (Cl r cls) = r: [c| cl<-cls, c<-elems cl]
-
+ --   rd (Cl r cls) =
 
 
     lcl `isc` rcl | length trees==1 = head trees

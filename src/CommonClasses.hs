@@ -1,7 +1,5 @@
-{-# LINE 1 "CommonClasses.lhs" #-}
-#line 1 "CommonClasses.lhs"
   module CommonClasses
-  (  Identified(name)
+  (  Identified(..)
    , ABoolAlg(glb,lub,order)
    , Explained(explain)
    , Conceptual(conts)
@@ -9,17 +7,18 @@
    )
 
   where
-  -- import Strings()
+
    import Collection(rd)
    ----------------------------------------------
    class Identified a where
     name   :: a->String
-    -- idName :: a->String
-
+    typ    :: a->String
+ 
    instance Identified a => Identified [a] where
     name [] = ""
     name (i:is) = name i
-    -- idName c = idNam (name c)
+    typ  [] = ""
+    typ  (i:is) = typ i
 
    class Ord a => ABoolAlg a where
     glb,lub :: a -> a -> a

@@ -6,7 +6,7 @@
    import ADLdataDef
    import CC_aux ( ShowHS (showHS,showHSname)
                  )
-   import CommonClasses(Identified(name))
+   import CommonClasses(Identified(name,typ))
    import Auxiliaries(showL,haskellIdentifier)
    import Strings(chain)
 
@@ -15,12 +15,13 @@
 
    instance Identified Fspc where
      name fspc = name (fsid fspc)
+     typ fspc = "Fspc_"
    
    fspc_patterns :: Fspc -> Patterns
    fspc_patterns spec = themesOfPatterns (themes spec)     
    instance Fidentified Fspc where
     fsid    spec = fsfsid spec
-    typ     a = "f_Ctx"
+  --  typ     a = "f_Ctx"
 
    instance ShowHS Fspc where
     showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS "" (pfixFSid "f_Ctx_" (fsid fspec)) 
@@ -57,7 +58,6 @@
 
    instance Fidentified Ftheme where
     fsid theme = ftsid theme
-    typ  f = "f_Thm"
    
    instance ShowHS Ftheme where
     showHSname ftheme = typ ftheme ++ "_" ++ showHSname (fsid ftheme) --showHS "" (pfixFSid "f_Theeeeeeeem_" (fsid ftheme))
@@ -74,8 +74,6 @@
    instance Fidentified Dataset where
      fsid (DS c pths) = fsid c
      fsid (BR m) = fsid m
-     typ  (DS c pths) = "f_DS"
-     typ  (BR m) = "f_DS"
 
    instance Fidentified Morphism where
      fsid m = FS_id (name m++name (source m)++name(target m))  --Hier moet nog goed naar worden gekeken....
@@ -84,13 +82,13 @@
            source m = error ("FspecDef.lhs : Cannot evaluate the source expression of the current morphism (yet)")
            target (Mph nm pos atts (a,b) _ s) = b    
            target m = error ("FspecDef.lhs : Cannot evaluate the target expression of the current morphism (yet)")
-     typ m  = "f_morph"
+  --   typ m  = "f_morph"
    instance Fidentified Concept where
      fsid c = FS_id (name c)
-     typ m  = "f_cpt"
+  --   typ m  = "f_cpt"
    instance Fidentified ObjectDef where
      fsid o = FS_id (name o)
-     typ m  = "f_objdef"
+  --   typ m  = "f_objdef"
 
    instance ShowHS Dataset where
     showHSname dset = typ dset ++ "_" ++ showHSname (fsid dset)
@@ -99,20 +97,19 @@
     showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
     showHS indent (BR m     ) = "BR ("++showHS "" m++")"
 
-   instance Eq Dataset where  -- opletten: een dataset moet Ã©Ã©n vast concept hebben waaraan het wordt herkend.
+   instance Eq Dataset where  -- opletten: een dataset moet één vast concept hebben waaraan het wordt herkend.
     DS c _ == DS d _ = c==d
     BR m   == BR m'  = m==m'
     _      == _      = False
 
    instance Fidentified Frule where
     fsid frul = FS_id (name (rule frul))   
-    typ frul = "f_rule"
+
    rule:: Frule -> Rule
    rule (Frul r) = r
 
    instance Fidentified Fview where
     fsid fview = fsid (objectdef(fview))
-    typ fview = "f_View"
    
    instance ShowHS Fview where
     showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))
@@ -139,7 +136,7 @@
 
    instance Fidentified Funit where
     fsid funit = fusid funit 
-    typ funit = "f_Unit"
+
    instance ShowHS Funit where
     showHSname funit = typ funit ++ "_" ++ showHSname (fsid funit) 
     showHS indent funit
@@ -166,7 +163,6 @@
 
    instance Fidentified ServiceSpec where
       fsid (Sspc fid _ _ _ _ _ _ _) = fid  
-      typ sspc = "f_svc"
 
    instance ShowHS ServiceSpec where
     showHSname sspc  = typ sspc ++ "_" ++ showHSname (fsid sspc) --"f_svc_"++showHS "" (fsid sspc)
@@ -187,7 +183,7 @@
 
    class Fidentified a where
      fsid :: a -> FSid
-     typ  :: a -> String
+   --  typ  :: a -> String
 
 
    instance Identified FSid where
@@ -203,3 +199,25 @@
    --pfixFSid pfix NoName = FS_id pfix      -- Het is de vraag of dit nuttig is...
 
    mkdefname fid = typ fid ++ "_" ++ showHSname (fsid fid)
+
+   
+   instance Identified Ftheme where
+     typ  f = "f_Thm"
+     
+   instance Identified Dataset where
+     typ  (DS c pths) = "f_DS"
+     typ  (BR m) = "f_DS"
+
+   instance Identified Fview where
+    typ fview = "f_View"
+   
+   instance Identified Frule where
+    typ frul = "f_rule"
+     
+   instance Identified Funit where
+    typ funit = "f_Unit"
+    
+   instance Identified ServiceSpec where
+    typ sspc = "f_svc"
+    
+       

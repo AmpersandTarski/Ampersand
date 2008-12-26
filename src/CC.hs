@@ -1,12 +1,11 @@
-{-# LINE 1 "CC.lhs" #-}
-#line 1 "CC.lhs"
   module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    import UU_Scanner
    import UU_Parsing
    import CommonClasses ( Identified(name))
    import Collection (Collection(empty,uni,(>-),rd))
    import Auxiliaries (sort, upCap)
-   import ADLdef 
+   import ADLdef (flp,cptAnything,cptnew,cptS,mIs)
+   import Data.ADL
    import ShowADL
    import CC_aux 
              (  pKey_pos, pString_val_pos

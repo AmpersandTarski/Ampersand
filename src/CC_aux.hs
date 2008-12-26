@@ -42,7 +42,6 @@
              ( Classification(),preCl,mapCl
              )
    import Typology ( Inheritance(Isa), Typologic, genEq, typology)
-   import ADLdataDef
    import ADLdef
    import ShowADL
 

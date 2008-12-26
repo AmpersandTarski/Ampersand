@@ -1,16 +1,13 @@
-{-# LINE 1 "ShowADL.lhs" #-}
-#line 1 "ShowADL.lhs"
-
-
-
   module ShowADL ( ShowADL(..) )
   where
    import Char  (isAlpha,isUpper)
    import CommonClasses(Identified(name))
    import ADLdataDef
-   import ADLdef (mIs, Morphic(..))
+   import ADLdef (Morphic(source,target))
    import Auxiliaries(chain,showL)
-
+ --  import Data.ADL
+   
+   
    class ShowADL a where
     showADL :: a -> String
    instance ShowADL a => ShowADL [a] where
@@ -61,24 +58,28 @@
     showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
    instance ShowADL ObjectDef where
+   -- WAAROM? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten. Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'inline', 'source' en 'target' hier al bekend zijn. Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'. 
     showADL obj = "  SERVICE "++str obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
                   "\n   = [ "++chain "\n     , " (zipWith f [1..] atts)++"\n     ]"
      where f i m | length [ a| a<-atts, name a==name m ]>1 = name m++show i++" : "++showtyped m
+       -- WAAROM? Het feit dat een morphisme geflipt is of niet, zou niet uit moeten maken voor de manier waarop je het terug toont. Als dat wél zo is, zou flip een échte taalconstuctie moeten zijn. Dan is terugreparatie met  inline  niet nodig. 
                  | inline m                                = name m
                  | otherwise                               = name m++" : "++name m++['~'| not (inline m)]
            showtyped m
+       -- WAAROM? Ook het gebruik van source en target is hier niet netjes. je zou hier iets verwachten als show(mphtyp m) 
                  | inline m  =  name m++"["++str (source m)++"*"++str (target m)++"]"
                  | otherwise =  name m++"["++str (target m)++"*"++str (source m)++"]~"
            atts = [ m | a<-objats obj, Tm m<-[objctx a] ]
            str obj | and [isAlpha c| c<-name obj] && isUpper (head (name obj)) = name obj
                    | otherwise                                                 = adlString (name obj)
 
-   adlString str= "\""++as str++"\""
-    where
-     as "" = ""
-     as (c:cs) | c=='\t'   = "\t"++as cs
-               | c=='\n'   = "\n"++as cs
-               | otherwise = c: as cs
+           -- WAAROM wordt hier met LaTeX gewerkt? Hoort hier niet thuis. => Rethink
+           adlString str= "\""++as str++"\""
+             where
+               as "" = ""
+               as (c:cs) | c=='\t'   = "\t"++as cs
+                         | c=='\n'   = "\n"++as cs
+                         | otherwise = c: as cs
 
    instance ShowADL KeyDef where
     showADL kd 

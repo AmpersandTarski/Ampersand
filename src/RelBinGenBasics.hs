@@ -1,5 +1,3 @@
-{-# LINE 1 "RelBinGenBasics.lhs" #-}
-#line 1 "RelBinGenBasics.lhs"
   module RelBinGenBasics where
    import Char
    import Auxiliaries
@@ -353,15 +351,15 @@
     where
       namepart str   = reverse (dropWhile isDigit str)
       numberpart str = reverse (takeWhile isDigit str)
-      changeNr x     = decode (encode x+1)
+      changeNr x     = int2string (string2int x+1)
       --  changeNr x = show (read x +1)
-      encode :: String -> Int
-      encode  = enc.reverse
+      string2int :: String -> Int
+      string2int  = enc.reverse
        where enc "" = 0
              enc (c:cs) = digitToInt c + 10* enc cs
-      decode :: Int -> String
-      decode 0 = "0"
-      decode n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else decode (n `div` 10)++[intToDigit (n `rem` 10)]
+      int2string :: Int -> String
+      int2string 0 = "0"
+      int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
 
 
 

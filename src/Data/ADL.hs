@@ -4,6 +4,7 @@ module Data.ADL where
    import Typology ( Inheritance())
    import Classification ( Classification())
    import UU_Scanner (Pos(Pos),noPos)
+
    data Architecture = Arch { archContexts :: Contexts} 
 
    type Contexts  = [Context]
@@ -38,6 +39,7 @@ module Data.ADL where
             , cddef :: String   -- ^ The textual definition of this concept.
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
             } 
+
    type Patterns  = [Pattern]
    data Pattern 
       = Pat { ptnm  :: String       -- ^ Name of this pattern
@@ -49,7 +51,6 @@ module Data.ADL where
             } 
 
    type Rules = [Rule]
-
    data Rule =
   -- Ru c antc p cons cpu expla sgn nr pn
         Ru { rrsrt :: Char              -- ^ One of the following characters:
@@ -65,7 +66,7 @@ module Data.ADL where
            , rrcpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
            , rrxpl :: String            -- ^ Explanation
            , rrtyp :: (Concept,Concept) -- ^ Type
-           , rrnum :: Int               -- ^ Rule number
+           , runum :: Int               -- ^ Rule number
            , rrpat :: String            -- ^ Name of pattern in which it was defined.
            }
   -- Sg p rule expla sgn nr pn signal
@@ -73,7 +74,7 @@ module Data.ADL where
            , srsig :: Rule              -- ^ the rule to be signalled
            , srxpl :: String            -- ^ explanation
            , srtyp :: (Concept,Concept) -- ^ type
-           , srnum :: Int               -- ^ rule number
+           , runum :: Int               -- ^ rule number
            , srpat :: String            -- ^ name of pattern in which it was defined.
            , srrel :: Declaration       -- ^ the signal relation
            }
@@ -83,7 +84,7 @@ module Data.ADL where
            , grgen :: Expression        -- ^ generic
            , grcpu :: Expressions       -- ^ cpu. This is a list of subexpressions, which must be computed.
            , grtyp :: (Concept,Concept) -- ^ declaration
-           , grnum :: Int               -- ^ rule number
+           , runum :: Int               -- ^ rule number
            , grpat :: String            -- ^ name of pattern in which it was defined.
            }
   -- Fr t d expr pn  -- represents an automatic computation, such as * or +.
@@ -163,7 +164,7 @@ module Data.ADL where
    type Morphisms = [Morphism]
    data Morphism  = 
                    Mph { mphnm :: String   -- ^ the name of the morphism. This is the same name as
-                                           --   the relation that is bound to the morphism.
+                                           --   the declaration that is bound to the morphism.    WAAROM Stef, waarom zou je dit attribuut opnemen? Als het niet is opgenomen, dan kan je altijd zeggen dat de naam van het morphisme gelijk is aan de naam van z'n makeDeclaration. Nu kan dat niet. Voorstel: Dit attribuut slopen. 
                        , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
                        , mphats :: [Concept]         -- ^ the attributes specified inline
                        , mphtyp :: (Concept,Concept) -- ^ the allocated type. Together with the name, this forms the declaration.
@@ -200,7 +201,8 @@ module Data.ADL where
    type Paire     = [String]
    type GenR = Concept->Concept->Bool
 
-   newtype FilePos = FilePos (String, Pos, String)                        deriving (Eq,Ord)
+   newtype FilePos = FilePos (String, Pos, String) 
+                          deriving (Eq,Ord)
    posNone         = FilePos ("",noPos,"")
    instance Ord Pos where
      a >= b = (show a) >= (show b)

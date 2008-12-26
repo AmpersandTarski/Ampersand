@@ -7,7 +7,7 @@
                   , isPos,isNeg,notCp
                   , ruleType
                   , consequent,cpu,antecedent,normExpr,uncomp
-                  , src, trg,v
+                  , src, trg ,v
                   , Object(..)
                   , Populated(..)
                   , Morphic(..)
@@ -25,7 +25,7 @@
    import CommonClasses ( Identified(name)
                         , ABoolAlg(glb,lub,order)
                         , Explained(explain)
-                                                , Conceptual(conts)
+                        , Conceptual(conts)
                         , Morphics(anything)
                         )
    import Typology ( Inheritance(Isa), Typologic(typology), genEq)
@@ -35,11 +35,19 @@
    import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
 
 
+   class Key a where
+    keys :: a->[(Concept,String,[ObjectDef])]
    instance Key Context where
     keys context
      = ( concat [keys p| p<-patterns context] ++
          [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs context]
        )
+   instance Key KeyDef where
+    keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
+   instance Key Pattern where
+    keys pat = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs pat]
+
+
 
    instance Language Context where
     --Interpretation of context as a language means to describe the classification tree,
@@ -184,9 +192,6 @@
 
    objdefNew e = Obj "" posNone e []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
 
-
-   instance Key KeyDef where
-    keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
 
    instance Morphical KeyDef where
     concs        kd = concs (kdctx kd)`uni` concs (kdats kd)
@@ -356,9 +361,6 @@
     contents (Isn g s)                      = [[o,o] | o<-conts s]
     contents (Iscompl g s)                  = [[o,o']| o<-conts s,o'<-conts s,o/=o']
     contents (Vs g s)                       = [[o,o']| o<-conts s,o'<-conts s]
-
-   instance Key Pattern where
-    keys pat = [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs pat]
 
    instance Language Pattern where
     declaredRules (Pat nm rs parChds pms cs ks) = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
@@ -651,6 +653,7 @@
    flipProps :: [Prop] -> [Prop]
    flipProps ps = [flipProp p| p<-ps]
 
+   flipProp :: Prop -> Prop
    flipProp Uni = Inj
    flipProp Tot = Sur
    flipProp Sur = Tot
@@ -756,9 +759,6 @@
      = Gc pos m' expr' cpu (sign expr') nr pn
        where expr' = subst (m,f) expr
 
-   instance Identified Rule where
-    name r = "Rule"++show (nr r)
-
    ruleType    (Ru c _ _ _ _ _ _ _ _) = c
    ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
    ruleType    (Gc _ _ _ _ _ _ _)     = 'g'
@@ -843,8 +843,6 @@
     pos (K1 e)  = ADLdef.pos e
     pos (Cp e)  = ADLdef.pos e
 
-   class Key a where
-    keys :: a->[(Concept,String,[ObjectDef])]
 
 
 

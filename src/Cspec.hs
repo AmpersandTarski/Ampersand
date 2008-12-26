@@ -1,7 +1,8 @@
-{-# LINE 1 "Cspec.lhs" #-}
-#line 1 "Cspec.lhs"
    module Cspec (zed,glossary,functionalSpecText,projectSpecText) where
 
+  -- WAAROM ? Wat is dit voor een module? Het is niet te compileren, en het
+  --          zondigt tegen de architectuur op grote schaal. Geen nut? => Dumpen!
+  --                                                         Wel nut?  => Uitleggen! en beschrijven hoe dit zich verhoudt tot architectuur        
    import System
    -- import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
    import ADLdef
