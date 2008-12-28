@@ -3,7 +3,7 @@
    import Char  (isAlpha,isUpper)
    import CommonClasses(Identified(name))
    import ADLdataDef
-   import ADLdef (Morphic(source,target,isIdent,multiplicities))
+   import ADLdef (Morphic(..))
    import Auxiliaries(chain,showL,eqCl)
  --  import Data.ADL
    
@@ -66,7 +66,8 @@
             = ind++" = [ "++
               chain (ind++"   , ") [ name o++(if name o `elem` cls then show i else "")++
                                     " : "++showADL (objctx o)++
-                                           (if isIdent (objctx o) then "["++(name (target (objctx o)))++"]" else "")++
+                                           (if isIdent (objctx o) then "["++(name (target (objctx o)))++"]" else
+                                            if isTrue  (objctx o) then "[ONE*"++(name (target (objctx o)))++"]" else "")++
                                     " "++props (multiplicities (objctx o))++
                                     if null (objats o) then "" else recur (ind++"     ") (objats o)
                                   | (o,i)<-zip objs [1..]

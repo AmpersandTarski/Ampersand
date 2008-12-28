@@ -103,7 +103,7 @@
 
    instance Conceptual Concept where
     conts (C {cptos = os}) = os
-    conts (S)        = error ("(module CC_aux) Fatal: ONE has exactly one concept, but it is not te be referred to")
+    conts (S)        = error ("(module CC_aux) Fatal: ONE has exactly one atom, but that atom may not be referred to")
     conts Anything   = error ("(module CC_aux) Fatal: Anything is Everything...")
     conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
 

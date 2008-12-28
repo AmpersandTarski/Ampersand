@@ -14,20 +14,34 @@
    erAnalysis p = (datasets, viewEsts, rels, ruls)
     where
        viewEsts
-        = [ (objdefNew (v (cptAnything,c)))
-               { objnm  = name c
-               , objats = [ (objdefNew (Tm m))
-                               { objnm  = show (name m++" "++name (target m))
-                               , objats = let ats = [ (objdefNew att) { objnm = name (target att) }
-                                                    | att<-recur [] (target m)]
-                                          in if null ats then [] else ((objdefNew (Tm (mIs (target m)))) { objnm = name (target m) }):ats
-                               }
-                          | m<-relsFrom c, not (isSignal m)]++
-                          [ (objdefNew (notCp (normExpr (srsig s)))) {objnm=name m}
-                          | m<-relsFrom c, isSignal m, s<-signals p, source m==source s, name (srrel s) == name m ]++
-                          [ (objdefNew (notCp (normExpr (flp (srsig s))))) {objnm=name m}
-                          | m<-relsFrom c, isSignal m, s<-signals p, source m==target s, name (srrel s) == name m ]
-               }
+        = concat
+          [ [ (objdefNew (v (cptAnything,c)))
+                 { objnm  = name c
+                 , objats = [ (objdefNew (Tm m))
+                                 { objnm  = show (name m++" "++name (target m))
+                                 , objats = let ats = [ (objdefNew att) { objnm = name (target att) }
+                                                      | att<-recur [] (target m)]
+                                            in if null ats then [] else ((objdefNew (Tm (mIs (target m)))) { objnm = name (target m) }):ats
+                                 }
+                            | m<-relsFrom c, not (isSignal m)]++
+                            [ (objdefNew (notCp (normExpr (srsig s)))) {objnm=name m}
+                            | m<-relsFrom c, isSignal m, s<-signals p, source m==source s, name (srrel s) == name m ]++
+                            [ (objdefNew (notCp (normExpr (flp (srsig s))))) {objnm=name m}
+                            | m<-relsFrom c, isSignal m, s<-signals p, source m==target s, name (srrel s) == name m ]
+                 }
+            , (objdefNew (Tm (mIs S)))
+                 { objnm  = name c++"s"
+                 , objats = [ (objdefNew (v(S,c)))
+                                 { objnm  = name c++"s"
+                                 , objats = ((objdefNew (Tm (mIs c))) { objnm = "nr" }):
+                                            [ (objdefNew (Tm m))
+                                                 { objnm  = show (name m++" "++name (target m))
+                                                 , objats = []
+                                                 }
+                                            | m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+                                 } ]
+                 }
+            ]
           | c<-concs p ]
           where
            relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d<-declarations p, source d == c]++
