@@ -48,7 +48,8 @@
 
 
 
-   -- Show   --WAAROM wat is precies het doel van Show vs ShowADL ??
+   -- Show   --WAAROM (HJ) wat is precies het doel van Show vs ShowADL ??
+   -- ANTWOORD (SJ): De standaard-show is alleen bedoeld voor foutmeldingen tijdens het testen. Foutmeldingen voor de gebruiker zouden eigenlijk via een aparte show moeten, omdat je daarmee device-independence kunt bereiken voor foutmeldingen (voorlopig is de gewone show hiervoor goed genoeg). ShowADL is bedoeld om ADL source code te genereren. Ik kan me voorstellen dat er op den duur een showADL ontstaat die zowel inline ADL kan genereren alsook geprettyprinte ADL.
    instance Show ConceptDef    
    instance Show Pattern
    instance Show Rule
@@ -141,7 +142,8 @@
     typ obj = "ObjectDef_"
 
    instance Identified Morphism where
-    name (Mph nm _ _ _ _ _) = nm    -- WAAROM? zou name (makeDaclaration (Mph nm _ _ _ _ _)) het ook niet doen? Dan is de definitie op de volgende regel voldoende. 
+    name (Mph nm _ _ _ _ _) = nm    -- WAAROM (HJ)? zou name (makeDeclaration (Mph nm _ _ _ _ _)) het ook niet doen? Dan is de definitie op de volgende regel voldoende. 
+                                    -- ANTWOORD (SJ): Tja, dat klopt. Maar het is ook wel eens lekker om gewoon te kunnen lezen hoe het is, in plaats van continu te moeten dereferencen als je code leest...
     name i = name (makeDeclaration i)
     typ mph = "Morphism_"
    instance Identified Rule where

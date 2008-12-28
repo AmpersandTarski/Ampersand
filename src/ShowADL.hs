@@ -58,7 +58,8 @@
     showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
 
    instance ShowADL ObjectDef where
-   -- WAAROM? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten. Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'inline', 'source' en 'target' hier al bekend zijn. Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'. 
+   -- WAAROM (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten. Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'inline', 'source' en 'target' hier al bekend zijn. Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'. 
+   -- ANTWOORD (SJ): Dit blijft nog even zo, omdat showADL gebruikt wordt in het genereren van services. Zolang we dat nog niet onder de knie hebben blijft de code wat troebel.
     showADL obj = "  SERVICE "++str obj++" : I["++(name (target (objctx obj)))++"]"++
                   recur "\n  " (objats obj)
      where recur :: String -> [ObjectDef] -> String
@@ -78,14 +79,16 @@
                       where f [] = "ALWAYS"
                             f ps = "ALWAYS "++chain " " ps
            showtyped m
-       -- WAAROM? Ook het gebruik van source en target is hier niet netjes. je zou hier iets verwachten als show(mphtyp m) 
+       -- WAAROM? (HJ) Ook het gebruik van source en target is hier niet netjes. je zou hier iets verwachten als show(mphtyp m) 
+       -- ANTWOORD (SJ): Klopt. Gaarne aanpassen.
                  | inline m  =  name m++"["++str (source m)++"*"++str (target m)++"]"
                  | otherwise =  name m++"["++str (target m)++"*"++str (source m)++"]~"
            atts = [ m | a<-objats obj, Tm m<-[objctx a] ]
            str obj | and [isAlpha c| c<-name obj] && isUpper (head (name obj)) = name obj
                    | otherwise                                                 = adlString (name obj)
 
-           -- WAAROM wordt hier met LaTeX gewerkt? Hoort hier niet thuis. => Rethink
+           -- WAAROM? (HJ) Waarom wordt hier met LaTeX gewerkt? Hoort hier niet thuis. => Rethink
+           -- ANTWOORD (SJ): Dit is niet persé LaTeX. Het is wel een string transformatie. Inderdaad: Rethink.
            adlString str= "\""++as str++"\""
              where
                as "" = ""
