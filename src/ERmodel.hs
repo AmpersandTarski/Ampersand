@@ -13,20 +13,36 @@
    erAnalysis :: (Language a) => a -> ([ObjectDef],[ObjectDef],[Declaration],[String])
    erAnalysis p = (datasets, viewEsts, rels, ruls)
     where
-       datasets 
+       viewEsts
+        = [ (objdefNew (v (cptAnything,c)))
+               { objnm  = name c
+               , objats = [ (objdefNew (Tm m))
+                               { objnm  = show (name m++" "++name (target m))
+                               , objats = let ats = [ (objdefNew att) { objnm = name (target att) }
+                                                    | att<-recur [] (target m)]
+                                          in if null ats then [] else ((objdefNew (Tm (mIs (target m)))) { objnm = name (target m) }):ats
+                               }
+                          | m<-relsFrom c, not (isSignal m)]++
+                          [ (objdefNew (notCp (normExpr (srsig s)))) {objnm=name m}
+                          | m<-relsFrom c, isSignal m, s<-signals p, source m==source s, name (srrel s) == name m ]++
+                          [ (objdefNew (notCp (normExpr (flp (srsig s))))) {objnm=name m}
+                          | m<-relsFrom c, isSignal m, s<-signals p, source m==target s, name (srrel s) == name m ]
+               }
+          | c<-concs p ]
+          where
+           relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d<-declarations p, source d == c]++
+                        [flp (Mph (name d) posNone [] (source d,target d) True d)| d<-declarations p, target d == c]
+           recur :: [Morphism] -> Concept -> [Expression]
+           recur rs c
+            = [ F [Tm m| m<-rs++[n]] | n<-new, not (n `elem` rs)] ++
+              [ rs' | n<-new, not (n `elem` rs), rs' <-recur (rs++[n]) (target n) ] 
+              where new = [m| m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+       datasets
         = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
-                                            , objats = [ (objdefNew (Tm e)) { objnm = (concat.map name.mors) e
-                                                                            } | e<-as ]
+                                            , objats = [ (objdefNew (Tm e)) { objnm = name e }
+                                                       | e<-as ]
                                             }
           | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
-       viewEsts
-        = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
-                                            , objats = [ (objdefNew (Tm e)) { objnm = (concat.map name.mors) e
-                                                                            } | e<-as ]
-                                            }
-          | c<-concs p, as<-[[Mph (name d) posNone [] (source d,target d) True d| d<-declarations p, source d == c]++
-                             [flp (Mph (name d) posNone [] (source d,target d) True d)| d<-declarations p, target d == c]]
-          , not (null as) ]
        attrs :: [Morphism]
        attrs = [Mph (name d ++ if isFlpFunction d then "Fun" else "") posNone [] (source d,target d) True d | d<-declarations p,    isFunction d] ++
                [flp (Mph (name d++if isFunction d then "Inv" else "") posNone [] (source d,target d) True d)| d<-declarations p, isFlpFunction d] ++

@@ -26,8 +26,8 @@
                        , "PATTERN", "ENDPATTERN"
                        , "SERVICE", "INITIAL"
                        , "POPULATION", "CONTAINS"
-                       , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX"
-                       , "RELATION", "CONCEPT", "KEY"
+                       , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP"
+                       , "ALWAYS", "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V"
                        , "PRAGMA", "EXPLANATION", "SIGNAL", "ON", "COMPUTING", "INSERTING", "DELETING"
                        , "ONE"
@@ -245,20 +245,22 @@
    pObj              = obj <$> (pConid_val_pos <|> pString_val_pos)              -- de naam van het object
                            <*> (optional (pSpec '[' *> pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
                            <*> (optional (pKey ":" *> pExpr) )                   -- de contextexpressie (default: I[c])
+                           <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
                            <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
                        <|>
-                       vbj <$> pVarid_val_pos                                     -- de naam van het object
-                           <*> (optional (pSpec '[' *>  pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
-                           <*> (optional (pKey ":" *>  pExpr) )                   -- de contextexpressie (default: I[c])
+                       vbj <$> pVarid_val_pos                                    -- de naam van het object
+                           <*> (optional (pSpec '[' *>  pConid <* pSpec ']') )   -- optioneel: het type van het object (een concept)
+                           <*> (optional (pKey ":" *>  pExpr) )                  -- de contextexpressie (default: I[c])
+                           <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
                            <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
-                       where obj (nm,pos) Nothing  Nothing  ats = Obj nm pos ((Tm . mIs . cptnew) nm) ats
-                             obj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
-                             obj (nm,pos) (Just c) Nothing  ats = Obj nm pos ((Tm . mIs . cptnew) c) ats
-                             obj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
-                             vbj (nm,pos) Nothing  Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptAnything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
-                             vbj (nm,pos) Nothing  (Just e) ats = Obj nm pos e ats
-                             vbj (nm,pos) (Just c) Nothing  ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptnew c ) True (error "CC.lhs: vbj (nm,pos) Nothing (Just c) has no declaration"))) ats
-                             vbj (nm,pos) (Just c) (Just e) ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
+                       where obj (nm,pos) Nothing  Nothing  a ats = Obj nm pos ((Tm . mIs . cptnew) nm) ats
+                             obj (nm,pos) Nothing  (Just e) a ats = Obj nm pos e ats
+                             obj (nm,pos) (Just c) Nothing  a ats = Obj nm pos ((Tm . mIs . cptnew) c) ats
+                             obj (nm,pos) (Just c) (Just e) a ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
+                             vbj (nm,pos) Nothing  Nothing  a ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptAnything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
+                             vbj (nm,pos) Nothing  (Just e) a ats = Obj nm pos e ats
+                             vbj (nm,pos) (Just c) Nothing  a ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptnew c ) True (error "CC.lhs: vbj (nm,pos) Nothing (Just c) has no declaration"))) ats
+                             vbj (nm,pos) (Just c) (Just e) a ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
 
    pAtt             :: Parser Token ObjectDef
    pAtt              = att <$> phpId <* pKey ":" <*>  pExpr
@@ -283,6 +285,18 @@
    pProp             = k Uni "UNI" <|> k Inj "INJ" <|> k Sur "SUR" <|> k Tot "TOT"
                        <|> k Sym "SYM" <|> k Asy "ASY" <|> k Trn "TRN" <|> k Rfx "RFX"
                        where k obj str = f <$> pKey str where f _ = obj
+
+-- ^ pProps is bedoeld voor gebruik in relatie-declaraties.
+-- | De volgende pProps is identiek, maar werkt alleen op UNI en TOT. Ze is bedoeld voor de Service definities.
+
+   pProps'          :: Parser Token [Prop]
+   pProps'           = f <$> pList pProp'
+                       where f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
+                             k "TOT" = Tot
+                             k "UNI" = Uni
+
+   pProp'           :: Parser Token String
+   pProp'            = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"
 
    pPragma          :: Parser Token [String]
    pPragma           = pKey "PRAGMA" *> pList1 pString

@@ -3,8 +3,8 @@
    import Char  (isAlpha,isUpper)
    import CommonClasses(Identified(name))
    import ADLdataDef
-   import ADLdef (Morphic(source,target))
-   import Auxiliaries(chain,showL)
+   import ADLdef (Morphic(source,target,isIdent,multiplicities))
+   import Auxiliaries(chain,showL,eqCl)
  --  import Data.ADL
    
    
@@ -59,12 +59,23 @@
 
    instance ShowADL ObjectDef where
    -- WAAROM? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten. Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'inline', 'source' en 'target' hier al bekend zijn. Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'. 
-    showADL obj = "  SERVICE "++str obj++{-" : I["++(name (target (objctx obj)))++"]"++-}
-                  "\n   = [ "++chain "\n     , " (zipWith f [1..] atts)++"\n     ]"
-     where f i m | length [ a| a<-atts, name a==name m ]>1 = name m++show i++" : "++showtyped m
-       -- WAAROM? Het feit dat een morphisme geflipt is of niet, zou niet uit moeten maken voor de manier waarop je het terug toont. Als dat wél zo is, zou flip een échte taalconstuctie moeten zijn. Dan is terugreparatie met  inline  niet nodig. 
-                 | inline m                                = name m
-                 | otherwise                               = name m++" : "++name m++['~'| not (inline m)]
+    showADL obj = "  SERVICE "++str obj++" : I["++(name (target (objctx obj)))++"]"++
+                  recur "\n  " (objats obj)
+     where recur :: String -> [ObjectDef] -> String
+           recur ind objs
+            = ind++" = [ "++
+              chain (ind++"   , ") [ name o++(if name o `elem` cls then show i else "")++
+                                    " : "++showADL (objctx o)++
+                                           (if isIdent (objctx o) then "["++(name (target (objctx o)))++"]" else "")++
+                                    " "++props (multiplicities (objctx o))++
+                                    if null (objats o) then "" else recur (ind++"     ") (objats o)
+                                  | (o,i)<-zip objs [1..]
+                                  , cls<-[[c|cl<-eqCl name objs, length cl>1, c<-take 1 (map name cl)]]
+                                  ]++
+              ind++"   ]"
+           props ps = f (["UNI"| Uni `elem` ps]++["TOT"| Tot `elem` ps]++["PROP"| Sym `elem` ps, Asy `elem` ps])
+                      where f [] = "ALWAYS"
+                            f ps = "ALWAYS "++chain " " ps
            showtyped m
        -- WAAROM? Ook het gebruik van source en target is hier niet netjes. je zou hier iets verwachten als show(mphtyp m) 
                  | inline m  =  name m++"["++str (source m)++"*"++str (target m)++"]"
