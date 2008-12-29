@@ -11,38 +11,7 @@
    import Atlas     -- (for converting error messages to HTML)
    import RelBinGenBasics
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   localsettings context dbName = chain "\n"
+   localsettings context serviceObjects dbName = chain "\n"
     (["<?php"
      ] ++ (map ((++) "  ") (
        ["// Select the monastir view"
@@ -62,7 +31,7 @@
            ,"$menu[] = array"
            ,"  ("++ (chain "\n        ,"
             [ "new menuItem('"++objname++".php','Show all "++objname++" objects','menuItem','"++objname++"')"
-            | o<-attributes context, objname <- [addSlashes (name o)]
+            | o<-serviceObjects, objname <- [addSlashes (name o)]
             ])
            ,"  );"
            ,"parent::monastir($menu,$obj,$object,ucfirst($object->name));"

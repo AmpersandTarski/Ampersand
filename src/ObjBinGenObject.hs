@@ -391,7 +391,8 @@
       )) ++
       [ "}"
       ] ++ (concat [ showClasses context (nm++[name o]) a |a <- attributes o ] )
-    where phpObjRelName pth o r = phpIdentifier (chain "_" (pth++[name o,name r]))
+
+   phpObjRelName pth o r = phpIdentifier (chain "_" (pth++[name o,name r]))
 
 
    getObject context o | null (attributes o) = 

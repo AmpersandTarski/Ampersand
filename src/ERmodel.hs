@@ -11,37 +11,38 @@
    import HtmlFilenames (fnContext)
 
    erAnalysis :: (Language a) => a -> ([ObjectDef],[ObjectDef],[Declaration],[String])
-   erAnalysis p = (datasets, viewEsts, rels, ruls)
+   erAnalysis p = (datasets, generatedServices, rels, ruls)
     where
-       viewEsts
+       generatedServices
         = concat
-          [ [ (objdefNew (v (cptAnything,c)))
+          [ [ (objdefNew (v (cptS,c)))
                  { objnm  = name c
                  , objats = [ (objdefNew (Tm m))
                                  { objnm  = show (name m++" "++name (target m))
-                                 , objats = let ats = [ (objdefNew att) { objnm = name (target att) }
+                                 , objats = let ats = [ (objdefNew att) { objnm = showADL att++" "++name (target att) }
                                                       | att<-recur [] (target m)]
-                                            in if null ats then [] else ((objdefNew (Tm (mIs (target m)))) { objnm = name (target m) }):ats
+                                            in if null ats then []
+                                               else ((objdefNew (Tm (mIs (target m))))
+                                                        { objnm = name (target m) }):ats
                                  }
                             | m<-relsFrom c, not (isSignal m)]++
                             [ (objdefNew (notCp (normExpr (srsig s)))) {objnm=name m}
                             | m<-relsFrom c, isSignal m, s<-signals p, source m==source s, name (srrel s) == name m ]++
                             [ (objdefNew (notCp (normExpr (flp (srsig s))))) {objnm=name m}
                             | m<-relsFrom c, isSignal m, s<-signals p, source m==target s, name (srrel s) == name m ]
-                 }
-            , (objdefNew (Tm (mIs S)))
-                 { objnm  = name c++"s"
-                 , objats = [ (objdefNew (v(S,c)))
-                                 { objnm  = name c++"s"
-                                 , objats = ((objdefNew (Tm (mIs c))) { objnm = "nr" }):
-                                            [ (objdefNew (Tm m))
-                                                 { objnm  = show (name m++" "++name (target m))
-                                                 , objats = []
-                                                 }
-                                            | m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
-                                 } ]
-                 }
-            ]
+                 }]
+            ++let ats = [ (objdefNew (Tm m))
+                             { objnm  = show (name m++" "++name (target m))
+                             , objats = []
+                             }
+                        | m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+              in [(objdefNew (Tm (mIs S)))
+                    { objnm  = name c++"s"
+                    , objats = [ (objdefNew (v(S,c)))
+                                    { objnm  = name c++"s"
+                                    , objats = ((objdefNew (Tm (mIs c))) { objnm = "nr" }): ats
+                                    } ]
+                    }| not (null ats)]
           | c<-concs p ]
           where
            relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d<-declarations p, source d == c]++
@@ -89,7 +90,7 @@
        rs      = declaredRules context
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
-       (datasets,viewEsts,relations,ruls) = erAnalysis context
+       (datasets,generatedServices,relations,ruls) = erAnalysis context
        fnObject c = "list"++name c++".csv"
        shEnts = chain "\n" . map (chain ";")
        entConts context (Obj nm pos c ats) = [] -- moet inhoud opleveren, maar moet nog worden gebouwd.
@@ -173,7 +174,7 @@
       "\n   }"
       where
         ms = declarations context >- map makeDeclaration (mors (closExprs context))
-        (datasets,viewEsts,relations,ruls) = erAnalysis context
+        (datasets,generatedServices,relations,ruls) = erAnalysis context
         attrs = [a| e<-datasets, a<-attributes e]
         sep = "\n   ; "
         nodesPlaces = ["node [shape=box]"]++
@@ -211,7 +212,7 @@
       "\n   }"
       where
         ms = declarations context >- map makeDeclaration (mors (closExprs context))
-        (datasets,viewEsts,relations,ruls) = erAnalysis context
+        (datasets,generatedServices,relations,ruls) = erAnalysis context
         sep = "\n   ; "
         concepts = [nm| Obj nm pos ctx ats<-attributes context] -- all concepts
         attrs = [a| o<-datasets, a<-attributes o]

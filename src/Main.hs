@@ -44,6 +44,8 @@
                      where (yes,no) = splitStr f xs
    splitStr _ [] = ([],[])
 
+-- | TODO (SJ) Het volgende is slordige code. Dat moet nog eens netjes worden neergezet, zodat we ook eenvoudig executables kunnen afleiden met een gedeelte van alle functionaliteit.
+
    main :: IO ()
    main
     = do { -- First, parse the options from the command line:
@@ -55,7 +57,7 @@
            
            -- Next, do some checking of commandline options:
          ; if "-checker" `elem` switches && "-beeper" `elem` switches then putStr ("incompatible switches: -checker and -beeper") else
-           if length args==0 then putStr ("Please provide a filename (.adl) and a context name") else
+           if length args==0 then putStr ("Please provide a filename (.adl) and a context name\n"++helptext) else
            if length dbArgs>1 then putStr (". This is confusing! please specify 1 database name only.") else
 
            -- If no errors in the commandline options are found, continue with
@@ -108,18 +110,20 @@
              build_DEPRECEATED :: [Context] -> [String] -> String -> String -> String -> whatever -> IO ()
              build_DEPRECEATED contexts switches contextname filename dbName hierGebeurtNietsMee
               = sequence_ 
-                 ([ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
-                  | null switches || "-h" `elem` switches]++
+                 ([ putStr ("Nothing generated.\n"++helptext) | null switches ] ++
+                  [ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
+                  | "-atlas" `elem` switches]++
                   [ makeXML_depreciated contexts contextname| "-XML" `elem` switches]++
    --               [ showHaskell_new fspec | "-Haskell" `elem` switches]++ 
                   [ diagnose contexts contextname| "-diag" `elem` switches]++
                   [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  [ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-views" `elem` switches]++
+                  [ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-serviceEsts" `elem` switches]++
                   [ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
                   [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
    -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
                   [ cdModel contexts contextname | "-CD" `elem` switches]++
-                  [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
+                  [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") True | "-phpcode" `elem` switches]++
+                  [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") False | "-serviceGen" `elem` switches]++
                   [ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
                   [ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
                   [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
@@ -150,10 +154,24 @@
                    where
                       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
                       ctxs    = [c| c<-contexts, name c==contextname]
-                      (datasets,viewEsts,rels,ruls) = erAnalysis context
-                      spec = funcSpec context (datasets,viewEsts,rels,ruls) (lang switches)
-                      
-              
+                      (datasets,generatedServices,rels,ruls) = erAnalysis context
+                      spec = funcSpec context (datasets,generatedServices,rels,ruls) (lang switches)
+
+             helptext
+              = chain "\n"
+                [ "The following functionalities are available:"
+                , "ADL <myfile>.adl -atlas             generate an atlas, which is a website that"
+                , "                                    documents your ADL-script."
+                , "ADL <myfile>.adl -fSpec             generate a functional specification, which"
+                , "                                    is a PDF-document called myfile.pdf."
+                , "ADL <myfile>.adl -phpcode           generate a functional prototype, which is a"
+                , "                                    PHP/MySQL application that resides in directory <myfile>"
+                , "ADL <myfile>.adl -serviceGen        similar to -phpcode, but generates only those"
+                , "                                    services specified in your ADL-script."
+                , "ADL <myfile>.adl -proofs            generate correctness proofs (works partly)"
+                , ""
+                ]
+
              build_NewStyle :: [Fspc] -> [String] -> String -> String -> String -> whatever -> IO ()
              build_NewStyle fspecs switches contextname filename dbName hierGebeurtNietsMee
               = sequence_ 
@@ -201,7 +219,7 @@
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
        spec = funcSpec context (erAnalysis context) language
-       (datasets,viewEsts, relations, ruls) = erAnalysis context
+       (datasets,generatedServices, relations, ruls) = erAnalysis context
 
    showHaskell_new :: [Fspc] -> IO()
  --  showHaskell_new [] = []
@@ -249,16 +267,24 @@
       where
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
-       spec = funcSpec context (datasets,viewEsts,rels,ruls) language
-       (datasets,viewEsts,rels,ruls) = erAnalysis context
+       spec = funcSpec context (datasets,generatedServices,rels,ruls) language
+       (datasets,generatedServices,rels,ruls) = erAnalysis context
 
    viewEstimates :: Contexts -> String ->   String ->    Lang ->  String -> IO()
    viewEstimates    contexts    contextname graphicstyle language filename
-    = putStr (chain "\n\n" (map showADL viewEsts))
+    = putStr (chain "\n\n" (map showADL generatedServices))
       where
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
-       (datasets,viewEsts,rels,ruls) = erAnalysis context
+       (datasets,generatedServices,rels,ruls) = erAnalysis context
+
+   serviceGen :: Contexts -> String ->   String ->    Lang ->  String -> IO()
+   serviceGen    contexts    contextname graphicstyle language filename
+    = putStr (chain "\n\n" (map showADL generatedServices))
+      where
+       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
+       ctxs    = [c| c<-contexts, name c==contextname]
+       (datasets,generatedServices,rels,ruls) = erAnalysis context
 
    archText :: Contexts -> String ->   String ->    Lang ->  String -> IO()
    archText    contexts    contextname graphicstyle language filename
@@ -271,8 +297,8 @@
       where
        context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
        ctxs    = [c| c<-contexts, name c==contextname]
-       spec = funcSpec context (datasets,viewEsts,rels,ruls) language
-       (datasets,viewEsts,rels,ruls) = erAnalysis context
+       spec = funcSpec context (datasets,generatedServices,rels,ruls) language
+       (datasets,generatedServices,rels,ruls) = erAnalysis context
      -- the following is copied from Atlas.lhs. TODO: remove double code.
 
    glossary :: Contexts -> String -> Lang -> IO()

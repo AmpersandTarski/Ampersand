@@ -253,8 +253,12 @@
                                                 (sqlConcept ctx s ++ " AS cfst, "++selectExprBrac ctx (i) trg'' trg'' (Tm (mIs t))++" AS csnd")
                                                 ("1"
                                                 )
-                        where src'  = sqlAttConcept ctx s
-                              trg'  = sqlAttConcept ctx t
+                        where src'  = if s==Anything
+                                      then error ("!Fatal in module RelBinGenBasics: selectExpr ctx i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
+                                      else sqlAttConcept ctx s
+                              trg'  = if t==Anything
+                                      then error ("!Fatal in module RelBinGenBasics: selectExpr ctx i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
+                                      else sqlAttConcept ctx t
                               trg'' = noCollide [src'] trg'
 
    selectExpr ctx i src trg (Tm (I _ s _ _)   ) | s == cptS = selectExpr ctx i src trg (Tm (V [] (s,s)))
@@ -265,7 +269,7 @@
         selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         (selectExprBrac ctx (i) src' mid' e++" AS fst, "++selectExprBrac ctx (i) mid2' trg' (F (f:fx))++" AS snd")
                         ("fst."++mid'++" = snd."++mid2')
-   --  The values of  src', mid', mid2', and trg' might be fantasies (albeit distinct), but have been chosen to be meaningful names derived from source and targets.
+   --  The values of  src', mid', mid2', and trg' can be anything, as long as they are distinct. Here they have been chosen (arbitrarily) to be meaningful names derived from source and targets.
                         where src' = sqlExprSrc e
                               mid' = noCollideUnlessTm e [src'] (sqlExprTrg e)
                               mid2'= sqlExprSrc f

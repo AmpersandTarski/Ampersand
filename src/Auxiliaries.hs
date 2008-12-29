@@ -31,7 +31,7 @@
    import Collection (Collection(isc,uni,(>-),rd))
    import Strings (chain, unCap, upCap,firstCaps)
 
-   adlVersion = "ADL vs. 0.8.10 svn release 185"
+   adlVersion = "ADL vs. 0.8.10 svn revision 186"
    fst3 (a,b,c) = a
    snd3 (a,b,c) = b
    thd3 (a,b,c) = c
