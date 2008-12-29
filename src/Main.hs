@@ -168,6 +168,8 @@
                 , "                                    PHP/MySQL application that resides in directory <myfile>"
                 , "ADL <myfile>.adl -serviceGen        similar to -phpcode, but generates only those"
                 , "                                    services specified in your ADL-script."
+                , "ADL <myfile>.adl -services          generate service definitions from scratch. You may"
+                , "                                    find this useful to start writing SERVICE definitions."
                 , "ADL <myfile>.adl -proofs            generate correctness proofs (works partly)"
                 , ""
                 ]
@@ -180,7 +182,7 @@
                   [ showHaskell_new fspecs | "-Haskell" `elem` switches]  -- ++ 
                   --[ diagnose contexts contextname| "-diag" `elem` switches]++
                   --[ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  --[ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-views" `elem` switches]++
+                  --[ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-services" `elem` switches]++
                   --[ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
                   --[ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
    -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
