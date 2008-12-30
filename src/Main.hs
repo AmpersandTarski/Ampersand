@@ -44,8 +44,11 @@
                      where (yes,no) = splitStr f xs
    splitStr _ [] = ([],[])
 
--- | TODO (SJ) Het volgende is slordige code. Dat moet nog eens netjes worden neergezet, zodat we ook eenvoudig executables kunnen afleiden met een gedeelte van alle functionaliteit.
-
+   -- WAAROM? Stef, het is gelukt! Hieronder heb je Haddock code neergezet. Prima!
+   --         In dit geval is het overigens de vraag of je dat wilt, want nu komt het in de gegenereerde documentatie. Is dat de bedoeling?
+   --         Daarnaast nog even een tip: Ook het commentaar met Haddock code er in moet netjes inspringen. Anders gaat Haddock mopperen. Ik heb het inspringen gerepareerd voor je.
+   --         En als laatste: Kan je me een ftp-site aanwijzen waarop ik de Haddock code kan neerzetten?
+   -- | TODO (SJ) Het volgende is slordige code. Dat moet nog eens netjes worden neergezet, zodat we ook eenvoudig executables kunnen afleiden met een gedeelte van alle functionaliteit.
    main :: IO ()
    main
     = do { -- First, parse the options from the command line:

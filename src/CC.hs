@@ -16,12 +16,6 @@
    diagc = 0
 
 
-
-
-
-
-
-
    keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"
                        , "SERVICE", "INITIAL"
@@ -278,6 +272,7 @@
    pContent         :: Parser Token Pairs
    pContent          = pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
 
+   -- | pProps is bedoeld voor gebruik in relatie-declaraties.
    pProps           :: Parser Token [Prop]
    pProps            = pSpec '['  *> pListSep (pSpec ',') pProp <* pSpec ']'
 
@@ -286,8 +281,7 @@
                        <|> k Sym "SYM" <|> k Asy "ASY" <|> k Trn "TRN" <|> k Rfx "RFX"
                        where k obj str = f <$> pKey str where f _ = obj
 
--- ^ pProps is bedoeld voor gebruik in relatie-declaraties.
--- | De volgende pProps is identiek, maar werkt alleen op UNI en TOT. Ze is bedoeld voor de Service definities.
+   -- | De pProps' is identiek aan pProps, maar werkt alleen op UNI en TOT. Ze is bedoeld voor de Service definities.
 
    pProps'          :: Parser Token [Prop]
    pProps'           = f <$> pList pProp'
