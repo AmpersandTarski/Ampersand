@@ -5,14 +5,21 @@
    import Auxiliaries
    import ADLdef
    import CommonClasses
-   import ERmodel
+   import Data.Fspec
    import ObjBinGenLocalsettings
    import ObjBinGenConnectToDataBase
    import ObjBinGenObject
    import ObjBinGenObjectWrapper
 
-   phpObjServices contexts
-                  contextname
+   phpObjServices :: Context -- should become obsolete, as soon as fSpec takes over...
+                  -> Fspc    -- should take over from Context in due time.
+                  -> String  -- the file name to which these services are written
+                  -> String  -- the database name
+                  -> String  -- the directory to which the result is written
+                  -> Bool    -- a boolean that tells whether to generate services or compile services.
+                  -> IO()
+   phpObjServices context
+                  fSpec
                   filename
                   dbName
                   targetDir
@@ -40,11 +47,8 @@
          ]
       >> putStr ("\n\n")
       where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
-       (datasets, servicesGenerated, rels, ruls) = erAnalysis context
        ls   = localsettings context serviceObjects dbName
        ctdb = connectToDataBase context dbName
        wrapper o = objectWrapper (name o)
        ojs o = objectServices context filename o
-       serviceObjects = if servGen then servicesGenerated else attributes context
+       serviceObjects = if servGen then serviceG fSpec else attributes context

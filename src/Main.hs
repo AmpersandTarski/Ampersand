@@ -13,7 +13,9 @@
    import AGtry (sem_Architecture)
    import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
    import Calc (deriveProofs,triggers)
-   import Views (viewEstimate)
+   import Views (viewDataset)
+   import Dataset
+   import Data.Fspec
    import FspecDEPRECIATED (projectClassic
                 ,generateFspecLaTeX
                 ,generateArchLaTeX
@@ -28,9 +30,8 @@
    import Graphic(processCdDataModelFile,dotGraph,processDotgraphFile)
    import Atlas (anal)
    import Fspec2Xml (makeXML_depreciated)
-   import ERmodel (erAnalysis)
    import ClassDiagram (cdModel,cdDataModel)  
-   import RelBinGen(phpServices)
+--   import RelBinGen(phpServices)  OBSOLETE as of Jan 1st, 2009 (SJ)
    import ObjBinGen(phpObjServices)
    import ADL2Fspec (makeFspecNew2,Fspc)
 
@@ -65,7 +66,8 @@
 
            -- If no errors in the commandline options are found, continue with
            -- parsing of the import file.
-      do { let fn = args!!0; contextname = args!!1
+      do { let fn = args!!0
+               contextname = args!!1
                dbName | null dbArgs = fnOutp
                       | otherwise   = tail (head dbArgs)
                ( _ ,fnSuffix) = (take (length fn-4) fn, drop (length fn-4) fn)
@@ -78,10 +80,17 @@
          
            -- Now continue with typechecking of the parsetree:
          ; let (contexts,errs) = sem_Architecture slRes
+         ; let context = if null contexts
+                         then error ("!Mistake: no context encountered in input file.\n")
+                         else if length args<=1 then head contexts else
+                              let cs = [c| c<-contexts, name c==contextname] in
+                              if null cs
+                              then error ("!Mistake: context "++contextname++" was not encountered in input file.\n")
+                              else head cs
          ; let Typ pths = if null contexts then Typ [] else
                           if length args>1 && contextname `elem` map name contexts
-                          then typology (isa (head [c| c<-contexts,name c==contextname]))
-                          else typology (isa (head contexts))
+                          then typology (ADLdef.isa (head [c| c<-contexts,name c==contextname]))
+                          else typology (ADLdef.isa (head contexts))
          ; putStr "\nConcepts:\n" >>(putStr.chain "\n".map show) (makeTrees (Typ (map reverse pths)))
 
            -- Now we have Contexts with or without errors in it. If there are no errors,
@@ -90,14 +99,14 @@
          ; if null errs 
            then (putStr ("\nNo type errors or cyclic specializations were found.\n")>>
                  if length args==1 && length contexts==1
-                 then (( build_DEPRECEATED contexts switches (name (head contexts)) fnOutp dbName slRes ) >>
-                       ( build_NewStyle (map makeFspecNew2 contexts) switches (name (head contexts)) fnOutp dbName slRes )) else
+                 then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
+                       ( build_NewStyle (map makeFspecNew2 contexts) switches fnOutp dbName slRes )) else
                  if length args==1 && length contexts>1
                  then putStr ("\nPlease specify the name of a context."++
                               "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
                  if length args>1 && contextname `elem` map name contexts
-                 then (( build_DEPRECEATED contexts switches contextname fnOutp dbName slRes ) >>
-                       ( build_NewStyle (map makeFspecNew2 contexts) switches contextname fnOutp dbName slRes ))
+                 then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
+                       ( build_NewStyle (map makeFspecNew2 contexts) switches fnOutp dbName slRes ))
                  else putStr ("\nContext "++contextname++" not defined."++
                               "\nPlease specify the name of an available context."++
                               "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
@@ -107,35 +116,35 @@
                 putStr (concat ["!Error of type "++err| err<-errs])>>
                 putStr ("Nothing generated, please correct mistake(s) first.\n")
          }}
-       where 
+       where
              -- TODO: De volgende build moet worden 'uitgekleed' door de verschillende 
              --       vertaalslagen via Fspec te laten verlopen. Hiervoor is een functie build_NewStyle gemaakt.
-             build_DEPRECEATED :: [Context] -> [String] -> String -> String -> String -> whatever -> IO ()
-             build_DEPRECEATED contexts switches contextname filename dbName hierGebeurtNietsMee
+             build_DEPRECEATED :: Context -> [String] -> String -> String -> Architecture -> IO ()
+             build_DEPRECEATED context switches filename dbName hierGebeurtNietsMee
               = sequence_ 
                  ([ putStr ("Nothing generated.\n"++helptext) | null switches ] ++
-                  [ anal contexts contextname ("-p" `elem` switches) (lineStyle switches)
+                  [ anal context ("-p" `elem` switches) (lineStyle switches)
                   | "-atlas" `elem` switches]++
-                  [ makeXML_depreciated contexts contextname| "-XML" `elem` switches]++
+                  [ makeXML_depreciated context| "-XML" `elem` switches]++
    --               [ showHaskell_new fspec | "-Haskell" `elem` switches]++ 
-                  [ diagnose contexts contextname| "-diag" `elem` switches]++
-                  [ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  [ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-serviceEsts" `elem` switches]++
-                  [ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
-                  [ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
-   -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
-                  [ cdModel contexts contextname | "-CD" `elem` switches]++
-                  [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") True | "-phpcode" `elem` switches]++
-                  [ phpObjServices contexts contextname filename dbName ("./"++filename++"/") False | "-serviceGen" `elem` switches]++
-                  [ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
-                  [ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
-                  [ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
- --               ++[ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]
- --               ++[ csvcontent contexts contextname | "-csv" `elem` switches]
+                  [ diagnose context| "-diag" `elem` switches]++
+                  [ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+                  [ serviceGens fSpec (lang switches) filename| "-services" `elem` switches]++
+                  [ archText context (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
+                  [ glossary context (lang switches) | "-g" `elem` switches]++
+   -- out of order[ erModel context | "-ER" `elem` switches]++
+                  [ cdModel context | "-CD" `elem` switches]++
+                  [ phpObjServices context fSpec filename dbName ("./"++filename++"/") True | "-phpcode" `elem` switches]++
+                  [ phpObjServices context fSpec filename dbName ("./"++filename++"/") False | "-serviceGen" `elem` switches]++
+ --                 [ phpServices context filename dbName True True | "-beeper" `elem` switches]++
+ --                 [ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
+                  [ deriveProofs context ("-m" `elem` switches)| "-proofs" `elem` switches]
+ --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
+ --               ++[ csvcontent context | "-csv" `elem` switches]
  --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
                  ) >>
                     putStr ("\nwriting to \\ADL.log:\nADL "++filename++" "++chain " " switches++"\n") >>
-                    putStr ("  nr. of classes:                    "++show (length datasets)++"\n") >>
+                    putStr ("  nr. of data sets:                  "++show (length datasets)++"\n") >>
                     putStr ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
                     putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
                     putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
@@ -155,10 +164,11 @@
                     appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n")
                    where
-                      context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-                      ctxs    = [c| c<-contexts, name c==contextname]
-                      (datasets,generatedServices,rels,ruls) = erAnalysis context
-                      spec = funcSpec context (datasets,generatedServices,rels,ruls) (lang switches)
+                      fSpec = makeFspecNew2 context
+                      spec  = funcSpec context (lang switches)
+                      datasets = makeDatasets context
+                      rels  = declarations context
+                      ruls  = rules context
 
              helptext
               = chain "\n"
@@ -171,35 +181,35 @@
                 , "                                    PHP/MySQL application that resides in directory <myfile>"
                 , "ADL <myfile>.adl -serviceGen        similar to -phpcode, but generates only those"
                 , "                                    services specified in your ADL-script."
-                , "ADL <myfile>.adl -services          generate service definitions from scratch. You may"
-                , "                                    find this useful to start writing SERVICE definitions."
+                , "ADL <myfile>.adl -services          generate service definitions from scratch and display "
+                , "                                    on standard output. You may find this useful"
+                , "                                    to start writing SERVICE definitions."
                 , "ADL <myfile>.adl -proofs            generate correctness proofs (works partly)"
                 , ""
                 ]
 
-             build_NewStyle :: [Fspc] -> [String] -> String -> String -> String -> whatever -> IO ()
-             build_NewStyle fspecs switches contextname filename dbName hierGebeurtNietsMee
+             build_NewStyle :: [Fspc] -> [String] -> String -> String -> Architecture -> IO ()
+             build_NewStyle fspecs switches filename dbName hierGebeurtNietsMee
               = sequence_ 
-                 (--[ anal contexts contextname ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
-                  --[ makeXML_depreciated contexts contextname| "-XML" `elem` switches]++
+                 (--[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
+                  --[ makeXML_depreciated context| "-XML" `elem` switches]++
                   [ showHaskell_new fspecs | "-Haskell" `elem` switches]  -- ++ 
-                  --[ diagnose contexts contextname| "-diag" `elem` switches]++
-                  --[ functionalSpecLaTeX contexts contextname (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  --[ viewEstimates contexts contextname (lineStyle switches) (lang switches) filename| "-services" `elem` switches]++
-                  --[ archText contexts contextname (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
-                  --[ glossary contexts contextname (lang switches) | "-g" `elem` switches]++
-   -- out of order[ erModel contexts contextname | "-ER" `elem` switches]++
-                  --[ cdModel contexts contextname | "-CD" `elem` switches]++
-                  --[ phpObjServices contexts contextname filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
-                  --[ phpServices contexts contextname filename dbName True True | "-beeper" `elem` switches]++
-                  --[ phpServices contexts contextname filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
-                  --[ deriveProofs contexts contextname ("-m" `elem` switches)| "-proofs" `elem` switches]
- --               ++[ projectSpecText contexts contextname (lang switches) | "-project" `elem` switches]
- --               ++[ csvcontent contexts contextname | "-csv" `elem` switches]
+                  --[ diagnose context| "-diag" `elem` switches]++
+                  --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+                  --[ viewEstimates context (lineStyle switches) (lang switches) filename| "-services" `elem` switches]++
+                  --[ archText context (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
+                  --[ glossary context (lang switches) | "-g" `elem` switches]++
+   -- out of order[ erModel context | "-ER" `elem` switches]++
+                  --[ cdModel context | "-CD" `elem` switches]++
+                  --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
+                  --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++
+                  --[ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
+                  --[ deriveProofs context ("-m" `elem` switches)| "-proofs" `elem` switches]
+ --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
+ --               ++[ csvcontent context | "-csv" `elem` switches]
  --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
                  ) 
-                where 
-                   fspec = [f| f<-fspecs, name f==contextname]
+
              lineStyle switches
               | "-crowfoot" `elem` switches = "crowfoot"
               | otherwise                   = "cc"
@@ -208,23 +218,17 @@
               | "-UK" `elem` switches = English
               | otherwise             = Dutch
 
-   diagnose :: Contexts -> String -> IO()
-   diagnose contexts contextname
+   diagnose :: Context -> IO()
+   diagnose context
     = putStr (showHS "\n>  " context)
-      where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
 
-   projectSpecText :: Contexts -> String -> Lang -> IO()
-   projectSpecText contexts contextname language
+   projectSpecText :: Context -> Lang -> IO()
+   projectSpecText context language
     = putStrLn ("\nGenerating project plan for "++name context)                >>
       writeFile (name context++".csv") (projectClassic context spec language)  >>
       putStr ("\nMicrosoft Project file "++name context++".csv written... ")
       where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
-       spec = funcSpec context (erAnalysis context) language
-       (datasets,generatedServices, relations, ruls) = erAnalysis context
+       spec = funcSpec context language
 
    showHaskell_new :: [Fspc] -> IO()
  --  showHaskell_new [] = []
@@ -259,8 +263,8 @@
        baseName = "f_Ctx_"++(name fspc)
 
 
-   functionalSpecLaTeX :: Contexts -> String ->   String ->    Lang ->  String -> IO()
-   functionalSpecLaTeX    contexts    contextname graphicstyle language filename
+   functionalSpecLaTeX :: Context -> String ->    Lang ->  String -> IO()
+   functionalSpecLaTeX    context    graphicstyle language filename
     = putStr ("\nGenerating functional specification for context "++
               name context++" in the current directory.\n")                   >>
       graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
@@ -270,29 +274,14 @@
       putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
       processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
       where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
-       spec = funcSpec context (datasets,generatedServices,rels,ruls) language
-       (datasets,generatedServices,rels,ruls) = erAnalysis context
+       spec = funcSpec context language
 
-   viewEstimates :: Contexts -> String ->   String ->    Lang ->  String -> IO()
-   viewEstimates    contexts    contextname graphicstyle language filename
-    = putStr (chain "\n\n" (map showADL generatedServices))
-      where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
-       (datasets,generatedServices,rels,ruls) = erAnalysis context
+   serviceGens :: Fspc -> Lang ->  String -> IO()
+   serviceGens    fSpec   language filename
+    = putStr (chain "\n\n" (map showADL (serviceG fSpec)))
 
-   serviceGen :: Contexts -> String ->   String ->    Lang ->  String -> IO()
-   serviceGen    contexts    contextname graphicstyle language filename
-    = putStr (chain "\n\n" (map showADL generatedServices))
-      where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
-       (datasets,generatedServices,rels,ruls) = erAnalysis context
-
-   archText :: Contexts -> String ->   String ->    Lang ->  String -> IO()
-   archText    contexts    contextname graphicstyle language filename
+   archText :: Context -> String ->    Lang ->  String -> IO()
+   archText    context    graphicstyle language filename
     = putStr ("\nGenerating architecture document for context "++
               name context++" in the current directory.\n")                   >>
       graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
@@ -300,21 +289,14 @@
       putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
       processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.
       where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
-       spec = funcSpec context (datasets,generatedServices,rels,ruls) language
-       (datasets,generatedServices,rels,ruls) = erAnalysis context
-     -- the following is copied from Atlas.lhs. TODO: remove double code.
+       spec = funcSpec context language
 
-   glossary :: Contexts -> String -> Lang -> IO()
-   glossary    contexts contextname language
+   glossary :: Context -> Lang -> IO()
+   glossary    context language
     = putStr ("\nGenerating Glossary for "++name context++" in the current directory.") >>
       writeFile ("gloss"++name context++".tex") (generateGlossaryLaTeX context language)           >>
       putStr ("\nLaTeX file "++"gloss"++name context++".tex written... ") >>
       processLaTeX2PDF ("gloss"++name context)
-      where
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
 
   --  graphics ::  Context -> String -> String -> Bool ->  { Pattern of Context ??? } -> IO()
    graphics context fnm graphicstyle full b

@@ -40,30 +40,27 @@
 
    testing = False
 
-   anal contexts contextname predLogic graphicstyle
-    | null ctxs = putStr ("!Mistake: "++contextname++" not encountered in input file.\n")
-    | otherwise =  putStr ("\nGenerating Atlas for "++name context++" in the current directory."++
-                           "\n  (current directory must already contain the directory \"treemenutils\""++
-                           " with its complete contents)\n")                                               >>
-  --              writing the large rhs frame (concept) with empty contents
-                   writeFile "Concept.html" (htmlPage "Concept" leader (htmlBody introtext))               >>
-                   putStr ("Concept.html written,\n")                                                      >>
-  --              writing context switching (top left)
-                   writeFile ("CTX_"++fnContext context++".html") (contextFrame (Cl context world))        >>
-                   putStr("HTML code for context tree "++fnContext context++".html written\n")             >>
-  --              writing the main html page, containing the required frames
-                   writeFile "index.html" (indexcode (fnContext context++".html"))                         >>
-                   putStr ("index.html written,\n")                                                        >>
-  --              writing the content for all contexts in ctxTree
-                   (if testing then (writeFile "test.txt".showHS "".preCl) (Cl context world) else
-                    putStr "")                                                                             >>
-                   putStr "\nStarting generation of navigators\n"                                          >>
-                   sequence_ [navigators cTrees c predLogic graphicstyle| c<-preCl (Cl context world)]     >>
-                   putStr "\nStarting generation of analysis\n"                                            >>
-                   sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
+   anal context predLogic graphicstyle
+    = putStr ("\nGenerating Atlas for "++name context++" in the current directory."++
+               "\n  (current directory must already contain the directory \"treemenutils\""++
+               " with its complete contents)\n")                                               >>
+  --  writing the large rhs frame (concept) with empty contents
+       writeFile "Concept.html" (htmlPage "Concept" leader (htmlBody introtext))               >>
+       putStr ("Concept.html written,\n")                                                      >>
+  --  writing context switching (top left)
+       writeFile ("CTX_"++fnContext context++".html") (contextFrame (Cl context world))        >>
+       putStr("HTML code for context tree "++fnContext context++".html written\n")             >>
+  --  writing the main html page, containing the required frames
+       writeFile "index.html" (indexcode (fnContext context++".html"))                         >>
+       putStr ("index.html written,\n")                                                        >>
+  --  writing the content for all contexts in ctxTree
+       (if testing then (writeFile "test.txt".showHS "".preCl) (Cl context world) else
+        putStr "")                                                                             >>
+       putStr "\nStarting generation of navigators\n"                                          >>
+       sequence_ [navigators cTrees c predLogic graphicstyle| c<-preCl (Cl context world)]     >>
+       putStr "\nStarting generation of analysis\n"                                            >>
+       sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
       where
-       ctxs     = [{- recalc -} c| c<-contexts, name c==contextname]
-       context  = head ctxs
        cTrees   = makeTrees (Typ (map reverse pths))
        Typ pths = typology (isa context)
        gE    = genE context

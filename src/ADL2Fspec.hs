@@ -1,4 +1,4 @@
-  module ADL2Fspec (makeFspecNew2,Fspc)
+  module ADL2Fspec (makeFspecNew2,Fspc,makeDatasets)
   where
    import CommonClasses ( Identified(name))
    import Collection    ( Collection (isc,(>-),rd) )
@@ -6,11 +6,12 @@
    import Char(toLower)
    import Strings(firstCaps,idNam,chain)
    import ADLdef
+   import Dataset
    import ShowADL
    import FspecDef
    import LaTeX (tt)   -- Dat is hier natuurlijk helemaal niet op z'n plaats! (TODO opruimen)
    import Calc(lClause,rClause,makeRule)
-   import ERmodel(erAnalysis)
+--   import ERmodel(erAnalysis)
 
  -- The story:
  -- A number of datasets for this context is identified.
@@ -20,13 +21,71 @@
 
    makeFspecNew2 :: Context -> Fspc
    makeFspecNew2 context
-     = Fspc fid themes datasets fviews frules frels isa where
+     = Fspc fid themes datasets serviceS serviceG fviews frules frels isa where
         fid      = makeFSid1 (name context)
+-- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
+-- needs to be introduced in the same unit of text. For that purpose everything is allocated to a theme only once.
         themes   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
                    ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
                    )
-        datasets = rd [datasetMor context m| m<-mors context]
-        fviews   = [ makeFview context a | a <-attributes context]
+-- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
+-- of relations together with multiplicity constraints. That is what serviceG does.
+-- This is meant to help a developer to build his own list of services, by providing a set of services that works.
+-- The developer will want to assign his own labels and maybe add or rearrange attributes.
+-- This is easier than to invent a set of services from scratch.
+-- At a later stage, serviceG will be used to generate semantic error messages. The idea is to compare a service
+-- definition from the ADL-script with the generated service definition and to signal missing items.
+-- Rule: a service must be large enough to allow the required transactions to take place within that service.
+        serviceG
+         = concat
+           [ [ (objdefNew (v (cptS,c)))
+                  { objnm  = name c
+                  , objats = [ (objdefNew (Tm m))
+                                  { objnm  = show (name m++" "++name (target m))
+                                  , objats = let ats = [ (objdefNew att) { objnm = showADL att++" "++name (target att) }
+                                                       | att<-recur [] (target m)]
+                                             in if null ats then []
+                                                else ((objdefNew (Tm (mIs (target m))))
+                                                         { objnm = name (target m) }):ats
+                                  }
+                             | m<-relsFrom c, not (isSignal m)]++
+                             [ (objdefNew (notCp (normExpr (srsig s)))) {objnm=name m}
+                             | m<-relsFrom c, isSignal m, s<-signals context, source m==source s, name (srrel s) == name m ]++
+                             [ (objdefNew (notCp (normExpr (flp (srsig s))))) {objnm=name m}
+                             | m<-relsFrom c, isSignal m, s<-signals context, source m==target s, name (srrel s) == name m ]
+                  }]
+             ++let ats = [ (objdefNew (Tm m))
+                              { objnm  = show (name m++" "++name (target m))
+                              , objats = []
+                              }
+                         | m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+               in [(objdefNew (Tm (mIs S)))
+                     { objnm  = name c++"s"
+                     , objats = [ (objdefNew (v(S,c)))
+                                     { objnm  = name c++"s"
+                                     , objats = ((objdefNew (Tm (mIs c))) { objnm = "nr" }): ats
+                                     } ]
+                     }| not (null ats)]
+           | c<-concs context ]
+           where
+            relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d<-declarations context, source d == c]++
+                         [flp (Mph (name d) posNone [] (source d,target d) True d)| d<-declarations context, target d == c]
+            recur :: [Morphism] -> Concept -> [Expression]
+            recur rs c
+             = [ F [Tm m| m<-rs++[n]] | n<-new, not (n `elem` rs)] ++
+               [ rs' | n<-new, not (n `elem` rs), rs' <-recur (rs++[n]) (target n) ] 
+               where new = [m| m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+-- serviceS contains the services defined in the ADL-script.
+-- services are meant to create user interfaces, programming interfaces and messaging interfaces.
+-- A generic user interface (the Monastir interface) is already available.
+        serviceS = attributes context
+{- A dataset combines all functions that share the same source.
+   This is used for function point analysis (in which data sets are counted).
+   It can also be used in code generate towards SQL, allowing the code generator to
+   implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
+   Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
+        datasets = makeDatasets context
+        fviews   = [ makeFview context a | a <-serviceS]
         frules   = [ makeFrule context r | r <-rules context]
         frels    = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
         isa      = ctxisa context
@@ -71,17 +130,25 @@
  -- The patterns with the appropriate datasets are determined:
         pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
-
-  -- Dataset should not be made Morphical, because it would make it too dependant from ADL. For this reason the functions are defined as follows: 
-   declarationsDS :: Dataset -> Declarations
-   declarationsDS ds = declarations (morsDS ds)
-   morsDS :: Dataset -> Morphisms 
-   morsDS (DS c pths) = pths
-   morsDS (BR m     ) = [m]
-   concsDS :: Dataset ->  Concepts
-   concsDS ds = concs (morsDS ds)
-
-
+{- Obsolete stuff: in the days before Fspc, we used to have this function
+   erAnalysis :: Language a	 => a -> ([ObjectDef],[ObjectDef],[Declaration],[String])
+   erAnalysis :: Context -> ([ObjectDef],[ObjectDef],[Declaration],[String])
+   erAnalysis ctx = (serviceS fspc, serviceG fspc, rels, ruls)
+    where
+     datasets
+      = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
+                                          , objats = [ (objdefNew (Tm e)) { objnm = name e }
+                                                     | e<-as ]
+                                          }
+        | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
+     attrs :: [Morphism]
+     attrs = [Mph (name d ++ if isFlpFunction d then "Fun" else "") posNone [] (source d,target d) True d | d<-declarations p,    isFunction d] ++
+             [flp (Mph (name d++if isFunction d then "Inv" else "") posNone [] (source d,target d) True d)| d<-declarations p, isFlpFunction d] ++
+             [     Mph (name d) posNone [] (source d,target d) True d | d<-declarations p, isProperty d]
+     fspc = makeFspecNew2 ctx
+     rels = [d| d<-declarations ctx, not (isFunction d), not (isFunction (flp d))]
+     ruls = [showADL r| r<-declaredRules ctx]
+-}
 
 
 
@@ -93,11 +160,6 @@
         units = [makeFunit context pat (objs ds) [] []| ds<-dss]
          where
           objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
-
-   datasetMor :: Context -> Morphism -> Dataset
-   datasetMor context m | isFunction      m  = makeDataset context (source m)
-                        | isFunction (flp m) = makeDataset context (target m)
-                        | otherwise          = BR m
 
    makeFview :: Context -> ObjectDef -> Fview
    makeFview context o
@@ -137,30 +199,11 @@
                      | o<-objs ])
 
 
-
-
-   makeDataset :: Context -> Concept -> Dataset
-   makeDataset context c
-    = DS (minimum [g|g<-concs context,g<=head cl]) dss
-      where
-       cl   = head ([cl| cl<-eCls, c `elem` cl]++error ("!Fatal (module Fspec>dataset): cannot determine dataset for concept "++name c))
-       eCls = eqClass bi (concs context)
-       c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
-                               , source m<=c && target m<=c'  ||  source m<=c' && target m<=c])
-       dss = [     makeMph d | d<-declarations context, isFunction      d , source d `elem` cl]++
-             [flp (makeMph d)| d<-declarations context, isFunction (flp d), target d `elem` cl]
-
-
-
-
-
-
-
-
-
-
-
-
+{- Datasets zijn bedoeld voor functiepuntentellingen en voor mogelijke efficiency-redenen in SQL-implementaties.
+   Ze brengen een aantal relaties bijeen die zich als één SQL-tabel laten implementeren.
+   De volgende drie functies, makeDataset, makeDatasets en datasetMor, horen bij elkaar
+   en moeten onderling consistent blijven.
+-}
 
 
 
@@ -334,9 +377,8 @@
                          "&)\n\\end{array}$"
                          )]
 
-   handle :: Identified a => Context -> a -> String
-   handle context c = firstCaps (name c)++if name c `elem` (map name datasets) then "Handle" else ""
-    where (datasets,viewEsts,relations,ruls) = erAnalysis context
+   handle :: Context -> ObjectDef -> String
+   handle context c = firstCaps (name c)++if name c `elem` (map name (makeDatasets context)) then "Handle" else ""
 
    dressRules :: [(Expression,Rule)] -> [Rule]
    dressRules clauses = [ if length cl>1 then rule else makeRule rule clause | cl<-(map rd.eqCl snd) clauses, (clause,rule)<-take 1 cl]

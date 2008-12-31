@@ -10,12 +10,22 @@ module Data.Fspec where
                , Pattern
                )
 
+{- The intentions behind Fspc (SJ 30 dec 2008):
+Generation of functional specifications is the core functionality of ADL.
+All items in a specification are generated into the following data structure, Fspc.
+It is built by compiling an ADL-script and translating that to Fspc.
+In the future, other ways of "filling" Fspc are foreseen.
+All generators (such as the code generator, the proof generator, the atlas generator, etc.)
+are merely different ways to show Fspc.
+-}
    import Typology(Inheritance)
    data Fspc = Fspc -- Fctx 
               { fsfsid   :: FSid  -- The name of the specification
               , themes   :: [Ftheme]      -- One for every pattern
-              , datasets :: [Dataset]     -- One for every (group of) relations
-              , views    :: [Fview]       -- One for every view 
+              , datasets :: [Dataset]     -- This list contains the data sets that are computed from the basic ontology.
+              , serviceS :: [ObjectDef]   -- all services defined in the ADL-script
+              , serviceG :: [ObjectDef]   -- all services derived from the basic ontology
+              , views    :: [Fview]       -- One for every service 
               , vrules   :: [Frule]       -- One for every rule
               , vrels    :: [Declaration] -- One for every declaration
               , isa      :: (Inheritance Concept) -- The data structure containing the generalization structure of concepts

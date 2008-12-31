@@ -69,6 +69,11 @@
 
 
 
+   instance Identified Dataset where
+     name (DS c pths) = name c
+     name (BR m) = name m
+     typ  (DS c pths) = "f_DS"
+     typ  (BR m) = "f_DS"
 
 
    instance Fidentified Dataset where
@@ -188,6 +193,8 @@
 
    instance Identified FSid where
     name (FS_id nm) = nm
+    typ _ = "f_Id"
+
    instance ShowHS FSid where
     showHSname a@(FS_id nm ) = haskellIdentifier nm 
     showHS indent (FS_id nm) 
@@ -202,12 +209,8 @@
 
    
    instance Identified Ftheme where
-     typ  f = "f_Thm"
+    typ  f = "f_Thm"
      
-   instance Identified Dataset where
-     typ  (DS c pths) = "f_DS"
-     typ  (BR m) = "f_DS"
-
    instance Identified Fview where
     typ fview = "f_View"
    
@@ -216,8 +219,7 @@
      
    instance Identified Funit where
     typ funit = "f_Unit"
-    
+
    instance Identified ServiceSpec where
     typ sspc = "f_svc"
-    
        

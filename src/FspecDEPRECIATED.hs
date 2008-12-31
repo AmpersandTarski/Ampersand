@@ -46,7 +46,6 @@
    import Calc
    import PredLogic
    import HtmlFilenames
-   import ERmodel (erAnalysis)
    import LaTeX
 
 
@@ -94,10 +93,11 @@
             ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
             )
             datasets
-            [ makeFview context o  | o <-attributes context]
+            [ makeFview context o | o <-attributes context]
             [ makeFrule context r | r <-rules context]
        where
-        datasets = rd [datasetMor context m| m<-mors context]
+        datasets = makeDatasets context
+
  -- next thing, we look which datasets will be discussed in which themes.
  -- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
  -- because we assume that the programmer found it important enough to define that concept in that pattern.
@@ -136,6 +136,21 @@
    --              pops  = populations context
  -- The patterns with the appropriate datasets are determined:
         pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
+
+   instance Identified Dataset where
+     name (DS c pths) = name c
+     name (BR m) = name m
+     
+   makeDatasets :: Context -> [Dataset]
+   makeDatasets context
+    = [ DS (minimum [g|g<-concs context,g<=head cl]) (dss cl)
+      | cl<-eqClass bi (concs context) ]
+      where
+       c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
+                               , source m<=c && target m<=c'  ||  source m<=c' && target m<=c])
+       dss cl = [     makeMph d | d<-declarations context, isFunction      d , source d `elem` cl]++
+                [flp (makeMph d)| d<-declarations context, isFunction (flp d), target d `elem` cl]
+
 
    data Frule = Frul Rule
 
@@ -194,21 +209,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-   datasetMor :: Context -> Morphism -> Dataset
-   datasetMor context m | isFunction      m  = dataset context (source m)
-                        | isFunction (flp m) = dataset context (target m)
-                        | otherwise          = BR m
 
    instance Morphical Dataset where
     concs        (DS c pths) = concs pths
@@ -684,7 +684,7 @@
 
 
 
-   funcSpec context (datasets,viewEsts,relations,ruls) language
+   funcSpec context language
     = [ Tspc pat 
              ([ Uspc (firstCaps (name o)) pat [ {- (o,ILGV Eenvoudig,cs,rs) -} ]
                      ({- [ createObj context o rs ] ++ [ readObj context o]                           ++
@@ -697,15 +697,6 @@
       | (pat,newConcs,newDecls)<-zip3 (patterns context) (firsts [] (map concs (patterns context))) (firsts [] (map declarations (patterns context)))
       , car<-[definedEnts context pat], not (null car), ec<-[ents car] ]
       where
-
-
-
-
-
-
-
-
-
        ents car = [ (o,if null (attributes o) then NO else ILGV Eenvoudig,cs,rs)
                   | o<-car
  -- selecteer alle geldende regels, die relevant zijn voor o. Bepaal daarvan de conjuncts, omdat elke conjunct waar moet blijven.
@@ -742,6 +733,7 @@
                  ]]
           , not (null ss)
           ]
+       relations = declarations context
        hcs = [hc| rule<-rules context, hc<-triggers rule ]
 
    funcSpecText context fspcs English
@@ -938,8 +930,7 @@
    firsts seen (ds:dss) = new: firsts (seen++new) dss where new = ds>-seen
    firsts seen [] = []
    handle :: Identified a => Context -> a -> String
-   handle context c = firstCaps (name c)++if name c `elem` (map name datasets) then "Handle" else ""
-    where (datasets,viewEsts,relations,ruls) = erAnalysis context
+   handle context c = firstCaps (name c)++if name c `elem` (map name (makeDatasets context)) then "Handle" else ""
 
    srvSchema pat language cnm (Sspc nm sees changes fpa input output rs pre post) new
     = latexSubsection nm nm++
@@ -1051,7 +1042,6 @@
        ps = [ (p,e,[r|(_,_,r)<-cl]) | cl <-eqCl (\(p,o,_)->(p,name o)) rs, (p,e,_)<-take 1 cl ]
        rs = [ (name pat,o,rule)
             | pat<-patterns context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
-       (datasets,viewEsts, relations, ruls) = erAnalysis context
 
    nDesignPr context = n where (_,n) = dp undef f context where undef=undef; f=f
    designPrinciples English context = dps
@@ -1238,7 +1228,7 @@
        , "\\label{bibliography"++name context++"}"
        ] else [] )
        where
-        spec = funcSpec context (erAnalysis context) language
+        spec = funcSpec context language
         cList = concs context>-rd [cptnew nm| Cd pos nm def ref<-conceptDefs context]
  --       nav :: Classification Concept
  --       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
@@ -1307,7 +1297,7 @@
        , latexFigure (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_CD.png}")++
          "\n\\caption{Gegevensmodel van "++latexWord cname++"}\n\\label{fig:"++cname++"CD}")
        , "\tDit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties."
-       , funcSpecLaTeX context (funcSpec context (erAnalysis context) Dutch) Dutch
+       , funcSpecLaTeX context (funcSpec context Dutch) Dutch
        , latexChapter "Terminologie" ("typology"++cname)
  --      , "De terminologie is ontleend aan het Divisie Informatieplan \\cite{TPDI},"
  --      , "de begrippenlijst voor \\mulF{} \\cite{MultiFit} en de begrippen gebruikt in de voorstudie SBD \\cite{SBD}."
@@ -1364,7 +1354,7 @@
        , latexFigure (latexCenter ("  \\includegraphics[scale=.4]{"++cname++"_CD.png}")++
          "\n\\caption{Data structure of "++latexWord cname++"}\n\\label{fig:"++cname++"CD}")
        , "\tDetails are provided in the following sections."
-       , funcSpecLaTeX context (funcSpec context (erAnalysis context) English) English
+       , funcSpecLaTeX context (funcSpec context English) English
        , latexChapter "Glossary" ("typology"++cname)
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
@@ -1378,7 +1368,7 @@
        , "\\label{bibliography"++name context++"}"
        ] else [] )
        where
-        spec = funcSpec context (erAnalysis context) language
+        spec = funcSpec context language
         cList = concs context>-rd [cptnew nm| Cd pos nm def ref<-conceptDefs context]
  --       nav :: Classification Concept
  --       nav  = sortCl before (Cl (Anything (genE context)) (makeTrees typ))
@@ -1935,5 +1925,4 @@
           , Tsk "Transfer" "1 mon" "" ["Roll-out"]
           , Tsk "after care" "3 mons" "" ["Transfer"]
           ]
-       (datasets,viewEsts, relations, ruls) = erAnalysis context
 

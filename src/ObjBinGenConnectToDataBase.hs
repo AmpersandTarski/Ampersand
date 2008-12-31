@@ -11,7 +11,6 @@
                 , applyM
                 )
    import CommonClasses
-   import ERmodel
    import PredLogic -- (for error messages by dbCorrect)
    import Hatml     -- (for converting error messages to HTML)
    import Atlas     -- (for converting error messages to HTML)

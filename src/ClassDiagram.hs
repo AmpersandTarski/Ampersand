@@ -27,11 +27,9 @@
             ( genGraphics)
 
    -- |   'cdModel' generates a 'Graphic' for a named 'Context'. 
-   cdModel :: Contexts   -- ^ Contexts that contains the specific context
-           -> String     -- ^ Identifier of the contexts to generate a graphic for
-           -> IO()		 -- ^ Good old system to put the results...
+   cdModel :: Context -> IO()
  
-   cdModel contexts contextname
+   cdModel context
     = putStr ("\nObject oriented analysis for "++name context++"\n")           >>
       (writeFile (fnm++".dot"). cdDataModel context False layout) context >>   -- generate abbreviated class diagram  (pick True for full class diagram)
       putStr (fnm++".dot written\n")>>
@@ -40,8 +38,6 @@
        layout  = "neato" -- nongravitational layout
             -- = "dot"   -- vertical layout (default)
        rs      = declaredRules context
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
        shR r   = showADL r
        fnm     = fnContext context++"_CD"
 

@@ -20,18 +20,17 @@
    import ADLdef
    import ShowADL
    import CC_aux
-   import ERmodel
    import Graphic
 
 
 
-   deriveProofs contexts contextname multiplicityAnalysis
+   deriveProofs context multiplicityAnalysis
     = putStr ("\nSignals for "++name context++"\n--------------\n")>>
       putStr (proof (signals context))>>
       putStr ("\nRules for "++name context++"\n--------------\n")>>
       putStr (proof (declaredRules context))>>
       ( if not multiplicityAnalysis then putStr "" else
-        let fnm = "MULT"++contextname in
+        let fnm = "MULT"++name context in
         putStr ("\n--------------\n"++
                 "Multiplicity Analysis:\n")>>
   {- obsolete?  chain "\n\n" [ showMLink deriv
@@ -66,10 +65,7 @@
                               | o<-attributes context, c<-[concept o]]) >>
       putStr "\n--------------\n"
       where
-       (datasets,viewEsts, relations, ruls) = erAnalysis context
        hcs = [hc| rule<-declaredRules context++multRules context, hc<-triggers rule ]
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs = [ c| c<-contexts, name c==contextname]
        sh x = showHS "" x
        codeFragments :: [ECArule]
        codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
@@ -154,7 +150,7 @@
                                             then "A reaction is not required, because  r -: r'. Proof:"++(showProof.derivMono r ev) m++"\n"
                                             else "The correct reaction on this event is\n"++show (ECA (On ev m) (doCode viols Ins r'))
                                       )
-                                    | m<-rd [m|x<-mors r, m<-[x,flp x], inline m]
+                                    | m<-rd [m|x<-mors r, m<-[x,flp x], inline m, not (isIdent m)] -- TODO: include proofs that allow: isIdent m
                                     , ev<-[Ins,Del]
                                     , r'<-[subst (Tm m,actSem ev (Tm m) (delta (sign m))) r]
                                     , nr'<-[conjNF r']

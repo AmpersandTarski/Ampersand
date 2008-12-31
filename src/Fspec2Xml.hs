@@ -12,14 +12,12 @@
    import CC_aux ( explain)
    import FspecDef
    
-   makeXML_depreciated contexts contextname
+   makeXML_depreciated context
     = putStr ("\nXML representation of "++name context++"\n")>>
-      writeFile (contextname++".xml") (showXML context "")>>
-      putStr ("\n"++contextname++".xml written\n")
+      writeFile (name context++".xml") (showXML context "")>>
+      putStr ("\n"++name context++".xml written\n")
     where
-       rs      = rules (head ctxs)
-       context = if null ctxs then error ("!Mistake: "++contextname++" not encountered in input file.\n") else head ctxs
-       ctxs    = [c| c<-contexts, name c==contextname]
+       rs      = rules context
 
 
 
