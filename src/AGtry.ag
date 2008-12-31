@@ -8,6 +8,9 @@ DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:Conc
 DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
                    | Gc gluePos:{FilePos} m:Morphism expr:Expression cpu:Expressions sgn:{(Concept,Concept)} nr:Int pn:String
+DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
+DATA Population    | Popu m:Morphism ps:{[Paire]}
+DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
 DATA Expression    | Tm m:Morphism
                    | Tc c:Expression
                    | F ts:Expressions
@@ -17,23 +20,20 @@ DATA Expression    | Tm m:Morphism
                    | K0 e:Expression
                    | K1 e:Expression
                    | Cp e:Expression
+DATA Gen           | G pos:FilePos genus:Concept spec:Concept
+DATA Morphism      | Mph nm:String pos:FilePos atts:{[Concept]} sgn:{(Concept,Concept)} yin:Bool decl:Declaration
+                   | I atts:{[Concept]} g:Concept s:Concept yin:Bool -- if yin then the (source,target) is (s,g) else it is (g,s)
+                   | V atts:{[Concept]} sgn:{(Concept,Concept)}
 DATA Declaration   | Sgn nm:String a:Concept b:Concept props:{[Prop]} prL:String prM:String prR:String content:{[Paire]} expla:String morPos:{FilePos} nr:Int sig:Bool
                    | Isn g:Concept s:Concept
                    | Iscompl g:Concept s:Concept
                    | Vs g:Concept s:Concept
-DATA Morphism      | Mph nm:String pos:FilePos atts:{[Concept]} sgn:{(Concept,Concept)} yin:Bool decl:Declaration
-                   | I atts:{[Concept]} g:Concept s:Concept yin:Bool -- if yin then the (source,target) is (s,g) else it is (g,s)
-                   | V atts:{[Concept]} sgn:{(Concept,Concept)}
-DATA Prop          | Uni | Tot | Inj | Sur | Sym | Asy | Trn
-DATA Gen           | G pos:FilePos genus:Concept spec:Concept
+DATA ConceptDef    | Cd pos:{FilePos} nm:String def:String ref:String
 DATA Concept       | C c:String gE:GenR os:{[String]}
                    | S
                    | Anything
                    | NOthing
-DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
-DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
-DATA ConceptDef    | Cd pos:{FilePos} nm:String def:String ref:String
-DATA Population    | Popu m:Morphism ps:{[Paire]}
+DATA Prop          | Uni | Tot | Inj | Sur | Sym | Asy | Trn
 
 TYPE ConceptDefs   = [ConceptDef]
 TYPE Contexts      = [Context]

@@ -1,0 +1,59 @@
+
+Architecture -> Context
+
+Context -> Concept
+Context -> Pattern
+Context -> Rule
+Context -> Declaration
+Context -> ConceptDef
+Context -> KeyDef
+Context -> ObjDef
+Context -> Population
+
+Pattern -> Rule
+Pattern -> Gen
+Pattern -> Declaration
+Pattern -> ConceptDef
+Pattern -> KeyDef
+
+Rule -> Expression
+Rule -> FilePos
+Rule -> (Concept,Concept)
+Rule -> Declaration
+Rule -> Morphism
+Rule -> AutType
+
+KeyDef -> FilePos
+KeyDef -> Expression
+KeyDef -> ObjectDef
+
+Population -> Morphism
+Population -> [Paire]
+
+ObjectDef -> FilePos
+ObjectDef -> Expression
+
+Expression -> Morphism
+
+Gen -> FilePos
+Gen -> Concept
+
+Morphism -> FilePos
+Morphism -> (Concept, Concept)
+Morphism -> Declaration
+
+Declaration -> Concept
+Declaration -> Prop
+Declaration -> Paire
+Declaration -> FilePos
+
+ConceptDef -> FilePos
+
+Concept -> GenR
+
+AutType ->  --
+
+Prop -> --
+
+FilePos -> --
+

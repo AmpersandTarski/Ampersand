@@ -1,12 +1,13 @@
-  module ADLdef (   cptC,cptS,cptAnything,cptNothing
-                  , cptnew,isAnything,isNothing,isC
+  module ADLdef (   isAnything,isNothing,isC
                   , objdefNew
                   , makeInline
-                  , makeMph
+               --   , makeMph
                   , union
                   , isPos,isNeg,notCp
-                  , ruleType
-                  , consequent,cpu,antecedent,normExpr,uncomp
+               --   , ruleType
+               --   , consequent,cpu,antecedent
+                  ,normExpr
+                  -- ,uncomp
                   , src, trg ,v
                   , Object(..)
                   , Populated(..)
@@ -14,7 +15,7 @@
                   , Key(..)
                   , Language(..)
                   , Morphical(..)
-                  , Numbered(..)
+               --   , Numbered(..)
                   , Substitutive(..)
                   , mIs
                   , sIs 
@@ -31,7 +32,6 @@
    import Typology ( Inheritance(Isa), Typologic(typology), genEq)
    import Classification ( Classification(),preCl)
    import Collection (Collection (uni,isc,(>-),empty,rd))
-   import UU_Scanner (Pos(Pos))
    import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
 
 
@@ -87,19 +87,6 @@
     extends ctx = ctxon ctx
 
 
-   cptC nm gE os = C nm gE os  -- constructor
-   cptS = S                    -- constructor
-   cptAnything = Anything      -- constructor
-   cptNothing = NOthing        -- constructor
-   cptnew nm = cptC nm (==) []
-
-   instance ABoolAlg Concept where
-    glb a b | b <= a = b
-            | a <= b = a
-            | otherwise = error ("(module CC_aux) Fatal: (C) glb undefined: a="++show a++", b="++show b)
-    lub a b | a <= b = b
-            | b <= a = a
-            | otherwise = error ("(module CC_aux) Fatal: (C) lub undefined: a="++show a++", b="++show b)
 
    instance Conceptual Concept where
     conts (C {cptos = os}) = os
@@ -115,9 +102,6 @@
     --explain Anything      = "Anything"
 
    instance Morphic Concept where
-    source c = c
-    target c = c
- --   sign c = (c,c)
     multiplicities c = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
     flp c = c
     isIdent c = True    -- > tells whether the argument is equivalent to I
@@ -145,15 +129,6 @@
     genE         Anything             = (<=)::Concept->Concept->Bool
     genE         NOthing              = (<=)::Concept->Concept->Bool
 
-   instance Ord Concept where
-    NOthing <= b  = False
-    a <= NOthing  = True
-    Anything <= b = True
-    a <= Anything = False
-    a@(C _ gE _) <= b = a `gE` b
-    a <= b = a==b
-    --TODO?: ORD is niet gedefinieerd op Singelton.... Is dat erg?
-
    instance Typologic Concept
 
    isNothing, isAnything :: Concept -> Bool
@@ -180,9 +155,6 @@
     closExprs    obj = closExprs (objctx obj) `uni` closExprs (objats obj)
     objDefs      obj = [obj]
 
-   instance Numbered ObjectDef where
-    pos obj = objpos obj
-
    instance Object ObjectDef where
     concept obj = target (objctx obj)
     attributes obj = objats obj
@@ -207,18 +179,6 @@
 
 
    instance Morphic Morphism where
-    source (Mph nm pos atts (a,b) _ s) = a
-    source (I atts g s yin)            = if yin then s else g
-    source (V atts (a,b))              = a
-    source (Mp1 _ s) = s
-    target (Mph nm pos atts (a,b) _ s) = b
-    target (I atts g s yin)            = if yin then g else s
-    target (V atts (a,b))              = b
-    target (Mp1 _ t) = t
-    sign   (Mph nm pos atts (a,b) _ s) = (a,b)
-    sign   (I atts g s yin)            = if yin then (s,g) else (g,s)
-    sign   (V atts (a,b))              = (a,b)
-    sign   (Mp1 _ s) = (s,s)
     multiplicities (Mph nm pos atts (a,b) True  s) = multiplicities s
     multiplicities (Mph nm pos atts (a,b) False s) = flipProps (multiplicities s)
     multiplicities (V atts (a,b)) = [Tot,Sur]++[Inj| singleton a]++[Uni| singleton b]++
@@ -283,34 +243,22 @@
      = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
               error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
-      where h Sym = Ru 'E' (F [Tm r]) (ADLdef.pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
-            h Asy = Ru 'I' (Fi [F [Tm r], F [Tm r']]) (ADLdef.pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
-            h Trn = Ru 'I' (F [Tm r, Tm r]) (ADLdef.pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
-            h Rfx = Ru 'I' id (ADLdef.pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
-            h Uni = Ru 'I' (F [Tm r',Tm r]) (ADLdef.pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
-            h Sur = Ru 'I' id' (ADLdef.pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
-            h Inj = Ru 'I' (F [Tm r,Tm r']) (ADLdef.pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
-            h Tot = Ru 'I' id (ADLdef.pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
+      where h Sym = Ru 'E' (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
+            h Asy = Ru 'I' (Fi [F [Tm r], F [Tm r']]) (pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
+            h Trn = Ru 'I' (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
+            h Rfx = Ru 'I' id (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
+            h Uni = Ru 'I' (F [Tm r',Tm r]) (pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
+            h Sur = Ru 'I' id' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
+            h Inj = Ru 'I' (F [Tm r,Tm r']) (pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
+            h Tot = Ru 'I' id (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
             sgn   = (source d,source d)
-            r     = Mph (name d)                (ADLdef.pos d) [] (source d,target d) True d
+            r     = Mph (name d)                (pos d) [] (source d,target d) True d
             r'    = flp (r ) 
-            r'' t = Mph (t++"["++(name d)++"]") (ADLdef.pos d) [] (source d,target d) True d
+            r'' t = Mph (t++"["++(name d)++"]") (pos d) [] (source d,target d) True d
             id    = F [Tm (I [source d] (source d) (source d) True)]
             id'    = F [Tm (I [target d] (target d) (target d) True)]
 
    instance Morphic Declaration where
-    source (Sgn _ a b _ _ _ _ _ _ _ _ _)         = a
-    source (Isn g s)                             = s
-    source (Iscompl g s)                         = s
-    source (Vs a b)                              = a
-    target (Sgn _ a b _ _ _ _ _ _ _ _ _)         = b
-    target (Isn g s)                             = g
-    target (Iscompl g s)                         = g
-    target (Vs a b)                              = b
-    sign   (Sgn _ a b _ _ _ _ _ _ _ _ _)         = (a,b)
-    sign   (Isn g s)                             = (s,g)
-    sign   (Iscompl g s)                         = (s,g)
-    sign   (Vs g s)                              = (s,g)
     multiplicities (Sgn _ _ _ ps _ _ _ _ _ _ _ _)= ps
     multiplicities (Isn g s)         | g==s      = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
                                      | otherwise = [Uni,Tot,    Inj,Sym,Trn,Rfx]
@@ -352,8 +300,6 @@
     genE (Vs g s)                                 = genE s
     declarations s                                = [s]
 
-   makeMph :: Declaration -> Morphism
-   makeMph d = Mph (name d) (ADLdef.pos d) [] (sign d) True d
 
 
    instance Populated Declaration where
@@ -386,55 +332,7 @@
      = Pat nm' (rs `uni` rs') (parChds `uni` parChds') (pms `uni` pms') (cs `uni` cs') (ks `uni` ks')
 
 
-
    instance Morphic Expression where
-    source (Tm m)          = source m
-    source (Tc f)          = source f
-    source (F  [])         = Anything -- error ("(module CC_aux) Fatal: source (F [])")
-    source (F  ts)         = source (head ts)
-    source (Fd [])         = Anything -- error ("(module CC_aux) Fatal: source (Fd [])")
-    source (Fd ts)         = source (head ts)
-    source (Fu fs)         = if length (eqClass order (map source fs))==1 then minimum (map source fs)
-                             else Anything -- error ("(module CC_aux) Fatal: source ("++showHS "" (Fu fs)++")")
-    source (Fi fs)         = if length (eqClass order (map source fs))==1 then maximum (map source fs)
-                             else Anything -- error ("(module CC_aux) Fatal: source ("++showHS "" (Fi fs)++")")
-    source (K0 e)          = source e
-    source (K1 e)          = source e
-    source (Cp e)          = source e
-
-    target (Tm m)          = target m
-    target (Tc f)          = target f
-    target (F  [])         = Anything -- error ("(module CC_aux) Fatal: target (F [])")
-    target (F  ts)         = target (last ts)
-    target (Fd [])         = Anything -- error ("(module CC_aux) Fatal: target (Fd [])")
-    target (Fd ts)         = target (last ts)
-    target (Fu fs)         = if length (eqClass order (map target fs))==1 then minimum (map target fs)
-                             else Anything
-    target (Fi fs)         = if length (eqClass order (map target fs))==1 then maximum (map target fs)
-                             else Anything
-    target (K0 e)          = target e
-    target (K1 e)          = target e
-    target (Cp e)          = target e
-
-    sign (Tm m)            = sign m
-    sign (Tc f)            = sign f
-    sign (F ts)            = if null ts 
-                              then error ("(module CC_aux) Fatal: no terms in sign (F "++misbruiktShowHS "" ts++")")
-                              else foldr1 jnSign (map sign ts)
-                              where (s,t) `jnSign` (s',t') = (s,t')
-    sign (Fd ts)           = if null ts 
-                              then error ("(module CC_aux) Fatal: no terms in sign (Fd "++misbruiktShowHS "" ts++")")
-                              else foldr1 jnSign (map sign ts)
-                              where (s,t) `jnSign` (s',t') = (s,t')
-    sign (Fu fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fu fs) not defined\nwith map sign fs="++show (map sign fs)) else
-                             if null fs then (cptAnything, cptAnything) else
-                             foldr1 lub (map sign fs)
-    sign (Fi fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fi fs) not defined\nwith map sign fs="++show (map sign fs)) else
-                             if null fs then (cptAnything, cptAnything) else
-                             foldr1 lub (map sign fs)
-    sign (K0 e)            = sign e
-    sign (K1 e)            = sign e
-    sign (Cp e)            = sign e
 
     multiplicities (Tm m)  = multiplicities m
     multiplicities (Tc f)  = multiplicities f
@@ -690,13 +588,6 @@
     isa r = empty
 
    instance Morphic Rule where
-    source r | ruleType r=='A' = fst (sign r)
-             | otherwise       = fst (sign r)
-    target r | ruleType r=='A' = snd (sign r)
-             | otherwise       = snd (sign r)
-    sign r   | ruleType r=='A' = sign (consequent r)
-             | otherwise       = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
-                                 error ("(module CC_aux) Fatal: incompatible signs in "++misbruiktShowHS "" r)
     multiplicities r           = []
     isMph r  | ruleType r=='A' = isMph (consequent r)
              | otherwise       = False
@@ -759,30 +650,6 @@
      = Gc pos m' expr' cpu (sign expr') nr pn
        where expr' = subst (m,f) expr
 
-   ruleType    (Ru c _ _ _ _ _ _ _ _) = c
-   ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
-   ruleType    (Gc _ _ _ _ _ _ _)     = 'g'
-   ruleType    (Fr _ _ _ _)           = 'f'
-   antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
-   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
-   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
-   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
-   antecedent  (Fr _ _ e _)           = e
-   consequent  (Ru _ _ _ c _ _ _ _ _) = c
-   consequent  (Sg _ rule _ _ _ _ _)  = consequent rule
-   consequent  (Gc _ _ e _ _ _ _)     = e
-   consequent  (Fr _ d _ _)           = Tm (makeMph d)
-   cpu         (Ru _ _ _ _ c _ _ _ _) = c
-   cpu         (Sg _ _ _ _ _ _ _)     = [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
-   cpu         (Gc _ _ _ c _ _ _)     = c
-   cpu         (Fr _ d _ _)           = [Tm (makeMph d)]
-   patternName (Ru _ _ _ _ _ _ _ _ p) = p
-   patternName (Sg _ _ _ _ _ p _)     = p
-   patternName (Gc _ _ _ _ _ _ p)     = p
-   patternName (Fr _ _ _ p)           = p
-   uncomp (Ru a b c d e f (g,g') h i) = Ru a b c d [] f (g,g') h i
-   uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
-   uncomp s                           = s
 
 
 
@@ -802,47 +669,6 @@
     contents  :: a -> Pairs
 
 
-   class Numbered a where
-    nr :: a->Int
-    pos :: a->FilePos
-    nr x = nr (ADLdef.pos x)
-
-   instance Numbered FilePos where
-    nr (FilePos (fn,Pos l c,sym)) = l
-    pos p = p
-
-   instance Numbered Rule where
-    pos (Ru _ _ p _ _ _ _ _ _) = p
-    pos (Sg p _ _ _ _ _ _)     = p
-    pos (Gc p _ _ _ _ _ _)     = p
-    pos r = posNone
-    nr  (Ru _ _ _ _ _ _ _ n _) = n
-    nr  (Sg _ _ _ _ n _ _)     = n
-    nr  (Gc _ _ _ _ _ n _)     = n
-    nr  r = 0
-
-   instance Numbered Morphism where
-    pos (Mph _ p _ _ _ _) = p
-    pos m                 = posNone
-    nr m = nr (makeDeclaration m)
-
-   instance Numbered Declaration where
-    pos (Sgn _ _ _ _ _ _ _ _ _ p _ _) = p
-    pos d                             = posNone
-    nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
-    nr d                              = 0
-
-   instance Numbered Expression where
-    pos (Tm m)  = ADLdef.pos m
-    pos (Tc f)  = ADLdef.pos f
-    pos (F ts)  = if not (null ts) then ADLdef.pos (head ts) else error "(module ADLdef) !!Software error 813. Please submit a complete bug report to your dealer"
-    pos (Fd ts) = if not (null ts) then ADLdef.pos (head ts) else error "(module ADLdef) !!Software error 814. Please submit a complete bug report to your dealer"
-    pos (Fu fs) = if not (null fs) then ADLdef.pos (head fs) else error "(module ADLdef) !!Software error 815. Please submit a complete bug report to your dealer"
-    pos (Fi fs) = if not (null fs) then ADLdef.pos (head fs) else error "(module ADLdef) !!Software error 816. Please submit a complete bug report to your dealer"
-    pos (K0 e)  = ADLdef.pos e
-    pos (K1 e)  = ADLdef.pos e
-    pos (Cp e)  = ADLdef.pos e
-
 
 
 
@@ -858,10 +684,10 @@
     extends :: a -> [String]                -- the objects of which this is is extension (for now: use for contexts only)
     extends _ = []                          -- empty unless specified otherwise.
 
-   class Morphic a where
-    source, target :: a -> Concept
-    sign           :: a -> (Concept,Concept)
-    sign x = (source x,target x)
+   class Association a => Morphic a where
+ --   source, target :: a -> Concept
+ --   sign           :: a -> (Concept,Concept)
+ --   sign x = (source x,target x)
     multiplicities :: a -> [Prop]
     multiplicities m = []
     flp            :: a -> a
@@ -895,7 +721,7 @@
     genE x        = if null cx then (==) else head cx where cx = [gE|C {cptgE = gE } <-concs x]
     closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
     closExprs s   = []
-    objDefs      :: a -> ObjDefs
+    objDefs      :: a -> ObjectDefs
     objDefs s     = []
     keyDefs      :: a -> KeyDefs
     keyDefs s     = []

@@ -6,7 +6,10 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Auxiliaries (chain, eqCl, enc)
    import Typology (Inheritance(Isa))
-   import ADLdef
+   import ADLdef(Contexts,declaredRules,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
+                ,multiplicities
+                ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign)
+   import Data.ADL
    import ShowADL
    import CC_aux  
          --     ( Context, Concept, Object(concept, attributes, ctx)

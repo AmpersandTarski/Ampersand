@@ -5,6 +5,7 @@ module Data.ADL where
    import Classification ( Classification())
    import UU_Scanner (Pos(Pos),noPos)
 
+   -- | Architecture of ADL consists of a set of contexts
    data Architecture = Arch { archContexts :: Contexts} 
 
    type Contexts  = [Context]
@@ -18,26 +19,8 @@ module Data.ADL where
             , ctxds    :: Declarations              -- ^ A list of declarations defined in this context, outside the scope of patterns
             , ctxcs    :: ConceptDefs               -- ^ A list of concept definitions defined in this context, outside the scope of patterns
             , ctxks    :: KeyDefs                   -- ^ A list of key definitions defined in this context, outside the scope of patterns
-            , ctxos    :: ObjDefs                   -- ^ A list of attributes defined in this context, outside the scope of patterns
+            , ctxos    :: ObjectDefs                -- ^ A list of attributes defined in this context, outside the scope of patterns
             , ctxpops  :: Populations               -- ^ A list of populations defined in this context
-            } 
-
-   type Concepts = [Concept]
-   data Concept
-      = C   { cptnm :: String    -- ^The name of this Concept
-            , cptgE :: GenR 
-            , cptos :: [String]  -- ^Atoms
-            }  -- ^C nm gE cs represents the set of instances cs by name nm.
-      | S  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything']
-      | Anything -- ^Really Anything!
-      | NOthing  -- ^Nothing at all
-            
-   type ConceptDefs = [ConceptDef]
-   data ConceptDef 
-      = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
-            , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
-            , cddef :: String   -- ^ The textual definition of this concept.
-            , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
             } 
 
    type Patterns  = [Pattern]
@@ -93,7 +76,69 @@ module Data.ADL where
            , frcmp :: Expression        -- ^ expression to be computed
            , frpat :: String            -- ^ name of pattern in which it was defined.
            } 
+   -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
+   data AutType = Clos0 | Clos1 --deriving (Eq,Show)
         
+
+   type KeyDefs = [KeyDef]
+   data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
+                    , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                    , kdctx :: Expression   -- ^ this expression describes the instances of this object, related to their context
+                    , kdats :: ObjectDefs   -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
+                    } 
+
+   type Populations = [Population]
+   data Population = Popu 
+              { popm  :: Morphism
+              , popps :: Pairs
+              }
+
+   type ObjectDefs = [ObjectDef]
+   data ObjectDef = Obj { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                        , objpos :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
+                        , objctx :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+                        , objats :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
+                        } 
+
+   type Expressions = [Expression]
+   data Expression  = Tm Morphism          -- ^ simple morphism, possibly conversed     ~
+                    | Tc Expression        -- ^ bracketed expression                 ( ... )
+                    | F  Expressions       -- ^ composition                             ;
+                    | Fd Expressions       -- ^ relative addition                       !
+                    | Fi Expressions       -- ^ intersection                            /\
+                    | Fu Expressions       -- ^ union                                   \/
+                    | K0 Expression        -- ^ Reflexive and transitive closure        *
+                    | K1 Expression        -- ^ Transitive closure                      +
+                    | Cp Expression        -- ^ Complement                              -
+
+   type Gens      = [Gen]
+   data Gen       = G { genfp  :: FilePos          -- ^ the position of the GEN-rule
+                      , gengen :: Concept          -- ^ generic concept
+                      , genspc :: Concept          -- ^ specific concept
+                      }
+                      
+   type Morphisms = [Morphism]
+   data Morphism  = 
+                   Mph { mphnm :: String   -- ^ the name of the morphism. This is the same name as
+                                           --   the declaration that is bound to the morphism.    WAAROM Stef, waarom zou je dit attribuut opnemen? Als het niet is opgenomen, dan kan je altijd zeggen dat de naam van het morphisme gelijk is aan de naam van z'n makeDeclaration. Nu kan dat niet. Voorstel: Dit attribuut slopen. 
+                       , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
+                       , mphats :: [Concept]         -- ^ the attributes specified inline
+                       , mphtyp :: MorphType         -- ^ the allocated type. Together with the name, this forms the declaration.
+                       , mphyin :: Bool              -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
+                       , mphdcl :: Declaration       -- ^ the declaration bound to this morphism.
+                       }
+                  | I  { mphats :: [Concept]         -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
+                       , mphgen ::  Concept          -- ^ the generic concept
+                       , mphspc ::  Concept          -- ^ the specific concept
+                       , mphyin ::  Bool             -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
+                       } 
+                  | V  { mphats :: [Concept]         -- ^ the (optional) attributes specified inline.
+                       , mphtyp :: MorphType         -- ^ the allocated type.
+                       }
+                  | Mp1 { mph1val :: String          -- ^ the value of the one morphism
+                        , mph1typ :: Concept         -- ^ the allocated type.
+                        }  
+
 
    type Declarations = [Declaration]
    data Declaration = 
@@ -123,69 +168,25 @@ module Data.ADL where
                , dectgt :: Concept
                }
 
-
-   type KeyDefs = [KeyDef]
-   data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
-                    , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                    , kdctx :: Expression   -- ^ this expression describes the instances of this object, related to their context
-                    , kdats :: ObjDefs      -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
-                    } 
-
-   type Populations = [Population]
-   data Population = Popu 
-              { popm  :: Morphism
-              , popps :: Pairs
-              }
-
-   type ObjDefs = [ObjectDef]
-   data ObjectDef = Obj { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                        , objpos :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
-                        , objctx :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
-                        , objats :: ObjDefs        -- ^ the attributes, which are object definitions themselves.
-                        } 
-
-   type Gens      = [Gen]
-   data Gen       = G { genfp  :: FilePos          -- ^ the position of the GEN-rule
-                      , gengen :: Concept          -- ^ generic concept
-                      , genspc :: Concept          -- ^ specific concept
-                      }
-                      
-   type Expressions = [Expression]
-   data Expression  = Tm Morphism          -- ^ simple morphism, possibly conversed     ~
-                    | Tc Expression        -- ^ bracketed expression                 ( ... )
-                    | F  Expressions       -- ^ composition                             ;
-                    | Fd Expressions       -- ^ relative addition                       !
-                    | Fi Expressions       -- ^ intersection                            /\
-                    | Fu Expressions       -- ^ union                                   \/
-                    | K0 Expression        -- ^ Reflexive and transitive closure        *
-                    | K1 Expression        -- ^ Transitive closure                      +
-                    | Cp Expression        -- ^ Complement                              -
-
-   type Morphisms = [Morphism]
-   data Morphism  = 
-                   Mph { mphnm :: String   -- ^ the name of the morphism. This is the same name as
-                                           --   the declaration that is bound to the morphism.    WAAROM Stef, waarom zou je dit attribuut opnemen? Als het niet is opgenomen, dan kan je altijd zeggen dat de naam van het morphisme gelijk is aan de naam van z'n makeDeclaration. Nu kan dat niet. Voorstel: Dit attribuut slopen. 
-                       , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
-                       , mphats :: [Concept]         -- ^ the attributes specified inline
-                       , mphtyp :: (Concept,Concept) -- ^ the allocated type. Together with the name, this forms the declaration.
-                       , mphyin :: Bool              -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
-                       , mphdcl :: Declaration       -- ^ the declaration bound to this morphism.
-                       }
-                  | I  { mphats :: [Concept]         -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
-                       , mphgen ::  Concept           -- ^ the generic concept
-                       , mphspc ::  Concept           -- ^ the specific concept
-                       , mphyin ::  Bool              -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
-                       } 
-                  | V  { mphats :: [Concept]         -- ^ the (optional) attributes specified inline.
-                       , mphtyp :: (Concept,Concept) -- ^ the allocated type.
-                       }
-                  | Mp1 { mph1val :: String            -- ^ the value of the one morphism
-                        , mph1typ :: Concept           -- ^ the allocated type.
-                        }  
+   type ConceptDefs = [ConceptDef]
+   data ConceptDef 
+      = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
+            , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
+            , cddef :: String   -- ^ The textual definition of this concept.
+            , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+            } 
 
 
-   data AutType = Clos0 | Clos1 --deriving (Eq,Show)
-
+   type Concepts = [Concept]
+   data Concept
+      = C   { cptnm :: String    -- ^The name of this Concept
+            , cptgE :: GenR 
+            , cptos :: [String]  -- ^Atoms
+            }  -- ^C nm gE cs represents the set of instances cs by name nm.
+      | S  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything']
+      | Anything -- ^Really Anything!
+      | NOthing  -- ^Nothing at all
+            
    type Props = [Prop]
    data Prop      = Uni          -- ^ univalent
                   | Inj          -- ^ injective
@@ -197,8 +198,14 @@ module Data.ADL where
                   | Rfx          -- ^ reflexive
                   | Aut          -- ^ calculate contents automatically if possible
                     deriving (Eq,Ord)
-   type Pairs     = [Paire]
+
+
+   type MorphType = (Concept,Concept) 
+   
+
+   type Pairs     = [Paire]  -- WAAROM? Zouden dit niet tweetallen moeten zijn? In dit geval mogen Paire ook uit meer dan twee bestaan...
    type Paire     = [String]
+   
    type GenR = Concept->Concept->Bool
 
    newtype FilePos = FilePos (String, Pos, String) 
