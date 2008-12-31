@@ -100,13 +100,13 @@
            then (putStr ("\nNo type errors or cyclic specializations were found.\n")>>
                  if length args==1 && length contexts==1
                  then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                       ( build_NewStyle (map makeFspecNew2 contexts) switches fnOutp dbName slRes )) else
+                       ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes )) else
                  if length args==1 && length contexts>1
                  then putStr ("\nPlease specify the name of a context."++
                               "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
                  if length args>1 && contextname `elem` map name contexts
                  then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                       ( build_NewStyle (map makeFspecNew2 contexts) switches fnOutp dbName slRes ))
+                       ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes ))
                  else putStr ("\nContext "++contextname++" not defined."++
                               "\nPlease specify the name of an available context."++
                               "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
@@ -126,10 +126,8 @@
                   [ anal context ("-p" `elem` switches) (lineStyle switches)
                   | "-atlas" `elem` switches]++
                   [ makeXML_depreciated context| "-XML" `elem` switches]++
-   --               [ showHaskell_new fspec | "-Haskell" `elem` switches]++ 
                   [ diagnose context| "-diag" `elem` switches]++
                   [ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  [ serviceGens fSpec (lang switches) filename| "-services" `elem` switches]++
                   [ archText context (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
                   [ glossary context (lang switches) | "-g" `elem` switches]++
    -- out of order[ erModel context | "-ER" `elem` switches]++
@@ -138,7 +136,7 @@
                   [ phpObjServices context fSpec filename dbName ("./"++filename++"/") False | "-serviceGen" `elem` switches]++
  --                 [ phpServices context filename dbName True True | "-beeper" `elem` switches]++
  --                 [ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
-                  [ deriveProofs context ("-m" `elem` switches)| "-proofs" `elem` switches]
+                  [ putStr (deriveProofs context)| "-proofs" `elem` switches]
  --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
  --               ++[ csvcontent context | "-csv" `elem` switches]
  --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
@@ -184,22 +182,20 @@
                 , "ADL <myfile>.adl -services          generate service definitions from scratch and display "
                 , "                                    on standard output. You may find this useful"
                 , "                                    to start writing SERVICE definitions."
-                , "ADL <myfile>.adl -proofs            generate correctness proofs (works partly)"
+                , "ADL <myfile>.adl -proofs            generate correctness proofs"
+                , "ADL <myfile>.adl -Haskell           generate internal data structure, written in Haskell source code"
                 , ""
                 ]
 
-             build_NewStyle :: [Fspc] -> [String] -> String -> String -> Architecture -> IO ()
-             build_NewStyle fspecs switches filename dbName hierGebeurtNietsMee
+             build_NewStyle :: Fspc -> [String] -> String -> String -> Architecture -> IO ()
+             build_NewStyle fSpec switches filename dbName hierGebeurtNietsMee
               = sequence_ 
                  (--[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
                   --[ makeXML_depreciated context| "-XML" `elem` switches]++
-                  [ showHaskell_new fspecs | "-Haskell" `elem` switches]  -- ++ 
+                  [ showHaskell fSpec | "-Haskell" `elem` switches] ++ 
+                  [ serviceGen fSpec (lang switches) filename| "-services" `elem` switches]
                   --[ diagnose context| "-diag" `elem` switches]++
                   --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  --[ viewEstimates context (lineStyle switches) (lang switches) filename| "-services" `elem` switches]++
-                  --[ archText context (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
-                  --[ glossary context (lang switches) | "-g" `elem` switches]++
-   -- out of order[ erModel context | "-ER" `elem` switches]++
                   --[ cdModel context | "-CD" `elem` switches]++
                   --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
                   --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++
@@ -229,17 +225,6 @@
       putStr ("\nMicrosoft Project file "++name context++".csv written... ")
       where
        spec = funcSpec context language
-
-   showHaskell_new :: [Fspc] -> IO()
- --  showHaskell_new [] = []
- --  showHaskell_new f:fs = do {  (showHaskell f) 
- --                             ; (showHaskell_new fs)
- --                            }
- --  showHaskell_new f:fs = 
- --       sequence_ ( [ showHaskell f ] ++
- --                   [ showHaskell_new fs]
- --                 )                         
-   showHaskell_new fs = showHaskell (head fs) --TODO Bovenstaande probeersels aan de praat krijgen.
    
    
    showHaskell :: Fspc -> IO ()
@@ -276,8 +261,8 @@
       where
        spec = funcSpec context language
 
-   serviceGens :: Fspc -> Lang ->  String -> IO()
-   serviceGens    fSpec   language filename
+   serviceGen :: Fspc -> Lang ->  String -> IO()
+   serviceGen    fSpec    language filename
     = putStr (chain "\n\n" (map showADL (serviceG fSpec)))
 
    archText :: Context -> String ->    Lang ->  String -> IO()

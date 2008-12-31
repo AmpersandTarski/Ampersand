@@ -23,52 +23,47 @@
    import Graphic
 
 
+   multiplicityAnalysis context 
+    = let fnm = "MULT"++name context in
+      putStr ("\n--------------\n"++
+              "Multiplicity Analysis:\n")>>
+      writeFile (fnm++".dot") (dotGraph context "anyStyle" fnm (multDerivations context)) >>
+      putStr ("\nMultiplicity propagation graph "++fnm++".dot written... ") >>
+      processDotgraphFile fnm >>
+      writeFile ("CF"++fnm++".dot") (dotGraph context "anyStyle" fnm codeFragments) >>
+      putStr ("\nCode graph CF"++fnm++".dot written... ") >>
+      processDotgraphFile ("CF"++fnm)
+      where
+       codeFragments :: [ECArule]
+       codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
 
-   deriveProofs context multiplicityAnalysis
-    = putStr ("\nSignals for "++name context++"\n--------------\n")>>
-      putStr (proof (signals context))>>
-      putStr ("\nRules for "++name context++"\n--------------\n")>>
-      putStr (proof (declaredRules context))>>
-      ( if not multiplicityAnalysis then putStr "" else
-        let fnm = "MULT"++name context in
-        putStr ("\n--------------\n"++
-                "Multiplicity Analysis:\n")>>
-  {- obsolete?  chain "\n\n" [ showMLink deriv
-                             | deriv@(Deriv clauses fs ts)<-multDerivations context
-                             , and [ f `elem` mults context && not (t `elem` mults context)|f<-fs, t<-ts]
-                             ]) >>
-  -}
-        writeFile (fnm++".dot") (dotGraph context "anyStyle" fnm (multDerivations context)) >>
-        putStr ("\nMultiplicity propagation graph "++fnm++".dot written... ") >>
-        processDotgraphFile fnm >>
-        writeFile ("CF"++fnm++".dot") (dotGraph context "anyStyle" fnm codeFragments) >>
-        putStr ("\nCode graph CF"++fnm++".dot written... ") >>
-        processDotgraphFile ("CF"++fnm)
-      ) >>
-      putStr ("\n--------------\n"++
-              "Summarizing all compute rules: \n  "++
-              chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-declaredRules context, hc@(CR (fOps, e, bOp, toExpr, frExpr, rule))<-triggers rule]) >>
-      putStr ("\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
-              "Ontological analysis: \n  "++
-              chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
-                             | o<-attributes context, c<-[concept o]]) >>
-      putStr ("\n--------------\n"++
-              "Triggers from objects: \n     "++
-              chain "\n     " [name c++"("++chain ", "[name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):"++
-                               condNull ("\n  Rules for Insert transactions\n    ") (chain "\n    ") informalRule 
-                                (computeOrder hcs "INSERT INTO" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntCreate
-                               condNull ("\n  Rules for Update transactions\n    ") (chain "\n    ") informalRule 
-                                (computeOrder hcs "UPDATE"              (map makeDeclaration (mors o)))++          -- taken from phpCodeEntUpdate
-                               condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
-                                (computeOrder hcs "DELETE FROM" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntDelete
-                               "\n"
-                              | o<-attributes context, c<-[concept o]]) >>
-      putStr "\n--------------\n"
+   deriveProofs context
+    = "\nSignals for "++name context++"\n--------------\n"++
+      proof (signals context)++
+      "\nRules for "++name context++"\n--------------\n"++
+      proof (declaredRules context)++
+      "\n--------------\n"++
+      "Summarizing all compute rules: \n  "++
+      chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-declaredRules context, hc@(CR (fOps, e, bOp, toExpr, frExpr, rule))<-triggers rule]++
+      "\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
+      "Ontological analysis: \n  "++
+      chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
+                     | o<-attributes context, c<-[concept o]]++
+      "\n--------------\n"++
+      "Triggers from objects: \n     "++
+      chain "\n     " [name c++"("++chain ", "[name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):"++
+                       condNull ("\n  Rules for Insert transactions\n    ") (chain "\n    ") informalRule 
+                        (computeOrder hcs "INSERT INTO" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntCreate
+                       condNull ("\n  Rules for Update transactions\n    ") (chain "\n    ") informalRule 
+                        (computeOrder hcs "UPDATE"              (map makeDeclaration (mors o)))++          -- taken from phpCodeEntUpdate
+                       condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
+                        (computeOrder hcs "DELETE FROM" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntDelete
+                       "\n"
+                      | o<-attributes context, c<-[concept o]]++
+      "\n--------------\n"
       where
        hcs = [hc| rule<-declaredRules context++multRules context, hc<-triggers rule ]
        sh x = showHS "" x
-       codeFragments :: [ECArule]
-       codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
 
    condNull header fold f xs = if null xs then "" else header++fold (map f xs)
 
