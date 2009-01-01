@@ -3,7 +3,8 @@
    import Auxiliaries
    import ADLdef
    import ShowADL
-   import CC_aux ( isProperty, ShowHS(showHS),oneMorphism)
+   import ShowHS(showHS,ShowHS())
+   import CC_aux ( isProperty,oneMorphism)
    import CommonClasses
    import Calc(conjNF, informalRule, computeOrder, homogeneous, ComputeRule(CR))
  --  import MultRules
@@ -501,7 +502,7 @@
    sqlRuleName context r = error ("Illegal call to sqlRuleName ("++showADL r++" on "++show (pos r)++")")
 
 
-
+   -- WAAROM?? Onderstaande declaratie mag wel wat verduidelijking. Het lijkt me ook niet onderhoudbaar. Overigens is deze module de ENIGE die het noodzakelijk maakt om de Class ShowHS te exproteren in ShowHS. Jammer!
    sqlRelName :: (ShowHS m,Morphic m,Morphical m,IsClos m) => Context -> m -> String
    sqlRelName context m
     = if isIdent m then sqlConcept context (source m) else

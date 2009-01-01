@@ -8,7 +8,7 @@
    import Typology (Typology(Typ), typology, makeTrees)
    import ADLdef
    import ShowADL
-   import CC_aux (showHS, showHSname)
+   import ShowHS (showHS)
    import Languages( Lang(English,Dutch))
    import AGtry (sem_Architecture)
    import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
@@ -16,15 +16,16 @@
    import Views (viewDataset)
    import Dataset
    import Data.Fspec
-   import FspecDEPRECIATED (projectClassic
-                ,generateFspecLaTeX
-                ,generateArchLaTeX
-                ,generateGlossaryLaTeX
-                ,funcSpec
+   import FspecDEPRECIATED( 
+                   projectClassic
+                  ,generateFspecLaTeX
+                  ,generateArchLaTeX
+                  ,generateGlossaryLaTeX
+                  ,funcSpec
               --  ,nDesignPr
-                ,nServices
-                ,nFpoints
-                ,makeFspec
+                  ,nServices
+                  ,nFpoints
+           --     ,makeFspec
                 )
    import HtmlFilenames(fnContext,fnPattern)
    import Graphic(processCdDataModelFile,dotGraph,processDotgraphFile)
@@ -33,7 +34,7 @@
    import ClassDiagram (cdModel,cdDataModel)  
 --   import RelBinGen(phpServices)  OBSOLETE as of Jan 1st, 2009 (SJ)
    import ObjBinGen(phpObjServices)
-   import ADL2Fspec (makeFspecNew2,Fspc)
+   import ADL2Fspec (makeFspecNew2)
 
 
 
@@ -97,21 +98,22 @@
            -- AND the argument matches the context name, then the build is done for that 
            -- context
          ; if null errs 
-           then (putStr ("\nNo type errors or cyclic specializations were found.\n")>>
-                 if length args==1 && length contexts==1
-                 then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                       ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes )) else
-                 if length args==1 && length contexts>1
-                 then putStr ("\nPlease specify the name of a context."++
-                              "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
-                 if length args>1 && contextname `elem` map name contexts
-                 then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                       ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes ))
-                 else putStr ("\nContext "++contextname++" not defined."++
-                              "\nPlease specify the name of an available context."++
-                              "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
-                              "\n(Note: context names are case sensitive).\n")
-                )
+           then do { putStr ("\nNo type errors or cyclic specializations were found.\n")
+                   ; let fspec = makeFspecNew2 context
+                   ; if length args==1 && length contexts==1
+                     then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
+                           ( build_NewStyle fspec switches fnOutp dbName slRes )) else
+                     if length args==1 && length contexts>1
+                     then putStr ("\nPlease specify the name of a context."++
+                                  "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
+                     if length args>1 && contextname `elem` map name contexts
+                     then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
+                           ( build_NewStyle fspec switches fnOutp dbName slRes ))
+                     else putStr ("\nContext "++contextname++" not defined."++
+                                  "\nPlease specify the name of an available context."++
+                                  "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
+                                  "\n(Note: context names are case sensitive).\n")
+                   }
            else putStr ("\nThe type analysis of "++fnFull++" yields errors.\n")>>
                 putStr (concat ["!Error of type "++err| err<-errs])>>
                 putStr ("Nothing generated, please correct mistake(s) first.\n")

@@ -1,5 +1,3 @@
-{-# LINE 1 "Atlas.lhs" #-}
-#line 1 "Atlas.lhs"
   module Atlas (anal) where
    import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
    import Char (isUpper,chr,ord)
@@ -15,7 +13,8 @@
              ,makeTrees)
    import ADLdef
    import ShowADL
-   import CC_aux ( showHS, explain
+   import ShowHS
+   import CC_aux ( explain
                  , conts, dom, cod
                  , clearG
                  , applyM

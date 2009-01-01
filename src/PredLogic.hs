@@ -1,5 +1,3 @@
-{-# LINE 1 "PredLogic.lhs" #-}
-#line 1 "PredLogic.lhs"
    module PredLogic 
               ( normRule
               , normRL
@@ -19,8 +17,8 @@
 
    import ADLdef
    import ShowADL
-   import CC_aux ( showHS
-                 , explain 
+   import ShowHS
+   import CC_aux ( explain 
                  , applyM 
                  , lub, sur, inj, fun, tot 
                  , mkVar

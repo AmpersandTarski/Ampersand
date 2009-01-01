@@ -1,4 +1,4 @@
-  module ADL2Fspec (makeFspecNew2,Fspc,makeDatasets)
+  module ADL2Fspec (makeFspecNew2)
   where
    import CommonClasses ( Identified(name))
    import Collection    ( Collection (isc,(>-),rd) )
@@ -11,7 +11,6 @@
    import FspecDef
    import LaTeX (tt)   -- Dat is hier natuurlijk helemaal niet op z'n plaats! (TODO opruimen)
    import Calc(lClause,rClause,makeRule)
---   import ERmodel(erAnalysis)
 
  -- The story:
  -- A number of datasets for this context is identified.

@@ -1,15 +1,12 @@
-{-# LINE 1 "ObjBinGenConnectToDataBase.lhs" #-}
-#line 1 "ObjBinGenConnectToDataBase.lhs"
   module ObjBinGenConnectToDataBase where
    import Char
    import Auxiliaries
    import Collection
    import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
    import ADLdef
-   import ShowADL
-   import CC_aux( showHS
-                , applyM
-                )
+   import ShowADL(showADL)
+   import ShowHS(showHS)
+   import CC_aux( applyM )
    import CommonClasses
    import PredLogic -- (for error messages by dbCorrect)
    import Hatml     -- (for converting error messages to HTML)

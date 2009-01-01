@@ -13,7 +13,8 @@ import Typology (Inheritance(Isa),genEq,typology)
 import ADLdef
 import ADLdataDef (pos)
 import ShowADL
-import CC_aux ( showHS,order,makeConceptSpace, put_gE
+import ShowHS
+import CC_aux ( order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 

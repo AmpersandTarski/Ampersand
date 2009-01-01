@@ -1,57 +1,23 @@
   module FspecDef
-         ( module Data.Fspec )
+         ( module Data.Fspec
+         , module CommonClasses
+         , module Auxiliaries
+         , module Strings 
+         , Fidentified(..)
+         , fspc_patterns
+         , themesOfPatterns)
 
   where
 
    import ADLdataDef
-   import CC_aux ( ShowHS (showHS,showHSname)
-                 )
    import CommonClasses(Identified(name,typ))
    import Auxiliaries(showL,haskellIdentifier)
    import Strings(chain)
 
    import Data.Fspec
 
-
-   instance Identified Fspc where
-     name fspc = name (fsid fspc)
-     typ fspc = "Fspc_"
-   
    fspc_patterns :: Fspc -> Patterns
    fspc_patterns spec = themesOfPatterns (themes spec)     
-   instance Fidentified Fspc where
-    fsid    spec = fsfsid spec
-  --  typ     a = "f_Ctx"
-
-   instance ShowHS Fspc where
-    showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS "" (pfixFSid "f_Ctx_" (fsid fspec)) 
-    showHS indent fspec
-     = "Fspc"++showHS " " (fsid fspec)++
-       (if null (themes   fspec) then " []" else indent++"{- themes:    -}  "++showL [showHSname t|t<-themes   fspec ])++
-       (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
-       (if null (views    fspec) then " []" else indent++"{- views:     -}  "++showL [showHSname v|v<-views    fspec ])++
-       (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
-       (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
-       indent++" isa "++
-       indent++"where"++
-       indent++" isa = "++ showHS (indent ++ "       ") (isa fspec)++
-       indent++" gE = genEq (typology isa)"++
-       "\n>-- ***VIEWS***: " ++
-       (if null (views    fspec ) then "" else concat [indent++" "++showHSname v++indent++"  = "++showHS (indent++"    ") v|v<- views    fspec ]++"\n")++
-        "\n>-- ***RULES***: "++
-       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
-        "\n>-- ***DATASETS***: "++
-       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
-        "\n>-- ***THEMES***: "++
-       (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
-        "\n>-- ***DECLARATIONS OF RELATIONS***: "++
-       (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
-        "\n>-- ***PATTERNS***: "++
-       (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++"\n")
-
-
-
-
    themesOfPatterns :: [Ftheme] -> [Pattern]
    themesOfPatterns themes = [ftpat tm | tm <-themes]
 
@@ -59,13 +25,6 @@
    instance Fidentified Ftheme where
     fsid theme = ftsid theme
    
-   instance ShowHS Ftheme where
-    showHSname ftheme = typ ftheme ++ "_" ++ showHSname (fsid ftheme) --showHS "" (pfixFSid "f_Theeeeeeeem_" (fsid ftheme))
-    showHS indent ftheme
-     = "Tspc ("++showHS "" (fsid ftheme)++")"
-              ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-units(ftheme)]++indent++"     ]"
-              ++indent++"("++showHSname (ftpat ftheme)++" gE)"
-
 
 
 
@@ -95,13 +54,6 @@
      fsid o = FS_id (name o)
   --   typ m  = "f_objdef"
 
-   instance ShowHS Dataset where
-    showHSname dset = typ dset ++ "_" ++ showHSname (fsid dset)
-   -- showHSname dset@(BR m)      = showHS "" (pfixFSid "f_BR_" (fsid dset))
-    showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
-    showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
-    showHS indent (BR m     ) = "BR ("++showHS "" m++")"
-
    instance Eq Dataset where  -- opletten: een dataset moet één vast concept hebben waaraan het wordt herkend.
     DS c _ == DS d _ = c==d
     BR m   == BR m'  = m==m'
@@ -116,110 +68,82 @@
    instance Fidentified Fview where
     fsid fview = fsid (objectdef(fview))
    
-   instance ShowHS Fview where
-    showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))
-    showHS indent fview
-     = "Fview "
-       ++ datasetSection
-       ++ objdefSection
-       ++ servicesSection
-       ++ rulesSection
-       ++indent++" -- Einde Fview "++showHSname (dataset fview)
-        where
-          datasetSection  = "("++ showHS "" (dataset fview)++")"
-          objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fview)++")"
-          servicesSection = indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-services(fview)]++indent++"     ]"
-          rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fview)]++"]"
-
-
-
-
-   instance ShowHS Frule where
-    showHSname frul  = typ frul ++ "_" ++ showHSname (fsid frul) -- showHSname (rule frul)
-    showHS indent (Frul r) = "Frul ("++showHS "" r++")"
-
-
-   instance Fidentified Funit where
-    fsid funit = fusid funit 
-
-   instance ShowHS Funit where
-    showHSname funit = typ funit ++ "_" ++ showHSname (fsid funit) 
-    showHS indent funit
-     = "Uspc "++showHS "" (fsid funit)
-        ++" ("++showHSname (pattern funit)++" gE)"
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") v| v<-viewDefs(funit)]++indent++"     ]"
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
-
-   -- objDefs  funit = [o | (o,cs,rs)<-viewDefs(funit)]
-   instance ShowHS FViewDef where
-    showHSname fvd = error ("(module FspecDef) should not showHSname the FViewDef (Vdef): "++showHS "" fvd)
-    showHS indent fvd
-      = "Vdef ("++ showHS indent (vdobjdef fvd)++")" 
-          ++indent++"     [ "++chain (indent++"     ") [showHS (indent++"       ") m| m<-vdmorphs fvd]++indent++"     ]"
-          ++indent++"     [ "++chain (indent++"     ") [showtuple (indent++"       ") tup| tup<-vdExprRules fvd]++indent++"     ]"
-        where
-          showtuple :: String -> (Expression,Rule) -> String
-          showtuple indent (expr,rule) = "( "++ showHS (indent++"  ") expr
-                               ++indent++", "++ showHS (indent++"  ") rule
-
-
-
-
-
-   instance Fidentified ServiceSpec where
-      fsid (Sspc fid _ _ _ _ _ _ _) = fid  
-
-   instance ShowHS ServiceSpec where
-    showHSname sspc  = typ sspc ++ "_" ++ showHSname (fsid sspc) --"f_svc_"++showHS "" (fsid sspc)
-    showHS indent sspc
-      =            "Sspc " ++ showHS "" (fsid sspc)
-       ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) (sees sspc)  )++indent++"     ] -- these are the visible morphisms: <sees> "
-       ++indent++"     [" ++(if null (changes sspc) then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) (changes sspc))++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
-       ++indent++"     [" ++(if null (input   sspc) then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") (input sspc) )++"] -- these are the input parameters: <input>")
-       ++indent++"     [" ++(if null (output  sspc) then "]   -- no output parameters"          else " "++chain "," (map (showHS "") (output sspc) )++"] -- these are the output parameters: <output> ")
-       ++indent++"     [" ++(if null (rs      sspc) then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) (rs sspc) )++indent++"     ]")
-       ++indent++"     [" ++(if null (pre     sspc) then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        (pre sspc))++indent++"     ] -- preconditions")
-       ++indent++"     [" ++(if null (post    sspc) then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        (post sspc))++indent++"     ] -- postconditions")
-
-   instance ShowHS ParamSpec where
-    showHSname a@(Aspc fid typ) = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
-    showHS indent (Aspc fid typ)
-     = "Aspc "++showHS "" fid++" "++show typ
-
    class Fidentified a where
      fsid :: a -> FSid
    --  typ  :: a -> String
 
 
-   instance Identified FSid where
-    name (FS_id nm) = nm
-    typ _ = "f_Id"
 
-   instance ShowHS FSid where
-    showHSname a@(FS_id nm ) = haskellIdentifier nm 
-    showHS indent (FS_id nm) 
-      = "(FS_id " ++ show nm ++ ")"
-    showHS indent NoName = "NoName"
 
-   --pfixFSid :: String -> FSid -> FSid
-   --pfixFSid pfix (FS_id nm)= FS_id (pfix ++ nm)
-   --pfixFSid pfix NoName = FS_id pfix      -- Het is de vraag of dit nuttig is...
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Fspc                          ***
+-- \***********************************************************************
+   instance Identified Fspc where
+     name fspc = name (fsid fspc)
+     typ fspc = "Fspc_"
+   
+   instance Fidentified Fspc where
+    fsid    spec = fsfsid spec
+  --  typ     a = "f_Ctx"
 
-   mkdefname fid = typ fid ++ "_" ++ showHSname (fsid fid)
-
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Ftheme                        ***
+-- \***********************************************************************
    
    instance Identified Ftheme where
     typ  f = "f_Thm"
-     
-   instance Identified Fview where
-    typ fview = "f_View"
-   
-   instance Identified Frule where
-    typ frul = "f_rule"
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Funit                         ***
+-- \***********************************************************************
      
    instance Identified Funit where
     typ funit = "f_Unit"
 
+   instance Fidentified Funit where
+    fsid funit = fusid funit 
+
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Fview                         ***
+-- \***********************************************************************
+     
+   instance Identified Fview where
+    typ fview = "f_View"
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Frule                         ***
+-- \***********************************************************************
+   
+   instance Identified Frule where
+    typ frul = "f_rule"
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: FViewDef                      ***
+-- \***********************************************************************
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
+-- \***********************************************************************
    instance Identified ServiceSpec where
     typ sspc = "f_svc"
-       
+
+   instance Fidentified ServiceSpec where
+      fsid ss = ssid ss 
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Dataset                       ***
+-- \***********************************************************************
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
+-- \***********************************************************************
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: FSid                          ***
+-- \***********************************************************************
+
+   instance Identified FSid where
+    name (FS_id nm) = nm
+    typ _ = "f_Id"
+

@@ -1,15 +1,12 @@
-   module FspecDEPRECIATED --( projectClassic
-                --, fnContext
-                --, generateFspecLaTeX
-                --, generateArchLaTeX
-                --, generateGlossaryLaTeX
-                --, funcSpec
-                --, nDesignPr
-                --, nServices
-                --, nFpoints
-                --, makeFspec
-                --, Fspec(..),Fobj(..),Frule(..),Dataset(..),Ftheme(..)  -- Moet worden geexporteerd om gegenereerde bestanden te kunnen parsen..
-                --)
+   module FspecDEPRECIATED (
+                   projectClassic
+                  ,generateFspecLaTeX
+                  ,generateArchLaTeX
+                  ,generateGlossaryLaTeX
+                  ,funcSpec
+                  ,nServices
+                  ,nFpoints
+                           )
   where
    import Char
    import CommonClasses ( Identified(name))
@@ -39,8 +36,8 @@
    import Typology
    import ADLdef
    import ShowADL
-   import CC_aux( ShowHS(showHSname, showHS)
-                 , isSgn
+   import ShowHS
+   import CC_aux(  isSgn
                  , applyM ,conts, explain, fEmpty
                  )
    import Calc
@@ -48,30 +45,30 @@
    import HtmlFilenames
    import LaTeX
 
-
+-- WAAROM? Stef, deze module moet worden uitgekleed. De functies die er in zitten, werken voornamelijk nog op de oude manier, dus direct vanaf Context. Dit moet natuurlijk Fspc worden, en dan mag er ook een eigen module per functie worden aangemaakt.
 
    data Fspec = Fctx Context [Ftheme] [Dataset] [Fobj] [Frule]
 
-   instance ShowHS Fspec where
-    showHSname (Fctx context themes datasets objects vrules) = "f_Ctx_"++haskellIdentifier (name context)
-    showHS indent fctx@(Fctx context themes datasets objects vrules)
-     = "Fctx "++showHSname context++"   -- context   (Fspec has this structure:  Fctx context themes datasets objects vrules)"++
-       (if null themes   then " []" else indent++"{- themes   -}  "++showL [showHSname t|t<-themes  ])++
-       (if null datasets then " []" else indent++"{- datasets -}  "++showL [showHSname d|d<-datasets])++
-       (if null objects  then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-objects ])++
-       (if null vrules   then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-vrules  ])++
-       indent++"where"++
-       indent++" gE = genE "++showHSname context++
-       "\n>-- ***VIEWS***: " ++
-       (if null objects            then "" else concat [indent++" "++showHSname o++indent++"  = "++showHS (indent++"    ") o|o<-objects ]++"\n")++
-        "\n>-- ***RULES***: "++
-       (if null vrules             then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-vrules  ]++"\n")++
-        "\n>-- ***DATASETS***: "++
-       (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
-        "\n>-- ***THEMES***: "++
-       (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
-        "\n>-- ***PATTERNS***: "++
-       (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
+--   instance ShowHS Fspec where
+--    showHSname (Fctx context themes datasets objects vrules) = "f_Ctx_"++haskellIdentifier (name context)
+--    showHS indent fctx@(Fctx context themes datasets objects vrules)
+--     = "Fctx "++showHSname context++"   -- context   (Fspec has this structure:  Fctx context themes datasets objects vrules)"++
+--       (if null themes   then " []" else indent++"{- themes   -}  "++showL [showHSname t|t<-themes  ])++
+--       (if null datasets then " []" else indent++"{- datasets -}  "++showL [showHSname d|d<-datasets])++
+--       (if null objects  then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-objects ])++
+--       (if null vrules   then " []" else indent++"{- objects  -}  "++showL [showHSname o|o<-vrules  ])++
+--       indent++"where"++
+--       indent++" gE = genE "++showHSname context++
+--       "\n>-- ***VIEWS***: " ++
+--       (if null objects            then "" else concat [indent++" "++showHSname o++indent++"  = "++showHS (indent++"    ") o|o<-objects ]++"\n")++
+--        "\n>-- ***RULES***: "++
+--       (if null vrules             then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-vrules  ]++"\n")++
+--        "\n>-- ***DATASETS***: "++
+--       (if null datasets           then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<-datasets]++"\n")++
+--        "\n>-- ***THEMES***: "++
+--       (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
+--        "\n>-- ***PATTERNS***: "++
+--       (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
 
  -- The story:
  -- A number of datasets for this context is identified.
@@ -154,9 +151,9 @@
 
    data Frule = Frul Rule
 
-   instance ShowHS Frule where
-    showHSname (Frul r)    = "frule_"++showHSname r     -- (name r)
-    showHS indent (Frul r) = "Frul (" ++showHS "" r++")"
+--   instance ShowHS Frule where
+--    showHSname (Frul r)    = "frule_"++showHSname r     -- (name r)
+--    showHS indent (Frul r) = "Frul (" ++showHS "" r++")"
 
    makeFrule :: Context -> Rule -> Frule
    makeFrule context r = Frul r
@@ -170,12 +167,12 @@
                      [Morphism]  -- the functions from the root
                 | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
 
-   instance ShowHS Dataset where
-    showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
-    showHSname (BR m)      = "f_BR_"++haskellIdentifier (name m++name (source m)++name(target m))
-    showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
-    showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
-    showHS indent (BR m     ) = "BR ("++showHS "" m++")"
+--   instance ShowHS Dataset where
+--    showHSname (DS c pths) = "f_DS_"++haskellIdentifier (name c)
+--    showHSname (BR m)      = "f_BR_"++haskellIdentifier (name m++name (source m)++name(target m))
+--    showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
+--    showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
+--    showHS indent (BR m     ) = "BR ("++showHS "" m++")"
    instance Eq Dataset where  -- opletten: een dataset moet één vast concept hebben waaraan het wordt herkend.
     DS c _ == DS d _ = c==d
     BR m   == BR m'  = m==m'
@@ -228,17 +225,17 @@
 
    data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Frule]
 
-   instance ShowHS Fobj where
-    showHSname (Fobj dset objd svcs rs) = "f_Obj_"++haskellIdentifier (name objd)
-    showHS indent (Fobj dset objd svcs rs)
-     = "Fobj "++showHSname dset
-       ++indent++" -- objectdef NOG UIT TE WERKEN IN FspecDef.lhs " 
-       ++indent++"     ("++showHS (indent++"      ") objd++")"
-       ++indent++" -- services NOG UIT TE WERKEN IN FspecDef.lhs "
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
-       ++indent++" -- rules NOG UIT TE WERKEN IN FspecDef.lhs " 
-       ++indent++"     ["++chain ", " [showHSname r| r<-rs]++"]"
-       ++indent++" -- Einde Fobj "++showHSname dset
+--   instance ShowHS Fobj where
+--    showHSname (Fobj dset objd svcs rs) = "f_Obj_"++haskellIdentifier (name objd)
+--    showHS indent (Fobj dset objd svcs rs)
+--     = "Fobj "++showHSname dset
+--       ++indent++" -- objectdef NOG UIT TE WERKEN IN FspecDef.lhs " 
+--       ++indent++"     ("++showHS (indent++"      ") objd++")"
+--       ++indent++" -- services NOG UIT TE WERKEN IN FspecDef.lhs "
+--       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-svcs]++indent++"     ]"
+--       ++indent++" -- rules NOG UIT TE WERKEN IN FspecDef.lhs " 
+--       ++indent++"     ["++chain ", " [showHSname r| r<-rs]++"]"
+--       ++indent++" -- Einde Fobj "++showHSname dset
 
 
 
@@ -260,9 +257,9 @@
 
    data Ftheme  = Tspc Pattern [Funit]
 
-   instance ShowHS Ftheme where
-    showHSname (Tspc pat us) = "f_Thm_"++haskellIdentifier (name pat)
-    showHS indent (Tspc pat us) = "Tspc ("++showHSname pat++" gE)"++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-us]++indent++"     ]"
+--   instance ShowHS Ftheme where
+--    showHSname (Tspc pat us) = "f_Thm_"++haskellIdentifier (name pat)
+--    showHS indent (Tspc pat us) = "Tspc ("++showHSname pat++" gE)"++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-us]++indent++"     ]"
 
 
 
@@ -278,12 +275,12 @@
                      [(ObjectDef,FPA,[Morphism],[(Expression,Rule)])]
                      [ServiceSpec] -- services
 
-   instance ShowHS Funit where
-    showHSname (Uspc nm pat ents svs) = "f_Unit_"++haskellIdentifier nm
-    showHS indent (Uspc nm pat ents svs)
-     = "Uspc "++show nm++" ("++showHSname pat++" gE)"
-       ++indent++"     [ "++chain (indent++"     , ") ["(" ++ showHS (indent++"       ") o ++ ", ILGV Eenvoudig, [] {-cs-},[] {-rs-}) "     | (o,fpa,cs,rs)<-ents]++indent++"     ]"
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-svs ]++indent++"     ]"
+--   instance ShowHS Funit where
+--    showHSname (Uspc nm pat ents svs) = "f_Unit_"++haskellIdentifier nm
+--    showHS indent (Uspc nm pat ents svs)
+--     = "Uspc "++show nm++" ("++showHSname pat++" gE)"
+--       ++indent++"     [ "++chain (indent++"     , ") ["(" ++ showHS (indent++"       ") o ++ ", ILGV Eenvoudig, [] {-cs-},[] {-rs-}) "     | (o,fpa,cs,rs)<-ents]++indent++"     ]"
+--       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-svs ]++indent++"     ]"
 
    makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
    makeFunit context pat objs newConcs newDecls
@@ -320,23 +317,23 @@
                            String       -- type of the parameter
                     | Pbool
 
-   instance ShowHS ServiceSpec where
-    showHSname (Sspc nm sees changes fpa input output rs pre post) = "f_svc_"++haskellIdentifier nm
-    showHS indent (Sspc nm sees changes fpa input output rs pre post)
-     = "Sspc "++show nm
-       ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) sees   )++indent++"     ] -- these are the visible morphisms: <sees> "
-       ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
-       ++indent++"     (" ++show fpa++")"
-       ++indent++"     [" ++(if null input   then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") input )++"] -- these are the input parameters: <input>")
-       ++indent++"     [" ++(if null output  then "]   -- no output parameters"          else " "++chain "," (map (showHS "") output)++"] -- these are the output parameters: <output> ")
-       ++indent++"     [" ++(if null rs      then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) rs  )++indent++"     ]")
-       ++indent++"     [" ++(if null pre     then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        pre )++indent++"     ] -- preconditions")
-       ++indent++"     [" ++(if null post    then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        post)++indent++"     ] -- postconditions")
+--   instance ShowHS ServiceSpec where
+--    showHSname (Sspc nm sees changes fpa input output rs pre post) = "f_svc_"++haskellIdentifier nm
+--    showHS indent (Sspc nm sees changes fpa input output rs pre post)
+--     = "Sspc "++show nm
+--       ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) sees   )++indent++"     ] -- these are the visible morphisms: <sees> "
+--       ++indent++"     [" ++(if null changes then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) changes)++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
+--       ++indent++"     (" ++show fpa++")"
+--       ++indent++"     [" ++(if null input   then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") input )++"] -- these are the input parameters: <input>")
+--       ++indent++"     [" ++(if null output  then "]   -- no output parameters"          else " "++chain "," (map (showHS "") output)++"] -- these are the output parameters: <output> ")
+--       ++indent++"     [" ++(if null rs      then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) rs  )++indent++"     ]")
+--       ++indent++"     [" ++(if null pre     then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        pre )++indent++"     ] -- preconditions")
+--       ++indent++"     [" ++(if null post    then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        post)++indent++"     ] -- postconditions")
 
-   instance ShowHS ParamSpec where
-    showHSname a@(Aspc nm typ) = error ("(module Fspec) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
-    showHS indent (Aspc nm typ)
-     = "Aspc "++show nm++" "++show typ
+--   instance ShowHS ParamSpec where
+--    showHSname a@(Aspc nm typ) = error ("(module Fspec) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
+--    showHS indent (Aspc nm typ)
+--     = "Aspc "++show nm++" "++show typ
 
    class Statistics a where
     nServices :: a -> Int

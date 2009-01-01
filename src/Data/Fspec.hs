@@ -1,16 +1,4 @@
--- This module contains the internal data structure of Fspec
-module Data.Fspec where
-   import Data.ADL  -- TODO Nagaan of alle gesharede datadefinities écht geshared moeten zijn. 
-               ( Declaration
-               , Concept
-               , Morphism
-               , ObjectDef
-               , Expression
-               , Rule
-               , Pattern
-               )
-
-{- The intentions behind Fspc (SJ 30 dec 2008):
+{- | The intentions behind Fspc (SJ 30 dec 2008):
 Generation of functional specifications is the core functionality of ADL.
 All items in a specification are generated into the following data structure, Fspc.
 It is built by compiling an ADL-script and translating that to Fspc.
@@ -18,6 +6,30 @@ In the future, other ways of "filling" Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
+module Data.Fspec 
+             (module Data.ADL
+             , Fspc(..)
+             , Ftheme(..)
+             , Funit(..)
+             , Fview(..)
+             , Frule(..)
+             , FViewDef(..)
+             , ServiceSpec(..)
+             , Dataset(..)
+             , ParamSpec(..)
+             , FSid(..)
+             )
+where
+   import Data.ADL  -- TODO Nagaan of alle gesharede datadefinities écht geshared moeten zijn. 
+               ( Pattern
+               , Rule
+               , ObjectDef
+               , Expression
+               , Morphism
+               , Declaration
+               , Concept
+               )
+
    import Typology(Inheritance)
    data Fspc = Fspc -- Fctx 
               { fsfsid   :: FSid  -- The name of the specification
@@ -35,12 +47,14 @@ are merely different ways to show Fspc.
                  , units :: [Funit]  -- The units of the theme
                  , ftpat   ::  Pattern  -- Het pattern van de unit -- Obsolete
                  }
+
+   data Funit = Uspc 
+                  { fusid    :: FSid
+                  , pattern  :: Pattern
+                  , viewDefs :: [FViewDef]
+                  , servDefs :: [ServiceSpec] -- services
+                  }
               
-   data Dataset = DS Concept     -- the root of the dataset
-                     [Morphism]  -- the functions from the root
-                | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
-
-
    data Fview  = Fview 
                { dataset   :: Dataset
                , objectdef :: ObjectDef
@@ -49,13 +63,6 @@ are merely different ways to show Fspc.
                }
 
    data Frule = Frul Rule
-
-   data Funit = Uspc 
-                  { fusid    :: FSid
-                  , pattern  :: Pattern
-                  , viewDefs :: [FViewDef]
-                  , servDefs :: [ServiceSpec] -- services
-                  }
 
    data FViewDef = Vdef
                   { vdobjdef :: ObjectDef
@@ -75,11 +82,15 @@ are merely different ways to show Fspc.
                        , post    :: [String]     -- Postconditions
                        }
 
+   data Dataset = DS Concept     -- the root of the dataset
+                     [Morphism]  -- the functions from the root
+                | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
+
    data ParamSpec   = Aspc 
                       {pname :: FSid         -- name of the parameter
                       ,ptype :: String }     -- type of the parameter
-                    -- | HJO: Wat moet die Pbool hier??
-                    | Pbool
+                    --   WAAROM stond hieronder Pbool ?? HJO: Wat moet die Pbool hier?? Zat hier nog een gedachte achter? Zo niet, gooi deze regels dan maar weg, Stef.
+                    --   Pbool
 
    data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
              | NoName           -- some identified objects have no name...

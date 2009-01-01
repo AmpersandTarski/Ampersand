@@ -19,6 +19,7 @@
    import Classification
    import ADLdef
    import ShowADL
+   import ShowHS
    import CC_aux
    import Graphic
 
