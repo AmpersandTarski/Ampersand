@@ -2,7 +2,7 @@
 #line 1 "ObjBinGenObject.lhs"
   module ObjBinGenObject where
    import Char(toUpper)
-   import Auxiliaries(chain, adlVersion)
+   import Auxiliaries(chain, adlVersion, commaEng)
    import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
    import ADLdef
    import ShowADL
@@ -125,7 +125,7 @@
                                 ++"',$errno)===false){"
        ,"          $DB_err=$preErr.(($errno==1062) ? '"
           ++(addSlashes (name (concept object))) ++" \\''."++phpVar (name object)++
-          "->id.'\\' allready exists' : 'Error '.$errno.' in query '.$DB_lastquer);"
+          "->id.'\\' already exists' : 'Error '.$errno.' in query '.$DB_lastquer);"
        ,"          DB_doquer('ROLLBACK');"
        ,"          return false;"
        ,"      }"
@@ -142,22 +142,27 @@
 
    updateObject :: Object a => Context -> [String] -> a -> [String]
    updateObject context nms o =
+     ( if null (termAtts o) then [] else
        ["    if(!$new){"
        ,"      // destroy old attribute values"
        ] ++ (concat (map (map ((++) "      "))
-              [ [ "$effected = DB_doquer('"++ (selectExprForAttr context a o (phpVar nm++"->id")) ++"');"
+              [ [ ""
+                , "// When changed, retain the value of "++name a++" in "++phpVar (nm++"_"++name a++"_str")++"."
+                , "// It is obtained from "++showADL (objctx a)++"."
+                , "$affected = DB_doquer('"++ (selectExprForAttr context a o (phpVar nm++"->id")) ++"');"
                 , "$arr=array();"
-                , "foreach($effected as $i=>$v){"
+                , "foreach($affected as $i=>$v){"
                 , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (nm++"_"++name a++"_str")++"=join(',',$arr);"
+                , "// destroy old value of "++name a++" in the database."
                 , "DB_doquer( '"++(deleteExprForAttr context a o (phpVar nm++"->id"))++"');"
                 ]
               | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
               ]
              )) ++
-       ["    }"
-       ]  ++ (concat (map (map ((++) "    "))
+       ["    }"]
+     )   ++ (concat (map (map ((++) "    "))
               [ [ "foreach("++phpVar nm++"->"++phpIdentifier (name a)++" as $i=>"++phpVar (nm++"_"++name a)++"){"
                 ] ++ (concat (map (map ((++) "  "))
                       [ [ "if(isset("++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id)){"
@@ -238,9 +243,9 @@
  --  deleteObject :: Context -> a -> [String]
    deleteObject context object =
        (concat (map (map ((++) "      "))
-              [ [ "$effected = DB_doquer('"++ (selectExprForAttr context a object "$id") ++"');"
+              [ [ "$affected = DB_doquer('"++ (selectExprForAttr context a object "$id") ++"');"
                 , "$arr=array();"
-                , "foreach($effected as $i=>$v){"
+                , "foreach($affected as $i=>$v){"
                 , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (name a)++"_str=join(',',$arr);"

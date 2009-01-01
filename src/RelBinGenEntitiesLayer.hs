@@ -324,20 +324,6 @@
       , phpCodeTransactionClose context noTransactions "true"
       , "}"
       , ""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       , "// checks whether multiplicities are OK...."
       , "function DB_is_multi($rel,$source){"
       , "    switch($rel){"
