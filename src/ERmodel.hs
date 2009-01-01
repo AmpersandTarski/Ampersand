@@ -1,5 +1,3 @@
-{-# LINE 1 "ERmodel.lhs" #-}
-#line 1 "ERmodel.lhs"
   module ERmodel(erAnalysis) where
    import Char (isSpace, isAlphaNum)
    import CommonClasses ( Identified(name)) 
