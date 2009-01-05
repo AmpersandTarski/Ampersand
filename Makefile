@@ -29,7 +29,7 @@ ghci:
 adl: bin/adl$(EXE)
 
 bin/adl$(EXE): $(SOURCES) out bin
-	ghc $(FLAGS) -o $@ src/Main.lhs
+	ghc $(FLAGS) -o $@ src/Main.hs
 	strip $@
 
 out:
