@@ -99,16 +99,16 @@
            -- context
          ; if null errs 
            then do { putStr ("\nNo type errors or cyclic specializations were found.\n")
-                   ; let fspec = makeFspecNew2 context
+             --      ; let fspec = (makeFspecNew2 context)
                    ; if length args==1 && length contexts==1
                      then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                           ( build_NewStyle fspec switches fnOutp dbName slRes )) else
+                           ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes )) else
                      if length args==1 && length contexts>1
                      then putStr ("\nPlease specify the name of a context."++
                                   "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
                      if length args>1 && contextname `elem` map name contexts
                      then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                           ( build_NewStyle fspec switches fnOutp dbName slRes ))
+                           ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes ))
                      else putStr ("\nContext "++contextname++" not defined."++
                                   "\nPlease specify the name of an available context."++
                                   "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
@@ -232,20 +232,20 @@
    showHaskell :: Fspc -> IO ()
    showHaskell fspc
     = putStrLn ("\nGenerating Haskell source code for "++name fspc) >>
-      writeFile (baseName++"_new.lhs")
+      writeFile (baseName++".lhs")
                 ("> module Main where"
              ++"\n>  import UU_Scanner"
              ++"\n>  import Classification"
              ++"\n>  import Typology"
              ++"\n>  import ADLdef"
-             ++"\n>  import CC_aux (showHS)"
-             ++"\n>  import FspecDef"
+             ++"\n>  import ShowHS (showHS)"
+             ++"\n>  import Data.Fspec"
              ++"\n"
              ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName++")"
              ++"\n\n"
-                 ++">  "++baseName++"\n>   = "++showHS "\n>     " fspc
+             ++">  "++baseName++"\n>   = "++showHS "\n>     " fspc
                 ) >>
-      putStr ("\nHaskell file "++baseName++"_new.lhs written...\n")
+      putStr ("\nHaskell file "++baseName++".lhs written...\n")
       where
        baseName = "f_Ctx_"++(name fspc)
 
@@ -305,3 +305,4 @@
          case result of
              ExitSuccess   -> putStrLn ("  "++fnm++".pdf created.")
              ExitFailure x -> putStrLn $ "Failure: " ++ show x
+             

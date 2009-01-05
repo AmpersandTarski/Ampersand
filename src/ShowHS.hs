@@ -17,7 +17,7 @@ where
                 , morlist
                 , isa
                 )
-   import Collection ( (>-) )
+   import Collection ( (>-),uni )
    import CommonClasses (explain )             
    import UU_Scanner (Pos(Pos))
    import ShowADL
@@ -51,6 +51,8 @@ where
      = "Fspc"++showHS " " (fsid fspec)++
        (if null (themes   fspec) then " []" else indent++"{- themes:    -}  "++showL [showHSname t|t<-themes   fspec ])++
        (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
+       (if null (serviceS fspec) then " []" else indent++"{- serviceS:  -}  "++showL [showHSname s|s<-serviceS fspec ])++
+       (if null (serviceG fspec) then " []" else indent++"{- serviceG:  -}  "++showL [showHSname s|s<-serviceG fspec ])++
        (if null (views    fspec) then " []" else indent++"{- views:     -}  "++showL [showHSname v|v<-views    fspec ])++
        (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
        (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
@@ -62,6 +64,12 @@ where
        (if null (views    fspec ) then "" else concat [indent++" "++showHSname v++indent++"  = "++showHS (indent++"    ") v|v<- views    fspec ]++"\n")++
         "\n>-- ***RULES***: "++
        (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
+ 
+        "\n>-- ***object Definitions***: "++
+       (if null 
+            (uni (serviceS fspec)  (serviceG fspec)) then "" 
+             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
+ 
         "\n>-- ***DATASETS***: "++
        (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
         "\n>-- ***THEMES***: "++

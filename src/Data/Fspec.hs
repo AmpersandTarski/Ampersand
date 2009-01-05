@@ -2,7 +2,7 @@
 Generation of functional specifications is the core functionality of ADL.
 All items in a specification are generated into the following data structure, Fspc.
 It is built by compiling an ADL-script and translating that to Fspc.
-In the future, other ways of "filling" Fspc are foreseen.
+In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
@@ -20,7 +20,7 @@ module Data.Fspec
              , FSid(..)
              )
 where
-   import Data.ADL  -- TODO Nagaan of alle gesharede datadefinities écht geshared moeten zijn. 
+   import Data.ADL  
                ( Pattern
                , Rule
                , ObjectDef
@@ -32,20 +32,20 @@ where
 
    import Typology(Inheritance)
    data Fspc = Fspc -- Fctx 
-              { fsfsid   :: FSid  -- The name of the specification
-              , themes   :: [Ftheme]      -- One for every pattern
-              , datasets :: [Dataset]     -- This list contains the data sets that are computed from the basic ontology.
-              , serviceS :: [ObjectDef]   -- all services defined in the ADL-script
-              , serviceG :: [ObjectDef]   -- all services derived from the basic ontology
-              , views    :: [Fview]       -- One for every service 
-              , vrules   :: [Frule]       -- One for every rule
-              , vrels    :: [Declaration] -- One for every declaration
-              , isa      :: (Inheritance Concept) -- The data structure containing the generalization structure of concepts
+              { fsfsid   :: FSid          -- ^The name of the specification
+              , themes   :: [Ftheme]      -- ^ One for every pattern
+              , datasets :: [Dataset]     -- ^ This list contains the data sets that are computed from the basic ontology.
+              , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
+              , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
+              , views    :: [Fview]       -- ^ One for every service 
+              , vrules   :: [Frule]       -- ^ One for every rule
+              , vrels    :: [Declaration] -- ^ One for every declaration
+              , isa      :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
               }
-   data Ftheme  = Tspc     -- The constructor
-                 { ftsid  :: FSid     -- The name of the theme (aka pattern)
-                 , units :: [Funit]  -- The units of the theme
-                 , ftpat   ::  Pattern  -- Het pattern van de unit -- Obsolete
+   data Ftheme  = Tspc                    --  The constructor
+                 { ftsid :: FSid          -- ^ The name of the theme (aka pattern)
+                 , units :: [Funit]       -- ^ The units of the theme
+                 , ftpat :: Pattern       -- ^ Het pattern van de unit 
                  }
 
    data Funit = Uspc 
