@@ -1,4 +1,10 @@
-  module Dataset -- (Identified(..),makeDataset,makeDatasets,datasetMor,declarationsDS,morsDS,concsDS)
+  module Dataset (--Identified(..)
+                 makeDataset
+                 ,makeDatasets
+                 ,datasetMor
+                 ,declarationsDS
+                 ,morsDS
+                 ,concsDS)
   where
    import CommonClasses (Identified(..))
    import Auxiliaries (eqClass)

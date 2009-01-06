@@ -1,5 +1,3 @@
-{-# LINE 1 "ClassDiagram.lhs" #-}
-#line 1 "ClassDiagram.lhs"
   module ClassDiagram where
    import Char (toUpper)
    import CommonClasses (  Identified(name))

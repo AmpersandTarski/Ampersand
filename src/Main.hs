@@ -13,7 +13,7 @@
    import AGtry (sem_Architecture)
    import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
    import Calc (deriveProofs,triggers)
-   import Views (viewDataset)
+ --  import Views (viewDataset)
    import Dataset
    import Data.Fspec
    import FspecDEPRECIATED( 
@@ -23,19 +23,20 @@
                   ,generateGlossaryLaTeX
                   ,funcSpec
               --  ,nDesignPr
-                  ,nServices
-                  ,nFpoints
+             --     ,nServices
+             --     ,nFpoints
            --     ,makeFspec
                 )
    import HtmlFilenames(fnContext,fnPattern)
    import Graphic(processCdDataModelFile,dotGraph,processDotgraphFile)
    import Atlas (anal)
+   import Fspec2LaTeX
    import Fspec2Xml (makeXML_depreciated)
    import ClassDiagram (cdModel,cdDataModel)  
 --   import RelBinGen(phpServices)  OBSOLETE as of Jan 1st, 2009 (SJ)
    import ObjBinGen(phpObjServices)
    import ADL2Fspec (makeFspecNew2)
-
+   import Statistics 
 
 
    latexOpt :: [String] -> Bool
@@ -151,8 +152,8 @@
                     putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
                     putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
                     putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
-                    putStr ("  nr. of services:                   "++show (nServices spec)++"\n") >>
-                    putStr ("  nr. of function points:            "++show (nFpoints spec)++"\n") >>
+                    putStr ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
+                    putStr ("  nr. of function points:            "++show (nFpoints fSpec)++"\n") >>
                     appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length datasets)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
@@ -161,11 +162,11 @@
                     appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices spec)++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints spec)++"\n")
+                    appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
+                    appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints fSpec)++"\n")
                    where
                       fSpec = makeFspecNew2 context
-                      spec  = funcSpec context (lang switches)
+          -- TODO: Onderstaande definities moet op basis van fSpec, niet op basis van context...
                       datasets = makeDatasets context
                       rels  = declarations context
                       ruls  = rules context

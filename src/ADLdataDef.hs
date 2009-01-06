@@ -20,43 +20,15 @@
    import Collection (Collection (rd))
    import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
    
-   -- Eq
-   instance Eq Rule
-   instance Eq KeyDef
-   instance Eq ObjectDef
-   instance Eq Gen
-   instance Eq Concept where
-    C a _ _ == C b _ _ = a==b
-    S == S = True
-    Anything == Anything = True
-    NOthing == NOthing = True
-    _ == _ = False
-   instance Eq ConceptDef where
-    cd == cd' = cdnm cd == cdnm cd
-   instance Eq Declaration where
-      d == d' = name d==name d' && decsrc d==decsrc d' && dectgt d==dectgt d'
-   instance Eq Expression where
-    F  ts == F  ts' = ts==ts'
-    Fd ts == Fd ts' = ts==ts'
-    Fu fs == Fu fs' = rd fs==rd fs'
-    Fi fs == Fi fs' = rd fs==rd fs'
-    Cp e  == Cp e'  = e==e'
-    K0 e  == K0 e'  = e==e'
-    K1 e  == K1 e'  = e==e'
-    Tm m  == Tm m'  = m==m'
-    Tc e  == e'     = e==e'
-    e     == Tc e'  = e==e'
-    _     == _      = False
-   instance Eq Morphism where
- --   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
-    Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
-    Mph nm _ _ (a,b) yin _ == _ = False
-    I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
-    I _ g s yin            == _ = False
-    V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
-    V _ (a,b)              == _ = False
-    Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
-    Mp1 s c                == _ = False
+-- In deze module worden aan taalconstuctors van ADL de eigenschappen
+-- toegekend voor de volgende classen:
+--   Eq
+--   Show
+--   Identified
+--   Association
+--   Numbered
+--   Ord
+--   ABoolAlg
 
 
 
@@ -69,33 +41,117 @@
    --                Ik kan me voorstellen dat er op den duur een showADL ontstaat die zowel
    --                inline ADL kan genereren alsook geprettyprinte ADL.
 
-   instance Show ConceptDef    
+
+   class Association a where
+     source, target :: a -> Concept
+     sign           :: a -> MorphType
+     sign x = (source x,target x) 
+
+   instance Association MorphType where
+     source (src, tgt) = src
+     target (src, tgt) = tgt
+     
+
+   class Numbered a where
+    nr :: a->Int
+    pos :: a->FilePos
+    nr x = nr (pos x)
+
+
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Architecture                  ***
+-- \***********************************************************************
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Context                       ***
+-- \***********************************************************************
+   instance Identified Context where
+    name ctx = ctxnm ctx
+    typ ctx = "Context_"
+    
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Pattern                       ***
+-- \***********************************************************************
    instance Show Pattern
+   instance Identified Pattern where
+    name pat = ptnm pat
+    typ pat = "Pattern_"
+
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Rule                          ***
+-- \***********************************************************************
+   instance Eq Rule
    instance Show Rule
+   instance Identified Rule where
+    name r = "Rule"++show (runum r)
+    typ r = "Rule_"
+   instance Association Rule where
+    source r | ruleType r=='A' = fst (sign r)
+             | otherwise       = fst (sign r)
+    target r | ruleType r=='A' = snd (sign r)
+             | otherwise       = snd (sign r)
+    sign r   | ruleType r=='A' = sign (consequent r)
+             | otherwise       = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
+                                 error ("(module CC_aux) Fatal: incompatible signs in "++misbruiktShowHS "" r)
+
+   instance Numbered Rule where
+    pos (Ru _ _ p _ _ _ _ _ _) = p
+    pos (Sg p _ _ _ _ _ _)     = p
+    pos (Gc p _ _ _ _ _ _)     = p
+    pos r = posNone
+    nr  (Ru _ _ _ _ _ _ _ n _) = n
+    nr  (Sg _ _ _ _ n _ _)     = n
+    nr  (Gc _ _ _ _ _ n _)     = n
+    nr  r = 0
+
+
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: KeyDef                        ***
+-- \***********************************************************************
+   instance Eq KeyDef
    instance Show KeyDef
+   instance Identified KeyDef where
+    name kd = kdlbl kd
+    typ kd = "KeyDef_"
+
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Population                    ***
+-- \***********************************************************************
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
+-- \***********************************************************************
+   instance Eq ObjectDef
    instance Show ObjectDef
-   instance Show Concept where
-    showsPrec p c = showString (name c)
-   instance Show Prop where
-    showsPrec p Uni = showString "UNI"
-    showsPrec p Inj = showString "INJ"
-    showsPrec p Sur = showString "SUR"
-    showsPrec p Tot = showString "TOT"
-    showsPrec p Sym = showString "SYM"
-    showsPrec p Asy = showString "ASY"
-    showsPrec p Trn = showString "TRN"
-    showsPrec p Rfx = showString "RFX"
-    showsPrec p Aut = showString "AUT"
-   instance Show Declaration where
-    showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ False)
-     = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
-    showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ True)
-     = showString (chain " " ["SIGNAL",nm,"ON (",name a,"*",name b,")"])
-    showsPrec p _
-     = showString ""
-   instance Show Gen where
-    -- This show is used in error messages. It should therefore not display the term's type
-    showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)
+   instance Identified ObjectDef where
+    name obj = objnm obj
+    typ obj = "ObjectDef_"
+   instance Numbered ObjectDef where
+    pos obj = objpos obj
+
+
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Expression                    ***
+-- \***********************************************************************
+   instance Eq Expression where
+    F  ts == F  ts' = ts==ts'
+    Fd ts == Fd ts' = ts==ts'
+    Fu fs == Fu fs' = rd fs==rd fs'
+    Fi fs == Fi fs' = rd fs==rd fs'
+    Cp e  == Cp e'  = e==e'
+    K0 e  == K0 e'  = e==e'
+    K1 e  == K1 e'  = e==e'
+    Tm m  == Tm m'  = m==m'
+    Tc e  == e'     = e==e'
+    e     == Tc e'  = e==e'
+    _     == _      = False
+
    instance Show Expression where
     showsPrec p e  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") e)
       where
@@ -116,104 +172,6 @@
           showchar i (Cp e)  = compl++showchar 8 e
           showchar i (Tc f)  = showchar i f
     
-   instance Show Morphism where
-    showsPrec p (Mph nm pos  []  sgn yin m) = showString (nm  {- ++"("++show a++"*"++show b++")" where (a,b)=sgn -} ++if yin then "" else "~")
-    showsPrec p (Mph nm pos atts sgn yin m) = showString (nm  {- ++"["++chain "*" (map name (rd atts))++"]" -}      ++if yin then "" else "~")
-    showsPrec p (I atts g s yin)            = showString ("I"++ (if null atts then {- ++"["++name g, (if s/=g then ","++name s else "")++"]" -} "" else show atts))
-    showsPrec p (V atts (a,b))              = showString ("V"++ (if null atts then "" else show atts))
-
-
- 
-   
-  -- Identified
-   instance Identified Context where
-    name ctx = ctxnm ctx
-    typ ctx = "Context_"
-    
-   instance Identified Concept where
-    name (C {cptnm = nm}) = nm
-    name S = "ONE"
-    name Anything   = "Anything"
-    name NOthing    = "NOthing"
-    typ cpt = "Concept_"
-
-   instance Identified ConceptDef where
-    name cd = cdnm cd
-    typ cd = "ConceptDef_"
-
-   instance Identified Pattern where
-    name pat = ptnm pat
-    typ pat = "Pattern_"
-
-   instance Identified Declaration where
-    name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
-    name (Isn _ _)                      = "I"
-    name (Iscompl _ _)                  = "-I"
-    name (Vs _ _)                       = "V"
-    typ d = "Declaration_"
-
-   instance Identified KeyDef where
-    name kd = kdlbl kd
-    typ kd = "KeyDef_"
-
-   instance Identified ObjectDef where
-    name obj = objnm obj
-    typ obj = "ObjectDef_"
-
-   instance Identified Morphism where
---    name (Mph nm _ _ _ _ _) = nm    -- WAAROM (HJ)? zou name (makeDeclaration (Mph nm _ _ _ _ _)) het ook niet doen? Dan is de definitie op de volgende regel voldoende. 
-                                    -- ANTWOORD (SJ): Tja, dat klopt. Maar het is ook wel eens lekker om gewoon te kunnen lezen hoe het is, in plaats van continu te moeten dereferencen als je code leest...
-                                    -- conclusie: Toch maar verwijderd, want dat is weer een onnodige afhankelijkheid van de datastructuur minder...
-    name i = name (makeDeclaration i)
-    typ mph = "Morphism_"
-   instance Identified Rule where
-    name r = "Rule"++show (runum r)
-    typ r = "Rule_"
-
-   class Association a where
-     source, target :: a -> Concept
-     sign           :: a -> MorphType
-     sign x = (source x,target x) 
-
-   instance Association MorphType where
-     source (src, tgt) = src
-     target (src, tgt) = tgt
-     
-   instance Association Concept where
-    source c = c
-    target c = c
- --   sign c = (c,c)
-
-   instance Association Morphism where
-    source (Mph nm pos atts (a,b) _ s) = a
-    source (I atts g s yin)            = if yin then s else g
-    source (V atts (a,b))              = a
-    source (Mp1 _ s) = s
-    target (Mph nm pos atts (a,b) _ s) = b
-    target (I atts g s yin)            = if yin then g else s
-    target (V atts (a,b))              = b
-    target (Mp1 _ t) = t
-    sign   (Mph nm pos atts (a,b) _ s) = (a,b)
-    sign   (I atts g s yin)            = if yin then (s,g) else (g,s)
-    sign   (V atts (a,b))              = (a,b)
-    sign   (Mp1 _ s) = (s,s)
-
-
-   instance Association Declaration where
-    source (Sgn _ a b _ _ _ _ _ _ _ _ _)         = a
-    source (Isn g s)                             = s
-    source (Iscompl g s)                         = s
-    source (Vs a b)                              = a
-    target (Sgn _ a b _ _ _ _ _ _ _ _ _)         = b
-    target (Isn g s)                             = g
-    target (Iscompl g s)                         = g
-    target (Vs a b)                              = b
-    sign   (Sgn _ a b _ _ _ _ _ _ _ _ _)         = (a,b)
-    sign   (Isn g s)                             = (s,g)
-    sign   (Iscompl g s)                         = (s,g)
-    sign   (Vs g s)                              = (s,g)
-
-
    instance Association Expression where
 
     source (Tm m)          = source m
@@ -264,15 +222,199 @@
     sign (K1 e)            = sign e
     sign (Cp e)            = sign e
 
+   instance Numbered Expression where
+    pos (Tm m)  = pos m
+    pos (Tc f)  = pos f
+    pos (F ts)  = if not (null ts) then pos (head ts) else error "(module ADLdataDef) !!Software error 813. Please submit a complete bug report to your dealer"
+    pos (Fd ts) = if not (null ts) then pos (head ts) else error "(module ADLdataDef) !!Software error 814. Please submit a complete bug report to your dealer"
+    pos (Fu fs) = if not (null fs) then pos (head fs) else error "(module ADLdataDef) !!Software error 815. Please submit a complete bug report to your dealer"
+    pos (Fi fs) = if not (null fs) then pos (head fs) else error "(module ADLdataDef) !!Software error 816. Please submit a complete bug report to your dealer"
+    pos (K0 e)  = pos e
+    pos (K1 e)  = pos e
+    pos (Cp e)  = pos e
 
-   instance Association Rule where
-    source r | ruleType r=='A' = fst (sign r)
-             | otherwise       = fst (sign r)
-    target r | ruleType r=='A' = snd (sign r)
-             | otherwise       = snd (sign r)
-    sign r   | ruleType r=='A' = sign (consequent r)
-             | otherwise       = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
-                                 error ("(module CC_aux) Fatal: incompatible signs in "++misbruiktShowHS "" r)
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Gen                           ***
+-- \***********************************************************************
+   instance Eq Gen
+   instance Show Gen where
+    -- This show is used in error messages. It should therefore not display the term's type
+    showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Morphism                      ***
+-- \***********************************************************************
+   instance Eq Morphism where
+ --   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
+    Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
+    Mph nm _ _ (a,b) yin _ == _ = False
+    I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
+    I _ g s yin            == _ = False
+    V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
+    V _ (a,b)              == _ = False
+    Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
+    Mp1 s c                == _ = False
+
+   instance Show Morphism where
+    showsPrec p (Mph nm pos  []  sgn yin m) = showString (nm  {- ++"("++show a++"*"++show b++")" where (a,b)=sgn -} ++if yin then "" else "~")
+    showsPrec p (Mph nm pos atts sgn yin m) = showString (nm  {- ++"["++chain "*" (map name (rd atts))++"]" -}      ++if yin then "" else "~")
+    showsPrec p (I atts g s yin)            = showString ("I"++ (if null atts then {- ++"["++name g, (if s/=g then ","++name s else "")++"]" -} "" else show atts))
+    showsPrec p (V atts (a,b))              = showString ("V"++ (if null atts then "" else show atts))
+
+   instance Identified Morphism where
+--    name (Mph nm _ _ _ _ _) = nm    -- WAAROM (HJ)? zou name (makeDeclaration (Mph nm _ _ _ _ _)) het ook niet doen? Dan is de definitie op de volgende regel voldoende. 
+                                    -- ANTWOORD (SJ): Tja, dat klopt. Maar het is ook wel eens lekker om gewoon te kunnen lezen hoe het is, in plaats van continu te moeten dereferencen als je code leest...
+                                    -- conclusie: Toch maar verwijderd, want dat is weer een onnodige afhankelijkheid van de datastructuur minder...
+    name i = name (makeDeclaration i)
+    typ mph = "Morphism_"
+
+   instance Association Morphism where
+--    source (Mph nm pos atts (a,b) _ s) = a
+--    source (I atts g s yin)            = if yin then s else g
+--    source (V atts (a,b))              = a
+--    source (Mp1 _ s) = s
+--    target (Mph nm pos atts (a,b) _ s) = b
+--    target (I atts g s yin)            = if yin then g else s
+--    target (V atts (a,b))              = b
+--    target (Mp1 _ t) = t
+    sign   (Mph nm pos atts (a,b) _ s) = (a,b)
+    sign   (I atts g s yin)            = if yin then (s,g) else (g,s)
+    sign   (V atts (a,b))              = (a,b)
+    sign   (Mp1 _ s) = (s,s)
+    source m = source (sign m)
+    target m = target (sign m)
+   instance Numbered Morphism where
+    pos (Mph _ p _ _ _ _) = p
+    pos m                 = posNone
+    nr m = nr (makeDeclaration m)
+
+    
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Declaration                   ***
+-- \***********************************************************************
+   instance Eq Declaration where
+      d == d' = name d==name d' && decsrc d==decsrc d' && dectgt d==dectgt d'
+   instance Show Declaration where
+    showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ False)
+     = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
+    showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ True)
+     = showString (chain " " ["SIGNAL",nm,"ON (",name a,"*",name b,")"])
+    showsPrec p _
+     = showString ""
+   instance Identified Declaration where
+    name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
+    name (Isn _ _)                      = "I"
+    name (Iscompl _ _)                  = "-I"
+    name (Vs _ _)                       = "V"
+    typ d = "Declaration_"
+
+   instance Association Declaration where
+--    source (Sgn _ a b _ _ _ _ _ _ _ _ _)         = a
+--    source (Isn g s)                             = s
+--    source (Iscompl g s)                         = s
+--    source (Vs a b)                              = a
+--    target (Sgn _ a b _ _ _ _ _ _ _ _ _)         = b
+--    target (Isn g s)                             = g
+--    target (Iscompl g s)                         = g
+--    target (Vs a b)                              = b
+--    sign   (Sgn _ a b _ _ _ _ _ _ _ _ _)         = (a,b)
+--    sign   (Isn g s)                             = (s,g)
+--    sign   (Iscompl g s)                         = (s,g)
+--    sign   (Vs g s)                              = (s,g)
+--  Bovenstaande is wel érg omslachtig. Ik heb het vervangen door:
+      source d = decsrc d
+      target d = dectgt d
+    --sign is vanzelf al geregeld...
+
+   instance Numbered Declaration where
+    pos (Sgn _ _ _ _ _ _ _ _ _ p _ _) = p
+    pos d                             = posNone
+    nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
+    nr d                              = 0
+
+
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
+-- \***********************************************************************
+   instance Eq ConceptDef where
+    cd == cd' = cdnm cd == cdnm cd
+   instance Show ConceptDef    
+   instance Identified ConceptDef where
+    name cd = cdnm cd
+    typ cd = "ConceptDef_"
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Concept                       ***
+-- \***********************************************************************
+   instance Eq Concept where
+    C a _ _ == C b _ _ = a==b
+    S == S = True
+    Anything == Anything = True
+    NOthing == NOthing = True
+    _ == _ = False
+   instance Show Concept where
+    showsPrec p c = showString (name c)
+   instance Identified Concept where
+    name (C {cptnm = nm}) = nm
+    name S = "ONE"
+    name Anything   = "Anything"
+    name NOthing    = "NOthing"
+    typ cpt = "Concept_"
+   instance Association Concept where
+    source c = c
+    target c = c
+   instance Ord Concept where
+    NOthing <= b  = False
+    a <= NOthing  = True
+    Anything <= b = True
+    a <= Anything = False
+    a@(C _ gE _) <= b = a `gE` b
+    a <= b = a==b
+    --TODO?: ORD is niet gedefinieerd op Singelton.... Is dat erg?
+
+
+   instance ABoolAlg Concept where
+    glb a b | b <= a = b
+            | a <= b = a
+            | otherwise = error ("(module ADLdataDef) Fatal: (C) glb undefined: a="++show a++", b="++show b)
+    lub a b | a <= b = b
+            | b <= a = a
+            | otherwise = error ("(module ADLdataDef) Fatal: (C) lub undefined: a="++show a++", b="++show b)
+
+
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: AutType                       ***
+-- \***********************************************************************
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Prop                          ***
+-- \***********************************************************************
+   instance Show Prop where
+    showsPrec p Uni = showString "UNI"
+    showsPrec p Inj = showString "INJ"
+    showsPrec p Sur = showString "SUR"
+    showsPrec p Tot = showString "TOT"
+    showsPrec p Sym = showString "SYM"
+    showsPrec p Asy = showString "ASY"
+    showsPrec p Trn = showString "TRN"
+    showsPrec p Rfx = showString "RFX"
+    showsPrec p Aut = showString "AUT"
+   
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: FilePos                       ***
+-- \***********************************************************************
+   instance Numbered FilePos where
+    nr (FilePos (fn,Pos l c,sym)) = l
+    pos p = p
+
+
+
+
+--  /---------------------Hieronder moet nog verder worden bekeken of het hier wel thuishoort.
 
 
    ruleType    (Ru c _ _ _ _ _ _ _ _) = c
@@ -323,130 +465,4 @@
    cptAnything = Anything      -- constructor
    cptNothing = NOthing        -- constructor
    cptnew nm = cptC nm (==) []
-
-   class Numbered a where
-    nr :: a->Int
-    pos :: a->FilePos
-    nr x = nr (ADLdataDef.pos x)
-
-   instance Numbered FilePos where
-    nr (FilePos (fn,Pos l c,sym)) = l
-    pos p = p
-
-   instance Numbered Rule where
-    pos (Ru _ _ p _ _ _ _ _ _) = p
-    pos (Sg p _ _ _ _ _ _)     = p
-    pos (Gc p _ _ _ _ _ _)     = p
-    pos r = posNone
-    nr  (Ru _ _ _ _ _ _ _ n _) = n
-    nr  (Sg _ _ _ _ n _ _)     = n
-    nr  (Gc _ _ _ _ _ n _)     = n
-    nr  r = 0
-
-   instance Numbered Morphism where
-    pos (Mph _ p _ _ _ _) = p
-    pos m                 = posNone
-    nr m = nr (makeDeclaration m)
-
-   instance Numbered Declaration where
-    pos (Sgn _ _ _ _ _ _ _ _ _ p _ _) = p
-    pos d                             = posNone
-    nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
-    nr d                              = 0
-
-   instance Numbered Expression where
-    pos (Tm m)  = ADLdataDef.pos m
-    pos (Tc f)  = ADLdataDef.pos f
-    pos (F ts)  = if not (null ts) then ADLdataDef.pos (head ts) else error "(module ADLdef) !!Software error 813. Please submit a complete bug report to your dealer"
-    pos (Fd ts) = if not (null ts) then ADLdataDef.pos (head ts) else error "(module ADLdef) !!Software error 814. Please submit a complete bug report to your dealer"
-    pos (Fu fs) = if not (null fs) then ADLdataDef.pos (head fs) else error "(module ADLdef) !!Software error 815. Please submit a complete bug report to your dealer"
-    pos (Fi fs) = if not (null fs) then ADLdataDef.pos (head fs) else error "(module ADLdef) !!Software error 816. Please submit a complete bug report to your dealer"
-    pos (K0 e)  = ADLdataDef.pos e
-    pos (K1 e)  = ADLdataDef.pos e
-    pos (Cp e)  = ADLdataDef.pos e
-
-   instance Ord Concept where
-    NOthing <= b  = False
-    a <= NOthing  = True
-    Anything <= b = True
-    a <= Anything = False
-    a@(C _ gE _) <= b = a `gE` b
-    a <= b = a==b
-    --TODO?: ORD is niet gedefinieerd op Singelton.... Is dat erg?
-
-
-   instance ABoolAlg Concept where
-    glb a b | b <= a = b
-            | a <= b = a
-            | otherwise = error ("(module CC_aux) Fatal: (C) glb undefined: a="++show a++", b="++show b)
-    lub a b | a <= b = b
-            | b <= a = a
-            | otherwise = error ("(module CC_aux) Fatal: (C) lub undefined: a="++show a++", b="++show b)
-
-   instance Numbered ObjectDef where
-    pos obj = objpos obj
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Architecture                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Context                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Pattern                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Rule                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: KeyDef                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Population                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ObjectDef                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Expression                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Gen                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Morphism                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Declaration                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ConceptDef                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Concept                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: AutType                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Prop                          ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FilePos                          ***
--- \***********************************************************************
 

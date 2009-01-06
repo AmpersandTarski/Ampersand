@@ -4,12 +4,13 @@
                   ,generateArchLaTeX
                   ,generateGlossaryLaTeX
                   ,funcSpec
-                  ,nServices
-                  ,nFpoints
+           --       ,nServices
+           --       ,nFpoints
                            )
   where
+   import FPA
    import Char
-   import CommonClasses ( Identified(name))
+   import CommonClasses ( Identified(..))
    import Collection (Collection (isc,(>-),empty, rd))
    import Auxiliaries
           (  --adlVersion
@@ -76,70 +77,71 @@
  -- Every dataset is discussed in precisely one theme
  -- Every theme will be explained in a chapter of its own.
 
-   makeFspec :: Context -> Fspec
-   makeFspec context
-     = Fctx ( context { ctxpats = patterns context ++ if null remainingDS then [] else [others]
-                      , ctxrs   = rules context
-                      , ctxds   = declarations context
-                      , ctxcs   = conceptDefs context
-                      , ctxks   = []
-                      , ctxos   = attributes context
-                      }
-            ) 
-            (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
-            ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
-            )
-            datasets
-            [ makeFview context o | o <-attributes context]
-            [ makeFrule context r | r <-rules context]
-       where
-        datasets = makeDatasets context
-
- -- next thing, we look which datasets will be discussed in which themes.
- -- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
- -- because we assume that the programmer found it important enough to define that concept in that pattern.
- -- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
-        pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
-                 [ (pat,length cns,ds)
-                 | pat<-patterns context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
- -- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
- -- The remaining concepts and datasets are determined in pcsds1.
- -- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
-        pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
-                 [ (pat,0-length ms,ds)
-                 | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
-                 , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
-                 ]
- -- The remaining datasets will be discussed in the last theme
-        remainingDS = datasets>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
-        others
-         = Pat "Other topics" rs gen pms cs ks
-           where rs  = []
-                 gen = []
-                 pms = rd [d| ds<-remainingDS, d<-declarations ds]
-                 cs  = []
-                 ks  = []
-   --     context' = Ctx nm on i world pats rs ds cs ks os pops
-   --        where nm    = name context
-   --              on    = extends context
-   --              i     = isa context
-   --              world = wrld context
-   --              pats  = patterns context ++ if null remainingDS then [] else [others]
-   --              rs    = rules context
-   --              ds    = declarations context
-   --              cs    = conceptDefs context
-   --              ks    = []
-   --              os    = attributes context
-   --              pops  = populations context
- -- The patterns with the appropriate datasets are determined:
-        pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
+--   makeFspecOUD :: Context -> Fspec
+--   makeFspecOUD context
+--     = Fctx ( context { ctxpats = patterns context ++ if null remainingDS then [] else [others]
+--                      , ctxrs   = rules context
+--                      , ctxds   = declarations context
+--                      , ctxcs   = conceptDefs context
+--                      , ctxks   = []
+--                      , ctxos   = attributes context
+--                      }
+--            ) 
+--            (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
+--            ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
+--            )
+--            datasets
+--            [ makeFview context o | o <-attributes context]
+--            [ makeFrule context r | r <-rules context]
+--       where
+--        datasets = makeDatasets context
+--
+-- -- next thing, we look which datasets will be discussed in which themes.
+-- -- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
+-- -- because we assume that the programmer found it important enough to define that concept in that pattern.
+-- -- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
+--        pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
+--                 [ (pat,length cns,ds)
+--                 | pat<-patterns context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
+-- -- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
+-- -- The remaining concepts and datasets are determined in pcsds1.
+-- -- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
+--        pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
+--                 [ (pat,0-length ms,ds)
+--                 | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
+--                 , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
+--                 ]
+-- -- The remaining datasets will be discussed in the last theme
+--        remainingDS = datasets>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
+--        others
+--         = Pat "Other topics" rs gen pms cs ks
+--           where rs  = []
+--                 gen = []
+--                 pms = rd [d| ds<-remainingDS, d<-declarations ds]
+--                 cs  = []
+--                 ks  = []
+--   --     context' = Ctx nm on i world pats rs ds cs ks os pops
+--   --        where nm    = name context
+--   --              on    = extends context
+--   --              i     = isa context
+--   --              world = wrld context
+--   --              pats  = patterns context ++ if null remainingDS then [] else [others]
+--   --              rs    = rules context
+--   --              ds    = declarations context
+--   --              cs    = conceptDefs context
+--   --              ks    = []
+--   --              os    = attributes context
+--   --              pops  = populations context
+-- -- The patterns with the appropriate datasets are determined:
+--        pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
 
    instance Identified Dataset where
      name (DS c pths) = name c
      name (BR m) = name m
+     typ d = error "No Dataset typ defined"
      
-   makeDatasets :: Context -> [Dataset]
-   makeDatasets context
+   makeDatasetsOUD :: Context -> [Dataset]
+   makeDatasetsOUD context
     = [ DS (minimum [g|g<-concs context,g<=head cl]) (dss cl)
       | cl<-eqClass bi (concs context) ]
       where
@@ -155,8 +157,8 @@
 --    showHSname (Frul r)    = "frule_"++showHSname r     -- (name r)
 --    showHS indent (Frul r) = "Frul (" ++showHS "" r++")"
 
-   makeFrule :: Context -> Rule -> Frule
-   makeFrule context r = Frul r
+--   makeFruleOUD :: Context -> Rule -> Frule
+--   makeFruleOUD context r = Frul r
 
 
 
@@ -242,15 +244,15 @@
 
 
 
-   makeFview :: Context -> ObjectDef -> Fobj
-   makeFview context o
-    = Fobj (dataset context (concept o)) o
-           ([ getEach context o
-            , createObj context o [] {-rs-}
-            , readObj context o
-            , deleteObj context o [] {-rs-}
-            , updateObj context o [] {-cs-} [] {-rs-} ])
-           [Frul r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+--   makeFviewOUD :: Context -> ObjectDef -> Fobj
+--   makeFviewOUD context o
+--    = Fobj (dataset context (concept o)) o
+--           ([ getEach context o
+--            , createObj context o [] {-rs-}
+--            , readObj context o
+--            , deleteObj context o [] {-rs-}
+--            , updateObj context o [] {-cs-} [] {-rs-} ])
+--           [Frul r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
 
 
 
@@ -265,11 +267,11 @@
 
 
 
-   makeFtheme :: Context -> Pattern -> [Dataset] -> Ftheme
-   makeFtheme context pat dss
-    = Tspc pat [makeFunit context pat (objs ds) [] []| ds<-dss]
-      where
-       objs ds = [o| o<-attributes context, dataset context (concept o)==ds]
+--   makeFthemeOUD :: Context -> Pattern -> [Dataset] -> Ftheme
+--   makeFthemeOUD context pat dss
+--    = Tspc pat [makeFunit context pat (objs ds) [] []| ds<-dss]
+--      where
+--       objs ds = [o| o<-attributes context, dataset context (concept o)==ds]
 
    data Funit = Uspc String Pattern
                      [(ObjectDef,FPA,[Morphism],[(Expression,Rule)])]
@@ -282,8 +284,8 @@
 --       ++indent++"     [ "++chain (indent++"     , ") ["(" ++ showHS (indent++"       ") o ++ ", ILGV Eenvoudig, [] {-cs-},[] {-rs-}) "     | (o,fpa,cs,rs)<-ents]++indent++"     ]"
 --       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-svs ]++indent++"     ]"
 
-   makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
-   makeFunit context pat objs newConcs newDecls
+   makeFunitOUD :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
+   makeFunitOUD context pat objs newConcs newDecls
     = Uspc (if null objs then "" else name (head objs)) pat 
           objDefs
           servicespecs
@@ -335,95 +337,8 @@
 --    showHS indent (Aspc nm typ)
 --     = "Aspc "++show nm++" "++show typ
 
-   class Statistics a where
-    nServices :: a -> Int
-    nPatterns :: a -> Int
-    nFpoints  :: a -> Int
-   instance Statistics Fspec where
-    nServices (Fctx context themes datasets objects vrules) = nServices themes+nServices objects
-    nPatterns (Fctx context themes datasets objects vrules) = nPatterns themes+nPatterns objects
-    nFpoints  (Fctx context themes datasets objects vrules) = nFpoints datasets + nFpoints objects
-   instance Statistics Ftheme where
-    nServices (Tspc p us) = nServices us
-    nPatterns (Tspc p us) = 1
-    nFpoints  (Tspc p us) = sum (map nFpoints us)
-   instance Statistics Dataset where
-    nServices (DS c pths) = 4
-    nServices (BR m)      = 2
-    nPatterns (DS c pths) = 0
-    nPatterns (BR m)      = 0
-    nFpoints  (DS c pths) = fPoints (ILGV Eenvoudig)
-    nFpoints  (BR m)      = fPoints (ILGV Eenvoudig)
-   instance Statistics Fobj where
-    nServices (Fobj dset o svcs rs) = length svcs
-    nPatterns (Fobj dset o svcs rs) = 1
-    nFpoints  (Fobj dset o svcs rs) = nFpoints o
-   instance Statistics ObjectDef where
-    nServices o = 4+sum [nServices a| a<-attributes o]
-    nPatterns o = 0
-    nFpoints  o = error ("(Module Fspec) Function points TBD")
-   instance Statistics a => Statistics [a] where
-    nServices xs = sum (map nServices xs)
-    nPatterns xs = sum (map nPatterns xs)
-    nFpoints  xs = sum (map nFpoints xs)
-   instance Statistics Funit where
-    nServices (Uspc nm pat ents svs) = length svs
-    nPatterns x = 0
-    nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ _ _ fpa _ _ _ _ _<-specs]
-   instance Statistics ServiceSpec where
-    nServices x = 1
-    nPatterns x = 0
-    nFpoints (Sspc nm sees changes fpa input output rs pre post) = fPoints fpa
 
 
-
-   data FPA = ILGV FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
-            | KGV  FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
-            | IF   FPcompl -- verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
-            | UF   FPcompl -- presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
-            | OF   FPcompl -- is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
-            | NO           -- een onderdeel waaraan geen functiepunten worden toegekend.
-              deriving (Eq, Show)
-   data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
-
-   instance ShowLang FPcompl where
-    showLang Dutch Eenvoudig   = "Eenvoudig"
-    showLang Dutch Gemiddeld   = "Gemiddeld"
-    showLang Dutch Moeilijk    = "Moeilijk"
-    showLang English Eenvoudig = "Simple"
-    showLang English Gemiddeld = "Average"
-    showLang English Moeilijk  = "Difficult"
-
-   instance ShowLang FPA where
-    showLang lang (ILGV c) = "ILGV "++showLang lang c
-    showLang lang (KGV  c) = "KGV "++showLang lang c
-    showLang lang (IF   c) = "IF "++showLang lang c
-    showLang lang (UF   c) = "UF "++showLang lang c
-    showLang lang (OF   c) = "OF "++showLang lang c
-    showLang lang NO       = ""
-
-   fPoints (ILGV Eenvoudig) = 7
-   fPoints (ILGV Gemiddeld) = 10
-   fPoints (ILGV Moeilijk ) = 15
-   fPoints (KGV  Eenvoudig) = 5
-   fPoints (KGV  Gemiddeld) = 7
-   fPoints (KGV  Moeilijk ) = 10
-   fPoints (IF   Eenvoudig) = 3
-   fPoints (IF   Gemiddeld) = 4
-   fPoints (IF   Moeilijk ) = 6
-   fPoints (UF   Eenvoudig) = 4
-   fPoints (UF   Gemiddeld) = 5
-   fPoints (UF   Moeilijk ) = 7
-   fPoints (OF   Eenvoudig) = 3
-   fPoints (OF   Gemiddeld) = 4
-   fPoints (OF   Moeilijk ) = 6
-   fPoints NO               = 0
-   complexity (ILGV c) = c
-   complexity (KGV  c) = c
-   complexity (IF   c) = c
-   complexity (UF   c) = c
-   complexity (OF   c) = c
-   complexity NO       = Eenvoudig
 
 
 
@@ -680,7 +595,7 @@
 
 
 
-
+   funcSpec :: Context -> Lang -> [Ftheme]
    funcSpec context language
     = [ Tspc pat 
              ([ Uspc (firstCaps (name o)) pat [ {- (o,ILGV Eenvoudig,cs,rs) -} ]
@@ -927,7 +842,7 @@
    firsts seen (ds:dss) = new: firsts (seen++new) dss where new = ds>-seen
    firsts seen [] = []
    handle :: Identified a => Context -> a -> String
-   handle context c = firstCaps (name c)++if name c `elem` (map name (makeDatasets context)) then "Handle" else ""
+   handle context c = firstCaps (name c)++if name c `elem` (map name (makeDatasetsOUD context)) then "Handle" else ""
 
    srvSchema pat language cnm (Sspc nm sees changes fpa input output rs pre post) new
     = latexSubsection nm nm++
@@ -1525,7 +1440,8 @@
 
    instance Identified (Typology a) where
     name typ = ""
-
+    typ = error "No type defined for (Typology a)"
+    
   -- lname and clname clean strings
    lname :: Identified a => a -> String
    lname  = clname . name

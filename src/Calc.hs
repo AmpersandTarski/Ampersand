@@ -21,7 +21,9 @@
    import ShowADL
    import ShowHS
    import CC_aux
-   import Graphic
+   import Graphic ( dotGraph
+                  , processDotgraphFile
+                  , Graphic)
 
 
    multiplicityAnalysis context 

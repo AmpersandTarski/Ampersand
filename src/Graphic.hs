@@ -1,4 +1,9 @@
-  module Graphic where
+  module Graphic  ( dotGraph
+                  , processDotgraphFile
+                  , Graphic
+                  , genGraphics
+                  , processCdDataModelFile)
+  where
    import Char (isSpace)
    import CommonClasses ( Identified(name) )
    import Collection (Collection(rd))
@@ -23,10 +28,6 @@
    import System (system, ExitCode(ExitSuccess,ExitFailure))
    import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
 
- --  fnConcept :: Concept -> String
- --  fnConcept c = fnIdentified c
- --  fnRelation :: a -> String
- --  fnRelation r = fnIdentified r
    class Graphic a where
     dotGraph :: Context -> String -> String -> a -> String
 

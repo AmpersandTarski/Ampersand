@@ -13,7 +13,6 @@
    import CommonClasses(Identified(name,typ))
    import Auxiliaries(showL,haskellIdentifier)
    import Strings(chain)
-
    import Data.Fspec
 
    fspc_patterns :: Fspc -> Patterns
@@ -22,30 +21,16 @@
    themesOfPatterns themes = [ftpat tm | tm <-themes]
 
 
-   instance Fidentified Ftheme where
-    fsid theme = ftsid theme
-   
 
 
-
-   instance Identified Dataset where
-     name (DS c pths) = name c
-     name (BR m) = name m
-     typ  (DS c pths) = "f_DS"
-     typ  (BR m) = "f_DS"
-
-
-   instance Fidentified Dataset where
-     fsid (DS c pths) = fsid c
-     fsid (BR m) = fsid m
 
    instance Fidentified Morphism where
      fsid m = FS_id (name m++name (source m)++name(target m))  --Hier moet nog goed naar worden gekeken....
-         where 
-           source (Mph nm pos atts (a,b) _ s) = a
-           source m = error ("FspecDef.lhs : Cannot evaluate the source expression of the current morphism (yet)")
-           target (Mph nm pos atts (a,b) _ s) = b    
-           target m = error ("FspecDef.lhs : Cannot evaluate the target expression of the current morphism (yet)")
+ --        where 
+ --          source (Mph nm pos atts (a,b) _ s) = a
+ --          source m = error ("FspecDef.lhs : Cannot evaluate the source expression of the current morphism (yet)")
+ --          target (Mph nm pos atts (a,b) _ s) = b    
+ --          target m = error ("FspecDef.lhs : Cannot evaluate the target expression of the current morphism (yet)")
   --   typ m  = "f_morph"
    instance Fidentified Concept where
      fsid c = FS_id (name c)
@@ -65,9 +50,6 @@
    rule:: Frule -> Rule
    rule (Frul r) = r
 
-   instance Fidentified Fview where
-    fsid fview = fsid (objectdef(fview))
-   
    class Fidentified a where
      fsid :: a -> FSid
    --  typ  :: a -> String
@@ -92,6 +74,9 @@
    
    instance Identified Ftheme where
     typ  f = "f_Thm"
+   instance Fidentified Ftheme where
+    fsid theme = ftsid theme
+   
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Funit                         ***
@@ -110,6 +95,9 @@
      
    instance Identified Fview where
     typ fview = "f_View"
+   instance Fidentified Fview where
+    fsid fview = fsid (objectdef(fview))
+   
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Frule                         ***
@@ -134,6 +122,15 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Dataset                       ***
 -- \***********************************************************************
+
+   instance Identified Dataset where
+     name (DS c pths) = name c
+     name (BR m) = name m
+     typ  (DS c pths) = "f_DS"
+     typ  (BR m) = "f_DS"
+   instance Fidentified Dataset where
+     fsid (DS c pths) = fsid c
+     fsid (BR m) = fsid m
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ParamSpec                     ***

@@ -1,7 +1,5 @@
-{-# LINE 1 "Views.lhs" #-}
-#line 1 "Views.lhs"
-  module Views ( viewDataset )
-  where
+  module Views ( )--viewDataset )
+  where             -- HJO: Let op als je hier mee aan de slag gaat: Dataset zit ook in Data.Fspec!
 
    import CommonClasses ( Identified(name))
    import Auxiliaries
@@ -10,7 +8,7 @@
           )
    import ADLdef
    import ShowADL
-   import Dataset
+   import Dataset(makeDatasets)
    import Data.Fspec
 
    viewDataset :: Context -> String

@@ -1,6 +1,5 @@
-{-# LINE 1 "RelBinGenEntitiesLayer.lhs" #-}
-#line 1 "RelBinGenEntitiesLayer.lhs"
-  module RelBinGenEntitiesLayer where
+  module RelBinGenEntitiesLayer ()
+  where
    import Auxiliaries(chain,adlVersion)
    import Calc(informalRule, disjNF, computeOrder, ComputeRule(CR), triggers)
    import ADLdef
@@ -12,7 +11,7 @@
    import Languages(Lang(English), plural)
    import CommonClasses
    import Collection (Collection(isc,(>-),rd,uni))
-   import ERmodel
+ --  import ERmodel
    import PredLogic -- (for error messages by dbCorrect)
    import Hatml     -- (for converting error messages to HTML)
    import Atlas     -- (for converting error messages to HTML)
