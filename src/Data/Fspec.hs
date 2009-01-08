@@ -11,7 +11,6 @@ module Data.Fspec
              , Fspc(..)
              , Ftheme(..)
              , Funit(..)
-             , Fview(..)
              , Frule(..)
              , FViewDef(..)
              , ServiceSpec(..)
@@ -37,9 +36,8 @@ where
               , datasets :: [Dataset]     -- ^ This list contains the data sets that are computed from the basic ontology.
               , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
               , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
-              , views    :: [Fview]       -- ^ One for every service 
               , vrules   :: [Frule]       -- ^ One for every rule
-              , vrels    :: [Declaration] -- ^ One for every declaration
+              , vrels    :: [Declaration] -- ^ One for every declaration of a relation
               , isa      :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
               }
    data Ftheme  = Tspc                    --  The constructor
@@ -55,12 +53,12 @@ where
                   , servDefs :: [ServiceSpec] -- services
                   }
               
-   data Fview  = Fview 
-               { dataset   :: Dataset
-               , objectdef :: ObjectDef
-               , services  :: [ServiceSpec]
-               , frules    :: [Frule]
-               }
+--   data Fview  = Fview 
+--               { dataset   :: Dataset
+--               , objectdef :: ObjectDef
+--               , services  :: [ServiceSpec]
+--               , frules    :: [Frule]
+--               }
 
    data Frule = Frul Rule
 

@@ -90,16 +90,6 @@
 
 
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Fview                         ***
--- \***********************************************************************
-     
-   instance Identified Fview where
-    typ fview = "f_View"
-   instance Fidentified Fview where
-    fsid fview = fsid (objectdef(fview))
-   
-
--- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Frule                         ***
 -- \***********************************************************************
    

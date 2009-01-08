@@ -243,14 +243,14 @@
      = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
               error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
-      where h Sym = Ru 'E' (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
-            h Asy = Ru 'I' (Fi [F [Tm r], F [Tm r']]) (pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
-            h Trn = Ru 'I' (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
-            h Rfx = Ru 'I' id (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
-            h Uni = Ru 'I' (F [Tm r',Tm r]) (pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
-            h Sur = Ru 'I' id' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
-            h Inj = Ru 'I' (F [Tm r,Tm r']) (pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
-            h Tot = Ru 'I' id (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
+      where h Sym = Ru Equivalence (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
+            h Asy = Ru Implication (Fi [F [Tm r], F [Tm r']]) (pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
+            h Trn = Ru Implication (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
+            h Rfx = Ru Implication id (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
+            h Uni = Ru Implication (F [Tm r',Tm r]) (pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
+            h Sur = Ru Implication id' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
+            h Inj = Ru Implication (F [Tm r,Tm r']) (pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
+            h Tot = Ru Implication id (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
             sgn   = (source d,source d)
             r     = Mph (name d)                (pos d) [] (source d,target d) True d
             r'    = flp (r ) 
@@ -573,7 +573,7 @@
 
    instance Language Rule where
     declaredRules r@(Gc pos m expr cpu sgn nr pn)
-     = [Ru 'E' (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
+     = [Ru Equivalence (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
     declaredRules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
     declaredRules   r                        = []
     rules r                                  = []
@@ -589,53 +589,53 @@
 
    instance Morphic Rule where
     multiplicities r           = []
-    isMph r  | ruleType r=='A' = isMph (consequent r)
+    isMph r  | ruleType r==AlwaysExpr = isMph (consequent r)
              | otherwise       = False
-    flp r@(Ru 'A' antc pos expr cpu expla (a,b) nr pn) = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in flp ("++show r++")")) pos (flp expr) cpu expla (b,a) nr pn
+    flp r@(Ru AlwaysExpr antc pos expr cpu expla (a,b) nr pn) = Ru AlwaysExpr (error ("(Module CC_aux:) illegal call to antecedent in flp ("++show r++")")) pos (flp expr) cpu expla (b,a) nr pn
     flp (Ru c antc pos cons cpu expla (a,b) nr pn)   = Ru c (flp antc) pos (flp cons) cpu expla (b,a) nr pn
   --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS "" r)
-    typeUniq r | ruleType r=='A' = typeUniq (antecedent r)
+    typeUniq r | ruleType r==AlwaysExpr = typeUniq (antecedent r)
                | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
     isIdent r = isIdent (normExpr r)
     isProp r = isProp (normExpr r)
-    isTrue r | ruleType r=='A'  = isTrue (consequent r)
+    isTrue r | ruleType r==AlwaysExpr  = isTrue (consequent r)
              | otherwise        = isTrue (consequent r) || isFalse (consequent r)
-    isFalse r| ruleType r=='A'  = isFalse (consequent r)
+    isFalse r| ruleType r==AlwaysExpr  = isFalse (consequent r)
              | otherwise        = isFalse (consequent r) && isTrue (consequent r)
     isSignal (Sg _ _ _ _ _ _ _) = True
     isSignal _                  = False
-    isNot r  | ruleType r=='A'  = isNot (consequent r)
+    isNot r  | ruleType r==AlwaysExpr  = isNot (consequent r)
              | otherwise        = False  -- TODO: check correctness!
 
    instance Morphical Rule where
-    concs (Ru c antc _ cons _ _ _ _ _)     = if c=='A' then concs cons else concs antc `uni` concs cons
+    concs (Ru c antc _ cons _ _ _ _ _)     = if c==AlwaysExpr then concs cons else concs antc `uni` concs cons
     concs (Sg _ rule _ _ _ _ _)            = concs rule
     concs (Gc _ m expr _ _ _ _)            = concs m `uni` concs expr
     concs (Fr _ d expr _)                  = concs d `uni` concs expr
-    mors (Ru c antc _ cons _ _ _ _ _)      = if c=='A' then mors cons else mors antc `uni` mors cons
+    mors (Ru c antc _ cons _ _ _ _ _)      = if c==AlwaysExpr then mors cons else mors antc `uni` mors cons
     mors (Sg _ rule _ _ _ _ _)             = mors rule
     mors (Gc _ m expr _ _ _ _)             = mors m `uni` mors expr
     mors (Fr _ d expr _)                   = mors d `uni` mors expr
-    morlist (Ru c antc _ cons _ _ _ _ _)   = if c=='A' then morlist cons else morlist antc++morlist cons
+    morlist (Ru c antc _ cons _ _ _ _ _)   = if c==AlwaysExpr then morlist cons else morlist antc++morlist cons
     morlist (Sg _ rule _ _ _ _ _)          = morlist rule
     morlist (Gc _ m expr _ _ _ _)          = morlist m++morlist expr
     morlist (Fr _ _ expr _)                = morlist expr
-    genE (Ru c antc _ cons  _ _ _ _ _)     = if c=='A' then genE cons else genE [antc,cons]
+    genE (Ru c antc _ cons  _ _ _ _ _)     = if c==AlwaysExpr then genE cons else genE [antc,cons]
     genE (Sg _ rule _ _ _ _ _)             = genE rule
     genE (Gc _ m expr _ _ _ _)             = genE m
     genE (Fr _ _ expr _)                   = genE expr
-    declarations (Ru c antc _ cons _ _ _ _ _) = if c=='A' then declarations cons else declarations [antc,cons]
+    declarations (Ru c antc _ cons _ _ _ _ _) = if c==AlwaysExpr then declarations cons else declarations [antc,cons]
     declarations (Sg _ rule _ _ _ _ d)        = [d] `uni` declarations rule
     declarations (Gc _ m expr _ _ _ _)        = declarations m
     declarations (Fr _ _ expr _)              = declarations expr
-    closExprs (Ru c antc _ cons _ _ _ _ _) = if c=='A' then closExprs cons else closExprs antc `uni` closExprs cons
+    closExprs (Ru c antc _ cons _ _ _ _ _) = if c==AlwaysExpr then closExprs cons else closExprs antc `uni` closExprs cons
     closExprs (Sg _ rule _ _ _ _ _)        = closExprs rule
     closExprs (Gc _ m expr  _ _ _ _)       = closExprs expr
     closExprs (Fr _ _ expr _)              = [expr]
 
    instance Substitutive Rule where
-    subst (m,f) r@(Ru 'A' antc pos cons cpu expla sgn nr pn)
-     = Ru 'A' (error ("(Module CC_aux:) illegal call to antecedent in subst ("++show m++","++show f++") ("++show r++")")) pos cons' cpu expla (sign cons') nr pn
+    subst (m,f) r@(Ru AlwaysExpr antc pos cons cpu expla sgn nr pn)
+     = Ru AlwaysExpr (error ("(Module CC_aux:) illegal call to antecedent in subst ("++show m++","++show f++") ("++show r++")")) pos cons' cpu expla (sign cons') nr pn
        where cons' = subst (m,f) cons
     subst (m,f) r@(Ru c antc pos cons cpu expla sgn nr pn)
      = if sign antc' `order` sign cons'
@@ -819,9 +819,9 @@
    normExpr :: Rule -> Expression
    normExpr rule
     | isSignal rule      = v (sign rule)
-    | ruleType rule=='A' = consequent rule
-    | ruleType rule=='I' = Fu [Cp (antecedent rule), consequent rule]
-    | ruleType rule=='E' = Fi [ Fu [antecedent rule, Cp (consequent rule)]
+    | ruleType rule==AlwaysExpr = consequent rule
+    | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
+    | ruleType rule==Equivalence = Fi [ Fu [antecedent rule, Cp (consequent rule)]
                               , Fu [Cp (antecedent rule), consequent rule]]
     | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++misbruiktShowHS "" rule)
 

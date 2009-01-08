@@ -44,11 +44,11 @@
     showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
     showADL r@(Fr _ d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
     showADL r@(Ru c antc p cons cpu expla sgn nr pn)
-     | c=='A' = "ALWAYS "++showADL cons++
+     | c==AlwaysExpr = "ALWAYS "++showADL cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 
-     | c=='I' = showADL antc ++" |- "++showADL cons++
+     | c==Implication = showADL antc ++" |- "++showADL cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 
-     | c=='E' = showADL antc ++" = " ++showADL cons++
+     | c==Equivalence = showADL antc ++" = " ++showADL cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 
     showADL r@(Gc _ antc cons cpu _ _ _)
               = "GLUE "++showADL antc++" = "++showADL cons++
@@ -110,7 +110,7 @@
     showADL m@(Mph nm pos atts sgn@(a,b) yin s)
      = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} nm)++
        (if null atts
-            then (if yin && sgn==(decsrc s,dectgt s) || not yin && sgn==(dectgt s,decsrc s) then "" else showSign [a,b])
+            then (if yin && sgn==(d_src s,d_tgt s) || not yin && sgn==(d_tgt s,d_src s) then "" else showSign [a,b])
             else showSign atts)++
        if yin then "" else "~"
     showADL (I atts g s yin)

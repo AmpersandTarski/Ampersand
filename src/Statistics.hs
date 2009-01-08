@@ -1,14 +1,14 @@
 
 module Statistics where
 
-   import Data.Fspec
+   import FspecDef
    import FPA
  -- TODO Deze module moet nog geheel worden ingekleurd...
  
    class Statistics a where
-    nServices :: a -> Int
-    nPatterns :: a -> Int
-    nFpoints  :: a -> Int
+    nServices :: a -> Int      -- ^ The number of services in a
+    nPatterns :: a -> Int      -- ^ The number of services in a
+    nFpoints  :: a -> Int      -- ^ The number of function points in a
     
     
    instance Statistics a => Statistics [a] where
@@ -23,11 +23,11 @@ module Statistics where
    instance Statistics Fspc where
     nServices s = -1
     nPatterns s = -2
-    nFpoints s = -3
+    nFpoints  s = -3
  -- TODO Deze module moet nog geheel worden ingekleurd...
 
 --   instance Statistics Fspc where
---    nServices fspc = nServices themes+nServices objects
+--    nServices fspc = nServices (serviceS fspc `uni` serviceG fspc)  -- TODO: Stef, is het reeel om deze services op deze manier te tellen?
 --    nPatterns (Fctx context themes datasets objects vrules) = nPatterns themes+nPatterns objects
 --    nFpoints  (Fctx context themes datasets objects vrules) = nFpoints datasets + nFpoints objects
 

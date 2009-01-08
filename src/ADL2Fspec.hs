@@ -20,7 +20,7 @@
 
    makeFspecNew2 :: Context -> Fspc
    makeFspecNew2 context
-     = Fspc fid themes datasets serviceS serviceG fviews frules frels isa where
+     = Fspc fid themes datasets serviceS serviceG frules frels isa where
         fid      = makeFSid1 (name context)
 -- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
 -- needs to be introduced in the same unit of text. For that purpose everything is allocated to a theme only once.
@@ -84,7 +84,6 @@
    implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
    Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
         datasets = makeDatasets context
-        fviews   = [ makeFview context a | a <-serviceS]
         frules   = [ makeFrule context r | r <-rules context]
         frels    = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
         isa      = ctxisa context
@@ -160,16 +159,17 @@
          where
           objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
 
-   makeFview :: Context -> ObjectDef -> Fview
-   makeFview context o
-    = Fview (makeDataset context (concept o)) o
-           ([ getEach context o
-            , createObj context o [] {-rs-}
-            , readObj context o
-            , deleteObj context o [] {-rs-}
-            , updateObj context o [] {-cs-} [] {-rs-} ])
-           [makeFrule context r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
-
+--   Obsolete stuff, from the days before services...
+--   makeFview :: Context -> ObjectDef -> Fview
+--   makeFview context o
+--    = Fview (makeDataset context (concept o)) o
+--           ([ getEach context o
+--            , createObj context o [] {-rs-}
+--            , readObj context o
+--            , deleteObj context o [] {-rs-}
+--            , updateObj context o [] {-cs-} [] {-rs-} ])
+--           [makeFrule context r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+--
    makeFrule :: Context -> Rule -> Frule
    makeFrule context r = Frul r
 
@@ -196,15 +196,6 @@
                           ++ [ deleteObj context o [] {-rs-} ]
                           ++ [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
                      | o<-objs ])
-
-
-{- Datasets zijn bedoeld voor functiepuntentellingen en voor mogelijke efficiency-redenen in SQL-implementaties.
-   Ze brengen een aantal relaties bijeen die zich als één SQL-tabel laten implementeren.
-   De volgende drie functies, makeDataset, makeDatasets en datasetMor, horen bij elkaar
-   en moeten onderling consistent blijven.
--}
-
-
 
 
 

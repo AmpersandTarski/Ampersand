@@ -101,11 +101,11 @@
         chain "\n" ["   "++stmt++if null comment then "" else "\n<=> { "++comment++". }"
                    | (stmt,comment)<-cleanup (derivation rule)]
       | rule<-rs]
-      where derivation rule@(Ru c _ _ _ _ _ _ _ _)
+      where derivation rule@(Ru rt _ _ _ _ _ _ _ _)
              = [ (showADL rule          , if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
                , (showProof prf         , "")
                ]++
-               if c=='A' then [] else
+               if rt==AlwaysExpr then [] else
                [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
                   (showProof.cfProof. Cp . normExpr) rule++"\n"
                  , "")
@@ -643,7 +643,7 @@
     = [ if length cl==1 then head cl else
         CR( rd [fOp|(CR (fOps, e, bOp, toExpr, frExpr, rule))<-cl, fOp<-fOps]
           , e, bOp, toExpr, frExpr
-          , Ru 'I' frExpr posNone toExpr [] 
+          , Ru Implication frExpr posNone toExpr [] 
               (chain "; " (rd[explain rule++" ("++show (pos rule)++")"|(CR (fOps, e, bOp, toExpr, frExpr, rule))<-cl, (not.null.explain) rule]))
               (sign frExpr `lub` sign toExpr) 0 ""
         )
@@ -683,11 +683,11 @@
    makeRule :: Rule -> Expression -> Rule
    makeRule rule (Fu []) = error ("(module Calc:) erroneous call to function makeRule rule ("++showADL (Fu [])++").")
    makeRule rule@(Ru _ _ p _ cpu expla (a,b) nr pn) (Fu ts)
-    | or [isNeg t|t<-ts] = Ru 'I' (Fi [notCp t|t<-ts,isNeg t]) p (Fu [t|t<-ts,isPos t]) [] expla (a,b) nr pn
-    | otherwise          = Ru 'A' (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL (Fu ts))) p (Fu ts) [] expla (a,b) nr pn
+    | or [isNeg t|t<-ts] = Ru Implication (Fi [notCp t|t<-ts,isNeg t]) p (Fu [t|t<-ts,isPos t]) [] expla (a,b) nr pn
+    | otherwise          = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL (Fu ts))) p (Fu ts) [] expla (a,b) nr pn
    makeRule rule@(Ru _ _ p _ cpu expla (a,b) nr pn) e
     | isFu e'   = makeRule rule e'
-    | otherwise = Ru 'A' (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL e)) p e [] expla (a,b) nr pn
+    | otherwise = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL e)) p e [] expla (a,b) nr pn
     where e' = disjNF e
 
 
@@ -763,8 +763,8 @@
          f prf (neg,pos)
      start Ins  = (Tm m,Fu [Tm m,delta (sign m)])
      start Del  = (Fi [Tm m,Cp (delta (sign m))],Tm m)
-     rule neg pos | isTrue neg = Ru 'A' (error ("(Module Calc:) illegal reference to antecedent in rule ("++showADL neg++") ("++showADL pos++")")) posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
-                  | otherwise  = Ru 'I' neg posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
+     rule neg pos | isTrue neg = Ru AlwaysExpr (error ("(Module Calc:) illegal reference to antecedent in rule ("++showADL neg++") ("++showADL pos++")")) posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
+                  | otherwise  = Ru Implication neg posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
      showOp (F fs) = ";"
      showOp (Fd fs) = "!"
      showOp (Fu fs) = "\\/"
@@ -1048,7 +1048,7 @@
                  e:es = xs
                  ys = unF e
 
-   normR r@(Ru 'A' antc pos cons cpu expla sgn nr pn) = Ru 'A' err pos (conjNF cons) cpu expla sgn nr pn
+   normR r@(Ru AlwaysExpr antc pos cons cpu expla sgn nr pn) = Ru AlwaysExpr err pos (conjNF cons) cpu expla sgn nr pn
     where err = error ("Module Calc: erroneous reference to antc of rule "++showADL r)
    normR (Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (disjNF antc) pos (conjNF cons) cpu expla sgn nr pn
    normR (Sg p rule expla sgn nr pn signal)         = Sg p (normR rule) expla sgn nr pn signal

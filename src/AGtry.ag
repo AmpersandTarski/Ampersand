@@ -8,6 +8,7 @@ DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:Conc
 DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
                    | Gc gluePos:{FilePos} m:Morphism expr:Expression cpu:Expressions sgn:{(Concept,Concept)} nr:Int pn:String
+DATA RuleType      | Implication | Equivalence | AlwaysExpr | Generalization | Automatic
 DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
 DATA Population    | Popu m:Morphism ps:{[Paire]}
 DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
@@ -61,8 +62,9 @@ import Classification
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
 import ADLdef
+import ShowHS(showHS)
 import ShowADL
-import CC_aux ( showHS,order,makeConceptSpace, put_gE
+import CC_aux ( order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 
@@ -265,7 +267,7 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
      | (c,es)<-cpu']
    )
    where
-    (matches,str) = recur ([antc|c/='A']++[cons])
+    (matches,str) = recur ([antc|c/=AlwaysExpr]++[cons])
     cerrs = [] -- obsolete? map (drop 5) ([ name m| m<-mors r] `isc` map (("Clos_"++).name.head.mors.fst) cpu')
     cpu'  = [ (c,es) | c<-cpu, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
     recur  []    = ([],"")
@@ -322,8 +324,8 @@ SEM Rule
 -- @errcpu contains all error messages wrt cpu.
        loc.errcpu      = snd @rcpu
        loc.rcpu        = subExprCheck
-                         (if @c=='A'
-                         then Ru @c (error ("Reference to antecedent of 'A' Rule "++showHS "" @r)) @rulePos @cons.expr @cpu.raw @expl
+                         (if @c==AlwaysExpr
+                         then Ru @c (error ("Reference to antecedent of AlwaysExpr Rule "++showHS "" @r)) @rulePos @cons.expr @cpu.raw @expl
                                  (if null @is
                                   then error("Fatal: null @is on "++show @rulePos++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
                                   else head @is)
@@ -340,12 +342,12 @@ SEM Rule
 -- closure declarations
        loc.closdecls   = rd [s| Ru c antc p cons cpu expla (a,b) n pn <- @clrs, s<-declarations antc]
 -- closure rules
-       loc.clrs        = if @c=='A'
+       loc.clrs        = if @c==AlwaysExpr
                          then @cons.rules
                          else @antc.rules ++ @cons.rules
-       lhs.morphisms   = (if @c=='A' then [] else @antc.morphisms)++ @cons.morphisms
+       lhs.morphisms   = (if @c==AlwaysExpr then [] else @antc.morphisms)++ @cons.morphisms
 -- this is for more precise error messages in case antc or cons have Anything for a type.
-       loc.is          = if @c=='A' then @cons.signs else
+       loc.is          = if @c==AlwaysExpr then @cons.signs else
                          if null @antc.signs 
                          then (if null @cons.signs
                                then []
@@ -354,7 +356,7 @@ SEM Rule
                                then @antc.signs
                                else @s)
 -- the basic types for this rule that can be constructed from the types in declarations from antc and cons
-       loc.s           = if @c=='A' then @cons.signs else
+       loc.s           = if @c==AlwaysExpr then @cons.signs else
                          irredT @lhs.gE [ (if a `@lhs.gE` a' then a' else a, if b `@lhs.gE` b' then b' else b)
                                         | (a,b)<- @cons.signs, (a',b')<- @antc.signs
                                         , (a `@lhs.gE` a' || a' `@lhs.gE` a) && (b `@lhs.gE` b' || b' `@lhs.gE` b)
@@ -388,7 +390,7 @@ SEM Rule
                          | ((Ru c antc pos expr cpu expla (a,b) _ _,cpuErrs), i)<-zip @ruls [0..]] ++ @expr.rules
        lhs.morphisms   = @mors
        loc.mors        = @m.morphism : @expr.morphisms
-       loc.ruls        = [ subExprCheck (Ru 'I' (Tm @m.morphism) @gluePos @expr.expr @cpu.raw "" (a,b) @nr @lhs.pn)
+       loc.ruls        = [ subExprCheck (Ru Implication (Tm @m.morphism) @gluePos @expr.expr @cpu.raw "" (a,b) @nr @lhs.pn)
                          | (d,c) <- @expr.signs, s <- @m.usedDecls
                          , if d `@lhs.gE` source @m.morphism && c `@lhs.gE` target @m.morphism then True else
                            error ("Fatal: (please report this as an error in ADL)\nFalse assumption in alternative Gc of SEM Rule, that "++show (d,c)++" in @expr.signs be more general than "++ show (source @m.morphism,target @m.morphism)++".")
@@ -607,7 +609,7 @@ SEM Rules
          lhs.usedDecls    = []
 SEM Rule
   | Ru lhs.sErr     ={-  ["Diagnose Ru on Line "++show diagl++": "++
-                       (if @c=='A' then "" else
+                       (if @c==AlwaysExpr then "" else
                         "\n@antc.signs: "++show @antc.signs++
                         "\n@antc.raw: "++showADL @antc.raw++
                         "\n@antc.expr: "++showADL @antc.expr)++
@@ -620,7 +622,7 @@ SEM Rule
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @rulePos]++ -}
                       take 1   -- tip: for diagnosis purposes, remove this `take 1' and get more messages.
                       (@cons.sErr ++
-                        (if @c=='A' then [] else @antc.sErr ++
+                        (if @c==AlwaysExpr then [] else @antc.sErr ++
                          [ "8 in "++show @rulePos++"\n   Meaningless rule.\n"
                          | null @cons.signs&&null @antc.signs]++
                          [ "1 in "++show @rulePos++"\n   Mismatch in rule:\n   "++
@@ -941,7 +943,7 @@ SEM Rules
 
 SEM Rule
   | Ru   antc.rnr   = @lhs.rnr + 1
-         cons.rnr   = if @c=='A' then @lhs.rnr + 1 else @antc.rnr
+         cons.rnr   = if @c==AlwaysExpr then @lhs.rnr + 1 else @antc.rnr
          lhs.rnr    = @cons.rnr
          lhs.rules  = @rs
   | Sg   rule.rnr   = @lhs.rnr
@@ -973,7 +975,7 @@ SEM Expression
   | K0   e.rnr      = @lhs.rnr+1
          lhs.rnr    = @e.rnr
          lhs.rules  = let [(a,b)] = take 1 @lhs.isign
-                      in Ru 'E'             -- an equivalence rule:   n = expr* COMPUTING n
+                      in Ru Equivalence     -- an equivalence rule:   n = expr* COMPUTING n
                             (Tm @closmor)   -- n
                             @lhs.pos        -- the position in the file
                             (K0 @e.expr)    -- expr*
@@ -986,7 +988,7 @@ SEM Expression
   | K1   e.rnr      = @lhs.rnr+1
          lhs.rnr    = @e.rnr
          lhs.rules  = let [(a,b)] = take 1 @lhs.isign
-                      in Ru 'E'             -- an equivalence rule:   n = expr+ COMPUTING n
+                      in Ru Equivalence     -- an equivalence rule:   n = expr+ COMPUTING n
                             (Tm @closmor)   -- n
                             @lhs.pos        -- the position in the file
                             (K1 @e.expr)    -- expr*
@@ -1036,7 +1038,7 @@ SEM Gens
 
 SEM Gen  -- G pos:FilePos genus:Concept spec:Concept;       'GEN Elephant ISA Animal' creates a new rule: I[Elephant] |- I[Animal]
   | G    lhs.rnr    = @lhs.rnr+1
-         lhs.rules  = [ Ru 'I'                                                 -- an implication rule:   I[@spec] |- I[@genus]
+         lhs.rules  = [ Ru Implication                                                 -- an implication rule:   I[@spec] |- I[@genus]
                             (Tm (mIs @spec.concept))                           -- antecedent: I[@spec]
                             @pos                                               -- the position in the file
                             (Tm (mIs @genus.concept))                          -- consequent: I[@genus]

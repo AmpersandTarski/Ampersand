@@ -33,6 +33,12 @@
    concsDS :: Dataset ->  Concepts
    concsDS ds = concs (morsDS ds)
 
+{- Datasets zijn bedoeld voor functiepuntentellingen en voor mogelijke efficiency-redenen in SQL-implementaties.
+   Ze brengen een aantal relaties bijeen die zich als één SQL-tabel laten implementeren.
+   De volgende drie functies, makeDataset, makeDatasets en datasetMor, horen bij elkaar
+   en moeten onderling consistent blijven.
+-}
+
 
    makeDataset :: Context -> Concept -> Dataset
    makeDataset context c

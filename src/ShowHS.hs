@@ -53,27 +53,24 @@ where
        (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
        (if null (serviceS fspec) then " []" else indent++"{- serviceS:  -}  "++showL [showHSname s|s<-serviceS fspec ])++
        (if null (serviceG fspec) then " []" else indent++"{- serviceG:  -}  "++showL [showHSname s|s<-serviceG fspec ])++
-       (if null (views    fspec) then " []" else indent++"{- views:     -}  "++showL [showHSname v|v<-views    fspec ])++
        (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
        (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
        indent++" isa "++
        indent++"where"++
        indent++" isa = "++ showHS (indent ++ "       ") (FspecDef.isa fspec)++
        indent++" gE = genEq (typology isa)"++
-       "\n>-- ***VIEWS***: " ++
-       (if null (views    fspec ) then "" else concat [indent++" "++showHSname v++indent++"  = "++showHS (indent++"    ") v|v<- views    fspec ]++"\n")++
-        "\n>-- ***RULES***: "++
-       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
- 
-        "\n>-- ***object Definitions***: "++
+        "\n>-- ***THEMES***: "++
+       (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+        "\n>-- ***DATASETS***: "++
+       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
+        "\n>-- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++
        (if null 
             (uni (serviceS fspec)  (serviceG fspec)) then "" 
              else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
  
-        "\n>-- ***DATASETS***: "++
-       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
-        "\n>-- ***THEMES***: "++
-       (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+        "\n>-- ***RULES***: "++
+       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
+ 
         "\n>-- ***DECLARATIONS OF RELATIONS***: "++
        (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
         "\n>-- ***PATTERNS***: "++
@@ -107,22 +104,22 @@ where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fview                         ***
 -- \***********************************************************************
-
-   instance ShowHS Fview where
-    showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))
-    showHS indent fview
-     = "Fview "
-       ++ datasetSection
-       ++ objdefSection
-       ++ servicesSection
-       ++ rulesSection
-       ++indent++" -- Einde Fview "++showHSname (dataset fview)
-        where
-          datasetSection  = "("++ showHS "" (dataset fview)++")"
-          objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fview)++")"
-          servicesSection = indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-services(fview)]++indent++"     ]"
-          rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fview)]++"]"
-
+--
+--   instance ShowHS Fview where
+--    showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))
+--    showHS indent fview
+--     = "Fview "
+--       ++ datasetSection
+--       ++ objdefSection
+--       ++ servicesSection
+--       ++ rulesSection
+--       ++indent++" -- Einde Fview "++showHSname (dataset fview)
+--        where
+--          datasetSection  = "("++ showHS "" (dataset fview)++")"
+--          objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fview)++")"
+--          servicesSection = indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-services(fview)]++indent++"     ]"
+--          rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fview)]++"]"
+--
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Frule                         ***
 -- \***********************************************************************
@@ -267,16 +264,26 @@ where
 
    instance ShowHS Rule where
     showHSname r = "rule"++show (nr r)
-    showHS indent r@(Ru 'A' _ pos cons cpu expla sgn nr pn)
-     = chain " " ["Ru","'A'",undef,"("++showHS "" pos++")","("++showHS "" (consequent r)++")",showL (map (showHS "") cpu),show(explain r),(showHS "" sgn),show nr,show pn]
+    showHS indent r@(Ru AlwaysExpr _ pos cons cpu expla sgn nr pn)
+     = chain " " ["Ru",showHS "" AlwaysExpr,undef,"("++showHS "" pos++")","("++showHS "" (consequent r)++")",showL (map (showHS "") cpu),show(explain r),(showHS "" sgn),show nr,show pn]
        where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an 'A' rule\")"
-    showHS indent r@(Ru c antc pos cons cpu expla sgn nr pn)
-     = chain " " ["Ru","'"++[c]++"'","("++showHS "" antc++")","("++showHS "" pos++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",show(explain r),(showHS "" sgn),show nr,show pn]
+    showHS indent r@(Ru rt antc pos cons cpu expla sgn nr pn)
+     = chain " " ["Ru",showHS "" rt,"("++showHS "" antc++")","("++showHS "" pos++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",show(explain r),(showHS "" sgn),show nr,show pn]
     showHS indent r@(Sg pos rule expla sgn nr pn signal)
      = chain " " ["Sg","("++showHS "" pos++")","("++showHS "" rule++")",show expla,(showHS "" sgn),show nr,show pn,show signal]
     showHS indent r@(Gc pos m expr cpu sgn nr pn)
      = chain " " ["Gc","("++showHS "" pos++")","("++showHS "" m++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",(showHS "" sgn),show nr,show pn]
     showHS indent r = ""
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: RuleType                      ***
+-- \***********************************************************************
+   instance ShowHS RuleType where
+     showHSname rt = error "showHSname undefined for Type 'RuleType'"
+     showHS indent AlwaysExpr     = "AlwaysExpr"
+     showHS indent Equivalence    = "Equivalence"
+     showHS indent Implication    = "Implication"
+     showHS indent Generalization = "Generalization"
+     showHS indent Automatic      = "Automatic"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: KeyDef                        ***

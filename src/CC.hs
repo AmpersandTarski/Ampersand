@@ -103,16 +103,16 @@
                        gc <$> pSignal <*> pKey_pos "GLUE" <*> pMorphism <* pKey "=" <*> pExpr <*> pComputing 
                        where
                         hc m antc pos cons cpu expl
-                         | not beep && name m=="" = Ru 'I' antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru 'I' antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] expl pos 0 True)
+                         | not beep && name m=="" = Ru Implication antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos (Ru Implication antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] expl pos 0 True)
                         kc m cons pos antc cpu expl = hc m antc pos cons cpu expl
                         dc m defd pos expr cpu expl
    {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos = error ("Diag: "++showADL (Ru 'E' defd pos expr cpu expl (cptAnything,cptAnything) 0 ""))  -}
-                         | not beep && name m=="" = Ru 'E' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru 'E' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
+                         | not beep && name m=="" = Ru Equivalence defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos (Ru Equivalence defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
                         ac m      pos expr cpu expl
-                         | not beep && name m=="" = Ru 'A' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru 'A' defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
+                         | not beep && name m=="" = Ru AlwaysExpr defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos (Ru AlwaysExpr defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
                          where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
                         gc m      pos pm pf cpu     = Gc pos pm pf (if beep then [] else cpu) (cptAnything,cptAnything) 0 ""
 

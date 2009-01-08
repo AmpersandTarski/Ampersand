@@ -9,7 +9,7 @@
    import Collection (Collection(rd))
    import Auxiliaries (chain, eqClass, sort)
    import ADLdef ( Context,Pattern(..),ctxpats
-                 , Rule(Ru),sign
+                 , Rule(Ru),sign,RuleType(..)
                  , Expression(..)
                  , isMph, isSignal, makeDeclaration
                  , flp, inline, posNone
@@ -190,7 +190,7 @@
 
    instance Graphic Morphism where
     dotGraph context style nm m -- @(Mph nm' _ atts sgn yin m')
-     = dotGraph context style nm (Pat nm [Ru 'E' (F [Tm m]) posNone (F []) [] "" (sign m) 0 ""] [] [] [] [])
+     = dotGraph context style nm (Pat nm [Ru Equivalence (F [Tm m]) posNone (F []) [] "" (sign m) 0 ""] [] [] [] [])
 
    processDotgraphFile     fnm = genGraphics fnm "neato"
    processCdDataModelFile  fnm = genGraphics fnm "dot"

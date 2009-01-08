@@ -1567,7 +1567,7 @@
     = lschema cname
               typ language
               (Pat (nm++" "++show (length (declaredRules pat)+1))
-                   [Ru 'E' (F [Tm m]) pos expr cpu "" sgn nr pn
+                   [Ru Equivalence  (F [Tm m]) pos expr cpu "" sgn nr pn
                    | Gc pos m expr cpu sgn nr pn<-specs pat] [] [] [] [])
 
    instance LATEX Prop where
@@ -1670,14 +1670,14 @@
     lshow language (K1 e)   = "\\kleeneplus{"++lshow language e++"}"
 
    instance LATEX Rule where
-    ltshow cname typ language (Gc pos m expr cpu sgn nr pn) = ltshow cname typ language (Ru 'E' (F [Tm m]) pos expr cpu "" sgn nr pn)
+    ltshow cname typ language (Gc pos m expr cpu sgn nr pn) = ltshow cname typ language (Ru Equivalence (F [Tm m]) pos expr cpu "" sgn nr pn)
     ltshow cname typ language r = (ltshow cname typ language.assemble.normRule) r
-    lshow language r | ruleType r=='I' && fEmpty (antecedent r) = lshow language (consequent r)
-                     | ruleType r=='I' && fEmpty (consequent r) = lshow language (Cp (antecedent r))
-                     | ruleType r=='I'                          = lshow language (antecedent r)++"\\subs"++lshow language (consequent r)
-                     | ruleType r=='E' = lshow language (antecedent r)++"="++lshow language (consequent r)
-                     | ruleType r=='A' = lshow language (consequent r)
-                     | otherwise       = lshow language (antecedent r)++"="++lshow language (consequent r)
+    lshow language r | ruleType r==Implication && fEmpty (antecedent r) = lshow language (consequent r)
+                     | ruleType r==Implication && fEmpty (consequent r) = lshow language (Cp (antecedent r))
+                     | ruleType r==Implication                          = lshow language (antecedent r)++"\\subs"++lshow language (consequent r)
+                     | ruleType r==Equivalence = lshow language (antecedent r)++"="++lshow language (consequent r)
+                     | ruleType r==AlwaysExpr  = lshow language (consequent r)
+                     | otherwise               = lshow language (antecedent r)++"="++lshow language (consequent r)
 
 
 

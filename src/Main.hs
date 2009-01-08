@@ -1,4 +1,4 @@
-  module Main where
+ module Main where
    import System (getArgs,system, ExitCode(ExitSuccess,ExitFailure))
    import Char (toLower)
    import UU_Scanner(scan,initPos)

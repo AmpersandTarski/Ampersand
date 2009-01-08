@@ -56,13 +56,13 @@
                      ["EXPLANATION="++show expla | not (null expla)]
                    ) (showXML rule)
     showXML r@(Ru c antc p cons _ expla sgn nr pn) indent
-     | ruleType r=='A'
+     | ruleType r==AlwaysExpr
        = tagLn indent "RULE"
                    ( [ "INVARIANT="++show (showADL (consequent r))] ++
                      [ "TYPE=\"TRUTH\""] ++
                      [ "EXPLANATION="++show expla | not (null expla)]
                    ) (showXML (consequent r))
-     | ruleType r=='I'
+     | ruleType r==Implication
        = tagLn indent "RULE"
                    ( [ "INVARIANT="++show (showADL (antecedent r)++" |- "++showADL (consequent r))] ++
                      [ "TYPE=\"IMPLICATION\""] ++
@@ -71,7 +71,7 @@
                                        , tagLn ind "CONSEQUENT" [] (showXML (consequent r))
                                        ]
                      )
-     | ruleType r=='E'
+     | ruleType r==Equivalence
        = tagLn indent "RULE"
                    ( [ "INVARIANT="++show (showADL (antecedent r)++" = "++showADL (consequent r))] ++
                      [ "TYPE=\"EQUIVALENCE\""] ++

@@ -36,7 +36,7 @@ module Data.ADL where
    type Rules = [Rule]
    data Rule =
   -- Ru c antc p cons cpu expla sgn nr pn
-        Ru { rrsrt :: Char              -- ^ One of the following characters:
+        Ru { rrsrt :: RuleType          -- ^ One of the following characters:
                                         --
                                         --    * 'I' if this is an implication;
                                         --
@@ -46,11 +46,11 @@ module Data.ADL where
            , rrant :: Expression        -- ^ Antecedent
            , rrfps :: FilePos           -- ^ Position in the ADL file
            , rrcon :: Expression        -- ^ Consequent
-           , rrcpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
+           , r_cpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
            , rrxpl :: String            -- ^ Explanation
-           , rrtyp :: (Concept,Concept) -- ^ Type
+           , rrtyp :: (Concept,Concept) -- ^ Sign of this rule
            , runum :: Int               -- ^ Rule number
-           , rrpat :: String            -- ^ Name of pattern in which it was defined.
+           , r_pat :: String            -- ^ Name of pattern in which it was defined.
            }
   -- Sg p rule expla sgn nr pn signal
       | Sg { srfps :: FilePos           -- ^ position in the ADL file
@@ -58,17 +58,17 @@ module Data.ADL where
            , srxpl :: String            -- ^ explanation
            , srtyp :: (Concept,Concept) -- ^ type
            , runum :: Int               -- ^ rule number
-           , srpat :: String            -- ^ name of pattern in which it was defined.
+           , r_pat :: String            -- ^ name of pattern in which it was defined.
            , srrel :: Declaration       -- ^ the signal relation
            }
   -- Gc p antc cons cpu _ _ _
       | Gc { grfps :: FilePos           -- ^ position in the ADL file
            , grspe :: Morphism          -- ^ specific
            , grgen :: Expression        -- ^ generic
-           , grcpu :: Expressions       -- ^ cpu. This is a list of subexpressions, which must be computed.
+           , r_cpu :: Expressions       -- ^ cpu. This is a list of subexpressions, which must be computed.
            , grtyp :: (Concept,Concept) -- ^ declaration
            , runum :: Int               -- ^ rule number
-           , grpat :: String            -- ^ name of pattern in which it was defined.
+           , r_pat :: String            -- ^ name of pattern in which it was defined.
            }
   -- Fr t d expr pn  -- represents an automatic computation, such as * or +.
       | Fr { fraut :: AutType           -- ^ the type of automatic computation
@@ -76,6 +76,8 @@ module Data.ADL where
            , frcmp :: Expression        -- ^ expression to be computed
            , frpat :: String            -- ^ name of pattern in which it was defined.
            } 
+   data RuleType = Implication | Equivalence | AlwaysExpr | Generalization | Automatic
+
    -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
    data AutType = Clos0 | Clos1 --deriving (Eq,Show)
         
@@ -128,7 +130,7 @@ module Data.ADL where
                        , mphdcl :: Declaration       -- ^ the declaration bound to this morphism.
                        }
                   | I  { mphats :: [Concept]         -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
-                       , mphgen ::  Concept          -- ^ the generic concept
+                       , mphgen ::  Concept          -- ^ the generic concept  
                        , mphspc ::  Concept          -- ^ the specific concept
                        , mphyin ::  Bool             -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
                        } 
@@ -143,8 +145,8 @@ module Data.ADL where
    type Declarations = [Declaration]
    data Declaration = 
            Sgn { decnm   :: String  -- ^ the name of the declaration
-               , decsrc  :: Concept -- ^ the source concept of the declaration
-               , dectgt  :: Concept -- ^ the target concept of the declaration
+               , d_src  :: Concept -- ^ the source concept of the declaration
+               , d_tgt  :: Concept -- ^ the target concept of the declaration
                , decprps :: Props   -- ^ the multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
                , decp1   :: String  -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                , decp2   :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
@@ -156,16 +158,16 @@ module Data.ADL where
                , deciss  :: Bool    -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
                }
           | Isn 
-               { dectgt :: Concept  -- ^ The generic concept
-               , decsrc :: Concept  -- ^ The specific concept
+               { d_tgt :: Concept  -- ^ The generic concept
+               , d_src :: Concept  -- ^ The specific concept
                }
           | Iscompl 
-               { dectgt :: Concept
-               , decsrc :: Concept
+               { d_tgt :: Concept
+               , d_src :: Concept
                }
           | Vs 
-               { decsrc :: Concept
-               , dectgt :: Concept
+               { d_src :: Concept
+               , d_tgt :: Concept
                }
 
    type ConceptDefs = [ConceptDef]
