@@ -10,7 +10,7 @@
    import ShowADL
    import FspecDef
    import LaTeX (tt)   -- Dat is hier natuurlijk helemaal niet op z'n plaats! (TODO opruimen)
-   import Calc(lClause,rClause,makeRule)
+   import Calc(lClause,rClause,makeRule,allClauses,doClause,conjuncts,conjNF,simplPAclause)
 
  -- The story:
  -- A number of datasets for this context is identified.
@@ -20,7 +20,7 @@
 
    makeFspecNew2 :: Context -> Fspc
    makeFspecNew2 context
-     = Fspc fid themes datasets serviceS serviceG frules frels isa where
+     = Fspc fid themes datasets serviceS serviceG fservices frules frels isa where
         fid      = makeFSid1 (name context)
 -- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
 -- needs to be introduced in the same unit of text. For that purpose everything is allocated to a theme only once.
@@ -35,6 +35,7 @@
 -- At a later stage, serviceG will be used to generate semantic error messages. The idea is to compare a service
 -- definition from the ADL-script with the generated service definition and to signal missing items.
 -- Rule: a service must be large enough to allow the required transactions to take place within that service.
+-- TODO: afdwingen dat attributen van elk object unieke namen krijgen.
         serviceG
          = concat
            [ [ (objdefNew (v (cptS,c)))
@@ -84,6 +85,7 @@
    implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
    Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
         datasets = makeDatasets context
+        fservices   = [ makeFservice context a | a <-serviceS]
         frules   = [ makeFrule context r | r <-rules context]
         frels    = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
         isa      = ctxisa context
@@ -159,17 +161,46 @@
          where
           objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
 
---   Obsolete stuff, from the days before services...
---   makeFview :: Context -> ObjectDef -> Fview
---   makeFview context o
---    = Fview (makeDataset context (concept o)) o
---           ([ getEach context o
---            , createObj context o [] {-rs-}
---            , readObj context o
---            , deleteObj context o [] {-rs-}
---            , updateObj context o [] {-cs-} [] {-rs-} ])
---           [makeFrule context r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
---
+   makeFservice :: Context -> ObjectDef -> Fservice
+   makeFservice context o
+    = Fservice
+        o                                  -- the object from which the service is drawn
+        trBound                            -- the transaction boundary, i.e. all expressions that may be changed in a transaction
+        [ limit trBound eca                -- all ECA-rules that may be used in this object
+        | rule<-declaredRules context
+        , conjunct<-conjuncts rule
+        , clause<-allClauses conjunct
+        , eca<-doClause clause
+        ]
+        (makeDataset context (concept o))  -- the dataset in which the objects are stored
+-- obsolete services?
+        [ getEach context o
+        , createObj context o [] {-rs-}
+        , readObj context o
+        , deleteObj context o [] {-rs-}
+        , updateObj context o [] {-cs-} [] {-rs-} ]
+        [makeFrule context r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+      where
+       trBound
+        = rd [conjNF e | a<-atts o, e<-[objctx a, flp (objctx a)] ]
+          where atts o = o: [e| a<-attributes o, e<-atts a]
+       limit rels (ECA ev clause) = ECA ev (simplPAclause (lim clause))
+        where
+         lim (Choice clauses)              = Choice [c'| c<-clauses, c'<-[lim c], p c']
+          where p (Do insdel toExpr delta) = conjNF toExpr `elem` trBound
+                p (Choice [])              = False
+                p _                        = True
+         lim (All clauses)
+            | null [ 1 | Choice []<-cls]   = All cls
+            | otherwise                    = Choice []
+          where
+           cls = [lim c| c<-clauses]
+         lim (Do insdel toExpr delta) 
+            | conjNF toExpr `elem` trBound = Do insdel toExpr delta
+            | otherwise                    = Choice []
+         lim (New c)                       = New c
+
+
    makeFrule :: Context -> Rule -> Frule
    makeFrule context r = Frul r
 

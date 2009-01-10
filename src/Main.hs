@@ -13,7 +13,6 @@
    import AGtry (sem_Architecture)
    import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
    import Calc (deriveProofs,triggers)
- --  import Views (viewDataset)
    import Dataset
    import Data.Fspec
    import FspecDEPRECIATED( 
@@ -76,9 +75,9 @@
                fnFull = if map Char.toLower fnSuffix /= ".adl" then (fn ++ ".adl") else fn
                fnOutp = take (length fnFull-4) fnFull
          ; inp<-readFile fnFull
-         ; putStr ("\n"++fnFull++" is read.")
+         ; putStr ("\n"++fnFull++" is read.\n")
          ; slRes <- parseIO (pArchitecture ("-beeper" `elem` switches))(scan keywordstxt keywordsops specialchars opchars fnFull initPos inp)
-         ; putStr ("\n"++fnFull++" has been parsed.")
+         ; putStr (fnFull++" has been parsed.\n")
          
            -- Now continue with typechecking of the parsetree:
          ; let (contexts,errs) = sem_Architecture slRes
@@ -99,22 +98,21 @@
            -- AND the argument matches the context name, then the build is done for that 
            -- context
          ; if null errs 
-           then do { putStr ("\nNo type errors or cyclic specializations were found.\n")
-             --      ; let fspec = (makeFspecNew2 context)
-                   ; if length args==1 && length contexts==1
-                     then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                           ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes )) else
-                     if length args==1 && length contexts>1
-                     then putStr ("\nPlease specify the name of a context."++
-                                  "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
-                     if length args>1 && contextname `elem` map name contexts
-                     then (( build_DEPRECEATED context switches fnOutp dbName slRes ) >>
-                           ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName slRes ))
-                     else putStr ("\nContext "++contextname++" not defined."++
-                                  "\nPlease specify the name of an available context."++
-                                  "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
-                                  "\n(Note: context names are case sensitive).\n")
-                   }
+           then (putStr ("\nNo type errors or cyclic specializations were found.\n")>>
+                 if length args==1 && length contexts==1
+                 then (( build_DEPRECEATED context switches fnOutp dbName ) >>
+                       ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName )) else
+                 if length args==1 && length contexts>1
+                 then putStr ("\nPlease specify the name of a context."++
+                              "\nAvailable contexts: "++commaEng "and" (map name contexts)++".\n") else
+                 if length args>1 && contextname `elem` map name contexts
+                 then (( build_DEPRECEATED context switches fnOutp dbName ) >>
+                       ( build_NewStyle (makeFspecNew2 context) switches fnOutp dbName ))
+                 else putStr ("\nContext "++contextname++" not defined."++
+                              "\nPlease specify the name of an available context."++
+                              "\nAvailable contexts: "++commaEng "and" (map name contexts)++"."++
+                              "\n(Note: context names are case sensitive).\n")
+                )
            else putStr ("\nThe type analysis of "++fnFull++" yields errors.\n")>>
                 putStr (concat ["!Error of type "++err| err<-errs])>>
                 putStr ("Nothing generated, please correct mistake(s) first.\n")
@@ -122,27 +120,27 @@
        where
              -- TODO: De volgende build moet worden 'uitgekleed' door de verschillende 
              --       vertaalslagen via Fspec te laten verlopen. Hiervoor is een functie build_NewStyle gemaakt.
-             build_DEPRECEATED :: Context -> [String] -> String -> String -> Architecture -> IO ()
-             build_DEPRECEATED context switches filename dbName hierGebeurtNietsMee
+             build_DEPRECEATED :: Context -> [String] -> String -> String -> IO ()
+             build_DEPRECEATED context switches filename dbName
               = sequence_ 
                  ([ putStr ("Nothing generated.\n"++helptext) | null switches ] ++
-                  [ anal context ("-p" `elem` switches) (lineStyle switches)
-                  | "-atlas" `elem` switches]++
-                  [ makeXML_depreciated context| "-XML" `elem` switches]++
-                  [ diagnose context| "-diag" `elem` switches]++
-                  [ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
-                  [ archText context (lineStyle switches) (lang switches) filename| "-arch" `elem` switches]++
-                  [ glossary context (lang switches) | "-g" `elem` switches]++
-   -- out of order[ erModel context | "-ER" `elem` switches]++
-                  [ cdModel context | "-CD" `elem` switches]++
-                  [ phpObjServices context fSpec filename dbName ("./"++filename++"/") True | "-phpcode" `elem` switches]++
-                  [ phpObjServices context fSpec filename dbName ("./"++filename++"/") False | "-serviceGen" `elem` switches]++
- --                 [ phpServices context filename dbName True True | "-beeper" `elem` switches]++
+                  [ anal context ("-p" `elem` switches) (lineStyle switches)       | "-atlas" `elem` switches]++
+                  [ makeXML_depreciated context                                    | "-XML"   `elem` switches]++
+                  [ diagnose context                                               | "-diag"  `elem` switches]++
+                  [ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename
+                                                                                   | "-fSpec" `elem` switches]++
+                  [ archText context (lineStyle switches) (lang switches) filename | "-arch"  `elem` switches]++
+                  [ glossary context (lang switches)                               | "-g"     `elem` switches]++
+                  [ cdModel context                                                | "-CD"    `elem` switches]++
+                  [ phpObjServices context fSpec filename dbName ("./"++filename++"/") True
+                                                                                   | "-phpcode" `elem` switches]++
+                  [ phpObjServices context fSpec filename dbName ("./"++filename++"/") False
+                                                                                   | "-serviceGen" `elem` switches]++
+ --                 [ phpServices context filename dbName True True                | "-beeper" `elem` switches]++
  --                 [ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
-                  [ putStr (deriveProofs context)| "-proofs" `elem` switches]
+                  [ putStr (deriveProofs context)                                  | "-proofs" `elem` switches]
  --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
  --               ++[ csvcontent context | "-csv" `elem` switches]
- --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
                  ) >>
                     putStr ("\nwriting to \\ADL.log:\nADL "++filename++" "++chain " " switches++"\n") >>
                     putStr ("  nr. of data sets:                  "++show (length datasets)++"\n") >>
@@ -150,17 +148,17 @@
                     putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
                     putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
                     putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
-                    putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
+--                    putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
                     putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
                     putStr ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
                     putStr ("  nr. of function points:            "++show (nFpoints fSpec)++"\n") >>
                     appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of classes:                    "++show (length datasets)++"\n") >>
+                    appendFile "\\ADL.log" ("  nr. of data sets:                  "++show (length datasets)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of relations:                  "++show (length rels)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
+--                    appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints fSpec)++"\n")
@@ -190,12 +188,12 @@
                 , ""
                 ]
 
-             build_NewStyle :: Fspc -> [String] -> String -> String -> Architecture -> IO ()
-             build_NewStyle fSpec switches filename dbName hierGebeurtNietsMee
+             build_NewStyle :: Fspc -> [String] -> String -> String -> IO ()
+             build_NewStyle fSpec switches filename dbName
               = sequence_ 
                  (--[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
                   --[ makeXML_depreciated context| "-XML" `elem` switches]++
-                  [ showHaskell fSpec | "-Haskell" `elem` switches] ++ 
+                  [ putStr "Boe\n" >> showHaskell fSpec | "-Haskell" `elem` switches] ++ 
                   [ serviceGen fSpec (lang switches) filename| "-services" `elem` switches]
                   --[ diagnose context| "-diag" `elem` switches]++
                   --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++

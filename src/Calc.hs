@@ -6,10 +6,13 @@
               , conjNF
               , homogeneous
               , computeOrder
+              , allClauses
               , lClause
               , rClause
               , conjuncts
               , makeRule
+              , doClause
+              , simplPAclause
               , informalRule ) 
   where 
    import Char ( isSpace )
@@ -18,6 +21,7 @@
    import Auxiliaries
    import Classification
    import ADLdef
+   import FspecDef
    import ShowADL
    import ShowHS
    import CC_aux
@@ -146,7 +150,8 @@
                                             then "A reaction is not required, because  r -: r'. Proof:"++(showProof.cfProof) (Fu[Cp r,r'])++"\n"
                                             else if checkMono r ev m
                                             then "A reaction is not required, because  r -: r'. Proof:"++(showProof.derivMono r ev) m++"\n"
-                                            else "The correct reaction on this event is\n"++show (ECA (On ev m) (doCode viols Ins r'))
+                                            else "The correct reaction on this event is\n"++show (ECA (On ev m) (doCode viols Ins r'))++"\n"++
+                                                 "\ndoClause :\n"++show (ECA (On ev m) (doCode (Fi [Cp r,nr']) Ins r))
                                       )
                                     | m<-rd [m|x<-mors r, m<-[x,flp x], inline m, not (isIdent m)] -- TODO: include proofs that allow: isIdent m
                                     , ev<-[Ins,Del]
@@ -196,27 +201,6 @@
                  "\ntoExpr `elem` cpu rule: "++show ((map name.morlist) toExpr `elem` map (map name.morlist) (cpu rule))
                | (CR (fOps, e, bOp, toExpr, frExpr, r))<-hornCs rule clause ]
 
-
-
-
-
-
-
-
-
-   data InsDel     = Ins | Del
-                     deriving (Eq,Show)
-
-   ca = cptC "A" (==) []
-   cb = cptC "B" (==) []
-
-   r = Mph "r" posNone [] (ca,cb) True (error "Illegal reference to r")
-   s = Mph "s" posNone [] (ca,cb) True (error "Illegal reference to s")
-   d = Mph "Delta" posNone [] (ca,cb) True (error "Illegal reference to Delta")
-   x = Fi [Cp (Fu [Cp (Tm r) ,Tm s, Tm d]), Fu [Cp (Tm r) ,Tm s]]
-
-
-
    doClause :: Expression -> [ECArule]
    doClause r
     = {- if error("Diagnostic: \n"++
@@ -238,7 +222,7 @@
            | m<-rd [m|x<-mors r, m<-[x,flp x], inline m]
            , ev<-[Ins,Del]
            , r'<-[(conjNF.subst (Tm m,actSem ev (Tm m) (delta (sign m))) ) r]
-           , viols<-[conjNF r']
+           , viols<-[conjNF (Cp r')]
            , phi<-[(Fi [Cp r,r'])]
         {- , (not.isTrue) r' -} ]
 
@@ -248,62 +232,86 @@
    makeTm name = Tm (makeMph (Sgn name cptAnything cptAnything [] "" "" "" [] "" posNone 0 True))
    delta (a,b) = Tm (makeMph (Sgn "Delta" a b [] "" "" "" [] "" posNone 0 True))
 
-   data ECArule  = ECA Event PAclause
-   data Event    = On InsDel Morphism
-   data PAclause = Choice [PAclause]
-                   | All [PAclause]
-                   | Do  InsDel         -- do Insert or Delete
-                         Expression     -- into toExpr    or from toExpr
-                         Expression     -- delta
-                   | New Concept        -- makes a new instance of type c
- --                    deriving Show
+-- TODO: De volgende code voor simplPAclause stinkt. Opzoeken: procesalgebra herschrijfregels.
 
+   simplPAclause :: PAclause -> PAclause
+   simplPAclause (Choice [c])             = simplPAclause c
+   simplPAclause (Choice [])              = Choice []
+-- ?   simplPAclause (Choice (All []:cs))  = simplPAclause (Choice cs) -- TODO: wat moet er in dit geval gebeuren?
+   simplPAclause (Choice (Choice cs:cs')) = simplPAclause (Choice (cs++cs'))
+   simplPAclause (Choice (c:cs))          = f (simplPAclause (Choice cs))
+                                            where f (Choice [])  = Choice []
+                                                  f (Choice cs') = Choice (simplPAclause c:cs')
+                                                  f cl           = error ("Module Calc: something funny in simplPAclause (Choice ("++show c++":"++show cs++"))")
+   simplPAclause (All [c])                = simplPAclause c
+   simplPAclause (All [])                 = All []
+   simplPAclause (All (Choice []:cs'))    = Choice []
+   simplPAclause (All (All cs:cs'))       = simplPAclause (All (cs++cs'))
+   simplPAclause (All (c:cs))             = f (simplPAclause (All cs))
+                                            where f (Choice []) = Choice []
+                                                  f (All cs')   = All (c:cs')
+                                                  f cl          = error ("Module Calc: something funny in simplPAclause (All ("++show c++":"++show cs++"))")
+   simplPAclause c                        = c
 
+-- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 
-   doCode delta tOp (Fd ts) = doCode delta tOp (Cp (F (map Cp ts)))
-   doCode delta tOp (F [])  = error ("Module Calc: doCode ("++showADL delta++") "++show tOp++" "++showADL (F []))
-   doCode delta tOp (F [t]) = doCode delta tOp t
-   doCode delta Ins f@(F ts)
-    = All
-      [ Do Ins (head ts)     (simplify (F[delta',v (target delta,source one),one]))
-      , Do Ins (F (tail ts)) (simplify (F[one,v (source one,source delta),delta']))
-      ] where
-         delta' = Fi[delta,Cp f]
-         one  = Tm (Mph "One" posNone [] (source (F (tail ts)),target (head ts)) True d) --(error "Illegal reference to declaration of one"))
-                where d=Sgn "One" (target (head ts)) (source (F (tail ts))) [Sym,Asy,Trn] "" "" "" [] "" posNone 0 True
-   doCode delta Del (F ts)
-    = Choice         
-      [ Do Del (head ts) (simplify (Fi [F[delta,v (target delta,target (head ts))], F[v (source (head ts),target (head ts)),flp (F (tail ts))]]))
-      , Do Del (last ts) (simplify (Fi [F[flp (F (init ts)),v (target (last ts),source (last ts))], F[v (source (last ts),source delta),delta]]))
-      ]
-   doCode delta Ins (Cp x ) = doCode delta Del x
-   doCode delta Del (Cp x ) = doCode delta Ins x
-   doCode delta Ins (K0 x ) = doCode (deltaK0 delta Ins x) Ins x
-   doCode delta Del (K0 x ) = doCode (deltaK0 delta Del x) Del x
-   doCode delta Ins (K1 x ) = doCode (deltaK1 delta Ins x) Ins x
-   doCode delta Del (K1 x ) = doCode (deltaK1 delta Del x) Del x
-   doCode delta Del (Fi []) = error ("Module Calc: doCode ("++showADL delta++") Del "++showADL (Fi []))
-   doCode delta Del (Fi fs) = Choice [ doCode delta Del f | f<-fs ]
-   doCode delta Ins (Fi []) = error ("Module Calc: doCode ("++showADL delta++") Ins "++showADL (Fi []))
-   doCode delta Ins (Fi fs) = All    [ doCode delta Ins f | f<-fs ]
-   doCode delta Del (Fu []) = error ("Module Calc: doCode ("++showADL delta++") Del "++showADL (Fu []))
-   doCode delta Del (Fu fs) = All    [ doCode delta Del f | f<-fs ]
-   doCode delta Ins (Fu []) = error ("Module Calc: doCode ("++showADL delta++") Ins "++showADL (Fu []))
-   doCode delta Ins (Fu fs) = Choice [ doCode delta Ins f | f<-fs ]
-   doCode delta tOp (Tm m)  = if name m=="One"
-                              then New (source m)
-                              else if tOp==Ins 
-                                   then Do Ins (Tm m) (f Ins (conjNF (Fi [Cp (Tm m),delta])))
-                                   else Do Del (Tm m) (f Del (conjNF (Fi [    Tm m ,delta])))
-                              where -- De functie f versimpelt de uitdrukking (en dus de SELECT expressie), maar nu moet wel INSERT IGNORE gebruikt worden (DELETE is al IGNORE)
-                                f Ins (Fi fs) = simplify (Fi [f| f<-fs, not (isNeg f && notCp f==Tm m)])
-                                f Del (Fi fs) = simplify (Fi [f| f<-fs, not (isPos f &&       (f==Tm m || (isIdent f && isIdent m)) )])
-                                f _ e = e
-   doCode delta tOp e = error ("Module Calc: Non-exhaustive patterns in function doCode ("++showADL delta++") "++show tOp++" ("++showHS "" e++")")
+   doCode delta' tOp' expr = {- simplPAclause -} (doCod delta' tOp' expr)
+    where
+      doCod delta tOp (Fu []) = error ("!Fail (Module Calc): doCod ("++showADL delta++") "++show tOp++" "++showADL (Fu [])++",\n"++
+                                       "within function doCode ("++showADL delta'++") "++show tOp'++" ("++showHS "" (F [])++").")
+      doCod delta tOp (Fi []) = error ("!Fail (Module Calc): doCod ("++showADL delta++") "++show tOp++" "++showADL (Fi [])++",\n"++
+                                       "within function doCode ("++showADL delta'++") "++show tOp'++" ("++showHS "" (F [])++").")
+      doCod delta tOp (F [])  = error ("!Fail (Module Calc): doCod ("++showADL delta++") "++show tOp++" "++showADL (F [])++",\n"++
+                                       "within function doCode ("++showADL delta'++") "++show tOp'++" ("++showHS "" (F [])++").")
+      doCod delta tOp (F [t]) = doCod delta Ins t
 
+      doCod delta Ins (Cp x ) = doCod delta Del x
+      doCod delta Ins (Fu fs) = Choice [ doCod delta Ins f | f<-fs ]
+      doCod delta Ins (Fi fs) = All    [ doCod delta Ins f | f<-fs ]
+      doCod delta Ins f@(F ts)
+       = All [ c | (l,r)<-chop ts 
+                 , one <- [Tm (Mph "One" posNone [] (source (F r),target (F l)) True
+                                   (Sgn "One" (target (F l)) (source (F r)) [Sym,Asy,Trn] "" "" "" [] "" posNone 0 True))]
+                 , c<-[ Do Ins (F l) (simplify (Fi [F[delta',v (target delta,target one)],F[v(source delta,source one),one]]))
+                      , Do Ins (F r) (simplify (Fi [F[one,v(target one,target delta)],F[v (source one,source delta),delta']]))
+                      ]
+                 ]
+         where
+            delta' = Fi[delta,Cp f]
+      doCod delta Ins (Tm m)  = Do Ins (Tm m) delta
+      doCod delta Del (Cp x ) = Choice [ doCod delta Ins x
+                                       , doCod (F [delta, v (target x,source x)]) Del (Tm (mIs (source x)))
+                                       , doCod (F [v (source x,target x), flp delta]) Del (Tm (mIs (target x)))
+                                       ]
+      doCod delta Del (Fu fs) = All    [ doCod delta Del f | f<-fs ]
+      doCod delta Del (Fi fs) = Choice [ doCod delta Del f | f<-fs ]
+      doCod delta Del (F ts)
+       = Choice [ All [ Do Del (F l) (Fd [ F[delta, Cp (flp (F r))]])
+                      , Do Del (F r) (Fd [ F[Cp (flp (F l)), delta]])
+                      ]
+                | (l,r)<-chop ts ]
+      doCod delta Del (Tm m)  = Do Del (Tm m) delta
+      doCod delta tOp (Fd ts) = doCod delta tOp (Cp (F (map Cp ts)))
+      doCod delta tOp (K0 x ) = doCod (deltaK0 delta tOp x) tOp x
+      doCod delta tOp (K1 x ) = doCod (deltaK1 delta tOp x) tOp x
+{-
+      doCod delta tOp (Tm m)  = if name m=="Delta" then Choice [] else
+                                if name m=="One"
+                                then New (source m)
+                                else if tOp==Ins 
+                                     then Do Ins (Tm m) (f Ins (conjNF (Fi [Cp (Tm m),delta])))
+                                     else Do Del (Tm m) (f Del (conjNF (Fi [    Tm m ,delta])))
+                                where -- De functie f versimpelt de uitdrukking (en dus de SELECT expressie), maar nu moet wel INSERT IGNORE gebruikt worden (DELETE is al IGNORE)
+                                  f Ins (Fi fs) = simplify (Fi [f| f<-fs, not (isNeg f && notCp f==Tm m)])
+                                  f Del (Fi fs) = simplify (Fi [f| f<-fs, not (isPos f &&       (f==Tm m || (isIdent f && isIdent m)) )])
+                                  f _ e = e
+-}
+      doCod delta tOp e = error ("!Fail (Module Calc): Non-exhaustive patterns in the recursive call doCod ("++showADL delta++") "++show tOp++" ("++showHS "" e++"),\n"++
+                                 "within function doCode ("++showADL delta'++") "++show tOp'++" ("++showHS "" expr++").")
 
-
-
+   chop [x]    = []
+   chop (x:xs) = ([x],xs): [(x:l, r)| (l,r)<-chop xs]
+   chop []     = []
 
    deltaK0 delta Ins x = delta  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta -: x*)
    deltaK0 delta Del x = delta  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x* leeg is)
@@ -443,24 +451,6 @@
    instance Show ComputeRule where
     showsPrec p (CR (fOps, e, bOp, toExpr, frExpr, rule))
      = showString ("("++show fOps++", "++show e++", "++show bOp++", "++show toExpr++", "++show frExpr++", "++show rule++")")
-   instance Show ECArule where
-    showsPrec p (ECA event pa) = showString (show event++" "++show pa)
-   instance Show Event where
-    showsPrec p (On Ins m) = showString ("ON INSERT Delta IN "++showADL m)
-    showsPrec p (On Del m) = showString ("ON DELETE Delta FROM "++showADL m)
-
-   instance Show PAclause where
-    showsPrec p fragm = showString ("ON "++showFragm "\n  " fragm)
-
-   showFragm indent (Do tOp tExpr delt)
-     = indent++"DO "++f tOp delt++sh tExpr
-       where sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
-             f Ins delta = "INSERT "++sh delta++" IN "
-             f Del delta = "DELETE "++sh delta++" FROM "
-   showFragm indent (Choice ds)
-     = indent++concat ("Choice":map (showFragm (indent++"  ")) ds)
-   showFragm indent (All ds)
-     = indent++concat ("All": map (showFragm (indent++"  ")) ds)
 
    triggers :: Rule -> [ComputeRule]
    triggers rule
@@ -656,12 +646,22 @@
     = "ON "++commaEng "OR" [fOp++" "++if isSgn r then name r else showADL r|(fOp,r)<-fOps] ++" DO "++bOp++" "++showADL toExpr++" SELECTFROM "++sh frExpr
       where sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
 
+   instance Show ECArule where
+    showsPrec p (ECA event pa) = showString (show event++"\nEXECUTE "++show pa)
+   instance Show Event where
+    showsPrec p (On Ins m) = showString ("ON INSERT Delta IN "++show m)
+    showsPrec p (On Del m) = showString ("ON DELETE Delta FROM "++show m)
 
-
-
-
-
-
+   instance Show PAclause where
+    showsPrec p fragm = showString (showFragm "\n        " fragm)
+     where
+      showFragm indent (Do Ins tExpr delt) = "INSERT INTO "++sh tExpr++" SELECTFROM "++sh delt
+      showFragm indent (Do Del tExpr delt) = "DELETE FROM "++sh tExpr++" SELECTFROM "++sh delt
+      showFragm indent (Choice ds)
+        = "ONE of "++chain (indent++"       ") [showFragm (indent++"       ") d | d<-ds]
+      showFragm indent (All ds)
+        = "ALL of "++chain (indent++"       ") [showFragm (indent++"       ") d | d<-ds]
+      sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
 
 
    recalc :: Context -> Context

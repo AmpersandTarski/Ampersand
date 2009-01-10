@@ -4,7 +4,7 @@ where
    import Typology
    import FspecDef
    import ADLdataDef
-   import ADLdef(isAnything,isNothing,singleton
+   import ADLdef( isAnything,isNothing,singleton
                 , populations
                 , patterns
                 , rules
@@ -102,24 +102,24 @@ where
 
      
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Fview                         ***
+-- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************
---
---   instance ShowHS Fview where
---    showHSname fview = typ fview ++ "_" ++ showHSname (fsid fview) --showHS "" (pfixFSid "f_Obj_" (fsid fview))
---    showHS indent fview
---     = "Fview "
---       ++ datasetSection
---       ++ objdefSection
---       ++ servicesSection
---       ++ rulesSection
---       ++indent++" -- Einde Fview "++showHSname (dataset fview)
---        where
---          datasetSection  = "("++ showHS "" (dataset fview)++")"
---          objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fview)++")"
---          servicesSection = indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-services(fview)]++indent++"     ]"
---          rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fview)]++"]"
---
+
+   instance ShowHS Fservice where
+    showHSname fservice = typ fservice ++ "_" ++ showHSname (fsid fservice) --showHS "" (pfixFSid "f_Obj_" (fsid fservice))
+    showHS indent fservice
+     = "Fservice "
+       ++ datasetSection
+       ++ objdefSection
+       ++ servicesSection
+       ++ rulesSection
+       ++indent++" -- Einde Fservice "++showHSname (dataset fservice)
+        where
+          datasetSection  = "("++ showHS "" (dataset fservice)++")"
+          objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fservice)++")"
+          servicesSection = indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-methods(fservice)]++indent++"     ]"
+          rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fservice)]++"]"
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Frule                         ***
 -- \***********************************************************************

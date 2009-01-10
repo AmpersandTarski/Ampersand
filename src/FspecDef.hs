@@ -56,7 +56,6 @@
 
 
 
-
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
@@ -88,6 +87,16 @@
    instance Fidentified Funit where
     fsid funit = fusid funit 
 
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Fservice                         ***
+-- \***********************************************************************
+     
+   instance Identified Fservice where
+    typ fservice = "f_Service"
+   instance Fidentified Fservice where
+    fsid fservice = fsid (objectdef(fservice))
+   
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Frule                         ***

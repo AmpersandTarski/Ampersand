@@ -89,6 +89,7 @@
    instance Identified Rule where
     name r = "Rule"++show (runum r)
     typ r = "Rule_"
+-- | Han, wat hieronder gebeurt vind ik raar: twee varianten waar hetzelfde uitkomt (in source en target). WAAROM? Welke bedoeling heb je daarmee? Geen? TODO: vereenvoudigen.
    instance Association Rule where
     source r | ruleType r==AlwaysExpr = fst (sign r)
              | otherwise              = fst (sign r)

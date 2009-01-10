@@ -3,15 +3,15 @@
 -- TODO: cyclisch verband in signalen ontdekken en verbieden (SIGNAL inzage ON ALWAYS inzage)
 
 DATA Architecture  | Arch cs:Contexts
-DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} pats:Patterns rs:Rules ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
+DATA Context       | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} pats:Patterns rs:Rules ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjectDefs pops:Populations
 DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:ConceptDefs ks:KeyDefs
-DATA Rule          | Ru c:Char antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
+DATA Rule          | Ru c:{RuleType} antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
                    | Gc gluePos:{FilePos} m:Morphism expr:Expression cpu:Expressions sgn:{(Concept,Concept)} nr:Int pn:String
 DATA RuleType      | Implication | Equivalence | AlwaysExpr | Generalization | Automatic
-DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
+DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjectDefs
 DATA Population    | Popu m:Morphism ps:{[Paire]}
-DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
+DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjectDefs
 DATA Expression    | Tm m:Morphism
                    | Tc c:Expression
                    | F ts:Expressions
@@ -45,7 +45,7 @@ TYPE Concepts      = [Concept]
 TYPE Declarations  = [Declaration]
 TYPE Morphisms     = [Morphism]
 TYPE KeyDefs       = [KeyDef]
-TYPE ObjDefs       = [ObjectDef]
+TYPE ObjectDefs    = [ObjectDef]
 TYPE Patterns      = [Pattern]
 TYPE Pairs         = [Paire]
 TYPE Populations   = [Population]
@@ -252,9 +252,17 @@ SEM Rule
   | Sg lhs.mGen       = []
   | Gc lhs.mGen       = rd [G pos g s| (d,c) <- @expr.signs, m <- @m.usedDecls, G pos g s<-[G @gluePos d (source m), G @gluePos c (target m)], g/=s]
 
+ATTR RuleType [ | | typ:{RuleType} ]
+SEM RuleType     
+  | Implication    lhs.typ = Implication   
+  | Equivalence    lhs.typ = Equivalence   
+  | AlwaysExpr     lhs.typ = AlwaysExpr    
+  | Generalization lhs.typ = Generalization
+  | Automatic      lhs.typ = Automatic     
+
 ATTR Rule Rules [ | | declarations:Declarations usedDecls:Declarations ]
 ATTR Morphism Morphisms [ | | usedDecls:Declarations ]
-ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations KeyDef KeyDefs ObjectDef ObjDefs Population Populations
+ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Declaration Declarations KeyDef KeyDefs ObjectDef ObjectDefs Population Populations
      [ sDef:Declarations gE:GenR | | ]
 {
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
@@ -325,12 +333,12 @@ SEM Rule
        loc.errcpu      = snd @rcpu
        loc.rcpu        = subExprCheck
                          (if @c==AlwaysExpr
-                         then Ru @c (error ("Reference to antecedent of AlwaysExpr Rule "++showHS "" @r)) @rulePos @cons.expr @cpu.raw @expl
+                         then Ru @c.typ (error ("Reference to antecedent of AlwaysExpr Rule "++showHS "" @r)) @rulePos @cons.expr @cpu.raw @expl
                                  (if null @is
                                   then error("Fatal: null @is on "++show @rulePos++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
                                   else head @is)
                                   @lhs.rnr @lhs.pn
-                         else Ru @c @antc.expr @rulePos @cons.expr @cpu.raw @expl
+                         else Ru @c.typ @antc.expr @rulePos @cons.expr @cpu.raw @expl
                                  (if null @is
                                   then error("Fatal: null @is on "++show @rulePos++"\n@antc.expr = "++show @antc.expr++"\n@antc.signs = "++shSigns @antc.signs++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
                                   else head @is)
@@ -586,7 +594,7 @@ SEM Expressions
 
 
 -- Type errors
-ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjDefs Population Populations
+ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expressions Declaration Declarations Morphism KeyDef KeyDefs ObjectDef ObjectDefs Population Populations
      [ | | sErr: {[String]} ]
 SEM Architecture
   | Arch lhs.sErr   = @cs.sErr
@@ -859,7 +867,7 @@ SEM ObjectDef
                        , [e,e']<-[[o| cl<-take 2 eqcls, o<-take 1 (sort' (ground.source.ctx) cl)]]
                        ])
 
-SEM ObjDefs 
+SEM ObjectDefs 
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Population
@@ -878,10 +886,10 @@ We distinguish: Ru-type rules, multiplicity rules, glue-rules and signals. They 
 Expressions get rule numbers too, because some expressions create extra rules (K0 and K1 in particular)
 ---------------------------------------------------------------------------------------------}
 
-ATTR Patterns Pattern ObjDefs ObjectDef KeyDefs KeyDef Rules Rule Expression Expressions Declarations Declaration Gens Gen [ | rnr:Int | rules:Rules ]
+ATTR Patterns Pattern ObjectDefs ObjectDef KeyDefs KeyDef Rules Rule Expression Expressions Declarations Declaration Gens Gen [ | rnr:Int | rules:Rules ]
 ATTR Context [ | | rules:Rules nRules:Int ]
 
-SEM Context -- DATA Context  | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} pats:Patterns rs:Rules ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjDefs pops:Populations
+SEM Context -- DATA Context  | Ctx nm:String on:{[String]} isa:{Inheritance Concept} world:{[Classification Context]} pats:Patterns rs:Rules ds:Declarations cs:ConceptDefs ks:KeyDefs os:ObjectDefs pops:Populations
   | Ctx  pats.rnr   = 1
          os.rnr     = @pats.rnr
          ds.rnr     = @os.rnr
@@ -905,7 +913,7 @@ SEM Pattern -- DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Decla
          lhs.rnr    = @ks.rnr
          lhs.rules  = @gen.rules ++ @rules.rules ++ @pms.rules ++ @ks.rules
 
-SEM ObjDefs
+SEM ObjectDefs
   | Cons hd.rnr     = @lhs.rnr
          tl.rnr     = @hd.rnr
          lhs.rnr    = @tl.rnr
@@ -913,7 +921,7 @@ SEM ObjDefs
   | Nil  lhs.rnr    = @lhs.rnr
          lhs.rules  = []
 
-SEM ObjectDef -- DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
+SEM ObjectDef -- DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjectDefs
   | Obj  ats.rnr    = @lhs.rnr
          ctx.rnr    = @ats.rnr
          lhs.rnr    = @ctx.rnr
@@ -927,7 +935,7 @@ SEM KeyDefs
   | Nil  lhs.rnr    = @lhs.rnr
          lhs.rules  = []
 
-SEM KeyDef    -- DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjDefs
+SEM KeyDef    -- DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjectDefs
   | Kd   ats.rnr    = @lhs.rnr
          ctx.rnr    = @ats.rnr
          lhs.rnr    = @ctx.rnr
@@ -1115,15 +1123,15 @@ SEM KeyDefs
   | Nil  lhs.keyDefs = []
          lhs.exprs   = []
 
-ATTR ObjectDef [ iConcs:{[Concept]} iConc:Concept | | odef:ObjectDef ats:ObjDefs sConcs:{[Concept]} pos:FilePos nm:String]
-SEM ObjDefs
+ATTR ObjectDef [ iConcs:{[Concept]} iConc:Concept | | odef:ObjectDef ats:ObjectDefs sConcs:{[Concept]} pos:FilePos nm:String]
+SEM ObjectDefs
   | Cons hd.iConcs   = @lhs.iConcs
          hd.iConc    = @lhs.iConc
 SEM KeyDef
   | Kd   ats.iConcs  = rd (map snd @ctx.signs ++ @ats.sources)>-[Anything]
          ats.iConc   = head (rd (map snd @ctx.signs))
 
-SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjDefs
+SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjectDefs
   | Obj  lhs.odef    = if and [sgn==(Anything,Anything)|sgn<- @ctx.signs]
                        then Obj @nm @pos (Tm (mIs (C @nm @lhs.gE []))) @ats.objDefs
                        else Obj @nm @pos @ctx.expr @ats.objDefs
@@ -1161,8 +1169,8 @@ SEM Populations
   | Cons lhs.popus   = @hd.pop : @tl.popus
   | Nil  lhs.popus   = []
 
-ATTR ObjDefs [ iConcs:{[Concept]} iConc:Concept | | objDefs:ObjDefs sources:{[Concept]}]
-SEM ObjDefs
+ATTR ObjectDefs [ iConcs:{[Concept]} iConc:Concept | | objDefs:ObjectDefs sources:{[Concept]}]
+SEM ObjectDefs
   | Cons lhs.objDefs = @hd.odef : @tl.objDefs
          lhs.sources = @signs
          loc.signs   = rd [lubb @lhs.gE src' src''|src''<- @tl.sources, src'<- @hd.sConcs, src' `order` src'']

@@ -1,9 +1,10 @@
 {-# LINE 1 "ObjBinGenObject.lhs" #-}
 #line 1 "ObjBinGenObject.lhs"
+  {-# OPTIONS -XPatternSignatures #-}
   module ObjBinGenObject where
    import Char(toUpper)
    import Auxiliaries(chain, adlVersion, commaEng)
-   import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
+   import Calc(informalRule, disjNF, computeOrder, triggers, allClauses, conjuncts, doClause)
    import ADLdef
    import ShowADL
    import CC_aux ( tot, fun
@@ -39,12 +40,11 @@
       ([ "<?php // generated with "++adlVersion
        , ""
        , "/********* on "++(show (pos object))
-       ] ++ (map ((++) " * ") (
-                 showObjDef object )) ++
-       [" *********/"
+       , showADL object
+       , " *********/"
        , ""
        , generateService_getobject context object   -- generate metadata for "object"
-       ] ++ showClasses context [] object ++
+       ] ++ showClasses context triggers [] object ++
        [ generateService_getEach context capname object
        , generateService_create  context capname object
        , generateService_read    context capname object
@@ -52,6 +52,17 @@
        , generateService_delete  context capname object]
       )) ++ "\n?>"
      where
+   -- The expressions of which the population can change inside this object (i.e. the transaction boundary)
+      tboundary :: [Expression]
+       = rd [objctx o | o<-atts object ]
+         where atts o = o: [e| a<-attributes o, e<-atts a]
+   -- The compute rules that may be used within this service.
+      ecarules
+       = [ eca | rule<-declaredRules context
+               , conjunct<-conjuncts rule
+               , clause<-allClauses conjunct
+               , eca<-doClause clause  -- was: hc<-hornCs rule clause
+               ]
       showObjDef a | null (attributes a) =
        [  phpIdentifier (name a)++"["++phpIdentifier (name (concept a))++"] : "++ (showADL (ctx a))
         ]
@@ -168,6 +179,7 @@
                       [ [ "if(isset("++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id)){"
                         , "  if(count(DB_doquer('"++doesExistQuer context a (phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id")++"'))==0)"
                         , "    DB_doquer('"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
+                        , "    print '"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"';"
                         ] ++ updateObject context (nms++[name a,name as]) as ++
                         [ "}"
                         , phpVar (nm++"_"++name a)++"->id = @"++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id;"
@@ -328,15 +340,22 @@
                    (F [Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") cpt), e])
 
 
+-- | The function showClasses defines the PHP class of an object o and also (recursively) the
+-- | PHP-classes of all subordinate objects (i.e. the attributes) of o.
+-- | context  : the Context of object o. In due time, this will be replaced by an Fspc
+-- | triggers : a [possibly empty] set of triggers, that is used to generate automated functionality.
+-- |            Precondition: This set contains precisely those triggers that may be used within the transaction
+-- |            boundary of the class.
+-- |            In due time, this parameter will become a selection from the entire set of triggers in Fspc.
+-- | nms      : the name trail of all super-objects until the root of this service. This is used to generate unique names for every field.
+-- | o        : the object to be transformed in a class.
 
-
-
-   showClasses context nm o
-    = [ "class "++phpIdentifier (chain "_" (nm++[name o])) ++" {"] ++
+   showClasses context triggers nms o
+    = [ "class "++phpIdentifier (chain "_" (nms++[name o])) ++" {"] ++
       (map ((++) "  ") (
        ["var $id;"]
        ++ ["var "++phpVar (name a)++";"| a <- attributes o]++
-       ["function "++phpIdentifier (chain "_" (nm++[name o]))++"($id=null"
+       ["function "++phpIdentifier (chain "_" (nms++[name o]))++"($id=null"
                                   ++  (concat [", "++phpVar (name a)++"=null" | a<-attributes o])
                                   ++"){"
        ,"    $this->id=$id;"]
@@ -346,11 +365,11 @@
                 , "  if(isset($id)){"
                 , "    $this->"++phpIdentifier (name a)++" = array();"
                 , "    foreach(DB_doquer('"++ selectExprForAttr context a o "$id" ++"') as $i=>$v){"
-                , "      $this->"++phpIdentifier (name a)++"[]=new "++phpObjRelName nm o a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
+                , "      $this->"++phpIdentifier (name a)++"[]=new "++phpObjRelName nms o a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
                 , "    }"
                 , "  } else $this->"++phpIdentifier (name a)++"=array();"
                 , "}"] ++
-                concat [ ["if(count($this->"++phpIdentifier (name a)++")==0) $this->"++phpIdentifier (name a)++"[] = new "++phpObjRelName nm o a++"();"]
+                concat [ ["if(count($this->"++phpIdentifier (name a)++")==0) $this->"++phpIdentifier (name a)++"[] = new "++phpObjRelName nms o a++"();"]
                        | tot (multiplicities (ctx a))
                        ] ++
                 concat [ ["if(count($this->"++phpIdentifier (name a)++")>1){"
@@ -365,9 +384,10 @@
              )) ++
        ["}"]
        ++ (concat
-          [ ["function add_"++phpIdentifier (name a)++"("++phpObjRelName nm o a++" "++phpVar (name a)++"){"
+          [ ["function add_"++phpIdentifier (name a)++"("++phpObjRelName nms o a++" "++phpVar (name a)++"){"
             ,"  return $this->"++phpIdentifier (name a)++(if (fun (multiplicities (ctx a))) then "[0]" else "[]")++"="++phpVar (name a)++";"
             ,"}"
+      -- The following function fills the drop-down boxes of an individual field in edit mode
             ,"function getEach_"++phpIdentifier (name a)++"(){"
             ,"  // currently, this returns all concepts.. why not let it return only the valid ones?"
             ,"  $v = DB_doquer('"++selectExpr context
@@ -375,6 +395,7 @@
                                            (sqlAttConcept context (concept a))
                                            (sqlAttConcept context (concept a))
                                            (Tm (mIs (concept a)))++"');"
+            ,"// triggers:"++[]
             ,"  $res = array();"
             ,"  foreach($v as $i=>$j){"
             ,"    $res[]=$j['"++addSlashes (sqlAttConcept context (concept a))++"'];"
@@ -394,7 +415,7 @@
       ]
       )) ++
       [ "}"
-      ] ++ (concat [ showClasses context (nm++[name o]) a |a <- attributes o ] )
+      ] ++ (concat [ showClasses context triggers (nms++[name o]) a |a <- attributes o ] )
 
    phpObjRelName pth o r = phpIdentifier (chain "_" (pth++[name o,name r]))
 
