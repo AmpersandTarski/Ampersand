@@ -41,12 +41,12 @@
               [showXML pat indent| pat<-patterns ctx]
 
    instance XML Pattern where
-    showXML pat@(Pat nm rs gen pms cs ks) indent
-     = tagLn indent "PATTERN" ["NAME="++show (name pat)] (\indent->chain "\n" (inhoud indent))
+    showXML pat indent
+     = tagLn indent "PATTERN" ["NAME="++show (ptnm pat)] (\indent->chain "\n" (inhoud indent))
      where inhoud indent
-            = [showXML g indent| g<-rd gen]++  -- TODO: remove transitively redundant elements from gen.
-              [showXML d indent| d<-rd pms, not (isSignal d)]++
-              [showXML r indent| r<-rs]
+            = [showXML g indent| g<-rd (ptgns pat)]++  -- TODO: remove transitively redundant elements from gen.
+              [showXML d indent| d<-rd (ptdcs pat), not (isSignal d)]++
+              [showXML r indent| r<-ptrls pat]
 
    instance XML Rule where
     showXML r@(Sg p rule expla sgn nr pn signal) indent

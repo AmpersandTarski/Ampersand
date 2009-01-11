@@ -117,7 +117,7 @@ deriveMults ks sgs
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
  = (Ru c antc p cons matches expla sgn nr pn
    , if not (null cerrs) then [showADL r++"\n"++"COMPUTING not allowed for closures (neither * nor +)."] else
-     [ 
+     [
        if length es>1
        then "cannot decide which occurrence of ("++showADL c++") you mean:\n"++chain "\n" [showADL e++"["++show (source e)++"*"++show (target e)++"]"| e<-es]
        else "No match found for " ++showADL c++" in this rule."

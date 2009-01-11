@@ -39,7 +39,7 @@
     keys :: a->[(Concept,String,[ObjectDef])]
    instance Key Context where
     keys context
-     = ( concat [keys p| p<-patterns context] ++
+     = ( concat [keys p| p<-ctxpats context] ++
          [(target ctx,lbl,ats)|Kd pos lbl ctx ats<-keyDefs context]
        )
    instance Key KeyDef where
@@ -53,12 +53,12 @@
     --Interpretation of context as a language means to describe the classification tree,
     --the set of declarations and the rules that apply in that context. Inheritance of
     --properties is achieved as a result.
-    declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (patterns context))++declaredRules (ctxwrld context)
-    multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (patterns context))++multRules     (ctxwrld context)
+    declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++declaredRules (ctxwrld context)
+    multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++multRules     (ctxwrld context)
     rules         context = [r| r<-(ctxrs context), not (isSignal r)]
    -- rules         (Ctx nm on i world pats rs ds cs ks os pops) = [r| r<-rs, not (isSignal r)]
-    signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (patterns context))++signals       (ctxwrld context)
-    specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (patterns context))++specs         (ctxwrld context)
+    signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++signals       (ctxwrld context)
+    specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++specs         (ctxwrld context)
     patterns      context     = ctxpats context
     objectdefs    context     = ctxos   context
     isa           context     = ctxisa  context
@@ -309,27 +309,32 @@
     contents (Vs g s)                       = [[o,o']| o<-conts s,o'<-conts s]
 
    instance Language Pattern where
-    declaredRules (Pat nm rs parChds pms cs ks) = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-rs]
-    rules r                                     = []
-    signals (Pat nm rs parChds pms cs ks)       = [r|r@(Sg p rule expla sgn nr pn signal)<-rs]
-    specs (Pat nm rs parChds pms cs ks)         = [r|r@(Gc pos m expr cpu sgn nr pn)<-rs]
-    patterns p                                  = [p]
-    isa   (Pat nm rs parChds pms cs ks)         = Isa ts (singles>-[e| G pos g s<-parChds,e<-[g,s]])
-                                                  where Isa tuples singles = isa rs
-                                                        ts = clear (tuples++[(g,s)| G pos g s<-parChds])
+    declaredRules pat = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-ptrls pat]
+    rules pat         = []
+    signals pat       = [r|r@(Sg p rule expla sgn nr pn signal)<-ptrls pat]
+    specs pat         = [r|r@(Gc pos m expr cpu sgn nr pn)<-ptrls pat]
+    patterns pat      = [pat]
+    isa pat           = Isa ts (singles>-[e| G pos g s<-ptgns pat,e<-[g,s]])
+                        where Isa tuples singles = isa (ptdcs pat)
+                              ts = clear (tuples++[(g,s)| G pos g s<-ptgns pat])
 
    instance Morphical Pattern where
-    concs        (Pat nm rs gen pms cs ks) = concs rs `uni` concs gen `uni` concs pms
-    conceptDefs  (Pat nm rs gen pms cs ks) = cs
-    mors         (Pat nm rs gen pms cs ks) = mors rs `uni` mors ks
-    morlist      (Pat nm rs gen pms cs ks) = morlist rs++morlist ks
-    declarations (Pat nm rs gen pms cs ks) = rd pms
-    genE         (Pat nm rs gen pms cs ks) = genE (pms++declarations (signals rs))
-    closExprs    (Pat nm rs gen pms cs ks) = closExprs rs
+    concs        pat = concs (ptrls pat) `uni` concs (ptgns pat) `uni` concs (ptdcs pat)
+    conceptDefs  pat = ptcds pat
+    mors         pat = mors (ptrls pat) `uni` mors (ptkds pat)
+    morlist      pat = morlist (ptrls pat)++morlist (ptkds pat)
+    declarations pat = ptdcs pat
+    genE         pat = genE (ptdcs pat++declarations (signals (ptrls pat)))
+    closExprs    pat = closExprs (ptrls pat)
 
    union :: Pattern -> Pattern -> Pattern
-   union (Pat nm rs parChds pms cs ks) (Pat nm' rs' parChds' pms' cs' ks')
-     = Pat nm' (rs `uni` rs') (parChds `uni` parChds') (pms `uni` pms') (cs `uni` cs') (ks `uni` ks')
+   union pat pat'
+     = Pat (ptnm pat')
+           (ptrls pat `uni` ptrls pat')
+           (ptgns pat `uni` ptgns pat')
+           (ptdcs pat `uni` ptdcs pat')
+           (ptcds pat `uni` ptcds pat')
+           (ptkds pat `uni` ptkds pat')
 
 
    instance Morphic Expression where

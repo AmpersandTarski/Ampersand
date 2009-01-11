@@ -11,7 +11,7 @@ module Typology
    import Classification 
           (Classification(Cl),root,makeClassifications)
 
-   data Inheritance a = Isa [(a,a)] [a] deriving Show
+   data Inheritance a = Isa [(a,a)] [a] deriving (Eq,Show)
 
    type IsaPath a = [a]
 

@@ -122,7 +122,7 @@
     showsPrec p context  -- (Ctx nm on isa world pats rs ds cs ks os pops)
      = showString ("CONTEXT "++nm++
                    (if null (extends context) then "" else " EXTENDS "++chain ", " (extends context))++"\n"++
-                   chain "\n\n" (map show (patterns context))++"\n"++
+                   chain "\n\n" (map show (ctxpats context))++"\n"++
                    chain "\n" (map show (rules context))++"\n"++
                    chain "\n" (map show (declarations context))++"\n"++
                    chain "\n" (map show (conceptDefs context))++"\n"++

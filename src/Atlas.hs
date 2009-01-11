@@ -87,7 +87,7 @@
           putStr ("NAV_"++thisCtx++".html written\n")         >>
           writeFile (thisCtx++".html") (htmlContext thisCtx context)  >> -- the main page for this context
           putStr ("HTML code for "++name context++" navigator ("++thisCtx++".html) written\n") >>
-  -- navigator ("NAV_"++thisCtx++".html") calls each pat<-patterns context, and all concepts c<-concs (declarations context)
+  -- navigator ("NAV_"++thisCtx++".html") calls each pat<-ctxpats context, and all concepts c<-concs (declarations context)
   -- Generate the html code and pictures for each pattern in this context
           sequence_ [ graphSpecs (fnPattern context pat) pat                                     >> -- the graphical specifications for this pattern's main page
                       cdSpecs context (fnPattern context pat) True pat                           >> -- generate fully fledge (full==True) class diagram
@@ -101,12 +101,12 @@
                       sequence_ [ traverse [] subtree
                                 | subtree<-(sort' name.cTrees.declarations) pat]                 >>
                       putStr ("HTML code for "++name pat++": "++fnPattern context pat++".html, NAV_"++fnPattern context pat++".html, written\n")
-                    | pat<-patterns context]                       >>
+                    | pat<-ctxpats context]                       >>
   -- Now generate html code and pictures for each rule in this context
-          sequence_ [ graphSpecs (fnRule context r) (Pat ("Rule "++show (nr r)) [r] [] [] [] [])         >>
-                      putStr ("Graph for Rule "++show (nr r)++": "++fnRule context r++" written\n")      >>
+          sequence_ [ graphSpecs (fnRule context r) (Pat ("Rule "++show (runum r)) [r] [] [] [] [])         >>
+                      putStr ("Graph for Rule "++show (runum r)++": "++fnRule context r++" written\n")      >>
                       writeFile (fnRule context r++".html") (htmlRule context r predLogic)                       >>
-                      putStr ("HTML code for rule "++show (nr r)++": "++fnRule context r++".html written\n")
+                      putStr ("HTML code for rule "++show (runum r)++": "++fnRule context r++".html written\n")
                     | r<-declaredRules context]              >>
   -- Part 2: Generate the html code and pictures for each concept in this context
           sequence_ [ graphSpecs (fnConcept context c) cPat                                              >>
@@ -121,7 +121,7 @@
   -- Part 3: Now generate navigators for each concept in each pattern
           sequence_ [ sequence_ [writeFile ("NAV_"++fnPatConcept context pat c++".html")
                                            (navCodePop context pat c) |c<-concs pat]
-                    | pat<-patterns context]
+                    | pat<-ctxpats context]
            where
             cdSpecs context fnm full b
              = writeFile (fnm++"_CD.dot") (cdDataModel context full "dot" b)      >>
@@ -157,7 +157,7 @@
                               ["onChange=\"SwitchPat(this.value)\""]
                               ( ("value="++show(fnContext context), "All patterns"):
                                 [("value="++show(fnPattern context pat), name pat)
-                                | pat<-patterns context]
+                                | pat<-ctxpats context]
                               )++
                             if null ms then "" else
                             "\n<P>\nRelations\n<BR />\n"++
@@ -189,7 +189,7 @@
                               ["onChange=\"SwitchPat(this.value)\""]
                               ( ("value="++show(fnContext context), "All patterns"):
                                 [("value="++show(fnPattern context pat), name pat)
-                                | pat<-patterns context]
+                                | pat<-ctxpats context]
                               )++
                             (if null ms then "" else
                             "\n<P>\nRelations\n<BR />\n"++
@@ -224,7 +224,7 @@
                               ( ("value="++show(fnContext context), "All patterns"):
                                 [("value="++show(fnPattern context p)++
                                    if name cPat==name p then " selected" else "",name p)
-                                | p<-patterns context]
+                                | p<-ctxpats context]
                               ) ++
                             if null ms then "" else
                             "\n<P>\nRelations\n<BR />\n"++
@@ -251,7 +251,7 @@
                               ( ("value="++show(fnContext context), "All patterns"):
                                 [("value="++show(fnPattern context p)++
                                    if name cPat==name p then " selected" else "",name p)
-                                | p<-patterns context]
+                                | p<-ctxpats context]
                               )++
                             if null ms then "" else
                             "\n<P>\nRelations\n<BR />\n"++
@@ -410,14 +410,14 @@
      where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (rules context)++reverse (rules context)
    htmlRule :: Context -> Rule -> Bool -> String
    htmlRule context r predLogic
-    = htmlPage ("Code (5) for "++"Rule "++show (nr r)) ""
-                    (htmlBody ((if emptyGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] [])
+    = htmlPage ("Code (5) for "++"Rule "++show (runum r)) ""
+                    (htmlBody ((if emptyGlossary context (Pat ("Rule "++show (runum r)) [r] [] [] [] [])
                                 then "" else "<A HREF=#REF2Glossary>Glossary</A> ")++
                             {- "<A HREF=#REF2Relations>Relations</A>\n"++ -}
                                (if length (rules context) <=1 then "" else
                                 "<A HREF=\""++fnRule context (nextRule context r)++".html\">Next rule</A>\n"++
                                 "<A HREF=\""++fnRule context (prevRule context r)++".html\">Previous rule</A>\n")++
-                               htmlHeadinglevel 3 ("Rule "++show (nr r)) []++"\n<P>\n"++
+                               htmlHeadinglevel 3 ("Rule "++show (runum r)) []++"\n<P>\n"++
                                (if null (explain r)
                                 then "Artificial explanation:<BR />\n<BLOCKQUOTE>"++(lang English .assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
                                 else "Explanation:<BR />\n<BLOCKQUOTE>"++explain r++"</BLOCKQUOTE>\n<P>\n")++
@@ -433,20 +433,20 @@
                                (if testing then "Test\n<P>\n"++showHS "" r++"\n<P>\n"++show r++"\n<P>\n" else "") ++
                                imageMap (fnRule context r)++"\n<P>\n"++
                                (if null ruleviol then "" else
-                                htmlHeadinglevel 2 ("Rule "++show (nr r)++" is not satisfied in the following cases") []++"\n"++ruleviol++"\n<P>\n"
+                                htmlHeadinglevel 2 ("Rule "++show (runum r)++" is not satisfied in the following cases") []++"\n"++ruleviol++"\n<P>\n"
  {-                             ++(if length (violations r)>1 then "Analysis of the first instance:<BR />\n" else "")++
                                 (if null antcStrands
                                  then (if length consStrands ==1
                                        then htmlItalic "Since "++commaEng (htmlItalic "and") [x,y]++htmlItalic " are linked through  "++showADL cons++htmlItalic ", "
                                        else commaEng (htmlItalic "and") [x,y]++htmlItalic " are linked through "++showADL antc++htmlItalic " as follows."++"<BR />\n"++htmlTable antcStrands []++"\n"
-                                      )++htmlItalic ("Rule "++show (nr r)++" prescribes that ")++commaEng (htmlItalic "and") [x,y]++htmlItalic " must be linked through "++showADL antc++". \n"++htmlItalic "However, this is not the case.\n"++
+                                      )++htmlItalic ("Rule "++show (runum r)++" prescribes that ")++commaEng (htmlItalic "and") [x,y]++htmlItalic " must be linked through "++showADL antc++". \n"++htmlItalic "However, this is not the case.\n"++
                                       (if nullN antcNostrds then "" else
                                        htmlItalic "Here is how far we got with the available population."++"<BR />"++
                                        htmlTable antcNostrds [])
                                  else (if length antcStrands ==1
                                        then htmlItalic "Since "++commaEng (htmlItalic "and") [x,y]++htmlItalic " are linked through "++showADL antc++htmlItalic ", "
                                        else commaEng (htmlItalic "and") [x,y]++htmlItalic " are linked through "++showADL cons++htmlItalic " as follows."++"<BR />\n"++htmlTable antcStrands []++"\n"
-                                      )++htmlItalic ("Rule "++show (nr r)++" prescribes that ")++commaEng (htmlItalic "and") [x,y]++htmlItalic " must be linked through "++showADL cons++". \n"++htmlItalic "However, this is not the case.\n"++
+                                      )++htmlItalic ("Rule "++show (runum r)++" prescribes that ")++commaEng (htmlItalic "and") [x,y]++htmlItalic " must be linked through "++showADL cons++". \n"++htmlItalic "However, this is not the case.\n"++
                                       (if nullN consNostrds then "" else
                                        htmlItalic "Here is how far we got with the available population."++"<BR />"++
                                        htmlTable consNostrds [])
@@ -456,8 +456,8 @@
                                htmlHeadinglevel 2 "Relations" []++"\n"++
                                (if nr r==2 then error (showHS "" (declarations r)) else "")++
                                htmlDeclarations context (declarations r)++"\n<P>\n"++
-                               if emptyGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] []) then ""
-                               else htmlGlossary context (Pat ("Rule "++show (nr r)) [r] [] [] [] []) -}
+                               if emptyGlossary context (Pat ("Rule "++show (runum r)) [r] [] [] [] []) then ""
+                               else htmlGlossary context (Pat ("Rule "++show (runum r)) [r] [] [] [] []) -}
                     ))
     where ruleviol    = htmlViolations r
           [x,y]       = if null vs then error ("No violations in "++show (violations r)++".") else
@@ -507,12 +507,12 @@
    multViolations s Sur = [["",e]| e<-rd (conts (target s))>-cod s]
 
    htmlPattern :: Context -> String -> Pattern -> String
-   htmlPattern context fnm pat@(Pat nm rs parChds pms cs ks)
-    = htmlPage ("Code (6) for "++nm) ""
-                    (htmlBody (htmlHeadinglevel 1 ("Pattern: "++nm) []++"\n"++
+   htmlPattern context fnm pat
+    = htmlPage ("Code (6) for "++ptnm pat) ""
+                    (htmlBody (htmlHeadinglevel 1 ("Pattern: "++ptnm pat) []++"\n"++
                                htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (declaredRules pat++signals pat)]++"\n"++
                                imageMap fnm ++
-                               htmlHeadinglevel 1 ("Data model: "++nm) []++"\n"++
+                               htmlHeadinglevel 1 ("Data model: "++ptnm pat) []++"\n"++
                                imageMap (fnPattern context pat++"_CD")++
                                htmlSignals context pat++
                                if emptyGlossary context pat then "" else "\n"++htmlGlossary context pat))
@@ -522,7 +522,7 @@
                     (--"Test: show (rules context) = "++show (rules context)++"\n"++
                      --"explaination(s) = \n>>   "++ chain "\n>>   " [explainverder context r | r<-sort' nr (rules context++signals context) ]++"\n"++
                      htmlBody (htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (rules context++signals context)]
-                              ++ (if length (patterns context)<=1 then "" else
+                              ++ (if length (ctxpats context)<=1 then "" else
                                   "\n<BR>\n"++(imageMap (fnContext context++"_CD"))
                                )  )
                      )

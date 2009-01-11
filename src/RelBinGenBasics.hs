@@ -694,7 +694,7 @@
                 , "  return("++okVar++");"
                 ]
          else chain "\n   "
-                [ "if(" ++ (chain " && " [ "checkRule"++show (nr r)++"()" | r<-rules context ])  ++ "){"
+                [ "if(" ++ (chain " && " [ "checkRule"++show (runum r)++"()" | r<-rules context ])  ++ "){"
                 , "     DB_doquer('COMMIT');"
                 , "  // DB_doquer('UNLOCK TABLES');"
                 , "     return("++okVar++");"

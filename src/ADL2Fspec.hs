@@ -96,13 +96,13 @@
  -- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
         pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
                  [ (pat,length cns,ds)
-                 | pat<-patterns context, ds<-datasets, cns<-map name (concsDS ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
+                 | pat<-ctxpats context, ds<-datasets, cns<-map name (concsDS ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
  -- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
  -- The remaining concepts and datasets are determined in pcsds1.
  -- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
         pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
                  [ (pat,0-length ms,ds)
-                 | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
+                 | pat<-ctxpats context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
                  , ms<-[[m|m<-morlist pat, m `elem` morsDS ds || flp m `elem` morsDS ds]], not (null ms)
                  ]
  -- The remaining datasets will be discussed in the last theme
@@ -120,7 +120,7 @@
     --             on    = extends context
     --             i     = isa context
     --             world = wrld context
-    --             pats  = patterns context ++ if null remainingDS then [] else [others]
+    --             pats  = ctxpats context ++ if null remainingDS then [] else [others]
     --             rs    = rules context
     --             ds    = declarations context
     --             cs    = conceptDefs context
@@ -128,29 +128,7 @@
     --             os    = attributes context
     --             pops  = populations context
  -- The patterns with the appropriate datasets are determined:
-        pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
-
-{- Obsolete stuff: in the days before Fspc, we used to have this function
-   erAnalysis :: Language a	 => a -> ([ObjectDef],[ObjectDef],[Declaration],[String])
-   erAnalysis :: Context -> ([ObjectDef],[ObjectDef],[Declaration],[String])
-   erAnalysis ctx = (serviceS fspc, serviceG fspc, rels, ruls)
-    where
-     datasets
-      = [ (objdefNew (v (cptAnything,c))) { objnm  = (name c)
-                                          , objats = [ (objdefNew (Tm e)) { objnm = name e }
-                                                     | e<-as ]
-                                          }
-        | c<-concs p, as<-[[a| a<-attrs, source a <= c]], not (null as) ]
-     attrs :: [Morphism]
-     attrs = [Mph (name d ++ if isFlpFunction d then "Fun" else "") posNone [] (source d,target d) True d | d<-declarations p,    isFunction d] ++
-             [flp (Mph (name d++if isFunction d then "Inv" else "") posNone [] (source d,target d) True d)| d<-declarations p, isFlpFunction d] ++
-             [     Mph (name d) posNone [] (source d,target d) True d | d<-declarations p, isProperty d]
-     fspc = makeFspecNew2 ctx
-     rels = [d| d<-declarations ctx, not (isFunction d), not (isFunction (flp d))]
-     ruls = [showADL r| r<-declaredRules ctx]
--}
-
-
+        pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-ctxpats context]
 
    makeFtheme :: Context -> Pattern -> [Dataset] -> Ftheme
    makeFtheme context pat dss

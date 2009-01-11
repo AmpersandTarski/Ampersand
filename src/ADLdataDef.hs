@@ -62,11 +62,28 @@
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Architecture                  ***
--- \***********************************************************************
-   
+-- \**** (Eq dient alleen diagnostische doeleinden)    ********************
+
+   instance Eq Architecture where
+    a==a' = archContexts a==archContexts a'
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***
--- \***********************************************************************
+-- \**** (Eq dient alleen diagnostische doeleinden)    ********************
+
+   instance Eq Context where
+    c==c' = ctxnm      c == ctxnm   c'
+            && ctxon   c == ctxon   c'
+            && ctxisa  c == ctxisa  c'
+            && ctxwrld c == ctxwrld c'
+            && ctxpats c == ctxpats c'
+      --    && ctxrs   c == ctxrs   c'
+      --    && ctxds   c == ctxds   c'
+            && ctxcs   c == ctxcs   c'
+            && ctxks   c == ctxks   c'
+            && ctxos   c == ctxos   c'
+      --    && ctxpops c == ctxpops c'
+
    instance Identified Context where
     name ctx = ctxnm ctx
     typ ctx = "Context_"
@@ -74,7 +91,16 @@
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Pattern                       ***
--- \***********************************************************************
+-- \**** (Eq dient alleen diagnostische doeleinden)    ********************
+
+   instance Eq Pattern where
+    p==p' = ptnm     p == ptnm  p'
+       --   && ptrls p == ptrls p'
+            && ptgns p == ptgns p'
+       --   && ptdcs p == ptdcs p'
+            && ptcds p == ptcds p'
+            && ptkds p == ptkds p'
+
    instance Show Pattern
    instance Identified Pattern where
     name pat = ptnm pat
@@ -452,7 +478,7 @@
                    Sg{} -> ruleType (srsig r)
                    Gc{} -> Generalization
                    Fr{} -> Automatic
-                   
+
    antecedent :: Rule -> Expression
    antecedent r = case r of
                    Ru{} -> if rrsrt r == AlwaysExpr  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
@@ -460,33 +486,32 @@
                    Sg{} -> antecedent (srsig r)
                    Gc{} -> Tm (grspe r)
                    Fr{} -> frcmp r
-   
-   consequent :: Rule -> Expression                
-   consequent r = case r of 
+
+   consequent :: Rule -> Expression
+   consequent r = case r of
                    Ru{} -> rrcon r
                    Sg{} -> consequent (srsig r)
                    Gc{} -> grgen r
                    Fr{} -> Tm (makeMph (frdec r))
 
-   cpu :: Rule -> Expressions                
-   cpu r = case r of 
+   cpu :: Rule -> Expressions
+   cpu r = case r of
                    Ru{} -> r_cpu r
                    Sg{} -> [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
                    Gc{} -> r_cpu r
                    Fr{} -> [Tm (makeMph (frdec r))]
-                                   
+
    patternName :: Rule -> String
    patternName r = r_pat r
- 
+
    uncomp :: Rule -> Rule
-   uncomp r = case r of 
+   uncomp r = case r of
                    Ru{} -> r{r_cpu = []}
                    Sg{} -> r
                    Gc{} -> r{r_cpu = []}
                    Fr{} -> r
    -- HJO, Wellicht mag i.p.v. bovenstaande ook gewoon het volgende worden gezegd, maar dat kan ik momenteel niet bevestigen:
    -- uncomp r = r{r_cpu = []}   (Dat zou wel elegant zijn, maar het moet nog worden getest of dit goed gaat...)
-                   
 
    makeMph :: Declaration -> Morphism
    makeMph d = Mph{ mphnm  = name d
@@ -503,15 +528,16 @@
                I{}   -> True
                V{}   -> True
                Mp1{} -> True
-   
-   
+
+
    makeDeclaration :: Morphism -> Declaration
-   makeDeclaration m = case m of 
+   makeDeclaration m = case m of
                Mph{} -> mphdcl m
-               I{}   -> Isn{ d_src = mphspc  m, d_tgt = mphgen  m}   -- WAAROM?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT? 
+               I{}   -> Isn{ d_src = mphspc  m, d_tgt = mphgen  m}   -- WAAROM?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
                V{}   -> Vs { d_src = source  m, d_tgt = target  m}
                Mp1{} -> Isn{ d_src = mph1typ m, d_tgt = mph1typ m}
-               
+
+
 --   Was vroeger:
 --   makeDeclaration (Mph _ _ _ _ _ s) = s
 --   makeDeclaration (I atts g s yin)  = Isn g s

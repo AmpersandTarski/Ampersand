@@ -27,8 +27,8 @@
        ++ (if null (ctxpats context) then "" else "\n"      ++chain "\n\n" (map showADL (ctxpats context)) ++ "\n")
        ++ (if null (ctxpops context) then "" else "\n"      ++chain "\n\n" (map showADL (ctxpops context)) ++ "\n")
        ++ "\n\nENDCONTEXT"
-   --    where decls = declarations context>-declarations (patterns context)
-   --          cdefs = conceptDefs context>-conceptDefs (patterns context)
+   --    where decls = declarations context>-declarations (ctxpats context)
+   --          cdefs = conceptDefs context>-conceptDefs (ctxpats context)
 
    instance ShowADL Pattern where
     showADL pat

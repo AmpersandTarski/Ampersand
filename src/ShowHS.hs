@@ -228,13 +228,13 @@ where
        (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
        (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
     -- patterns will be shown in  (showHS indent Fspec)
-       where pats = patterns context
-             rs   = rules context
-             ds   = declarations context>-declarations (patterns context)
-             cs   = conceptDefs context>-conceptDefs (patterns context)
-             ks   = keyDefs context
-             os   = attributes context
-             pops = populations context
+       where pats = ctxpats context     -- ^ patterns declared in this context
+             rs   = ctxrs context       -- ^ rules declared in this context
+             ds   = ctxds context       -- ^ declaration declared in this context, outside patterns
+             cs   = ctxcs context       -- ^ A list of concept definitions defined in this context, outside the scope of patterns
+             ks   = ctxks context       -- ^ A list of key definitions defined in this context, outside the scope of patterns
+             os   = attributes context  -- ^ A list of attributes defined in this context, outside the scope of patterns
+             pops = populations context -- ^ A list of populations defined in this context
              on   = extends context
 
    
@@ -245,34 +245,34 @@ where
    instance ShowHS Pattern where
  -- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
     showHSname pat = "pat_"++haskellIdentifier (name pat)
-    showHS indent pat@(Pat nm rs gen pss cs ks)
+    showHS indent pat
      = "Pat "++show (name pat)++
        (if null (declaredRules pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-declaredRules pat] ++            "]")++
-       (if null gen                 then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") g| g<-gen              ] ++indent++"    ]")++
-       (if null (declarations pat)  then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-declarations  pat] ++            "]")++
-       (if null (conceptDefs pat)   then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-conceptDefs   pat] ++            "]")++
-       (if null ks                  then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") k| k<-ks               ] ++indent++"    ]")++
+       (if null (ptgns pat)         then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") g| g<-ptgns         pat] ++indent++"    ]")++
+       (if null (ptdcs pat)         then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-ptdcs         pat] ++            "]")++
+       (if null (ptcds pat)         then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-ptcds         pat] ++            "]")++
+       (if null (ptkds pat)         then " []" else indent++"    [ "++chain (indent++"    , ") [showHS (indent++"     ") k| k<-ptkds         pat] ++indent++"    ]")++
        indent++"where"++
-       (if null (declarations pat)  then "" else concat [indent++" "++showHSname d ++" = "++ showHS (indent++"   ") d |d <-declarations  pat] )++
+       (if null (ptdcs pat)         then "" else concat [indent++" "++showHSname d ++" = "++ showHS (indent++"   ") d |d <-ptdcs         pat] )++
        (if null (declaredRules pat) then "" else concat [indent++" "++showHSname r ++" = "++ showHS (indent++"   ") r |r <-declaredRules pat] )++
-       (if null (conceptDefs pat)   then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-conceptDefs   pat] )++
-       (if null ks                  then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ks               ] )
+       (if null (ptcds pat)         then "" else concat [indent++" "++showHSname cd++" = "++ showHS (indent++"   ") cd|cd<-ptcds         pat] )++
+       (if null (ptkds pat)         then "" else concat [indent++" "++showHSname k ++" = "++ showHS (indent++"   ") k |k <-ptkds         pat] )
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
 
    instance ShowHS Rule where
-    showHSname r = "rule"++show (nr r)
-    showHS indent r@(Ru AlwaysExpr _ pos cons cpu expla sgn nr pn)
-     = chain " " ["Ru",showHS "" AlwaysExpr,undef,"("++showHS "" pos++")","("++showHS "" (consequent r)++")",showL (map (showHS "") cpu),show(explain r),(showHS "" sgn),show nr,show pn]
-       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an 'A' rule\")"
-    showHS indent r@(Ru rt antc pos cons cpu expla sgn nr pn)
-     = chain " " ["Ru",showHS "" rt,"("++showHS "" antc++")","("++showHS "" pos++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",show(explain r),(showHS "" sgn),show nr,show pn]
-    showHS indent r@(Sg pos rule expla sgn nr pn signal)
-     = chain " " ["Sg","("++showHS "" pos++")","("++showHS "" rule++")",show expla,(showHS "" sgn),show nr,show pn,show signal]
-    showHS indent r@(Gc pos m expr cpu sgn nr pn)
-     = chain " " ["Gc","("++showHS "" pos++")","("++showHS "" m++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") cpu)++"]",(showHS "" sgn),show nr,show pn]
+    showHSname r = "rule"++show (runum r)
+    showHS indent r@(Ru _ _ _ _ _ _ _ _ _)
+     = if rrsrt r==AlwaysExpr
+       then chain " " ["Ru",showHS "" AlwaysExpr,undef,"("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")",showL (map (showHS "") (r_cpu r)),show (rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
+       else chain " " ["Ru",showHS "" (rrsrt r),"("++showHS "" (antecedent r)++")","("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",show(rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
+       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an AlwaysExpr rule\")"
+    showHS indent r@(Sg _ _ _ _ _ _ _)
+     = chain " " ["Sg","("++showHS "" (srfps r)++")","("++showHS "" (srsig r)++")",show (srxpl r),(showHS "" (srtyp r)),show (runum r),show (r_pat r),show (srrel r)]
+    showHS indent r@(Gc _ _ _ _ _ _ _)
+     = chain " " ["Gc","("++showHS "" (grfps r)++")","("++showHS "" (grspe r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",(showHS "" (grtyp r)),show (runum r),show (r_pat r)]
     showHS indent r = ""
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***

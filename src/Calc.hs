@@ -87,7 +87,7 @@
                   , Fu terms<-ilClauses conjunct
                   , F ts<-terms, ts'<-[[t| t<-ts, length (morlist t)==1]]
                   , if null ts' then error(" module Calc "++show (nr rule)++" ("++show (pos rule)++") in "++showADL rule++"\nterms = "++showHS "" (Fu terms)++"\nts = "++showHS "" (F ts)) else True
-                  , term<-[flp (head ts'), last ts']--, term `elem` cpu rule
+                  , term<-[flp (head ts'), last ts']--, term `elem` r_cpu rule
                   ]
 
    delFrs :: Context -> Concept -> [Rule]
@@ -196,9 +196,9 @@
             sh (Fi []) = "empty"
             sh f       = showADL f
             showcomp rule clause -- laat de functionaliteit van 'computing' in de functie 'triggers' zien (nuttig voor testen).
-             = [ "\ntoExpr                : "++showADL toExpr++
-                 "\ncpu rule              : "++show (cpu rule)++
-                 "\ntoExpr `elem` cpu rule: "++show ((map name.morlist) toExpr `elem` map (map name.morlist) (cpu rule))
+             = [ "\ntoExpr                  : "++showADL toExpr++
+                 "\nr_cpu rule              : "++show (r_cpu rule)++
+                 "\ntoExpr `elem` r_cpu rule: "++show ((map name.morlist) toExpr `elem` map (map name.morlist) (r_cpu rule))
                | (CR (fOps, e, bOp, toExpr, frExpr, r))<-hornCs rule clause ]
 
    doClause :: Expression -> [ECArule]
@@ -478,8 +478,8 @@
        CR (fOps, e, bOp, toExpr, frExpr, r) `eq2expr` CR (fOps', e', bOp', toExpr', frExpr', r') = toExpr == toExpr'
        bop (CR (fOps, e, bOp, toExpr, frExpr, r)) = bOp
    -- alleen "COMPUTING" termen opleveren
-       computing rule hc@(CR (fOps, e, bOp, toExpr, frExpr, r)) = toExpr `elem` map simplify (cpu rule)
-   -- debug:    computing rule e = error ("(module Calc diagnostic) rule: "++showADL rule++"\e: "++show e++"\ncpu rule : "++ show (e `elem` cpu rule))
+       computing rule hc@(CR (fOps, e, bOp, toExpr, frExpr, r)) = toExpr `elem` map simplify (r_cpu rule)
+   -- debug:    computing rule e = error ("(module Calc diagnostic) rule: "++showADL rule++"\e: "++show e++"\nr_cpu rule : "++ show (e `elem` r_cpu rule))
 
    multDerivations :: Language pat => pat -> Declarations
    multDerivations context
@@ -681,13 +681,13 @@
    norm1Rule :: Rule -> Expression
    norm1Rule = conjNF.normExpr
    makeRule :: Rule -> Expression -> Rule
-   makeRule rule (Fu []) = error ("(module Calc:) erroneous call to function makeRule rule ("++showADL (Fu [])++").")
-   makeRule rule@(Ru _ _ p _ cpu expla (a,b) nr pn) (Fu ts)
-    | or [isNeg t|t<-ts] = Ru Implication (Fi [notCp t|t<-ts,isNeg t]) p (Fu [t|t<-ts,isPos t]) [] expla (a,b) nr pn
-    | otherwise          = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL (Fu ts))) p (Fu ts) [] expla (a,b) nr pn
-   makeRule rule@(Ru _ _ p _ cpu expla (a,b) nr pn) e
-    | isFu e'   = makeRule rule e'
-    | otherwise = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of rule "++showADL e)) p e [] expla (a,b) nr pn
+   makeRule r (Fu []) = error ("(module Calc:) erroneous call to function makeRule r ("++showADL (Fu [])++").")
+   makeRule r (Fu ts)
+    | or [isNeg t|t<-ts] = Ru Implication (Fi [notCp t|t<-ts,isNeg t]) (rrfps r) (Fu [t|t<-ts,isPos t]) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
+    | otherwise          = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL (Fu ts))) (rrfps r) (Fu ts) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
+   makeRule r e
+    | isFu e'   = makeRule r e'
+    | otherwise = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL e)) (rrfps r) e [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
     where e' = disjNF e
 
 
@@ -1048,11 +1048,11 @@
                  e:es = xs
                  ys = unF e
 
-   normR r@(Ru AlwaysExpr antc pos cons cpu expla sgn nr pn) = Ru AlwaysExpr err pos (conjNF cons) cpu expla sgn nr pn
+   normR r@(Ru AlwaysExpr antc pos cons cpu expla sgn nr pn) = Ru AlwaysExpr err pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
     where err = error ("Module Calc: erroneous reference to antc of rule "++showADL r)
-   normR (Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (disjNF antc) pos (conjNF cons) cpu expla sgn nr pn
-   normR (Sg p rule expla sgn nr pn signal)         = Sg p (normR rule) expla sgn nr pn signal
-   normR (Gc pos m expr cpu sgn nr pn)              = error "Calc.lhs: normR op glue regel. Gc pos m (conjNF expr) cpu sgn nr pn"
+   normR r@(Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (disjNF antc) pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
+   normR r@(Sg p rule expla sgn nr pn signal)         = Sg p (normR rule) expla sgn nr (r_pat r) signal
+   normR r@(Gc pos m expr cpu sgn nr pn)              = error "Calc.lhs: normR op glue regel. Gc pos m (conjNF expr) (r_cpu r) sgn nr (r_pat r)"
 
 
 

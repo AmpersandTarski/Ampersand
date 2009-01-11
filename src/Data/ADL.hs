@@ -10,8 +10,8 @@ module Data.ADL where
 
    type Contexts  = [Context]
    data Context   
-      = Ctx { ctxnm    :: String                    -- ^The name of this context
-            , ctxon    :: [String]                  -- ^The list of extends (= context names of contexts) whose rules are imported
+      = Ctx { ctxnm    :: String                    -- ^ The name of this context
+            , ctxon    :: [String]                  -- ^ The list of extends (= context names of contexts) whose rules are imported
             , ctxisa   :: (Inheritance Concept)     -- ^ A data structure containing the generalization structure of concepts
             , ctxwrld  :: [Classification Context]  -- ^ A tree, being the transitive closure of the 'extends' (see formal definition) relation.
             , ctxpats  :: Patterns                  -- ^ A list of patterns defined in this context
@@ -36,13 +36,10 @@ module Data.ADL where
    type Rules = [Rule]
    data Rule =
   -- Ru c antc p cons cpu expla sgn nr pn
-        Ru { rrsrt :: RuleType          -- ^ One of the following characters:
-                                        --
-                                        --    * 'I' if this is an implication;
-                                        --
-                                        --    * 'E' if this is an equivalence;
-                                        --
-                                        --    * 'A' if this is an ALWAYS expression.
+        Ru { rrsrt :: RuleType          -- ^ One of the following:
+                                        --    | Implication if this is an implication;
+                                        --    | Equivalence if this is an equivalence;
+                                        --    | AlwaysExpr  if this is an ALWAYS expression.
            , rrant :: Expression        -- ^ Antecedent
            , rrfps :: FilePos           -- ^ Position in the ADL file
            , rrcon :: Expression        -- ^ Consequent
@@ -65,7 +62,7 @@ module Data.ADL where
       | Gc { grfps :: FilePos           -- ^ position in the ADL file
            , grspe :: Morphism          -- ^ specific
            , grgen :: Expression        -- ^ generic
-           , r_cpu :: Expressions       -- ^ cpu. This is a list of subexpressions, which must be computed.
+           , r_cpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
            , grtyp :: (Concept,Concept) -- ^ declaration
            , runum :: Int               -- ^ rule number
            , r_pat :: String            -- ^ name of pattern in which it was defined.

@@ -159,7 +159,7 @@ ATTR Architecture [ | | cs:Contexts]
 SEM Architecture
   | Arch lhs.cs       = @cs.contexts
          cs.ctxs      = @cs.over
-SEM Contexts 
+SEM Contexts
   | Cons lhs.contexts = @hd.context : @tl.contexts
          lhs.over     = @hd.over ++ @tl.over
          hd.ctxTree   = mkCtxAG @lhs.ctxs (name @hd.context)
@@ -239,7 +239,7 @@ SEM Context
 
 -- Generation of (G pos g s) elements, which are the basis for a concept tree.
 ATTR Rule Rules Pattern Patterns [ | | mGen:Gens ]
-SEM Patterns 
+SEM Patterns
   | Cons lhs.mGen     = @hd.mGen ++ @tl.mGen
   | Nil  lhs.mGen     = []
 SEM Pattern
@@ -253,12 +253,12 @@ SEM Rule
   | Gc lhs.mGen       = rd [G pos g s| (d,c) <- @expr.signs, m <- @m.usedDecls, G pos g s<-[G @gluePos d (source m), G @gluePos c (target m)], g/=s]
 
 ATTR RuleType [ | | typ:{RuleType} ]
-SEM RuleType     
-  | Implication    lhs.typ = Implication   
-  | Equivalence    lhs.typ = Equivalence   
-  | AlwaysExpr     lhs.typ = AlwaysExpr    
+SEM RuleType
+  | Implication    lhs.typ = Implication
+  | Equivalence    lhs.typ = Equivalence
+  | AlwaysExpr     lhs.typ = AlwaysExpr
   | Generalization lhs.typ = Generalization
-  | Automatic      lhs.typ = Automatic     
+  | Automatic      lhs.typ = Automatic
 
 ATTR Rule Rules [ | | declarations:Declarations usedDecls:Declarations ]
 ATTR Morphism Morphisms [ | | usedDecls:Declarations ]
@@ -268,7 +268,7 @@ ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Decla
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
  = (Ru c antc p cons matches expla sgn nr pn
    , if not (null cerrs) then [showADL r++"\n"++"COMPUTING not allowed for closures (neither * nor +)."] else
-     [ 
+     [
        if length es>1
        then "cannot decide which occurrence of ("++showADL c++") you mean:\n"++chain "\n" [showADL e++"["++show (source e)++"*"++show (target e)++"]"| e<-es]
        else "No match found for " ++showADL c++" in this rule."
@@ -277,26 +277,26 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
    where
     (matches,str) = recur ([antc|c/=AlwaysExpr]++[cons])
     cerrs = [] -- obsolete? map (drop 5) ([ name m| m<-mors r] `isc` map (("Clos_"++).name.head.mors.fst) cpu')
-    cpu'  = [ (c,es) | c<-cpu, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
+    cpu'  = [ (c,es) | c<-r_cpu r, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
     recur  []    = ([],"")
     recur (e:es) = (subexps++matches , "   recur "++showADL (e:es)++" = "++showADL (subexps++matches)++"\nbecause\n"++
                    "("++showADL subexps++" = subexprs ("++showADL e++") and\n"++
                    "("++showADL matches++" = recur ("++showADL es++")\n--------\n"++str'++str'')
      where (subexps,str')  = subexprs e
            (matches,str'') = recur es
-    subexprs e@(Tm m)    = ([e| c<-cpu, e `match` c] , "")
+    subexprs e@(Tm m)    = ([e| c<-r_cpu r, e `match` c] , "")
     subexprs e@(Tc e')   = subexprs e'
-    subexprs e@(F ts)    = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
+    subexprs e@(F ts)    = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
                            where (matches,str) = recur ts
-    subexprs e@(Fd ts)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
+    subexprs e@(Fd ts)   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
                            where (matches,str) = recur ts
-    subexprs e@(Fi fs)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
+    subexprs e@(Fi fs)   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
                            where (matches,str) = recur fs
-    subexprs e@(Fu fs)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
+    subexprs e@(Fu fs)   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
                            where (matches,str) = recur fs
-    subexprs e@(K0 e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+    subexprs e@(K0 e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
-    subexprs e@(K1 e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+    subexprs e@(K1 e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
     subexprs e@(Cp e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
@@ -315,7 +315,7 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
     match _ _              = False
 }
 SEM Rule
-  | Ru 
+  | Ru
 -- inherited (i.e. downward) propagation of types
        cpu.isign       = @is
        cpu.septets     = []
@@ -356,7 +356,7 @@ SEM Rule
        lhs.morphisms   = (if @c==AlwaysExpr then [] else @antc.morphisms)++ @cons.morphisms
 -- this is for more precise error messages in case antc or cons have Anything for a type.
        loc.is          = if @c==AlwaysExpr then @cons.signs else
-                         if null @antc.signs 
+                         if null @antc.signs
                          then (if null @cons.signs
                                then []
                                else @cons.signs)
@@ -486,7 +486,7 @@ SEM Expression
        lhs.expr     = @dis
        loc.dis      = if null @lhs.isign then F (@ts.exprs) else
                       let (s,t)= head @lhs.isign -- @lhs.isign has length 1, or else there is a type error.
-                      in F (-- if length @ts.exprs==1 then @ts.exprs else 
+                      in F (-- if length @ts.exprs==1 then @ts.exprs else
                             distr @lhs.pos (s,t) @lhs.gE [cs|(a,l,sl,cs,sr,r,b)<- @trpls, s `@lhs.gE` a, t `@lhs.gE` b] @ts.exprs)
        ts.septets   = @trpls
        lhs.raw      = F @ts.raw
@@ -507,7 +507,7 @@ SEM Expression
        lhs.expr     = @dis
        loc.dis      = if null @lhs.isign then Fd (@ts.exprs) else
                       let (s,t)= head @lhs.isign -- @lhs.isign has length 1, or else there is a type error.
-                      in Fd (-- if length @ts.exprs==1 then @ts.exprs else 
+                      in Fd (-- if length @ts.exprs==1 then @ts.exprs else
                              distr @lhs.pos (s,t) @lhs.gE [cs|(a,l,sl,cs,sr,r,b)<- @trpls, a==s, b==t] @ts.exprs)
        ts.septets   = @trpls
        lhs.raw      = Fd @ts.raw
@@ -559,15 +559,15 @@ SEM Expressions
   | Nil  lhs.signss = []
          lhs.raw    = []
 
-SEM Morphisms 
+SEM Morphisms
   | Cons lhs.usedDecls   = @hd.usedDecls ++ @tl.usedDecls
   | Nil  lhs.usedDecls   = []
 
 ATTR Pattern Patterns [ | | keyDefs:KeyDefs ]
-SEM Patterns 
+SEM Patterns
   | Cons lhs.keyDefs   = @hd.keyDefs ++ @tl.keyDefs
   | Nil  lhs.keyDefs   = []
-SEM Pattern         
+SEM Pattern
   | Pat lhs.keyDefs    = @ks.keyDefs
 ATTR Expression Expressions Rule Rules Pattern Patterns [ | | morphisms:{Morphisms} ]
 SEM Patterns
@@ -598,12 +598,12 @@ ATTR Architecture Contexts Context Patterns Pattern Rules Rule Expression Expres
      [ | | sErr: {[String]} ]
 SEM Architecture
   | Arch lhs.sErr   = @cs.sErr
-SEM Contexts 
+SEM Contexts
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Context
   | Ctx  lhs.sErr   = @pats.sErr ++ @ks.sErr ++ @os.sErr ++ @pops.sErr
-SEM Patterns 
+SEM Patterns
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Pattern
@@ -867,7 +867,7 @@ SEM ObjectDef
                        , [e,e']<-[[o| cl<-take 2 eqcls, o<-take 1 (sort' (ground.source.ctx) cl)]]
                        ])
 
-SEM ObjectDefs 
+SEM ObjectDefs
   | Cons lhs.sErr   = @hd.sErr ++ @tl.sErr
   | Nil  lhs.sErr   = []
 SEM Population
@@ -1158,12 +1158,12 @@ SEM ObjectDef     -- | Obj nm:String pos:FilePos ctx:Expression ats:ObjectDefs
                        --    , t' <- if null @ats.sources then [t] else irredC @lhs.gE @ats.sources -- all possible signatures for ctx
                        --    , ordd @lhs.gE t t'])
          ctx.pn      = ""
-                       
+
 ATTR Population [ | | pop:Population ]
 SEM Population
   | Popu lhs.pop     = Popu @m.morphism @ps
          m.isign     = let (m,ss) = @m.raw in if isMph m then (if inline m then map sign ss else map (sign.flp) ss) else [sign m]
-    
+
 ATTR Populations [ | | popus:Populations ]
 SEM Populations
   | Cons lhs.popus   = @hd.pop : @tl.popus
@@ -1196,8 +1196,8 @@ ATTR Declarations [ | | declarations:Declarations rawDecls:Declarations ]
 SEM Declarations
   | Cons lhs.declarations = @hd.declaration: @tl.declarations
          lhs.rawDecls = @hd.rawDecl: @tl.rawDecls
-  | Nil  lhs.declarations = []           
-         lhs.rawDecls = []           
+  | Nil  lhs.declarations = []
+         lhs.rawDecls = []
 
 ATTR Morphisms [ | | morphisms:Morphisms raw:{[(Morphism,Declarations)]} ]
 SEM Morphisms
@@ -1273,7 +1273,7 @@ SEM Morphism
         loc.ats      = rd ([C a @lhs.gE as|C a _ as<- @atts]++[S|S<- @atts])
         lhs.id       = True
         lhs.yin      = True
-        
+
 ATTR Declaration [ | | nm:String declaration:Declaration rawDecl:Declaration]
 SEM Declaration
   | Sgn lhs.declaration = @msignat

@@ -77,8 +77,8 @@
          ; inp<-readFile fnFull
          ; putStr ("\n"++fnFull++" is read.\n")
          ; slRes <- parseIO (pArchitecture ("-beeper" `elem` switches))(scan keywordstxt keywordsops specialchars opchars fnFull initPos inp)
-         ; putStr (fnFull++" has been parsed.\n")
-         
+         ; putStr ("Prove that the scanner works:\n"++show(scan keywordstxt keywordsops specialchars opchars fnFull initPos inp))
+         ; putStr ("Proven that the scanner works.\n\n")
            -- Now continue with typechecking of the parsetree:
          ; let (contexts,errs) = sem_Architecture slRes
          ; let context = if null contexts
@@ -88,6 +88,8 @@
                               if null cs
                               then error ("!Mistake: context "++contextname++" was not encountered in input file.\n")
                               else head cs
+         ; putStr ("Now prove that the parser works:\n"++(if context==context then showHS "\n  " context else "")++"\n"++fnFull++" has been parsed.\n")
+         ; putStr ("Proven that the parser works:\n\n")
          ; let Typ pths = if null contexts then Typ [] else
                           if length args>1 && contextname `elem` map name contexts
                           then typology (ADLdef.isa (head [c| c<-contexts,name c==contextname]))
@@ -149,7 +151,7 @@
                     putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
                     putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
 --                    putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
-                    putStr ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
+                    putStr ("  nr. of patterns:                   "++show (length (ctxpats context))++"\n") >>
                     putStr ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
                     putStr ("  nr. of function points:            "++show (nFpoints fSpec)++"\n") >>
                     appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
@@ -159,7 +161,7 @@
                     appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
 --                    appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (patterns context))++"\n") >>
+                    appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (ctxpats context))++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
                     appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints fSpec)++"\n")
                    where
@@ -255,7 +257,7 @@
               name context++" in the current directory.\n")                   >>
       graphics context (fnContext context) graphicstyle False context         >>   -- generate abbreviated (full==False) class diagram
       sequence_ [ graphics context (fnPattern context pat) graphicstyle True pat   -- generate fully fledge (full==True) class diagram
-                | pat<-patterns context]                                      >>
+                | pat<-ctxpats context]                                      >>
       writeFile (filename++".tex") (generateFspecLaTeX context language spec) >>   -- generate LaTeX code
       putStr ("\nLaTeX file "++filename++".tex written... ")                  >>
       processLaTeX2PDF filename                                                    -- crunch the LaTeX file into PDF.

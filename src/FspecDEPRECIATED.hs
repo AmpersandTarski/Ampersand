@@ -69,7 +69,7 @@
 --        "\n>-- ***THEMES***: "++
 --       (if null themes             then "" else concat [indent++" "++showHSname t++         " = "++showHS (indent++"    ") t|t<-themes  ]++"\n")++
 --        "\n>-- ***PATTERNS***: "++
---       (if null (patterns context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-patterns context]++"\n")
+--       (if null (ctxpats context) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-ctxpats context]++"\n")
 
  -- The story:
  -- A number of datasets for this context is identified.
@@ -79,7 +79,7 @@
 
 --   makeFspecOUD :: Context -> Fspec
 --   makeFspecOUD context
---     = Fctx ( context { ctxpats = patterns context ++ if null remainingDS then [] else [others]
+--     = Fctx ( context { ctxpats = ctxpats context ++ if null remainingDS then [] else [others]
 --                      , ctxrs   = rules context
 --                      , ctxds   = declarations context
 --                      , ctxcs   = conceptDefs context
@@ -102,13 +102,13 @@
 -- -- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
 --        pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
 --                 [ (pat,length cns,ds)
---                 | pat<-patterns context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
+--                 | pat<-ctxpats context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
 -- -- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
 -- -- The remaining concepts and datasets are determined in pcsds1.
 -- -- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
 --        pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
 --                 [ (pat,0-length ms,ds)
---                 | pat<-patterns context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
+--                 | pat<-ctxpats context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
 --                 , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
 --                 ]
 -- -- The remaining datasets will be discussed in the last theme
@@ -125,7 +125,7 @@
 --   --              on    = extends context
 --   --              i     = isa context
 --   --              world = wrld context
---   --              pats  = patterns context ++ if null remainingDS then [] else [others]
+--   --              pats  = ctxpats context ++ if null remainingDS then [] else [others]
 --   --              rs    = rules context
 --   --              ds    = declarations context
 --   --              cs    = conceptDefs context
@@ -133,7 +133,7 @@
 --   --              os    = attributes context
 --   --              pops  = populations context
 -- -- The patterns with the appropriate datasets are determined:
---        pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-patterns context]
+--        pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-ctxpats context]
 
    instance Identified Dataset where
      name (DS c pths) = name c
@@ -606,7 +606,7 @@
                          [ updateObj context o cs rs| not (null cs) ] -} []
                      )
               | (o,fpa,cs,rs)<-ec])-- ++clss pat ec newConcs++asss pat newDecls)
-      | (pat,newConcs,newDecls)<-zip3 (patterns context) (firsts [] (map concs (patterns context))) (firsts [] (map declarations (patterns context)))
+      | (pat,newConcs,newDecls)<-zip3 (ctxpats context) (firsts [] (map concs (ctxpats context))) (firsts [] (map declarations (ctxpats context)))
       , car<-[definedEnts context pat], not (null car), ec<-[ents car] ]
       where
        ents car = [ (o,if null (attributes o) then NO else ILGV Eenvoudig,cs,rs)
@@ -661,7 +661,7 @@
               ( if null post then "" else "\n  {"++chain " and " post ++"}") ++
               ( if null rs then "" else
                 if length rs>1
-                then "\n\tInvariants:\n   "++chain "\n   " [fixSpaces 3 (show (nr r))++") "++showOO r |r<-rs]
+                then "\n\tInvariants:\n   "++chain "\n   " [fixSpaces 3 (show (runum r))++") "++showOO r |r<-rs]
                 else "\n\tInvariant: "++showOO (head rs) ++ "(Rule "++show (nr (head rs))++")"
               )++
               if fpa==NO then "" else
@@ -682,7 +682,7 @@
               ( if null post then "" else "\n  {"++chain " and " post ++"}") ++
               ( if null rs then "" else
                 if length rs>1
-                then "\n\tInvarianten:\n   "++chain "\n   " [fixSpaces 3 (show (nr r))++") "++showOO r |r<-rs]
+                then "\n\tInvarianten:\n   "++chain "\n   " [fixSpaces 3 (show (runum r))++") "++showOO r |r<-rs]
                 else "\n\tInvariant: "++showOO (head rs) ++ "(Rule "++show (nr (head rs))++")"
               )++
               "\n\n\tDeze service is gekwalificeerd in de FPA als "++showLang Dutch (complexity fpa)++"."
@@ -886,7 +886,7 @@
        if length rs>1
        then str5++  -- The service call "++call++" must maintain the following rules:
             "\\[\\begin{array}{l}\n   "++
-            chain "\\\\\n   " [show (nr r)++")~~~"++(lshow language.assemble.normRule) r |r<-rs]++"\n"++
+            chain "\\\\\n   " [show (runum r)++")~~~"++(lshow language.assemble.normRule) r |r<-rs]++"\n"++
             "\\end{array}\\]\n"
        else "\n\nInvariant: \\("++(lshow language.assemble.normRule.head) rs++"\\)\\ "++str6++show (nr (head rs))++")\n")++
       (if null ms then "" else
@@ -946,14 +946,14 @@
       where
        ps = [(p,e,[r|(_,_,r)<-cl])| cl<-eqCl (\(p,o,r)->(name p,name o)) rs, (p,e,_)<-take 1 cl]
        rs = [(pat,o,rule)
-            | pat<-patterns context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
+            | pat<-ctxpats context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
    definedEnts context pat
     = [ e
       | cl<-eqCl (\(p,o,rs)->concept o) ps, (p,e,rs)<-take 1 (sort' (\(p,e,rs)->0-length rs) cl), p==name pat]
       where
        ps = [ (p,e,[r|(_,_,r)<-cl]) | cl <-eqCl (\(p,o,_)->(p,name o)) rs, (p,e,_)<-take 1 cl ]
        rs = [ (name pat,o,rule)
-            | pat<-patterns context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
+            | pat<-ctxpats context, rule<-declaredRules pat, o<-attributes context, concept o `elem` concs rule]
 
    nDesignPr context = n where (_,n) = dp undef f context where undef=undef; f=f
    designPrinciples English context = dps
@@ -1003,7 +1003,7 @@
          ( [ latexChapter str1 str1
            , "\t"++str2
            ] ++
-           patSections [] [] (patterns context)
+           patSections [] [] (ctxpats context)
          )
        , length [d| d<-declarations context, not (isSignal d)] +    -- bereken het totaal aantal requirements
          length (rules context++signals context)
@@ -1109,7 +1109,7 @@
        , chain "\n\n" [ latexSection ("Design choices about "++firstCaps (name pat)) ("DesignChoices"++cname++"Pat"++firstCaps (name pat)) ++
                         latexEnumerate ([latexWord (explainRule context language r)|r<-declaredRules pat++signals pat, null (cpu r)]++
                                         [latexWord (explainDecl context language d)|d<-declarations pat, (not.null) (multiplicities d)])
-                      | pat<-patterns context]
+                      | pat<-ctxpats context]
        , latexChapter "Conceptual Analysis" "Conceptual Analysis"
        , "\tThis chapter provides an analysis of the principles described in chapter \\ref{chp:Design rules}. Each section in that chapter is analysed in terms of relations and each principle is then translated in a rule."
        , spec2fp context English spec
@@ -1118,7 +1118,7 @@
   --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
   --                      "\n\\caption{Conceptual analysis of "++(latexWord.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
                         latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-                              (chain "\n" [show (nr r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relations:\\\\"++
+                              (chain "\n" [show (runum r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relations:\\\\"++
                                            "&\\(\\begin{array}{rcl}\n"++
                                                 chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
                                                                | d<-declarations r]++
@@ -1126,7 +1126,7 @@
                                            "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-declaredRules pat]
           -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-declaredRules pat]
                                )
-                      | pat<-patterns context]
+                      | pat<-ctxpats context]
        , latexChapter "Glossary" ("typology"++cname)
        , if null (conceptDefs context) then "" else
          latex "longtable" ["{|p{4cm}|p{10cm}|}\\hline"]
@@ -1194,7 +1194,7 @@
   --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
   --                      "\n\\caption{Conceptuele analyse van "++(latexWord.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}\n")++
                         latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-                              (chain "\n" [show (nr r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relaties:\\\\"++
+                              (chain "\n" [show (runum r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relaties:\\\\"++
                                            "&\\(\\begin{array}{rcl}\n"++
                                                 chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
                                                                | d<-declarations r]++
@@ -1202,7 +1202,7 @@
                                            "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-declaredRules pat]
           -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-declaredRules pat]
                                )
-                      | pat<-patterns context]
+                      | pat<-ctxpats context]
        , latexChapter "Gegevensanalyse" "Gegevensanalyse"
        , "\tDe keuzes, zoals beschreven in hoofdstuk \\ref{chp:Ontwerpregels} zijn in een gegevensanalyse vertaald naar"
        , "\thet klassediagram in figuur \\ref{fig:"++cname++"CD}."
@@ -1251,7 +1251,7 @@
   --                      latexFigureHere (latexCenter ("  \\includegraphics[scale=.3]{"++cname++"_"++clname (name pat)++".png}")++
   --                      "\n\\caption{Conceptual analysis of "++(latexWord.name) pat++"}\n\\label{fig: concAnal"++clname (firstCaps (name pat))++"}")++
                         latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-                              (chain "\n" [show (nr r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relations:\\\\"++
+                              (chain "\n" [show (runum r)++"&"++latexWord (explainArt context language r)++"\\\\\n&Relations:\\\\"++
                                            "&\\(\\begin{array}{rcl}\n"++
                                                 chain "\\\\\n" [idName d++"&:&"++(idName.source) d++"\\times"++(idName.target) d
                                                                | d<-declarations r]++
@@ -1259,7 +1259,7 @@
                                            "&\\(\\begin{array}{l}"++(lshow language.assemble.normRule) r++"\\end{array}\\)\\\\\\hline"|r<-declaredRules pat]
           -- als het relAlg moet zijn:     "&\\("++lshow language r                    ++"\\)\\\\\\hline"|r<-declaredRules pat]
                                )
-                      | pat<-patterns context]
+                      | pat<-ctxpats context]
        , latexChapter "Data Analysis" "Data Analysis"
        , "\tA data analysis of the principles from the previous chapter (\\ref{chp:Design rules}) yields a class diagram,"
        , "\twhich shown in figure \\ref{fig:"++cname++"CD}."
@@ -1546,9 +1546,9 @@
    latexSchema :: String -> [String] -> String
    latexSchema nm body = latex "schema" ["{"++nm++"}"] (chain "\\\\\n" body)
 
-   lschema cname (Typ pths) language pat@(Pat nm rs gen pms cs ks)
-    = if null rs then "void" else
-      (latexSchema nm . filter (not.null))
+   lschema cname (Typ pths) language pat
+    = if null (ptrls pat) then "void" else
+      (latexSchema (ptnm pat) . filter (not.null))
       [ {- "  "++cname++" Concepts"
       , "\\where"
       , -} chain "\n" ["  "++(ltshow cname (Typ pths) language.assemble.normRule) r++"\\\\" | r <- declaredRules pat]
@@ -1563,10 +1563,10 @@
 
 
    contDef :: String -> Typology Concept -> Lang -> Pattern -> String
-   contDef cname typ language pat@(Pat nm rs gen pms cs ks)
+   contDef cname typ language pat
     = lschema cname
               typ language
-              (Pat (nm++" "++show (length (declaredRules pat)+1))
+              (Pat (ptnm pat++" "++show (length (declaredRules pat)+1))
                    [Ru Equivalence  (F [Tm m]) pos expr cpu "" sgn nr pn
                    | Gc pos m expr cpu sgn nr pn<-specs pat] [] [] [] [])
 
