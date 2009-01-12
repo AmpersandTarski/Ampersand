@@ -1,3 +1,4 @@
+ {-# LANGUAGE ScopedTypeVariables#-}
  module Main where
    import System (getArgs,system, ExitCode(ExitSuccess,ExitFailure))
    import Char (toLower)

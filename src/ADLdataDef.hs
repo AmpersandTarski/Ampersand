@@ -472,6 +472,7 @@
    uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
    uncomp s                           = s
 
+
 {-
    ruleType :: Rule -> RuleType
    ruleType r = case r of 
@@ -480,13 +481,19 @@
                    Gc{} -> Generalization
                    Fr{} -> Automatic
 
+--   antecedent :: Rule -> Expression
+--   antecedent r = case r of
+--                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
+--                                                                   else rrant r
+--                   Sg{} -> antecedent (srsig r)
+--                   Gc{} -> Tm (grspe r)
+--                   Fr{} -> frcmp r
    antecedent :: Rule -> Expression
-   antecedent r = case r of
-                   Ru{} -> if rrsrt r == AlwaysExpr  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
-                                                     else rrant r
-                   Sg{} -> antecedent (srsig r)
-                   Gc{} -> Tm (grspe r)
-                   Fr{} -> frcmp r
+   antecedent r@(Ru AlwaysExpr _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
+   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
+   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
+   antecedent  (Fr _ _ e _)           = e
 
    consequent :: Rule -> Expression
    consequent r = case r of
@@ -546,11 +553,17 @@
 --   makeDeclaration (V atts (a,b))    = Vs a b
 --   makeDeclaration (Mp1 s c)         = Isn c c
 
+   misbruiktShowHS :: Show s => String -> s -> String
    misbruiktShowHS indent e = show e
 
+   cptC :: String -> GenR -> [String] -> Concept
    cptC nm gE os = C{ cptnm=nm, cptgE = gE, cptos = os}  -- constructor
+   cptS :: Concept
    cptS = S                    -- constructor
+   cptAnything :: Concept
    cptAnything = Anything      -- constructor
+   cptNothing :: Concept
    cptNothing = NOthing        -- constructor
+   cptnew :: String -> Concept
    cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = []}
 

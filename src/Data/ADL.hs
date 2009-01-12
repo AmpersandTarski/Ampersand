@@ -209,7 +209,8 @@ module Data.ADL where
 
    newtype FilePos = FilePos (String, Pos, String) 
                           deriving (Eq,Ord)
-   posNone         = FilePos ("",noPos,"")
+   posNone :: FilePos
+   posNone = FilePos ("",noPos,"")
    instance Ord Pos where
      a >= b = (show a) >= (show b)
      a <= b = (show a) <= (show b)

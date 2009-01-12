@@ -253,8 +253,7 @@
                                                   f cl          = error ("Module Calc: something funny in simplPAclause (All ("++show c++":"++show cs++"))")
    simplPAclause c                        = c
 
--- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
-
+   -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
    doCode delta' tOp' expr = {- simplPAclause -} (doCod delta' tOp' expr)
     where
       doCod delta tOp (Fu []) = error ("!Fail (Module Calc): doCod ("++showADL delta++") "++show tOp++" "++showADL (Fu [])++",\n"++

@@ -1,6 +1,4 @@
-{-# LINE 1 "ObjBinGenObject.lhs" #-}
-#line 1 "ObjBinGenObject.lhs"
-  {-# OPTIONS -XPatternSignatures #-}
+{-# LANGUAGE ScopedTypeVariables#-}
   module ObjBinGenObject where
    import Char(toUpper)
    import Auxiliaries(chain, adlVersion, commaEng)
@@ -340,15 +338,15 @@
                    (F [Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") cpt), e])
 
 
--- | The function showClasses defines the PHP class of an object o and also (recursively) the
--- | PHP-classes of all subordinate objects (i.e. the attributes) of o.
--- | context  : the Context of object o. In due time, this will be replaced by an Fspc
--- | triggers : a [possibly empty] set of triggers, that is used to generate automated functionality.
--- |            Precondition: This set contains precisely those triggers that may be used within the transaction
--- |            boundary of the class.
--- |            In due time, this parameter will become a selection from the entire set of triggers in Fspc.
--- | nms      : the name trail of all super-objects until the root of this service. This is used to generate unique names for every field.
--- | o        : the object to be transformed in a class.
+   -- | The function showClasses defines the PHP class of an object o and also (recursively) the
+   --   PHP-classes of all subordinate objects (i.e. the attributes) of o.
+   --   context  : the Context of object o. In due time, this will be replaced by an Fspc
+   --   triggers : a [possibly empty] set of triggers, that is used to generate automated functionality.
+   --              Precondition: This set contains precisely those triggers that may be used within the transaction
+   --              boundary of the class.
+   --              In due time, this parameter will become a selection from the entire set of triggers in Fspc.
+   --   nms      : the name trail of all super-objects until the root of this service. This is used to generate unique names for every field.
+   --   o        : the object to be transformed in a class.
 
    showClasses context triggers nms o
     = [ "class "++phpIdentifier (chain "_" (nms++[name o])) ++" {"] ++

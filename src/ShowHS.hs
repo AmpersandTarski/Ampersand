@@ -220,21 +220,30 @@ where
        indent++"where"++
        indent++" isa = "++showHS (indent++"       ") (ADLdef.isa context)++
        indent++" gE  = genEq (typology isa)"++
+       " ##1## " ++
+       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
+       " ##2## " ++
        (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"")++
        (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
+       " ##3## " ++
        (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
+       " ##4## " ++
        (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
+       " ##5## " ++
        (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
+       " ##6## " ++
        (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
-       (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
+       " ##7## " ++
+       (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")++
+       " ##8## " 
     -- patterns will be shown in  (showHS indent Fspec)
-       where pats = ctxpats context     -- ^ patterns declared in this context
-             rs   = ctxrs context       -- ^ rules declared in this context
-             ds   = ctxds context       -- ^ declaration declared in this context, outside patterns
-             cs   = ctxcs context       -- ^ A list of concept definitions defined in this context, outside the scope of patterns
-             ks   = ctxks context       -- ^ A list of key definitions defined in this context, outside the scope of patterns
-             os   = attributes context  -- ^ A list of attributes defined in this context, outside the scope of patterns
-             pops = populations context -- ^ A list of populations defined in this context
+       where pats = ctxpats context     --  patterns declared in this context
+             rs   = ctxrs context       --  rules declared in this context
+             ds   = ctxds context       --  declaration declared in this context, outside patterns
+             cs   = ctxcs context       --  A list of concept definitions defined in this context, outside the scope of patterns
+             ks   = ctxks context       --  A list of key definitions defined in this context, outside the scope of patterns
+             os   = attributes context  --  A list of attributes defined in this context, outside the scope of patterns
+             pops = populations context --  A list of populations defined in this context
              on   = extends context
 
    
@@ -264,16 +273,45 @@ where
 
    instance ShowHS Rule where
     showHSname r = "rule"++show (runum r)
-    showHS indent r@(Ru _ _ _ _ _ _ _ _ _)
-     = if rrsrt r==AlwaysExpr
-       then chain " " ["Ru",showHS "" AlwaysExpr,undef,"("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")",showL (map (showHS "") (r_cpu r)),show (rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
-       else chain " " ["Ru",showHS "" (rrsrt r),"("++showHS "" (antecedent r)++")","("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",show(rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
-       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an AlwaysExpr rule\")"
-    showHS indent r@(Sg _ _ _ _ _ _ _)
-     = chain " " ["Sg","("++showHS "" (srfps r)++")","("++showHS "" (srsig r)++")",show (srxpl r),(showHS "" (srtyp r)),show (runum r),show (r_pat r),show (srrel r)]
-    showHS indent r@(Gc _ _ _ _ _ _ _)
-     = chain " " ["Gc","("++showHS "" (grfps r)++")","("++showHS "" (grspe r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",(showHS "" (grtyp r)),show (runum r),show (r_pat r)]
-    showHS indent r = ""
+    showHS indent r = "## " ++ -- " ##SHOW r## "
+       (case r of
+              Ru{} -> "Ru{}"  ++ aap r
+              Sg{} -> "Sg{}"  -- ruleType (srsig r)
+              Gc{} -> "Gc{}"  -- Generalization
+              Fr{} -> "Fr{}"  -- Automatic
+            )++ showHS "" (ruleType r) ++ " ##" 
+     where 
+      aap r = 
+       case r of
+        Ru{} -> 
+           chain " " ["Ru"
+                     ,showHS "" (rrsrt r)
+                     ,"\n *1 "
+                     ,"("++showHS "" (antecedent r)++")"
+                     ,"\n *2 "
+                     ,"("++showHS "" (rrfps r)++")"
+                     ,"\n *3 "
+                     ,"("++showHS "" (consequent r)++")"
+                     ,"\n *4 "
+                     ,"["++chain "," (map (showHS "") (r_cpu r))++"]"
+                     ,"\n *5 "
+                     ,show(rrxpl r)
+                     ,"\n *6 "
+                     ,showHS "" (rrtyp r)
+                     ,"\n *7 "
+                     ,show (runum r)
+                     ,show (r_pat r)
+                     ]
+--    showHS indent r@(Ru _ _ _ _ _ _ _ _ _)
+--     = if rrsrt r==AlwaysExpr
+--       then chain " " ["Ru",showHS "" AlwaysExpr,undef,"("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")",showL (map (showHS "") (r_cpu r)),show (rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
+--       else chain " " ["Ru",showHS "" (rrsrt r),"("++showHS "" (antecedent r)++")","("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",show(rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
+--       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an AlwaysExpr rule\")"
+--    showHS indent r@(Sg _ _ _ _ _ _ _)
+--     = chain " " ["Sg","("++showHS "" (srfps r)++")","("++showHS "" (srsig r)++")",show (srxpl r),(showHS "" (srtyp r)),show (runum r),show (r_pat r),show (srrel r)]
+--    showHS indent r@(Gc _ _ _ _ _ _ _)
+--     = chain " " ["Gc","("++showHS "" (grfps r)++")","("++showHS "" (grspe r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",(showHS "" (grtyp r)),show (runum r),show (r_pat r)]
+--    showHS indent r = ""
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
@@ -324,24 +362,24 @@ where
 
    instance ShowHS Expression where
     showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
-    showHS indent (Tm m)   = "Tm ("++showHS "" m++") "
-    showHS indent (Tc f)   = showHS indent f
-    showHS indent (F [])   = "F [] <Id>"
-    showHS indent (Fd [])  = "Fd [] <nId>"
-    showHS indent (Fu [])  = "Fu [] <False>"
-    showHS indent (Fi [])  = "Fi [] <True>"
-    showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
-    showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
-    showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
-    showHS indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS (indent++"     ") t| t<-ts]++indent++"   ]"
-    showHS indent (Fu [f]) = "Fu ["++showHS (indent++"    ") f++"]"
-    showHS indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
-    showHS indent (Fi [f]) = "Fi ["++showHS (indent++"    ") f++"]"
-    showHS indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
-    showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
-    showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
-    showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
-   
+--    showHS indent (Tm m)   = "Tm ("++showHS "" m++") "
+--    showHS indent (Tc f)   = showHS indent f
+--    showHS indent (F [])   = "F [] <Id>"
+--    showHS indent (Fd [])  = "Fd [] <nId>"
+--    showHS indent (Fu [])  = "Fu [] <False>"
+--    showHS indent (Fi [])  = "Fi [] <True>"
+--    showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
+--    showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
+--    showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
+--    showHS indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS (indent++"     ") t| t<-ts]++indent++"   ]"
+--    showHS indent (Fu [f]) = "Fu ["++showHS (indent++"    ") f++"]"
+--    showHS indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
+--    showHS indent (Fi [f]) = "Fi ["++showHS (indent++"    ") f++"]"
+--    showHS indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
+--    showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
+--    showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
+--    showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
+    showHS indent e = "&& "++show e ++" &&"   
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
