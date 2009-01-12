@@ -283,7 +283,7 @@
                                       violations
                 )         )          )
     where
-      violations = concat [ hv r| r<-rules context]++
+      violations = concat [ hv r| r<-ctxrs context]++
                    if null viol then "" else "\n<P>\n"++chain "\n\n" viol
       hv r = if null ruleviol then "" else
              htmlAnchor (fnRule context r++".html") ("Rule") []++
@@ -405,16 +405,16 @@
        = htmlImageMap (fnm++".gif") fnm ((unsafePerformIO . readFile) (fnm++".map"))
  -- Pre: 
    nextRule context r = if null rs then error("Fatal: no first rule in this context") else head rs
-     where rs = dropWhile (\rule->nr r>=nr rule) (rules context)++rules context
+     where rs = dropWhile (\rule->nr r>=nr rule) (ctxrs context)++ctxrs context
    prevRule context r = if null rs then error("Fatal: no last rule in this context") else head rs
-     where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (rules context)++reverse (rules context)
+     where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (ctxrs context)++reverse (ctxrs context)
    htmlRule :: Context -> Rule -> Bool -> String
    htmlRule context r predLogic
     = htmlPage ("Code (5) for "++"Rule "++show (runum r)) ""
                     (htmlBody ((if emptyGlossary context (Pat ("Rule "++show (runum r)) [r] [] [] [] [])
                                 then "" else "<A HREF=#REF2Glossary>Glossary</A> ")++
                             {- "<A HREF=#REF2Relations>Relations</A>\n"++ -}
-                               (if length (rules context) <=1 then "" else
+                               (if length (ctxrs context) <=1 then "" else
                                 "<A HREF=\""++fnRule context (nextRule context r)++".html\">Next rule</A>\n"++
                                 "<A HREF=\""++fnRule context (prevRule context r)++".html\">Previous rule</A>\n")++
                                htmlHeadinglevel 3 ("Rule "++show (runum r)) []++"\n<P>\n"++
@@ -519,9 +519,9 @@
    htmlContext :: String -> Context -> String
    htmlContext fnm context
     = htmlPage ("Code (7) for "++name context) ("<SCRIPT type=\"text/javascript\">\nparent.menu.document.location.href='NAV_"++fnm++".html'\n</SCRIPT>")
-                    (--"Test: show (rules context) = "++show (rules context)++"\n"++
-                     --"explaination(s) = \n>>   "++ chain "\n>>   " [explainverder context r | r<-sort' nr (rules context++signals context) ]++"\n"++
-                     htmlBody (htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (rules context++signals context)]
+                    (--"Test: show (ctxrs context) = "++show (ctxrs context)++"\n"++
+                     --"explaination(s) = \n>>   "++ chain "\n>>   " [explainverder context r | r<-sort' nr (ctxrs context++signals context) ]++"\n"++
+                     htmlBody (htmlValNumbered [(nr r,explainverder context r) | r<-sort' nr (ctxrs context++signals context)]
                               ++ (if length (ctxpats context)<=1 then "" else
                                   "\n<BR>\n"++(imageMap (fnContext context++"_CD"))
                                )  )
@@ -563,7 +563,7 @@
           (declarations rulesV)
           [cd| cd<-conceptDefs context, cptnew (name cd) `elem` concsV]
           []
-      where rulesV = [r| r<-rules context, c `elem` concs r]
+      where rulesV = [r| r<-ctxrs context, c `elem` concs r]
             concsV = concs rulesV
 
    inhViewpoint :: Classification Context -> Concept -> Concept -> Pattern

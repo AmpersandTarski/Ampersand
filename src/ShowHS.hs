@@ -220,7 +220,7 @@ where
        indent++"where"++
        indent++" isa = "++showHS (indent++"       ") (ADLdef.isa context)++
        indent++" gE  = genEq (typology isa)"++
-       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
+       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"")++
        (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
        (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
        (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++

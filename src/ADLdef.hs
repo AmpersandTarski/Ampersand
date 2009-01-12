@@ -53,15 +53,15 @@
     --Interpretation of context as a language means to describe the classification tree,
     --the set of declarations and the rules that apply in that context. Inheritance of
     --properties is achieved as a result.
-    declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++declaredRules (ctxwrld context)
-    multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++multRules     (ctxwrld context)
-    rules         context = [r| r<-(ctxrs context), not (isSignal r)]
+    declaredRules context = declaredRules (foldr union (Pat "" [] [] [] [] []) (ctxpats context))
+    multRules     context = multRules     (foldr union (Pat "" [] [] [] [] []) (ctxpats context))
+    rules         context = [r| r<-ctxrs context, not (isSignal r)]
    -- rules         (Ctx nm on i world pats rs ds cs ks os pops) = [r| r<-rs, not (isSignal r)]
-    signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++signals       (ctxwrld context)
-    specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (ctxpats context))++specs         (ctxwrld context)
-    patterns      context     = ctxpats context
-    objectdefs    context     = ctxos   context
-    isa           context     = ctxisa  context
+    signals       context = signals       (foldr union (Pat "" [] [] [] [] []) (ctxpats context))
+    specs         context = specs         (foldr union (Pat "" [] [] [] [] []) (ctxpats context))
+    patterns      context = ctxpats context
+    objectdefs    context = ctxos   context
+    isa           context = ctxisa  context
 
    instance Morphical Context where
     concs        ctx = concs (ctxds ctx) `uni` concs (ctxpats ctx)

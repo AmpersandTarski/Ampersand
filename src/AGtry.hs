@@ -115,7 +115,7 @@ deriveMults ks sgs
    where derived s = []
 
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
- = (Ru c antc p cons matches expla sgn nr pn
+ = (Ru (rrsrt r) antc p cons matches expla sgn nr pn
    , if not (null cerrs) then [showADL r++"\n"++"COMPUTING not allowed for closures (neither * nor +)."] else
      [
        if length es>1
@@ -126,28 +126,28 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
    where
     (matches,str) = recur ([antc|c/=AlwaysExpr]++[cons])
     cerrs = [] -- obsolete? map (drop 5) ([ name m| m<-mors r] `isc` map (("Clos_"++).name.head.mors.fst) cpu')
-    cpu'  = [ (c,es) | c<-cpu, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
+    cpu'  = [ (c,es) | c<-r_cpu r, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
     recur  []    = ([],"")
     recur (e:es) = (subexps++matches , "   recur "++showADL (e:es)++" = "++showADL (subexps++matches)++"\nbecause\n"++
                    "("++showADL subexps++" = subexprs ("++showADL e++") and\n"++
                    "("++showADL matches++" = recur ("++showADL es++")\n--------\n"++str'++str'')
      where (subexps,str')  = subexprs e
            (matches,str'') = recur es
-    subexprs e@(Tm m)    = ([e| c<-cpu, e `match` c] , "")
+    subexprs e@(Tm m)    = ([e| c<-r_cpu r, e `match` c] , "")
     subexprs e@(Tc e')   = subexprs e'
-    subexprs e@(F ts)    = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
+    subexprs e@(F ts)    = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
                            where (matches,str) = recur ts
-    subexprs e@(Fd ts)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
+    subexprs e@(Fd ts)   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL ts++")\n--------\n"++str)
                            where (matches,str) = recur ts
-    subexprs e@(Fi fs)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
+    subexprs e@(Fi fs)   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
                            where (matches,str) = recur fs
-    subexprs e@(Fu fs)   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
+    subexprs e@(Fu fs)   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = recur ("++showADL fs++")\n--------\n"++str)
                            where (matches,str) = recur fs
-    subexprs e@(K0 e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+    subexprs e@(K0 e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
-    subexprs e@(K1 e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+    subexprs e@(K1 e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
-    subexprs e@(Cp e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+    subexprs e@(Cp e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
     match  (Tm m) (Tm m')  = name m == name m' && (sign m `order` sign m' || sign (flp m) `order` sign m')
     match  (F ts) (F ts')  = length ms==length ms' && and [f `match` f'| (f,f')<-zip ms ms']
@@ -466,12 +466,13 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os
                   _inh
                   [cl|Cl r cls<-[mapCl fst _lhs_ctxTree], cl<-cls]
                   _pats_patterns
-                  (_pats_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
+                  (_pats_rules )
                   (declarations _pats_patterns)
                   (sort' name (rd (_cs_conDefs ++ _pats_conDefs)))
                   _keys
                   _os_objDefs
-                  _pops_popus)
+                  _pops_popus
+             )
         ( _pats_conDefs,_pats_keyDefs,_pats_mGen,_pats_morphisms,_pats_patterns,_pats_rawDecls,_pats_rnr,_pats_rules,_pats_sErr,_pats_usedDecls) =
             (_pats (_genE) (1) (_mD))
         ( _rs_declarations,_rs_mGen,_rs_morphisms,_rs_rnr,_rs_rules,_rs_sErr,_rs_usedDecls) =
@@ -494,7 +495,7 @@ sem_Context_Ctx (_nm) (_on) (_isa) (_world) (_pats) (_rs) (_ds) (_cs) (_ks) (_os
                  _inh
                  []
                  _pats_patterns
-                 (_pats_rules ++ _os_rules ++ _ds_rules ++ _ks_rules)
+                 (_pats_rules )
                  _mC
                  _cs_conDefs
                  _keys

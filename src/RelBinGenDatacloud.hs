@@ -89,7 +89,7 @@
         ([ "'"++phpConcept context c++"'=>"++phpShow (name c)| c<-concs context ]++
          [ "'"++p++"'=>"++phpShow (name c)
          | (p,c)<-rd ([(p,c)| r<-relations, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]] ++
-                      [(p,c)| r<-rules context, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]])
+                      [(p,c)| r<-ctxrs context, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]])
          ])
       , "                    );"
 

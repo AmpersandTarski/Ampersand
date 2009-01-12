@@ -123,7 +123,7 @@
      = showString ("CONTEXT "++nm++
                    (if null (extends context) then "" else " EXTENDS "++chain ", " (extends context))++"\n"++
                    chain "\n\n" (map show (ctxpats context))++"\n"++
-                   chain "\n" (map show (rules context))++"\n"++
+                   chain "\n" (map show (ctxrs context))++"\n"++
                    chain "\n" (map show (declarations context))++"\n"++
                    chain "\n" (map show (conceptDefs context))++"\n"++
                    chain "\n" (map show (keyDefs context))++"\n"++

@@ -447,31 +447,32 @@
 
 
 --  /---------------------Hieronder moet nog verder worden bekeken of het hier wel thuishoort.
---   ruleType    (Ru c _ _ _ _ _ _ _ _) = c
---   ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
---   ruleType    (Gc _ _ _ _ _ _ _)     = 'g'
---   ruleType    (Fr _ _ _ _)           = 'f'
---   antecedent r@(Ru 'A' _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
---   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
---   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
---   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
---   antecedent  (Fr _ _ e _)           = e
---   consequent  (Ru _ _ _ c _ _ _ _ _) = c
---   consequent  (Sg _ rule _ _ _ _ _)  = consequent rule
---   consequent  (Gc _ _ e _ _ _ _)     = e
---   consequent  (Fr _ d _ _)           = Tm (makeMph d)
---   cpu         (Ru _ _ _ _ c _ _ _ _) = c
---   cpu         (Sg _ _ _ _ _ _ _)     = [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
---   cpu         (Gc _ _ _ c _ _ _)     = c
---   cpu         (Fr _ d _ _)           = [Tm (makeMph d)]
---   patternName (Ru _ _ _ _ _ _ _ _ p) = p
---   patternName (Sg _ _ _ _ _ p _)     = p
---   patternName (Gc _ _ _ _ _ _ p)     = p
---   patternName (Fr _ _ _ p)           = p
---   uncomp (Ru a b c d e f (g,g') h i) = Ru a b c d [] f (g,g') h i
---   uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
---   uncomp s                           = s
+   ruleType    (Ru c _ _ _ _ _ _ _ _) = c
+   ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
+   ruleType    (Gc _ _ _ _ _ _ _)     = Generalization
+   ruleType    (Fr _ _ _ _)           = Automatic
+   antecedent r@(Ru AlwaysExpr _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
+   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
+   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
+   antecedent  (Fr _ _ e _)           = e
+   consequent  (Ru _ _ _ c _ _ _ _ _) = c
+   consequent  (Sg _ rule _ _ _ _ _)  = consequent rule
+   consequent  (Gc _ _ e _ _ _ _)     = e
+   consequent  (Fr _ d _ _)           = Tm (makeMph d)
+   cpu         (Ru _ _ _ _ c _ _ _ _) = c
+   cpu         (Sg _ _ _ _ _ _ _)     = [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
+   cpu         (Gc _ _ _ c _ _ _)     = c
+   cpu         (Fr _ d _ _)           = [Tm (makeMph d)]
+   patternName (Ru _ _ _ _ _ _ _ _ p) = p
+   patternName (Sg _ _ _ _ _ p _)     = p
+   patternName (Gc _ _ _ _ _ _ p)     = p
+   patternName (Fr _ _ _ p)           = p
+   uncomp (Ru a b c d e f (g,g') h i) = Ru a b c d [] f (g,g') h i
+   uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
+   uncomp s                           = s
 
+{-
    ruleType :: Rule -> RuleType
    ruleType r = case r of 
                    Ru{} -> rrsrt r
@@ -512,6 +513,7 @@
                    Fr{} -> r
    -- HJO, Wellicht mag i.p.v. bovenstaande ook gewoon het volgende worden gezegd, maar dat kan ik momenteel niet bevestigen:
    -- uncomp r = r{r_cpu = []}   (Dat zou wel elegant zijn, maar het moet nog worden getest of dit goed gaat...)
+-}
 
    makeMph :: Declaration -> Morphism
    makeMph d = Mph{ mphnm  = name d

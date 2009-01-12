@@ -17,7 +17,7 @@
       writeFile (name context++".xml") (showXML context "")>>
       putStr ("\n"++name context++".xml written\n")
     where
-       rs      = rules context
+       rs      = ctxrs context
 
 
 

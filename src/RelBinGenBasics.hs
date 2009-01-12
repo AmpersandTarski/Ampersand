@@ -687,14 +687,14 @@
 
    phpCodeTransactionClose context noTransactions okVar
     = if noTransactions then "     return("++okVar++");" else
-      if(null (rules context))
+      if(null (ctxrs context))
          then chain "\n"
                 [ "DB_doquer('COMMIT');"
                 , "   // DB_doquer('UNLOCK TABLES');"
                 , "  return("++okVar++");"
                 ]
          else chain "\n   "
-                [ "if(" ++ (chain " && " [ "checkRule"++show (runum r)++"()" | r<-rules context ])  ++ "){"
+                [ "if(" ++ (chain " && " [ "checkRule"++show (runum r)++"()" | r<-ctxrs context ])  ++ "){"
                 , "     DB_doquer('COMMIT');"
                 , "  // DB_doquer('UNLOCK TABLES');"
                 , "     return("++okVar++");"

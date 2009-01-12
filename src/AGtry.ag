@@ -223,7 +223,7 @@ SEM Context
                                 @pops.popus)
                         , (@pats.mGen, @mC))]
 -- if stuck looping, try changing @mC ^^ <--(here) into an empty list. It has shown the way to a computational loop in the attribute evaluation before.
-        lhs.context   = @loc.ctx
+        lhs.context   = @loc.ctx	
         loc.ctx       = put_gE @genE @cD
                         ( Ctx @nm
                               @on
@@ -235,7 +235,8 @@ SEM Context
                               (sort' name (rd (@cs.conDefs ++ @pats.conDefs)))
                               @keys
                               @os.objDefs
-                              @pops.popus)
+                              @pops.popus
+                         )
 
 -- Generation of (G pos g s) elements, which are the basis for a concept tree.
 ATTR Rule Rules Pattern Patterns [ | | mGen:Gens ]
@@ -266,7 +267,7 @@ ATTR Patterns Pattern Rule Rules Expression Expressions Morphism Morphisms Decla
      [ sDef:Declarations gE:GenR | | ]
 {
 subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
- = (Ru c antc p cons matches expla sgn nr pn
+ = (Ru (rrsrt r) antc p cons matches expla sgn nr pn
    , if not (null cerrs) then [showADL r++"\n"++"COMPUTING not allowed for closures (neither * nor +)."] else
      [
        if length es>1
@@ -298,7 +299,7 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
                            where (matches,str) = subexprs e'
     subexprs e@(K1 e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
-    subexprs e@(Cp e')   = ([e| c<-cpu, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
+    subexprs e@(Cp e')   = ([e| c<-r_cpu r, e `match` c]++matches ,  showADL matches++" = subexprs ("++showADL e'++")\n--------\n"++str)
                            where (matches,str) = subexprs e'
     match  (Tm m) (Tm m')  = name m == name m' && (sign m `order` sign m' || sign (flp m) `order` sign m')
     match  (F ts) (F ts')  = length ms==length ms' && and [f `match` f'| (f,f')<-zip ms ms']
@@ -999,8 +1000,8 @@ SEM Expression
                       in Ru Equivalence     -- an equivalence rule:   n = expr+ COMPUTING n
                             (Tm @closmor)   -- n
                             @lhs.pos        -- the position in the file
-                            (K1 @e.expr)    -- expr*
-                            [Tm @closmor]   -- expr*
+                            (K1 @e.expr)    -- expr+
+                            [Tm @closmor]   -- expr+
                             ""              -- the explanation
                             (a,b)           -- the declaration
                             @lhs.rnr        -- the rule number
@@ -1046,7 +1047,7 @@ SEM Gens
 
 SEM Gen  -- G pos:FilePos genus:Concept spec:Concept;       'GEN Elephant ISA Animal' creates a new rule: I[Elephant] |- I[Animal]
   | G    lhs.rnr    = @lhs.rnr+1
-         lhs.rules  = [ Ru Implication                                                 -- an implication rule:   I[@spec] |- I[@genus]
+         lhs.rules  = [ Ru Implication                                         -- an implication rule:   I[@spec] |- I[@genus]
                             (Tm (mIs @spec.concept))                           -- antecedent: I[@spec]
                             @pos                                               -- the position in the file
                             (Tm (mIs @genus.concept))                          -- consequent: I[@genus]
@@ -1060,8 +1061,6 @@ SEM Gen  -- G pos:FilePos genus:Concept spec:Concept;       'GEN Elephant ISA An
 SEM Morphism
   | Mph  decl.rnr   = -999999
 
-{---------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------}
 
 
 ATTR Pattern Patterns [ | | patterns:Patterns usedDecls:Declarations rawDecls:Declarations conDefs:{[ConceptDef]} ]

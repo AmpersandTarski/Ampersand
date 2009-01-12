@@ -79,10 +79,10 @@
 
    delMors :: Context -> Concept -> [Morphism]
    delMors context e = [m| m<-rd (ms++[ m| m<-rd (ms'++map flp ms'), sur (multiplicities m)]), source m == e]
-    where ms' = mors (rules context)
+    where ms' = mors (ctxrs context)
           ms = rd [ if null (morlist term) then error "Module Calc: head error 1" else
                     head (morlist term)
-                  | rule<-rules context
+                  | rule<-ctxrs context
                   , conjunct<-conjuncts rule
                   , Fu terms<-ilClauses conjunct
                   , F ts<-terms, ts'<-[[t| t<-ts, length (morlist t)==1]]
@@ -93,7 +93,7 @@
    delFrs :: Context -> Concept -> [Rule]
    delFrs context e
         = [ makeRule rule (Fu terms)
-          | rule<-rules context
+          | rule<-ctxrs context
           , conjunct<-conjuncts rule
           , clause@(Fu terms)<-allClauses conjunct
           , and [idsOnly t| Cp t<-terms], source clause==e]
@@ -667,7 +667,7 @@
    recalc :: Context -> Context
    recalc context = update (foldr subst (declarations context) calcrules) context
     where
-     calcrules = computeOrder [hc| rule<-rules context, hc@ (CR (fOps, e, "INSERT INTO", toExpr, frExpr, rule))<-triggers rule, "INSERT INTO" `elem` [fOp|(fOp,r)<-fOps] ] "UPDATE" (declarations context)
+     calcrules = computeOrder [hc| rule<-ctxrs context, hc@ (CR (fOps, e, "INSERT INTO", toExpr, frExpr, rule))<-triggers rule, "INSERT INTO" `elem` [fOp|(fOp,r)<-fOps] ] "UPDATE" (declarations context)
      subst hc@(CR (fOp, e, bOp, toExpr, frExpr, rule)) ss
       = [ if [s]==declarations toExpr then insert (calc frExpr ss) s else s
         | s<-ss ]

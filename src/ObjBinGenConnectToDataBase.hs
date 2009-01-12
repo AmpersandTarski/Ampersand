@@ -35,7 +35,7 @@
        , "if($DB_debug>=3){"
        ] ++
           [ "  checkRule"++show (runum r)++"();"
-          | r<-rules context ] ++
+          | r<-ctxrs context ] ++
        [ "}"
        ]
       )) ++ "?>"
@@ -74,7 +74,7 @@
        , "      "++chain "\n        " [ "\n        DB_doquer(\"INSERT IGNORE INTO "++sqlClosName context e++" "++selectNormFiExpr "$attrs" context 15 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
                                         "\n        "++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');"
                                       | e<-closE context]
-       , let checkers = [ "checkRule"++show (runum r)++"()" | r<-rules context ]
+       , let checkers = [ "checkRule"++show (runum r)++"()" | r<-ctxrs context ]
          in "      if($DB_errs"++ (if noTrans || null checkers then "" else " || !("++chain " && " checkers++")")++")"
        , "      {  DB_debug( \"DB errors, removing database\",5);"
        , "         mysql_query(\"DROP DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not delete DB "++dbName++"');"
@@ -102,7 +102,7 @@
                  "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++src++"'].'") ("'.$v[0]['"++trg++"'].'")) ++",3);\n    "++
                  "  return false;\n    }")++
                  "return true;\n  }"
-         | rule<-rules context, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
+         | rule<-ctxrs context, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
 
 
 
