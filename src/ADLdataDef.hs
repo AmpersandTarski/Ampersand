@@ -20,6 +20,30 @@
                         )
    import Collection (Collection (rd))
    import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
+
+{- Alternative 1: -}
+
+   antecedent :: Rule -> Expression
+   antecedent r = case r of
+                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
+                                                                   else rrant r
+                   Sg{} -> antecedent (srsig r)
+                   Gc{} -> Tm (grspe r)
+                   Fr{} -> frcmp r
+
+{- Alternative 2: -}
+{-
+   antecedent :: Rule -> Expression
+   antecedent r@(Ru AlwaysExpr _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
+   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
+   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
+   antecedent  (Fr _ _ e _)           = e
+-}
+
+
+
+
    
 -- In deze module worden aan taalconstuctors van ADL de eigenschappen
 -- toegekend voor de volgende classen:
@@ -115,7 +139,7 @@
    instance Identified Rule where
     name r = "Rule"++show (runum r)
     typ r = "Rule_"
--- | Han, wat hieronder gebeurt vind ik raar: twee varianten waar hetzelfde uitkomt (in source en target). WAAROM? Welke bedoeling heb je daarmee? Geen? TODO: vereenvoudigen.
+   -- | Han, wat hieronder gebeurt vind ik raar: twee varianten waar hetzelfde uitkomt (in source en target). WAAROM? Welke bedoeling heb je daarmee? Geen? TODO: vereenvoudigen.
    instance Association Rule where
     source r | ruleType r==AlwaysExpr = fst (sign r)
              | otherwise              = fst (sign r)
@@ -451,11 +475,6 @@
    ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
    ruleType    (Gc _ _ _ _ _ _ _)     = Generalization
    ruleType    (Fr _ _ _ _)           = Automatic
-   antecedent r@(Ru AlwaysExpr _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
-   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
-   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
-   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
-   antecedent  (Fr _ _ e _)           = e
    consequent  (Ru _ _ _ c _ _ _ _ _) = c
    consequent  (Sg _ rule _ _ _ _ _)  = consequent rule
    consequent  (Gc _ _ e _ _ _ _)     = e
@@ -473,6 +492,11 @@
    uncomp s                           = s
 
 
+
+
+
+
+
 {-
    ruleType :: Rule -> RuleType
    ruleType r = case r of 
@@ -480,20 +504,6 @@
                    Sg{} -> ruleType (srsig r)
                    Gc{} -> Generalization
                    Fr{} -> Automatic
-
---   antecedent :: Rule -> Expression
---   antecedent r = case r of
---                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
---                                                                   else rrant r
---                   Sg{} -> antecedent (srsig r)
---                   Gc{} -> Tm (grspe r)
---                   Fr{} -> frcmp r
-   antecedent :: Rule -> Expression
-   antecedent r@(Ru AlwaysExpr _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
-   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
-   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
-   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
-   antecedent  (Fr _ _ e _)           = e
 
    consequent :: Rule -> Expression
    consequent r = case r of
