@@ -1,37 +1,37 @@
 CONTEXT Deliveries
 
-VIEW Leveranciers : I[Provider]
+SERVICE Leveranciers : I[Provider]
  = [ besteller : issuedTo~;from
    , opdracht:accepted
    , leverantie: provider~ = [ Leverantie: I[Delivery], order:of=[Ordernummer:I[Order],klant:from], klant:deliveredto ]
    , rekening: sentBy~=[klant:sent,leverantie: delivery]
    ]
 
-VIEW Klanten : I[Client]
+SERVICE Klanten : I[Client]
  = [ opdracht: from~ = [opdrachtnummer:I[Order], leverancier:issuedTo]
    , rekening: sent~=[rekeningnummer:I[Invoice],betaalddoor:paid~, betaald:paid~;paid]
    ]
 
-VIEW Bestellingen : I[Order]
+SERVICE Bestellingen : I[Order]
  = [ van : from
    , aan : issuedTo
    , betaald[Order] : from;paid;delivery;of;V[Order*ONE]
    ]
 
-VIEW Rekeningen : I[Invoice]
+SERVICE Rekeningen : I[Invoice]
  = [ leverancier : sentBy
    , leverantie : delivery
    , klant : sent
    , betaald[Order] : paid~;paid
    ]
 
-VIEW Levering : I[Delivery]
+SERVICE Levering : I[Delivery]
  = [ leverancier : provider
    , klant : deliveredto
    , betaald : deliveredto;paid;delivery;V[Delivery*ONE]
    ]
 
-VIEW Bestellijst : I[ONE]
+SERVICE Bestellijst : I[ONE]
  = [ LijstItem : V[ONE*Delivery]
       = [ leverancier : provider
         , klant : deliveredto
@@ -39,22 +39,7 @@ VIEW Bestellijst : I[ONE]
    ]    ]
 
 PATTERN Deliveries
-{-
- item :: Order * Product
-  = [ ("C45666"                  , "Jelly beans"  )
-    ; ("Order 22/09/2006 Cookies", "Cookies"      )
-    ; ("C45683"                  , "Peanut butter")
-    ].
- item :: Delivery * Product
-  = [ ("Jelly beans #4921"  , "Jelly beans"  )
-    ; ("Cookies #0382"      , "Cookies"      )
-    ; ("Peanut butter #1993", "Peanut butter")
-    ].
- item[Delivery*Product] |- of;item COMPUTING item[Delivery*Product]
-  EXPLANATION "There must be an order for every item delivered."
- of;item |- item[Delivery*Product] COMPUTING item[Delivery*Product]
-  EXPLANATION "All items ordered must be delivered."
--}
+
 
 -- Upon creation of a new order, the provider must be known. Therefore every order always has precisely one provider.
 

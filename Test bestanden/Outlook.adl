@@ -1,6 +1,6 @@
 CONTEXT Outlook
 	{-
-    VIEW index : V
+    SERVICE index : V
      = [ people : V
          = [ person : I[Person] -- go to 'accounts [Person]'
            , account : accountOwner~
@@ -14,10 +14,10 @@ CONTEXT Outlook
            ]
        ]
     -}
-	VIEW Accounts [Person]
+	SERVICE Accounts [Person]
 	 = [ account : accountOwner~ ]
 	
-	VIEW AccountMails [Account]
+	SERVICE AccountMails [Account]
 	 = [ email : mailbox~
 				 = [ from : sentBy;fullAddress
 				   , subject
@@ -26,20 +26,20 @@ CONTEXT Outlook
 	   , owner : accountOwner
 	   ]
 	
-	VIEW AllMails [Person]
+	SERVICE AllMails [Person]
 	 = [ email : accountOwner~;mailbox~
 				 = [ from : sentBy;fullAddress
 				   , subject
 				   ]
 	   ]
 	
-	VIEW AddressInfo [Address]
+	SERVICE AddressInfo [Address]
 	 = [ fullAddress
 	   , domain
 	   , account : boxMail~
 	   ]
 	
-	VIEW ReadMail [Email]
+	SERVICE ReadMail [Email]
 	 = [ mailbox
 	   , sentBy
 	     = [fullAddress]

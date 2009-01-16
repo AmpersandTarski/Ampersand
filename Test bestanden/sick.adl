@@ -53,17 +53,17 @@ PATTERN Type8Error
 I=I
 ENDPATTERN
 
-VIEW Type9Error [A]
+SERVICE Type9Error [A]
  = [ t ]
 
-VIEW Type10Error [Comp]
+SERVICE Type10Error [Comp]
  = [ sees
      = [ a:sees[Component*Comp]
        , b:sees[Comp*Comp]
        ]
    ]
 
-VIEW Type11Error [Comp]
+SERVICE Type11Error [Comp]
  = [ a: sees~ ]
 
 
