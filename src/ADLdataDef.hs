@@ -21,16 +21,15 @@
    import Collection (Collection (rd))
    import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
 
-{- Alternative 1: -}
-
---   antecedent :: Rule -> Expression
---   antecedent r = case r of
---                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
---                                                                   else rrant r
---                   Sg{} -> antecedent (srsig r)
---                   Gc{} -> Tm (grspe r)
---                   Fr{} -> frcmp r
-
+{- Alternative 1: 
+   antecedent :: Rule -> Expression
+   antecedent r = case r of
+                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
+                                                                   else rrant r
+                   Sg{} -> antecedent (srsig r)
+                   Gc{} -> Tm (grspe r)
+                   Fr{} -> frcmp r
+-}
 {- Alternative 1 (modified): 
 
    antecedent :: Rule -> Expression
@@ -55,7 +54,6 @@
 -}
 
 {- Alternative 3 : -}
-
    antecedent :: Rule -> Expression
    antecedent r = case r of
                    Ru{rrsrt = AlwaysExpr} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
@@ -64,7 +62,7 @@
                    Gc{} -> Tm (grspe r)
                    Fr{} -> frcmp r
                    
-{- alterinative 2
+{- alterinative 
    antecedent :: Rule -> Expression
    antecedent r = case r of
                    Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
@@ -195,7 +193,7 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
-   instance Eq RuleType
+--   instance Eq RuleType
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: KeyDef                        ***
