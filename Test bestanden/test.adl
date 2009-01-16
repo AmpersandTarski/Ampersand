@@ -1,0 +1,9 @@
+CONTEXT Test
+
+
+PATTERN Permits
+ authentic -| authentic
+
+ authentic  :: Person * IDdocument.
+ENDPATTERN
+ENDCONTEXT
