@@ -39,6 +39,7 @@
 
    testing = False
 
+   anal :: Context -> Bool -> String -> IO ()
    anal context predLogic graphicstyle
     = putStr ("\nGenerating Atlas for "++name context++" in the current directory."++
                "\n  (current directory must already contain the directory \"treemenutils\""++

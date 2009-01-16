@@ -23,14 +23,27 @@
 
 {- Alternative 1: -}
 
+--   antecedent :: Rule -> Expression
+--   antecedent r = case r of
+--                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
+--                                                                   else rrant r
+--                   Sg{} -> antecedent (srsig r)
+--                   Gc{} -> Tm (grspe r)
+--                   Fr{} -> frcmp r
+
+{- Alternative 1 (modified): 
+
    antecedent :: Rule -> Expression
    antecedent r = case r of
                    Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
                                                                    else rrant r
                    Sg{} -> antecedent (srsig r)
-                   Gc{} -> Tm (grspe r)
+                   (Gc _ d _ _ _ _ _) -> Tm d
+             --      Gc{} -> Tm $! (grspe r) 
+             --      Gc{} -> case r of { Gc{ grspe = x } -> Tm x }
+             --      Gc{} -> let x = grspe r in r `seq` Tm x
                    Fr{} -> frcmp r
-
+-}
 {- Alternative 2: -}
 {-
    antecedent :: Rule -> Expression
@@ -41,6 +54,25 @@
    antecedent  (Fr _ _ e _)           = e
 -}
 
+{- Alternative 3 : -}
+
+   antecedent :: Rule -> Expression
+   antecedent r = case r of
+                   Ru{rrsrt = AlwaysExpr} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+                   Ru{} -> rrant r
+                   Sg{} -> antecedent (srsig r)
+                   Gc{} -> Tm (grspe r)
+                   Fr{} -> frcmp r
+                   
+{- alterinative 2
+   antecedent :: Rule -> Expression
+   antecedent r = case r of
+                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
+                                                                   else rrant r
+                   Sg{} -> antecedent (srsig r)
+                   Gc{} -> Tm (grspe r)
+                   Fr{} -> frcmp r
+-}
 
 
 
