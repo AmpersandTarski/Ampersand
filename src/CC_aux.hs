@@ -253,8 +253,7 @@
 
    instance Pop Context where
       put_gE gE cs context
-                  = context { ctxwrld = map (mapCl (put_gE gE cs)) (ctxwrld context)
-                            , ctxpats = map (put_gE gE cs) (ctxpats context)
+                  = context { ctxpats = map (put_gE gE cs) (ctxpats context)
                             , ctxrs   = map (put_gE gE cs) (ctxrs context)
                             , ctxds   = map (put_gE gE cs) (ctxds context)
                             , ctxks   = map (put_gE gE cs) (ctxks context)

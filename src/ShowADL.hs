@@ -1,3 +1,12 @@
+  -- | DAAROM (HJ) Wat is precies het doel van Show vs ShowADL ??
+  -- ANTWOORD (SJ): De standaard-show is alleen bedoeld voor foutmeldingen tijdens het testen.
+  --                Foutmeldingen voor de gebruiker zouden eigenlijk via een aparte show moeten,
+  --                omdat je daarmee device-independence kunt bereiken voor foutmeldingen
+  --                (voorlopig is de gewone show hiervoor goed genoeg).
+  --                ShowADL is bedoeld om ADL source code te genereren.
+  --                Ik kan me voorstellen dat er op den duur een showADL ontstaat die zowel
+  --                inline ADL kan genereren alsook geprettyprinte ADL.
+
   module ShowADL ( ShowADL(..) )
   where
    import Char  (isAlpha,isUpper)

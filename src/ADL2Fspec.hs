@@ -84,11 +84,11 @@
    It can also be used in code generate towards SQL, allowing the code generator to
    implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
    Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
-        datasets = makeDatasets context
-        fservices   = [ makeFservice context a | a <-serviceS]
-        frules   = [ makeFrule context r | r <-ctxrs context]
-        frels    = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
-        isa      = ctxisa context
+        datasets  = makeDatasets context
+        fservices = [ makeFservice context a | a <-serviceS]
+        frules    = [ makeFrule context r | r <-rules context]
+        frels     = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
+        isa       = ctxisa context
 
  -- next thing, we look which datasets will be discussed in which themes.
  -- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
@@ -157,7 +157,7 @@
         , readObj context o
         , deleteObj context o [] {-rs-}
         , updateObj context o [] {-cs-} [] {-rs-} ]
-        [makeFrule context r| r<-ctxrs context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+        [makeFrule context r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
       where
        trBound
         = rd [conjNF e | a<-atts o, e<-[objctx a, flp (objctx a)] ]

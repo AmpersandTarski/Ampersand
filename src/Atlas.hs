@@ -284,7 +284,7 @@
                                       violations
                 )         )          )
     where
-      violations = concat [ hv r| r<-ctxrs context]++
+      violations = concat [ hv r| r<-rules context]++
                    if null viol then "" else "\n<P>\n"++chain "\n\n" viol
       hv r = if null ruleviol then "" else
              htmlAnchor (fnRule context r++".html") ("Rule") []++
@@ -406,16 +406,16 @@
        = htmlImageMap (fnm++".gif") fnm ((unsafePerformIO . readFile) (fnm++".map"))
  -- Pre: 
    nextRule context r = if null rs then error("Fatal: no first rule in this context") else head rs
-     where rs = dropWhile (\rule->nr r>=nr rule) (ctxrs context)++ctxrs context
+     where rs = dropWhile (\rule->nr r>=nr rule) (rules context)++rules context
    prevRule context r = if null rs then error("Fatal: no last rule in this context") else head rs
-     where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (ctxrs context)++reverse (ctxrs context)
+     where rs = (dropWhile (\rule->nr r<=nr rule).reverse) (rules context)++reverse (rules context)
    htmlRule :: Context -> Rule -> Bool -> String
    htmlRule context r predLogic
     = htmlPage ("Code (5) for "++"Rule "++show (runum r)) ""
                     (htmlBody ((if emptyGlossary context (Pat ("Rule "++show (runum r)) [r] [] [] [] [])
                                 then "" else "<A HREF=#REF2Glossary>Glossary</A> ")++
                             {- "<A HREF=#REF2Relations>Relations</A>\n"++ -}
-                               (if length (ctxrs context) <=1 then "" else
+                               (if length (rules context) <=1 then "" else
                                 "<A HREF=\""++fnRule context (nextRule context r)++".html\">Next rule</A>\n"++
                                 "<A HREF=\""++fnRule context (prevRule context r)++".html\">Previous rule</A>\n")++
                                htmlHeadinglevel 3 ("Rule "++show (runum r)) []++"\n<P>\n"++
@@ -564,7 +564,7 @@
           (declarations rulesV)
           [cd| cd<-conceptDefs context, cptnew (name cd) `elem` concsV]
           []
-      where rulesV = [r| r<-ctxrs context, c `elem` concs r]
+      where rulesV = [r| r<-rules context, c `elem` concs r]
             concsV = concs rulesV
 
    inhViewpoint :: Classification Context -> Concept -> Concept -> Pattern

@@ -80,7 +80,7 @@
 --   makeFspecOUD :: Context -> Fspec
 --   makeFspecOUD context
 --     = Fctx ( context { ctxpats = ctxpats context ++ if null remainingDS then [] else [others]
---                      , ctxrs   = ctxrs context
+--                      , ctxrs   = rules context
 --                      , ctxds   = declarations context
 --                      , ctxcs   = conceptDefs context
 --                      , ctxks   = []
@@ -92,7 +92,7 @@
 --            )
 --            datasets
 --            [ makeFview context o | o <-attributes context]
---            [ makeFrule context r | r <-ctxrs context]
+--            [ makeFrule context r | r <-rules context]
 --       where
 --        datasets = makeDatasets context
 --
@@ -126,7 +126,7 @@
 --   --              i     = isa context
 --   --              world = wrld context
 --   --              pats  = ctxpats context ++ if null remainingDS then [] else [others]
---   --              rs    = ctxrs context
+--   --              rs    = rules context
 --   --              ds    = declarations context
 --   --              cs    = conceptDefs context
 --   --              ks    = []
@@ -252,7 +252,7 @@
 --            , readObj context o
 --            , deleteObj context o [] {-rs-}
 --            , updateObj context o [] {-cs-} [] {-rs-} ])
---           [Frul r| r<-ctxrs context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+--           [Frul r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
 
 
 
@@ -612,7 +612,7 @@
        ents car = [ (o,if null (attributes o) then NO else ILGV Eenvoudig,cs,rs)
                   | o<-car
  -- selecteer alle geldende regels, die relevant zijn voor o. Bepaal daarvan de conjuncts, omdat elke conjunct waar moet blijven.
-                  , rs<-[[(conj,rule) |rule<-ctxrs context, not (null (mors o `isc` mors rule)), conj<-conjuncts rule]]
+                  , rs<-[[(conj,rule) |rule<-rules context, not (null (mors o `isc` mors rule)), conj<-conjuncts rule]]
  -- selecteer de verzameling cs van attributen van o, die door functionele afhankelijkheden (ook genoemd: triggers) kunnen veranderen.
                   , cs<-[[a| a<-attributes o, not (null (declarations (ctx a) `isc` declarations affected))]], not (null cs)
                   ]
@@ -636,7 +636,7 @@
                  | r<-relations, not (isSignal r), r `elem` new
                  , nm <- [name r++if length [d|d<-relations, name d==name r]==1 then "" else
                                   name (source r)++name (target r)]
-                 , rs<-[[(conj,rule) |rule<-ctxrs context, conj<-conjuncts rule, r `elem` declarations conj]]
+                 , rs<-[[(conj,rule) |rule<-rules context, conj<-conjuncts rule, r `elem` declarations conj]]
                  , service <- [ newPair context relations rs r nm
                               , isPair context relations r nm
                               , delPair context relations rs r nm
@@ -646,7 +646,7 @@
           , not (null ss)
           ]
        relations = declarations context
-       hcs = [hc| rule<-ctxrs context, hc<-triggers rule ]
+       hcs = [hc| rule<-rules context, hc<-triggers rule ]
 
    funcSpecText context fspcs English
     = "Functional Specification:\n"++chain "\n\n" (map fSpec fspcs)
@@ -1006,7 +1006,7 @@
            patSections [] [] (ctxpats context)
          )
        , length [d| d<-declarations context, not (isSignal d)] +    -- bereken het totaal aantal requirements
-         length (ctxrs context++signals context)
+         length (rules context++signals context)
        )
     where
      (str1,str2,str3,str4,str5,str6,str7,str8,str9,str10,str11,str12,str13,str14,str15,str16,str17) = strs

@@ -304,7 +304,7 @@
         ,"    $DB_err=$preErr.'"++(addSlashes (show(explain rul)))++"';"
         ,"  } else"
         ]
-      | rul <- ctxrs context
+      | rul <- rules context
       , or (map (\m -> elem m (mors rul)) -- rule contains an element
                 (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
            )

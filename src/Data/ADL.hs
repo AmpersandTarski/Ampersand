@@ -73,10 +73,10 @@ module Data.ADL where
            , frcmp :: Expression        -- ^ expression to be computed
            , frpat :: String            -- ^ name of pattern in which it was defined.
            } 
-   data RuleType = Implication | Equivalence | AlwaysExpr | Generalization | Automatic deriving Eq
+   data RuleType = Implication | Equivalence | AlwaysExpr | Generalization | Automatic deriving (Eq,Show)
 
    -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
-   data AutType = Clos0 | Clos1 --deriving (Eq,Show)
+   data AutType = Clos0 | Clos1 deriving (Eq,Show)
         
 
    type KeyDefs = [KeyDef]

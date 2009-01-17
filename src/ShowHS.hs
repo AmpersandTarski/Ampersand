@@ -238,7 +238,7 @@ where
        " ##8## " 
     -- patterns will be shown in  (showHS indent Fspec)
        where pats = ctxpats context     --  patterns declared in this context
-             rs   = ctxrs context       --  rules declared in this context
+             rs   = rules context       --  rules declared in this context, except the signals
              ds   = ctxds context       --  declaration declared in this context, outside patterns
              cs   = ctxcs context       --  A list of concept definitions defined in this context, outside the scope of patterns
              ks   = ctxks context       --  A list of key definitions defined in this context, outside the scope of patterns

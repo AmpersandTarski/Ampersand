@@ -22,107 +22,26 @@
         "      ( "++chain "\n      , " [ "\""++phpConcept context c++"\"\n        => Array ( "++chain ", " ["\""++phpRelName context s++"\""|s<-declarations context, source s==c || target s==c]++" )"
                                        | c<-concs context]
                                        ++"\n      );"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       , ""
       , "  // DB_tbls2 is used for ... (Bas, uitleggen...)"
       , if null relations then "  $DB_tbls2 = Array();" else
         "  $DB_tbls2 = Array\n      ( "++chain "\n      , "
         [ "\""++phpRelName context s++"\" => Array (\""++sqlConcept context (source s)++"\",\""++sqlConcept context (target s)++"\")"
         | s<-declarations context ]++"\n      );"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       , "  // DB_tbls3 is used for ... (Bas, uitleggen...)"
       , if null relations then "  $DB_tbls3 = Array();" else
         "  $DB_tbls3 = Array\n      ( "++chain "\n      , "
         [ "\""++phpRelName context s++"\" => Array (\""++sqlRelSrc s++"\",\""++sqlRelTrg s++"\")"
         | s<-declarations context ]++"\n      );"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       , ""
       , "  // DB_concepts is used for ... (Bas, uitleggen...)"
       , "  $DB_concepts = Array( "++chain "\n                      , "
         ([ "'"++phpConcept context c++"'=>"++phpShow (name c)| c<-concs context ]++
          [ "'"++p++"'=>"++phpShow (name c)
          | (p,c)<-rd ([(p,c)| r<-relations, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]] ++
-                      [(p,c)| r<-ctxrs context, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]])
+                      [(p,c)| r<-rules context, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]])
          ])
       , "                    );"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       , "" ] ++ "\n?>"
     where
         (datasets, viewEsts, relations, erruls) = erAnalysis context

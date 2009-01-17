@@ -62,7 +62,7 @@
                    Gc{} -> Tm (grspe r)
                    Fr{} -> frcmp r
                    
-{- alterinative 
+{- alternative 
    antecedent :: Rule -> Expression
    antecedent r = case r of
                    Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
@@ -86,17 +86,6 @@
 --   ABoolAlg
 
 
-
-   -- Show   --WAAROM (HJ) wat is precies het doel van Show vs ShowADL ??
-   -- ANTWOORD (SJ): De standaard-show is alleen bedoeld voor foutmeldingen tijdens het testen.
-   --                Foutmeldingen voor de gebruiker zouden eigenlijk via een aparte show moeten,
-   --                omdat je daarmee device-independence kunt bereiken voor foutmeldingen
-   --                (voorlopig is de gewone show hiervoor goed genoeg).
-   --                ShowADL is bedoeld om ADL source code te genereren.
-   --                Ik kan me voorstellen dat er op den duur een showADL ontstaat die zowel
-   --                inline ADL kan genereren alsook geprettyprinte ADL.
-
-
    class Association a where
      source, target :: a -> Concept
      sign           :: a -> MorphType
@@ -116,14 +105,15 @@
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Architecture                  ***
--- \**** (Eq dient alleen diagnostische doeleinden)    ********************
+{- \**** (Eq dient alleen diagnostische doeleinden)    ********************
 
    instance Eq Architecture where
     a==a' = archContexts a==archContexts a'
+-}
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***
--- \**** (Eq dient alleen diagnostische doeleinden)    ********************
+{- \**** (Eq dient alleen diagnostische doeleinden)    ********************
 
    instance Eq Context where
     c==c' = ctxnm      c == ctxnm   c'
@@ -131,12 +121,13 @@
             && ctxisa  c == ctxisa  c'
             && ctxwrld c == ctxwrld c'
             && ctxpats c == ctxpats c'
-      --    && ctxrs   c == ctxrs   c'
-      --    && ctxds   c == ctxds   c'
+            && ctxrs   c == ctxrs   c'
+            && ctxds   c == ctxds   c'
             && ctxcs   c == ctxcs   c'
             && ctxks   c == ctxks   c'
             && ctxos   c == ctxos   c'
       --    && ctxpops c == ctxpops c'
+-}
 
    instance Identified Context where
     name ctx = ctxnm ctx
@@ -145,7 +136,7 @@
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Pattern                       ***
--- \**** (Eq dient alleen diagnostische doeleinden)    ********************
+{- \**** (Eq dient alleen diagnostische doeleinden)    ********************
 
    instance Eq Pattern where
     p==p' = ptnm     p == ptnm  p'
@@ -154,6 +145,7 @@
        --   && ptdcs p == ptdcs p'
             && ptcds p == ptcds p'
             && ptkds p == ptkds p'
+-}
 
    instance Show Pattern
    instance Identified Pattern where

@@ -46,7 +46,7 @@
         ([ "'"++phpConcept context c++"'=>"++phpShow (name c)| c<-concs context ]++
          [ "'"++p++"'=>"++phpShow (name c)
          | (p,c)<-rd ([(p,c)| r<-relations, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]] ++
-                      [(p,c)| r<-ctxrs context, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]])
+                      [(p,c)| r<-rules context, (p,c)<-[(phpRelSrc context r,source r), (phpRelTrg context r,target r)]])
          ])
       , "                    );"
       , ""
@@ -339,14 +339,14 @@
       , "" ] ++ "\n?>"
     where
         (datasets, viewEsts, relations, erruls) = erAnalysis context
-        hcs = [hc| rule<-ctxrs context, hc<-triggers rule ]
+        hcs = [hc| rule<-rules context, hc<-triggers rule ]
         labelname (nm,"",k:ks) = if length labels <=1
                                  then name k
                                  else name k++"["++name (target k)++"]"
                                  where labels = [name a++"["++name (target (ctx a))++"]"|o<-attributes context, name o==name (concept o), a<-attributes o, name a==name k]
         labelname (nm,lbl,ks)  = lbl
         comp :: [Declaration]      -- all computed relations
-        comp = rd [s| rule<-ctxrs context, toExpr<-cpu rule, s<-declarations toExpr]
+        comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]
 
 
    phpCodeRelCreate (context,datasets,relations,hcs) r
@@ -522,7 +522,7 @@
               dms = []::[Morphism] -- delMors context (concept o)
               i=8
               comp :: [Declaration]      -- all computed relations
-              comp = rd [s| rule<-ctxrs context, toExpr<-cpu rule, s<-declarations toExpr]
+              comp = rd [s| rule<-rules context, toExpr<-cpu rule, s<-declarations toExpr]
 
    phpCodeEntDelete (context,datasets,relations,hcs) o
     = (chain "\n".filter (not.null))

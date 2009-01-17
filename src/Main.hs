@@ -145,7 +145,7 @@
           -- TODO: Onderstaande definities moet op basis van fSpec, niet op basis van context...
                       datasets = makeDatasets context
                       rels  = declarations context
-                      ruls  = ctxrs context
+                      ruls  = rules context
 
              helptext
               = chain "\n"
