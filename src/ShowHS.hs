@@ -208,18 +208,15 @@ where
     showHSname context = "ctx_"++haskellIdentifier (name context)
     showHS indent context
      = "Ctx "++show (name context)++"   -- (Ctx nm on isa world pats rs ds cs ks os pops)"++
-       indent++"       "++(if null on   then "[{-NOON-}]" else showL [show x|x<-on])++
+       indent++"       "++(if null on   then "[]" else showL [show x|x<-on])++
        (if null on   then " " else indent++"       ")++"isa [ {- world is left empty -} ]"++
-       (if null pats then " [{-NOPATS-}]" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
-     --  (if null rs   then " [{-NORULS-}]" else indent++"       "++showL [showHSname r       | r<-rs  ])++
-       (if null ds   then " [{-NODATASETS-}\n]" else indent++"       "++  showL ["baa\n" ++ showHSname d        | d<-ds  ])++
-     --  (if null ds   then " [{-NODATASETS-}]" else indent++"       "++showL [showHSname d       | d<-ds  ])++
-
-
-       (if null cs   then " [{-NOCS-}]" else indent++"       "++showL [showHSname c       | c<-cs  ])++
-       (if null ks   then " [{-NOKS-}]" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
-       (if null os   then " [{-NOOS-}]" else indent++"       "++showL [showHSname o       | o<-os  ])++
-       (if null pops then " [{-NOPOPS-}]" else indent++"       "++showL [showHSname p       | p<-pops])++
+       (if null pats then " []" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
+       (if null rs   then " []" else indent++"       "++showL [showHSname r       | r<-rs  ])++
+       (if null ds   then " []" else indent++"       "++showL [showHSname d       | d<-ds  ])++
+       (if null cs   then " []" else indent++"       "++showL [showHSname c       | c<-cs  ])++
+       (if null ks   then " []" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
+       (if null os   then " []" else indent++"       "++showL [showHSname o       | o<-os  ])++
+       (if null pops then " []" else indent++"       "++showL [showHSname p       | p<-pops])++
        indent++"where"++
        indent++" isa = "++showHS (indent++"       ") (ADLdef.isa context)++
        indent++" gE  = genEq (typology isa)"++
