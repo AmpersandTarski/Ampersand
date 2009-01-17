@@ -24,7 +24,7 @@
                   dbName
                   targetDir
                   servGen
-     =   putStr ("\n---------------------------\nGenerating php Object files with ADL version "++adlVersion++"\n---------------------------")
+     =   putStr ("\n---------------------------\nGenerating php Object files with ADL\n---------------------------")
       >> putStr ("\n  Generating localsettings.inc.php")
       >> do { d <- doesDirectoryExist targetDir
             ; if d

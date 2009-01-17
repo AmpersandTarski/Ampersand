@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables#-}
   module ObjBinGenObject where
    import Char(toUpper)
-   import Auxiliaries(chain, adlVersion, commaEng)
+   import Auxiliaries(chain, commaEng)
    import Calc(informalRule, disjNF, computeOrder, triggers, allClauses, conjuncts, doClause)
    import ADLdef
    import ShowADL
@@ -35,7 +35,7 @@
    objectServices :: Context -> String -> ObjectDef -> String
    objectServices context filename object
     = (chain "\n  "
-      ([ "<?php // generated with "++adlVersion
+      ([ "<?php // generated with ADL"
        , ""
        , "/********* on "++(show (pos object))
        , showADL object

@@ -210,7 +210,7 @@
 
 
 
-   selectExpr ctx i src trg (F (Tm (V _ (s,t)):fs)) | s==cptS = selectExpr ctx i src trg (F (Tm (Mp1 "'1'" t):fs))
+   selectExpr ctx i src trg (F (Tm (V _ (s,t)):fs)) | s==cptS = selectExpr ctx i src trg (F (Tm (Mp1 "1" t):fs))
    selectExpr ctx i src trg (F (s1@(Tm (Mp1 _ _)):(s2@(Tm (V _ _)):(s3@(Tm (Mp1 _ _)):fx@(_:_))))) -- to make more use of the thing below
      =  selectExpr ctx i src trg (F ((F (s1:s2:s3:[])):fx))
 

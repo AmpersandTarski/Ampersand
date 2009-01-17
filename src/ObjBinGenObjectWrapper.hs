@@ -14,7 +14,7 @@
 
    objectWrapper objectName
     = (chain "\n  "
-      ([ "<?php // generated with "++adlVersion
+      ([ "<?php // generated with ADL"
        , ""
        , "require \"localsettings.inc.php\";"
        , "require \""++objectName++".inc.php\";"

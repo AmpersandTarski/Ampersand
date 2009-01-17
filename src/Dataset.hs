@@ -24,6 +24,7 @@
   --                                    ^- Maak hier ook een lijst van. Scheelt veel geneuzel.
   --  en dan iets van 
   --  instance Dataset DStype1 where  etc.
+  
 
    declarationsDS :: Dataset -> Declarations
    declarationsDS ds = declarations (morsDS ds)
