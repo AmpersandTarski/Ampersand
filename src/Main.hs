@@ -5,7 +5,7 @@
    import UU_Scanner(scan,initPos)
    import UU_Parsing(parseIO)
    import CommonClasses ( Identified(name))
-   import Auxiliaries (chain, commaEng, adlVersion)
+   import Auxiliaries (chain, commaEng)
    import Typology (Typology(Typ), typology, makeTrees)
    import ADLdef
    import ShowADL
@@ -38,6 +38,7 @@
    import ADL2Fspec (makeFspecNew2)
    import Statistics 
 
+   adlVersion = "ADL vs. 0.8.10-211" -- the number behind the last digit is the SVN revision number.
 
    latexOpt :: [String] -> Bool
    latexOpt sws = "-l" `elem` sws
@@ -78,9 +79,6 @@
          ; inp<-readFile fnFull
          ; putStr ("\n"++fnFull++" is read.\n")
          ; slRes <- parseIO (pArchitecture ("-beeper" `elem` switches))(scan keywordstxt keywordsops specialchars opchars fnFull initPos inp)
-         ; putStr ("Prove that the scanner works:\n"++show(scan keywordstxt keywordsops specialchars opchars fnFull initPos inp))
-         ; putStr ("Proven that the scanner works.\n\n")
-           -- Now continue with typechecking of the parsetree:
          ; let (contexts,errs) = sem_Architecture slRes
          ; let context = if null contexts
                          then error ("!Mistake: no context encountered in input file.\n")
@@ -89,8 +87,6 @@
                               if null cs
                               then error ("!Mistake: context "++contextname++" was not encountered in input file.\n")
                               else head cs
-         ; putStr ("Now prove that the parser works:\n"++(if context==context then showHS "\n  " context else "")++"\n"++fnFull++" has been parsed.\n")
-         ; putStr ("Proven that the parser works:\n\n")
          ; let Typ pths = if null contexts then Typ [] else
                           if length args>1 && contextname `elem` map name contexts
                           then typology (ADLdef.isa (head [c| c<-contexts,name c==contextname]))
@@ -144,27 +140,7 @@
                   [ putStr (deriveProofs context)                                  | "-proofs" `elem` switches]
  --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
  --               ++[ csvcontent context | "-csv" `elem` switches]
-                 ) >>
-                    putStr ("\nwriting to \\ADL.log:\nADL "++filename++" "++chain " " switches++"\n") >>
-                    putStr ("  nr. of data sets:                  "++show (length datasets)++"\n") >>
-                    putStr ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
-                    putStr ("  nr. of relations:                  "++show (length rels)++"\n") >>
-                    putStr ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
-                    putStr ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
---                    putStr ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
-                    putStr ("  nr. of patterns:                   "++show (length (ctxpats context))++"\n") >>
-                    putStr ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
-                    putStr ("  nr. of function points:            "++show (nFpoints fSpec)++"\n") >>
-                    appendFile "\\ADL.log" ("ADL "++filename++" "++chain " " switches++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of data sets:                  "++show (length datasets)++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of concepts:                   "++show (length (concs context))++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of relations:                  "++show (length rels)++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of invariants:                 "++show (length ruls)++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of multiplicity rules:         "++show (length (multRules context))++"\n") >>
---                    appendFile "\\ADL.log" ("  nr. of action rules generated:     "++show (length [ hc | rule<-declaredRules context, hc<-triggers rule])++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of patterns:                   "++show (length (ctxpats context))++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of services:                   "++show (nServices fSpec)++"\n") >>
-                    appendFile "\\ADL.log" ("  nr. of function points:            "++show (nFpoints fSpec)++"\n")
+                 )
                    where
                       fSpec = makeFspecNew2 context
           -- TODO: Onderstaande definities moet op basis van fSpec, niet op basis van context...
@@ -196,7 +172,7 @@
               = sequence_ 
                  (--[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
                   --[ makeXML_depreciated context| "-XML" `elem` switches]++
-                  [ putStr "Boe\n" >> showHaskell fSpec | "-Haskell" `elem` switches] ++ 
+                  [ putStr "\n" >> showHaskell fSpec | "-Haskell" `elem` switches] ++ 
                   [ serviceGen fSpec (lang switches) filename| "-services" `elem` switches]
                   --[ diagnose context| "-diag" `elem` switches]++
                   --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
