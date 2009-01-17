@@ -21,59 +21,6 @@
    import Collection (Collection (rd))
    import Auxiliaries (eqClass, enumerate, sort', clos1,diag,eqCl) 
 
-{- Alternative 1: 
-   antecedent :: Rule -> Expression
-   antecedent r = case r of
-                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
-                                                                   else rrant r
-                   Sg{} -> antecedent (srsig r)
-                   Gc{} -> Tm (grspe r)
-                   Fr{} -> frcmp r
--}
-{- Alternative 1 (modified): 
-
-   antecedent :: Rule -> Expression
-   antecedent r = case r of
-                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
-                                                                   else rrant r
-                   Sg{} -> antecedent (srsig r)
-                   (Gc _ d _ _ _ _ _) -> Tm d
-             --      Gc{} -> Tm $! (grspe r) 
-             --      Gc{} -> case r of { Gc{ grspe = x } -> Tm x }
-             --      Gc{} -> let x = grspe r in r `seq` Tm x
-                   Fr{} -> frcmp r
--}
-{- Alternative 2: -}
-{-
-   antecedent :: Rule -> Expression
-   antecedent r@(Ru AlwaysExpr _ _ _ _ _ _ _ _) = error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
-   antecedent  (Ru _ a _ _ _ _ _ _ _) = a
-   antecedent  (Sg _ rule _ _ _ _ _)  = antecedent rule
-   antecedent  (Gc _ d _ _ _ _ _)     = Tm d
-   antecedent  (Fr _ _ e _)           = e
--}
-
-{- Alternative 3 : -}
-   antecedent :: Rule -> Expression
-   antecedent r = case r of
-                   Ru{rrsrt = AlwaysExpr} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
-                   Ru{} -> rrant r
-                   Sg{} -> antecedent (srsig r)
-                   Gc{} -> Tm (grspe r)
-                   Fr{} -> frcmp r
-                   
-{- alternative 
-   antecedent :: Rule -> Expression
-   antecedent r = case r of
-                   Ru{} -> if (rrsrt r == AlwaysExpr)  then error ("(Module ADLdataDef:) illegal call to antecedent of rule "++show r)
-                                                                   else rrant r
-                   Sg{} -> antecedent (srsig r)
-                   Gc{} -> Tm (grspe r)
-                   Fr{} -> frcmp r
--}
-
-
-
    
 -- In deze module worden aan taalconstuctors van ADL de eigenschappen
 -- toegekend voor de volgende classen:
@@ -88,10 +35,10 @@
 
    class Association a where
      source, target :: a -> Concept
-     sign           :: a -> MorphType
+     sign           :: a -> Sign
      sign x = (source x,target x) 
 
-   instance Association MorphType where
+   instance Association Sign where
      source (src, tgt) = src
      target (src, tgt) = tgt
      
@@ -169,7 +116,7 @@
              | otherwise              = snd (sign r)
     sign r   | ruleType r==AlwaysExpr = sign (consequent r)
              | otherwise              = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
-                                            error ("(module CC_aux) Fatal: incompatible signs in "++misbruiktShowHS "" r)
+                                            error ("(module ADLdataDef) Fatal: incompatible signs in "++misbruiktShowHS "" r)
 
    instance Numbered Rule where
     pos (Ru _ _ p _ _ _ _ _ _) = p
@@ -373,7 +320,7 @@
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
 -- \***********************************************************************
    instance Eq Declaration where
-      d == d' = name d==name d' && d_src d==d_src d' && d_tgt d==d_tgt d'
+      d == d' = name d==name d' && source d==source d' && target d==target d'
    instance Show Declaration where
     showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ False)
      = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
@@ -389,21 +336,16 @@
     typ d = "Declaration_"
 
    instance Association Declaration where
---    source (Sgn _ a b _ _ _ _ _ _ _ _ _)         = a
---    source (Isn g s)                             = s
---    source (Iscompl g s)                         = s
---    source (Vs a b)                              = a
---    target (Sgn _ a b _ _ _ _ _ _ _ _ _)         = b
---    target (Isn g s)                             = g
---    target (Iscompl g s)                         = g
---    target (Vs a b)                              = b
---    sign   (Sgn _ a b _ _ _ _ _ _ _ _ _)         = (a,b)
---    sign   (Isn g s)                             = (s,g)
---    sign   (Iscompl g s)                         = (s,g)
---    sign   (Vs g s)                              = (s,g)
---  Bovenstaande is wel érg omslachtig. Ik heb het vervangen door:
-      source d = d_src d
-      target d = d_tgt d
+      source d = case d of
+                   Sgn {}     -> desrc d
+                   Isn {}     -> despc d
+                   Iscompl {} -> despc d
+                   Vs {}      -> degen d
+      target d = case d of 
+                   Sgn {}     -> detgt d
+                   Isn {}     -> degen d
+                   Iscompl {} -> degen d
+                   Vs {}      -> despc d
     --sign is vanzelf al geregeld...
 
    instance Numbered Declaration where
@@ -493,33 +435,7 @@
 
 
 --  /---------------------Hieronder moet nog verder worden bekeken of het hier wel thuishoort.
-   ruleType    (Ru c _ _ _ _ _ _ _ _) = c
-   ruleType    (Sg _ rule _ _ _ _ _)  = ruleType rule
-   ruleType    (Gc _ _ _ _ _ _ _)     = Generalization
-   ruleType    (Fr _ _ _ _)           = Automatic
-   consequent  (Ru _ _ _ c _ _ _ _ _) = c
-   consequent  (Sg _ rule _ _ _ _ _)  = consequent rule
-   consequent  (Gc _ _ e _ _ _ _)     = e
-   consequent  (Fr _ d _ _)           = Tm (makeMph d)
-   cpu         (Ru _ _ _ _ c _ _ _ _) = c
-   cpu         (Sg _ _ _ _ _ _ _)     = [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
-   cpu         (Gc _ _ _ c _ _ _)     = c
-   cpu         (Fr _ d _ _)           = [Tm (makeMph d)]
-   patternName (Ru _ _ _ _ _ _ _ _ p) = p
-   patternName (Sg _ _ _ _ _ p _)     = p
-   patternName (Gc _ _ _ _ _ _ p)     = p
-   patternName (Fr _ _ _ p)           = p
-   uncomp (Ru a b c d e f (g,g') h i) = Ru a b c d [] f (g,g') h i
-   uncomp (Gc a b c d e f g)          = Gc a b c [] e f g
-   uncomp s                           = s
-
-
-
-
-
-
-
-{-
+--
    ruleType :: Rule -> RuleType
    ruleType r = case r of 
                    Ru{} -> rrsrt r
@@ -527,6 +443,14 @@
                    Gc{} -> Generalization
                    Fr{} -> Automatic
 
+   antecedent :: Rule -> Expression
+   antecedent r = case r of
+                   Ru{rrsrt = AlwaysExpr} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+                   Ru{} -> rrant r
+                   Sg{} -> antecedent (srsig r)
+                   Gc{} -> Tm (grspe r)
+                   Fr{} -> frcmp r
+                   
    consequent :: Rule -> Expression
    consequent r = case r of
                    Ru{} -> rrcon r
@@ -541,9 +465,6 @@
                    Gc{} -> r_cpu r
                    Fr{} -> [Tm (makeMph (frdec r))]
 
-   patternName :: Rule -> String
-   patternName r = r_pat r
-
    uncomp :: Rule -> Rule
    uncomp r = case r of
                    Ru{} -> r{r_cpu = []}
@@ -552,7 +473,7 @@
                    Fr{} -> r
    -- HJO, Wellicht mag i.p.v. bovenstaande ook gewoon het volgende worden gezegd, maar dat kan ik momenteel niet bevestigen:
    -- uncomp r = r{r_cpu = []}   (Dat zou wel elegant zijn, maar het moet nog worden getest of dit goed gaat...)
--}
+
 
    makeMph :: Declaration -> Morphism
    makeMph d = Mph{ mphnm  = name d
@@ -562,28 +483,28 @@
                   , mphyin = True
                   , mphdcl = d
                   }
-
-   inline::Morphism -> Bool
-   inline m = case m of
-               Mph{} -> mphyin m
-               I{}   -> True
-               V{}   -> True
-               Mp1{} -> True
-
-
+   
    makeDeclaration :: Morphism -> Declaration
    makeDeclaration m = case m of
                Mph{} -> mphdcl m
-               I{}   -> Isn{ d_src = mphspc  m, d_tgt = mphgen  m}   -- WAAROM?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
-               V{}   -> Vs { d_src = source  m, d_tgt = target  m}
-               Mp1{} -> Isn{ d_src = mph1typ m, d_tgt = mph1typ m}
-
+               I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WAAROM?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
+               V{}   -> Vs { degen = source  (sign m), despc = target (sign m)}
+               Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}
 
 --   Was vroeger:
 --   makeDeclaration (Mph _ _ _ _ _ s) = s
 --   makeDeclaration (I atts g s yin)  = Isn g s
 --   makeDeclaration (V atts (a,b))    = Vs a b
 --   makeDeclaration (Mp1 s c)         = Isn c c
+
+   
+   inline::Morphism -> Bool
+   inline m =  case m of
+                Mph{} -> mphyin m
+                I{}   -> True
+                V{}   -> True
+                Mp1{} -> True
+
 
    misbruiktShowHS :: Show s => String -> s -> String
    misbruiktShowHS indent e = show e

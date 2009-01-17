@@ -30,7 +30,7 @@
    import Collection (Collection(isc,uni,(>-),rd))
    import Strings (chain, unCap, upCap,firstCaps)
 
-   adlVersion = "ADL vs. 0.8.10-217" -- the number behind the last digit is the SVN revision number.
+   adlVersion = "ADL vs. 0.8.10-218" -- the number behind the last digit is the SVN revision number.
 
    fst3 (a,b,c) = a
    snd3 (a,b,c) = b

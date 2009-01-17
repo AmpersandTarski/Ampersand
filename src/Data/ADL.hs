@@ -122,7 +122,7 @@ module Data.ADL where
                                            --   the declaration that is bound to the morphism.    WAAROM Stef, waarom zou je dit attribuut opnemen? Als het niet is opgenomen, dan kan je altijd zeggen dat de naam van het morphisme gelijk is aan de naam van z'n makeDeclaration. Nu kan dat niet. Voorstel: Dit attribuut slopen. 
                        , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
                        , mphats :: [Concept]         -- ^ the attributes specified inline
-                       , mphtyp :: MorphType         -- ^ the allocated type. Together with the name, this forms the declaration.
+                       , mphtyp :: Sign         -- ^ the allocated type. Together with the name, this forms the declaration.
                        , mphyin :: Bool              -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
                        , mphdcl :: Declaration       -- ^ the declaration bound to this morphism.
                        }
@@ -132,7 +132,7 @@ module Data.ADL where
                        , mphyin ::  Bool             -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
                        } 
                   | V  { mphats :: [Concept]         -- ^ the (optional) attributes specified inline.
-                       , mphtyp :: MorphType         -- ^ the allocated type.
+                       , mphtyp :: Sign              -- ^ the allocated type.
                        }
                   | Mp1 { mph1val :: String          -- ^ the value of the one morphism
                         , mph1typ :: Concept         -- ^ the allocated type.
@@ -142,8 +142,8 @@ module Data.ADL where
    type Declarations = [Declaration]
    data Declaration = 
            Sgn { decnm   :: String  -- ^ the name of the declaration
-               , d_src  :: Concept -- ^ the source concept of the declaration
-               , d_tgt  :: Concept -- ^ the target concept of the declaration
+               , desrc   :: Concept -- ^ the source concept of the declaration
+               , detgt   :: Concept -- ^ the target concept of the declaration
                , decprps :: Props   -- ^ the multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
                , decp1   :: String  -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                , decp2   :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
@@ -155,16 +155,16 @@ module Data.ADL where
                , deciss  :: Bool    -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
                }
           | Isn 
-               { d_tgt :: Concept  -- ^ The generic concept
-               , d_src :: Concept  -- ^ The specific concept
+               { degen :: Concept  -- ^ The generic concept
+               , despc :: Concept  -- ^ The specific concept
                }
           | Iscompl 
-               { d_tgt :: Concept
-               , d_src :: Concept
+               { degen :: Concept
+               , despc :: Concept
                }
           | Vs 
-               { d_src :: Concept
-               , d_tgt :: Concept
+               { degen :: Concept
+               , despc :: Concept
                }
 
    type ConceptDefs = [ConceptDef]
@@ -199,7 +199,7 @@ module Data.ADL where
                     deriving (Eq,Ord)
 
 
-   type MorphType = (Concept,Concept) 
+   type Sign = (Concept,Concept) 
    
 
    type Pairs     = [Paire]  -- WAAROM? Zouden dit niet tweetallen moeten zijn? In dit geval mogen Paire ook uit meer dan twee bestaan...

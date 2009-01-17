@@ -119,7 +119,7 @@
     showADL m@(Mph nm pos atts sgn@(a,b) yin s)
      = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} nm)++
        (if null atts
-            then (if yin && sgn==(d_src s,d_tgt s) || not yin && sgn==(d_tgt s,d_src s) then "" else showSign [a,b])
+            then (if yin && sgn==(source s, target s) || not yin && sgn==(target s,source s) then "" else showSign [a,b])
             else showSign atts)++
        if yin then "" else "~"
     showADL (I atts g s yin)
