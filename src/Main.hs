@@ -5,7 +5,7 @@
    import UU_Scanner(scan,initPos)
    import UU_Parsing(parseIO)
    import CommonClasses ( Identified(name))
-   import Auxiliaries (chain, commaEng)
+   import Auxiliaries (chain, commaEng, adlVersion)
    import Typology (Typology(Typ), typology, makeTrees)
    import ADLdef
    import ShowADL
