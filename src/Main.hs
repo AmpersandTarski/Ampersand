@@ -38,7 +38,6 @@
    import ADL2Fspec (makeFspecNew2)
    import Statistics 
 
-   adlVersion = "ADL vs. 0.8.10-211" -- the number behind the last digit is the SVN revision number.
 
    latexOpt :: [String] -> Bool
    latexOpt sws = "-l" `elem` sws

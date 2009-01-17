@@ -1,5 +1,6 @@
   module Auxiliaries
   (fst3, snd3, thd3
+   , adlVersion
  --  , unCap, upCap
    , showL
    , rEncode
@@ -28,6 +29,8 @@
    import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper,digitToInt,intToDigit)
    import Collection (Collection(isc,uni,(>-),rd))
    import Strings (chain, unCap, upCap,firstCaps)
+
+   adlVersion = "ADL vs. 0.8.10-211" -- the number behind the last digit is the SVN revision number.
 
    fst3 (a,b,c) = a
    snd3 (a,b,c) = b
