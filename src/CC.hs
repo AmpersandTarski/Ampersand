@@ -27,7 +27,7 @@
                        , "ONE"
                        ]
    keywordsops       = [ "-|", "|-", ":-", "-:", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\" ]
-   specialchars      = "()[].,"
+   specialchars      = "()[].,{}"
    opchars           = rd (sort (concat keywordsops))
 
 
@@ -213,18 +213,22 @@
    pConcept          = (cptS <$ (pKey "ONE")) <|> (cptnew <$> (pConid <|> pString))
                       -- where c str = C str (==) []
 
-   pLabel           :: Parser Token (String, FilePos)
-   pLabel            = (phpId <* pKey ">" ) `opt` ("", posNone)
+   pLabel           :: Parser Token Label
+   pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos)
+                           <*> ((pSpec '{' *> pList1Sep (pSpec ',') (f <$> phpId <*> phpId) <* pSpec '}') `opt` [])
+                           <*  pKey_pos ":"
+                       where lbl (nm,pos) strs = Lbl nm pos strs
+                             f x y             = [x,y]
 
-   phpId            :: Parser Token (String, FilePos)
-   phpId             = pVarid_val_pos <|> pConid_val_pos
+   phpId            :: Parser Token String
+   phpId             = pVarid <|> pConid <|> pString
 
    pConceptDef      :: Parser Token ConceptDef
    pConceptDef       = Cd <$> pKey_pos "CONCEPT" <*> (pConid <|> pString) <*> pString <*> (pString `opt` "")
 
    pKeyDef          :: Parser Token KeyDef
-   pKeyDef           = kd <$ pKey "KEY" <*> pLabel <* pSpec ':' <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
-                        where kd (nm,pos) e ats = Kd pos nm e ats
+   pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
+                        where kd (Lbl nm pos strs) e ats = Kd pos nm e ats
 
    pObjDef          :: Parser Token ObjectDef
    pObjDef           = pKey_pos "SERVICE" *> pObj
@@ -257,8 +261,8 @@
                              vbj (nm,pos) (Just c) (Just e) a ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
 
    pAtt             :: Parser Token ObjectDef
-   pAtt              = att <$> phpId <* pKey ":" <*>  pExpr
-                       where att (nm,pos) ctx = Obj nm pos ctx []
+   pAtt              = att <$> pLabel <*>  pExpr
+                       where att (Lbl nm pos strs) ctx = Obj nm pos ctx []
 
    pDeclaration     :: Parser Token Declaration
    pDeclaration      = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept

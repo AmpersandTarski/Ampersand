@@ -68,7 +68,7 @@ import CC_aux ( order,makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 
-diagl = 31
+diagl = 13
 diagc = 0
 }
 
@@ -807,14 +807,14 @@ SEM KeyDef
   | Kd lhs.sErr     = @ats.sErr
 
 SEM ObjectDef
-  | Obj lhs.sErr    = {- ["Diagnose Objectdef on Line "++show diagl++
+  | Obj lhs.sErr    =  ["Diagnose Objectdef on Line "++show diagl++
                        "\n @ctx.signs:   "++show @ctx.signs++
                        "\n @lhs.iConc:   "++show @lhs.iConc++
                        "\n @lhs.iConcs:  "++show @lhs.iConcs++
                        "\n @signs:       "++show @signs++
                        "\n @ats.sources: "++show @ats.sources++
                        "\n @ctx:         "++showADL @ctx.expr++"\n"
-                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @pos] ++ -}
+                      | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @pos] ++ 
                       let ls  = (concs @ats.objDefs)
                           ls' c = [g| g<-ls, g `@lhs.gE` c || c `@lhs.gE` g]
                           ground c = if null (ls' c)
@@ -827,9 +827,7 @@ SEM ObjectDef
                                                  ++"\n  "++chain "\n  " (map (showHS "\n  ") @ats.objDefs) )   -}
                                      else Just (minimum (ls' c))
                       in
-                      take 1
-                      (@ctx.sErr++
-                       @ats.sErr++
+                       take 1 (@ctx.sErr++
                        [ "18 on \n"++show @pos ++" in the definition of '"++ @nm ++
                          "'\n   Undefined type, because there is no relation '"++showADL @ctx.expr
                          ++"' with source '"++showADL @lhs.iConc++"'.\n"
@@ -838,6 +836,7 @@ SEM ObjectDef
                          "'\n   Ambiguous type for '"++showADL @ctx.expr++"', because the target can be any of "
                          ++commaEng "or" [name t|(s,t)<- @signs]++".\n"
                        | length @signs>1]++
+                       @ats.sErr++
                        [ "19 on \n"++show @pos ++" in the definition of '"++ @nm ++
                          "'\n   the label '"++nm
                          ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- @ats.objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"

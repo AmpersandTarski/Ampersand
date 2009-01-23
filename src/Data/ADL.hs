@@ -78,6 +78,12 @@ module Data.ADL where
    -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
    data AutType = Clos0 | Clos1 deriving (Eq,Show)
         
+   data Label = Lbl { lblnm   :: String
+                    , lblpos  :: FilePos
+                    , lblstrs :: [[String]]
+                    }
+   instance Eq Label where
+    l==l' = lblnm l==lblnm l'
 
    type KeyDefs = [KeyDef]
    data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
