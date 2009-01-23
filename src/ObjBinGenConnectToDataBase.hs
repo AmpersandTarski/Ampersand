@@ -1,30 +1,27 @@
   module ObjBinGenConnectToDataBase where
-   import Char
-   import Auxiliaries
-   import Collection
-   import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
+ --  import Char
+   import Auxiliaries(chain,eqClass,commaNL,eqCl)
+   import Collection(rd)
+ --  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
    import ADLdef
    import ShowADL(showADL)
    import ShowHS(showHS)
    import CC_aux( applyM )
-   import CommonClasses
+   import CommonClasses(explain,name)
    import PredLogic -- (for error messages by dbCorrect)
-   import Hatml     -- (for converting error messages to HTML)
-   import Atlas     -- (for converting error messages to HTML)
+ --  import Hatml     -- (for converting error messages to HTML)
+ --  import Atlas     -- (for converting error messages to HTML)
    import Calc (conjNF)
    import RelBinGenBasics
+   import Version (versionbanner)
+
 
    type PHPcode = String
 
 
-
-
-
-
-
    connectToDataBase context dbName
     = (chain "\n  " 
-      ([ "<?php // generated with "++adlVersion
+      ([ "<?php // generated with "++versionbanner
        , "$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');"
        , "$DB_slct = mysql_select_db('"++dbName++"',$DB_link);"
        , ""

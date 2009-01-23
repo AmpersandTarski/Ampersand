@@ -117,26 +117,6 @@
    renumberRules _ [] = []
 
 
-
- {-  instance Show Context where
-    showsPrec p context  -- (Ctx nm on isa world pats rs ds cs ks os pops)
-     = showString ("CONTEXT "++nm++
-                   (if null (extends context) then "" else " EXTENDS "++chain ", " (extends context))++"\n"++
-                   chain "\n\n" (map show (ctxpats context))++"\n"++
-                   chain "\n" (map show (ctxrs context))++"\n"++
-                   chain "\n" (map show (declarations context))++"\n"++
-                   chain "\n" (map show (conceptDefs context))++"\n"++
-                   chain "\n" (map show (keyDefs context))++"\n"++
-                   chain "\n" (map show (objectDefs context))++"\n"++
-                   chain "\n" (map show (populations context))++"\nENDCONTEXT" ) -}
-
-
-
---   class ShowHS a where
---    showHSname :: a -> String
---    showHS     :: String -> a -> String
-
-
    isFactor (Fu fs) = True
    isFactor (Fi fs) = True
    isFactor _ = False
@@ -148,33 +128,8 @@
     showADL (Isa ts cs) = ""
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    shSigns [(a,b)] = "["++show a++"*"++show b++"]"
    shSigns ss = commaEng "or" ["["++show a++"*"++show b++"]"|(a,b)<-ss]
-
-
-
-
 
 
 
@@ -239,11 +194,6 @@
     put_gE gE cs (x,y) = (put_gE gE cs x, put_gE gE cs y)
     update ss    (x,y) = (update ss    x, update ss    y)
     specialize t (x,y) = (specialize t x, specialize t y)
-
-
-
-
-
 
 
    instance Pop Gen where

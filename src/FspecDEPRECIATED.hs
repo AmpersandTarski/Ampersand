@@ -13,8 +13,7 @@
    import CommonClasses ( Identified(..))
    import Collection (Collection (isc,(>-),empty, rd))
    import Auxiliaries
-          (  --adlVersion
-             unCap, upCap, firstCaps
+          (  unCap, upCap, firstCaps
            , fst3, snd3
            , chain
            , showL

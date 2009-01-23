@@ -1,4 +1,4 @@
-  module ADL2Fspec (makeFspecNew2)
+  module ADL2Fspec (makeFspec)
   where
    import CommonClasses ( Identified(name))
    import Collection    ( Collection (isc,(>-),rd) )
@@ -18,8 +18,8 @@
  -- Every dataset is discussed in precisely one theme
  -- Every theme will be explained in a chapter of its own.
 
-   makeFspecNew2 :: Context -> Fspc
-   makeFspecNew2 context
+   makeFspec :: Context -> Fspc
+   makeFspec context
      = Fspc fid themes datasets serviceS serviceG fservices frules frels isa where
         fid      = makeFSid1 (name context)
 -- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
