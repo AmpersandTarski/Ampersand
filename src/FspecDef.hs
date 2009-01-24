@@ -39,11 +39,6 @@
      fsid o = FS_id (name o)
   --   typ m  = "f_objdef"
 
-   instance Eq Dataset where  -- opletten: een dataset moet één vast concept hebben waaraan het wordt herkend.
-    DS c _ == DS d _ = c==d
-    BR m   == BR m'  = m==m'
-    _      == _      = False
-
    instance Fidentified Frule where
     fsid frul = FS_id (name (rule frul))   
 
@@ -61,20 +56,21 @@
 -- \***********************************************************************
    instance Identified Fspc where
      name fspc = name (fsid fspc)
-     typ fspc = "Fspc_"
+     typ   _   = "Fspc_"
    
    instance Fidentified Fspc where
     fsid    spec = fsfsid spec
-  --  typ     a = "f_Ctx"
+  --  typ     _ = "f_Ctx"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Ftheme                        ***
 -- \***********************************************************************
    
    instance Identified Ftheme where
-    typ  f = "f_Thm"
+     name theme = name (ftsid theme)
+     typ  _     = "f_Thm"
    instance Fidentified Ftheme where
-    fsid theme = ftsid theme
+     fsid theme = ftsid theme
    
 
 -- \***********************************************************************
@@ -82,10 +78,11 @@
 -- \***********************************************************************
      
    instance Identified Funit where
-    typ funit = "f_Unit"
+     name funit = name (fusid funit)
+     typ _      = "f_Unit"
 
    instance Fidentified Funit where
-    fsid funit = fusid funit 
+     fsid funit = fusid funit 
 
 
 -- \***********************************************************************
@@ -93,9 +90,10 @@
 -- \***********************************************************************
      
    instance Identified Fservice where
-    typ fservice = "f_Service"
+     name fservice = name (objectdef fservice)
+     typ fservice = "f_Service"
    instance Fidentified Fservice where
-    fsid fservice = fsid (objectdef(fservice))
+     fsid fservice = fsid (objectdef fservice)
    
 
 -- \***********************************************************************
@@ -103,7 +101,8 @@
 -- \***********************************************************************
    
    instance Identified Frule where
-    typ frul = "f_rule"
+     name (Frul r) = name r
+     typ    _      = "f_rule"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FViewDef                      ***
@@ -117,19 +116,6 @@
 
    instance Fidentified ServiceSpec where
       fsid ss = ssid ss 
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Dataset                       ***
--- \***********************************************************************
-
-   instance Identified Dataset where
-     name (DS c pths) = name c
-     name (BR m) = name m
-     typ  (DS c pths) = "f_DS"
-     typ  (BR m) = "f_DS"
-   instance Fidentified Dataset where
-     fsid (DS c pths) = fsid c
-     fsid (BR m) = fsid m
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ParamSpec                     ***

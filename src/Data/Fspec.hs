@@ -15,7 +15,6 @@ module Data.Fspec
              , Frule(..)
              , FViewDef(..)
              , ServiceSpec(..)
-             , Dataset(..)
              , ParamSpec(..)
              , FSid(..)
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
@@ -34,7 +33,7 @@ where
    import Typology(Inheritance)
    data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                      , themes   :: [Ftheme]      -- ^ One for every pattern
-                     , datasets :: [Dataset]     -- ^ This list contains the data sets that are computed from the basic ontology.
+                     , datasets :: [ObjectDef]   -- ^ This list contains the data sets that are computed from the basic ontology.
                      , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
                      , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
                      , services :: [Fservice]    -- ^ One for every service 
@@ -59,7 +58,7 @@ where
                        { objectdef  :: ObjectDef
                        , trBoundary :: [Expression]
                        , ecaRules   :: [ECArule]
-                       , dataset    :: Dataset
+                       , dataset    :: ObjectDef
                        , methods    :: [ServiceSpec]
                        , frules     :: [Frule]
                        }
@@ -83,10 +82,6 @@ where
                        , pre     :: [String]     -- Preconditions
                        , post    :: [String]     -- Postconditions
                        }
-
-   data Dataset = DS Concept     -- the root of the dataset
-                     [Morphism]  -- the functions from the root
-                | BR Morphism    -- for every m that is not (isFunction m || isFunction (flp m))
 
    data ParamSpec   = Aspc 
                       {pname :: FSid         -- name of the parameter

@@ -8,7 +8,7 @@
                --   , consequent,cpu,antecedent
                   ,normExpr
                   -- ,uncomp
-                  , src, trg ,v
+                  , src, trg ,v, one
                   , Object(..)
                   , Populated(..)
                   , Morphic(..)
@@ -832,6 +832,10 @@
 
    v :: (Concept, Concept) -> Expression
    v (a,b) = Tm (V [] (a,b))
+
+   one :: Concept
+   one = C "ONE" (error "!Bug in module ADLdef: Illegal reference to gE in ONE. Please program the right gE into ONE.")
+                 (error "!Fatal (module ADLdef): Illegal reference to content of the universal singleton.")
 
    joinD :: [Expression] -> [Paire]
    joinD [s]      = contents s

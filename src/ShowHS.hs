@@ -160,17 +160,6 @@ where
        ++indent++"     [" ++(if null (post    sspc) then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        (post sspc))++indent++"     ] -- postconditions")
        
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Dataset                       ***
--- \***********************************************************************
-
-   instance ShowHS Dataset where
-    showHSname dset = typ dset ++ "_" ++ showHSname (fsid dset)
-   -- showHSname dset@(BR m)      = showHS "" (pfixFSid "f_BR_" (fsid dset))
-    showHS indent (DS c  [] ) = "DS ("++showHS "" c++") []"
-    showHS indent (DS c pths) = "DS ("++showHS "" c++")"++indent++"   [ "++chain (indent++"   , ") [showHS (indent++"     ") pth| pth<-pths]++indent++"   ]"
-    showHS indent (BR m     ) = "BR ("++showHS "" m++")"
-
--- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
 -- \***********************************************************************
 

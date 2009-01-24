@@ -96,14 +96,14 @@
  -- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
         pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
                  [ (pat,length cns,ds)
-                 | pat<-ctxpats context, ds<-datasets, cns<-map name (concsDS ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
+                 | pat<-ctxpats context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
  -- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
  -- The remaining concepts and datasets are determined in pcsds1.
  -- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
         pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
                  [ (pat,0-length ms,ds)
                  | pat<-ctxpats context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
-                 , ms<-[[m|m<-morlist pat, m `elem` morsDS ds || flp m `elem` morsDS ds]], not (null ms)
+                 , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
                  ]
  -- The remaining datasets will be discussed in the last theme
         remainingDS = datasets>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
@@ -111,7 +111,7 @@
          = Pat "Other topics" rs gen pms cs ks
            where rs  = []
                  gen = []
-                 pms = rd [d| ds<-remainingDS, d<-declarationsDS ds]
+                 pms = rd [d| ds<-remainingDS, d<-declarations ds]
                  cs  = []
                  ks  = []
 
@@ -130,8 +130,8 @@
  -- The patterns with the appropriate datasets are determined:
         pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-ctxpats context]
 
-   makeFtheme :: Context -> Pattern -> [Dataset] -> Ftheme
-   makeFtheme context pat dss
+   makeFtheme :: Context -> Pattern -> [ObjectDef] -> Ftheme
+   makeFtheme context pat dss -- dss zijn de datasets die afgeleid zijn van de context
     = Tspc fid units pat
       where
         fid = makeFSid1 (name pat)

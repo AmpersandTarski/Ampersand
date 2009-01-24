@@ -1,6 +1,7 @@
 
 module Statistics where
 
+   import ADLdef
    import FspecDef
    import FPA
  -- TODO Deze module moet nog geheel worden ingekleurd...
@@ -73,14 +74,19 @@ module Statistics where
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Dataset                       ***
--- \***********************************************************************
-   instance Statistics Dataset where
-    nServices (DS c pths) = 4
-    nServices (BR m)      = 2
-    nPatterns (DS c pths) = 0
-    nPatterns (BR m)      = 0
-    nFpoints  (DS c pths) = fPoints (ILGV Eenvoudig)
-    nFpoints  (BR m)      = fPoints (ILGV Eenvoudig)
+-- \*** TODO: zowel datasets als services worden weergegeven middels een ObjectDef. Dit maakt voor de functiepuntentelling natuurlijk wel wat uit, dus dat kan zo niet....
+   instance Statistics ObjectDef where
+    nServices (Obj nm _ _ [])  = 2 -- dit is een associatie, en dus een binaire relatie
+    nServices (Obj nm _ _ ats) = 4 -- dit is een entiteit met één of meer attributen.
+    nPatterns (Obj nm _ _ [])  = 0
+    nPatterns (Obj nm _ _ ats) = 0
+    nFpoints  (Obj nm _ _ [])  = fPoints (ILGV Eenvoudig)
+    nFpoints  (Obj nm _ _ ats) = fPoints (ILGV Eenvoudig)
+-- \*** TODO: de functiepuntentelling voor Services zou er als volgt uit moeten zien....
+--   instance Statistics ObjectDef where
+--    nServices o = 4+sum [nServices a| a<-attributes o]
+--    nPatterns o = 0
+--    nFpoints  o = error ("(Module Fspec) Function points TBD")
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
@@ -92,10 +98,6 @@ module Statistics where
 
 
 
---   instance Statistics ObjectDef where
---    nServices o = 4+sum [nServices a| a<-attributes o]
---    nPatterns o = 0
---    nFpoints  o = error ("(Module Fspec) Function points TBD")
 
 --   instance Statistics Fobj where
 --    nServices (Fobj dset o svcs rs) = length svcs
