@@ -40,7 +40,8 @@ module Main where
 import MainOUDEMEUK (mainold)
 
 import System                        (getArgs, getProgName, exitFailure)
-import System.Console.GetOpt         (usageInfo)
+import System.Environment(getEnvironment)
+--import System.Console.GetOpt         (usageInfo)
 import List                          (isSuffixOf)
 import Options
 import Version       (versionbanner)
@@ -51,14 +52,15 @@ import Version       (versionbanner)
 
 
 main :: IO ()
-main = mainold
---main = mainnew
+--main = mainold
+main = mainnew
 
 mainnew :: IO ()
 mainnew
  = do args     <- getArgs
       progName <- getProgName
-      (flags,inputfile) <- getOptions args progName
+      env      <- getEnvironment
+      (flags,inputfile) <- getOptions args progName env
    
       if showVersion flags
        then putStrLn versionbanner
@@ -66,26 +68,15 @@ mainnew
        then mapM_ putStrLn [(usageInfo' progName)]
        else goforit flags inputfile
        
---       if genFileDeps flags
---            then reportDeps flags files
---            else zipWithM_ (compile flags) files (outputFiles flags++repeat "")
 
 goforit :: Options -> String -> IO()
-goforit flags file = sequence_
-                        ([putStrLn (show flags)] ++
-                         [toonlijst [file]]
-                        ) 
-                               
-    --              >>  putStrLn ("Klaar.")
---toonfiles :: [String -> IO()
---toonfiles s = case s of
---             Nothing -> putStrLn ("Niets te doen!")
---             Just s  -> putStrLn s
+goforit flags file 
+  = sequence_
+       ([putStrLn (show flags)] ++
+        [putStrLn (inputFile file) ]
+       ) 
 
-toonlijst :: [String] -> IO()
---toonlijst [] = putStrLn ""
---toonlijst [x] = putStrLn x
-toonlijst x = mapM_ putStrLn x
+                               
 
 inputFile :: String -> String
 inputFile name 
