@@ -1,91 +1,66 @@
  {-# LANGUAGE ScopedTypeVariables#-}
 module Main where
---   import System (getArgs,getProgName,system, ExitCode(ExitSuccess,ExitFailure))
---   import Char (toLower)
---   import UU_Scanner(scan,initPos)
---   import UU_Parsing(parseIO)
---   import CommonClasses ( Identified(name))
---   import Auxiliaries (chain, commaEng, adlVersion)
---   import Typology (Typology(Typ), typology, makeTrees)
---   import ADLdef
---   import ShowADL
---   import ShowHS (showHS)
---   import Languages( Lang(English,Dutch))
---   import AGtry (sem_Architecture)
---   import CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars)
---   import Calc (deriveProofs,triggers)
---   import Dataset
---   import Data.Fspec
---   import FspecDEPRECIATED( 
---                   projectClassic
---                  ,generateFspecLaTeX
---                  ,generateArchLaTeX
---                  ,generateGlossaryLaTeX
---                  ,funcSpec
---              --  ,nDesignPr
---             --     ,nServices
---             --     ,nFpoints
---           --     ,makeFspec
---                )
---   import HtmlFilenames(fnContext,fnPattern)
---   import Graphic(processCdDataModelFile,dotGraph,processDotgraphFile)
---   import Atlas (anal)
---   import Fspec2LaTeX
---   import Fspec2Xml (makeXML_depreciated)
---   import ClassDiagram (cdModel,cdDataModel)  
-----   import RelBinGen(phpServices)  OBSOLETE as of Jan 1st, 2009 (SJ)
---   import ObjBinGen(phpObjServices)
---   import ADL2Fspec (makeFspec)
---   import Statistics 
+
+
+import Options               (getOptions,Options(..),usageInfo')
+import Version               (versionbanner)
+import Parser                (parseADL)
+import Data.ADL              (Context)
+import Data.Fspec            (Fspc)
+import ADL2Fspec             (makeFspec)
+import Generators            
+
 import MainOUDEMEUK (mainold)
-
-import System                        (getArgs, getProgName, exitFailure)
-import System.Environment(getEnvironment)
---import System.Console.GetOpt         (usageInfo)
-import List                          (isSuffixOf)
-import Options
-import Version       (versionbanner)
---import Parser        (parseAG, depsAG)
---import ErrorMessages (Error(ParserError), Errors)
---import CommonTypes
---import ATermWrite
-
-
 main :: IO ()
 --main = mainold
 main = mainnew
 
+
+
 mainnew :: IO ()
 mainnew
- = do args     <- getArgs
-      progName <- getProgName
-      env      <- getEnvironment
-      (flags,inputfile) <- getOptions args progName env
-   
+ = do flags <- getOptions   
       if showVersion flags
        then putStrLn versionbanner
        else if showHelp flags 
-       then mapM_ putStrLn [(usageInfo' progName)]
-       else goforit flags inputfile
+       then mapM_ putStrLn [(usageInfo' (progrName flags))]
+       else do context <- phase1 flags 
+               fSpec   <- phase2 flags context
+               phase3 flags fSpec
        
 
-goforit :: Options -> String -> IO()
-goforit flags file 
-  = sequence_
-       ([putStrLn (show flags)] ++
-        [putStrLn (inputFile file) ]
-       ) 
+phase1 :: Options -> IO(Context)
+phase1 flags  
+      = let fnFull = adlFileName flags in
+        do verbose flags "Parsing... "
+           adlText <- readFile fnFull
+           context <- parseADL adlText flags fnFull 
+           return context
 
+phase2 :: Options -> Context -> IO(Fspc)
+phase2 flags context = do verboseLn flags "Calculating..."
+                          return (makeFspec context)
+                          
+phase3 :: Options -> Fspc -> IO()
+phase3 flags fSpec = 
+    sequence_ 
+       ([ verboseLn flags "Generating..."]++
+      --[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
+      --[ makeXML_depreciated context| "-XML" `elem` switches]++
+        [ showHaskell fSpec flags | haskell flags] ++ 
+--        [ serviceGen fSpec (language flags) filename| "-services" `elem` switches]
+      --[ diagnose context| "-diag" `elem` switches]++
+      --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+      --[ cdModel context | "-CD" `elem` switches]++
+      --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
+      --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++
+      --[ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
+      --[ deriveProofs context ("-m" `elem` switches)| "-proofs" `elem` switches]
+ --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
+ --               ++[ csvcontent context | "-csv" `elem` switches]
+ --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
+ --    ) 
+        [ verbose flags "Done."]
+       ) 
                                
 
-inputFile :: String -> String
-inputFile name 
- = if ".adl" `isSuffixOf` name
-   then name
-   else name ++ ".adl"
-
-defaultContextName :: String -> String
-defaultContextName name 
- = if ".adl" `isSuffixOf` name
-   then take (length name - 4) name
-   else name

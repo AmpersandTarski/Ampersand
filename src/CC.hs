@@ -1,4 +1,4 @@
-  module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars,Architecture) where
+  module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars,Architecture,Context) where
    import UU_Scanner
    import UU_Parsing
    import CommonClasses ( Identified(name))

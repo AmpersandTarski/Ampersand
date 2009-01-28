@@ -88,11 +88,11 @@ where
                               if null cs
                               then error ("!Mistake: context "++contextname++" was not encountered in input file.\n")
                               else head cs
-         ; let Typ pths = if null contexts then Typ [] else
-                          if length args>1 && contextname `elem` map name contexts
-                          then typology (ADLdef.isa (head [c| c<-contexts,name c==contextname]))
-                          else typology (ADLdef.isa (head contexts))
-         ; putStr "\nConcepts:\n" >>(putStr.chain "\n".map show) (makeTrees (Typ (map reverse pths)))
+--         ; let Typ pths = if null contexts then Typ [] else
+--                          if length args>1 && contextname `elem` map name contexts
+--                          then typology (ADLdef.isa (head [c| c<-contexts,name c==contextname]))
+--                          else typology (ADLdef.isa (head contexts))
+--         ; putStr "\nConcepts:\n" >>(putStr.chain "\n".map show) (makeTrees (Typ (map reverse pths)))
 
            -- Now we have Contexts with or without errors in it. If there are no errors,
            -- AND the argument matches the context name, then the build is done for that 

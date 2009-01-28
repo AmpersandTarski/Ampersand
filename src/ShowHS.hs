@@ -209,22 +209,14 @@ where
        indent++"where"++
        indent++" isa = "++showHS (indent++"       ") (ADLdef.isa context)++
        indent++" gE  = genEq (typology isa)"++
-       " ##1## " ++
        (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
-       " ##2## " ++
        (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"")++
        (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
-       " ##3## " ++
        (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
-       " ##4## " ++
        (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
-       " ##5## " ++
        (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
-       " ##6## " ++
        (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
-       " ##7## " ++
-       (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")++
-       " ##8## " 
+       (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
     -- patterns will be shown in  (showHS indent Fspec)
        where pats = ctxpats context     --  patterns declared in this context
              rs   = rules context       --  rules declared in this context, except the signals
@@ -351,24 +343,24 @@ where
 
    instance ShowHS Expression where
     showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
---    showHS indent (Tm m)   = "Tm ("++showHS "" m++") "
---    showHS indent (Tc f)   = showHS indent f
---    showHS indent (F [])   = "F [] <Id>"
---    showHS indent (Fd [])  = "Fd [] <nId>"
---    showHS indent (Fu [])  = "Fu [] <False>"
---    showHS indent (Fi [])  = "Fi [] <True>"
---    showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
---    showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
---    showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
---    showHS indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS (indent++"     ") t| t<-ts]++indent++"   ]"
---    showHS indent (Fu [f]) = "Fu ["++showHS (indent++"    ") f++"]"
---    showHS indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
---    showHS indent (Fi [f]) = "Fi ["++showHS (indent++"    ") f++"]"
---    showHS indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
---    showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
---    showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
---    showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
-    showHS indent e = "&& "++show e ++" &&"   
+    showHS indent (Tm m)   = "Tm ("++showHS "" m++") "
+    showHS indent (Tc f)   = showHS indent f
+    showHS indent (F [])   = "F [] <Id>"
+    showHS indent (Fd [])  = "Fd [] <nId>"
+    showHS indent (Fu [])  = "Fu [] <False>"
+    showHS indent (Fi [])  = "Fi [] <True>"
+    showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
+    showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
+    showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
+    showHS indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS (indent++"     ") t| t<-ts]++indent++"   ]"
+    showHS indent (Fu [f]) = "Fu ["++showHS (indent++"    ") f++"]"
+    showHS indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
+    showHS indent (Fi [f]) = "Fi ["++showHS (indent++"    ") f++"]"
+    showHS indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
+    showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
+    showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
+    showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
