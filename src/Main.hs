@@ -1,8 +1,7 @@
  {-# LANGUAGE ScopedTypeVariables#-}
 module Main where
 
-
-import Options               (getOptions,Options(..),usageInfo')
+import Options               (getOptions,Options(..),usageInfo',verboseLn,verbose)
 import Version               (versionbanner)
 import Parser                (parseADL)
 import Data.ADL              (Context)
@@ -24,10 +23,10 @@ mainnew
        then putStrLn versionbanner
        else if showHelp flags 
        then mapM_ putStrLn [(usageInfo' (progrName flags))]
-       else do context <- phase1 flags 
+       else do verboseLn flags (show flags) 
+               context <- phase1 flags 
                fSpec   <- phase2 flags context
                phase3 flags fSpec
-       
 
 phase1 :: Options -> IO(Context)
 phase1 flags  
@@ -47,7 +46,10 @@ phase3 flags fSpec =
        ([ verboseLn flags "Generating..."]++
       --[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
       --[ makeXML_depreciated context| "-XML" `elem` switches]++
-        [ showHaskell fSpec flags | haskell flags] ++ 
+        [ doGenAtlas fSpec flags | genAtlas flags] ++
+        [ doGenXML   fSpec flags | genXML flags] ++
+        [ doGenHaskell fSpec flags | haskell flags] ++ 
+        [ doGenProto fSpec flags | genPrototype flags]++
         [ serviceGen  fSpec flags | services flags] ++
       --[ diagnose context| "-diag" `elem` switches]++
       --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++

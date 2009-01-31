@@ -1,4 +1,9 @@
-  module RelBinGenBasics where
+  module RelBinGenBasics(phpIdentifier,
+                         selectExpr,sqlExprTrg,sqlExprSrc,addSlashes,sqlMorName
+                        ,sqlConcept,sqlAttConcept,sqlMorSrc
+                        ,sqlClosName,closE,sqlRelName,sqlRelSrc,sqlRelTrg
+                        ,phpShow,insConcept
+                        ,selectNormFiExpr,clos0,pDebug,noCollide) where
    import Char
    import Auxiliaries
    import ADLdef

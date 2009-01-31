@@ -4,8 +4,9 @@
          , module Auxiliaries
          , module Strings 
          , Fidentified(..)
-         , fspc_patterns
-         , themesOfPatterns)
+     --    , fspc_patterns
+     --    , themesOfPatterns
+         )
 
   where
 
@@ -15,10 +16,10 @@
    import Strings(chain)
    import Data.Fspec
 
-   fspc_patterns :: Fspc -> Patterns
-   fspc_patterns spec = themesOfPatterns (themes spec)     
-   themesOfPatterns :: [Ftheme] -> [Pattern]
-   themesOfPatterns themes = [ftpat tm | tm <-themes]
+   --fspc_patterns :: Fspc -> Patterns
+   --fspc_patterns spec = themesOfPatterns (themes spec)     
+   --themesOfPatterns :: [Ftheme] -> [Pattern]
+   --themesOfPatterns themes = [ftpat tm | tm <-themes]
 
 
 
@@ -113,7 +114,8 @@
 -- \***********************************************************************
    instance Identified ServiceSpec where
     typ sspc = "f_svc"
-
+    name sspc = name (ssid sspc)
+    
    instance Fidentified ServiceSpec where
       fsid ss = ssid ss 
 

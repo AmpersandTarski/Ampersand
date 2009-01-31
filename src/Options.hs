@@ -1,5 +1,5 @@
 
-module Options (Options(..),getOptions,usageInfo')
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName, exitFailure)
@@ -15,30 +15,33 @@ import System.Directory
 data Options = Options { contextName   :: Maybe String
                        , showVersion   :: Bool
                        , showHelp      :: Bool
-                       , verbose       :: String -> IO ()  -- vervangt putStr -- Voor de fijnproevers: Een functie kan hier ook! ;-)) 
-                       , verboseLn     :: String -> IO ()  -- vervangt putStrLn
-                       , genPrototype  :: Bool 
-                       , uncheckedDirPrototype  :: Maybe String
-                       , dirPrototype  :: String
-                       , allServices   :: Bool
-                       , services      :: Bool
-                       , dbName        :: Maybe String
-                       , genAtlas      :: Bool
-                       , uncheckedDirAtlas      :: Maybe String
-                       , dirAtlas      :: String
-                       , xml           :: Bool
-                       , fspec         :: Bool
-                       , proofs        :: Bool
-                       , haskell       :: Bool
-                       , uncheckedDirOutput     :: Maybe String
-                       , dirOutput     :: String     
-                       , beeper        :: Bool
-                       , crowfoot      :: Bool
-                       , language      :: Lang
+        --             , verbose       :: String -> IO ()  -- vervangt putStr -- Voor de fijnproevers: Een functie kan hier ook! ;-)) 
+		--			   , verboseLn     :: String -> IO ()  -- vervangt putStrLn
+					   , verboseP      :: Bool
+					   , genPrototype  :: Bool 
+					   , uncheckedDirPrototype  :: Maybe String
+					   , dirPrototype  :: String
+					   , allServices   :: Bool
+					   , dbName        :: Maybe String
+					   , genAtlas      :: Bool
+					   , uncheckedDirAtlas      :: Maybe String
+					   , dirAtlas      :: String
+					   , genXML        :: Bool
+					   , fspec         :: Bool
+					   , proofs        :: Bool
+					   , haskell       :: Bool
+					   , uncheckedDirOutput     :: Maybe String
+					   , dirOutput     :: String     
+					   , beeper        :: Bool
+					   , crowfoot      :: Bool
+					   , language      :: Lang
                        , progrName     :: String
                        , adlFileName   :: String
                        , baseName      :: String
-                       } 
+                       , logName       :: String
+                       , uncheckedLogName :: Maybe String
+                       , services      :: Bool
+                       } deriving Show
  
 getOptions :: IO Options
 getOptions = 
@@ -55,15 +58,17 @@ getOptions =
 
 checkPaths :: Options -> IO Options
 checkPaths flags = 
-        do verboseLn flags ("Checking output directories...")
+        do flags0  <- case uncheckedLogName flags of
+                          Nothing -> return flags { logName = "ADL.log"}
+                          Just s  -> return flags { logName = s } 
+           verboseLn flags0 ("Checking output directories...")
            currDir <- getCurrentDirectory
-           flags1 <- case uncheckedDirOutput flags of
-                          Nothing -> return flags { dirOutput = currDir }
+           flags1  <- case uncheckedDirOutput flags0 of
+                          Nothing -> return flags0 { dirOutput = currDir }
                           Just s  -> do exists <- doesDirectoryExist s
                                         if exists
-                                          then return flags { dirOutput =  s}
+                                          then return flags0 { dirOutput =  s}
                                           else ioError (userError ("Directory does not exist: "++s))  
-
            flags2 <- if genPrototype flags1
                         then case uncheckedDirPrototype flags1 of
                              Nothing -> return flags1 { dirPrototype = dirOutput flags1 }
@@ -80,9 +85,6 @@ checkPaths flags =
                                              then return flags2 { dirAtlas = s }
                                              else ioError (userError ("Directory does not exist: "++s))
                         else return flags2  {- No need to check if no atlas will be generated. -}
-           verboseLn flags3 (dirOutput flags3)
-           verboseLn flags3 (dirPrototype flags3) 
-           verboseLn flags3 (dirAtlas flags3) 
            return flags3                  
              
 
@@ -103,19 +105,25 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option ['v']     ["version"]      (NoArg versionOpt)          "show version and exit"
            , Option ['h','?'] ["help"]         (NoArg helpOpt)             "get (this) usage information"
            , Option []        ["verbose"]      (NoArg verboseOpt)          "verbose error message format"
-           , Option ['p']     ["proto"]        (OptArg prototypeOpt "dir") "generate a functional prototype with services defined in ADL file" 
+           , Option ['p']     ["proto"]        (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file (dir overrides "++
+                                                                                envdirPrototype ++ " )") 
            , Option ['P']     ["maxServices"]  (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"
+           , Option ['d']     ["dbName"]       (OptArg dbNameOpt "name")   ("use database with name (name overrides "++
+                                                                                envdbName ++ " )")
            , Option ['s']     ["services"]     (NoArg servicesOpt)         "generate service specifications in ADL format"
-           , Option ['d']     ["dbName"]       (OptArg dbNameOpt "name")   "use database with name"
-           , Option ['a']     ["atlas"]        (OptArg atlasOpt "dir" )    "generate atlas (optional an output directory, defaults to current directory)"
+           , Option ['a']     ["atlas"]        (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
+                                                                                envdirAtlas ++ " )")
            , Option []        ["XML"]          (NoArg xmlOpt)              "generate XML output"
            , Option []        ["fspec"]        (NoArg fspecOpt)            "generate a functional specification document"
            , Option []        ["proofs"]       (NoArg proofsOpt)           "generate correctness proofs"
            , Option []        ["haskell"]      (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"
-           , Option ['o']     ["outputDir"]    (ReqArg outputDirOpt "dir") "default directory for generated files"        
+           , Option ['o']     ["outputDir"]    (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
+                                                                                envdirOutput ++ " )")        
            , Option []        ["beeper"]       (NoArg beeperOpt)           "generate beeper instead of checker"
            , Option []        ["crowfoot"]     (NoArg crowfootOpt)         "generate crowfoot notation in graphics"
-           , Option ['l']     ["language"]     (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"
+           , Option []        ["language"]     (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"
+           , Option ['l']     ["log"]          (ReqArg logOpt "name")       ("log to file with name (name overrides "++
+                                                                                envlogName  ++ " )")
            ]
 
 defaultOptions :: [(String, String)] -> String -> String -> Options
@@ -123,22 +131,22 @@ defaultOptions env fName pName
                = Options { contextName   = Nothing
                          , showVersion   = False
                          , showHelp      = False
-                         , verbose       = hushup
-                         , verboseLn     = hushup
-                         , genPrototype  = False
-                         , uncheckedDirPrototype  = lookup "CCdirPrototype" env
-                         , dirPrototype  = unchecked
-                         , allServices   = False
-                         , services      = False
-                         , dbName        = lookup "CCdbName" env
-                         , genAtlas      = False   
-                         , uncheckedDirAtlas      = lookup "CCdirAtlas" env
-                         , dirAtlas      = unchecked
-                         , xml           = False 
-                         , fspec         = False
-                         , proofs        = False
-                         , haskell       = False
-                         , uncheckedDirOutput     = lookup "CCdirOutput" env
+                   --      , verbose       = donothing
+			       --      , verboseLn     = donothing
+			             , verboseP      = False
+			             , genPrototype  = False
+					     , uncheckedDirPrototype  = lookup envdirPrototype env
+            		     , dirPrototype  = unchecked
+            		     , allServices   = False
+		                 , dbName        = lookup "CCdbName" env
+		                 , genAtlas      = False   
+            		     , uncheckedDirAtlas      = lookup envdirAtlas env
+            		     , dirAtlas      = unchecked
+            		     , genXML        = False 
+	            	     , fspec         = False
+	            	     , proofs        = False
+	            	     , haskell       = False
+	            	     , uncheckedDirOutput     = lookup envdirOutput env
                          , dirOutput     = unchecked
                          , beeper        = False
                          , crowfoot      = False
@@ -146,40 +154,51 @@ defaultOptions env fName pName
                          , progrName     = pName
                          , adlFileName   = replaceExtension fName ".adl"
                          , baseName      = dropExtension  fName
+                         , uncheckedLogName = lookup envlogName env
+                         , logName       = "ADL.log"
+                         , services      = False
                          }
                     
+envdirPrototype = "CCdirPrototype"
+envdirAtlas="CCdirAtlas"
+envdirOutput="CCdirOutput"
+envdbName="CCdbName"
+envlogName="CClogName"
 
 contextOpt  nm  opts = opts{contextName  = nm}            
 versionOpt      opts = opts{showVersion  = True}            
 helpOpt         opts = opts{showHelp     = True}            
-verboseOpt      opts = opts{verbose      = putStr
-                           ,verboseLn    = putStrLn}            
+verboseOpt      opts = opts{ -- verbose      = putStr
+                            --,verboseLn    = putStrLn
+                            verboseP     = True}            
 prototypeOpt nm opts = opts{uncheckedDirPrototype = nm
-                           ,dirPrototype = unchecked   
                            ,genPrototype = True}
 maxServicesOpt  opts = opts{genPrototype = True
                            ,allServices  = True}                            
 dbNameOpt nm    opts = opts{dbName       = nm}
 atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
-                           ,dirAtlas     = unchecked
                            ,genAtlas     = True}
-xmlOpt          opts = opts{xml          = True}
+xmlOpt          opts = opts{genXML       = True}
 fspecOpt        opts = opts{fspec        = True}
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt     opts = opts{services     = True}
 haskellOpt      opts = opts{haskell      = True}
-outputDirOpt nm opts = opts{uncheckedDirOutput    = Just nm
-                           ,dirOutput    = unchecked}
+outputDirOpt nm opts = opts{uncheckedDirOutput    = Just nm}
 beeperOpt       opts = opts{beeper       = True}
 crowfootOpt     opts = opts{crowfoot     = True}
 languageOpt l   opts = opts{language     = case map toUpper l of
                                              "NL"      -> Dutch
                                              "UK"      -> English
                                              otherwise -> Dutch}
-hushup  :: String -> IO ()
-hushup s = putStr ""
-
-
+logOpt nm       opts = opts{uncheckedLogName = Just nm} 
+verbose flags x
+    | verboseP flags = putStr x
+    | otherwise      = donothing
    
-unchecked = "@@UNCHECKED@@"
+verboseLn flags x
+    | verboseP flags = putStrLn x
+    | otherwise      = donothing
+    
+donothing = putStr ""   -- Ik weet zo gauw niet hoe dit anders moet....
+unchecked = "."
                              

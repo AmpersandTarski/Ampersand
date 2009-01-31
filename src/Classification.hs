@@ -73,7 +73,7 @@
     empty = Bottom
     elems Bottom = []
     elems (Cl r cls) = r: [c| cl<-cls, c<-elems cl]
- --   rd (Cl r cls) =
+    rd (Cl r cls) = error ("Module Classifications needs a fix....")
 
 
     lcl `isc` rcl | length trees==1 = head trees

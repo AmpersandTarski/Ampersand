@@ -49,18 +49,28 @@ where
     showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS "" (pfixFSid "f_Ctx_" (fsid fspec)) 
     showHS indent fspec
      = "Fspc"++showHS " " (fsid fspec)++
-       (if null (themes   fspec) then " []" else indent++"{- themes:    -}  "++showL [showHSname t|t<-themes   fspec ])++
+       "##1## \n"++
+   --    (if null (themes   fspec) then " []" else indent++"{- themes:    -}  \n"++showL [showHSname t ++"\n"|t<-themes   fspec ])++
+       "##2## \n"++
        (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
+       "##3## \n"++
        (if null (serviceS fspec) then " []" else indent++"{- serviceS:  -}  "++showL [showHSname s|s<-serviceS fspec ])++
+       "##4## \n"++
        (if null (serviceG fspec) then " []" else indent++"{- serviceG:  -}  "++showL [showHSname s|s<-serviceG fspec ])++
+       "##5## \n"++
        (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
+       "##6## \n"++
        (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
+       "##7## \n"++
        indent++" isa "++
+       "##8## \n"++
        indent++"where"++
+       "##9## \n"++
        indent++" isa = "++ showHS (indent ++ "       ") (FspecDef.isa fspec)++
+       "##10## \n"++
        indent++" gE = genEq (typology isa)"++
         "\n>-- ***THEMES***: "++
-       (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+   --    (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
         "\n>-- ***DATASETS***: "++
        (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
         "\n>-- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++
@@ -74,7 +84,8 @@ where
         "\n>-- ***DECLARATIONS OF RELATIONS***: "++
        (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
         "\n>-- ***PATTERNS***: "++
-       (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++"\n")
+--       (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
+        "\n"
 
 
 -- \***********************************************************************
@@ -82,7 +93,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Ftheme where
-    showHSname ftheme = typ ftheme ++ "_" ++ showHSname (fsid ftheme) --showHS "" (pfixFSid "f_Theeeeeeeem_" (fsid ftheme))
+    showHSname ftheme = "ZIT HIER DE FOUT?? \n" -- typ ftheme ++ "_" ++ showHSname (fsid ftheme) --showHS "" (pfixFSid "f_Theeeeeeeem_" (fsid ftheme))
     showHS indent ftheme
      = "Tspc ("++showHS "" (fsid ftheme)++")"
               ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-units(ftheme)]++indent++"     ]"

@@ -1,5 +1,3 @@
-{-# LINE 1 "ObjBinGenObjectWrapper.lhs" #-}
-#line 1 "ObjBinGenObjectWrapper.lhs"
   module ObjBinGenObjectWrapper where
    import Char
    import Auxiliaries
@@ -9,7 +7,7 @@
    import PredLogic -- (for error messages by dbCorrect)
    import Hatml     -- (for converting error messages to HTML)
    import Atlas     -- (for converting error messages to HTML)
-   import RelBinGenBasics
+   import RelBinGenBasics (phpIdentifier)
   
 
    objectWrapper objectName

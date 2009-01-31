@@ -12,7 +12,11 @@
  --  import Hatml     -- (for converting error messages to HTML)
  --  import Atlas     -- (for converting error messages to HTML)
    import Calc (conjNF)
-   import RelBinGenBasics
+   import RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,addSlashes,sqlMorName
+                        ,sqlConcept,sqlAttConcept,sqlMorSrc
+                        ,sqlClosName,closE,sqlRelName,sqlRelSrc,sqlRelTrg
+                        ,phpShow,insConcept
+                        ,selectNormFiExpr,clos0,pDebug,noCollide)
    import Version (versionbanner)
 
 
