@@ -288,11 +288,8 @@
     showsPrec p (V atts (a,b))              = showString ("V"++ (if null atts then "" else show atts))
 
    instance Identified Morphism where
---    name (Mph nm _ _ _ _ _) = nm    -- WAAROM (HJ)? zou name (makeDeclaration (Mph nm _ _ _ _ _)) het ook niet doen? Dan is de definitie op de volgende regel voldoende. 
-                                    -- ANTWOORD (SJ): Tja, dat klopt. Maar het is ook wel eens lekker om gewoon te kunnen lezen hoe het is, in plaats van continu te moeten dereferencen als je code leest...
-                                    -- conclusie: Toch maar verwijderd, want dat is weer een onnodige afhankelijkheid van de datastructuur minder...
-    name i = name (makeDeclaration i)
-    typ mph = "Morphism_"
+    name m = name (makeDeclaration m)
+    typ m = "Morphism_"
 
    instance Association Morphism where
 --    source (Mph nm pos atts (a,b) _ s) = a
@@ -310,8 +307,8 @@
     source m = source (sign m)
     target m = target (sign m)
    instance Numbered Morphism where
-    pos (Mph _ p _ _ _ _) = p
-    pos m                 = posNone
+    pos m@(Mph{}) = mphpos m
+    pos m         = posNone
     nr m = nr (makeDeclaration m)
 
     

@@ -76,12 +76,12 @@ module Statistics where
 -- \*** Eigenschappen met betrekking tot: Dataset                       ***
 -- \*** TODO: zowel datasets als services worden weergegeven middels een ObjectDef. Dit maakt voor de functiepuntentelling natuurlijk wel wat uit, dus dat kan zo niet....
    instance Statistics ObjectDef where
-    nServices (Obj nm _ _ [])  = 2 -- dit is een associatie, en dus een binaire relatie
-    nServices (Obj nm _ _ ats) = 4 -- dit is een entiteit met één of meer attributen.
-    nPatterns (Obj nm _ _ [])  = 0
-    nPatterns (Obj nm _ _ ats) = 0
-    nFpoints  (Obj nm _ _ [])  = fPoints (ILGV Eenvoudig)
-    nFpoints  (Obj nm _ _ ats) = fPoints (ILGV Eenvoudig)
+    nServices (Obj nm _ _ []  _) = 2 -- dit is een associatie, en dus een binaire relatie
+    nServices (Obj nm _ _ ats _) = 4 -- dit is een entiteit met één of meer attributen.
+    nPatterns (Obj nm _ _ []  _) = 0
+    nPatterns (Obj nm _ _ ats _) = 0
+    nFpoints  (Obj nm _ _ []  _) = fPoints (ILGV Eenvoudig)
+    nFpoints  (Obj nm _ _ ats _) = fPoints (ILGV Eenvoudig)
 -- \*** TODO: de functiepuntentelling voor Services zou er als volgt uit moeten zien....
 --   instance Statistics ObjectDef where
 --    nServices o = 4+sum [nServices a| a<-attributes o]

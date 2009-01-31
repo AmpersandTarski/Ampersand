@@ -99,10 +99,11 @@ module Data.ADL where
               }
 
    type ObjectDefs = [ObjectDef]
-   data ObjectDef = Obj { objnm  :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                        , objpos :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
-                        , objctx :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
-                        , objats :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
+   data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                        , objpos  :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
+                        , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+                        , objats  :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
+                        , objstrs :: [[String]]     -- ^ directives that specify the interface.
                         } 
 
    type Expressions = [Expression]
@@ -124,11 +125,13 @@ module Data.ADL where
                       
    type Morphisms = [Morphism]
    data Morphism  = 
-                   Mph { mphnm :: String   -- ^ the name of the morphism. This is the same name as
-                                           --   the declaration that is bound to the morphism.    WAAROM Stef, waarom zou je dit attribuut opnemen? Als het niet is opgenomen, dan kan je altijd zeggen dat de naam van het morphisme gelijk is aan de naam van z'n makeDeclaration. Nu kan dat niet. Voorstel: Dit attribuut slopen. 
+                   Mph { mphnm :: String             -- ^ the name of the morphism. This is the same name as
+                                                     --   the declaration that is bound to the morphism.
+                                                     --    WAAROM Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
+                                                     --    ANTWOORD Tijdens het parsen, tot het moment dat de declaration aan het Morphism is gekoppeld, moet de naam van het Morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
                        , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
                        , mphats :: [Concept]         -- ^ the attributes specified inline
-                       , mphtyp :: Sign         -- ^ the allocated type. Together with the name, this forms the declaration.
+                       , mphtyp :: Sign              -- ^ the allocated type. Together with the name, this forms the declaration.
                        , mphyin :: Bool              -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
                        , mphdcl :: Declaration       -- ^ the declaration bound to this morphism.
                        }

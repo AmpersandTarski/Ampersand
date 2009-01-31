@@ -9,8 +9,9 @@
    import Dataset
    import ShowADL
    import FspecDef
-   import LaTeX (tt)   -- Dat is hier natuurlijk helemaal niet op z'n plaats! (TODO opruimen)
-   import Calc(lClause,rClause,makeRule,allClauses,doClause,conjuncts,conjNF,simplPAclause)
+   import Calc
+   import PredLogic
+   import Languages
 
  -- The story:
  -- A number of datasets for this context is identified.
@@ -41,22 +42,27 @@
            [ [ (objdefNew (v (cptS,c)))
                   { objnm  = name c
                   , objats = [ (objdefNew (Tm m))
-                                  { objnm  = show (name m++" "++name (target m))
-                                  , objats = let ats = [ (objdefNew att) { objnm = showADL att++" "++name (target att) }
+                                  { objnm  = name m++name (target m)
+                                  , objstrs = [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
+                                  , objats = let ats = [ (objdefNew att) { objnm = concat [name m| m<-morlist att]++name (target att)
+                                                                         , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
+                                                                         }
                                                        | att<-recur [] (target m)]
                                              in if null ats then []
                                                 else ((objdefNew (Tm (mIs (target m))))
                                                          { objnm = name (target m) }):ats
                                   }
                              | m<-relsFrom c, not (isSignal m)]++
-                             [ (objdefNew (notCp (normExpr (srsig s)))) {objnm=name m}
-                             | m<-relsFrom c, isSignal m, s<-signals context, source m==source s, name (srrel s) == name m ]++
-                             [ (objdefNew (notCp (normExpr (flp (srsig s))))) {objnm=name m}
-                             | m<-relsFrom c, isSignal m, s<-signals context, source m==target s, name (srrel s) == name m ]
+                             [ ((objdefNew . disjNF . notCp) (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
+                                  { objnm   = name (srrel s)
+                                  , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
+                                  }
+                             | s<-signals context, source s==c || target s==c ]
                   }]
              ++let ats = [ (objdefNew (Tm m))
-                              { objnm  = show (name m++" "++name (target m))
-                              , objats = []
+                              { objnm   = name m++name (target m)
+                              , objstrs = [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
+                              , objats  = []
                               }
                          | m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
                in [(objdefNew (Tm (mIs S)))
@@ -68,13 +74,20 @@
                      }| not (null ats)]
            | c<-concs context ]
            where
-            relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d<-declarations context, source d == c]++
-                         [flp (Mph (name d) posNone [] (source d,target d) True d)| d<-declarations context, target d == c]
+            relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
+                         [flp (Mph (name d) posNone [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
             recur :: [Morphism] -> Concept -> [Expression]
             recur rs c
              = [ F [Tm m| m<-rs++[n]] | n<-new, not (n `elem` rs)] ++
                [ rs' | n<-new, not (n `elem` rs), rs' <-recur (rs++[n]) (target n) ] 
-               where new = [m| m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+               where new = [m| m<-relsFrom c, not (isSignal m), not (isIdent m), Tot `elem` multiplicities m]
+            props ps = [if Sym `elem` ps && Asy `elem` ps then ["PROPERTY"] else
+                        if Tot `elem` ps && Uni `elem` ps then ["ATTRIBUTE"] else
+                        if Tot `elem` ps                  then ["NONEMPTY LIST"] else
+                        if                  Uni `elem` ps then ["OPTIONAL FIELD"] else
+                                                               ["LIST"]
+                       ]
+
 -- serviceS contains the services defined in the ADL-script.
 -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
 -- A generic user interface (the Monastir interface) is already available.
@@ -221,7 +234,7 @@
           results     = [ Aspc (makeFSid1 "objs") ("["++handle context o++"]")]  -- results
           invariants  = []                 -- rules
           preconds    = []                 -- Precondition
-          postconds   = ([tt "objs"++"= I["++name (concept o)++"]"]) -- Postcondition
+          postconds   = (["objs"++"= I["++name (concept o)++"]"]) -- Postcondition
 
    createObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
    createObj context o rs
@@ -242,7 +255,7 @@
                          , not (null (mors o `isc` mors [t| Cp t<-terms]))])
           preconds    =  []
  --    Post (example:) {o in Pair and o left l and o right r}
-          postconds   =  ([tt ("obj."++name a)++"="++tt (varName (name a))|a<-attributes o])
+          postconds   =  ([("obj."++name a)++"="++(varName (name a))|a<-attributes o])
           varName :: String -> String
           varName = uName (map name (attributes o))
    readObj :: Context -> ObjectDef -> ServiceSpec
@@ -259,9 +272,9 @@
           results     = [Aspc (makeFSid1 (varName (name a))) (handle context a) | a<-attributes o]
           invariants  = []
  --    Pre (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
-          preconds    = ([ tt ("x."++name a)++"="++idNam (nameAt a) |a<-attributes o])
+          preconds    = ([ ("x."++name a)++"="++idNam (nameAt a) |a<-attributes o])
  --    Post (example:) {left=l, right=r, src=s, and trg=t}
-          postconds   = [tt (varName (name a))++"="++idNam (nameAt a)|a<-attributes o]
+          postconds   = [(varName (name a))++"="++idNam (nameAt a)|a<-attributes o]
           varName :: String -> String
           varName = uName (map name (attributes o))
 
@@ -280,8 +293,8 @@
           results     = [Aspc (makeFSid1 "obj") (handle context o)]
           invariants  = []
  --    Pre (example:) {Assume l=atom_left and r=atom_right}
-          preconds    = [let args = [tt ("x."++name a)++"="++tt (varName (name a)) | a<-attributes o] ++
-                                    [tt ("x."++name a)++"="++idNam (nameAt a)      | a<-attributes o, not (name a `elem` map name ats')]
+          preconds    = [let args = [("x."++name a)++"="++(varName (name a)) | a<-attributes o] ++
+                                    [("x."++name a)++"="++idNam (nameAt a)      | a<-attributes o, not (name a `elem` map name ats')]
                          in
                          "\\hbox{There is an {\\tt x}}\\in"++idName (concept o)++"\\ \\hbox{such that}"++
                          (if length args==1 then "\\ "++concat args else
@@ -290,7 +303,7 @@
                           "&)\n\\end{array}$"
                          )]
  --    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
-          postconds   = ([ tt "obj"++"="++tt "x"])
+          postconds   = ([ "obj"++"="++"x"])
           varName :: String -> String
           varName = uName (map name (attributes o))
 
@@ -316,9 +329,9 @@
           preconds    = []
  --    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
           postconds   = ["\\hbox{\\tt obj}\\in"++idName o++"\\ \\hbox{implies that not}"++
-                         (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++tt ("obj."++name a)++"="++showADL (ctx a)++")" else
+                         (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++("obj."++name a)++"="++showADL (ctx a)++")" else
                          "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
-                         chain "\\\\\n" ["&"++tt ("obj."++name a)++"="++tt (varName (name a))|a<-attributes o]++
+                         chain "\\\\\n" ["&"++("obj."++name a)++"="++(varName (name a))|a<-attributes o]++
                          "&)\n\\end{array}$"
                          )]
           varName :: String -> String
@@ -340,7 +353,7 @@
  --    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
           preconds    = []
  --    Post (example:) {x left l, x right r, x src s, and x trg t}
-          postconds   = [ tt ("x."++name a)++"="++tt (varName (name a))|a<-attributes o]
+          postconds   = [ ("x."++name a)++"="++(varName (name a))|a<-attributes o]
           varName :: String -> String
           varName = uName (map name (attributes o))
 
@@ -362,17 +375,17 @@
                         , clause@(Fu terms)<-[rClause conj]
                         , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
  --    Pre
-          preconds    = [if length (attributes o)==1 then let a=head (attributes o) in tt ("x."++name a)++"="++idNam (nameAt a) else
+          preconds    = [if length (attributes o)==1 then let a=head (attributes o) in ("x."++name a)++"="++idNam (nameAt a) else
                          "$\\begin{array}[t]{lll}\n"++
-                         chain "\\\\\nand" ["&"++tt ("x."++name a)++"="++idNam (nameAt a)|a<-(attributes o)]++
+                         chain "\\\\\nand" ["&"++("x."++name a)++"="++idNam (nameAt a)|a<-(attributes o)]++
                          "&\n\\end{array}$"
                         | not (null (attributes o))]
  --    Post 
           postconds   = [if null (attributes o) then "\\hbox{\\tt x}\\not\\in"++idName (concept o) else
                          "\\hbox{\\tt obj}\\in"++idName (concept o)++"\\ \\hbox{implies that not}"++
-                         (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++tt ("obj."++name a)++"="++idNam (nameAt a)++")" else
+                         (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++("obj."++name a)++"="++idNam (nameAt a)++")" else
                          "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
-                         chain "\\\\\nand" ["&"++tt ("obj."++name a)++"="++idNam (nameAt a)|a<-attributes o]++
+                         chain "\\\\\nand" ["&"++("obj."++name a)++"="++idNam (nameAt a)|a<-attributes o]++
                          "&)\n\\end{array}$"
                          )]
 

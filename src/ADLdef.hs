@@ -162,7 +162,7 @@
     populations  _ = []
 
 
-   objdefNew e = Obj "" posNone e []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
+   objdefNew e = Obj "" posNone e [] []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
 
 
    instance Morphical KeyDef where

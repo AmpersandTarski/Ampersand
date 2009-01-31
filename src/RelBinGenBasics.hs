@@ -107,7 +107,7 @@
             sub (Cp e) = Cp (sub e)
             sub (K0 e) = K0 (sub e)
             sub (K1 e) = K1 (sub e)
-            sub (Tm m@(Mph _ _ _ _ _ _)) = subMorph [ x | x@(r,_,_)<-s, sqlMorName ctx m == sqlMorName ctx r] m
+            sub (Tm m@(Mph{})) = subMorph [ x | x@(r,_,_)<-s, sqlMorName ctx m == sqlMorName ctx r] m
             sub (Tm m) = Tm m
             sub (Tc e) = Tc (sub e)
             subMorph trs m | isIdent m = mp1 to (head [a|(r,a,_)<-s,sqlMorName ctx m == sqlMorName ctx r]) (source m)
@@ -342,7 +342,7 @@
    selectExprBrac ctx i src trg (F  [e])                             = selectExprBrac ctx i src trg e
    selectExprBrac ctx i src trg (Fi [e])                             = selectExprBrac ctx i src trg e
    selectExprBrac ctx i src trg (Fu [e])                             = selectExprBrac ctx i src trg e
-   selectExprBrac ctx i src trg (Tm m@(Mph _ _ _ _ _ _))
+   selectExprBrac ctx i src trg (Tm m@(Mph{}))
     | (sqlMorSrc ctx m,sqlMorTrg ctx m)==(src,trg) = sqlMorName ctx m
    selectExprBrac ctx i src trg (K0 e)
     | (sqlExprSrc e,sqlExprTrg e)==(src,trg)                         = sqlRelName ctx (K0 e)
@@ -436,15 +436,14 @@
     sqlClosName context (Fi [e]) = sqlClosName context e
 
    instance IsClos Morphism where
-    isClos (Mph _ _ _ _ _ d) = isClos d
+    isClos m@(Mph{}) = isClos (mphdcl m)
     isClos _ = False
-    sqlClosName ctx mph@(Mph _ _ _ _ False _) = sqlClosName ctx (K0 (Tm (flp mph)))
-    sqlClosName ctx mph@(Mph _ _ _ _ _ _) = sqlClosName ctx (K0 (Tm mph))
-
+    sqlClosName ctx mph@(Mph{}) = sqlClosName ctx (K0 (Tm (if mphyin mph then mph else flp mph)))
+    sqlClosName _ _ = error ("Module RelBinGenBasics: incomplete pattern in sqlClosName.")
    instance IsClos Declaration where
     isClos s = take 4 (name s) == "Clos"
-    sqlClosName context s | isClos s = name s
-
+    sqlClosName context s | isClos s  = name s
+                          | otherwise = error ("Module RelBinGenBasics: incomplete condition in sqlClosName.")
 
 
    phpIndent i = "\n"++[' '|n<-[1..i]]

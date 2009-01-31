@@ -48,7 +48,7 @@ phase3 flags fSpec =
       --[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
       --[ makeXML_depreciated context| "-XML" `elem` switches]++
         [ showHaskell fSpec flags | haskell flags] ++ 
---        [ serviceGen fSpec (language flags) filename| "-services" `elem` switches]
+        [ serviceGen  fSpec flags | services flags] ++
       --[ diagnose context| "-diag" `elem` switches]++
       --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
       --[ cdModel context | "-CD" `elem` switches]++

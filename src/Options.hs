@@ -10,30 +10,31 @@ import System.Console.GetOpt
 import System.FilePath
 import System.Directory
 --import System.FilePath.Posix
--- | This data constructor is able to hold all kind of information that is usefull to 
---   express what the user would like adl to do. 
+-- | This data constructor is able to hold all kind of information that is useful to 
+--   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
                        , showVersion   :: Bool
                        , showHelp      :: Bool
                        , verbose       :: String -> IO ()  -- vervangt putStr -- Voor de fijnproevers: Een functie kan hier ook! ;-)) 
-					   , verboseLn     :: String -> IO ()  -- vervangt putStrLn
-					   , genPrototype  :: Bool 
-					   , uncheckedDirPrototype  :: Maybe String
-					   , dirPrototype  :: String
-					   , allServices   :: Bool
-					   , dbName        :: Maybe String
-					   , genAtlas      :: Bool
-					   , uncheckedDirAtlas      :: Maybe String
-					   , dirAtlas      :: String
-					   , xml           :: Bool
-					   , fspec         :: Bool
-					   , proofs        :: Bool
-					   , haskell       :: Bool
-					   , uncheckedDirOutput     :: Maybe String
-					   , dirOutput     :: String     
-					   , beeper        :: Bool
-					   , crowfoot      :: Bool
-					   , language      :: Lang
+                       , verboseLn     :: String -> IO ()  -- vervangt putStrLn
+                       , genPrototype  :: Bool 
+                       , uncheckedDirPrototype  :: Maybe String
+                       , dirPrototype  :: String
+                       , allServices   :: Bool
+                       , services      :: Bool
+                       , dbName        :: Maybe String
+                       , genAtlas      :: Bool
+                       , uncheckedDirAtlas      :: Maybe String
+                       , dirAtlas      :: String
+                       , xml           :: Bool
+                       , fspec         :: Bool
+                       , proofs        :: Bool
+                       , haskell       :: Bool
+                       , uncheckedDirOutput     :: Maybe String
+                       , dirOutput     :: String     
+                       , beeper        :: Bool
+                       , crowfoot      :: Bool
+                       , language      :: Lang
                        , progrName     :: String
                        , adlFileName   :: String
                        , baseName      :: String
@@ -45,10 +46,10 @@ getOptions =
       progName <- getProgName
       env      <- getEnvironment
       flags    <- case getOpt Permute options args of
-			          (o,[n],[])    -> return (foldl (flip id) (defaultOptions env n progName) o )
-			          (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
-			          (_,x:xs,[])   -> ioError (userError ("too many files: "++ show [x:xs] ++usageInfo' progName))
-			          (_,_,errs)    -> ioError (userError (concat errs ++ usageInfo' progName))
+                      (o,[n],[])    -> return (foldl (flip id) (defaultOptions env n progName) o )
+                      (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
+                      (_,x:xs,[])   -> ioError (userError ("too many files: "++ show [x:xs] ++usageInfo' progName))
+                      (_,_,errs)    -> ioError (userError (concat errs ++ usageInfo' progName))
       flags'   <- checkPaths flags
       return flags'
 
@@ -104,7 +105,8 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option []        ["verbose"]      (NoArg verboseOpt)          "verbose error message format"
            , Option ['p']     ["proto"]        (OptArg prototypeOpt "dir") "generate a functional prototype with services defined in ADL file" 
            , Option ['P']     ["maxServices"]  (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"
-           , Option ['d']     ["dbName"]       (OptArg dbNameOpt "name")    "use database with name"
+           , Option ['s']     ["services"]     (NoArg servicesOpt)         "generate service specifications in ADL format"
+           , Option ['d']     ["dbName"]       (OptArg dbNameOpt "name")   "use database with name"
            , Option ['a']     ["atlas"]        (OptArg atlasOpt "dir" )    "generate atlas (optional an output directory, defaults to current directory)"
            , Option []        ["XML"]          (NoArg xmlOpt)              "generate XML output"
            , Option []        ["fspec"]        (NoArg fspecOpt)            "generate a functional specification document"
@@ -122,20 +124,21 @@ defaultOptions env fName pName
                          , showVersion   = False
                          , showHelp      = False
                          , verbose       = hushup
-			             , verboseLn     = hushup
-			             , genPrototype  = False
-					     , uncheckedDirPrototype  = lookup "CCdirPrototype" env
-            		     , dirPrototype  = unchecked
-            		     , allServices   = False
-		                 , dbName        = lookup "CCdbName" env
-		                 , genAtlas      = False   
-            		     , uncheckedDirAtlas      = lookup "CCdirAtlas" env
-            		     , dirAtlas      = unchecked
-            		     , xml           = False 
-	            	     , fspec         = False
-	            	     , proofs        = False
-	            	     , haskell       = False
-	            	     , uncheckedDirOutput     = lookup "CCdirOutput" env
+                         , verboseLn     = hushup
+                         , genPrototype  = False
+                         , uncheckedDirPrototype  = lookup "CCdirPrototype" env
+                         , dirPrototype  = unchecked
+                         , allServices   = False
+                         , services      = False
+                         , dbName        = lookup "CCdbName" env
+                         , genAtlas      = False   
+                         , uncheckedDirAtlas      = lookup "CCdirAtlas" env
+                         , dirAtlas      = unchecked
+                         , xml           = False 
+                         , fspec         = False
+                         , proofs        = False
+                         , haskell       = False
+                         , uncheckedDirOutput     = lookup "CCdirOutput" env
                          , dirOutput     = unchecked
                          , beeper        = False
                          , crowfoot      = False
@@ -163,6 +166,7 @@ atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
 xmlOpt          opts = opts{xml          = True}
 fspecOpt        opts = opts{fspec        = True}
 proofsOpt       opts = opts{proofs       = True}
+servicesOpt     opts = opts{services     = True}
 haskellOpt      opts = opts{haskell      = True}
 outputDirOpt nm opts = opts{uncheckedDirOutput    = Just nm
                            ,dirOutput    = unchecked}

@@ -215,7 +215,7 @@
 
    pLabel           :: Parser Token Label
    pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos)
-                           <*> ((pSpec '{' *> pList1Sep (pSpec ',') (f <$> phpId <*> phpId) <* pSpec '}') `opt` [])
+                           <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
                        where lbl (nm,pos) strs = Lbl nm pos strs
                              f x y             = [x,y]
@@ -240,29 +240,15 @@
    optional a        = Just <$> a <|> pSucceed Nothing
 
    pObj             :: Parser Token ObjectDef
-   pObj              = obj <$> (pConid_val_pos <|> pString_val_pos)              -- de naam van het object
-                           <*> (optional (pSpec '[' *> pConid <* pSpec ']') )    -- optioneel: het type van het object (een concept)
-                           <*> (optional (pKey ":" *> pExpr) )                   -- de contextexpressie (default: I[c])
+   pObj              = obj <$> pLabel
+                           <*> pExpr                                             -- de contextexpressie (default: I[c])
                            <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
                            <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
-                       <|>
-                       vbj <$> pVarid_val_pos                                    -- de naam van het object
-                           <*> (optional (pSpec '[' *>  pConid <* pSpec ']') )   -- optioneel: het type van het object (een concept)
-                           <*> (optional (pKey ":" *>  pExpr) )                  -- de contextexpressie (default: I[c])
-                           <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
-                           <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
-                       where obj (nm,pos) Nothing  Nothing  a ats = Obj nm pos ((Tm . mIs . cptnew) nm) ats
-                             obj (nm,pos) Nothing  (Just e) a ats = Obj nm pos e ats
-                             obj (nm,pos) (Just c) Nothing  a ats = Obj nm pos ((Tm . mIs . cptnew) c) ats
-                             obj (nm,pos) (Just c) (Just e) a ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
-                             vbj (nm,pos) Nothing  Nothing  a ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptAnything) True (error "CC.lhs: vbj (nm,pos) Nothing Nothing has no declaration"))) ats
-                             vbj (nm,pos) Nothing  (Just e) a ats = Obj nm pos e ats
-                             vbj (nm,pos) (Just c) Nothing  a ats = Obj nm pos (Tm (Mph nm pos [] (cptAnything,cptnew c ) True (error "CC.lhs: vbj (nm,pos) Nothing (Just c) has no declaration"))) ats
-                             vbj (nm,pos) (Just c) (Just e) a ats = Obj nm pos (F[e,Tm (mIs (cptnew c ))]) ats
+                       where obj (Lbl nm pos strs) expr a ats = Obj nm pos expr ats strs
 
    pAtt             :: Parser Token ObjectDef
    pAtt              = att <$> pLabel <*>  pExpr
-                       where att (Lbl nm pos strs) ctx = Obj nm pos ctx []
+                       where att (Lbl nm pos strs) ctx = Obj nm pos ctx [] strs
 
    pDeclaration     :: Parser Token Declaration
    pDeclaration      = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept

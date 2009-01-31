@@ -15,7 +15,7 @@
 
    makeDataset :: Context -> Concept -> ObjectDef
    makeDataset context c
-    = Obj (name c) posNone (v (one,c)) [Obj (name m++name(target m)) posNone (Tm m) []| m<-dss]
+    = Obj (name c) posNone (v (one,c)) [Obj (name m++name(target m)) posNone (Tm m) [] []| m<-dss] []
       where
        c  = minimum [g|g<-concs context,g<=head cl]
        cl = head ([cl| cl<-eqClass bi (concs context), c `elem` cl]++error ("!Fatal (module Fspec>dataset): cannot determine dataset for concept "++name c))
@@ -26,7 +26,7 @@
 
    makeDatasets :: Context -> [ObjectDef]
    makeDatasets context
-    = [ Obj (name c) posNone (v (one,c)) [Obj (name m++name(target m)) posNone (Tm m) []| m<-dss cl]
+    = [ Obj (name c) posNone (v (one,c)) [Obj (name m++name(target m)) posNone (Tm m) [] []| m<-dss cl] []
       | cl<-eqClass bi (concs context), c<-[minimum [g|g<-concs context,g<=head cl]] ]
       where
        c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
@@ -37,5 +37,5 @@
    datasetMor :: Context -> Morphism -> ObjectDef
    datasetMor context m | isFunction      m  = makeDataset context (source m)
                         | isFunction (flp m) = makeDataset context (target m)
-                        | otherwise          = Obj (name m) posNone (Tm m) []
+                        | otherwise          = Obj (name m) posNone (Tm m) [] []
 

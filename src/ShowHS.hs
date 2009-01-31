@@ -333,7 +333,10 @@ where
      = "Obj "++show (name obj)++" ("++showHS "" (objpos obj)++")"++ctxStr++
        (if null (objats obj)
         then " []"
-        else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")
+        else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")++
+       (if null (objstrs obj)
+        then " []"
+        else indent++show (objstrs obj))
      where ctxStr | length (morlist (objctx obj)) >1 = indent++"    ("++showHS (indent++"     ") (objctx obj)++indent++"    )"
                   | otherwise               = indent++"    ("++showHS "" (objctx obj)++")"
    

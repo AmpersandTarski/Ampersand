@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables#-}
+{-# OPTIONS  -XPatternSignatures #-}
   module ObjBinGenObject where
    import Char(toUpper)
    import Auxiliaries(chain, commaEng)
