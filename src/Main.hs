@@ -9,15 +9,9 @@ import Data.Fspec            (Fspc)
 import ADL2Fspec             (makeFspec)
 import Generators            
 
--- import MainOUDEMEUK (mainold)
+
 main :: IO ()
---main = mainold
-main = mainnew
-
-
-
-mainnew :: IO ()
-mainnew
+main
  = do flags <- getOptions   
       if showVersion flags
        then putStrLn versionbanner
