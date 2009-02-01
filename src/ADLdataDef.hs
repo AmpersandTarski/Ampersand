@@ -180,23 +180,36 @@
    instance Show Expression where
     showsPrec p e  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") e)
       where
-       showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar 0 e
+       showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) e = showchar (insParentheses e)
          where
           wrap i j str = if i<=j then str else lpar++str++rpar
-          showchar i (Tm m)  = name m++if inline m then "" else "~"
-          showchar i (Fu []) = "-V"
-          showchar i (Fu fs) = wrap i 4 (chain union [showchar 4 f| f<-fs])
-          showchar i (Fi []) = "V"
-          showchar i (Fi fs) = wrap i 5 (chain inter [showchar 5 f| f<-fs])
-          showchar i (Fd []) = "-I"
-          showchar i (Fd ts) = wrap i 6 (chain rAdd [showchar 6 t| t<-ts])
-          showchar i (F [])  = "I"
-          showchar i (F ts)  = wrap i 7 (chain rMul [showchar 7 t| t<-ts])
-          showchar i (K0 e)  = showchar 8 e++clos0
-          showchar i (K1 e)  = showchar 8 e++clos1
-          showchar i (Cp e)  = compl++showchar 8 e
-          showchar i (Tc f)  = showchar i f
+          showchar (Tm m)  = name m++if inline m then "" else "~"
+          showchar (Fu []) = "-V"
+          showchar (Fu fs) = chain union [showchar f| f<-fs]
+          showchar (Fi []) = "V"
+          showchar (Fi fs) = chain inter [showchar f| f<-fs]
+          showchar (Fd []) = "-I"
+          showchar (Fd ts) = chain rAdd [showchar t| t<-ts]
+          showchar (F [])  = "I"
+          showchar (F ts)  = chain rMul [showchar t| t<-ts]
+          showchar (K0 e)  = showchar e++clos0
+          showchar (K1 e)  = showchar e++clos1
+          showchar (Cp e)  = compl++showchar e
+          showchar (Tc f)  = lpar++showchar f++rpar
     
+   insParentheses e = insPar 0 e
+         where
+          wrap i j e = if i<=j then e else Tc e
+          insPar i (Tm m)  = Tm m
+          insPar i (Fu fs) = wrap i 4 (Fu [insPar 4 f| f<-fs])
+          insPar i (Fi fs) = wrap i 5 (Fi [insPar 5 f| f<-fs])
+          insPar i (Fd ts) = wrap i 6 (Fd [insPar 6 t| t<-ts])
+          insPar i (F ts)  = wrap i 7 (F  [insPar 7 t| t<-ts])
+          insPar i (K0 e)  = K0 (insPar 8 e)
+          insPar i (K1 e)  = K1 (insPar 8 e)
+          insPar i (Cp e)  = Cp (insPar 8 e)
+          insPar i (Tc f)  = insPar i f
+
    instance Association Expression where
 
     source (Tm m)          = source m

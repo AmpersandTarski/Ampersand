@@ -2,19 +2,23 @@
 module Generators where
 
 
+import System.FilePath(combine,replaceExtension)
 import Options
 import FspecDef
 import ShowHS       (showHS)
-import ShowADL      (showADL)
+import ShowADL      (showADLcode)
 import ShowXML      (showXML)
 import Strings      (chain)
-import System.FilePath(combine,replaceExtension)
+import Calc         (deriveProofs)
 import Version      (versionbanner)
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
-    = putStr (chain "\n\n" (map showADL (serviceG fSpec)))
+    = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
 
+prove :: Fspc -> Options -> IO()
+prove fSpec flags
+    = putStr (deriveProofs fSpec)
 
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags

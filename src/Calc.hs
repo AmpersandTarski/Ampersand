@@ -44,20 +44,21 @@
        codeFragments :: [ECArule]
        codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
 
-   deriveProofs context
-    = "\nSignals for "++name context++"\n--------------\n"++
-      proof (signals context)++
-      "\nRules for "++name context++"\n--------------\n"++
-      proof (declaredRules context)++
+   deriveProofs :: Fspc -> String
+   deriveProofs fSpec
+    = --"\nSignals for "++name fSpec++"\n--------------\n"++
+      --proof (signals fSpec)++
+      "\nRules for "++name fSpec++"\n--------------\n"++
+      proof [r| Frul r<-vrules fSpec]++
       "\n--------------\n"++
       "Summarizing all compute rules: \n  "++
-      chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-declaredRules context, hc@(CR (fOps, e, bOp, toExpr, frExpr, rule))<-triggers rule]++
+      chain "\n  " [ informalRule {-(declarations frExpr)-} hc | Frul rule<-vrules fSpec, hc@(CR (fOps, e, bOp, toExpr, frExpr, r))<-triggers rule]++
       "\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
       "Ontological analysis: \n  "++
       chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
-                     | o<-attributes context, c<-[concept o]]++
+                     | o<-serviceS fSpec, c<-[concept o]]++
       "\n--------------\n"++
-      "Triggers from objects: \n     "++
+      "Triggers from services: \n     "++
       chain "\n     " [name c++"("++chain ", "[name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):"++
                        condNull ("\n  Rules for Insert transactions\n    ") (chain "\n    ") informalRule 
                         (computeOrder hcs "INSERT INTO" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntCreate
@@ -66,10 +67,10 @@
                        condNull ("\n  Rules for Delete transactions\n    ") (chain "\n    ") informalRule 
                         (computeOrder hcs "DELETE FROM" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntDelete
                        "\n"
-                      | o<-attributes context, c<-[concept o]]++
+                      | o<-serviceS fSpec, c<-[concept o]]++
       "\n--------------\n"
       where
-       hcs = [hc| rule<-declaredRules context++multRules context, hc<-triggers rule ]
+       hcs = [hc| Frul rule<-vrules fSpec, hc<-triggers rule ]
        sh x = showHS "" x
 
    condNull header fold f xs = if null xs then "" else header++fold (map f xs)

@@ -9,7 +9,7 @@ import Data.Fspec            (Fspc)
 import ADL2Fspec             (makeFspec)
 import Generators            
 
-import MainOUDEMEUK (mainold)
+-- import MainOUDEMEUK (mainold)
 main :: IO ()
 --main = mainold
 main = mainnew
@@ -57,7 +57,7 @@ phase3 flags fSpec =
       --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
       --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++
       --[ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
-      --[ deriveProofs context ("-m" `elem` switches)| "-proofs" `elem` switches]
+        [ prove fSpec flags| proofs flags]++
  --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
  --               ++[ csvcontent context | "-csv" `elem` switches]
  --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
