@@ -23,7 +23,7 @@ prove fSpec flags
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags
    =  verboseLn flags "Generation of Haskell code is currently not supported."
-   >> verboseLn flags ("Haskell code would be written into " ++ show fileName ++ ".")
+   >> verboseLn flags ("Haskell code would be written into " ++ fileName ++ ".")
        where fileName
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".lhs")
            
@@ -31,7 +31,7 @@ showHaskell :: Fspc -> Options -> IO ()
 showHaskell fSpec flags 
     = verboseLn flags ("\nGenerating Haskell source code for "++name fSpec) >>
       verboseLn flags outputFile >>
-      putStr  haskellCode >>
+      putStr  haskellCode >>  
       verboseLn flags (outputFile ++ " has been written...")
       where
        baseName = "f_Ctx_"++(name fSpec)
@@ -55,16 +55,24 @@ doGenAtlas fSpec flags =
   >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
    
 doGenXML :: Fspc -> Options -> IO()
-doGenXML fSpec flags
-   =  verboseLn flags "Generating XML..."
-   >> writeFile fileName ( "<!-- "++ versionbanner ++" -->" ++ showXML fSpec)   
-   >> verboseLn flags ("XML written into " ++ show fileName ++ ".")
-   where fileName
+doGenXML fSpec flags 
+   =  verboseLn flags "Generating XML..." >>
+      writeFile outputFile ( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
+                             "<tns:ADL xmlns:tns=\"http://www.sig-cc.org/ADL\" "++
+                             "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
+                             "xsi:schemaLocation=\"http://www.sig-cc.org/ADL "++
+                             "ADL.xsd \">"++
+                             "<!-- "++ versionbanner ++" -->" ++
+                              showXML fSpec ++
+                             "</tns:ADL>"
+                           )   
+   >> verboseLn flags ("XML written into " ++ outputFile ++ ".")
+   where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")
                
 doGenProto :: Fspc -> Options -> IO()
 doGenProto fSpec flags
    =  verboseLn flags "Generation of Prototype is currently not supported."
-   >> verboseLn flags ("Prototype files would be written into " ++ show (dirPrototype flags) ++ "." ) 
+   >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
 
           

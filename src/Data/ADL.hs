@@ -71,7 +71,7 @@ module Data.ADL where
       | Fr { fraut :: AutType           -- ^ the type of automatic computation
            , frdec :: Declaration       -- ^ where the result is to be stored
            , frcmp :: Expression        -- ^ expression to be computed
-           , frpat :: String            -- ^ name of pattern in which it was defined.
+           , r_pat :: String            -- ^ name of pattern in which it was defined.
            } 
    data RuleType = Implication | Equivalence | AlwaysExpr | Generalization | Automatic deriving (Eq,Show)
 

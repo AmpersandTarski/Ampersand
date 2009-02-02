@@ -94,7 +94,7 @@
             && ptkds p == ptkds p'
 -}
 
-   instance Show Pattern
+--   instance Show Pattern
    instance Identified Pattern where
     name pat = ptnm pat
     typ pat = "Pattern_"
@@ -103,8 +103,21 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
-   instance Eq Rule
-   instance Show Rule
+   instance Eq Rule where        -- WAAROM :TODO Stef, deze Eq mistte zijn where clause. Wil jij dit valideren? 
+     r == r' = case ( r, r') of
+       (Ru{} , Ru{})  -> r_pat r == r_pat r' &&
+                         runum r == runum r'  
+       (Sg{} , Sg{})  -> r_pat r == r_pat r' &&
+                         runum r == runum r'
+       (Gc{} , Gc{})  -> r_pat r == r_pat r' &&
+                         runum r == runum r'
+       (Fr{} , Fr{})  -> r_pat r == r_pat r' &&
+                         frcmp r == frcmp r' &&
+                         frdec r == frdec r' &&
+                         fraut r == fraut r'
+       ( _   , _   )  -> False
+   instance Show Rule 
+      
    instance Identified Rule where
     name r = "Rule"++show (runum r)
     typ r = "Rule_"
@@ -137,7 +150,12 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: KeyDef                        ***
 -- \***********************************************************************
-   instance Eq KeyDef
+   instance Eq KeyDef where       -- WAAROM :TODO Stef, deze Eq mistte zijn where clause. Wil jij dit valideren? 
+    kd == kd' = kdpos kd == kdpos kd' &&
+                kdlbl kd == kdlbl kd' &&
+                kdctx kd == kdctx kd' &&
+                kdats kd == kdats kd'
+    
    instance Show KeyDef
    instance Identified KeyDef where
     name kd = kdlbl kd
@@ -151,7 +169,8 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
 -- \***********************************************************************
-   instance Eq ObjectDef
+   instance Eq ObjectDef where  -- WAAROM :TODO Stef, deze Eq mistte zijn where clause. Wil jij dit valideren? 
+      obj == obj' = name obj == name obj'
    instance Show ObjectDef
    instance Identified ObjectDef where
     name obj = objnm obj
@@ -275,7 +294,10 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
-   instance Eq Gen
+   instance Eq Gen where -- WAAROM :TODO Stef, deze Eq mistte zijn where clause. Wil jij dit valideren? 
+       g == g' = gengen g == gengen g' &&
+                 genspc g == genspc g'
+                 
    instance Show Gen where
     -- This show is used in error messages. It should therefore not display the term's type
     showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)

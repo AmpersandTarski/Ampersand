@@ -9,20 +9,15 @@ where
     showXMLstartTag :: a -> String
     showXMLendTag   :: a -> String
     showXML     :: ShowXML a =>  a -> String
-    showXMLendTag x = case showXMLstartTag x of
-                       c : xs    ->    c : '/' : xs
-                       otherwise -> error( "could not define endTag for " ++ showXMLstartTag x ++ "! Contact your ADL dealer.")
-
+    showXMLendTag x = "</" ++ fst(break (' '==) (init(tail(showXMLstartTag x)))) ++ ">"
 
    instance ShowXML a => ShowXML [a] where
      showXMLstartTag list = case list of
              [] -> error ( "No tag defined for empty lists! Contact your ADL dealer.")
-             x:xs -> "<ListOf_"++ removeBrackets (showXMLstartTag x) ++ ">"
-        where 
-           removeBrackets = reverse.tail.reverse.tail
+             x:xs -> "<ListOf_"++ fst(break (' '==) (init(tail(showXMLstartTag x)))) ++ ">"
            
      showXML list = case list of
-             [] ->  "<emptylist></emptylist>" 
+             [] ->  "<emptylist/>"  
              xs ->  encloseInTags xs (foldr (++) "" (map showXML xs))
                                  
    instance (ShowXML a, ShowXML b) => ShowXML (a, b) where
@@ -45,7 +40,7 @@ where
      showXML f@(Fspc aaa bbb ccc ddd eee fff ggg hhh iii)
         = encloseInTags f 
            ( showXML aaa ++ 
-             genereertLoop ++ -- showXML bbb ++
+             genereertLoop ++ --  showXML bbb ++ 
              showXML ccc ++
              showXML ddd ++
              showXML eee ++
@@ -180,16 +175,56 @@ where
      showXMLstartTag f = "<PatternXXX>"
      showXML f
         = encloseInTags f 
-           ( show "NOG TE DOEN" )
+           ( show "NOG TE DOEN (Pattern)" )
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
    instance ShowXML Rule where
-     showXMLstartTag f = "<RuleXXX>"
-     showXML f
-        = encloseInTags f 
-           ( show "NOG TE DOEN" )
+     showXMLstartTag f =  "<Rule type=\""
+                       ++ (case f of
+                             Sg{} -> show ("Signal_of_"++show (ruleType f))
+                             _    -> show (ruleType f)
+                          ) 
+                       ++ "\">"
+     showXML f = encloseInTags f body 
+      where body = case f of 
+                    Ru aaa bbb ccc ddd eee fff ggg hhh iii
+                       -> ( -- showXML aaa ++ 
+                            showXML bbb ++
+                            showXML ccc ++
+                            showXML ddd ++
+                            showXML eee ++
+                            show fff ++
+                            showXML ggg ++
+                            show hhh ++
+                            show iii
+                           ) 
+                    Sg aaa bbb ccc ddd eee fff ggg
+                       -> ( showXML aaa ++ 
+                            showXML bbb ++
+                            show ccc ++
+                            showXML ddd ++
+                            show eee ++
+                            show fff ++
+                            showXML ggg
+                           ) 
+                    Gc aaa bbb ccc ddd eee fff ggg
+                       -> ( showXML aaa ++ 
+                            showXML bbb ++
+                            showXML ccc ++
+                            showXML ddd ++
+                            showXML eee ++
+                            show fff ++
+                            show ggg
+                           ) 
+                    Fr aaa bbb ccc ddd
+                       -> ( show aaa ++ 
+                            showXML bbb ++
+                            showXML ccc ++
+                            show ddd
+                           ) 
+              
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
@@ -210,10 +245,10 @@ where
 -- \***********************************************************************
 
    instance ShowXML ObjectDef where
-     showXMLstartTag f = "<ObjectDef>"
+     showXMLstartTag f = "<ObjectDef name="++show(name f)++">"
      showXML f@(Obj aaa bbb ccc ddd eee)
         = encloseInTags f 
-           ( show aaa ++ 
+           ( -- show aaa ++  (reeds opgenomen in starttag)
              showXML bbb ++
              showXML ccc ++
              showXML ddd ++
@@ -226,10 +261,10 @@ where
 -- \***********************************************************************
 
    instance ShowXML Expression where
-     showXMLstartTag f = "<ExpressionXXX>"
+     showXMLstartTag f = "<Expression>"
      showXML f
         = encloseInTags f 
-           ( show "NOG TE DOEN" )
+           ( show(show f) )
 
 
 -- \***********************************************************************
@@ -245,7 +280,7 @@ where
      showXMLstartTag f = "<MorphismXXX>"
      showXML f
         = encloseInTags f 
-           ( show "NOG TE DOEN" )
+           ( show "NOG TE DOEN (Morphism)" )
    
    
 -- \***********************************************************************
@@ -253,10 +288,10 @@ where
 -- \***********************************************************************
    instance ShowXML Declaration where
      showXMLstartTag f = case f of
-             Sgn{}     -> "<DeclarationSgn>"
-             Isn{}     -> "<DeclarationIsn>"
-             Iscompl{} -> "<DeclarationIscompl>"
-             Vs{}      -> "<DeclarationVs>"
+             Sgn{}     -> "<Declaration type=\"Sgn\">"
+             Isn{}     -> "<Declaration type=\"Isn\">"
+             Iscompl{} -> "<Declaration type=\"Iscompl\">"
+             Vs{}      -> "<Declaration type=\"Vs\">"
              
      showXML f = encloseInTags f body 
       where body = case f of 
@@ -295,10 +330,10 @@ where
 -- \*** Eigenschappen met betrekking tot: Concept                       ***
 -- \***********************************************************************
    instance ShowXML Concept where
-     showXMLstartTag f = "<ConceptXXX>"
+     showXMLstartTag f = "<Concept>"
      showXML f
         = encloseInTags f 
-           ( show "NOG TE DOEN" )
+           ( show f )
 
    
 -- \***********************************************************************
@@ -309,24 +344,20 @@ where
 -- \*** Eigenschappen met betrekking tot: Prop                          ***
 -- \***********************************************************************
    instance ShowXML Prop where
-     showXMLstartTag f = "<PropXXX>"
+     showXMLstartTag f = "<Prop>"
      showXML f
         = encloseInTags f 
-           ( show "NOG TE DOEN" )
+           ( show f )
    
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FilePos                       ***
 -- \***********************************************************************
    instance ShowXML FilePos where
-     showXMLstartTag f = "<FilePosXXX>"
-     showXML f
-        = encloseInTags f 
-           ( show "NOG TE DOEN" )
-
-
-
-
+     showXMLstartTag f = "<FilePos>"
+     showXML f 
+        | f == posNone = ""
+        | otherwise    = encloseInTags f ( show f )
 
 
    instance ShowXML ECArule where
@@ -336,6 +367,6 @@ where
            ( show "NOG TE DOEN" )
 
      
-   genereertLoop = "HIER HOORT NOG IETS"
+   genereertLoop = show "HIER HOORT NOG IETS, maar dat genereert een -LOOP-."
    
    
