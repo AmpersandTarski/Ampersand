@@ -5,23 +5,36 @@ where
    import FspecDef
    import ADLdataDef
 
+   data XmlTag = Tag {   tagNm :: String
+                       , pairs :: [(String,String)]
+                     }
+
    class ShowXML a where
-    showXMLstartTag :: a -> String
-    showXMLendTag   :: a -> String
-    showXML     :: ShowXML a =>  a -> String
-    showXMLendTag x = "</" ++ fst(break (' '==) (init(tail(showXMLstartTag x)))) ++ ">"
+    mkTag    :: a -> XmlTag
+    startTag :: a -> String
+    endTag   :: a -> String
+    showXML  :: a -> String
+    
+    startTag a = "<" ++ tagNm tag ++ showpairs tag ++ ">"
+      where tag = mkTag a
+            showpairs t = case pairs t of
+                            []       -> ""
+                            (a,b):xs -> " "++a++"="++show b               
+    endTag a = "</" ++ tagNm (mkTag a) ++ ">"   
 
    instance ShowXML a => ShowXML [a] where
-     showXMLstartTag list = case list of
-             [] -> error ( "No tag defined for empty lists! Contact your ADL dealer.")
-             x:xs -> "<ListOf_"++ fst(break (' '==) (init(tail(showXMLstartTag x)))) ++ ">"
+     mkTag list =  case list of
+             []   -> error ( "No tag defined for empty lists! Contact your ADL dealer.")
+   --          x:xs -> Tag {tagNm = ("ListOf_" ++ tagNm x), pairs = []} 
+             x:xs -> Tag ("ListOf_" ++ tagNm (mkTag x)) []
            
      showXML list = case list of
              [] ->  "<emptylist/>"  
              xs ->  encloseInTags xs (foldr (++) "" (map showXML xs))
                                  
    instance (ShowXML a, ShowXML b) => ShowXML (a, b) where
-     showXMLstartTag (p,q) = "<Tuple>"
+     mkTag (a,b) = Tag "Tuple" []
+ --    showXMLstartTag (p,q) = "<Tuple>"
      showXML (aaa, bbb)
         = encloseInTags (aaa, bbb) 
            ( showXML aaa ++ 
@@ -30,13 +43,13 @@ where
    
      
    encloseInTags :: ShowXML a => a -> String -> String
-   encloseInTags a s = showXMLstartTag a ++ s ++ showXMLendTag a
-   tagchar = 'a'
+   encloseInTags a s = startTag a ++ s ++ endTag a
+   
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance ShowXML Fspc where
-     showXMLstartTag f = "<Fspec>"
+     mkTag f = Tag "Fspec" [] 
      showXML f@(Fspc aaa bbb ccc ddd eee fff ggg hhh iii)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -55,7 +68,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML Ftheme where
-     showXMLstartTag f = "<Ftheme>"
+     mkTag f = Tag "Ftheme" [] 
      showXML f@(Tspc aaa bbb ccc)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -67,7 +80,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML Funit where
-     showXMLstartTag f = "<Funit>"
+     mkTag f = Tag "Funit" [] 
      showXML f@(Uspc aaa bbb ccc ddd)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -81,7 +94,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML Fservice where
-     showXMLstartTag f = "<Fservice>"
+     mkTag f = Tag "Fservice" [] 
      showXML f@(Fservice aaa bbb ccc ddd eee fff)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -97,7 +110,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML Frule where
-     showXMLstartTag f = "<Frule>"
+     mkTag f = Tag "Frule" [] 
      showXML f@(Frul aaa )
         = encloseInTags f 
            ( showXML aaa
@@ -108,7 +121,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML FViewDef where
-     showXMLstartTag f = "<FViewDef>"
+     mkTag f = Tag "FViewDef" [] 
      showXML f@(Vdef aaa bbb ccc)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -121,7 +134,7 @@ where
 -- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
 -- \***********************************************************************
    instance ShowXML ServiceSpec where
-     showXMLstartTag f = "<ServiceSpec>"
+     mkTag f = Tag "ServiceSpec" [] 
      showXML f@(Sspc aaa bbb ccc ddd eee fff ggg hhh)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -138,7 +151,7 @@ where
 -- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
 -- \***********************************************************************
    instance ShowXML ParamSpec where
-     showXMLstartTag f = "<ParamSpec>"
+     mkTag f = Tag "ParamSpec" [] 
      showXML f@(Aspc aaa bbb)
         = encloseInTags f 
            ( showXML aaa ++ 
@@ -150,7 +163,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML FSid where
-     showXMLstartTag f = "<FSid>"
+     mkTag f = Tag "FSid" [] 
      
      showXML x = case x of
                   NoName  -> encloseInTags x "<NoName>" 
@@ -172,7 +185,7 @@ where
 -- \***********************************************************************
  
    instance ShowXML Pattern where
-     showXMLstartTag f = "<PatternXXX>"
+     mkTag f = Tag "PatternXXX" [] 
      showXML f
         = encloseInTags f 
            ( show "NOG TE DOEN (Pattern)" )
@@ -181,12 +194,10 @@ where
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
    instance ShowXML Rule where
-     showXMLstartTag f =  "<Rule type=\""
-                       ++ (case f of
-                             Sg{} -> show ("Signal_of_"++show (ruleType f))
-                             _    -> show (ruleType f)
-                          ) 
-                       ++ "\">"
+     mkTag f = Tag "Rule" [("type",rt )]
+          where rt = case f of 
+                       Sg{} -> "Signal_of_"++show (ruleType f)
+                       _    -> show (ruleType f) 
      showXML f = encloseInTags f body 
       where body = case f of 
                     Ru aaa bbb ccc ddd eee fff ggg hhh iii
@@ -245,7 +256,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML ObjectDef where
-     showXMLstartTag f = "<ObjectDef name="++show(name f)++">"
+     mkTag f = Tag "ObjectDef" [("name",name f )]
      showXML f@(Obj aaa bbb ccc ddd eee)
         = encloseInTags f 
            ( -- show aaa ++  (reeds opgenomen in starttag)
@@ -261,7 +272,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML Expression where
-     showXMLstartTag f = "<Expression>"
+     mkTag f = Tag "Expression" []
      showXML f
         = encloseInTags f 
            ( show(show f) )
@@ -277,7 +288,7 @@ where
 -- \***********************************************************************
 
    instance ShowXML Morphism where
-     showXMLstartTag f = "<MorphismXXX>"
+     mkTag f = Tag "MorphismXXX" []
      showXML f
         = encloseInTags f 
            ( show "NOG TE DOEN (Morphism)" )
@@ -287,11 +298,13 @@ where
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
 -- \***********************************************************************
    instance ShowXML Declaration where
-     showXMLstartTag f = case f of
-             Sgn{}     -> "<Declaration type=\"Sgn\">"
-             Isn{}     -> "<Declaration type=\"Isn\">"
-             Iscompl{} -> "<Declaration type=\"Iscompl\">"
-             Vs{}      -> "<Declaration type=\"Vs\">"
+     mkTag f = Tag "Declaration" [("type", typeOf f)]
+        where typeOf decl = 
+                case decl of
+                       Sgn{}     -> "Sgn"
+                       Isn{}     -> "Isn"
+                       Iscompl{} -> "Iscompl"
+                       Vs{}      -> "Vs"
              
      showXML f = encloseInTags f body 
       where body = case f of 
@@ -330,7 +343,7 @@ where
 -- \*** Eigenschappen met betrekking tot: Concept                       ***
 -- \***********************************************************************
    instance ShowXML Concept where
-     showXMLstartTag f = "<Concept>"
+     mkTag f = Tag "Concept" []
      showXML f
         = encloseInTags f 
            ( show f )
@@ -344,7 +357,7 @@ where
 -- \*** Eigenschappen met betrekking tot: Prop                          ***
 -- \***********************************************************************
    instance ShowXML Prop where
-     showXMLstartTag f = "<Prop>"
+     mkTag f = Tag "Prop" []
      showXML f
         = encloseInTags f 
            ( show f )
@@ -354,18 +367,19 @@ where
 -- \*** Eigenschappen met betrekking tot: FilePos                       ***
 -- \***********************************************************************
    instance ShowXML FilePos where
-     showXMLstartTag f = "<FilePos>"
+     mkTag f = Tag "FilePos" []
      showXML f 
         | f == posNone = ""
         | otherwise    = encloseInTags f ( show f )
 
 
    instance ShowXML ECArule where
-     showXMLstartTag f = "<ECAruleXXX>"
+     mkTag f = Tag "ECAruleXXX" []
      showXML f
         = encloseInTags f 
            ( show "NOG TE DOEN" )
 
+   
      
    genereertLoop = show "HIER HOORT NOG IETS, maar dat genereert een -LOOP-."
    
