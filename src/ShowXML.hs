@@ -106,17 +106,6 @@ where
            ) 
 
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Frule                         ***
--- \***********************************************************************
-
-   instance ShowXML Frule where
-     mkTag f = Tag "Frule" [] 
-     showXML f@(Frul aaa )
-        = encloseInTags f 
-           ( showXML aaa
-           ) 
-  
--- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FViewDef                      ***
 -- \***********************************************************************
 

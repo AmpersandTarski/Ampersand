@@ -56,10 +56,6 @@ module Statistics where
 -- \***********************************************************************
 
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Frule                         ***
--- \***********************************************************************
-   
--- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FViewDef                      ***
 -- \***********************************************************************
 
@@ -77,7 +73,7 @@ module Statistics where
 -- \*** TODO: zowel datasets als services worden weergegeven middels een ObjectDef. Dit maakt voor de functiepuntentelling natuurlijk wel wat uit, dus dat kan zo niet....
    instance Statistics ObjectDef where
     nServices (Obj nm _ _ []  _) = 2 -- dit is een associatie, en dus een binaire relatie
-    nServices (Obj nm _ _ ats _) = 4 -- dit is een entiteit met één of meer attributen.
+    nServices (Obj nm _ _ ats _) = 4 -- dit is een entiteit met ï¿½ï¿½n of meer attributen.
     nPatterns (Obj nm _ _ []  _) = 0
     nPatterns (Obj nm _ _ ats _) = 0
     nFpoints  (Obj nm _ _ []  _) = fPoints (ILGV Eenvoudig)

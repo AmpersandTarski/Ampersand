@@ -12,7 +12,6 @@ module Data.Fspec
              , Ftheme(..)
              , Funit(..)
              , Fservice(..)
-             , Frule(..)
              , FViewDef(..)
              , ServiceSpec(..)
              , ParamSpec(..)
@@ -37,7 +36,7 @@ where
                      , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
                      , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
                      , services :: [Fservice]    -- ^ One for every service 
-                     , vrules   :: [Frule]       -- ^ One for every rule
+                     , vrules   :: [Rule]        -- ^ One for every rule
                      , vrels    :: [Declaration] -- ^ One for every declaration
                      , isa      :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
                      }
@@ -60,10 +59,8 @@ where
                        , ecaRules   :: [ECArule]
                        , dataset    :: ObjectDef
                        , methods    :: [ServiceSpec]
-                       , frules     :: [Frule]
+                       , frules     :: [Rule]
                        }
-
-   data Frule = Frul Rule
 
    data FViewDef = Vdef
                   { vdobjdef :: ObjectDef

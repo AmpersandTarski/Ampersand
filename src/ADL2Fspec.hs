@@ -99,7 +99,7 @@
    Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
         datasets  = makeDatasets context
         fservices = [ makeFservice context a | a <-serviceS]
-        frules    = [ makeFrule context r | r <-rules context]
+        frules    = [ r | r <-rules context]
         frels     = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
         isa       = ctxisa context
 
@@ -170,7 +170,7 @@
         , readObj context o
         , deleteObj context o [] {-rs-}
         , updateObj context o [] {-cs-} [] {-rs-} ]
-        [makeFrule context r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+        [ r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
       where
        trBound
         = rd [conjNF e | a<-atts o, e<-[objctx a, flp (objctx a)] ]
@@ -192,8 +192,8 @@
          lim (New c)                       = New c
 
 
-   makeFrule :: Context -> Rule -> Frule
-   makeFrule context r = Frul r
+   makeRFrule :: Context -> Rule -> Rule
+   makeRFrule context r = r
 
    makeFdecl :: Context -> Declaration -> Declaration
    makeFdecl context d@(Sgn nm a b props prL prM prR cs expla pos nr sig)

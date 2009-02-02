@@ -47,7 +47,7 @@
 
 -- WAAROM? Stef, deze module moet worden uitgekleed. De functies die er in zitten, werken voornamelijk nog op de oude manier, dus direct vanaf Context. Dit moet natuurlijk Fspc worden, en dan mag er ook een eigen module per functie worden aangemaakt.
 
-   data Fspec = Fctx Context [Ftheme] [Dataset] [Fobj] [Frule]
+   data Fspec = Fctx Context [Ftheme] [Dataset] [Fobj] [Rule]
 
 --   instance ShowHS Fspec where
 --    showHSname (Fctx context themes datasets objects vrules) = "f_Ctx_"++haskellIdentifier (name context)
@@ -150,7 +150,7 @@
                 [flp (makeMph d)| d<-declarations context, isFunction (flp d), target d `elem` cl]
 
 
-   data Frule = Frul Rule
+--   data Frule = Frul Rule
 
 --   instance ShowHS Frule where
 --    showHSname (Frul r)    = "frule_"++showHSname r     -- (name r)
@@ -224,7 +224,7 @@
     closExprs    (DS c pths) = []
     closExprs    (BR m     ) = []
 
-   data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Frule]
+   data Fobj  = Fobj Dataset ObjectDef [ServiceSpec] [Rule]
 
 --   instance ShowHS Fobj where
 --    showHSname (Fobj dset objd svcs rs) = "f_Obj_"++haskellIdentifier (name objd)

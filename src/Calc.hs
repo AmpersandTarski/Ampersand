@@ -49,10 +49,10 @@
     = --"\nSignals for "++name fSpec++"\n--------------\n"++
       --proof (signals fSpec)++
       "\nRules for "++name fSpec++"\n--------------\n"++
-      proof [r| Frul r<-vrules fSpec]++
+      proof [r| r<-vrules fSpec]++
       "\n--------------\n"++
       "Summarizing all compute rules: \n  "++
-      chain "\n  " [ informalRule {-(declarations frExpr)-} hc | Frul rule<-vrules fSpec, hc@(CR (fOps, e, bOp, toExpr, frExpr, r))<-triggers rule]++
+      chain "\n  " [ informalRule {-(declarations frExpr)-} hc | rule<-vrules fSpec, hc@(CR (fOps, e, bOp, toExpr, frExpr, r))<-triggers rule]++
       "\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
       "Ontological analysis: \n  "++
       chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
@@ -70,7 +70,7 @@
                       | o<-serviceS fSpec, c<-[concept o]]++
       "\n--------------\n"
       where
-       hcs = [hc| Frul rule<-vrules fSpec, hc<-triggers rule ]
+       hcs = [hc| rule<-vrules fSpec, hc<-triggers rule ]
        sh x = showHS "" x
 
    condNull header fold f xs = if null xs then "" else header++fold (map f xs)

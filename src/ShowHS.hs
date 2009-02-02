@@ -132,15 +132,6 @@ where
           rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fservice)]++"]"
 
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Frule                         ***
--- \***********************************************************************
-
-   instance ShowHS Frule where
-    showHSname frul  = typ frul ++ "_" ++ showHSname (fsid frul) -- showHSname (rule frul)
-    showHS indent (Frul r) = "Frul ("++showHS "" r++")"
-
-   
--- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FViewDef                      ***
 -- \***********************************************************************
 

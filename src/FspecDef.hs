@@ -40,11 +40,6 @@
      fsid o = FS_id (name o)
   --   typ m  = "f_objdef"
 
-   instance Fidentified Frule where
-    fsid frul = FS_id (name (rule frul))   
-
-   rule:: Frule -> Rule
-   rule (Frul r) = r
 
    class Fidentified a where
      fsid :: a -> FSid
@@ -96,14 +91,6 @@
    instance Fidentified Fservice where
      fsid fservice = fsid (objectdef fservice)
    
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Frule                         ***
--- \***********************************************************************
-   
-   instance Identified Frule where
-     name (Frul r) = name r
-     typ    _      = "f_rule"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FViewDef                      ***
