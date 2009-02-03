@@ -43,7 +43,7 @@ showHaskell fSpec flags
              ++"\n>  import Typology"
              ++"\n>  import ADLdef"
              ++"\n>  import ShowHS (showHS)"
-             ++"\n>  import Data.Fspec"
+             ++"\n>  import Adl.Fspec"
              ++"\n"
              ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName++")"
              ++"\n\n"

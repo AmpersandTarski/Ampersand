@@ -1,9 +1,7 @@
-{-# LINE 1 "ObjBinGen.lhs" #-}
-#line 1 "ObjBinGen.lhs"
   module ObjBinGen where
    import Directory
    import Auxiliaries
-   import ADLdef
+   import Adl
    import CommonClasses
    import Data.Fspec
    import ObjBinGenLocalsettings

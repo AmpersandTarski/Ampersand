@@ -3,7 +3,7 @@
    import Auxiliaries(chain,eqClass,commaNL,eqCl)
    import Collection(rd)
  --  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
-   import ADLdef
+   import Adl
    import ShowADL(showADL)
    import ShowHS(showHS)
    import CC_aux( applyM )

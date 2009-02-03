@@ -3,20 +3,8 @@ where
 
    import Typology
    import FspecDef
-   import ADLdataDef
-   import ADLdef( isAnything,isNothing,singleton
-                , populations
-                , patterns
-                , rules
-                , declarations
-                , conceptDefs
-                , keyDefs
-                , attributes
-                , extends
-                , declaredRules
-                , morlist
-                , isa
-                )
+   import Adl
+   import Adl.Rule(ruleType, antecedent,consequent)
    import Collection ( (>-),uni )
    import CommonClasses (explain )             
    import UU_Scanner (Pos(Pos))
@@ -209,7 +197,7 @@ where
        (if null os   then " []" else indent++"       "++showL [showHSname o       | o<-os  ])++
        (if null pops then " []" else indent++"       "++showL [showHSname p       | p<-pops])++
        indent++"where"++
-       indent++" isa = "++showHS (indent++"       ") (ADLdef.isa context)++
+       indent++" isa = "++showHS (indent++"       ") (Adl.isa context)++
        indent++" gE  = genEq (typology isa)"++
        (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
        (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"")++
@@ -428,10 +416,13 @@ where
 
    instance ShowHS Concept where
     showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
-    showHS indent c |  isAnything c = "Anything"
-                    |  isNothing  c = "NOthing"
-                    |  singleton  c = "S"
-                    |  otherwise    = "C "++show (name c) ++ " gE []"    -- contents not shown. 
+    showHS indent c = case c of
+                       C{} -> "C "++show (name c) ++ " gE []"    -- contents not shown.
+                       _   -> name c
+--    showHS indent c |  isAnything c = "Anything"
+--                    |  isNothing  c = "NOthing"
+--                    |  singleton  c = "S"
+--                    |  otherwise    = "C "++show (name c) ++ " gE []"    -- contents not shown. 
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: AutType                       ***

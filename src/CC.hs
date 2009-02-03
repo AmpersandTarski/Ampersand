@@ -4,8 +4,8 @@
    import CommonClasses ( Identified(name))
    import Collection (Collection(empty,uni,(>-),rd))
    import Auxiliaries (sort, upCap)
-   import ADLdef (flp,cptAnything,cptnew,cptS,mIs)
-   import Data.ADL
+--   import ADLdef (flp,cptAnything,cptnew,cptS,mIs)
+   import Adl
    import ShowADL
    import CC_aux 
              (  pKey_pos, pString_val_pos

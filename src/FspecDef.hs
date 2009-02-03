@@ -10,7 +10,7 @@
 
   where
 
-   import ADLdataDef
+   import Adl
    import CommonClasses(Identified(name,typ))
    import Auxiliaries(showL,haskellIdentifier)
    import Strings(chain)

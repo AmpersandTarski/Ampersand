@@ -839,7 +839,7 @@ SEM ObjectDef
                        @ats.sErr++
                        [ "19 on \n"++show @pos ++" in the definition of '"++ @nm ++
                          "'\n   the label '"++nm
-                         ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- @ats.objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
+                         ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- @ats.objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[Adl.pos o]]++".\n"
                        | nm<-map name @ats.objDefs, length [o| o<- @ats.objDefs, name o==nm]>1 ]++
                        [ "9 on \n"++show @pos ++" in the definition of SERVICE "++ @nm ++ "\n   Cannot match the right hand side of "++showADL @ctx.expr
                          ++"\n   with the left hand side of "
@@ -861,7 +861,7 @@ SEM ObjectDef
                          ++".\n"
                        | null @signs, t<-map snd @ctx.signs ]++
                        [ "17 on "++show @pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
-                         ++(showADL.ctx) e++ " on " ++(show . ADLdef.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . ADLdef.pos . ctx) e'
+                         ++(showADL.ctx) e++ " on " ++(show . Adl.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . Adl.pos . ctx) e'
                          ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
                          ++ "\n (" ++(showADL.ctx) e++ " and " ++(showADL.ctx) e'++ " do not match."
                          ++ "\n"

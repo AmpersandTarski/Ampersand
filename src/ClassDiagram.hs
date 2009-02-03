@@ -4,10 +4,10 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Auxiliaries (chain, eqCl, enc)
    import Typology (Inheritance(Isa))
-   import ADLdef(Contexts,declaredRules,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
+   import Adl(Contexts,declaredRules,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
                 ,multiplicities
-                ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign)
-   import Data.ADL
+                ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign
+                ,Prop(..),Morphism(..),posNone,Concept)
    import ShowADL
    import CC_aux  
          --     ( Context, Concept, Object(concept, attributes, ctx)

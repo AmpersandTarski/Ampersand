@@ -1,8 +1,8 @@
   {-# OPTIONS -XFlexibleContexts #-}
-  module CC_aux ( explain
+  module CC_aux ( -- explain
           --      ,  ShowADL(..)
           --      ,  ShowHS(..)
-                , objectOfConcept
+                  objectOfConcept
                 , pKey_pos
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
@@ -42,15 +42,10 @@
              ( Classification(),preCl,mapCl
              )
    import Typology ( Inheritance(Isa), Typologic, genEq, typology)
-   import ADLdef
+   import Adl
    import ShowADL
    import ShowHS
-
-
-
-
-
-
+   import Adl.Pair
 
 
    objectOfConcept :: Context -> Concept -> Maybe ObjectDef
@@ -133,14 +128,6 @@
 
 
 
-   join::[Paire]->[Paire]->[Paire]
-   join a b = merge ((sort' (trg.head).eqCl trg) a)
-                    ((sort' (src.head).eqCl src) b)
-              where merge (xs:xss) (ys:yss)
-                     | trg (head xs)<src (head ys) = merge xss (ys:yss)
-                     | trg (head xs)>src (head ys) = merge (xs:xss) yss
-                     | otherwise = [[x,y]|[x,i]<-xs,[j,y]<-ys]++ merge xss yss
-                    merge _ _ = []
    makeConceptSpace :: GenR -> [Morphism] -> Concepts
    makeConceptSpace gE morphisms
     = [ upd (fst (head raw)) (sord (concat (map snd raw)))
@@ -148,8 +135,9 @@
                                , (c,os) <- [(s',dom sgn),(t',cod sgn)]
                         ]
       ] where
-         upd c os | isC c     = c{cptos=os}
-                  | otherwise = c
+         upd c os = case c of
+                       C{} -> c{cptos=os}
+                       _   -> c
 
 
 
@@ -167,8 +155,9 @@
 
    instance Pop Concept where
     put_gE gE cs c = h (head ([c'|c'<-cs, c==c']++[c]))
-            where h x | isC x = x{cptgE = gE}
-                      | otherwise = x
+            where h x = case x of
+                         C{} ->  x{cptgE = gE}
+                         _   ->  x
 
     specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("(module CC_aux) Fatal: specialize 1 ("++show a++","++show b++") "++showHS "" c) else
                          (a `glb` b) `lub` c

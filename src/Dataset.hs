@@ -2,12 +2,11 @@
                  ,makeDatasets
                  ,datasetMor)
   where
-   import CommonClasses (Identified(..))
    import Auxiliaries (eqClass)
-   import ADLdef
+   import Adl
 
 {- Datasets zijn bedoeld voor functiepuntentellingen en voor mogelijke efficiency-redenen in SQL-implementaties.
-   Ze brengen een aantal relaties bijeen die zich als één SQL-tabel laten implementeren.
+   Ze brengen een aantal relaties bijeen die zich als ï¿½ï¿½n SQL-tabel laten implementeren.
    Om praktische redenen krijgt een dataset geen eigen zelfstandige type, maar wordt het weergegeven als een ObjectDef.
    De volgende drie functies, makeDataset, makeDatasets en datasetMor, horen bij elkaar
    en moeten onderling consistent blijven.

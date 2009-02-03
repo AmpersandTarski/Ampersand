@@ -67,10 +67,6 @@ module Typology
     match       = (==)
     mul      :: [a] -> [a] -> [a]
     xs `mul` ys = xs++tail ys
-
-
-
-
     typology :: Inheritance a -> Typology a
     typology (Isa rs cs)
      = Typ ([fst (head pth): map snd pth| pth<-clos fst snd rs, not (null pth)] ++ [[c]| c<-cs])

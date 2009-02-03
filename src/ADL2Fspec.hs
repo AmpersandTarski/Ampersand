@@ -5,7 +5,7 @@
    import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass)
    import Char(toLower)
    import Strings(firstCaps,idNam,chain)
-   import ADLdef
+   import Adl
    import Dataset
    import ShowADL
    import FspecDef
@@ -191,9 +191,6 @@
             | otherwise                    = Choice []
          lim (New c)                       = New c
 
-
-   makeRFrule :: Context -> Rule -> Rule
-   makeRFrule context r = r
 
    makeFdecl :: Context -> Declaration -> Declaration
    makeFdecl context d@(Sgn nm a b props prL prM prR cs expla pos nr sig)

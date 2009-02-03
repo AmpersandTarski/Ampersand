@@ -1,10 +1,10 @@
   module HtmlFilenames where
    import CommonClasses ( Identified(name) )
-   import ADLdef ( Context, Declaration, source, target, Context, Rule, nr
+   import Adl ( Context, Declaration, source, target, Context, Rule
                   ,Concept, Pattern)
    import Hatml  (htmlname)
    import Data.Fspec
-   --TODO : Er is géén nut meer voor een ADL2Html, maar alleen een Fspec2Html. 
+   --TODO : Er is gï¿½ï¿½n nut meer voor een ADL2Html, maar alleen een Fspec2Html. 
    --       hierdoor zullen veel van onderstaande spullen kunnen/moeten verdwijnen.
 
    fnContext :: Context -> String
@@ -13,9 +13,9 @@
    fnRelation :: Context -> Declaration -> String
    fnRelation context decl
     = "REL_"++htmlname (name context++"_"++name decl++name (source decl)++name (target decl))
-   fnRule :: Context -> Rule -> String
-   fnRule context rule
-    = "RULE_"++htmlname (name context++"_"++show (nr rule))
+--   fnRule :: Context -> Rule -> String
+--   fnRule context rule
+--    = "RULE_"++htmlname (name context++"_"++show (nr rule))
    fnConcept :: Context -> Concept -> String
    fnConcept context cnpt
     = "CPT_"++htmlname (name context++name cnpt)

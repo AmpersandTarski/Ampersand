@@ -6,7 +6,7 @@
                         ,selectNormFiExpr,clos0,pDebug,noCollide) where
    import Char
    import Auxiliaries
-   import ADLdef
+   import Adl
    import ShowADL
    import ShowHS(showHS,ShowHS())
    import CC_aux ( isProperty,oneMorphism)
@@ -507,7 +507,7 @@
 
 
    -- WAAROM?? Onderstaande declaratie mag wel wat verduidelijking. Het lijkt me ook niet onderhoudbaar. Overigens is deze module de ENIGE die het noodzakelijk maakt om de Class ShowHS te exproteren in ShowHS. Jammer!
-   sqlRelName :: (ShowHS m,Morphic m,Morphical m,IsClos m) => Context -> m -> String
+   sqlRelName :: (ShowHS m,Morphic m,MorphicId m,Morphical m,IsClos m) => Context -> m -> String
    sqlRelName context m
     = if isIdent m then sqlConcept context (source m) else
       if isClos m then sqlClosName context m else
@@ -721,7 +721,7 @@
        [ "\n"++[' '|i<-[1..n-3]]++"// "++informalRule {-[sIs c]-} (CR(fOp, Tm (mIs c), bOp, toExpr, frExpr, rule))++"\n"++[' '|i<-[1..n]]++
          "if(isset($attrs['"++str++"']))" ++
          "DB_doquer('INSERT IGNORE INTO "++sqlMorName context s++" VALUES (\\''.addSlashes($attrs['"++str++"']).'\\', \\''.addSlashes($attrs['"++str++"']).'\\')');"
-       | (CR(fOp, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [sIs c], isIdent toExpr
+       | (CR(fOp, e, bOp, toExpr, frExpr, rule))<-computeOrder hcs "INSERT INTO" [Isn c c], isIdent toExpr
        , sign frExpr <= sign c
        , oneMorphism toExpr
        , s<-mors toExpr, not (makeDeclaration s `elem` excludeRels)]

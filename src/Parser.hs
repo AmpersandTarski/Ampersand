@@ -7,7 +7,7 @@ import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
 import AGtry
-import Data.ADL
+import Adl
 
  
 parseADL :: String      -- | The string to be parsed

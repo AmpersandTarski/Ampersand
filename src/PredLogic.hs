@@ -15,11 +15,10 @@
    import Collection (Collection((>-)))
    import Auxiliaries (chain, eqCl)
 
-   import ADLdef
+   import Adl
    import ShowADL
    import ShowHS
-   import CC_aux ( explain 
-                 , applyM 
+   import CC_aux ( applyM 
                  , lub, sur, inj, fun, tot 
                  , mkVar
                  , order

@@ -1,18 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables#-}
   module ObjBinGenObject where
    import Char(toUpper)
-   import Auxiliaries(chain, commaEng)
-   import Calc(informalRule, disjNF, computeOrder, triggers, allClauses, conjuncts, doClause)
-   import ADLdef
+   import Strings(chain)
+   import Calc( disjNF, triggers, allClauses, conjuncts, doClause)
+   import Adl
    import ShowADL
    import CC_aux ( tot, fun
                  , objectOfConcept
                  )
-   import CommonClasses
    import Collection (Collection(rd))
-   import PredLogic -- (for error messages by dbCorrect)
-   import Hatml     -- (for converting error messages to HTML)
-   import Atlas     -- (for converting error messages to HTML)
    import RelBinGenBasics
 
  -- The service "getobject" communicates metadata to the interface.

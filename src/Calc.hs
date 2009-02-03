@@ -20,7 +20,7 @@
    import Collection (Collection (uni,isc,empty,rd))
    import Auxiliaries
    import Classification
-   import ADLdef
+   import Adl
    import FspecDef
    import ShowADL
    import ShowHS

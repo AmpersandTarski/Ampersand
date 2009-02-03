@@ -8,20 +8,21 @@
    import CommonClasses ( Identified(name) )
    import Collection (Collection(rd))
    import Auxiliaries (chain, eqClass, sort)
-   import ADLdef ( Context,Pattern(..),ctxpats
-                 , Rule(Ru),sign,RuleType(..)
-                 , Expression(..)
-                 , isMph, isSignal, makeDeclaration
-                 , flp, inline, posNone
-                 , source, target
-                 , multiplicities
-                 , union
-                 , Morphism(..)
-                 , concs
-                 , declarations
-                 , mors
-                 , specs
-                 )
+   import Adl
+--   import ADLdef ( Context,Pattern(..),ctxpats
+--                 , Rule(Ru),sign,RuleType(..)
+--                 , Expression(..)
+--                 , isMph, isSignal, makeDeclaration
+--                 , flp, inline, posNone
+--                 , source, target
+--                 , multiplicities
+--                 , union
+--                 , Morphism(..)
+--                 , concs
+--                 , declarations
+--                 , mors
+--                 , specs
+--                 )
    import CC_aux (order,isProperty,tot,inj,sur,fun)
    import Typology ( Inheritance(Isa) )
    import HtmlFilenames (fnConcept,fnRelation)

@@ -10,7 +10,7 @@ import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
 import Typology (Inheritance(Isa),genEq,typology)
-import ADLdef
+import Adl
 import ShowHS(showHS)
 import ShowADL
 import CC_aux ( order,makeConceptSpace, put_gE
@@ -1571,7 +1571,7 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_strs) (_lhs_gE) (_lhs_iConc) (_lh
           _ats_sErr++
           [ "19 on \n"++show _pos ++" in the definition of '"++ _nm ++
             "'\n   the label '"++nm
-            ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- _ats_objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[ADLdef.pos o]]++".\n"
+            ++"' may be used only once in each SERVICE, but it occurs on lines "++commaEng "and" [show l| o<- _ats_objDefs, name o==nm, FilePos (fn,Pos l c,sym)<-[Adl.pos o]]++".\n"
           | nm<-map name _ats_objDefs, length [o| o<- _ats_objDefs, name o==nm]>1 ]++
           [ "9 on \n"++show _pos ++" in the definition of SERVICE "++ _nm ++ "\n   Cannot match the right hand side of "++showADL _ctx_expr
             ++"\n   with the left hand side of "
@@ -1593,7 +1593,7 @@ sem_ObjectDef_Obj (_nm) (_pos) (_ctx) (_ats) (_strs) (_lhs_gE) (_lhs_iConc) (_lh
             ++".\n"
           | null _signs, t<-map snd _ctx_signs ]++
           [ "17 on "++show _pos ++"\n"++show [ [concept o|o<-cl] | cl<-eqcls]++"\n"++": Cannot match "
-            ++(showADL.ctx) e++ " on " ++(show . ADLdef.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . ADLdef.pos . ctx) e'
+            ++(showADL.ctx) e++ " on " ++(show . Adl.pos . ctx) e++ " with " ++(showADL.ctx) e'++ " on " ++(show . Adl.pos . ctx) e'
             ++ "\n because source(" ++(showADL.ctx) e++ ")=" ++(name.source.ctx) e++ " and source(" ++(showADL.ctx) e'++ ")=" ++(name.source.ctx) e'++"."
             ++ "\n (" ++(showADL.ctx) e++ " and " ++(showADL.ctx) e'++ " do not match."
             ++ "\n"

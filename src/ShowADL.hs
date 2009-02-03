@@ -11,10 +11,28 @@
    import Char  (isAlphaNum,isUpper)
    import CommonClasses(Identified(name),order,lub)
    import Collection (rd)
-   import ADLdataDef
-   import ADLdef (Morphic(..),morlist, declarations,mIs)
-   import FspecDef
-   import Auxiliaries(chain,showL,eqCl)
+--   import ADLdataDef
+--   import ADLdef (Morphic(..),morlist, declarations,mIs)
+   import Adl.Concept
+   import Adl.ConceptDef
+   import Adl.Context
+   import Adl.Expression
+   import Adl.FilePos
+   import Adl.Gen
+   import Adl.KeyDef
+   import Adl.Label
+   import Adl.MorphismAndDeclaration
+   import Adl.ObjectDef
+   import Adl.Pair
+   import Adl.Pattern
+   import Adl.Population
+   import Adl.Prop
+   import Adl.Rule
+   import Classes.Morphic
+   
+   import Data.Fspec(Fspc,vrels)-- TODO FspecDef hoort hier natuurlijk niet!
+   import Strings (chain)
+   import Auxiliaries(eqCl,showL)
    
    class ShowADL a where
     showADL :: a -> String

@@ -4,7 +4,7 @@ module Main where
 import Options               (getOptions,Options(..),usageInfo',verboseLn,verbose)
 import Version               (versionbanner)
 import Parser                (parseADL)
-import Data.ADL              (Context)
+import Adl                   (Context)
 import Data.Fspec            (Fspc)
 import ADL2Fspec             (makeFspec)
 import Generators            

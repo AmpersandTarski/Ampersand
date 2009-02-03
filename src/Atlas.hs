@@ -11,11 +11,11 @@
             ( Inheritance(Isa)
              ,Typology(Typ), Typologic(typology)
              ,makeTrees)
-   import ADLdef
+   import Adl
    import ShowADL
    import ShowHS
-   import CC_aux ( explain
-                 , conts, dom, cod
+   import CC_aux ( 
+                   conts, dom, cod
                  , clearG
                  , applyM
                  )
@@ -27,7 +27,7 @@
              ,hshow,htmlImageMap,htmlTable,htmlNumbered,htmlValNumbered
              ,avoidJSreservedwords,HTML)
    import HtmlFilenames
-            ( fnContext,fnPatConcept,fnPattern,fnRule,fnConcept
+            ( fnContext,fnPatConcept,fnPattern,fnConcept
              ,fnRelation)
    import PredLogic 
             ( explainArt,lang,assemble,normRule,objOrShow
@@ -331,7 +331,7 @@
               nijssenZin (Sgn _ _ _ _ l s r [] expla _ _ _)
                = expla++"A tuple <I>x</I>,<I>y</I> in the following table means:<BR />"++l++"&lt;x&gt;"++s++"&lt;y&gt;"++r++".<P>"
               nijssenZin (Sgn _ _ _ _ l s r (c:cs) expla _ _ _)
-               = expla++"A tuple, for example <I>("++src c++","++trg c++")</I> in the following table means:<BR />"++l++src c++s++trg c++r++".<P>"
+               = expla++"A tuple, for example <I>("++source c++","++target c++")</I> in the following table means:<BR />"++l++source c++s++target c++r++".<P>"
               nijssenZin (Isn g s)
                = "A tuple <I>x</I>,<I>y</I> in relation I means:<BR />x&eq;y.<P>"
               nijssenZin (Iscompl g s)
@@ -502,8 +502,8 @@
        pTitle = [Inj,Sur,Uni,Tot]++if or [source s==target s| s<-ss] then [Rfx,Trn,Sym,Asy] else []
 
    multViolations :: Declaration -> Prop -> Pairs
-   multViolations s Uni = [rec| cl<-eqCl src (contents s), length cl>1, rec<-cl]
-   multViolations s Inj = [rec| cl<-eqCl trg (contents s), length cl>1, rec<-cl]
+   multViolations s Uni = [rec| cl<-eqCl source (contents s), length cl>1, rec<-cl]
+   multViolations s Inj = [rec| cl<-eqCl target (contents s), length cl>1, rec<-cl]
    multViolations s Tot = [[e,""]| e<-rd (conts (source s))>-dom s]
    multViolations s Sur = [["",e]| e<-rd (conts (target s))>-cod s]
 

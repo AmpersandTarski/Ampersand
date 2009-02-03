@@ -6,8 +6,14 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module Data.Fspec 
-             (module Data.ADL
+module Data.Fspec ( 
+               Pattern(..)
+             , Rule(..)
+             , ObjectDef(..)
+             , Expression(..)
+             , Morphism(..)
+             , Declaration(..)
+             , Concept(..)
              , Fspc(..)
              , Ftheme(..)
              , Funit(..)
@@ -19,16 +25,12 @@ module Data.Fspec
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
 where
-   import Data.ADL  
-               ( Pattern
-               , Rule
-               , ObjectDef
-               , Expression
-               , Morphism
-               , Declaration
-               , Concept
-               )
-
+   import Adl.Pattern
+   import Adl.Rule
+   import Adl.ObjectDef
+   import Adl.Expression
+   import Adl.MorphismAndDeclaration
+   import Adl.Concept
    import Typology(Inheritance)
    data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                      , themes   :: [Ftheme]      -- ^ One for every pattern

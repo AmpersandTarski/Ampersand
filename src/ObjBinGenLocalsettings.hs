@@ -1,15 +1,8 @@
-{-# LINE 1 "ObjBinGenLocalsettings.lhs" #-}
-#line 1 "ObjBinGenLocalsettings.lhs"
   module ObjBinGenLocalsettings where
-   import Char
-   import Auxiliaries
-   import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
-   import ADLdef (Object(attributes))
+   import Strings(chain)
+   import Adl (Object(attributes))
    import CommonClasses (Identified(name))
-   import PredLogic -- (for error messages by dbCorrect)
-   import Hatml     -- (for converting error messages to HTML)
-   import Atlas     -- (for converting error messages to HTML)
-   import RelBinGenBasics
+   import RelBinGenBasics(addSlashes)
 
    localsettings context serviceObjects dbName = chain "\n"
     (["<?php"
