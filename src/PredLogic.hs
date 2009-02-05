@@ -157,8 +157,8 @@
    ruleToPL = assemble . normRule
 
    normRule :: Rule -> Rule
-   normRule r@(Ru AlwaysExpr _ pos cons cpu expla sgn nr pn)
-    = Ru AlwaysExpr (error ("(Module PredLogic:) illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn nr pn
+   normRule r@(Ru Truth _ pos cons cpu expla sgn nr pn)
+    = Ru Truth (error ("(Module PredLogic:) illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn nr pn
    normRule (Ru Implication a@(F ants) pos c@(F cons) cpu expla sgn nr pn)
     | idsOnly ants = Ru Implication (F [Tm (mIs idA)]) pos (F cons) cpu expla (idC,idC) nr pn
     | otherwise    = Ru Implication (F as) pos (F cs) cpu expla (sac,tac) nr pn
@@ -184,18 +184,18 @@
     | ruleType r==Implication = if idsOnly (antecedent r)
                         then Forall [(s,source(r))] rb
                         else transform (Forall [(s,source(r)),(t,target(r))] (Implies ra rc))
-    | ruleType r==AlwaysExpr = Forall [(s,source(r)),(t,target(r))] rc
+    | ruleType r==Truth = Forall [(s,source(r)),(t,target(r))] rc
     where
       [s,t] = mkVar [] [source(r), target(r)]
       transform (Forall vs (Implies (Exists es antc) cons)) = Forall (vs++es) (Implies antc cons)
       transform expr = expr
       (ra,avars) | ruleType r==Equivalence = assembleF [s,t] (antecedent r) s t
                  | ruleType r==Implication = assembleF [s,t] (antecedent r) s t
-                 | ruleType r==AlwaysExpr = assembleF [s,t] (consequent r) s t
+                 | ruleType r==Truth = assembleF [s,t] (consequent r) s t
       (rb,bvars) | ruleType r==Implication = assembleF [s]   (consequent r) s s
       (rc,cvars) | ruleType r==Equivalence = assembleF avars (consequent r) s t
                  | ruleType r==Implication = assembleF avars (consequent r) s t
-                 | ruleType r==AlwaysExpr = assembleF [s,t] (consequent r) s t
+                 | ruleType r==Truth = assembleF [s,t] (consequent r) s t
 
    assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t

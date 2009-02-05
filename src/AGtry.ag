@@ -8,7 +8,7 @@ DATA Pattern       | Pat nm:String rules:Rules gen:Gens pms:Declarations cs:Conc
 DATA Rule          | Ru c:RuleType antc:Expression rulePos:{FilePos} cons:Expression cpu:Expressions expl:String sgn:{(Concept,Concept)} nr:Int pn:String
                    | Sg pos:{FilePos} rule:Rule expl:String sgn:{(Concept,Concept)} nr:Int pn:String signal:Declaration
                    | Gc gluePos:{FilePos} m:Morphism expr:Expression cpu:Expressions sgn:{(Concept,Concept)} nr:Int pn:String
-DATA RuleType      | Implication | Equivalence | AlwaysExpr | Generalization | Automatic
+DATA RuleType      | Implication | Equivalence | Truth | Generalization | Automatic
 DATA KeyDef        | Kd pos:FilePos lbl:String ctx:Expression ats:ObjectDefs
 DATA Population    | Popu m:Morphism ps:{[Paire]}
 DATA ObjectDef     | Obj nm:String pos:FilePos ctx:Expression ats:ObjectDefs strs:{[[String]]}
@@ -257,7 +257,7 @@ ATTR RuleType [ | | typ:{RuleType} ]
 SEM RuleType
   | Implication    lhs.typ = Implication
   | Equivalence    lhs.typ = Equivalence
-  | AlwaysExpr     lhs.typ = AlwaysExpr
+  | Truth     lhs.typ = Truth
   | Generalization lhs.typ = Generalization
   | Automatic      lhs.typ = Automatic
 
@@ -276,7 +276,7 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
      | (c,es)<-cpu']
    )
    where
-    (matches,str) = recur ([antc|c/=AlwaysExpr]++[cons])
+    (matches,str) = recur ([antc|c/=Truth]++[cons])
     cerrs = [] -- obsolete? map (drop 5) ([ name m| m<-mors r] `isc` map (("Clos_"++).name.head.mors.fst) cpu')
     cpu'  = [ (c,es) | c<-r_cpu r, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
     recur  []    = ([],"")
@@ -333,8 +333,8 @@ SEM Rule
 -- @errcpu contains all error messages wrt cpu.
        loc.errcpu      = snd @rcpu
        loc.rcpu        = subExprCheck
-                         (if @c.typ==AlwaysExpr
-                         then Ru @c.typ (error ("Reference to antecedent of AlwaysExpr Rule "++"showHS  r")) @rulePos @cons.expr @cpu.raw @expl
+                         (if @c.typ==Truth
+                         then Ru @c.typ (error ("Reference to antecedent of Truth Rule "++"showHS  r")) @rulePos @cons.expr @cpu.raw @expl
                                  (if null @is
                                   then error("Fatal: null @is on "++show @rulePos++"\n@cons.expr = "++show @cons.expr++"\n@cons.signs = "++shSigns @cons.signs)
                                   else head @is)
@@ -351,12 +351,12 @@ SEM Rule
 -- closure declarations
        loc.closdecls   = rd [s| Ru c antc p cons cpu expla (a,b) n pn <- @clrs, s<-declarations antc]
 -- closure rules
-       loc.clrs        = if @c.typ==AlwaysExpr
+       loc.clrs        = if @c.typ==Truth
                          then @cons.rules
                          else @antc.rules ++ @cons.rules
-       lhs.morphisms   = (if @c.typ==AlwaysExpr then [] else @antc.morphisms)++ @cons.morphisms
+       lhs.morphisms   = (if @c.typ==Truth then [] else @antc.morphisms)++ @cons.morphisms
 -- this is for more precise error messages in case antc or cons have Anything for a type.
-       loc.is          = if @c.typ==AlwaysExpr then @cons.signs else
+       loc.is          = if @c.typ==Truth then @cons.signs else
                          if null @antc.signs
                          then (if null @cons.signs
                                then []
@@ -365,7 +365,7 @@ SEM Rule
                                then @antc.signs
                                else @s)
 -- the basic types for this rule that can be constructed from the types in declarations from antc and cons
-       loc.s           = if @c.typ==AlwaysExpr then @cons.signs else
+       loc.s           = if @c.typ==Truth then @cons.signs else
                          irredT @lhs.gE [ (if a `@lhs.gE` a' then a' else a, if b `@lhs.gE` b' then b' else b)
                                         | (a,b)<- @cons.signs, (a',b')<- @antc.signs
                                         , (a `@lhs.gE` a' || a' `@lhs.gE` a) && (b `@lhs.gE` b' || b' `@lhs.gE` b)
@@ -620,7 +620,7 @@ SEM Rules
          lhs.usedDecls    = []
 SEM Rule
   | Ru lhs.sErr     ={-  ["Diagnose Ru on Line "++show diagl++": "++
-                       (if @c==AlwaysExpr then "" else
+                       (if @c==Truth then "" else
                         "\n@antc.signs: "++show @antc.signs++
                         "\n@antc.raw: "++showADL @antc.raw++
                         "\n@antc.expr: "++showADL @antc.expr)++
@@ -633,7 +633,7 @@ SEM Rule
                       | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) @rulePos]++ -}
                       take 1   -- tip: for diagnosis purposes, remove this `take 1' and get more messages.
                       (@cons.sErr ++
-                        (if @c.typ==AlwaysExpr then [] else @antc.sErr ++
+                        (if @c.typ==Truth then [] else @antc.sErr ++
                          [ "8 in "++show @rulePos++"\n   Meaningless rule.\n"
                          | null @cons.signs&&null @antc.signs]++
                          [ "1 in "++show @rulePos++"\n   Mismatch in rule:\n   "++
@@ -960,7 +960,7 @@ SEM Rules
 
 SEM Rule
   | Ru   antc.rnr   = @lhs.rnr + 1
-         cons.rnr   = if @c.typ==AlwaysExpr then @lhs.rnr + 1 else @antc.rnr
+         cons.rnr   = if @c.typ==Truth then @lhs.rnr + 1 else @antc.rnr
          lhs.rnr    = @cons.rnr
          lhs.rules  = @rs
   | Sg   rule.rnr   = @lhs.rnr

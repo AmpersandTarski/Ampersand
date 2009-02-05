@@ -97,8 +97,8 @@ where
        _     `match` _       = False
 
    instance Substitutive Rule where
-    subst (m,f) r@(Ru AlwaysExpr antc pos cons cpu expla sgn nr pn)
-     = Ru AlwaysExpr (error ("(Module CC_aux:) illegal call to antecedent in subst ("++show m++","++show f++") ("++show r++")")) pos cons' cpu expla (sign cons') nr pn
+    subst (m,f) r@(Ru Truth antc pos cons cpu expla sgn nr pn)
+     = Ru Truth (error ("(Module CC_aux:) illegal call to antecedent in subst ("++show m++","++show f++") ("++show r++")")) pos cons' cpu expla (sign cons') nr pn
        where cons' = subst (m,f) cons
     subst (m,f) r@(Ru c antc pos cons cpu expla sgn nr pn)
      = if sign antc' `order` sign cons'

@@ -64,10 +64,10 @@ module Adl.Concept where
    instance ABoolAlg Concept where
     glb a b | b <= a = b
             | a <= b = a
-            | otherwise = error ("(module ADLdataDef) Fatal: (C) glb undefined: a="++show a++", b="++show b)
+            | otherwise = error ("(module Concept) Fatal: (C) glb undefined: a="++show a++", b="++show b)
     lub a b | a <= b = b
             | b <= a = a
-            | otherwise = error ("(module ADLdataDef) Fatal: (C) lub undefined: a="++show a++", b="++show b)
+            | otherwise = error ("(module Concept) Fatal: (C) lub undefined: a="++show a++", b="++show b)
 
    cptC :: String -> GenR -> [String] -> Concept
    cptC nm gE os = C{ cptnm=nm, cptgE = gE, cptos = os}  -- constructor

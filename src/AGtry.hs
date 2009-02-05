@@ -124,7 +124,7 @@ subExprCheck r@(Ru c antc p cons cpu expla sgn nr pn)
      | (c,es)<-cpu']
    )
    where
-    (matches,str) = recur ([antc|c/=AlwaysExpr]++[cons])
+    (matches,str) = recur ([antc|c/=Truth]++[cons])
     cerrs = [] -- obsolete? map (drop 5) ([ name m| m<-mors r] `isc` map (("Clos_"++).name.head.mors.fst) cpu')
     cpu'  = [ (c,es) | c<-r_cpu r, es<-[rd[m| m<-matches, c `match` m]], length es/=1]
     recur  []    = ([],"")
@@ -2102,8 +2102,8 @@ sem_Rule_Ru (_c) (_antc) (_rulePos) (_cons) (_cpu) (_expl) (_sgn) (_nr) (_pn) (_
             snd _rcpu
         (_rcpu) =
             subExprCheck
-            (if _c_typ==AlwaysExpr
-            then Ru _c_typ (error ("Reference to antecedent of AlwaysExpr Rule "++"showHS  r")) _rulePos _cons_expr _cpu_raw _expl
+            (if _c_typ==Truth
+            then Ru _c_typ (error ("Reference to antecedent of Truth Rule "++"showHS  r")) _rulePos _cons_expr _cpu_raw _expl
                     (if null _is
                      then error("Fatal: null @is on "++show _rulePos++"\n@cons.expr = "++show _cons_expr++"\n@cons.signs = "++shSigns _cons_signs)
                      else head _is)
@@ -2116,11 +2116,11 @@ sem_Rule_Ru (_c) (_antc) (_rulePos) (_cons) (_cpu) (_expl) (_sgn) (_nr) (_pn) (_
         (_closdecls) =
             rd [s| Ru c antc p cons cpu expla (a,b) n pn <- _clrs, s<-declarations antc]
         (_clrs) =
-            if _c_typ==AlwaysExpr
+            if _c_typ==Truth
             then _cons_rules
             else _antc_rules ++ _cons_rules
         (_is) =
-            if _c_typ==AlwaysExpr then _cons_signs else
+            if _c_typ==Truth then _cons_signs else
             if null _antc_signs
             then (if null _cons_signs
                   then []
@@ -2129,7 +2129,7 @@ sem_Rule_Ru (_c) (_antc) (_rulePos) (_cons) (_cpu) (_expl) (_sgn) (_nr) (_pn) (_
                   then _antc_signs
                   else _s)
         (_s) =
-            if _c_typ==AlwaysExpr then _cons_signs else
+            if _c_typ==Truth then _cons_signs else
             irredT _lhs_gE [ (if a `_lhs_gE` a' then a' else a, if b `_lhs_gE` b' then b' else b)
                            | (a,b)<- _cons_signs, (a',b')<- _antc_signs
                            , (a `_lhs_gE` a' || a' `_lhs_gE` a) && (b `_lhs_gE` b' || b' `_lhs_gE` b)
@@ -2139,17 +2139,17 @@ sem_Rule_Ru (_c) (_antc) (_rulePos) (_cons) (_cpu) (_expl) (_sgn) (_nr) (_pn) (_
         ( _antc_expr,_antc_morphisms,_antc_raw,_antc_rnr,_antc_rules,_antc_sErr,_antc_signs) =
             (_antc (_lhs_gE) (if null _is then _antc_signs else _is) (_lhs_pn) (_rulePos) (_lhs_rnr + 1) (_lhs_sDef))
         ( _cons_expr,_cons_morphisms,_cons_raw,_cons_rnr,_cons_rules,_cons_sErr,_cons_signs) =
-            (_cons (_lhs_gE) (if null _is then _cons_signs else _is) (_lhs_pn) (_rulePos) (if _c_typ==AlwaysExpr then _lhs_rnr + 1 else _antc_rnr) (_lhs_sDef))
+            (_cons (_lhs_gE) (if null _is then _cons_signs else _is) (_lhs_pn) (_rulePos) (if _c_typ==Truth then _lhs_rnr + 1 else _antc_rnr) (_lhs_sDef))
         ( _cpu_exprs,_cpu_morphisms,_cpu_raw,_cpu_rnr,_cpu_rules,_cpu_sErr,_cpu_signss) =
             (_cpu (_lhs_gE) (_is) (_lhs_pn) (_rulePos) (_cons_rnr) (_lhs_sDef) ([]))
     in  ([]
         ,[]
-        ,(if _c_typ==AlwaysExpr then [] else _antc_morphisms)++ _cons_morphisms
+        ,(if _c_typ==Truth then [] else _antc_morphisms)++ _cons_morphisms
         ,_cons_rnr
         ,_rs
         ,take 1
          (_cons_sErr ++
-           (if _c_typ==AlwaysExpr then [] else _antc_sErr ++
+           (if _c_typ==Truth then [] else _antc_sErr ++
             [ "8 in "++show _rulePos++"\n   Meaningless rule.\n"
             | null _cons_signs&&null _antc_signs]++
             [ "1 in "++show _rulePos++"\n   Mismatch in rule:\n   "++
@@ -2212,7 +2212,7 @@ sem_Rule_Sg (_pos) (_rule) (_expl) (_sgn) (_nr) (_pn) (_signal) (_lhs_gE) (_lhs_
 
 -}
 {-
-   local variables for RuleType.AlwaysExpr:
+   local variables for RuleType.Truth:
 
 -}
 {-
@@ -2236,8 +2236,8 @@ type T_RuleType = ((RuleType))
 -- cata
 sem_RuleType :: (RuleType) ->
                 (T_RuleType)
-sem_RuleType ((AlwaysExpr )) =
-    (sem_RuleType_AlwaysExpr )
+sem_RuleType ((Truth )) =
+    (sem_RuleType_Truth )
 sem_RuleType ((Automatic )) =
     (sem_RuleType_Automatic )
 sem_RuleType ((Equivalence )) =
@@ -2246,10 +2246,10 @@ sem_RuleType ((Generalization )) =
     (sem_RuleType_Generalization )
 sem_RuleType ((Implication )) =
     (sem_RuleType_Implication )
-sem_RuleType_AlwaysExpr :: (T_RuleType)
-sem_RuleType_AlwaysExpr  =
+sem_RuleType_Truth :: (T_RuleType)
+sem_RuleType_Truth  =
     let 
-    in  (AlwaysExpr)
+    in  (Truth)
 sem_RuleType_Automatic :: (T_RuleType)
 sem_RuleType_Automatic  =
     let 

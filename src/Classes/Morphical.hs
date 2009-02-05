@@ -202,27 +202,27 @@ module Classes.Morphical where
     closExprs    pat = closExprs (ptrls pat)
 
    instance Morphical Rule where
-    concs (Ru c antc _ cons _ _ _ _ _)     = if c==AlwaysExpr then concs cons else concs antc `uni` concs cons
+    concs (Ru c antc _ cons _ _ _ _ _)     = if c==Truth then concs cons else concs antc `uni` concs cons
     concs (Sg _ rule _ _ _ _ _)            = concs rule
     concs (Gc _ m expr _ _ _ _)            = concs m `uni` concs expr
     concs (Fr _ d expr _)                  = concs d `uni` concs expr
-    mors (Ru c antc _ cons _ _ _ _ _)      = if c==AlwaysExpr then mors cons else mors antc `uni` mors cons
+    mors (Ru c antc _ cons _ _ _ _ _)      = if c==Truth then mors cons else mors antc `uni` mors cons
     mors (Sg _ rule _ _ _ _ _)             = mors rule
     mors (Gc _ m expr _ _ _ _)             = mors m `uni` mors expr
     mors (Fr _ d expr _)                   = mors d `uni` mors expr
-    morlist (Ru c antc _ cons _ _ _ _ _)   = if c==AlwaysExpr then morlist cons else morlist antc++morlist cons
+    morlist (Ru c antc _ cons _ _ _ _ _)   = if c==Truth then morlist cons else morlist antc++morlist cons
     morlist (Sg _ rule _ _ _ _ _)          = morlist rule
     morlist (Gc _ m expr _ _ _ _)          = morlist m++morlist expr
     morlist (Fr _ _ expr _)                = morlist expr
-    genE (Ru c antc _ cons  _ _ _ _ _)     = if c==AlwaysExpr then genE cons else genE [antc,cons]
+    genE (Ru c antc _ cons  _ _ _ _ _)     = if c==Truth then genE cons else genE [antc,cons]
     genE (Sg _ rule _ _ _ _ _)             = genE rule
     genE (Gc _ m expr _ _ _ _)             = genE m
     genE (Fr _ _ expr _)                   = genE expr
-    declarations (Ru c antc _ cons _ _ _ _ _) = if c==AlwaysExpr then declarations cons else declarations [antc,cons]
+    declarations (Ru c antc _ cons _ _ _ _ _) = if c==Truth then declarations cons else declarations [antc,cons]
     declarations (Sg _ rule _ _ _ _ d)        = [d] `uni` declarations rule
     declarations (Gc _ m expr _ _ _ _)        = declarations m
     declarations (Fr _ _ expr _)              = declarations expr
-    closExprs (Ru c antc _ cons _ _ _ _ _) = if c==AlwaysExpr then closExprs cons else closExprs antc `uni` closExprs cons
+    closExprs (Ru c antc _ cons _ _ _ _ _) = if c==Truth then closExprs cons else closExprs antc `uni` closExprs cons
     closExprs (Sg _ rule _ _ _ _ _)        = closExprs rule
     closExprs (Gc _ m expr  _ _ _ _)       = closExprs expr
     closExprs (Fr _ _ expr _)              = [expr]

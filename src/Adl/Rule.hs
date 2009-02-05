@@ -13,7 +13,7 @@ module Adl.Rule where
         Ru { rrsrt :: RuleType          -- ^ One of the following:
                                         --    | Implication if this is an implication;
                                         --    | Equivalence if this is an equivalence;
-                                        --    | AlwaysExpr  if this is an ALWAYS expression.
+                                        --    | Truth  if this is an ALWAYS expression.
            , rrant :: Expression        -- ^ Antecedent
            , rrfps :: FilePos           -- ^ Position in the ADL file
            , rrcon :: Expression        -- ^ Consequent
@@ -47,7 +47,7 @@ module Adl.Rule where
            , frcmp :: Expression        -- ^ expression to be computed
            , r_pat :: String            -- ^ name of pattern in which it was defined.
            } deriving (Eq,Show)
-   data RuleType = Implication | Equivalence | AlwaysExpr | Generalization | Automatic deriving (Eq,Show)
+   data RuleType = Implication | Equivalence | Truth | Generalization | Automatic deriving (Eq,Show)
 
    -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
    data AutType = Clos0 | Clos1 deriving (Eq,Show)
@@ -83,13 +83,13 @@ module Adl.Rule where
     typ r = "Rule_"
    -- | Han, wat hieronder gebeurt vind ik raar: twee varianten waar hetzelfde uitkomt (in source en target). WAAROM? Welke bedoeling heb je daarmee? Geen? TODO: vereenvoudigen.
    instance Association Rule where
-    source r | ruleType r==AlwaysExpr = fst (sign r)
+    source r | ruleType r==Truth = fst (sign r)
              | otherwise              = fst (sign r)
-    target r | ruleType r==AlwaysExpr = snd (sign r)
+    target r | ruleType r==Truth = snd (sign r)
              | otherwise              = snd (sign r)
-    sign r   | ruleType r==AlwaysExpr = sign (consequent r)
+    sign r   | ruleType r==Truth = sign (consequent r)
              | otherwise              = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
-                                            error ("(module ADLdataDef) Fatal: incompatible signs in "++misbruiktShowHS "" r)
+                                            error ("(module Rule) Fatal: incompatible signs in "++misbruiktShowHS "" r)
 
    instance Explained Rule where
     explain (Ru _ _ _ _ _ expla _ _ _) = expla
@@ -105,7 +105,7 @@ module Adl.Rule where
 
    antecedent :: Rule -> Expression
    antecedent r = case r of
-                   Ru{rrsrt = AlwaysExpr} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+                   Ru{rrsrt = Truth} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
                    Ru{} -> rrant r
                    Sg{} -> antecedent (srsig r)
                    Gc{} -> Tm (grspe r)

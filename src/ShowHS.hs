@@ -274,10 +274,10 @@ where
                      ,show (r_pat r)
                      ]
 --    showHS indent r@(Ru _ _ _ _ _ _ _ _ _)
---     = if rrsrt r==AlwaysExpr
---       then chain " " ["Ru",showHS "" AlwaysExpr,undef,"("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")",showL (map (showHS "") (r_cpu r)),show (rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
+--     = if rrsrt r==Truth
+--       then chain " " ["Ru",showHS "" Truth,undef,"("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")",showL (map (showHS "") (r_cpu r)),show (rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
 --       else chain " " ["Ru",showHS "" (rrsrt r),"("++showHS "" (antecedent r)++")","("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",show(rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
---       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an AlwaysExpr rule\")"
+--       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an Truth rule\")"
 --    showHS indent r@(Sg _ _ _ _ _ _ _)
 --     = chain " " ["Sg","("++showHS "" (srfps r)++")","("++showHS "" (srsig r)++")",show (srxpl r),(showHS "" (srtyp r)),show (runum r),show (r_pat r),show (srrel r)]
 --    showHS indent r@(Gc _ _ _ _ _ _ _)
@@ -288,7 +288,7 @@ where
 -- \***********************************************************************
    instance ShowHS RuleType where
      showHSname rt = error "showHSname undefined for Type 'RuleType'"
-     showHS indent AlwaysExpr     = "AlwaysExpr"
+     showHS indent Truth     = "Truth"
      showHS indent Equivalence    = "Equivalence"
      showHS indent Implication    = "Implication"
      showHS indent Generalization = "Generalization"

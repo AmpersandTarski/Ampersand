@@ -1675,7 +1675,7 @@
                      | ruleType r==Implication && fEmpty (consequent r) = lshow language (Cp (antecedent r))
                      | ruleType r==Implication                          = lshow language (antecedent r)++"\\subs"++lshow language (consequent r)
                      | ruleType r==Equivalence = lshow language (antecedent r)++"="++lshow language (consequent r)
-                     | ruleType r==AlwaysExpr  = lshow language (consequent r)
+                     | ruleType r==Truth  = lshow language (consequent r)
                      | otherwise               = lshow language (antecedent r)++"="++lshow language (consequent r)
 
 

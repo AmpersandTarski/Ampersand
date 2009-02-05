@@ -406,7 +406,7 @@ where
 --                     ["EXPLANATION="++show expla | not (null expla)]
 --                   ) (showXML rule)
 --    showXML r@(Ru c antc p cons _ expla sgn nr pn) indent
---     | ruleType r==AlwaysExpr
+--     | ruleType r==Truth
 --       = tagLn indent "RULE"
 --                   ( [ "INVARIANT="++show (showADL (consequent r))] ++
 --                     [ "TYPE=\"TRUTH\""] ++

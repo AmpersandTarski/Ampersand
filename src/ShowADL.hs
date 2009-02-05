@@ -11,8 +11,6 @@
    import Char  (isAlphaNum,isUpper)
    import CommonClasses(Identified(name),order,lub)
    import Collection (rd)
---   import ADLdataDef
---   import ADLdef (Morphic(..),morlist, declarations,mIs)
    import Adl.Concept
    import Adl.ConceptDef
    import Adl.Context
@@ -79,7 +77,7 @@
     showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
     showADL r@(Fr _ d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
     showADL r@(Ru c antc p cons cpu expla sgn nr pn)
-     | c==AlwaysExpr = "ALWAYS "++showADL cons++
+     | c==Truth = "ALWAYS "++showADL cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 
      | c==Implication = showADL antc ++" |- "++showADL cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 
@@ -91,7 +89,7 @@
     showADLcode fSpec r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADLcode fSpec rule
     showADLcode fSpec r@(Fr _ d expr _) = showADLcode fSpec d ++ "\n" ++ show (name d)++" = "++showADLcode fSpec expr
     showADLcode fSpec r@(Ru c antc p cons cpu expla sgn nr pn)
-     | c==AlwaysExpr = "ALWAYS "++showADLcode fSpec cons++
+     | c==Truth = "ALWAYS "++showADLcode fSpec cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 
      | c==Implication = showADLcode fSpec antc ++" |- "++showADLcode fSpec cons++
                   if null cpu then "" else " COMPUTING " ++ show cpu 

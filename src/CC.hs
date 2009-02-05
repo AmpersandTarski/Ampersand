@@ -111,8 +111,8 @@
                          | not beep && name m=="" = Ru Equivalence defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
                          | otherwise  = Sg pos (Ru Equivalence defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
                         ac m      pos expr cpu expl
-                         | not beep && name m=="" = Ru AlwaysExpr defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru AlwaysExpr defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
+                         | not beep && name m=="" = Ru Truth defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos (Ru Truth defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
                          where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
                         gc m      pos pm pf cpu     = Gc pos pm pf (if beep then [] else cpu) (cptAnything,cptAnything) 0 ""
 

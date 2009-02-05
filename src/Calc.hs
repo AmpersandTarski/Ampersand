@@ -110,7 +110,7 @@
              = [ (showADL rule          , if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
                , (showProof prf         , "")
                ]++
-               if rt==AlwaysExpr then [] else
+               if rt==Truth then [] else
                [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
                   (showProof.cfProof. Cp . normExpr) rule++"\n"
                  , "")
@@ -684,10 +684,10 @@
    makeRule r (Fu []) = error ("(module Calc:) erroneous call to function makeRule r ("++showADL (Fu [])++").")
    makeRule r (Fu ts)
     | or [isNeg t|t<-ts] = Ru Implication (Fi [notCp t|t<-ts,isNeg t]) (rrfps r) (Fu [t|t<-ts,isPos t]) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
-    | otherwise          = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL (Fu ts))) (rrfps r) (Fu ts) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
+    | otherwise          = Ru Truth (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL (Fu ts))) (rrfps r) (Fu ts) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
    makeRule r e
     | isFu e'   = makeRule r e'
-    | otherwise = Ru AlwaysExpr (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL e)) (rrfps r) e [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
+    | otherwise = Ru Truth (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL e)) (rrfps r) e [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
     where e' = disjNF e
 
 
@@ -763,7 +763,7 @@
          f prf (neg,pos)
      start Ins  = (Tm m,Fu [Tm m,delta (sign m)])
      start Del  = (Fi [Tm m,Cp (delta (sign m))],Tm m)
-     rule neg pos | isTrue neg = Ru AlwaysExpr (error ("(Module Calc:) illegal reference to antecedent in rule ("++showADL neg++") ("++showADL pos++")")) posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
+     rule neg pos | isTrue neg = Ru Truth (error ("(Module Calc:) illegal reference to antecedent in rule ("++showADL neg++") ("++showADL pos++")")) posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
                   | otherwise  = Ru Implication neg posNone pos [] "" (sign neg {- (neg `lub` pos) -}) 0 ""
      showOp (F fs) = ";"
      showOp (Fd fs) = "!"
@@ -1048,7 +1048,7 @@
                  e:es = xs
                  ys = unF e
 
-   normR r@(Ru AlwaysExpr antc pos cons cpu expla sgn nr pn) = Ru AlwaysExpr err pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
+   normR r@(Ru Truth antc pos cons cpu expla sgn nr pn) = Ru Truth err pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
     where err = error ("Module Calc: erroneous reference to antc of rule "++showADL r)
    normR r@(Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (disjNF antc) pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
    normR r@(Sg p rule expla sgn nr pn signal)         = Sg p (normR rule) expla sgn nr (r_pat r) signal

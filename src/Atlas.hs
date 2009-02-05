@@ -473,7 +473,7 @@
       where vs = violations r
    violations :: Rule -> [Paire]
    violations r | isSignal r = []
-                | ruleType r==AlwaysExpr = contents (Cp (consequent r))
+                | ruleType r==Truth = contents (Cp (consequent r))
                 | otherwise       = [l| l<-contents (antecedent r), not (l `elem` contents (consequent r))]++
                                     if ruleType r==Equivalence
                                     then [l| l<-contents (consequent r), not (l `elem` contents (antecedent r))]

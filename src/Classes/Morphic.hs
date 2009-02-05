@@ -204,28 +204,28 @@ module Classes.Morphic where
 
    instance Morphic Rule where
     multiplicities r           = []
-    isMph r  | ruleType r==AlwaysExpr = isMph (consequent r)
+    isMph r  | ruleType r==Truth = isMph (consequent r)
              | otherwise       = False
-    flp r@(Ru AlwaysExpr antc pos expr cpu expla (a,b) nr pn) = Ru AlwaysExpr (error ("(Module CC_aux:) illegal call to antecedent in flp ("++show r++")")) pos (flp expr) cpu expla (b,a) nr pn
+    flp r@(Ru Truth antc pos expr cpu expla (a,b) nr pn) = Ru Truth (error ("(Module CC_aux:) illegal call to antecedent in flp ("++show r++")")) pos (flp expr) cpu expla (b,a) nr pn
     flp (Ru c antc pos cons cpu expla (a,b) nr pn)   = Ru c (flp antc) pos (flp cons) cpu expla (b,a) nr pn
   --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS "" r)
-    typeUniq r | ruleType r==AlwaysExpr = typeUniq (antecedent r)
+    typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
                | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 --    isIdent r = isIdent (normExpr r)
     isProp r = isProp (normExpr r)
-    isTrue r | ruleType r==AlwaysExpr  = isTrue (consequent r)
+    isTrue r | ruleType r==Truth  = isTrue (consequent r)
              | otherwise        = isTrue (consequent r) || isFalse (consequent r)
-    isFalse r| ruleType r==AlwaysExpr  = isFalse (consequent r)
+    isFalse r| ruleType r==Truth  = isFalse (consequent r)
              | otherwise        = isFalse (consequent r) && isTrue (consequent r)
     isSignal r = isSignaal r
-    isNot r  | ruleType r==AlwaysExpr  = isNot (consequent r)
+    isNot r  | ruleType r==Truth  = isNot (consequent r)
              | otherwise        = False  -- TODO: check correctness!
 
 
    normExpr :: Rule -> Expression
    normExpr rule
     | isSignal rule      = v (sign rule)
-    | ruleType rule==AlwaysExpr = consequent rule
+    | ruleType rule==Truth = consequent rule
     | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
     | ruleType rule==Equivalence = Fi [ Fu [antecedent rule, Cp (consequent rule)]
                               , Fu [Cp (antecedent rule), consequent rule]]
