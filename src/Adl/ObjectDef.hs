@@ -9,7 +9,7 @@ module Adl.ObjectDef where
                         , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
                         , objats  :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
                         , objstrs :: [[String]]     -- ^ directives that specify the interface.
-                        } deriving Eq
+                        } deriving (Eq) -- , Show)  -- voor debugging (zie ook instance Show ObjectDef)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***

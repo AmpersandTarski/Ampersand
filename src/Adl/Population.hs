@@ -6,9 +6,9 @@ module Adl.Population where
    import Adl.Concept
    
    type Populations = [Population]
-   data Population = Popu 
+   data Population = Popu
               { popm  :: Morphism
               , popps :: Pairs
-              }
+              }         --deriving (Show) -- voor debugging
 
  

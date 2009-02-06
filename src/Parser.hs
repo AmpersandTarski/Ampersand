@@ -7,6 +7,7 @@ import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
 import AGtry
+import TypeChecker
 import Adl
 
  
@@ -16,7 +17,7 @@ parseADL :: String      -- | The string to be parsed
          -> IO(Context) -- | The IO modad with the context. 
 parseADL adlstring flags fnFull =
     do { slRes <- parseIO (pArchitecture (beeper flags))(scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
-	   ; case sem_Architecture slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result: 
+	   ; case procParseRes slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
 	        ( _ , e:errs)  -> ioError (userError ("\nThe type analysis of "++fnFull++" yields errors.\n" ++
                                                   (concat ["!Error of type "++err| err<-e:errs])++
                                                   "Nothing generated, please correct mistake(s) first.\n"
@@ -33,6 +34,10 @@ parseADL adlstring flags fnFull =
 	                                specificName = case contextName flags of
 	                                                       Just name -> name
 	                                                       --Nothing is niet aan de orde hier
-	    }    
+	    }
+	    where
+               procParseRes arch = case typecheck arch of   --when no type errors then AGtry
+                                       (t_e:t_errs) -> ([],t_e:t_errs)
+                                       []           -> sem_Architecture arch
 
    

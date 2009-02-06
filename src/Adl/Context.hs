@@ -14,10 +14,10 @@ module Adl.Context where
    
    
    -- | Architecture of ADL consists of a set of contexts
-   data Architecture = Arch { archContexts :: Contexts} 
+   data Architecture = Arch { archContexts :: Contexts}
 
    type Contexts  = [Context]
-   data Context   
+   data Context
       = Ctx { ctxnm    :: String                    -- ^ The name of this context
             , ctxon    :: [String]                  -- ^ The list of extends (= context names of contexts) whose rules are imported
             , ctxisa   :: (Inheritance Concept)     -- ^ A data structure containing the generalization structure of concepts
@@ -29,7 +29,7 @@ module Adl.Context where
             , ctxks    :: KeyDefs                   -- ^ A list of key definitions defined in this context, outside the scope of patterns
             , ctxos    :: ObjectDefs                -- ^ A list of attributes defined in this context, outside the scope of patterns
             , ctxpops  :: Populations               -- ^ A list of populations defined in this context
-            } 
+            }               --deriving (Show) -- voor debugging
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***
 {- \**** (Eq dient alleen diagnostische doeleinden)    ********************
