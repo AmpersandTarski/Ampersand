@@ -7,7 +7,12 @@ module TypeChecker (typecheck) where
    import Adl
    import Classification
 
-   typecheck :: Architecture -> [String]
+   type Errors = [String]
+   type Hierarchy = Classification Concept
+   type RelationTree = Classification Concept
+   type Environment = (Hierarchy, RelationTree)
+
+   typecheck :: Architecture -> Errors
    --typecheck _arch = iwantastring _arch  -- voor debugging
    --typecheck (Arch ctxs) = iwantastring (srchContext ctxs "Test")
    typecheck arch@(Arch ctxs) = checkCtx arch ctxs   --this list of errors is not distinct
@@ -29,54 +34,61 @@ module TypeChecker (typecheck) where
        = (show _x3):[]
    -}
 
-   type ContextCheckResult = ((Classification Concept, Classification Concept), [String])
-   checkCtx :: Architecture -> Contexts -> [String]
+   type ContextCheckResult = (Environment, Errors)
+   checkCtx :: Architecture -> Contexts -> Errors
    checkCtx _ [] = []
-   --Take the errors found when checking this context as root context and concat it with the errors of the other contexts
-   checkCtx arch@(Arch ctxs) (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):tl_ctxs) = snd (check (Found cx)) ++ (checkCtx arch tl_ctxs)
+   --Take the errors found when checking this context as root context and concat it with the errors of the other contexts taken as root
+   checkCtx arch@(Arch ctxs) (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):tl_ctxs) = errors (check (Found cx)) ++ (checkCtx arch tl_ctxs)
       where
          check :: ContextFound -> ContextCheckResult
          check (Found cx@(Ctx _ xts _ _ _ _ _ _ _ _ _))
-                     -- = ("CHECK " ++ nm):[]
-                     = checkExtCtx  --TODO
+                     = constructEnv checkExtCtx cx
                      where
                          --get the list of extended Context
                          --check all extended Context in the list
                          --merge the results (classification, relations, errors)
                          checkExtCtx :: ContextCheckResult
                          checkExtCtx = foldr mergeRes ((Bottom, Bottom),[]) (map check (map (srchContext ctxs) xts))
-         check (NotFound str) = ((Bottom,Bottom),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[])
+                         --Enrich the Environment of the extended contexts with patterns from the current context
+                         constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
+                         constructEnv extRes cx = extRes --TODO
+         check (NotFound str) = ((Bottom,Bottom),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
+         errors :: ContextCheckResult -> Errors
+         errors ((_,_),e) = e
 
    mergeRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
-   mergeRes ((_,_),errs1) ((_,_),errs2) | length errs1 > 0
-                                          || length errs2 > 0 = ((Bottom,Bottom),errs1 ++ errs2)
-                                        | otherwise = ((Bottom,Bottom),[])  --TODO
+   mergeRes ((cl1,rel1),errs1) ((cl2,rel2),errs2) | errs1==[] && errs2==[]
+                                                              = ((mergeCl cl1 cl2, mergeRel rel1 rel2),[])
+                                                  | otherwise = ((Bottom,Bottom),errs1 ++ errs2)   
+   --merge the classification of concepts trees
+   mergeCl :: Hierarchy -> Hierarchy -> Hierarchy
+   mergeCl _ _ = Bottom       --TODO
+   --merge the relations trees
+   mergeRel :: RelationTree -> RelationTree -> RelationTree
+   mergeRel _ _ = Bottom      --TODO
 
-   --construct the classification of concepts according to extend and ISA decls and attach the
-   --environment (like patterns in scope) to the concepts
-   --Ik heb nog geen compleet gevoel over hoe ik dit moet implementeren
-   classification :: Architecture -> Context -> Classification Concept
-   classification _ _ = Bottom
-
-   relations :: Architecture -> Context -> Classification Concept
-   relations _ _ = Bottom
+     {-
+   hierarchy :: ContextCheckResult -> Hierarchy
+   hierarchy    ((h,_),_) = h
+   relationTree :: ContextCheckResult -> RelationTree
+   relationTree ((_,r),_) = r
+   -}
 
    data ContextFound = Found Context | NotFound String
    srchContext :: Contexts -> String -> ContextFound
-   srchContext [] srchstr = NotFound srchstr   --Maybe this is impossible as a consequence of the parse method
+   srchContext [] srchstr = NotFound srchstr   --The UU_Parser has already caught this case
    srchContext (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):ctxs) srchstr
             | nm==srchstr = Found cx
             | otherwise = srchContext ctxs srchstr
+            
+            
+            
 
-   --lookup the concept in the classification tree of concepts, and return the patterns in scope
-   --Ik heb nog geen compleet gevoel over hoe ik dit moet implementeren
-   --patterns :: Concept -> Classification Concept -> Patterns
-   --patterns _ _ = []
 
    type ADLType = String
 
    --needs the rules, relations, and concepts from the patterns in scope
-   typeof :: Expression -> Classification Concept -> [ADLType]
+   typeof :: Environment -> Expression -> [ADLType]
    typeof _ _ = []
 
 
