@@ -5,14 +5,13 @@
 module TypeChecker (typecheck) where
 
    import Adl
-   import Classification
-
-   type Errors = [String]
-   type Environment = (Ancestors, DeclRels, Contexts)
 
    ---------------------------------------------------------------------------------------------
    --MAIN function
    ---------------------------------------------------------------------------------------------
+
+   type Errors = [String]
+   type Environment = (Ancestors, DeclRels, Contexts)
 
    typecheck :: Architecture -> Errors
    --typecheck _arch = iwantastring _arch  -- voor debugging
@@ -50,44 +49,33 @@ module TypeChecker (typecheck) where
       where
          check :: ContextFound -> ContextCheckResult
          check (Found cx@(Ctx _ xts _ _ ((Pat _ _ gens@((G _ g _):_) _ _ _):_) _ _ _ _ _ _))
-                     = constructEnv checkExtCtx cx
+                     = checkObjDefExprs (constructEnv checkExtCtx cx)
                      where
                          --get the list of extended Context
-                         --check all extended Context in the list
+                         --check all extended Context in the list (all siblings)
                          --merge the results (classification, relations, errors)
                          checkExtCtx :: ContextCheckResult
-                         checkExtCtx = foldr mergeRes (([], [], []),[]) (map check (map (srchContext ctxs) xts))
+                         checkExtCtx = foldr concatRes (([], [], []),[]) (map check (map (srchContext ctxs) xts))
                          --Enrich the Environment of the extended contexts with patterns from the current context
                          constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
-                         constructEnv extRes@((extAncs,_,extCtxs),_) cx@(Ctx nm _ _ _ _ _ _ _ _ _ _)
-                                    = ((flatAncList (allCtxGens (cx:extCtxs)),[],cx:extCtxs),[]) --TODO
-                                   -- =(([], [],[]),[show (flatAncList (allCtxGens (cx:extCtxs)))]) --for debugging to show flatAncList
-                                   -- | nm=="Test2" = ((flatAncList (allCtxGens (cx:extCtxs)),[],cx:extCtxs),[])            --for debugging
+                         constructEnv ((_,_,extCtxs),_) cx@(Ctx nm _ _ _ _ _ _ _ _ _ _)
+                                   --{-
+                                    = (
+                                         ( flatAncList (allCtxGens (cx:extCtxs)),
+                                           declRels (allCtxPats (cx:extCtxs)),
+                                           cx:extCtxs
+                                         ),
+                                         []
+                                       ) --TODO
+                                   ---}
+                                   -- =(([], [],[]),[show (flatAncList (allCtxGens (cx:extCtxs)) )]) --for debugging to show flatAncList
+                                   -- =(([], [],[]),[show (declRels    (allCtxPats (cx:extCtxs)) )]) --for debugging to show declRels
+                                   -- | nm=="Test2" = ((flatAncList (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])            --for debugging
                                    -- | otherwise   = (([], [], []),[show (flatAncList (allCtxGens (cx:extCtxs)))])  --of extends Test2
+                                   -- | otherwise   = (([], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --of extends Test2
          check (NotFound str) = (([],[],[]),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          errors :: ContextCheckResult -> Errors
          errors ((_,_,_),e) = e
-
-   mergeRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
-   mergeRes ((anc1,rel1,cxs1),errs1) ((anc2,rel2,cxs2),errs2) | errs1==[] && errs2==[]
-                                                              = ((anc1 ++ anc2, rel1 ++ rel2, cxs1 ++ cxs2),[])
-                                                  | otherwise = (([],[],[]),errs1 ++ errs2)
-   
-   allCtxGens :: Contexts -> Gens
-   allCtxGens [] = []
-   allCtxGens ((Ctx _ _ _ _ ps _ _ _ _ _ _):ctxs) = allPatGens ps ++ allCtxGens ctxs
-   
-   allPatGens :: Patterns -> Gens
-   allPatGens [] = []
-   allPatGens ((Pat _ _ gens _ _ _):ps)  = gens ++ allPatGens ps
-
-
-     {-
-   hierarchy :: ContextCheckResult -> Hierarchy
-   hierarchy    ((h,_),_) = h
-   relationTree :: ContextCheckResult -> RelationTree
-   relationTree ((_,r),_) = r
-   -}
 
    --search for a context by name and return the first one found
    srchContext :: Contexts -> String -> ContextFound
@@ -95,18 +83,66 @@ module TypeChecker (typecheck) where
    srchContext (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):ctxs) srchstr
             | nm==srchstr = Found cx
             | otherwise = srchContext ctxs srchstr
-            
-            
-            
+
+   checkObjDefExprs :: ContextCheckResult -> ContextCheckResult
+   --abort when there are errors from previous steps
+   checkObjDefExprs ccr@(_,err:errs)       = ccr
+   --resolve the type and check if the arguments are of such a type
+   checkObjDefExprs ccr@(env@(_,_,ctxs),_) = ccr --play env (allCtxObjDefs ctxs)  --TODO probably some foldr
+             where play :: Environment -> ObjectDefs -> ContextCheckResult
+                   play env ((Obj  _ _ _ ((Obj nm _ expr _ _):_) _):_)
+                        = (env, snd (typeof env expr))
+                   play _ _ = (env, ["not good"])
+
+   ------------------------------
+   --cumulative context functions
+   --assumption, names are unqualified and unique within the context and its extended contexts
+   --            if names must be qualified, then change the names of the components in
+   --            the patterns to qualified names (p.e. TestContext.concept1 instead of concept1)
+   ------------------------------
+   --combine sibling contexts
+   concatRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
+   concatRes ((anc1,rel1,cxs1),errs1) ((anc2,rel2,cxs2),errs2) | errs1==[] && errs2==[]
+                                                              = ((anc1 ++ anc2, rel1 ++ rel2, cxs1 ++ cxs2),[])
+                                                  | otherwise = (([],[],[]),errs1 ++ errs2)
+
+   --all the Gens of Contexts
+   allCtxGens :: Contexts -> Gens
+   allCtxGens [] = []
+   allCtxGens ((Ctx _ _ _ _ ps _ _ _ _ _ _):ctxs) = allPatGens ps ++ allCtxGens ctxs
+
+   --all the Gens of patterns
+   allPatGens :: Patterns -> Gens
+   allPatGens [] = []
+   allPatGens ((Pat _ _ gens _ _ _):ps)  = gens ++ allPatGens ps
+
+   --all the patterns of contexts
+   allCtxPats :: Contexts -> Patterns
+   allCtxPats [] = []
+   allCtxPats ((Ctx _ _ _ _ ps _ _ _ _ _ _):ctxs) = ps ++ allCtxPats ctxs
+
+   allCtxObjDefs :: Contexts -> ObjectDefs
+   allCtxObjDefs [] = []
+   allCtxObjDefs ((Ctx _ _ _ _ _ _ _ _ _ os _):ctxs) = os ++ allCtxObjDefs ctxs
+
    ---------------------------------------------------------------------------------------------
    --Expression part: later in separate module
    ---------------------------------------------------------------------------------------------
 
-   type ADLType = String
+   type ADLType = ([(Concept,Concept)],[String])
 
    --needs the rules, relations, and concepts from the patterns in scope
-   typeof :: Environment -> Expression -> [ADLType]
-   typeof _ _ = []
+   typeof :: Environment -> Expression -> ADLType
+   typeof (_,rels,_) (Tm mph@(Mph name x2 x3 x4 x5 x6)) =
+                   --lookup worksfor in DeclRels
+                   --Found -> return type else error
+                   typeofMph (srchDeclRel rels name) mph
+                   --([],(show x1):(show x2):(show x3):(show x4):(show x5):(show x6):[])
+   typeof _ _ = ([],[])
+
+   typeofMph :: DeclRelFound -> Morphism -> ADLType
+   typeofMph (FoundDr (Sgn name src trg _ _ _ _ _ _ _ _ _)) mph = ([(src,trg)],[])
+   typeofMph (NotFoundDr srchstr) (Mph name pos _ _ _ _) = ([],["Relation " ++ srchstr ++ " in expression at " ++ show pos ++ " has not been declared. "])
 
    ---------------------------------------------------------------------------------------------
    --Ancestors part: later in separate module
@@ -250,12 +286,20 @@ module TypeChecker (typecheck) where
    ---------------------------------------------------------------------------------------------
 
    --just Declarations?
-   type DeclRels = Declarations
+   type DeclRels = [DeclRel]
+   type DeclRel = Declaration
+   data DeclRelFound = FoundDr DeclRel | NotFoundDr String
    
    --concatenate the declarations of relation from the patterns
    declRels :: Patterns -> DeclRels
    declRels [] = []
    declRels (p@(Pat _ _ _ decls _ _):ps) = decls ++ declRels ps
+   
+   srchDeclRel :: DeclRels -> String -> DeclRelFound
+   srchDeclRel [] srchstr = NotFoundDr srchstr
+   srchDeclRel (drl@(Sgn name src trg _ _ _ _ _ _ _ _ _):drls) srchstr
+             | name==srchstr = FoundDr drl
+             | otherwise = srchDeclRel drls srchstr
 
    ---------------------------------------------------------------------------------------------
    --MORE COMMENTS
