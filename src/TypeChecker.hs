@@ -8,8 +8,7 @@ module TypeChecker (typecheck) where
    import Classification
 
    type Errors = [String]
-   type RelationTree = Classification Concept
-   type Environment = (Ancestors, RelationTree)
+   type Environment = (Ancestors, DeclRels, Contexts)
 
    ---------------------------------------------------------------------------------------------
    --MAIN function
@@ -57,27 +56,31 @@ module TypeChecker (typecheck) where
                          --check all extended Context in the list
                          --merge the results (classification, relations, errors)
                          checkExtCtx :: ContextCheckResult
-                         checkExtCtx = foldr mergeRes (([], Bottom),[]) (map check (map (srchContext ctxs) xts))
+                         checkExtCtx = foldr mergeRes (([], [], []),[]) (map check (map (srchContext ctxs) xts))
                          --Enrich the Environment of the extended contexts with patterns from the current context
                          constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
-                         constructEnv extRes cx =
-                                   extRes --TODO
-                                   --((Bottom, Bottom),[show (flatAncList gens)]) --for debugging to show flatAncList
-                                   --(([], Bottom),[show (ancestors (oneAnc (flatAncList gens) g) )])
-         check (NotFound str) = (([],Bottom),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
+                         constructEnv extRes@((extAncs,_,extCtxs),_) cx@(Ctx nm _ _ _ _ _ _ _ _ _ _)
+                                    = ((flatAncList (allCtxGens (cx:extCtxs)),[],cx:extCtxs),[]) --TODO
+                                   -- =(([], [],[]),[show (flatAncList (allCtxGens (cx:extCtxs)))]) --for debugging to show flatAncList
+                                   -- | nm=="Test2" = ((flatAncList (allCtxGens (cx:extCtxs)),[],cx:extCtxs),[])            --for debugging
+                                   -- | otherwise   = (([], [], []),[show (flatAncList (allCtxGens (cx:extCtxs)))])  --of extends Test2
+         check (NotFound str) = (([],[],[]),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          errors :: ContextCheckResult -> Errors
-         errors ((_,_),e) = e
+         errors ((_,_,_),e) = e
 
    mergeRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
-   mergeRes ((cl1,rel1),errs1) ((cl2,rel2),errs2) | errs1==[] && errs2==[]
-                                                              = ((mergeCl cl1 cl2, mergeRel rel1 rel2),[])
-                                                  | otherwise = (([],Bottom),errs1 ++ errs2)
-   --merge the classification of concepts trees
-   mergeCl :: Ancestors -> Ancestors -> Ancestors
-   mergeCl _ _ = []       --TODO
-   --merge the relations trees
-   mergeRel :: RelationTree -> RelationTree -> RelationTree
-   mergeRel _ _ = Bottom      --TODO
+   mergeRes ((anc1,rel1,cxs1),errs1) ((anc2,rel2,cxs2),errs2) | errs1==[] && errs2==[]
+                                                              = ((anc1 ++ anc2, rel1 ++ rel2, cxs1 ++ cxs2),[])
+                                                  | otherwise = (([],[],[]),errs1 ++ errs2)
+   
+   allCtxGens :: Contexts -> Gens
+   allCtxGens [] = []
+   allCtxGens ((Ctx _ _ _ _ ps _ _ _ _ _ _):ctxs) = allPatGens ps ++ allCtxGens ctxs
+   
+   allPatGens :: Patterns -> Gens
+   allPatGens [] = []
+   allPatGens ((Pat _ _ gens _ _ _):ps)  = gens ++ allPatGens ps
+
 
      {-
    hierarchy :: ContextCheckResult -> Hierarchy
@@ -153,7 +156,7 @@ module TypeChecker (typecheck) where
    --declarations are enumerated (declAncs). Then the ancestors are resolved recursively, and folded (foldTrgs).
    flatAncList :: Gens -> Ancestors
    flatAncList gens = foldTrgs (declAncs gens) (declAncs gens)
-         where    
+         where
          --foreach Ancestor entry in declAncs, fold distinct the targets of its targets
          --provide the Ancestors declared in the code, and the list of Ancestors to resolve
          foldTrgs :: Ancestors -> Ancestors -> Ancestors
@@ -200,7 +203,7 @@ module TypeChecker (typecheck) where
                           --register this target as resolved (trg:lst)
                           foldr allAncsTrg (trg:lst,at:ancs,declancs) (ancestors (oneAnc declancs trg))
 
-   --return all the AncTarget for a list of AncTarget, 
+   --return all the AncTarget for a list of AncTarget,
    --given the explicit declaration from the ADL code
    allAncsTrgs :: Ancestors -> [AncTarget] -> [AncTarget]
    allAncsTrgs declancs trgs = allAncRes (foldr allAncsTrg ([],[],declancs) trgs)
@@ -216,7 +219,7 @@ module TypeChecker (typecheck) where
           | src' == src =
                           --if the child is located, add the ancestor to the list of ancestors of this child
                           (Anc(src, insertGenTrg trgs gen)):as --update  (insert target)
-          | otherwise   = 
+          | otherwise   =
                           --child not located yet, try next and preserve all entries (a:)
                           a:(insertGen gen as)
 
@@ -228,7 +231,31 @@ module TypeChecker (typecheck) where
           | trg' == trg = (trg,gen:gens):trgs --update (tracklist)
           | otherwise   = t:(insertGenTrg trgs gen) --try next
 
+   ---------------------------------------------------------------------------------------------
+   --Relations part: later in separate module
+   --
+   --BADLY formulated reasoning by Gerard for Gerard only, because I know what I mean, if you know what I mean. :)
+   --Will be removed...
+   --The difference with the Ancestor model is that a relation declaration is not an
+   --intuitionistic nonlinear implication, but more a labeled equality.
+   --The label has a direction, the flip reverses the direction
+   --Thus, the Ancestor model needed to support only a query returning ancestors for a given child
+   --      because the relations in this model are not equal.
+   --      the relations in the relation model ARE equal. Only in the definition there is a
+   --      source and a target, and also in the application of the relation in expressions
+   --      and rules the concepts relate as source and target.
+   --On the other hand because the concepts in a relation are equal, there is no inheritance.
+   --The relation model can be just a list of declarations.
+   --New relations can be defined as expressions consisting of relations from the model.
+   ---------------------------------------------------------------------------------------------
 
+   --just Declarations?
+   type DeclRels = Declarations
+   
+   --concatenate the declarations of relation from the patterns
+   declRels :: Patterns -> DeclRels
+   declRels [] = []
+   declRels (p@(Pat _ _ _ decls _ _):ps) = decls ++ declRels ps
 
    ---------------------------------------------------------------------------------------------
    --MORE COMMENTS
