@@ -672,8 +672,11 @@
       = [ if [s]==declarations toExpr then insert (calc frExpr ss) s else s
         | s<-ss ]
      insert :: Pairs -> Declaration -> Declaration
-     insert ls (Sgn nm a b props prL prM prR cs expla pos nr sig) = Sgn nm a b props prL prM prR (ls `uni` cs) expla pos nr sig
-     insert ls id                                                 = id
+     insert pairs decl 
+         = case decl of
+              Sgn{} -> decl {decpopu = pairs `uni` (decpopu decl) }
+              _     -> decl 
+                       
 
 
 

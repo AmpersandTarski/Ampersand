@@ -9,6 +9,7 @@ import Char (toUpper)
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory
+import Time          
 --import System.FilePath.Posix
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
@@ -39,6 +40,7 @@ data Options = Options { contextName   :: Maybe String
                        , adlFileName   :: String
                        , baseName      :: String
                        , logName       :: String
+                       , genTime       :: ClockTime
                        , uncheckedLogName :: Maybe String
                        , services      :: Bool
                        } deriving Show
@@ -48,16 +50,17 @@ getOptions =
    do args     <- getArgs
       progName <- getProgName
       env      <- getEnvironment
+      genTime  <- getClockTime
       flags    <- case getOpt Permute options args of
-                      (o,[n],[])    -> return (foldl (flip id) (defaultOptions env n progName) o )
+                      (o,[n],[])    -> return (foldl (flip id) (defaultOptions' genTime env n progName) o )
                       (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
                       (_,x:xs,[])   -> ioError (userError ("too many files: "++ show [x:xs] ++usageInfo' progName))
                       (_,_,errs)    -> ioError (userError (concat errs ++ usageInfo' progName))
-      flags'   <- checkPaths flags
+      flags'   <- checkOptions flags
       return flags'
 
-checkPaths :: Options -> IO Options
-checkPaths flags = 
+checkOptions :: Options -> IO Options
+checkOptions flags = 
         do flags0  <- case uncheckedLogName flags of
                           Nothing -> return flags { logName = "ADL.log"}
                           Just s  -> return flags { logName = s } 
@@ -126,8 +129,8 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
                                                                                 envlogName  ++ " )")
            ]
 
-defaultOptions :: [(String, String)] -> String -> String -> Options
-defaultOptions env fName pName 
+defaultOptions' :: ClockTime -> [(String, String)] -> String -> String -> Options
+defaultOptions' clocktime env fName pName 
                = Options { contextName   = Nothing
                          , showVersion   = False
                          , showHelp      = False
@@ -157,6 +160,7 @@ defaultOptions env fName pName
                          , uncheckedLogName = lookup envlogName env
                          , logName       = "ADL.log"
                          , services      = False
+                         , genTime       = clocktime
                          }
                     
 envdirPrototype = "CCdirPrototype"

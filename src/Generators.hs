@@ -62,8 +62,8 @@ doGenXML fSpec flags
                              "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
                              "xsi:schemaLocation=\"http://www.sig-cc.org/ADL "++
                              "ADL.xsd \">"++
-                             "<!-- "++ versionbanner ++" -->" ++
-                              showXML fSpec ++
+                             "<!-- Generated with "++ versionbanner ++", at "++ show (genTime flags) ++" -->" ++
+                             showXML fSpec ++
                              "</tns:ADL>"
                            )   
    >> verboseLn flags ("XML written into " ++ outputFile ++ ".")

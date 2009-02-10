@@ -14,8 +14,8 @@ module Adl.MorphismAndDeclaration where
    data Morphism  = 
                    Mph { mphnm :: String             -- ^ the name of the morphism. This is the same name as
                                                      --   the declaration that is bound to the morphism.
-                                                     --    WAAROM Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
-                                                     --    ANTWOORD Tijdens het parsen, tot het moment dat de declaration aan het Morphism is gekoppeld, moet de naam van het Morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
+                                                     --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
+                                                     --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het Morphism is gekoppeld, moet de naam van het Morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
                        , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
                        , mphats :: [Concept]         -- ^ the attributes specified inline
                        , mphtyp :: Sign              -- ^ the allocated type. Together with the name, this forms the declaration.
@@ -113,10 +113,10 @@ module Adl.MorphismAndDeclaration where
                , desrc   :: Concept -- ^ the source concept of the declaration
                , detgt   :: Concept -- ^ the target concept of the declaration
                , decprps :: Props   -- ^ the multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
-               , decp1   :: String  -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
-               , decp2   :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-               , decp3   :: String
-               , decpr   :: Pairs   -- ^ the list of tuples, of which the relation consists.
+               , decprL  :: String  -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+               , decprM  :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+               , decprR  :: String
+               , decpopu :: Pairs   -- ^ the list of tuples, of which the relation consists.
                , decexpl :: String  -- ^ the explanation
                , decfpos :: FilePos -- ^ the position in the ADL source file where this declaration is declared.
                , decid   :: Int     -- ^ a unique number that can be used to identify the relation

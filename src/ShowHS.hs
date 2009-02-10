@@ -166,7 +166,7 @@ where
     showHSname a@(FS_id nm ) = haskellIdentifier nm 
     showHS indent (FS_id nm) 
       = "(FS_id " ++ show nm ++ ")"
-    showHS indent NoName = "NoName"
+--    showHS indent NoName = "NoName"
 
 
 

@@ -1,499 +1,384 @@
  {-# OPTIONS -XFlexibleContexts #-}
 module ShowXML (showXML)
 where
-
+--   import Text.XML.HaXml
+--     --Als de compiler hierover struikelt, dan moet je xml installeren. Dat is overigens in de volgende 3 stappen:
+--                             -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
+--                             -- 2) cabal-install HaXml
+--                             -- 3) er is geen stap 3!
+--                             
+--     -- Motivatie voor keuze van XML Light. (HJO, 6 feb 2009)
+--     -- Oorspronkelijk heb ik gemeend om de Haskell XML Toolbox (hxt) te gebruiken. Die is uitgebreid en 
+--     --  maakt het mogelijk om in de toekomst allerlei leuke dingen te gaan doen met de gegenereerde XML. 
+--     -- Helaas was het niet mogelijk om dit te gebruiken: Onder Windows kreeg ik het niet aan de praat, omdat
+--     --  het gebruik maakt van packages die nog niet standaard beschikbaar zijn.
+--     -- Onder debian kreeg ik het ook niet voor elkaar met de standaard installatie manier, omdat in de standaard
+--     -- distributie voor debian nog gebruik wordt gemaakt van ghc 6.6 
+--     -- Wie weet komt dit later dus nog wel een keer....
    import FspecDef
    import Adl
-
-   data XmlTag = Tag {   tagNm :: String
-                       , pairs :: [(String,String)]
+   import ShowADL
+   showXML :: Fspc -> String
+   showXML f = showXTree ( mkXmlTree f)
+   -----------------some new data types for simple XML structures--------
+   data XTree = Elem { etag  :: XTag
+                     , etrees :: [XTree]
                      }
+              | Node { ntag  :: XTag
+                     }
+              | PlainText {str :: String}
+              | Dummy {str :: String} 
+   data XTag =  Tag  { tName :: String
+                     , tAtts :: [XAtt]
+                     }
+   data XAtt = Att { attName :: String
+                   , attValue :: String
+                   }
 
-   class ShowXML a where
-    mkTag    :: a -> XmlTag
-    startTag :: a -> String
-    endTag   :: a -> String
-    showXML  :: a -> String
-    
-    startTag a = "<" ++ tagNm tag ++ showpairs tag ++ ">"
-      where tag = mkTag a
-            showpairs t = case pairs t of
-                            []       -> ""
-                            (a,b):xs -> " "++a++"="++show b               
-    endTag a = "</" ++ tagNm (mkTag a) ++ ">"   
 
-   instance ShowXML a => ShowXML [a] where
-     mkTag list =  case list of
-             []   -> error ( "No tag defined for empty lists! Contact your ADL dealer.")
-             x:xs -> Tag ("ListOf_" ++ tagNm (mkTag x)) []
-           
-     showXML list = case list of
-             [] ->  "<emptylist/>"  
-             xs ->  encloseInTags xs (foldr (++) "" (map showXML xs))
-                                 
-   instance (ShowXML a, ShowXML b) => ShowXML (a, b) where
-     mkTag (a,b) = Tag "Tuple" []
-     showXML (aaa, bbb)
-        = encloseInTags (aaa, bbb) 
-           ( showXML aaa ++ 
-             showXML bbb 
-           )
+   showXTree :: XTree -> String
+   showXTree tree = case tree of
+                        Elem{} -> showStart tag
+                               ++ (foldr (++) [] (map showXTree (etrees tree)))
+                               ++ showEnd tag
+                                   where tag = etag tree
+                        Node{} -> showNode (ntag tree)
+                        PlainText{} -> show (str tree)
+                        Dummy{} -> str tree
+   showStart :: XTag -> String
+   showStart a = "<" ++ tName a ++ showAtts (tAtts a) ++ ">" 
+  
+   showAtts :: [XAtt] -> String
+   showAtts xs = foldr (++) [] (map showAtt xs)
+      where showAtt :: XAtt -> String
+            showAtt a= " "++attName a++"="++show (attValue a)
+
+   showEnd :: XTag -> String
+   showEnd a = "</" ++ tName a ++ ">"   
    
-     
-   encloseInTags :: ShowXML a => a -> String -> String
-   encloseInTags a s = startTag a ++ s ++ endTag a
+   showNode :: XTag -> String
+   showNode a = "<" ++ tName a ++ showAtts (tAtts a) ++ "/>"   
+
+   mkAttr :: String -> String -> XAtt
+   mkAttr nm value = Att nm value
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Fspc                          ***
--- \***********************************************************************
-   instance ShowXML Fspc where
-     mkTag f = Tag "Fspec" [] 
-     showXML f@(Fspc aaa bbb ccc ddd eee fff ggg hhh iii)
-        = encloseInTags f 
-           ( --showXML aaa ++ 
-             genereertLoop ++ --  showXML bbb ++ 
-             --showXML ccc ++
-             --showXML ddd ++
-             --showXML eee ++
-             showXML fff ++ --genereertLoop ++  --
-             --showXML ggg ++
-             --showXML hhh ++
-             show "XXX nog uit te zoeken ISA structuur"
-           ) 
+   simpleTag :: String -> XTag
+   simpleTag nm = Tag nm []
    
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Ftheme                        ***
--- \***********************************************************************
+   nameToAttr :: Identified x => x -> XAtt 
+   nameToAttr x = mkAttr "name" (name x)
+   ----------------------------------------------------------------------
+  
+   class XML a where 
+    mkTag     :: a -> XTag
+    mkXmlTree :: a -> XTree
+   
+   still2bdone :: String -> XTree
+   still2bdone str= Node (Tag "NotImplementedYet" [(mkAttr "work2do_in_ShowXML.hs"  str)])     
 
-   instance ShowXML Ftheme where
-     mkTag f = Tag "Ftheme" [] 
-     showXML f@(Tspc aaa bbb ccc)
-        = encloseInTags f 
-           ( showXML aaa ++ 
-             showXML bbb ++
-             showXML ccc 
+
+   instance XML Fspc where
+     mkTag f = Tag "Fspec" [ nameToAttr f] 
+     mkXmlTree f@(Fspc sid aaa bbb ccc ddd eee fff ggg hhh)
+        = Elem (mkTag f) (
+             [ Elem (simpleTag "Themes")   (map mkXmlTree aaa)] 
+          ++ [ Elem (simpleTag "Datasets") (map mkXmlTree bbb)] 
+          ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree ccc)] 
+          ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree ddd)] 
+          ++ [ Elem (simpleTag "Services") (map mkXmlTree eee)] 
+          ++ [ Elem (simpleTag "Rules")    (map mkXmlTree fff)] 
+          ++ [ Elem (simpleTag "Declarations")(map mkXmlTree ggg)] 
+          ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
+                   )
+
+
+   instance XML Ftheme where
+     mkTag f = Tag "Ftheme" [nameToAttr f] 
+     mkXmlTree f@(Tspc sid aaa bbb)
+        = Elem (mkTag f) (
+             [ Elem (simpleTag "Units")    (map mkXmlTree aaa) |not (null aaa)] 
+          ++ [ Elem (simpleTag "Pattern")  [mkXmlTree bbb]]
+          ) 
+
+
+   instance XML Funit where
+     mkTag f = Tag "Funit" [nameToAttr f] 
+     mkXmlTree f@(Uspc sid aaa bbb ccc)
+        = Elem (mkTag f) (
+             [ Elem (simpleTag "Pattern")  [mkXmlTree aaa]] 
+          ++ [ Elem (simpleTag "Views")    (map mkXmlTree bbb) |not (null bbb)] 
+          ++ [ Elem (simpleTag "Services") (map mkXmlTree ccc) |not (null ccc)] 
            )
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Funit                         ***
--- \***********************************************************************
 
-   instance ShowXML Funit where
-     mkTag f = Tag "Funit" [] 
-     showXML f@(Uspc aaa bbb ccc ddd)
-        = encloseInTags f 
-           ( showXML aaa ++ 
-             showXML bbb ++
-             showXML ccc ++
-             showXML ddd 
-           )
-     
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Fservice                      ***
--- \***********************************************************************
 
-   instance ShowXML Fservice where
+   instance XML Fservice where
      mkTag f = Tag "Fservice" [] 
-     showXML f@(Fservice aaa bbb ccc ddd eee fff)
-        = encloseInTags f 
-           ( showXML aaa ++ 
-             showXML bbb ++
-             showXML ccc ++
-             showXML ddd ++
-             showXML eee ++
-             showXML fff
-           ) 
+     mkXmlTree f@(Fservice aaa bbb ccc ddd eee fff )
+        = Elem (mkTag f) (  
+             [ Elem (simpleTag "Service")   [mkXmlTree aaa]] 
+          ++ [ Elem (simpleTag "TrBoundary")(map mkXmlTree bbb)] 
+          ++ [ Elem (simpleTag "EcaRules") (map mkXmlTree ccc) |not (null ccc)] 
+          ++ [ Elem (simpleTag "Dataset")  [mkXmlTree ddd]] 
+          ++ [ Elem (simpleTag "Methods")  (map mkXmlTree eee) |not (null eee)] 
+          ++ [ Elem (simpleTag "Rules")    (map mkXmlTree fff) |not (null fff)] 
+           )
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FViewDef                      ***
--- \***********************************************************************
 
-   instance ShowXML FViewDef where
+   instance XML FViewDef where
      mkTag f = Tag "FViewDef" [] 
-     showXML f@(Vdef aaa bbb ccc)
-        = encloseInTags f 
-           ( showXML aaa ++ 
-             showXML bbb ++
-             showXML ccc 
+     mkXmlTree f@(Vdef aaa bbb ccc)
+        = Elem (mkTag f) (
+             [ Elem (simpleTag "View")   [mkXmlTree aaa]] 
+          ++ [ Elem (simpleTag "Morphisms") (map mkXmlTree bbb) |not (null bbb)] 
+          ++ [ Elem (simpleTag "Expr_Rules")(map tuple (vdExprRules f)) |not (null ccc)] 
+                )   
+                where tuple :: (Expression,Rule) -> XTree
+                      tuple (e,r) = Elem (simpleTag "Tuple" ) 
+                                         ([mkXmlTree e]++[mkXmlTree r])
+
+   instance XML ServiceSpec where
+     mkTag f = Tag "ServiceSpec" [nameToAttr f] 
+     mkXmlTree f@(Sspc sid aaa bbb ccc ddd eee fff ggg)
+        = Elem (mkTag f) (
+             [ Elem (simpleTag "Sees")   (map mkXmlTree aaa)] 
+          ++ [ Elem (simpleTag "Changes") (map mkXmlTree bbb)] 
+          ++ [ Elem (simpleTag "InputParams") (map mkXmlTree ccc)] 
+          ++ [ Elem (simpleTag "OutputParams") (map mkXmlTree ddd)] 
+          ++ [ Elem (simpleTag "Invariants") (map mkXmlTree eee)] 
+          ++ [ Elem (simpleTag "Preconditions") [PlainText (show fff)]] 
+          ++ [ Elem (simpleTag "Postconditions")[PlainText (show ggg)]] 
+          )   
+
+   instance XML ParamSpec where
+     mkTag f = Tag "ParamSpec" ([ nameToAttr (pname f)]
+                             ++ [ mkAttr "type" (ptype f)]
+                               )
+     mkXmlTree f = Node (mkTag f)  
+
+   instance XML Pattern where
+     mkTag p = Tag "Pattern" [ nameToAttr p]
+     mkXmlTree p@(Pat sid aaa bbb ccc ddd eee)
+        = Elem (mkTag p) (  
+             [ Elem (simpleTag "Rules")       (map mkXmlTree aaa)|not (null aaa)] 
+          ++ [ Elem (simpleTag "Gens")        (map mkXmlTree bbb)|not (null bbb)] 
+          ++ [ Elem (simpleTag "Declarations")(map mkXmlTree ccc)|not (null ccc)] 
+          ++ [ Elem (simpleTag "Concepts")    (map mkXmlTree ddd)|not (null ddd)] 
+          ++ [ Elem (simpleTag "Keys")        (map mkXmlTree eee)|not (null eee)] 
            )
+           
+   instance XML Rule where
+     mkTag r = Tag rtype extraAtts
+                 where rtype = case r of
+                                  Sg{} -> "Signal"
+                                  _    -> "Rule"
+                       extraAtts
+                             = runumAtt ++
+                               case r of
+                                  Sg{} -> [nameToAttr (srrel r)]
+                                  _    -> [mkAttr "type" (show rtype2)]
+                       runumAtt = case r of
+                                    Fr{} -> []
+                                    _    -> [mkAttr "ruleId" (show(runum r))]
+                       rtype2 = case r of
+                                 Ru{} -> rrsrt r
+                                 _    -> Equivalence           
+     mkXmlTree r = Elem (mkTag r)
+        (case r of  
+          Ru rt antc p cons cpu expla sgn nr pn
+                -> [Elem (simpleTag "Invariant") 
+                            [PlainText (invariantString r)]
+                   ]
+                ++ case rt of 
+                     Truth ->  [Elem (simpleTag "Allways")
+                                      [mkXmlTree (consequent r)]]
+                     Implication -> [Elem (simpleTag "If")
+                                      [mkXmlTree (antecedent r)]]
+                                 ++ [Elem (simpleTag "Then")
+                                      [mkXmlTree (consequent r)]] 
+                     Equivalence -> [Elem (simpleTag "LHS")
+                                      [mkXmlTree (antecedent r)]]
+                                 ++ [Elem (simpleTag "RHS")
+                                      [mkXmlTree (consequent r)]] 
+                         
+          Sg p rule expla sgn nr pn signal
+                ->  explainTree (srxpl r)
+                 ++ [mkXmlTree rule]
+          Gc p antc cons cpu _ _ _
+                ->  [still2bdone "Rule_Gc"]
+          Fr t d expr pn  -- represents an automatic computation, such as * or +.
+                ->  [still2bdone "Rule_Fr"]
+        )
+      where invariantString :: Rule -> String
+            invariantString r = case ruleType r of
+                                 Truth -> showADL (consequent r)
+                                 Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
+                                 Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
+        
+   
+   instance XML KeyDef where
+     mkTag k = Tag "KeyDef" [nameToAttr k]
+     mkXmlTree k = Elem (mkTag k)
+                        ( descriptionTree (kdctx k)
+                       ++ attributesTree (kdats k)
+                       )
+
+   
+   instance XML ObjectDef where
+     mkTag x = Tag "ObjectDef" [ nameToAttr x]
+     mkXmlTree x@(Obj aaa bbb ccc ddd eee) 
+           = Elem (mkTag x)
+                      ( descriptionTree (objctx x)
+                     ++ attributesTree (objats x)
+                     ++ [Elem (simpleTag "Directives")
+                              [PlainText (show (objstrs x))]|not (null (objstrs x))]
+                      )    --TODO: De directieven moeten waarschijnlijk nog verder uitgewerkt.
 
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
--- \***********************************************************************
-   instance ShowXML ServiceSpec where
-     mkTag f = Tag "ServiceSpec" [] 
-     showXML f@(Sspc aaa bbb ccc ddd eee fff ggg hhh)
-        = encloseInTags f 
-           ( showXML aaa ++ 
-             showXML bbb ++
-             showXML ccc ++
-             showXML ddd ++
-             showXML eee ++
-             showXML fff ++
-             show ggg ++
-             show hhh
+   instance XML Expression where
+     mkTag e  = error ("(module ShowXML) Fatal: mkTag should not be used for expressions.")
+     mkXmlTree e 
+         = case e of
+               (Tm m) | inline m -> Node (Tag rel ( [mkAttr "Name" (name m)]
+                                                   ++[mkAttr "Source" (name(source m))]
+                                                   ++[mkAttr "Target" (name(target m))]
+                                          )        ) 
+                      | otherwise -> Elem (simpleTag flip) [mkXmlTree (Tm (flp m))]
+               (Fu [])  -> Elem (simpleTag compl) 
+                                [ Node (Tag rel [mkAttr "Name" "V"])]
+               (Fu [f]) -> mkXmlTree f
+               (Fu fs)  -> Elem (simpleTag union) (map mkXmlTree fs)
+               (Fi [])  -> Node (Tag rel [mkAttr "Name" "V"])
+               (Fi [f]) -> mkXmlTree f
+               (Fi fs)  -> Elem (simpleTag inter) (map mkXmlTree fs)
+               (Fd [])  -> Elem (simpleTag compl) 
+                                [ Node (Tag rel [mkAttr "Name" "I"])]
+               (Fd [f]) -> mkXmlTree f
+               (Fd fs)  -> Elem (simpleTag rAdd) (map mkXmlTree fs)
+               (F  [])  -> Node (Tag rel [mkAttr "Name" "I"])
+               (F  [f]) -> mkXmlTree f
+               (F  fs)  -> Elem (simpleTag rMul) (map mkXmlTree fs)
+               (K0 e)   -> Elem (simpleTag clos0) [mkXmlTree e]
+               (K1 e)   -> Elem (simpleTag clos1) [mkXmlTree e]
+               (Cp e)   -> Elem (simpleTag compl) [mkXmlTree e]
+               (Tc f)   -> mkXmlTree f
+      where
+      (union,inter,rAdd,rMul,clos0,clos1,compl,flip,rel)
+       = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
+
+
+   instance XML Gen where
+     mkTag g = Tag "Gen" ([mkAttr "Generic" (show (gengen g))]
+                       ++ [mkAttr "Specific" (show (genspc g))]
+                         )
+     mkXmlTree g = Node (mkTag g) 
+   
+
+   instance XML Morphism where
+     mkTag f = Tag "Morphism" [nameToAttr f] 
+     mkXmlTree m = Elem (mkTag m) 
+      (case m of  
+          Mph nm pos ats typ yin dcl
+                ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats m))]
+                  ++[Elem (simpleTag "Source") [mkXmlTree (source m)]]
+                  ++[Elem (simpleTag "Target") [mkXmlTree (target m)]]                  
+          I ats gen spc yin
+                ->  [still2bdone "Morphism_I"]
+          V ats typ
+                ->  [still2bdone "Morphism_V"]
+          Mp1 val typ
+                ->  [still2bdone "Morphism_ONE"]
            ) 
-       
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
--- \***********************************************************************
-   instance ShowXML ParamSpec where
-     mkTag f = Tag "ParamSpec" [] 
-     showXML f@(Aspc aaa bbb)
-        = encloseInTags f 
-           ( showXML aaa ++ 
-             show bbb
+
+
+   instance XML Declaration where
+     mkTag d = Tag "Association" ([nameToAttr d]
+                                ++[ mkAttr "type" t]
+                                ++ extraAtts )
+            where t = case d of
+                        Sgn{} -> "Sgn"
+                        Isn{} -> "Isn"
+                        Iscompl{} -> "Iscompl"
+                        Vs{} -> "Vs"
+                  extraAtts = case d of
+                                Sgn{} -> [mkAttr "decId"    (show (decid  d))]
+                                       ++[mkAttr "IsSignal" (show (deciss d))]
+                                _     -> []
+            
+     mkXmlTree d = Elem (mkTag d)
+        (case d of  
+          Sgn nm a b props prL prM prR cs expla pos nr sig
+                ->  [Node (Tag "Source" [mkAttr "concept" (name(source d))])]
+                  ++[Node (Tag "Target" [mkAttr "concept" (name(target d))])]
+                  ++[Elem (simpleTag "MultFrom") [PlainText (multiplicity d)]]
+                  ++[Elem (simpleTag "MultTo") [PlainText (multiplicity (flp d))]]
+                  ++[Elem (simpleTag "Pragma") 
+                             [PlainText (show (prL++"%f"++prM++"%t"++prR))] 
+                                | not (null (prL++prM++prR))]
+                  ++ explainTree (decexpl d)
+                  ++[Elem (simpleTag "Population") 
+                             (map mkXmlTreeOfPaire (decpopu d)) 
+                                | not (null (decpopu d))]                 
+          Isn gen spc 
+                ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
+                  ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
+          Iscompl gen spc
+                ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
+                  ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
+          Vs gen spc
+                ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
+                  ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
            ) 
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FSid                          ***
--- \***********************************************************************
-
-   instance ShowXML FSid where
-     mkTag f = Tag "FSid" [] 
-     
-     showXML x = case x of
-                  NoName  -> encloseInTags x "<NoName>" 
-                  FS_id s -> encloseInTags x (show s)
-                    
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Architecture                  ***
--- \***********************************************************************
-
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Context                       ***
--- \***********************************************************************
-   
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Pattern                       ***
--- \***********************************************************************
- 
-   instance ShowXML Pattern where
-     mkTag f = Tag "PatternXXX" [] 
-     showXML f
-        = encloseInTags f 
-           ( show "NOG TE DOEN (Pattern)" )
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Rule                          ***
--- \***********************************************************************
-   instance ShowXML Rule where
-     mkTag f = Tag "Rule" [("type",rt )]
-          where rt = case f of 
-                       Sg{} -> "Signal_of_"++show (ruleType f)
-                       _    -> show (ruleType f) 
-     showXML f = encloseInTags f body 
-      where body = case f of 
-                    Ru aaa bbb ccc ddd eee fff ggg hhh iii
-                       -> ( -- showXML aaa ++ 
-                            showXML bbb ++
-                            showXML ccc ++
-                            showXML ddd ++
-                            showXML eee ++
-                            show fff ++
-                            showXML ggg ++
-                            show hhh ++
-                            show iii
-                           ) 
-                    Sg aaa bbb ccc ddd eee fff ggg
-                       -> ( showXML aaa ++ 
-                            showXML bbb ++
-                            show ccc ++
-                            showXML ddd ++
-                            show eee ++
-                            show fff ++
-                            showXML ggg
-                           ) 
-                    Gc aaa bbb ccc ddd eee fff ggg
-                       -> ( showXML aaa ++ 
-                            showXML bbb ++
-                            showXML ccc ++
-                            showXML ddd ++
-                            showXML eee ++
-                            show fff ++
-                            show ggg
-                           ) 
-                    Fr aaa bbb ccc ddd
-                       -> ( show aaa ++ 
-                            showXML bbb ++
-                            showXML ccc ++
-                            show ddd
-                           ) 
-              
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: RuleType                      ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: KeyDef                        ***
--- \***********************************************************************
-
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Population                    ***
--- \***********************************************************************
-
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
--- \***********************************************************************
-
-   instance ShowXML ObjectDef where
-     mkTag f = Tag "ObjectDef" [("name",name f )]
-     showXML f@(Obj aaa bbb ccc ddd eee)
-        = encloseInTags f 
-           ( -- show aaa ++  (reeds opgenomen in starttag)
-             showXML bbb ++
-             showXML ccc ++
-             showXML ddd ++
-             showStringList eee 
-           )
-        where showStringList s = "<directives>"++show s ++"</directives>"
-                                   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Expression                    ***
--- \***********************************************************************
-
-   instance ShowXML Expression where
-     mkTag f = Tag "Expression" []
-     showXML f
-        = encloseInTags f 
-           ( show(show f) )
+       where
+         multiplicity s | Sur `elem` multiplicities s && Inj `elem` multiplicities s = "1"
+                        |                                Inj `elem` multiplicities s = "0..1"
+                        | Sur `elem` multiplicities s                                = "1..n"
+                        | otherwise                                                  = "0..n"
+         prL = decprL d
+         prM = decprM d
+         prR = decprR d
+         mkXmlTreeOfPaire :: Paire -> XTree
+         mkXmlTreeOfPaire p 
+             = Elem tag []
+             where tag :: XTag
+                   tag = Tag "link" atts
+                   atts :: [XAtt]
+                   atts = [mkAttr "from" (head p)]
+                        ++[mkAttr "to"   (last p)]
 
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Gen                           ***
--- \***********************************************************************
-
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Morphism                      ***
--- \***********************************************************************
-
-   instance ShowXML Morphism where
-     mkTag f = Tag "MorphismXXX" []
-     showXML f
-        = encloseInTags f 
-           ( show "NOG TE DOEN (Morphism)" )
-   
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Declaration                   ***
--- \***********************************************************************
-   instance ShowXML Declaration where
-     mkTag f = Tag "Declaration" [("type", typeOf f)]
-        where typeOf decl = 
-                case decl of
-                       Sgn{}     -> "Sgn"
-                       Isn{}     -> "Isn"
-                       Iscompl{} -> "Iscompl"
-                       Vs{}      -> "Vs"
-             
-     showXML f = encloseInTags f body 
-      where body = case f of 
-                    Sgn aaa bbb ccc ddd eee fff ggg hhh iii jjj kkk lll
-                       -> ( show aaa ++ 
-                            showXML bbb ++
-                            showXML ccc ++
-                            showXML ddd ++
-                            show eee ++
-                            show fff ++
-                            show ggg ++
-                            show hhh ++
-                            show iii ++
-                            showXML jjj ++
-                            show kkk ++
-                            show lll
-                           ) 
-                    Isn aaa bbb
-                       -> ( showXML aaa ++ 
-                            showXML bbb
-                          )
-                    Iscompl aaa bbb
-                       -> ( showXML aaa ++ 
-                            showXML bbb
-                          )
-                    Vs aaa bbb
-                       -> ( showXML aaa ++ 
-                            showXML bbb
-                          )
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
--- \***********************************************************************
-
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Concept                       ***
--- \***********************************************************************
-   instance ShowXML Concept where
-     mkTag f = Tag "Concept" []
-     showXML f
-        = encloseInTags f 
-           ( show f )
-
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: AutType                       ***
--- \***********************************************************************
-   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Prop                          ***
--- \***********************************************************************
-   instance ShowXML Prop where
-     mkTag f = Tag "Prop" []
-     showXML f
-        = encloseInTags f 
-           ( show f )
+   instance XML ConceptDef where
+     mkTag f = Tag "ConceptDef" ( [nameToAttr f]
+                                ++[mkAttr "Trace" (cdref f) |not (null (cdref f))])
+     mkXmlTree f = Elem (mkTag f) (explainTree (cddef f))
    
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FilePos                       ***
--- \***********************************************************************
-   instance ShowXML FilePos where
-     mkTag f = Tag "FilePos" []
-     showXML f 
-        | f == posNone = ""
-        | otherwise    = encloseInTags f ( show f )
+   instance XML Concept where
+     mkTag f = Tag "Concept" [nameToAttr f]
+     mkXmlTree f
+        = Node (mkTag f)  
 
 
-   instance ShowXML ECArule where
-     mkTag f = Tag "ECAruleXXX" []
-     showXML f
-        = encloseInTags f 
-           ( show "NOG TE DOEN" )
-
+   instance XML ECArule where
+     mkTag f = Tag "ECArule" []
+     mkXmlTree f = still2bdone "ECArule"
    
-     
-   genereertLoop = show "HIER HOORT NOG IETS, maar dat genereert een -LOOP-."
+   
+   attributesTree :: ObjectDefs -> [XTree]
+   attributesTree atts = [Elem (simpleTag "Attributes") 
+                               (map mkXmlTree atts)    |not(null atts)]
 
--- HIERONDER IS NOG DE OORSPRONKELIJKE VERSIE VAN STEF:   
---   tag indent tg labels str
---    = indent++"<"++tg++ concat [" "++lbl| lbl<-labels] ++if null str then "/>" else ">"++str++"</"++tg++">"
---   tagLn indent tg labels f
---    = chain "\n" [indent++"<"++tg++ concat [" "++lbl| lbl<-labels] ++">",f ("\t"++indent),indent++"</"++tg++">"]
---
---   class XML a where
---    showXML :: a -> String -> String
---
---   instance XML a => XML [a] where
---    showXML xs indent = chain "\n" [showXML x indent| x<-xs]
---
---   instance XML Context where
---    showXML ctx indent -- (Ctx nm on isa world pats rs ds cs ks os pops)
---     = tagLn indent "CONTEXT" ["NAME="++show (name ctx)] (\indent->chain "\n" (inhoud indent))
---     where inhoud indent
---            = [showXML cd  indent| cd<-conceptDefs ctx, name cd `elem` (map name.concs) ctx]++
---              [showXML cd  indent| c<-concs ctx, cd<-[Cd posNone (name c) "" ""], not (name c `elem` map name (conceptDefs ctx))]++
---              [showXML pat indent| pat<-patterns ctx]
---
---   instance XML Pattern where
---    showXML pat indent
---     = tagLn indent "PATTERN" ["NAME="++show (ptnm pat)] (\indent->chain "\n" (inhoud indent))
---     where inhoud indent
---            = [showXML g indent| g<-rd (ptgns pat)]++  -- TODO: remove transitively redundant elements from gen.
---              [showXML d indent| d<-rd (ptdcs pat), not (isSignal d)]++
---              [showXML r indent| r<-ptrls pat]
---
---   instance XML Rule where
---    showXML r@(Sg p rule expla sgn nr pn signal) indent
---     = tagLn indent "SIGNAL"
---                   ( [ "NAME="++show (name signal)
---                     ] ++
---                     ["EXPLANATION="++show expla | not (null expla)]
---                   ) (showXML rule)
---    showXML r@(Ru c antc p cons _ expla sgn nr pn) indent
---     | ruleType r==Truth
---       = tagLn indent "RULE"
---                   ( [ "INVARIANT="++show (showADL (consequent r))] ++
---                     [ "TYPE=\"TRUTH\""] ++
---                     [ "EXPLANATION="++show expla | not (null expla)]
---                   ) (showXML (consequent r))
---     | ruleType r==Implication
---       = tagLn indent "RULE"
---                   ( [ "INVARIANT="++show (showADL (antecedent r)++" |- "++showADL (consequent r))] ++
---                     [ "TYPE=\"IMPLICATION\""] ++
---                     [ "EXPLANATION="++show expla | not (null expla)]
---                   ) (\ind->chain "\n" [ tagLn ind "ANTECEDENT" [] (showXML (antecedent r))
---                                       , tagLn ind "CONSEQUENT" [] (showXML (consequent r))
---                                       ]
---                     )
---     | ruleType r==Equivalence
---       = tagLn indent "RULE"
---                   ( [ "INVARIANT="++show (showADL (antecedent r)++" = "++showADL (consequent r))] ++
---                     [ "TYPE=\"EQUIVALENCE\""] ++
---                     [ "EXPLANATION="++show expla | not (null expla)]
---                   ) (\ind->chain "\n" [ tagLn ind "LHS" [] (showXML (antecedent r))
---                                       , tagLn ind "RHS" [] (showXML (consequent r))
---                                       ]
---                     )
---     | otherwise
---       = tagLn indent "RULE"
---                   ( [ "INVARIANT="++show (showADL (antecedent r)++" = "++showADL (consequent r))]++
---                     [ "TYPE=\"EQUIVALENCE\""]
---                   ) (\ind->chain "\n" [ tagLn ind "LHS" [] (showXML (antecedent r))
---                                       , tagLn ind "RHS" [] (showXML (consequent r))
---                                       ]
---                     )
---
---   instance XML Declaration where
---    showXML d@(Sgn nm a b props prL prM prR cs expla pos nr sig) indent
---     = if isSignal d
---       then error ("!Fail: no XML representation for Declaration that is a signal: "++showADL d) else
---       tag indent "ASSOC"
---                   ( [ "NAME="++show (name d)
---                     , "FROM="++show (name (source d))
---                     , "MULTFROM="++show (multiplicity d)
---                     , "TO="++show (name (target d))
---                     , "MULTTO="++show (multiplicity (flp d))
---                     ] ++
---                     ["PRAGMA="++show (prL++"%f"++prM++"%t"++prR) | not (null (prL++prM++prR))]
---                   )
---                   (concat [tag "" "EXPLAIN" [] (show (explain d)) | not (null (explain d))&&explain d/="NONE"])
---       where
---         multiplicity s | Sur `elem` multiplicities s && Inj `elem` multiplicities s = "1"
---                        |                                Inj `elem` multiplicities s = "0..1"
---                        | Sur `elem` multiplicities s                                = "1..n"
---                        | otherwise                                                  = "0..n"
---
---   instance XML ConceptDef where
---    showXML c@(Cd pos nm def ref) indent
---     = tagLn indent "CONCEPT" (["NAME="++show (name c)]++["TRACE="++show ref| not (null ref)]) (\indent->concat [tag indent "EXPLAIN" [] (show def) | not (null def)&&def/="NONE"])
--- --tag indent "EXPLAIN" [] def)
---
---   instance XML Concept where
---    showXML c indent
---     = tag indent "C" ["NAME="++show (name c)] ""
---
---   instance XML Gen where
---    showXML (G pos g s) indent
---     = tag indent "GEN" ["GENERIC=\""++show g++"\"", "SPECIFIC=\""++show s++"\""] ""
---
---   instance XML Expression where
---    showXML e indent = showX e indent
---     where
---      (union,inter,rAdd,rMul,clos0,clos1,compl,flip,rel)
---       = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
---      showX (Tm m) ind  = if inline m then t ind else tagLn ind flip [] t
---                          where d = makeDeclaration m
---                                t ind = tag ind rel [ "NAME="++show (name d), "SRC="++(show.name.source) d, "TRG="++(show.name.target) d ] ""
---      showX (Fu []) ind = tagLn ind compl [] (\ind->tag ind rel [ "NAME=V" ] "")
---      showX (Fu[f]) ind = showX f ind
---      showX (Fu fs) ind = tagLn ind union [] (\ind->chain "\n" [showX f ind| f<-fs])
---      showX (Fi []) ind = tag ind rel [ "NAME=V" ] ""
---      showX (Fi[f]) ind = showX f ind
---      showX (Fi fs) ind = tagLn ind inter [] (\ind->chain "\n" [showX f ind| f<-fs])
---      showX (Fd []) ind = tagLn ind compl [] (\ind->tag ind rel [ "NAME=I" ] "")
---      showX (Fd[t]) ind = showX t ind
---      showX (Fd ts) ind = tagLn ind rAdd [] (\ind->chain "\n" [showX t ind| t<-ts])
---      showX (F [])  ind = tag ind rel [ "NAME=I" ] ""
---      showX (F[t])  ind = showX t ind
---      showX (F ts)  ind = tagLn ind rMul [] (\ind->chain "\n" [showX t ind| t<-ts])
---      showX (K0 e)  ind = tag ind clos0 [] (showX e ind)
---      showX (K1 e)  ind = tag ind clos1 [] (showX e ind)
---      showX (Cp e)  ind = compl++showX e ind
---      showX (Tc f)  ind = showX f ind
---   
+   descriptionTree :: Expression -> [XTree]
+   descriptionTree e = [Elem (simpleTag "Description")
+                           [mkXmlTree e] ]
+
+   explainTree :: String -> [XTree]
+   explainTree str = [Elem (simpleTag "Explanation")
+                           [PlainText str] | not (null str)]
+   
+   invariantStringl :: Rule -> String
+   invariantStringl r = case ruleType r of
+                         Truth -> showADL (consequent r)
+                         Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
+                         Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
+                         
+                             

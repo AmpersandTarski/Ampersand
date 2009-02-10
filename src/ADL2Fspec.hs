@@ -202,7 +202,7 @@
    makeFunit context pat objs newConcs newDecls
     = Uspc fid pat ents svs
         where
-          fid  = (if null objs then NoName else makeFSid1(name (head objs))) 
+          fid  = (if null objs then (makeFSid1 "*NONAME*") else makeFSid1(name (head objs))) 
           ents = [ Vdef o
                 -- ,ILGV Eenvoudig
                    [] {-cs-}

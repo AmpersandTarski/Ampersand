@@ -9,15 +9,15 @@ module Adl.Expression where
    import Auxiliaries (eqClass)
 
    type Expressions = [Expression]
-   data Expression  = Tm Morphism          -- ^ simple morphism, possibly conversed     ~
-                    | Tc Expression        -- ^ bracketed expression                 ( ... )
-                    | F  Expressions       -- ^ composition                             ;
-                    | Fd Expressions       -- ^ relative addition                       !
-                    | Fi Expressions       -- ^ intersection                            /\
-                    | Fu Expressions       -- ^ union                                   \/
-                    | K0 Expression        -- ^ Reflexive and transitive closure        *
-                    | K1 Expression        -- ^ Transitive closure                      +
-                    | Cp Expression        -- ^ Complement                              -
+   data Expression  = Tm { m :: Morphism}     -- ^ simple morphism, possibly conversed     ~
+                    | Tc { e :: Expression}   -- ^ bracketed expression                 ( ... )
+                    | F  { es :: Expressions} -- ^ composition                             ;
+                    | Fd { es :: Expressions} -- ^ relative addition                       !
+                    | Fi { es :: Expressions} -- ^ intersection                            /\
+                    | Fu { es :: Expressions} -- ^ union                                   \/
+                    | K0 { e :: Expression}   -- ^ Reflexive and transitive closure        *
+                    | K1 { e :: Expression}   -- ^ Transitive closure                      +
+                    | Cp { e :: Expression}   -- ^ Complement                              -
 
                       
 -- \***********************************************************************
