@@ -8,9 +8,12 @@ module TypeChecker (typecheck) where
    import Classification
 
    type Errors = [String]
-   type Hierarchy = Classification Concept
    type RelationTree = Classification Concept
-   type Environment = (Hierarchy, RelationTree)
+   type Environment = (Ancestors, RelationTree)
+
+   ---------------------------------------------------------------------------------------------
+   --MAIN function
+   ---------------------------------------------------------------------------------------------
 
    typecheck :: Architecture -> Errors
    --typecheck _arch = iwantastring _arch  -- voor debugging
@@ -34,37 +37,44 @@ module TypeChecker (typecheck) where
        = (show _x3):[]
    -}
 
+   ---------------------------------------------------------------------------------------------
+   --Context part: later in separate module
+   ---------------------------------------------------------------------------------------------
+
    type ContextCheckResult = (Environment, Errors)
+   data ContextFound = Found Context | NotFound String
+
    checkCtx :: Architecture -> Contexts -> Errors
    checkCtx _ [] = []
    --Take the errors found when checking this context as root context and concat it with the errors of the other contexts taken as root
    checkCtx arch@(Arch ctxs) (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):tl_ctxs) = errors (check (Found cx)) ++ (checkCtx arch tl_ctxs)
       where
          check :: ContextFound -> ContextCheckResult
-         check (Found cx@(Ctx _ xts _ _ ((Pat _ _ gens _ _ _):_) _ _ _ _ _ _))
+         check (Found cx@(Ctx _ xts _ _ ((Pat _ _ gens@((G _ g _):_) _ _ _):_) _ _ _ _ _ _))
                      = constructEnv checkExtCtx cx
                      where
                          --get the list of extended Context
                          --check all extended Context in the list
                          --merge the results (classification, relations, errors)
                          checkExtCtx :: ContextCheckResult
-                         checkExtCtx = foldr mergeRes ((Bottom, Bottom),[]) (map check (map (srchContext ctxs) xts))
+                         checkExtCtx = foldr mergeRes (([], Bottom),[]) (map check (map (srchContext ctxs) xts))
                          --Enrich the Environment of the extended contexts with patterns from the current context
                          constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
-                         constructEnv extRes cx = 
+                         constructEnv extRes cx =
                                    extRes --TODO
                                    --((Bottom, Bottom),[show (flatAncList gens)]) --for debugging to show flatAncList
-         check (NotFound str) = ((Bottom,Bottom),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
+                                   --(([], Bottom),[show (ancestors (oneAnc (flatAncList gens) g) )])
+         check (NotFound str) = (([],Bottom),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          errors :: ContextCheckResult -> Errors
          errors ((_,_),e) = e
 
    mergeRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
    mergeRes ((cl1,rel1),errs1) ((cl2,rel2),errs2) | errs1==[] && errs2==[]
                                                               = ((mergeCl cl1 cl2, mergeRel rel1 rel2),[])
-                                                  | otherwise = ((Bottom,Bottom),errs1 ++ errs2)
+                                                  | otherwise = (([],Bottom),errs1 ++ errs2)
    --merge the classification of concepts trees
-   mergeCl :: Hierarchy -> Hierarchy -> Hierarchy
-   mergeCl _ _ = Bottom       --TODO
+   mergeCl :: Ancestors -> Ancestors -> Ancestors
+   mergeCl _ _ = []       --TODO
    --merge the relations trees
    mergeRel :: RelationTree -> RelationTree -> RelationTree
    mergeRel _ _ = Bottom      --TODO
@@ -77,7 +87,6 @@ module TypeChecker (typecheck) where
    -}
 
    --search for a context by name and return the first one found
-   data ContextFound = Found Context | NotFound String
    srchContext :: Contexts -> String -> ContextFound
    srchContext [] srchstr = NotFound srchstr   --The UU_Parser has already caught this case
    srchContext (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):ctxs) srchstr
@@ -86,7 +95,9 @@ module TypeChecker (typecheck) where
             
             
             
-
+   ---------------------------------------------------------------------------------------------
+   --Expression part: later in separate module
+   ---------------------------------------------------------------------------------------------
 
    type ADLType = String
 
@@ -96,58 +107,121 @@ module TypeChecker (typecheck) where
 
    ---------------------------------------------------------------------------------------------
    --Ancestors part: later in separate module
-   --flatAncList is the interesting function which returns the Hierarchy and the tracklist to
-   --correlate to the ADL code
+   --flatAncList is the interesting function which returns the model and the tracklist to
+   --correlate to the ADL code. flatAncList is build in two phases. First the actual code
+   --declarations are enumerated (declancs). Then the ancestors are resolved recursively, and folded.
+   --Each concept is resolved once to prevent recursive loops. Therefore a list is passed around
+   --to keep track of the resolved concepts.
+   --
+   --oneAnc can be used to get the Ancestor entry for a Concept by Concept.
+   --ancestors can be used to get the ancestors from an Ancestor entry
+   --
+   --Maybe I can arrange and label the functions more clearly. 
+   --target = ancestor,
+   --source = child,
+   --both target and source are Concepts.
+   --
+   --Ancestor is a kind of nonlinear intuitionistic implication.
+   --if Boss -> Person. If Boss is true then Person is true.
+   --Both Boss and Person are free resources.
+   --Ancestor is also an Identity, If Boss then Boss
    ---------------------------------------------------------------------------------------------
 
    type Ancestors = [Ancestor]
-   type AncTarget = (Concept,[Gen])   -- (target, tracklist of gen declarations in ADL code)
-   data Ancestor = Anc (Concept, [AncTarget]) deriving (Show)
-                    --(source , list of AncTarget)
-                    --source is child, targets all its ancestors
 
+   -- (target, tracklist of gen declarations in ADL code)
+   type AncTarget = (Concept,[Gen])
+
+   data Ancestor = Anc (Concept       , [AncTarget]) deriving (Show)
+                    --(child / source , list of AncTarget / ancestors)
+
+   --triple to pass around progress ([Concept]), intermediate result ([AncTarget]), 
+   --and progress original input (Ancestors)
+   --to get all ancestors of a Concept and prevent looping
+   type AllAncResult = ([Concept],[AncTarget],Ancestors)
+
+   --equality of Ancestor = equality of its source Concept = equality of the name of the source Concept
    instance Eq Ancestor where
      (Anc (src,_))==(Anc (src',_)) = src==src'
 
-   type AllAncResult = ([Concept],[AncTarget],Ancestors)
+   ------------------
+   --PUBLIC FUNCTIONS
+   ------------------
 
-   allAncsTrg :: AncTarget -> AllAncResult -> AllAncResult
-   allAncsTrg  at@(trg,_) (lst,ancs,declancs)
-         | elem trg lst = (lst,ancs,declancs)           --skip
-         | otherwise    = foldr allAncsTrg (trg:lst,at:ancs,declancs) (ancestors (oneAnc declancs trg))    --add AncTarget and the allancs of this target
-
-   --get the entry of a child from declAncs
-   oneAnc :: Ancestors -> Concept -> Ancestor
-   oneAnc [] src = Anc (src,[]) --should not be possible to find no entry
-   oneAnc (a@(Anc(src',_)):ancs) src
-         | src' == src = a            --found -> return
-         | otherwise = oneAnc ancs src --try next
-
-   --get the ancestors of a child
-   ancestors :: Ancestor -> [AncTarget]
-   ancestors (Anc (_,trgs)) = trgs
-
-
-   allAncsTrgs :: Ancestors -> [AncTarget] -> [AncTarget]
-   allAncsTrgs declancs trgs = allAncRes (foldr allAncsTrg ([],[],declancs) trgs)
-       where   allAncRes :: AllAncResult -> [AncTarget]
-               allAncRes (_,ancs,_) = ancs
-
+   --returns the model and the tracklist to correlate to the ADL code.
+   --flatAncList is build in two phases. First the actual code
+   --declarations are enumerated (declAncs). Then the ancestors are resolved recursively, and folded (foldTrgs).
    flatAncList :: Gens -> Ancestors
    flatAncList gens = foldTrgs (declAncs gens) (declAncs gens)
-         where    --foreach Ancestor in declAncs, fold distinct the targets of its targets
+         where    
+         --foreach Ancestor entry in declAncs, fold distinct the targets of its targets
+         --provide the Ancestors declared in the code, and the list of Ancestors to resolve
+         foldTrgs :: Ancestors -> Ancestors -> Ancestors
          foldTrgs _ [] = []
          foldTrgs declancs ((Anc (src,trgs)):das) = (Anc(src,allAncsTrgs declancs trgs)):(foldTrgs declancs das)
          --Ancestor relations which are declared in ADL
          declAncs :: Gens -> Ancestors
          declAncs gens = foldr insertGen [] gens
 
-   insertGen :: Gen -> Ancestors -> Ancestors
-   insertGen gen@(G _ src trg) [] = ( Anc (src, [(trg,[gen])] ) ):[] --insert new
-   insertGen gen@(G _ src _) (a@(Anc(src',trgs)):as)
-          | src' == src = (Anc(src, insertGenTrg trgs gen)):as --update  (insert target)
-          | otherwise   = a:(insertGen gen as) --try next
+   --get the Ancestor entry from an Ancestor model by Concept 
+   --(equality by concept name)
+   oneAnc :: Ancestors -> Concept -> Ancestor
+   oneAnc [] src       =
+                         --apparantly this Concept has no ancestors, return the concept without ancestors
+                         Anc (src,[])
+   oneAnc (a@(Anc(src',_)):ancs) src
+         | src' == src = 
+                         --found -> return
+                         a
+         | otherwise   = 
+                         --try next
+                         oneAnc ancs src
 
+   --get the ancestors of a Ancestor entry
+   ancestors :: Ancestor -> [AncTarget]
+   ancestors (Anc (_,trgs)) = trgs
+
+   -------------------
+   --PRIVATE FUNCTIONS
+   -------------------
+
+   --return all AncTargets of an AncTarget, 
+   --respecting the already resolved Concepts and results,
+   --given the explicit declarations from the ADL code
+   allAncsTrg :: AncTarget -> AllAncResult -> AllAncResult
+   allAncsTrg  at@(trg,_) (lst,ancs,declancs)
+         | elem trg lst = 
+                          --skip, already resolved: so just forward result so far
+                          (lst,ancs,declancs)
+
+         | otherwise    =
+                          --add this target (at:ancs),
+                          --and all its ancestors (foldr ... oneAnc declancs trg), as ancestor,
+                          --register this target as resolved (trg:lst)
+                          foldr allAncsTrg (trg:lst,at:ancs,declancs) (ancestors (oneAnc declancs trg))
+
+   --return all the AncTarget for a list of AncTarget, 
+   --given the explicit declaration from the ADL code
+   allAncsTrgs :: Ancestors -> [AncTarget] -> [AncTarget]
+   allAncsTrgs declancs trgs = allAncRes (foldr allAncsTrg ([],[],declancs) trgs)
+       where   allAncRes :: AllAncResult -> [AncTarget]
+               allAncRes (_,ancs,_) = ancs
+
+   --insert an explicit ADL code declaration (Gen) to the list
+   insertGen :: Gen -> Ancestors -> Ancestors
+   --if there is no Ancestor entry yet, add a new entry
+   insertGen gen@(G _ src trg) [] = ( Anc (src, [(trg,[gen])] ) ):[]
+   --if there are entries, search for an entry of the child / source of the Gen
+   insertGen gen@(G _ src _) (a@(Anc(src',trgs)):as)
+          | src' == src =
+                          --if the child is located, add the ancestor to the list of ancestors of this child
+                          (Anc(src, insertGenTrg trgs gen)):as --update  (insert target)
+          | otherwise   = 
+                          --child not located yet, try next and preserve all entries (a:)
+                          a:(insertGen gen as)
+
+   --insert a new target/ancestor to the ancestor list.
+   --if the ancestor already exists, add track information to the ancestor (declared twice)
    insertGenTrg :: [AncTarget] -> Gen -> [AncTarget]
    insertGenTrg [] gen@(G _ _ trg) = (trg,[gen]):[] --insert
    insertGenTrg (t@(trg',gens):trgs) gen@(G _ _ trg)
@@ -156,6 +230,9 @@ module TypeChecker (typecheck) where
 
 
 
+   ---------------------------------------------------------------------------------------------
+   --MORE COMMENTS
+   ---------------------------------------------------------------------------------------------
 
    {-
    1)  Doe voor iedere context in Architecture. De contexten in architecture hebben geen join, misschien
