@@ -317,7 +317,36 @@ module TypeChecker (typecheck) where
    3b) Check de types van de expressies uit de ObjectDefs
    -}
 
+{- Opmerking van Han aan Gerard:
+Beste Gerard,
+Ik zag dat je hard aan het werk bent aan de typechecker! Welkom aan boord!
+Ik kon mijn nieuwsgierigheid niet bedwingen, en heb even in je code zitten gluren.
+Hopelijk vind je dat niet erg. Het ziet er goed uit, overzichtelijk m.b.t. structuur,
+en lekker veel commentaar. Houden zo. 
+Daarnaast zie ik ook veel gebruik van de streepjes notatie. Dat is een kwestie
+van smaak natuurlijk, maar weet dat je te kiezen hebt:
 
+een voorbeeld:
 
+   declRels :: Patterns -> DeclRels
+   declRels [] = []
+   declRels (p@(Pat _ _ _ decls _ _):ps) = decls ++ declRels ps
+
+is identiek aan
+
+   declRels :: Patterns -> DeclRels
+   declRels [] = []
+   declRels (p:ps) = case p of
+                     Pat{} -> ptdcs p ++ declRels ps
+
+Beide notaties doen hetzelfde, maar de onderste is minder gevoelig voor wijzigingen
+in de datastructuur. Als er een 7de attribuut aan Pat wordt toegevoegd, dan 
+moet je de eerste variant aanpassen. De tweede variant is ongevoelig. 
+In sommige gevallen wil je juist wél getriggerd worden als de datastructuur 
+wijzigt. (bijvoorbeeld in ShowXML). Dan is de eerste variant verstandiger. 
+Maar het is natuurlijk allemaal een kwestie van smaak. 
+Succes met typechecken! 
+NB mocht je me willen bellen voor vragen, doe dat gerust: 06-10930606
+-}
 
 
