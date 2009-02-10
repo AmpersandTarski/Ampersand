@@ -41,7 +41,7 @@ module TypeChecker (typecheck) where
    checkCtx arch@(Arch ctxs) (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):tl_ctxs) = errors (check (Found cx)) ++ (checkCtx arch tl_ctxs)
       where
          check :: ContextFound -> ContextCheckResult
-         check (Found cx@(Ctx _ xts _ _ _ _ _ _ _ _ _))
+         check (Found cx@(Ctx _ xts _ _ ((Pat _ _ gens _ _ _):_) _ _ _ _ _ _))
                      = constructEnv checkExtCtx cx
                      where
                          --get the list of extended Context
@@ -51,7 +51,9 @@ module TypeChecker (typecheck) where
                          checkExtCtx = foldr mergeRes ((Bottom, Bottom),[]) (map check (map (srchContext ctxs) xts))
                          --Enrich the Environment of the extended contexts with patterns from the current context
                          constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
-                         constructEnv extRes cx = extRes --TODO
+                         constructEnv extRes cx = 
+                                   extRes --TODO
+                                   --((Bottom, Bottom),[show (flatAncList gens)]) --for debugging to show flatAncList
          check (NotFound str) = ((Bottom,Bottom),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          errors :: ContextCheckResult -> Errors
          errors ((_,_),e) = e
@@ -59,7 +61,7 @@ module TypeChecker (typecheck) where
    mergeRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
    mergeRes ((cl1,rel1),errs1) ((cl2,rel2),errs2) | errs1==[] && errs2==[]
                                                               = ((mergeCl cl1 cl2, mergeRel rel1 rel2),[])
-                                                  | otherwise = ((Bottom,Bottom),errs1 ++ errs2)   
+                                                  | otherwise = ((Bottom,Bottom),errs1 ++ errs2)
    --merge the classification of concepts trees
    mergeCl :: Hierarchy -> Hierarchy -> Hierarchy
    mergeCl _ _ = Bottom       --TODO
@@ -74,6 +76,7 @@ module TypeChecker (typecheck) where
    relationTree ((_,r),_) = r
    -}
 
+   --search for a context by name and return the first one found
    data ContextFound = Found Context | NotFound String
    srchContext :: Contexts -> String -> ContextFound
    srchContext [] srchstr = NotFound srchstr   --The UU_Parser has already caught this case
@@ -91,20 +94,82 @@ module TypeChecker (typecheck) where
    typeof :: Environment -> Expression -> [ADLType]
    typeof _ _ = []
 
+   ---------------------------------------------------------------------------------------------
+   --Ancestors part: later in separate module
+   --flatAncList is the interesting function which returns the Hierarchy and the tracklist to
+   --correlate to the ADL code
+   ---------------------------------------------------------------------------------------------
+
+   type Ancestors = [Ancestor]
+   type AncTarget = (Concept,[Gen])   -- (target, tracklist of gen declarations in ADL code)
+   data Ancestor = Anc (Concept, [AncTarget]) deriving (Show)
+                    --(source , list of AncTarget)
+                    --source is child, targets all its ancestors
+
+   instance Eq Ancestor where
+     (Anc (src,_))==(Anc (src',_)) = src==src'
+
+   type AllAncResult = ([Concept],[AncTarget],Ancestors)
+
+   allAncsTrg :: AncTarget -> AllAncResult -> AllAncResult
+   allAncsTrg  at@(trg,_) (lst,ancs,declancs)
+         | elem trg lst = (lst,ancs,declancs)           --skip
+         | otherwise    = foldr allAncsTrg (trg:lst,at:ancs,declancs) (ancestors (oneAnc declancs trg))    --add AncTarget and the allancs of this target
+
+   --get the entry of a child from declAncs
+   oneAnc :: Ancestors -> Concept -> Ancestor
+   oneAnc [] src = Anc (src,[]) --should not be possible to find no entry
+   oneAnc (a@(Anc(src',_)):ancs) src
+         | src' == src = a            --found -> return
+         | otherwise = oneAnc ancs src --try next
+
+   --get the ancestors of a child
+   ancestors :: Ancestor -> [AncTarget]
+   ancestors (Anc (_,trgs)) = trgs
+
+
+   allAncsTrgs :: Ancestors -> [AncTarget] -> [AncTarget]
+   allAncsTrgs declancs trgs = allAncRes (foldr allAncsTrg ([],[],declancs) trgs)
+       where   allAncRes :: AllAncResult -> [AncTarget]
+               allAncRes (_,ancs,_) = ancs
+
+   flatAncList :: Gens -> Ancestors
+   flatAncList gens = foldTrgs (declAncs gens) (declAncs gens)
+         where    --foreach Ancestor in declAncs, fold distinct the targets of its targets
+         foldTrgs _ [] = []
+         foldTrgs declancs ((Anc (src,trgs)):das) = (Anc(src,allAncsTrgs declancs trgs)):(foldTrgs declancs das)
+         --Ancestor relations which are declared in ADL
+         declAncs :: Gens -> Ancestors
+         declAncs gens = foldr insertGen [] gens
+
+   insertGen :: Gen -> Ancestors -> Ancestors
+   insertGen gen@(G _ src trg) [] = ( Anc (src, [(trg,[gen])] ) ):[] --insert new
+   insertGen gen@(G _ src _) (a@(Anc(src',trgs)):as)
+          | src' == src = (Anc(src, insertGenTrg trgs gen)):as --update  (insert target)
+          | otherwise   = a:(insertGen gen as) --try next
+
+   insertGenTrg :: [AncTarget] -> Gen -> [AncTarget]
+   insertGenTrg [] gen@(G _ _ trg) = (trg,[gen]):[] --insert
+   insertGenTrg (t@(trg',gens):trgs) gen@(G _ _ trg)
+          | trg' == trg = (trg,gen:gens):trgs --update (tracklist)
+          | otherwise   = t:(insertGenTrg trgs gen) --try next
 
 
 
 
-{-
-1)  Doe voor iedere context in Architecture. De contexten in architecture hebben geen join, misschien
-    is er een efficientere manier.
-2)  Beschouw recursief de componenten van de extended contexten als onderdeel van de context.
-    Dit zijn alle componenten in scope.
-2a) Bouw de classification van concepten op. Door het mergen van lager gelegen contexten en het 
-    toevoegen van de componenten in de huidige. Nodig patterns: gens, concs, rels decls
-2b) Bouw de relatieboom op. Nodig patterns: concs, rels decls
-3a) Check de types van de rules uit de huidige context
-3b) Check de types van de expressies uit de ObjectDefs
--}
+   {-
+   1)  Doe voor iedere context in Architecture. De contexten in architecture hebben geen join, misschien
+       is er een efficientere manier.
+   2)  Beschouw recursief de componenten van de extended contexten als onderdeel van de context.
+       Dit zijn alle componenten in scope.
+   2a) Bouw de classification van concepten op. Door het mergen van lager gelegen contexten en het
+       toevoegen van de componenten in de huidige. Nodig patterns: gens, concs, rels decls
+   2b) Bouw de relatieboom op. Nodig patterns: concs, rels decls
+   3a) Check de types van de rules uit de huidige context
+   3b) Check de types van de expressies uit de ObjectDefs
+   -}
+
+
+
 
 
