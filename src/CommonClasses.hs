@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
   module CommonClasses
   (  Identified(..)
    , ABoolAlg(glb,lub,order)
@@ -16,9 +17,9 @@
  
    instance Identified a => Identified [a] where
     name [] = ""
-    name (i:is) = name i
+    name (i:_) = name i
     typ  [] = ""
-    typ  (i:is) = typ i
+    typ  (i:_) = typ i
 
    class Ord a => ABoolAlg a where
     glb,lub :: a -> a -> a
@@ -43,13 +44,13 @@
 
    class Explained a where
     explain :: a -> String
-    explain a = error "(module CommonClasses) explain undefined"
+    explain _ = error "(module CommonClasses) explain undefined"
 
    class Conceptual a where
     conts      :: a -> [String]                   -- the set of all instances in a concept
 
    instance Conceptual a => Conceptual [a] where
-    conts                                         = rd . concat . map conts
+    conts = rd . concat . map conts
 
    class Morphics a where
     anything       :: a -> Bool

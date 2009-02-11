@@ -1,4 +1,4 @@
- {-# OPTIONS -XFlexibleContexts #-}
+{-# OPTIONS_GHC -Wall #-}
 module ShowXML (showXML)
 where
 --   import Text.XML.HaXml
@@ -26,8 +26,7 @@ where
                      }
               | Node { ntag  :: XTag
                      }
-              | PlainText {str :: String}
-              | Dummy {str :: String} 
+              | PlainText {ptstr :: String}
    data XTag =  Tag  { tName :: String
                      , tAtts :: [XAtt]
                      }
@@ -43,8 +42,7 @@ where
                                ++ showEnd tag
                                    where tag = etag tree
                         Node{} -> showNode (ntag tree)
-                        PlainText{} -> show (str tree)
-                        Dummy{} -> str tree
+                        PlainText{} -> show (ptstr tree)
    showStart :: XTag -> String
    showStart a = "<" ++ tName a ++ showAtts (tAtts a) ++ ">" 
   
@@ -74,27 +72,27 @@ where
     mkXmlTree :: a -> XTree
    
    still2bdone :: String -> XTree
-   still2bdone str= Node (Tag "NotImplementedYet" [(mkAttr "work2do_in_ShowXML.hs"  str)])     
+   still2bdone worktxt = Node (Tag "NotImplementedYet" [(mkAttr "work2do_in_ShowXML.hs"  worktxt)])     
 
 
    instance XML Fspc where
      mkTag f = Tag "Fspec" [ nameToAttr f] 
-     mkXmlTree f@(Fspc sid aaa bbb ccc ddd eee fff ggg hhh)
+     mkXmlTree f@(Fspc _ _ _ _ _ _ _ _ _)
         = Elem (mkTag f) (
-             [ Elem (simpleTag "Themes")   (map mkXmlTree aaa)] 
-          ++ [ Elem (simpleTag "Datasets") (map mkXmlTree bbb)] 
-          ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree ccc)] 
-          ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree ddd)] 
-          ++ [ Elem (simpleTag "Services") (map mkXmlTree eee)] 
-          ++ [ Elem (simpleTag "Rules")    (map mkXmlTree fff)] 
-          ++ [ Elem (simpleTag "Declarations")(map mkXmlTree ggg)] 
+             [ Elem (simpleTag "Themes")   (map mkXmlTree (themes f))] 
+          ++ [ Elem (simpleTag "Datasets") (map mkXmlTree (datasets f))] 
+          ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
+          ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
+          ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 
+          ++ [ Elem (simpleTag "Rules")    (map mkXmlTree (vrules f))] 
+          ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
                    )
 
 
    instance XML Ftheme where
      mkTag f = Tag "Ftheme" [nameToAttr f] 
-     mkXmlTree f@(Tspc sid aaa bbb)
+     mkXmlTree f@(Tspc _ aaa bbb)
         = Elem (mkTag f) (
              [ Elem (simpleTag "Units")    (map mkXmlTree aaa) |not (null aaa)] 
           ++ [ Elem (simpleTag "Pattern")  [mkXmlTree bbb]]
@@ -103,7 +101,7 @@ where
 
    instance XML Funit where
      mkTag f = Tag "Funit" [nameToAttr f] 
-     mkXmlTree f@(Uspc sid aaa bbb ccc)
+     mkXmlTree f@(Uspc _ aaa bbb ccc)
         = Elem (mkTag f) (
              [ Elem (simpleTag "Pattern")  [mkXmlTree aaa]] 
           ++ [ Elem (simpleTag "Views")    (map mkXmlTree bbb) |not (null bbb)] 
@@ -112,7 +110,7 @@ where
 
 
    instance XML Fservice where
-     mkTag f = Tag "Fservice" [] 
+     mkTag _ = Tag "Fservice" [] 
      mkXmlTree f@(Fservice aaa bbb ccc ddd eee fff )
         = Elem (mkTag f) (  
              [ Elem (simpleTag "Service")   [mkXmlTree aaa]] 
@@ -125,7 +123,7 @@ where
 
 
    instance XML FViewDef where
-     mkTag f = Tag "FViewDef" [] 
+     mkTag _ = Tag "FViewDef" [] 
      mkXmlTree f@(Vdef aaa bbb ccc)
         = Elem (mkTag f) (
              [ Elem (simpleTag "View")   [mkXmlTree aaa]] 
@@ -133,12 +131,12 @@ where
           ++ [ Elem (simpleTag "Expr_Rules")(map tuple (vdExprRules f)) |not (null ccc)] 
                 )   
                 where tuple :: (Expression,Rule) -> XTree
-                      tuple (e,r) = Elem (simpleTag "Tuple" ) 
-                                         ([mkXmlTree e]++[mkXmlTree r])
+                      tuple (expr,rul) = Elem (simpleTag "Tuple" ) 
+                                         ([mkXmlTree expr]++[mkXmlTree rul])
 
    instance XML ServiceSpec where
      mkTag f = Tag "ServiceSpec" [nameToAttr f] 
-     mkXmlTree f@(Sspc sid aaa bbb ccc ddd eee fff ggg)
+     mkXmlTree f@(Sspc _ aaa bbb ccc ddd eee fff ggg)
         = Elem (mkTag f) (
              [ Elem (simpleTag "Sees")   (map mkXmlTree aaa)] 
           ++ [ Elem (simpleTag "Changes") (map mkXmlTree bbb)] 
@@ -157,7 +155,7 @@ where
 
    instance XML Pattern where
      mkTag p = Tag "Pattern" [ nameToAttr p]
-     mkXmlTree p@(Pat sid aaa bbb ccc ddd eee)
+     mkXmlTree p@(Pat _ aaa bbb ccc ddd eee)
         = Elem (mkTag p) (  
              [ Elem (simpleTag "Rules")       (map mkXmlTree aaa)|not (null aaa)] 
           ++ [ Elem (simpleTag "Gens")        (map mkXmlTree bbb)|not (null bbb)] 
@@ -184,11 +182,11 @@ where
                                  _    -> Equivalence           
      mkXmlTree r = Elem (mkTag r)
         (case r of  
-          Ru rt antc p cons cpu expla sgn nr pn
+          Ru _ _ _ _ _ _ _ _ _
                 -> [Elem (simpleTag "Invariant") 
-                            [PlainText (invariantString r)]
+                            [PlainText invariantString ]
                    ]
-                ++ case rt of 
+                ++ case (rrsrt r) of 
                      Truth ->  [Elem (simpleTag "Allways")
                                       [mkXmlTree (consequent r)]]
                      Implication -> [Elem (simpleTag "If")
@@ -199,21 +197,23 @@ where
                                       [mkXmlTree (antecedent r)]]
                                  ++ [Elem (simpleTag "RHS")
                                       [mkXmlTree (consequent r)]] 
-                         
-          Sg p rule expla sgn nr pn signal
+                     Generalization -> undefined
+                     Automatic      -> undefined    
+          Sg _ _ _ _ _ _ _
                 ->  explainTree (srxpl r)
-                 ++ [mkXmlTree rule]
-          Gc p antc cons cpu _ _ _
+                 ++ [mkXmlTree (srsig r)]
+          Gc _ _ _ _ _ _ _
                 ->  [still2bdone "Rule_Gc"]
-          Fr t d expr pn  -- represents an automatic computation, such as * or +.
+          Fr _ _ _ _  -- represents an automatic computation, such as * or +.
                 ->  [still2bdone "Rule_Fr"]
         )
-      where invariantString :: Rule -> String
-            invariantString r = case ruleType r of
+      where invariantString ::  String
+            invariantString = case ruleType r of
                                  Truth -> showADL (consequent r)
                                  Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
                                  Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
-        
+                                 Generalization -> undefined
+                                 Automatic -> undefined
    
    instance XML KeyDef where
      mkTag k = Tag "KeyDef" [nameToAttr k]
@@ -225,7 +225,7 @@ where
    
    instance XML ObjectDef where
      mkTag x = Tag "ObjectDef" [ nameToAttr x]
-     mkXmlTree x@(Obj aaa bbb ccc ddd eee) 
+     mkXmlTree x@(Obj _ _ _ _ _ ) 
            = Elem (mkTag x)
                       ( descriptionTree (objctx x)
                      ++ attributesTree (objats x)
@@ -235,18 +235,18 @@ where
 
 
    instance XML Expression where
-     mkTag e  = error ("(module ShowXML) Fatal: mkTag should not be used for expressions.")
-     mkXmlTree e 
-         = case e of
-               (Tm m) | inline m -> Node (Tag rel ( [mkAttr "Name" (name m)]
-                                                   ++[mkAttr "Source" (name(source m))]
-                                                   ++[mkAttr "Target" (name(target m))]
-                                          )        ) 
-                      | otherwise -> Elem (simpleTag flip) [mkXmlTree (Tm (flp m))]
+     mkTag _  = error ("(module ShowXML) Fatal: mkTag should not be used for expressions.")
+     mkXmlTree expr 
+         = case expr of
+               (Tm mph) | inline mph -> Node (Tag rel ( [mkAttr "Name" (name mph)]
+                                                      ++[mkAttr "Source" (name(source mph))]
+                                                      ++[mkAttr "Target" (name(target mph))]
+                                              )        ) 
+                        | otherwise -> Elem (simpleTag flip') [mkXmlTree (Tm (flp mph))]
                (Fu [])  -> Elem (simpleTag compl) 
                                 [ Node (Tag rel [mkAttr "Name" "V"])]
                (Fu [f]) -> mkXmlTree f
-               (Fu fs)  -> Elem (simpleTag union) (map mkXmlTree fs)
+               (Fu fs)  -> Elem (simpleTag union') (map mkXmlTree fs)
                (Fi [])  -> Node (Tag rel [mkAttr "Name" "V"])
                (Fi [f]) -> mkXmlTree f
                (Fi fs)  -> Elem (simpleTag inter) (map mkXmlTree fs)
@@ -257,12 +257,12 @@ where
                (F  [])  -> Node (Tag rel [mkAttr "Name" "I"])
                (F  [f]) -> mkXmlTree f
                (F  fs)  -> Elem (simpleTag rMul) (map mkXmlTree fs)
-               (K0 e)   -> Elem (simpleTag clos0) [mkXmlTree e]
-               (K1 e)   -> Elem (simpleTag clos1) [mkXmlTree e]
-               (Cp e)   -> Elem (simpleTag compl) [mkXmlTree e]
+               (K0 f)   -> Elem (simpleTag clos0) [mkXmlTree f]
+               (K1 f)   -> Elem (simpleTag clos1) [mkXmlTree f]
+               (Cp f)   -> Elem (simpleTag compl) [mkXmlTree f]
                (Tc f)   -> mkXmlTree f
       where
-      (union,inter,rAdd,rMul,clos0,clos1,compl,flip,rel)
+      (union',inter,rAdd,rMul,clos0,clos1,compl,flip',rel)
        = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
 
 
@@ -275,17 +275,17 @@ where
 
    instance XML Morphism where
      mkTag f = Tag "Morphism" [nameToAttr f] 
-     mkXmlTree m = Elem (mkTag m) 
-      (case m of  
-          Mph nm pos ats typ yin dcl
-                ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats m))]
-                  ++[Elem (simpleTag "Source") [mkXmlTree (source m)]]
-                  ++[Elem (simpleTag "Target") [mkXmlTree (target m)]]                  
-          I ats gen spc yin
+     mkXmlTree mph = Elem (mkTag mph) 
+      (case mph of  
+          Mph _ _ _ _ _ _ 
+                ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats mph))]
+                  ++[Elem (simpleTag "Source") [mkXmlTree (source mph)]]
+                  ++[Elem (simpleTag "Target") [mkXmlTree (target mph)]]                  
+          I _ _ _ _ 
                 ->  [still2bdone "Morphism_I"]
-          V ats typ
+          V _ _
                 ->  [still2bdone "Morphism_V"]
-          Mp1 val typ
+          Mp1 _ _
                 ->  [still2bdone "Morphism_ONE"]
            ) 
 
@@ -306,7 +306,7 @@ where
             
      mkXmlTree d = Elem (mkTag d)
         (case d of  
-          Sgn nm a b props prL prM prR cs expla pos nr sig
+          Sgn _ _ _ _ _ _ _ _ _ _ _ _ 
                 ->  [Node (Tag "Source" [mkAttr "concept" (name(source d))])]
                   ++[Node (Tag "Target" [mkAttr "concept" (name(target d))])]
                   ++[Elem (simpleTag "MultFrom") [PlainText (multiplicity d)]]
@@ -318,13 +318,13 @@ where
                   ++[Elem (simpleTag "Population") 
                              (map mkXmlTreeOfPaire (decpopu d)) 
                                 | not (null (decpopu d))]                 
-          Isn gen spc 
+          Isn _ _ 
                 ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
                   ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
-          Iscompl gen spc
+          Iscompl _ _
                 ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
                   ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
-          Vs gen spc
+          Vs _ _
                 ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
                   ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
            ) 
@@ -359,8 +359,8 @@ where
 
 
    instance XML ECArule where
-     mkTag f = Tag "ECArule" []
-     mkXmlTree f = still2bdone "ECArule"
+     mkTag _ = Tag "ECArule" []
+     mkXmlTree _ = still2bdone "ECArule"
    
    
    attributesTree :: ObjectDefs -> [XTree]
@@ -368,17 +368,11 @@ where
                                (map mkXmlTree atts)    |not(null atts)]
 
    descriptionTree :: Expression -> [XTree]
-   descriptionTree e = [Elem (simpleTag "Description")
-                           [mkXmlTree e] ]
+   descriptionTree f = [Elem (simpleTag "Description")
+                           [mkXmlTree f] ]
 
    explainTree :: String -> [XTree]
    explainTree str = [Elem (simpleTag "Explanation")
                            [PlainText str] | not (null str)]
-   
-   invariantStringl :: Rule -> String
-   invariantStringl r = case ruleType r of
-                         Truth -> showADL (consequent r)
-                         Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
-                         Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
-                         
+                          
                              

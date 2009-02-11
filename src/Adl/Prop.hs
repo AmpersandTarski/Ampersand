@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.Prop where
 
    type Props = [Prop]
@@ -13,19 +13,19 @@ module Adl.Prop where
                   | Aut          -- ^ calculate contents automatically if possible
                     deriving (Eq,Ord)
 
-                    -- \***********************************************************************
+-- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Prop                          ***
 -- \***********************************************************************
    instance Show Prop where
-    showsPrec p Uni = showString "UNI"
-    showsPrec p Inj = showString "INJ"
-    showsPrec p Sur = showString "SUR"
-    showsPrec p Tot = showString "TOT"
-    showsPrec p Sym = showString "SYM"
-    showsPrec p Asy = showString "ASY"
-    showsPrec p Trn = showString "TRN"
-    showsPrec p Rfx = showString "RFX"
-    showsPrec p Aut = showString "AUT"
+    showsPrec _ Uni = showString "UNI"     -- WAAROM? Stef, waarom is dit nodig? wat doet dit? 
+    showsPrec _ Inj = showString "INJ"
+    showsPrec _ Sur = showString "SUR"
+    showsPrec _ Tot = showString "TOT"
+    showsPrec _ Sym = showString "SYM"
+    showsPrec _ Asy = showString "ASY"
+    showsPrec _ Trn = showString "TRN"
+    showsPrec _ Rfx = showString "RFX"
+    showsPrec _ Aut = showString "AUT"
    
    flipProps :: [Prop] -> [Prop]
    flipProps ps = [flipProp p| p<-ps]
