@@ -88,11 +88,18 @@ module TypeChecker (typecheck) where
    --abort when there are errors from previous steps
    checkObjDefExprs ccr@(_,err:errs)       = ccr
    --resolve the type and check if the arguments are of such a type
-   checkObjDefExprs ccr@(env@(_,_,ctxs),_) = ccr --play env (allCtxObjDefs ctxs)  --TODO probably some foldr
+   checkObjDefExprs ccr@(env@(_,_,ctxs),_) = 
+                            ccr
+                            --play env (allCtxObjDefs ctxs)  --TODO probably some foldr
              where play :: Environment -> ObjectDefs -> ContextCheckResult
-                   play env ((Obj  _ _ _ ((Obj nm _ expr _ _):_) _):_)
-                        = (env, snd (typeof env expr))
+                   play env (objdef1@(Obj  _ _ _ (objdef2:_) _):_)
+                        = (env, go env objdef2)
                    play _ _ = (env, ["not good"])
+                   go :: Environment -> ObjectDef -> [String]
+                   go (_,rels,_) obj = processResult (infer env (castObjectDefToAdlExpr rels obj))
+                   processResult :: InferedType -> [String]
+                   processResult (TypeError err) = [err]
+                   processResult (Type _) = []
 
    ------------------------------
    --cumulative context functions
@@ -127,22 +134,72 @@ module TypeChecker (typecheck) where
 
    ---------------------------------------------------------------------------------------------
    --Expression part: later in separate module
+   --the expr are definitions?
+   -- x::(a,b), y::(b,c), expr::(a,b);(b,c)  -> (a,c) |- expr::(a,c) (I have to proof x and y to proof x;y)
+   -- x::(a,b), y::(b,c), expr::(a,b)!(b,c)  -> (a,c) |- expr::(a,c)
+   -- x::(a,b), y::(a,b), expr::(a,b)\/(a,b) -> (a,b) |- expr::(a,b)
+   -- x::(a,b), y::(a,b), expr::(a,b)/\(a,b) -> (a,b) |- expr::(a,b)
+   -- x::(a,b), expr::(a,b)~ -> (b,a)                 |- expr::(b,a)
+   -- c1::a, c2::b, expr::V[a,b] -> (a,b)             |- expr::(a,b)
+   -- c::a, expr::I[a] -> (a,a)                       |- expr::(a,a)
+   -- x::(a,b), expr::-(a,b) -> (a,b)                 |- expr::(a,b)
+   -- x::(a,b), expr::(a,b)* -> (a,b)                 |- expr::(a,b)
+   -- x::(a,b), expr::(a,b)+ -> (a,b)                 |- expr::(a,b)
    ---------------------------------------------------------------------------------------------
 
-   type ADLType = ([(Concept,Concept)],[String])
+   anythingExpr :: AdlExpr
+   anythingExpr = Relation ([Anything,Anything],NotFoundDr "anythingExpr")
 
-   --needs the rules, relations, and concepts from the patterns in scope
-   typeof :: Environment -> Expression -> ADLType
-   typeof (_,rels,_) (Tm mph@(Mph name x2 x3 x4 x5 x6)) =
-                   --lookup worksfor in DeclRels
-                   --Found -> return type else error
-                   typeofMph (srchDeclRel rels name) mph
-                   --([],(show x1):(show x2):(show x3):(show x4):(show x5):(show x6):[])
-   typeof _ _ = ([],[])
+   --TODO
+   castExpressionToAdlExpr :: DeclRels -> Expression -> AdlExpr
+   castExpressionToAdlExpr declrels (Tm (Mph name _ _ _ _ _)) = Relation ([],srchDeclRel declrels name)
+   castExpressionToAdlExpr _ _ = anythingExpr --unimplemented patterns
 
-   typeofMph :: DeclRelFound -> Morphism -> ADLType
-   typeofMph (FoundDr (Sgn name src trg _ _ _ _ _ _ _ _ _)) mph = ([(src,trg)],[])
-   typeofMph (NotFoundDr srchstr) (Mph name pos _ _ _ _) = ([],["Relation " ++ srchstr ++ " in expression at " ++ show pos ++ " has not been declared. "])
+   castObjectDefToAdlExpr :: DeclRels -> ObjectDef -> InferExpr
+   --castObjectDefToAdlExpr _ _ = Skip --comment to enable this function
+   castObjectDefToAdlExpr declrels (Obj  _ pos expr _ _) = Inf (castExpressionToAdlExpr declrels expr) pos
+
+   --cast the rule to an AdlExpr
+   castRuleToAdlExpr :: DeclRels -> Rule -> InferExpr
+   --castRuleToAdlExpr _ _ = Skip --comment to enable this function
+   castRuleToAdlExpr declrels (Ru Implication left pos right _ _ _ _ _)
+                         = Inf (ImplRule (castExpressionToAdlExpr declrels left) (castExpressionToAdlExpr declrels right)) pos
+
+
+   data InferedType = Type AdlType | TypeError String
+   data InferExpr = Inf AdlExpr FilePos | Skip  --pass the position of the expression in the ADL code to generate sensible error
+   type AdlType = (Concept,Concept)   --TODO make a Monad for ADLType to store error information?
+   data AdlExpr =   Relation    ([Concept],DeclRelFound)
+                  | Semicolon   {source::AdlExpr, target::AdlExpr}
+                  | Dagger      {source::AdlExpr, target::AdlExpr}
+                  | Flip        AdlExpr
+                  | TrsClose    AdlExpr
+                  | TrsRefClose AdlExpr
+                  | Complement  AdlExpr
+                  | Union       {source::AdlExpr, target::AdlExpr}
+                  | Intersect   {source::AdlExpr, target::AdlExpr}
+                  | Identity    AdlExpr
+                  | Universe    AdlExpr
+                  | ImplRule    {premise::AdlExpr, conclusion::AdlExpr}
+                  --TODO
+
+   --TODO
+   infer :: Environment -> InferExpr -> InferedType
+   infer _ Skip = Type (Anything, Anything)
+   infer _ (Inf (Relation rel) pos) = typeofRel rel pos
+   infer _ (Inf _ pos) = TypeError ("Unknown type: " ++ show pos) --TODO
+
+   --TODO
+   --commonUpperBound returns a list of all common Ancestors.
+   --If the expression is used in other expressions then there should be a common AdlType that fits the main expression.
+   commonUpperBound :: Environment -> AdlType -> AdlType -> [AdlType]
+   commonUpperBound _ _ _ = []
+
+   typeofRel :: ([Concept],DeclRelFound) -> FilePos -> InferedType
+   --morphism attributes first
+   typeofRel (mphats@(src:trg:_),_) _ = Type(src,trg)
+   typeofRel (_,(FoundDr (Sgn _ src trg _ _ _ _ _ _ _ _ _))) _ = Type (src,trg)
+   typeofRel (_,(NotFoundDr srchstr)) pos = TypeError ("Relation " ++ srchstr ++ " in expression at " ++ show pos ++ " has not been declared. ")
 
    ---------------------------------------------------------------------------------------------
    --Ancestors part: later in separate module
@@ -164,6 +221,9 @@ module TypeChecker (typecheck) where
    --if Boss -> Person. If Boss is true then Person is true.
    --Both Boss and Person are free resources.
    --Ancestor is also an Identity, If Boss then Boss
+   -- House -> Building, (Building,Door) |- (House,Door)
+   -- Villa -> House, House -> Building |- Villa -> Building
+   -- isa::a -> b, rel::(b,c) |- rel::(a,c)
    ---------------------------------------------------------------------------------------------
 
    type Ancestors = [Ancestor]
@@ -269,6 +329,8 @@ module TypeChecker (typecheck) where
 
    ---------------------------------------------------------------------------------------------
    --Relations part: later in separate module
+   -- relations have nonlinear resources
+   -- (Building, Door) |- (Building,Door)
    --
    --BADLY formulated reasoning by Gerard for Gerard only, because I know what I mean, if you know what I mean. :)
    --Will be removed...
@@ -289,7 +351,7 @@ module TypeChecker (typecheck) where
    type DeclRels = [DeclRel]
    type DeclRel = Declaration
    data DeclRelFound = FoundDr DeclRel | NotFoundDr String
-   
+
    --concatenate the declarations of relation from the patterns
    declRels :: Patterns -> DeclRels
    declRels [] = []
