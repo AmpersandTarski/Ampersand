@@ -45,20 +45,20 @@ module TypeChecker (typecheck) where
    checkCtx :: Architecture -> Contexts -> Errors
    checkCtx _ [] = []
    --Take the errors found when checking this context as root context and concat it with the errors of the other contexts taken as root
-   checkCtx arch@(Arch ctxs) (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):tl_ctxs) = errors (check (Found cx)) ++ (checkCtx arch tl_ctxs)
+   checkCtx arch@(Arch ctxs) (cx:tl_ctxs) = errors (check (Found cx)) ++ (checkCtx arch tl_ctxs)
       where
          check :: ContextFound -> ContextCheckResult
-         check (Found cx@(Ctx _ xts _ _ ((Pat _ _ gens@((G _ g _):_) _ _ _):_) _ _ _ _ _ _))
+         check (Found cx) -- @(Ctx _ xts _ _ ((Pat _ _ gens@((G _ g _):_) _ _ _):_) _ _ _ _ _ _))
                      = checkObjDefExprs (constructEnv checkExtCtx cx)
                      where
                          --get the list of extended Context
                          --check all extended Context in the list (all siblings)
                          --merge the results (classification, relations, errors)
                          checkExtCtx :: ContextCheckResult
-                         checkExtCtx = foldr concatRes (([], [], []),[]) (map check (map (srchContext ctxs) xts))
+                         checkExtCtx = foldr concatRes (([], [], []),[]) (map check (map (srchContext ctxs) (case cx of Ctx{} -> ctxon cx) ))
                          --Enrich the Environment of the extended contexts with patterns from the current context
                          constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
-                         constructEnv ((_,_,extCtxs),_) cx@(Ctx nm _ _ _ _ _ _ _ _ _ _)
+                         constructEnv ((_,_,extCtxs),_) cx -- @(Ctx nm _ _ _ _ _ _ _ _ _ _)
                                    --{-
                                     = (
                                          ( flatAncList (allCtxGens (cx:extCtxs)),
@@ -73,15 +73,16 @@ module TypeChecker (typecheck) where
                                    -- | nm=="Test2" = ((flatAncList (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])            --for debugging
                                    -- | otherwise   = (([], [], []),[show (flatAncList (allCtxGens (cx:extCtxs)))])  --of extends Test2
                                    -- | otherwise   = (([], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --of extends Test2
-         check (NotFound str) = (([],[],[]),("Extended context " ++ str ++ " of context " ++ nm ++ " could not be found"):[]) --this case will not have been caught by the parser yet
+         check (NotFound str) = (([],[],[]),("Extended context " ++ str ++ " of context " ++ (case cx of Ctx{} -> ctxnm cx) ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          errors :: ContextCheckResult -> Errors
          errors ((_,_,_),e) = e
 
    --search for a context by name and return the first one found
    srchContext :: Contexts -> String -> ContextFound
    srchContext [] srchstr = NotFound srchstr   --The UU_Parser has already caught this case
-   srchContext (cx@(Ctx nm _ _ _ _ _ _ _ _ _ _):ctxs) srchstr
-            | nm==srchstr = Found cx
+   srchContext (cx:ctxs) srchstr
+            | case cx of Ctx{} -> (ctxnm cx==srchstr)
+                                  = Found cx
             | otherwise = srchContext ctxs srchstr
 
    checkObjDefExprs :: ContextCheckResult -> ContextCheckResult
@@ -116,21 +117,22 @@ module TypeChecker (typecheck) where
    --all the Gens of Contexts
    allCtxGens :: Contexts -> Gens
    allCtxGens [] = []
-   allCtxGens ((Ctx _ _ _ _ ps _ _ _ _ _ _):ctxs) = allPatGens ps ++ allCtxGens ctxs
+   allCtxGens (cx:ctxs) = case cx of Ctx{} -> allPatGens (ctxpats cx) ++ allCtxGens ctxs
 
    --all the Gens of patterns
    allPatGens :: Patterns -> Gens
    allPatGens [] = []
-   allPatGens ((Pat _ _ gens _ _ _):ps)  = gens ++ allPatGens ps
+   allPatGens (p:ps)  = case p of Pat{} -> ptgns p ++ allPatGens ps
 
    --all the patterns of contexts
    allCtxPats :: Contexts -> Patterns
    allCtxPats [] = []
-   allCtxPats ((Ctx _ _ _ _ ps _ _ _ _ _ _):ctxs) = ps ++ allCtxPats ctxs
+   allCtxPats (cx:ctxs) = case cx of Ctx{} -> ctxpats cx ++ allCtxPats ctxs
 
+   --all the ObjectDefs of Contexts
    allCtxObjDefs :: Contexts -> ObjectDefs
    allCtxObjDefs [] = []
-   allCtxObjDefs ((Ctx _ _ _ _ _ _ _ _ _ os _):ctxs) = os ++ allCtxObjDefs ctxs
+   allCtxObjDefs (cx:ctxs) = case cx of Ctx{} -> ctxos cx ++ allCtxObjDefs ctxs
 
    ---------------------------------------------------------------------------------------------
    --Expression part: later in separate module
@@ -150,26 +152,40 @@ module TypeChecker (typecheck) where
    anythingExpr :: AdlExpr
    anythingExpr = Relation ([Anything,Anything],NotFoundDr "anythingExpr")
 
-   --TODO
+   --TODO more guards for different expressions
    castExpressionToAdlExpr :: DeclRels -> Expression -> AdlExpr
-   castExpressionToAdlExpr declrels (Tm (Mph name _ _ _ _ _)) = Relation ([],srchDeclRel declrels name)
+   castExpressionToAdlExpr declrels (Tm morph) = case morph of
+                                    Mph{} -> Relation ([],srchDeclRel declrels (mphnm morph))
    castExpressionToAdlExpr _ _ = anythingExpr --unimplemented patterns
 
    castObjectDefToAdlExpr :: DeclRels -> ObjectDef -> InferExpr
    --castObjectDefToAdlExpr _ _ = Skip --comment to enable this function
-   castObjectDefToAdlExpr declrels (Obj  _ pos expr _ _) = Inf (castExpressionToAdlExpr declrels expr) pos
+   castObjectDefToAdlExpr declrels obj = case obj of
+                                   Obj{} -> Inf (castExpressionToAdlExpr declrels (objctx obj)) (objpos obj)
 
    --cast the rule to an AdlExpr
+   --TODO more guards for different rules
    castRuleToAdlExpr :: DeclRels -> Rule -> InferExpr
    --castRuleToAdlExpr _ _ = Skip --comment to enable this function
-   castRuleToAdlExpr declrels (Ru Implication left pos right _ _ _ _ _)
-                         = Inf (ImplRule (castExpressionToAdlExpr declrels left) (castExpressionToAdlExpr declrels right)) pos
+   castRuleToAdlExpr declrels rule
+                     | case rule of Ru{} -> (rrsrt rule == Implication)
+                                            = Inf (ImplRule                                         --rule of type implication
+                                                    (castExpressionToAdlExpr declrels (rrant rule)) --left expr of rule
+                                                    (castExpressionToAdlExpr declrels (rrcon rule)) --right expr of rule
+                                                    )
+                                              (rrfps rule)                                          --file position of rule
 
 
+   --The type infered
    data InferedType = Type AdlType | TypeError String
-   data InferExpr = Inf AdlExpr FilePos | Skip  --pass the position of the expression in the ADL code to generate sensible error
-   type AdlType = (Concept,Concept)   --TODO make a Monad for ADLType to store error information?
-   data AdlExpr =   Relation    ([Concept],DeclRelFound)
+
+   --Expression for which the type can be infered by function infer
+   data InferExpr = Inf AdlExpr FilePos | Skip
+
+   --a Concept is identified by its name of type String. A type is always a binary relation of Concepts
+   type AdlType = (Concept,Concept)
+   data AdlExpr =   Relation    ([Concept],DeclRelFound)              --The type of a Relation is declared locally in the expression or as a declaration line
+                                                                      --use typeofRel to cast to InferedType (The AdlExpr must be part of an InferExpr containing the file position)
                   | Semicolon   {source::AdlExpr, target::AdlExpr}
                   | Dagger      {source::AdlExpr, target::AdlExpr}
                   | Flip        AdlExpr
@@ -183,7 +199,7 @@ module TypeChecker (typecheck) where
                   | ImplRule    {premise::AdlExpr, conclusion::AdlExpr}
                   --TODO
 
-   --TODO
+   --TODO more guards for AdlExpr
    infer :: Environment -> InferExpr -> InferedType
    infer _ Skip = Type (Anything, Anything)
    infer _ (Inf (Relation rel) pos) = typeofRel rel pos
@@ -198,7 +214,8 @@ module TypeChecker (typecheck) where
    typeofRel :: ([Concept],DeclRelFound) -> FilePos -> InferedType
    --morphism attributes first
    typeofRel (mphats@(src:trg:_),_) _ = Type(src,trg)
-   typeofRel (_,(FoundDr (Sgn _ src trg _ _ _ _ _ _ _ _ _))) _ = Type (src,trg)
+   typeofRel (_,(FoundDr d)) _ = case d of
+                         Sgn{} -> Type (desrc d, detgt d)
    typeofRel (_,(NotFoundDr srchstr)) pos = TypeError ("Relation " ++ srchstr ++ " in expression at " ++ show pos ++ " has not been declared. ")
 
    ---------------------------------------------------------------------------------------------
@@ -309,12 +326,14 @@ module TypeChecker (typecheck) where
    --insert an explicit ADL code declaration (Gen) to the list
    insertGen :: Gen -> Ancestors -> Ancestors
    --if there is no Ancestor entry yet, add a new entry
-   insertGen gen@(G _ src trg) [] = ( Anc (src, [(trg,[gen])] ) ):[]
+   insertGen gen [] = case gen of
+                           G{} -> ( Anc (gengen gen, [(genspc gen,[gen])] ) ):[]
    --if there are entries, search for an entry of the child / source of the Gen
    insertGen gen@(G _ src _) (a@(Anc(src',trgs)):as)
-          | src' == src =
-                          --if the child is located, add the ancestor to the list of ancestors of this child
-                          (Anc(src, insertGenTrg trgs gen)):as --update  (insert target)
+          | case gen of G{} -> (gengen gen == src')
+                               =
+                               --if the child is located, add the ancestor to the list of ancestors of this child
+                               (Anc(gengen gen, insertGenTrg trgs gen)):as --update  (insert target)
           | otherwise   =
                           --child not located yet, try next and preserve all entries (a:)
                           a:(insertGen gen as)
@@ -322,9 +341,11 @@ module TypeChecker (typecheck) where
    --insert a new target/ancestor to the ancestor list.
    --if the ancestor already exists, add track information to the ancestor (declared twice)
    insertGenTrg :: [AncTarget] -> Gen -> [AncTarget]
-   insertGenTrg [] gen@(G _ _ trg) = (trg,[gen]):[] --insert
-   insertGenTrg (t@(trg',gens):trgs) gen@(G _ _ trg)
-          | trg' == trg = (trg,gen:gens):trgs --update (tracklist)
+   insertGenTrg [] gen = case gen of
+                              G{} -> (genspc gen,[gen]):[] --insert ancestor
+   insertGenTrg (t@(trg',gens):trgs) gen
+          | case gen of G{} -> (genspc gen == trg')
+                               = (genspc gen, gen:gens):trgs --update tracklist
           | otherwise   = t:(insertGenTrg trgs gen) --try next
 
    ---------------------------------------------------------------------------------------------
@@ -355,12 +376,14 @@ module TypeChecker (typecheck) where
    --concatenate the declarations of relation from the patterns
    declRels :: Patterns -> DeclRels
    declRels [] = []
-   declRels (p@(Pat _ _ _ decls _ _):ps) = decls ++ declRels ps
-   
+   declRels (p:ps) = case p of
+                          Pat{} -> ptdcs p ++ declRels ps
+
    srchDeclRel :: DeclRels -> String -> DeclRelFound
    srchDeclRel [] srchstr = NotFoundDr srchstr
-   srchDeclRel (drl@(Sgn name src trg _ _ _ _ _ _ _ _ _):drls) srchstr
-             | name==srchstr = FoundDr drl
+   srchDeclRel (drl:drls) srchstr
+             | case drl of Sgn{} -> (decnm drl == srchstr)
+                                    = FoundDr drl
              | otherwise = srchDeclRel drls srchstr
 
    ---------------------------------------------------------------------------------------------
@@ -404,7 +427,7 @@ is identiek aan
 Beide notaties doen hetzelfde, maar de onderste is minder gevoelig voor wijzigingen
 in de datastructuur. Als er een 7de attribuut aan Pat wordt toegevoegd, dan 
 moet je de eerste variant aanpassen. De tweede variant is ongevoelig. 
-In sommige gevallen wil je juist wél getriggerd worden als de datastructuur 
+In sommige gevallen wil je juist wél getriggerd worden als de datastructuur
 wijzigt. (bijvoorbeeld in ShowXML). Dan is de eerste variant verstandiger. 
 Maar het is natuurlijk allemaal een kwestie van smaak. 
 Succes met typechecken! 
