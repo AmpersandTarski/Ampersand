@@ -5,13 +5,14 @@
 module TypeChecker (typecheck) where
 
    import Adl
+   import Data.List   --intersect
 
    ---------------------------------------------------------------------------------------------
    --MAIN function
    ---------------------------------------------------------------------------------------------
 
    type Errors = [String]
-   type Environment = (Ancestors, DeclRels, Contexts)
+   type Environment = (Children, DeclRels, Contexts)
 
    typecheck :: Architecture -> Errors
    --typecheck _arch = iwantastring _arch  -- voor debugging
@@ -61,17 +62,17 @@ module TypeChecker (typecheck) where
                          constructEnv ((_,_,extCtxs),errs) cx -- @(Ctx nm _ _ _ _ _ _ _ _ _ _)
                                    --{-
                                     = (
-                                         ( flatAncList (allCtxGens (cx:extCtxs)),
+                                         ( flatChdList (allCtxGens (cx:extCtxs)),
                                            declRels (allCtxPats (cx:extCtxs)),
                                            cx:extCtxs
                                          ),
                                          errs
                                        ) --TODO
                                    ---}
-                                   -- =(([], [],[]),[show (flatAncList (allCtxGens (cx:extCtxs)) )]) --for debugging to show flatAncList
+                                   -- =(([], [],[]),[show (flatChdList (allCtxGens (cx:extCtxs)) )]) --for debugging to show flatChdList
                                    -- =(([], [],[]),[show (declRels    (allCtxPats (cx:extCtxs)) )]) --for debugging to show declRels
-                                   -- | nm=="Test2" = ((flatAncList (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])            --for debugging
-                                   -- | otherwise   = (([], [], []),[show (flatAncList (allCtxGens (cx:extCtxs)))])  --of extends Test2
+                                   -- | nm=="Test2" = ((flatChdList (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])            --for debugging
+                                   -- | otherwise   = (([], [], []),[show (flatChdList (allCtxGens (cx:extCtxs)))])  --of extends Test2
                                    -- | otherwise   = (([], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --of extends Test2
          check (NotFound str) = (([],[],[]),("Extended context " ++ str ++ " of context " ++ (case cx of Ctx{} -> ctxnm cx) ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          errors :: ContextCheckResult -> Errors
@@ -97,7 +98,7 @@ module TypeChecker (typecheck) where
                         = (env, go env objdef2)
                    play _ _ = (env, ["not good"])
                    go :: Environment -> ObjectDef -> [String]
-                   go (_,rels,_) obj = processResult (infer (castObjectDefToAdlExpr rels obj))
+                   go env obj = processResult (infer (castObjectDefToAdlExpr env obj))
                    processResult :: InferedType -> [String]
                    processResult (TypeError err) = [err]
                    processResult (Type _) = []
@@ -110,8 +111,8 @@ module TypeChecker (typecheck) where
    ------------------------------
    --combine sibling contexts
    concatRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
-   concatRes ((anc1,rel1,cxs1),errs1) ((anc2,rel2,cxs2),errs2) | errs1==[] && errs2==[]
-                                                              = ((anc1 ++ anc2, rel1 ++ rel2, cxs1 ++ cxs2),[])
+   concatRes ((chd1,rel1,cxs1),errs1) ((chd2,rel2,cxs2),errs2) | errs1==[] && errs2==[]
+                                                              = ((chd1 ++ chd2, rel1 ++ rel2, cxs1 ++ cxs2),[])
                                                   | otherwise = (([],[],[]),errs1 ++ errs2)
 
    --all the Gens of Contexts
@@ -136,6 +137,7 @@ module TypeChecker (typecheck) where
 
    ---------------------------------------------------------------------------------------------
    --Expression part: later in separate module
+   --This module connects the ADL code to the type inference module by means of the InferExpr data type
    -- e1::(a,b), e2::(b,c) |- e3::e1;e2   -> (a,c)
    -- e1::(a,b), e2::(b,c) |- e3::e1!e2   -> (a,c)
    -- e1::(a,b), e2::(a,b) |- e3::e1\/e2  -> (a,b)
@@ -146,12 +148,11 @@ module TypeChecker (typecheck) where
    -- e1::(a,b)            |- e2::-e1     -> (a,b)
    -- e1::(a,b)            |- e2::e1*     -> (a,b)
    -- e1::(a,b)            |- e2::e1+     -> (a,b)
-   -- c1::a, c2::b, a<=b   |- c1::a -> b           --need to define <=
+   -- c1::a, c2::b, a>=b   |- c1::a -> b           --need to define >=, it is the lowerbound
    ---------------------------------------------------------------------------------------------
 
    --Expression for which the type can be infered by function infer
-   data InferExpr = Inf AdlExpr FilePos | Skip
-
+   data InferExpr = Inf AdlExpr FilePos
 
    --Relation will be the only expression already infered possibly containing a TypeError
    data AdlExpr =   Relation    InferedType --([Concept],DeclRelFound)              --The type of a Relation is declared locally in the expression or as a declaration line
@@ -169,54 +170,77 @@ module TypeChecker (typecheck) where
                   | ImplRule    {premise::AdlExpr, conclusion::AdlExpr}
                   --TODO
 
+   ------------------
+   --common functions
+   ------------------
+
    --An AdlExpr of type ([Anything],[Anything])
    -- define as morphism attributes to infer the type like all other types by using typeofRel
    anythingExpr :: AdlExpr
-   anythingExpr =  Relation (typeofRel 
-                               (Just [Anything,Anything]) 
+   anythingExpr =  Relation (typeofRel
+                               []
+                               (Just [Anything,Anything])
                                Nothing
                              )
+                             
+   lowerbound :: Children -> Concept -> [Concept]
+   lowerbound _ Anything = [Anything]
+   lowerbound _ NOthing = [NOthing]
+   lowerbound _ S = [S] --TODO check if this is correct
+   lowerbound chds c = c:(children (chdTargets (oneChd chds c)))
 
-   --TODO more guards for different expressions
-   castExpressionToAdlExpr :: DeclRels -> Expression -> AdlExpr
-   castExpressionToAdlExpr declrels (Tm morph) = case morph of
-                                    Mph{} -> Relation (typeofRel
-                                                          Nothing
-                                                          (Just (srchDeclRel declrels (mphnm morph)))
-                                                       )
-   castExpressionToAdlExpr _ _ = anythingExpr --unimplemented patterns
+   ------------------------
+   --Cast functions 
+   --for casting ADL module 
+   --data type to InferExpr
+   ------------------------
 
-   upperbound :: Concept -> [Concept]
-   upperbound Anything = [Anything]
-   upperbound NOthing = [NOthing]
-   upperbound S = [S] --TODO check if this is correct
-   upperbound c = [c] --TODO add the ancestors of c
-
-   --morphism attributes -> Declaration -> the type given mphatts or declaration, when both specified mphatts will be used
-   typeofRel :: Maybe [Concept] -> Maybe DeclRelFound -> InferedType
-   typeofRel (Just mphats@(src:trg:_)) _ = Type(upperbound src,upperbound trg)
-   typeofRel _ (Just (FoundDr d)) = case d of
-                         Sgn{} -> Type (upperbound (desrc d), upperbound (detgt d))
-   typeofRel _ (Just (NotFoundDr srchstr)) = TypeError ("Relation " ++ srchstr ++ " has not been declared. " ) -- ++ " in expression at " ++ show pos )
-
-   castObjectDefToAdlExpr :: DeclRels -> ObjectDef -> InferExpr
-   --castObjectDefToAdlExpr _ _ = Skip --comment to enable this function
-   castObjectDefToAdlExpr declrels obj = case obj of
-                                   Obj{} -> Inf (castExpressionToAdlExpr declrels (objctx obj)) (objpos obj)
+   castObjectDefToAdlExpr :: Environment -> ObjectDef -> InferExpr
+   castObjectDefToAdlExpr env obj = case obj of
+                                   Obj{} -> Inf (castExpressionToAdlExpr env (objctx obj)) (objpos obj)
 
    --cast the rule to an AdlExpr
    --TODO more guards for different rules
-   castRuleToAdlExpr :: DeclRels -> Rule -> InferExpr
-   --castRuleToAdlExpr _ _ = Skip --comment to enable this function
-   castRuleToAdlExpr declrels rule
+   castRuleToAdlExpr :: Environment -> Rule -> InferExpr
+   castRuleToAdlExpr env rule
                      | case rule of Ru{} -> (rrsrt rule == Implication)
                                             = Inf (ImplRule                                         --rule of type implication
-                                                    (castExpressionToAdlExpr declrels (rrant rule)) --left expr of rule
-                                                    (castExpressionToAdlExpr declrels (rrcon rule)) --right expr of rule
+                                                    (castExpressionToAdlExpr env (rrant rule)) --left expr of rule
+                                                    (castExpressionToAdlExpr env (rrcon rule)) --right expr of rule
                                                     )
                                               (rrfps rule)                                          --file position of rule
 
 
+   --TODO more guards for different expressions
+   castExpressionToAdlExpr :: Environment -> Expression -> AdlExpr
+   castExpressionToAdlExpr (chds,declrels,_) (Tm morph)
+                         | case morph of Mph{} -> mphats morph==[]
+                                                  =  Relation (typeofRel
+                                                          chds
+                                                          Nothing
+                                                          (Just (srchDeclRel declrels (mphnm morph)))
+                                                       )
+                         | otherwise              = Relation (typeofRel
+                                                          chds
+                                                          (Just (mphats morph))
+                                                          Nothing
+                                                       )
+   castExpressionToAdlExpr env (F (expr1:expr2:exprs))
+                                | exprs==[]    = Semicolon
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env expr2)
+                                | otherwise    = Semicolon
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env (F (expr2:exprs)))
+   castExpressionToAdlExpr _ _ = anythingExpr --unimplemented patterns
+
+
+   --morphism attributes -> Declaration -> the type given mphatts or declaration, when both specified mphatts will be used
+   typeofRel :: Children -> Maybe [Concept] -> Maybe DeclRelFound -> InferedType
+   typeofRel chds (Just mphats@(src:trg:_)) _ = Type(lowerbound chds src,lowerbound chds trg)
+   typeofRel chds _ (Just (FoundDr d)) = case d of
+                    Sgn{} -> Type (lowerbound chds (desrc d), lowerbound chds (detgt d))
+   typeofRel _ _ (Just (NotFoundDr srchstr)) = TypeError ("Relation " ++ srchstr ++ " has not been declared. " )
 
 
 
@@ -230,14 +254,17 @@ module TypeChecker (typecheck) where
    --a Concept is identified by its name of type String. A type is always a binary relation of Concepts
    --The Concept is the list of all types it can be as a result of ISA relations
    type AdlType = ([Concept],[Concept])
+   
+   errorpos :: String -> FilePos -> String
+   errorpos err pos = err ++ " in expression at " ++ show pos
 
    --TODO more guards for AdlExpr
    --I'll need a function intersection::[Concept]->[Concept]->[Concept] to get the intersection of to concept lists as a list
    --there is a function intersect::[a]->[a]->[a] taken the intersect based on equality (==) of a.
    infer :: InferExpr -> InferedType
-   infer Skip = Type ([Anything], [Anything])
-   infer (Inf (Relation rel) pos) = rel   --Relation is already an InferedType
-   infer (Inf (Semicolon expr1 expr2) pos) = typeofSemiColon expr1 expr2 pos
+   infer (Inf (Relation (TypeError err)) pos) = TypeError (errorpos err pos)
+   infer (Inf (Relation rel) _) = rel   --Relation is already an InferedType
+   infer (Inf (Semicolon expr1 expr2) pos) = typeofSemiColon (infer (Inf expr1 pos)) (infer (Inf expr2 pos)) pos
    infer (Inf (Dagger expr1 expr2) pos) = typeofDagger expr1 expr2 pos
    infer (Inf (Union expr1 expr2) pos) = typeofUnion expr1 expr2 pos
    infer (Inf (Intersect expr1 expr2) pos) = typeofIntersect expr1 expr2 pos
@@ -250,22 +277,12 @@ module TypeChecker (typecheck) where
    infer (Inf (TrsRefClose expr) pos) = typeofTrsRefClose expr pos
    infer (Inf _ pos) = TypeError ("Unknown expression: " ++ show pos) --TODO
 
-   --TODO
-   --commonUpperBound returns a list of all common Ancestors.
-   --If the expression is used in other expressions then there should be a common AdlType that fits the main expression.
-   --commonUpperBound :: Environment -> AdlType -> AdlType -> [AdlType]
-   --commonUpperBound _ _ _ = []
-     {-
-   --returns one AdlType i.e. ([Concept],[Concept]) where the concept lists have at least one value
-   --         or a TypeError String
-   typeofRel :: ([Concept],DeclRelFound) -> FilePos -> InferedType
-   --morphism attributes first
-   typeofRel (mphats@(src:trg:_),_) _ = Type([src],[trg])
-   typeofRel (_,(FoundDr d)) _ = case d of
-                         Sgn{} -> Type ([desrc d], [detgt d]) --TODO add all Ancestors
-   typeofRel (_,(NotFoundDr srchstr)) pos = TypeError ("Relation " ++ srchstr ++ " in expression at " ++ show pos ++ " has not been declared. ")
-       -}
-   typeofSemiColon :: AdlExpr -> AdlExpr -> FilePos -> InferedType
+   typeofSemiColon :: InferedType -> InferedType -> FilePos -> InferedType
+   typeofSemiColon (TypeError err) _ pos = TypeError (errorpos err pos)
+   typeofSemiColon _ (TypeError err) pos = TypeError (errorpos err pos)
+   typeofSemiColon (Type (src1,trg1)) (Type (src2,trg2)) _
+                   | intersect trg1 src2==[] = TypeError ("Type inference rule Composition: Possible types of target1 " ++ show trg1 ++ " do not match the possible types of source2 " ++ show src2)
+                   | otherwise = Type (src1,trg2)
    typeofSemiColon _ _ _ = TypeError ("typeofSemiColon: not implemented. ")
 
    typeofDagger :: AdlExpr -> AdlExpr -> FilePos -> InferedType
@@ -299,133 +316,137 @@ module TypeChecker (typecheck) where
    typeofTrsRefClose _ _ = TypeError ("typeofTrsRefClose: not implemented. ")
 
    ---------------------------------------------------------------------------------------------
-   --Ancestors part: later in separate module
-   --flatAncList is the interesting function which returns the model and the tracklist to
-   --correlate to the ADL code. flatAncList is build in two phases. First the actual code
-   --declarations are enumerated (declancs). Then the ancestors are resolved recursively, and folded.
+   --Children part: later in separate module
+   --flatChdList is the interesting function which returns the model and the tracklist to
+   --correlate to the ADL code. flatChdList is build in two phases. First the actual code
+   --declarations are enumerated (declchds). Then the children are resolved recursively, and folded.
    --Each concept is resolved once to prevent recursive loops. Therefore a list is passed around
    --to keep track of the resolved concepts.
    --
-   --oneAnc can be used to get the Ancestor entry for a Concept by Concept.
-   --ancestors can be used to get the ancestors from an Ancestor entry
+   --oneChd can be used to get the Child entry for a Concept by Concept.
+   --children can be used to get the children from an Child entry
    --
    --Maybe I can arrange and label the functions more clearly. 
-   --target = ancestor,
+   --target = parent,
    --source = child,
    --both target and source are Concepts.
    --
-   --Ancestor is a kind of nonlinear intuitionistic implication.
+   --Child is a kind of nonlinear intuitionistic implication.
    --if Boss -> Person. If Boss is true then Person is true.
    --Both Boss and Person are free resources.
-   --Ancestor is also an Identity, If Boss then Boss
+   --Child is also an Identity, If Boss then Boss
    -- House -> Building, (Building,Door) |- (House,Door)
    -- Villa -> House, House -> Building |- Villa -> Building
    -- isa::a -> b, rel::(b,c) |- rel::(a,c)
    ---------------------------------------------------------------------------------------------
 
-   type Ancestors = [Ancestor]
+   type Children = [Child]
 
    -- (target, tracklist of gen declarations in ADL code)
-   type AncTarget = (Concept,[Gen])
+   type ChdTarget = (Concept,[Gen])
 
-   data Ancestor = Anc (Concept       , [AncTarget]) deriving (Show)
-                    --(child / source , list of AncTarget / ancestors)
+   data Child = Chd (Concept       , [ChdTarget]) deriving (Show)
+                    --(parent / source , list of ChdTarget / children)
 
-   --triple to pass around progress ([Concept]), intermediate result ([AncTarget]), 
-   --and progress original input (Ancestors)
-   --to get all ancestors of a Concept and prevent looping
-   type AllAncResult = ([Concept],[AncTarget],Ancestors)
+   --triple to pass around progress ([Concept]), intermediate result ([ChdTarget]), 
+   --and progress original input (Children)
+   --to get all children of a Concept (lowerbound) and prevent looping
+   type AllChdResult = ([Concept],[ChdTarget],Children)
 
-   --equality of Ancestor = equality of its source Concept = equality of the name of the source Concept
-   instance Eq Ancestor where
-     (Anc (src,_))==(Anc (src',_)) = src==src'
+   --equality of Child = equality of its source Concept = equality of the name of the source Concept
+   instance Eq Child where
+     (Chd (src,_))==(Chd (src',_)) = src==src'
 
    ------------------
    --PUBLIC FUNCTIONS
    ------------------
 
    --returns the model and the tracklist to correlate to the ADL code.
-   --flatAncList is build in two phases. First the actual code
-   --declarations are enumerated (declAncs). Then the ancestors are resolved recursively, and folded (foldTrgs).
-   flatAncList :: Gens -> Ancestors
-   flatAncList gens = foldTrgs (declAncs gens) (declAncs gens)
+   --flatChdList is build in two phases. First the actual code
+   --declarations are enumerated (declChds). Then the children are resolved recursively, and folded (foldTrgs).
+   flatChdList :: Gens -> Children
+   flatChdList gens = foldTrgs (declChds gens) (declChds gens)
          where
-         --foreach Ancestor entry in declAncs, fold distinct the targets of its targets
-         --provide the Ancestors declared in the code, and the list of Ancestors to resolve
-         foldTrgs :: Ancestors -> Ancestors -> Ancestors
+         --foreach Child entry in declChds, fold distinct the targets of its targets
+         --provide the Children declared in the code, and the list of Children to resolve
+         foldTrgs :: Children -> Children -> Children
          foldTrgs _ [] = []
-         foldTrgs declancs ((Anc (src,trgs)):das) = (Anc(src,allAncsTrgs declancs trgs)):(foldTrgs declancs das)
-         --Ancestor relations which are declared in ADL
-         declAncs :: Gens -> Ancestors
-         declAncs gens = foldr insertGen [] gens
+         foldTrgs declchds ((Chd (src,trgs)):das) = (Chd(src,allChdsTrgs declchds trgs)):(foldTrgs declchds das)
+         --Child relations which are declared in ADL
+         declChds :: Gens -> Children
+         declChds gens = foldr insertGen [] gens
 
-   --get the Ancestor entry from an Ancestor model by Concept 
+   --get the Child entry from an Child model by Concept 
    --(equality by concept name)
-   oneAnc :: Ancestors -> Concept -> Ancestor
-   oneAnc [] src       =
-                         --apparantly this Concept has no ancestors, return the concept without ancestors
-                         Anc (src,[])
-   oneAnc (a@(Anc(src',_)):ancs) src
+   oneChd :: Children -> Concept -> Child
+   oneChd [] src       =
+                         --apparantly this Concept has no children, return the concept without children
+                         Chd (src,[])
+   oneChd (a@(Chd(src',_)):chds) src
          | src' == src = 
                          --found -> return
                          a
          | otherwise   = 
                          --try next
-                         oneAnc ancs src
+                         oneChd chds src
 
-   --get the ancestors of a Ancestor entry
-   ancestors :: Ancestor -> [AncTarget]
-   ancestors (Anc (_,trgs)) = trgs
+   --get the children of a Child entry
+   chdTargets :: Child -> [ChdTarget]
+   chdTargets (Chd (_,trgs)) = trgs
+   
+   children :: [ChdTarget] -> [Concept]
+   children [] = []
+   children ((c,_):ats) = c:(children ats)
 
    -------------------
    --PRIVATE FUNCTIONS
    -------------------
 
-   --return all AncTargets of an AncTarget, 
+   --return all ChdTargets of an ChdTarget, 
    --respecting the already resolved Concepts and results,
    --given the explicit declarations from the ADL code
-   allAncsTrg :: AncTarget -> AllAncResult -> AllAncResult
-   allAncsTrg  at@(trg,_) (lst,ancs,declancs)
+   allChdsTrg :: ChdTarget -> AllChdResult -> AllChdResult
+   allChdsTrg  at@(trg,_) (lst,chds,declchds)
          | elem trg lst = 
                           --skip, already resolved: so just forward result so far
-                          (lst,ancs,declancs)
+                          (lst,chds,declchds)
 
          | otherwise    =
-                          --add this target (at:ancs),
-                          --and all its ancestors (foldr ... oneAnc declancs trg), as ancestor,
+                          --add this target (at:chds),
+                          --and all its children (foldr ... oneChd declchds trg), as child,
                           --register this target as resolved (trg:lst)
-                          foldr allAncsTrg (trg:lst,at:ancs,declancs) (ancestors (oneAnc declancs trg))
+                          foldr allChdsTrg (trg:lst,at:chds,declchds) (chdTargets (oneChd declchds trg))
 
-   --return all the AncTarget for a list of AncTarget,
+   --return all the ChdTarget for a list of ChdTarget,
    --given the explicit declaration from the ADL code
-   allAncsTrgs :: Ancestors -> [AncTarget] -> [AncTarget]
-   allAncsTrgs declancs trgs = allAncRes (foldr allAncsTrg ([],[],declancs) trgs)
-       where   allAncRes :: AllAncResult -> [AncTarget]
-               allAncRes (_,ancs,_) = ancs
+   allChdsTrgs :: Children -> [ChdTarget] -> [ChdTarget]
+   allChdsTrgs declchds trgs = allChdRes (foldr allChdsTrg ([],[],declchds) trgs)
+       where   allChdRes :: AllChdResult -> [ChdTarget]
+               allChdRes (_,chds,_) = chds
 
    --insert an explicit ADL code declaration (Gen) to the list
-   insertGen :: Gen -> Ancestors -> Ancestors
-   --if there is no Ancestor entry yet, add a new entry
+   insertGen :: Gen -> Children -> Children
+   --if there is no Child entry yet, add a new entry
    insertGen gen [] = case gen of
-                           G{} -> ( Anc (gengen gen, [(genspc gen,[gen])] ) ):[]
+                           G{} -> ( Chd (genspc gen, [(gengen gen,[gen])] ) ):[]
    --if there are entries, search for an entry of the child / source of the Gen
-   insertGen gen@(G _ src _) (a@(Anc(src',trgs)):as)
-          | case gen of G{} -> (gengen gen == src')
+   insertGen gen (a@(Chd(src',trgs)):as)
+          | case gen of G{} -> (genspc gen == src')
                                =
-                               --if the child is located, add the ancestor to the list of ancestors of this child
-                               (Anc(gengen gen, insertGenTrg trgs gen)):as --update  (insert target)
+                               --if the child is located, add the child to the list of children of this child
+                               (Chd(genspc gen, insertGenTrg trgs gen)):as --update  (insert target)
           | otherwise   =
                           --child not located yet, try next and preserve all entries (a:)
                           a:(insertGen gen as)
 
-   --insert a new target/ancestor to the ancestor list.
-   --if the ancestor already exists, add track information to the ancestor (declared twice)
-   insertGenTrg :: [AncTarget] -> Gen -> [AncTarget]
+   --insert a new target/child to the child list.
+   --if the child already exists, add track information to the child (declared twice)
+   insertGenTrg :: [ChdTarget] -> Gen -> [ChdTarget]
    insertGenTrg [] gen = case gen of
-                              G{} -> (genspc gen,[gen]):[] --insert ancestor
+                              G{} -> (gengen gen,[gen]):[] --insert child
    insertGenTrg (t@(trg',gens):trgs) gen
-          | case gen of G{} -> (genspc gen == trg')
-                               = (genspc gen, gen:gens):trgs --update tracklist
+          | case gen of G{} -> (gengen gen == trg')
+                               = (gengen gen, gen:gens):trgs --update tracklist
           | otherwise   = t:(insertGenTrg trgs gen) --try next
 
    ---------------------------------------------------------------------------------------------
@@ -435,15 +456,15 @@ module TypeChecker (typecheck) where
    --
    --BADLY formulated reasoning by Gerard for Gerard only, because I know what I mean, if you know what I mean. :)
    --Will be removed...
-   --The difference with the Ancestor model is that a relation declaration is not an
+   --The difference with the Child model is that a relation declaration is not an
    --intuitionistic nonlinear implication, but more a labeled equality.
    --The label has a direction, the flip reverses the direction
-   --Thus, the Ancestor model needed to support only a query returning ancestors for a given child
+   --Thus, the Child model needed to support only a query returning children for a given child
    --      because the relations in this model are not equal.
    --      the relations in the relation model ARE equal. Only in the definition there is a
    --      source and a target, and also in the application of the relation in expressions
    --      and rules the concepts relate as source and target.
-   --On the other hand because the concepts in a relation are equal, there is no inheritance.
+   --On the other hand because the concepts in a relation are equal, there is no inheritchde.
    --The relation model can be just a list of declarations.
    --New relations can be defined as expressions consisting of relations from the model.
    ---------------------------------------------------------------------------------------------
