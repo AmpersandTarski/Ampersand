@@ -92,16 +92,18 @@ module TypeChecker (typecheck) where
    --resolve the type and check if the arguments are of such a type
    checkObjDefExprs ccr@(env@(_,_,ctxs),_) = 
                             ccr
-                            --play env (allCtxObjDefs ctxs)  --TODO probably some foldr
+                            --play env (allCtxObjDefs ctxs)  --TODO
              where play :: Environment -> ObjectDefs -> ContextCheckResult
                    play env (objdef1@(Obj  _ _ _ (objdef2:_) _):_)
                         = (env, go env objdef2)
                    play _ _ = (env, ["not good"])
                    go :: Environment -> ObjectDef -> [String]
-                   go env obj = processResult (infer (castObjectDefToAdlExpr env obj))
-                   processResult :: InferedType -> [String]
-                   processResult (TypeError err) = [err]
-                   processResult (Type _) = []
+                   go env obj = processResult (infer (fst (castresult env obj))) (snd (castresult env obj))
+                   castresult :: Environment -> ObjectDef -> (AdlExpr, FilePos)
+                   castresult env obj = (castObjectDefToAdlExpr env obj)
+                   processResult :: InferedType -> FilePos -> [String]
+                   processResult (TypeError err) pos = [errorpos err pos]
+                   processResult (Type _) _ = []
 
    ------------------------------
    --cumulative context functions
@@ -137,38 +139,11 @@ module TypeChecker (typecheck) where
 
    ---------------------------------------------------------------------------------------------
    --Expression part: later in separate module
-   --This module connects the ADL code to the type inference module by means of the InferExpr data type
-   -- e1::(a,b), e2::(b,c) |- e3::e1;e2   -> (a,c)
-   -- e1::(a,b), e2::(b,c) |- e3::e1!e2   -> (a,c)
-   -- e1::(a,b), e2::(a,b) |- e3::e1\/e2  -> (a,b)
-   -- e1::(a,b), e2::(a,b) |- e3::e1/\e2  -> (a,b)
-   -- e1::(a,b)            |- e2::e1~     -> (b,a)
-   -- c1::a, c2::b         |- e::V[c1,c2] -> (a,b)
-   -- c::a                 |- e::I[c]     -> (a,a)
-   -- e1::(a,b)            |- e2::-e1     -> (a,b)
-   -- e1::(a,b)            |- e2::e1*     -> (a,b)
-   -- e1::(a,b)            |- e2::e1+     -> (a,b)
-   -- c1::a, c2::b, a>=b   |- c1::a -> b           --need to define >=, it is the lowerbound
+   --This module connects the ADL tool to the type inference module by means of the InferExpr data type
+   --If something changes in the ADL tool this is the module to adapt to changes
+   --In other words: the inference module should be decoupled by this module
    ---------------------------------------------------------------------------------------------
 
-   --Expression for which the type can be infered by function infer
-   data InferExpr = Inf AdlExpr FilePos
-
-   --Relation will be the only expression already infered possibly containing a TypeError
-   data AdlExpr =   Relation    InferedType --([Concept],DeclRelFound)              --The type of a Relation is declared locally in the expression or as a declaration line
-                                                                      --use typeofRel to cast to InferedType (The AdlExpr must be part of an InferExpr containing the file position)
-                  | Semicolon   {source::AdlExpr, target::AdlExpr}
-                  | Dagger      {source::AdlExpr, target::AdlExpr}
-                  | Flip        AdlExpr
-                  | TrsClose    AdlExpr
-                  | TrsRefClose AdlExpr
-                  | Complement  AdlExpr
-                  | Union       {source::AdlExpr, target::AdlExpr}
-                  | Intersect   {source::AdlExpr, target::AdlExpr}
-                  | Identity    AdlExpr
-                  | Universe    AdlExpr
-                  | ImplRule    {premise::AdlExpr, conclusion::AdlExpr}
-                  --TODO
 
    ------------------
    --common functions
@@ -189,42 +164,58 @@ module TypeChecker (typecheck) where
    lowerbound _ S = [S] --TODO check if this is correct
    lowerbound chds c = c:(children (chdTargets (oneChd chds c)))
 
+   errorpos :: String -> FilePos -> String
+   errorpos err pos = err ++ " in expression at " ++ show pos
+
    ------------------------
    --Cast functions 
    --for casting ADL module 
    --data type to InferExpr
    ------------------------
-
-   castObjectDefToAdlExpr :: Environment -> ObjectDef -> InferExpr
+   --TODO casting of ObjectDef and Rule should probably result in a list of (AdlExpr, FilePos)
+   --The type of the AdlExprs should be infered, and the types should be checked in their
+   --context for example in a rule both sides must be of the same type
+   --                    in an ObjectDef the expression should be applied to a conceptof a valid type
+   castObjectDefToAdlExpr :: Environment -> ObjectDef -> (AdlExpr, FilePos)
    castObjectDefToAdlExpr env obj = case obj of
-                                   Obj{} -> Inf (castExpressionToAdlExpr env (objctx obj)) (objpos obj)
+                                   Obj{} -> (castExpressionToAdlExpr env (objctx obj), (objpos obj))
 
    --cast the rule to an AdlExpr
    --TODO more guards for different rules
-   castRuleToAdlExpr :: Environment -> Rule -> InferExpr
+   castRuleToAdlExpr :: Environment -> Rule -> (AdlExpr, FilePos)
    castRuleToAdlExpr env rule
                      | case rule of Ru{} -> (rrsrt rule == Implication)
-                                            = Inf (ImplRule                                         --rule of type implication
+                                            = (ImplRule                                        --rule of type implication
                                                     (castExpressionToAdlExpr env (rrant rule)) --left expr of rule
                                                     (castExpressionToAdlExpr env (rrcon rule)) --right expr of rule
-                                                    )
-                                              (rrfps rule)                                          --file position of rule
+                                              , rrfps rule)                                    --file position of rule
 
 
    --TODO more guards for different expressions
+   --The parser translates expressions with a flip on subexpressions to an expressions
+   --with only flips on morphisms for example (r;s)~ is parsed as s~;r~
    castExpressionToAdlExpr :: Environment -> Expression -> AdlExpr
    castExpressionToAdlExpr (chds,declrels,_) (Tm morph)
                          | case morph of Mph{} -> mphats morph==[]
-                                                  =  Relation (typeofRel
+                                               = doNotFlip (mphyin morph)
+                                                    (Relation (typeofRel
                                                           chds
                                                           Nothing
                                                           (Just (srchDeclRel declrels (mphnm morph)))
-                                                       )
-                         | otherwise              = Relation (typeofRel
+                                                      )
+                                                  )
+                         | otherwise           = doNotFlip (mphyin morph)
+                                                    (Relation (typeofRel
                                                           chds
                                                           (Just (mphats morph))
                                                           Nothing
-                                                       )
+                                                     )
+                                                  )
+                         where
+                            doNotFlip:: Bool -> AdlExpr -> AdlExpr
+                            doNotFlip False expr@(Relation (Type _)) = Flip expr
+                            doNotFlip _     expr                     = expr
+   castExpressionToAdlExpr env (Tc expr)       = castExpressionToAdlExpr env expr
    castExpressionToAdlExpr env (F (expr1:expr2:exprs))
                                 | exprs==[]    = Semicolon
                                                       (castExpressionToAdlExpr env expr1)
@@ -232,12 +223,37 @@ module TypeChecker (typecheck) where
                                 | otherwise    = Semicolon
                                                       (castExpressionToAdlExpr env expr1)
                                                       (castExpressionToAdlExpr env (F (expr2:exprs)))
-   castExpressionToAdlExpr _ _ = anythingExpr --unimplemented patterns
+   castExpressionToAdlExpr env (Fd (expr1:expr2:exprs))
+                                | exprs==[]    = Dagger
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env expr2)
+                                | otherwise    = Dagger
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env (Fd (expr2:exprs)))
+   castExpressionToAdlExpr env (Fi (expr1:expr2:exprs))
+                                | exprs==[]    = Intersect
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env expr2)
+                                | otherwise    = Intersect
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env (Fi (expr2:exprs)))
+   castExpressionToAdlExpr env (Fu (expr1:expr2:exprs))
+                                | exprs==[]    = Union
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env expr2)
+                                | otherwise    = Union
+                                                      (castExpressionToAdlExpr env expr1)
+                                                      (castExpressionToAdlExpr env (Fu (expr2:exprs)))
+   castExpressionToAdlExpr env (K0 expr)       = TrsRefClose (castExpressionToAdlExpr env expr)
+   castExpressionToAdlExpr env (K1 expr)       = TrsClose (castExpressionToAdlExpr env expr)
+   castExpressionToAdlExpr env (Cp expr)       = Complement (castExpressionToAdlExpr env expr)
+   castExpressionToAdlExpr env expr = UnknownExpr "Fatal: Cannot cast to AdlExpr. "
 
 
    --morphism attributes -> Declaration -> the type given mphatts or declaration, when both specified mphatts will be used
+   --Loose the declarations of ISA and relations, and other ADL tool specifics, by already infering a type
    typeofRel :: Children -> Maybe [Concept] -> Maybe DeclRelFound -> InferedType
-   typeofRel chds (Just mphats@(src:trg:_)) _ = Type(lowerbound chds src,lowerbound chds trg)
+   typeofRel chds (Just mphats@(src:trg:_)) _ = Type (lowerbound chds src , lowerbound chds trg)
    typeofRel chds _ (Just (FoundDr d)) = case d of
                     Sgn{} -> Type (lowerbound chds (desrc d), lowerbound chds (detgt d))
    typeofRel _ _ (Just (NotFoundDr srchstr)) = TypeError ("Relation " ++ srchstr ++ " has not been declared. " )
@@ -246,6 +262,17 @@ module TypeChecker (typecheck) where
 
    ---------------------------------------------------------------------------------------------
    --Type inference part: later in separate module
+   -- e1::(a,b), e2::(b,c) |- e3::e1;e2   -> (a,c)
+   -- e1::(a,b), e2::(b,c) |- e3::e1!e2   -> (a,c)
+   -- e1::(a,b), e2::(a,b) |- e3::e1\/e2  -> (a,b)
+   -- e1::(a,b), e2::(a,b) |- e3::e1/\e2  -> (a,b)
+   -- e1::(a,b)            |- e2::e1~     -> (b,a)
+   -- c1::a, c2::b         |- e::V[c1,c2] -> (a,b)
+   -- c::a                 |- e::I[c]     -> (a,a)
+   -- e1::(a,b)            |- e2::-e1     -> (a,b)
+   -- e1::(a,b)            |- e2::e1*     -> (a,b)
+   -- e1::(a,b)            |- e2::e1+     -> (a,b)
+   -- c1::a, c2::b, a>=b   |- c1::a -> b           --need to define >=, it is the lowerbound
    ---------------------------------------------------------------------------------------------
 
    --The type infered
@@ -255,65 +282,69 @@ module TypeChecker (typecheck) where
    --The Concept is the list of all types it can be as a result of ISA relations
    type AdlType = ([Concept],[Concept])
    
-   errorpos :: String -> FilePos -> String
-   errorpos err pos = err ++ " in expression at " ++ show pos
+
+   --Relation will be the only expression already infered possibly containing a TypeError
+   --TODO make an AdlExpr trackable by storing the original Expression (AdlExpr, Expression) and use this in errors
+   data AdlExpr =   Relation    InferedType --([Concept],DeclRelFound)              --The type of a Relation is declared locally in the expression or as a declaration line
+                                                                      --use typeofRel to cast to InferedType (The AdlExpr must be part of an InferExpr containing the file position)
+                  | Semicolon   {source::AdlExpr, target::AdlExpr}
+                  | Dagger      {source::AdlExpr, target::AdlExpr}
+                  | Flip        AdlExpr
+                  | TrsClose    AdlExpr
+                  | TrsRefClose AdlExpr
+                  | Complement  AdlExpr
+                  | Union       {source::AdlExpr, target::AdlExpr}
+                  | Intersect   {source::AdlExpr, target::AdlExpr}
+        --TODO          | Identity    AdlExpr
+        --TODO          | Universe    InferedType
+                  | ImplRule    {premise::AdlExpr, conclusion::AdlExpr} --TODO is a rule an expression, and thus has a type?
+                  | UnknownExpr String
+                  --TODO
 
    --TODO more guards for AdlExpr
-   --I'll need a function intersection::[Concept]->[Concept]->[Concept] to get the intersection of to concept lists as a list
-   --there is a function intersect::[a]->[a]->[a] taken the intersect based on equality (==) of a.
-   infer :: InferExpr -> InferedType
-   infer (Inf (Relation (TypeError err)) pos) = TypeError (errorpos err pos)
-   infer (Inf (Relation rel) _) = rel   --Relation is already an InferedType
-   infer (Inf (Semicolon expr1 expr2) pos) = typeofSemiColon (infer (Inf expr1 pos)) (infer (Inf expr2 pos)) pos
-   infer (Inf (Dagger expr1 expr2) pos) = typeofDagger expr1 expr2 pos
-   infer (Inf (Union expr1 expr2) pos) = typeofUnion expr1 expr2 pos
-   infer (Inf (Intersect expr1 expr2) pos) = typeofIntersect expr1 expr2 pos
-   infer (Inf (ImplRule expr1 expr2) pos) = typeofImplRule expr1 expr2 pos
-   infer (Inf (Flip expr) pos) = typeofFlip expr pos
-   infer (Inf (Identity expr) pos) = typeofIdentity expr pos
-   infer (Inf (Universe expr) pos) = typeofUniverse expr pos
-   infer (Inf (Complement expr) pos) = typeofComplement expr pos
-   infer (Inf (TrsClose expr) pos) = typeofTrsClose expr pos
-   infer (Inf (TrsRefClose expr) pos) = typeofTrsRefClose expr pos
-   infer (Inf _ pos) = TypeError ("Unknown expression: " ++ show pos) --TODO
+   infer :: AdlExpr -> InferedType
+   infer (Relation rel) = rel   --Relation is already an InferedType
+   infer (Semicolon expr1 expr2) = inferAbBcAc (infer expr1) (infer expr2)
+   infer (Dagger expr1 expr2) = inferAbBcAc (infer expr1) (infer expr2)
+   infer (Union expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
+   infer (Intersect expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
+   infer (ImplRule expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
+   infer (Flip expr) = inferAbBa (infer expr)
+   --TODO infer (Identity expr) = inferIdentity expr
+   --TODO infer (Universe expr) = inferUniverse expr
+   infer (Complement expr) = inferAbAb (infer expr)
+   infer (TrsClose expr) = inferAbAb (infer expr)
+   infer (TrsRefClose expr) = inferAbAb (infer expr)
+   infer (UnknownExpr err)= TypeError err --The expression is already known to be unknown
+   infer _ = TypeError ("Fatal: No inference algorithm implemented for certain AdlExpr. ")
 
-   typeofSemiColon :: InferedType -> InferedType -> FilePos -> InferedType
-   typeofSemiColon (TypeError err) _ pos = TypeError (errorpos err pos)
-   typeofSemiColon _ (TypeError err) pos = TypeError (errorpos err pos)
-   typeofSemiColon (Type (src1,trg1)) (Type (src2,trg2)) _
-                   | intersect trg1 src2==[] = TypeError ("Type inference rule Composition: Possible types of target1 " ++ show trg1 ++ " do not match the possible types of source2 " ++ show src2)
+   --infer  e1::(a,b), e2::(b,c) |- e3::e1 -> e2 -> (a,c)
+   inferAbBcAc :: InferedType -> InferedType -> InferedType
+   inferAbBcAc err@(TypeError str) _ = err   --pass errors up
+   inferAbBcAc _ err@(TypeError str) = err
+   inferAbBcAc (Type (src1,trg1)) (Type (src2,trg2))
+                   | intersect trg1 src2==[] = TypeError ("Type inference (a,b) -> (b,c) -> (a,c): Possible types of target1::b " ++ show trg1 ++ " do not match the possible types of source2::b " ++ show src2)
                    | otherwise = Type (src1,trg2)
-   typeofSemiColon _ _ _ = TypeError ("typeofSemiColon: not implemented. ")
 
-   typeofDagger :: AdlExpr -> AdlExpr -> FilePos -> InferedType
-   typeofDagger _ _ _ = TypeError ("typeofDagger: not implemented. ")
-   
-   typeofUnion :: AdlExpr -> AdlExpr -> FilePos -> InferedType
-   typeofUnion _ _ _ = TypeError ("typeofUnion: not implemented. ")
+   --infer  e1::(a,b), e2::(a,b) |- e3::e1 -> e2 -> (a,b)
+   inferAbAbAb :: InferedType -> InferedType -> InferedType
+   inferAbAbAb err@(TypeError str) _ = err   --pass errors up
+   inferAbAbAb _ err@(TypeError str) = err
+   inferAbAbAb (Type (src1,trg1)) (Type (src2,trg2))
+                   | intersect trg1 trg2==[]
+                               = TypeError ("Type inference (a,b) -> (a,b) -> (a,b): Possible types of target1::b " ++ show trg1 ++ " do not match the possible types of target2::b " ++ show trg2)
+                   | intersect src1 src2==[]
+                               = TypeError ("Type inference (a,b) -> (a,b) -> (a,b): Possible types of source1::a " ++ show src1 ++ " do not match the possible types of source2::a " ++ show src2)
+                   | otherwise = Type (src1,trg1)
 
-   typeofIntersect :: AdlExpr -> AdlExpr -> FilePos -> InferedType
-   typeofIntersect _ _ _ = TypeError ("typeofIntersect: not implemented. ")
+   --infer  e1::(a,b) |- e2::e1 -> (b,a)                   
+   inferAbBa :: InferedType -> InferedType
+   inferAbBa err@(TypeError str) = err
+   inferAbBa (Type (src,trg)) = Type (trg,src)
 
-   typeofImplRule :: AdlExpr -> AdlExpr -> FilePos -> InferedType
-   typeofImplRule _ _ _ = TypeError ("typeofImplRule: not implemented. ")
-   
-   typeofFlip :: AdlExpr -> FilePos -> InferedType
-   typeofFlip _ _ = TypeError ("typeofFlip: not implemented. ")
-
-   typeofIdentity :: AdlExpr -> FilePos -> InferedType
-   typeofIdentity _ _ = TypeError ("typeofIdentity: not implemented. ")
-   
-   typeofUniverse :: AdlExpr -> FilePos -> InferedType
-   typeofUniverse _ _ = TypeError ("typeofUniverse: not implemented. ")
-   
-   typeofComplement :: AdlExpr -> FilePos -> InferedType
-   typeofComplement _ _ = TypeError ("typeofComplement: not implemented. ")
-   
-   typeofTrsClose :: AdlExpr -> FilePos -> InferedType
-   typeofTrsClose _ _ = TypeError ("typeofTrsClose: not implemented. ")
-   
-   typeofTrsRefClose :: AdlExpr -> FilePos -> InferedType
-   typeofTrsRefClose _ _ = TypeError ("typeofTrsRefClose: not implemented. ")
+   --infer  e1::(a,b) |- e2::e1 -> (a,b)
+   inferAbAb :: InferedType -> InferedType
+   inferAbAb t = t
 
    ---------------------------------------------------------------------------------------------
    --Children part: later in separate module
