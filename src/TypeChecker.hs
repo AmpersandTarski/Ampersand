@@ -173,7 +173,7 @@ module TypeChecker (typecheck) where
    --data type to InferExpr
    ------------------------
    --TODO casting of ObjectDef and Rule should probably result in a list of (AdlExpr, FilePos)
-   --The type of the AdlExprs should be infered, and the types should be checked in their
+   --The type of the AdlExprs should be inferred, and the types should be checked in their
    --context for example in a rule both sides must be of the same type
    --                    in an ObjectDef the expression should be applied to a conceptof a valid type
    castObjectDefToAdlExpr :: Environment -> ObjectDef -> (AdlExpr, FilePos)
@@ -275,7 +275,7 @@ module TypeChecker (typecheck) where
    -- c1::a, c2::b, a>=b   |- c1::a -> b           --need to define >=, it is the lowerbound
    ---------------------------------------------------------------------------------------------
 
-   --The type infered
+   --The type inferred
    data InferedType = Type AdlType | TypeError String
 
    --a Concept is identified by its name of type String. A type is always a binary relation of Concepts
@@ -283,7 +283,7 @@ module TypeChecker (typecheck) where
    type AdlType = ([Concept],[Concept])
    
 
-   --Relation will be the only expression already infered possibly containing a TypeError
+   --Relation will be the only expression already inferred possibly containing a TypeError
    --TODO make an AdlExpr trackable by storing the original Expression (AdlExpr, Expression) and use this in errors
    data AdlExpr =   Relation    InferedType --([Concept],DeclRelFound)              --The type of a Relation is declared locally in the expression or as a declaration line
                                                                       --use typeofRel to cast to InferedType (The AdlExpr must be part of an InferExpr containing the file position)
@@ -298,6 +298,8 @@ module TypeChecker (typecheck) where
         --TODO          | Identity    AdlExpr
         --TODO          | Universe    InferedType
                   | ImplRule    {premise::AdlExpr, conclusion::AdlExpr} --TODO is a rule an expression, and thus has a type?
+        --SJ: Ja, een regel is een expressie. De regel a|-c is hetzelfde als de expressie -a\/c.
+        --SJ: Het type van een regel is het type van de equivalente expressie, namelijk  typeOf a `lub` typeOf c (aannemende dat typeOf het type van een expressie bepaalt)
                   | UnknownExpr String
                   --TODO
 
