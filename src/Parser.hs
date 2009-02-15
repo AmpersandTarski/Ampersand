@@ -36,8 +36,9 @@ parseADL adlstring flags fnFull =
 	                                                       --Nothing is niet aan de orde hier
 	    }
 	    where
-               procParseRes arch = case typecheck arch of   --when no type errors then AGtry
-                                       (t_e:t_errs) -> ([],t_e:t_errs)
-                                       []           -> sem_Architecture arch
+               procParseRes arch = if (skipTypechecker flags) then sem_Architecture arch
+                                   else case typecheck arch of   --when no type errors then AGtry
+                                            (t_e:t_errs) -> ([],t_e:t_errs)
+                                            []           -> sem_Architecture arch
 
    

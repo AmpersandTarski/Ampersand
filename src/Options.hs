@@ -43,6 +43,7 @@ data Options = Options { contextName   :: Maybe String
                        , genTime       :: ClockTime
                        , uncheckedLogName :: Maybe String
                        , services      :: Bool
+                       , skipTypechecker :: Bool  -- tijdelijke optie, totdat typechecker werkt.... 
                        } deriving Show
  
 getOptions :: IO Options
@@ -127,6 +128,7 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option []        ["language"]     (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"
            , Option ['l']     ["log"]          (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                 envlogName  ++ " )")
+           , Option []    ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" -- Tijdelijk, zolang de TC nog onderhanden is. 
            ]
 
 defaultOptions' :: ClockTime -> [(String, String)] -> String -> String -> Options
@@ -161,6 +163,7 @@ defaultOptions' clocktime env fName pName
                          , logName       = "ADL.log"
                          , services      = False
                          , genTime       = clocktime
+                         , skipTypechecker = False
                          }
                     
 envdirPrototype = "CCdirPrototype"
@@ -194,7 +197,8 @@ languageOpt l   opts = opts{language     = case map toUpper l of
                                              "NL"      -> Dutch
                                              "UK"      -> English
                                              otherwise -> Dutch}
-logOpt nm       opts = opts{uncheckedLogName = Just nm} 
+logOpt nm       opts = opts{uncheckedLogName = Just nm}
+skipTCOpt       opts = opts{skipTypechecker = True} 
 verbose flags x
     | verboseP flags = putStr x
     | otherwise      = donothing
