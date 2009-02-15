@@ -1,4 +1,4 @@
- {-# LANGUAGE ScopedTypeVariables#-}
+{-# OPTIONS_GHC -Wall #-}
 module Main where
 
 import Options               (getOptions,Options(..),usageInfo',verboseLn,verbose)

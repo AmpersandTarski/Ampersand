@@ -1,8 +1,8 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Options (Options(..),getOptions,usageInfo',verboseLn,verbose)
 where
 --import List                  (isSuffixOf)
-import System                (getArgs, getProgName, exitFailure)
+import System                (getArgs, getProgName)
 import System.Environment    (getEnvironment)
 import Languages (Lang(..))
 import Char (toUpper)
@@ -51,9 +51,9 @@ getOptions =
    do args     <- getArgs
       progName <- getProgName
       env      <- getEnvironment
-      genTime  <- getClockTime
+      genTime'  <- getClockTime
       flags    <- case getOpt Permute options args of
-                      (o,[n],[])    -> return (foldl (flip id) (defaultOptions' genTime env n progName) o )
+                      (o,[n],[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
                       (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
                       (_,x:xs,[])   -> ioError (userError ("too many files: "++ show [x:xs] ++usageInfo' progName))
                       (_,_,errs)    -> ioError (userError (concat errs ++ usageInfo' progName))
@@ -131,8 +131,8 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option []    ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" -- Tijdelijk, zolang de TC nog onderhanden is. 
            ]
 
-defaultOptions' :: ClockTime -> [(String, String)] -> String -> String -> Options
-defaultOptions' clocktime env fName pName 
+defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
+defaultOptions clocktime env fName pName 
                = Options { contextName   = Nothing
                          , showVersion   = False
                          , showHelp      = False
@@ -166,47 +166,75 @@ defaultOptions' clocktime env fName pName
                          , skipTypechecker = False
                          }
                     
+envdirPrototype :: String
 envdirPrototype = "CCdirPrototype"
+envdirAtlas :: String
 envdirAtlas="CCdirAtlas"
+envdirOutput :: String
 envdirOutput="CCdirOutput"
+envdbName :: String
 envdbName="CCdbName"
+envlogName :: String
 envlogName="CClogName"
 
+contextOpt :: Maybe String -> Options -> Options
 contextOpt  nm  opts = opts{contextName  = nm}            
+versionOpt :: Options -> Options
 versionOpt      opts = opts{showVersion  = True}            
+helpOpt :: Options -> Options
 helpOpt         opts = opts{showHelp     = True}            
+verboseOpt :: Options -> Options
 verboseOpt      opts = opts{ -- verbose      = putStr
                             --,verboseLn    = putStrLn
                             verboseP     = True}            
+prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts = opts{uncheckedDirPrototype = nm
                            ,genPrototype = True}
+maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{genPrototype = True
                            ,allServices  = True}                            
+dbNameOpt :: Maybe String -> Options -> Options
 dbNameOpt nm    opts = opts{dbName       = nm}
+atlasOpt :: Maybe String -> Options -> Options
 atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
                            ,genAtlas     = True}
+xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
+fspecOpt :: Options -> Options
 fspecOpt        opts = opts{fspec        = True}
+proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
+servicesOpt :: Options -> Options
 servicesOpt     opts = opts{services     = True}
+haskellOpt :: Options -> Options
 haskellOpt      opts = opts{haskell      = True}
+outputDirOpt :: String -> Options -> Options
 outputDirOpt nm opts = opts{uncheckedDirOutput    = Just nm}
+beeperOpt :: Options -> Options
 beeperOpt       opts = opts{beeper       = True}
+crowfootOpt :: Options -> Options
 crowfootOpt     opts = opts{crowfoot     = True}
+languageOpt :: String -> Options -> Options
 languageOpt l   opts = opts{language     = case map toUpper l of
-                                             "NL"      -> Dutch
-                                             "UK"      -> English
-                                             otherwise -> Dutch}
+                                             "NL"  -> Dutch
+                                             "UK"  -> English
+                                             _     -> Dutch}
+logOpt :: String -> Options -> Options
 logOpt nm       opts = opts{uncheckedLogName = Just nm}
+skipTCOpt :: Options -> Options
 skipTCOpt       opts = opts{skipTypechecker = True} 
+verbose :: Options -> String -> IO ()
 verbose flags x
     | verboseP flags = putStr x
     | otherwise      = donothing
    
+verboseLn :: Options -> String -> IO ()
 verboseLn flags x
     | verboseP flags = putStrLn x
     | otherwise      = donothing
     
+donothing :: IO()
 donothing = putStr ""   -- Ik weet zo gauw niet hoe dit anders moet....
+unchecked :: String
 unchecked = "."
                              

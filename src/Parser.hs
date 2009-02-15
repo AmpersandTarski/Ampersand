@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Parser (parseADL)where
 
 
@@ -18,22 +18,22 @@ parseADL :: String      -- | The string to be parsed
 parseADL adlstring flags fnFull =
     do { slRes <- parseIO (pArchitecture (beeper flags))(scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
 	   ; case procParseRes slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
-	        ( _ , e:errs)  -> ioError (userError ("\nThe type analysis of "++fnFull++" yields errors.\n" ++
-                                                  (concat ["!Error of type "++err| err<-e:errs])++
+	        ( _ , err:errs)-> ioError (userError ("\nThe type analysis of "++fnFull++" yields errors.\n" ++
+                                                  (concat ["!Error of type "++err'| err'<-err:errs])++
                                                   "Nothing generated, please correct mistake(s) first.\n"
                                                  ))
 	        ( []      ,[]) -> ioError(userError ("no context encountered in input file.\n"))
-	        ( contexts,[]) -> case filtered contexts of
+	        ( contexts,[]) -> case filteredContexts  of
 	                            []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))
 	                            cs   -> do{ verboseLn flags (fnFull++ " has been parsed.")
 	                                      ; return (head cs) -- Just take the first context encounterd. If there are more contexts no warning is generated.
                                           }
-	                          where filtered contexts  = case contextName flags of
-	                                                       Just name -> [c | c <- contexts , name == ctxnm c] 
+	                          where filteredContexts   = case contextName flags of
+	                                                       Just cname -> [c | c <- contexts , cname == ctxnm c] 
 	                                                       Nothing   -> contexts
 	                                specificName = case contextName flags of
-	                                                       Just name -> name
-	                                                       --Nothing is niet aan de orde hier
+	                                                       Just cname -> cname
+	                                                       Nothing   -> undefined   --Nothing is niet aan de orde hier
 	    }
 	    where
                procParseRes arch = if (skipTypechecker flags) then sem_Architecture arch
