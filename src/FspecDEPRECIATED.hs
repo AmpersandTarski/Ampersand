@@ -8,6 +8,7 @@
            --       ,nFpoints
                            )
   where
+   import LaTeX
    import FPA
    import Char
    import CommonClasses ( Identified(..))
@@ -34,11 +35,11 @@
      )
    import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
    import Typology
-   import ADLdef
+   import Adl
    import ShowADL
    import ShowHS
    import CC_aux(  isSgn
-                 , applyM ,conts, explain, fEmpty
+                 , applyM ,conts, fEmpty
                  )
    import Calc
    import PredLogic
@@ -1161,18 +1162,18 @@
        , "\\maketitle"
        , "\\tableofcontents"
        , latexChapter "Inleiding" "Inleiding"
-       , "\tDit document definieert de servicelaag van een systeem genaamd "++latexWord cname++"."
-       , "\tHet definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken"
-       , "\tom afspraken na te leven die gelden in de context van "++latexWord cname++"."
-       , "\tDeze afspraken worden weergegeven door bedrijfsregels."
-       , "\tDeze regels staan beschreven in hoofdstuk \\ref{chp:Ontwerpregels}, geordend op thema."
-       , "\tEen gegevensanalyse volgt in hoofdstuk \\ref{chp:Gegevensanalyse}."
-       , "\tIn de daarop volgende hoofdstukken is elk thema"
-       , "\tuitgewerkt in definities van services."
-       , "\tDeze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk \\ref{chp:Ontwerpregels}."
-       , "\tDeze ondersteuning bestaat uit het voorkomen dat een afspraak wordt overtreden,"
-       , "\tof het signaleren van overtredingen (opdat mensen kunnen ingrijpen)"
-       , "\tof het herstellen van een regel (door automatische acties op de database uit te voeren)."
+--       , "\tDit document definieert de servicelaag van een systeem genaamd "++latexWord cname++"."
+--       , "\tHet definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken"
+--       , "\tom afspraken na te leven die gelden in de context van "++latexWord cname++"."
+--       , "\tDeze afspraken worden weergegeven door bedrijfsregels."
+--       , "\tDeze regels staan beschreven in hoofdstuk \\ref{chp:Ontwerpregels}, geordend op thema."
+--       , "\tEen gegevensanalyse volgt in hoofdstuk \\ref{chp:Gegevensanalyse}."
+--       , "\tIn de daarop volgende hoofdstukken is elk thema"
+--       , "\tuitgewerkt in definities van services."
+--       , "\tDeze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk \\ref{chp:Ontwerpregels}."
+--       , "\tDeze ondersteuning bestaat uit het voorkomen dat een afspraak wordt overtreden,"
+--       , "\tof het signaleren van overtredingen (opdat mensen kunnen ingrijpen)"
+--       , "\tof het herstellen van een regel (door automatische acties op de database uit te voeren)."
        , designPrinciples language context
 
 
@@ -1447,8 +1448,8 @@
    clname :: String -> String
    clname str = [if isAlphaNum c then c else if c `elem` "/\\" then c else '_'| c<- str]
 
-   lIntro :: Lang -> String
-   lIntro language
+   lIntro' :: Lang -> String
+   lIntro' language
      = chain "\n"
          [ "\\documentclass[10pt,a4paper]{report}"
          , if language==Dutch then "\\usepackage[dutch]{babel}" else ""

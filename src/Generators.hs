@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Generators where
 
 
@@ -11,32 +11,25 @@ import ShowXML      (showXML)
 import Strings      (chain)
 import Calc         (deriveProofs)
 import Version      (versionbanner)
-
+import Data.Document
+import Fspec2Doc 
+import System
 serviceGen :: Fspc -> Options -> IO()
-serviceGen    fSpec flags
+serviceGen    fSpec _
     = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
 
 prove :: Fspc -> Options -> IO()
-prove fSpec flags
+prove fSpec _
     = putStr (deriveProofs fSpec)
 
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags
-   =  verboseLn flags "Generation of Haskell code is currently not supported."
-   >> verboseLn flags ("Haskell code would be written into " ++ fileName ++ ".")
-       where fileName
+   =  verboseLn flags ("Generating Haskell source code for "++name fSpec)
+   >> writeFile outputFile haskellCode 
+   >> verboseLn flags ("Haskell written into " ++ outputFile ++ ".")
+   where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".lhs")
-           
-showHaskell :: Fspc -> Options -> IO ()
-showHaskell fSpec flags 
-    = verboseLn flags ("\nGenerating Haskell source code for "++name fSpec) >>
-      verboseLn flags outputFile >>
-      putStr  haskellCode >>  
-      verboseLn flags (outputFile ++ " has been written...")
-      where
-       baseName = "f_Ctx_"++(name fSpec)
-       outputFile = combine(dirOutput flags) (replaceExtension baseName ".lhs")
-       haskellCode =
+         haskellCode =
                 ("> module Main where"
              ++"\n>  import UU_Scanner"
              ++"\n>  import Classification"
@@ -45,9 +38,9 @@ showHaskell fSpec flags
              ++"\n>  import ShowHS (showHS)"
              ++"\n>  import Adl.Fspec"
              ++"\n"
-             ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName++")"
+             ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName flags++")"
              ++"\n\n"
-             ++">  "++baseName++"\n>   = "++showHS "\n>     " fSpec
+             ++">  "++baseName flags++"\n>   = "++showHS "\n>     " fSpec
                 ) 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
@@ -60,7 +53,7 @@ doGenXML fSpec flags
       writeFile outputFile ( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
                              "<tns:ADL xmlns:tns=\"http://www.sig-cc.org/ADL\" "++
                              "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
-                             "xsi:schemaLocation=\"http://www.sig-cc.org/ADL "++
+                             "xsi:schemaLocation=\"http://www.sig-cc.org/AdlDocs "++
                              "ADL.xsd \">"++
                              "<!-- Generated with "++ versionbanner ++", at "++ show (genTime flags) ++" -->" ++
                              showXML fSpec ++
@@ -71,8 +64,37 @@ doGenXML fSpec flags
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")
                
 doGenProto :: Fspc -> Options -> IO()
-doGenProto fSpec flags
+doGenProto _ flags
    =  verboseLn flags "Generation of Prototype is currently not supported."
    >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
 
+doGenFspecLaTeX :: Fspc -> Options -> IO()
+doGenFspecLaTeX fSpec flags
+   =  verboseLn flags "Generating LaTeX functional specification document..." >>
+      writeFile outputFile (render2LaTeX (fSpec2document fSpec flags)
+                           )   
+   >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
+--   >> verboseLn flags ("Processing .tex file into .pdf...")
+--   >> system ("pdftex outputFile ")
+   where outputFile
+               = combine (dirOutput flags) (replaceExtension (baseName flags) ".tex")
+               
+doGenFspecHtml :: Fspc -> Options -> IO()
+doGenFspecHtml fSpec flags
+   =  verboseLn flags "Generating Html functional specification document..." >>
+      writeFile outputFile ( "leeg"
+                           )   
+   >> verboseLn flags ("Functional specification written into " ++ outputFile ++ ".")
+   where outputFile
+               = combine (dirOutput flags) (replaceExtension (baseName flags) ".html")
+               
+doGenFspecRtf :: Fspc -> Options -> IO()
+doGenFspecRtf fSpec flags
+   =  verboseLn flags "Generating Rtf functional specification document..." >>
+      writeFile outputFile ( "leeg"
+                           )   
+   >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
+   where outputFile
+               = combine (dirOutput flags) (replaceExtension (baseName flags) ".rtf")
+               
           

@@ -28,7 +28,9 @@ data Options = Options { contextName   :: Maybe String
 					   , uncheckedDirAtlas      :: Maybe String
 					   , dirAtlas      :: String
 					   , genXML        :: Bool
-					   , fspec         :: Bool
+					   , fspecLaTeX    :: Bool
+					   , fspecHtml     :: Bool
+					   , fspecRtf      :: Bool
 					   , proofs        :: Bool
 					   , haskell       :: Bool
 					   , uncheckedDirOutput     :: Maybe String
@@ -118,7 +120,9 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option ['a']     ["atlas"]        (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
                                                                                 envdirAtlas ++ " )")
            , Option []        ["XML"]          (NoArg xmlOpt)              "generate XML output"
-           , Option []        ["fspec"]        (NoArg fspecOpt)            "generate a functional specification document"
+           , Option []        ["fspecLaTeX"]   (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"
+           , Option []        ["fspecHtml"]    (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"
+           , Option []        ["fspecRtf"]     (NoArg fspecRtfOpt)         "generate a functional specification document in Rtf format"
            , Option []        ["proofs"]       (NoArg proofsOpt)           "generate correctness proofs"
            , Option []        ["haskell"]      (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"
            , Option ['o']     ["outputDir"]    (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
@@ -148,7 +152,9 @@ defaultOptions clocktime env fName pName
             		     , uncheckedDirAtlas      = lookup envdirAtlas env
             		     , dirAtlas      = unchecked
             		     , genXML        = False 
-	            	     , fspec         = False
+	            	     , fspecLaTeX    = False
+	            	     , fspecHtml     = False
+	            	     , fspecRtf      = False
 	            	     , proofs        = False
 	            	     , haskell       = False
 	            	     , uncheckedDirOutput     = lookup envdirOutput env
@@ -200,8 +206,12 @@ atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
                            ,genAtlas     = True}
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
-fspecOpt :: Options -> Options
-fspecOpt        opts = opts{fspec        = True}
+fspecLaTeXOpt :: Options -> Options
+fspecLaTeXOpt   opts = opts{fspecLaTeX   = True}
+fspecHtmlOpt  :: Options -> Options
+fspecHtmlOpt   opts = opts{fspecHtml     = True}
+fspecRtfOpt   :: Options -> Options
+fspecRtfOpt   opts = opts{fspecRtf       = True}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

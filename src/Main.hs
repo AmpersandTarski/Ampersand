@@ -44,7 +44,9 @@ phase3 flags fSpec =
         [ doGenProto fSpec flags | genPrototype flags]++
         [ serviceGen  fSpec flags | services flags] ++
       --[ diagnose context| "-diag" `elem` switches]++
-      --[ functionalSpecLaTeX context (lineStyle switches) (lang switches) filename| "-fSpec" `elem` switches]++
+        [ doGenFspecLaTeX fSpec flags | fspecLaTeX flags] ++
+        [ doGenFspecHtml fSpec flags | fspecHtml flags] ++
+        [ doGenFspecRtf fSpec flags | fspecRtf flags] ++  
       --[ cdModel context | "-CD" `elem` switches]++
       --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
       --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++
