@@ -1,8 +1,8 @@
-  {-# OPTIONS -XTypeSynonymInstances #-}
+{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS -XTypeSynonymInstances #-}
 
 module Adl.Concept where
    import Adl.Prop
-   import Strings(chain)
    import CommonClasses --(Identified(name,typ)
                         --, ABoolAlg(glb,lub,order)
                         --, Explained(explain)
@@ -38,21 +38,21 @@ module Adl.Concept where
     NOthing == NOthing = True
     _ == _ = False
    instance Show Concept where
-    showsPrec p c = showString (name c)
+    showsPrec _ c = showString (name c)
    instance Identified Concept where
     name (C {cptnm = nm}) = nm
     name S = "ONE"
     name Anything   = "Anything"
     name NOthing    = "NOthing"
-    typ cpt = "Concept_"
+    typ _ = "Concept_"
    instance Association Concept where
     source c = c
     target c = c
    instance Ord Concept where
-    NOthing <= b  = False
-    a <= NOthing  = True
-    Anything <= b = True
-    a <= Anything = False
+    NOthing <= _  = False
+    _ <= NOthing  = True
+    Anything <= _ = True
+    _ <= Anything = False
     a@(C _ gE _) <= b = a `gE` b
     a <= b = a==b
 
@@ -86,15 +86,15 @@ module Adl.Concept where
      sign x = (source x,target x) 
 
    instance Association Sign where
-     source (src, tgt) = src
-     target (src, tgt) = tgt
+     source (src, _ ) = src
+     target (_ , tgt) = tgt
      
    class Association a => MorphicId a where
     isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     
    class Association a => Morphic a where
     multiplicities :: a -> [Prop]
-    multiplicities m = []
+--    multiplicities _ = []  --WAAROM? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
     flp            :: a -> a
 --    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     isProp         :: a -> Bool  -- > tells whether the argument is a property
