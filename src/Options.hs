@@ -30,7 +30,7 @@ data Options = Options { contextName   :: Maybe String
 					   , genXML        :: Bool
 					   , fspecLaTeX    :: Bool
 					   , fspecHtml     :: Bool
-					   , fspecRtf      :: Bool
+					   , fspecWord      :: Bool
 					   , proofs        :: Bool
 					   , haskell       :: Bool
 					   , uncheckedDirOutput     :: Maybe String
@@ -120,9 +120,9 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option ['a']     ["atlas"]        (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
                                                                                 envdirAtlas ++ " )")
            , Option []        ["XML"]          (NoArg xmlOpt)              "generate XML output"
-           , Option []        ["fspecLaTeX"]   (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"
-           , Option []        ["fspecHtml"]    (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"
-           , Option []        ["fspecRtf"]     (NoArg fspecRtfOpt)         "generate a functional specification document in Rtf format"
+           , Option ['L']     ["fspecLaTeX"]   (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"
+           , Option ['H']     ["fspecHtml"]    (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"
+           , Option ['W']     ["fspecWord"]    (NoArg fspecWordOpt)       "generate a functional specification document for microsoft's Word"
            , Option []        ["proofs"]       (NoArg proofsOpt)           "generate correctness proofs"
            , Option []        ["haskell"]      (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"
            , Option ['o']     ["outputDir"]    (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
@@ -130,7 +130,7 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option []        ["beeper"]       (NoArg beeperOpt)           "generate beeper instead of checker"
            , Option []        ["crowfoot"]     (NoArg crowfootOpt)         "generate crowfoot notation in graphics"
            , Option []        ["language"]     (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"
-           , Option ['l']     ["log"]          (ReqArg logOpt "name")       ("log to file with name (name overrides "++
+           , Option []        ["log"]          (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                 envlogName  ++ " )")
            , Option []    ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" -- Tijdelijk, zolang de TC nog onderhanden is. 
            ]
@@ -154,7 +154,7 @@ defaultOptions clocktime env fName pName
             		     , genXML        = False 
 	            	     , fspecLaTeX    = False
 	            	     , fspecHtml     = False
-	            	     , fspecRtf      = False
+	            	     , fspecWord      = False
 	            	     , proofs        = False
 	            	     , haskell       = False
 	            	     , uncheckedDirOutput     = lookup envdirOutput env
@@ -210,8 +210,8 @@ fspecLaTeXOpt :: Options -> Options
 fspecLaTeXOpt   opts = opts{fspecLaTeX   = True}
 fspecHtmlOpt  :: Options -> Options
 fspecHtmlOpt   opts = opts{fspecHtml     = True}
-fspecRtfOpt   :: Options -> Options
-fspecRtfOpt   opts = opts{fspecRtf       = True}
+fspecWordOpt   :: Options -> Options
+fspecWordOpt   opts = opts{fspecWord       = True}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

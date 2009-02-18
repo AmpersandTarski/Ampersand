@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module ShowXML (showXML)
+module ShowXML (showXML')
 where
 --   import Text.XML.HaXml
 --     --Als de compiler hierover struikelt, dan moet je xml installeren. Dat is overigens in de volgende 3 stappen:
@@ -18,6 +18,18 @@ where
    import FspecDef
    import Adl
    import ShowADL
+   import Time(ClockTime)
+   import Version(versionbanner)
+   showXML' :: Fspc -> ClockTime -> String
+   showXML' fSpec now 
+            = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
+              "<tns:ADL xmlns:tns=\"http://www.sig-cc.org/ADL\" "++
+              "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
+              "xsi:schemaLocation=\"http://www.sig-cc.org/AdlDocs "++
+              "ADL.xsd \">"++
+              "<!-- Generated with "++ versionbanner ++", at "++ show now ++" -->" ++
+              showXML fSpec ++
+              "</tns:ADL>"   
    showXML :: Fspc -> String
    showXML f = showXTree ( mkXmlTree f)
    -----------------some new data types for simple XML structures--------

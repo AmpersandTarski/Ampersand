@@ -7,13 +7,15 @@ import Options
 import FspecDef
 import ShowHS       (showHS)
 import ShowADL      (showADLcode)
-import ShowXML      (showXML)
+import ShowXML      (showXML')
 import Strings      (chain)
 import Calc         (deriveProofs)
-import Version      (versionbanner)
-import Data.Document
+--import Version      (versionbanner)
+import Rendering.Document
+import Rendering.Doc2LaTeX
+import Rendering.Doc2Word
 import Fspec2Doc 
-import System
+--import System
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec _
     = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
@@ -50,15 +52,7 @@ doGenAtlas fSpec flags =
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
    =  verboseLn flags "Generating XML..." >>
-      writeFile outputFile ( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
-                             "<tns:ADL xmlns:tns=\"http://www.sig-cc.org/ADL\" "++
-                             "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
-                             "xsi:schemaLocation=\"http://www.sig-cc.org/AdlDocs "++
-                             "ADL.xsd \">"++
-                             "<!-- Generated with "++ versionbanner ++", at "++ show (genTime flags) ++" -->" ++
-                             showXML fSpec ++
-                             "</tns:ADL>"
-                           )   
+      writeFile outputFile ( showXML' fSpec (genTime flags))   
    >> verboseLn flags ("XML written into " ++ outputFile ++ ".")
    where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")
@@ -71,7 +65,7 @@ doGenProto _ flags
 doGenFspecLaTeX :: Fspc -> Options -> IO()
 doGenFspecLaTeX fSpec flags
    =  verboseLn flags "Generating LaTeX functional specification document..." >>
-      writeFile outputFile (render2LaTeX (fSpec2document fSpec flags)
+      writeFile outputFile (render2LaTeX flags (fSpec2document fSpec flags)
                            )   
    >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
 --   >> verboseLn flags ("Processing .tex file into .pdf...")
@@ -88,13 +82,13 @@ doGenFspecHtml fSpec flags
    where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".html")
                
-doGenFspecRtf :: Fspc -> Options -> IO()
-doGenFspecRtf fSpec flags
-   =  verboseLn flags "Generating Rtf functional specification document..." >>
-      writeFile outputFile ( "leeg"
+doGenFspecWord :: Fspc -> Options -> IO()
+doGenFspecWord fSpec flags
+   =  verboseLn flags "Generating Word functional specification document..." >>
+      writeFile outputFile ( render2Word flags (fSpec2document fSpec flags)
                            )   
    >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".rtf")
+               = combine (dirOutput flags) (replaceExtension (baseName flags) ".doc")
                
           

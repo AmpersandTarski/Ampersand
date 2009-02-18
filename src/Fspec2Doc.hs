@@ -2,7 +2,7 @@
 module Fspec2Doc where
 
    import FspecDef
-   import Data.Document
+   import Rendering.Document
    import Languages
    import Options
    
@@ -23,8 +23,13 @@ module Fspec2Doc where
                        , dshead = case (language flags) of
                                     Dutch   ->  Text "Inleiding"   
                                     English ->  Text "Introduction"
-                       , dscnts 
-                          = [Par (
+                       , dscnts = case (language flags) of
+                                    Dutch   -> dutchIntro
+                                    English -> englishIntro
+                       }
+                where
+                 dutchIntro 
+                     = [Par (
                               [Text "Dit document definieert de servicelaag van een systeem genaamd "]
                            ++ [Text (name fspc) ]
                            ++ [Text ". Het definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken "]
@@ -44,5 +49,6 @@ module Fspec2Doc where
                            ++ [Text "of het signaleren van overtredingen (opdat mensen kunnen ingrijpen)"]
                            ++ [Text "of het herstellen van een regel (door automatische acties op de database uit te voeren)."]
                               )]
-                        }
+                 englishIntro = dutchIntro -- for the time being...       
+                 
                        
