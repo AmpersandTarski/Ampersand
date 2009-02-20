@@ -30,19 +30,19 @@ doGenHaskell fSpec flags
    >> writeFile outputFile haskellCode 
    >> verboseLn flags ("Haskell written into " ++ outputFile ++ ".")
    where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".lhs")
+               = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
          haskellCode =
-                ("> module Main where"
-             ++"\n>  import UU_Scanner"
-             ++"\n>  import Classification"
-             ++"\n>  import Typology"
-             ++"\n>  import ADLdef"
-             ++"\n>  import ShowHS (showHS)"
-             ++"\n>  import Adl.Fspec"
+                ("module Main where"
+             ++"\n  import UU_Scanner"
+             ++"\n  import Classification"
+             ++"\n  import Typology"
+             ++"\n  import Adl"
+             ++"\n  import ShowHS (showHS)"
+             ++"\n  import Data.Fspec"
              ++"\n"
-             ++"\n>  main = putStr (showHS \"\\n>  \" "++baseName flags++")"
+             ++"\n  main = putStr (showHS \"\\n  \" fSpec_"++baseName flags++")"
              ++"\n\n"
-             ++">  "++baseName flags++"\n>   = "++showHS "\n>     " fSpec
+             ++"  fSpec_"++baseName flags++"\n   = "++showHS "\n     " fSpec
                 ) 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =

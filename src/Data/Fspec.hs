@@ -40,7 +40,7 @@ where
                      , services :: [Fservice]    -- ^ One for every service 
                      , vrules   :: [Rule]        -- ^ One for every rule
                      , vrels    :: [Declaration] -- ^ One for every declaration
-                     , isa      :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
+                     , fsisa    :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
                      }
    data Ftheme = Tspc
                      { ftsid    :: FSid     -- ^ The name of the theme (aka pattern)

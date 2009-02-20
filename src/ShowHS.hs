@@ -36,45 +36,64 @@ where
    instance ShowHS Fspc where
     showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS "" (pfixFSid "f_Ctx_" (fsid fspec)) 
     showHS indent fspec
-     = "Fspc"++showHS " " (fsid fspec)++
-       "##1## \n"++
-   --    (if null (themes   fspec) then " []" else indent++"{- themes:    -}  \n"++showL [showHSname t ++"\n"|t<-themes   fspec ])++
-       "##2## \n"++
-       (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
-       "##3## \n"++
-       (if null (serviceS fspec) then " []" else indent++"{- serviceS:  -}  "++showL [showHSname s|s<-serviceS fspec ])++
-       "##4## \n"++
-       (if null (serviceG fspec) then " []" else indent++"{- serviceG:  -}  "++showL [showHSname s|s<-serviceG fspec ])++
-       "##5## \n"++
-       (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
-       "##6## \n"++
-       (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
-       "##7## \n"++
-       indent++" isa "++
-       "##8## \n"++
-       indent++"where"++
-       "##9## \n"++
-       indent++" isa = "++ showHS (indent ++ "       ") (FspecDef.isa fspec)++
-       "##10## \n"++
-       indent++" gE = genEq (typology isa)"++
-        "\n>-- ***THEMES***: "++
-   --    (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
-        "\n>-- ***DATASETS***: "++
-       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
-        "\n>-- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++
-       (if null 
-            (uni (serviceS fspec)  (serviceG fspec)) then "" 
-             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
- 
-        "\n>-- ***RULES***: "++
-       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
- 
-        "\n>-- ***DECLARATIONS OF RELATIONS***: "++
-       (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
-        "\n>-- ***PATTERNS***: "++
---       (if null (fspc_patterns fspec) then "" else concat ["\n\n>  "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
-        "\n"
+         = (chain (indent ++"    ") 
+            ["Fspc{ fsfsid = " ++ showHS " " (fsid fspec)
+--                  ,", themes   = " ++ "["++chain "," (map (showHS "") (themes fspec))++"]" 
+                  ,", themes = []"
+--                  ,", datasets = " ++ "["++chain "," (map (showHS "") (datasets fspec))++"]"
+                  ,", datasets = []"
+--                  ,", serviceS = " ++ "["++chain "," (map (showHS "") (serviceS fspec))++"]"
+                  ,", serviceS = []"
+--                  ,", serviceG = " ++ "["++chain "," (map (showHS "") (serviceG fspec))++"]"
+                  ,", serviceG = []"
+--                  ,", services = " ++ "["++chain "," (map (showHS "") (services fspec))++"]"
+                  ,", services = []"
+                  ,", vrules   = " ++ "["++chain (indent ++"                 ,") (map (showHS (indent ++ "        ")) (vrules fspec))++"]"
+                  ,", vrels    = " ++ "["++chain "," (map (showHS "") (vrels fspec))++"]"
+                  ,", fsisa = isa'"
+                  ,"}" 
+                    ]) ++   
+    
+--     = "Fspc"++showHS " " (fsid fspec)++
+--       "-- ##1## \n"++
+--   --    (if null (themes   fspec) then " []" else indent++"{- themes:    -}  \n"++showL [showHSname t ++"\n"|t<-themes   fspec ])++
+--       "-- ##2## \n"++
+--       (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
+--       "-- ##3## \n"++
+--       (if null (serviceS fspec) then " []" else indent++"{- serviceS:  -}  "++showL [showHSname s|s<-serviceS fspec ])++
+--       "-- ##4## \n"++
+--       (if null (serviceG fspec) then " []" else indent++"{- serviceG:  -}  "++showL [showHSname s|s<-serviceG fspec ])++
+--       "-- ##5## \n"++
+--       (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
+--       "-- ##6## \n"++
+--       (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
+--       "-- ##7## \n"++
+--       indent++" isa "++
+--       "-- ##8## \n"++
 
+       indent++"where"++
+       "-- ##9## \n"++
+       indent++" isa' = "++ showHS (indent ++ "       ") (fsisa fspec)++
+       "-- ##10## \n"++
+       indent++" gE = genEq (typology isa')"++
+--        "\n -- ***THEMES***: "++
+--   --    (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+--        "\n -- ***DATASETS***: "++
+--       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
+--        "\n -- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++
+--       (if null 
+--            (uni (serviceS fspec)  (serviceG fspec)) then "" 
+--             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
+-- 
+--        "\n -- ***RULES***: "++
+--       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
+-- 
+--        "\n -- ***DECLARATIONS OF RELATIONS***: "++
+       (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
+--        "\n -- ***PATTERNS***: "++
+----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
+        "\n"
+--
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Ftheme                        ***
@@ -174,49 +193,49 @@ where
 -- \*** Eigenschappen met betrekking tot: Architecture                  ***
 -- \***********************************************************************
 
-   instance ShowHS Architecture where
-    showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
-    showHS indent arch = concat (map (showHS indent) (archContexts arch))
+--   instance ShowHS Architecture where
+--    showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
+--    showHS indent arch = concat (map (showHS indent) (archContexts arch))
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***
 -- \***********************************************************************
    
-   instance ShowHS Context where
- -- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
-    showHSname context = "ctx_"++haskellIdentifier (name context)
-    showHS indent context
-     = "Ctx "++show (name context)++"   -- (Ctx nm on isa world pats rs ds cs ks os pops)"++
-       indent++"       "++(if null on   then "[]" else showL [show x|x<-on])++
-       (if null on   then " " else indent++"       ")++"isa [ {- world is left empty -} ]"++
-       (if null pats then " []" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
-       (if null rs   then " []" else indent++"       "++showL [showHSname r       | r<-rs  ])++
-       (if null ds   then " []" else indent++"       "++showL [showHSname d       | d<-ds  ])++
-       (if null cs   then " []" else indent++"       "++showL [showHSname c       | c<-cs  ])++
-       (if null ks   then " []" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
-       (if null os   then " []" else indent++"       "++showL [showHSname o       | o<-os  ])++
-       (if null pops then " []" else indent++"       "++showL [showHSname p       | p<-pops])++
-       indent++"where"++
-       indent++" isa = "++showHS (indent++"       ") (Adl.isa context)++
-       indent++" gE  = genEq (typology isa)"++
-       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
-       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"")++
-       (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
-       (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
-       (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
-       (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
-       (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
-       (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
-    -- patterns will be shown in  (showHS indent Fspec)
-       where pats = ctxpats context     --  patterns declared in this context
-             rs   = rules context       --  rules declared in this context, except the signals
-             ds   = ctxds context       --  declaration declared in this context, outside patterns
-             cs   = ctxcs context       --  A list of concept definitions defined in this context, outside the scope of patterns
-             ks   = ctxks context       --  A list of key definitions defined in this context, outside the scope of patterns
-             os   = attributes context  --  A list of attributes defined in this context, outside the scope of patterns
-             pops = populations context --  A list of populations defined in this context
-             on   = extends context
-
+--   instance ShowHS Context where
+-- -- TODO: showHS should generate valid Haskell code for the entire pattern. Right now, it doesn't
+--    showHSname context = "ctx_"++haskellIdentifier (name context)
+--    showHS indent context
+--     = "Ctx "++show (name context)++"   -- (Ctx nm on isa world pats rs ds cs ks os pops)"++
+--       indent++"       "++(if null on   then "[]" else showL [show x|x<-on])++
+--       (if null on   then " " else indent++"       ")++"isa [ {- world is left empty -} ]"++
+--       (if null pats then " []" else indent++"       "++showL [showHSname p++" gE"| p<-pats])++
+--       (if null rs   then " []" else indent++"       "++showL [showHSname r       | r<-rs  ])++
+--       (if null ds   then " []" else indent++"       "++showL [showHSname d       | d<-ds  ])++
+--       (if null cs   then " []" else indent++"       "++showL [showHSname c       | c<-cs  ])++
+--       (if null ks   then " []" else indent++"       "++showL ["key_"++name k     | k<-ks  ])++
+--       (if null os   then " []" else indent++"       "++showL [showHSname o       | o<-os  ])++
+--       (if null pops then " []" else indent++"       "++showL [showHSname p       | p<-pops])++
+--       indent++"where"++
+--       indent++" isa = "++showHS (indent++"       ") (Adl.isa context)++
+--       indent++" gE  = genEq (typology isa)"++
+--       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"\n")++
+--       (if null on   then "" else indent++" on  = "++showL [show x|x<-on]++"")++
+--       (if null os   then "" else concat [indent++" "++showHSname o++" = "++showHS "" o| o<-os]++"\n")++
+--       (if null rs   then "" else concat [indent++" "++showHSname r++" = "++showHS "" r| r<-rs]++"\n")++
+--       (if null ds   then "" else concat [indent++" "++showHSname d++" = "++showHS "" d| d<-ds]++"\n")++
+--       (if null pops then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p  |p<-populations context]++"\n")++
+--       (if null cs   then "" else concat [indent++" "++showHSname c++" = "++showHS "" c| c<-cs]++"\n")++
+--       (if null ks   then "" else concat [indent++" "++showHSname k++" = "++showHS "" k| k<-ks]++"\n")
+--    -- patterns will be shown in  (showHS indent Fspec)
+--       where pats = ctxpats context     --  patterns declared in this context
+--             rs   = rules context       --  rules declared in this context, except the signals
+--             ds   = ctxds context       --  declaration declared in this context, outside patterns
+--             cs   = ctxcs context       --  A list of concept definitions defined in this context, outside the scope of patterns
+--             ks   = ctxks context       --  A list of key definitions defined in this context, outside the scope of patterns
+--             os   = attributes context  --  A list of attributes defined in this context, outside the scope of patterns
+--             pops = populations context --  A list of populations defined in this context
+--             on   = extends context
+--
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Pattern                       ***
@@ -244,51 +263,50 @@ where
 
    instance ShowHS Rule where
     showHSname r = "rule"++show (runum r)
-    showHS indent r = "## " ++ -- " ##SHOW r## "
-       (case r of
-              Ru{} -> "Ru{}"  ++ aap r
-              Sg{} -> "Sg{}"  -- ruleType (srsig r)
-              Gc{} -> "Gc{}"  -- Generalization
-              Fr{} -> "Fr{}"  -- Automatic
-            )++ showHS "" (ruleType r) ++ " ##" 
-     where 
-      aap r = 
-       case r of
-        Ru{} -> 
-           chain " " ["Ru"
-                     ,showHS "" (rrsrt r)
-                     ,"\n *1 "
-                     ,"("++showHS "" (antecedent r)++")"
-                     ,"\n *2 "
-                     ,"("++showHS "" (rrfps r)++")"
-                     ,"\n *3 "
-                     ,"("++showHS "" (consequent r)++")"
-                     ,"\n *4 "
-                     ,"["++chain "," (map (showHS "") (r_cpu r))++"]"
-                     ,"\n *5 "
-                     ,show(rrxpl r)
-                     ,"\n *6 "
-                     ,showHS "" (rrtyp r)
-                     ,"\n *7 "
-                     ,show (runum r)
-                     ,show (r_pat r)
-                     ]
---    showHS indent r@(Ru _ _ _ _ _ _ _ _ _)
---     = if rrsrt r==Truth
---       then chain " " ["Ru",showHS "" Truth,undef,"("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")",showL (map (showHS "") (r_cpu r)),show (rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
---       else chain " " ["Ru",showHS "" (rrsrt r),"("++showHS "" (antecedent r)++")","("++showHS "" (rrfps r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",show(rrxpl r),(showHS "" (rrtyp r)),show (runum r),show (r_pat r)]
---       where undef = "(let undef = undef in error \"Fatal: antecedent is not defined in an Truth rule\")"
---    showHS indent r@(Sg _ _ _ _ _ _ _)
---     = chain " " ["Sg","("++showHS "" (srfps r)++")","("++showHS "" (srsig r)++")",show (srxpl r),(showHS "" (srtyp r)),show (runum r),show (r_pat r),show (srrel r)]
---    showHS indent r@(Gc _ _ _ _ _ _ _)
---     = chain " " ["Gc","("++showHS "" (grfps r)++")","("++showHS "" (grspe r)++")","("++showHS "" (consequent r)++")","["++chain "," (map (showHS "") (r_cpu r))++"]",(showHS "" (grtyp r)),show (runum r),show (r_pat r)]
---    showHS indent r = ""
+    showHS indent r   
+      = case r of
+           Ru{} -> (chain (indent ++ "            ") 
+                    ["Ru{ rrsrt = " ++ showHS "" (rrsrt r)
+                        ,", rrant = " ++ "("++showHS "" (rrant r)++")"
+                        ,", rrfps = " ++ "("++showHS "" (rrfps r)++")"
+                        ,", rrcon = " ++ "("++showHS "" (rrcon r)++")"
+                        ,", r_cpu = " ++ "["++chain "," (map (showHS "") (r_cpu r))++"]"
+                        ,", rrxpl = " ++ show(rrxpl r)
+                        ,", rrtyp = " ++ showHS "" (rrtyp r)
+                        ,", runum = " ++ show (runum r)
+                        ,", r_pat = " ++ show (r_pat r)
+                    ])++"}"
+           Sg{} -> (chain "\n           , " 
+                    ["Sg{ srfps = " ++ "("++showHS "" (srfps r)++")"
+                        ,", srsig = " ++ "("++showHS "" (srsig r)++")"
+                        ,", srxpl = " ++ show (srxpl r)
+                        ,", srtyp = " ++ "("++showHS "" (srtyp r)++")"
+                        ,", runum = " ++ show (runum r)
+                        ,", r_pat = " ++ show (r_pat r)
+                        ,", srrel = " ++ show(srrel r)
+                    ])++"}"
+           Gc{} -> (chain "\n           , " 
+                    ["Gc{ grfps = " ++ "("++showHS "" (grfps r)++")"
+                        ,", grspe = " ++ "("++showHS "" (grspe r)++")"
+                        ,", grgen = " ++ "("++showHS "" (grgen r)++")"
+                        ,", r_cpu = " ++ "["++chain "," (map (showHS "") (r_cpu r))++"]"
+                        ,", grtyp = " ++ showHS "" (grtyp r)
+                        ,", runum = " ++ show (runum r)
+                        ,", r_pat = " ++ show (r_pat r)
+                    ])++"}"
+           Fr{} -> (chain "\n           , " 
+                    ["Fr{ fraut = " ++ show (fraut r)
+                        ,", frdec = " ++ showHS "" (frdec r)
+                        ,", frcmp = " ++ "("++showHS "" (frcmp r)++")"
+                        ,", r_pat = " ++ show (r_pat r)
+                    ])++"}"
+          
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
    instance ShowHS RuleType where
      showHSname rt = error "showHSname undefined for Type 'RuleType'"
-     showHS indent Truth     = "Truth"
+     showHS indent Truth          = "Truth"
      showHS indent Equivalence    = "Equivalence"
      showHS indent Implication    = "Implication"
      showHS indent Generalization = "Generalization"
@@ -319,16 +337,23 @@ where
 
    instance ShowHS ObjectDef where
     showHSname obj = "oDef_"++haskellIdentifier (name obj)
-    showHS indent obj 
-     = "Obj "++show (name obj)++" ("++showHS "" (objpos obj)++")"++ctxStr++
-       (if null (objats obj)
-        then " []"
-        else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")++
-       (if null (objstrs obj)
-        then " []"
-        else indent++show (objstrs obj))
-     where ctxStr | length (morlist (objctx obj)) >1 = indent++"    ("++showHS (indent++"     ") (objctx obj)++indent++"    )"
-                  | otherwise               = indent++"    ("++showHS "" (objctx obj)++")"
+    showHS indent r 
+     = (chain indent 
+           ["Obj{ objnm = " ++ show(objnm r)
+                ,"objpos = " ++ "("++showHS "" (objpos r)++")"
+                ,"objctx = " ++ "("++showHS "" (objctx r)++")"
+                ,"objats = " ++ "["++chain "," (map (showHS "") (objats r))++"]"
+                ,"objstrs = " ++ show(objstrs r)
+           ])++"}"
+--     = "Obj "++show (name obj)++" ("++showHS "" (objpos obj)++")"++ctxStr++
+--       (if null (objats obj)
+--        then " []"
+--        else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")++
+--       (if null (objstrs obj)
+--        then " []"
+--        else indent++show (objstrs obj))
+--     where ctxStr | length (morlist (objctx obj)) >1 = indent++"    ("++showHS (indent++"     ") (objctx obj)++indent++"    )"
+--                  | otherwise               = indent++"    ("++showHS "" (objctx obj)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
