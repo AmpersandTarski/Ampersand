@@ -3,10 +3,9 @@ module Version (versionbanner)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. 0.8.10-261" -- the number behind the last digit is the SVN revision number.
+versionbanner = "ADL vs. 0.8.10-262" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-Word generatie verder uitgewerkt, maar ik loop tegen die @#$ loop aan. Ik denk dat die ergens in services zit.
-ShowHS verder opgeschoond. Dit kon wel eens de sleutel worden tot het opsporen van de bug.
-
+Bug uit de Equal van ConceptDef gehaald. Het is echter niet de laatste, want ik heb nog steeds een loop...
+Maar toch is dit een mooi voorbeeld van dat het nuttig is om warnings ALLEMAAL te bekijken...
 -}

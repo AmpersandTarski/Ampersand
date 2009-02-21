@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.ConceptDef 
 where
    import Adl.FilePos
@@ -15,9 +15,9 @@ where
 -- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
 -- \***********************************************************************
    instance Eq ConceptDef where
-    cd == cd' = cdnm cd == cdnm cd
+    cd == cd' = cdnm cd == cdnm cd'
    instance Show ConceptDef    
    instance Identified ConceptDef where
     name cd = cdnm cd
-    typ cd = "ConceptDef_"
+    typ _ = "ConceptDef_"
    
