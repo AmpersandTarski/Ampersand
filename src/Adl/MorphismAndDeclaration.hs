@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.MorphismAndDeclaration where
    import Adl.FilePos
    import Adl.Concept
@@ -51,26 +51,27 @@ module Adl.MorphismAndDeclaration where
    instance Eq Morphism where
  --   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
     Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
-    Mph nm _ _ (a,b) yin _ == _ = False
+    Mph _ _ _ (_,_) _ _    == _ = False
     I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
-    I _ g s yin            == _ = False
+    I _ _ _ _              == _ = False
     V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
-    V _ (a,b)              == _ = False
+    V _ (_,_)              == _ = False
     Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
-    Mp1 s c                == _ = False
+    Mp1 _ _                == _ = False
 
    instance Show Morphism where
-    showsPrec p (Mph nm pos  []  sgn yin m) = showString (nm  {- ++"("++show a++"*"++show b++")" where (a,b)=sgn -} ++if yin then "" else "~")
-    showsPrec p (Mph nm pos atts sgn yin m) = showString (nm  {- ++"["++chain "*" (map name (rd atts))++"]" -}      ++if yin then "" else "~")
-    showsPrec p (I atts g s yin)            = showString ("I"++ (if null atts then {- ++"["++name g, (if s/=g then ","++name s else "")++"]" -} "" else show atts))
-    showsPrec p (V atts (a,b))              = showString ("V"++ (if null atts then "" else show atts))
-
+    showsPrec _ m = case m of
+           Mph{} -> showString ((mphnm m) ++ if mphyin m then "" else "~")
+           I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
+           V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
+           Mp1{} -> undefined
+            
    instance Ord Morphism where
     a <= b = source a <= source b && target a <= target b
 
    instance Identified Morphism where
     name m = name (makeDeclaration m)
-    typ m = "Morphism_"
+    typ _ = "Morphism_"
 
    instance Association Morphism where
 --    source (Mph nm pos atts (a,b) _ s) = a
@@ -81,15 +82,15 @@ module Adl.MorphismAndDeclaration where
 --    target (I atts g s yin)            = if yin then g else s
 --    target (V atts (a,b))              = b
 --    target (Mp1 _ t) = t
-    sign   (Mph nm pos atts (a,b) _ s) = (a,b)
-    sign   (I atts g s yin)            = if yin then (s,g) else (g,s)
-    sign   (V atts (a,b))              = (a,b)
+    sign   (Mph _ _ _ (a,b) _ _) = (a,b)
+    sign   (I _ g s yin)            = if yin then (s,g) else (g,s)
+    sign   (V _ (a,b))              = (a,b)
     sign   (Mp1 _ s) = (s,s)
     source m = source (sign m)
     target m = target (sign m)
    instance Numbered Morphism where
     pos m@(Mph{}) = mphpos m
-    pos m         = posNone
+    pos _         = posNone
     nr m = nr (makeDeclaration m)
 
    makeDeclaration :: Morphism -> Declaration
@@ -141,18 +142,18 @@ module Adl.MorphismAndDeclaration where
    instance Eq Declaration where
       d == d' = name d==name d' && source d==source d' && target d==target d'
    instance Show Declaration where
-    showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ False)
+    showsPrec _ (Sgn nm a b props prL prM prR _ expla _ _ False)
      = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
-    showsPrec p (Sgn nm a b props prL prM prR cs expla _ _ True)
+    showsPrec _ (Sgn nm a b _ _ _ _ _ _ _ _ True)
      = showString (chain " " ["SIGNAL",nm,"ON (",name a,"*",name b,")"])
-    showsPrec p _
+    showsPrec _ _
      = showString ""
    instance Identified Declaration where
     name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
     name (Isn _ _)                      = "I"
     name (Iscompl _ _)                  = "-I"
     name (Vs _ _)                       = "V"
-    typ d = "Declaration_"
+    typ _ = "Declaration_"
 
    instance Association Declaration where
       source d = case d of
@@ -169,9 +170,9 @@ module Adl.MorphismAndDeclaration where
 
    instance Numbered Declaration where
     pos (Sgn _ _ _ _ _ _ _ _ _ p _ _) = p
-    pos d                             = posNone
+    pos _                             = posNone
     nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
-    nr d                              = 0
+    nr _                              = 0
 
    -- | Deze declaratie is de reden dat Declaration en Morphism in één module moeten zitten.
    makeMph :: Declaration -> Morphism
@@ -199,15 +200,17 @@ module Adl.MorphismAndDeclaration where
 --    contents m = contents (makeDeclaration m)
 
    instance Populated Declaration where
-    contents (Sgn _ _ _ _ _ _ _ cs _ _ _ _) = cs
-    contents (Isn g s)                      = [[o,o] | o<-conts s]
-    contents (Iscompl g s)                  = [[o,o']| o<-conts s,o'<-conts s,o/=o']
-    contents (Vs g s)                       = [[o,o']| o<-conts s,o'<-conts s]
+    contents d 
+       = case d of
+           Sgn{}     -> decpopu d
+           Isn{}     -> [[o,o] | o<-conts (despc d)]
+           Iscompl{} -> [[o,o']| o <-conts (despc d),o'<-conts (despc d),o/=o']
+           Vs{}      -> [[o,o']| o <-conts (despc d),o'<-conts (despc d)]
 
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
                   
    instance Explained Declaration where
-    explain (Sgn _ _ _ _ _ _ _ _ expla _ _ _) = expla
-    explain d                                 = ""
+    explain d@Sgn{} = decexpl d
+    explain _       = ""
 
                         

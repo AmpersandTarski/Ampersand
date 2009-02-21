@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.Pattern where
    import Adl.KeyDef
    import Adl.Rule
@@ -33,7 +33,7 @@ module Adl.Pattern where
 --   instance Show Pattern
    instance Identified Pattern where
     name pat = ptnm pat
-    typ pat = "Pattern_"
+    typ _ = "Pattern_"
 
    union :: Pattern -> Pattern -> Pattern
    union pat pat'

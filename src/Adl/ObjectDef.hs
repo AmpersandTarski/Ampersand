@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.ObjectDef where
    import Adl.FilePos
    import Adl.Expression
@@ -14,16 +14,16 @@ module Adl.ObjectDef where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
 -- \***********************************************************************
---   instance Eq ObjectDef where  -- WAAROM :TODO Stef, deze Eq mistte zijn where clause. Wil jij dit valideren? 
---      obj == obj' = name obj == name obj'
+
    instance Show ObjectDef
    instance Identified ObjectDef where
     name obj = objnm obj
-    typ obj = "ObjectDef_"
+    typ _ = "ObjectDef_"
    instance Numbered ObjectDef where
     pos obj = objpos obj
 
-   objdefNew e = Obj "" posNone e [] []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
+   objdefNew :: Expression -> ObjectDef
+   objdefNew e' = Obj "" posNone e' [] []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
 
 
    

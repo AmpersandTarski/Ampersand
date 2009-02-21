@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.Gen where
    import Adl.FilePos
    import Adl.Concept
@@ -18,6 +18,6 @@ module Adl.Gen where
                  
    instance Show Gen where
     -- This show is used in error messages. It should therefore not display the term's type
-    showsPrec p (G pos g s) = showString ("GEN "++show s++" ISA "++show g)
+    showsPrec _ (G _ g s) = showString ("GEN "++show s++" ISA "++show g)
    
                       

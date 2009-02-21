@@ -229,7 +229,7 @@ module Classes.Morphic where
     | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
     | ruleType rule==Equivalence = Fi [ Fu [antecedent rule, Cp (consequent rule)]
                               , Fu [Cp (antecedent rule), consequent rule]]
-    | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++misbruiktShowHS "" rule)
+    | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++show rule)
 
    isImin :: Expression -> Bool
    isImin (Fd ts)  = and [isImin t| t<-ts]

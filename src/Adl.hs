@@ -119,15 +119,15 @@ where
     contents (Tc f)        = contents f
     contents f@(F ts)
      | idsOnly ts
-        = if not (source f `order` target f) then error ("(module CC_aux) Fatal: no order in "++misbruiktShowHS "" f) else
+        = if not (source f `order` target f) then error ("(module CC_aux) Fatal: no order in "++show f) else
                              [[e,e]|e<-os]
      | otherwise
-        = if null css then error ("(module CC_aux) Fatal: no terms in F "++misbruiktShowHS "" ts) else
+        = if null css then error ("(module CC_aux) Fatal: no terms in F "++show ts) else
                              foldr1 join css
                              where os = conts (source f `lub` target f)
                                    css = [contents t|t<-ts, not (idsOnly t)]
     contents f@(Fd ts)
-      = if null ts then error ("(module CC_aux) Fatal: no terms in Fd "++misbruiktShowHS "" ts) else joinD ts
+      = if null ts then error ("(module CC_aux) Fatal: no terms in Fd "++show ts) else joinD ts
     contents (Fu fs) = if null fs then [] else
                        (foldr1 uni .map contents) fs
     contents (Fi fs) = if null fs then [] else

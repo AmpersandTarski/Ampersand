@@ -1,11 +1,11 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.Rule where
    import Adl.FilePos
    import Adl.Concept
    import Adl.MorphismAndDeclaration
    import Adl.Expression
    import CommonClasses(Identified(name,typ)
-                        , ABoolAlg(glb,lub,order)
+                        , ABoolAlg(lub,order)
                         , Explained(explain))   
    type Rules = [Rule]
    data Rule =
@@ -53,48 +53,36 @@ module Adl.Rule where
    data AutType = Clos0 | Clos1 deriving (Eq,Show)
         
    instance Numbered Rule where
-    pos (Ru _ _ p _ _ _ _ _ _) = p
-    pos (Sg p _ _ _ _ _ _)     = p
-    pos (Gc p _ _ _ _ _ _)     = p
-    pos r = posNone
-    nr  (Ru _ _ _ _ _ _ _ n _) = n
-    nr  (Sg _ _ _ _ n _ _)     = n
-    nr  (Gc _ _ _ _ _ n _)     = n
-    nr  r = 0
+    pos r = case r of
+              Ru{}  ->  rrfps r
+              Sg{}  ->  srfps r
+              Gc{}  ->  grfps r
+              Fr{}  ->  posNone
+    nr r = case r of
+              Ru{}  ->  runum r
+              Sg{}  ->  runum r
+              Gc{}  ->  runum r
+              Fr{}  ->  0
 
-
---   instance Eq Rule where        -- WAAROM :TODO Stef, deze Eq mistte zijn where clause. Wil jij dit valideren? 
---     r == r' = case ( r, r') of
---       (Ru{} , Ru{})  -> r_pat r == r_pat r' &&
---                         runum r == runum r'  
---       (Sg{} , Sg{})  -> r_pat r == r_pat r' &&
---                         runum r == runum r'
---       (Gc{} , Gc{})  -> r_pat r == r_pat r' &&
---                         runum r == runum r'
---       (Fr{} , Fr{})  -> r_pat r == r_pat r' &&
---                         frcmp r == frcmp r' &&
---                         frdec r == frdec r' &&
---                         fraut r == fraut r'
---       ( _   , _   )  -> False
---   instance Show Rule 
       
    instance Identified Rule where
     name r = "Rule"++show (runum r)
-    typ r = "Rule_"
+    typ _ = "Rule_"
+    
    -- | Han, wat hieronder gebeurt vind ik raar: twee varianten waar hetzelfde uitkomt (in source en target). WAAROM? Welke bedoeling heb je daarmee? Geen? TODO: vereenvoudigen.
    instance Association Rule where
-    source r | ruleType r==Truth = fst (sign r)
-             | otherwise              = fst (sign r)
-    target r | ruleType r==Truth = snd (sign r)
-             | otherwise              = snd (sign r)
+    source r  = fst (sign r)
+    target r  = snd (sign r)
     sign r   | ruleType r==Truth = sign (consequent r)
-             | otherwise              = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
-                                            error ("(module Rule) Fatal: incompatible signs in "++misbruiktShowHS "" r)
+             | otherwise         = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
+                                            error ("(module Rule) Fatal: incompatible signs in "++show r)
 
    instance Explained Rule where
-    explain (Ru _ _ _ _ _ expla _ _ _) = expla
-    explain (Sg _ _ expla _ _ _ _)     = expla
-    explain r                          = ""
+    explain r = case r of
+                   Ru{}  ->  rrxpl r
+                   Sg{}  ->  srxpl r
+                   Gc{}  ->  ""
+                   Fr{}  ->  ""
 
    ruleType :: Rule -> RuleType
    ruleType r = case r of 
@@ -105,7 +93,7 @@ module Adl.Rule where
 
    antecedent :: Rule -> Expression
    antecedent r = case r of
-                   Ru{rrsrt = Truth} -> error ("(Module ADLdef:) illegal call to antecedent of rule "++show r)
+                   Ru{rrsrt = Truth} -> error ("(Module Adl.Rule:) illegal call to antecedent of rule "++show r)
                    Ru{} -> rrant r
                    Sg{} -> antecedent (srsig r)
                    Gc{} -> Tm (grspe r)

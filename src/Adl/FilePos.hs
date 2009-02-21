@@ -1,4 +1,6 @@
-
+-- Deze module kan niet warningvrij worden gemaakt, omdat er twee orphan instances
+-- in voorkomen. (Zie de discussie op http://lukepalmer.wordpress.com/2009/01/25/a-world-without-orphans/)
+{- # OPTIONS_GHC -Wall # -}
 module Adl.FilePos 
 where
    import UU_Scanner (Pos(Pos),noPos)
@@ -17,7 +19,7 @@ where
          ++ ", column " ++ show c
 
    instance Show FilePos where
-     show (FilePos (fn,Pos l c,sym))
+     show (FilePos (fn,Pos l _,_))
        = "line " ++ show l
          ++ ", file " ++ show fn
      
@@ -27,7 +29,7 @@ where
     nr x = nr (pos x)
 
    instance Numbered FilePos where
-    nr (FilePos (fn,Pos l c,sym)) = l
+    nr (FilePos (_,Pos l _,_)) = l
     pos p = p
 
      

@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.Context where
    import Adl.Concept
    import Adl.Pattern
@@ -50,6 +50,6 @@ module Adl.Context where
 
    instance Identified Context where
     name ctx = ctxnm ctx
-    typ ctx = "Context_"
+    typ _ = "Context_"
             
             

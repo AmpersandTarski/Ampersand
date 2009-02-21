@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Adl.KeyDef where
    import Adl.FilePos
    import Adl.Concept
@@ -23,12 +23,12 @@ module Adl.KeyDef where
    instance Show KeyDef
    instance Identified KeyDef where
     name kd = kdlbl kd
-    typ kd = "KeyDef_"
+    typ _ = "KeyDef_"
 
    class Key a where
     keys :: a->[(Concept,String,[ObjectDef])]
    instance Key KeyDef where
-    keys (Kd pos lbl ctx ats) = [(target ctx,lbl,ats)]
+    keys (Kd _ lbl ctx ats) = [(target ctx,lbl,ats)]
 
 
                     
