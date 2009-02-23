@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Classes.Object where
    import Adl.Concept
    import Adl.ObjectDef
@@ -15,11 +15,11 @@ module Classes.Object where
     extends _ = []                          -- empty unless specified otherwise.
 
    instance Object Context where
-    concept _    = cptAnything
-    attributes ctx = ctxos ctx
-    ctx        _ = error ("Cannot evaluate the context expression of the current context (yet)")
-    populations  ctx = ctxpops ctx
-    extends ctx = ctxon ctx
+    concept _      = cptAnything
+    attributes c   = ctxos c
+    ctx        _   = error ("Cannot evaluate the context expression of the current context (yet)")
+    populations  c = ctxpops c
+    extends c      = ctxon c
 
    instance Object ObjectDef where
     concept obj = target (objctx obj)

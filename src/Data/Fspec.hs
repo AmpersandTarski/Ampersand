@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 {- | The intentions behind Fspc (SJ 30 dec 2008):
 Generation of functional specifications is the core functionality of ADL.
 All items in a specification are generated into the following data structure, Fspc.

@@ -32,7 +32,8 @@ doGenHaskell fSpec flags
    where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
          haskellCode =
-                ("module Main where"
+                ("{-# OPTIONS_GHC -Wall #-}"
+             ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
              ++"\n  import Classification"
              ++"\n  import Typology"
@@ -40,9 +41,11 @@ doGenHaskell fSpec flags
              ++"\n  import ShowHS (showHS)"
              ++"\n  import Data.Fspec"
              ++"\n"
+             ++"\n  main :: IO ()"
              ++"\n  main = putStr (showHS \"\\n  \" fSpec_"++baseName flags++")"
-             ++"\n\n"
-             ++"  fSpec_"++baseName flags++"\n   = "++showHS "\n     " fSpec
+             ++"\n"
+             ++"\n  fSpec_"++baseName flags++" :: Fspc"
+             ++"\n  fSpec_"++baseName flags++"\n   = "++showHS "\n     " fSpec
                 ) 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =

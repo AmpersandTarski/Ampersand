@@ -1,4 +1,3 @@
-
 module Adl ( Architecture(..)
            , Context(..),Contexts
            , Pattern(..),Patterns,union
