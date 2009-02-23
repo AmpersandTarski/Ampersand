@@ -111,7 +111,7 @@ module Adl.Rule where
                    Ru{} -> r_cpu r
                    Sg{} -> [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
                    Gc{} -> r_cpu r
-                   Fr{} -> error (" [Tm (makeMph (frdec r))] genereerdt wellicht een loop.")
+                   Fr{} -> error (" [Tm (makeMph (frdec r))] genereert wellicht een loop.")
 
    uncomp :: Rule -> Rule
    uncomp r = case r of
@@ -120,10 +120,4 @@ module Adl.Rule where
                    Gc{} -> r{r_cpu = []}
                    Fr{} -> r
 
-   signalen :: Rules -> Rules      -- Deze functie is toegevoegd vanwege gebruik in 'Morphical'.  
-   signalen  rls = [r| r<-rls, isSignaal r]
-
-   isSignaal :: Rule -> Bool
-   isSignaal r = case r of
-                  Sg{} -> True
-                  _    -> False            
+                       

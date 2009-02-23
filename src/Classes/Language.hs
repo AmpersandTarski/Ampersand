@@ -1,7 +1,7 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Classes.Language where
    import Classes.Morphical
-   import Classes.Morphic
+   import Classes.Morphic()
    import Adl.Context
    import Adl.Pattern
    import Adl.Rule
@@ -20,21 +20,21 @@ module Classes.Language where
 
    class Morphical a => Language a where
      declaredRules  :: a -> [Rule] -- all rules in the language that are specified as a rule in the ADL-model, including the GLUE rules, but excluding the multiplicity rules (multRules).
-     declaredRules x = []
+     declaredRules _ = []
      multRules      :: a -> [Rule] -- all rules in the language that are specified as declaration properties.
      multRules       = multRules.declarations
      rules          :: a -> [Rule] -- all rules in the language that hold within the language
      rules x         = declaredRules x++multRules x++specs x
      signals        :: a -> [Rule] -- all SIGNAL rules in the language.
-     signals x       = []
+     signals _       = []
      specs          :: a -> [Rule] -- all GLUE rules in the language.
-     specs x         = []
+     specs _         = []
      patterns       :: a -> [Pattern]
-     patterns x      = []
+     patterns _      = []
      objectdefs     :: a -> [ObjectDef]
-     objectdefs x    = []
+     objectdefs _    = []
      isa            :: a -> Inheritance Concept
-     isa x           = empty
+     isa _           = empty
 
    instance Language a => Language [a] where
     declaredRules xs = (concat. map declaredRules) xs
@@ -74,47 +74,82 @@ module Classes.Language where
            , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
               error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
       where h Sym = Ru Equivalence (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
-            h Asy = Ru Implication (Fi [F [Tm r], F [Tm r']]) (pos d) id [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
+            h Asy = Ru Implication (Fi [F [Tm r], F [Tm r']]) (pos d) id' [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
             h Trn = Ru Implication (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
-            h Rfx = Ru Implication id (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
-            h Uni = Ru Implication (F [Tm r',Tm r]) (pos d) id'          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
-            h Sur = Ru Implication id' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
-            h Inj = Ru Implication (F [Tm r,Tm r']) (pos d) id           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
-            h Tot = Ru Implication id (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
+            h Rfx = Ru Implication id' (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
+            h Uni = Ru Implication (F [Tm r',Tm r]) (pos d) id''          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
+            h Sur = Ru Implication id'' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
+            h Inj = Ru Implication (F [Tm r,Tm r']) (pos d) id'           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
+            h Tot = Ru Implication id' (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
+            h Aut = error("!Fatal (module Language): multRules not defined for property 'Aut'")
             sgn   = (source d,source d)
             r     = Mph (name d)                (pos d) [] (source d,target d) True d
             r'    = flp (r ) 
-            r'' t = Mph (t++"["++(name d)++"]") (pos d) [] (source d,target d) True d
-            id    = F [Tm (I [source d] (source d) (source d) True)]
-            id'    = F [Tm (I [target d] (target d) (target d) True)]
-
+ --           r'' t = Mph (t++"["++(name d)++"]") (pos d) [] (source d,target d) True d
+            id'    = F [Tm (I [source d] (source d) (source d) True)]
+            id''    = F [Tm (I [target d] (target d) (target d) True)]
+ 
 
    instance Language Pattern where
-    declaredRules pat = [r|r@(Ru c antc pos cons cpu expla sgn nr pn)<-ptrls pat]
-    rules pat         = []
-    signals pat       = [r|r@(Sg p rule expla sgn nr pn signal)<-ptrls pat]
-    specs pat         = [r|r@(Gc pos m expr cpu sgn nr pn)<-ptrls pat]
+    declaredRules pat = [r|r@(Ru _ _ _ _ _ _ _ _ _)<-ptrls pat]
+    rules _           = []
+    signals pat       = [r|r@(Sg _ _ _ _ _ _ _)<-ptrls pat]
+    specs pat         = [r|r@(Gc _ _ _ _ _ _ _)<-ptrls pat]
     patterns pat      = [pat]
-    isa pat           = Isa ts (singles>-[e| G pos g s<-ptgns pat,e<-[g,s]])
+    isa pat           = Isa ts (singles>-[e'| G _ g s<-ptgns pat,e'<-[g,s]])
                         where Isa tuples singles = isa (ptdcs pat)
-                              ts = clear (tuples++[(g,s)| G pos g s<-ptgns pat])
+                              ts = clear (tuples++[(g,s)| G _ g s<-ptgns pat])
 
 
    instance Language Rule where
-    declaredRules r@(Gc pos m expr cpu sgn nr pn)
-     = [Ru Equivalence (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
-    declaredRules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
-    declaredRules   r                        = []
-    rules r                                  = []
-    signals r@(Sg _ _ _ _ _ _ _)             = [r]
-    signals r                                = []
-    specs   r@(Gc _ _ _ _ _ _ _)             = [r]
-    specs   r                                = []
-    patterns r                               = [Pat "" [r] [] [] [] []]
-    isa (Gc _ m expr _ _ _ _)
-      = Isa tuples (concs expr>-[e|(a,b)<-tuples,e<-[a,b]])
-        where tuples = clear [(source expr,source m),(target expr,target m)]
-    isa r = empty
+      declaredRules r = case r of 
+                        Ru{} -> [r]
+                        Sg{} -> []
+                        Gc{} -> [Ru {rrsrt = Equivalence
+                                    ,rrant = F [Tm (grspe r)]
+                                    ,rrfps = grfps r
+                                    ,rrcon = grgen r
+                                    ,r_cpu = r_cpu r
+                                    ,rrxpl = name r++" is implemented using "++enumerate (map name (mors (grgen r)))
+                                    ,rrtyp = grtyp r
+                                    ,runum = runum r
+                                    ,r_pat = r_pat r
+                                   }]
+                        Fr{} -> []
+                         
+--    Was eerst: 
+--    declaredRules r@(Gc pos m expr cpu sgn nr pn)
+--     = [Ru Equivalence (F [Tm m]) pos expr cpu (name m++" is implemented using "++enumerate (map name (mors expr))) sgn nr pn]
+--    declaredRules   r@(Ru _ _ _ _ _ _ _ _ _) = [r]
+--    declaredRules   r                        = []
+      rules _     = []
 
-   clear abs = rd [(a,b)| (a,b)<-abs, a/=b]
+      signals r = case r of
+                    Ru{} -> []
+                    Sg{} -> [r]
+                    Gc{} -> []
+                    Fr{} -> [] 
+
+      specs r = case r of
+                    Ru{} -> []
+                    Sg{} -> []
+                    Gc{} -> [r]
+                    Fr{} -> [] 
+      patterns r = [Pat{ ptnm  = ""
+                       , ptrls = [r]
+                       , ptgns = []
+                       , ptdcs = []
+                       , ptcds = []
+                       , ptkds = []}]
+      isa r = case r of
+                    Ru{} -> empty
+                    Sg{} -> empty
+                    Gc{} -> Isa tuples (concs (grgen r)>-[e'|(a,b)<-tuples,e'<-[a,b]])
+                    Fr{} -> empty 
+                  where tuples = clear [(source(grgen r),source(grspe r))
+                                       ,(target(grgen r),target(grspe r))
+                                       ]  
+
+   clear :: [(Concept,Concept)] -> [(Concept,Concept)]
+   clear abs' = rd [(a,b)| (a,b)<-abs', a/=b]
 

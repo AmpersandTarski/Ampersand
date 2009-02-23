@@ -1,18 +1,13 @@
-
 module Classes.Morphic where
    import Adl.Concept
    import Adl.Prop
-   import Adl.ConceptDef
-   import Adl.Context
    import Adl.MorphismAndDeclaration
-   import Adl.Gen
    import Adl.Expression
-   import Adl.ObjectDef
-   import Adl.KeyDef
-   import Adl.Population
-   import Adl.Pattern
-   import Adl.Rule
+   import Adl.Rule (Rule(..),RuleType(..),ruleType,consequent,antecedent)
    import Collection (Collection (uni,isc,(>-),empty,rd))
+
+   class Association a => MorphicId a where
+    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
 
    instance MorphicId Concept where
     isIdent c = True    -- > tells whether the argument is equivalent to I
@@ -204,10 +199,26 @@ module Classes.Morphic where
 
    instance Morphic Rule where
     multiplicities r           = []
-    isMph r  | ruleType r==Truth = isMph (consequent r)
-             | otherwise       = False
-    flp r@(Ru Truth antc pos expr cpu expla (a,b) nr pn) = Ru Truth (error ("(Module CC_aux:) illegal call to antecedent in flp ("++show r++")")) pos (flp expr) cpu expla (b,a) nr pn
-    flp (Ru c antc pos cons cpu expla (a,b) nr pn)   = Ru c (flp antc) pos (flp cons) cpu expla (b,a) nr pn
+    isMph r = case r of
+                Ru{rrsrt=Truth} -> isMph (rrcon r)
+                Ru{}            -> False
+                Sg{}            -> isMph (srsig r)
+                Gc{}            -> False
+                Fr{}            -> False
+                
+--    isMph r  | ruleType r==Truth = isMph (consequent r)
+--             | otherwise       = False
+    flp r = case r of
+                Ru{} -> r{rrant = if rrsrt r == Truth
+                                  then error ("(Module Classes.Morphic:) illegal call to antecedent in flp ("++show r++")")
+                                  else flp (rrant r)
+                         ,rrcon = flp (rrcon r)
+                         ,rrtyp = (target (rrtyp r),source (rrtyp r))
+                         }
+                Sg{}            -> undefined
+                Gc{}            -> undefined
+                Fr{}            -> undefined
+              where typeflip (a,b) = (b,a)
   --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS "" r)
     typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
                | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
@@ -217,7 +228,9 @@ module Classes.Morphic where
              | otherwise        = isTrue (consequent r) || isFalse (consequent r)
     isFalse r| ruleType r==Truth  = isFalse (consequent r)
              | otherwise        = isFalse (consequent r) && isTrue (consequent r)
-    isSignal r = isSignaal r
+    isSignal r = case r of
+                   Sg{} -> True
+                   _    -> False 
     isNot r  | ruleType r==Truth  = isNot (consequent r)
              | otherwise        = False  -- TODO: check correctness!
 

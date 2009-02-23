@@ -89,8 +89,6 @@ module Adl.Concept where
      source (src, _ ) = src
      target (_ , tgt) = tgt
      
-   class Association a => MorphicId a where
-    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     
    class Association a => Morphic a where
     multiplicities :: a -> [Prop]

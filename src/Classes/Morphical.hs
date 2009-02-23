@@ -16,6 +16,7 @@ module Classes.Morphical where
    import Collection  (rd,uni)
    import Typology
    import Classes.Object
+   import Classes.Morphic
 
    class Morphical a where
     concs        :: a -> Concepts                  -- the set of all concepts used in data structure a
@@ -198,7 +199,7 @@ module Classes.Morphical where
     mors         pat = mors (ptrls pat) `uni` mors (ptkds pat)
     morlist      pat = morlist (ptrls pat)++morlist (ptkds pat)
     declarations pat = ptdcs pat
-    genE         pat = genE (ptdcs pat++declarations (signalen (ptrls pat)))
+    genE         pat = genE (ptdcs pat++declarations [r| r<-(ptrls pat),isSignal r ])  
     closExprs    pat = closExprs (ptrls pat)
 
    instance Morphical Rule where
