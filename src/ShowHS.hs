@@ -1,12 +1,12 @@
+{-# OPTIONS_GHC -Wall #-}
 module ShowHS (showHS,ShowHS()) -- TODO: ShowHS() mag eigenlijk niet meer ontsnappen uit deze module, maar wordt nu nog ergens misbruikt...
 where
 
    import Typology
    import FspecDef
    import Adl
-   import Adl.Rule(ruleType, antecedent,consequent)
-   import Collection ( (>-),uni )
-   import CommonClasses (explain )             
+--   import Collection ( (>-),uni )
+--   import CommonClasses (explain )             
    import UU_Scanner (Pos(Pos))
    import ShowADL
 
@@ -39,17 +39,18 @@ where
          = (chain (indent ++"    ") 
             ["Fspc{ fsfsid = " ++ showHS " " (fsid fspec)
 --                  ,", themes   = " ++ "["++chain "," (map (showHS "") (themes fspec))++"]" 
-                  ,", themes = []"
+                  ,", themes = [] -- NOG UIT TE WERKEN IN SHOWHS (Genereert nog een loop... 8-(("
+                  ,", datasets = "++ "[ "++chain (indent ++"                 , ") (map showHSname (datasets fspec))++indent++"                 "++"]" 
 --                  ,", datasets = " ++ "["++chain "," (map (showHS "") (datasets fspec))++"]"
-                  ,", datasets = []"
+--                  ,", datasets = [] -- NOG UIT TE WERKEN IN SHOWHS"
 --                  ,", serviceS = " ++ "["++chain "," (map (showHS "") (serviceS fspec))++"]"
-                  ,", serviceS = []"
+                  ,", serviceS = [] -- NOG UIT TE WERKEN IN SHOWHS"
 --                  ,", serviceG = " ++ "["++chain "," (map (showHS "") (serviceG fspec))++"]"
-                  ,", serviceG = []"
+                  ,", serviceG = [] -- NOG UIT TE WERKEN IN SHOWHS"
 --                  ,", services = " ++ "["++chain "," (map (showHS "") (services fspec))++"]"
-                  ,", services = []"
-                  ,", vrules   = " ++ "["++chain (indent ++"                 ,") (map (showHS (indent ++ "        ")) (vrules fspec))++"]"
-                  ,", vrels    = " ++ "["++chain "," (map (showHS "") (vrels fspec))++"]"
+                  ,", services = [] -- NOG UIT TE WERKEN IN SHOWHS"
+                  ,", vrules   = " ++ "[ "++chain (indent ++"                 , ") (map showHSname (vrules fspec))++indent++"                 "++"]"
+                  ,", vrels    = " ++ "[ "++chain (indent ++"                 , ") (map showHSname (vrels  fspec))++indent++"                 "++"]"
                   ,", fsisa = isa'"
                   ,"}" 
                     ]) ++   
@@ -73,22 +74,22 @@ where
 
        indent++"where"++
        "-- ##9## \n"++
-       indent++" isa' = "++ showHS (indent ++ "       ") (fsisa fspec)++
+       indent++" isa' = "++ showHS (indent ++ "        ") (fsisa fspec)++
        "-- ##10## \n"++
        indent++" gE = genEq (typology isa')"++
 --        "\n -- ***THEMES***: "++
 --   --    (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
---        "\n -- ***DATASETS***: "++
---       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
+        "\n -- ***DATASETS***: "++
+       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
 --        "\n -- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++
 --       (if null 
 --            (uni (serviceS fspec)  (serviceG fspec)) then "" 
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
---        "\n -- ***RULES***: "++
---       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
+        "\n -- ***Declarations of RULES***: "++
+       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
 -- 
---        "\n -- ***DECLARATIONS OF RELATIONS***: "++
+        "\n -- ***Declarations OF RELATIONS***: "++
        (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
 --        "\n -- ***PATTERNS***: "++
 ----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
@@ -100,7 +101,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Ftheme where
-    showHSname ftheme = "ZIT HIER DE FOUT?? \n" -- typ ftheme ++ "_" ++ showHSname (fsid ftheme) --showHS "" (pfixFSid "f_Theeeeeeeem_" (fsid ftheme))
+    showHSname ftheme = typ ftheme ++ "_" ++ showHSname (fsid ftheme)
     showHS indent ftheme
      = "Tspc ("++showHS "" (fsid ftheme)++")"
               ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-units(ftheme)]++indent++"     ]"
@@ -115,7 +116,7 @@ where
     showHS indent funit
      = "Uspc "++showHS "" (fsid funit)
         ++" ("++showHSname (pattern funit)++" gE)"
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") v| v<-viewDefs(funit)]++indent++"     ]"
+       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") v'| v'<-viewDefs(funit)]++indent++"     ]"
        ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
 
      
@@ -146,12 +147,12 @@ where
     showHSname fvd = error ("(module FspecDef) should not showHSname the FViewDef (Vdef): "++showHS "" fvd)
     showHS indent fvd
       = "Vdef ("++ showHS indent (vdobjdef fvd)++")" 
-          ++indent++"     [ "++chain (indent++"     ") [showHS (indent++"       ") m| m<-vdmorphs fvd]++indent++"     ]"
+          ++indent++"     [ "++chain (indent++"     ") [showHS (indent++"       ") m'| m'<-vdmorphs fvd]++indent++"     ]"
           ++indent++"     [ "++chain (indent++"     ") [showtuple (indent++"       ") tup| tup<-vdExprRules fvd]++indent++"     ]"
         where
           showtuple :: String -> (Expression,Rule) -> String
-          showtuple indent (expr,rule) = "( "++ showHS (indent++"  ") expr
-                               ++indent++", "++ showHS (indent++"  ") rule
+          showtuple indent' (expr,rule) = "( "++ showHS (indent'++"  ") expr
+                               ++indent'++", "++ showHS (indent'++"  ") rule
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
@@ -173,17 +174,17 @@ where
 -- \***********************************************************************
 
    instance ShowHS ParamSpec where
-    showHSname a@(Aspc fid typ) = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
-    showHS indent (Aspc fid typ)
-     = "Aspc "++showHS "" fid++" "++show typ
+    showHSname a = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
+    showHS _ (Aspc fid typ')
+     = "Aspc "++showHS "" fid++" "++show typ'
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
 -- \***********************************************************************
 
    instance ShowHS FSid where
-    showHSname a@(FS_id nm ) = haskellIdentifier nm 
-    showHS indent (FS_id nm) 
+    showHSname (FS_id nm ) = haskellIdentifier nm 
+    showHS _ (FS_id nm) 
       = "(FS_id " ++ show nm ++ ")"
 --    showHS indent NoName = "NoName"
 
@@ -265,7 +266,7 @@ where
     showHSname r = "rule"++show (runum r)
     showHS indent r   
       = case r of
-           Ru{} -> (chain (indent ++ "            ") 
+           Ru{} -> (chain newIndent 
                     ["Ru{ rrsrt = " ++ showHS "" (rrsrt r)
                         ,", rrant = " ++ "("++showHS "" (rrant r)++")"
                         ,", rrfps = " ++ "("++showHS "" (rrfps r)++")"
@@ -276,7 +277,7 @@ where
                         ,", runum = " ++ show (runum r)
                         ,", r_pat = " ++ show (r_pat r)
                     ])++"}"
-           Sg{} -> (chain "\n           , " 
+           Sg{} -> (chain newIndent
                     ["Sg{ srfps = " ++ "("++showHS "" (srfps r)++")"
                         ,", srsig = " ++ "("++showHS "" (srsig r)++")"
                         ,", srxpl = " ++ show (srxpl r)
@@ -285,7 +286,7 @@ where
                         ,", r_pat = " ++ show (r_pat r)
                         ,", srrel = " ++ show(srrel r)
                     ])++"}"
-           Gc{} -> (chain "\n           , " 
+           Gc{} -> (chain newIndent
                     ["Gc{ grfps = " ++ "("++showHS "" (grfps r)++")"
                         ,", grspe = " ++ "("++showHS "" (grspe r)++")"
                         ,", grgen = " ++ "("++showHS "" (grgen r)++")"
@@ -294,23 +295,23 @@ where
                         ,", runum = " ++ show (runum r)
                         ,", r_pat = " ++ show (r_pat r)
                     ])++"}"
-           Fr{} -> (chain "\n           , " 
+           Fr{} -> (chain newIndent
                     ["Fr{ fraut = " ++ show (fraut r)
                         ,", frdec = " ++ showHS "" (frdec r)
                         ,", frcmp = " ++ "("++showHS "" (frcmp r)++")"
                         ,", r_pat = " ++ show (r_pat r)
                     ])++"}"
-          
+         where newIndent = indent ++ "  " 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
    instance ShowHS RuleType where
-     showHSname rt = error "showHSname undefined for Type 'RuleType'"
-     showHS indent Truth          = "Truth"
-     showHS indent Equivalence    = "Equivalence"
-     showHS indent Implication    = "Implication"
-     showHS indent Generalization = "Generalization"
-     showHS indent Automatic      = "Automatic"
+     showHSname _ = error "showHSname undefined for Type 'RuleType'"
+     showHS _ Truth          = "Truth"
+     showHS _ Equivalence    = "Equivalence"
+     showHS _ Implication    = "Implication"
+     showHS _ Generalization = "Generalization"
+     showHS _ Automatic      = "Automatic"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: KeyDef                        ***
@@ -318,18 +319,19 @@ where
 
    instance ShowHS KeyDef where
     showHSname kd = "kDef_"++haskellIdentifier (name kd)
-    showHS indent kd@(Kd pos lbl ctx ats)
-     = "Kd ("++showHS "" pos++") "++show lbl++" ("++showHS "" ctx++")"
-       ++indent++"[ "++chain (indent++", ") [showHS (indent++"  ") a|a<-ats]++indent++"]"
+    showHS indent kd
+     = "Kd ("++showHS "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS "" (kdctx kd)++")"
+       ++indent++"[ "++chain (indent++", ") [showHS (indent++"  ") a|a<-(kdats kd)]++indent++"]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Population                    ***
 -- \***********************************************************************
 
    instance ShowHS Population where
-    showHSname (Popu m ps) = "pop_"++haskellIdentifier (name m++name (source m)++name (target m))
-    showHS indent p@(Popu m ps)
-     = "Popu ("++showHS "" m++")"++indent++"     [ "++chain (indent++"     , ") (map show ps)++indent++"     ]"
+    showHSname pop = "pop_"++haskellIdentifier (name mph++name (source mph)++name (target mph))
+        where mph = popm pop
+    showHS indent pop
+     = "Popu ("++showHS "" (popm pop)++")"++indent++"     [ "++chain (indent++"     , ") (map show (popps pop))++indent++"     ]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
@@ -338,35 +340,29 @@ where
    instance ShowHS ObjectDef where
     showHSname obj = "oDef_"++haskellIdentifier (name obj)
     showHS indent r 
-     = (chain indent 
+     = (chain (indent++"   ") 
            ["Obj{ objnm = " ++ show(objnm r)
-                ,"objpos = " ++ "("++showHS "" (objpos r)++")"
-                ,"objctx = " ++ "("++showHS "" (objctx r)++")"
-                ,"objats = " ++ "["++chain "," (map (showHS "") (objats r))++"]"
-                ,"objstrs = " ++ show(objstrs r)
+                ,", objpos = " ++ "("++showHS "" (objpos r)++")"
+                ,", objctx = " ++ "("++showHS "" (objctx r)++")"
+                ,", objats = " ++ "["++chain (indent ++ "              ,")
+                                             (map (showHS (indent ++"               "))
+                                                  (objats r))
+                                ++"]"
+                ,", objstrs = " ++ show(objstrs r)
            ])++"}"
---     = "Obj "++show (name obj)++" ("++showHS "" (objpos obj)++")"++ctxStr++
---       (if null (objats obj)
---        then " []"
---        else indent++"    [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (objats obj))++indent++"    ]")++
---       (if null (objstrs obj)
---        then " []"
---        else indent++show (objstrs obj))
---     where ctxStr | length (morlist (objctx obj)) >1 = indent++"    ("++showHS (indent++"     ") (objctx obj)++indent++"    )"
---                  | otherwise               = indent++"    ("++showHS "" (objctx obj)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
 -- \***********************************************************************
 
    instance ShowHS Expression where
-    showHSname e = error ("(module CC_aux) an expression is anonymous with respect to showHS. Detected at: "++ showADL e)
-    showHS indent (Tm m)   = "Tm ("++showHS "" m++") "
+    showHSname expr = error ("(module ShowHS) an expression is anonymous with respect to showHS. Detected at: "++ showADL expr)
+    showHS _ (Tm m')   = "Tm ("++showHS "" m'++") "
     showHS indent (Tc f)   = showHS indent f
-    showHS indent (F [])   = "F [] <Id>"
-    showHS indent (Fd [])  = "Fd [] <nId>"
-    showHS indent (Fu [])  = "Fu [] <False>"
-    showHS indent (Fi [])  = "Fi [] <True>"
+    showHS _ (F [])   = "F [] <Id>"
+    showHS _ (Fd [])  = "Fd [] <nId>"
+    showHS _ (Fu [])  = "Fu [] <False>"
+    showHS _ (Fi [])  = "Fi [] <True>"
     showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
     showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
     showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
@@ -375,33 +371,36 @@ where
     showHS indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
     showHS indent (Fi [f]) = "Fi ["++showHS (indent++"    ") f++"]"
     showHS indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS (indent++"     ") f| f<-fs]++indent++"   ]"
-    showHS indent (K0 e)   = "K0 ("++showHS (indent++"    ") e++") "
-    showHS indent (K1 e)   = "K1 ("++showHS (indent++"    ") e++") "
-    showHS indent (Cp e)   = "Cp ("++showHS (indent++"    ") e++") "
+    showHS indent (K0 e')   = "K0 ("++showHS (indent++"    ") e'++") "
+    showHS indent (K1 e')   = "K1 ("++showHS (indent++"    ") e'++") "
+    showHS indent (Cp e')   = "Cp ("++showHS (indent++"    ") e'++") "
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
 
    instance ShowHS Gen where
-    showHSname g = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
-    showHS indent (G pos g s)  = "G ("++showHS "" pos++") ("++showHS "" s++") ("++showHS "" g++")"
+    showHSname g = error ("(module ShowHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
+    showHS _ gen = "G ("++showHS "" (genfp gen)++") ("++showHS "" (gengen gen)++") ("++showHS "" (genspc gen)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Morphism                      ***
 -- \***********************************************************************
 
    instance ShowHS Morphism where
-    showHSname m = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL m++"). A morphism gets no definition in Haskell code.")
-    showHS indent (Mph nm pos atts sgn@(a,b) yin d)
-     = "Mph "++show nm++" ("++showHS "" pos++") "++showL(map (showHS "") atts)++" "++(showHS "" sgn)++" "++show yin++" "++showHSname d
-    showHS indent (I atts g s yin)
-     = "I"++" "++showL(map (showHS "") atts)++" ("++showHS "" g++") ("++showHS "" s++") "++show yin
-    showHS indent (V atts sgn)
-     = "V"++" "++showL(map (showHS "") atts)++" ("++(showHS "" sgn)++")"
-    showHS indent (Mp1 str sgn)
-     = "Mp1"++" "++show str++" ("++showHS "" sgn++")"
-   
+    showHSname mph = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
+    showHS _ mph 
+       = case mph of
+            Mph{} -> "Mph "++show (mphnm mph)++" "++showPos++" "++showAtts
+                         ++" "++showSgn++" "++show (mphyin mph)++" "++showHSname (mphdcl mph)
+            I{}   -> "I "++showAtts++" "++showGen++" "++showSpc++" "++show (mphyin mph)
+            V{}   -> "V "++showAtts++" "++showSgn
+            Mp1{} -> "Mp1 "++show (mph1val mph)++" ("++showHS "" (mph1typ mph)++")"
+           where showPos  = "("++showHS "" (mphpos mph)++")"
+                 showAtts = showL(map (showHS "") (mphats mph))
+                 showGen  = "("++showHS "" (mphgen mph)++")"
+                 showSpc  = "("++showHS "" (mphspc mph)++")"
+                 showSgn  = "("++showHS "" (mphtyp mph)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
@@ -409,30 +408,42 @@ where
 
    instance ShowHS Declaration where
     showHSname d = "rel_"++haskellIdentifier (name d++name (source d)++name (target d))
-    showHS indent d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
-     = "Sgn "++show nm++
-               " ("++showHS "" a++") ("++showHS "" b++") "
-               ++showL(map (showHS "") props)++" "
-               ++show prL++" "++show prM++" "++show prR++" "
-               ++show cs -- (if null cs then "[]" else "[[\"Content not shown\",\"\"]]")
-               ++" "++show expla
-               ++" ("++showHS "" pos++")"
-               ++" "++show nr
-               ++" "++show sig
-    showHS indent (Isn g s)
-     = "Isn ("++showHS "" g++") ("++showHS "" s++")"
-    showHS indent (Iscompl g s)
-     = "Iscompl ("++showHS "" g++") ("++showHS "" s++")"
-    showHS indent (Vs g s)
-     = "Vs ("++showHS "" g++") ("++showHS "" s++")"
-
+    showHS indent d 
+       = case d of 
+          Sgn{}     -> (chain newIndent
+                        ["Sgn{ decnm   = " ++ show (decnm d)
+                           ,", desrc   = " ++ showHS "" (desrc d)
+                           ,", detgt   = " ++ showHS "" (detgt d)
+                           ,", decprps = " ++ showL(map (showHS "") (decprps d))
+                           ,", decprL  = " ++ show (decprL d)
+                           ,", decprM  = " ++ show (decprM d)
+                           ,", decprR  = " ++ show (decprR d)
+                           ,", decpopu = " ++ show (decpopu d)
+                           ,", decexpl = " ++ show (decexpl d)
+                           ,", decfpos = " ++ showHS "" (decfpos d)
+                           ,", decid   = " ++ show (decid d)
+                           ,", deciss  = " ++ show (deciss d)
+                        ])++"}"
+          Isn{}     -> (chain newIndent
+                        ["Isn{ degen   = " ++ showHS "" (degen d)
+                           ,", despc   = " ++ showHS "" (despc d)
+                        ])++"}"
+          Iscompl{} -> (chain newIndent
+                        ["Isn{ degen   = " ++ showHS "" (degen d)
+                           ,", despc   = " ++ showHS "" (despc d)
+                        ])++"}"
+          Vs{}      -> (chain newIndent
+                        ["Isn{ degen   = " ++ showHS "" (degen d)
+                           ,", despc   = " ++ showHS "" (despc d)
+                        ])++"}"
+       where newIndent = indent ++ "   "
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ConceptDef                    ***
 -- \***********************************************************************
 
    instance ShowHS ConceptDef where
     showHSname cd = "cDef_"++haskellIdentifier (name cd)
-    showHS indent cd
+    showHS _ cd
      = " Cd ("++showHS "" (cdpos cd)++") "++show (name cd)++" "++show (cddef cd)++(if null (cdref cd) then "" else " "++show (cdref cd))
    
 -- \***********************************************************************
@@ -441,13 +452,11 @@ where
 
    instance ShowHS Concept where
     showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
-    showHS indent c = case c of
-                       C{} -> "C "++show (name c) ++ " gE []"    -- contents not shown.
-                       _   -> name c
---    showHS indent c |  isAnything c = "Anything"
---                    |  isNothing  c = "NOthing"
---                    |  singleton  c = "S"
---                    |  otherwise    = "C "++show (name c) ++ " gE []"    -- contents not shown. 
+    showHS _ c = case c of
+                       C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
+                       S        -> name c
+                       Anything -> name c
+                       NOthing  -> name c
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: AutType                       ***
@@ -459,15 +468,15 @@ where
    
    instance ShowHS Prop where
     showHSname p = error ("(module CC_aux) should not showHS the name of multiplicities (Prop): "++showHS "" p)
-    showHS indent Uni = "Uni"
-    showHS indent Inj = "Inj"
-    showHS indent Sur = "Sur"
-    showHS indent Tot = "Tot"
-    showHS indent Sym = "Sym"
-    showHS indent Asy = "Asy"
-    showHS indent Trn = "Trn"
-    showHS indent Rfx = "Rfx"
-    showHS indent Aut = "AUT"
+    showHS _ Uni = "Uni"
+    showHS _ Inj = "Inj"
+    showHS _ Sur = "Sur"
+    showHS _ Tot = "Tot"
+    showHS _ Sym = "Sym"
+    showHS _ Asy = "Asy"
+    showHS _ Trn = "Trn"
+    showHS _ Rfx = "Rfx"
+    showHS _ Aut = "AUT"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FilePos                       ***
@@ -475,7 +484,7 @@ where
 
    instance ShowHS FilePos where
     showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
-    showHS indent (FilePos (fn,Pos l c,sym))
+    showHS _ (FilePos (fn,Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
 
 

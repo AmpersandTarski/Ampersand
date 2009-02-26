@@ -15,6 +15,7 @@ import Rendering.Document
 import Rendering.Doc2LaTeX
 import Rendering.Doc2Word
 import Fspec2Doc 
+import Version
 --import System
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec _
@@ -33,9 +34,10 @@ doGenHaskell fSpec flags
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
          haskellCode =
                 ("{-# OPTIONS_GHC -Wall #-}"
+             ++"\n{-Generated code by "++versionbanner++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
-             ++"\n  import Classification"
+             ++"\n  --import Classification"
              ++"\n  import Typology"
              ++"\n  import Adl"
              ++"\n  import ShowHS (showHS)"
