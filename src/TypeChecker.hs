@@ -105,7 +105,7 @@ module TypeChecker (typecheck, Error, Errors) where
    iwantastring (NotFound str) = ("Context " ++ str ++ " could not be found"):[]
    iwantastring (Found (Ctx _x1 _x2 _x3 _x4 _x5 _x6 _x7 _x8 _x9 _x10 _x11))
        -- = (show _x1):(show _x2):(show _x3):(show _x4):(show _x5):(show _x6):(show _x7):(show _x8):(show _x9):(show _x11):[]
-       = (show _x3):[]
+        = (show _x5):(show _x6):[]
    -}
 
 ------------------------------------------------------------------------------------------------
@@ -261,7 +261,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR -> infer the type of an AdlExpr maintaining the link to the meta information
    --TODO -> put the trace down to the type inferer
-   inferWithInfo :: MetaInfo a AdlExpr -> MetaInfo a InferredRelType
+   inferWithInfo :: MetaInfo a AdlExpr -> MetaInfo a RelationType
    inferWithInfo (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer expr1)))
           where 
           checkInferred (TypeError t err) = TypeError t (errInExpr expr1 err)
@@ -291,22 +291,20 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR -> Process type inference results of ObjectDefs
    --         If a type is inferred, then it's ok. In case of a TypeError return the error.
-   processResult1 :: [MetaInfo1 InferredRelType] -> Errors
+   processResult1 :: [MetaInfo1 RelationType] -> Errors
    processResult1 [] = []
    processResult1 ((Info (posi,_) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"):(processResult1 ts)
-   processResult1 ((Info _ (Trace _ (Type _)):ts)) = processResult1 ts
-   processResult1 ((Info _ (Trace _ (IType _)):ts)) = processResult1 ts
+   processResult1 ((Info _ (Trace _ (RelationType _)):ts)) = processResult1 ts
 
    --USE -> MetaInfo of this type is used for checking Rules
    type MetaInfo2 a = MetaInfo (FilePos) a
 
    --DESCR -> Process type inference results of Rules
    --         If a type is inferred, then it's ok. In case of a TypeError return the error.
-   processResult2 :: [MetaInfo2 InferredRelType] -> Errors
+   processResult2 :: [MetaInfo2 RelationType] -> Errors
    processResult2 [] = []
    processResult2 ((Info (posi) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"):(processResult2 ts)
-   processResult2 ((Info _ (Trace _(Type _)):ts))  = processResult2 ts
-   processResult2 ((Info _ (Trace _(IType _)):ts)) = processResult2 ts
+   processResult2 ((Info _ (Trace _(RelationType _)):ts))  = processResult2 ts
    
    --DESCR -> Combine code position information and an error string
    compose :: TypeErrorType ->Error -> FilePos -> Error
@@ -421,7 +419,29 @@ module TypeChecker (typecheck, Error, Errors) where
                                                  (rrfps rul)
                                                  (writeTrcLn composetrace1 [] translateimplication)
                                                ):(castRulesToAdlExprs env ruls)
-                      | otherwise           = (Info posNone (Trace [] (ExprError EE_Fatal "Unknown rule type.")):(castRulesToAdlExprs env ruls))
+                     | case rul of
+                              Ru{} -> (rrsrt rul == Equivalence);
+                              _ -> False
+                                            = (Info
+                                                 --DESCR -> file position of rule
+                                                 (rrfps rul)
+                                                 (writeTrcLn composetrace2 [] translateequivalence)
+                                               ):(castRulesToAdlExprs env ruls)
+                 {-
+                     | case rul of
+                              Sg{} -> True
+                              _ -> False
+                                            = (Info posNone (Trace [] (ExprError EE_Fatal "Rule type Sg not implemented.")):(castRulesToAdlExprs env ruls))
+                     | case rul of
+                              Gc{} -> True
+                              _ -> False
+                                            = (Info posNone (Trace [] (ExprError EE_Fatal "Rule type Gc not implemented.")):(castRulesToAdlExprs env ruls))
+                     | case rul of
+                              Fr{} -> True
+                              _ -> False
+                                            = (Info posNone (Trace [] (ExprError EE_Fatal "Rule type Fr not implemented.")):(castRulesToAdlExprs env ruls))
+                 -}
+                     | otherwise            = (Info posNone (Trace [] (ExprError EE_Fatal "Unknown rule type.")):(castRulesToAdlExprs env ruls))
                         where
                             leftsubexpr = castExpressionToAdlExpr env (rrant rul)
                             rightsubexpr = castExpressionToAdlExpr env (rrcon rul)
@@ -434,6 +454,18 @@ module TypeChecker (typecheck, Error, Errors) where
                                 "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer leftsubexpr) ++ "\n" ++
                                 "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer rightsubexpr) ++ "\n" ++
                                 traceruleerror (infer translateimplication)
+                               )
+                                                   -- left=right => (-left\/right)/\(left\/-right)
+                            translateequivalence = Union
+                                                         (Intersect (Complement (leftsubexpr)) (rightsubexpr))
+                                                         (Intersect (Complement (rightsubexpr)) (leftsubexpr))
+                            composetrace2 =
+                               ("ERROR IN RULE ->\n" ++
+                                "Translating equivalence rule (subexpr1 = subexpr2) to expression ( -subexpr1\\/subexpr2/\\-subexpr2\\/subexpr1) for type validation:\n" ++
+                                --TODO -> show rul is ugly "Translating rule " ++ show rul ++ " resulting in expression -" ++ show (rrant rul) ++ "\\/" ++ show (rrcon rul) ++ "\n" ++
+                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer leftsubexpr) ++ "\n" ++
+                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer rightsubexpr) ++ "\n" ++
+                                traceruleerror (infer translateequivalence)
                                )
                             traceruleerror (TypeError RTE_AbAbAb err)
                                             = "ERROR DESCRIPTION -> subexpr1 does not match type of subexpr2:\n" ++ err
@@ -454,7 +486,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
                          where
                             doNotFlip:: Bool -> AdlExpr -> AdlExpr
-                            doNotFlip False expr1@(Relation (Type _)) = Flip expr1
+                            doNotFlip False expr1@(Relation (RelationType _)) = Flip expr1
                             doNotFlip _     expr1                     = expr1
    castExpressionToAdlExpr (lbos,declrels,_) (Tm morph) --RULE -> other Morphisms (I and V etc do not need to be flipped)
                                                = Relation (typeofRel
@@ -496,15 +528,15 @@ module TypeChecker (typecheck, Error, Errors) where
    castExpressionToAdlExpr _ _ = ExprError EE_Fatal "Cannot cast to AdlExpr. "
 
    --EXTEND -> Loose the declarations of ISA and relations, and other ADL tool specifics, by already infering a type
-   typeofRel :: LowerboundsOfs -> DeclRelFound -> InferredRelType
+   typeofRel :: LowerboundsOfs -> DeclRelFound -> RelationType
    typeofRel _ (NotFoundDr t err) = TypeError (RTE_DeclError t) err
    typeofRel lbos (FoundDr d) = case d of
                     -- _ -> TypeError (show lbos) ; --DEBUG
-                    Sgn{} -> Type ( lowerbound lbos (desrc d), lowerbound lbos (detgt d) );
+                    Sgn{} -> RelationType ( lowerbound lbos (desrc d), lowerbound lbos (detgt d) );
                     --TODO -> why is there a despc and degen?
-                    Isn{} -> IType ( lowerbound lbos (despc d) );
+                    Isn{} -> RelationType ( lowerbound lbos (despc d), lowerbound lbos (despc d) );
                     --REMARK -> Vs degen is the source Concept, Vs despc the target Concept
-                    Vs {} -> Type ( lowerbound lbos (degen d), lowerbound lbos (despc d) );
+                    Vs {} -> RelationType ( lowerbound lbos (degen d), lowerbound lbos (despc d) );
                     --TODO   -> when will there be an IsCompl?
                     --REMARK -> IsCompl{} will never be the result of ADL.MorphismAndDeclaration.makeDeclaration
                     --          makeDeclaration is used in srchDeclRelByMorphism
@@ -512,46 +544,72 @@ module TypeChecker (typecheck, Error, Errors) where
 
 ---------------------------------------------------------------------------------------------
 --Type inference part: later in separate module
---need to define a >= b   (b is a subset of a)
---TODO -> I(a) is the binary relation type with source==target and is not necessarily the identity, maybe a less confusing name
--- Anything = top, Nothing = bottom
--- c1::a, c2::b, a>=b   |- c1::a -> b
--- e1::(a,b1) , e2::(b2,c)  b1>=b b2>=b             |- e3::e1;e2 -> (a,c)
--- e1::I(a)   , e2::(b2,c)  a>=b  b2>=b             |- e3::e1;e2 -> (b,c)
--- e1::(a,b1) , e2::I(c)    b1>=b c>=b              |- e3::e1;e2 -> (a,b)
--- e1::I(a)   , e2::I(c)    a>=b c>=b               |- e3::e1;e2 -> I(b)
--- e1::(a,b1) , e2::(b2,c)  b1>=b b2>=b             |- e3::e1!e2 -> (a,c)
--- e1::I(a)   , e2::(b2,c)  a>=b  b2>=b             |- e3::e1!e2 -> (b,c)
--- e1::(a,b1) , e2::I(c)    b1>=b c>=b              |- e3::e1!e2 -> (a,b)
--- e1::I(a)   , e2::I(c)    a>=b c>=b               |- e3::e1!e2 -> I(b)
--- e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1\/e2 -> (a,b)
--- e1::I(a1)  , e2::(a2,b2) a1>=a a2>=a b2>=a       |- e3::e1\/e2 -> I(a)
--- e1::I(a1)  , e2::(a2,b2) a1>=a a2>=a b2>=a       |- e3::e2\/e1 -> I(a)
--- e1::I(a1)  , e2::I(a2)   a1>=a a2>=a             |- e3::e2\/e1 -> I(a)
--- e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1/\e2 -> (a,b)
--- e1::I(a1)  , e2::(a2,b2) a1>=a a2>=a b2>=a       |- e3::e1/\e2 -> I(a)
--- e1::I(a1)  , e2::(a2,b2) a1>=a a2>=a b2>=a       |- e3::e2/\e1 -> I(a)
--- e1::I(a1)  , e2::I(a2)   a1>=a a2>=a             |- e3::e2/\e1 -> I(a)
--- e1::(a,b)            |- e2::e1~     -> (b,a)
--- e1::I(a)             |- e2::e1~     -> I(a)
--- c1::a, c2::b         |- e::V[c1,c2] -> (a,b)
--- c::a                 |- e::I[c]     -> I(a)
--- e1::(a,b)            |- e2::-e1     -> (a,b)
--- e1::I(a)             |- e2::-e1     -> I(a)
--- e1::(a,b)            |- e2::e1*     -> (a,b)
--- e1::I(a)             |- e2::e1*     -> I(a)
--- e1::(a,b)            |- e2::e1+     -> (a,b)
--- e1::I(a)             |- e2::e1+     -> I(a)
+--PATTERN Type16Error
+--GEN XX ISA Medewerker
+--GEN XX ISA Document
+--van         :: Toegangsrecht * Medewerker.
+--op          :: Toegangsrecht * Document.
+-- van~;op |- I[XX]            ---> AGtry CORRECT
+-- van~;op |- I                ---> AGtry INCORRECT, maar zou moeten betekenen van~;op is een subset van I[Anything]
+--                                  deze rule zou heel veel violations moeten retourneren
+--                                  het type van de rule zou (Anything,Anything) moeten zijn.
+-- -(van~;op) \/ I |- V        ---> AGtry CORRECT (even if van~;op contains a type error)
+--ENDPATTERN
+--
+--DESCR -> a (concept)type is a set of concepttypes
+--         the set consists of all concepttypes lower than or equal to the concepttype
+--         a>=b indicates that concepttype b is a subset of concepttype a
+--         thus if a concepttype is part of type b then it is also part of concepttype a
+--         Anything = top = the set of all concepttypes, 
+--         Nothing = bottom = the set with no concepttypes
+--      1) Id of a concepttype
+--                              |- c::a
+--      2) if concepttype b is a subset of concepttype a then concept c1 of type a is also a concept of type b
+--         c1::a, c2::b, a>=b   |- c1::a -> b
+--      3) a relation expression can be defined given concepttypes a and b, the type is (a,b)
+--         c1::a, c2::b         |- e::def[c1,c2] -> (a,b)
+--      4) the universal relation expression can be defined given concepttypes a and b, the type is (a,b)
+--         c1::a, c2::b         |- e::V[c1,c2]   -> (a,b)
+--      5) the identity relation expression can be defined given concepttype a, the type is (a,a)
+--         c::a                 |- e::I[c]       -> (a,a)
+--      6) the composition expression can be defined given expression e1 and e2
+--         if there is a concepttype b which is a subset of concepttype b1 and b2, the type is (a,c)
+--         e1::(a,b1), e2::(b2,c), b1>=b, b2>=b, not b=bottom |- e3::e1;e2 -> (a,c)
+--      7) the relative addition expression can be defined given expression e1 and e2
+--         if there is a concepttype b which is a subset of concepttype b1 and b2, the type is (a,c)
+--         e1::(a,b1) , e2::(b2,c)  b1>=b b2>=b, not b=bottom |- e3::e1!e2 -> (a,c)
+--      8) the intersection expression can be defined given expression e1 and e2
+--         if concepttype a1 and a2 are subsets of concepttype a AND
+--         if concepttype b1 and b2 are subsets of concepttype b, the type is (a,b)
+--         e1::(a1,b1), e2::(a2,b2) a>=a1 a>=a2 b>=b1 b>=b2 |- e3::e1\/e2 -> (a,b)
+--      9) the union expression can be defined given expression e1 and e2
+--         if concepttype a1 and a2 are subsets of concepttype a AND
+--         if concepttype b1 and b2 are subsets of concepttype b, the type is (a,b)
+--         e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1/\e2 -> (a,b)
+--     10) the flip expression can be defined given expression e1, the type is (b,a)
+--         e1::(a,b)            |- e2::e1~     -> (b,a)
+--     11) the complement expression can be defined given expression e1, the type is (a,b)
+--         e1::(a,b)            |- e2::-e1     -> (a,b)
+--     12) the reflexive, transitive closure expression can be defined given expression e1, the type is (a,b)
+--         e1::(a,b)            |- e2::e1*     -> (a,b)
+--     13) the transitive closure expression can be defined given expression e1, the type is (a,b)
+--         e1::(a,b)            |- e2::e1+     -> (a,b)
 ---------------------------------------------------------------------------------------------
 
-   --USE -> Store the type inferred
-   --       IType must be used for unary relations
-   data InferredRelType = Type AdlType | IType ConceptType | TypeError TypeErrorType Error
+   --USE -> a ConceptType is a set of concepttypes implemented as a list of Concept
+   --       the set consists of all concepttypes lower than or equal to the concepttype
+   --       The Concept is a part of the expressions coming from the parser
+   --       Use function lowerbound to get the ConceptType of a Concept
+   --       You will need a LowerBoundsOfs object which can be built with function lowerboundsOfs
+   --       based on Gens. GEN ... ISA ... definitions are parsed to Gens.
+   type ConceptType = [Concept]
 
-   instance Show InferredRelType where
-       showsPrec _ (Type t)     = showString (show t)
-       showsPrec _ (IType t)     = showString ("I"++(show t))
-       showsPrec _ (TypeError t err) = showString ("TypeError " ++ show t ++ err)
+   --USE ->  Store the type of an expression or a type error
+   data RelationType = RelationType (ConceptType, ConceptType) | TypeError TypeErrorType Error
+
+   instance Show RelationType where
+       showsPrec _ (RelationType t)     = showString (show t)
+       showsPrec _ (TypeError t err)    = showString ("TypeError " ++ show t ++ err)
 
    --USE -> A type error can result from:
    --          - type inference rules ab->ab->ab or ab->bc->ac
@@ -560,25 +618,21 @@ module TypeChecker (typecheck, Error, Errors) where
    --          - a problem with finding a declaration of a relation
    data TypeErrorType = RTE_AbAbAb | RTE_AbBcAc | RTE_ExprError ExprErrorType | RTE_DeclError NotFoundDrType | RTE_Fatal deriving (Show)
 
-   --USE -> a Concept is identified by its name of type String. A type is always a binary relation of Concepts
-   --       The Concept is the list of all types it can be as a result of ISA relations
-   type AdlType = (ConceptType, ConceptType)
-   type ConceptType = [Concept]
 
    --USE -> Relation will be the only expression already inferred possibly containing a TypeError
-   data AdlExpr =   Relation    InferredRelType  --USE -> use typeofRel to get the InferredRelType
-                  | Semicolon   {source::AdlExpr, target::AdlExpr}
-                  | Dagger      {source::AdlExpr, target::AdlExpr}
-                  | Flip        {expr::AdlExpr}
-                  | TrsClose    {expr::AdlExpr}
-                  | TrsRefClose {expr::AdlExpr}
-                  | Complement  {expr::AdlExpr}
-                  | Union       {source::AdlExpr, target::AdlExpr}
-                  | Intersect   {source::AdlExpr, target::AdlExpr}
+   data AdlExpr =   Relation    RelationType  --USE -> use typeofRel to get the RelationType
+                  | Semicolon   {ex1::AdlExpr, ex2::AdlExpr}
+                  | Dagger      {ex1::AdlExpr, ex2::AdlExpr}
+                  | Flip        {ex1::AdlExpr}
+                  | TrsClose    {ex1::AdlExpr}
+                  | TrsRefClose {ex1::AdlExpr}
+                  | Complement  {ex1::AdlExpr}
+                  | Union       {ex1::AdlExpr, ex2::AdlExpr}
+                  | Intersect   {ex1::AdlExpr, ex2::AdlExpr}
    --TODO -> why can't I specify an I or V for a Relation? Why are I and V morphisms and not expressions?
-   --RULE -> I and V are cast as Relation InferredRelType and thus supported as morphisms
+   --RULE -> I and V are cast as Relation RelationType and thus supported as morphisms
    --        | Identity    AdlExpr
-   --        | Universe    InferredRelType
+   --        | Universe    RelationType
                   | ExprError ExprErrorType Error  -- deriving (Show)
 
    data ExprErrorType = EE_SubExpr | EE_Fatal deriving (Show)
@@ -586,8 +640,7 @@ module TypeChecker (typecheck, Error, Errors) where
    instance Show AdlExpr where
        showsPrec _ (Relation (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
        --showsPrec _ t@(Relation _)    = showString (show t)
-       showsPrec _ (Relation (Type t))     = showString (show t)
-       showsPrec _ (Relation (IType t))     = showString ("I"++(show t))
+       showsPrec _ (Relation (RelationType t))     = showString (show t)
        showsPrec _ (Semicolon e1 e2) = showString (show e1 ++ ";" ++ show e2)
        showsPrec _ (Dagger e1 e2)    = showString (show e1 ++ "!" ++ show e2)
        showsPrec _ (Union e1 e2)     = showString (show e1 ++ "/\\" ++ show e2)
@@ -600,18 +653,18 @@ module TypeChecker (typecheck, Error, Errors) where
 
    lowerbound :: LowerboundsOfs -> Concept -> [Concept]
    lowerbound _ Anything = [Anything]
-   lowerbound _ NOthing = [NOthing]
-   lowerbound _ S = [S] --TODO -> check if this is correct
+   lowerbound _ NOthing = []
+   lowerbound _ S = [] --TODO -> check if this is correct
    lowerbound chds c = (lowerboundsToConcepts (lowerbounds (lowerboundsOf chds c)))
 
-   infer :: AdlExpr -> InferredRelType
-   infer (Relation rel) = rel   --DESCR -> Relation is already an InferredRelType
+   infer :: AdlExpr -> RelationType
+   infer (Relation rel) = rel   --DESCR -> Relation is already an RelationType
    infer (Semicolon expr1 expr2) = inferAbBcAc (infer expr1) (infer expr2)
    infer (Dagger expr1 expr2) = inferAbBcAc (infer expr1) (infer expr2)
    infer (Union expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
    infer (Intersect expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
    infer (Flip expr1) = inferAbBa (infer expr1)
-   --RULE -> I and V are cast as Relation InferredRelType and thus supported as morphisms
+   --RULE -> I and V are cast as Relation RelationType and thus supported as morphisms
    --        infer (Identity expr) = inferIdentity expr
    --        infer (Universe expr) = inferUniverse expr
    infer (Complement expr1) = inferAbAb (infer expr1)
@@ -619,15 +672,17 @@ module TypeChecker (typecheck, Error, Errors) where
    infer (TrsRefClose expr1) = inferAbAb (infer expr1)
    infer (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
 
-
-   type AdlTypeResult = (InferredCptType,InferredCptType)
+   --USE -> InferredCptType is an internal structure. CptType or CptTypeError will be stored in a RelationType
    data CptTypeErrorType = CTE_TypeMismatch deriving (Show)
    data InferredCptType = CptType ConceptType | CptTypeError CptTypeErrorType Error deriving (Show)
 
+   --DESCR -> check if c1 is a subset of c2, if so return c1
+   --         otherwise check if c2 is a subset of c1, if so return c2
+   --         otherwise raise a type error
    inferCptType :: ConceptType -> ConceptType -> InferredCptType
    inferCptType c1 c2
-                      | c1 >=-> c2 = CptType c2
-                      | c2 >=-> c1 = CptType c1
+                      | c1 >=-> c2 = CptType c1
+                      | c2 >=-> c1 = CptType c2
                       | otherwise = CptTypeError CTE_TypeMismatch  --TODO -> better message
                       ( "\nt1 can be a\n" ++ showtypes c1
                       ++ "t2 can be a\n" ++ showtypes c2
@@ -648,39 +703,21 @@ module TypeChecker (typecheck, Error, Errors) where
    notElem2 lst elm = not (elem elm lst)
 
    --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
-   inferAbBcAc :: InferredRelType -> InferredRelType -> InferredRelType
+   inferAbBcAc :: RelationType -> RelationType -> RelationType
    inferAbBcAc err@(TypeError _ _) _ = err   --pass errors up
    inferAbBcAc _ err@(TypeError _ _) = err
-   inferAbBcAc (Type (src1,trg1)) (Type (src2,trg2)) =
+   inferAbBcAc (RelationType (src1,trg1)) (RelationType (src2,trg2)) =
                      checkAbBcAc (inferCptType trg1 src2 )
                      where
                           checkAbBcAc (CptTypeError CTE_TypeMismatch err)
                                       = TypeError RTE_AbBcAc ("The type of the target (t1) of the left expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAbBcAc _ = Type (src1, trg2)
-   inferAbBcAc (IType (icpt)) (Type (src2,trg2)) =
-                     checkAbBcAc (inferCptType icpt src2)
-                     where
-                          checkAbBcAc (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbBcAc ("The type of the target (t1) of the left expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAbBcAc (CptType infcpt) = Type (infcpt, trg2)  -- src1 == infcpt
-   inferAbBcAc (Type (src1,trg1)) (IType (icpt)) =
-                     checkAbBcAc (inferCptType trg1 icpt)
-                     where
-                          checkAbBcAc (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbBcAc ("The type of the target (t1) of the left expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAbBcAc (CptType infcpt) = Type (src1, infcpt)  -- trg2 == infcpt
-   inferAbBcAc (IType (icpt1)) (IType (icpt2)) =
-                     checkAbBcAc (inferCptType icpt1 icpt2)
-                     where
-                          checkAbBcAc (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbBcAc ("The type of the target (t1) of the left expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAbBcAc (CptType infcpt) = IType (infcpt)  -- trg2 == infcpt == src1
+                          checkAbBcAc _ = RelationType (src1, trg2)
 
    --DESCR -> infer  e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1 -> e2 -> (a,b)
-   inferAbAbAb :: InferredRelType -> InferredRelType -> InferredRelType
+   inferAbAbAb :: RelationType -> RelationType -> RelationType
    inferAbAbAb err@(TypeError _ _) _                = err   --DESCR -> pass errors up
    inferAbAbAb _ err@(TypeError _ _)                = err
-   inferAbAbAb (Type (src1,trg1)) (Type (src2,trg2))  =
+   inferAbAbAb (RelationType (src1,trg1)) (RelationType (src2,trg2))  =
                      checkAbAbAb (inferCptType src1 src2) (inferCptType trg1 trg2)
                      where
                           checkAbAbAb (CptTypeError CTE_TypeMismatch err) _
@@ -688,50 +725,15 @@ module TypeChecker (typecheck, Error, Errors) where
                           checkAbAbAb _ (CptTypeError CTE_TypeMismatch err)
                                       = TypeError RTE_AbAbAb ("The type of the target (t1) of the left expression does not match the type of the target (t2) of the right expression:\n\t" ++ err)
                           checkAbAbAb (CptType infsrc) (CptType inftrg)
-                                      = Type (infsrc, inftrg)
-   inferAbAbAb (IType icpt) (Type (src,trg)) =
-                     checkAAbA (inferCptType icpt src) (inferCptType icpt trg)
-                     where
-                          checkAAbA (CptTypeError CTE_TypeMismatch err) _
-                                      = TypeError RTE_AbAbAb ("The type (t1) of the left Identity expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAAbA _ (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbAbAb ("The type (t1) of the left Identity expression does not match the type of the target (t2) of the right expression:\n\t" ++ err)
-                          checkAAbA (CptType infsrc) (CptType inftrg)
-                                      = checkSubsets (inferCptType infsrc inftrg)
-                          checkSubsets (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbAbAb ("The Identity expression must have the same source type (t1) and target type (t2):\n\t" ++ err)
-                          checkSubsets (CptType infcpt)
-                                      = IType infcpt
-   inferAbAbAb (Type (src,trg)) (IType icpt) =
-                     checkAbAA (inferCptType icpt src) (inferCptType icpt trg)
-                     where
-                          checkAbAA (CptTypeError CTE_TypeMismatch err) _
-                                      = TypeError RTE_AbAbAb ("The type of the source (t1) of the left expression does not match the type (t2) of the right Identity expression:\n\t" ++ err)
-                          checkAbAA _ (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbAbAb ("The type of the target (t1) of the left expression does not match the type (t2) of the right Identity expression:\n\t" ++ err)
-                          checkAbAA (CptType infsrc) (CptType inftrg)
-                                      = checkSubsets (inferCptType infsrc inftrg)
-                          checkSubsets (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbAbAb ("The Identity expression must have the same source type (t1) and target type (t2):\n\t" ++ err)
-                          checkSubsets (CptType infcpt)
-                                      = IType infcpt
-   inferAbAbAb (IType icpt1)  (IType icpt2)  =
-                     checkAAA (inferCptType icpt1 icpt2)
-                     where
-                          checkAAA (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbAbAb ("The type (t1) of the left Identity expression does not match the type (t2) of the right Identity expression:\n\t" ++ err)
-                          checkAAA (CptType infcpt)
-                                      = IType infcpt
-
+                                      = RelationType (infsrc, inftrg)
 
    --DESCR -> infer  e1::(a,b) |- e2::e1 -> (b,a)
-   inferAbBa :: InferredRelType -> InferredRelType
+   inferAbBa :: RelationType -> RelationType
    inferAbBa err@(TypeError _ _) = err
-   inferAbBa (Type (src,trg)) = Type (trg,src)
-   inferAbBa it@(IType _) = it
+   inferAbBa (RelationType (src,trg)) = RelationType (trg,src)
 
    --DESCR -> infer  e1::(a,b) |- e2::e1 -> (a,b)
-   inferAbAb :: InferredRelType -> InferredRelType
+   inferAbAb :: RelationType -> RelationType
    inferAbAb t = t
 
 ---------------------------------------------------------------------------------------------
@@ -797,13 +799,10 @@ module TypeChecker (typecheck, Error, Errors) where
                          --TODO -> I must be sure that the lowerbounds are always consulted through function lowerboundsOf
                          --        because this function has an lbo entry for concepts not in ISA too
                          LbsOf (cpt,[(cpt,[])])
-   lowerboundsOf (a@(LbsOf(cpt',lbs)):lbsos) cpt
+   lowerboundsOf (a@(LbsOf(cpt',_)):lbsos) cpt
          | cpt' == cpt =
                          --DESCR -> found -> return
-                         --if (elem cpt' (lowerboundsToConcepts lbs))
-                         --then
                          a
-                    --     else LbsOf (cpt',((cptnew "blerf"),[]):lbs) --DESCR add cpt to the lowerbound too, it should however already be in the list
          | otherwise   =
                          --DESCR -> try next
                          lowerboundsOf lbsos cpt
@@ -854,7 +853,8 @@ module TypeChecker (typecheck, Error, Errors) where
    --                                  ])]    parsed as: genspc     gengen
    insertGen :: Gen -> LowerboundsOfs -> LowerboundsOfs
    --DESCR -> search for a LowerboundOf object for this upperbound concept in a LowerboundsOf list
-   --         if the LowerboundOf is not in the list, construct and add a new LowerboundOf object to the end of the list
+   --         if the LowerboundsOf is not in the list, construct and add a new LowerboundsOf object to the end of the list
+   --         put the concept as lowerbound of itself in the LowerboundsOf object
    insertGen gen [] = case gen of
                            G{} -> ( LbsOf (genspc gen, [(gengen gen,[gen])
                                                        , (genspc gen,[])
@@ -896,25 +896,13 @@ module TypeChecker (typecheck, Error, Errors) where
    data DeclRelFound = FoundDr DeclRel | NotFoundDr NotFoundDrType Error
    data NotFoundDrType = NFD_NotFound | NFD_Fatal deriving (Show)
 
-   --DESCR -> concatenate the declarations of relation from the patterns
+   --DESCR -> concatenate the declarations of relations from the patterns
    declRels :: Patterns -> DeclRels
    declRels [] = []
    declRels (p:ps) = case p of
                           Pat{} -> ptdcs p ++ declRels ps
 
-   {-   not used
-   --search by declaration name and return the first one found
-   srchDeclRel :: DeclRels -> String -> DeclRelFound
-   srchDeclRel [] srchstr = NotFoundDr srchstr
-   srchDeclRel (drl:drls) srchstr
-             | case drl of Sgn{} -> (decnm drl == srchstr)
-                                    = FoundDr drl
-             | otherwise = srchDeclRel drls srchstr
-   -}
-
-   --DESCR -> search by Morphism (use mphats if specified, otherwise the mphnm)
-   --TODO  -> the show of Morphism does not display mphats, wouldn't that be more convenient?
-   --TODO  -> detect duplicate names searched without mphats
+   --DESCR -> search by Morphism (use mphats if specified)
    srchDeclRelByMorphism :: DeclRels -> Morphism -> DeclRelFound
    srchDeclRelByMorphism [] morph = case morph of Mph{} -> NotFoundDr NFD_NotFound ("Relation '" ++ (show morph) ++ "' has not been declared. " );
                                                       _ -> NotFoundDr NFD_Fatal ("Morphism type is not supported.")
@@ -926,8 +914,11 @@ module TypeChecker (typecheck, Error, Errors) where
                                else decnm drl == mphnm morph && desrc drl == head (mphats morph) &&  detgt drl == head (tail (mphats morph));
                          _ -> False;
                    _ -> False
-                                    = if null (mphats morph) && (containsDecl (decnm drl) drls)
-                                      then NotFoundDr NFD_NotFound ("Ambiguous relation '" ++ (mphnm morph) ++ "', specify type explicitly (relation[a*b])")
+                                    = if null (mphats morph) && not ((filter (isDeclWithName (mphnm morph)) drls)==[])
+                                      then NotFoundDr NFD_NotFound (
+                                            "Ambiguous relation '" ++ (mphnm morph) ++
+                                            "', specify type explicitly (relation[a*b])\nPossible types are:\n"
+                                            ++ show (filter (isDeclWithName (mphnm morph)) (drl:drls)) )
                                       else FoundDr drl
              | case drl of
                    Sgn{} -> case morph of
@@ -938,12 +929,11 @@ module TypeChecker (typecheck, Error, Errors) where
              --TODO -> what about other declaration types and Mp1 morphisms?
              | otherwise            = srchDeclRelByMorphism drls morph
 
-   containsDecl :: String -> DeclRels -> Bool
-   containsDecl _ [] = False
-   containsDecl nm (d:ds) | case d of Sgn{} -> nm == (decnm d);
-                                          _ -> False
-                                                       = True
-                            | otherwise                = containsDecl nm ds
+   --DESCR -> Check if a declared relation has been given a certain name
+   --USE   -> combine with filter to get all declarations with a certain name
+   isDeclWithName :: String -> DeclRel -> Bool
+   isDeclWithName str decl = case decl of Sgn{} -> str == (decnm decl);
+                                          _     -> False
 
 
 ---------------------------------------------------------------------------------------------
