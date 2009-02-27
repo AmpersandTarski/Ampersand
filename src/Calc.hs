@@ -1,48 +1,44 @@
   {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
-  module Calc ( ComputeRule(CR)
-              , deriveProofs
-              , triggers
-              , disjNF
-              , conjNF
+  module Calc ( 
+                deriveProofs
+        --      , triggers
+        --      , disjNF
+        --      , conjNF
               , homogeneous
               , computeOrder
-              , allClauses
+        --      , allClauses
               , lClause
               , rClause
-              , conjuncts
+        --      , conjuncts
               , makeRule
               , doClause
               , simplPAclause
               , informalRule ) 
   where 
-   import Char ( isSpace )
-   import CommonClasses (Identified(name) )
-   import Collection (Collection (uni,isc,empty,rd))
-   import Auxiliaries
-   import Classification
+--   import Char ( isSpace )
+   import Collection (Collection (uni,isc,rd))
+   import Auxiliaries(sort',eqClass,eqCl,commaEng,elem')
+--   import Classification
    import Adl
    import FspecDef
    import ShowADL
    import ShowHS
    import CC_aux
-   import Graphic ( dotGraph
-                  , processDotgraphFile
-                  , Graphic)
-
-
-   multiplicityAnalysis context 
-    = let fnm = "MULT"++name context in
-      putStr ("\n--------------\n"++
-              "Multiplicity Analysis:\n")>>
-      writeFile (fnm++".dot") (dotGraph context "anyStyle" fnm (multDerivations context)) >>
-      putStr ("\nMultiplicity propagation graph "++fnm++".dot written... ") >>
-      processDotgraphFile fnm >>
-      writeFile ("CF"++fnm++".dot") (dotGraph context "anyStyle" fnm codeFragments) >>
-      putStr ("\nCode graph CF"++fnm++".dot written... ") >>
-      processDotgraphFile ("CF"++fnm)
-      where
-       codeFragments :: [ECArule]
-       codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
+   import ComputeRule(ComputeRule(CR),triggers,conjuncts,allClauses,hornCs)
+   import NormalForms(conjNF,disjNF,nfProof,nfPr,simplify,negRight,isFu)
+--   multiplicityAnalysis context 
+--    = let fnm = "MULT"++name context in
+--      putStr ("\n--------------\n"++
+--              "Multiplicity Analysis:\n")>>
+--      writeFile (fnm++".dot") (dotGraph context "anyStyle" fnm (multDerivations context)) >>
+--      putStr ("\nMultiplicity propagation graph "++fnm++".dot written... ") >>
+--      processDotgraphFile fnm >>
+--      writeFile ("CF"++fnm++".dot") (dotGraph context "anyStyle" fnm codeFragments) >>
+--      putStr ("\nCode graph CF"++fnm++".dot written... ") >>
+--      processDotgraphFile ("CF"++fnm)
+--      where
+--       codeFragments :: [ECArule]
+--       codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
 
    deriveProofs :: Fspc -> String
    deriveProofs fSpec
@@ -151,8 +147,8 @@
                                             then "A reaction is not required, because  r -: r'. Proof:"++(showProof.cfProof) (Fu[Cp r,r'])++"\n"
                                             else if checkMono r ev m
                                             then "A reaction is not required, because  r -: r'. Proof:"++(showProof.derivMono r ev) m++"\n"
-                                            else "The correct reaction on this event is\n"++show (ECA (On ev m) (doCode viols Ins r'))++"\n"++
-                                                 "\ndoClause :\n"++show (ECA (On ev m) (doCode (Fi [Cp r,nr']) Ins r))
+                                            else "The correct reaction on this event is\n"++showSQL (ECA (On ev m) (doCode viols Ins r'))++"\n"++
+                                                 "\ndoClause :\n"++showSQL (ECA (On ev m) (doCode (Fi [Cp r,nr']) Ins r))
                                       )
                                     | m<-rd [m|x<-mors r, m<-[x,flp x], inline m, not (isIdent m)] -- TODO: include proofs that allow: isIdent m
                                     , ev<-[Ins,Del]
@@ -243,7 +239,7 @@
    simplPAclause (Choice (c:cs))          = f (simplPAclause (Choice cs))
                                             where f (Choice [])  = Choice []
                                                   f (Choice cs') = Choice (simplPAclause c:cs')
-                                                  f cl           = error ("Module Calc: something funny in simplPAclause (Choice ("++show c++":"++show cs++"))")
+                                                  f cl           = error ("Module Calc: something funny in simplPAclause (Choice ("++showL(map showSQL (c:cs))++"))")
    simplPAclause (All [c])                = simplPAclause c
    simplPAclause (All [])                 = All []
    simplPAclause (All (Choice []:cs'))    = Choice []
@@ -251,7 +247,7 @@
    simplPAclause (All (c:cs))             = f (simplPAclause (All cs))
                                             where f (Choice []) = Choice []
                                                   f (All cs')   = All (c:cs')
-                                                  f cl          = error ("Module Calc: something funny in simplPAclause (All ("++show c++":"++show cs++"))")
+                                                  f cl          = error ("Module Calc: something funny in simplPAclause (All ("++showL(map showSQL (c:cs))++"))")
    simplPAclause c                        = c
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
@@ -342,25 +338,6 @@
 
 
 
-   conjuncts :: Rule -> [Expression]
-   conjuncts = fiRule.conjNF.normExpr
-    where fiRule (Fi fis) = {- map disjuncts -} fis
-          fiRule r        = [ {- disjuncts -} r]
-
-   disjuncts :: Expression -> Expression
-   disjuncts = fuRule
-    where fuRule (Fu cps) = (Fu . rd . map cpRule) cps
-          fuRule r        = Fu [cpRule r]
-          cpRule (Cp r)   = Cp (fRule r)
-          cpRule r        = fRule r
-          fRule (F ts)    = F ts
-          fRule  r        = F [r]
-
-
-
-
-
-   allClauses cl = rd [simplify e|e<-shiftL cl++shiftR cl, not (isTrue e)]
    ilClauses cl  = [ hc | hc@(Fu fus)<-allClauses cl
                         , and [idsOnly e| t@(Cp e)<-fus]
                    ]
@@ -381,105 +358,8 @@
 
 
 
-   hornCs :: Rule -> Expression -> [ComputeRule]
-   hornCs rule f@(Fu fus)
-    = 
-  -- the following inserts new atoms in positive terms. Deletion of new atoms from negative terms cannot occur,
-  -- because an atom which is new in V is not in t in the first place (t-:V)
-      [ CR ( [("INSERT INTO", Vs (source t) (target t))]     -- fOps
-        , v (sign t)                                         -- e
-        , "INSERT INTO"                                      -- bOp
-        , simplify t                                           -- toExpr
-        , v (sign t)                                         -- frm
-        , rule)
-      | and (map isPos fus), t<-fus, not (isIdent t)]++  -- (ignore generating to I, because both I and V are derived from C-tables.)
-      [ CR ( [("DELETE FROM",hdl l)]              -- fOps
-        , if isPos t' then t' else notCp t'       -- e
-        , "DELETE FROM"                           -- bOp
-        , (conjNF.Cp) t                    -- toExpr
-        , (disjNF.Cp) (Fu (rest t))        -- frExpr
-        , rule)
-      | t<-fus, t'<-rest t, l<-leaves t', isPos l, isNeg t]++
-      [ CR ( [("INSERT INTO",hdl l)]
-        , if isPos t' then t' else notCp t'
-        , "DELETE FROM"
-        , (conjNF.Cp) t
-        , (disjNF.Cp) (Fu (rest t))
-        , rule)
-      | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isNeg t]++
-      [ CR ( [("DELETE FROM",hdl l)] 
-        , if isPos t' then t' else notCp t'
-        , "INSERT INTO"
-        , conjNF t   
-        , (disjNF.Cp) (Fu (rest t))
-        , rule)
-      | t<-fus, t'<-rest t, l<-leaves t', isPos l, isPos t]++
-      [ CR ( [("INSERT INTO",hdl l)] 
-        , if isPos t' then t' else notCp t'
-        , "INSERT INTO"
-        , conjNF t   
-        , (disjNF.Cp) (Fu (rest t))
-        , rule)
-      | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isPos t]
-      where rest t = if length [e|e<-fus, t /= e] == length fus-1 then [e|e<-fus, t /= e] else
-                     error ("(module Calc) Failure in hornCs rule f@(Fu fus) with\n"++
-                            "Rule : "++showADL rule++"\n"++
-                            "t    : "++showADL t++"\n"++
-                            "t    : "++showHS "" t++"\n"++
-                            "f    : "++showADL f++"\n"++
-                            "f    : "++showHS "" f++"\n"
-                           )
-            hdl l | null (declarations l) = error("Module Calc: empty list of declarations in hornCs")
-                  | otherwise             = head (declarations l)
-   hornCs rule e = error("Module Calc: erroneous call of hornCs ("++showHS "" e++") in rule "++show (nr rule)++":\n  "++showADL rule)
 
 
-
-   leaves e = rd (lvs e)
-    where
-     lvs (F fs)  = (concat.map lvs) fs
-     lvs (Fd fs) = (concat.map lvs) fs
-     lvs (Fu fs) = (concat.map lvs) fs
-     lvs (Fi fs) = (concat.map lvs) fs
-     lvs (Cp e)  = [notCp l|l<-lvs e ]
-     lvs (Tm r)  = [Tm r]
-     lvs (K0 e)  = lvs e
-     lvs (K1 e)  = lvs e
-     lvs e = error("module Calc: illegal pattern in leaves ("++showADL e++")\ne = "++showHS "" e)
-
-   data ComputeRule = CR ([(String,Declaration)],Expression,String,Expression,Expression,Rule) deriving (Eq)
-   instance Show ComputeRule where
-    showsPrec p (CR (fOps, e, bOp, toExpr, frExpr, rule))
-     = showString ("("++show fOps++", "++show e++", "++show bOp++", "++show toExpr++", "++show frExpr++", "++show rule++")")
-
-   triggers :: Rule -> [ComputeRule]
-   triggers rule
-    = (concat.map (sort' bop).eqClass eq2expr)          --  < ---  bij gelijke targets: eerst DELETE dan INSERT
-      [ hc ::ComputeRule
-      | conjunct<-conjuncts rule, clause<-allClauses conjunct
-      , hcID<-(map collect.eqClass eqHC.hornCs rule) clause  --  < ---  alle gelijke horn clauses op hoopjes vegen.
-      , hc<-splitInsDel hcID
-      , computing rule hc]
-      where
-   -- eerst alle gelijke horn clauses op hoopjes vegen.
-       ( CR (fOps, e, bOp, toExpr, frExpr, rule)) `eqHC` (CR (fOps', e', bOp', toExpr', frExpr', rule'))
-              =      (bOp, toExpr, frExpr)          ==                  (bOp', toExpr', frExpr')
-       collect :: [ComputeRule] -> ComputeRule
-       collect cl = CR ((rd.concat)[fOps| CR (fOps, e, bOp, toExpr, frExpr, rule) <-cl], simplify (Fu [e| CR (fOps, e, bOp, toExpr, frExpr, rule)<-cl]), bOp, toExpr, frExpr, rule)
-        where CR (fOps, e, bOp, toExpr, frExpr, rule) = head cl
-       splitInsDel :: ComputeRule -> [ComputeRule]
-       splitInsDel (CR (fOps, e, bOp, toExpr, frExpr, rule))
-  --      = [ ([(f,r)|(f, CR (r, e, bOp, toExpr, frExpr, rule))<-cl], e, bOp, toExpr, if f=="DELETE FROM" then (notCp frExpr) else frExpr, rule)
-  --        | cl<-eqCl fst [(f, CR (r, e, bOp, toExpr, frExpr, rule))| (f,r)<-fOps]
-  --        ]
-        = [ CR ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("DELETE FROM",r)<-fOps]++
-          [ CR ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("INSERT INTO",r)<-fOps]
-   -- volgorde aanbrengen in hornclauses met gelijke toExpr: eerst DELETE dan INSERT
-       CR (fOps, e, bOp, toExpr, frExpr, r) `eq2expr` CR (fOps', e', bOp', toExpr', frExpr', r') = toExpr == toExpr'
-       bop (CR (fOps, e, bOp, toExpr, frExpr, r)) = bOp
-   -- alleen "COMPUTING" termen opleveren
-       computing rule hc@(CR (fOps, e, bOp, toExpr, frExpr, r)) = toExpr `elem` map simplify (r_cpu rule)
-   -- debug:    computing rule e = error ("(module Calc diagnostic) rule: "++showADL rule++"\e: "++show e++"\nr_cpu rule : "++ show (e `elem` r_cpu rule))
 
    multDerivations :: Language pat => pat -> Declarations
    multDerivations context
@@ -493,62 +373,6 @@
           , d<-(map (add Tot) . declarations . head) ts++(map (add Sur) . declarations . last) ts
           ])
       where add m (Sgn nm a b props prL prM prR cs expla pos nr sig) = (Sgn nm a b (rd (m:props)) prL prM prR cs expla pos nr sig)
-
-   instance Graphic Declarations where
-    dotGraph context style nm links
-     = "digraph "++show [x|x<-nm,not(isSpace x)]++introG++newline
-             ++ chain newline
-                ([ line (name (source d)) (name d) (name (target d)) | d<-links, Tot `elem` multiplicities d]++
-                 [ line (name (target d)) (name d) (name (source d)) | d<-links, Sur `elem` multiplicities d])
-             ++ "\n   }"
-       where
-         introG = "\n   { bgcolor=transparent"++newline
-               ++ " { node [shape=box,fontsize=18,font=helvetica] "++(chain "; ".map quote.sord) [name c| d<-links, c<-[source d, target d]]++" }"++newline
-               ++ "node [shape=plaintext,fontsize=18,font=helvetica]"++newline
-               ++ "edge [fontsize=12,arrowsize=0.8,len=2]"
-         line p1 s p2 = quote (p1) ++ edgearrow ++ quote (p2) ++ if null s then "" else " [label="++quote s++"]"
-         --- Nog wat hulpfuncties. Die horen overigens waarschijnlijk niet hier...
-         edgearrow = " -> "
-         newline = "\n   ; "
-         quote s = "\"" ++ s ++ "\" "
-
-   instance Graphic [ECArule] where
-    dotGraph context style nm links
-     = "digraph "++show [x|x<-nm,not(isSpace x)]++introG++newline
-             ++ chain newline
-                [ line f "" t | l@(ECA (On fOp frm) (Do tOp tExpr delta))<-lnks
-                              , (f,t)<-[(showADL frm,show l),(show l,showADL tExpr)]]
-             ++ "\n   }"
-       where
-         introG = "\n   { bgcolor=transparent"++newline  -- the overlap=False takes time!   ++"overlap=False"++newline
-               ++ " { node [shape=ellipse,fontsize=18,font=helvetica] "++(chain "; ".map quote.sord) [c| ECA (On fOp frm) (Do tOp tExpr delta)<-lnks, c<-[showADL frm, showADL tExpr]]++" }"++newline
-               ++ " { node [shape=box,fontsize=12,font=helvetica] "++(chain "; ".sord) ["{"++quote (show l)++" ["++lbl l++"]} "| l<-lnks]++" }"++newline
-               ++ "node [shape=plaintext,fontsize=18,font=helvetica]"++newline
-               ++ "edge [fontsize=12,arrowsize=1.2,len=2]"
-         line p1 s p2 = quote (p1) ++ edgearrow ++ quote (p2) ++ if null s then "" else " [label="++quote s++"]"
-         lbl (ECA (On fOp frm) (Do tOp tExpr delta))
-          = "label="++quote("ON "++show fOp++" DO "++show tOp++" "++showADL delta)
-         lnks = [ ECA (On fOp (if inline frm then frm else flp frm))
-                      (Do tOp (if p tExpr then tExpr else flp tExpr) delta)
-                | ECA (On fOp frm) (Do tOp tExpr delta)<-links ]
-         p (Tm m)  = inline m
-         p (F [])  = True
-         p (F ts)  = p (head ts)
-         p (Fd []) = True
-         p (Fd ts) = p (head ts)
-         p (Fi []) = True
-         p (Fi fs) = p (head fs)
-         p (Fu []) = True
-         p (Fu fs) = p (head fs)
-         p (Cp e)  = p e
-         p (K0 e)  = p e
-         p (K1 e)  = p e
-         p e       = True
-
-         --- Nog wat hulpfuncties. Die horen overigens waarschijnlijk niet hier...
-         edgearrow = " -> "
-         newline = "\n   ; "
-         quote s = "\"" ++ s ++ "\" "
 
    closRule [] = error ("Module Calc: empty argument in closRule.")
    closRule xs
@@ -646,14 +470,17 @@
     = "ON "++commaEng "OR" [fOp++" "++if isSgn r then name r else showADL r|(fOp,r)<-fOps] ++" DO "++bOp++" "++showADL toExpr++" SELECTFROM "++sh frExpr
       where sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
 
-   instance Show ECArule where
-    showsPrec p (ECA event pa) = showString (show event++"\nEXECUTE "++show pa)
-   instance Show Event where
-    showsPrec p (On Ins m) = showString ("ON INSERT Delta IN "++show m)
-    showsPrec p (On Del m) = showString ("ON DELETE Delta FROM "++show m)
+   class SQL a where
+    showSQL :: a -> String
 
-   instance Show PAclause where
-    showsPrec p fragm = showString (showFragm "\n        " fragm)
+   instance SQL ECArule where
+    showSQL (ECA event pa) = (showSQL event++"\nEXECUTE "++showSQL pa)
+   instance SQL Event where
+    showSQL (On Ins m) = "ON INSERT Delta IN   "++show m
+    showSQL (On Del m) = "ON DELETE Delta FROM "++show m
+
+   instance SQL PAclause where
+    showSQL fragm = showFragm "\n        " fragm
      where
       showFragm indent (Do Ins tExpr delt) = "INSERT INTO "++sh tExpr++" SELECTFROM "++sh delt
       showFragm indent (Do Del tExpr delt) = "DELETE FROM "++sh tExpr++" SELECTFROM "++sh delt
@@ -722,28 +549,7 @@
 
 
 
-   nfProof expr = nfPr True False expr -- Clauses are derived by means of the conjunctive form, using <=> derivations.
-   nfPr eq dnf expr
-    = if expr==res
-      then [(expr,[],"<=>")]
-      else (expr,steps,equ):nfPr eq dnf (simplify res)
-    where (res,steps,equ) = normStep eq dnf False expr
 
-
-
-   conjNF  expr = negRight (if null proof then expr else expr')
-                  where (expr',motives,equ) = last proof
-                        proof = nfPr True  False expr
-   conjNF' expr = negRight (if null proof then expr else expr')
-                  where (expr',motives,equ) = last proof
-                        proof = nfPr False False expr
-   disjNF  expr = negRight (if null proof then expr else expr')
-                  where (expr',motives,equ) = last proof
-                        proof = nfPr True  True expr
-   disjNF' expr = negRight (if null proof then expr else expr')
-                  where (expr',motives,equ) = last proof
-                        proof = nfPr False True expr
-   negRight e = e
 
 
 
@@ -910,125 +716,6 @@
        first ((e,morphism,text,str):rest) = e
        first _ = error "Module Calc: wrong pattern in first"
 
-   simplify :: Expression -> Expression
-   simplify expr = e where (e,_,_) = last (simpProof expr)
-   
-   simpProof expr    -- dus levert op: [(Expression,[String],String)]
-    = if expr==res
-      then [(expr,[],"<=>")]
-      else (expr,steps,equ):simpProof res
-    where (res,steps,equ) = normStep True True True expr
-
-
-
-   normStep :: Bool -> Bool -> Bool -> Expression -> (Expression,[String],String)
-   normStep eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
-            dnf   -- If dnf=True, the result is in disjunctive normal form. Otherwise it is in conjunctive normal form
-            simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
-            expr = (res,ss,equ)
-    where
-     (res,ss,equ) = norm expr []
-     norm :: Expression -> [Expression] -> (Expression,[String],String)
-     norm (K0 e)       rs   = (K0 res, steps, equ)
-                              where (res,steps,equ) = norm e []
-     norm (K1 e)       rs   = (K1 res, steps, equ)
-                              where (res,steps,equ) = norm e []
-     norm (Cp (Cp e))  rs   = (e, ["compl of compl"],"<=>")
-     norm (Cp (Fi fs)) rs   = if simpl then (notCp res,steps,equ) else (Fu (map notCp fs), ["De Morgan"], "<=>")
-                              where (res,steps,equ) = norm (Fi fs) []
-     norm (Cp (Fu fs)) rs   = if simpl then (notCp res,steps,equ) else (Fi (map notCp fs), ["De Morgan"], "<=>")
-                              where (res,steps,equ) = norm (Fu fs) []
-     norm (Cp (Fd ts)) rs   = if not simpl && and [isNeg t| t<-ts] then (F (map notCp ts), ["De Morgan"], "<=>") else
-                              (notCp res,steps,equ)
-                              where (res,steps,equ) = norm (Fd ts) []
-     norm (Cp e)       rs   = (notCp res,steps,equ)
-                              where (res,steps,equ) = norm e []
-     norm (Tc f)       rs   = norm f []
-     norm (F [t])      rs   = norm t []
-     norm (F (e:es))   rs   | or [isF x|x<-e:es]          = norm (F [y| x<-e:es, y<-if isF x then unF x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
-                            | or [isIdent x|x<-e:es]      = (F [x|x<-e:es,not (isIdent x)], ["x;I = x"], "<=>")
-                            | not simpl && not eq && length es>1 && isFd g && length gs>1
-                                                          = (F (Fd (F [e,head gs]:tail gs):es'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
-                            | not simpl && not eq && isFd e && length ue>1
-                                                          = (Fd (init ue++[F (last ue:es)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
-                            | not simpl && not eq && isFi e = (distribute F Fi isF isFi (F (e:es)), ["distribute /\\ over ;"], "==>")
-                            | not simpl && isFu e           = (distribute F Fu isF isFu (F (e:es)), ["distribute \\/ over ;"], "<=>")
-                            | not simpl && and [isNeg x|x<-(e:es)]
-                                                          = (notCp (Fd [notCp x| x<-(e:es)]), ["De Morgan"], "<=>")
-                            | not simpl && isFu (last (e:es)) = (Fu [F (init (e:es)++[t])|Fu xs<-[last (e:es)], t<-xs], ["distribute \\/ over ;"], "<=>")
-                            | otherwise                   = (if isF f then F (t:unF f) else F [t,f], steps++steps', fEqu [equ,equ'])
-                            where (t,steps, equ)  = norm e []
-                                  (f,steps',equ') = norm (F es) (e:rs)
-                                  ue = unF e
-                                  g@(Fd gs):es' = es
-     norm (Fd [e])    rs    = norm e []
-     norm (Fd (e:es)) rs    | or [isFd x|x<-e:es]         = norm (Fd [y| x<-e:es, y<-if isFd x then unF x else [x]]) rs
-                            | or [isNot x|x<-e:es]        = (F [x|x<-e:es,not (isNot x)], ["x!-I = x"], "<=>")
-                            | not simpl && not eq && isFu e = (distribute Fd Fu isFd isFu (Fd (e:es)), ["distribute \\/ over !"], "==>")
-                            | not simpl && isFi e         = (distribute Fd Fi isFd isFi (Fd (e:es)), ["distribute /\\ over !"], "<=>")
-                            | not simpl && and [isNeg x|x<-(e:es)]
-                                                          = (notCp (F [notCp x| x<-(e:es)]), ["De Morgan"], "<=>")
-                            | not simpl && length es>1 && isNeg e && isPos g && isFunction e
-                                                          = (F [notCp e,Fd es], ["f-!g = f;g if f is a function"], "<=>")
-                            | not simpl && length es>1 && isPos e && isNeg g && isFunction (flp g)
-                                                          = (Fd ( F[e,notCp g]:es'), ["f!g- = f;g if g~ is a function"], "<=>")
-                            | otherwise                   = (if isFd f then Fd (t:unF f) else Fd [t,f], steps++steps', fEqu [equ,equ'])
-                            where (t,steps, equ)  = norm e []
-                                  (f,steps',equ') = norm (Fd es) (e:rs)
-                                  ue = unF e
-                                  g:es' = es
-     norm (Fi [e]) rs       = norm e []
-     norm (Fi (e:es)) rs    | or [isFi x|x<-e:es]         = norm (Fi [y| x<-e:es, y<-if isFi x then unF x else [x]]) rs
-                            | rd(e:es)/=e:es              = (Fi (rd (e:es)), ["x/\\x = x"], "<=>")
-                            | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
-                            | e==Fu []                    = (Fu [], ["inconsistency"], "<=>")
-  -- this is unreachable    | e==Fi []                    = (Fi es, ["x/\\V = x"], "<=>")
-                            | or[x==Fu []|x<-es]          = (Fu [], ["x/\\V- = V-"], "<=>")
-                            | isFu e && not (null absor0) = let f=head absor0 in (Fi es, ["absorb "++showADL e++" because of "++showADL f], "<=>")
-                            | isFu e && not (null absor1) = let (ts,f)=head absor1 in (Fi (ts++es), ["absorb "++showADL f], "<=>")
-                            | not simpl && isFu e && dnf  = (distribute Fi Fu isFi isFu (Fi (e:es)), ["distribute \\/ over /\\"], "<=>")
-                            | otherwise                   = (if isFi f then Fi (t:unF f) else Fi [t,f], steps++steps', fEqu [equ,equ'])
-                            where (t,steps, equ)  = norm e []
-                                  (f,steps',equ') = norm (Fi es) (e:rs)
-                                  incons = [x|x<-es,x==notCp e]
-                                  absor0 = [t| t<-unF e, f<-es++rs, t==f]
-                                  absor1 = [(if length rest<=1 then rest else [Fu rest] , t)| t<-unF e, f<-es++rs, notCp t==f, rest<-[[x|x<-unF e,x/=t]]]
-     norm (Fu [e]) rs       = norm e []
-     norm (Fu (e:es)) rs    | or [isFu x|x<-e:es]         = norm (Fu [y| x<-e:es, y<-if isFu x then unF x else [x]]) rs
-                            | rd(e:es)/=e:es              = (Fu (rd (e:es)), ["x\\/x = x"], "<=>")
-                            | not (null compl)            = (Fi [], [showADL (notCp (head compl))++"\\/"++showADL (head compl)++" = V"], "<=>")
-                            | e==Fi []                    = (Fi [], ["tautology"], "<=>")
-  -- this is unreachable    | e==Fu []                    = (Fu es, ["x\\/V- = x"], "<=>")
-                            | or[x==Fi []|x<-es]          = (Fi [], ["x\\/V = V"], "<=>")
-                            | isFi e && not (null absor0) = let f=head absor0 in (Fu es, ["absorb "++showADL e++" because of "++showADL f++" ((x/\\y)\\/y = y))"], "<=>")
-                            | isFi e && not (null absor1) = let (ts,f)=head absor1 in (Fu (ts++es), ["absorb "++showADL f++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
-                            | not simpl && isFi e && not dnf = (distribute Fu Fi isFu isFi (Fu (e:es)), ["distribute /\\ over \\/"], "<=>")
-                            | otherwise                   = (if isFu f then Fu (t:unF f) else Fu [t,f], steps++steps', fEqu [equ,equ'])
-                            where (t,steps, equ)  = norm e []
-                                  (f,steps',equ') = norm (Fu es) (e:rs)
-                                  compl  = [x|x<-es,x==notCp e]
-                                  absor0 = [t| t<-unF e, f<-es++rs, t==f]
-                                  absor1 = [(if length rest<=1 then rest else [Fi rest] , t)| t<-unF e, f<-es++rs, notCp t==f, rest<-[[x|x<-unF e,x/=t]]]
-     norm x           rs    = (x,[],"<=>")
-
-
-
-
-
-   fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
-   isFu (Fu fs) = True
-   isFu _       = False
-   isFi (Fi fs) = True
-   isFi _       = False
-   isF  (F _)   = True
-   isF _        = False
-   isFd (Fd _)  = True
-   isFd _       = False
-   unF (Fi es)  = es
-   unF (Fu es)  = es
-   unF (Fd es)  = es
-   unF (F  es)  = es
-   unF x        = [x]
 
 
 
@@ -1037,19 +724,9 @@
 
 
 
-   distribute f g isf isg = dis
-    where
-     dis x | isf x && null xs = g [f []]
-           | isg x && null xs = g []
-           | isg x && isg e   = dis (g (ys++es))
-           | isf x && isf e   = dis (f (ys++es))
-           | isf x            = g [f [p,q]| p<-if isg e then unF e else [e], q<-unF (dis (f es))]
-           | isg x            = g (unF (dis e)++es)
-  --       | null es          = g [e]
-           | otherwise        = g [x]             
-           where xs = unF x
-                 e:es = xs
-                 ys = unF e
+
+
+
 
    normR r@(Ru Truth antc pos cons cpu expla sgn nr pn) = Ru Truth err pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
     where err = error ("Module Calc: erroneous reference to antc of rule "++showADL r)
@@ -1088,84 +765,6 @@
 
 
 
-
-   shiftL :: Expression -> [Expression]
-   shiftL r
-    | length antss+length conss /= length fus = error ("(module Calc) shiftL will not handle argument of the form "++showHS "" r)
-    | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
-    | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F conss)]
-    | otherwise                               = [Fu ([ Cp (F (if null ts then id css else ts))
-                                                     | ts<-ass++if null ass then [id css] else []]++
-                                                     [ F (if null ts then id ass else ts)
-                                                     | ts<-css++if null css then [id ass] else []])
-                                                | (ass,css)<-rd(move antss conss)
-                                                , if null css then error "Null css" else True
-                                                , if null ass then error "Null ass" else True
-                                                ]
-    where
-     Fu fs = disjuncts r
-     fus = filter (not.isIdent) fs
-     antss = [ts | Cp (F ts)<-fus]
-     conss = [ts | F ts<-fus]
-     srcA = -- if null antss  then error ("(module Calc) empty antecedent in shiftL ("++showHS "" r++")") else
-            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("(module Calc) shiftL ("++showHS "" r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
-            foldr1 lub [ source (head ants) | ants<-antss]
-     id ass = [Tm (mIs c)]
-      where a = (source.head.head) ass
-            c = if not (a `order` b) then error ("(module Calc) shiftL ("++showHS "" r++")\n"++showADL r++"\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
-                a `lub` b
-            b = (target.last.last) ass
-   -- It is imperative that both ass and css are not empty.
-     move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
-     move ass [] = [(ass,[])]
-     move ass css
-      = (ass,css):
-        if and ([not (idsOnly (F cs))| cs<-css]) -- idsOnly (F [])=True, so:  and [not (null cs)| cs<-css]
-        then [ts| length (eqClass (==) (map head css)) == 1
-                , fun (multiplicities h)
-                , ts<-move [[flp h]++as|as<-ass] (map tail css)]++
-             [ts| length (eqClass (==) (map last css)) == 1
-                , inj (multiplicities l)
-                , ts<-move [as++[flp l]|as<-ass] (map init css)]
-        else []
-        where h=head (map head css); l=head (map last css)
-
-   shiftR :: Expression -> [Expression]
-   shiftR r
-    | length antss+length conss /= length fus = error ("(module Calc) shiftR will not handle argument of the form "++showHS "" r)
-    | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
-    | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F antss)]
-    | otherwise                               = [Fu ([ Cp (F (if null ts then id css else ts))
-                                                     | ts<-ass++if null ass then [id css] else []]++
-                                                     [ F (if null ts then id ass else ts)
-                                                     | ts<-css++if null css then [id ass] else []])
-                                                | (ass,css)<-rd(move antss conss)]
-    where
-     Fu fs = disjuncts r
-     fus = filter (not.isIdent) fs
-     antss = [ts | Cp (F ts)<-fus]
-     conss = [ts | F ts<-fus]
-     srcA = if null conss then error ("(module Calc) empty consequent in shiftR ("++showHS "" r++")") else
-            if length (eqClass order [ source (head cons) | cons<-conss])>1 then error ("(module Calc) shiftR ("++showHS "" r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss])) else
-            foldr1 lub [ source (head cons) | cons<-conss]
-     id css = [Tm (mIs c)]
-      where a = (source.head.head) css
-            c = if not (a `order` b) then error ("(module Calc) shiftR ("++showHS "" r++")\n"++showADL r++"\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
-                a `lub` b
-            b = (target.last.last) css
-     move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
-     move [] css = [([],css)]
-     move ass css
-      = (ass,css):
-        if and [not (null as)| as<-ass]
-        then [ts| length (eqClass (==) (map head ass)) == 1
-                , sur (multiplicities h)
-                , ts<-move (map tail ass) [[flp h]++cs|cs<-css]]++
-             [ts| length (eqClass (==) (map last ass)) == 1
-                , tot (multiplicities l)
-                , ts<-move (map init ass) [cs++[flp l]|cs<-css]]
-        else []
-        where h=head (map head ass); l=head (map last ass)
 
    cl::Expression -> Expression
    cl (Fu [F [t]]) = t

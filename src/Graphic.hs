@@ -1,3 +1,4 @@
+ {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
   module Graphic  ( dotGraph
                   , processDotgraphFile
                   , Graphic
@@ -7,8 +8,10 @@
    import Char (isSpace)
    import CommonClasses ( Identified(name) )
    import Collection (Collection(rd))
-   import Auxiliaries (chain, eqClass, sort)
+   import Auxiliaries (chain, eqClass, sort,sord)
    import Adl
+   import FspecDef
+   import ShowADL
 --   import ADLdef ( Context,Pattern(..),ctxpats
 --                 , Rule(Ru),sign,RuleType(..)
 --                 , Expression(..)
@@ -192,6 +195,64 @@
    instance Graphic Morphism where
     dotGraph context style nm m -- @(Mph nm' _ atts sgn yin m')
      = dotGraph context style nm (Pat nm [Ru Equivalence (F [Tm m]) posNone (F []) [] "" (sign m) 0 ""] [] [] [] [])
+
+   instance Graphic [ECArule] where
+    dotGraph context style nm links
+     = "digraph "++show [x|x<-nm,not(isSpace x)]++introG++newline
+             ++ chain newline
+                [ line f "" t | l@(ECA (On fOp frm) (Do tOp tExpr delta))<-lnks
+                              , (f,t)<-[(showADL frm,show l),(show l,showADL tExpr)]]
+             ++ "\n   }"
+       where
+         introG = "\n   { bgcolor=transparent"++newline  -- the overlap=False takes time!   ++"overlap=False"++newline
+               ++ " { node [shape=ellipse,fontsize=18,font=helvetica] "++(chain "; ".map quote.sord) [c| ECA (On fOp frm) (Do tOp tExpr delta)<-lnks, c<-[showADL frm, showADL tExpr]]++" }"++newline
+               ++ " { node [shape=box,fontsize=12,font=helvetica] "++(chain "; ".sord) ["{"++quote (show l)++" ["++lbl l++"]} "| l<-lnks]++" }"++newline
+               ++ "node [shape=plaintext,fontsize=18,font=helvetica]"++newline
+               ++ "edge [fontsize=12,arrowsize=1.2,len=2]"
+         line p1 s p2 = quote (p1) ++ edgearrow ++ quote (p2) ++ if null s then "" else " [label="++quote s++"]"
+         lbl (ECA (On fOp frm) (Do tOp tExpr delta))
+          = "label="++quote("ON "++show fOp++" DO "++show tOp++" "++showADL delta)
+         lnks = [ ECA (On fOp (if inline frm then frm else flp frm))
+                      (Do tOp (if p tExpr then tExpr else flp tExpr) delta)
+                | ECA (On fOp frm) (Do tOp tExpr delta)<-links ]
+         p (Tm m)  = inline m
+         p (F [])  = True
+         p (F ts)  = p (head ts)
+         p (Fd []) = True
+         p (Fd ts) = p (head ts)
+         p (Fi []) = True
+         p (Fi fs) = p (head fs)
+         p (Fu []) = True
+         p (Fu fs) = p (head fs)
+         p (Cp e)  = p e
+         p (K0 e)  = p e
+         p (K1 e)  = p e
+         p e       = True
+
+         --- Nog wat hulpfuncties. Die horen overigens waarschijnlijk niet hier...
+         edgearrow = " -> "
+         newline = "\n   ; "
+         quote s = "\"" ++ s ++ "\" "
+
+   instance Graphic Declarations where
+    dotGraph context style nm links
+     = "digraph "++show [x|x<-nm,not(isSpace x)]++introG++newline
+             ++ chain newline
+                ([ line (name (source d)) (name d) (name (target d)) | d<-links, Tot `elem` multiplicities d]++
+                 [ line (name (target d)) (name d) (name (source d)) | d<-links, Sur `elem` multiplicities d])
+             ++ "\n   }"
+       where
+         introG = "\n   { bgcolor=transparent"++newline
+               ++ " { node [shape=box,fontsize=18,font=helvetica] "++(chain "; ".map quote.sord) [name c| d<-links, c<-[source d, target d]]++" }"++newline
+               ++ "node [shape=plaintext,fontsize=18,font=helvetica]"++newline
+               ++ "edge [fontsize=12,arrowsize=0.8,len=2]"
+         line p1 s p2 = quote (p1) ++ edgearrow ++ quote (p2) ++ if null s then "" else " [label="++quote s++"]"
+         --- Nog wat hulpfuncties. Die horen overigens waarschijnlijk niet hier...
+         edgearrow = " -> "
+         newline = "\n   ; "
+         quote s = "\"" ++ s ++ "\" "
+
+
 
    processDotgraphFile     fnm = genGraphics fnm "neato"
    processCdDataModelFile  fnm = genGraphics fnm "dot"

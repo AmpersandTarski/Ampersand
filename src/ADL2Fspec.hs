@@ -13,7 +13,8 @@
    import Calc
    import PredLogic
    import Languages
-
+   import NormalForms(disjNF,conjNF)
+   import ComputeRule(conjuncts,allClauses)
  -- The story:
  -- A number of datasets for this context is identified.
  -- Every pattern is considered to be a theme and every object is treated as a separate object specification.
@@ -23,7 +24,7 @@
    makeFspec :: Context -> Fspc
    makeFspec context
      = Fspc { fsfsid = makeFSid1 (name context)
-            , themes =  [] -- was: themes'  --TODO: Herstellen, en bewijzen dat dit termineert! -- TODO Aanpassen op nieuwe Document structuur
+            , themes =   themes'  --TODO: Herstellen, en bewijzen dat dit termineert! -- TODO Aanpassen op nieuwe Document structuur
             , datasets = datasets'
             , serviceS = []-- serviceS'  TODO: Loop verwijderen uit generatie serviceS.
             , serviceG = serviceG'
@@ -36,7 +37,7 @@
 -- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
 -- needs to be introduced in the same unit of text. For that purpose everything is allocated to a theme only once.
         themes'   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
-                   ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
+                    ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
                    )
 -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
 -- of relations together with multiplicity constraints. That is what serviceG does.
@@ -80,19 +81,32 @@
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
                    }]
-             ++let ats = [ (objdefNew (Tm mph))
-                              { objnm   = name mph++name (target mph)
-                              , objstrs = [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
-                              , objats  = []
-                              }
-                         | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
-               in [(objdefNew (Tm (mIs S)))
-                     { objnm  = name c++"s"
-                     , objats = [ (objdefNew (v(S,c)))
-                                     { objnm  = name c++"s"
-                                     , objats = ((objdefNew (Tm (mIs c))) { objnm = "nr" }): ats
-                                     } ]
-                     }| not (null ats)]
+             ++let ats = [ Obj { objnm  = name mph++name (target mph)
+                               , objpos = posNone
+                               , objctx = Tm mph
+                               , objats = []
+                               , objstrs= [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
+                               }
+                           | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
+               in [ Obj { objnm  = name c++"s"
+                        , objpos = posNone
+                        , objctx = Tm (mIs S)
+                        , objats = [ Obj { objnm  = name c++"s"
+                                         , objpos = posNone
+                                         , objctx = v(S,c)
+                                         , objats = ( Obj { objnm = "nr"
+                                                          , objpos = posNone
+                                                          , objctx = Tm (mIs c)
+                                                          , objats = []
+                                                          , objstrs= []
+                                                          }): ats
+                                         , objstrs= []
+                                         }
+                                   ]
+                        , objstrs = []
+                        }
+                        | not (null ats)
+                  ]
            | c<-concs context ]
            where
             relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
@@ -228,7 +242,7 @@
 --   makeFdecl context d = d
 
    makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
-   makeFunit context pat objs newConcs newDecls
+   makeFunit context pat objs _ _
     = Uspc fid pat ents svs
         where
           fid  = (if null objs then (makeFSid1 "*NONAME*") else makeFSid1(name (head objs))) 
@@ -240,7 +254,7 @@
           svs  = (concat [   [ createObj context o [] {-rs-} ]
                           ++ [ readObj context o]
                           ++ concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
-                                      | (e,key,ks)<-keys pat, e==concept o]
+                                      | (e',key,ks)<-keys pat, e'==concept o]
                           ++ [ deleteObj context o [] {-rs-} ]
                           ++ [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
                      | o<-objs ])
@@ -263,7 +277,7 @@
           postconds   = (["objs"++"= I["++name (concept o)++"]"]) -- Postcondition
 
    createObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
-   createObj context o rs
+   createObj context o ers
     = Sspc fid maySee mayChange
            -- No more FPA here
            params results invariants preconds postconds 
@@ -276,7 +290,7 @@
           results     = [ Aspc (makeFSid1("obj")) (handle context o)] -- results
           invariants  = (dressRules
                          [ (clause,rule)
-                         | (conj,rule)<-rs
+                         | (conj,rule)<-ers
                          , clause@(Fu terms)<-[lClause conj]
                          , not (null (mors o `isc` mors [t| Cp t<-terms]))])
           preconds    =  []
@@ -322,7 +336,7 @@
           preconds    = [let args = [("x."++name a)++"="++(varName (name a)) | a<-attributes o] ++
                                     [("x."++name a)++"="++idNam (nameAt a)      | a<-attributes o, not (name a `elem` map name ats')]
                          in
-                         "\\hbox{There is an {\\tt x}}\\in"++idName (concept o)++"\\ \\hbox{such that}"++
+                         "\\hbox{There is an {\\tt x}}\\in"++name (concept o)++"\\ \\hbox{such that}"++
                          (if length args==1 then "\\ "++concat args else
                           "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
                           chain "\\\\\n" (map ('&':) args)++
@@ -334,7 +348,7 @@
           varName = uName (map name (attributes o))
 
    delKeyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> [(Expression,Rule)] -> ServiceSpec
-   delKeyEnt context o (key,ats') rs
+   delKeyEnt context o (key,ats') ers
     = Sspc fid maySee mayChange
            -- No more FPA here
            params results invariants preconds postconds 
@@ -348,13 +362,13 @@
           results     = []
           invariants  = (dressRules
                         [ (clause,rule)
-                        | (conj,rule)<-rs
+                        | (conj,rule)<-ers
                         , clause@(Fu terms)<-[rClause conj]
                         , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
  --    Pre (example:) 
           preconds    = []
  --    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
-          postconds   = ["\\hbox{\\tt obj}\\in"++idName o++"\\ \\hbox{implies that not}"++
+          postconds   = ["\\hbox{\\tt obj}\\in"++name o++"\\ \\hbox{implies that not}"++
                          (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++("obj."++name a)++"="++showADL (ctx a)++")" else
                          "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
                          chain "\\\\\n" ["&"++("obj."++name a)++"="++(varName (name a))|a<-attributes o]++
@@ -364,7 +378,7 @@
           varName = uName (map name (attributes o))
 
    updateObj :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
-   updateObj context o cs rs
+   updateObj context o _ ers
     = Sspc fid maySee mayChange
            -- No more FPA here
            params results invariants preconds postconds 
@@ -375,7 +389,7 @@
        --    (IF Gemiddeld)
           params      = (Aspc (makeFSid1 "x") (handle context o): [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-attributes o])
           results     = []
-          invariants  = (dressRules rs)
+          invariants  = (dressRules ers)
  --    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
           preconds    = []
  --    Post (example:) {x left l, x right r, x src s, and x trg t}
@@ -384,7 +398,7 @@
           varName = uName (map name (attributes o))
 
    deleteObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
-   deleteObj context o rs
+   deleteObj context o ers
     = Sspc fid maySee mayChange
            -- No more FPA here
            params results invariants preconds postconds 
@@ -397,7 +411,7 @@
           results     = []
           invariants  = (dressRules
                         [ (clause,rule)
-                        | (conj,rule)<-rs
+                        | (conj,rule)<-ers
                         , clause@(Fu terms)<-[rClause conj]
                         , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
  --    Pre
@@ -407,8 +421,8 @@
                          "&\n\\end{array}$"
                         | not (null (attributes o))]
  --    Post 
-          postconds   = [if null (attributes o) then "\\hbox{\\tt x}\\not\\in"++idName (concept o) else
-                         "\\hbox{\\tt obj}\\in"++idName (concept o)++"\\ \\hbox{implies that not}"++
+          postconds   = [if null (attributes o) then "\\hbox{\\tt x}\\not\\in"++name (concept o) else
+                         "\\hbox{\\tt obj}\\in"++name (concept o)++"\\ \\hbox{implies that not}"++
                          (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++("obj."++name a)++"="++idNam (nameAt a)++")" else
                          "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
                          chain "\\\\\nand" ["&"++("obj."++name a)++"="++idNam (nameAt a)|a<-attributes o]++
@@ -420,25 +434,29 @@
 
    dressRules :: [(Expression,Rule)] -> [Rule]
    dressRules clauses = [ if length cl>1 then rule else makeRule rule clause | cl<-(map rd.eqCl snd) clauses, (clause,rule)<-take 1 cl]
-    where
-     f (Fu cl) (Fu cl') = [e| e<-cl, isPos e] `eq` [e| Cp e<-cl'] &&
-                          [e| Cp e<-cl] `eq` [e| e<-cl', isPos e]
-     self (Fu cl)       = [e| e<-cl, isPos e] `eq` [e| Cp e<-cl]
-     a `eq` b = length a==length b && length a==length (a `isc` b)
+--    where
+--     f (Fu cl) (Fu cl') = [e| e<-cl, isPos e] `eq` [e| Cp e<-cl'] &&
+--                          [e| Cp e<-cl] `eq` [e| e<-cl', isPos e]
+--     self (Fu cl)       = [e| e<-cl, isPos e] `eq` [e| Cp e<-cl]
+--     a `eq` b = length a==length b && length a==length (a `isc` b)
 
 
    uName :: [String] -> String -> String
-   uName nms n = concat [v| (nm,v)<-zip nms' vs, n==nm]
-    where nms' = rd nms
+   uName nms n = concat [v'| (nm,v')<-zip nms' vs, n==nm]
+    where nms' :: [String] 
+          nms' = rd nms
+          vs :: [String]
           vs = f (map (map toLower.take 1) nms')
-          f (v:vs)          = if v `elem` vs then f (g v (map show [1..]) (v:vs)) else v: f vs
+          f :: [String] -> [String]
+          f (v':vs')          = if v' `elem` vs' then f (g v' (map show [1..]) (v':vs')) else v': f vs'
           f []              = []
-          g e (i:is) (v:vs) = if v==e then (v++i): g e is vs else v: g e (i:is) vs
-          g e _ []          = []
-
+          g :: String -> [String] -> [String] -> [String]
+          g e' (i:is) (v':vs') = if v'==e' then (v'++i): g e' is vs' else v': g e' (i:is) vs'
+          g _ _ []          = []
+          g _ [] _          = undefined
+          
    nameAt :: (Identified a, Object a) => a -> String
    nameAt a = firstCaps ((map toLower.name.target.ctx) a++"_"++name a)
-   idName c = name c
 
    makeFSid1 :: String -> FSid
    makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
