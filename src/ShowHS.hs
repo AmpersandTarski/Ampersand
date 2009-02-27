@@ -1,14 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module ShowHS (showHS,ShowHS()) -- TODO: ShowHS() mag eigenlijk niet meer ontsnappen uit deze module, maar wordt nu nog ergens misbruikt...
+module ShowHS (showHS)
 where
 
-   import Typology
+   import Typology(Inheritance(..))
    import FspecDef
    import Adl
---   import Collection ( (>-),uni )
---   import CommonClasses (explain )             
    import UU_Scanner (Pos(Pos))
-   import ShowADL
+   import ShowADL(showADL) -- wenselijk voor foutmeldingen.
 
 
    class ShowHS a where
@@ -38,64 +36,48 @@ where
     showHS indent fspec
          = (chain (indent ++"    ") 
             ["Fspc{ fsfsid = " ++ showHS " " (fsid fspec)
---                  ,", themes   = " ++ "["++chain "," (map (showHS "") (themes fspec))++"]" 
-                  ,", themes = [] -- NOG UIT TE WERKEN IN SHOWHS (Genereert nog een loop... 8-(("
-                  ,", datasets = "++ "[ "++chain (indent ++"                 , ") (map showHSname (datasets fspec))++indent++"                 "++"]" 
---                  ,", datasets = " ++ "["++chain "," (map (showHS "") (datasets fspec))++"]"
---                  ,", datasets = [] -- NOG UIT TE WERKEN IN SHOWHS"
---                  ,", serviceS = " ++ "["++chain "," (map (showHS "") (serviceS fspec))++"]"
-                  ,", serviceS = [] -- NOG UIT TE WERKEN IN SHOWHS"
---                  ,", serviceG = " ++ "["++chain "," (map (showHS "") (serviceG fspec))++"]"
-                  ,", serviceG = [] -- NOG UIT TE WERKEN IN SHOWHS"
---                  ,", services = " ++ "["++chain "," (map (showHS "") (services fspec))++"]"
-                  ,", services = [] -- NOG UIT TE WERKEN IN SHOWHS"
-                  ,", vrules   = " ++ "[ "++chain (indent ++"                 , ") (map showHSname (vrules fspec))++indent++"                 "++"]"
-                  ,", vrels    = " ++ "[ "++chain (indent ++"                 , ") (map showHSname (vrels  fspec))++indent++"                 "++"]"
+                  ,", themes   = " ++ "["++chain "," (map (showHS "") (themes fspec))++"]" 
+                  ,", datasets = "++ "[ "++chain indentA (map showHSname (datasets fspec))++indent++"                 "++"]" 
+                  ,", serviceS = serviceS'"
+                  ,", serviceG = serviceG'"
+                  ,", services = services'"
+                  ,", vrules   = " ++ "[ "++chain indentA (map showHSname (vrules fspec))++indent++"                 "++"]"
+                  ,", vrels    = " ++ "[ "++chain indentA (map showHSname (vrels  fspec))++indent++"                 "++"]"
                   ,", fsisa = isa'"
                   ,"}" 
                     ]) ++   
-    
---     = "Fspc"++showHS " " (fsid fspec)++
---       "-- ##1## \n"++
---   --    (if null (themes   fspec) then " []" else indent++"{- themes:    -}  \n"++showL [showHSname t ++"\n"|t<-themes   fspec ])++
---       "-- ##2## \n"++
---       (if null (datasets fspec) then " []" else indent++"{- datasets:  -}  "++showL [showHSname d|d<-datasets fspec ])++
---       "-- ##3## \n"++
---       (if null (serviceS fspec) then " []" else indent++"{- serviceS:  -}  "++showL [showHSname s|s<-serviceS fspec ])++
---       "-- ##4## \n"++
---       (if null (serviceG fspec) then " []" else indent++"{- serviceG:  -}  "++showL [showHSname s|s<-serviceG fspec ])++
---       "-- ##5## \n"++
---       (if null (vrules   fspec) then " []" else indent++"{- rules:     -}  "++showL [showHSname r|r<-vrules   fspec ])++
---       "-- ##6## \n"++
---       (if null (vrels    fspec) then " []" else indent++"{- relations: -}  "++showL [showHSname r|r<-vrels    fspec ])++
---       "-- ##7## \n"++
---       indent++" isa "++
---       "-- ##8## \n"++
 
        indent++"where"++
-       "-- ##9## \n"++
        indent++" isa' = "++ showHS (indent ++ "        ") (fsisa fspec)++
-       "-- ##10## \n"++
        indent++" gE = genEq (typology isa')"++
---        "\n -- ***THEMES***: "++
---   --    (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++" = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+        "\n -- ***THEMES***: "++
+       (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++indent++"  = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
         "\n -- ***DATASETS***: "++
        (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
---        "\n -- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++
+        "\n -- ***Services S***: "++
+       indent++" serviceS' = "++"["++chain (indentB++",") (map (showHS indentB) (serviceS fspec))++"]"++
+        "\n -- ***Services G***: "++
+       indent++" serviceG' = "++"["++chain (indentB++",") (map (showHS indentB) (serviceG fspec))++"]"++
+        "\n -- ***Services***: "++
+       indent++" services' = "++"["++chain (indentB++",") (map (showHS indentB) (services fspec))++"]"++
+
+-- WAAROM?  Stef, je had hier ooit de intentie om de verschillende soorten servicedefinities apart op te sommen. Echter, dan moeten ze wel te onderscheiden zijn. de namen moeten
+--          dan ook netjes uniek worden gemaakt. Dat is nu nog niet het geval. Is dat nodig/ wenselijk? Waarom wel, waarom niet?
+
+--        "\n -- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++  
 --       (if null 
 --            (uni (serviceS fspec)  (serviceG fspec)) then "" 
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
         "\n -- ***Declarations of RULES***: "++
        (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
--- 
         "\n -- ***Declarations OF RELATIONS***: "++
        (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
 --        "\n -- ***PATTERNS***: "++
 ----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
         "\n"
---
-
+           where indentA = indent ++"                 , "
+                 indentB = indent ++"              "
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Ftheme                        ***
 -- \***********************************************************************
@@ -454,9 +436,9 @@ where
     showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
     showHS _ c = case c of
                        C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
-                       S        -> name c
-                       Anything -> name c
-                       NOthing  -> name c
+                       S        -> "S "
+                       Anything -> "Anything "
+                       NOthing  -> "NOthing "
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: AutType                       ***

@@ -1,8 +1,9 @@
+  {-# OPTIONS_GHC -Wall #-}
   module ADL2Fspec (makeFspec)
   where
-   import CommonClasses ( Identified(name))
+--   import CommonClasses ( Identified(name))
    import Collection    ( Collection (isc,(>-),rd) )
-   import Auxiliaries(sort,sort',snd3,eqCl,fst3,eqClass)
+   import Auxiliaries(sort',snd3,eqCl,fst3)
    import Char(toLower)
    import Strings(firstCaps,idNam,chain)
    import Adl
@@ -21,11 +22,20 @@
 
    makeFspec :: Context -> Fspc
    makeFspec context
-     = Fspc fid themes datasets serviceS serviceG fservices frules frels isa where
-        fid      = makeFSid1 (name context)
+     = Fspc { fsfsid = makeFSid1 (name context)
+            , themes =  [] -- was: themes'  --TODO: Herstellen, en bewijzen dat dit termineert! -- TODO Aanpassen op nieuwe Document structuur
+            , datasets = datasets'
+            , serviceS = []-- serviceS'  TODO: Loop verwijderen uit generatie serviceS.
+            , serviceG = serviceG'
+            , services = [] --was: fservices --TODO: Herstellen, en bewijzen dat dit termineert!
+            , vrules   = frules'
+            , vrels    = frels
+            , fsisa    = isa'
+            } where
+
 -- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
 -- needs to be introduced in the same unit of text. For that purpose everything is allocated to a theme only once.
-        themes   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
+        themes'   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
                    ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
                    )
 -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
@@ -37,34 +47,45 @@
 -- definition from the ADL-script with the generated service definition and to signal missing items.
 -- Rule: a service must be large enough to allow the required transactions to take place within that service.
 -- TODO: afdwingen dat attributen van elk object unieke namen krijgen.
-        serviceG
+        serviceG'
          = concat
-           [ [ (objdefNew (v (cptS,c)))
-                  { objnm  = name c
-                  , objats = [ (objdefNew (Tm m))
-                                  { objnm  = name m++name (target m)
-                                  , objstrs = [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
-                                  , objats = let ats = [ (objdefNew att) { objnm = concat [name m| m<-morlist att]++name (target att)
-                                                                         , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
-                                                                         }
-                                                       | att<-recur [] (target m)]
-                                             in if null ats then []
-                                                else ((objdefNew (Tm (mIs (target m))))
-                                                         { objnm = name (target m) }):ats
-                                  }
-                             | m<-relsFrom c, not (isSignal m)]++
-                             [ ((objdefNew . disjNF . notCp) (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
-                                  { objnm   = name (srrel s)
-                                  , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
-                                  }
-                             | s<-signals context, source s==c || target s==c ]
-                  }]
-             ++let ats = [ (objdefNew (Tm m))
-                              { objnm   = name m++name (target m)
-                              , objstrs = [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
+           [ [ Obj { objnm   = name c
+                   , objpos  = posNone
+                   , objctx  = v (cptS,c)
+                   , objats  = [ Obj { objnm  = name mph++name (target mph)
+                                     , objpos = posNone
+                                     , objctx = Tm mph
+                                     , objats = let ats = [ Obj { objnm = concat [name mph'| mph'<-morlist att]++name (target att)
+                                                                , objpos = posNone
+                                                                , objctx = att
+                                                                , objats = []
+                                                                , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
+                                                                }
+                                                          | att<-recur [] (target mph)]
+                                                in if null ats then []
+                                                   else (( Obj { objnm = name (target mph)
+                                                               , objpos = posNone
+                                                               , objctx = Tm (mIs (target mph))
+                                                               , objats = []
+                                                               , objstrs= []
+                                                               }
+                                                          ):ats)
+                                     , objstrs = [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
+                                     }
+                                | mph<-relsFrom c, not (isSignal mph)]++
+                                [ ((objdefNew . disjNF . notCp) (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
+                                     { objnm   = name (srrel s)
+                                     , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
+                                     }
+                                | s<-signals context, source s==c || target s==c ]
+                   , objstrs = []
+                   }]
+             ++let ats = [ (objdefNew (Tm mph))
+                              { objnm   = name mph++name (target mph)
+                              , objstrs = [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
                               , objats  = []
                               }
-                         | m<-relsFrom c, not (isSignal m), Tot `elem` multiplicities m]
+                         | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
                in [(objdefNew (Tm (mIs S)))
                      { objnm  = name c++"s"
                      , objats = [ (objdefNew (v(S,c)))
@@ -77,10 +98,10 @@
             relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
                          [flp (Mph (name d) posNone [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
             recur :: [Morphism] -> Concept -> [Expression]
-            recur rs c
-             = [ F [Tm m| m<-rs++[n]] | n<-new, not (n `elem` rs)] ++
-               [ rs' | n<-new, not (n `elem` rs), rs' <-recur (rs++[n]) (target n) ] 
-               where new = [m| m<-relsFrom c, not (isSignal m), not (isIdent m), Tot `elem` multiplicities m]
+            recur rs' c
+             = [ F [Tm mph| mph<-rs'++[n]] | n<-new, not (n `elem` rs')] ++
+               [ rs'' | n<-new, not (n `elem` rs'), rs'' <-recur (rs'++[n]) (target n) ] 
+               where new = [mph| mph<-relsFrom c, not (isSignal mph), not (isIdent mph), Tot `elem` multiplicities mph]
             props ps = [if Sym `elem` ps && Asy `elem` ps then ["PROPERTY"] else
                         if Tot `elem` ps && Uni `elem` ps then ["ATTRIBUTE"] else
                         if Tot `elem` ps                  then ["NONEMPTY LIST"] else
@@ -91,17 +112,17 @@
 -- serviceS contains the services defined in the ADL-script.
 -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
 -- A generic user interface (the Monastir interface) is already available.
-        serviceS = attributes context
+        serviceS' = attributes context
 {- A dataset combines all functions that share the same source.
    This is used for function point analysis (in which data sets are counted).
    It can also be used in code generate towards SQL, allowing the code generator to
    implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
    Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
-        datasets  = makeDatasets context
-        fservices = [ makeFservice context a | a <-serviceS]
-        frules    = [ r | r <-rules context]
+        datasets'  = makeDatasets context
+        fservices = [ makeFservice context a | a <-serviceS']
+        frules'    = [ r | r <-rules context]
         frels     = [ {- makeFdecl context -} d | d <-declarations context] -- TODO: makeFdecl wordt nu nog in ADLdef aangeroepen. Wanneer de SQL-objecten eenmaal vanuit de Fspc worden gegenereerd, moet makeFdecl natuurlijk op deze plaats worden aangeroepen...
-        isa       = ctxisa context
+        isa'       = ctxisa context
 
  -- next thing, we look which datasets will be discussed in which themes.
  -- Priority is given to those patterns that contain a concept definition of a root concept of the dataset,
@@ -109,20 +130,20 @@
  -- in order to ensure that at most one pattern discusses a dataset, double (pat,cs,d)-triples are dropped.
         pcsds0 = (map (head.sort' snd3).eqCl (name.fst3))
                  [ (pat,length cns,ds)
-                 | pat<-ctxpats context, ds<-datasets, cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
+                 | pat<-ctxpats context, ds<-datasets', cns<-map name (concs ds) `isc` [name c|c<-conceptDefs pat], not (null cns)]
  -- Now, pcsds0 covers concepts that are both root of a dataset and are defined in a pattern.
  -- The remaining concepts and datasets are determined in pcsds1.
  -- A dataset is assigned to the pattern with the most morphisms about the root(s) of the dataset.
         pcsds1 = (map (head.sort' snd3).eqCl (name.fst3))
                  [ (pat,0-length ms,ds)
-                 | pat<-ctxpats context, ds <- datasets>-[ds|(_,_,ds)<-pcsds0]
-                 , ms<-[[m|m<-morlist pat, m `elem` mors ds || flp m `elem` mors ds]], not (null ms)
+                 | pat<-ctxpats context, ds <- datasets'>-[ds|(_,_,ds)<-pcsds0]
+                 , ms<-[[mph|mph<-morlist pat, mph `elem` mors ds || flp mph `elem` mors ds]], not (null ms)
                  ]
  -- The remaining datasets will be discussed in the last theme
-        remainingDS = datasets>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
+        remainingDS = datasets'>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
         others
-         = Pat "Other topics" rs gen pms cs ks
-           where rs  = []
+         = Pat "Other topics" rs' gen pms cs ks
+           where rs'  = []
                  gen = []
                  pms = rd [d| ds<-remainingDS, d<-declarations ds]
                  cs  = []
@@ -145,10 +166,10 @@
 
    makeFtheme :: Context -> Pattern -> [ObjectDef] -> Ftheme
    makeFtheme context pat dss -- dss zijn de datasets die afgeleid zijn van de context
-    = Tspc fid units pat
+    = Tspc fid units' pat
       where
         fid = makeFSid1 (name pat)
-        units = [makeFunit context pat (objs ds) [] []| ds<-dss]
+        units' = [makeFunit context pat (objs ds) [] []| ds<-dss]
          where
           objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
 
@@ -173,14 +194,15 @@
         [ r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
       where
        trBound
-        = rd [conjNF e | a<-atts o, e<-[objctx a, flp (objctx a)] ]
-          where atts o = o: [e| a<-attributes o, e<-atts a]
-       limit rels (ECA ev clause) = ECA ev (simplPAclause (lim clause))
+        = rd [conjNF e' | a<-atts o, e'<-[objctx a, flp (objctx a)] ]
+          where atts o' = o': [e'| a<-attributes o', e'<-atts a]
+       limit :: [Expression] -> ECArule -> ECArule
+       limit rels (ECA ev clause) = ECA ev (simplPAclause (lim clause))   -- TODO Stef, kijk je even naar deze warning? Dit lijkt me niet goed...
         where
          lim (Choice clauses)              = Choice [c'| c<-clauses, c'<-[lim c], p c']
-          where p (Do insdel toExpr delta) = conjNF toExpr `elem` trBound
-                p (Choice [])              = False
-                p _                        = True
+          where p (Do _ toExpr _) = conjNF toExpr `elem` trBound
+                p (Choice [])     = False
+                p _               = True
          lim (All clauses)
             | null [ 1 | Choice []<-cls]   = All cls
             | otherwise                    = Choice []
@@ -193,10 +215,17 @@
 
 
    makeFdecl :: Context -> Declaration -> Declaration
-   makeFdecl context d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
-    = (Sgn nm a b props prL prM prR cs' expla pos nr sig)
-      where cs' = rd ([link| Popu m ps<-populations context, makeDeclaration m==d, link<-ps]++cs)
-   makeFdecl context d = d
+   makeFdecl context d 
+        = case d of 
+             Sgn{}     -> d{decpopu = rd ([link| Popu mph ps<-populations context, makeDeclaration mph==d, link<-ps]++(decpopu d))}
+             Isn{}     -> d
+             Iscompl{} -> d
+             Vs{}      -> d 
+    
+--   d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
+--                     = (Sgn nm a b props prL prM prR cs' expla pos nr sig)
+--      where cs' = rd ([link| Popu m ps<-populations context, makeDeclaration m==d, link<-ps]++cs)
+--   makeFdecl context d = d
 
    makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
    makeFunit context pat objs newConcs newDecls
