@@ -96,14 +96,20 @@ where
 
    data InsDel   = Ins | Del
                    deriving (Eq,Show)
-   data ECArule  = ECA Event PAclause
-   data Event    = On InsDel Morphism
-   data PAclause = Choice [PAclause]
-                 | All [PAclause]
-                 | Do  InsDel         -- do Insert or Delete
-                       Expression     -- into toExpr    or from toExpr
-                       Expression     -- delta
-                 | New Concept        -- makes a new instance of type c
+   data ECArule  = ECA { ecaTriggr :: Event
+                       , ecaAction :: PAclause
+                       }
+   data Event    = On { eSrt :: InsDel
+                      , eMhp :: Morphism
+                      }
+   data PAclause = Choice { paCls:: [PAclause]
+                          }
+                 | All { paCls   :: [PAclause]}
+                 | Do  { paSrt   :: InsDel         -- do Insert or Delete
+                       , paTo    :: Expression     -- into toExpr    or from toExpr
+                       , paDelta ::Expression     -- delta
+                       }
+                 | New { paNew :: Concept }        -- makes a new instance of type c
  --                  deriving Show
 
 --   instance Show ECArule where

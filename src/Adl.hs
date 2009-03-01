@@ -4,7 +4,7 @@ module Adl ( Architecture(..)
            , Rule(..),Rules,consequent
            , KeyDef(..),KeyDefs,keys
            , Population(..),Populations
-           , ObjectDef(..),ObjectDefs,objdefNew
+           , ObjectDef(..),ObjectDefs
            , Expression(..), Expressions,isPos,isNeg
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline

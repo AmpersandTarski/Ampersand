@@ -22,8 +22,5 @@ module Adl.ObjectDef where
    instance Numbered ObjectDef where
     pos obj = objpos obj
 
-   objdefNew :: Expression -> ObjectDef
-   objdefNew e' = Obj "" posNone e' [] []    -- de constructor van een object. Er is geen default waarde voor expression, dus die moeten we dan maar meegeven. 8-((
-
 
    

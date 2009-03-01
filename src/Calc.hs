@@ -1,31 +1,24 @@
-  {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
-  module Calc ( 
+module Calc ( 
                 deriveProofs
-        --      , triggers
-        --      , disjNF
-        --      , conjNF
               , homogeneous
               , computeOrder
-        --      , allClauses
               , lClause
               , rClause
-        --      , conjuncts
               , makeRule
               , doClause
               , simplPAclause
               , informalRule ) 
   where 
---   import Char ( isSpace )
+
    import Collection (Collection (uni,isc,rd))
    import Auxiliaries(sort',eqClass,eqCl,commaEng,elem')
---   import Classification
    import Adl
    import FspecDef
    import ShowADL
    import ShowHS
    import CC_aux
    import ComputeRule(ComputeRule(CR),triggers,conjuncts,allClauses,hornCs)
-   import NormalForms(conjNF,disjNF,nfProof,nfPr,simplify,negRight,isFu)
+   import NormalForms(conjNF,disjNF,nfProof,nfPr,simplify,negRight)
 --   multiplicityAnalysis context 
 --    = let fnm = "MULT"++name context in
 --      putStr ("\n--------------\n"++
@@ -515,10 +508,18 @@
    makeRule r (Fu ts)
     | or [isNeg t|t<-ts] = Ru Implication (Fi [notCp t|t<-ts,isNeg t]) (rrfps r) (Fu [t|t<-ts,isPos t]) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
     | otherwise          = Ru Truth (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL (Fu ts))) (rrfps r) (Fu ts) [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
-   makeRule r e
-    | isFu e'   = makeRule r e'
-    | otherwise = Ru Truth (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL e)) (rrfps r) e [] (rrxpl r) (rrtyp r) (runum r) (r_pat r)
-    where e' = disjNF e
+   makeRule r e =
+     case disjNF e of
+        Fu{} -> makeRule r (disjNF e)
+        _    -> Ru { rrsrt = Truth
+                   , rrant = (error ("(Module Calc: ) erroneous call to antecedent of r "++showADL e))
+                   , rrfps = rrfps r
+                   , rrcon = e
+                   , r_cpu = []
+                   , rrxpl = rrxpl r
+                   , rrtyp = rrtyp r
+                   , runum = runum r
+                   , r_pat = r_pat r}
 
 
 

@@ -24,7 +24,7 @@
    makeFspec :: Context -> Fspc
    makeFspec context
      = Fspc { fsfsid = makeFSid1 (name context)
-            , themes =   themes'  --TODO: Herstellen, en bewijzen dat dit termineert! -- TODO Aanpassen op nieuwe Document structuur
+            , themes =   [] --themes'  --TODO: Herstellen, en bewijzen dat dit termineert!(dat doet het nu niet...) -- TODO Aanpassen op nieuwe Document structuur
             , datasets = datasets'
             , serviceS = []-- serviceS'  TODO: Loop verwijderen uit generatie serviceS.
             , serviceG = serviceG'
@@ -48,6 +48,8 @@
 -- definition from the ADL-script with the generated service definition and to signal missing items.
 -- Rule: a service must be large enough to allow the required transactions to take place within that service.
 -- TODO: afdwingen dat attributen van elk object unieke namen krijgen.
+        
+
         serviceG'
          = concat
            [ [ Obj { objnm   = name c
@@ -74,10 +76,12 @@
                                      , objstrs = [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
                                      }
                                 | mph<-relsFrom c, not (isSignal mph)]++
-                                [ ((objdefNew . disjNF . notCp) (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
-                                     { objnm   = name (srrel s)
-                                     , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
-                                     }
+                                [ Obj { objnm =  name (srrel s)
+                                      , objpos = posNone
+                                      , objctx = disjNF (notCp (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
+                                      , objats = []
+                                      , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
+                                      }
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
                    }]
@@ -156,12 +160,12 @@
  -- The remaining datasets will be discussed in the last theme
         remainingDS = datasets'>-[ds'|(_,_,ds')<-pcsds0++pcsds1]
         others
-         = Pat "Other topics" rs' gen pms cs ks
-           where rs'  = []
-                 gen = []
-                 pms = rd [d| ds<-remainingDS, d<-declarations ds]
-                 cs  = []
-                 ks  = []
+         = Pat { ptnm = "Other topics"
+               , ptrls = []
+               , ptgns = []
+               , ptdcs = rd [d| ds<-remainingDS, d<-declarations ds]
+               , ptcds = []
+               , ptkds = []}
 
     --    context' = Ctx nm on i world pats rs ds cs ks os pops
     --       where nm    = name context

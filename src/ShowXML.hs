@@ -4,7 +4,7 @@ where
 --   import Text.XML.HaXml
 --     --Als de compiler hierover struikelt, dan moet je xml installeren. Dat is overigens in de volgende 3 stappen:
 --                             -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
---                             -- 2) cabal-install HaXml
+--                             -- 2) cabal-install HaXml  (onder windows: cabal install HaXml)
 --                             -- 3) er is geen stap 3!
 --                             
 --     -- Motivatie voor keuze van XML Light. (HJO, 6 feb 2009)
