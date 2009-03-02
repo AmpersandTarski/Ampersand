@@ -32,31 +32,46 @@ module Adl ( Architecture(..)
            )
 where
 
-   import Adl.Concept
-   import Adl.ConceptDef
-   import Adl.Context
-   import Adl.Expression
-   import Adl.FilePos
-   import Adl.Gen
-   import Adl.KeyDef
-   import Adl.Label
-   import Adl.MorphismAndDeclaration
-   import Adl.ObjectDef
-   import Adl.Pair
-   import Adl.Pattern
-   import Adl.Population
-   import Adl.Prop
-   import Adl.Rule
-   import Classes.Morphical
-   import Classes.Morphic
-   import Classes.Object
-   import Classes.Language
-   import CommonClasses(Identified(..)
-                       ,ABoolAlg(order,lub,glb)
-                       ,Conceptual(conts)
-                       ,Explained(explain))
-   import Collection (Collection (uni,(>-),isc))   
-   import Auxiliaries (clos1,diag,eqCl) 
+   import Adl.Concept                    (Concept(..),Concepts,one,cptnew,cptS,cptAnything
+                                         ,GenR(..)
+                                         ,Association(..)
+                                         ,Morphic(..))
+   import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
+   import Adl.Context                    (Context(..),Contexts
+                                         ,Architecture(..))
+   import Adl.Expression                 (Expression(..),Expressions
+                                         ,isPos,isNeg,v,notCp)
+   import Adl.FilePos                    (FilePos(..)
+                                         ,posNone
+                                         ,Numbered(..))
+   import Adl.Gen                        (Gen(..),Gens)
+   import Adl.KeyDef                     (KeyDef(..),KeyDefs
+                                         ,Key(..))
+   import Adl.Label                      (Label(..))
+   import Adl.MorphismAndDeclaration     (Morphism(..),Morphisms
+                                         ,Declaration(..),Declarations
+                                         ,makeMph,makeDeclaration
+                                         ,inline,makeInline
+                                         ,mIs)
+   import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
+   import Adl.Pair                       (Paire(..),Pairs
+                                         ,Populated(..),join)
+   import Adl.Pattern                    (Pattern(..),Patterns,union)
+   import Adl.Population                 (Population(..),Populations)
+   import Adl.Prop                       (Prop(..))
+   import Adl.Rule                       (Rule(..),Rules
+                                         ,RuleType(..)
+                                         ,consequent,antecedent,cpu,ruleType)
+   import Classes.Morphical              (Morphical(..))
+   import Classes.Morphic                (Substitutive(..),MorphicId(..),normExpr)
+   import Classes.Object                 (Object(..))
+   import Classes.Language               (Language(..))
+   import CommonClasses                  (Identified(..)
+                                         ,ABoolAlg(order,lub,glb)
+                                         ,Conceptual(conts)
+                                         ,Explained(explain))
+   import Collection                     (Collection (uni,(>-),isc))   
+   import Auxiliaries                    (clos1,diag,eqCl) 
 
 
    instance Key Context where

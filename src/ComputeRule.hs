@@ -1,5 +1,5 @@
 
-module ComputeRule (ComputeRule(CR)
+module ComputeRule (ComputeRule(..)
                    ,triggers
                    ,conjuncts
                    ,allClauses
@@ -16,50 +16,60 @@ where
    import CC_aux
    import NormalForms(simplify,conjNF,disjNF)
    
-   data ComputeRule = CR ([(String,Declaration)],Expression,String,Expression,Expression,Rule) deriving (Eq)
+   data ComputeRule = CR { crOps :: [(String,Declaration)]
+                         , crexp :: Expression
+                         , crbOp :: String
+                         , crto  :: Expression
+                         , crfrm :: Expression
+                         , crule :: Rule} deriving (Eq)
    instance Show ComputeRule where
-    showsPrec p (CR (fOps, e, bOp, toExpr, frExpr, rule))
-     = showString ("("++show fOps++", "++show e++", "++show bOp++", "++show toExpr++", "++show frExpr++", "++show rule++")")
+    showsPrec p cr 
+     = showString ("("++show (crOps cr)++", "
+                      ++show (crexp cr)++", "
+                      ++show (crbOp cr)++", "
+                      ++show (crto cr) ++", "
+                      ++show (crfrm cr)++", "
+                      ++show (crule cr)++")")
 
    hornCs :: Rule -> Expression -> [ComputeRule]
    hornCs rule f@(Fu fus)
     = 
   -- the following inserts new atoms in positive terms. Deletion of new atoms from negative terms cannot occur,
   -- because an atom which is new in V is not in t in the first place (t-:V)
-      [ CR ( [("INSERT INTO", Vs (source t) (target t))]     -- fOps
-        , v (sign t)                                         -- e
-        , "INSERT INTO"                                      -- bOp
-        , simplify t                                           -- toExpr
-        , v (sign t)                                         -- frm
-        , rule)
+      [ CR { crOps = [("INSERT INTO", Vs (source t) (target t))]
+           , crexp = v (sign t)
+           , crbOp = "INSERT INTO"
+           , crto  = simplify t
+           , crfrm = v (sign t)
+           , crule = rule}
       | and (map isPos fus), t<-fus, not (isIdent t)]++  -- (ignore generating to I, because both I and V are derived from C-tables.)
-      [ CR ( [("DELETE FROM",hdl l)]              -- fOps
-        , if isPos t' then t' else notCp t'       -- e
-        , "DELETE FROM"                           -- bOp
-        , (conjNF.Cp) t                    -- toExpr
-        , (disjNF.Cp) (Fu (rest t))        -- frExpr
-        , rule)
+      [ CR { crOps = [("DELETE FROM",hdl l)]
+           , crexp = if isPos t' then t' else notCp t'
+           , crbOp = "DELETE FROM"
+           , crto  = (conjNF.Cp) t
+           , crfrm = (disjNF.Cp) (Fu (rest t))
+           , crule = rule}
       | t<-fus, t'<-rest t, l<-leaves t', isPos l, isNeg t]++
-      [ CR ( [("INSERT INTO",hdl l)]
-        , if isPos t' then t' else notCp t'
-        , "DELETE FROM"
-        , (conjNF.Cp) t
-        , (disjNF.Cp) (Fu (rest t))
-        , rule)
+      [ CR { crOps = [("INSERT INTO",hdl l)]
+           , crexp = if isPos t' then t' else notCp t'
+           , crbOp = "DELETE FROM"
+           , crto  = (conjNF.Cp) t
+           , crfrm = (disjNF.Cp) (Fu (rest t))
+           , crule = rule}
       | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isNeg t]++
-      [ CR ( [("DELETE FROM",hdl l)] 
-        , if isPos t' then t' else notCp t'
-        , "INSERT INTO"
-        , conjNF t   
-        , (disjNF.Cp) (Fu (rest t))
-        , rule)
+      [ CR { crOps = [("DELETE FROM",hdl l)]
+           , crexp = if isPos t' then t' else notCp t'
+           , crbOp = "INSERT INTO"
+           , crto  = conjNF t
+           , crfrm = (disjNF.Cp) (Fu (rest t))
+           , crule = rule}
       | t<-fus, t'<-rest t, l<-leaves t', isPos l, isPos t]++
-      [ CR ( [("INSERT INTO",hdl l)] 
-        , if isPos t' then t' else notCp t'
-        , "INSERT INTO"
-        , conjNF t   
-        , (disjNF.Cp) (Fu (rest t))
-        , rule)
+      [ CR { crOps = [("INSERT INTO",hdl l)]
+           , crexp = if isPos t' then t' else notCp t'
+           , crbOp = "INSERT INTO"
+           , crto  = conjNF t
+           , crfrm = (disjNF.Cp) (Fu (rest t))
+           , crule = rule}
       | t<-fus, t'<-rest t, l<-leaves t', isNeg l, isPos t]
       where rest t = if length [e|e<-fus, t /= e] == length fus-1 then [e|e<-fus, t /= e] else
                      error ("(module Calc) Failure in hornCs rule f@(Fu fus) with\n"++
@@ -89,7 +99,7 @@ where
 
    triggers :: Rule -> [ComputeRule]
    triggers rule
-    = (concat.map (sort' bop).eqClass eq2expr)          --  < ---  bij gelijke targets: eerst DELETE dan INSERT
+    = (concat.map (sort' crbOp).eqClass eq2expr)          --  < ---  bij gelijke targets: eerst DELETE dan INSERT
       [ hc ::ComputeRule
       | conjunct<-conjuncts rule, clause<-allClauses conjunct
       , hcID<-(map collect.eqClass eqHC.hornCs rule) clause  --  < ---  alle gelijke horn clauses op hoopjes vegen.
@@ -97,23 +107,26 @@ where
       , computing rule hc]
       where
    -- eerst alle gelijke horn clauses op hoopjes vegen.
-       ( CR (fOps, e, bOp, toExpr, frExpr, rule)) `eqHC` (CR (fOps', e', bOp', toExpr', frExpr', rule'))
-              =      (bOp, toExpr, frExpr)          ==                  (bOp', toExpr', frExpr')
+       eqHC :: ComputeRule -> ComputeRule -> Bool
+       cr `eqHC` cr' = and [ crbOp cr == crbOp cr'
+                           , crto  cr == crto  cr'
+                           , crfrm cr == crfrm cr']
+
        collect :: [ComputeRule] -> ComputeRule
-       collect cl = CR ((rd.concat)[fOps| CR (fOps, e, bOp, toExpr, frExpr, rule) <-cl], simplify (Fu [e| CR (fOps, e, bOp, toExpr, frExpr, rule)<-cl]), bOp, toExpr, frExpr, rule)
-        where CR (fOps, e, bOp, toExpr, frExpr, rule) = head cl
+       collect [] = undefined
+       collect (x:xs) = x {crOps = (rd.concat)[crOps cr| cr <-x:xs]
+                        ,crexp = simplify (Fu [crexp cr| cr <-x:xs])
+                           }
        splitInsDel :: ComputeRule -> [ComputeRule]
-       splitInsDel (CR (fOps, e, bOp, toExpr, frExpr, rule))
-  --      = [ ([(f,r)|(f, CR (r, e, bOp, toExpr, frExpr, rule))<-cl], e, bOp, toExpr, if f=="DELETE FROM" then (notCp frExpr) else frExpr, rule)
-  --        | cl<-eqCl fst [(f, CR (r, e, bOp, toExpr, frExpr, rule))| (f,r)<-fOps]
-  --        ]
-        = [ CR ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("DELETE FROM",r)<-fOps]++
-          [ CR ([fOp], e, bOp, toExpr, frExpr, rule)| fOp@("INSERT INTO",r)<-fOps]
+       splitInsDel cr = [ cr{crOps = [fOp]} | fOp@("DELETE FROM",r)<-crOps cr]
+                      ++[ cr{crOps = [fOp]} | fOp@("INSERT INTO",r)<-crOps cr]
+                         
    -- volgorde aanbrengen in hornclauses met gelijke toExpr: eerst DELETE dan INSERT
-       CR (fOps, e, bOp, toExpr, frExpr, r) `eq2expr` CR (fOps', e', bOp', toExpr', frExpr', r') = toExpr == toExpr'
-       bop (CR (fOps, e, bOp, toExpr, frExpr, r)) = bOp
+       eq2expr :: ComputeRule -> ComputeRule -> Bool
+       cr `eq2expr` cr' = (crto cr) == (crto cr')
    -- alleen "COMPUTING" termen opleveren
-       computing rule hc@(CR (fOps, e, bOp, toExpr, frExpr, r)) = toExpr `elem` map simplify (r_cpu rule)
+       computing :: Rule -> ComputeRule -> Bool
+       computing rule hc = crto hc `elem` map simplify (r_cpu rule)
    -- debug:    computing rule e = error ("(module Calc diagnostic) rule: "++showADL rule++"\e: "++show e++"\nr_cpu rule : "++ show (e `elem` r_cpu rule))
 
    conjuncts :: Rule -> [Expression]

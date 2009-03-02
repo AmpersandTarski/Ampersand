@@ -84,6 +84,9 @@ module Adl.Concept where
      source, target :: a -> Concept
      sign           :: a -> Sign
      sign x = (source x,target x) 
+     homogeneous :: a -> Bool
+     homogeneous s = source s == target s
+
 
    instance Association Sign where
      source (src, _ ) = src
