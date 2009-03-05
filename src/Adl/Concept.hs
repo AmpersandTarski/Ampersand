@@ -1,7 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XTypeSynonymInstances #-}
-
-module Adl.Concept where
+module Adl.Concept ( Concept(..),Concepts
+                   , Sign,GenR
+                   , Association(..),Morphic(..)
+                   , isSingleton
+                   , cptnew,cptAnything,cptS
+                   , one
+                   ) 
+where
    import Adl.Prop
    import CommonClasses --(Identified(name,typ)
                         --, ABoolAlg(glb,lub,order)
@@ -69,14 +75,10 @@ module Adl.Concept where
             | b <= a = a
             | otherwise = error ("(module Concept) Fatal: (C) lub undefined: a="++show a++", b="++show b)
 
-   cptC :: String -> GenR -> [String] -> Concept
-   cptC nm gE os = C{ cptnm=nm, cptgE = gE, cptos = os}  -- constructor
    cptS :: Concept
    cptS = S                    -- constructor
    cptAnything :: Concept
    cptAnything = Anything      -- constructor
-   cptNothing :: Concept
-   cptNothing = NOthing        -- constructor
    cptnew :: String -> Concept
    cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = []}
 

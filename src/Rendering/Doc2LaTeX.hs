@@ -1,4 +1,4 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Rendering.Doc2LaTeX where
    import Rendering.Document
    import Languages

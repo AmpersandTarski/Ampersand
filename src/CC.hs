@@ -1,21 +1,19 @@
-  module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars,Architecture,Context) where
+{-# OPTIONS_GHC -Wall #-}
+ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars,Architecture,Context) where
    import UU_Scanner
    import UU_Parsing
-   import CommonClasses ( Identified(name))
-   import Collection (Collection(empty,uni,(>-),rd))
-   import Auxiliaries (sort, upCap)
+--   import CommonClasses ( Identified(name))
+   import Collection (Collection(empty,uni,rd))
+   import Auxiliaries (sort)
 --   import ADLdef (flp,cptAnything,cptnew,cptS,mIs)
    import Adl
    import ShowADL
    import CC_aux 
-             (  pKey_pos, pString_val_pos
+             (  pKey_pos
               , pVarid_val_pos, pConid_val_pos
               )
 
-   diagl = 52
-   diagc = 0
-
-
+   keywordstxt :: [String]
    keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"
                        , "SERVICE", "INITIAL"
@@ -26,8 +24,11 @@
                        , "PRAGMA", "EXPLANATION", "SIGNAL", "ON", "COMPUTING", "INSERTING", "DELETING"
                        , "ONE"
                        ]
+   keywordsops :: [String]
    keywordsops       = [ "-|", "|-", ":-", "-:", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\" ]
+   specialchars :: String
    specialchars      = "()[].,{}"
+   opchars :: String
    opchars           = rd (sort (concat keywordsops))
 
 
@@ -48,7 +49,7 @@
                                cs   = [c| CCon c<-ces]
                                ks   = [k| CKey k<-ces]
                                os   = [o| CObj o<-ces]
-                               pops = [Popu m ps| CPop m ps<-ces]
+                               pops = [Popu mph prs| CPop mph prs<-ces]
                                pats = ps++[Pat "CONTEXT" [] [] ds cs ks| not (null ds && null cs && null ks)]
 
    data ContextElement = CPat Pattern
@@ -71,7 +72,7 @@
                                <*> pList (pPatElem beep)
                                <* pKey "ENDPATTERN"
                        where
-                         rebuild nm pes = Pat nm [r|Pr r<-pes] [gen |Pg gen<-pes] [m| Pm m<-pes] [c| Pc c<-pes] [k| Pk k<-pes]
+                         rebuild nm pes = Pat nm [r|Pr r<-pes] [gen |Pg gen<-pes] [mph| Pm mph<-pes] [c| Pc c<-pes] [k| Pk k<-pes]
 
    data PatElem      = Pr Rule
                      | Pg Gen
@@ -102,24 +103,24 @@
                        ac <$> pSignal <*> pKey_pos "RULE"         <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
                        gc <$> pSignal <*> pKey_pos "GLUE" <*> pMorphism <* pKey "=" <*> pExpr <*> pComputing 
                        where
-                        hc m antc pos cons cpu expl
-                         | not beep && name m=="" = Ru Implication antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru Implication antc pos cons (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] expl pos 0 True)
-                        kc m cons pos antc cpu expl = hc m antc pos cons cpu expl
-                        dc m defd pos expr cpu expl
-   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos = error ("Diag: "++showADL (Ru 'E' defd pos expr cpu expl (cptAnything,cptAnything) 0 ""))  -}
-                         | not beep && name m=="" = Ru Equivalence defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru Equivalence defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
-                        ac m      pos expr cpu expl
-                         | not beep && name m=="" = Ru Truth defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 ""
-                         | otherwise  = Sg pos (Ru Truth defd pos expr (if beep then [] else cpu) expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m) cptAnything cptAnything [] "" "" "" [] "" pos 0 True)
+                        hc m' antc pos' cons cpu' expl
+                         | not beep && name m'=="" = Ru Implication antc pos' cons (if beep then [] else cpu') expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos' (Ru Implication antc pos' cons (if beep then [] else cpu') expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True)
+                        kc m' cons pos' antc cpu' expl = hc m' antc pos' cons cpu' expl
+                        dc m' defd pos' expr cpu' expl
+   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("Diag: "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 ""))  -}
+                         | not beep && name m'=="" = Ru Equivalence defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos' (Ru Equivalence defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
+                        ac m'      pos' expr cpu' expl
+                         | not beep && name m'=="" = Ru Truth defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) 0 ""
+                         | otherwise  = Sg pos' (Ru Truth defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
                          where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
-                        gc m      pos pm pf cpu     = Gc pos pm pf (if beep then [] else cpu) (cptAnything,cptAnything) 0 ""
+                        gc _       pos' pm pf cpu'     = Gc pos' pm pf (if beep then [] else cpu') (cptAnything,cptAnything) 0 ""
 
-   data PCompu       = Uc [Morphism]
-                     | Ui [Morphism]
-                     | Ud [Morphism]
-                     | Un
+--   data PCompu       = Uc [Morphism]
+--                     | Ui [Morphism]
+--                     | Ud [Morphism]
+--                     | Un
 
    pComputing       :: Parser Token Expressions
    pComputing        = (f <$ pKey "COMPUTING" <*> pList1Sep (pSpec ',') (pExpr) {- <|>
@@ -129,7 +130,7 @@
 
    pGen             :: Parser Token Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
-                       where rebuild spec pos genus = G pos (cptnew genus ) (cptnew spec )
+                       where rebuild spec pos' genus = G pos' (cptnew genus ) (cptnew spec )
 
    postStr          :: Parser Token String
    postStr           = f <$> pList1 (pKey "~" <|> pKey "+" <|> pKey "-" <|> pKey "*")
@@ -137,6 +138,7 @@
                         f xs = g ['~'|'~'<-concat xs] ++ g ['-'|'-'<-concat xs] ++ eat [x|x<-concat xs,x/='~',x/='-']
                         g xs = if odd (length xs) then take 1 xs else []
 
+   eat :: [Char] -> [Char]
    eat ('*':'*':xs) = eat ('*':xs)
    eat ('+':'*':xs) = eat ('*':xs)
    eat ('*':'+':xs) = eat ('*':xs)
@@ -188,26 +190,28 @@
                         f t ('*':xs) = K0 (f t xs)
                         f t ('+':xs) = K1 (f t xs)
                         f t ('-':xs) = Cp (f t xs)
+                        f _ (_:_)   = undefined     -- WAAROM? Stef, waarom ontbrak dit? Is dat vergeten? TODO Deze match is toegevoegd om de warning kwijt te raken. Maar is dit ook op deze manier bedoeld?
                         f t []       = t
 
    pMorphism        :: Parser Token Morphism
    pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)                <|>
-                       v    <$ pKey "V" <*> pTwo                                                                 <|>
+                       v'   <$ pKey "V" <*> pTwo                                                                 <|>
                        rebuild <$> pVarid_val_pos <*> pTwo
-                       where rebuild (nm,pos) atts = Mph nm pos (take 2 (atts++atts)) (cptAnything,cptAnything) True
+                       where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
                                                       (Sgn nm cptAnything cptAnything [] "" "" "" [] "" posNone 0 (nm/=""))
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
-                             v []                  = V [] (cptAnything, cptAnything)
-                             v [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
-                             v [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
+                             v' []                  = V [] (cptAnything, cptAnything)
+                             v' [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
+                             v' [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
+                             v' _  = undefined  -- WAAROM? Stef, waarom ontbrak dit? Is dat vergeten? TODO Deze match is toegevoegd om de warning kwijt te raken. Maar is dit ook op deze manier bedoeld?
                              emp c | c == cptnew ""     = cptAnything
                                    | otherwise          = c
-                             pTwo = (one <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>
-                                     two <$ pSpec '[' <*> pConcept <* pKey "*" <*> pConcept <* pSpec ']')
+                             pTwo = (one' <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>
+                                     two  <$ pSpec '[' <*> pConcept <* pKey "*" <*> pConcept <* pSpec ']')
                                      `opt` []
-                                    where one c    = [c]
-                                          two c c' = [c,c']
+                                    where one' c    = [c]
+                                          two  c c' = [c,c']
 
    pConcept         :: Parser Token Concept
    pConcept          = (cptS <$ (pKey "ONE")) <|> (cptnew <$> (pConid <|> pString))
@@ -217,8 +221,7 @@
    pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos)
                            <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
-                       where lbl (nm,pos) strs = Lbl nm pos strs
-                             f x y             = [x,y]
+                       where lbl (nm,pos') strs = Lbl nm pos' strs
 
    phpId            :: Parser Token String
    phpId             = pVarid <|> pConid <|> pString
@@ -228,7 +231,7 @@
 
    pKeyDef          :: Parser Token KeyDef
    pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
-                        where kd (Lbl nm pos strs) e ats = Kd pos nm e ats
+                        where kd (Lbl nm pos' _) expr ats = Kd pos' nm expr ats
 
    pObjDef          :: Parser Token ObjectDef
    pObjDef           = pKey_pos "SERVICE" *> pObj
@@ -236,7 +239,7 @@
 
 
 
-
+   optional :: (Sequence p, Alternative p) => p a -> p (Maybe a)
    optional a        = Just <$> a <|> pSucceed Nothing
 
    pObj             :: Parser Token ObjectDef
@@ -244,19 +247,19 @@
                            <*> pExpr                                             -- de contextexpressie (default: I[c])
                            <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
                            <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
-                       where obj (Lbl nm pos strs) expr a ats = Obj nm pos expr ats strs
+                       where obj (Lbl nm pos' strs) expr _ ats = Obj nm pos' expr ats strs
 
    pAtt             :: Parser Token ObjectDef
    pAtt              = att <$> pLabel <*>  pExpr
-                       where att (Lbl nm pos strs) ctx = Obj nm pos ctx [] strs
+                       where att (Lbl nm pos' strs) ctx' = Obj nm pos' ctx' [] strs
 
    pDeclaration     :: Parser Token Declaration
    pDeclaration      = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept
                                <*> (pProps `opt` []) <*> (pPragma `opt` [])
                                <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
                                <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
-                       where rebuild nm pos s fun t props pragma expla content
-                               = Sgn nm s t (rd props `uni` if fun=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos 0 False
+                       where rebuild nm pos' s fun t props pragma expla content
+                               = Sgn nm s t (rd props `uni` if fun=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False
                                  where pr = pragma++["","",""]
 
    pContent         :: Parser Token Pairs
@@ -278,6 +281,7 @@
                        where f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
                              k "TOT" = Tot
                              k "UNI" = Uni
+                             k _ = undefined  -- WAAROM? Stef, waarom ontbrak dit? Is dat vergeten? TODO Deze match is toegevoegd om de warning kwijt te raken. Maar is dit ook op deze manier bedoeld?
 
    pProp'           :: Parser Token String
    pProp'            = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"
