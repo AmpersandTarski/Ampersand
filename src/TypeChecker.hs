@@ -155,9 +155,9 @@ module TypeChecker (typecheck, Error, Errors) where
                                        )
                                    -- =(([], [],[]),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)) )]) --DEBUG to show lowerboundsOfs
                                    -- =(([], [],[]),[show (declRels    (allCtxPats (cx:extCtxs)) )]) --DEBUG to show declRels
-                                   -- | nm=="Test2" = ((lowerboundsOfs (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])  --DEBUG
-                                   -- | otherwise   = (([], [], []),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)))])  --DEBUG of extends Test2
-                                   -- | otherwise   = (([], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --DEBUG of extends Test2
+                                   -- \| nm=="Test2" = ((lowerboundsOfs (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])  --DEBUG
+                                   -- \| otherwise   = (([], [], []),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)))])  --DEBUG of extends Test2
+                                   -- \| otherwise   = (([], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --DEBUG of extends Test2
 
    --DESCR -> search for a context by name and return the first one found
    srchContext :: Contexts -> String -> ContextFound

@@ -3,8 +3,8 @@ module Version (versionbanner)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. 0.8.10-273" -- the number behind the last digit is the SVN revision number.
+versionbanner = "ADL vs. 0.8.10-274" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-Nog een stapel warnings verwijderd.
+Enkele commentaren aangepast, zodat Haddock alles weer kan parsen.
 -}
