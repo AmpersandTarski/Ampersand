@@ -1,5 +1,5 @@
  {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
-  module Graphic  () MODULE WORDT VERVANGEN DOOR Graphics, die geheel anders is van opzet. 
+  module Graphic  () --MODULE WORDT VERVANGEN DOOR Graphics, die geheel anders is van opzet. 
 --  ( dotGraph
 --                  , processDotgraphFile
 --                  , Graphic

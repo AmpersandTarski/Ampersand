@@ -97,7 +97,7 @@ where
     
    class Association a => Morphic a where
     multiplicities :: a -> [Prop]
---    multiplicities _ = []  --WAAROM? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
+    multiplicities _ = []  --WAAROM? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
     flp            :: a -> a
 --    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     isProp         :: a -> Bool  -- > tells whether the argument is a property

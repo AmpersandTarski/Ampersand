@@ -1,5 +1,5 @@
 
-module FPA 
+module FPA() 
 
 where
    import Languages (Lang(..),ShowLang(..))

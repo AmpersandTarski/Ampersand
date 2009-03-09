@@ -1,7 +1,7 @@
 
 module Statistics where
 
-   import ADLdef
+   import Adl
    import FspecDef
    import FPA
  -- TODO Deze module moet nog geheel worden ingekleurd...
