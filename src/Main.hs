@@ -46,7 +46,8 @@ phase3 flags fSpec =
       --[ diagnose context| "-diag" `elem` switches]++
         [ doGenFspecLaTeX fSpec flags | fspecLaTeX flags] ++
         [ doGenFspecHtml fSpec flags | fspecHtml flags] ++
-        [ doGenFspecWord fSpec flags | fspecWord flags] ++  
+        [ doGenFspecWord fSpec flags | fspecWord flags] ++ 
+        [ doGenFspecPandoc fSpec flags | fspecPandoc flags] ++ 
       --[ cdModel context | "-CD" `elem` switches]++
       --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
       --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++

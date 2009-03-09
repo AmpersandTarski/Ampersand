@@ -11,10 +11,12 @@ import ShowXML      (showXML')
 import Strings      (chain)
 import Calc         (deriveProofs)
 --import Version      (versionbanner)
-import Rendering.Document
+--import Rendering.Document
 import Rendering.Doc2LaTeX
 import Rendering.Doc2Word
 import Fspec2Doc 
+--import Fspec2Pandoc
+import Fspec2PandocDummy
 import Version
 --import System
 serviceGen :: Fspc -> Options -> IO()
@@ -96,4 +98,11 @@ doGenFspecWord fSpec flags
    where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".doc")
                
-          
+doGenFspecPandoc :: Fspc -> Options -> IO()
+doGenFspecPandoc fSpec flags
+   =  verboseLn flags "Generating Pandoc functional specification document..." >>
+      writeFile outputFile ( render2Pandoc flags (fSpec2Pandoc fSpec flags)
+                           )   
+   >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
+   where outputFile
+               = combine (dirOutput flags) (replaceExtension (baseName flags) ".pandoc")         

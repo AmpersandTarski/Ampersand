@@ -30,7 +30,8 @@ data Options = Options { contextName   :: Maybe String
 					   , genXML        :: Bool
 					   , fspecLaTeX    :: Bool
 					   , fspecHtml     :: Bool
-					   , fspecWord      :: Bool
+					   , fspecWord     :: Bool
+					   , fspecPandoc   :: Bool
 					   , proofs        :: Bool
 					   , haskell       :: Bool
 					   , uncheckedDirOutput     :: Maybe String
@@ -113,7 +114,7 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option []        ["verbose"]      (NoArg verboseOpt)          "verbose error message format"
            , Option ['p']     ["proto"]        (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file (dir overrides "++
                                                                                 envdirPrototype ++ " )") 
-           , Option ['P']     ["maxServices"]  (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"
+           , Option ['x']     ["maxServices"]  (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"
            , Option ['d']     ["dbName"]       (OptArg dbNameOpt "name")   ("use database with name (name overrides "++
                                                                                 envdbName ++ " )")
            , Option ['s']     ["services"]     (NoArg servicesOpt)         "generate service specifications in ADL format"
@@ -123,6 +124,7 @@ options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use 
            , Option ['L']     ["fspecLaTeX"]   (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"
            , Option ['H']     ["fspecHtml"]    (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"
            , Option ['W']     ["fspecWord"]    (NoArg fspecWordOpt)       "generate a functional specification document for microsoft's Word"
+           , Option ['P']     ["fspecPandoc"]  (NoArg fspecPandocOpt)     "generate a functional specification document in Pandoc format"
            , Option []        ["proofs"]       (NoArg proofsOpt)           "generate correctness proofs"
            , Option []        ["haskell"]      (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"
            , Option ['o']     ["outputDir"]    (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
@@ -154,7 +156,8 @@ defaultOptions clocktime env fName pName
             		     , genXML        = False 
 	            	     , fspecLaTeX    = False
 	            	     , fspecHtml     = False
-	            	     , fspecWord      = False
+	            	     , fspecWord     = False
+	            	     , fspecPandoc   = False
 	            	     , proofs        = False
 	            	     , haskell       = False
 	            	     , uncheckedDirOutput     = lookup envdirOutput env
@@ -211,7 +214,9 @@ fspecLaTeXOpt   opts = opts{fspecLaTeX   = True}
 fspecHtmlOpt  :: Options -> Options
 fspecHtmlOpt   opts = opts{fspecHtml     = True}
 fspecWordOpt   :: Options -> Options
-fspecWordOpt   opts = opts{fspecWord       = True}
+fspecWordOpt   opts = opts{fspecWord     = True}
+fspecPandocOpt   :: Options -> Options
+fspecPandocOpt   opts = opts{fspecPandoc = True}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options
