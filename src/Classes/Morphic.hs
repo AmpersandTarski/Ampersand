@@ -92,12 +92,14 @@ module Classes.Morphic where
    instance Morphic Declaration where
     multiplicities d = case d of
            Sgn {}       -> decprps d
-           Isn{}        -> [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]         --WAAROM? Stef, waarom is dit niet ook Asy? Is dit niet gewoon FOUT?
+           Isn{}        -> [Uni,Tot,Inj,Sym,Trn,Rfx]         --WAAROM? Stef, waarom is dit niet ook Asy? Is dit niet gewoon FOUT?
                         ++ [Sur | (degen d) == (despc d)]
            Iscompl{}    -> [Sym]
            Vs{}         -> [Tot,Sur]
     flp d = case d of
-           Sgn {}       -> d{ decprps = flipProps (decprps d)
+           Sgn {}       -> d{ desrc   = detgt d
+                            , detgt   = desrc d
+                            , decprps = flipProps (decprps d)
                             , decprL  = ""
                             , decprM  = ""
                             , decprR  = ""
