@@ -10,13 +10,11 @@ import ShowADL      (showADLcode)
 import ShowXML      (showXML')
 import Strings      (chain)
 import Calc         (deriveProofs)
---import Version      (versionbanner)
---import Rendering.Document
 import Rendering.Doc2LaTeX
 import Rendering.Doc2Word
 import Fspec2Doc 
---import Fspec2Pandoc
-import Fspec2PandocDummy
+import Fspec2Pandoc  -- Als je Pandoc niet hebt geinstalleerd, dan kan je deze regel disabelen door 
+--import Fspec2PandocDummy  -- maar dan moet je deze regel enabelen....
 import Version
 --import System
 serviceGen :: Fspc -> Options -> IO()

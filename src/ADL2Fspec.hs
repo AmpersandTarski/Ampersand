@@ -24,7 +24,7 @@
    makeFspec :: Context -> Fspc
    makeFspec context
      = Fspc { fsfsid = makeFSid1 (name context)
-            , themes =   [] --themes'  --TODO: Herstellen, en bewijzen dat dit termineert!(dat doet het nu niet...) -- TODO Aanpassen op nieuwe Document structuur
+            , themes   = themes'  --TODO: Bewijzen dat dit termineert!(dat doet het nu niet altijd...) -- TODO Aanpassen op nieuwe Document structuur
             , datasets = datasets'
             , serviceS = []-- serviceS'  TODO: Loop verwijderen uit generatie serviceS.
             , serviceG = serviceG'
