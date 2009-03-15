@@ -213,4 +213,8 @@ module Adl.MorphismAndDeclaration where
     explain d@Sgn{} = decexpl d
     explain _       = ""
 
+   isSgn :: Declaration -> Bool
+   isSgn Sgn{} = True
+   isSgn _ = False
+
                         

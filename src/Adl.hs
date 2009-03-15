@@ -8,7 +8,7 @@ module Adl ( Architecture(..)
            , Expression(..), Expressions,isPos,isNeg
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
-           , Declaration(..),Declarations
+           , Declaration(..),Declarations,isSgn
            , ConceptDef(..),ConceptDefs
            , Concept(..), GenR, Concepts, one,v,cptnew,cptS
            , RuleType(..)
@@ -50,6 +50,7 @@ where
    import Adl.Label                      (Label(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Morphisms
                                          ,Declaration(..),Declarations
+                                         ,isSgn
                                          ,makeMph,makeDeclaration
                                          ,inline,makeInline
                                          ,mIs)

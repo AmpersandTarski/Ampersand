@@ -147,5 +147,4 @@ module Adl.Expression where
    isNeg e' = not (isPos e')
 
 
-
                       
