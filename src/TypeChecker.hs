@@ -22,11 +22,12 @@
 --        de typechecker zal alleen bepaalde fouten eerder afvangen.
 --TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
 --        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)
+--TODO -> meerdere fouten in expressie, dan binnenste fout, 1 per expressie
 --
 --DESCR ->
 --         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
---TODO -> Checking sick.adl results in a lot of ambiguous relations in expressions, because 
+--TODO -> Checking sick.adl results in a lot of ambiguous relations in expressions, because
 --        this type checker just puts all patterns of this context and the extended contexts of this context on a heap
 --        apparantly there is another definition for the objects in scope than the definition implemented.
 --        Check the correctness of handling context extension and patterns.
@@ -34,7 +35,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    import Adl         -- USE -> .MorphismAndDeclaration.makeDeclaration
                       --        and of course many data types
-   import Data.List   -- USE -> intersect, union, delete
+  -- import Data.List   -- USE ->
 
    ---------------
    --MAIN function
@@ -53,15 +54,16 @@ module TypeChecker (typecheck, Error, Errors) where
    typecheck arch@(Arch ctxs) =
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
+                                --TODO -> check circularity
                                 checkCtxNameUniqueness ctxs ++||
-                                checkCtxs arch ctxs   --TODO -> this list of errors is not distinct
+                                checkCtxs arch ctxs   --TODO -> this list of errors is not distinct for SERVICES
 
    --DESCR -> check rule: Every context must have a unique name
    checkCtxNameUniqueness :: Contexts -> Errors
    checkCtxNameUniqueness [] = []
    checkCtxNameUniqueness (cx:ctxs) | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs
                                     | otherwise    = checkCtxNameUniqueness ctxs
-                                    where 
+                                    where
                                     --DESCR -> return True if the names of the Contexts are equal
                                     eqCtx :: Context -> Context -> Bool
                                     eqCtx cx1 cx2 =
@@ -90,7 +92,7 @@ module TypeChecker (typecheck, Error, Errors) where
    (++||) :: Errors -> Errors -> Errors
    (++||) [] e2 = e2 -- if left contains no Errors then return the errors of the right
    (++||) e1 _ = e1  -- if left contains Errors then return them and ignore the right
-   
+
    --DESCR -> function elem provided with own equality function
    --USE   -> use when not instance Eq a or if another predicate is needed then implemented by instance Eq a
    elemBy :: (a->a->Bool)->a->[a]->Bool
@@ -129,6 +131,7 @@ module TypeChecker (typecheck, Error, Errors) where
    checkCtxs :: Architecture -> Contexts -> Errors
    checkCtxs _ [] = []
    --DESCR -> Take the errors found when checking this context as root context and concat it with the errors of the other contexts taken as root
+   --TODO -> context in 1x checken
    checkCtxs arch@(Arch ctxs) (ctx':tl_ctxs) = errors (check (Found ctx')) ++ (checkCtxs arch tl_ctxs)
       where
          errors :: ContextCheckResult -> Errors
@@ -174,11 +177,12 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> resolve the type and check if the arguments are of such a type
    checkThisCtx (env@(_,_,ctxs),_) =
                             --DESCR -> combine all errors of things to check like objectdefs and rules
-                            (env,
+                            (env,        --TODO -> is this redundant
                                   checkObjDefs env (allCtxObjDefs ctxs) ++&&
                                   checkRules env (allCtxRules ctxs)
                             )
 
+   --TODO -> replace by function checkTypes :: Checkable a => Environment -> a -> Errors
    --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprs) and infer their types (inferWithInfo)
    --         Then check the result (processResult)
    --         Return the list of error strings
@@ -260,7 +264,7 @@ module TypeChecker (typecheck, Error, Errors) where
        showsPrec _ (Trace (x:xs) subj) = showString (x ++ show (Trace xs subj))
 
    --DESCR -> infer the type of an AdlExpr maintaining the link to the meta information
-   --TODO -> put the trace down to the type inferer
+   --TODO -> put the trace down to the type inferer?
    inferWithInfo :: MetaInfo a AdlExpr -> MetaInfo a RelationType
    inferWithInfo (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer expr1)))
           where 
@@ -446,7 +450,7 @@ module TypeChecker (typecheck, Error, Errors) where
                             leftsubexpr = castExpressionToAdlExpr env (rrant rul)
                             rightsubexpr = castExpressionToAdlExpr env (rrcon rul)
                                                    -- left|-right => -left\/right
-                            translateimplication = (Intersect (Complement (leftsubexpr)) (rightsubexpr))
+                            translateimplication = (Union (Complement (leftsubexpr)) (rightsubexpr))
                             composetrace1 =
                                ("ERROR IN RULE ->\n" ++
                                 "Translating implication rule (subexpr1 |- subexpr2) to expression ( -subexpr1\\/subexpr2 ) for type validation:\n" ++
@@ -456,12 +460,16 @@ module TypeChecker (typecheck, Error, Errors) where
                                 traceruleerror (infer translateimplication)
                                )
                                                    -- left=right => (-left\/right)/\(left\/-right)
-                            translateequivalence = Union
-                                                         (Intersect (Complement (leftsubexpr)) (rightsubexpr))
-                                                         (Intersect (Complement (rightsubexpr)) (leftsubexpr))
+                                                   --TODO -> why are the implications united and not intersected in 4.15 of rule based design?
+                                                   --        don't I want that both implications (thus AND) are true for all x,y?
+                                                   --        expression (-left\/right)\/(left\/-right) is the same as V => -left\/left \/ -right\/right => V \/ V = V
+                                                   --        for all x,y.V is always true
+                            translateequivalence = Intersect
+                                                         (Union (Complement (leftsubexpr)) (rightsubexpr))
+                                                         (Union (Complement (rightsubexpr)) (leftsubexpr))
                             composetrace2 =
                                ("ERROR IN RULE ->\n" ++
-                                "Translating equivalence rule (subexpr1 = subexpr2) to expression ( -subexpr1\\/subexpr2/\\-subexpr2\\/subexpr1) for type validation:\n" ++
+                                "Translating equivalence rule (subexpr1 = subexpr2) to expression ( (-subexpr1\\/subexpr2)/\\(-subexpr2\\/subexpr1)) for type validation:\n" ++
                                 --TODO -> show rul is ugly "Translating rule " ++ show rul ++ " resulting in expression -" ++ show (rrant rul) ++ "\\/" ++ show (rrcon rul) ++ "\n" ++
                                 "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer leftsubexpr) ++ "\n" ++
                                 "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer rightsubexpr) ++ "\n" ++
@@ -578,11 +586,11 @@ module TypeChecker (typecheck, Error, Errors) where
 --      7) the relative addition expression can be defined given expression e1 and e2
 --         if there is a concepttype b which is a subset of concepttype b1 and b2, the type is (a,c)
 --         e1::(a,b1) , e2::(b2,c)  b1>=b b2>=b, not b=bottom |- e3::e1!e2 -> (a,c)
---      8) the intersection expression can be defined given expression e1 and e2
+--      8) the union expression can be defined given expression e1 and e2
 --         if concepttype a1 and a2 are subsets of concepttype a AND
 --         if concepttype b1 and b2 are subsets of concepttype b, the type is (a,b)
 --         e1::(a1,b1), e2::(a2,b2) a>=a1 a>=a2 b>=b1 b>=b2 |- e3::e1\/e2 -> (a,b)
---      9) the union expression can be defined given expression e1 and e2
+--      9) the intersection expression can be defined given expression e1 and e2
 --         if concepttype a1 and a2 are subsets of concepttype a AND
 --         if concepttype b1 and b2 are subsets of concepttype b, the type is (a,b)
 --         e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1/\e2 -> (a,b)
@@ -643,8 +651,8 @@ module TypeChecker (typecheck, Error, Errors) where
        showsPrec _ (Relation (RelationType t))     = showString (show t)
        showsPrec _ (Semicolon e1 e2) = showString (show e1 ++ ";" ++ show e2)
        showsPrec _ (Dagger e1 e2)    = showString (show e1 ++ "!" ++ show e2)
-       showsPrec _ (Union e1 e2)     = showString (show e1 ++ "/\\" ++ show e2)
-       showsPrec _ (Intersect e1 e2) = showString (show e1 ++ "\\/" ++ show e2)
+       showsPrec _ (Union e1 e2)     = showString (show e1 ++ "\\/" ++ show e2)
+       showsPrec _ (Intersect e1 e2) = showString (show e1 ++ "/\\" ++ show e2)
        showsPrec _ (Flip e1)         = showString (show e1 ++ "~")
        showsPrec _ (TrsClose e1)     = showString (show e1 ++ "+")
        showsPrec _ (TrsRefClose e1)  = showString (show e1 ++ "*")
