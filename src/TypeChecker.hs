@@ -35,7 +35,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    import Adl         -- USE -> .MorphismAndDeclaration.makeDeclaration
                       --        and of course many data types
-  -- import Data.List   -- USE ->
+   import Data.List   -- USE -> unionBy
 
    ---------------
    --MAIN function
@@ -120,7 +120,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --          a dictionary containing the lowerbounds of the Concepts from the contexts in scope, the Concept is the key
    --          a list of all declared (direct) relations between two Concepts from the contexts in scope
    --          the contexts in scope, which will be the context under evaluation and its extended contexts (recursively)
-   type Environment = (LowerboundsOfs, DeclRels, Contexts)
+   type Environment = (RelSet Concept, DeclRels, Contexts)
 
    --USE    -> The ContextCheckResult is needed to communicate the environment from a context and potential errors
    --REMARK -> From the environment only the Contexts containing the contexts in scope is used
@@ -137,7 +137,7 @@ module TypeChecker (typecheck, Error, Errors) where
          errors :: ContextCheckResult -> Errors
          errors ((_,_,_),err) = err
          check :: ContextFound -> ContextCheckResult
-         check (NotFound str) = (([],[],[]),("Extended context " ++ str ++ " of context " ++ (case ctx' of Ctx{} -> ctxnm ctx') ++ " could not be found"):[]) --this case will not have been caught by the parser yet
+         check (NotFound str) = ((RelSet [],[],[]),("Extended context " ++ str ++ " of context " ++ (case ctx' of Ctx{} -> ctxnm ctx') ++ " could not be found"):[]) --this case will not have been caught by the parser yet
          check (Found cx)
                      = checkThisCtx (constructEnv checkExtCtx cx)
                      where
@@ -145,22 +145,26 @@ module TypeChecker (typecheck, Error, Errors) where
                          --         check all extended Context in the list (all siblings)
                          --         merge the results (classification, relations, errors)
                          checkExtCtx :: ContextCheckResult
-                         checkExtCtx = case cx of Ctx{} -> foldr concatRes (([], [], []),[]) (map check (map (srchContext ctxs) ( ctxon cx) ))
+                         checkExtCtx = case cx of Ctx{} -> foldr concatRes ((RelSet [], [], []),[]) (map check (map (srchContext ctxs) ( ctxon cx) ))
                          --DESCR -> Enrich the Environment of the extended contexts with patterns from the current context
                          constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
                          constructEnv ((_,_,extCtxs),errs) cx' -- @(Ctx nm _ _ _ _ _ _ _ _ _ _) --DEBUG
                                     = (
-                                         ( lowerboundsOfs (allCtxGens (cx':extCtxs)),
+                                         ( isaRel (allCtxConcepts (cx':extCtxs)) (allCtxGens (cx':extCtxs)),
                                            declRels (allCtxPats (cx':extCtxs)),
                                            cx':extCtxs
                                          ),
                                          errs
                                        )
-                                   -- =(([], [],[]),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)) )]) --DEBUG to show lowerboundsOfs
-                                   -- =(([], [],[]),[show (declRels    (allCtxPats (cx:extCtxs)) )]) --DEBUG to show declRels
+                                --   = ((RelSet [],[],[]),[show ( isaRel
+                                  --                         (allCtxConcepts (cx':extCtxs))
+                                    --                       (allCtxGens (cx':extCtxs))
+                                      --                  )])
+                                   -- =((RelSet [], [],[]),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)) )]) --DEBUG to show lowerboundsOfs
+                                   -- =((RelSet [], [],[]),[show (declRels    (allCtxPats (cx:extCtxs)) )]) --DEBUG to show declRels
                                    -- \| nm=="Test2" = ((lowerboundsOfs (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])  --DEBUG
-                                   -- \| otherwise   = (([], [], []),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)))])  --DEBUG of extends Test2
-                                   -- \| otherwise   = (([], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --DEBUG of extends Test2
+                                   -- \| otherwise   = ((RelSet [], [], []),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)))])  --DEBUG of extends Test2
+                                   -- \| otherwise   = ((RelSet [], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --DEBUG of extends Test2
 
    --DESCR -> search for a context by name and return the first one found
    srchContext :: Contexts -> String -> ContextFound
@@ -188,9 +192,9 @@ module TypeChecker (typecheck, Error, Errors) where
    --         Return the list of error strings
    checkObjDefs :: Environment -> ObjectDefs -> Errors
    --checkObjDefs env (obj:objs) = case obj of Obj{} -> [show (castObjectDefsToAdlExprs env [obj] 0)] --DEBUG
-   checkObjDefs env objs =
+   checkObjDefs env@(universe,_,_) objs =
                                (processResult1
-                                       (map inferWithInfo (castObjectDefsToAdlExprs env objs 0))
+                                       (map (inferWithInfo universe) (castObjectDefsToAdlExprs env objs 0))
                                   )
 
    --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprs) and infer their types (inferWithInfo)
@@ -198,7 +202,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --         Return the list of error strings
    checkRules :: Environment -> Rules -> Errors
    --checkRules env rules =  [(show (castRulesToAdlExprs env rules))] --DEBUG
-   checkRules env ruls = (processResult2 (map inferWithInfo (castRulesToAdlExprs env ruls)))
+   checkRules env@(universe,_,_) ruls = (processResult2 (map (inferWithInfo universe) (castRulesToAdlExprs env ruls)))
 
 
    ------------------------------
@@ -214,8 +218,8 @@ module TypeChecker (typecheck, Error, Errors) where
    --        based on the Contexts in the Environment resulting from this function
    concatRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
    concatRes ((_,_,cxs1),errs1) ((_,_,cxs2),errs2) | errs1==[] && errs2==[]
-                                                              = (([], [], cxs1 ++ cxs2),[])
-                                                  | otherwise = (([],[],[]),errs1 ++ errs2)
+                                                              = ((RelSet [], [], cxs1 ++ cxs2),[])
+                                                  | otherwise = ((RelSet [],[],[]),errs1 ++ errs2)
 
    --DESCR -> all the Gens of Contexts
    allCtxGens :: Contexts -> Gens
@@ -246,6 +250,26 @@ module TypeChecker (typecheck, Error, Errors) where
    allPatRules :: Patterns -> Rules
    allPatRules [] = []
    allPatRules (p:ps)  = case p of Pat{} -> ptrls p ++ allPatRules ps
+   
+   allCtxConcepts :: Contexts -> Concepts
+   allCtxConcepts ctxs = foldr cptinsert []
+                            (allDeclConcepts (declRels (allCtxPats ctxs)) ++
+                             allGenConcepts (allCtxGens ctxs)
+                             )
+                         where
+                         cptinsert :: Concept -> Concepts -> Concepts
+                         cptinsert cp cpts | elem cp cpts = cpts
+                                           | otherwise    = cp:cpts
+   
+   allDeclConcepts :: DeclRels -> Concepts
+   --allDeclConcepts [] = []
+   allDeclConcepts dls = [case d of Sgn{} -> desrc d | d<-dls] ++
+                         [case d of Sgn{} -> detgt d | d<-dls]
+
+   allGenConcepts :: Gens -> Concepts
+   --allGenConcepts [] = []
+   allGenConcepts gens = [case g of G{} -> gengen g | g<-gens] ++
+                         [case g of G{} -> genspc g | g<-gens]
 
 ---------------------------------------------------------------------------------------------
 --Meta information part: later in separate module
@@ -265,8 +289,8 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR -> infer the type of an AdlExpr maintaining the link to the meta information
    --TODO -> put the trace down to the type inferer?
-   inferWithInfo :: MetaInfo a AdlExpr -> MetaInfo a RelationType
-   inferWithInfo (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer expr1)))
+   inferWithInfo :: RelSet Concept -> MetaInfo a AdlExpr -> MetaInfo a RelationType
+   inferWithInfo universe (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer universe expr1)))
           where 
           checkInferred (TypeError t err) = TypeError t (errInExpr expr1 err)
           checkInferred t = t
@@ -317,6 +341,7 @@ module TypeChecker (typecheck, Error, Errors) where
    compose (RTE_ExprError t) err posi = "\nError at " ++ show posi ++ "\nThere is a problem interpreting an expression:\n\t" ++ composeEE t err ++ "\n"
    compose RTE_AbAbAb        err posi = "\nError at " ++ show posi ++ "\nType inference (a,b) -> (a,b) -> (a,b): " ++ err ++ "\n"
    compose RTE_AbBcAc        err posi = "\nError at " ++ show posi ++ "\nType inference (a,b) -> (b,c) -> (a,c): " ++ err ++ "\n"
+   compose RTE_AaAa          err posi = "\nError at " ++ show posi ++ "\nType inference (a,a) -> (a,a): " ++ err ++ "\n"
    --compose _                err posi = "\n Error at " ++ show posi ++ "\n" ++ err ++ "\n"
 
    composeNFD :: NotFoundDrType -> Error -> Error
@@ -351,7 +376,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --                   each combination is a Semicolon AdlExpr
    castObjectDefsToAdlExprs :: Environment -> ObjectDefs -> Depth ->  [MetaInfo1 AdlExpr] -- [(AdlExpr,MetaInfo)]
    castObjectDefsToAdlExprs _ [] _ = []
-   castObjectDefsToAdlExprs env (obj:objs) currdepth = case obj of
+   castObjectDefsToAdlExprs env@(universe,_,_) (obj:objs) currdepth = case obj of
                                    Obj{} -> if null (objats obj)
                                             then
                                                   --DESCR -> add this objdef as AdlExpr for evaluation
@@ -365,7 +390,7 @@ module TypeChecker (typecheck, Error, Errors) where
                                                   ++ [Info (objpos obj,currdepth) (writeTrcLn composetrace [] thisAsAdlExpr)]
                                                   --DESCR -> add the nested objDefs combined with this objdef as AdlExpr for evaluation
                                                   ++ (map
-                                                       (combineObjDefs thisAsAdlExpr currdepth)
+                                                       (combineObjDefs universe thisAsAdlExpr currdepth)
                                                        (castObjectDefsToAdlExprs env (objats obj) (currdepth+1))
                                                   )
                                                   --DESCR -> add the sibling objdefs as AdlExpr for evaluation
@@ -375,13 +400,13 @@ module TypeChecker (typecheck, Error, Errors) where
                                                   composetrace =
                                                        ("Validating type of subexpression (expr1) in a SERVICE on depth " ++
                                                        show currdepth ++ " :\n" ++
-                                                       "=> expr1 -> " ++ show thisAsAdlExpr ++ " of type " ++ show (infer thisAsAdlExpr)
+                                                       "=> expr1 -> " ++ show thisAsAdlExpr ++ " of type " ++ show (infer universe thisAsAdlExpr)
                                                        )
 
    --DESCR -> given the current depth, combine the subexpression from the current objectdef
    --         with a nested object def as AdlExpr with MetaInfo1 to a new AdlExpr with MetaInfo1
-   combineObjDefs :: AdlExpr -> Depth -> MetaInfo1 AdlExpr -> MetaInfo1 AdlExpr
-   combineObjDefs obj currdepth expr1@(Info (posi,depth) (Trace trc nestedobj))
+   combineObjDefs :: RelSet Concept -> AdlExpr -> Depth -> MetaInfo1 AdlExpr -> MetaInfo1 AdlExpr
+   combineObjDefs universe obj currdepth expr1@(Info (posi,depth) (Trace trc nestedobj))
                          --DESCR -> only combine if the nested expr is one depth lower then the current depth
                          --         put the combined expr on the current depth
                          --         link the combined expr to the file position of the nested expr
@@ -401,9 +426,9 @@ module TypeChecker (typecheck, Error, Errors) where
                                                 where composetrace =
                                                        ("Combining subexpression (expr1) in a SERVICE on depth " ++ show depth ++
                                                        " with a nested subexpression (expr2) to a new expression expr1;expr2 (expr3) for type validation:\n" ++
-                                                       "=> expr1 -> " ++ show obj       ++ " of type " ++ show (infer obj)       ++ "\n" ++
-                                                       "=> expr2 -> " ++ show nestedobj ++ " of type " ++ show (infer nestedobj) ++ "\n" ++
-                                                       "=> expr3 has type " ++ show (infer (Semicolon obj nestedobj))
+                                                       "=> expr1 -> " ++ show obj       ++ " of type " ++ show (infer universe obj)       ++ "\n" ++
+                                                       "=> expr2 -> " ++ show nestedobj ++ " of type " ++ show (infer universe nestedobj) ++ "\n" ++
+                                                       "=> expr3 has type " ++ show (infer universe (Semicolon obj nestedobj))
                                                        )
 
 
@@ -414,14 +439,14 @@ module TypeChecker (typecheck, Error, Errors) where
    --          SJ: Het type van een regel is het type van de equivalente expressie, namelijk  typeOf a `lub` typeOf c (aannemende dat typeOf het type van een expressie bepaalt)
    castRulesToAdlExprs :: Environment -> Rules -> [MetaInfo2 AdlExpr]
    castRulesToAdlExprs _ [] = []
-   castRulesToAdlExprs env (rul:ruls)
+   castRulesToAdlExprs env@(universe,_,_) (rul:ruls)
                      | case rul of
                               Ru{} -> (rrsrt rul == Implication);
                               _ -> False
                                             = (Info
                                                  --DESCR -> file position of rule
                                                  (rrfps rul)
-                                                 (writeTrcLn composetrace1 [] translateimplication)
+                                                 (writeTrcLn composetrace1 [] castimplication)
                                                ):(castRulesToAdlExprs env ruls)
                      | case rul of
                               Ru{} -> (rrsrt rul == Equivalence);
@@ -429,7 +454,7 @@ module TypeChecker (typecheck, Error, Errors) where
                                             = (Info
                                                  --DESCR -> file position of rule
                                                  (rrfps rul)
-                                                 (writeTrcLn composetrace2 [] translateequivalence)
+                                                 (writeTrcLn composetrace2 [] castequivalence)
                                                ):(castRulesToAdlExprs env ruls)
                  {-
                      | case rul of
@@ -450,30 +475,23 @@ module TypeChecker (typecheck, Error, Errors) where
                             leftsubexpr = castExpressionToAdlExpr env (rrant rul)
                             rightsubexpr = castExpressionToAdlExpr env (rrcon rul)
                                                    -- left|-right => -left\/right
-                            translateimplication = (Union (Complement (leftsubexpr)) (rightsubexpr))
+                            castimplication = Implicate leftsubexpr rightsubexpr
                             composetrace1 =
                                ("ERROR IN RULE ->\n" ++
-                                "Translating implication rule (subexpr1 |- subexpr2) to expression ( -subexpr1\\/subexpr2 ) for type validation:\n" ++
+                                show  castimplication ++ "\n" ++
                                 --TODO -> show rul is ugly "Translating rule " ++ show rul ++ " resulting in expression -" ++ show (rrant rul) ++ "\\/" ++ show (rrcon rul) ++ "\n" ++
-                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer leftsubexpr) ++ "\n" ++
-                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer rightsubexpr) ++ "\n" ++
-                                traceruleerror (infer translateimplication)
+                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer universe leftsubexpr) ++ "\n" ++
+                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer universe rightsubexpr) ++ "\n" ++
+                                traceruleerror (infer universe castimplication)
                                )
-                                                   -- left=right => (-left\/right)/\(left\/-right)
-                                                   --TODO -> why are the implications united and not intersected in 4.15 of rule based design?
-                                                   --        don't I want that both implications (thus AND) are true for all x,y?
-                                                   --        expression (-left\/right)\/(left\/-right) is the same as V => -left\/left \/ -right\/right => V \/ V = V
-                                                   --        for all x,y.V is always true
-                            translateequivalence = Intersect
-                                                         (Union (Complement (leftsubexpr)) (rightsubexpr))
-                                                         (Union (Complement (rightsubexpr)) (leftsubexpr))
+                            castequivalence = Equality leftsubexpr rightsubexpr
                             composetrace2 =
                                ("ERROR IN RULE ->\n" ++
-                                "Translating equivalence rule (subexpr1 = subexpr2) to expression ( (-subexpr1\\/subexpr2)/\\(-subexpr2\\/subexpr1)) for type validation:\n" ++
+                                show castequivalence ++ "\n" ++
                                 --TODO -> show rul is ugly "Translating rule " ++ show rul ++ " resulting in expression -" ++ show (rrant rul) ++ "\\/" ++ show (rrcon rul) ++ "\n" ++
-                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer leftsubexpr) ++ "\n" ++
-                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer rightsubexpr) ++ "\n" ++
-                                traceruleerror (infer translateequivalence)
+                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer universe leftsubexpr) ++ "\n" ++
+                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer universe rightsubexpr) ++ "\n" ++
+                                traceruleerror (infer universe castequivalence)
                                )
                             traceruleerror (TypeError RTE_AbAbAb err)
                                             = "ERROR DESCRIPTION -> subexpr1 does not match type of subexpr2:\n" ++ err
@@ -484,23 +502,19 @@ module TypeChecker (typecheck, Error, Errors) where
    --        with only flips on morphisms of type Mph for example (r;s)~ is parsed as s~;r~
    --RULE -> flips on Universe V[A*B] will be returned by the parser as V[B*A]
    castExpressionToAdlExpr :: Environment -> Expression -> AdlExpr
-   castExpressionToAdlExpr (lbos,declrels,_) (Tm morph@(Mph{}))
+   castExpressionToAdlExpr (_,declrels,_) (Tm morph@(Mph{}))
                                                = doNotFlip (mphyin morph)
-                                                            (Relation (typeofRel
-                                                                               lbos
-                                                                               (srchDeclRelByMorphism declrels morph)
-                                                                      )
+                                                            (typeofRel
+                                                                  (srchDeclRelByMorphism declrels morph)
                                                             )
 
                          where
                             doNotFlip:: Bool -> AdlExpr -> AdlExpr
                             doNotFlip False expr1@(Relation (RelationType _)) = Flip expr1
                             doNotFlip _     expr1                     = expr1
-   castExpressionToAdlExpr (lbos,declrels,_) (Tm morph) --RULE -> other Morphisms (I and V etc do not need to be flipped)
-                                               = Relation (typeofRel
-                                                          lbos
-                                                          (srchDeclRelByMorphism declrels morph)
-                                                          )
+   castExpressionToAdlExpr (_,declrels,_) (Tm morph) --RULE -> other Morphisms (I and V etc do not need to be flipped)
+                                               = typeofRel
+                                                      (srchDeclRelByMorphism declrels morph)
    castExpressionToAdlExpr env (Tc expr1)       = castExpressionToAdlExpr env expr1
    castExpressionToAdlExpr env (F (expr1:expr2:exprs))
                                 | exprs==[]    = Semicolon
@@ -536,19 +550,19 @@ module TypeChecker (typecheck, Error, Errors) where
    castExpressionToAdlExpr _ _ = ExprError EE_Fatal "Cannot cast to AdlExpr. "
 
    --EXTEND -> Loose the declarations of ISA and relations, and other ADL tool specifics, by already infering a type
-   typeofRel :: LowerboundsOfs -> DeclRelFound -> RelationType
-   typeofRel _ (NotFoundDr t err) = TypeError (RTE_DeclError t) err
-   typeofRel lbos (FoundDr d) = case d of
+   typeofRel :: DeclRelFound -> AdlExpr
+   typeofRel (NotFoundDr t err) = Relation (TypeError (RTE_DeclError t) err)
+   typeofRel (FoundDr d) = case d of
                     -- _ -> TypeError (show lbos) ; --DEBUG
-                    Sgn{} -> RelationType ( lowerbound lbos (desrc d), lowerbound lbos (detgt d) );
+                    Sgn{} -> Relation (RelationType ( desrc d, detgt d ));
                     --TODO -> why is there a despc and degen?
-                    Isn{} -> RelationType ( lowerbound lbos (despc d), lowerbound lbos (despc d) );
+                    Isn{} -> Identity (RelationType ( despc d, despc d ));
                     --REMARK -> Vs degen is the source Concept, Vs despc the target Concept
-                    Vs {} -> RelationType ( lowerbound lbos (degen d), lowerbound lbos (despc d) );
+                    Vs {} -> Universe (RelationType ( degen d, despc d ));
                     --TODO   -> when will there be an IsCompl?
                     --REMARK -> IsCompl{} will never be the result of ADL.MorphismAndDeclaration.makeDeclaration
                     --          makeDeclaration is used in srchDeclRelByMorphism
-                    _ -> TypeError RTE_Fatal ("Unknown Declaration constructor. ")
+                    _ -> Relation( TypeError RTE_Fatal ("Unknown Declaration constructor. "))
 
 ---------------------------------------------------------------------------------------------
 --Type inference part: later in separate module
@@ -604,16 +618,8 @@ module TypeChecker (typecheck, Error, Errors) where
 --         e1::(a,b)            |- e2::e1+     -> (a,b)
 ---------------------------------------------------------------------------------------------
 
-   --USE -> a ConceptType is a set of concepttypes implemented as a list of Concept
-   --       the set consists of all concepttypes lower than or equal to the concepttype
-   --       The Concept is a part of the expressions coming from the parser
-   --       Use function lowerbound to get the ConceptType of a Concept
-   --       You will need a LowerBoundsOfs object which can be built with function lowerboundsOfs
-   --       based on Gens. GEN ... ISA ... definitions are parsed to Gens.
-   type ConceptType = [Concept]
-
    --USE ->  Store the type of an expression or a type error
-   data RelationType = RelationType (ConceptType, ConceptType) | TypeError TypeErrorType Error
+   data RelationType = RelationType (Concept, Concept) | TypeError TypeErrorType Error
 
    instance Show RelationType where
        showsPrec _ (RelationType t)     = showString (show t)
@@ -624,31 +630,35 @@ module TypeChecker (typecheck, Error, Errors) where
    --          - a fatal error during type inference
    --          - an expression which cannot be interpreted
    --          - a problem with finding a declaration of a relation
-   data TypeErrorType = RTE_AbAbAb | RTE_AbBcAc | RTE_ExprError ExprErrorType | RTE_DeclError NotFoundDrType | RTE_Fatal deriving (Show)
-
+   data TypeErrorType = RTE_AaAa | RTE_AbAbAb | RTE_AbBcAc | RTE_ExprError ExprErrorType | RTE_DeclError NotFoundDrType | RTE_Fatal deriving (Show)
 
    --USE -> Relation will be the only expression already inferred possibly containing a TypeError
    data AdlExpr =   Relation    RelationType  --USE -> use typeofRel to get the RelationType
-                  | Semicolon   {ex1::AdlExpr, ex2::AdlExpr}
-                  | Dagger      {ex1::AdlExpr, ex2::AdlExpr}
-                  | Flip        {ex1::AdlExpr}
-                  | TrsClose    {ex1::AdlExpr}
-                  | TrsRefClose {ex1::AdlExpr}
+                  | Implicate   {ex1::AdlExpr, ex2::AdlExpr}
+                  | Equality    {ex1::AdlExpr, ex2::AdlExpr}
                   | Complement  {ex1::AdlExpr}
+                  | Flip        {ex1::AdlExpr}
                   | Union       {ex1::AdlExpr, ex2::AdlExpr}
                   | Intersect   {ex1::AdlExpr, ex2::AdlExpr}
+                  | Semicolon   {ex1::AdlExpr, ex2::AdlExpr}
+                  | Dagger      {ex1::AdlExpr, ex2::AdlExpr}
    --TODO -> why can't I specify an I or V for a Relation? Why are I and V morphisms and not expressions?
-   --RULE -> I and V are cast as Relation RelationType and thus supported as morphisms
-   --        | Identity    AdlExpr
-   --        | Universe    RelationType
+                  | Identity    RelationType
+                  | Universe    RelationType        --TODO -> this is not in table in article
+                  | TrsClose    {ex1::AdlExpr}      --TODO -> this is not in table in article
+                  | TrsRefClose {ex1::AdlExpr}      --TODO -> this is not in table in article
                   | ExprError ExprErrorType Error  -- deriving (Show)
 
    data ExprErrorType = EE_SubExpr | EE_Fatal deriving (Show)
    
    instance Show AdlExpr where
        showsPrec _ (Relation (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
+       showsPrec _ (Identity (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
+       showsPrec _ (Universe (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
        --showsPrec _ t@(Relation _)    = showString (show t)
        showsPrec _ (Relation (RelationType t))     = showString (show t)
+       showsPrec _ (Identity (RelationType t))     = showString ("I[" ++ show t ++ "]")
+       showsPrec _ (Universe (RelationType t))     = showString ("V[" ++ show t ++ "]")
        showsPrec _ (Semicolon e1 e2) = showString (show e1 ++ ";" ++ show e2)
        showsPrec _ (Dagger e1 e2)    = showString (show e1 ++ "!" ++ show e2)
        showsPrec _ (Union e1 e2)     = showString (show e1 ++ "\\/" ++ show e2)
@@ -657,83 +667,47 @@ module TypeChecker (typecheck, Error, Errors) where
        showsPrec _ (TrsClose e1)     = showString (show e1 ++ "+")
        showsPrec _ (TrsRefClose e1)  = showString (show e1 ++ "*")
        showsPrec _ (Complement e1)   = showString ("-" ++ show e1)
+       showsPrec _ (Implicate e1 e2) = showString (show e1 ++ "|-" ++ show e2)
+       showsPrec _ (Equality e1 e2)   = showString (show e1 ++ "=" ++ show e2)
        showsPrec _ (ExprError _ err) = showString err
 
-   lowerbound :: LowerboundsOfs -> Concept -> [Concept]
-   lowerbound _ Anything = [Anything]
-   lowerbound _ NOthing = []
-   lowerbound _ S = [] --TODO -> check if this is correct
-   lowerbound chds c = (lowerboundsToConcepts (lowerbounds (lowerboundsOf chds c)))
-
-   infer :: AdlExpr -> RelationType
-   infer (Relation rel) = rel   --DESCR -> Relation is already an RelationType
-   infer (Semicolon expr1 expr2) = inferAbBcAc (infer expr1) (infer expr2)
-   infer (Dagger expr1 expr2) = inferAbBcAc (infer expr1) (infer expr2)
-   infer (Union expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
-   infer (Intersect expr1 expr2) = inferAbAbAb (infer expr1) (infer expr2)
-   infer (Flip expr1) = inferAbBa (infer expr1)
-   --RULE -> I and V are cast as Relation RelationType and thus supported as morphisms
-   --        infer (Identity expr) = inferIdentity expr
-   --        infer (Universe expr) = inferUniverse expr
-   infer (Complement expr1) = inferAbAb (infer expr1)
-   infer (TrsClose expr1) = inferAbAb (infer expr1)
-   infer (TrsRefClose expr1) = inferAbAb (infer expr1)
-   infer (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
-
-   --USE -> InferredCptType is an internal structure. CptType or CptTypeError will be stored in a RelationType
-   data CptTypeErrorType = CTE_TypeMismatch deriving (Show)
-   data InferredCptType = CptType ConceptType | CptTypeError CptTypeErrorType Error deriving (Show)
-
-   --DESCR -> check if c1 is a subset of c2, if so return c1
-   --         otherwise check if c2 is a subset of c1, if so return c2
-   --         otherwise raise a type error
-   inferCptType :: ConceptType -> ConceptType -> InferredCptType
-   inferCptType c1 c2
-                      | c1 >=-> c2 = CptType c1
-                      | c2 >=-> c1 = CptType c2
-                      | otherwise = CptTypeError CTE_TypeMismatch  --TODO -> better message
-                      ( "\nt1 can be a\n" ++ showtypes c1
-                      ++ "t2 can be a\n" ++ showtypes c2
-                      ++ "However t1 is not allowed to be a\n" ++ showtypes (filter (notElem2 c2) c1)
-                      ++ "and t2 is not allowed to be a\n"  ++ showtypes (filter (notElem2 c1) c2)
-                      )
-                      where
-                      showtypes [] = "" --should not be needed
-                      showtypes (ct:[]) = "\t" ++ show ct ++ "\n"
-                      showtypes (ct:cts) = "\t" ++ show ct ++ " or\n" ++ showtypes cts
-
-   --DESCR -> True if there are no elements in c2 that are not in c1  (c2 is a subset of c1)
-   (>=->) :: ConceptType -> ConceptType -> Bool
-   (>=->) c1 c2 = elem Anything c1 ||
-                  (filter (notElem2 c1) c2) == []
-
-   notElem2 :: (Eq a) => [a] -> a -> Bool
-   notElem2 lst elm = not (elem elm lst)
+   --TODO -> check the expressions as a whole and not just the subexpressions
+   --        I have to change to infer all possible types, and then check if only one type is inferred
+   infer :: RelSet Concept -> AdlExpr -> RelationType
+   infer _ (Relation rel) = inferAbAb rel
+   infer _ (Universe rel) = inferAbAb rel
+   infer _ (Identity rel) = inferAaAa rel
+                                --TODO -> check for equality of source and target
+   infer universe (Semicolon expr1 expr2) = inferAbBcAc universe (infer universe expr1) (infer universe expr2)
+   infer universe (Dagger expr1 expr2) = inferAbBcAc universe (infer universe expr1) (infer universe expr2)
+   infer universe (Union expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
+   infer universe (Intersect expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
+   infer universe (Implicate expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
+   infer universe (Equality  expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
+   infer universe (Flip expr1) = inferAbBa (infer universe expr1)
+   infer universe (Complement expr1) = inferAbAb (infer universe expr1)
+   infer universe (TrsClose expr1) = inferAbAb (infer universe expr1)
+   infer universe (TrsRefClose expr1) = inferAbAb (infer universe expr1)
+   infer _ (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
 
    --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
-   inferAbBcAc :: RelationType -> RelationType -> RelationType
-   inferAbBcAc err@(TypeError _ _) _ = err   --pass errors up
-   inferAbBcAc _ err@(TypeError _ _) = err
-   inferAbBcAc (RelationType (src1,trg1)) (RelationType (src2,trg2)) =
-                     checkAbBcAc (inferCptType trg1 src2 )
-                     where
-                          checkAbBcAc (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbBcAc ("The type of the target (t1) of the left expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAbBcAc _ = RelationType (src1, trg2)
+   inferAbBcAc :: RelSet Concept -> RelationType -> RelationType -> RelationType
+   inferAbBcAc _ err@(TypeError _ _) _ = err   --pass errors up
+   inferAbBcAc _ _ err@(TypeError _ _) = err
+   inferAbBcAc universe (RelationType (a,b1)) (RelationType (b2,c))
+             | diamond universe b1 b2 = (RelationType (a,c))
+             | otherwise              = TypeError RTE_AbBcAc ("The target of the left expression ("++ show b1 ++") does not match the source of the right expression ("++ show b2 ++")\n")
 
    --DESCR -> infer  e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1 -> e2 -> (a,b)
-   inferAbAbAb :: RelationType -> RelationType -> RelationType
-   inferAbAbAb err@(TypeError _ _) _                = err   --DESCR -> pass errors up
-   inferAbAbAb _ err@(TypeError _ _)                = err
-   inferAbAbAb (RelationType (src1,trg1)) (RelationType (src2,trg2))  =
-                     checkAbAbAb (inferCptType src1 src2) (inferCptType trg1 trg2)
-                     where
-                          checkAbAbAb (CptTypeError CTE_TypeMismatch err) _
-                                      = TypeError RTE_AbAbAb ("The type of the source (t1) of the left expression does not match the type of the source (t2) of the right expression:\n\t" ++ err)
-                          checkAbAbAb _ (CptTypeError CTE_TypeMismatch err)
-                                      = TypeError RTE_AbAbAb ("The type of the target (t1) of the left expression does not match the type of the target (t2) of the right expression:\n\t" ++ err)
-                          checkAbAbAb (CptType infsrc) (CptType inftrg)
-                                      = RelationType (infsrc, inftrg)
+   inferAbAbAb :: RelSet Concept -> RelationType -> RelationType -> RelationType
+   inferAbAbAb _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
+   inferAbAbAb _ _ err@(TypeError _ _)                = err
+   inferAbAbAb universe (RelationType (a,b)) (RelationType (p,q))
+             | diamond universe a p 
+               && diamond universe b q    = (RelationType (lubcpt universe a p,lubcpt universe b q))
+             | not (diamond universe a p) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show a ++ ") does not match the source of the right expression (" ++ show p ++ ")\n")
+             | not (diamond universe b q) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show b ++ ") does not match the source of the right expression (" ++ show q ++ ")\n")
+             --REMARK   | otherwise is not possible
 
    --DESCR -> infer  e1::(a,b) |- e2::e1 -> (b,a)
    inferAbBa :: RelationType -> RelationType
@@ -744,152 +718,97 @@ module TypeChecker (typecheck, Error, Errors) where
    inferAbAb :: RelationType -> RelationType
    inferAbAb t = t
 
----------------------------------------------------------------------------------------------
---Lowerbounds part: later in separate module
---lowerboundsOfs is the interesting function which returns the model and the tracklist to
---correlate to the ADL code. lowerboundsOfs is build in two phases. First the actual code
---declarations are enumerated (decllbofs). Then the lowerbounds are evaluated recursively, and folded.
---Each concept is evaluated once to prevent recursive loops. Therefore a list is passed around
---to keep track of the evaluated concepts.
---
---lowerboundsOf can be used to get the LowerboundsOf object for a Concept by Concept.
---lowerbounds can be used to get the lowerbounds from an Child entry
---lowerboundsToConcepts will transform lowerbounds to a list of concepts
---
---need to define a >= b
--- Anything = top, Nothing = bottom
--- c1::a, c2::b, a>=b   |- c1::a -> b
+   --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
+   inferAaAa :: RelationType -> RelationType
+   inferAaAa err@(TypeError _ _) = err
+   inferAaAa t@(RelationType (src,trg)) | src==trg  = t
+                                        | otherwise = TypeError RTE_AaAa ("Source does not equal target -> source: " ++ show src ++ " target: " ++ show trg ++ "\n")
+
 ---------------------------------------------------------------------------------------------
 
-   type LowerboundsOfs = [LowerboundsOf]
+   data RelSet a = RelSet [(a,a)] deriving (Show)
 
-   --USE -> (lowerbound, tracklist of gen declarations in ADL code)
-   type Lowerbound = (Concept,[Gen])
+   --DESCR -> if is in isaRel then predicate isa is true. reflects axiom 15-19
+   --         reflexive transitive closure (R0 \/ transclose) of the declared GEN relations
+   --         including that every concept has a top (NOthing) and bottom (Anything)
+   --TODO  -> does not ensure axiom 18, antisymmetry, does AGtry ensure it?
+   --REMARK -> Anything and NOthing must not be in Concepts
+   --          "Ampersand is restricted to concepts that are not bottom or top, but the two are needed to signal type errors"
+   isaRel :: Concepts -> Gens -> RelSet Concept
+   isaRel cpts gens = foldr unite (RelSet [])
+                        (RelSet [(a,NOthing) | a<-cpts      ]:
+                         RelSet [(Anything,b) |  b<-cpts     ]:
+                         expon (NOthing:Anything:cpts) 0 (RelSet []):    --Iu
+                         transitiveclosure cpts gens2rels:
+                         []
+                         )
+                      where
+                         gens2rels = RelSet [(a,b) | (a,b)<-(map gen2rel gens)]
+                         gen2rel gen =  case gen of
+                                        G{} -> (genspc gen, gengen gen)
 
-   --USE -> structure for storing all lowerbound concepts of a concept
-   data LowerboundsOf = LbsOf (Concept       , [Lowerbound]) deriving (Show)
+    --TODO -> Maybe I want to attach the universe to each Concept
 
-   --USE -> triple to pass around progress ([Concept]), intermediate result ([Lowerbound]),
-   --       and progress original input (LowerboundsOfs)
-   --       to get all lowerbounds of all Concepts and prevent looping
-   type ConstrLbsOfResult = ([Concept],[Lowerbound],LowerboundsOfs)
+   --lub :: RelSet a -> a -> a -> a --TODO -> make a class for a to define top and bottom
+   lubcpt :: RelSet Concept -> Concept -> Concept -> Concept
+   lubcpt universe a b | isA universe a b = b
+                       | isA universe b a = a
+                       | not (diamond universe a b) = NOthing
+                      -- | otherwise = should not be possible by definition of diamond
 
-   --DESCR -> equality of LowerboundsOf = equality of its source Concept = equality of the name of the source Concept
-   instance Eq LowerboundsOf where
-     (LbsOf (cpt,_))==(LbsOf (cpt',_)) = cpt==cpt'
+   diamond :: Eq a => RelSet a -> a -> a -> Bool
+   diamond universe a b = isA universe a b || isA universe b a
 
-   ------------------
-   --PUBLIC FUNCTIONS
-   ------------------
+   isA :: Eq a => RelSet a -> a -> a -> Bool
+   isA (RelSet r) c1 c2 = elem (c1,c2) r
+                                        
+   --DESCR -> R+ = R \/ R^2 \/ R^3 \/ ...
+   --REMARK -> transitiveclosure must be evaluated completely. We don't know the number of loops up front
+   --          we know that the function is evaluated if
+   transitiveclosure :: Eq a => [a] -> RelSet a -> RelSet a
+   transitiveclosure universe r = geteval $ allCumUnion universe r
+            where
+            --DESCR  -> if a cumUnion n matches a cumUnion n+1 then cumUnion n and higher are
+            --          all equal and the transitiveclosure
+            --REMARK -> transitiveclosure must get a matching set1 and set2 at some point
+            --TODO -> I could implement == for RelSet
+            geteval (set1:set2:sets) | stop set1 set2 = set1
+                                     | otherwise  = geteval (set2:sets)
+            stop (RelSet set1) (RelSet set2) = foldr (&&) True ([elem s2 set1 | s2<-set2]++[elem s1 set2 | s1<-set1])
 
-   --DESCR -> returns the model and the tracklist to correlate to the ADL code.
-   --         lowerboundsOfs is build in two phases. First the actual code
-   --         declarations are enumerated (declLbOfs). Then the children are resolved recursively, and folded (foldLbs).
-   lowerboundsOfs :: Gens -> LowerboundsOfs
-   lowerboundsOfs gens = foldLbs (declLbOfs gens) (declLbOfs gens)
-         where
-         --DESCR -> foreach LbsOf in declLbOfs, fold distinct the targets of its targets
-         --         provide the LowerboundsOfs declared in the code, and the list of LowerboundsOfs to resolve
-         foldLbs :: LowerboundsOfs -> LowerboundsOfs -> LowerboundsOfs
-         foldLbs _ [] = []
-         foldLbs decllbofs ((LbsOf (cpt,lbs)):lbsos) = (LbsOf(cpt,allLowerbounds decllbofs lbs)):(foldLbs decllbofs lbsos)
-         --DESCR -> lowerbounds which are explicitly and directly declared in ADL
-         declLbOfs :: Gens -> LowerboundsOfs
-         declLbOfs gens' = foldr insertGen [] gens'
+   --DESCR -> a list of cumUnion n for all n>0 indexed by n where n=1 is the head of he list
+   --REMARK -> 1 million should be enough
+   allCumUnion :: Eq a => [a] -> RelSet a -> [RelSet a]
+   allCumUnion universe r = [cumUnion universe n r | n<-[1..999999]]
+   
+   --DESCR -> R \/ R^2 \/ .. \/ R^n
+   --USE -> n>0
+   cumUnion :: Eq a => [a] -> Int -> RelSet a -> RelSet a
+   cumUnion universe 1 r = expon universe 1 r --should be the same as just r
+   cumUnion universe n r = unite (cumUnion universe (n-1) r) (expon universe n r)
 
-   --DESCR -> get the LowerboundsOf object from LowerboundsOfs by Concept
-   --         (equality by concept name)
-   lowerboundsOf :: LowerboundsOfs -> Concept -> LowerboundsOf
-   lowerboundsOf [] cpt       =
-                         --REMARK -> apparantly this Concept has no declared lowerbounds, return a list
-                         --          with only itself as lowerbound
-                         --TODO -> I could implement NOthing as bottom object
-                         --TODO -> I must be sure that the lowerbounds are always consulted through function lowerboundsOf
-                         --        because this function has an lbo entry for concepts not in ISA too
-                         LbsOf (cpt,[(cpt,[])])
-   lowerboundsOf (a@(LbsOf(cpt',_)):lbsos) cpt
-         | cpt' == cpt =
-                         --DESCR -> found -> return
-                         a
-         | otherwise   =
-                         --DESCR -> try next
-                         lowerboundsOf lbsos cpt
+   --DESCR -> R \/ S
+   unite :: Eq a => RelSet a -> RelSet a -> RelSet a
+   unite (RelSet r) (RelSet s) = RelSet (unionBy equalelem r s)
+            where
+            equalelem (a,b) (c,d) = a==c && b==d
 
+   --DESCR -> given the universe set => R^n
+   --REMARK -> not tested with infinite universes and lazy evaluation, because no need for infinite universes yet
+   --USE -> Use with positive exponents only (>=0)
+   expon :: Eq a => [a] -> Int -> RelSet a -> RelSet a
+   expon universe 0   _ =  RelSet [(a,a) | a<-universe] --DESCR -> Iu = R0
+   expon universe exp r =  composition r (expon universe (exp-1) r)
 
-
-   --DESCR -> get the Lowerbounds of a LowerboundsOf object
-   lowerbounds :: LowerboundsOf -> [Lowerbound]
-   lowerbounds (LbsOf (_,lbs)) = lbs
-
-   --DESCR -> Get a list of Lowerbounds as a list of Concepts
-   lowerboundsToConcepts :: [Lowerbound] -> [Concept]
-   lowerboundsToConcepts [] = []
-   lowerboundsToConcepts ((lbcpt,_):lbs) = lbcpt:(lowerboundsToConcepts lbs)
-
-   -------------------
-   --PRIVATE FUNCTIONS
-   -------------------
-
-   --DESCR -> return all Lowerbounds of a Lowerbound,
-   --         respecting the already resolved Concepts and results,
-   --         given the explicit declarations from the ADL code
-   constrLbsOfResult :: Lowerbound -> ConstrLbsOfResult -> ConstrLbsOfResult
-   constrLbsOfResult  lb@(lbcpt,_) (progress,lbsres,decllbofs)
-           --DESCR -> if lowerbound as Concept already in progress list
-         | elem lbcpt progress =
-                          --DESCR -> skip, already evaluated: so just forward result so far
-                          (progress,lbsres,decllbofs)
-         | otherwise    =
-                          --DESCR -> add this lowerbound to the lowerbounds found so far (lb:lbsres),
-                          --         and all the lowerbounds of this lowerbound (foldr ... lowerboundsOf decllbofs lbcpt),
-                          --         register this lbcpt as evaluated (lbcpt:progress)
-                          foldr constrLbsOfResult (lbcpt:progress,lb:lbsres,decllbofs) (lowerbounds (lowerboundsOf decllbofs lbcpt))
-
-   --DESCR -> return all the Lowerbounds for a list of Lowerbounds,
-   --         given the explicit declaration from the ADL code
-   allLowerbounds :: LowerboundsOfs -> [Lowerbound] -> [Lowerbound]
-   allLowerbounds decllbofs lbs = constrLbsOfRes (foldr constrLbsOfResult ([],[],decllbofs) lbs)
-       where   --DESCR -> return lowerbounds found so far
-               constrLbsOfRes :: ConstrLbsOfResult -> [Lowerbound]
-               constrLbsOfRes (_,lbsres,_) = lbsres
-
-   --DESCR -> insert an explicit ADL code declaration (Gen) of a lowerbound concept of a concept to the list
-   --TODO  -> for some reason the upperbound is parsed as the genspc and the lowerbound the gengen
-   --         or the parser mixes up the two or the current typechecker Agtry. It's implemented assuming the AGtry is correct.
-   --         example     [LbsOf (Person,[(Boss    ,[GEN Person ISA Boss]),
-   --                                     (Employee,[GEN Person ISA Employee])
-   --                                  ])]    parsed as: genspc     gengen
-   insertGen :: Gen -> LowerboundsOfs -> LowerboundsOfs
-   --DESCR -> search for a LowerboundOf object for this upperbound concept in a LowerboundsOf list
-   --         if the LowerboundsOf is not in the list, construct and add a new LowerboundsOf object to the end of the list
-   --         put the concept as lowerbound of itself in the LowerboundsOf object
-   insertGen gen [] = case gen of
-                           G{} -> ( LbsOf (genspc gen, [(gengen gen,[gen])
-                                                       , (genspc gen,[])
-                                                       ]
-                                           )
-                                   ):[]  --DESCR -> insert
-   insertGen gen (lbo@(LbsOf(cpt,lbs)):lbos)
-          | case gen of G{} -> (genspc gen == cpt)
-                               =
-                               --DESCR -> if the LowerboundOf is located, add the lowerbound to the lowerbounds of the LowerboundOf
-                               (LbsOf(genspc gen, insertGenLb lbs gen)):lbos --DESCR -> update  (insert lowerbound)
-          | otherwise   =
-                          --DESCR -> lowerboundOf object not located yet, try next and preserve all entries (lbo:)
-                          lbo:(insertGen gen lbos)
-
-   --DESCR -> insert a new lowerbound to the lowerbound list.
-   --         if the lowerbound already exists, add track information to the lowerbound (declared twice)
-   insertGenLb :: [Lowerbound] -> Gen -> [Lowerbound]
-   --DESCR -> if the Lowerbound is not in the list, construct and add a new Lowerbound object to the end of the list
-   insertGenLb [] gen = case gen of
-                              G{} -> (gengen gen,[gen]):[] --DESCR -> insert
-   insertGenLb (lb@(lbcpt,gens):lbs) gen
-          | case gen of G{} -> (gengen gen == lbcpt)
-                               =
-                               --DESCR -> if the Lowerbound is located, add the Gen as tracking info to the lowerbound
-                               (gengen gen, gen:gens):lbs --DESCR -> update tracklist
-          | otherwise   = lb:(insertGenLb lbs gen) --DESCR -> not found yet, try next
+   --DESCR -> R;S
+   --TODO -> TEST!!!
+   --TODO -> is there a way to check for equality in the list comprehension, because if I just add b1==b2
+   --        then it can't match () to a Num, the list comprehension is bothering me with its implementation
+   composition :: Eq a => RelSet a -> RelSet a -> RelSet a
+   composition (RelSet r) (RelSet s) = RelSet (map toelem $ filter matches [((b1,b2),(a,c)) | (a,b1)<-r,(b2,c)<-s])
+              where
+              matches ((x,y),_) = x==y
+              toelem (_,elem) = elem
 
 ---------------------------------------------------------------------------------------------
 --Relations part: later in separate module
