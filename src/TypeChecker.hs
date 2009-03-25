@@ -48,15 +48,25 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR -> The parser composes an Architecture object. This function typechecks this object.
    --USE   -> This is the only function needed outside of the TypeChecker
-   typecheck :: Architecture -> Errors
-   typecheck _ = [] --DEBUG -> uncomment to disable typechecker
+   typecheck :: Architecture -> (Contexts, Errors)
+   --typecheck _ = [] --DEBUG -> uncomment to disable typechecker
    --typecheck (Arch ctxs) = iwantastring (srchContext ctxs "Test")  --DEBUG
    typecheck arch@(Arch ctxs) =
+                                (enrich ctxs,
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
                                 --TODO -> check circularity
                                 checkCtxNameUniqueness ctxs ++||
                                 checkCtxs arch ctxs   --TODO -> this list of errors is not distinct for SERVICES
+                                )
+
+   --TODO -> put extra information, derived from the patterns (and ???), in the contexts, like :
+   --        Isa [] [] -> representing isa relations
+   --        Rules -> active rules
+   --        Declarations -> active declarations
+   --        ObjectDefs   p.e. types of expressions
+   enrich :: Contexts -> Contexts
+   enrich ctxs = ctxs
 
    --DESCR -> check rule: Every context must have a unique name
    checkCtxNameUniqueness :: Contexts -> Errors
