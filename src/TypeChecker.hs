@@ -678,36 +678,39 @@ module TypeChecker (typecheck, Error, Errors) where
    infer _ (Universe rel) = inferAbAb rel
    infer _ (Identity rel) = inferAaAa rel
                                 --TODO -> check for equality of source and target
-   infer universe (Semicolon expr1 expr2) = inferAbBcAc universe (infer universe expr1) (infer universe expr2)
-   infer universe (Dagger expr1 expr2) = inferAbBcAc universe (infer universe expr1) (infer universe expr2)
-   infer universe (Union expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
-   infer universe (Intersect expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
-   infer universe (Implicate expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
-   infer universe (Equality  expr1 expr2) = inferAbAbAb universe (infer universe expr1) (infer universe expr2)
-   infer universe (Flip expr1) = inferAbBa (infer universe expr1)
-   infer universe (Complement expr1) = inferAbAb (infer universe expr1)
-   infer universe (TrsClose expr1) = inferAbAb (infer universe expr1)
-   infer universe (TrsRefClose expr1) = inferAbAb (infer universe expr1)
+   infer isarel (Semicolon expr1 expr2) = inferAbBcAc isarel (infer isarel expr1) (infer isarel expr2)
+   infer isarel (Dagger expr1 expr2) = inferAbBcAc isarel (infer isarel expr1) (infer isarel expr2)
+   infer isarel (Union expr1 expr2) = extInferAbAbAb isarel expr1 expr2
+   infer isarel (Intersect expr1 expr2) = extInferAbAbAb isarel expr1 expr2
+   infer isarel (Implicate expr1 expr2) = extInferAbAbAb isarel expr1 expr2
+   infer isarel (Equality expr1 expr2)  = extInferAbAbAb isarel expr1 expr2
+   infer isarel (Flip expr1) = inferAbBa (infer isarel expr1)
+   infer isarel (Complement expr1) = inferAbAb (infer isarel expr1)
+   infer isarel (TrsClose expr1) = inferAbAb (infer isarel expr1)
+   infer isarel (TrsRefClose expr1) = inferAbAb (infer isarel expr1)
    infer _ (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
+
+   extInferAbAbAb isarel expr1@(Identity rel) expr2 = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
+   extInferAbAbAb isarel expr1 expr2@(Identity rel) = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
+   extInferAbAbAb isarel expr1 expr2                = inferAbAbAb isarel (infer isarel expr1) (infer isarel expr2)
 
    --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
    inferAbBcAc :: RelSet Concept -> RelationType -> RelationType -> RelationType
    inferAbBcAc _ err@(TypeError _ _) _ = err   --pass errors up
    inferAbBcAc _ _ err@(TypeError _ _) = err
-   inferAbBcAc universe (RelationType (a,b1)) (RelationType (b2,c))
-             | diamond universe b1 b2 = (RelationType (a,c))
+   inferAbBcAc isarel (RelationType (a,b1)) (RelationType (b2,c))
+             | diamond isarel b1 b2 = (RelationType (a,c))
              | otherwise              = TypeError RTE_AbBcAc ("The target of the left expression ("++ show b1 ++") does not match the source of the right expression ("++ show b2 ++")\n")
 
    --DESCR -> infer  e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1 -> e2 -> (a,b)
    inferAbAbAb :: RelSet Concept -> RelationType -> RelationType -> RelationType
    inferAbAbAb _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
    inferAbAbAb _ _ err@(TypeError _ _)                = err
-   inferAbAbAb universe (RelationType (a,b)) (RelationType (p,q))
-             | diamond universe a p 
-               && diamond universe b q    = (RelationType (lubcpt universe a p,lubcpt universe b q))
-             | not (diamond universe a p) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show a ++ ") does not match the source of the right expression (" ++ show p ++ ")\n")
-             | not (diamond universe b q) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show b ++ ") does not match the source of the right expression (" ++ show q ++ ")\n")
-             --REMARK   | otherwise is not possible
+   inferAbAbAb isarel (RelationType (a,b)) (RelationType (p,q))
+             | diamond isarel a p
+               && diamond isarel b q    = (RelationType (lubcpt isarel a p,lubcpt isarel b q))
+             | not (diamond isarel a p) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show a ++ ") does not match the source of the right expression (" ++ show p ++ ")\n")
+             | otherwise                = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show b ++ ") does not match the source of the right expression (" ++ show q ++ ")\n")
 
    --DESCR -> infer  e1::(a,b) |- e2::e1 -> (b,a)
    inferAbBa :: RelationType -> RelationType
@@ -718,7 +721,18 @@ module TypeChecker (typecheck, Error, Errors) where
    inferAbAb :: RelationType -> RelationType
    inferAbAb t = t
 
+   inferAaAaAa :: RelSet Concept -> RelationType -> RelationType -> RelationType
+   inferAaAaAa _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
+   inferAaAaAa _ _ err@(TypeError _ _)                = err
+   inferAaAaAa isarel t1@(RelationType (a,b)) t2@(RelationType (p,q))
+                                        | a==b &&
+                                          p==q      = (RelationType (lubcpt isarel a p,lubcpt isarel a p))
+                                        | not(a==b) = TypeError RTE_AaAa ("Left expression: Source does not equal target -> source: " ++ show a ++ " target: " ++ show b ++ "\n")
+                                        | otherwise = TypeError RTE_AaAa ("Right expression: Source does not equal target -> source: " ++ show p ++ " target: " ++ show q ++ "\n")
+
    --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
+   --REMARK -> this function is only used for Identities, Identities are constructed in such a way that always src==trg
+   --          so the otherwise has never been hit in a test
    inferAaAa :: RelationType -> RelationType
    inferAaAa err@(TypeError _ _) = err
    inferAaAa t@(RelationType (src,trg)) | src==trg  = t
@@ -745,20 +759,24 @@ module TypeChecker (typecheck, Error, Errors) where
                       where
                          gens2rels = RelSet [(a,b) | (a,b)<-(map gen2rel gens)]
                          gen2rel gen =  case gen of
-                                        G{} -> (genspc gen, gengen gen)
+                                        G{} -> (gengen gen, genspc gen) --TODO -> check if gengen actually contains gen and not spc
 
-    --TODO -> Maybe I want to attach the universe to each Concept
-
+   --REMARK -> I could construct a list (set) with all top-to-bottom paths in isaRel,
+   --          p.e. isaLists :: Relset Concept -> [[Concept]], but I won't
+   --          If A 'lub' B results in something not NOthing, A, or B, then I can conclude that A and B are
+   --          not (A 'diamond' B) thus NOthing (axiom 21,22,23)
+   --DESCR -> returns c1 'lub' c2
    --lub :: RelSet a -> a -> a -> a --TODO -> make a class for a to define top and bottom
    lubcpt :: RelSet Concept -> Concept -> Concept -> Concept
-   lubcpt universe a b | isA universe a b = b
-                       | isA universe b a = a
-                       | not (diamond universe a b) = NOthing
+   lubcpt isarel a b | isA isarel a b = b
+                     | isA isarel b a = a
+                     | not (diamond isarel a b) = NOthing
                       -- | otherwise = should not be possible by definition of diamond
 
    diamond :: Eq a => RelSet a -> a -> a -> Bool
-   diamond universe a b = isA universe a b || isA universe b a
+   diamond isarel a b = isA isarel a b || isA isarel b a
 
+   --DESCR -> check if (c1,c2) exists in isaRel
    isA :: Eq a => RelSet a -> a -> a -> Bool
    isA (RelSet r) c1 c2 = elem (c1,c2) r
                                         
@@ -784,13 +802,15 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> R \/ R^2 \/ .. \/ R^n
    --USE -> n>0
    cumUnion :: Eq a => [a] -> Int -> RelSet a -> RelSet a
-   cumUnion universe 1 r = expon universe 1 r --should be the same as just r
+   cumUnion universe 1 r = expon universe 1 r --REMARK -> should be the same as just r
    cumUnion universe n r = unite (cumUnion universe (n-1) r) (expon universe n r)
 
    --DESCR -> R \/ S
    unite :: Eq a => RelSet a -> RelSet a -> RelSet a
    unite (RelSet r) (RelSet s) = RelSet (unionBy equalelem r s)
             where
+            --DESCR -> a binary value equals a binary value if sources and targets are equal
+            equalelem :: Eq a => (a,a) -> (a,a) -> Bool
             equalelem (a,b) (c,d) = a==c && b==d
 
    --DESCR -> given the universe set => R^n
@@ -801,14 +821,8 @@ module TypeChecker (typecheck, Error, Errors) where
    expon universe exp r =  composition r (expon universe (exp-1) r)
 
    --DESCR -> R;S
-   --TODO -> TEST!!!
-   --TODO -> is there a way to check for equality in the list comprehension, because if I just add b1==b2
-   --        then it can't match () to a Num, the list comprehension is bothering me with its implementation
    composition :: Eq a => RelSet a -> RelSet a -> RelSet a
-   composition (RelSet r) (RelSet s) = RelSet (map toelem $ filter matches [((b1,b2),(a,c)) | (a,b1)<-r,(b2,c)<-s])
-              where
-              matches ((x,y),_) = x==y
-              toelem (_,elem) = elem
+   composition (RelSet r) (RelSet s) = RelSet [(a,c) | (a,b1)<-r,(b2,c)<-s, b1==b2]
 
 ---------------------------------------------------------------------------------------------
 --Relations part: later in separate module
