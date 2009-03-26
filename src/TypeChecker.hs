@@ -16,10 +16,6 @@
 --     -> RULE                The implementation is correct whenever this rule holds. If the rule does not hold anymore
 --                            then reexamine the implementation.
 
---TODO -> AGtry doet verschillende dingen
---        hij bouwt bijvoorbeeld de ISA op en de wereld en leidt regels af uit de hierarchy
---        als ik de typechecker eerst uitvoer en als er geen fouten zijn de AGtry, dan gaat die functionaliteit nooit verloren
---        de typechecker zal alleen bepaalde fouten eerder afvangen.
 --TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
 --        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)
 --TODO -> meerdere fouten in expressie, dan binnenste fout, 1 per expressie
@@ -55,9 +51,9 @@ module TypeChecker (typecheck, Error, Errors) where
                                 (enrich ctxs,
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
-                                --TODO -> check circularity
                                 checkCtxNameUniqueness ctxs ++||
-                                checkCtxs arch ctxs   --TODO -> this list of errors is not distinct for SERVICES
+                                checkCtxExtLoops ctxs ++||
+                                checkCtxs arch ctxs
                                 )
 
    --TODO -> put extra information, derived from the patterns (and ???), in the contexts, like :
@@ -84,6 +80,10 @@ module TypeChecker (typecheck, Error, Errors) where
                                     notUniqError :: Context -> Error
                                     notUniqError cx' = case cx' of
                                                 Ctx{} ->  "Context name " ++ (ctxnm cx')++ " is not unique"
+                          
+   --TODO -> check for loops in context extensions
+   checkCtxExtLoops :: Contexts -> Errors
+   checkCtxExtLoops _ = []
 
    ------------------
    --Common functions
@@ -94,12 +94,12 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR -> same as ++
    --USE   -> use ++&& and ++|| to combine multiple checks
-   (++&&) :: Errors -> Errors -> Errors
+   (++&&) :: [a] -> [a] -> [a]
    (++&&) e1 e2 = e1 ++ e2
 
    --DESCR -> only return errors of the right check if left check did not have errors
    --USE   -> use ++&& and ++|| to combine multiple checks
-   (++||) :: Errors -> Errors -> Errors
+   (++||) :: [a] -> [a] -> [a]
    (++||) [] e2 = e2 -- if left contains no Errors then return the errors of the right
    (++||) e1 _ = e1  -- if left contains Errors then return them and ignore the right
 
@@ -196,35 +196,31 @@ module TypeChecker (typecheck, Error, Errors) where
                                   checkRules env (allCtxRules ctxs)
                             )
 
-   --TODO -> replace by function checkTypes :: Checkable a => Environment -> a -> Errors
-   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprs) and infer their types (inferWithInfo)
+   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
    --         Then check the result (processResult)
    --         Return the list of error strings
    checkObjDefs :: Environment -> ObjectDefs -> Errors
-   --checkObjDefs env (obj:objs) = case obj of Obj{} -> [show (castObjectDefsToAdlExprs env [obj] 0)] --DEBUG
-   checkObjDefs env@(universe,_,_) objs =
-                               (processResult1
-                                       (map (inferWithInfo universe) (castObjectDefsToAdlExprs env objs 0))
+   --checkObjDefs env objs = case obj of Obj{} -> [show (castObjectDefsToAdlExprTrees env objs 0)] --DEBUG
+   checkObjDefs env@(isarel,_,_) objs =
+                               (processResult2          --DESCR -> after map a list of list of metainfo2 RT
+                                       (foldr (++) [] (map (inferTree isarel) (castObjectDefsToAdlExprTrees env objs 0)))
                                   )
 
-   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprs) and infer their types (inferWithInfo)
+   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
    --         Then check the result (processResult)
    --         Return the list of error strings
    checkRules :: Environment -> Rules -> Errors
    --checkRules env rules =  [(show (castRulesToAdlExprs env rules))] --DEBUG
-   checkRules env@(universe,_,_) ruls = (processResult2 (map (inferWithInfo universe) (castRulesToAdlExprs env ruls)))
+   checkRules env@(isarel,_,_) ruls = (processResult2 (map (inferWithInfo isarel) (castRulesToAdlExprs env ruls)))
 
 
    ------------------------------
    --cumulative context functions
-   --TODO -> assumption, names are unqualified and unique within the context and its extended contexts
-   --             if names must be qualified, then change the names of the components in
-   --             the patterns to qualified names (p.e. TestContext.concept1 instead of concept1)
    ------------------------------
 
    --DESCR -> Merge two ContextCheckResult objects
    --USE   -> This function is only used to combine two sibling, extended contexts
-   --RULE  -> The LowerboundsOfs and DeclRels from the Environment are always recomputed
+   --RULE  -> The IsaRel and DeclRels from the Environment are always recomputed
    --        based on the Contexts in the Environment resulting from this function
    concatRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
    concatRes ((_,_,cxs1),errs1) ((_,_,cxs2),errs2) | errs1==[] && errs2==[]
@@ -300,10 +296,40 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> infer the type of an AdlExpr maintaining the link to the meta information
    --TODO -> put the trace down to the type inferer?
    inferWithInfo :: RelSet Concept -> MetaInfo a AdlExpr -> MetaInfo a RelationType
-   inferWithInfo universe (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer universe expr1)))
+   inferWithInfo isarel (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer isarel expr1)))
           where 
           checkInferred (TypeError t err) = TypeError t (errInExpr expr1 err)
           checkInferred t = t
+
+   data AdlExprTree = AETree (MetaInfo2 AdlExpr) [AdlExprTree] | AELeaf (MetaInfo2 AdlExpr)  deriving (Show)
+
+   inferTree :: RelSet Concept -> AdlExprTree -> [MetaInfo2 RelationType]
+   inferTree isarel (AELeaf expr)                                           = [inferWithInfo isarel expr]
+   inferTree isarel (AETree exprinfo@(Info info (Trace trace  expr)) trees) =
+            case infer isarel expr of
+            --DESCR -> do not combine with child nodes if parent is in error and return error with position of parent
+            TypeError _ _  -> [inferWithInfo isarel exprinfo]
+            --DESCR -> combine parent with all child nodes and infer type if a TypeError then return it, else
+            --         combine parent with all child nodes and put the combined expression in the child node and infer types of child trees
+            RelationType _ ->
+                       [inferWithInfo isarel (getNodeLeafExpr exprinfo (getNodeExpr subtree)) | subtree <- trees]
+                       ++
+                       (foldr (++) [] 
+                       [inferTree isarel (addParentToTree expr subtree) | subtree <-trees
+                                                                        , not (iserr(inferWithInfo isarel (getNodeLeafExpr exprinfo (getNodeExpr subtree))))])
+             where
+             --DESCR -> MetaInfo of child node on the combined expression
+             getNodeLeafExpr :: MetaInfo2 AdlExpr -> MetaInfo2 AdlExpr -> MetaInfo2 AdlExpr
+             getNodeLeafExpr (Info _ (Trace _ exprp)) (Info info (Trace trace exprc)) = (Info info (Trace trace (Semicolon exprp exprc)))
+             getNodeExpr :: AdlExprTree -> MetaInfo2 AdlExpr
+             getNodeExpr (AETree expr _) = expr
+             getNodeExpr (AELeaf expr)   = expr
+             addParentToTree :: AdlExpr -> AdlExprTree -> AdlExprTree
+             addParentToTree exprp (AETree (Info info (Trace trace exprc)) trees) = (AETree (Info info (Trace trace (Semicolon exprp exprc))) trees)
+             addParentToTree exprp (AELeaf (Info info (Trace trace exprc)))       = (AELeaf (Info info (Trace trace (Semicolon exprp exprc)))      )
+             iserr :: MetaInfo2 RelationType -> Bool
+             iserr (Info info (Trace trc (TypeError _ _))) = True
+             iserr _ = False
 
    --DESCR -> function to write trace lines
    --EXTEND -> always use this function for writing trace lines to be able to easily change the implementation
@@ -315,9 +341,6 @@ module TypeChecker (typecheck, Error, Errors) where
    errInExpr ex err = "\nError in expression: " ++ show ex
                            ++"\n"
                            ++err
-
-   --removeInfo :: MetaInfo info a -> a
-   --removeInfo (Info _ x) = x
 
    ----------------------------------------------------
    --specific meta information structures and functions
@@ -331,7 +354,9 @@ module TypeChecker (typecheck, Error, Errors) where
    --         If a type is inferred, then it's ok. In case of a TypeError return the error.
    processResult1 :: [MetaInfo1 RelationType] -> Errors
    processResult1 [] = []
-   processResult1 ((Info (posi,_) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"):(processResult1 ts)
+   processResult1 ((Info (posi,_) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)
+                                                                              -- ++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"
+                                                                              ):(processResult1 ts)
    processResult1 ((Info _ (Trace _ (RelationType _)):ts)) = processResult1 ts
 
    --USE -> MetaInfo of this type is used for checking Rules
@@ -341,7 +366,9 @@ module TypeChecker (typecheck, Error, Errors) where
    --         If a type is inferred, then it's ok. In case of a TypeError return the error.
    processResult2 :: [MetaInfo2 RelationType] -> Errors
    processResult2 [] = []
-   processResult2 ((Info (posi) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"):(processResult2 ts)
+   processResult2 ((Info (posi) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)
+                                                                            -- ++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"
+                                                                            ):(processResult2 ts)
    processResult2 ((Info _ (Trace _(RelationType _)):ts))  = processResult2 ts
    
    --DESCR -> Combine code position information and an error string
@@ -349,9 +376,9 @@ module TypeChecker (typecheck, Error, Errors) where
    compose RTE_Fatal         err posi = "\nError at " ++ show posi ++ "\nFATAL ERROR while infering types: " ++ err ++ "\n"
    compose (RTE_DeclError t) err posi = "\nError at " ++ show posi ++ "\nThere is a problem finding the declaration of a relation:\n\t" ++ composeNFD t err ++ "\n"
    compose (RTE_ExprError t) err posi = "\nError at " ++ show posi ++ "\nThere is a problem interpreting an expression:\n\t" ++ composeEE t err ++ "\n"
-   compose RTE_AbAbAb        err posi = "\nError at " ++ show posi ++ "\nType inference (a,b) -> (a,b) -> (a,b): " ++ err ++ "\n"
-   compose RTE_AbBcAc        err posi = "\nError at " ++ show posi ++ "\nType inference (a,b) -> (b,c) -> (a,c): " ++ err ++ "\n"
-   compose RTE_AaAa          err posi = "\nError at " ++ show posi ++ "\nType inference (a,a) -> (a,a): " ++ err ++ "\n"
+   compose RTE_AbAbAb        err posi = "\nError at " ++ show posi ++ "\nCould not infer type of expression (a,b) -> (a,b) -> (a,b): " ++ err ++ "\n"
+   compose RTE_AbBcAc        err posi = "\nError at " ++ show posi ++ "\nCould not infer type of expression (a,b) -> (b,c) -> (a,c): " ++ err ++ "\n"
+   compose RTE_AaAa          err posi = "\nError at " ++ show posi ++ "\nSource and target of homogeneous relation are not the same {I, SYM, ASY, RFX, or TRN}. " ++ err ++ "\n"
    --compose _                err posi = "\n Error at " ++ show posi ++ "\n" ++ err ++ "\n"
 
    composeNFD :: NotFoundDrType -> Error -> Error
@@ -375,72 +402,27 @@ module TypeChecker (typecheck, Error, Errors) where
    --data type to InferExpr
    ------------------------
 
-   --DESCR -> Cast all objectdefs based on the environment to a list of AdlExprs
-   --         The AdlExprs are linked to meta data
-   --         The depth is used to be able to compose AdlExprs from nested objectdefs
-   --         The AdlExprs abstracted are:
-   --                1) all the isolated expression, one from each objectdef
-   --                2) all the nested objectdefs cast as AdlExprs
-   --                3) the cartesian product of an isolated expression of an objectdef
-   --                   combined with the nested objectdefs of that objectdef cast as AdlExprs
-   --                   each combination is a Semicolon AdlExpr
-   castObjectDefsToAdlExprs :: Environment -> ObjectDefs -> Depth ->  [MetaInfo1 AdlExpr] -- [(AdlExpr,MetaInfo)]
-   castObjectDefsToAdlExprs _ [] _ = []
-   castObjectDefsToAdlExprs env@(universe,_,_) (obj:objs) currdepth = case obj of
+   --DESCR -> Cast all objectdefs based on the environment to a list of AdlExprTree
+   castObjectDefsToAdlExprTrees :: Environment -> ObjectDefs -> Depth ->  [AdlExprTree] -- [(AdlExpr,MetaInfo)]
+   castObjectDefsToAdlExprTrees _ [] _ = []
+   castObjectDefsToAdlExprTrees env@(isarel,_,_) (obj:objs) currdepth = case obj of
                                    Obj{} -> if null (objats obj)
                                             then
                                                   --DESCR -> add this objdef as AdlExpr for evaluation
-                                                  (Info (objpos obj,currdepth) (writeTrcLn composetrace [] thisAsAdlExpr) )
+                                                  (AELeaf (Info (objpos obj) (writeTrcLn composetrace [] thisAsAdlExpr) ))
                                                   --DESCR -> add the sibling objdefs as AdlExpr for evaluation
-                                                  :(castObjectDefsToAdlExprs env objs currdepth)
+                                                  :(castObjectDefsToAdlExprTrees env objs currdepth)
                                             else
-                                                  --DESCR -> add the nested objdefs as AdlExpr for evaluation
-                                                  (castObjectDefsToAdlExprs env (objats obj) (currdepth+1))
-                                                  --DESCR -> add this objdef as AdlExpr for evaluation
-                                                  ++ [Info (objpos obj,currdepth) (writeTrcLn composetrace [] thisAsAdlExpr)]
-                                                  --DESCR -> add the nested objDefs combined with this objdef as AdlExpr for evaluation
-                                                  ++ (map
-                                                       (combineObjDefs universe thisAsAdlExpr currdepth)
-                                                       (castObjectDefsToAdlExprs env (objats obj) (currdepth+1))
-                                                  )
-                                                  --DESCR -> add the sibling objdefs as AdlExpr for evaluation
-                                                  ++ (castObjectDefsToAdlExprs env objs currdepth)
+                                                  [AETree (Info (objpos obj) (writeTrcLn composetrace [] thisAsAdlExpr))
+                                                          (castObjectDefsToAdlExprTrees env (objats obj) (currdepth+1))]
+                                                   ++ (castObjectDefsToAdlExprTrees env objs currdepth)
                                             where
                                                   thisAsAdlExpr = castExpressionToAdlExpr env (objctx obj)
                                                   composetrace =
                                                        ("Validating type of subexpression (expr1) in a SERVICE on depth " ++
-                                                       show currdepth ++ " :\n" ++
-                                                       "=> expr1 -> " ++ show thisAsAdlExpr ++ " of type " ++ show (infer universe thisAsAdlExpr)
+                                                     --  show currdepth ++ " :\n" ++
+                                                       "=> expr1 -> " ++ show thisAsAdlExpr ++ " of type " ++ show (infer isarel thisAsAdlExpr)
                                                        )
-
-   --DESCR -> given the current depth, combine the subexpression from the current objectdef
-   --         with a nested object def as AdlExpr with MetaInfo1 to a new AdlExpr with MetaInfo1
-   combineObjDefs :: RelSet Concept -> AdlExpr -> Depth -> MetaInfo1 AdlExpr -> MetaInfo1 AdlExpr
-   combineObjDefs universe obj currdepth expr1@(Info (posi,depth) (Trace trc nestedobj))
-                         --DESCR -> only combine if the nested expr is one depth lower then the current depth
-                         --         put the combined expr on the current depth
-                         --         link the combined expr to the file position of the nested expr
-                         --TODO  -> filter to prevent duplicates not complete yet
-                         --         I think this is the place to filter, because this is the place where
-                         --         expressions are copied, and thus the place where potential errors are duplicated.
-                         --         MetaInfo1 contains the Depth of the AdlExpr in an objectdef
-                         --         Because subexpressions will be evaluated more then once, incorrect exprs will
-                         --         result in multiple reporting of the same error. The error from the deepest AdlExpr
-                         --         has the most precise MetaInfo (at the time of writing only the FilePos)
-                         --         I can also just display pointing at the fact that this error is a result of another error (the more the better?)
-                       | (currdepth+1)==depth = --if (isError (infer obj)) || (isError (infer nestedobj))
-                                                --then Info (posi,currdepth) (Trace [] (ExprError EE_SubExpr "Parent or nested SERVICE contains type error."))
-                                                --else
-                                                Info (posi,currdepth) ((writeTrcLn composetrace trc) (Semicolon obj nestedobj))
-                       | otherwise            = expr1
-                                                where composetrace =
-                                                       ("Combining subexpression (expr1) in a SERVICE on depth " ++ show depth ++
-                                                       " with a nested subexpression (expr2) to a new expression expr1;expr2 (expr3) for type validation:\n" ++
-                                                       "=> expr1 -> " ++ show obj       ++ " of type " ++ show (infer universe obj)       ++ "\n" ++
-                                                       "=> expr2 -> " ++ show nestedobj ++ " of type " ++ show (infer universe nestedobj) ++ "\n" ++
-                                                       "=> expr3 has type " ++ show (infer universe (Semicolon obj nestedobj))
-                                                       )
-
 
    --DESCR  -> cast the rule to an AdlExpr
    --TODO   -> more guards for different rules
@@ -449,7 +431,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --          SJ: Het type van een regel is het type van de equivalente expressie, namelijk  typeOf a `lub` typeOf c (aannemende dat typeOf het type van een expressie bepaalt)
    castRulesToAdlExprs :: Environment -> Rules -> [MetaInfo2 AdlExpr]
    castRulesToAdlExprs _ [] = []
-   castRulesToAdlExprs env@(universe,_,_) (rul:ruls)
+   castRulesToAdlExprs env@(isarel,_,_) (rul:ruls)
                      | case rul of
                               Ru{} -> (rrsrt rul == Implication);
                               _ -> False
@@ -484,24 +466,23 @@ module TypeChecker (typecheck, Error, Errors) where
                         where
                             leftsubexpr = castExpressionToAdlExpr env (rrant rul)
                             rightsubexpr = castExpressionToAdlExpr env (rrcon rul)
-                                                   -- left|-right => -left\/right
                             castimplication = Implicate leftsubexpr rightsubexpr
                             composetrace1 =
                                ("ERROR IN RULE ->\n" ++
                                 show  castimplication ++ "\n" ++
-                                --TODO -> show rul is ugly "Translating rule " ++ show rul ++ " resulting in expression -" ++ show (rrant rul) ++ "\\/" ++ show (rrcon rul) ++ "\n" ++
-                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer universe leftsubexpr) ++ "\n" ++
-                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer universe rightsubexpr) ++ "\n" ++
-                                traceruleerror (infer universe castimplication)
+                                --TODO -> show rul is ugly
+                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer isarel leftsubexpr) ++ "\n" ++
+                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer isarel rightsubexpr) ++ "\n" ++
+                                traceruleerror (infer isarel castimplication)
                                )
                             castequivalence = Equality leftsubexpr rightsubexpr
                             composetrace2 =
                                ("ERROR IN RULE ->\n" ++
                                 show castequivalence ++ "\n" ++
-                                --TODO -> show rul is ugly "Translating rule " ++ show rul ++ " resulting in expression -" ++ show (rrant rul) ++ "\\/" ++ show (rrcon rul) ++ "\n" ++
-                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer universe leftsubexpr) ++ "\n" ++
-                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer universe rightsubexpr) ++ "\n" ++
-                                traceruleerror (infer universe castequivalence)
+                                --TODO -> show rul is ugly
+                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer isarel leftsubexpr) ++ "\n" ++
+                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer isarel rightsubexpr) ++ "\n" ++
+                                traceruleerror (infer isarel castequivalence)
                                )
                             traceruleerror (TypeError RTE_AbAbAb err)
                                             = "ERROR DESCRIPTION -> subexpr1 does not match type of subexpr2:\n" ++ err
@@ -559,12 +540,15 @@ module TypeChecker (typecheck, Error, Errors) where
    castExpressionToAdlExpr env (Cp expr1)       = Complement (castExpressionToAdlExpr env expr1)
    castExpressionToAdlExpr _ _ = ExprError EE_Fatal "Cannot cast to AdlExpr. "
 
-   --EXTEND -> Loose the declarations of ISA and relations, and other ADL tool specifics, by already infering a type
+   --EXTEND -> Loose the declarations of relations, and other ADL tool specifics, by already infering a type
    typeofRel :: DeclRelFound -> AdlExpr
    typeofRel (NotFoundDr t err) = Relation (TypeError (RTE_DeclError t) err)
-   typeofRel (FoundDr d) = case d of
+   typeofRel (FoundDr d) =
+                    case d of
                     -- _ -> TypeError (show lbos) ; --DEBUG
-                    Sgn{} -> Relation (RelationType ( desrc d, detgt d ));
+                    Sgn{} ->  if elem Sym (decprps d) || elem Asy (decprps d) || elem Trn (decprps d) || elem Rfx (decprps d)
+                              then HomoRelation (RelationType ( desrc d, detgt d ))
+                              else Relation (RelationType ( desrc d, detgt d ));
                     --TODO -> why is there a despc and degen?
                     Isn{} -> Identity (RelationType ( despc d, despc d ));
                     --REMARK -> Vs degen is the source Concept, Vs despc the target Concept
@@ -576,56 +560,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
 ---------------------------------------------------------------------------------------------
 --Type inference part: later in separate module
---PATTERN Type16Error
---GEN XX ISA Medewerker
---GEN XX ISA Document
---van         :: Toegangsrecht * Medewerker.
---op          :: Toegangsrecht * Document.
--- van~;op |- I[XX]            ---> AGtry CORRECT
--- van~;op |- I                ---> AGtry INCORRECT, maar zou moeten betekenen van~;op is een subset van I[Anything]
---                                  deze rule zou heel veel violations moeten retourneren
---                                  het type van de rule zou (Anything,Anything) moeten zijn.
--- -(van~;op) \/ I |- V        ---> AGtry CORRECT (even if van~;op contains a type error)
---ENDPATTERN
 --
---DESCR -> a (concept)type is a set of concepttypes
---         the set consists of all concepttypes lower than or equal to the concepttype
---         a>=b indicates that concepttype b is a subset of concepttype a
---         thus if a concepttype is part of type b then it is also part of concepttype a
---         Anything = top = the set of all concepttypes, 
---         Nothing = bottom = the set with no concepttypes
---      1) Id of a concepttype
---                              |- c::a
---      2) if concepttype b is a subset of concepttype a then concept c1 of type a is also a concept of type b
---         c1::a, c2::b, a>=b   |- c1::a -> b
---      3) a relation expression can be defined given concepttypes a and b, the type is (a,b)
---         c1::a, c2::b         |- e::def[c1,c2] -> (a,b)
---      4) the universal relation expression can be defined given concepttypes a and b, the type is (a,b)
---         c1::a, c2::b         |- e::V[c1,c2]   -> (a,b)
---      5) the identity relation expression can be defined given concepttype a, the type is (a,a)
---         c::a                 |- e::I[c]       -> (a,a)
---      6) the composition expression can be defined given expression e1 and e2
---         if there is a concepttype b which is a subset of concepttype b1 and b2, the type is (a,c)
---         e1::(a,b1), e2::(b2,c), b1>=b, b2>=b, not b=bottom |- e3::e1;e2 -> (a,c)
---      7) the relative addition expression can be defined given expression e1 and e2
---         if there is a concepttype b which is a subset of concepttype b1 and b2, the type is (a,c)
---         e1::(a,b1) , e2::(b2,c)  b1>=b b2>=b, not b=bottom |- e3::e1!e2 -> (a,c)
---      8) the union expression can be defined given expression e1 and e2
---         if concepttype a1 and a2 are subsets of concepttype a AND
---         if concepttype b1 and b2 are subsets of concepttype b, the type is (a,b)
---         e1::(a1,b1), e2::(a2,b2) a>=a1 a>=a2 b>=b1 b>=b2 |- e3::e1\/e2 -> (a,b)
---      9) the intersection expression can be defined given expression e1 and e2
---         if concepttype a1 and a2 are subsets of concepttype a AND
---         if concepttype b1 and b2 are subsets of concepttype b, the type is (a,b)
---         e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1/\e2 -> (a,b)
---     10) the flip expression can be defined given expression e1, the type is (b,a)
---         e1::(a,b)            |- e2::e1~     -> (b,a)
---     11) the complement expression can be defined given expression e1, the type is (a,b)
---         e1::(a,b)            |- e2::-e1     -> (a,b)
---     12) the reflexive, transitive closure expression can be defined given expression e1, the type is (a,b)
---         e1::(a,b)            |- e2::e1*     -> (a,b)
---     13) the transitive closure expression can be defined given expression e1, the type is (a,b)
---         e1::(a,b)            |- e2::e1+     -> (a,b)
 ---------------------------------------------------------------------------------------------
 
    --USE ->  Store the type of an expression or a type error
@@ -644,6 +579,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --USE -> Relation will be the only expression already inferred possibly containing a TypeError
    data AdlExpr =   Relation    RelationType  --USE -> use typeofRel to get the RelationType
+                  | HomoRelation RelationType
                   | Implicate   {ex1::AdlExpr, ex2::AdlExpr}
                   | Equality    {ex1::AdlExpr, ex2::AdlExpr}
                   | Complement  {ex1::AdlExpr}
@@ -652,7 +588,6 @@ module TypeChecker (typecheck, Error, Errors) where
                   | Intersect   {ex1::AdlExpr, ex2::AdlExpr}
                   | Semicolon   {ex1::AdlExpr, ex2::AdlExpr}
                   | Dagger      {ex1::AdlExpr, ex2::AdlExpr}
-   --TODO -> why can't I specify an I or V for a Relation? Why are I and V morphisms and not expressions?
                   | Identity    RelationType
                   | Universe    RelationType        --TODO -> this is not in table in article
                   | TrsClose    {ex1::AdlExpr}      --TODO -> this is not in table in article
@@ -663,12 +598,14 @@ module TypeChecker (typecheck, Error, Errors) where
    
    instance Show AdlExpr where
        showsPrec _ (Relation (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
+       showsPrec _ (HomoRelation (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
        showsPrec _ (Identity (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
        showsPrec _ (Universe (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
        --showsPrec _ t@(Relation _)    = showString (show t)
        showsPrec _ (Relation (RelationType t))     = showString (show t)
        showsPrec _ (Identity (RelationType t))     = showString ("I[" ++ show t ++ "]")
        showsPrec _ (Universe (RelationType t))     = showString ("V[" ++ show t ++ "]")
+       showsPrec _ (HomoRelation (RelationType t)) = showString ("Homo[" ++ show t ++ "]")
        showsPrec _ (Semicolon e1 e2) = showString (show e1 ++ ";" ++ show e2)
        showsPrec _ (Dagger e1 e2)    = showString (show e1 ++ "!" ++ show e2)
        showsPrec _ (Union e1 e2)     = showString (show e1 ++ "\\/" ++ show e2)
@@ -681,13 +618,11 @@ module TypeChecker (typecheck, Error, Errors) where
        showsPrec _ (Equality e1 e2)   = showString (show e1 ++ "=" ++ show e2)
        showsPrec _ (ExprError _ err) = showString err
 
-   --TODO -> check the expressions as a whole and not just the subexpressions
-   --        I have to change to infer all possible types, and then check if only one type is inferred
    infer :: RelSet Concept -> AdlExpr -> RelationType
    infer _ (Relation rel) = inferAbAb rel
+   infer isarel (HomoRelation rel) = inferAaAa isarel rel
    infer _ (Universe rel) = inferAbAb rel
-   infer _ (Identity rel) = inferAaAa rel
-                                --TODO -> check for equality of source and target
+   infer isarel (Identity rel) = inferAaAa isarel rel
    infer isarel (Semicolon expr1 expr2) = inferAbBcAc isarel (infer isarel expr1) (infer isarel expr2)
    infer isarel (Dagger expr1 expr2) = inferAbBcAc isarel (infer isarel expr1) (infer isarel expr2)
    infer isarel (Union expr1 expr2) = extInferAbAbAb isarel expr1 expr2
@@ -696,8 +631,8 @@ module TypeChecker (typecheck, Error, Errors) where
    infer isarel (Equality expr1 expr2)  = extInferAbAbAb isarel expr1 expr2
    infer isarel (Flip expr1) = inferAbBa (infer isarel expr1)
    infer isarel (Complement expr1) = inferAbAb (infer isarel expr1)
-   infer isarel (TrsClose expr1) = inferAbAb (infer isarel expr1)
-   infer isarel (TrsRefClose expr1) = inferAbAb (infer isarel expr1)
+   infer isarel (TrsClose expr1) = inferAaAa isarel (infer isarel expr1)     --TODO -> is this correct?
+   infer isarel (TrsRefClose expr1) = inferAaAa isarel(infer isarel expr1)  --TODO -> is this correct?
    infer _ (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
 
    extInferAbAbAb isarel expr1@(Identity rel) expr2 = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
@@ -741,12 +676,10 @@ module TypeChecker (typecheck, Error, Errors) where
                                         | otherwise = TypeError RTE_AaAa ("Right expression: Source does not equal target -> source: " ++ show p ++ " target: " ++ show q ++ "\n")
 
    --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
-   --REMARK -> this function is only used for Identities, Identities are constructed in such a way that always src==trg
-   --          so the otherwise has never been hit in a test
-   inferAaAa :: RelationType -> RelationType
-   inferAaAa err@(TypeError _ _) = err
-   inferAaAa t@(RelationType (src,trg)) | src==trg  = t
-                                        | otherwise = TypeError RTE_AaAa ("Source does not equal target -> source: " ++ show src ++ " target: " ++ show trg ++ "\n")
+   inferAaAa :: RelSet Concept -> RelationType -> RelationType
+   inferAaAa _ err@(TypeError _ _) = err    --TODO -> condition for homogeneous relations not described in inference table, should identity be src==trg as described in table?
+   inferAaAa isarel t@(RelationType (src,trg)) | diamond isarel src trg  = RelationType (lubcpt isarel src trg, lubcpt isarel src trg)
+                                               | otherwise               = TypeError RTE_AaAa ("Source does not equal target -> source: " ++ show src ++ " target: " ++ show trg ++ "\n")
 
 ---------------------------------------------------------------------------------------------
 
@@ -755,7 +688,6 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> if is in isaRel then predicate isa is true. reflects axiom 15-19
    --         reflexive transitive closure (R0 \/ transclose) of the declared GEN relations
    --         including that every concept has a top (NOthing) and bottom (Anything)
-   --TODO  -> does not ensure axiom 18, antisymmetry, does AGtry ensure it?
    --REMARK -> Anything and NOthing must not be in Concepts
    --          "Ampersand is restricted to concepts that are not bottom or top, but the two are needed to signal type errors"
    isaRel :: Concepts -> Gens -> RelSet Concept
@@ -841,7 +773,6 @@ module TypeChecker (typecheck, Error, Errors) where
 --
 ---------------------------------------------------------------------------------------------
 
-   --TODO -> just Declarations?
    type DeclRels = [DeclRel]
    type DeclRel = Declaration
    data DeclRelFound = FoundDr DeclRel | NotFoundDr NotFoundDrType Error
