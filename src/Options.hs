@@ -55,7 +55,7 @@ getOptions =
       progName <- getProgName
       env      <- getEnvironment
       genTime'  <- getClockTime
-      flags    <- case getOpt Permute options args of
+      flags    <- case getOpt Permute (each options) args of
                       (o,[n],[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
                       (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
                       (_,x:xs,[])   -> ioError (userError ("too many files: "++ show [x:xs] ++usageInfo' progName))
@@ -94,48 +94,48 @@ checkOptions flags =
                         else return flags2  {- No need to check if no atlas will be generated. -}
            return flags3                  
              
-
-
-
-      
+data DisplayMode = Public | Hidden
+    
 usageInfo' :: String -> String
-usageInfo' progName = usageInfo (infoHeader progName) options
+usageInfo' progName = usageInfo (infoHeader progName) (publics options)
           
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
 
+publics :: [(a, DisplayMode) ] -> [a]
+publics opts = [o| (o,Public)<-opts]
+each :: [(a, DisplayMode) ] -> [a]
+each opts = [o|(o,_) <- opts]
 
-
-
-options     :: [OptDescr (Options -> Options)]
-options  = [ Option ['C']     ["context"]      (OptArg contextOpt "name")  "use context with name"
-           , Option ['v']     ["version"]      (NoArg versionOpt)          "show version and exit"
-           , Option ['h','?'] ["help"]         (NoArg helpOpt)             "get (this) usage information"
-           , Option []        ["verbose"]      (NoArg verboseOpt)          "verbose error message format"
-           , Option ['p']     ["proto"]        (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file (dir overrides "++
-                                                                                envdirPrototype ++ " )") 
-           , Option ['x']     ["maxServices"]  (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"
-           , Option ['d']     ["dbName"]       (OptArg dbNameOpt "name")   ("use database with name (name overrides "++
-                                                                                envdbName ++ " )")
-           , Option ['s']     ["services"]     (NoArg servicesOpt)         "generate service specifications in ADL format"
-           , Option ['a']     ["atlas"]        (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
-                                                                                envdirAtlas ++ " )")
-           , Option []        ["XML"]          (NoArg xmlOpt)              "generate XML output"
-           , Option ['L']     ["fspecLaTeX"]   (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"
-           , Option ['H']     ["fspecHtml"]    (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"
-           , Option ['W']     ["fspecWord"]    (NoArg fspecWordOpt)       "generate a functional specification document for microsoft's Word"
-           , Option ['P']     ["fspecPandoc"]  (NoArg fspecPandocOpt)     "generate a functional specification document in Pandoc format"
-           , Option []        ["proofs"]       (NoArg proofsOpt)           "generate correctness proofs"
-           , Option []        ["haskell"]      (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"
-           , Option ['o']     ["outputDir"]    (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
-                                                                                envdirOutput ++ " )")        
-           , Option []        ["beeper"]       (NoArg beeperOpt)           "generate beeper instead of checker"
-           , Option []        ["crowfoot"]     (NoArg crowfootOpt)         "generate crowfoot notation in graphics"
-           , Option []        ["language"]     (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"
-           , Option []        ["log"]          (ReqArg logOpt "name")       ("log to file with name (name overrides "++
-                                                                                envlogName  ++ " )")
-           , Option []    ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" -- Tijdelijk, zolang de TC nog onderhanden is. 
-           ]
+options :: [(OptDescr (Options -> Options), DisplayMode) ]
+options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  "use context with name"), Public)
+          , ((Option ['v']     ["version"]          (NoArg versionOpt)          "show version and exit"), Public)
+          , ((Option ['h','?'] ["help"]             (NoArg helpOpt)             "get (this) usage information"), Public)
+          , ((Option []        ["verbose"]          (NoArg verboseOpt)          "verbose error message format"), Public)
+          , ((Option ['p']     ["proto"]            (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file (dir overrides "++
+                                                                                   envdirPrototype ++ " )") ), Public)
+          , ((Option ['x']     ["maxServices"]      (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"), Public)
+          , ((Option ['d']     ["dbName"]           (OptArg dbNameOpt "name")   ("use database with name (name overrides "++
+                                                                                   envdbName ++ " )")), Public)
+          , ((Option ['s']     ["services"]         (NoArg servicesOpt)         "generate service specifications in ADL format"), Public)
+          , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
+                                                                                   envdirAtlas ++ " )")), Public)
+          , ((Option []        ["XML"]              (NoArg xmlOpt)              "generate XML output"), Public)
+          , ((Option ['L']     ["fspecLaTeX"]       (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"), Public)
+          , ((Option ['H']     ["fspecHtml"]        (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"), Public)
+          , ((Option ['W']     ["fspecWord"]        (NoArg fspecWordOpt)       "generate a functional specification document for microsoft's Word"), Public)
+          , ((Option ['P']     ["fspecPandoc"]      (NoArg fspecPandocOpt)     "generate a functional specification document in Pandoc format"), Public)
+          , ((Option []        ["proofs"]           (NoArg proofsOpt)           "generate correctness proofs"), Public)
+          , ((Option []        ["haskell"]          (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"), Public)
+          , ((Option ['o']     ["outputDir"]        (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
+                                                                                   envdirOutput ++ " )")        ), Public)
+          , ((Option []        ["beeper"]           (NoArg beeperOpt)           "generate beeper instead of checker"), Public)
+          , ((Option []        ["crowfoot"]         (NoArg crowfootOpt)         "generate crowfoot notation in graphics"), Public)
+          , ((Option []        ["language"]         (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"), Public)
+          , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
+                                                                                   envlogName  ++ " )")), Hidden)
+          , ((Option []        ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" ), Hidden) -- Tijdelijk, zolang de TC nog onderhanden is. 
+          ]
 
 defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
 defaultOptions clocktime env fName pName 
