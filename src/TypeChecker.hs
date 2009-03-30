@@ -32,6 +32,8 @@ module TypeChecker (typecheck, Error, Errors) where
    import Adl         -- USE -> .MorphismAndDeclaration.makeDeclaration
                       --        and of course many data types
    import Data.List   -- USE -> unionBy
+   import Data.Maybe  -- USE -> fromJust, isNothing
+   import Data.Tree   -- USE -> data Tree a
 
    ---------------
    --MAIN function
@@ -45,14 +47,14 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> The parser composes an Architecture object. This function typechecks this object.
    --USE   -> This is the only function needed outside of the TypeChecker
    typecheck :: Architecture -> (Contexts, Errors)
-   --typecheck _ = [] --DEBUG -> uncomment to disable typechecker
+   --typecheck arch@(Arch ctxs) = (ctxs,[]) --DEBUG -> uncomment to disable typechecker
    --typecheck (Arch ctxs) = iwantastring (srchContext ctxs "Test")  --DEBUG
    typecheck arch@(Arch ctxs) =
                                 (enrich ctxs,
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
-                                checkCtxNameUniqueness ctxs ++||
-                                checkCtxExtLoops ctxs ++||
+                                checkCtxNameUniqueness ctxs  ++||
+                                checkCtxExtLoops ctxs   ++||
                                 checkCtxs arch ctxs
                                 )
 
@@ -82,8 +84,41 @@ module TypeChecker (typecheck, Error, Errors) where
                                                 Ctx{} ->  "Context name " ++ (ctxnm cx')++ " is not unique"
                           
    --TODO -> check for loops in context extensions
+   --USE -> Contexts names must be unique
    checkCtxExtLoops :: Contexts -> Errors
-   checkCtxExtLoops _ = []
+   checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
+                            where
+                            composeError :: [ContextName] -> Errors
+                            composeError [] = []
+                            composeError cxnms = ["One or more CONTEXT loops have been detected involving contexts: "
+                                                   ++ foldr (++) "\n" [ cxnm++"\n" | cxnm<-cxnms]
+                                                   ]
+                            --DESCR -> there is a loop if a context is not found in the CtxTree, but it is found in the original Contexts
+                            findLoops :: Context -> [ContextName]
+                            findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
+                                                          , not (foundCtx cxf)
+                                                          , foundCtx (srchContext ctxs (ctxName cxf))]
+                            foundCtx :: ContextFound -> Bool
+                            foundCtx (Found _) = True
+                            foundCtx _         = False
+                            ctxName :: ContextFound -> ContextName
+                            ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
+                            ctxName (NotFound cxnm) = cxnm
+
+   --DESCR -> data Tree a = Node a [Tree a]
+   type CtxTree = Tree ContextFound
+
+   buildCtxTree :: ContextFound -> Contexts -> CtxTree
+   buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
+   buildCtxTree cxf@(Found cx) ctxs
+              --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
+              = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
+
+   --DESCR -> removes a context from contexts
+   --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
+   --          context names should be unique
+   removeCtx :: Contexts -> Context -> Contexts
+   removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
 
    ------------------
    --Common functions
@@ -135,7 +170,13 @@ module TypeChecker (typecheck, Error, Errors) where
    --USE    -> The ContextCheckResult is needed to communicate the environment from a context and potential errors
    --REMARK -> From the environment only the Contexts containing the contexts in scope is used
    type ContextCheckResult = (Environment, Errors)
-   data ContextFound = Found Context | NotFound Error
+   type ContextName = String
+   data ContextFound = Found Context | NotFound ContextName
+   
+   instance Eq ContextFound 
+        where
+        Found cx == Found cx' = (case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx')
+        _ == _                = False
 
    --DESCR -> check all the Contexts. The Architecture is communicated to be able to search for (extended) contexts.
    checkCtxs :: Architecture -> Contexts -> Errors
