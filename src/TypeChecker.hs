@@ -53,9 +53,11 @@ module TypeChecker (typecheck, Error, Errors) where
                                 (enrich ctxs,
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
-                                checkCtxNameUniqueness ctxs  ++||
-                                checkCtxExtLoops ctxs   ++||
-                                checkCtxs arch ctxs
+                                checkCtxNameUniqueness ctxs  
+                                ++||
+                                checkCtxExtLoops ctxs
+                                ++||
+                                checkArch arch
                                 )
 
    --TODO -> put extra information, derived from the patterns (and ???), in the contexts, like :
@@ -82,7 +84,7 @@ module TypeChecker (typecheck, Error, Errors) where
                                     notUniqError :: Context -> Error
                                     notUniqError cx' = case cx' of
                                                 Ctx{} ->  "Context name " ++ (ctxnm cx')++ " is not unique"
-                          
+
    --TODO -> check for loops in context extensions
    --USE -> Contexts names must be unique
    checkCtxExtLoops :: Contexts -> Errors
@@ -98,27 +100,6 @@ module TypeChecker (typecheck, Error, Errors) where
                             findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
                                                           , not (foundCtx cxf)
                                                           , foundCtx (srchContext ctxs (ctxName cxf))]
-                            foundCtx :: ContextFound -> Bool
-                            foundCtx (Found _) = True
-                            foundCtx _         = False
-                            ctxName :: ContextFound -> ContextName
-                            ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
-                            ctxName (NotFound cxnm) = cxnm
-
-   --DESCR -> data Tree a = Node a [Tree a]
-   type CtxTree = Tree ContextFound
-
-   buildCtxTree :: ContextFound -> Contexts -> CtxTree
-   buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
-   buildCtxTree cxf@(Found cx) ctxs
-              --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
-              = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
-
-   --DESCR -> removes a context from contexts
-   --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
-   --          context names should be unique
-   removeCtx :: Contexts -> Context -> Contexts
-   removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
 
    ------------------
    --Common functions
@@ -165,57 +146,27 @@ module TypeChecker (typecheck, Error, Errors) where
    --          a dictionary containing the lowerbounds of the Concepts from the contexts in scope, the Concept is the key
    --          a list of all declared (direct) relations between two Concepts from the contexts in scope
    --          the contexts in scope, which will be the context under evaluation and its extended contexts (recursively)
-   type Environment = (RelSet Concept, DeclRels, Contexts)
+   type Environment = (RelSet Concept, DeclRels)
 
    --USE    -> The ContextCheckResult is needed to communicate the environment from a context and potential errors
    --REMARK -> From the environment only the Contexts containing the contexts in scope is used
-   type ContextCheckResult = (Environment, Errors)
    type ContextName = String
    data ContextFound = Found Context | NotFound ContextName
-   
-   instance Eq ContextFound 
-        where
-        Found cx == Found cx' = (case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx')
-        _ == _                = False
 
-   --DESCR -> check all the Contexts. The Architecture is communicated to be able to search for (extended) contexts.
-   checkCtxs :: Architecture -> Contexts -> Errors
-   checkCtxs _ [] = []
-   --DESCR -> Take the errors found when checking this context as root context and concat it with the errors of the other contexts taken as root
-   --TODO -> context in 1x checken
-   checkCtxs arch@(Arch ctxs) (ctx':tl_ctxs) = errors (check (Found ctx')) ++ (checkCtxs arch tl_ctxs)
-      where
-         errors :: ContextCheckResult -> Errors
-         errors ((_,_,_),err) = err
-         check :: ContextFound -> ContextCheckResult
-         check (NotFound str) = ((RelSet [],[],[]),("Extended context " ++ str ++ " of context " ++ (case ctx' of Ctx{} -> ctxnm ctx') ++ " could not be found"):[]) --this case will not have been caught by the parser yet
-         check (Found cx)
-                     = checkThisCtx (constructEnv checkExtCtx cx)
-                     where
-                         --DESCR -> get the list of extended Context
-                         --         check all extended Context in the list (all siblings)
-                         --         merge the results (classification, relations, errors)
-                         checkExtCtx :: ContextCheckResult
-                         checkExtCtx = case cx of Ctx{} -> foldr concatRes ((RelSet [], [], []),[]) (map check (map (srchContext ctxs) ( ctxon cx) ))
-                         --DESCR -> Enrich the Environment of the extended contexts with patterns from the current context
-                         constructEnv :: ContextCheckResult -> Context -> ContextCheckResult
-                         constructEnv ((_,_,extCtxs),errs) cx' -- @(Ctx nm _ _ _ _ _ _ _ _ _ _) --DEBUG
-                                    = (
-                                         ( isaRel (allCtxConcepts (cx':extCtxs)) (allCtxGens (cx':extCtxs)),
-                                           declRels (allCtxPats (cx':extCtxs)),
-                                           cx':extCtxs
-                                         ),
-                                         errs
-                                       )
-                                --   = ((RelSet [],[],[]),[show ( isaRel
-                                  --                         (allCtxConcepts (cx':extCtxs))
-                                    --                       (allCtxGens (cx':extCtxs))
-                                      --                  )])
-                                   -- =((RelSet [], [],[]),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)) )]) --DEBUG to show lowerboundsOfs
-                                   -- =((RelSet [], [],[]),[show (declRels    (allCtxPats (cx:extCtxs)) )]) --DEBUG to show declRels
-                                   -- \| nm=="Test2" = ((lowerboundsOfs (allCtxGens (cx:extCtxs)),declRels (allCtxPats (cx:extCtxs)),cx:extCtxs),[])  --DEBUG
-                                   -- \| otherwise   = ((RelSet [], [], []),[show (lowerboundsOfs (allCtxGens (cx:extCtxs)))])  --DEBUG of extends Test2
-                                   -- \| otherwise   = ((RelSet [], [], []),[show (declRels    (allCtxPats (cx:extCtxs)))])  --DEBUG of extends Test2
+   --DESCR -> data Tree a = Node a [Tree a]
+   type CtxTree = Tree ContextFound
+
+   buildCtxTree :: ContextFound -> Contexts -> CtxTree
+   buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
+   buildCtxTree cxf@(Found cx) ctxs
+              --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
+              = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
+
+   --DESCR -> removes a context from contexts
+   --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
+   --          context names should be unique
+   removeCtx :: Contexts -> Context -> Contexts
+   removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
 
    --DESCR -> search for a context by name and return the first one found
    srchContext :: Contexts -> String -> ContextFound
@@ -225,24 +176,52 @@ module TypeChecker (typecheck, Error, Errors) where
                                   = Found cx
             | otherwise = srchContext ctxs srchstr
 
-   --DESCR -> Check what needs to be checked on a context
-   checkThisCtx :: ContextCheckResult -> ContextCheckResult
-   --DESCR -> abort when there are errors from previous steps
-   checkThisCtx ccr@(_,_:_)       = ccr
-   --DESCR -> resolve the type and check if the arguments are of such a type
-   checkThisCtx (env@(_,_,ctxs),_) =
-                            --DESCR -> combine all errors of things to check like objectdefs and rules
-                            (env,        --TODO -> is this redundant
-                                  checkObjDefs env (allCtxObjDefs ctxs) ++&&
-                                  checkRules env (allCtxRules ctxs)
-                            )
+   foundCtx :: ContextFound -> Bool
+   foundCtx (Found _) = True
+   foundCtx _         = False
+
+   ctxName :: ContextFound -> ContextName
+   ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
+   ctxName (NotFound cxnm) = cxnm
+
+   fromFoundCtx :: ContextFound -> Context
+   fromFoundCtx (NotFound cxnm) = error ("TypeChecker.fromFoundCtx: NotFound " ++ cxnm)
+   fromFoundCtx(Found cx)    = cx
+
+   checkArch :: Architecture -> Errors
+   checkArch arch = case arch of Arch{} -> dropWhile (==[])
+                                           [composeError cx (checkCtx $ buildCtxTree (Found cx) (archContexts arch))
+                                                     |cx<-(archContexts arch)]
+                                        where
+                                        cxName cx = case cx of Ctx{} -> ctxnm cx
+                                        composeError :: Context -> Errors -> Error
+                                        composeError _ [] = []
+                                        composeError cx errs = "\nCHECKING WITH CONTEXT '"++cxName cx++"' AS MAIN CONTEXT:\n" ++
+                                                               foldr (++) [] errs
+
+
+   --TODO -> Because ctxon in Context is a [String], I do not have file information for wrong EXTEND declarations
+   --        I could look at the parent and stuff like that, but that's inconsistent with other statements like Expressions
+   checkCtx :: CtxTree -> Errors
+   checkCtx cxtr = ["Extended context '"++ ctxName cxf ++"' could not be found.\n"
+                                      | cxf<-allFndCtx, not(foundCtx cxf)]
+                   ++|| --DESCR -> If extended context cannot be found then abort, else check what needs to be checked
+                   (checkObjDefs env (allCtxObjDefs allCtx)
+                   ++&&
+                   checkRules env (allCtxRules allCtx) )
+                   where
+                   allFndCtx = flatten cxtr
+                   allCtx = map fromFoundCtx allFndCtx
+                   env = (isaRel (allCtxConcepts allCtx) (allCtxGens allCtx),
+                          declRels (allCtxPats allCtx))
+
 
    --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
    --         Then check the result (processResult)
    --         Return the list of error strings
    checkObjDefs :: Environment -> ObjectDefs -> Errors
    --checkObjDefs env objs = case obj of Obj{} -> [show (castObjectDefsToAdlExprTrees env objs 0)] --DEBUG
-   checkObjDefs env@(isarel,_,_) objs =
+   checkObjDefs env@(isarel,_) objs =
                                (processResult2          --DESCR -> after map a list of list of metainfo2 RT
                                        (foldr (++) [] (map (inferTree isarel) (castObjectDefsToAdlExprTrees env objs 0)))
                                   )
@@ -252,52 +231,37 @@ module TypeChecker (typecheck, Error, Errors) where
    --         Return the list of error strings
    checkRules :: Environment -> Rules -> Errors
    --checkRules env rules =  [(show (castRulesToAdlExprs env rules))] --DEBUG
-   checkRules env@(isarel,_,_) ruls = (processResult2 (map (inferWithInfo isarel) (castRulesToAdlExprs env ruls)))
+   checkRules env@(isarel,_) ruls = (processResult2 (map (inferWithInfo isarel) (castRulesToAdlExprs env ruls)))
 
 
    ------------------------------
    --cumulative context functions
    ------------------------------
 
-   --DESCR -> Merge two ContextCheckResult objects
-   --USE   -> This function is only used to combine two sibling, extended contexts
-   --RULE  -> The IsaRel and DeclRels from the Environment are always recomputed
-   --        based on the Contexts in the Environment resulting from this function
-   concatRes :: ContextCheckResult -> ContextCheckResult -> ContextCheckResult
-   concatRes ((_,_,cxs1),errs1) ((_,_,cxs2),errs2) | errs1==[] && errs2==[]
-                                                              = ((RelSet [], [], cxs1 ++ cxs2),[])
-                                                  | otherwise = ((RelSet [],[],[]),errs1 ++ errs2)
-
    --DESCR -> all the Gens of Contexts
    allCtxGens :: Contexts -> Gens
-   allCtxGens [] = []
-   allCtxGens (cx:ctxs) = case cx of Ctx{} -> allPatGens (ctxpats cx) ++ allCtxGens ctxs
+   allCtxGens ctxs = foldr (++) [] [case cx of Ctx{} -> allPatGens (ctxpats cx) | cx<-ctxs]
 
    --DESCR -> all the Gens of patterns
    allPatGens :: Patterns -> Gens
-   allPatGens [] = []
-   allPatGens (p:ps)  = case p of Pat{} -> ptgns p ++ allPatGens ps
+   allPatGens ps = foldr (++) [] [case p of Pat{} -> ptgns p | p<-ps]
 
    --DESCR -> all the patterns of contexts
    allCtxPats :: Contexts -> Patterns
-   allCtxPats [] = []
-   allCtxPats (cx:ctxs) = case cx of Ctx{} -> ctxpats cx ++ allCtxPats ctxs
+   allCtxPats ctxs = foldr (++) [] [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
 
    --DESCR -> all the ObjectDefs of Contexts
    allCtxObjDefs :: Contexts -> ObjectDefs
-   allCtxObjDefs [] = []
-   allCtxObjDefs (cx:ctxs) = case cx of Ctx{} -> ctxos cx ++ allCtxObjDefs ctxs
+   allCtxObjDefs ctxs = foldr (++) [] [case cx of Ctx{} -> ctxos cx | cx<-ctxs]
 
    --DESCR -> all the Rules of Contexts
    allCtxRules :: Contexts -> Rules
-   allCtxRules [] = []
-   allCtxRules (cx:ctxs) = case cx of Ctx{} -> ctxrs cx ++ allPatRules (ctxpats cx) ++ allCtxRules ctxs
+   allCtxRules ctxs = foldr (++) [] [case cx of Ctx{} -> ctxrs cx ++ allPatRules (ctxpats cx) | cx<-ctxs]
 
    --DESCR -> all the Gens of patterns
    allPatRules :: Patterns -> Rules
-   allPatRules [] = []
-   allPatRules (p:ps)  = case p of Pat{} -> ptrls p ++ allPatRules ps
-   
+   allPatRules ps = foldr (++) [] [case p of Pat{} -> ptrls p | p<-ps]
+
    allCtxConcepts :: Contexts -> Concepts
    allCtxConcepts ctxs = foldr cptinsert []
                             (allDeclConcepts (declRels (allCtxPats ctxs)) ++
@@ -307,7 +271,7 @@ module TypeChecker (typecheck, Error, Errors) where
                          cptinsert :: Concept -> Concepts -> Concepts
                          cptinsert cp cpts | elem cp cpts = cpts
                                            | otherwise    = cp:cpts
-   
+
    allDeclConcepts :: DeclRels -> Concepts
    --allDeclConcepts [] = []
    allDeclConcepts dls = [case d of Sgn{} -> desrc d | d<-dls] ++
@@ -329,7 +293,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --USE -> generic type to communicate a meta information structure with an object a
    data MetaInfo info a = Info info (Trace a)  deriving (Show)
    data Trace a = Trace [String] a
-   
+
    instance Show (Trace a) where
        showsPrec _ (Trace [] _)     = showString ""
        showsPrec _ (Trace (x:xs) subj) = showString (x ++ show (Trace xs subj))
@@ -338,7 +302,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --TODO -> put the trace down to the type inferer?
    inferWithInfo :: RelSet Concept -> MetaInfo a AdlExpr -> MetaInfo a RelationType
    inferWithInfo isarel (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer isarel expr1)))
-          where 
+          where
           checkInferred (TypeError t err) = TypeError t (errInExpr expr1 err)
           checkInferred t = t
 
@@ -355,7 +319,7 @@ module TypeChecker (typecheck, Error, Errors) where
             RelationType _ ->
                        [inferWithInfo isarel (getNodeLeafExpr exprinfo (getNodeExpr subtree)) | subtree <- trees]
                        ++
-                       (foldr (++) [] 
+                       (foldr (++) []
                        [inferTree isarel (addParentToTree expr subtree) | subtree <-trees
                                                                         , not (iserr(inferWithInfo isarel (getNodeLeafExpr exprinfo (getNodeExpr subtree))))])
              where
@@ -411,7 +375,7 @@ module TypeChecker (typecheck, Error, Errors) where
                                                                             -- ++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"
                                                                             ):(processResult2 ts)
    processResult2 ((Info _ (Trace _(RelationType _)):ts))  = processResult2 ts
-   
+
    --DESCR -> Combine code position information and an error string
    compose :: TypeErrorType ->Error -> FilePos -> Error
    compose RTE_Fatal         err posi = "\nError at " ++ show posi ++ "\nFATAL ERROR while infering types: " ++ err ++ "\n"
@@ -446,7 +410,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> Cast all objectdefs based on the environment to a list of AdlExprTree
    castObjectDefsToAdlExprTrees :: Environment -> ObjectDefs -> Depth ->  [AdlExprTree] -- [(AdlExpr,MetaInfo)]
    castObjectDefsToAdlExprTrees _ [] _ = []
-   castObjectDefsToAdlExprTrees env@(isarel,_,_) (obj:objs) currdepth = case obj of
+   castObjectDefsToAdlExprTrees env@(isarel,_) (obj:objs) currdepth = case obj of
                                    Obj{} -> if null (objats obj)
                                             then
                                                   --DESCR -> add this objdef as AdlExpr for evaluation
@@ -472,7 +436,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --          SJ: Het type van een regel is het type van de equivalente expressie, namelijk  typeOf a `lub` typeOf c (aannemende dat typeOf het type van een expressie bepaalt)
    castRulesToAdlExprs :: Environment -> Rules -> [MetaInfo2 AdlExpr]
    castRulesToAdlExprs _ [] = []
-   castRulesToAdlExprs env@(isarel,_,_) (rul:ruls)
+   castRulesToAdlExprs env@(isarel,_) (rul:ruls)
                      | case rul of
                               Ru{} -> (rrsrt rul == Implication);
                               _ -> False
@@ -534,7 +498,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --        with only flips on morphisms of type Mph for example (r;s)~ is parsed as s~;r~
    --RULE -> flips on Universe V[A*B] will be returned by the parser as V[B*A]
    castExpressionToAdlExpr :: Environment -> Expression -> AdlExpr
-   castExpressionToAdlExpr (_,declrels,_) (Tm morph@(Mph{}))
+   castExpressionToAdlExpr (_,declrels) (Tm morph@(Mph{}))
                                                = doNotFlip (mphyin morph)
                                                             (typeofRel
                                                                   (srchDeclRelByMorphism declrels morph)
@@ -544,7 +508,7 @@ module TypeChecker (typecheck, Error, Errors) where
                             doNotFlip:: Bool -> AdlExpr -> AdlExpr
                             doNotFlip False expr1@(Relation (RelationType _)) = Flip expr1
                             doNotFlip _     expr1                     = expr1
-   castExpressionToAdlExpr (_,declrels,_) (Tm morph) --RULE -> other Morphisms (I and V etc do not need to be flipped)
+   castExpressionToAdlExpr (_,declrels) (Tm morph) --RULE -> other Morphisms (I and V etc do not need to be flipped)
                                                = typeofRel
                                                       (srchDeclRelByMorphism declrels morph)
    castExpressionToAdlExpr env (Tc expr1)       = castExpressionToAdlExpr env expr1
