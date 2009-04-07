@@ -34,6 +34,7 @@ module TypeChecker (typecheck, Error, Errors) where
    import Data.List   -- USE -> unionBy
    import Data.Maybe  -- USE -> fromJust, isNothing
    import Data.Tree   -- USE -> data Tree a
+   import qualified Data.Set as Set --
 
    ---------------
    --MAIN function
@@ -44,6 +45,14 @@ module TypeChecker (typecheck, Error, Errors) where
    type Errors = [Error]
    type Error = String
 
+   --USE   -> The Environment is used to communicate ready to use input information for type checking
+   --         The Environment is needed to transform to AdlExpr objects
+   --DESCR -> The environment consists of:
+   --          a dictionary containing the lowerbounds of the Cpts from the contexts in scope, the Cpt is the key
+   --          a list of all declared (direct) relations between two Cpts from the contexts in scope
+   --          the contexts in scope, which will be the context under evaluation and its extended contexts (recursively)
+   type Environment = (RelSet Cpt, DeclRels)
+
    --DESCR -> The parser composes an Architecture object. This function typechecks this object.
    --USE   -> This is the only function needed outside of the TypeChecker
    typecheck :: Architecture -> (Contexts, Errors)
@@ -53,12 +62,16 @@ module TypeChecker (typecheck, Error, Errors) where
                                 (enrich ctxs,
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
-                                checkCtxNameUniqueness ctxs  
+                                checkCtxNameUniqueness ctxs
                                 ++||
                                 checkCtxExtLoops ctxs
                                 ++||
                                 checkArch arch
                                 )
+
+   ------------------
+   --Enrich functions
+   ------------------
 
    --TODO -> put extra information, derived from the patterns (and ???), in the contexts, like :
    --        Isa [] [] -> representing isa relations
@@ -67,6 +80,10 @@ module TypeChecker (typecheck, Error, Errors) where
    --        ObjectDefs   p.e. types of expressions
    enrich :: Contexts -> Contexts
    enrich ctxs = ctxs
+
+   -----------------
+   --Check functions
+   -----------------
 
    --DESCR -> check rule: Every context must have a unique name
    checkCtxNameUniqueness :: Contexts -> Errors
@@ -100,6 +117,55 @@ module TypeChecker (typecheck, Error, Errors) where
                             findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
                                                           , not (foundCtx cxf)
                                                           , foundCtx (srchContext ctxs (ctxName cxf))]
+
+   --TODO -> argument Context indicating the current Context, only check that context
+   checkArch :: Architecture -> Errors
+   checkArch arch = case arch of Arch{} -> dropWhile (==[])
+                                        --TODO -> dropWhile is needed because composeError always returns an error
+                                        --        actually I want to check that there's no error without repeating
+                                        --        the complete checkCtx statement
+                                           [composeError cx (checkCtx $ buildCtxTree (Found cx) (archContexts arch))
+                                                     |cx<-(archContexts arch)]
+                                        where
+                                        cxName cx = case cx of Ctx{} -> ctxnm cx
+                                        composeError :: Context -> Errors -> Error
+                                        composeError _ [] = []
+                                        composeError cx errs = "\nCHECKING WITH CONTEXT '"++cxName cx++"' AS MAIN CONTEXT:\n" ++
+                                                               foldr (++) [] errs
+
+
+   --TODO -> Because ctxon in Context is a [String], I do not have file information for wrong EXTEND declarations
+   --        I could look at the parent and stuff like that, but that's inconsistent with other statements like Expressions
+   checkCtx :: CtxTree -> Errors
+   checkCtx cxtr = ["Extended context '"++ ctxName cxf ++"' could not be found.\n"
+                                      | cxf<-allFndCtx, not(foundCtx cxf)]
+                   ++|| --DESCR -> If extended context cannot be found then abort, else check what needs to be checked
+                   (checkObjDefs env (allCtxObjDefs allCtx)
+                   ++&&
+                   checkRules env (allCtxRules allCtx) )
+                   where
+                   allFndCtx = flatten cxtr
+                   allCtx = map fromFoundCtx allFndCtx
+                   env = (isaRel (allCtxCpts allCtx) (allCtxGens allCtx),
+                          declRels (allCtxPats allCtx))
+
+
+   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
+   --         Then check the result (processResult)
+   --         Return the list of error strings
+   checkObjDefs :: Environment -> ObjectDefs -> Errors
+   --checkObjDefs env objs = case obj of Obj{} -> [show (castObjectDefsToAdlExprTrees env objs 0)] --DEBUG
+   checkObjDefs env@(isarel,_) objs =
+                               (processResult2          --DESCR -> after map a list of list of metainfo2 RT
+                                       (foldr (++) [] (map (inferTree isarel) (castObjectDefsToAdlExprTrees env objs 0)))
+                                  )
+
+   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
+   --         Then check the result (processResult)
+   --         Return the list of error strings
+   checkRules :: Environment -> Rules -> Errors
+   --checkRules env rules =  [(show (castRulesToAdlExprs env rules))] --DEBUG
+   checkRules env@(isarel,_) ruls = (processResult2 (map (inferWithInfo isarel) (castRulesToAdlExprs env ruls)))
 
    ------------------
    --Common functions
@@ -140,14 +206,6 @@ module TypeChecker (typecheck, Error, Errors) where
 --Context part: later in separate module
 ------------------------------------------------------------------------------------------------
 
-   --USE   -> The Environment is used to communicate ready to use input information for type checking
-   --         The Environment is needed to transform to AdlExpr objects
-   --DESCR -> The environment consists of:
-   --          a dictionary containing the lowerbounds of the Concepts from the contexts in scope, the Concept is the key
-   --          a list of all declared (direct) relations between two Concepts from the contexts in scope
-   --          the contexts in scope, which will be the context under evaluation and its extended contexts (recursively)
-   type Environment = (RelSet Concept, DeclRels)
-
    --USE    -> The ContextCheckResult is needed to communicate the environment from a context and potential errors
    --REMARK -> From the environment only the Contexts containing the contexts in scope is used
    type ContextName = String
@@ -156,17 +214,15 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> data Tree a = Node a [Tree a]
    type CtxTree = Tree ContextFound
 
+   ------------------------
+   --ContextFound functions
+   ------------------------
+
    buildCtxTree :: ContextFound -> Contexts -> CtxTree
    buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
    buildCtxTree cxf@(Found cx) ctxs
               --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
               = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
-
-   --DESCR -> removes a context from contexts
-   --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
-   --          context names should be unique
-   removeCtx :: Contexts -> Context -> Contexts
-   removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
 
    --DESCR -> search for a context by name and return the first one found
    srchContext :: Contexts -> String -> ContextFound
@@ -188,55 +244,15 @@ module TypeChecker (typecheck, Error, Errors) where
    fromFoundCtx (NotFound cxnm) = error ("TypeChecker.fromFoundCtx: NotFound " ++ cxnm)
    fromFoundCtx(Found cx)    = cx
 
-   checkArch :: Architecture -> Errors
-   checkArch arch = case arch of Arch{} -> dropWhile (==[])
-                                           [composeError cx (checkCtx $ buildCtxTree (Found cx) (archContexts arch))
-                                                     |cx<-(archContexts arch)]
-                                        where
-                                        cxName cx = case cx of Ctx{} -> ctxnm cx
-                                        composeError :: Context -> Errors -> Error
-                                        composeError _ [] = []
-                                        composeError cx errs = "\nCHECKING WITH CONTEXT '"++cxName cx++"' AS MAIN CONTEXT:\n" ++
-                                                               foldr (++) [] errs
+   -------------------
+   --context functions
+   -------------------
 
-
-   --TODO -> Because ctxon in Context is a [String], I do not have file information for wrong EXTEND declarations
-   --        I could look at the parent and stuff like that, but that's inconsistent with other statements like Expressions
-   checkCtx :: CtxTree -> Errors
-   checkCtx cxtr = ["Extended context '"++ ctxName cxf ++"' could not be found.\n"
-                                      | cxf<-allFndCtx, not(foundCtx cxf)]
-                   ++|| --DESCR -> If extended context cannot be found then abort, else check what needs to be checked
-                   (checkObjDefs env (allCtxObjDefs allCtx)
-                   ++&&
-                   checkRules env (allCtxRules allCtx) )
-                   where
-                   allFndCtx = flatten cxtr
-                   allCtx = map fromFoundCtx allFndCtx
-                   env = (isaRel (allCtxConcepts allCtx) (allCtxGens allCtx),
-                          declRels (allCtxPats allCtx))
-
-
-   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
-   --         Then check the result (processResult)
-   --         Return the list of error strings
-   checkObjDefs :: Environment -> ObjectDefs -> Errors
-   --checkObjDefs env objs = case obj of Obj{} -> [show (castObjectDefsToAdlExprTrees env objs 0)] --DEBUG
-   checkObjDefs env@(isarel,_) objs =
-                               (processResult2          --DESCR -> after map a list of list of metainfo2 RT
-                                       (foldr (++) [] (map (inferTree isarel) (castObjectDefsToAdlExprTrees env objs 0)))
-                                  )
-
-   --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
-   --         Then check the result (processResult)
-   --         Return the list of error strings
-   checkRules :: Environment -> Rules -> Errors
-   --checkRules env rules =  [(show (castRulesToAdlExprs env rules))] --DEBUG
-   checkRules env@(isarel,_) ruls = (processResult2 (map (inferWithInfo isarel) (castRulesToAdlExprs env ruls)))
-
-
-   ------------------------------
-   --cumulative context functions
-   ------------------------------
+   --DESCR -> removes a context from contexts
+   --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
+   --          context names should be unique
+   removeCtx :: Contexts -> Context -> Contexts
+   removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
 
    --DESCR -> all the Gens of Contexts
    allCtxGens :: Contexts -> Gens
@@ -262,25 +278,22 @@ module TypeChecker (typecheck, Error, Errors) where
    allPatRules :: Patterns -> Rules
    allPatRules ps = foldr (++) [] [case p of Pat{} -> ptrls p | p<-ps]
 
-   allCtxConcepts :: Contexts -> Concepts
-   allCtxConcepts ctxs = foldr cptinsert []
-                            (allDeclConcepts (declRels (allCtxPats ctxs)) ++
-                             allGenConcepts (allCtxGens ctxs)
-                             )
-                         where
-                         cptinsert :: Concept -> Concepts -> Concepts
-                         cptinsert cp cpts | elem cp cpts = cpts
-                                           | otherwise    = cp:cpts
+   allCtxCpts :: Contexts -> Cpts
+   allCtxCpts ctxs = foldr Set.union Set.empty
+                            [allDeclCpts (declRels (allCtxPats ctxs)),
+                             allGenCpts (allCtxGens ctxs)
+                             --TODO -> get concepts from all mphatts
+                             ]
 
-   allDeclConcepts :: DeclRels -> Concepts
-   --allDeclConcepts [] = []
-   allDeclConcepts dls = [case d of Sgn{} -> desrc d | d<-dls] ++
-                         [case d of Sgn{} -> detgt d | d<-dls]
+   allDeclCpts :: DeclRels -> Cpts
+   --allDeclCpts [] = []
+   allDeclCpts dls = Set.fromList $ [case d of Sgn{} -> fromConcept (desrc d) | d<-dls] ++
+                                    [case d of Sgn{} -> fromConcept (detgt d) | d<-dls]
 
-   allGenConcepts :: Gens -> Concepts
-   --allGenConcepts [] = []
-   allGenConcepts gens = [case g of G{} -> gengen g | g<-gens] ++
-                         [case g of G{} -> genspc g | g<-gens]
+   allGenCpts :: Gens -> Cpts
+   --allGenCpts [] = []
+   allGenCpts gens = Set.fromList $ [case g of G{} -> fromConcept (gengen g) | g<-gens] ++
+                                    [case g of G{} -> fromConcept (genspc g) | g<-gens]
 
 ---------------------------------------------------------------------------------------------
 --Meta information part: later in separate module
@@ -300,7 +313,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR -> infer the type of an AdlExpr maintaining the link to the meta information
    --TODO -> put the trace down to the type inferer?
-   inferWithInfo :: RelSet Concept -> MetaInfo a AdlExpr -> MetaInfo a RelationType
+   inferWithInfo :: RelSet Cpt -> MetaInfo a AdlExpr -> MetaInfo a RelationType
    inferWithInfo isarel (Info info (Trace trc expr1)) = Info info (Trace trc (checkInferred (infer isarel expr1)))
           where
           checkInferred (TypeError t err) = TypeError t (errInExpr expr1 err)
@@ -308,7 +321,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    data AdlExprTree = AETree (MetaInfo2 AdlExpr) [AdlExprTree] | AELeaf (MetaInfo2 AdlExpr)  deriving (Show)
 
-   inferTree :: RelSet Concept -> AdlExprTree -> [MetaInfo2 RelationType]
+   inferTree :: RelSet Cpt -> AdlExprTree -> [MetaInfo2 RelationType]
    inferTree isarel (AELeaf expr)                                           = [inferWithInfo isarel expr]
    inferTree isarel (AETree exprinfo@(Info info (Trace trace  expr)) trees) =
             case infer isarel expr of
@@ -552,12 +565,12 @@ module TypeChecker (typecheck, Error, Errors) where
                     case d of
                     -- _ -> TypeError (show lbos) ; --DEBUG
                     Sgn{} ->  if elem Sym (decprps d) || elem Asy (decprps d) || elem Trn (decprps d) || elem Rfx (decprps d)
-                              then HomoRelation (RelationType ( desrc d, detgt d ))
-                              else Relation (RelationType ( desrc d, detgt d ));
+                              then HomoRelation (RelationType ( fromConcept(desrc d), fromConcept (detgt d) ))
+                              else Relation (RelationType ( fromConcept(desrc d), fromConcept (detgt d) ));
                     --TODO -> why is there a despc and degen?
-                    Isn{} -> Identity (RelationType ( despc d, despc d ));
-                    --REMARK -> Vs degen is the source Concept, Vs despc the target Concept
-                    Vs {} -> Universe (RelationType ( degen d, despc d ));
+                    Isn{} -> Identity (RelationType ( fromConcept(despc d), fromConcept (despc d) ));
+                    --REMARK -> Vs degen is the source Cpt, Vs despc the target Cpt
+                    Vs {} -> Universe (RelationType ( fromConcept(degen d), fromConcept (despc d) ));
                     --TODO   -> when will there be an IsCompl?
                     --REMARK -> IsCompl{} will never be the result of ADL.MorphismAndDeclaration.makeDeclaration
                     --          makeDeclaration is used in srchDeclRelByMorphism
@@ -569,7 +582,7 @@ module TypeChecker (typecheck, Error, Errors) where
 ---------------------------------------------------------------------------------------------
 
    --USE ->  Store the type of an expression or a type error
-   data RelationType = RelationType (Concept, Concept) | TypeError TypeErrorType Error
+   data RelationType = RelationType (Cpt, Cpt) | TypeError TypeErrorType Error
 
    instance Show RelationType where
        showsPrec _ (RelationType t)     = showString (show t)
@@ -600,7 +613,7 @@ module TypeChecker (typecheck, Error, Errors) where
                   | ExprError ExprErrorType Error  -- deriving (Show)
 
    data ExprErrorType = EE_SubExpr | EE_Fatal deriving (Show)
-   
+
    instance Show AdlExpr where
        showsPrec _ (Relation (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
        showsPrec _ (HomoRelation (TypeError _ _)) = showString "<error>" --DESCR -> override show of TypeError
@@ -623,7 +636,7 @@ module TypeChecker (typecheck, Error, Errors) where
        showsPrec _ (Equality e1 e2)   = showString (show e1 ++ "=" ++ show e2)
        showsPrec _ (ExprError _ err) = showString err
 
-   infer :: RelSet Concept -> AdlExpr -> RelationType
+   infer :: RelSet Cpt -> AdlExpr -> RelationType
    infer _ (Relation rel) = inferAbAb rel
    infer isarel (HomoRelation rel) = inferAaAa isarel rel
    infer _ (Universe rel) = inferAbAb rel
@@ -640,12 +653,13 @@ module TypeChecker (typecheck, Error, Errors) where
    infer isarel (TrsRefClose expr1) = inferAaAa isarel(infer isarel expr1)  --TODO -> is this correct?
    infer _ (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
 
+
    extInferAbAbAb isarel expr1@(Identity rel) expr2 = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
    extInferAbAbAb isarel expr1 expr2@(Identity rel) = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
    extInferAbAbAb isarel expr1 expr2                = inferAbAbAb isarel (infer isarel expr1) (infer isarel expr2)
 
    --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
-   inferAbBcAc :: RelSet Concept -> RelationType -> RelationType -> RelationType
+   inferAbBcAc :: RelSet Cpt -> RelationType -> RelationType -> RelationType
    inferAbBcAc _ err@(TypeError _ _) _ = err   --pass errors up
    inferAbBcAc _ _ err@(TypeError _ _) = err
    inferAbBcAc isarel (RelationType (a,b1)) (RelationType (b2,c))
@@ -653,14 +667,14 @@ module TypeChecker (typecheck, Error, Errors) where
              | otherwise              = TypeError RTE_AbBcAc ("The target of the left expression ("++ show b1 ++") does not match the source of the right expression ("++ show b2 ++")\n")
 
    --DESCR -> infer  e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1 -> e2 -> (a,b)
-   inferAbAbAb :: RelSet Concept -> RelationType -> RelationType -> RelationType
+   inferAbAbAb :: RelSet Cpt -> RelationType -> RelationType -> RelationType
    inferAbAbAb _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
    inferAbAbAb _ _ err@(TypeError _ _)                = err
    inferAbAbAb isarel (RelationType (a,b)) (RelationType (p,q))
              | diamond isarel a p
                && diamond isarel b q    = (RelationType (lubcpt isarel a p,lubcpt isarel b q))
              | not (diamond isarel a p) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show a ++ ") does not match the source of the right expression (" ++ show p ++ ")\n")
-             | otherwise                = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show b ++ ") does not match the source of the right expression (" ++ show q ++ ")\n")
+             | otherwise                = TypeError RTE_AbAbAb ("The target of the left expression (" ++ show b ++ ") does not match the target of the right expression (" ++ show q ++ ")\n")
 
    --DESCR -> infer  e1::(a,b) |- e2::e1 -> (b,a)
    inferAbBa :: RelationType -> RelationType
@@ -671,7 +685,7 @@ module TypeChecker (typecheck, Error, Errors) where
    inferAbAb :: RelationType -> RelationType
    inferAbAb t = t
 
-   inferAaAaAa :: RelSet Concept -> RelationType -> RelationType -> RelationType
+   inferAaAaAa :: RelSet Cpt -> RelationType -> RelationType -> RelationType
    inferAaAaAa _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
    inferAaAaAa _ _ err@(TypeError _ _)                = err
    inferAaAaAa isarel t1@(RelationType (a,b)) t2@(RelationType (p,q))
@@ -681,95 +695,96 @@ module TypeChecker (typecheck, Error, Errors) where
                                         | otherwise = TypeError RTE_AaAa ("Right expression: Source does not equal target -> source: " ++ show p ++ " target: " ++ show q ++ "\n")
 
    --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
-   inferAaAa :: RelSet Concept -> RelationType -> RelationType
+   inferAaAa :: RelSet Cpt -> RelationType -> RelationType
    inferAaAa _ err@(TypeError _ _) = err    --TODO -> condition for homogeneous relations not described in inference table, should identity be src==trg as described in table?
    inferAaAa isarel t@(RelationType (src,trg)) | diamond isarel src trg  = RelationType (lubcpt isarel src trg, lubcpt isarel src trg)
                                                | otherwise               = TypeError RTE_AaAa ("Source does not equal target -> source: " ++ show src ++ " target: " ++ show trg ++ "\n")
 
 ---------------------------------------------------------------------------------------------
 
-   data RelSet a = RelSet [(a,a)] deriving (Show)
+--REMARK -> Can not use data Cpt as a in RelSet a, because the  implementation of
+--          instance Ord Cpt is not suitable. Ord is needed by a lot of Data.Set functions
+   data Cpt = Cpt String | AllCpt | NoCpt
+   type Cpts = Set.Set Cpt
+
+   instance Show Cpt where
+       showsPrec _ (Cpt a) = showString a
+       showsPrec _ AllCpt = showString "Anything"
+       showsPrec _ NoCpt = showString "Nothing"
+
+   instance Eq Cpt where
+       Cpt a == Cpt b = a==b
+       AllCpt == AllCpt = True
+       NoCpt == NoCpt = True
+       _ == _ = False
+
+   instance Ord Cpt where
+       Cpt a <= Cpt b = a <= b
+       AllCpt <= _ = True
+       _ <= AllCpt = False
+       NoCpt <= _  = False
+       _ <= NoCpt  = True
+    
+   fromConcept :: Concept -> Cpt
+   fromConcept (C {cptnm = nm}) = Cpt nm
+   fromConcept Anything = AllCpt
+   fromConcept NOthing = NoCpt
+   fromConcept S = error "TypeChecker.hs function fromConcept: Singleton not supported."
+
+---------------------------------------------------------------------------------------------
+
+   --data RelSet a = RelSet [(a,a)] deriving (Show)
+   type RelSet a = Set.Set (a,a)
 
    --DESCR -> if is in isaRel then predicate isa is true. reflects axiom 15-19
    --         reflexive transitive closure (R0 \/ transclose) of the declared GEN relations
-   --         including that every concept has a top (NOthing) and bottom (Anything)
-   --REMARK -> Anything and NOthing must not be in Concepts
+   --         including that every concept has a top (NoCpt) and bottom (AllCpt)
+   --REMARK -> AllCpt and NoCpt must not be in Cpts
    --          "Ampersand is restricted to concepts that are not bottom or top, but the two are needed to signal type errors"
-   isaRel :: Concepts -> Gens -> RelSet Concept
-   isaRel cpts gens = foldr unite (RelSet [])
-                        (RelSet [(a,NOthing) | a<-cpts      ]:
-                         RelSet [(Anything,b) |  b<-cpts     ]:
-                         expon (NOthing:Anything:cpts) 0 (RelSet []):    --Iu
-                         transitiveclosure cpts gens2rels:
+   isaRel :: Cpts -> Gens -> RelSet Cpt
+   isaRel cpts gens = foldr Set.union (Set.empty)
+                        (Set.fromList [(a,NoCpt) | a<-Set.toList cpts      ]:
+                         Set.fromList [(AllCpt,b) |  b<-Set.toList cpts     ]:
+                         Set.fromList [(a,a) | a<-(NoCpt:AllCpt:Set.toList cpts)]:
+                         transitiveclosure_w (Set.toList cpts) gens2rels:
                          []
                          )
                       where
-                         gens2rels = RelSet [(a,b) | (a,b)<-(map gen2rel gens)]
+                         gens2rels = Set.fromList [(fromConcept a, fromConcept b) | (a,b)<-(map gen2rel gens)]
                          gen2rel gen =  case gen of
                                         G{} -> (gengen gen, genspc gen) --TODO -> check if gengen actually contains gen and not spc
 
    --REMARK -> I could construct a list (set) with all top-to-bottom paths in isaRel,
-   --          p.e. isaLists :: Relset Concept -> [[Concept]], but I won't
-   --          If A 'lub' B results in something not NOthing, A, or B, then I can conclude that A and B are
-   --          not (A 'diamond' B) thus NOthing (axiom 21,22,23)
+   --          p.e. isaLists :: Relset Cpt -> [[Cpt]], but I won't
+   --          If A 'lub' B results in something not NoCpt, A, or B, then I can conclude that A and B are
+   --          not (A 'diamond' B) thus NoCpt (axiom 21,22,23)
    --DESCR -> returns c1 'lub' c2
    --lub :: RelSet a -> a -> a -> a --TODO -> make a class for a to define top and bottom
-   lubcpt :: RelSet Concept -> Concept -> Concept -> Concept
+   lubcpt :: RelSet Cpt -> Cpt -> Cpt -> Cpt
    lubcpt isarel a b | isA isarel a b = b
                      | isA isarel b a = a
-                     | not (diamond isarel a b) = NOthing
+                     | not (diamond isarel a b) = NoCpt
                       -- | otherwise = should not be possible by definition of diamond
 
-   diamond :: Eq a => RelSet a -> a -> a -> Bool
+   diamond :: Ord a => RelSet a -> a -> a -> Bool
    diamond isarel a b = isA isarel a b || isA isarel b a
 
    --DESCR -> check if (c1,c2) exists in isaRel
-   isA :: Eq a => RelSet a -> a -> a -> Bool
-   isA (RelSet r) c1 c2 = elem (c1,c2) r
-                                        
-   --DESCR -> R+ = R \/ R^2 \/ R^3 \/ ...
-   --REMARK -> transitiveclosure must be evaluated completely. We don't know the number of loops up front
-   --          we know that the function is evaluated if
-   transitiveclosure :: Eq a => [a] -> RelSet a -> RelSet a
-   transitiveclosure universe r = geteval $ allCumUnion universe r
-            where
-            --DESCR  -> if a cumUnion n matches a cumUnion n+1 then cumUnion n and higher are
-            --          all equal and the transitiveclosure
-            --REMARK -> transitiveclosure must get a matching set1 and set2 at some point
-            --TODO -> I could implement == for RelSet
-            geteval (set1:set2:sets) | stop set1 set2 = set1
-                                     | otherwise  = geteval (set2:sets)
-            stop (RelSet set1) (RelSet set2) = foldr (&&) True ([elem s2 set1 | s2<-set2]++[elem s1 set2 | s1<-set1])
+   isA :: Ord a => RelSet a -> a -> a -> Bool
+   isA r c1 c2 = Set.member (c1,c2) r
 
-   --DESCR -> a list of cumUnion n for all n>0 indexed by n where n=1 is the head of he list
-   --REMARK -> 1 million should be enough
-   allCumUnion :: Eq a => [a] -> RelSet a -> [RelSet a]
-   allCumUnion universe r = [cumUnion universe n r | n<-[1..999999]]
-   
-   --DESCR -> R \/ R^2 \/ .. \/ R^n
-   --USE -> n>0
-   cumUnion :: Eq a => [a] -> Int -> RelSet a -> RelSet a
-   cumUnion universe 1 r = expon universe 1 r --REMARK -> should be the same as just r
-   cumUnion universe n r = unite (cumUnion universe (n-1) r) (expon universe n r)
-
-   --DESCR -> R \/ S
-   unite :: Eq a => RelSet a -> RelSet a -> RelSet a
-   unite (RelSet r) (RelSet s) = RelSet (unionBy equalelem r s)
-            where
-            --DESCR -> a binary value equals a binary value if sources and targets are equal
-            equalelem :: Eq a => (a,a) -> (a,a) -> Bool
-            equalelem (a,b) (c,d) = a==c && b==d
-
-   --DESCR -> given the universe set => R^n
-   --REMARK -> not tested with infinite universes and lazy evaluation, because no need for infinite universes yet
-   --USE -> Use with positive exponents only (>=0)
-   expon :: Eq a => [a] -> Int -> RelSet a -> RelSet a
-   expon universe 0   _ =  RelSet [(a,a) | a<-universe] --DESCR -> Iu = R0
-   expon universe exp r =  composition r (expon universe (exp-1) r)
-
-   --DESCR -> R;S
-   composition :: Eq a => RelSet a -> RelSet a -> RelSet a
-   composition (RelSet r) (RelSet s) = RelSet [(a,c) | (a,b1)<-r,(b2,c)<-s, b1==b2]
+   --DESCR -> duplicated from clos1.Auxiliaries.hs only [a] is provided instead of
+   --         computed from range(RelSet a) /\ domain(RelSet a)
+   --         [a] contains all possible intermediates on the path
+   --REMARK -> if for [a] the universe is provided this will be less efficient within this function
+   --          then providing the most precise subset range(RelSet a) /\ domain(RelSet a). 
+   --          However computing range(RelSet a) /\ domain(RelSet a) comes at a cost
+   --          just like computing universe. The choice is left to the user of this function.
+   --          p.e. the typechecker has already computed the universe for other purposes
+   --TODO -> We could calculate the cost of providing unnecessary large [a] lists
+   transitiveclosure_w :: Ord a => [a] -> RelSet a -> RelSet a
+   transitiveclosure_w [] r     = r
+   transitiveclosure_w (x:xs) r = transitiveclosure_w xs $ r `Set.union` (Set.fromList [(a,b')|(a,b)<-(Set.toList r),b==x,(a',b')<-(Set.toList r),a'==x])
 
 ---------------------------------------------------------------------------------------------
 --Relations part: later in separate module

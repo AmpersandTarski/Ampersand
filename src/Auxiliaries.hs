@@ -50,8 +50,13 @@
    mumble :: String -> String
    mumble str  = concat [if c==' ' then "_" else [c]| c<-str]
 
+   --DESCR -> [b] is a list of two: [c1,c2] indicating a path from c1 to c2
+   --TODO -> if [b] == [] then head results in Prelude.head: empty list error
+   --        if not length b == 2 then that element will be ignored
    clos1 :: (Eq b) => [[b]] -> [[b]] 
    clos1 xs
+     --DESCR -> rd - remove duplicates; isc - intersection
+     --         the snd arg is a set of every c which is domain [[b]] /\ range [[b]] (b is a tuple)
      = f xs (rd (map head xs) `isc` rd (map last xs))
        where
         f q (x:xs) = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs
