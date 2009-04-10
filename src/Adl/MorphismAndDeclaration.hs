@@ -33,7 +33,7 @@ module Adl.MorphismAndDeclaration where
                   | Mp1 { mph1val :: String          -- ^ the value of the one morphism
                         , mph1typ :: Concept         -- ^ the allocated type.
                         }  
-
+                           --  deriving (Show)
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Morphism                      ***
 -- \***********************************************************************
@@ -58,14 +58,14 @@ module Adl.MorphismAndDeclaration where
     V _ (_,_)              == _ = False
     Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
     Mp1 _ _                == _ = False
-
+--  {-
    instance Show Morphism where
     showsPrec _ m = case m of
            Mph{} -> showString ((mphnm m) ++ if mphyin m then "" else "~")
            I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
            V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
            Mp1{} -> undefined
-            
+--  -}
    instance Ord Morphism where
     a <= b = source a <= source b && target a <= target b
 

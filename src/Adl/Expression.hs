@@ -18,7 +18,7 @@ module Adl.Expression where
                     | K0 { e :: Expression}   -- ^ Reflexive and transitive closure        *
                     | K1 { e :: Expression}   -- ^ Transitive closure                      +
                     | Cp { e :: Expression}   -- ^ Complement                              -
-
+                                 --               deriving (Show)
                       
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
@@ -35,7 +35,7 @@ module Adl.Expression where
     Tc expr  == expr'     = expr==expr'
     expr     == Tc expr'  = expr==expr'
     _     == _      = False
-
+-- {-
    instance Show Expression where
     showsPrec _ expr  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") expr)
       where
@@ -55,7 +55,7 @@ module Adl.Expression where
           showchar (K1 e') = showchar e'++clos1
           showchar (Cp e') = compl++showchar e'
           showchar (Tc f)  = lpar++showchar f++rpar
-    
+-- -}
    insParentheses :: Expression -> Expression
    insParentheses expr = insPar 0 expr
          where

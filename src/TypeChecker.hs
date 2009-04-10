@@ -35,6 +35,9 @@ module TypeChecker (typecheck, Error, Errors) where
    import Data.Maybe  -- USE -> fromJust, isNothing
    import Data.Tree   -- USE -> data Tree a
    import qualified Data.Set as Set --
+   
+   import Classification --USE -> cast from data.Tree to Classification for enrichment
+   import Typology --USE -> Isa structure for enrichment
 
    ---------------
    --MAIN function
@@ -59,7 +62,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --typecheck arch@(Arch ctxs) = (ctxs,[]) --DEBUG -> uncomment to disable typechecker
    --typecheck (Arch ctxs) = iwantastring (srchContext ctxs "Test")  --DEBUG
    typecheck arch@(Arch ctxs) =
-                                (enrich ctxs,
+                                (enrichArch arch,
                                 --EXTEND -> put extra checking rules of the Architecture object here
                                 --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
                                 checkCtxNameUniqueness ctxs
@@ -78,8 +81,142 @@ module TypeChecker (typecheck, Error, Errors) where
    --        Rules -> active rules
    --        Declarations -> active declarations
    --        ObjectDefs   p.e. types of expressions
-   enrich :: Contexts -> Contexts
-   enrich ctxs = ctxs
+   enrichArch :: Architecture -> Contexts
+   enrichArch arch@(Arch ctxs) = map enrichCtx ctxs
+          where
+          enrichCtx :: Context -> Context
+          enrichCtx cx =
+             case cx of
+                  Ctx{} -> cx {ctxisa=hierarchy, ctxwrld=world, ctxrs=ctxrules, ctxds=ctxdecls, ctxos=[bindObjDef (AllCpt,AllCpt) od | od<-ctxos cx]}
+                           {-
+                           (ctxnm cx) --copy name
+                           (ctxon cx) --copy extended ctxs
+                           (hierarchy) --TODO -> Difference with AGtry, the concepts in mphats are also put in the list of concepts
+                           (world)     --construct the world with this cx on top of the world
+                           (ctxpats cx)--copy patterns
+                           (ctxrules)  --rules from gens and patterns of this context only
+                           (ctxdecls)  --declarations of this context only
+                           (ctxcptdefs)--concept defs of this context only
+                           (ctxks cx)  --TODO -> key defs, what's the ADL syntax?
+                           (ctxos cx)   --TODO -> change mphdcl and mphtyp on morphisms in expressions
+                           (ctxpops cx) --copy populations
+                              -}
+                           where
+                           ctxtree = buildCtxTree (Found cx) ctxs
+                           Cl _ world = toClassification $ ctxtree
+                           --in AGtry -> isa = Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
+                           isar = [case g of G{} -> (gengen g,genspc g) | g<-allCtxGens ctxs]
+                           isac = map fst isar ++ map snd isar
+                           hierarchy = Isa
+                                         isar
+                                         (map toConcept $ Set.toList
+                                                        $
+                                                          allCtxCpts ctxs
+                                                            Set.\\
+                                                          Set.fromList (map fromConcept isac)
+                                         )
+                           ctxrules = ctxrulesgens ++ ctxrulespats
+                           ctxrulespats = allCtxRules [cx] --TODO -> assign type to rules
+                           {-in AGtry ->
+                              [ Ru Implication
+                                  (Tm (mIs _spec_concept))
+                                    _pos
+                                  (Tm (mIs _genus_concept))
+                                  [Tm (mIs _spec_concept), Tm (mIs _genus_concept)]
+                                  ""
+                                  (_spec_concept, _genus_concept)
+                                    _lhs_rnr
+                                   _lhs_pn             ]
+                              -}
+                           ctxrulesgens = [rulefromgen g  | g<-allCtxGens [cx]]
+                           --TODO -> move rulefromgen to function toRule in module Gen
+                           rulefromgen (G {genfp = pos, gengen = gen, genspc = spc} )
+                                       = Ru
+                                           Implication
+                                           (Tm (mIs spc))
+                                           pos
+                                           (Tm (mIs gen))
+                                           [Tm (mIs spc), Tm (mIs gen)]
+                                           []
+                                           (spc,gen)
+                                           0 --TODO -> if needed by somebody assign rulenumber
+                                           [] --TODO -> if needed by somebody the Pattern the rule is in
+                                              --        if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
+                           ctxdecls = declRels (allCtxPats [cx])
+                           ctxcptdefs = allCtxCptDefs [cx]
+                           allCtx = map fromFoundCtx $ flatten ctxtree
+                           (isarel,rels) = (isaRel (allCtxCpts allCtx) (allCtxGens allCtx),
+                                            declRels (allCtxPats allCtx))
+                           bindExpr :: Expression -> (Cpt,Cpt) -> Expression
+                           bindExpr expr (src,tgt) =
+                                    let
+                                    adlexpr = castExpressionToAdlExpr (isarel,rels) expr
+                                    RelationType (src', tgt') = infer isarel adlexpr
+                                    bindsource = lubcpt isarel src src'
+                                    bindtarget = lubcpt isarel tgt tgt'
+                                    bindtype = (bindsource,bindtarget)
+                                    in
+                                    case expr of
+                                         Tm{} -> Tm $ bindMph (m expr) bindtype;
+                                         Tc{} -> Tc $ bindExpr (e expr) (src,tgt);
+                                         F{}  -> bindF (es expr)
+                                                    where
+                                                    bindF [] = F []
+                                                    bindF (x:[]) = F [bindExpr x (src,tgt)]
+                                                    bindF (left:right:[]) =
+                                                          let
+                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
+                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) right
+                                                          middle = lubcpt isarel targetleft sourceright
+                                                          in
+                                                          F [bindExpr left (bindsource,middle), bindExpr right (middle,bindtarget)]
+                                                    bindF (left:right) =
+                                                          let
+                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
+                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) (F right)
+                                                          middle = lubcpt isarel targetleft sourceright
+                                                          F boundright = (bindExpr (F right) (middle,bindtarget))
+                                                          in
+                                                          F $ (bindExpr left (bindsource,middle)):boundright
+
+                                         _ -> expr --TODO -> the rest of the expressions
+                           bindMph :: Morphism -> (Cpt,Cpt) -> Morphism
+                           bindMph m@(Mph {}) (src,tgt) =
+                                    let 
+                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source m)),
+                                          toConcept $ lubcpt isarel tgt (fromConcept (target m)))
+                                    FoundDr dcl = srchDeclRelByMorphism rels m
+                                    in
+                                    m {mphtyp=tp, mphdcl=dcl} --TODO
+                           bindMph i@(I {}) (src,tgt) =
+                                    let
+                                    gen' = if isA isarel src tgt then src else tgt
+                                    spc  = if isA isarel tgt src then src else tgt
+                                    gen  = if gen' == AllCpt then spc else gen' --DESCR -> gen is not allowed to stay Anything
+                                    in
+                                    i {mphgen=toConcept gen, mphspc=toConcept spc}
+                           bindMph v@(V {}) (src,tgt) =
+                                    let
+                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source v)),
+                                          toConcept $ lubcpt isarel tgt (fromConcept (target v)))
+                                    in
+                                    v {mphtyp=tp}
+                           bindMph x _ = x --TODO -> other morphisms are returned as parsed, is this correct?
+                           bindObjDef ::  (Cpt,Cpt) -> ObjectDef ->ObjectDef
+                           bindObjDef (src,tgt) od =  --od
+                                    let
+                                    expr' = bindExpr (objctx od) (src,tgt)
+                                    xxx oa = bindObjDef (middle,AllCpt) oa
+                                      where
+                                      oatree = castObjectDefToAdlExprTree (isarel,rels) oa
+                                      RelationType (src',tgt') = infer isarel $ adlexpr $ oatree
+                                      middle = lubcpt isarel (fromConcept (target (expr'))) (src')
+                                      adlexpr (AETree (Info _ (Trace _ adlexprt)) _) = adlexprt
+                                      adlexpr (AELeaf (Info _ (Trace _ adlexprl)))   = adlexprl
+                                    objats'= map (xxx) (objats od)
+                                    in
+                                    od {objctx=expr', objats=objats'}
+
 
    -----------------
    --Check functions
@@ -214,6 +351,10 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> data Tree a = Node a [Tree a]
    type CtxTree = Tree ContextFound
 
+   toClassification :: CtxTree -> Classification Context
+   toClassification (Node (NotFound cxnm) _) = error ("TypeChecker.toClassification: NotFound " ++ cxnm)
+   toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
+
    ------------------------
    --ContextFound functions
    ------------------------
@@ -266,6 +407,16 @@ module TypeChecker (typecheck, Error, Errors) where
    allCtxPats :: Contexts -> Patterns
    allCtxPats ctxs = foldr (++) [] [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
 
+   allCtxCptDefs :: Contexts -> ConceptDefs
+   allCtxCptDefs ctxs = allPatCptDefs (allCtxPats ctxs) 
+                      --REMARK -> Concept Defs defined outside of the patterns are parsed into one of the patterns
+                      --          so we do not need to add them again.
+                      --TODO -> why are they parsed into a pattern?
+                      --  ++ foldr (++) [] [case cx of Ctx{} -> ctxcs cx | cx<-ctxs]
+   
+   allPatCptDefs :: Patterns -> ConceptDefs
+   allPatCptDefs ps = foldr (++) [] [case p of Pat{} -> ptcds p | p<-ps]
+
    --DESCR -> all the ObjectDefs of Contexts
    allCtxObjDefs :: Contexts -> ObjectDefs
    allCtxObjDefs ctxs = foldr (++) [] [case cx of Ctx{} -> ctxos cx | cx<-ctxs]
@@ -281,9 +432,46 @@ module TypeChecker (typecheck, Error, Errors) where
    allCtxCpts :: Contexts -> Cpts
    allCtxCpts ctxs = foldr Set.union Set.empty
                             [allDeclCpts (declRels (allCtxPats ctxs)),
-                             allGenCpts (allCtxGens ctxs)
-                             --TODO -> get concepts from all mphatts
+                             allGenCpts (allCtxGens ctxs),
+                             allMphCpts (allExprMphs (allCtxExprs ctxs))
                              ]
+
+   allMphCpts :: Morphisms -> Cpts
+   allMphCpts ms = Set.fromList $ map fromConcept $ foldr (++) []
+                   [case mph of Mph{} -> mphats mph;
+                                I{} -> mphats mph;
+                                I{} -> mphats mph;
+                                _ -> []
+                    |mph<-ms]
+
+   allExprMphs :: Expressions -> Morphisms
+   allExprMphs es = foldr (++) [] 
+                    [
+                     let
+                        mphs (Tc e') = mphs e'
+                        mphs (F es') = allExprMphs es'
+                        mphs (Fd es') = allExprMphs es'
+                        mphs (Fi es') = allExprMphs es'
+                        mphs (Fu es') = allExprMphs es'
+                        mphs (K0 e') = mphs e'
+                        mphs (K1 e') = mphs e'
+                        mphs (Cp e') = mphs e'
+                        mphs (Tm mph) = [mph]
+                     in mphs e
+                     | e<-es]
+
+
+   allCtxExprs :: Contexts -> Expressions
+   allCtxExprs ctxs = allObjDefExprs (allCtxObjDefs ctxs) ++
+                      allRuleExprs (allCtxRules ctxs)
+                      --TODO -> allKeyDefExprs
+
+   allObjDefExprs :: ObjectDefs -> Expressions
+   allObjDefExprs os = foldr (++) [] [case obj of Obj{} -> (objctx obj):(allObjDefExprs (objats obj))| obj<-os]
+
+   allRuleExprs :: Rules -> Expressions
+   allRuleExprs rs = foldr (++) [] [case rul of Ru{} -> [rrant rul,rrcon rul];
+                                                _    -> [] | rul<-rs]
 
    allDeclCpts :: DeclRels -> Cpts
    --allDeclCpts [] = []
@@ -419,7 +607,14 @@ module TypeChecker (typecheck, Error, Errors) where
    --for casting ADL module
    --data type to InferExpr
    ------------------------
-
+--{-
+   castObjectDefToAdlExprTree :: Environment -> ObjectDef ->  AdlExprTree
+   castObjectDefToAdlExprTree env od =
+                     let
+                     treelist = castObjectDefsToAdlExprTrees env [od] 0
+                     in
+                     if length treelist == 1 then head treelist else error "TypeChecker.castObjectDefToAdlExprTree: list must be length one."
+ ---}
    --DESCR -> Cast all objectdefs based on the environment to a list of AdlExprTree
    castObjectDefsToAdlExprTrees :: Environment -> ObjectDefs -> Depth ->  [AdlExprTree] -- [(AdlExpr,MetaInfo)]
    castObjectDefsToAdlExprTrees _ [] _ = []
@@ -730,6 +925,11 @@ module TypeChecker (typecheck, Error, Errors) where
    fromConcept Anything = AllCpt
    fromConcept NOthing = NoCpt
    fromConcept S = error "TypeChecker.hs function fromConcept: Singleton not supported."
+   
+   toConcept :: Cpt -> Concept  
+   toConcept (Cpt nm) = cptnew nm
+   toConcept AllCpt = Anything
+   toConcept NoCpt = NOthing
 
 ---------------------------------------------------------------------------------------------
 

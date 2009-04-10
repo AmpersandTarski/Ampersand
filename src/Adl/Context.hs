@@ -11,7 +11,7 @@ module Adl.Context where
    import Typology ( Inheritance())
    import Classification ( Classification())
    import CommonClasses(Identified(name,typ))
-   
+
    
    -- | Architecture of ADL consists of a set of contexts
    data Architecture = Arch { archContexts :: Contexts}
@@ -48,8 +48,13 @@ module Adl.Context where
       --    && ctxpops c == ctxpops c'
 -}
 
+{- \**** (Show dient alleen diagnostische doeleinden)    ********************
+   instance Show Context where
+     showsPrec _ ctx = showString (ctxnm ctx)
+-}
+
    instance Identified Context where
     name ctx = ctxnm ctx
     typ _ = "Context_"
-            
+
             
