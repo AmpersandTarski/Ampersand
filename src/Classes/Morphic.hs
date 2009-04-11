@@ -323,11 +323,3 @@ module Classes.Morphic where
       (F [])  -> False
       (F (_:_))-> False   -- WAAROM?? Stef, is dit goed? Het ziet er zo raar uit... (Vergelijk ook deze versie met de vorige.)
 
-   class Substitutive a where  --WAAROM? Stef, hier hoort een vette uitleg bij...
- -- precondition: sign f `order` sign m
-    subst :: (Expression,Expression) -> a -> a
- --   subst (_,_) _ = error "(module CC_aux) Unable to substitute"
-
-   instance (Morphic a,Substitutive a) => Substitutive [a] where
-    subst (m',f) xs = map (subst (m',f)) xs
-

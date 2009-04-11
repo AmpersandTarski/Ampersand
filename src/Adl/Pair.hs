@@ -19,7 +19,5 @@ module Adl.Pair where
                      | otherwise = [[x,y]|[x,_]<-xs,[_,y]<-ys]++ merge xss yss
                     merge _ _ = []
 
-   class Populated a where
-    contents  :: a -> Pairs
 
                     

@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.KeyDef where
    import Adl.FilePos
-   import Adl.Concept
    import Adl.Expression
    import Adl.ObjectDef
    import CommonClasses(Identified(name,typ))   
@@ -24,11 +23,6 @@ module Adl.KeyDef where
    instance Identified KeyDef where
     name kd = kdlbl kd
     typ _ = "KeyDef_"
-
-   class Key a where
-    keys :: a->[(Concept,String,[ObjectDef])]
-   instance Key KeyDef where
-    keys (Kd _ lbl ctx ats) = [(target ctx,lbl,ats)]
 
 
                     

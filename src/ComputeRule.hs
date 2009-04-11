@@ -81,7 +81,7 @@ where
                            )
             hdl l | null (declarations l) = error("Module ComputeRule: empty list of declarations in hornCs")
                   | otherwise             = head (declarations l)
-   hornCs rule e' = error("Module ComputeRule: erroneous call of hornCs ("++showHS "" e'++") in rule "++show (nr rule)++":\n  "++showADL rule)
+   hornCs rule e' = error("Module ComputeRule: erroneous call of hornCs ("++showHS "" e'++") in rule "++show (runum rule)++":\n  "++showADL rule)
 
    leaves :: Expression -> [Expression]
    leaves e' = rd (lvs e')

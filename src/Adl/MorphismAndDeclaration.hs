@@ -6,7 +6,6 @@ module Adl.MorphismAndDeclaration where
    import Adl.Pair
    import Strings(chain)
    import CommonClasses(Identified(name,typ)
-                        , Conceptual(conts)
                         , Explained(explain)
                         , ABoolAlg)    
 
@@ -192,20 +191,6 @@ module Adl.MorphismAndDeclaration where
                    
    mIs :: Concept -> Morphism
    mIs c = I [] c c True
-
-   instance Populated Morphism where
-    contents m = contents (makeDeclaration (makeInline m))
--- Dit was in het verleden: (maar flp is hier niet bekend!)
---    contents m@(Mph _ _ _ _ False _) = map reverse (contents (flp m))
---    contents m = contents (makeDeclaration m)
-
-   instance Populated Declaration where
-    contents d 
-       = case d of
-           Sgn{}     -> decpopu d
-           Isn{}     -> [[o,o] | o<-conts (despc d)]
-           Iscompl{} -> [[o,o']| o <-conts (despc d),o'<-conts (despc d),o/=o']
-           Vs{}      -> [[o,o']| o <-conts (despc d),o'<-conts (despc d)]
 
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
                   
