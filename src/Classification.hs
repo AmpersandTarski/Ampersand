@@ -112,20 +112,6 @@
 
 
 
-   -- WAAROM?  Stef, ik zie zo gouw niet waarom deze functie goed zou zijn. Graag wat commentaar, 
-   -- en even nakijken of deze functie écht wel doet wat-ie zou moeten doen...
-   -- Ook blijkt hij verder niet gebruikt, dus hij mag wat mij betreft ook verdwijnen...
---   restrict :: Eq a => [a] -> [Classification a] -> [Classification a]
---   restrict stayers cls = rd(f cls)
---    where
---     f cls = [Cl r rest| Cl r subs<-cls, rest<-[f subs], r `elem` stayers || not (null rest)]
-
-
-
-
-
-
-
 
 
    insert:: Eq a => Classification a -> Classification a -> Classification a

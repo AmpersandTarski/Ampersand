@@ -1,22 +1,30 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Language where
-   import Classes.Morphical
-   import Classes.Morphic()
-   import Adl.Context
-   import Adl.Pattern
-   import Adl.Rule
-   import Adl.ObjectDef
-   import Adl.MorphismAndDeclaration
-   import Adl.Concept
-   import Adl.Prop
-   import Adl.Expression
-   import Adl.FilePos
-   import Adl.Gen
-   import Classification(Classification,preCl)
-   import Collection
-   import CommonClasses ( Identified(name))
-   import Typology ( Inheritance(Isa))--, Typologic(typology), genEq)
-   import Auxiliaries (enumerate) 
+module Classes.Language   (Language( declaredRules
+                                   , multRules
+                                   , rules
+                                   , signals
+                                   , specs
+                                   , patterns
+                                   , objectdefs
+                                   , isa
+                           )       ) 
+where
+   import Adl.Context                 (Context(..))
+   import Adl.Pattern                 (Pattern(..),union)
+   import Adl.Rule                    (Rule(..),RuleType(..))
+   import Adl.ObjectDef               (ObjectDef)
+   import Adl.MorphismAndDeclaration  (Morphism(..),Declaration)
+   import Adl.Concept                 (Concept(..),Association(..),Morphic(..))
+   import Adl.Prop                    (Prop(..))
+   import Adl.Expression              (Expression(..))
+   import Adl.FilePos                 (Numbered(..))
+   import Adl.Gen                     (Gen(G))
+   import Classes.Morphical           (Morphical(..))
+   import Classification              (Classification,preCl)
+   import Collection                  (Collection(..))
+   import CommonClasses               (Identified(..))
+   import Typology                    (Inheritance(..))
+   import Auxiliaries                 (enumerate) 
 
    class Morphical a => Language a where
      declaredRules  :: a -> [Rule] -- all rules in the language that are specified as a rule in the ADL-model, including the GLUE rules, but excluding the multiplicity rules (multRules).

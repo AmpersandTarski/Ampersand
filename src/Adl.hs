@@ -36,7 +36,7 @@ where
    import Adl.Concept                    (Concept(..),Concepts,one,cptnew,cptS,cptAnything
                                          ,GenR()
                                          ,Association(..)
-                                         ,Morphic(..))
+                                         ,MorphicId(..),Morphic(..))
    import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
    import Adl.Context                    (Context(..),Contexts
                                          ,Architecture(..))
@@ -63,15 +63,15 @@ where
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
                                          ,RuleType(..)
-                                         ,consequent,antecedent,cpu,ruleType)
+                                         ,consequent,antecedent,cpu,ruleType
+                                         ,normExpr)
    import Classes.Morphical              (Morphical(..))
    import Classes.Substitutive           (Substitutive(..))
-   import Classes.Morphic                (MorphicId(..),normExpr)
    import Classes.Key                    (Key(..))
    import Classes.Object                 (Object(..))
    import Classes.Language               (Language(..))
    import CommonClasses                  (Identified(..)
-                                         ,Explained(explain))
+                                         ,Explained(..))
 
 
 

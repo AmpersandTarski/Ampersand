@@ -1,5 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Morphical where
+module Classes.Morphical                 (Morphical(concs
+                                                   ,conceptDefs
+                                                   ,mors
+                                                   ,morlist
+                                                   ,declarations
+                                                   ,genE
+                                                   ,closExprs
+                                                   ,objDefs
+                                                   ,keyDefs
+                                                   ,idsOnly
+                                         )         )
+where
    import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),Morphic(isSignal))
    import Adl.ConceptDef                 (ConceptDefs)
    import Adl.Context                    (Context(..))
@@ -9,15 +20,14 @@ module Classes.Morphical where
    import Adl.Expression                 (Expression(..))
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                     (KeyDef(..),KeyDefs)
-   import Adl.Population                 (Population(Popu))
+   import Adl.Population                 (Population(..))
    import Adl.Pattern                    (Pattern(..))
-   import Adl.Rule                       (Rule(..),RuleType(Truth))
+   import Adl.Rule                       (Rule(..),RuleType(..))
    
    import Classification                 (Classification,preCl)
    import Collection                     (rd,uni)
    import Typology                       (genEq,typology)
    import Classes.Object                 (populations)
-   import Classes.Morphic                ()
 
    class Morphical a where
     concs        :: a -> Concepts                  -- the set of all concepts used in data structure a

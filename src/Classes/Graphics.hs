@@ -1,6 +1,6 @@
 
 module Classes.Graphics where
-
+-- TODO Deze module is nog onderHANden
 
    import Data.GraphViz
 --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:

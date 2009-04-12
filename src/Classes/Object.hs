@@ -1,10 +1,17 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Object where
-   import Adl.Concept
-   import Adl.ObjectDef
-   import Adl.Expression
-   import Adl.Population
-   import Adl.Context
+module Classes.Object        (Object( concept
+                                    , attributes
+                                    , ctx
+                                    , populations
+                                    , extends
+                                    )
+                             ) 
+where
+   import Adl.Concept        (Concept,cptAnything,Association(..))
+   import Adl.ObjectDef      (ObjectDef(..))
+   import Adl.Expression     (Expression)
+   import Adl.Population     (Population)
+   import Adl.Context        (Context(..))
 
    class Object a where
     concept :: a -> Concept                 -- the type of the object

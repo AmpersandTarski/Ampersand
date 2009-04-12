@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.ConceptDef 
+module Adl.ConceptDef    (ConceptDef(..),ConceptDefs)
 where
-   import Adl.FilePos
-   import CommonClasses(Identified(name,typ)) 
+   import Adl.FilePos    (FilePos)
+   import CommonClasses  (Identified(..)) 
+
    type ConceptDefs = [ConceptDef]
    data ConceptDef 
       = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).

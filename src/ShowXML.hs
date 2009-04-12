@@ -216,7 +216,7 @@ where
                  ++ [mkXmlTree (srsig r)]
           Gc _ _ _ _ _ _ _
                 ->  [still2bdone "Rule_Gc"]
-          Fr _ _ _ _  -- represents an automatic computation, such as * or +.
+          Fr _ _ _  -- represents an automatic computation, such as * or +.
                 ->  [still2bdone "Rule_Fr"]
         )
       where invariantString ::  String

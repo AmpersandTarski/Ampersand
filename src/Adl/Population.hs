@@ -1,12 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Population where
-   import Adl.MorphismAndDeclaration
-   import Adl.Pair
+module Adl.Population (Population(..),Populations) 
+where
+   import Adl.MorphismAndDeclaration   (Morphism)
+   import Adl.Pair                     (Pairs)
    
    type Populations = [Population]
    data Population = Popu
               { popm  :: Morphism
               , popps :: Pairs
-              }         --deriving (Show) -- voor debugging
+              }
 
  

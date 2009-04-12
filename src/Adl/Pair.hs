@@ -1,5 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Pair where
+module Adl.Pair    (Paire,Pairs
+                    , join
+                    , src,trg
+                   ) 
+where
    --import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
    import Auxiliaries(sort',eqCl)
 
@@ -10,6 +14,7 @@ module Adl.Pair where
    src, trg      :: Paire -> String
    src xs         = if null xs then error ("(module Adl.Pair) Fatal: src []") else head xs
    trg xs         = if null xs then error ("(module Adl.Pair) Fatal: trg []") else last xs
+
    join::Pairs->Pairs->Pairs
    join a b = merge ((sort' (trg.head).eqCl trg) a)
                     ((sort' (src.head).eqCl src) b)

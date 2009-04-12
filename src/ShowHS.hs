@@ -278,8 +278,7 @@ where
                         ,", r_pat = " ++ show (r_pat r)
                     ])++"}"
            Fr{} -> (chain newIndent
-                    ["Fr{ fraut = " ++ show (fraut r)
-                        ,", frdec = " ++ showHS "" (frdec r)
+                    ["Fr{ frdec = " ++ showHS "" (frdec r)
                         ,", frcmp = " ++ "("++showHS "" (frcmp r)++")"
                         ,", r_pat = " ++ show (r_pat r)
                     ])++"}"

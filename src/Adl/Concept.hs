@@ -2,21 +2,20 @@
 {-# OPTIONS -XTypeSynonymInstances #-}
 module Adl.Concept ( Concept(..),Concepts
                    , Sign,GenR
-                   , Association(..),Morphic(..)
+                   , Association(..),Morphic(..),MorphicId(..)
                    , isSingleton
                    , cptnew,cptAnything,cptS
                    , one
                    ) 
 where
-   import Adl.Prop
-   import CommonClasses --(Identified(name,typ)
-                        --, ABoolAlg(glb,lub,order)
-                        --, Explained(explain)
-                        --, 
-                        --, Morphics(anything)
-                        --)
-   import Collection ((>-))
-   import Typology
+   import Adl.Prop       ( Prop(..))
+   import CommonClasses  ( Identified(..)
+                         , ABoolAlg(..)
+                         , Conceptual(..)
+                         , Morphics(..)
+                         )
+   import Collection     ((>-))
+   import Typology       (Typologic)
    
    type Concepts = [Concept]
    data Concept
@@ -93,6 +92,13 @@ where
    instance Association Sign where
      source (src, _ ) = src
      target (_ , tgt) = tgt
+ 
+   class Association a => MorphicId a where
+    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
+
+   instance MorphicId Concept where
+    isIdent _ = True    -- > tells whether the argument is equivalent to I
+   
      
     
    class Association a => Morphic a where
@@ -115,6 +121,21 @@ where
     isFunction m   = null ([Uni,Tot]>-multiplicities m)
     isFlpFunction :: a -> Bool
     isFlpFunction m = null ([Sur,Inj]>-multiplicities m)
+
+   instance Morphic Concept where
+    multiplicities _ = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
+    flp c = c
+--    isIdent c = True    -- > tells whether the argument is equivalent to I
+    isProp _ = True    -- > tells whether the argument is equivalent to I
+    isNot _   = False   -- > tells whether the argument is equivalent to I-
+    isMph _ = False
+    isTrue c = singleton c
+    isFalse _ = False
+    isSignal _ = False
+    singleton S = True
+    singleton _ = False
+    typeUniq Anything = False
+    typeUniq _ = True
 
 
    isSingleton :: Concept -> Bool

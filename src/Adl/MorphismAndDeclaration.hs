@@ -8,7 +8,8 @@ module Adl.MorphismAndDeclaration where
    import CommonClasses(Identified(name,typ)
                         , Explained(explain)
                         , ABoolAlg)    
-
+   import Collection (Collection ((>-)))
+   
    type Morphisms = [Morphism]
    data Morphism  = 
                    Mph { mphnm :: String             -- ^ the name of the morphism. This is the same name as
@@ -92,6 +93,65 @@ module Adl.MorphismAndDeclaration where
     pos _         = posNone
     nr m = nr (makeDeclaration m)
 
+   instance MorphicId Morphism where
+    isIdent mph = isIdentM mph              -- > tells whether the argument is equivalent to I
+   
+   instance Morphic Morphism where
+    multiplicities mph 
+      = case mph of
+           Mph{mphyin = True}  -> multiplicities (mphdcl mph)
+           Mph{mphyin = False} -> flipProps (multiplicities (mphdcl mph))
+           V {}                -> [Tot]
+                                ++[Sur]
+                                ++[Inj| singleton(source (mphtyp mph))]
+                                ++[Uni| singleton(target (mphtyp mph))]
+                                ++[Asy| homogeneous(mphtyp mph), singleton(target (mphtyp mph))]
+                                ++[Sym| homogeneous(mphtyp mph)]
+                                ++[Rfx| homogeneous(mphtyp mph)]
+                                ++[Trn| homogeneous(mphtyp mph)]
+           I{}                 -> [Inj,Sur,Uni,Tot,Sym,Asy,Trn,Rfx]
+           Mp1{}               -> [Inj,Uni,Sym,Asy,Trn]
+    flp mph 
+      = case mph of
+           Mph{mphtyp = (s,t)} -> mph{ mphats = reverse(mphats mph)
+                                     , mphtyp = (t,s)
+                                     , mphyin = not (mphyin mph)
+                                     }
+           V{mphtyp = (s,t)}   -> V  { mphats = reverse(mphats mph)
+                                     , mphtyp = (t,s)
+                                     }
+           I{}                 -> mph
+           Mp1{}               -> mph
+    isProp mph = case mph of
+           Mph{}               -> null ([Asy,Sym]>-multiplicities mph)
+           V{}                 -> homogeneous(mphtyp mph) && singleton(source (mphtyp mph))
+           I{}                 -> True
+           Mp1{}               -> True
+    isNot mph  = isNot (makeDeclaration mph)   -- > tells whether the argument is equivalent to I-
+    isMph mph = case mph of 
+           Mph{}               -> True
+           _                   -> False
+    isTrue mph = case mph of
+           Mph{}               -> False
+           V{}                 -> True
+           I{}                 -> singleton (mphspc mph)
+           Mp1{}               -> False
+    isFalse _   = False
+    isSignal mph = isSignal (makeDeclaration mph)
+    typeUniq mph = case mph of
+           Mph{mphats = []}    ->  typeUniq (source (mphtyp mph)) && 
+                                   typeUniq (target (mphtyp mph))
+           Mph{mphats = _:_}   ->  True
+           I{mphats = []}      ->  typeUniq (mphgen mph) && 
+                                   typeUniq (mphspc mph)
+           I{mphats = _:_}     ->  True
+           V{mphats = []}      ->  typeUniq (mphgen mph) && 
+                                   typeUniq (mphspc mph)
+           V{mphats = _:_}     ->  True
+           Mp1{}               ->   undefined   --WAAROM? Stef, dit was niet gedefinieerd TODO
+    
+
+
    makeDeclaration :: Morphism -> Declaration
    makeDeclaration m = case m of
                Mph{} -> mphdcl m
@@ -172,6 +232,54 @@ module Adl.MorphismAndDeclaration where
     pos _                             = posNone
     nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
     nr _                              = 0
+
+   instance MorphicId Declaration where 
+    isIdent (Isn _ _)                            = True   -- > tells whether the argument is equivalent to I
+    isIdent _                                    = False
+
+   instance Morphic Declaration where
+    multiplicities d = case d of
+           Sgn {}       -> decprps d
+           Isn{}        -> [Uni,Tot,Inj,Sym,Trn,Rfx]         --WAAROM? Stef, waarom is dit niet ook Asy? Is dit niet gewoon FOUT?
+                        ++ [Sur | (degen d) == (despc d)]
+           Iscompl{}    -> [Sym]
+           Vs{}         -> [Tot,Sur]
+    flp d = case d of
+           Sgn {}       -> d{ desrc   = detgt d
+                            , detgt   = desrc d
+                            , decprps = flipProps (decprps d)
+                            , decprL  = ""
+                            , decprM  = ""
+                            , decprR  = ""
+                            , decpopu = map reverse (decpopu d)
+                            }
+           Isn{}        -> d
+           Iscompl{}    -> d
+           Vs{}         -> d
+    isProp d = case d of         -- > tells whether the argument is equivalent to I
+           Sgn {}       -> null ([Asy,Sym]>-multiplicities d)
+           Isn{}        -> True
+           Iscompl{}    -> False
+           Vs{}         -> ((degen d) == (despc d)) && singleton (degen d)
+    isNot d = case d of          -- > tells whether the argument is equivalent to I-
+           Iscompl{}    -> True   
+           _            -> False
+    isTrue d = case d of 
+           Vs{}         -> True
+           _            -> False
+    isFalse _ = False
+    isSignal d = case d of
+           Sgn {}       -> deciss d
+           _            -> False
+    isMph d = case d of
+           Sgn {}       -> True
+           _            -> False
+    typeUniq d = case d of
+           Sgn {}       -> typeUniq (desrc d) && typeUniq (detgt d)
+           Isn{}        -> typeUniq (degen d) && typeUniq (despc d)
+           Iscompl{}    -> typeUniq (degen d) && typeUniq (despc d)
+           Vs{}         -> typeUniq (degen d) && typeUniq (despc d)
+           
 
    -- | Deze declaratie is de reden dat Declaration en Morphism in één module moeten zitten.
    makeMph :: Declaration -> Morphism
