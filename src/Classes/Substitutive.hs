@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Substitutive  (Substitutive(..))
+module Classes.Substitutive  (Substitutive(subst))
 where
    import Adl.Expression     (Expression(..))
    import Adl.Concept        (Morphic(..),sign)

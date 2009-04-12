@@ -1,7 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 -- Deze module kan niet warningvrij worden gemaakt, omdat er twee orphan instances
 -- in voorkomen. (Zie de discussie op http://lukepalmer.wordpress.com/2009/01/25/a-world-without-orphans/)
-module Adl.FilePos 
+module Adl.FilePos    ( FilePos(FilePos)
+                      , posNone
+                      , Numbered(nr,pos))
 where
    import UU_Scanner (Pos(Pos),noPos)
 

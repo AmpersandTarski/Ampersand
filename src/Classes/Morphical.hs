@@ -11,11 +11,11 @@ module Classes.Morphical                 (Morphical(concs
                                                    ,idsOnly
                                          )         )
 where
-   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),Morphic(isSignal))
+   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),Morphic(..),MorphicId(..))
    import Adl.ConceptDef                 (ConceptDefs)
    import Adl.Context                    (Context(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..),Morphisms,Declarations
-                                         ,isIdentM,makeDeclaration,makeInline)
+                                         ,makeDeclaration,makeInline)
    import Adl.Gen                        (Gen(..))
    import Adl.Expression                 (Expression(..))
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
@@ -25,7 +25,7 @@ where
    import Adl.Rule                       (Rule(..),RuleType(..))
    
    import Classification                 (Classification,preCl)
-   import Collection                     (rd,uni)
+   import Collection                     (Collection(..))
    import Typology                       (genEq,typology)
    import Classes.Object                 (populations)
 
@@ -46,7 +46,7 @@ where
     keyDefs      :: a -> KeyDefs
     keyDefs _     = []
     idsOnly        :: a -> Bool
-    idsOnly e' = and [isIdentM m'| m'<-mors e'] -- > tells whether all the arguments are equivalent to I
+    idsOnly e' = and [isIdent m'| m'<-mors e'] -- > tells whether all the arguments are equivalent to I
 
    instance Morphical a => Morphical [a] where
     concs             = rd . concat . map concs

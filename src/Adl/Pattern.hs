@@ -1,12 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Pattern where
-   import Adl.KeyDef
-   import Adl.Rule
-   import Adl.Gen
-   import Adl.MorphismAndDeclaration
-   import Adl.ConceptDef
-   import CommonClasses(Identified(name,typ))
-   import Collection (Collection (uni))
+module Adl.Pattern (Pattern(..),Patterns
+                   ,union)
+where
+   import Adl.KeyDef                   (KeyDefs)
+   import Adl.Rule                     (Rules)
+   import Adl.Gen                      (Gens)
+   import Adl.MorphismAndDeclaration   (Declarations)
+   import Adl.ConceptDef               (ConceptDefs)
+   import CommonClasses                (Identified(..))
+   import Collection                   (Collection(..))
+   
    type Patterns  = [Pattern]
    data Pattern
       = Pat { ptnm  :: String       -- ^ Name of this pattern

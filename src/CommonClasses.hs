@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
   module CommonClasses
-  (  Identified(..)
+  (  Identified(name,typ)
    , ABoolAlg(glb,lub,order)
    , Explained(explain)
    , Conceptual(conts)
@@ -21,7 +21,7 @@
     typ  [] = ""
     typ  (i:_) = typ i
 
-   class Ord a => ABoolAlg a where
+   class (Show a,Ord a) => ABoolAlg a where
     glb,lub :: a -> a -> a
     order :: a -> a -> Bool
     glb a b | b <= a = b
@@ -34,7 +34,7 @@
               | b <= a = True
               | otherwise = False
 
-   instance (Show a,Show b,ABoolAlg a,ABoolAlg b) => ABoolAlg (a,b) where
+   instance (ABoolAlg a,ABoolAlg b) => ABoolAlg (a,b) where
     glb a b | a <= b = a
             | b <= a = b
             | otherwise = error ("(module CommonClasses) Fatal: glb undefined: a="++show a++", b="++show b)

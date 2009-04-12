@@ -1,9 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.KeyDef where
-   import Adl.FilePos
-   import Adl.Expression
-   import Adl.ObjectDef
-   import CommonClasses(Identified(name,typ))   
+module Adl.KeyDef (KeyDef(..),KeyDefs)
+where
+   import Adl.FilePos       (FilePos)
+   import Adl.Expression    (Expression)
+   import Adl.ObjectDef     (ObjectDefs)
+   import CommonClasses     (Identified(..))
+      
    type KeyDefs = [KeyDef]
    data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
                     , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.

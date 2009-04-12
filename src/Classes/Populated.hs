@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Populated                 (Populated(..))
+module Classes.Populated                 (Populated(contents))
 where
    import Adl.Concept                    (Association(..))
    import Adl.Pair                       (Pairs,join)

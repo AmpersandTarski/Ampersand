@@ -1,22 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-   module Classification
-   (  Classification(Cl, Bottom)
-    , root
-    , subs
-    , isBot
-    , recur
- --   , restrict
-    , sortCl
-    , isDefinedIn
-    , makeClassifications
-    , makeClassificationsF
-    , locates
-    , locatesF
-    , preCl
-    , postCl
-    , mapCl
-  --  , index
-   ) where
+module Classification (
+               Classification(Cl)
+             , root
+             , makeClassifications
+             , preCl
+             , locatesF
+             , makeClassificationsF
+             , mapCl
+   ) 
+where
    import CommonClasses ( Identified(name,typ)
                         , Conceptual(conts)
                         ) 
@@ -31,20 +23,21 @@
    subs :: Classification a -> [Classification a]
    subs (Cl _ cls) = cls
    subs Bottom = undefined
-   isBot :: Classification a -> Bool
-   isBot Bottom =True
-   isBot _      = False
-   recur :: (t -> [t1] -> t1) -> t1 -> Classification t -> t1
-   recur _ e Bottom     = e
-   recur f e (Cl c cls) = f c [recur f e cl| cl<-cls]
+--   isBot :: Classification a -> Bool
+--   isBot Bottom =True
+--   isBot _      = False
+--   recur :: (t -> [t1] -> t1) -> t1 -> Classification t -> t1
+--   recur _ e Bottom     = e
+--   recur f e (Cl c cls) = f c [recur f e cl| cl<-cls]
    mapCl :: (t -> a) -> Classification t -> Classification a
    mapCl _ Bottom       = Bottom
    mapCl f (Cl c cls)   = Cl (f c) (map (mapCl f) cls)
-   preCl,postCl :: Classification a -> [a]
+   preCl :: Classification a -> [a]
    preCl Bottom         = []
    preCl (Cl c cls)     = [c] ++ concat (map preCl cls)
-   postCl Bottom        = []
-   postCl (Cl c cls)    = concat (map postCl cls) ++ [c]
+--   postCl :: Classification a -> [a]
+--   postCl Bottom        = []
+--   postCl (Cl c cls)    = concat (map postCl cls) ++ [c]
 
    instance Eq a => Eq (Classification a) where
     Bottom == Bottom = True
@@ -123,11 +116,6 @@
         = error ("insert error!")
     | otherwise                    = Cl (root wls) (subs wls++[cls])
     where up wls' = foldl insert wls' (subs cls)
-      --    rd [] = []
-      --    rd (x:xs) = x:[e|e<-xs, e/=x]
-
-
-
 
 
    update :: Eq a => (Classification a -> Classification a)
@@ -155,34 +143,11 @@
 
 
 
---   locate :: Eq a => a -> Classification a -> Classification a
---   locate c Bottom = Bottom
---   locate c (Cl r cls) 
---     | r==c      = (Cl r cls)
---     | otherwise = head([Cl r cls| Cl r cls<-[locate c cl| cl<-cls]]++[Bottom])
---
-   locates :: Eq a => a -> Classification a -> [Classification a]
-   locates _ Bottom = []
-   locates c (Cl r cls) 
-     | r==c      = [Cl r cls]
-     | otherwise = concat (map (locates c) cls)
-
    locatesF :: (a->Bool) -> Classification a -> [Classification a]
    locatesF _ Bottom = []
    locatesF f (Cl r cls) 
      | f r = [Cl r cls]
      | otherwise = concat (map (locatesF f) cls)
-
-   sortCl :: (a -> a -> Bool) -> Classification a -> Classification a
-   sortCl geq classification
-    = s classification
-    where
-     s (Cl r cls) = Cl r (srt (map s cls))
-     s Bottom     = Bottom
-     srt   []     = []
-     srt (c:cls)  = srt [e|e<-cls, not (root e `geq` root c)] ++ [c] ++
-                    srt [e|e<-cls,      root e `geq` root c]
-
 
 
 

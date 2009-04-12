@@ -1,14 +1,22 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.MorphismAndDeclaration where
-   import Adl.FilePos
-   import Adl.Concept
-   import Adl.Prop
-   import Adl.Pair
-   import Strings(chain)
-   import CommonClasses(Identified(name,typ)
-                        , Explained(explain)
-                        , ABoolAlg)    
-   import Collection (Collection ((>-)))
+module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
+                                  ,Declaration(..),Declarations
+                                  ,makeDeclaration,makeMph
+                                  ,makeInline,inline
+                                  ,isIdent
+                                  ,isSgn,mIs
+                                  )
+where
+   import Adl.FilePos      (FilePos,posNone,Numbered(..))
+   import Adl.Concept      (Concept,Association(..),Sign,MorphicId(..),Morphic(..)
+                           ,isSingleton)
+   import Adl.Prop         (Prop(..),Props,flipProps)
+   import Adl.Pair         (Pairs) 
+   import Strings          (chain)
+   import CommonClasses    (Identified(name,typ)
+                           , Explained(explain)
+                           , ABoolAlg)    
+   import Collection       (Collection ((>-)))
    
    type Morphisms = [Morphism]
    data Morphism  = 
@@ -94,7 +102,10 @@ module Adl.MorphismAndDeclaration where
     nr m = nr (makeDeclaration m)
 
    instance MorphicId Morphism where
-    isIdent mph = isIdentM mph              -- > tells whether the argument is equivalent to I
+    isIdent mph = case mph of
+                   I{}   -> True       -- > tells whether the argument is equivalent to I
+                   V{}   -> source mph == target mph && isSingleton (source mph)
+                   _     -> False
    
    instance Morphic Morphism where
     multiplicities mph 
@@ -291,11 +302,6 @@ module Adl.MorphismAndDeclaration where
                   , mphdcl = d
                   }
 
-   isIdentM :: Morphism -> Bool
-   isIdentM m = case m of
-                   I{}   -> True       -- > tells whether the argument is equivalent to I
-                   V{}   -> source m == target m && isSingleton (source m)
-                   _     -> False
                    
    mIs :: Concept -> Morphism
    mIs c = I [] c c True

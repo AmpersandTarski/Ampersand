@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Label where
-   import Adl.FilePos
+module Adl.Label (Label(..))
+where
+   import Adl.FilePos  (FilePos)
+   
    data Label = Lbl { lblnm   :: String
                     , lblpos  :: FilePos
                     , lblstrs :: [[String]]

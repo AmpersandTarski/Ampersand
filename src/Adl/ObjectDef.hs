@@ -1,8 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.ObjectDef where
-   import Adl.FilePos
-   import Adl.Expression
-   import CommonClasses(Identified(name,typ))   
+module Adl.ObjectDef (ObjectDef(..),ObjectDefs)
+where
+   import Adl.FilePos       (FilePos,Numbered(..))
+   import Adl.Expression    (Expression)
+   import CommonClasses     (Identified(..)) 
+   
+     
    type ObjectDefs = [ObjectDef]
    data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                         , objpos  :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)

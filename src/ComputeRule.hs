@@ -6,10 +6,8 @@ module ComputeRule (ComputeRule(..)
                    ,hornCs)
 where
    import Adl 
---   import Char ( isSpace )
    import Collection (Collection (rd))
    import Auxiliaries(sort',eqClass)
---   import Classification
    import FspecDef
    import ShowADL
    import ShowHS

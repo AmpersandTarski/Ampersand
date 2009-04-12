@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Gen where
-   import Adl.FilePos
-   import Adl.Concept
+module Adl.Gen (Gen(..),Gens)
+where
+   import Adl.FilePos   (FilePos)
+   import Adl.Concept   (Concept)
    
    type Gens      = [Gen]
    data Gen       = G { genfp  :: FilePos          -- ^ the position of the GEN-rule

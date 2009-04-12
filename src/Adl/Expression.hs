@@ -1,14 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Expression where
-   import Adl.MorphismAndDeclaration
-   import Adl.FilePos
-   import Adl.Concept
-   import Adl.Prop
-   import Collection (Collection (rd,uni,isc,(>-)))
- --  import Collection (Collection (rd))
-   import Strings(chain)
-   import CommonClasses(Identified(name), ABoolAlg(lub,order))
-   import Auxiliaries (eqClass)
+module Adl.Expression (Expression(..),Expressions
+                      ,v
+                      ,isPos,isNeg,notCp)
+where
+   import Adl.MorphismAndDeclaration  (Morphism(..),inline)
+   import Adl.FilePos                 (Numbered(..))
+   import Adl.Concept                 (Concept(..),Association(..)
+                                      ,Sign
+                                      ,MorphicId(..),Morphic(..))
+   import Adl.Prop                    (Prop(..))
+   import Collection                  (Collection (..))
+   import Strings                     (chain)
+   import CommonClasses               (Identified(..), ABoolAlg(..))
+   import Auxiliaries                 (eqClass)
 
    type Expressions = [Expression]
    data Expression  = Tm { m :: Morphism}     -- ^ simple morphism, possibly conversed     ~
@@ -115,10 +119,10 @@ module Adl.Expression where
                               else foldr1 jnSign (map sign ts)
                               where (s , _ ) `jnSign` ( _ ,t') = (s,t')
     sign (Fu fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fu fs) not defined\nwith map sign fs="++show (map sign fs)) else
-                             if null fs then (cptAnything, cptAnything) else
+                             if null fs then (Anything, Anything) else
                              foldr1 lub (map sign fs)
     sign (Fi fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fi fs) not defined\nwith map sign fs="++show (map sign fs)) else
-                             if null fs then (cptAnything, cptAnything) else
+                             if null fs then (Anything, Anything) else
                              foldr1 lub (map sign fs)
     sign (K0 e')           = sign e'
     sign (K1 e')           = sign e'

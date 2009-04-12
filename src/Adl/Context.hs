@@ -1,16 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Context where
-   import Adl.Concept
-   import Adl.Pattern
-   import Adl.Rule
-   import Adl.MorphismAndDeclaration
-   import Adl.KeyDef
-   import Adl.ObjectDef
-   import Adl.Population
-   import Adl.ConceptDef
-   import Typology ( Inheritance())
-   import Classification ( Classification())
-   import CommonClasses(Identified(name,typ))
+module Adl.Context (Context(..),Contexts
+                   ,Architecture(..))
+where
+   import Adl.Concept                 (Concept)
+   import Adl.Pattern                 (Patterns)
+   import Adl.Rule                    (Rules)
+   import Adl.MorphismAndDeclaration  (Declarations)
+   import Adl.KeyDef                  (KeyDefs)
+   import Adl.ObjectDef               (ObjectDefs)
+   import Adl.Population              (Populations)
+   import Adl.ConceptDef              (ConceptDefs)
+   import Typology                    (Inheritance)
+   import Classification              (Classification)
+   import CommonClasses               (Identified(..))
 
    
    -- | Architecture of ADL consists of a set of contexts

@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Prop where
+module Adl.Prop (Prop(..),Props
+                ,flipProps)
+where
 
    type Props = [Prop]
    data Prop      = Uni          -- ^ univalent
@@ -27,8 +29,8 @@ module Adl.Prop where
     showsPrec _ Rfx = showString "RFX"
     showsPrec _ Aut = showString "AUT"
    
-   flipProps :: [Prop] -> [Prop]
-   flipProps ps = [flipProp p| p<-ps]
+   flipProps :: Props -> Props
+   flipProps ps = map flipProp ps 
 
    flipProp :: Prop -> Prop
    flipProp Uni = Inj
