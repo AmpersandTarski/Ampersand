@@ -1,24 +1,17 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XFlexibleContexts #-}
-  module CC_aux ( -- explain
-          --      ,  ShowADL(..)
-          --      ,  ShowHS(..)
+  module CC_aux ( 
                   objectOfConcept
                 , pKey_pos
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
                 , renumberRules
-             --   , isSgn   
-             --   , fEmpty
-             --   , oneMorphism
                 , applyM
-                , glb, lub
                 , sur, inj, fun, tot
                 , mkVar
                 , Calc(calc)
-                , order
                 , isProperty 
-                , Pop(update, put_gE)
+                , Pop(..)
                 , makeConceptSpace , pMeaning
                 , anything, shSigns , gEtabG
                 , conts , cod, clearG, dom
@@ -27,17 +20,15 @@
    import Char (toLower)
    import UU_Scanner
    import UU_Parsing
-   import CommonClasses ( Identified(name)
-                        , ABoolAlg(glb,lub,order)
-                    --    , Explained(explain)
-                                                , Conceptual(conts)
-                        , Morphics(anything)
+   import CommonClasses ( Identified(..)
+                        , ABoolAlg(..)
+                        , Conceptual(..)
+                        , Morphics(..)
                         )
-   import Collection (Collection (uni,isc,(>-),rd)  )
-   import Auxiliaries  
-           ( chain, rEncode, commaEng, clos1, diag
-            ,eqCl, sord, eqClass
-            ,unCap)
+   import Collection   (Collection (..))
+   import Strings      (chain,unCap)
+   import Auxiliaries  (rEncode,commaEng
+                       ,sord,eqCl,eqClass,clos1,diag)
    import Adl
    import ShowADL
    import ShowHS

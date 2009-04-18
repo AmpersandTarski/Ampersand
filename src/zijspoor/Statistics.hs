@@ -1,5 +1,5 @@
 
-module Statistics where
+module Statistics ()where
 
    import Adl
    import FspecDef

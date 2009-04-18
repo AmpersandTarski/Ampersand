@@ -1,5 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
-module Generators where
+module Generators (doGenAtlas
+                  ,doGenXML
+                  ,doGenHaskell
+                  ,doGenProto
+                  ,doGenFspecLaTeX
+                  ,doGenFspecHtml
+                  ,doGenFspecWord
+                  ,doGenFspecPandoc
+                  ,serviceGen
+                  ,prove)
+where
 
 
 import System.FilePath(combine,replaceExtension)
@@ -7,7 +17,7 @@ import Options
 import FspecDef
 import ShowHS       (showHS)
 import ShowADL      (showADLcode)
-import ShowXML      (showXML')
+import ShowXML      (showXML)
 import Strings      (chain)
 import Calc         (deriveProofs)
 import Rendering.Doc2LaTeX
@@ -57,7 +67,7 @@ doGenAtlas fSpec flags =
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
    =  verboseLn flags "Generating XML..." >>
-      writeFile outputFile ( showXML' fSpec (genTime flags))   
+      writeFile outputFile ( showXML fSpec (genTime flags))   
    >> verboseLn flags ("XML written into " ++ outputFile ++ ".")
    where outputFile
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")

@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module Fspec2Doc where
+module Fspec2Doc (fSpec2document)
+where
 
    import FspecDef
    import Rendering.Document

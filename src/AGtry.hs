@@ -2,10 +2,11 @@
 module AGtry where
 
 import Char (isDigit) -- more from this module: Alpha,chr,ord,digitToInt,intToDigit,isAlphaNum,toUpper,toLower,isUpper)
-import CommonClasses ( Identified(name))
+import CommonClasses ( Identified(name),ABoolAlg(..))
 import Collection ( Collection(isc,(>-),uni, rd))
 import UU_Scanner
-import Auxiliaries (chain, eqClass, commaEng, sord, sort', eqCl)
+import Strings(chain)
+import Auxiliaries (eqClass, commaEng, sord, sort', eqCl)
 import Classification
          ( Classification(Cl)
          ,locatesF,makeClassificationsF,preCl,mapCl)
@@ -13,7 +14,7 @@ import Typology (Inheritance(Isa),genEq,typology)
 import Adl
 import ShowHS(showHS)
 import ShowADL
-import CC_aux ( order,makeConceptSpace, put_gE
+import CC_aux ( makeConceptSpace, put_gE
               , renumberRules,pMeaning,shSigns,anything
               , gEtabG)
 

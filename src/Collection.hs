@@ -1,4 +1,5 @@
-  module Collection
+{-# OPTIONS_GHC -Wall #-}
+module Collection
   (  Collection ( eleM
                 , uni
                 , isc

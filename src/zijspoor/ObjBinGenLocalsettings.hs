@@ -1,4 +1,5 @@
-  module ObjBinGenLocalsettings where
+  module ObjBinGenLocalsettings ()
+  where
    import Strings(chain)
    import Adl (Object(attributes))
    import CommonClasses (Identified(name))

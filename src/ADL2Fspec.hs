@@ -2,11 +2,26 @@
   module ADL2Fspec (makeFspec)
   where
 --   import CommonClasses ( Identified(name))
-   import Collection    ( Collection (isc,(>-),rd) )
-   import Auxiliaries(sort',snd3,eqCl,fst3)
-   import Char(toLower)
-   import Strings(firstCaps,idNam,chain)
-   import Adl
+   import Collection     ( Collection (isc,(>-),rd) )
+   import Auxiliaries    (sort',eqCl)
+   import Char           (toLower)
+   import Strings        (firstCaps,chain)
+   import Adl            (Context(..)
+                         ,ObjectDef(..)
+                         ,KeyDef(..)
+                         ,Expression(..),v,notCp,isPos
+                         ,Rule(..),normExpr
+                         ,Pattern(..)
+                         ,Morphism(..),mIs,makeDeclaration
+                         ,Declaration(..)
+                         ,Object(..)
+                         ,Population(..)
+                         ,Prop(..),Key(..)
+                         ,Concept(..),cptS
+                         ,Language(..)
+                         ,posNone
+                         ,Association(..),Morphic(..),Morphical(..),MorphicId(..)
+                         )
    import Dataset
    import ShowADL
    import FspecDef
@@ -464,4 +479,14 @@
 
    makeFSid1 :: String -> FSid
    makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
+
+   fst3 :: (a,b,c) -> a
+   fst3 (a,_,_) = a
+   snd3 :: (a,b,c) -> b
+   snd3 (_,b,_) = b
+   thd3 :: (a,b,c) -> c
+   thd3 (_,_,c) = c
+
+   idNam :: String -> String
+   idNam c = "\\id{"++concat [if c `elem` [' ','_'] then "\\ " else [c]| c<-firstCaps c]++"}"
 

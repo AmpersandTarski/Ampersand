@@ -1,4 +1,4 @@
-  {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 module Calc ( 
                 deriveProofs
               , computeOrder
@@ -10,15 +10,15 @@ module Calc (
               , informalRule ) 
   where 
 
-   import Collection (Collection (uni,isc,rd))
-   import Auxiliaries(sort',eqCl,commaEng,elem')
+   import Collection         (Collection (uni,isc,rd))
+   import Auxiliaries        (sort',eqCl,commaEng,elem')
    import Adl
-   import FspecDef(Fspc,vrules,chain,serviceS,ECArule(..),Event(..),InsDel(..),PAclause(..),showL)
-   import ShowADL
-   import ShowHS
-   import CC_aux
-   import ComputeRule(ComputeRule(..),triggers,conjuncts,allClauses,hornCs)
-   import NormalForms(conjNF,disjNF,nfProof,nfPr,simplify)
+   import FspecDef           (Fspc,vrules,chain,serviceS,ECArule(..),Event(..),InsDel(..),PAclause(..),showL)
+   import ShowADL            (showADL)
+   import ShowHS             (showHS)
+   import CommonClasses      (ABoolAlg(..))
+   import ComputeRule        (ComputeRule(..),triggers,conjuncts,allClauses,hornCs)
+   import NormalForms        (conjNF,disjNF,nfProof,nfPr,simplify)
 --   multiplicityAnalysis context 
 --    = let fnm = "MULT"++name context in
 --      putStr ("\n--------------\n"++

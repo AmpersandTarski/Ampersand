@@ -8,14 +8,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show Fspc.
 -}
 module Data.Fspec ( 
-               Pattern(..)
-             , Rule(..)
-             , ObjectDef(..)
-             , Expression(..)
-             , Morphism(..)
-             , Declaration(..)
-             , Concept(..)
-             , Fspc(..)
+               Fspc(..)
              , Ftheme(..)
              , Funit(..)
              , Fservice(..)
@@ -26,13 +19,13 @@ module Data.Fspec (
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
 where
-   import Adl.Pattern
-   import Adl.Rule
-   import Adl.ObjectDef
-   import Adl.Expression
-   import Adl.MorphismAndDeclaration
-   import Adl.Concept
-   import Typology(Inheritance)
+   import Adl.Pattern                   (Pattern)
+   import Adl.Rule                      (Rule)
+   import Adl.ObjectDef                 (ObjectDef)
+   import Adl.Expression                (Expression)
+   import Adl.MorphismAndDeclaration    (Morphism,Declaration)
+   import Adl.Concept                   (Concept)
+   import Typology                      (Inheritance)
    data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                      , themes   :: [Ftheme]      -- ^ One for every pattern
                      , datasets :: [ObjectDef]   -- ^ This list contains the data sets that are computed from the basic ontology.

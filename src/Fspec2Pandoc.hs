@@ -10,9 +10,9 @@ where
                              -- 2) cabal-install pandoc  (onder windows: cabal install pandoc)
                              -- 3) Het kan zijn dat dit nog niet werkt, zie http://groups.google.com/group/pandoc-discuss/browse_thread/thread/a8fc3a627aeec7f2
                              --    als dat het geval is, kan deze module worden overruled in Generators.hs                                 
-   import Version
-   import Languages
-   import Options
+   import Version        (versionbanner)
+   import Languages      (Lang(..))
+   import Options        (Options(..))
    
    render2Pandoc :: Options -> Pandoc -> String
    render2Pandoc _ pandoc = prettyPandoc pandoc

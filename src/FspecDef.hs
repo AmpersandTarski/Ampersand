@@ -12,7 +12,7 @@
 
    import Adl
    import CommonClasses(Identified(name,typ))
-   import Auxiliaries(showL,haskellIdentifier)
+   import Auxiliaries(showL)
    import Strings(chain)
    import Data.Fspec
 

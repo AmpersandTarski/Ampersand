@@ -1,11 +1,9 @@
-  module Auxiliaries
-  (fst3, snd3, thd3
- --  , adlVersion
- --  , unCap, upCap
-   , showL
+{-# OPTIONS_GHC -Wall #-}
+module Auxiliaries(
+     showL
    , rEncode
    , commaEng
-   , commaNL
+--   , commaNL
    , clos1
    , clos
    , diag
@@ -13,42 +11,34 @@
    , sord
    , eqCl 
    , eqClass
-   , rd'
+--   , rd'
    , enumerate
    , sort'
-   , enc
-   , sord'
+--   , enc
+--   , sord'
    , elem'
-   , mumble
-   , fixSpaces
+--   , mumble
+--   , fixSpaces
    , haskellIdentifier
+--
 
-   , module Strings
   )
   where
-   import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper,digitToInt,intToDigit)
+   import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper)
    import Collection (Collection(isc,uni,(>-),rd))
-   import Strings (chain, unCap, upCap,firstCaps)
+   import Strings (chain)
 
-  -- LET OP, Versie is verplaatst naar een apart bestandje (Version.hs)  adlVersion = "ADL vs. 0.8.10-221" -- the number behind the last digit is the SVN revision number.
-
-   fst3 (a,b,c) = a
-   snd3 (a,b,c) = b
-   thd3 (a,b,c) = c
 
    rEncode :: String -> String
    rEncode str = charEncode False str
      where
         charEncode :: Bool -> String -> String
-        charEncode casePrev str
-         = t casePrev (concat [if isAlphaNum c then [c] else "_"++three (ord c)| c<-str])
+        charEncode casePrev1 str'
+         = t casePrev1 (concat [if isAlphaNum c then [c] else "_"++three (ord c)| c<-str'])
            where three = reverse . take 3 . reverse . ("00"++) . show
-                 t casePrev (c:str) | not (isAlpha c) || isUpper c == casePrev = c: t casePrev str
-                                    | otherwise                                = '_': c: t (not casePrev) str
-                 t casePrev []      = []
-
-   mumble :: String -> String
-   mumble str  = concat [if c==' ' then "_" else [c]| c<-str]
+                 t casePrev (c:cs) | not (isAlpha c) || isUpper c == casePrev = c: t casePrev cs
+                                   | otherwise                                = '_': c: t (not casePrev) cs
+                 t _ []      = []
 
    --DESCR -> [b] is a list of two: [c1,c2] indicating a path from c1 to c2
    --TODO -> if [b] == [] then head results in Prelude.head: empty list error
@@ -59,8 +49,8 @@
      --         the snd arg is a set of every c which is domain [[b]] /\ range [[b]] (b is a tuple)
      = f xs (rd (map head xs) `isc` rd (map last xs))
        where
-        f q (x:xs) = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs
-        f q []     = q
+        f q (x:xs') = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs'
+        f q []      = q
 
 
 
@@ -85,21 +75,22 @@
 
 
 
-   tests = (putStr.chain "\n".map test)
-           [ [[2,2],[1,1],[2,3],[3,4],[0,1],[5,5]]
-           , [[1,2],[2,3],[4,5]]
-           , [[1,2],[2,3],[3,2]]
-           , [[1,1],[1,2],[2,3],[3,2]]
-           , [[1,2],[2,1]]
-           , [[1,2],[2,3],[4,5],[3,4]]
-           , [[1,2],[2,3],[4,5],[5,1]]
-           , [[1,2],[2,3],[4,5],[3,4],[5,1]]
-           , [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
-           , []
-           ]
-    where 
-     test c = "clos "++show c++" = \n  "++(if null ps then "[]" else "[ "++chain "\n  , " (map show ps)++"  \n  ]")++"\n"
-              where ps = clos head last c
+--   tests :: IO()
+--   tests = (putStr.chain "\n".map test)
+--           [ [[2,2],[1,1],[2,3],[3,4],[0,1],[5,5]]
+--           , [[1,2],[2,3],[4,5]]
+--           , [[1,2],[2,3],[3,2]]
+--           , [[1,1],[1,2],[2,3],[3,2]]
+--           , [[1,2],[2,1]]
+--           , [[1,2],[2,3],[4,5],[3,4]]
+--           , [[1,2],[2,3],[4,5],[5,1]]
+--           , [[1,2],[2,3],[4,5],[3,4],[5,1]]
+--           , [[1,2],[2,3],[4,5],[12,0],[0,5],[6,12],[12,24]]
+--           , []
+--           ]
+--     where 
+--       test c = "clos "++show c++" = \n  "++(if null ps then "[]" else "[ "++chain "\n  , " (map show ps)++"  \n  ]")++"\n"
+--               where ps = clos head last c
 
 
    isPrefix :: Eq a => [a] -> [a] -> Bool
@@ -119,8 +110,8 @@
    diag :: [a] -> [a] -> [a] -> [a] -> [[a]]
    diag xt (x:xs) yt (y:ys)
     = [x,y]: [[x,t]|t<-yt]++[[t,y]|t<-xt]++diag (x:xt) xs (y:yt) ys
-   diag xt [] yt ys = [[t,y]|y<-ys, t<-xt]
-   diag xt xs yt [] = [[x,t]|x<-xs, t<-yt]
+   diag xt [] _ ys = [[t,y]|y<-ys, t<-xt]
+   diag _  xs yt [] = [[x,t]|x<-xs, t<-yt]
 
    showL   :: [String] -> String
    showL xs = "["++chain "," xs++"]"
@@ -128,16 +119,16 @@
    commaEng :: String -> [String] -> String
    commaEng str [a,b,c]= a++", "++b++", "++str++" "++c
    commaEng str [a,b]  = a++" "++str++" "++b
-   commaEng str [a]    = a
+   commaEng _ [a]    = a
    commaEng str (a:as) = a++", "++commaEng str as
-   commaEng str []     = ""
+   commaEng _ []     = ""
 
-   commaNL :: String -> [String] -> String
-   commaNL str [a,b,c]= a++", "++b++" "++str++" "++c
-   commaNL str [a,b]  = a++" "++str++" "++b
-   commaNL str [a]    = a
-   commaNL str (a:as) = a++", "++commaNL str as
-   commaNL str []     = ""
+--   commaNL :: String -> [String] -> String
+--   commaNL str [a,b,c]= a++", "++b++" "++str++" "++c
+--   commaNL str [a,b]  = a++" "++str++" "++b
+--   commaNL _ [a]    = a
+--   commaNL str (a:as) = a++", "++commaNL str as
+--   commaNL _ []     = ""
 
    enumerate :: [String] -> String
    enumerate [] = []
@@ -145,16 +136,16 @@
    enumerate xs = chain ", " (init xs)++" and "++last xs
 
    eqClass :: (a -> a -> Bool) -> [a] -> [[a]]
-   eqClass f [] = []
+   eqClass _ [] = []
    eqClass f (x:xs) = (x:[e|e<-xs, f x e]) : eqClass f [e|e<-xs, not (f x e)]
 
    eqCl :: Eq b => (a -> b) -> [a] -> [[a]]
-   eqCl f [] = []
+   eqCl _ [] = []
    eqCl f (x:xs) = (x:[e|e<-xs, f x==f e]) : eqCl f [e|e<-xs, f x/=f e]
 
-   rd' ::  Eq e => ( a -> e ) -> [a] -> [a]
-   rd' f [] = []
-   rd' f (x:xs) = x: rd' f [e|e<-xs, f e /= f x]
+--   rd' ::  Eq e => ( a -> e ) -> [a] -> [a]
+--   rd' _ [] = []
+--   rd' f (x:xs) = x: rd' f [e|e<-xs, f e /= f x]
 
    sort :: (Ord a) => [a] -> [a]
    sort [] = []
@@ -163,7 +154,7 @@
 
 
    sort' :: (Ord b) => (a -> b) -> [a] -> [a]
-   sort' f [] = []
+   sort' _ [] = []
    sort' f (x:xs) = sort' f [e|e<-xs, f e<f x] ++ [x] ++ sort' f [e|e<-xs, f e>=f x]
 
 
@@ -174,26 +165,26 @@
 
 
 
-   sord' :: Ord b => (a -> b) -> [a] -> [a]
-   sord' f [] = []
-   sord' f (x:xs) = sord' f [e|e<-xs, f e<f x] ++ [x] ++ sord' f [e|e<-xs, f e>f x]
+--   sord' :: Ord b => (a -> b) -> [a] -> [a]
+--   sord' _ [] = []
+--   sord' f (x:xs) = sord' f [e|e<-xs, f e<f x] ++ [x] ++ sord' f [e|e<-xs, f e>f x]
 
    elem' :: (a -> a -> Bool) -> a -> [a] -> Bool
    elem' eq e xs = not (null [x|x<-xs, eq e x])
 
-   enc :: Bool -> String -> String
-   enc upper (c:cs) | not (isAlphaNum c) = '_': htmlEnc c ++ enc upper cs
-                    | isUpper c==upper   = c: enc upper cs
-                    | otherwise          = '_': c: enc (not upper) cs
-     where 
-        htmlEnc = reverse . take 3 . (++"00") . reverse . show . ord
-   enc _ "" = ""
+--   enc :: Bool -> String -> String
+--   enc upper (c:cs) | not (isAlphaNum c) = '_': htmlEnc c ++ enc upper cs
+--                    | isUpper c==upper   = c: enc upper cs
+--                    | otherwise          = '_': c: enc (not upper) cs
+--     where 
+--        htmlEnc = reverse . take 3 . (++"00") . reverse . show . ord
+--   enc _ "" = ""
 
 
 
-   fixSpaces :: Int -> String -> String
-   fixSpaces n a = [' '| i<-[1..n-length str]]++str
-    where str = show a
+--   fixSpaces :: Int -> String -> String
+--   fixSpaces n a = [' '| _<-[1..n-length str]]++str
+--    where str = show a
 
 
 
@@ -202,6 +193,6 @@
    haskellIdentifier (c:cs) | isAlphaNum c || c=='\''  = c: haskellIdentifier cs
                             | otherwise                = haskellIdentifier (conceptForm cs)
     where
-      conceptForm (c:cs) = toUpper c: map toLower cs
+      conceptForm (c':cs') = toUpper c': map toLower cs'
       conceptForm "" = ""
 

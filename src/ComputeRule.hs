@@ -6,13 +6,13 @@ module ComputeRule (ComputeRule(..)
                    ,hornCs)
 where
    import Adl 
-   import Collection (Collection (rd))
-   import Auxiliaries(sort',eqClass)
-   import FspecDef
-   import ShowADL
-   import ShowHS
-   import CC_aux
-   import NormalForms(simplify,conjNF,disjNF)
+   import Collection    (Collection(..))
+   import Auxiliaries   (sort',eqClass)
+   import CommonClasses (ABoolAlg(..))
+   import ShowADL       (showADL)
+   import ShowHS        (showHS)
+   import CC_aux        (fun,inj,sur,tot)
+   import NormalForms   (simplify,conjNF,disjNF)
    
    data ComputeRule = CR { crOps :: [(String,Declaration)]
                          , crexp :: Expression

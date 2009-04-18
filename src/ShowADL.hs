@@ -8,28 +8,29 @@
 
   module ShowADL ( ShowADL(..) )
   where
-   import Char  (isAlphaNum,isUpper)
-   import CommonClasses(Identified(name),order,lub)
-   import Collection (rd)
-   import Adl.Concept
-   import Adl.ConceptDef
-   import Adl.Context
-   import Adl.Expression
-   import Adl.FilePos
-   import Adl.Gen
-   import Adl.KeyDef
-   import Adl.Label
-   import Adl.MorphismAndDeclaration
-   import Adl.ObjectDef
-   import Adl.Pair
-   import Adl.Pattern
-   import Adl.Population
-   import Adl.Prop
-   import Adl.Rule
+   import Char                            (isAlphaNum,isUpper)
+   import CommonClasses                   (Identified(..),ABoolAlg(..))
+   import Collection                      (Collection(..))
+   import Adl.Concept                     (Concept,Morphic(..),Association(..))
+   import Adl.ConceptDef                  (ConceptDef(..))
+   import Adl.Context                     (Architecture(..),Context(..))
+   import Adl.Expression                  (Expression(..))
+   import Adl.FilePos                     (FilePos)
+   import Adl.Gen                         (Gen(..))
+   import Adl.KeyDef                      (KeyDef(..))
+ --  import Adl.Label                       ()
+   import Adl.MorphismAndDeclaration      (Morphism(..),Declaration(..)
+                                          ,isIdent,mIs)  
+   import Adl.ObjectDef                   (ObjectDef(..))
+ --  import Adl.Pair                        ()
+   import Adl.Pattern                     (Pattern(..))
+   import Adl.Population                  (Population(..))
+   import Adl.Prop                        (Prop)
+   import Adl.Rule                        (Rule(..),RuleType(..))
    
    import Data.Fspec(Fspc,vrels)-- TODO FspecDef hoort hier natuurlijk niet!
-   import Strings (chain)
-   import Auxiliaries(eqCl,showL)
+   import Strings                         (chain)
+   import Auxiliaries                     (eqCl,showL)
    
    class ShowADL a where
     showADL :: a -> String

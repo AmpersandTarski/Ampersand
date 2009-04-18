@@ -1,9 +1,9 @@
-  {-# OPTIONS_GHC -Wall #-}
-module NormalForms (conjNF,disjNF,nfProof,nfPr,simplify,negRight)--,isFu)
+{-# OPTIONS_GHC -Wall #-}
+module NormalForms (conjNF,disjNF,nfProof,nfPr,simplify,negRight)
 where
    import Adl
-   import Collection (Collection (rd))
-   import ShowADL
+   import Collection (Collection (..))
+   import ShowADL    (showADL)
    
    simplify :: Expression -> Expression
    simplify expr = expr' 

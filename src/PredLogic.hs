@@ -11,17 +11,16 @@
               )
    where
 
-   import CommonClasses ( Identified(name))
+   import CommonClasses ( Identified(name),ABoolAlg(..))
    import Collection (Collection((>-)))
-   import Auxiliaries (chain, eqCl)
-
+   import Strings(chain)
+   import Auxiliaries (eqCl)
    import Adl
    import ShowADL
    import ShowHS
    import CC_aux ( applyM 
-                 , lub, sur, inj, fun, tot 
+                 , sur, inj, fun, tot 
                  , mkVar
-                 , order
             )
    import Languages (Lang(English,Dutch), plural)
  --  import Calc

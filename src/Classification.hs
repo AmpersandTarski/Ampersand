@@ -12,9 +12,9 @@ where
    import CommonClasses ( Identified(name,typ)
                         , Conceptual(conts)
                         ) 
-   import Collection (Collection(eleM,elems,isc,(>-),uni,empty,rd))
-   import Auxiliaries (chain, eqCl) 
-
+   import Collection  (Collection(eleM,elems,isc,(>-),uni,empty,rd))
+   import Auxiliaries (eqCl) 
+   import Strings     (chain)
 
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a

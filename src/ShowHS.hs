@@ -1,13 +1,22 @@
 {-# OPTIONS_GHC -Wall #-}
-module ShowHS (showHS,ShowHS)
+module ShowHS (showHS)
 where
 
-   import Typology(Inheritance(..))
-   import FspecDef
+   import Typology              (Inheritance(..))
+   import FspecDef              (Fspc(..)
+                                ,Ftheme(..)
+                                ,Funit(..)
+                                ,Fservice(..)
+                                ,FViewDef(..)
+                                ,ServiceSpec(..)
+                                ,ParamSpec(..)
+                                ,FSid(..)
+                                ,Fidentified(..))
+   import Strings               (chain)
    import Adl
-   import UU_Scanner (Pos(Pos))
-   import ShowADL(showADL) -- wenselijk voor foutmeldingen.
-
+   import UU_Scanner            (Pos(..))
+   import ShowADL               (showADL) -- wenselijk voor foutmeldingen.
+   import Auxiliaries           (haskellIdentifier,showL)
 
    class ShowHS a where
     showHSname :: a -> String

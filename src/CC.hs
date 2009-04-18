@@ -1,17 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
- module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars,Architecture,Context) where
+ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    import UU_Scanner
    import UU_Parsing
---   import CommonClasses ( Identified(name))
-   import Collection (Collection(empty,uni,rd))
+   import Collection  (Collection(..))
    import Auxiliaries (sort)
---   import ADLdef (flp,cptAnything,cptnew,cptS,mIs)
-   import Adl
-   import ShowADL
-   import CC_aux 
-             (  pKey_pos
-              , pVarid_val_pos, pConid_val_pos
-              )
+   import Adl         
+   import ShowADL     (showADL)
+   import CC_aux      (pKey_pos
+                      ,pVarid_val_pos, pConid_val_pos
+                      )
 
    keywordstxt :: [String]
    keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"

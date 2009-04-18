@@ -3,7 +3,7 @@ module Adl ( Architecture(..)
            , Context(..),Contexts
            , Pattern(..),Patterns,union
            , Rule(..),Rules,consequent
-           , KeyDef(..),KeyDefs,keys
+           , KeyDef(..),KeyDefs,Key(..)
            , Population(..),Populations
            , ObjectDef(..),ObjectDefs
            , Expression(..), Expressions,isPos,isNeg
