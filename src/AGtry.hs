@@ -1353,7 +1353,7 @@ sem_Morphism_I (_atts) (_g) (_s) (_yin) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
              is = ids _lhs_gE s' t'
          in if null is then I _ats s' t' True else head is
         ,"I"
-        ,posNone
+        ,Nowhere
         ,( _rraw, [])
         ,[]
         ,declarations [ _rraw ]
@@ -1424,7 +1424,7 @@ sem_Morphism_V (_atts) (_sgn) (_lhs_gE) (_lhs_isign) (_lhs_sDef) =
                      head _lhs_isign
          in V _ats (s,t)
         ,"V"
-        ,posNone
+        ,Nowhere
         ,( _rraw, [])
         ,[]
         ,declarations [ _rraw ]

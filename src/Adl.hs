@@ -14,7 +14,7 @@ module Adl ( Architecture(..)
            , Concept(..), GenR, Concepts, one,v,cptnew,cptS
            , RuleType(..)
            , Prop(..)
-           , FilePos(..),posNone
+           , FilePos(..), Numbered(..)
            , makeDeclaration,mIs,ruleType
            , antecedent,notCp,cptAnything,cpu
            , Object(..)
@@ -24,7 +24,6 @@ module Adl ( Architecture(..)
            , Morphic(..),normExpr
            , MorphicId(..)
            , Populated(..)
-           , Numbered(..)
            , Substitutive(..)
            , Identified(..)
            , Explained(..)
@@ -43,7 +42,6 @@ where
    import Adl.Expression                 (Expression(..),Expressions
                                          ,isPos,isNeg,v,notCp)
    import Adl.FilePos                    (FilePos(..)
-                                         ,posNone
                                          ,Numbered(..))
    import Adl.Gen                        (Gen(..),Gens)
    import Adl.KeyDef                     (KeyDef(..),KeyDefs)

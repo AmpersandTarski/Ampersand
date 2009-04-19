@@ -7,7 +7,7 @@ module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
                                   ,isSgn,mIs
                                   )
 where
-   import Adl.FilePos      (FilePos,posNone,Numbered(..))
+   import Adl.FilePos      (FilePos(..),Numbered(..))
    import Adl.Concept      (Concept,Association(..),Sign,MorphicId(..),Morphic(..)
                            ,isSingleton)
    import Adl.Prop         (Prop(..),Props,flipProps)
@@ -97,8 +97,9 @@ where
     source m = source (sign m)
     target m = target (sign m)
    instance Numbered Morphism where
-    pos m@(Mph{}) = mphpos m
-    pos _         = posNone
+    pos m = case m of
+             Mph{} ->  mphpos m
+             _     ->  Nowhere
     nr m = nr (makeDeclaration m)
 
    instance MorphicId Morphism where
@@ -239,14 +240,17 @@ where
     --sign is vanzelf al geregeld...
 
    instance Numbered Declaration where
-    pos (Sgn _ _ _ _ _ _ _ _ _ p _ _) = p
-    pos _                             = posNone
-    nr (Sgn _ _ _ _ _ _ _ _ _ _ n _)  = n
-    nr _                              = 0
+    pos d = case d of
+              Sgn{} -> decfpos d
+              _     -> Nowhere
+    nr  d = case d of
+              Sgn{} -> decid d
+              _     -> 0
 
    instance MorphicId Declaration where 
-    isIdent (Isn _ _)                            = True   -- > tells whether the argument is equivalent to I
-    isIdent _                                    = False
+    isIdent d = case d of
+                 Isn{} -> True   -- > tells whether the argument is equivalent to I
+                 _     -> False
 
    instance Morphic Declaration where
     multiplicities d = case d of

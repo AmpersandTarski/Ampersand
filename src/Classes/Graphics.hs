@@ -38,7 +38,7 @@ module Classes.Graphics where
                   arcs = rd ([m'|m<-mors pat++mors(specs pat), isMph m, not (isSignal (makeDeclaration m)), not (isProperty m)
                                     {- , take 5(name m)/="Clos_"  -}
                                        , m'<-[m,flp m], inline m']++
-                                    [Mph (name d) posNone [source d,target d] (source d,target d) True d
+                                    [Mph (name d) Nowhere [source d,target d] (source d,target d) True d
                                        | d<-declarations pat, not (isSignal d), not (isProperty d)])
                   conceptTable = case cpts of
                                    []   -> []

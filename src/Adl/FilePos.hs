@@ -1,30 +1,37 @@
 {-# OPTIONS_GHC -Wall #-}
--- Deze module kan niet warningvrij worden gemaakt, omdat er twee orphan instances
--- in voorkomen. (Zie de discussie op http://lukepalmer.wordpress.com/2009/01/25/a-world-without-orphans/)
-module Adl.FilePos    ( FilePos(FilePos)
-                      , posNone
+module Adl.FilePos    ( FilePos(FilePos,Nowhere)
                       , Numbered(nr,pos))
 where
-   import UU_Scanner (Pos(Pos),noPos)
+   import UU_Scanner (Pos(Pos))
 
-   newtype FilePos = FilePos (String, Pos, String) 
-                          deriving (Eq,Ord)
-   posNone :: FilePos
-   posNone = FilePos ("",noPos,"")
-   instance Ord Pos where
-     a >= b = (show a) >= (show b)
-     a <= b = (show a) <= (show b)
-     
-   instance Show Pos where
-     show (Pos l c)
-       = "line " ++ show l
-         ++ ", column " ++ show c
+   data FilePos = FilePos ( String, Pos, String)
+                | Nowhere 
+                        --  deriving (Eq,Ord)
 
+   instance Eq FilePos where
+       fp == fp' = case (fp,fp') of
+                 (Nowhere,Nowhere) -> True
+                 (FilePos(a,b,c),FilePos(a',b',c'))
+                                   -> a==a' && b==b' && c==c'
+                 (_,_)             -> False
+--   posNone :: FilePos
+--   posNone = FilePos ("",noPos,"")
+--   instance Ord Pos where
+--     a >= b = (show a) >= (show b)
+--     a <= b = (show a) <= (show b)
+--     
+--   instance Show Pos where
+--     show (Pos l c)
+--       = "line " ++ show l
+--         ++ ", column " ++ show c
+--
    instance Show FilePos where
      show (FilePos (fn,Pos l _,_))
        = "line " ++ show l
          ++ ", file " ++ show fn
-     
+     show Nowhere
+       = "Nowhere"    -- Valt nog te bezien of je hier eigenlijk wel wat wilt laten zien...
+       
    class Numbered a where
     nr :: a->Int
     pos :: a->FilePos
@@ -32,6 +39,8 @@ where
 
    instance Numbered FilePos where
     nr (FilePos (_,Pos l _,_)) = l
+    nr Nowhere = 0
+    
     pos p = p
 
      

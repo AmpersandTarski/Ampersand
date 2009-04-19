@@ -172,9 +172,9 @@ module Calc (
                      ] where prf = nfProof (normExpr (srsig rule))
           Gc{} -> undefined
           Fr{} -> undefined 
- --         dummy = Fu [Cp (F [Tm (Mph "q" posNone [] (C "A" (==) [],C "C" (==) []) True dec) ])
- --                    , F [Tm (Mph "r" posNone [] (C "A" (==) [],C "B" (==) []) True dec)
- --                        ,Tm (Mph "s" posNone [] (C "B" (==) [],C "C" (==) []) True dec)
+ --         dummy = Fu [Cp (F [Tm (Mph "q" Nowhere [] (C "A" (==) [],C "C" (==) []) True dec) ])
+ --                    , F [Tm (Mph "r" Nowhere [] (C "A" (==) [],C "B" (==) []) True dec)
+ --                        ,Tm (Mph "s" Nowhere [] (C "B" (==) [],C "C" (==) []) True dec)
  --                        ]
  --                    ]
  --                 where dec = error ("(Module Calc) Declaration error")
@@ -223,7 +223,7 @@ module Calc (
 --                                   , decprR  = ""
 --                                   , decpopu = []
 --                                   , decexpl = ""
---                                   , decfpos = posNone
+--                                   , decfpos = Nowhere
 --                                   , decid   = 0
 --                                   , deciss  = True
 --                                   }))
@@ -237,7 +237,7 @@ module Calc (
                                    , decprR  = ""
                                    , decpopu = []
                                    , decexpl = ""
-                                   , decfpos = posNone
+                                   , decfpos = Nowhere
                                    , decid   = 0
                                    , deciss  = True
                                    }))
@@ -280,8 +280,8 @@ module Calc (
           (Ins, Fu fs)   -> Choice [ doCod deltaX Ins f | f<-fs ]
           (Ins, Fi fs)   -> All    [ doCod deltaX Ins f | f<-fs ]
           (Ins, F ts)    -> All [ c | (l,r)<-chop ts 
-                                    , one1 <- [Tm (Mph "One" posNone [] (source (F r),target (F l)) True             -- Stef, WAAROM? gebruik je hier niet Mp1{}?
-                                                      (Sgn "One" (target (F l)) (source (F r)) [Sym,Asy,Trn] "" "" "" [] "" posNone 0 True))]
+                                    , one1 <- [Tm (Mph "One" Nowhere [] (source (F r),target (F l)) True             -- Stef, WAAROM? gebruik je hier niet Mp1{}?
+                                                      (Sgn "One" (target (F l)) (source (F r)) [Sym,Asy,Trn] "" "" "" [] "" Nowhere 0 True))]
                                     , c<-[ Do Ins (F l) (simplify (Fi [F[delta3,v (target deltaX,target one1)],F[v(source deltaX,source one1),one1]]))
                                          , Do Ins (F r) (simplify (Fi [F[one1,v(target one1,target deltaX)],F[v (source one1,source deltaX),delta3]]))
                                          ]
@@ -488,7 +488,7 @@ module Calc (
         headHc { crOps = rd [fOp|hc<-cl', fOp<-crOps hc]
                , crule = Ru { rrsrt = Implication
                             , rrant = crfrm headHc
-                            , rrfps = posNone
+                            , rrfps = Nowhere
                             , rrcon = crto headHc
                             , r_cpu = []
                             , rrxpl = chain "; " (rd[explain (crule hc)++" ("++show (pos (crule hc))++")"|hc<-cl', (not.null.explain) (crule hc)])
@@ -636,7 +636,7 @@ module Calc (
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
                                        , rrant = error ("(Module Calc:) illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
-                                       , rrfps = posNone
+                                       , rrfps = Nowhere
                                        , rrcon = pos'
                                        , r_cpu = []
                                        , rrxpl = ""
@@ -645,7 +645,7 @@ module Calc (
                                        , r_pat = ""}
                     | otherwise   = Ru { rrsrt = Implication
                                        , rrant = neg'
-                                       , rrfps = posNone
+                                       , rrfps = Nowhere
                                        , rrcon = pos'
                                        , r_cpu = []
                                        , rrxpl = ""

@@ -19,7 +19,7 @@
                          ,Prop(..),Key(..)
                          ,Concept(..),cptS
                          ,Language(..)
-                         ,posNone
+                         ,FilePos(..)
                          ,Association(..),Morphic(..),Morphical(..),MorphicId(..)
                          )
    import Dataset
@@ -68,13 +68,13 @@
         serviceG'
          = concat
            [ [ Obj { objnm   = name c
-                   , objpos  = posNone
+                   , objpos  = Nowhere
                    , objctx  = v (cptS,c)
                    , objats  = [ Obj { objnm  = name mph++name (target mph)
-                                     , objpos = posNone
+                                     , objpos = Nowhere
                                      , objctx = Tm mph
                                      , objats = let ats = [ Obj { objnm = concat [name mph'| mph'<-morlist att]++name (target att)
-                                                                , objpos = posNone
+                                                                , objpos = Nowhere
                                                                 , objctx = att
                                                                 , objats = []
                                                                 , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
@@ -82,7 +82,7 @@
                                                           | att<-recur [] (target mph)]
                                                 in if null ats then []
                                                    else (( Obj { objnm = name (target mph)
-                                                               , objpos = posNone
+                                                               , objpos = Nowhere
                                                                , objctx = Tm (mIs (target mph))
                                                                , objats = []
                                                                , objstrs= []
@@ -92,7 +92,7 @@
                                      }
                                 | mph<-relsFrom c, not (isSignal mph)]++
                                 [ Obj { objnm =  name (srrel s)
-                                      , objpos = posNone
+                                      , objpos = Nowhere
                                       , objctx = disjNF (notCp (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
                                       , objats = []
                                       , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
@@ -101,20 +101,20 @@
                    , objstrs = []
                    }]
              ++let ats = [ Obj { objnm  = name mph++name (target mph)
-                               , objpos = posNone
+                               , objpos = Nowhere
                                , objctx = Tm mph
                                , objats = []
                                , objstrs= [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
                                }
                            | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
                in [ Obj { objnm  = name c++"s"
-                        , objpos = posNone
+                        , objpos = Nowhere
                         , objctx = Tm (mIs S)
                         , objats = [ Obj { objnm  = name c++"s"
-                                         , objpos = posNone
+                                         , objpos = Nowhere
                                          , objctx = v(S,c)
                                          , objats = ( Obj { objnm = "nr"
-                                                          , objpos = posNone
+                                                          , objpos = Nowhere
                                                           , objctx = Tm (mIs c)
                                                           , objats = []
                                                           , objstrs= []
@@ -128,8 +128,8 @@
                   ]
            | c<-concs context ]
            where
-            relsFrom c = [Mph (name d) posNone [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
-                         [flp (Mph (name d) posNone [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
+            relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
+                         [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
             recur :: [Morphism] -> Concept -> [Expression]
             recur rs' c
              = [ F [Tm mph| mph<-rs'++[n]] | n<-new, not (n `elem` rs')] ++

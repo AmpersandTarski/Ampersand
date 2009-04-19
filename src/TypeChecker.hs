@@ -665,17 +665,17 @@ module TypeChecker (typecheck, Error, Errors) where
                      | case rul of
                               Sg{} -> True
                               _ -> False
-                                            = (Info posNone (Trace [] (ExprError EE_Fatal "Rule type Sg not implemented.")):(castRulesToAdlExprs env ruls))
+                                            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Rule type Sg not implemented.")):(castRulesToAdlExprs env ruls))
                      | case rul of
                               Gc{} -> True
                               _ -> False
-                                            = (Info posNone (Trace [] (ExprError EE_Fatal "Rule type Gc not implemented.")):(castRulesToAdlExprs env ruls))
+                                            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Rule type Gc not implemented.")):(castRulesToAdlExprs env ruls))
                      | case rul of
                               Fr{} -> True
                               _ -> False
-                                            = (Info posNone (Trace [] (ExprError EE_Fatal "Rule type Fr not implemented.")):(castRulesToAdlExprs env ruls))
+                                            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Rule type Fr not implemented.")):(castRulesToAdlExprs env ruls))
                  -}
-                     | otherwise            = (Info posNone (Trace [] (ExprError EE_Fatal "Unknown rule type.")):(castRulesToAdlExprs env ruls))
+                     | otherwise            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Unknown rule type.")):(castRulesToAdlExprs env ruls))
                         where
                             leftsubexpr = castExpressionToAdlExpr env (rrant rul)
                             rightsubexpr = castExpressionToAdlExpr env (rrcon rul)

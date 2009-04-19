@@ -23,17 +23,17 @@
    makeDataset :: Context -> Concept -> ObjectDef
    makeDataset context c    -- TODO FOUT?? WAAROM Stef, de c wordt niet gebruikt. Ik kan me niet voorstellen dat dat goed is.....
     = Obj { objnm   = name c
-          , objpos  = posNone
+          , objpos  = Nowhere
           , objctx  = v (one,c)
           , objats  = [Obj { objnm   = name mph++name(target mph)
-                           , objpos  = posNone
+                           , objpos  = Nowhere
                            , objctx  = Tm mph
                            , objats  = []
                            , objstrs = []
                            }| mph<-dss]
           , objstrs = []
           }
---was:    = Obj (name c) posNone (v (one,c)) [Obj (name m++name(target m)) posNone (Tm m) [] []| m<-dss] []
+--was:    = Obj (name c) Nowhere (v (one,c)) [Obj (name m++name(target m)) Nowhere (Tm m) [] []| m<-dss] []
       where
        c  = minimum [g|g<-concs context,g<=head cl]
        cl = head ([cl'| cl'<-eqClass bi (concs context), c `elem` cl']
@@ -45,7 +45,7 @@
 
    makeDatasets :: Context -> [ObjectDef]
    makeDatasets context
-    = [ Obj (name c) posNone (v (one,c)) [Obj (name m++name(target m)) posNone (Tm m) [] []| m<-dss cl] []
+    = [ Obj (name c) Nowhere (v (one,c)) [Obj (name m++name(target m)) Nowhere (Tm m) [] []| m<-dss cl] []
       | cl<-eqClass bi (concs context), c<-[minimum [g|g<-concs context,g<=head cl]] ]
       where
        c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
@@ -56,5 +56,5 @@
    datasetMor :: Context -> Morphism -> ObjectDef
    datasetMor context m | isFunction      m  = makeDataset context (source m)
                         | isFunction (flp m) = makeDataset context (target m)
-                        | otherwise          = Obj (name m) posNone (Tm m) [] []
+                        | otherwise          = Obj (name m) Nowhere (Tm m) [] []
 

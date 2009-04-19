@@ -85,7 +85,7 @@
                        Pk <$> pKeyDef
 
    pSignal          :: Parser Token Morphism
-   pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" posNone [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" posNone 0 False))
+   pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False))
 
 
 
@@ -195,7 +195,7 @@
                        v'   <$ pKey "V" <*> pTwo                                                                 <|>
                        rebuild <$> pVarid_val_pos <*> pTwo
                        where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
-                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" posNone 0 (nm/=""))
+                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/=""))
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
                              v' []                  = V [] (cptAnything, cptAnything)

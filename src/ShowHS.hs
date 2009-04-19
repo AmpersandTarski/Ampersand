@@ -476,6 +476,7 @@ where
     showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
     showHS _ (FilePos (fn,Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
-
+    showHS _ Nowhere
+      = "Nowhere"
 
 

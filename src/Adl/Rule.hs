@@ -3,7 +3,7 @@ module Adl.Rule    ( Rule(..),Rules
                    , RuleType(..)
                    , consequent, antecedent, cpu, ruleType, normExpr)     
 where
-   import Adl.FilePos                   ( FilePos(..),posNone,Numbered(..))
+   import Adl.FilePos                   ( FilePos(..),Numbered(..))
    import Adl.Concept                   ( Concept
                                         , Association(..)
                                         , MorphicId(..),Morphic(..))
@@ -63,7 +63,7 @@ where
               Ru{}  ->  rrfps r
               Sg{}  ->  srfps r
               Gc{}  ->  grfps r
-              Fr{}  ->  posNone
+              Fr{}  ->  Nowhere
     nr r = case r of
               Ru{}  ->  runum r
               Sg{}  ->  runum r

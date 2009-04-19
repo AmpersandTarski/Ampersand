@@ -38,7 +38,7 @@
       Conj [PredLogic]                      |
       Disj [PredLogic]                      |
       Not PredLogic                         |
-      Pred String String                    |  -- Pred nm v, with v::type   is equiv. to Mph nm posNone [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] posNone 0 False)
+      Pred String String                    |  -- Pred nm v, with v::type   is equiv. to Mph nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
       Rel PredLogic
           Morphism
           PredLogic                         |
