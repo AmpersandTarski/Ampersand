@@ -19,7 +19,7 @@
 --TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
 --        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)
 --TODO -> meerdere fouten in expressie, dan binnenste fout, 1 per expressie
---
+--TODO -> The ADL.Rule contains all kinds of structures typechecker  only supports the one with constructor Ru
 --DESCR ->
 --         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
@@ -87,7 +87,9 @@ module TypeChecker (typecheck, Error, Errors) where
           enrichCtx :: Context -> Context
           enrichCtx cx =
              case cx of
-                  Ctx{} -> cx {ctxisa=hierarchy, ctxwrld=world, ctxrs=ctxrules, ctxds=ctxdecls, ctxos=[bindObjDef (AllCpt,AllCpt) od | od<-ctxos cx]}
+                  Ctx{} -> cx {ctxisa=hierarchy, ctxwrld=world, ctxrs=ctxrules, ctxds=ctxdecls, 
+                               ctxos=[bindObjDef (AllCpt,AllCpt) od | od<-ctxos cx],
+                               ctxks=ctxkeys}
                            {-
                            (ctxnm cx) --copy name
                            (ctxon cx) --copy extended ctxs
@@ -98,7 +100,7 @@ module TypeChecker (typecheck, Error, Errors) where
                            (ctxdecls)  --declarations of this context only
                            (ctxcptdefs)--concept defs of this context only
                            (ctxks cx)  --TODO -> key defs, what's the ADL syntax?
-                           (ctxos cx)   --TODO -> change mphdcl and mphtyp on morphisms in expressions
+                           (ctxos cx)   --change mphdcl and mphtyp on morphisms in expressions
                            (ctxpops cx) --copy populations
                               -}
                            where
@@ -116,7 +118,12 @@ module TypeChecker (typecheck, Error, Errors) where
                                                           Set.fromList (map fromConcept isac)
                                          )
                            ctxrules = ctxrulesgens ++ ctxrulespats
-                           ctxrulespats = allCtxRules [cx] --TODO -> assign type to rules
+                           ctxrulespats = map bindRule $ allCtxRules [cx] --TODO -> assign type to rules
+                           bindRule r =
+                                       let
+                                       [bindant,bindcon] = bindExprs [rrant r, rrcon r]
+                                       in
+                                       r {rrant=bindant, rrcon=bindcon, rrtyp=sign bindant}
                            {-in AGtry ->
                               [ Ru Implication
                                   (Tm (mIs _spec_concept))
@@ -147,6 +154,16 @@ module TypeChecker (typecheck, Error, Errors) where
                            allCtx = map fromFoundCtx $ flatten ctxtree
                            (isarel,rels) = (isaRel (allCtxCpts allCtx) (allCtxGens allCtx),
                                             declRels (allCtxPats allCtx))
+
+                           bindExprs :: Expressions -> Expressions
+                           bindExprs exprs = [bindExpr x (foldlubcpts (srcs exprs),foldlubcpts (tgts exprs))| x<-exprs]
+                                    where
+                                    foldlubcpts cpts = foldr (lubcpt isarel) AllCpt cpts
+                                    srcs exprs = map rtsrc (rts exprs)
+                                    tgts exprs = map rttgt (rts exprs)
+                                    rts exprs = [infer isarel $ castExpressionToAdlExpr (isarel,rels) x | x<-exprs]
+                                    rtsrc (RelationType (s,_)) = s
+                                    rttgt (RelationType (_,t)) = t
                            bindExpr :: Expression -> (Cpt,Cpt) -> Expression
                            bindExpr expr (src,tgt) =
                                     let
@@ -157,8 +174,13 @@ module TypeChecker (typecheck, Error, Errors) where
                                     bindtype = (bindsource,bindtarget)
                                     in
                                     case expr of
-                                         Tm{} -> Tm $ bindMph (m expr) bindtype;
-                                         Tc{} -> Tc $ bindExpr (e expr) (src,tgt);
+                                         Tm{} -> Tm $ bindMph (m expr) bindtype
+                                         Tc{} -> Tc $ bindExpr (e expr) (src,tgt)
+                                         K0{} -> Tc $ bindExpr (e expr) (src,tgt)
+                                         K1{} -> Tc $ bindExpr (e expr) (src,tgt)
+                                         Cp{} -> Tc $ bindExpr (e expr) (src,tgt)
+                                         Fu{} -> Fu $ bindExprs (es expr)
+                                         Fi{} -> Fi $ bindExprs (es expr)
                                          F{}  -> bindF (es expr)
                                                     where
                                                     bindF [] = F []
@@ -178,11 +200,61 @@ module TypeChecker (typecheck, Error, Errors) where
                                                           F boundright = (bindExpr (F right) (middle,bindtarget))
                                                           in
                                                           F $ (bindExpr left (bindsource,middle)):boundright
+                                         --REMARK -> example Product 'voldoetAan' Eisen
+                                         --                  Certificering 'stelt' ExtraVoorwaarden
+                                         --                  GEN ExtraVoorwaarden ISA Eisen
+                                         --                  (-stelt ! voldoetAan~)~ :: Product * Certificering
+                                         --               -> voor alle extra voorwaarden geldt
+                                         --                  of het Product voldoetAan ExtraVoorwaarden
+                                         --                  of de ExtraVoorwaarden worden niet gesteld voor een certificering
+                                         --               => Product voldoet aan de extra voorwaarden die gesteld worden door een certificering
+                                         --                  Dus de b in het midden is ExtraVoorwaarden en niet Eisen, net als de relatieve compositie
+                                         --
+                                         --                  (-voldoetAan ! stelt~) :: Product * Certificering
+                                         --               -> voor alle eisen geldt
+                                         --                  of het is een Eis waar het Product niet aan voldoet
+                                         --                  of de Eis wordt gesteld door een Certificering
+                                         --               -> voor alle eisen geldt
+                                         --                  of het is een ExtraVoorwaarde waar het Product niet aan voldoet
+                                         --                  of de ExtraVoorwaarde wordt gesteld door een Certificering
+                                         --                  en het Product voldoet aan geen enkele Eis die geen ExtraVoorwaarde is
+                                         --               -> voor alle extra voorwaarden geldt
+                                         --                  of het is een ExtraVoorwaarde waar het Product niet aan voldoet
+                                         --                  of de ExtraVoorwaarde wordt gesteld door een Certificering
+                                         --                  en het Product voldoet aan geen enkel concept dat geen ExtraVoorwaarde is
+                                         --               => Het product is gerelateerd tot een certificering als het uitsluitend voldoet aan 
+                                         --                  ExtraVoorwaarden die gesteld worden door de certificering. Het product voldoet dus
+                                         --                  nooit aan een concept dat geen ExtraVoorwaarde is.
+                                         --                  Dus ik kan uit de voeten met een b van het type ExtraVoorwaarden
+                                         {-
+                                         Statement:
+                                         Als relatiealgebra wetten (zoals DeMorgan) in een type systeem met subtypes moet houden, dan
+                                         moet je een expressie met ; en zijn equivalent met !  over hetzelfde type b evalueren (en ook hetzelfde type a en hetzelfde type c)
+                                         (a b en c zijn de vrije variabelen in de evaluatieregels van ; en !)
+                                         -}
+                                         Fd{}  -> bindFd (es expr)
+                                                    where
+                                                    bindFd [] = Fd []
+                                                    bindFd (x:[]) = Fd [bindExpr x (src,tgt)]
+                                                    bindFd (left:right:[]) =
+                                                          let
+                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
+                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) right
+                                                          middle = lubcpt isarel targetleft sourceright
+                                                          in
+                                                          Fd [bindExpr left (bindsource,middle), bindExpr right (middle,bindtarget)]
+                                                    bindFd (left:right) =
+                                                          let
+                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
+                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) (Fd right)
+                                                          middle = lubcpt isarel targetleft sourceright
+                                                          Fd boundright = (bindExpr (Fd right) (middle,bindtarget))
+                                                          in
+                                                          Fd $ (bindExpr left (bindsource,middle)):boundright
 
-                                         _ -> expr --TODO -> the rest of the expressions
                            bindMph :: Morphism -> (Cpt,Cpt) -> Morphism
                            bindMph m@(Mph {}) (src,tgt) =
-                                    let 
+                                    let
                                     tp = (toConcept $ lubcpt isarel src (fromConcept (source m)),
                                           toConcept $ lubcpt isarel tgt (fromConcept (target m)))
                                     FoundDr dcl = srchDeclRelByMorphism rels m
@@ -216,6 +288,19 @@ module TypeChecker (typecheck, Error, Errors) where
                                     objats'= map (xxx) (objats od)
                                     in
                                     od {objctx=expr', objats=objats'}
+                           ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]
+                           bindKeyDef :: KeyDef -> KeyDef
+                           bindKeyDef kd = 
+                                    let 
+                                    expr' = bindExpr (kdctx kd) (AllCpt,AllCpt)
+                                    od@(Obj {objats=kdats'}) = bindObjDef (AllCpt,AllCpt)
+                                                                          (Obj {objats=kdats kd,
+                                                                               objnm=kdlbl kd,
+                                                                               objpos=kdpos kd,
+                                                                               objctx=expr'})
+                                    in
+                                    kd {kdctx=expr', kdats=kdats'}
+
 
 
    -----------------
@@ -482,6 +567,14 @@ module TypeChecker (typecheck, Error, Errors) where
    --allGenCpts [] = []
    allGenCpts gens = Set.fromList $ [case g of G{} -> fromConcept (gengen g) | g<-gens] ++
                                     [case g of G{} -> fromConcept (genspc g) | g<-gens]
+                                    
+   allCtxKeyDefs :: Contexts -> KeyDefs
+   allCtxKeyDefs ctxs = (allPatKeyDefs (allCtxPats ctxs))
+   --TODO -> all context keydefs are already parsed into a pattern for some unknown reason
+   --          not needed: ++ (foldr (++) [] [case cx of Ctx{} -> ctxks cx | cx <-ctxs])
+
+   allPatKeyDefs :: Patterns -> KeyDefs
+   allPatKeyDefs ps = foldr (++) [] [case p of Pat{} -> ptkds p | p<-ps]
 
 ---------------------------------------------------------------------------------------------
 --Meta information part: later in separate module

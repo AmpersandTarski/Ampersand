@@ -67,13 +67,13 @@ parseADL adlstring flags fnFull =
                                                      --,show (ctxcs (head c'))
                                                      --,show (ctxks (head c))
                                                      --,show (ctxks (head c'))
-                                                     ,show (ctxos (head c))
-                                                     ,show (ctxos (head c'))
+                                                     --,show (ctxos (head c))
+                                                     --,show (ctxos (head c'))
                                                      --,show (ctxpops (head c))
                                                      --,show (ctxpops (head c'))
                                                      ]
                                         compctxs (_,xs) (_,xs') = xs ++ xs'
-                                         -}
+                                          -}
 
 
 
