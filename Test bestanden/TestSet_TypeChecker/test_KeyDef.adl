@@ -1,0 +1,24 @@
+{-
+A KeyDef extends an expression (the key) and ObjectDefs (the properties).
+All properties relate to the key through expression key;property.
+The correct processing of this expression is tested.
+-}
+CONTEXT Test
+
+KEY Bkey : I[Ba] [Aprop : I[Aa], Dprop : I[Da], SAprop : sa]    -- I[Da] in AGtry does not have mphats, typechecker does
+
+PATTERN PatA
+GEN Aa ISA Ba
+GEN Aa ISA Ca
+GEN Ba ISA Da
+ra :: Ba * Ea.
+sa :: Aa * Ba.
+sa1 :: Ba * Aa.
+sa2 :: Da * Ea.
+sa3 :: Ba * Da.
+ENDPATTERN
+
+ENDCONTEXT
+
+
+

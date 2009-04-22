@@ -1,0 +1,88 @@
+{-
+Context Test1     : tests declaration functionality in one Context and different Patterns in this Context
+                    + ConceptDefs at Context or Patterns
+                    + KeyDefs at Context or Patterns
+                    + ObjectDefs at Context
+                    + Gens at Patterns
+                    + Relation declarations at Patterns
+                    + Rules at Patterns
+Context Test2,3,4 : tests multiple extensions and context constructure
+Context Test5     : tests how lower level declarations are available in Context Test
+                    + ConceptDefs are extended
+                    + KeyDefs are extended
+                    + ObjectDefs are extended
+                    + Gens from all Patterns are known in Isa tree
+                    + Relation declarations from all Patterns are available
+                    + Rules are extended
+-}
+
+CONTEXT Test
+EXTENDS Test2
+
+CONCEPT Xx "descrX"
+KEY Bkey : I[Ba] [Aprop : I[Aa], Dprop : I[Da], SAprop : sa]    -- I[Da] in AGtry does not have mphats, typechecker does
+SERVICE Svc1 : I[Ba]
+
+PATTERN PatA
+KEY patABkey : I[Ba] [Apropa : I[Aa], Dpropa : I[Da]]
+GEN Aa ISA Ba
+GEN Aa ISA Ca
+GEN Ba ISA Da
+ra :: Ba * Ea.
+I[Fa] = I[Fa]
+CONCEPT Xa "descrA"
+ENDPATTERN
+
+PATTERN PatB
+KEY patBBkey : I[Bb] [Apropb : I[Ab], Dpropb : I[Db]]
+GEN Ab ISA Bb
+GEN Ab ISA Cb
+GEN Bb ISA Db
+rb :: Bb * Eb.
+I[Fb] = I[Fb]
+CONCEPT Xb "descrB"
+ENDPATTERN
+
+ENDCONTEXT
+
+
+CONTEXT Test2
+EXTENDS Test3, Test4
+ENDCONTEXT
+
+CONTEXT Test3
+EXTENDS Test5
+ENDCONTEXT
+
+CONTEXT Test4
+EXTENDS Test5
+ENDCONTEXT
+
+CONTEXT Test5
+
+CONCEPT Xx5 "descrX5"
+KEY Bkey5 : I[Ba5] [Aprop5 : I[Aa5], Dprop5 : I[Da5]]
+SERVICE Svc15 : I[Ba5]
+
+PATTERN PatA5
+KEY patABkey5 : I[Ba5] [Apropa5 : I[Aa5], Dpropa5 : I[Da5]]
+GEN Aa5 ISA Ba5
+GEN Aa5 ISA Ca5
+GEN Ba5 ISA Da5
+r :: Ba5 * Ea5.
+I[Fa5] = I[Fa5]
+CONCEPT Xa5 "descrA5"
+ENDPATTERN
+
+PATTERN PatB5
+KEY patBBkey5 : I[Bb5] [Apropb5 : I[Ab5], Dpropb5 : I[Db5]]
+GEN Ab5 ISA Bb5
+GEN Ab5 ISA Cb5
+GEN Bb5 ISA Db5
+r :: Bb5 * Eb5.
+I[Fb5] = I[Fb5]
+CONCEPT Xb5 "descrB5"
+ENDPATTERN
+ENDCONTEXT
+
+
