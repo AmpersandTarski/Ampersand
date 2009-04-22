@@ -9,6 +9,7 @@ import UU_Parsing(parseIO)
 import AGtry
 import TypeChecker
 import Adl
+import Test.AdlTestFunctions --temp -> for comparing new typechecker output with old AGtry output
 
  
 parseADL :: String      -- ^ The string to be parsed
@@ -26,6 +27,7 @@ parseADL adlstring flags fnFull =
 	        ( contexts,[]) -> case filteredContexts  of
 	                            []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))
 	                            cs   -> do{ verboseLn flags (fnFull++ " has been parsed.")
+	                                      ; verboseLn flags ("Comparing typechecker output with AGtry output:\n" ++ compareTCOutput (sem_Architecture slRes) (typecheck slRes))
 	                                      ; return (head cs) -- Just take the first context encounterd. If there are more contexts no warning is generated.
                                           }
 	                          where filteredContexts   = case contextName flags of
@@ -36,44 +38,10 @@ parseADL adlstring flags fnFull =
 	                                                       Nothing   -> undefined   --Nothing is niet aan de orde hier
 	    }
 	    where
-	       --DEBUG -> the commented code is the old code to rollback to pipe typechecker -> sem_Architecture
-	       --         instead of just typechecker
-               procParseRes arch = if (skipTypechecker flags) then typecheck arch --DEBUG -> sem_Architecture arch
-                                   else --DEBUG -> case typecheck arch of --when no type errors then AGtry
-                                            --DEBUG -> (_,t_e:t_errs) -> ([],t_e:t_errs)
-                                            --DEBUG -> (_,[])           -> sem_Architecture arch
-                                        typecheck arch
-                                         {-DEBUG -> return this to compare context of typechecker and agtry
-                                         --         only for one context
-                                        ([],compctxs (sem_Architecture arch) (typecheck arch))
-                                        where
-                                        compctxs (c,[]) (c',[]) = case (head c) of
-                                          Ctx{} ->  case (head c') of
-                                                    Ctx{} -> map ("\n" ++)
-                                                     [ctxnm (head c), ctxnm (head c')
-                                                     --,show (ctxon (head c))
-                                                     --,show (ctxon (head c'))
-                                                     --,show (ctxisa (head c))
-                                                     --,show (ctxisa (head c'))
-                                                     --,show (ctxwrld (head c))
-                                                     --,show (ctxwrld (head c'))
-                                                     --,show (ctxpats (head c))
-                                                     --,show (ctxpats (head c'))
-                                                     --,show (ctxrs (head c))
-                                                     --,show (ctxrs (head c'))
-                                                     --,show (ctxds (head c))
-                                                     --,show (ctxds (head c'))
-                                                     ---,show (ctxcs (head c))
-                                                     --,show (ctxcs (head c'))
-                                                     --,show (ctxks (head c))
-                                                     --,show (ctxks (head c'))
-                                                     --,show (ctxos (head c))
-                                                     --,show (ctxos (head c'))
-                                                     --,show (ctxpops (head c))
-                                                     --,show (ctxpops (head c'))
-                                                     ]
-                                        compctxs (_,xs) (_,xs') = xs ++ xs'
-                                          -}
+            procParseRes arch = if (skipTypechecker flags) 
+                                then sem_Architecture arch
+                                else typecheck arch
+
 
 
 

@@ -14,7 +14,7 @@
 --                            when active and: {-DEBUG \r\n code block \r\n }, when inactive
 --                            All debug code blocks must be inactive when compiling for a release.
 --     -> RULE                The implementation is correct whenever this rule holds. If the rule does not hold anymore
---                            then reexamine the implementation.
+--                            then reexamine the implementation.                    
 
 --TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
 --        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)

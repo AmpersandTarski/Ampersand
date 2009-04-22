@@ -14,7 +14,7 @@ where
    import Classification              (Classification)
    import CommonClasses               (Identified(..))
 
-   
+
    -- | Architecture of ADL consists of a set of contexts
    data Architecture = Arch { archContexts :: Contexts}
 
@@ -50,13 +50,15 @@ where
       --    && ctxpops c == ctxpops c'
 -}
 
-{- \**** (Show dient alleen diagnostische doeleinden)    ********************
+
    instance Show Context where
      showsPrec _ ctx = showString (ctxnm ctx)
--}
+
+   instance Eq Context where
+     (==) c1 c2 = name c1 == name c2
 
    instance Identified Context where
     name ctx = ctxnm ctx
     typ _ = "Context_"
 
-            
+
