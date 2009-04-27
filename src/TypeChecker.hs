@@ -119,11 +119,17 @@ module TypeChecker (typecheck, Error, Errors) where
                                          )
                            ctxrules = ctxrulesgens ++ ctxrulespats
                            ctxrulespats = map bindRule $ allCtxRules [cx] --TODO -> assign type to rules
-                           bindRule r =
+                           bindRule r@(Ru{}) =
                                        let
                                        [bindant,bindcon] = bindExprs [rrant r, rrcon r]
                                        in
                                        r {rrant=bindant, rrcon=bindcon, rrtyp=sign bindant}
+                           bindRule r@(Sg{}) =
+                                       let
+                                       bindsig = bindRule (srsig r)
+                                       binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
+                                       in
+                                       r {srsig=bindsig, srtyp=sign bindsig, srrel= binddecl}
                            {-in AGtry ->
                               [ Ru Implication
                                   (Tm (mIs _spec_concept))
@@ -386,8 +392,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --         Then check the result (processResult)
    --         Return the list of error strings
    checkRules :: Environment -> Rules -> Errors
-   --checkRules env rules =  [(show (castRulesToAdlExprs env rules))] --DEBUG
-   checkRules env@(isarel,_) ruls = (processResult2 (map (inferWithInfo isarel) (castRulesToAdlExprs env ruls)))
+   checkRules env@(isarel,_) ruls = (processResult2 (map (inferWithInfo isarel) [castRuleToAdlExpr env rul | rul<-ruls] ))
 
    ------------------
    --Common functions
@@ -732,43 +737,26 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --DESCR  -> cast the rule to an AdlExpr
    --TODO   -> more guards for different rules
-   --RULE   -> SJ: Ja, een regel is een expressie. De regel a|-c is hetzelfde als de expressie -a\/c.
-   --          a b c  1 2 3      V=a1a2a3b1b2b3c1c2c3    a=a1a2a3 c=a1a3b1c3  => b1b3 are the rule violating instances
-   --          SJ: Het type van een regel is het type van de equivalente expressie, namelijk  typeOf a `lub` typeOf c (aannemende dat typeOf het type van een expressie bepaalt)
-   castRulesToAdlExprs :: Environment -> Rules -> [MetaInfo2 AdlExpr]
-   castRulesToAdlExprs _ [] = []
-   castRulesToAdlExprs env@(isarel,_) (rul:ruls)
-                     | case rul of
-                              Ru{} -> (rrsrt rul == Implication);
-                              _ -> False
+   castRuleToAdlExpr :: Environment -> Rule -> MetaInfo2 AdlExpr
+   castRuleToAdlExpr env@(isarel,_) rul@(Ru{})
+                     | rrsrt rul == Implication
                                             = (Info
                                                  --DESCR -> file position of rule
                                                  (rrfps rul)
                                                  (writeTrcLn composetrace1 [] castimplication)
-                                               ):(castRulesToAdlExprs env ruls)
-                     | case rul of
-                              Ru{} -> (rrsrt rul == Equivalence);
-                              _ -> False
+                                               )
+                     | rrsrt rul == Equivalence
                                             = (Info
                                                  --DESCR -> file position of rule
                                                  (rrfps rul)
                                                  (writeTrcLn composetrace2 [] castequivalence)
-                                               ):(castRulesToAdlExprs env ruls)
-                 {-
-                     | case rul of
-                              Sg{} -> True
-                              _ -> False
-                                            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Rule type Sg not implemented.")):(castRulesToAdlExprs env ruls))
-                     | case rul of
-                              Gc{} -> True
-                              _ -> False
-                                            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Rule type Gc not implemented.")):(castRulesToAdlExprs env ruls))
-                     | case rul of
-                              Fr{} -> True
-                              _ -> False
-                                            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Rule type Fr not implemented.")):(castRulesToAdlExprs env ruls))
-                 -}
-                     | otherwise            = (Info Nowhere (Trace [] (ExprError EE_Fatal "Unknown rule type.")):(castRulesToAdlExprs env ruls))
+                                               )
+                     | rrsrt rul == Truth
+                                            = (Info
+                                                 --DESCR -> file position of rule
+                                                 (rrfps rul)
+                                                 (writeTrcLn composetrace3 [] castalways)
+                                               )
                         where
                             leftsubexpr = castExpressionToAdlExpr env (rrant rul)
                             rightsubexpr = castExpressionToAdlExpr env (rrcon rul)
@@ -790,10 +778,22 @@ module TypeChecker (typecheck, Error, Errors) where
                                 "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer isarel rightsubexpr) ++ "\n" ++
                                 traceruleerror (infer isarel castequivalence)
                                )
+                            castalways = ExprError EE_Fatal $ show rul
+                            composetrace3 =
+                               ("ERROR IN RULE ->\n" ++
+                                show castalways ++ "\n" ++
+                                --TODO -> show rul is ugly
+                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer isarel leftsubexpr) ++ "\n" ++
+                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer isarel rightsubexpr) ++ "\n" ++
+                                traceruleerror (infer isarel castalways)
+                               )
                             traceruleerror (TypeError RTE_AbAbAb err)
                                             = "ERROR DESCRIPTION -> subexpr1 does not match type of subexpr2:\n" ++ err
                             traceruleerror _ = ""
-
+   castRuleToAdlExpr env@(isarel,_) rul@(Sg{}) = castRuleToAdlExpr env (srsig rul)
+   castRuleToAdlExpr env@(isarel,_) rul@(Gc{}) = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Rule type Gc not implemented: " ++ show rul
+   castRuleToAdlExpr env@(isarel,_) rul@(Fr{}) = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Rule type Fr not implemented: " ++ show rul
+   castRuleToAdlExpr _ rul = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Unknown rule type: " ++ show rul
 
    --RULE -> The parser translates expressions with a flip on subexpressions to an expressions
    --        with only flips on morphisms of type Mph for example (r;s)~ is parsed as s~;r~
