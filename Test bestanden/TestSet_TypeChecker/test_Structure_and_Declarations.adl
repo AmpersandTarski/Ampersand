@@ -14,13 +14,16 @@ Context Test5     : tests how lower level declarations are available in Context 
                     + Gens from all Patterns are known in Isa tree
                     + Relation declarations from all Patterns are available
                     + Rules are extended
+TODO -> Only errors from the type checker are displayed to the user, and not a correcty processed [Context]. To test a correct [Context]
+        I should be able to serialize a correct [Context] resulting from the typechecker, and do a regression test on this expected output
+        instead of a regression test on the output of an old typechecker.
 -}
 
 CONTEXT Test
 EXTENDS Test2
 
 CONCEPT Xx "descrX"
-KEY Bkey : I[Ba] [Aprop : I[Aa], Dprop : I[Da], SAprop : sa]    -- I[Da] in AGtry does not have mphats, typechecker does
+KEY Bkey : I[Ba] [Aprop : I[Aa], Dprop : I[Da], SAprop : sa]
 SERVICE Svc1 : I[Ba]
 
 PATTERN PatA
@@ -29,6 +32,7 @@ GEN Aa ISA Ba
 GEN Aa ISA Ca
 GEN Ba ISA Da
 ra :: Ba * Ea.
+ha :: Ha * Ha [SYM, ASY, TRN, RFX].
 I[Fa] = I[Fa]
 CONCEPT Xa "descrA"
 ENDPATTERN

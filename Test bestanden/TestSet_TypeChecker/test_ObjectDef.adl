@@ -1,58 +1,36 @@
 {-
 An ObjectDef extends expressions.
-The effective expression of a child ObjectDef is the expression 
+The effective expression of a child ObjectDef is the expression
         "the effective expression of the parent ObjectDef";"the declared expression of the Child ObjectDef"
 The correct processing of this expression is tested.
+TODO -> Only errors from the type checker are displayed to the user, and not a correcty processed [Context]. To test a correct [Context]
+        I should be able to serialize a correct [Context] resulting from the typechecker, and do a regression test on this expected output
+        instead of a regression test on the output of an old typechecker.
 -}
 CONTEXT Test
 
-SERVICE Svc1 : I[Ba]     --see label9
+--Testing if all nested object defs are processed
+SERVICE Svc1 : I[Ba]
    = [
-      --  label1    : ra
-       --          = [ label1a      : I[Ea] --AGTRY I present gen=Ea spc=Ea
-       --              , label1b   : ra~;I  --AGTRY no I ra~ type = (Ea,Ba)   (I[Ba])
-       --              , label1c   : ra~;I[Aa] --AGTRY no I ra~ type = (Ea,Aa)        (I[Aa])
-        --             , label1d   : ra~;I[Da] --AGTRY I present gen=Da,spc=Ba, ra~ type = (Ea,Ba)
-   --                ],
-    --    label2a : ra \/ ra,
---        label2b : ra /\ ra,
---        label3 : ra;ra~,
---        label4 : sa;I[Da], --AGTRY gen=Da,spc=Ba, sa type = (Aa,Ba)
---        label5 : sa;I[Aa],  --AGTRY I[Aa] removed from list on F, sa type = (Aa,Aa)
-  --      label6a : sa \/ sa1,   --AGTRY sa en sa1 beide (Aa,Aa)
---        label6b : sa /\ sa1,   --AGTRY sa en sa1 beide (Aa,Aa)
---        label7a : I[Ba] \/ I[Da],   --AGTRY beide gen en spc Ba
---        label7b : I[Ba] /\ I[Da],   --AGTRY beide gen en spc Ba
- --       label8 : I[Da],  --AGTRY I present gen=Da,spc=Ba
---        label9 : I[Aa],    --Svc1 I[Ba] remains gen en spc Ba and not I[Aa], so expression looks at higher level exprs only
---        label10: sa2,    --AGTRY (Ba,Ea)
---        label11 : sa~;I;I[Da],  --AGTRY sa~=(Ba,Aa), I gen=Da spc Aa, I[Da] is removed
---        label12 : sa3~;I;I[Aa],   --AGTRY removes both I indicating equality in gen and spc = Aa
-                                  --typechecker makes of I gen Ba spc Aa, because Ba is the most generic not beign Anything
-                                  -- which is  consistent with label11
---        label13 : ra!ra~,
---        label14 : sa!sa,               --Aa,Aa!Aa,Ba
---        label15 : sa~!sa~,             --Ba,Aa!Aa,Aa
-        label16 : sa!I[Da]!sa!I[Ba]!sa,   --..!I gBa sAa!..!I gBa sAa!..
-        labelx: I[Ba]
+        --Testing if all nested expressions are processed
+        label1    : ra
+                 = [ label1a      : I[Ea]
+                     , label1b   : ra~;I
+                     , label1c   : ra~;I[Da]
+                   ],
+        --Testing composition with specific concept
+        --Svc1 I[Ba] remains gen and spc Ba and not I[Aa], so expression looks at higher level exprs only
+        label2 : sa,
+        --Testing composition with generic concept
+        label3 : sa2
      ]
 
-{-
-AGTRY -label3, waar is de I uit ra~;I? Hij wordt verwijderd als gebruikt in expressie && gen==spc
- objpos = line 9, file "test3.adl", objctx = F {es = [Tm {m = Mph {mphnm = "ra",
- mphpos = line 9, file "test3.adl", mphats = [], mphtyp = (Ea,Ba), mphyin = Fals
-e, mphdcl = ra :: Ba * Ea [] PRAGMA "" "" ""}}]}, objats = [], objstrs = []}], o
-bjstrs = []},Obj {objnm = "label4", objpos = line 11, file "test3.adl", objctx =
-
-bjnm = "label3", objpos = line 9, file "test3.adl", objctx = F {es = [Tm {m = Mp
-h {mphnm = "ra", mphpos = line 9, file "test3.adl", mphats = [], mphtyp = (Anyth
-ing,Anything), mphyin = False, mphdcl = SIGNAL ra ON ( Anything * Anything )}},T
-m {m = I {mphats = [], mphgen = Anything, mphspc = Anything, mphyin = True}}]},
-objats = [], objstrs = []}], objstrs = []},Obj {objnm = "label4", objpos = line
-
-
---make more specific where applicable, in I keep the original as gen
- -}
+--Testing if all services are processed
+SERVICE Svc2 : I[Ba]
+   = [
+        label1 : sa,
+        label2 : sa2
+     ]
 
 PATTERN PatA
 GEN Aa ISA Ba

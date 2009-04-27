@@ -2,10 +2,13 @@
 A KeyDef extends an expression (the key) and ObjectDefs (the properties).
 All properties relate to the key through expression key;property.
 The correct processing of this expression is tested.
+TODO -> Only errors from the type checker are displayed to the user, and not a correcty processed [Context]. To test a correct [Context]
+        I should be able to serialize a correct [Context] resulting from the typechecker, and do a regression test on this expected output
+        instead of a regression test on the output of an old typechecker.
 -}
 CONTEXT Test
 
-KEY Bkey : I[Ba] [Aprop : I[Aa], Dprop : I[Da], SAprop : sa]    -- I[Da] in AGtry does not have mphats, typechecker does
+KEY Bkey : I[Ba] [Aprop : I[Aa], Dprop : I[Da], SAprop : sa]
 
 PATTERN PatA
 GEN Aa ISA Ba

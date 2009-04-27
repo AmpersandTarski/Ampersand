@@ -182,9 +182,9 @@ module TypeChecker (typecheck, Error, Errors) where
                                     case expr of
                                          Tm{} -> Tm $ bindMph (m expr) bindtype
                                          Tc{} -> Tc $ bindExpr (e expr) (src,tgt)
-                                         K0{} -> Tc $ bindExpr (e expr) (src,tgt)
-                                         K1{} -> Tc $ bindExpr (e expr) (src,tgt)
-                                         Cp{} -> Tc $ bindExpr (e expr) (src,tgt)
+                                         K0{} -> K0 $ bindExpr (e expr) (src,tgt)
+                                         K1{} -> K1 $ bindExpr (e expr) (src,tgt)
+                                         Cp{} -> Cp $ bindExpr (e expr) (src,tgt)
                                          Fu{} -> Fu $ bindExprs (es expr)
                                          Fi{} -> Fi $ bindExprs (es expr)
                                          F{}  -> bindF (es expr)
