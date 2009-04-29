@@ -26,6 +26,7 @@ where
           detail :: [String]
           detail = catMaybes [compareIsa (ctxisa cx1) (ctxisa cx2),
                               compareWorld (ctxwrld cx1) (ctxwrld cx2),
+                              comparePatterns (ctxpats cx1) (ctxpats cx2),
                               compareRules (ctxrs cx1) (ctxrs cx2),
                               compareDecls (ctxds cx1) (ctxds cx2),
                               compareCDefs (ctxcs cx1) (ctxcs cx2),
@@ -62,6 +63,32 @@ where
           | wrld1 == wrld2 = Nothing
           | otherwise      = Just $ "Context hierarchies " ++ show wrld1 ++ " does not equal " ++ show wrld2 ++ "\n"
 
+   comparePatterns :: Patterns -> Patterns -> Maybe String
+   comparePatterns pats1 pats2
+          | detail == [] = Nothing
+          | otherwise    = Just $ "Differences in Patterns:\n" ++
+                                  (foldr (++) nrerr detail)
+          where
+          detail :: [String]
+          detail = catMaybes  compoutput
+          compoutput :: [Maybe String]
+          compoutput = [comparePattern pat1 pat2 | pat1<-pats1, pat2<-pats2, name pat1==name pat2]
+          nrerr = if length pats1 /= length pats2 then "Number of patterns differ:\nPatterns from left:\n" ++ show (map name pats1) ++ "Patterns from right:\n" ++ show (map name pats2) ++ "\n"
+                  else []
+   
+   comparePattern :: Pattern -> Pattern -> Maybe String
+   comparePattern pat1@(Pat{}) pat2@(Pat {})
+          | detail == [] = Nothing
+          | otherwise    = Just $ "Differences in pattern: "++ name pat1  ++":\n" ++
+                                  (foldr (++) [] detail)
+          where
+          detail :: [String]
+          detail = catMaybes [compareRules (ptrls pat1) (ptrls pat2),
+                              compareGens (ptgns pat1) (ptgns pat2),
+                              compareDecls (ptdcs pat1) (ptdcs pat2),
+                              compareCDefs (ptcds pat1) (ptcds pat2),
+                              compareKDefs (ptkds pat1) (ptkds pat2)]
+
    compareRules :: Rules -> Rules -> Maybe String
    compareRules rls1 rls2
           | detail == [] = Nothing
@@ -81,12 +108,17 @@ where
    compareRule rl1@(Ru {}) rl2@(Ru {})
           | detail == [] = Nothing
           | otherwise    = Just $ "Differences in rule at file position "++ show (rrfps rl1) ++":\n" ++
-                                  (foldr (++) [] detail)
+                                  (foldr (++) [] detail)      
           where
           detail :: [String]
-          detail = catMaybes [compareExpression (rrant rl1) (rrant rl2),
-                              compareExpression (rrcon rl1) (rrcon rl2),
-                              compareSign (rrtyp rl1) (rrtyp rl2)]
+          detail = catMaybes $ if rrsrt rl1==Truth || rrsrt rl2 ==Truth
+                               then [compareExpression (rrcon rl1) (rrcon rl2),
+                                     compareSign (rrtyp rl1) (rrtyp rl2){- ,
+                                     if runum rl1 == runum rl2 then Nothing else Just $ "Rule number " ++ show (runum rl1) ++ " does not equal " ++ show (runum rl2) ++ "\n"-}]
+                               else [compareExpression (rrant rl1) (rrant rl2),
+                                     compareExpression (rrcon rl1) (rrcon rl2),
+                                     compareSign (rrtyp rl1) (rrtyp rl2){- ,
+                                     if runum rl1 == runum rl2 then Nothing else Just $ "Rule number " ++ show (runum rl1) ++ " does not equal " ++ show (runum rl2) ++ "\n"-}]
    compareRule rl1@(Sg {}) rl2@(Sg {})
           | detail == [] = Nothing
           | otherwise    = Just $ "Differences in rule at file position "++ show (srfps rl1) ++":\n" ++
@@ -107,12 +139,28 @@ where
           detail :: [String]
           detail = catMaybes declsInLists
           declsInLists = [if elem dcl2 dcls1 then Nothing
-                          else Just $ "Declaration " ++ show dcl2 ++ "from LIST2 not in LIST1"
-                          | dcl2<-dcls2] 
+                          else Just $ "Declaration " ++ show dcl2 ++ "from LIST2 not in LIST1\n"
+                          | dcl2<-dcls2]
                          ++
                          [if elem dcl1 dcls2 then Nothing
-                          else Just $ "Declaration " ++ show dcl1 ++ "from LIST1 not in LIST2"
+                          else Just $ "Declaration " ++ show dcl1 ++ "from LIST1 not in LIST2\n"
                           | dcl1<-dcls1]
+
+   compareGens :: Gens -> Gens -> Maybe String
+   compareGens gs1 gs2
+          | detail == [] = Nothing
+          | otherwise    = Just $ "Differences in lists of Gens:\n" ++
+                                  (foldr (++) [] detail)
+          where
+          detail :: [String]
+          detail = catMaybes gensInLists
+          gensInLists = [if elem g2 gs1 then Nothing
+                          else Just $ "Gen " ++ show g2 ++ "from LIST2 not in LIST1\n"
+                          | g2<-gs2]
+                         ++
+                         [if elem g1 gs2 then Nothing
+                          else Just $ "Gen " ++ show g1 ++ "from LIST1 not in LIST2\n"
+                          | g1<-gs1]
 
    compareCDefs :: ConceptDefs -> ConceptDefs -> Maybe String
    compareCDefs cds1 cds2

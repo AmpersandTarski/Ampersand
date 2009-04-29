@@ -26,9 +26,10 @@ SIGNAL signA ON sa |- sa1
 --Testing Antecedent and consequent expressions are processed
 sa=sa1
 sa|-sa1
+RULE ra
 
 --Testing Complement
--sa = sa 
+-sa = sa
 
 --Testing Flip
 sa~ = sa

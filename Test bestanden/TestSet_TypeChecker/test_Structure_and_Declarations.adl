@@ -34,6 +34,7 @@ GEN Ba ISA Da
 ra :: Ba * Ea.
 ha :: Ha * Ha [SYM, ASY, TRN, RFX].
 I[Fa] = I[Fa]
+I[Fb] = I[Fb]
 CONCEPT Xa "descrA"
 ENDPATTERN
 

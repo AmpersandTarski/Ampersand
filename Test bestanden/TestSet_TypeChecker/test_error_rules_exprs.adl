@@ -1,0 +1,69 @@
+{-
+Correct detection of errors by the type checker
+TODO -> How do I express a Truth, Fr, or Gc rule? I have seen ALWAYS on expressions in ObjectDef, but that does not cause differences between Typechecker and AGtry
+-}
+CONTEXT Test
+
+PATTERN PatA
+GEN Aa ISA Ba
+GEN Aa ISA Ca
+GEN Ba ISA Da
+ra :: Ba * Ea.
+sa :: Aa * Ba.
+sa1 :: Ba * Aa.
+sa2 :: Da * Ea.
+sa3 :: Ba * Da.
+ramb :: Amb1 * Ea.
+ramb :: Amb2 * Ea.
+
+--Declaration errors
+--not declared
+rx = ry
+--ambiguous
+ramb = ramb
+
+--Implication / Equality rule errors
+--sources mismatch
+ra~=sa
+ra~|-sa
+--targets mismatch
+ra=sa
+ra|-sa
+--homogeneous antecedent
+I=ra
+--homogeneous consequent
+ra=I
+
+--Signal rule errors.
+--SIGNAL signA ON sa |- sa1
+
+--Complement errors
+-- -sa = sa
+
+--Flip errors
+--sa~ = sa
+
+--Union / Disjunction errors
+--sources mismatch
+sa \/ ra~ \/ sa3 = sa
+sa /\ ra~ /\ sa3 = sa
+--targets mismatch
+sa \/ ra \/ sa3 = sa
+sa /\ ra /\ sa3 = sa
+--homogeneous
+sa \/ I \/ sa3 = sa
+sa /\ I /\ sa3 = sa
+
+--Composition errors
+--left associated => (a*b1;b2*c => b1/=b2);r
+ra;ra;ra~ = ra;ra~
+ra!ra!ra~ = ra;ra~
+--right associated => r;(a*b1;b2*c => b1/=b2)
+ra;ra~;ra~ = ra;ra~
+ra!ra~!ra~ = ra;ra~
+
+
+
+ENDPATTERN
+
+ENDCONTEXT

@@ -18,8 +18,10 @@
 
 --TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
 --        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)
---TODO -> meerdere fouten in expressie, dan binnenste fout, 1 per expressie
---TODO -> The ADL.Rule contains all kinds of structures typechecker  only supports the one with constructor Ru
+--REMARK -> meerdere fouten in expressie, dan binnenste fout, 1 per expressie
+--REMARK -> The ADL.Rule contains all kinds of structures typechecker only supports the one with constructor Ru and Sg.
+--          Fr rules will generate a type error message, but the parser (see CC.hs) does not output Fr rules at the moment of writing this comment.
+--          Gc rules are or will be deprecated. Gc rules will generate a type error message too.
 --DESCR ->
 --         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
@@ -29,15 +31,17 @@
 --        Check the correctness of handling context extension and patterns.
 module TypeChecker (typecheck, Error, Errors) where
 
-   import Adl         -- USE -> .MorphismAndDeclaration.makeDeclaration
-                      --        and of course many data types
-   import Data.List   -- USE -> unionBy
-   import Data.Maybe  -- USE -> fromJust, isNothing
-   import Data.Tree   -- USE -> data Tree a
+   import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
+                       --        and of course many data types
+   import Data.List    -- USE -> unionBy
+   import Data.Maybe() -- USE -> fromJust, isNothing
+   import Data.Tree    -- USE -> data Tree a
    import qualified Data.Set as Set --
-   
+
    import Classification --USE -> cast from data.Tree to Classification for enrichment
    import Typology --USE -> Isa structure for enrichment
+   
+   import CC_aux (renumberRules)
 
    ---------------
    --MAIN function
@@ -82,30 +86,46 @@ module TypeChecker (typecheck, Error, Errors) where
    --        Declarations -> active declarations
    --        ObjectDefs   p.e. types of expressions
    enrichArch :: Architecture -> Contexts
-   enrichArch arch@(Arch ctxs) = map enrichCtx ctxs
+   enrichArch (Arch ctxs) = map renumber $ map enrichCtx ctxs
           where
+          renumber :: Context -> Context
+          renumber cx@(Ctx{}) = cx {ctxpats=renumberPats 1 (ctxpats cx),
+                                    ctxrs=renumberRules 1 (ctxrs cx)}
+                           where
+                           renumberPats :: Int -> Patterns -> Patterns
+                           renumberPats _ [] = []
+                           renumberPats i (p:[]) = (renumberPat i p):[]
+                           renumberPats i (p@(Pat{}):ps) = (renumberPat i p):renumberPats (i+(length $ ptrls p)) ps
+                           renumberPat :: Int -> Pattern -> Pattern
+                           renumberPat i p@(Pat{}) = p {ptrls=renumberRules i (ptrls p)}
           enrichCtx :: Context -> Context
-          enrichCtx cx =
-             case cx of
-                  Ctx{} -> cx {ctxisa=hierarchy, ctxwrld=world, ctxrs=ctxrules, ctxds=ctxdecls, 
-                               ctxos=[bindObjDef (AllCpt,AllCpt) od | od<-ctxos cx],
+          enrichCtx cx@(Ctx{}) =
+                           cx {ctxisa=hierarchy, ctxwrld=world, ctxpats=ctxpatterns, ctxrs=ctxrules, ctxds=ctxdecls,
+                               ctxos=ctxobjdefs,
                                ctxks=ctxkeys}
                            {-
                            (ctxnm cx) --copy name
                            (ctxon cx) --copy extended ctxs
-                           (hierarchy) --TODO -> Difference with AGtry, the concepts in mphats are also put in the list of concepts
+                           (hierarchy) --construct Isa with all Concepts in scope
                            (world)     --construct the world with this cx on top of the world
-                           (ctxpats cx)--copy patterns
+                           (ctxpats cx)--bind rules and keydefs in patterns
                            (ctxrules)  --rules from gens and patterns of this context only
                            (ctxdecls)  --declarations of this context only
                            (ctxcptdefs)--concept defs of this context only
-                           (ctxks cx)  --TODO -> key defs, what's the ADL syntax?
+                           (ctxks cx)  --bind keydefs
                            (ctxos cx)   --change mphdcl and mphtyp on morphisms in expressions
                            (ctxpops cx) --copy populations
                               -}
                            where
-                           ctxtree = buildCtxTree (Found cx) ctxs
-                           Cl _ world = toClassification $ ctxtree
+                           --DESCR -> convenient data containers: 
+                           --        + allCtx -> all the contexts in scope
+                           --        + isarel -> the isa structure of all concepts in scope
+                           --        + rels   -> all declared relations in scope
+                           allCtx = map fromFoundCtx $ flatten ctxtree
+                           (isarel,rels) = (isaRel (allCtxCpts allCtx) (allCtxGens allCtx),
+                                            declRels (allCtxPats allCtx))
+
+                           --DESCR -> enriching ctxisa
                            --in AGtry -> isa = Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
                            isar = [case g of G{} -> (gengen g,genspc g) | g<-allCtxGens ctxs]
                            isac = map fst isar ++ map snd isar
@@ -117,9 +137,28 @@ module TypeChecker (typecheck, Error, Errors) where
                                                             Set.\\
                                                           Set.fromList (map fromConcept isac)
                                          )
+
+                           --DESCR -> enriching ctxwrld
+                           ctxtree = buildCtxTree (Found cx) ctxs
+                           Cl _ world = toClassification $ ctxtree
+
+                           --DESCR -> enriching ctxpats
+                           ctxpatterns = map bindPat (ctxpats cx)
+                           bindPat p@(Pat{}) = p {ptrls= map bindRule (ptrls p) ,ptkds= map bindKeyDef (ptkds p)}
+
+                           --DESCR -> enriching ctxrs
                            ctxrules = ctxrulesgens ++ ctxrulespats
-                           ctxrulespats = map bindRule $ allCtxRules [cx] --TODO -> assign type to rules
-                           bindRule r@(Ru{}) =
+                           ctxrulespats = map bindRule $ allCtxRules [cx]
+                           --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
+                           --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
+                           --          have different numbers.
+                           bindRule r@(Ru{})
+                                 | rrsrt r==Truth =
+                                       let
+                                       bindcon = bindExpr (rrcon r) (AllCpt,AllCpt)
+                                       in
+                                       r {rrcon=bindcon, rrtyp=sign bindcon}
+                                 | otherwise =
                                        let
                                        [bindant,bindcon] = bindExprs [rrant r, rrcon r]
                                        in
@@ -130,46 +169,80 @@ module TypeChecker (typecheck, Error, Errors) where
                                        binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
                                        in
                                        r {srsig=bindsig, srtyp=sign bindsig, srrel= binddecl}
-                           {-in AGtry ->
-                              [ Ru Implication
-                                  (Tm (mIs _spec_concept))
-                                    _pos
-                                  (Tm (mIs _genus_concept))
-                                  [Tm (mIs _spec_concept), Tm (mIs _genus_concept)]
-                                  ""
-                                  (_spec_concept, _genus_concept)
-                                    _lhs_rnr
-                                   _lhs_pn             ]
-                              -}
+                           bindRule _ = error "Unsupported rule type while enriching the context. The type checker should have given an error."
                            ctxrulesgens = [rulefromgen g  | g<-allCtxGens [cx]]
                            --TODO -> move rulefromgen to function toRule in module Gen
-                           rulefromgen (G {genfp = pos, gengen = gen, genspc = spc} )
+                           rulefromgen (G {genfp = posi, gengen = gen, genspc = spc} )
                                        = Ru
                                            Implication
                                            (Tm (mIs spc))
-                                           pos
+                                           posi
                                            (Tm (mIs gen))
                                            [Tm (mIs spc), Tm (mIs gen)]
                                            []
                                            (spc,gen)
-                                           0 --TODO -> if needed by somebody assign rulenumber
-                                           [] --TODO -> if needed by somebody the Pattern the rule is in
-                                              --        if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
-                           ctxdecls = declRels (allCtxPats [cx])
-                           ctxcptdefs = allCtxCptDefs [cx]
-                           allCtx = map fromFoundCtx $ flatten ctxtree
-                           (isarel,rels) = (isaRel (allCtxCpts allCtx) (allCtxGens allCtx),
-                                            declRels (allCtxPats allCtx))
+                                           0  --REMARK -> rules are renumbered after enriching the context
+                                           [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
 
+                           --DESCR -> enriching ctxds
+                           --         take all the declarations from all patterns included (not extended) in this context
+                           ctxdecls = declRels (allCtxPats [cx])
+
+                           --DESCR -> enriching ctxos
+                           --         bind the expression and nested object defs of all object defs in the context
+                           ctxobjdefs :: ObjectDefs
+                           ctxobjdefs = [bindObjDef (AllCpt,AllCpt) od | od<-ctxos cx]
+                           --DESCR -> bind an obj def, given the most generic sign allowed
+                           bindObjDef ::  (Cpt,Cpt) -> ObjectDef ->ObjectDef
+                           bindObjDef (src,_) od =
+                                    let
+                                    --DESCR -> the bound expression of this object def
+                                    --         the source is limited to 'src' or more specific, the target is not limited
+                                    expr' = bindExpr (objctx od) (src,AllCpt)
+                                    --DESCR -> bind a child object def
+                                    --         the source is limited to 'middle' or more specific, the target is not limited.
+                                    bindobjatt :: ObjectDef -> ObjectDef
+                                    bindobjatt oa = bindObjDef (middle,AllCpt) oa
+                                          where
+                                          --DESCR -> the AETree for this child objdef
+                                          oatree = castObjectDefToAdlExprTree (isarel,rels) oa
+                                          -- DESCR -> the source of the child obj def
+                                          RelationType (src',_) = infer isarel $ topExprOfAETree $ oatree
+                                          --DESCR -> the lubcpt of the target of (compositionOfParentObjDefs;exprThisObjDef) and
+                                          --         the source of the child obj def
+                                          middle = lubcpt isarel (fromConcept (target (expr'))) (src')
+                                    --DESCR -> the bound child object defs of this object def
+                                    objats'= map (bindobjatt) (objats od)
+                                    in
+                                    od {objctx=expr', objats=objats'}
+
+                           --DESCR -> enriching ctxks
+                           ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]
+                           bindKeyDef :: KeyDef -> KeyDef
+                           bindKeyDef kd =
+                                    let
+                                    expr' = bindExpr (kdctx kd) (AllCpt,AllCpt)
+                                    (Obj {objats=kdats'}) = bindObjDef (AllCpt,AllCpt)
+                                                                       (Obj {objats=kdats kd,
+                                                                             objnm=kdlbl kd,
+                                                                             objpos=kdpos kd,
+                                                                             objctx=expr',
+                                                                             objstrs=[[]]})
+                                    in
+                                    kd {kdctx=expr', kdats=kdats'}
+
+                           --DESCR -> Binding expressions and morphisms
                            bindExprs :: Expressions -> Expressions
                            bindExprs exprs = [bindExpr x (foldlubcpts (srcs exprs),foldlubcpts (tgts exprs))| x<-exprs]
                                     where
                                     foldlubcpts cpts = foldr (lubcpt isarel) AllCpt cpts
-                                    srcs exprs = map rtsrc (rts exprs)
-                                    tgts exprs = map rttgt (rts exprs)
-                                    rts exprs = [infer isarel $ castExpressionToAdlExpr (isarel,rels) x | x<-exprs]
+                                    srcs exprs' = map rtsrc (rts exprs')
+                                    tgts exprs' = map rttgt (rts exprs')
+                                    rts exprs' = [infer isarel $ castExpressionToAdlExpr (isarel,rels) x | x<-exprs']
                                     rtsrc (RelationType (s,_)) = s
+                                    rtsrc _ = error "Error in function enrich -> bindExprs -> rtsrc: relation type could not be determined."
                                     rttgt (RelationType (_,t)) = t
+                                    rttgt _ = error "Error in function enrich -> bindExprs -> rttgt: relation type could not be determined."
                            bindExpr :: Expression -> (Cpt,Cpt) -> Expression
                            bindExpr expr (src,tgt) =
                                     let
@@ -259,13 +332,13 @@ module TypeChecker (typecheck, Error, Errors) where
                                                           Fd $ (bindExpr left (bindsource,middle)):boundright
 
                            bindMph :: Morphism -> (Cpt,Cpt) -> Morphism
-                           bindMph m@(Mph {}) (src,tgt) =
+                           bindMph mp@(Mph {}) (src,tgt) =
                                     let
-                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source m)),
-                                          toConcept $ lubcpt isarel tgt (fromConcept (target m)))
-                                    FoundDr dcl = srchDeclRelByMorphism rels m
+                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source mp)),
+                                          toConcept $ lubcpt isarel tgt (fromConcept (target mp)))
+                                    FoundDr dcl = srchDeclRelByMorphism rels mp
                                     in
-                                    m {mphtyp=tp, mphdcl=dcl} --TODO
+                                    mp {mphtyp=tp, mphdcl=dcl} --TODO
                            bindMph i@(I {}) (src,tgt) =
                                     let
                                     gen' = if isA isarel src tgt then src else tgt
@@ -273,39 +346,13 @@ module TypeChecker (typecheck, Error, Errors) where
                                     gen  = if gen' == AllCpt then spc else gen' --DESCR -> gen is not allowed to stay Anything
                                     in
                                     i {mphgen=toConcept gen, mphspc=toConcept spc}
-                           bindMph v@(V {}) (src,tgt) =
+                           bindMph vm@(V {}) (src,tgt) =
                                     let
-                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source v)),
-                                          toConcept $ lubcpt isarel tgt (fromConcept (target v)))
+                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source vm)),
+                                          toConcept $ lubcpt isarel tgt (fromConcept (target vm)))
                                     in
-                                    v {mphtyp=tp}
+                                    vm {mphtyp=tp}
                            bindMph x _ = x --TODO -> other morphisms are returned as parsed, is this correct?
-                           bindObjDef ::  (Cpt,Cpt) -> ObjectDef ->ObjectDef
-                           bindObjDef (src,tgt) od =  --od
-                                    let
-                                    expr' = bindExpr (objctx od) (src,tgt)
-                                    xxx oa = bindObjDef (middle,AllCpt) oa
-                                      where
-                                      oatree = castObjectDefToAdlExprTree (isarel,rels) oa
-                                      RelationType (src',tgt') = infer isarel $ adlexpr $ oatree
-                                      middle = lubcpt isarel (fromConcept (target (expr'))) (src')
-                                      adlexpr (AETree (Info _ (Trace _ adlexprt)) _) = adlexprt
-                                      adlexpr (AELeaf (Info _ (Trace _ adlexprl)))   = adlexprl
-                                    objats'= map (xxx) (objats od)
-                                    in
-                                    od {objctx=expr', objats=objats'}
-                           ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]
-                           bindKeyDef :: KeyDef -> KeyDef
-                           bindKeyDef kd = 
-                                    let 
-                                    expr' = bindExpr (kdctx kd) (AllCpt,AllCpt)
-                                    od@(Obj {objats=kdats'}) = bindObjDef (AllCpt,AllCpt)
-                                                                          (Obj {objats=kdats kd,
-                                                                               objnm=kdlbl kd,
-                                                                               objpos=kdpos kd,
-                                                                               objctx=expr'})
-                                    in
-                                    kd {kdctx=expr', kdats=kdats'}
 
 
 
@@ -382,10 +429,9 @@ module TypeChecker (typecheck, Error, Errors) where
    --         Then check the result (processResult)
    --         Return the list of error strings
    checkObjDefs :: Environment -> ObjectDefs -> Errors
-   --checkObjDefs env objs = case obj of Obj{} -> [show (castObjectDefsToAdlExprTrees env objs 0)] --DEBUG
    checkObjDefs env@(isarel,_) objs =
                                (processResult2          --DESCR -> after map a list of list of metainfo2 RT
-                                       (foldr (++) [] (map (inferTree isarel) (castObjectDefsToAdlExprTrees env objs 0)))
+                                       (foldr (++) [] (map (inferTree isarel) (castObjectDefsToAdlExprTrees env objs)))
                                   )
 
    --DESCR -> abstract expressions from all objectdefs (castObjectDefsToAdlExprTrees) and infer their types (inferWithInfo)
@@ -497,16 +543,6 @@ module TypeChecker (typecheck, Error, Errors) where
    allCtxPats :: Contexts -> Patterns
    allCtxPats ctxs = foldr (++) [] [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
 
-   allCtxCptDefs :: Contexts -> ConceptDefs
-   allCtxCptDefs ctxs = allPatCptDefs (allCtxPats ctxs) 
-                      --REMARK -> Concept Defs defined outside of the patterns are parsed into one of the patterns
-                      --          so we do not need to add them again.
-                      --TODO -> why are they parsed into a pattern?
-                      --  ++ foldr (++) [] [case cx of Ctx{} -> ctxcs cx | cx<-ctxs]
-   
-   allPatCptDefs :: Patterns -> ConceptDefs
-   allPatCptDefs ps = foldr (++) [] [case p of Pat{} -> ptcds p | p<-ps]
-
    --DESCR -> all the ObjectDefs of Contexts
    allCtxObjDefs :: Contexts -> ObjectDefs
    allCtxObjDefs ctxs = foldr (++) [] [case cx of Ctx{} -> ctxos cx | cx<-ctxs]
@@ -530,12 +566,11 @@ module TypeChecker (typecheck, Error, Errors) where
    allMphCpts ms = Set.fromList $ map fromConcept $ foldr (++) []
                    [case mph of Mph{} -> mphats mph;
                                 I{} -> mphats mph;
-                                I{} -> mphats mph;
                                 _ -> []
                     |mph<-ms]
 
    allExprMphs :: Expressions -> Morphisms
-   allExprMphs es = foldr (++) [] 
+   allExprMphs exprs = foldr (++) []
                     [
                      let
                         mphs (Tc e') = mphs e'
@@ -547,8 +582,8 @@ module TypeChecker (typecheck, Error, Errors) where
                         mphs (K1 e') = mphs e'
                         mphs (Cp e') = mphs e'
                         mphs (Tm mph) = [mph]
-                     in mphs e
-                     | e<-es]
+                     in mphs expr
+                     | expr<-exprs]
 
 
    allCtxExprs :: Contexts -> Expressions
@@ -560,13 +595,15 @@ module TypeChecker (typecheck, Error, Errors) where
    allObjDefExprs os = foldr (++) [] [case obj of Obj{} -> (objctx obj):(allObjDefExprs (objats obj))| obj<-os]
 
    allRuleExprs :: Rules -> Expressions
-   allRuleExprs rs = foldr (++) [] [case rul of Ru{} -> [rrant rul,rrcon rul];
+   allRuleExprs rs = foldr (++) [] [case rul of Ru{} -> if rrsrt rul==Truth
+                                                        then [rrcon rul]
+                                                        else [rrant rul,rrcon rul];
                                                 _    -> [] | rul<-rs]
 
    allDeclCpts :: DeclRels -> Cpts
    --allDeclCpts [] = []
-   allDeclCpts dls = Set.fromList $ [case d of Sgn{} -> fromConcept (desrc d) | d<-dls] ++
-                                    [case d of Sgn{} -> fromConcept (detgt d) | d<-dls]
+   allDeclCpts dls = Set.fromList $ [fromConcept (desrc d) | d@(Sgn{})<-dls] ++
+                                    [fromConcept (detgt d) | d@(Sgn{})<-dls]
 
    allGenCpts :: Gens -> Cpts
    --allGenCpts [] = []
@@ -607,9 +644,14 @@ module TypeChecker (typecheck, Error, Errors) where
 
    data AdlExprTree = AETree (MetaInfo2 AdlExpr) [AdlExprTree] | AELeaf (MetaInfo2 AdlExpr)  deriving (Show)
 
+   --DESCR -> get an expression from the top node of an AEtree
+   topExprOfAETree :: AdlExprTree -> AdlExpr
+   topExprOfAETree (AETree (Info _ (Trace _ adlexprt)) _) = adlexprt
+   topExprOfAETree (AELeaf (Info _ (Trace _ adlexprl)))   = adlexprl
+
    inferTree :: RelSet Cpt -> AdlExprTree -> [MetaInfo2 RelationType]
    inferTree isarel (AELeaf expr)                                           = [inferWithInfo isarel expr]
-   inferTree isarel (AETree exprinfo@(Info info (Trace trace  expr)) trees) =
+   inferTree isarel (AETree exprinfo@(Info _ (Trace _ expr)) trees) =
             case infer isarel expr of
             --DESCR -> do not combine with child nodes if parent is in error and return error with position of parent
             TypeError _ _  -> [inferWithInfo isarel exprinfo]
@@ -626,13 +668,13 @@ module TypeChecker (typecheck, Error, Errors) where
              getNodeLeafExpr :: MetaInfo2 AdlExpr -> MetaInfo2 AdlExpr -> MetaInfo2 AdlExpr
              getNodeLeafExpr (Info _ (Trace _ exprp)) (Info info (Trace trace exprc)) = (Info info (Trace trace (Semicolon exprp exprc)))
              getNodeExpr :: AdlExprTree -> MetaInfo2 AdlExpr
-             getNodeExpr (AETree expr _) = expr
-             getNodeExpr (AELeaf expr)   = expr
+             getNodeExpr (AETree expr' _) = expr'
+             getNodeExpr (AELeaf expr')   = expr'
              addParentToTree :: AdlExpr -> AdlExprTree -> AdlExprTree
-             addParentToTree exprp (AETree (Info info (Trace trace exprc)) trees) = (AETree (Info info (Trace trace (Semicolon exprp exprc))) trees)
-             addParentToTree exprp (AELeaf (Info info (Trace trace exprc)))       = (AELeaf (Info info (Trace trace (Semicolon exprp exprc)))      )
+             addParentToTree exprp (AETree (Info info' (Trace trace' exprc)) trees') = (AETree (Info info' (Trace trace' (Semicolon exprp exprc))) trees')
+             addParentToTree exprp (AELeaf (Info info' (Trace trace' exprc)))        = (AELeaf (Info info' (Trace trace' (Semicolon exprp exprc)))      )
              iserr :: MetaInfo2 RelationType -> Bool
-             iserr (Info info (Trace trc (TypeError _ _))) = True
+             iserr (Info _ (Trace _ (TypeError _ _))) = True
              iserr _ = False
 
    --DESCR -> function to write trace lines
@@ -650,6 +692,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --specific meta information structures and functions
    ----------------------------------------------------
 
+{- EXTEND -> example of another implementation of MetaInfo
    --USE -> MetaInfo of this type is used for abstracting and checking expressions from ObjectDefs
    type MetaInfo1 a = MetaInfo (FilePos, Depth) a
    type Depth = Int
@@ -662,6 +705,7 @@ module TypeChecker (typecheck, Error, Errors) where
                                                                               -- ++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"
                                                                               ):(processResult1 ts)
    processResult1 ((Info _ (Trace _ (RelationType _)):ts)) = processResult1 ts
+ -}
 
    --USE -> MetaInfo of this type is used for checking Rules
    type MetaInfo2 a = MetaInfo (FilePos) a
@@ -670,7 +714,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --         If a type is inferred, then it's ok. In case of a TypeError return the error.
    processResult2 :: [MetaInfo2 RelationType] -> Errors
    processResult2 [] = []
-   processResult2 ((Info (posi) trc@(Trace _ (TypeError t err)):ts)) = ((compose t err posi)
+   processResult2 ((Info (posi) (Trace _ (TypeError t err)):ts)) = ((compose t err posi)
                                                                             -- ++"\nTRACE\n"++(show trc)++"\nENDTRACE\n\n"
                                                                             ):(processResult2 ts)
    processResult2 ((Info _ (Trace _(RelationType _)):ts))  = processResult2 ts
@@ -709,29 +753,28 @@ module TypeChecker (typecheck, Error, Errors) where
    castObjectDefToAdlExprTree :: Environment -> ObjectDef ->  AdlExprTree
    castObjectDefToAdlExprTree env od =
                      let
-                     treelist = castObjectDefsToAdlExprTrees env [od] 0
+                     treelist = castObjectDefsToAdlExprTrees env [od]
                      in
                      if length treelist == 1 then head treelist else error "TypeChecker.castObjectDefToAdlExprTree: list must be length one."
  ---}
    --DESCR -> Cast all objectdefs based on the environment to a list of AdlExprTree
-   castObjectDefsToAdlExprTrees :: Environment -> ObjectDefs -> Depth ->  [AdlExprTree] -- [(AdlExpr,MetaInfo)]
-   castObjectDefsToAdlExprTrees _ [] _ = []
-   castObjectDefsToAdlExprTrees env@(isarel,_) (obj:objs) currdepth = case obj of
-                                   Obj{} -> if null (objats obj)
+   castObjectDefsToAdlExprTrees :: Environment -> ObjectDefs ->  [AdlExprTree] -- [(AdlExpr,MetaInfo)]
+   castObjectDefsToAdlExprTrees _ [] = []
+   castObjectDefsToAdlExprTrees env@(isarel,_) (obj@(Obj{}):objs) =
+                                            if null (objats obj)
                                             then
                                                   --DESCR -> add this objdef as AdlExpr for evaluation
                                                   (AELeaf (Info (objpos obj) (writeTrcLn composetrace [] thisAsAdlExpr) ))
                                                   --DESCR -> add the sibling objdefs as AdlExpr for evaluation
-                                                  :(castObjectDefsToAdlExprTrees env objs currdepth)
+                                                  :(castObjectDefsToAdlExprTrees env objs)
                                             else
                                                   [AETree (Info (objpos obj) (writeTrcLn composetrace [] thisAsAdlExpr))
-                                                          (castObjectDefsToAdlExprTrees env (objats obj) (currdepth+1))]
-                                                   ++ (castObjectDefsToAdlExprTrees env objs currdepth)
+                                                          (castObjectDefsToAdlExprTrees env (objats obj))]
+                                                   ++ (castObjectDefsToAdlExprTrees env objs)
                                             where
                                                   thisAsAdlExpr = castExpressionToAdlExpr env (objctx obj)
                                                   composetrace =
-                                                       ("Validating type of subexpression (expr1) in a SERVICE on depth " ++
-                                                     --  show currdepth ++ " :\n" ++
+                                                       ("Validating type of subexpression (expr1) in a SERVICE " ++
                                                        "=> expr1 -> " ++ show thisAsAdlExpr ++ " of type " ++ show (infer isarel thisAsAdlExpr)
                                                        )
 
@@ -778,22 +821,19 @@ module TypeChecker (typecheck, Error, Errors) where
                                 "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer isarel rightsubexpr) ++ "\n" ++
                                 traceruleerror (infer isarel castequivalence)
                                )
-                            castalways = ExprError EE_Fatal $ show rul
+                            castalways = castExpressionToAdlExpr env (rrcon rul)
                             composetrace3 =
                                ("ERROR IN RULE ->\n" ++
                                 show castalways ++ "\n" ++
-                                --TODO -> show rul is ugly
-                                "=> subexpr1 -> " ++ show leftsubexpr  ++ " has type " ++ show (infer isarel leftsubexpr) ++ "\n" ++
-                                "=> subexpr2 -> " ++ show rightsubexpr ++ " has type " ++ show (infer isarel rightsubexpr) ++ "\n" ++
                                 traceruleerror (infer isarel castalways)
                                )
                             traceruleerror (TypeError RTE_AbAbAb err)
                                             = "ERROR DESCRIPTION -> subexpr1 does not match type of subexpr2:\n" ++ err
                             traceruleerror _ = ""
-   castRuleToAdlExpr env@(isarel,_) rul@(Sg{}) = castRuleToAdlExpr env (srsig rul)
-   castRuleToAdlExpr env@(isarel,_) rul@(Gc{}) = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Rule type Gc not implemented: " ++ show rul
-   castRuleToAdlExpr env@(isarel,_) rul@(Fr{}) = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Rule type Fr not implemented: " ++ show rul
-   castRuleToAdlExpr _ rul = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Unknown rule type: " ++ show rul
+   castRuleToAdlExpr env rul@(Sg{}) = castRuleToAdlExpr env (srsig rul)
+   castRuleToAdlExpr _   rul@(Gc{}) = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Rule type Gc not implemented: " ++ show rul
+   castRuleToAdlExpr _   rul@(Fr{}) = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Rule type Fr not implemented: " ++ show rul
+   castRuleToAdlExpr _   rul        = Info Nowhere $ Trace [] $ ExprError EE_Fatal $ "Unknown rule type: " ++ show rul
 
    --RULE -> The parser translates expressions with a flip on subexpressions to an expressions
    --        with only flips on morphisms of type Mph for example (r;s)~ is parsed as s~;r~
@@ -886,18 +926,18 @@ module TypeChecker (typecheck, Error, Errors) where
    --USE -> Relation will be the only expression already inferred possibly containing a TypeError
    data AdlExpr =   Relation    RelationType  --USE -> use typeofRel to get the RelationType
                   | HomoRelation RelationType
-                  | Implicate   {ex1::AdlExpr, ex2::AdlExpr}
-                  | Equality    {ex1::AdlExpr, ex2::AdlExpr}
-                  | Complement  {ex1::AdlExpr}
-                  | Flip        {ex1::AdlExpr}
-                  | Union       {ex1::AdlExpr, ex2::AdlExpr}
-                  | Intersect   {ex1::AdlExpr, ex2::AdlExpr}
-                  | Semicolon   {ex1::AdlExpr, ex2::AdlExpr}
-                  | Dagger      {ex1::AdlExpr, ex2::AdlExpr}
+                  | Implicate   AdlExpr AdlExpr
+                  | Equality    AdlExpr AdlExpr
+                  | Complement  AdlExpr
+                  | Flip        AdlExpr
+                  | Union       AdlExpr AdlExpr
+                  | Intersect   AdlExpr AdlExpr
+                  | Semicolon   AdlExpr AdlExpr
+                  | Dagger      AdlExpr AdlExpr
                   | Identity    RelationType
                   | Universe    RelationType        --TODO -> this is not in table in article
-                  | TrsClose    {ex1::AdlExpr}      --TODO -> this is not in table in article
-                  | TrsRefClose {ex1::AdlExpr}      --TODO -> this is not in table in article
+                  | TrsClose    AdlExpr      --TODO -> this is not in table in article
+                  | TrsRefClose AdlExpr      --TODO -> this is not in table in article
                   | ExprError ExprErrorType Error  -- deriving (Show)
 
    data ExprErrorType = EE_SubExpr | EE_Fatal deriving (Show)
@@ -942,8 +982,9 @@ module TypeChecker (typecheck, Error, Errors) where
    infer _ (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
 
 
-   extInferAbAbAb isarel expr1@(Identity rel) expr2 = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
-   extInferAbAbAb isarel expr1 expr2@(Identity rel) = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
+   extInferAbAbAb :: RelSet Cpt -> AdlExpr -> AdlExpr -> RelationType
+   extInferAbAbAb isarel expr1@(Identity _) expr2 = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
+   extInferAbAbAb isarel expr1 expr2@(Identity _) = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
    extInferAbAbAb isarel expr1 expr2                = inferAbAbAb isarel (infer isarel expr1) (infer isarel expr2)
 
    --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
@@ -976,7 +1017,7 @@ module TypeChecker (typecheck, Error, Errors) where
    inferAaAaAa :: RelSet Cpt -> RelationType -> RelationType -> RelationType
    inferAaAaAa _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
    inferAaAaAa _ _ err@(TypeError _ _)                = err
-   inferAaAaAa isarel t1@(RelationType (a,b)) t2@(RelationType (p,q))
+   inferAaAaAa isarel (RelationType (a,b)) (RelationType (p,q))
                                         | a==b &&
                                           p==q      = (RelationType (lubcpt isarel a p,lubcpt isarel a p))
                                         | not(a==b) = TypeError RTE_AaAa ("Left expression: Source does not equal target -> source: " ++ show a ++ " target: " ++ show b ++ "\n")
@@ -985,7 +1026,7 @@ module TypeChecker (typecheck, Error, Errors) where
    --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
    inferAaAa :: RelSet Cpt -> RelationType -> RelationType
    inferAaAa _ err@(TypeError _ _) = err    --TODO -> condition for homogeneous relations not described in inference table, should identity be src==trg as described in table?
-   inferAaAa isarel t@(RelationType (src,trg)) | diamond isarel src trg  = RelationType (lubcpt isarel src trg, lubcpt isarel src trg)
+   inferAaAa isarel (RelationType (src,trg)) | diamond isarel src trg  = RelationType (lubcpt isarel src trg, lubcpt isarel src trg)
                                                | otherwise               = TypeError RTE_AaAa ("Source does not equal target -> source: " ++ show src ++ " target: " ++ show trg ++ "\n")
 
 ---------------------------------------------------------------------------------------------
@@ -1019,7 +1060,7 @@ module TypeChecker (typecheck, Error, Errors) where
    fromConcept NOthing = NoCpt
    fromConcept S = error "TypeChecker.hs function fromConcept: Singleton not supported."
    
-   toConcept :: Cpt -> Concept  
+   toConcept :: Cpt -> Concept
    toConcept (Cpt nm) = cptnew nm
    toConcept AllCpt = Anything
    toConcept NoCpt = NOthing
@@ -1057,7 +1098,7 @@ module TypeChecker (typecheck, Error, Errors) where
    lubcpt isarel a b | isA isarel a b = b
                      | isA isarel b a = a
                      | not (diamond isarel a b) = NoCpt
-                      -- | otherwise = should not be possible by definition of diamond
+                     | otherwise = error "Error in function lubcpt: 'otherwise' van never be possible by definition of diamond"
 
    diamond :: Ord a => RelSet a -> a -> a -> Bool
    diamond isarel a b = isA isarel a b || isA isarel b a
