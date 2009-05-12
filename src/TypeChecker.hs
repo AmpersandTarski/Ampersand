@@ -40,7 +40,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    import Classification --USE -> cast from data.Tree to Classification for enrichment
    import Typology --USE -> Isa structure for enrichment
-   
+
    import CC_aux (renumberRules)
 
    ---------------
@@ -52,19 +52,12 @@ module TypeChecker (typecheck, Error, Errors) where
    type Errors = [Error]
    type Error = String
 
-   --USE   -> The Environment is used to communicate ready to use input information for type checking
-   --         The Environment is needed to transform to AdlExpr objects
    --DESCR -> The environment consists of:
-   --          a dictionary containing the lowerbounds of the Cpts from the contexts in scope, the Cpt is the key
-   --          a list of all declared (direct) relations between two Cpts from the contexts in scope
-   --          the contexts in scope, which will be the context under evaluation and its extended contexts (recursively)
    type Environment = (RelSet Cpt, DeclRels)
 
    --DESCR -> The parser composes an Architecture object. This function typechecks this object.
    --USE   -> This is the only function needed outside of the TypeChecker
    typecheck :: Architecture -> (Contexts, Errors)
-   --typecheck arch@(Arch ctxs) = (ctxs,[]) --DEBUG -> uncomment to disable typechecker
-   --typecheck (Arch ctxs) = iwantastring (srchContext ctxs "Test")  --DEBUG
    typecheck arch@(Arch ctxs) =
                                 (enrichArch arch,
                                 --EXTEND -> put extra checking rules of the Architecture object here
@@ -86,8 +79,11 @@ module TypeChecker (typecheck, Error, Errors) where
    --        Declarations -> active declarations
    --        ObjectDefs   p.e. types of expressions
    enrichArch :: Architecture -> Contexts
-   enrichArch (Arch ctxs) = map renumber $ map enrichCtx ctxs
+   enrichArch (Arch ctxs) = map enrichCtx ctxs
           where
+          --DESCR -> contains enrichment functionality which should be temporary
+          postenrich :: Context -> Context
+          postenrich cx@(Ctx{}) = addsgndecls $ renumber cx
           renumber :: Context -> Context
           renumber cx@(Ctx{}) = cx {ctxpats=renumberPats 1 (ctxpats cx),
                                     ctxrs=renumberRules 1 (ctxrs cx)}
@@ -98,11 +94,13 @@ module TypeChecker (typecheck, Error, Errors) where
                            renumberPats i (p@(Pat{}):ps) = (renumberPat i p):renumberPats (i+(length $ ptrls p)) ps
                            renumberPat :: Int -> Pattern -> Pattern
                            renumberPat i p@(Pat{}) = p {ptrls=renumberRules i (ptrls p)}
+          addsgndecls ::Context -> Context
+          addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
+                           where allsgndecls = [srrel sg | sg@(Sg{})<-allPatRules $ allCtxPats [cx]]
           enrichCtx :: Context -> Context
-          enrichCtx cx@(Ctx{}) =
+          enrichCtx cx@(Ctx{}) = postenrich $
                            cx {ctxisa=hierarchy, ctxwrld=world, ctxpats=ctxpatterns, ctxrs=ctxrules, ctxds=ctxdecls,
-                               ctxos=ctxobjdefs,
-                               ctxks=ctxkeys}
+                               ctxos=ctxobjdefs, ctxks=ctxkeys}
                            {-
                            (ctxnm cx) --copy name
                            (ctxon cx) --copy extended ctxs
@@ -395,7 +393,7 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --TODO -> argument Context indicating the current Context, only check that context
    checkArch :: Architecture -> Errors
-   checkArch arch = case arch of Arch{} -> dropWhile (==[])
+   checkArch arch@(Arch{}) = dropWhile (==[])
                                         --TODO -> dropWhile is needed because composeError always returns an error
                                         --        actually I want to check that there's no error without repeating
                                         --        the complete checkCtx statement
@@ -965,68 +963,69 @@ module TypeChecker (typecheck, Error, Errors) where
        showsPrec _ (ExprError _ err) = showString err
 
    infer :: RelSet Cpt -> AdlExpr -> RelationType
-   infer _ (Relation rel) = inferAbAb rel
-   infer isarel (HomoRelation rel) = inferAaAa isarel rel
-   infer _ (Universe rel) = inferAbAb rel
-   infer isarel (Identity rel) = inferAaAa isarel rel
-   infer isarel (Semicolon expr1 expr2) = inferAbBcAc isarel (infer isarel expr1) (infer isarel expr2)
-   infer isarel (Dagger expr1 expr2) = inferAbBcAc isarel (infer isarel expr1) (infer isarel expr2)
-   infer isarel (Union expr1 expr2) = extInferAbAbAb isarel expr1 expr2
-   infer isarel (Intersect expr1 expr2) = extInferAbAbAb isarel expr1 expr2
-   infer isarel (Implicate expr1 expr2) = extInferAbAbAb isarel expr1 expr2
-   infer isarel (Equality expr1 expr2)  = extInferAbAbAb isarel expr1 expr2
-   infer isarel (Flip expr1) = inferAbBa (infer isarel expr1)
-   infer isarel (Complement expr1) = inferAbAb (infer isarel expr1)
-   infer isarel (TrsClose expr1) = inferAaAa isarel (infer isarel expr1)     --TODO -> is this correct?
-   infer isarel (TrsRefClose expr1) = inferAaAa isarel(infer isarel expr1)  --TODO -> is this correct?
-   infer _ (ExprError t err)= TypeError (RTE_ExprError t) err --The expression is already known to be unknown
 
+   infer isarel r = case r of
+         (Relation rel) -> inferAbAb rel
+         (HomoRelation rel) -> inferAaAa rel
+         (Universe rel) -> inferAbAb rel
+         (Identity rel) -> inferAaAa rel
+         (Semicolon expr1 expr2) -> inferAbBcAc (infer isarel expr1) (infer isarel expr2)
+         (Dagger expr1 expr2) -> inferAbBcAc (infer isarel expr1) (infer isarel expr2)
+         (Union expr1 expr2) -> extInferAbAbAb expr1 expr2
+         (Intersect expr1 expr2) -> extInferAbAbAb expr1 expr2
+         (Implicate expr1 expr2) -> extInferAbAbAb expr1 expr2
+         (Equality expr1 expr2)  -> extInferAbAbAb expr1 expr2
+         (Flip expr1) -> inferAbBa (infer isarel expr1)
+         (Complement expr1) -> inferAbAb (infer isarel expr1)
+         (TrsClose expr1) -> inferAaAa (infer isarel expr1)     --TODO -> is this correct?
+         (TrsRefClose expr1) -> inferAaAa (infer isarel expr1)  --TODO -> is this correct?
+         (ExprError t err) -> TypeError (RTE_ExprError t) err --The expression is already known to be unknown
+         where
+         extInferAbAbAb :: AdlExpr -> AdlExpr -> RelationType
+         extInferAbAbAb expr1'@(Identity _) expr2' = inferAaAaAa (infer isarel expr1') (infer isarel expr2')
+         extInferAbAbAb expr1' expr2'@(Identity _) = inferAaAaAa (infer isarel expr1') (infer isarel expr2')
+         extInferAbAbAb expr1' expr2'              = inferAbAbAb (infer isarel expr1') (infer isarel expr2')
 
-   extInferAbAbAb :: RelSet Cpt -> AdlExpr -> AdlExpr -> RelationType
-   extInferAbAbAb isarel expr1@(Identity _) expr2 = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
-   extInferAbAbAb isarel expr1 expr2@(Identity _) = inferAaAaAa isarel (infer isarel expr1) (infer isarel expr2)
-   extInferAbAbAb isarel expr1 expr2                = inferAbAbAb isarel (infer isarel expr1) (infer isarel expr2)
-
-   --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
-   inferAbBcAc :: RelSet Cpt -> RelationType -> RelationType -> RelationType
-   inferAbBcAc _ err@(TypeError _ _) _ = err   --pass errors up
-   inferAbBcAc _ _ err@(TypeError _ _) = err
-   inferAbBcAc isarel (RelationType (a,b1)) (RelationType (b2,c))
+         --DESCR -> infer  e1::(a,b1), e2::(b2,c) b1>=b b2>=b |- e3::e1 -> e2 -> (a,c)
+         inferAbBcAc :: RelationType -> RelationType -> RelationType
+         inferAbBcAc err@(TypeError _ _) _ = err   --pass errors up
+         inferAbBcAc _ err@(TypeError _ _) = err
+         inferAbBcAc (RelationType (a,b1)) (RelationType (b2,c))
              | diamond isarel b1 b2 = (RelationType (a,c))
              | otherwise              = TypeError RTE_AbBcAc ("The target of the left expression ("++ show b1 ++") does not match the source of the right expression ("++ show b2 ++")\n")
 
-   --DESCR -> infer  e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1 -> e2 -> (a,b)
-   inferAbAbAb :: RelSet Cpt -> RelationType -> RelationType -> RelationType
-   inferAbAbAb _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
-   inferAbAbAb _ _ err@(TypeError _ _)                = err
-   inferAbAbAb isarel (RelationType (a,b)) (RelationType (p,q))
+         --DESCR -> infer  e1::(a1,b1), e2::(a2,b2) a1>=a a2>=a b1>=b b2>=b |- e3::e1 -> e2 -> (a,b)
+         inferAbAbAb :: RelationType -> RelationType -> RelationType
+         inferAbAbAb err@(TypeError _ _) _                = err   --DESCR -> pass errors up
+         inferAbAbAb _ err@(TypeError _ _)                = err
+         inferAbAbAb (RelationType (a,b)) (RelationType (p,q))
              | diamond isarel a p
                && diamond isarel b q    = (RelationType (lubcpt isarel a p,lubcpt isarel b q))
              | not (diamond isarel a p) = TypeError RTE_AbAbAb ("The source of the left expression (" ++ show a ++ ") does not match the source of the right expression (" ++ show p ++ ")\n")
              | otherwise                = TypeError RTE_AbAbAb ("The target of the left expression (" ++ show b ++ ") does not match the target of the right expression (" ++ show q ++ ")\n")
 
-   --DESCR -> infer  e1::(a,b) |- e2::e1 -> (b,a)
-   inferAbBa :: RelationType -> RelationType
-   inferAbBa err@(TypeError _ _) = err
-   inferAbBa (RelationType (src,trg)) = RelationType (trg,src)
+         --DESCR -> infer  e1::(a,b) |- e2::e1 -> (b,a)
+         inferAbBa :: RelationType -> RelationType
+         inferAbBa err@(TypeError _ _) = err
+         inferAbBa (RelationType (src,trg)) = RelationType (trg,src)
 
-   --DESCR -> infer  e1::(a,b) |- e2::e1 -> (a,b)
-   inferAbAb :: RelationType -> RelationType
-   inferAbAb t = t
+         --DESCR -> infer  e1::(a,b) |- e2::e1 -> (a,b)
+         inferAbAb :: RelationType -> RelationType
+         inferAbAb t = t
 
-   inferAaAaAa :: RelSet Cpt -> RelationType -> RelationType -> RelationType
-   inferAaAaAa _ err@(TypeError _ _) _                = err   --DESCR -> pass errors up
-   inferAaAaAa _ _ err@(TypeError _ _)                = err
-   inferAaAaAa isarel (RelationType (a,b)) (RelationType (p,q))
+         inferAaAaAa :: RelationType -> RelationType -> RelationType
+         inferAaAaAa err@(TypeError _ _) _                = err   --DESCR -> pass errors up
+         inferAaAaAa _ err@(TypeError _ _)                = err
+         inferAaAaAa (RelationType (a,b)) (RelationType (p,q))
                                         | a==b &&
                                           p==q      = (RelationType (lubcpt isarel a p,lubcpt isarel a p))
                                         | not(a==b) = TypeError RTE_AaAa ("Left expression: Source does not equal target -> source: " ++ show a ++ " target: " ++ show b ++ "\n")
                                         | otherwise = TypeError RTE_AaAa ("Right expression: Source does not equal target -> source: " ++ show p ++ " target: " ++ show q ++ "\n")
 
-   --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
-   inferAaAa :: RelSet Cpt -> RelationType -> RelationType
-   inferAaAa _ err@(TypeError _ _) = err    --TODO -> condition for homogeneous relations not described in inference table, should identity be src==trg as described in table?
-   inferAaAa isarel (RelationType (src,trg)) | diamond isarel src trg  = RelationType (lubcpt isarel src trg, lubcpt isarel src trg)
+         --DESCR -> infer  e1::(a,a) |- e2::e1 -> (a,a)
+         inferAaAa :: RelationType -> RelationType
+         inferAaAa err@(TypeError _ _) = err    --TODO -> condition for homogeneous relations not described in inference table, should identity be src==trg as described in table?
+         inferAaAa (RelationType (src,trg)) | diamond isarel src trg  = RelationType (lubcpt isarel src trg, lubcpt isarel src trg)
                                                | otherwise               = TypeError RTE_AaAa ("Source does not equal target -> source: " ++ show src ++ " target: " ++ show trg ++ "\n")
 
 ---------------------------------------------------------------------------------------------
@@ -1053,7 +1052,7 @@ module TypeChecker (typecheck, Error, Errors) where
        _ <= AllCpt = False
        NoCpt <= _  = False
        _ <= NoCpt  = True
-    
+
    fromConcept :: Concept -> Cpt
    fromConcept (C {cptnm = nm}) = Cpt nm
    fromConcept Anything = AllCpt
