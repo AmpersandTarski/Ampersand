@@ -15,7 +15,7 @@ data Statement = DisjStat  Concept Concept | --DESCR -> stating that two concept
                  EmptyStmt --DESCR -> stating that there is no statement
                  deriving (Show)
                  
-data InfErrType = UndeclRel AdlExpr | IErr deriving (Show)
+data InfErrType = UndeclRel AdlExpr | Disjunct Concept Concept deriving (Show)
 
 --DESCR -> constructs an IsaStat statement from an isa definition (spc,gen)
 fromIsa :: (Concept,Concept) -> Statement
