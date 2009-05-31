@@ -561,10 +561,11 @@ module TypeChecker (typecheck, Error, Errors) where
                              ]
 
    allMphCpts :: Morphisms -> Cpts
-   allMphCpts ms = Set.fromList $ map fromConcept $ foldr (++) []
+   allMphCpts ms = error $ show $ Set.fromList $ map fromConcept $ foldr (++) []
                    [case mph of Mph{} -> mphats mph;
                                 I{} -> mphats mph;
-                                _ -> []
+                                V{} -> mphats mph;
+                                Mp1{} -> [mph1typ mph]
                     |mph<-ms]
 
    allExprMphs :: Expressions -> Morphisms
@@ -1032,37 +1033,43 @@ module TypeChecker (typecheck, Error, Errors) where
 
 --REMARK -> Can not use data Cpt as a in RelSet a, because the  implementation of
 --          instance Ord Cpt is not suitable. Ord is needed by a lot of Data.Set functions
-   data Cpt = Cpt String | AllCpt | NoCpt
+   data Cpt = Cpt String | AllCpt | NoCpt | StonCpt
    type Cpts = Set.Set Cpt
 
    instance Show Cpt where
        showsPrec _ (Cpt a) = showString a
        showsPrec _ AllCpt = showString "Anything"
        showsPrec _ NoCpt = showString "Nothing"
+       showsPrec _ StonCpt = showString "Singleton"
 
    instance Eq Cpt where
        Cpt a == Cpt b = a==b
        AllCpt == AllCpt = True
        NoCpt == NoCpt = True
+       StonCpt == StonCpt = True
        _ == _ = False
 
    instance Ord Cpt where
        Cpt a <= Cpt b = a <= b
        AllCpt <= _ = True
        _ <= AllCpt = False
+       NoCpt <= StonCpt = True
        NoCpt <= _  = False
+       StonCpt <= _ = False
        _ <= NoCpt  = True
+       _ <= StonCpt = True  
 
    fromConcept :: Concept -> Cpt
    fromConcept (C {cptnm = nm}) = Cpt nm
    fromConcept Anything = AllCpt
    fromConcept NOthing = NoCpt
-   fromConcept S = error "TypeChecker.hs function fromConcept: Singleton not supported."
+   fromConcept S = StonCpt -- error "TypeChecker.hs function fromConcept: Singleton not supported."
    
    toConcept :: Cpt -> Concept
    toConcept (Cpt nm) = cptnew nm
    toConcept AllCpt = Anything
    toConcept NoCpt = NOthing
+   toConcept StonCpt = S
 
 ---------------------------------------------------------------------------------------------
 
