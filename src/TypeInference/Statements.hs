@@ -12,7 +12,9 @@ data Statement = DisjStat  Concept Concept | --DESCR -> stating that two concept
                  BndStat  AdlExpr Sign | --DESCR -> stating AdlExpr[Sign]
                  LAndStat  Statement Statement | --DESCR -> stating that both statements are true
                  InfErr InfErrType String  | --DESCR -> stating that the type of an expression cannot be inferred, because the inference attempt ended because of this error
-                 EmptyStmt --DESCR -> stating that there is no statement
+                 EmptyStmt | --DESCR -> stating that there is no statement
+                 BoundTo AdlExpr |
+                 TypeOf AdlExpr 
                  deriving (Show)
                  
 data InfErrType = UndeclRel AdlExpr | IErr deriving (Show)
@@ -29,4 +31,8 @@ instance Eq Statement where
   (LAndStat s1 s2)==(LAndStat s1' s2') = (s1==s1' && s2==s2') || (s1==s2' && s2==s1')
   (InfErr _ str)==(InfErr _ str') = str==str'
   EmptyStmt==EmptyStmt = True
+  (TypeOf expr)==(TypeOf expr') = expr==expr'
+  (BoundTo expr)==(BoundTo expr') = expr==expr'
   _==_ = False
+------------------------------------------
+

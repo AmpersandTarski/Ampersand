@@ -34,36 +34,37 @@ check ctx = [infer (gamma expr) expr | expr<-exprs]
   rv = [newdcl "x" (cptnew "C1") (cptnew "C2"), newdcl "y" (cptnew "C3") (cptnew "C4"), newdcl "amb1" (cptnew "Camb1") (cptnew "Camb1"), newdcl "amb1" (cptnew "Camb2") (cptnew "Camb2")]
   rc :: Declarations
   rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
-  exprs = map fromExpression ["amb1[Camb2*Camb2]","amb1[Camb2*Camb2];undecl[Camb2*Cx]","x;undecl;x","amb1","x/\\y","x;x;y"]
+  exprs = map fromExpression ["-(x;x~);x","x;undecl;x","y/\\x","amb1[Camb2*Camb2]","amb1[Camb2*Camb2];undecl[Camb2*Cx]","amb1","x;x;y"]
   --TODO -> I could split gamma in two
   gamma expr = (mphStmts expr)
                 ++ isaStmts
   mphStmts :: AdlExpr -> [Statement]
   --TODO -> zoek in rv of declared is
-  --mphStmts (Relation m@(Mph{mphnm=r1, mphats=[c1,c2]}) i) =  [BndStat (Relation m i) (c1, c2)]
-  --mphStmts (Relation m@(Mph{mphnm=r1, mphats=[]}) i) =
-  mphStmts (Relation m@(Mph{mphnm=r1}) i) =
+  --mphStmts (Relation m@(Mph{mphnm=r1, mphats=[c1,c2]}) i _) =  [BndStat (Relation m i) (c1, c2)]
+  --mphStmts (Relation m@(Mph{mphnm=r1, mphats=[]}) i _) =
+  mphStmts (Relation m@(Mph{mphnm=r1}) i t) =
      let
-     alternatives = [TypeStat (Relation m i) (c1, c2) | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
+     alternatives = [TypeStat (Relation m i t) (c1, c2) | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
      in
      if null alternatives
-     then [InfErr (UndeclRel (Relation m i)) "Relation has not been declared."]
+     then [InfErr (UndeclRel (Relation m i t)) "Relation has not been declared."]
      else alternatives
-  --mphStmts (Relation m@(Mph{}) _)=  error $ "Error in TypeInferenceTree.hs module InferenceRules function fromMph: " ++
+  --mphStmts (Relation m@(Mph{}) _ _)=  error $ "Error in TypeInferenceTree.hs module InferenceRules function fromMph: " ++
     --                                        "Morphism "++ show m ++" does not have mphats with length 0 or 2."
-  mphStmts (Implicate expr1 expr2) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Equality expr1 expr2) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Union expr1 expr2) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Intersect expr1 expr2) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Semicolon expr1 expr2) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Dagger expr1 expr2) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Complement expr) = mphStmts expr
-  mphStmts (Flip expr) = mphStmts expr
+  mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Union expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Intersect expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Complement expr _) = mphStmts expr
+  mphStmts (Flip expr _) = mphStmts expr
 
 --TODO -> put exr in tex in the trees as condition
 --DESCR -> return a typed AdlExpr and the inference tree
 --infer :: [Statement] -> AdlExpr -> (AdlExpr, ITree)
-infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
+infer gamma exr  = -- (exr, combinetrees step3inferstmts step2tree)
+                   error $ show step1tree
   where
   step1tree = tree $ unboundtree freecptvars
   --DESCR -> Get all used concept variables and leave them unbound by relating them to themselves
@@ -84,7 +85,7 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
            in
            if null undeclerr
            then -- case relvar of
-              --  (Relation (Mph{mphats=[explc1,explc2]}) _) -> [(BndStat relvar (explc1,explc2),Nothing)]
+              --  (Relation (Mph{mphats=[explc1,explc2]}) _ _) -> [(BndStat relvar (explc1,explc2),Nothing)]
                -- _ ->
                 [(stmt',Nothing) | stmt'@(TypeStat relvar' _)<-gamma, relvar==relvar']
            else undeclerr
@@ -93,28 +94,52 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
   --unboundtree :: (ITree, Concepts)
   tree (t, _) = t
   free (_, f) = f
-  unboundtree (c1:c2:fcs) = bindsubexprs (bindexpr exr) c1 c2 fcs
+  unboundtree (c1:c2:fcs) = bindsubexprs (bindto exr) (CT c1) (CT c2) fcs False
     where
-    bindexpr expr = \src tgt -> (BndStat expr (src,tgt))
+    bindto expr = \src tgt -> BoundTo expr{tt=TT src tgt}
     --pattern matching a disjunction statement \env c1 c2 -> env |- (x /\ y)[c1*c2]
     --infer :: (InfTree a) => (Concept -> Concept -> Statement) -> Concept -> Concept -> a
-    bindsubexprs stmt = \src tgt (cb:fcs) ->
+    bindsubexprs stmt = \src tgt (cb1:cb2:fcs) inv ->
       case stmt src tgt of
-        BndStat expr (src,tgt) -> case expr of
-          Intersect expr1 expr2 -> (DisjRule (tree tree1) (tree tree2), free tree2)
+        BoundTo expr -> case expr of
+          Intersect{} -> (DisjRule (tree tree1) (tree tree2), free tree2)
               where
-              tree1 = bindsubexprs (bindexpr expr1) src tgt (cb:fcs)
-              tree2 = bindsubexprs (bindexpr expr2) src tgt (free tree1)
-          Semicolon expr1 expr2 -> (RelcompRule (tree tree1) (tree tree2), free tree2)
+              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
+              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
+          Union{} -> (UnionRule (tree tree1) (tree tree2), free tree2)
+              where
+              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
+              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
+          Implicate{} -> (ImplyRule (tree tree1) (tree tree2), free tree2)
+              where
+              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
+              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
+          Equality{} -> (EqualRule (tree tree1) (tree tree2), free tree2)
+              where
+              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
+              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
+          Semicolon{} -> (RelcompRule (tree tree1) (tree tree2), free tree2)
              where
-             tree1 = bindsubexprs (bindexpr expr1) src cb fcs
-             tree2 = bindsubexprs (bindexpr expr2) cb tgt (free tree1)
-          expr1@(Relation{})     -> (Stmt $ BndStat expr1 (src,tgt), (cb:fcs))
+             genspec = if not inv then Specific else Generic
+             tree1 = bindsubexprs (bindto $ left expr) src (CF (genspec,cb1,cb2)) fcs inv
+             tree2 = bindsubexprs (bindto $ right expr) (CF (genspec,cb1,cb2)) tgt (free tree1) inv
+          Dagger{} -> (AddcompRule (tree tree1) (tree tree2), free tree2)
+             where
+             genspec = if not inv then Generic else Specific
+             tree1 = bindsubexprs (bindto $ left expr) src (CF (genspec,cb1,cb2)) fcs inv
+             tree2 = bindsubexprs (bindto $ right expr) (CF (genspec,cb1,cb2)) tgt (free tree1) inv
+          Complement{} -> (ComplRule (tree tree1), free tree1)
+              where
+              tree1 = bindsubexprs (bindto $ sub expr) src tgt (cb1:cb2:fcs) (not inv)
+          Flip{} -> (FlipRule (tree tree1), free tree1)
+              where
+              tree1 = bindsubexprs (bindto $ sub expr) tgt src (cb1:cb2:fcs) inv
+          Relation{}     -> (Stmt $ bindto expr src tgt, (cb1:cb2:fcs))
           _       -> error ""
         _                    -> error ""
   ------------------------------------------------------------------------------------
   bindMphats :: Statement -> (ITree, [BndCptVar]) -> (ITree, [BndCptVar])
-  bindMphats stmt@(BndStat r@(Relation (Mph{mphats=[c1,c2]}) _) (var1,var2)) (itree,vars) =
+  bindMphats stmt@(BndStat r@(Relation (Mph{mphats=[c1,c2]}) _ _) (var1,var2)) (itree,vars) =
      let
      unbndvar1 = [(var,cpt) |(var,cpt)<-vars, var==var1, var==cpt]
      (var',cpt') = head unbndvar1
@@ -129,7 +154,7 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
         then bindvar vars' var2 c2
         else []
      in
-     if null vars' && not (null vars)
+     if null vars' && not (null vars) --if 
      then (attachstmt (stmt, [(EmptyStmt, Just $ Stmt $ InfErr IErr $ expectedErr c1 cpt' r)]) itree, vars)
      else
         if null vars'' && not (null vars)
@@ -245,7 +270,7 @@ rebindtree :: ITree -> [BndCptVar] -> ITree
 rebindtree (Stmt stmt) vars = Stmt (foldr rebindstmt stmt vars)
 rebindtree (DisjRule tree1 tree2) vars = DisjRule (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (RelcompRule tree1 tree2) vars = RelcompRule (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (BindRule tree) vars = BindRule (rebindtree tree vars)
+rebindtree (BindRule bt tree) vars = BindRule bt (rebindtree tree vars)
 rebindtree (SpecRule tree1 tree2 ) vars = SpecRule (rebindtree tree1 vars) (rebindtree tree2 vars)
 
 combinetrees :: [( [(BndStmt, Alternatives)] , [BndCptVar])] -> ITree -> InferredType
@@ -272,7 +297,6 @@ eqbindings (vars:vars':varss) =
    else error $ "Error in TypeInferenceTree.hs module InferenceRules function allequal: " ++
                 "Lengths of concept variable lists differ:" ++ show (length vars) ++ " and " ++ show (length vars) ++ "."
 
-
 attachtrees :: ( [(BndStmt, Alternatives)] , [BndCptVar]) -> ITree -> ITree
 attachtrees (stmts,vars) unboundtree = foldr attachstmt (rebindtree unboundtree vars) stmts
 
@@ -280,11 +304,11 @@ attachtrees (stmts,vars) unboundtree = foldr attachstmt (rebindtree unboundtree 
 --USE -> A BndStat must be bound to exactly one alternative
 --TODO -> change the type to (Statement,Alternative) -> ITree -> ITree
 attachstmt :: (BndStmt, Alternatives) -> ITree -> ITree
-attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') | stmt==stmt' = BindRule $ treestmt bndstmt
+attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') | stmt==stmt' = BindRule Bind $ treestmt bndstmt
                                                   | otherwise   = baseleaf
 attachstmt bndstmt (DisjRule baseleaf1 baseleaf2) = DisjRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (RelcompRule baseleaf1 baseleaf2) = RelcompRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (BindRule baseleaf) = BindRule (attachstmt bndstmt baseleaf)
+attachstmt bndstmt (BindRule bt baseleaf) = BindRule bt (attachstmt bndstmt baseleaf)
 attachstmt bndstmt (SpecRule baseleaf1 baseleaf2 ) = SpecRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 
 --DESCR -> Returns the error string in case there is no proof of a BndStat statement based on statements derived from ADL declarations
@@ -318,7 +342,7 @@ treestmt (stmt,_) = error $ "Error in TypeInferenceTree.hs module InferenceRules
 
   
 userboundCptvars :: Statement -> [(Statement,(Concept,Concept))]
-userboundCptvars stmt@(BndStat (Relation (Mph{mphats=[c1,c2]}) _) (var1,var2) )
+userboundCptvars stmt@(BndStat (Relation (Mph{mphats=[c1,c2]}) _ _) (var1,var2) )
    | unbndStmt stmt = [(stmt,(var1,c1)),(stmt,(var2,c2))]
    | otherwise      = error $ "Error in Statements.hs module TypeInference.Statements function userboundCptvars: " ++
                               "The BndStat statement "++show stmt++" already has bound Concepts."

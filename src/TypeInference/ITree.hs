@@ -18,9 +18,17 @@ data TypeErrorsType = NoType | AmbiguousType deriving (Show)
 --         RelCompRule determines the BndStat statement of a relative composition expression based on the BndStat of its left and right expression
 data ITree = Stmt Statement
            | DisjRule ITree ITree
+           | UnionRule ITree ITree
+           | ImplyRule ITree ITree
+           | EqualRule ITree ITree
            | RelcompRule ITree ITree
-           | BindRule ITree
+           | AddcompRule ITree ITree
+           | BindRule BindType ITree
+           | ComplRule ITree
+           | FlipRule ITree
            | SpecRule ITree ITree deriving (Show)
+
+data BindType = Bind | BindG1 | BindG2 | BindGG | BindS1 | BindS2 | BindSS | BindSG | BindGS deriving (Show) 
 
 --DESCR -> Substitutes the first Concept argument by the second in the ITree
 --USE -> if a tree contains concept variable "$C1" then I can bind the variable to "ACpt" by bindCptvar tree "$C1" "Acpt"
@@ -32,7 +40,7 @@ bindCptvar stmt@(Stmt (BndStat expr (c1,c2))) var cpt
 bindCptvar stmt@(Stmt _) _ _ = stmt --other statements do not have concept vars
 bindCptvar (DisjRule tr1 tr2) var cpt = DisjRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
 bindCptvar (RelcompRule tr1 tr2) var cpt = RelcompRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
-bindCptvar (BindRule tr) var cpt = BindRule (bindCptvar tr var cpt)
+bindCptvar (BindRule bt tr) var cpt = BindRule bt (bindCptvar tr var cpt)
 bindCptvar (SpecRule tr1 tr2) var cpt = SpecRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
 
 --DESCR -> returns all the Stmt statements in a tree
@@ -40,5 +48,5 @@ stmts :: ITree -> [Statement]
 stmts (Stmt stmt) = [stmt]
 stmts (DisjRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
 stmts (RelcompRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (BindRule tr) = stmts tr
+stmts (BindRule _ tr) = stmts tr
 stmts (SpecRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
