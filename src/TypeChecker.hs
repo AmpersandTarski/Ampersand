@@ -561,7 +561,7 @@ module TypeChecker (typecheck, Error, Errors) where
                              ]
 
    allMphCpts :: Morphisms -> Cpts
-   allMphCpts ms = error $ show $ Set.fromList $ map fromConcept $ foldr (++) []
+   allMphCpts ms = Set.fromList $ map fromConcept $ foldr (++) []
                    [case mph of Mph{} -> mphats mph;
                                 I{} -> mphats mph;
                                 V{} -> mphats mph;
