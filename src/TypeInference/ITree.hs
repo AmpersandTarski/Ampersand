@@ -30,23 +30,16 @@ data ITree = Stmt Statement
 
 data BindType = Bind | BindG1 | BindG2 | BindGG | BindS1 | BindS2 | BindSS | BindSG | BindGS deriving (Show) 
 
---DESCR -> Substitutes the first Concept argument by the second in the ITree
---USE -> if a tree contains concept variable "$C1" then I can bind the variable to "ACpt" by bindCptvar tree "$C1" "Acpt"
-bindCptvar :: ITree -> Concept -> Concept -> ITree
-bindCptvar stmt@(Stmt (BndStat expr (c1,c2))) var cpt
-  | c1==var   = bindCptvar (Stmt $ BndStat expr (cpt,c2)) var cpt
-  | c2==var   = Stmt $ BndStat expr (c1,cpt)
-  | otherwise = stmt
-bindCptvar stmt@(Stmt _) _ _ = stmt --other statements do not have concept vars
-bindCptvar (DisjRule tr1 tr2) var cpt = DisjRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
-bindCptvar (RelcompRule tr1 tr2) var cpt = RelcompRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
-bindCptvar (BindRule bt tr) var cpt = BindRule bt (bindCptvar tr var cpt)
-bindCptvar (SpecRule tr1 tr2) var cpt = SpecRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
-
 --DESCR -> returns all the Stmt statements in a tree
 stmts :: ITree -> [Statement]
 stmts (Stmt stmt) = [stmt]
 stmts (DisjRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (UnionRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
 stmts (RelcompRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (AddcompRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (ImplyRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (EqualRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (FlipRule tr) = stmts tr
+stmts (ComplRule tr) = stmts tr
 stmts (BindRule _ tr) = stmts tr
 stmts (SpecRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)

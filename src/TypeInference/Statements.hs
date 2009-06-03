@@ -27,7 +27,7 @@ instance Eq Statement where
   (DisjStat c1 c2)==(DisjStat c1' c2') = (c1==c1' && c2==c2') || (c1==c2' && c2==c1')
   (IsaStat c1 c2)==(IsaStat c1' c2') = c1==c1' && c2==c2'
   (TypeStat expr sgn)==(TypeStat expr' sgn') = expr==expr' && sgn==sgn'
-  (BndStat expr sgn)==(BndStat expr' sgn') = expr==expr' && sgn==sgn'
+  --(BndStat expr sgn)==(BndStat expr' sgn') = expr==expr' && sgn==sgn'
   (LAndStat s1 s2)==(LAndStat s1' s2') = (s1==s1' && s2==s2') || (s1==s2' && s2==s1')
   (InfErr _ str)==(InfErr _ str') = str==str'
   EmptyStmt==EmptyStmt = True

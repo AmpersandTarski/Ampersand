@@ -34,7 +34,7 @@ check ctx = [infer (gamma expr) expr | expr<-exprs]
   rv = [newdcl "x" (cptnew "C1") (cptnew "C2"), newdcl "y" (cptnew "C3") (cptnew "C4"), newdcl "amb1" (cptnew "Camb1") (cptnew "Camb1"), newdcl "amb1" (cptnew "Camb2") (cptnew "Camb2")]
   rc :: Declarations
   rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
-  exprs = map fromExpression ["-(x;x~);x","x;undecl;x","y/\\x","amb1[Camb2*Camb2]","amb1[Camb2*Camb2];undecl[Camb2*Cx]","amb1","x;x;y"]
+  exprs = map fromExpression ["amb1[Camb2*Camb2];undecl[Camb2*Cx]","-(x;x~);x","x;undecl;x","y/\\x","amb1[Camb2*Camb2]","amb1","x;x;y"]
   --TODO -> I could split gamma in two
   gamma expr = (mphStmts expr)
                 ++ isaStmts
@@ -64,7 +64,7 @@ check ctx = [infer (gamma expr) expr | expr<-exprs]
 --DESCR -> return a typed AdlExpr and the inference tree
 --infer :: [Statement] -> AdlExpr -> (AdlExpr, ITree)
 infer gamma exr  = -- (exr, combinetrees step3inferstmts step2tree)
-                   error $ show step1tree
+                   error $ show (step2tree,step2cptvars)
   where
   step1tree = tree $ unboundtree freecptvars
   --DESCR -> Get all used concept variables and leave them unbound by relating them to themselves
@@ -79,7 +79,7 @@ infer gamma exr  = -- (exr, combinetrees step3inferstmts step2tree)
         where
         --DESCR -> bound alternatives of statement with concept vars without inference tree
         declAlts :: BndStmt -> Alternatives
-        declAlts stmt@(BndStat relvar (c1,c2)) =
+        declAlts stmt@(BoundTo relvar) =
            let
            undeclerr = [(EmptyStmt, Just $ Stmt stmt') | stmt'@(InfErr (UndeclRel relvar') _)<-gamma, relvar==relvar']
            in
@@ -139,20 +139,37 @@ infer gamma exr  = -- (exr, combinetrees step3inferstmts step2tree)
         _                    -> error ""
   ------------------------------------------------------------------------------------
   bindMphats :: Statement -> (ITree, [BndCptVar]) -> (ITree, [BndCptVar])
-  bindMphats stmt@(BndStat r@(Relation (Mph{mphats=[c1,c2]}) _ _) (var1,var2)) (itree,vars) =
+  bindMphats stmt@(BoundTo r@(Relation{rel=Mph{mphats=[c1,c2]}, tt=TT ct1 ct2}) ) (itree,vars) =
      let
-     unbndvar1 = [(var,cpt) |(var,cpt)<-vars, var==var1, var==cpt]
-     (var',cpt') = head unbndvar1
-     unbndvar2 = [(var,cpt) |(var,cpt)<-vars, var==var2, var==cpt]
-     (var'',cpt'') = head unbndvar2
+     var1 = case ct1 of 
+        CT c -> c
+        CF (f,c1,c2) -> if f==Generic then c2 else c1
+        CTake{} -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
+                           "ConceptTerm CTake is not expected: "++show ct1++"." 
+     var2 = case ct2 of 
+        CT c -> c
+        CF (f,c1,c2) -> if f==Generic then c2 else c1
+        CTake{} -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
+                           "ConceptTerm CTake is not expected: "++show ct2++"."
+     --unbndvar1 = [(var,cpt) |(var,cpt)<-vars, var==var1, var==cpt]
+     bndvar1 = [(var,cpt) |(var,cpt)<-vars, var==var1]
+     (var',cpt') = if not (null bndvar1) then head bndvar1 else varnotfnderr var1
+     bndvar2 = [(var,cpt) |(var,cpt)<-vars, var==var2]
+     (var'',cpt'') = if not (null bndvar2) then head bndvar2 else varnotfnderr var2
      vars'  =
-        if not (null unbndvar1)
-        then bindvar vars var1 c1
-        else []
+        if var'==cpt' -- is unbound
+        then bindvar vars var1 c1 --bind unbound
+        else if cpt'==c1 --already bound to the same concept by the mphats of another morphism
+             then vars --variable is already bound to this mphat
+             else [] --empty the variable environment
      vars'' =
-        if not (null unbndvar2)
-        then bindvar vars' var2 c2
-        else []
+        if var''==cpt'' -- is unbound
+        then bindvar vars' var2 c2 --bind unbound
+        else if cpt''==c2 --already bound to the same concept by the mphats of another morphism
+             then vars' --variable is already bound to this mphat
+             else [] --empty the variable environment
+     varnotfnderr v = error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
+                              "Concept variable could not be found in the variable environment: "++show v++"."
      in
      if null vars' && not (null vars) --if 
      then (attachstmt (stmt, [(EmptyStmt, Just $ Stmt $ InfErr IErr $ expectedErr c1 cpt' r)]) itree, vars)
@@ -234,7 +251,7 @@ infer gamma exr  = -- (exr, combinetrees step3inferstmts step2tree)
                                     then ((stmt, [(alt, Just $ SpecRule (Stmt $ fromIsa (c2, c2')) ruledomain)]),varsdomain)
                                     else ((stmt, [(alt, Just $ Stmt $ InfErr IErr $ expectedErr c2 c2' expr)]),varsdomain)
         _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindvars: " ++
-                     "The alternative statement "++show alt++" is not a TypeStat or BndStat statement."
+                     "The alternative statement "++show alt++" is not a TypeStat or BoundTo statement."
      thisalt _ _  = error
         $ "Error in TypeInferenceTree.hs module InferenceRules function bindvars: " ++
           "This function only binds concept variables of BndStmt statements."
@@ -260,11 +277,39 @@ bindvar ((var,cpt):vars) var' cpt' | var==var' = (var,cpt'):vars
 rebindvars :: ( [(Statement, Alternatives)] , [BndCptVar]) -> ( [(Statement, Alternatives)] , [BndCptVar])
 rebindvars (stmts,vars) = ([(foldr rebindstmt stmt vars, alts) | (stmt,alts)<-stmts],vars)
 
+--DESCR -> Substitutes the first Concept argument by the second in the ITree
+--USE -> if a tree contains concept variable "$C1" then I can bind the variable to "ACpt" by bindCptvar tree "$C1" "Acpt"
+bindCptvar :: ITree -> Concept -> Concept -> ITree
+bindCptvar (Stmt bndstmt@(BoundTo{})) var cpt = Stmt $ rebindstmt (var,cpt) bndstmt
+bindCptvar stmt@(Stmt _) _ _ = stmt --other statements do not have concept vars
+bindCptvar (DisjRule tr1 tr2) var cpt = DisjRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
+bindCptvar (RelcompRule tr1 tr2) var cpt = RelcompRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
+bindCptvar (BindRule bt tr) var cpt = BindRule bt (bindCptvar tr var cpt)
+bindCptvar (SpecRule tr1 tr2) var cpt = SpecRule (bindCptvar tr1 var cpt) (bindCptvar tr2 var cpt)
+
+
 rebindstmt :: BndCptVar -> BndStmt -> BndStmt
-rebindstmt bndvar@(var,cbnd) stmt@(BndStat expr (c1,c2))
-  | var==c1 = if var==c2 then (BndStat expr (cbnd,cbnd)) else  (BndStat expr (cbnd,c2))
-  | var==c2 = (BndStat expr (c1,cbnd))
-  | otherwise = stmt
+rebindstmt bndvar (BoundTo expr) = BoundTo $ rebindexpr bndvar expr
+rebindstmt _ stmt = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindstmt: " ++
+                            "Other statements than BoundTo are not expected: "++show stmt++"."
+
+rebindexpr :: BndCptVar -> AdlExpr -> AdlExpr
+rebindexpr bndvar expr@(Relation{}) = expr{tt=rebindtt bndvar (tt expr)}
+rebindexpr _ expr = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindexpr: " ++
+                            "Other expressions than just Relation are not expected: "++show expr++"."
+
+rebindtt :: BndCptVar -> TypeTerm -> TypeTerm
+rebindtt bndvar (TT ct1 ct2) = TT (rebindct bndvar ct1) (rebindct bndvar ct2)
+
+rebindct :: BndCptVar -> ConceptTerm -> ConceptTerm
+rebindct bndvar@(var,cbnd) (CT c) = if var==c then CT cbnd else CT c
+rebindct bndvar@(var,cbnd) (CF (f,c1,c2)) = 
+   if var==c1 && var==c2 then CF (f,cbnd,cbnd) 
+   else if var==c1 then CF (f,cbnd,c2)
+        else if var==c2 then CF (f,c1,cbnd)
+             else CF (f,c1,c2)
+rebindct _ ct@(CTake{}) = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindct: " ++
+                                  "Concept term CTake is not expected: "++show ct++"."
 
 rebindtree :: ITree -> [BndCptVar] -> ITree
 rebindtree (Stmt stmt) vars = Stmt (foldr rebindstmt stmt vars)
@@ -300,8 +345,8 @@ eqbindings (vars:vars':varss) =
 attachtrees :: ( [(BndStmt, Alternatives)] , [BndCptVar]) -> ITree -> ITree
 attachtrees (stmts,vars) unboundtree = foldr attachstmt (rebindtree unboundtree vars) stmts
 
---DESCR -> Attach the sub inference tree which is the proof of a BndStat statement in the main inference tree
---USE -> A BndStat must be bound to exactly one alternative
+--DESCR -> Attach the sub inference tree which is the proof of a BoundTo statement in the main inference tree
+--USE -> A BoundTo must be bound to exactly one alternative
 --TODO -> change the type to (Statement,Alternative) -> ITree -> ITree
 attachstmt :: (BndStmt, Alternatives) -> ITree -> ITree
 attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') | stmt==stmt' = BindRule Bind $ treestmt bndstmt
@@ -311,49 +356,36 @@ attachstmt bndstmt (RelcompRule baseleaf1 baseleaf2) = RelcompRule (attachstmt b
 attachstmt bndstmt (BindRule bt baseleaf) = BindRule bt (attachstmt bndstmt baseleaf)
 attachstmt bndstmt (SpecRule baseleaf1 baseleaf2 ) = SpecRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 
---DESCR -> Returns the error string in case there is no proof of a BndStat statement based on statements derived from ADL declarations
---USE -> A BndStat must be bound to exactly one alternative
+--DESCR -> Returns the error string in case there is no proof of a BoundTo statement based on statements derived from ADL declarations
+--USE -> A BoundTo must be bound to exactly one alternative
 --TODO -> change the type to (Statement,Alternative) -> ITree to get ride of most error cases
 errstmt :: (BndStmt, Alternatives) -> Maybe String
-errstmt (stmt@(BndStat expr _),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
+errstmt (stmt@(BoundTo expr),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
                                              "The statement "++show stmt++" is not bound to any alternative."
-errstmt (stmt@(BndStat{}),[(_, Just (Stmt (InfErr IErr err)) )]) = Just err
-errstmt (stmt@(BndStat{}),[(_, Just (Stmt (InfErr (UndeclRel r1) err)) )]) = Just $ "Relation " ++ show r1 ++ " has not been declared."
-errstmt (stmt@(BndStat{}),[alt]) = Nothing
-errstmt (stmt@(BndStat{}),alts) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
+errstmt (stmt@(BoundTo{}),[(_, Just (Stmt (InfErr IErr err)) )]) = Just err
+errstmt (stmt@(BoundTo{}),[(_, Just (Stmt (InfErr (UndeclRel r1) err)) )]) = Just $ "Relation " ++ show r1 ++ " has not been declared."
+errstmt (stmt@(BoundTo{}),[alt]) = Nothing
+errstmt (stmt@(BoundTo{}),alts) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
                                           "The statement "++show stmt++" is bound to more than one alternative: "++ show alts ++"."
 errstmr (stmt,_) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
                            "The statement "++show stmt++" is not a BndStmt."
 
---DESCR -> Returns the inference tree which is the proof of a BndStat statement based on statements derived from ADL declarations
---USE -> A BndStat must be bound to exactly one alternative
+--DESCR -> Returns the inference tree which is the proof of a BoundTo statement based on statements derived from ADL declarations
+--USE -> A BoundTo must be bound to exactly one alternative
 --TODO -> change the type to (Statement,Alternative) -> ITree
 treestmt :: (BndStmt, Alternatives) -> ITree
-treestmt (stmt@(BndStat expr _),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
+treestmt (stmt@(BoundTo expr),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
                                               "The statement "++show stmt++" is not bound to any alternative."
-treestmt (stmt@(BndStat{}),[(_, Just inftree )]) = inftree
-treestmt (stmt@(BndStat{}),[(alt, Nothing)]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
+treestmt (stmt@(BoundTo{}),[(_, Just inftree )]) = inftree
+treestmt (stmt@(BoundTo{}),[(alt, Nothing)]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
                                                        "The statement "++show stmt++" is bound to alternative "++ show alt ++" without inference tree."
-treestmt (stmt@(BndStat{}),alts) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
+treestmt (stmt@(BoundTo{}),alts) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
                                            "The statement "++show stmt++" is bound to more than one alternative: "++ show alts ++"."
 treestmt (stmt,_) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
-                            "The statement "++show stmt++" is not a BndStmt."
+                            "The statement "++show stmt++" is not a BoundTo."
                             
 
-  
-userboundCptvars :: Statement -> [(Statement,(Concept,Concept))]
-userboundCptvars stmt@(BndStat (Relation (Mph{mphats=[c1,c2]}) _ _) (var1,var2) )
-   | unbndStmt stmt = [(stmt,(var1,c1)),(stmt,(var2,c2))]
-   | otherwise      = error $ "Error in Statements.hs module TypeInference.Statements function userboundCptvars: " ++
-                              "The BndStat statement "++show stmt++" already has bound Concepts."
-userboundCptvars (BndStat (Relation{}) _ ) = []
-userboundCptvars stmt = error $ "Error in Statements.hs module TypeInference.Statements function userboundCptvars: " ++
-                              "The statement "++show stmt++" is not a BndStat on a Morphism."
 
-
-unbndStmt :: Statement -> Bool
-unbndStmt stmt@(BndStat expr (c1,c2))= head (name c1)=='$' && head (name c2)=='$'
-unbndStmt _ = False
 
 
 
@@ -431,6 +463,5 @@ disjrule (LAndStat (BndStat x (c1, c2)) (BndStat y (c3, c4)) )
   | otherwise = BndStat (x ++ "/\\" ++ y) (c1, c2)
 disjrule _ = error "Bad use of Disjunction rule."
 -}
-
 
 

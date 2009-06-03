@@ -88,6 +88,14 @@ fromExpression expr = fst (uniqueMphs 0 expr)
      where
      sub = uniqueMphs i ("x;x~")
 
+exprsrc :: AdlExpr -> ConceptTerm
+exprsrc expr = ttsrc $ tt expr
+exprtgt :: AdlExpr -> ConceptTerm
+exprtgt expr = tttgt $ tt expr
+ttsrc :: TypeTerm -> ConceptTerm
+ttsrc (TT ct _) = ct
+tttgt :: TypeTerm -> ConceptTerm
+tttgt (TT _ ct) = ct
      
 data TypeTerm = TT ConceptTerm ConceptTerm deriving (Show)
 evalTT :: TypeTerm -> Sign
