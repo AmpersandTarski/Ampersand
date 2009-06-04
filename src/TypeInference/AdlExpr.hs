@@ -22,6 +22,8 @@ data AdlExpr =   Relation    {rel::Morphism, id::Int, tt::TypeTerm}
                | Semicolon   {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
                | Dagger      {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
                deriving (Show)
+
+--REMARK -> Equality is NOT on the type to be able to correlate a typed expression to its untyped declaration
 instance Eq AdlExpr where
   (Relation m i _)==(Relation m' i' _) = (name m)==(name m') && i==i'
   (Implicate expr1 expr2 _)==(Implicate expr1' expr2' _) = expr1==expr1' && expr2==expr2'
