@@ -9,6 +9,8 @@ import Data.Maybe
 import TypeInference.ITree
 import TypeInference.Statements
 import TypeInference.AdlExpr
+import TypeInference.Input
+import Adl.Context
 
 import CommonClasses --for ghci only
 
@@ -18,30 +20,33 @@ type Alternatives = [(DeclStmt,Maybe ITree)]
 type CptVar = Concept
 type BndCptVar = (CptVar,Concept)
 
-check ctx = [infer (gamma expr) expr | expr<-exprs]
-            -- error $ show (mphStmts $ fromExpression "x/\\y")
+check :: (Context,[Context]) -> (Context,[Proof])
+check (ctx,xctxs) =  (ctxinf,[infer (gamma expr) expr | expr<-exprs])
   where
+  ctxinf = ctx
   --DESCR -> All Concepts in ctx
   tc :: Concepts
-  tc = [cptnew "C1",cptnew "C2",cptnew "C3",cptnew "C4"]
+  tc = allCtxCpts(ctx:xctxs) 
+       --[cptnew "C1",cptnew "C2",cptnew "C3",cptnew "C4"]
   tc0 :: Concepts
   tc0 = [Anything,NOthing]
-  isatree = [(cptnew "C1", cptnew "C3"), (cptnew "C2", cptnew "C4")]
+  isatree = isaRels tc (allCtxGens(ctx:xctxs))
+            --[(cptnew "C1", cptnew "C3"), (cptnew "C2", cptnew "C4")]
 --  isa c1 c2 = elem (c1,c2) isatree
   isaStmts = map fromIsa isatree
   --DESCR -> All Relation decls in ctx
   rv :: Declarations
-  rv = [newdcl "x" (cptnew "C1") (cptnew "C2"), newdcl "y" (cptnew "C3") (cptnew "C4"), newdcl "amb1" (cptnew "Camb1") (cptnew "Camb1"), newdcl "amb1" (cptnew "Camb2") (cptnew "Camb2")]
+  rv = allCtxDecls (ctx:xctxs)
+       --[newdcl "x" (cptnew "C1") (cptnew "C2"), newdcl "y" (cptnew "C3") (cptnew "C4"), newdcl "amb1" (cptnew "Camb1") (cptnew "Camb1"), newdcl "amb1" (cptnew "Camb2") (cptnew "Camb2")]
   rc :: Declarations
   rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
-  exprs = map fromExpression ["x;x~","x/\\y","y/\\x","-(x;x~);x","amb1[Camb2*Camb2];undecl[Camb2*Cx]","x;undecl;x","amb1[Camb2*Camb2]","amb1","x;x;y"]
+  --TODO -> !!!!!!!! 
+  exprs = (map fromExpression $ allCtxExprs [ctx]) ++ (map fromRule $ allCtxRules [ctx])
+          --map fromExpression ["x;x~","x/\\y","y/\\x","-(x;x~);x","amb1[Camb2*Camb2];undecl[Camb2*Cx]","x;undecl;x","amb1[Camb2*Camb2]","amb1","x;x;y"]
   --TODO -> I could split gamma in two
   gamma expr = (mphStmts expr)
                 ++ isaStmts
   mphStmts :: AdlExpr -> [Statement]
-  --TODO -> zoek in rv of declared is
-  --mphStmts (Relation m@(Mph{mphnm=r1, mphats=[c1,c2]}) i _) =  [BndStat (Relation m i) (c1, c2)]
-  --mphStmts (Relation m@(Mph{mphnm=r1, mphats=[]}) i _) =
   mphStmts (Relation m@(Mph{mphnm=r1}) i t) =
      let
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
@@ -49,10 +54,13 @@ check ctx = [infer (gamma expr) expr | expr<-exprs]
      alternatives = [TypeOf $ Relation m i $ TT (CF (Generic,c1,c1)) (CF (Generic,c2,c2)) | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
      in
      if null alternatives
-     then [InfErr (UndeclRel (Relation m i t)) "Relation has not been declared."]
+     then [InfErr (UndeclRel (Relation m i t))]
      else alternatives
-  --mphStmts (Relation m@(Mph{}) _ _)=  error $ "Error in TypeInferenceTree.hs module InferenceRules function fromMph: " ++
-    --                                        "Morphism "++ show m ++" does not have mphats with length 0 or 2."
+  mphStmts (Relation m@(I{mphats=[c1]}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,c1,c1)) (CF (Generic,c1,c1))]
+  mphStmts (Relation m@(I{}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,Anything,Anything)) (CF (Generic,Anything,Anything))]
+  mphStmts (Relation m@(V{mphats=[c1,c2]}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,c1,c1)) (CF (Generic,c2,c2))]
+  mphStmts (Relation m@(V{}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,Anything,Anything)) (CF (Generic,Anything,Anything))]
+  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Union expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
@@ -62,11 +70,10 @@ check ctx = [infer (gamma expr) expr | expr<-exprs]
   mphStmts (Complement expr _) = mphStmts expr
   mphStmts (Flip expr _) = mphStmts expr
 
---TODO -> put exr in tex in the trees as condition
---DESCR -> return a typed AdlExpr and the inference tree
---infer :: [Statement] -> AdlExpr -> (AdlExpr, ITree)
-infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
-                   
+type Gamma = [Statement]
+--DESCR -> return a type inference tree(s) for an expression given a gamma
+infer :: Gamma -> AdlExpr -> Proof
+infer gamma exr  = combinetrees step3inferstmts step2tree
   where
   step1tree = tree $ unboundtree freecptvars
   --DESCR -> Get all used concept variables and leave them unbound by relating them to themselves
@@ -81,9 +88,9 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
         where
         --DESCR -> bound alternatives of statement with concept vars without inference tree
         declAlts :: BndStmt -> Alternatives
-        declAlts stmt@(BoundTo relvar) =
+        declAlts (BoundTo relvar) =
            let
-           undeclerr = [(EmptyStmt, Just $ Stmt stmt') | stmt'@(InfErr (UndeclRel relvar') _)<-gamma, relvar==relvar']
+           undeclerr = [(EmptyStmt, Just $ Stmt stmt') | stmt'@(InfErr (UndeclRel relvar'))<-gamma, relvar==relvar']
            in
            if null undeclerr
            then -- case relvar of
@@ -91,6 +98,9 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
                -- _ ->
                 [(stmt',Nothing) | stmt'@(TypeOf relvar')<-gamma, relvar==relvar']
            else undeclerr
+        declAlts stmt = error
+          $ "Error in TypeInferenceTree.hs module InferenceRules function infer.step3inferstmts.declAlts: " ++
+            "This function only expects BoundTo statements. "++show stmt++"."
   ------------------------------------------------------------------------------------
   freecptvars = [cptnew $ "$C" ++ show i | i<-[1..]]
   tree (t, _) = t
@@ -98,7 +108,11 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
   --DESCR -> construct a base inference tree of BoundTo statements by decomposing the expr to infer, and put concept variables at all concept locations. Return all unused concept variable names too.
   --USE -> All concept variables need to be bound to a concept. And all leaves (Stmt BoundTo expr@(Relation{})) need to be inferred.
   unboundtree :: Concepts -> (ITree, Concepts)
-  unboundtree (c1:c2:fcs) = bindsubexprs (bindto exr) (CT c1) (CT c2) fcs False
+  unboundtree [] = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
+                           "Provide an infinite list of free concept variables."
+  unboundtree (_:[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
+                           "Provide an infinite list of free concept variables."
+  unboundtree (c1:c2:fcpts) = bindsubexprs (bindto exr) (CT c1) (CT c2) fcpts False
     where
     bindto expr = \src tgt -> BoundTo expr{tt=TT src tgt}
     bindsubexprs stmt = \src tgt (cb1:cb2:fcs) inv ->
@@ -146,13 +160,13 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
      --get the concept variable from the BoundTo statement to bind the first mphat to 
      var1 = case ct1 of 
         CT c -> c
-        CF (f,c1,c2) -> if f==Generic then c2 else c1
+        CF (f,c1',c2') -> if f==Generic then c2' else c1'
         CTake{} -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
                            "ConceptTerm CTake is not expected: "++show ct1++"." 
      --get the concept variable from the BoundTo statement to bind the second mphat to 
      var2 = case ct2 of 
         CT c -> c
-        CF (f,c1,c2) -> if f==Generic then c2 else c1
+        CF (f,c1',c2') -> if f==Generic then c2' else c1'
         CTake{} -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
                            "ConceptTerm CTake is not expected: "++show ct2++"."
      --get the binding of var1 from the variable environment
@@ -180,11 +194,11 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
      in
      if null vars' && not (null vars) --if the variable environment is set to [] when binding source mphat
      --then var1 is already bound to another concept -> infer a type error
-     then (attachstmt (stmt, [(EmptyStmt, Just $ Stmt $ InfErr IErr $ expectedErr c1 cpt' r)]) itree, vars)
+     then (attachstmt (stmt, [(EmptyStmt, Just $ Stmt $ InfErr $ IErr c1 cpt' r)]) itree, vars)
      else
         if null vars'' && not (null vars)  --if the variable environment is set to [] when binding target mphat
         --then var2 is already bound to another concept -> infer a type error
-        then (attachstmt (stmt, [(EmptyStmt, Just $ Stmt $ InfErr IErr $ expectedErr c2 cpt'' r)]) itree, vars)
+        then (attachstmt (stmt, [(EmptyStmt, Just $ Stmt $ InfErr $ IErr c2 cpt'' r)]) itree, vars)
         --else binding of the mphats is updated in the variable environment, now apply the new
         --variable binding to the unboundtree
         else (rebindtree itree vars'', vars'')
@@ -193,12 +207,12 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
   --DESCR -> infer all alternatives of all statements and bind concept vars in the var env along the way
   --EXTEND -> if the variable environment is changed then all previously inferred alts must be inferred again by deleting their inference trees!!!
   inferstmts :: ([(BndStmt,Alternatives)],[BndCptVar]) ->  [( [(BndStmt, Alternatives)] , [BndCptVar])]
-  inferstmts (stmts,vars) = if null toinfer --DONE!
-                            then [(stmts,vars)] --bind env to stmts and trees of alts?
+  inferstmts (stms,vars) = if null toinfer --DONE!
+                            then [(stms,vars)] --bind env to stmts and trees of alts?
                             --else: infer the next statement, and infer the other statements toinfer too
                             else foldr (++) [] [inferstmts alt |alt<-(inferalts $ head toinfer)]
      where
-     toinfer = [(stmt,alts) | (stmt,alts)<-stmts, uninferred alts]
+     toinfer = [(stmt,alts) | (stmt,alts)<-stms, uninferred alts]
      uninferred alts = not (null [alt | alt@(_,Nothing)<-alts])
 
      inferalts :: (BndStmt,Alternatives) -> [( [(BndStmt, Alternatives)] , [BndCptVar])]
@@ -213,7 +227,7 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
          )
         | (alt,_)<-curralts ] --make separate trees for all alternatives
      --all the stmts accept the currently inferred one
-     copyotherstmts currstmt = [(otherstmt,otheralts) | (otherstmt,otheralts)<-stmts, otherstmt/=currstmt ]
+     copyotherstmts currstmt = [(otherstmt,otheralts) | (otherstmt,otheralts)<-stms, otherstmt/=currstmt ]
      --set all inference trees of alts of other stmts to Nothing
      resetotherstmts :: Statement -> [(Statement,Alternatives)] 
      resetotherstmts currstmt = [(otherstmt,[(alt,if alt==EmptyStmt then tr else Nothing) |(alt,tr)<-otheralts]) | (otherstmt,otheralts)<-copyotherstmts currstmt]
@@ -242,8 +256,8 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
              --lookup concept var if it is actually a var
              c1 = if iscptvar var1 then lookupvar vars var1 else var1
              var1 = case ct1 of
-                CT var1 -> var1
-                CF (_,var1,_) -> var1
+                CT var1' -> var1'
+                CF (_,var1',_) -> var1'
                 _ -> error  $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
                               "Concept term CTake is not expected: "++show ct1++"."
              in
@@ -254,19 +268,19 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
                then tryrange (Stmt alt) (var1,vars, False)
                else 
                  if c1 `isa` c1' --try specialization rule
-                 then tryrange (SpecRule (Stmt $ fromIsa (c1, c1')) (Stmt alt)) (var1,vars, False)
+                 then tryrange (SpecRule SpecDomain (Stmt $ fromIsa (c1, c1')) (Stmt alt)) (var1,vars, False)
                  else 
                    if c1' `isa` c1
                    then tryrange (Stmt alt) (var1,bindvar vars var1 c1', True) --rebind the var
-                   else tryrange (Stmt $ InfErr IErr $ expectedErr c1 c1' expr) (var1,vars, False)
+                   else tryrange (Stmt $ InfErr $ IErr c1 c1' expr) (var1,vars, False)
                
           tryrange ruledomain (var1, varsdomain, envchanged) = 
              let 
              --lookup concept var if it is actually a var
              c2 = if iscptvar var2 then lookupvar varsdomain var2 else var2
              var2 = case ct2 of
-                CT var2 -> var2
-                CF (_,var2,_) -> var2
+                CT var2' -> var2'
+                CF (_,var2',_) -> var2'
                 _ -> error  $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
                               "Concept term CTake is not expected: "++show ct2++"."
              in
@@ -277,14 +291,14 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
                then ((stmt, [(alt, Just $ ruledomain)]),varsdomain, envchanged)
                else
                  if c2 `isa` c2' --try specialization rule
-                 then ((stmt, [(alt, Just $ SpecRule (Stmt $ fromIsa (c2, c2')) ruledomain)]),varsdomain, envchanged)
+                 then ((stmt, [(alt, Just $ SpecRule SpecRange (Stmt $ fromIsa (c2, c2')) ruledomain)]),varsdomain, envchanged)
                  else 
                    if c2' `isa` c2
                    then if var1==var2
                         --rebind the var and schedule this alt to be inferred again by setting the tree to Nothing
                         then ((stmt, [(alt, Nothing)]),bindvar varsdomain var2 c2', True) 
                         else  ((stmt, [(alt, Just $ ruledomain)]),bindvar varsdomain var2 c2', True) --rebind the var
-                   else ((stmt, [(alt, Just $ Stmt $ InfErr IErr $ expectedErr c2 c2' expr)]),varsdomain, envchanged)
+                   else ((stmt, [(alt, Just $ Stmt $ InfErr $ IErr c2 c2' expr)]),varsdomain, envchanged)
         _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
                      "The alternative statement "++show alt++" is not a TypeTo statement with two generic concept terms."
      inferalt _ _  = error
@@ -297,10 +311,6 @@ infer gamma exr  = (exr, combinetrees step3inferstmts step2tree)
 -------------------------------------------
 -- ENDFUNCTION -> infer gamma exr        --
 ---------------------------------
-
-expectedErr :: (Show a) => a -> a -> AdlExpr -> String
-expectedErr x y expr = "Expected type " ++ show x ++ " does not match inferred type " ++ show y ++ ".\n"
-                    ++ "at " ++ show expr ++ ".\n"
 
 lookupvar ::  [BndCptVar] -> CptVar -> Concept
 lookupvar vars lvar = if not (null bndvar) then head bndvar else varnotfnderr
@@ -317,12 +327,11 @@ bindvar [] _ _ = []
 bindvar ((var,cpt):vars) var' cpt' | var==var' = (var,cpt'):vars
                                    | otherwise = (var,cpt):(bindvar vars var' cpt')
 
-
 rebindtree :: ITree -> [BndCptVar] -> ITree
 rebindtree (DisjRule tree1 tree2) vars = DisjRule (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (RelcompRule tree1 tree2) vars = RelcompRule (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (BindRule bt tree) vars = BindRule bt (rebindtree tree vars)
-rebindtree (SpecRule tree1 tree2 ) vars = SpecRule (rebindtree tree1 vars) (rebindtree tree2 vars)
+rebindtree (SpecRule st tree1 tree2 ) vars = SpecRule st (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (AddcompRule tree1 tree2 ) vars = AddcompRule (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (UnionRule tree1 tree2 ) vars = UnionRule (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (ImplyRule tree1 tree2 ) vars = ImplyRule (rebindtree tree1 vars) (rebindtree tree2 vars)
@@ -333,7 +342,9 @@ rebindtree (Stmt stmt) vars = Stmt (rebindstmt stmt)
   where
   rebindstmt :: BndStmt -> BndStmt
   rebindstmt (BoundTo expr) = BoundTo $ rebindexpr expr
-  rebindstmt stmt = stmt
+  rebindstmt (InfErr (UndeclRel expr)) = InfErr $ UndeclRel $ rebindexpr expr
+  rebindstmt (InfErr (IErr c1 c2 expr)) = InfErr $ IErr c1 c2 $ rebindexpr expr
+  rebindstmt st = st
   rebindexpr :: AdlExpr -> AdlExpr
   rebindexpr expr@(Relation{}) = expr{tt=rebindtt (tt expr)}
   rebindexpr expr = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindtree.rebindexpr: " ++
@@ -348,32 +359,34 @@ rebindtree (Stmt stmt) vars = Stmt (rebindstmt stmt)
   rebindcpt :: Concept -> Concept
   rebindcpt c = if iscptvar c then lookupvar vars c else c 
 
-combinetrees :: [( [(BndStmt, Alternatives)] , [BndCptVar])] -> ITree -> InferredType
+combinetrees :: [( [(BndStmt, Alternatives)] , [BndCptVar])] -> ITree -> Proof
 combinetrees alts basetree =
    let
-   noerrbindings = [ vars | (stmts,vars)<-noerralts ]
-   noerralts = [(stmts,vars) | ((stmts,vars),errstmts)<-errstmtsOfAlts, null errstmts ]
-   errstmtsOfAlts = [((stmts,vars),catMaybes [errstmt stmt| stmt<-stmts]) | (stmts,vars)<-alts]
+   noerrbindings = [ vars | (_,vars)<-noerralts ]
+   noerralts = [(stms,vars) | ((stms,vars),errstmts)<-errstmtsOfAlts, null errstmts ]
+   errstmtsOfAlts = [((stms,vars), [treestmt stmt| stmt<-stms,iserrtree $ treestmt stmt]) | (stms,vars)<-alts]
+   iserrtree (Stmt stmt) = iserrstmt stmt
+   iserrtree _ = False
    allinftrees = [attachtrees alt basetree | alt<-alts] 
    allnoerrinftrees = [attachtrees alt basetree | alt<-noerralts ] 
    in
    if null noerralts --there are no alternatives inferring a type
-   then TypeErrors NoType allinftrees  --return inference trees of all alternatives
+   then NoProof NoType allinftrees  --return inference trees of all alternatives
    else if eqbindings noerrbindings --all alternatives without errors bind all the concept variables to the same concepts
-        then Type allnoerrinftrees  --return inference trees of all alternatives without errors
-        else TypeErrors AmbiguousType allnoerrinftrees --return inference trees of all alternatives without errors
+        then Proven allnoerrinftrees  --return inference trees of all alternatives without errors
+        else NoProof AmbiguousType allnoerrinftrees --return inference trees of all alternatives without errors
 
 eqbindings :: [[BndCptVar]] -> Bool
 eqbindings [] = True
-eqbindings (vars:[]) = True
-eqbindings (vars:vars':varss) =
+eqbindings (_:[]) = True
+eqbindings (vars:vars':_) =
    if length vars == length vars'
    then foldr (&&) True [elem var vars' | var<-vars]
    else error $ "Error in TypeInferenceTree.hs module InferenceRules function allequal: " ++
                 "Lengths of concept variable lists differ:" ++ show (length vars) ++ " and " ++ show (length vars) ++ "."
 
 attachtrees :: ( [(BndStmt, Alternatives)] , [BndCptVar]) -> ITree -> ITree
-attachtrees (stmts,vars) tree = rebindtree (foldr attachstmt tree stmts) vars
+attachtrees (stms,vars) tree = rebindtree (foldr attachstmt tree stms) vars
 
 --DESCR -> Attach the sub inference tree which is the proof of a BoundTo statement in the main inference tree
 --USE -> A BoundTo must be bound to exactly one alternative
@@ -384,7 +397,7 @@ attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') | stmt==stmt' = BindRule (bind
 attachstmt bndstmt (DisjRule baseleaf1 baseleaf2) = DisjRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (RelcompRule baseleaf1 baseleaf2) = RelcompRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (BindRule bt baseleaf) = BindRule bt (attachstmt bndstmt baseleaf)
-attachstmt bndstmt (SpecRule baseleaf1 baseleaf2 ) = SpecRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
+attachstmt bndstmt (SpecRule st baseleaf1 baseleaf2 ) = SpecRule st (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (AddcompRule baseleaf1 baseleaf2 ) = AddcompRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (UnionRule baseleaf1 baseleaf2 ) = UnionRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (ImplyRule baseleaf1 baseleaf2 ) = ImplyRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
@@ -405,28 +418,15 @@ bindtype (BoundTo expr) = case tt expr of
    (TT (CF (Generic,_,_)) (CF (Specific,_,_)))  -> BindGS
    _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindtype: " ++
                 "BoundTo statement does not match a Bind rule pattern: "++show (BoundTo expr)++"."
-
---DESCR -> Returns the error string in case there is no proof of a BoundTo statement based on statements derived from ADL declarations
---USE -> A BoundTo must be bound to exactly one alternative
---TODO -> change the type to (Statement,Alternative) -> ITree to get ride of most error cases
-errstmt :: (BndStmt, Alternatives) -> Maybe String
-errstmt (stmt@(BoundTo expr),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
-                                             "The statement "++show stmt++" is not bound to any alternative."
-errstmt (stmt@(BoundTo{}),[(_, Just (Stmt (InfErr IErr err)) )]) = Just err
-errstmt (stmt@(BoundTo{}),[(_, Just (Stmt (InfErr (UndeclRel r1) err)) )]) = Just $ "Relation " ++ show r1 ++ " has not been declared."
-errstmt (stmt@(BoundTo{}),[alt]) = Nothing
-errstmt (stmt@(BoundTo{}),alts) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
-                                          "The statement "++show stmt++" is bound to more than one alternative: "++ show alts ++"."
-errstmr (stmt,_) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
-                           "The statement "++show stmt++" is not a BndStmt."
+bindtype stmt = error $ "Error in TypeInferenceTree.hs module InferenceRules function bindtype: " ++
+                     "The statement "++show stmt++" is not a BoundTo."
 
 --DESCR -> Returns the inference tree which is the proof of a BoundTo statement based on statements derived from ADL declarations
 --USE -> A BoundTo must be bound to exactly one alternative
---TODO -> change the type to (Statement,Alternative) -> ITree
 treestmt :: (BndStmt, Alternatives) -> ITree
-treestmt (stmt@(BoundTo expr),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
+treestmt (stmt@(BoundTo{}),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function errstmt: " ++
                                               "The statement "++show stmt++" is not bound to any alternative."
-treestmt (stmt@(BoundTo{}),[(_, Just inftree )]) = inftree
+treestmt ((BoundTo{}),[(_, Just inftree )]) = inftree
 treestmt (stmt@(BoundTo{}),[(alt, Nothing)]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
                                                        "The statement "++show stmt++" is bound to alternative "++ show alt ++" without inference tree."
 treestmt (stmt@(BoundTo{}),alts) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++

@@ -31,44 +31,49 @@
 --        Check the correctness of handling context extension and patterns.
 module TypeChecker (typecheck, Error, Errors) where
 
-   import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
-                       --        and of course many data types
-   import Data.List    -- USE -> unionBy
-   import Data.Maybe() -- USE -> fromJust, isNothing
-   import Data.Tree    -- USE -> data Tree a
-   import qualified Data.Set as Set --
+import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
+                    --        and of course many data types
+import Data.List    -- USE -> unionBy
+import Data.Maybe() -- USE -> fromJust, isNothing
+import Data.Tree    -- USE -> data Tree a
+import qualified Data.Set as Set --
 
-   import Classification --USE -> cast from data.Tree to Classification for enrichment
-   import Typology --USE -> Isa structure for enrichment
+import Classification --USE -> cast from data.Tree to Classification for enrichment
+import Typology --USE -> Isa structure for enrichment
 
-   import CC_aux (renumberRules)
+import CC_aux (renumberRules)
 
-   ---------------
-   --MAIN function
-   ---------------
+import TypeInference.ITree
+import TypeInference.Statements
+import TypeInference.AdlExpr
+import TypeInference.Input
+import TypeInferenceEngine
 
-   --USE -> The error if is of type String and contains a complete error message
-   --       This is the only type needed outside of the TypeChecker.
-   type Errors = [Error]
-   type Error = String
+---------------
+--MAIN function
+---------------
 
-   --DESCR -> The environment consists of:
-   type Environment = (RelSet Cpt, DeclRels)
+--USE -> The error if is of type String and contains a complete error message
+--       This is the only type needed outside of the TypeChecker.
+type Errors = [Error]
+type Error = String
 
-   --DESCR -> The parser composes an Architecture object. This function typechecks this object.
-   --USE   -> This is the only function needed outside of the TypeChecker
-   typecheck :: Architecture -> (Contexts, Errors)
-   typecheck arch@(Arch ctxs) =
-                                (enrichArch arch,
-                                --EXTEND -> put extra checking rules of the Architecture object here
-                                --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
-                                checkCtxNameUniqueness ctxs
-                                ++||
-                                checkCtxExtLoops ctxs
-                                ++||
-                                checkArch arch
-                                )
+--DESCR -> The environment consists of:
+--type Environment = (RelSet Cpt, DeclRels)
 
+--DESCR -> The parser composes an Architecture object. This function typechecks this object.
+--USE   -> This is the only function needed outside of the TypeChecker
+typecheck :: Architecture -> (Contexts, Errors)
+typecheck arch@(Arch ctxs) = (enriched,checkresult)  
+                             --(enriched,[show $ evaltree (tree,False) | (Proven trees,_)<-allproofs, tree<-trees])
+   where
+   --EXTEND -> put extra checking rules of the Architecture object here
+   --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
+   check1 = checkCtxNameUniqueness ctxs
+   check2 = checkCtxExtLoops ctxs 
+   (enriched, allproofs) = enrichArch arch  
+   check3 = [(proof,fp) | (proof@(NoProof{}),fp)<-allproofs] --all type errors TODO -> pretty printing
+   checkresult = if null check1 then if null check2 then if null check3 then [] else [show check3] else check2 else check1
    ------------------
    --Enrich functions
    ------------------
@@ -78,29 +83,40 @@ module TypeChecker (typecheck, Error, Errors) where
    --        Rules -> active rules
    --        Declarations -> active declarations
    --        ObjectDefs   p.e. types of expressions
-   enrichArch :: Architecture -> Contexts
-   enrichArch (Arch ctxs) = map enrichCtx ctxs
-          where
-          --DESCR -> contains enrichment functionality which should be temporary
-          postenrich :: Context -> Context
-          postenrich cx@(Ctx{}) = addsgndecls $ renumber cx
-          renumber :: Context -> Context
-          renumber cx@(Ctx{}) = cx {ctxpats=renumberPats 1 (ctxpats cx),
-                                    ctxrs=renumberRules 1 (ctxrs cx)}
-                           where
-                           renumberPats :: Int -> Patterns -> Patterns
-                           renumberPats _ [] = []
-                           renumberPats i (p:[]) = (renumberPat i p):[]
-                           renumberPats i (p@(Pat{}):ps) = (renumberPat i p):renumberPats (i+(length $ ptrls p)) ps
-                           renumberPat :: Int -> Pattern -> Pattern
-                           renumberPat i p@(Pat{}) = p {ptrls=renumberRules i (ptrls p)}
-          addsgndecls ::Context -> Context
-          addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
-                           where allsgndecls = [srrel sg | sg@(Sg{})<-allPatRules $ allCtxPats [cx]]
-          enrichCtx :: Context -> Context
-          enrichCtx cx@(Ctx{}) = postenrich $
-                           cx {ctxisa=hierarchy, ctxwrld=world, ctxpats=ctxpatterns, ctxrs=ctxrules, ctxds=ctxdecls,
-                               ctxos=ctxobjdefs, ctxks=ctxkeys}
+enrichArch :: Architecture -> (Contexts,[(Proof,FilePos)])
+enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx ctx ctxs|ctx<-ctxs]]
+                            , foldr (++) [] [infresult | (_,infresult)<-[enrichCtx ctx ctxs|ctx<-ctxs]])
+
+--DESCR -> contains enrichment functionality which should be temporary
+postenrich :: Context -> Context
+postenrich cx@(Ctx{}) = addsgndecls $ renumber cx
+renumber :: Context -> Context
+renumber cx@(Ctx{}) = cx {ctxpats=renumberPats 1 (ctxpats cx),
+                          ctxrs=renumberRules 1 (ctxrs cx)}
+  where
+  renumberPats :: Int -> Patterns -> Patterns
+  renumberPats _ [] = []
+  renumberPats i (p:[]) = (renumberPat i p):[]
+  renumberPats i (p@(Pat{}):ps) = (renumberPat i p):renumberPats (i+(length $ ptrls p)) ps
+  renumberPat :: Int -> Pattern -> Pattern
+  renumberPat i p@(Pat{}) = p {ptrls=renumberRules i (ptrls p)}
+addsgndecls ::Context -> Context
+addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
+  where allsgndecls = [srrel sg | sg@(Sg{})<-allPatRules $ allCtxPats [cx]]
+
+enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos)])
+enrichCtx cx@(Ctx{}) ctxs = 
+  (postenrich $ 
+      cx {ctxisa=hierarchy, -- 
+          ctxwrld=world, --
+          ctxpats=ctxpatterns, -- 
+          ctxrs=[rule | (rule,_,_)<-ctxrules], 
+          ctxds=ctxdecls, -- 
+          ctxos=[od | (od,_)<-ctxobjdefs], 
+          ctxks=[kd | (kd,_)<-ctxkeys]} 
+  ,  [(proof,fp)|(_,proof,fp)<-ctxrules]
+   ++[(proof,fp)|(_,proofs)<-ctxobjdefs, (proof,fp)<-proofs]
+   ++[(proof,fp)|(_,proofs)<-ctxkeys, (proof,fp)<-proofs])
                            {-
                            (ctxnm cx) --copy name
                            (ctxon cx) --copy extended ctxs
@@ -114,129 +130,257 @@ module TypeChecker (typecheck, Error, Errors) where
                            (ctxos cx)   --change mphdcl and mphtyp on morphisms in expressions
                            (ctxpops cx) --copy populations
                               -}
-                           where
-                           --DESCR -> convenient data containers: 
-                           --        + allCtx -> all the contexts in scope
-                           --        + isarel -> the isa structure of all concepts in scope
-                           --        + rels   -> all declared relations in scope
-                           allCtx = map fromFoundCtx $ flatten ctxtree
-                           (isarel,rels) = (isaRel (allCtxCpts allCtx) (allCtxGens allCtx),
-                                            declRels (allCtxPats allCtx))
+  where
+  --ctxinf = ctx
 
-                           --DESCR -> enriching ctxisa
-                           --in AGtry -> isa = Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
-                           isar = [case g of G{} -> (gengen g,genspc g) | g<-allCtxGens ctxs]
-                           isac = map fst isar ++ map snd isar
-                           hierarchy = Isa
-                                         isar
-                                         (map toConcept $ Set.toList
-                                                        $
-                                                          allCtxCpts ctxs
-                                                            Set.\\
-                                                          Set.fromList (map fromConcept isac)
-                                         )
+  --DESCR -> enriching ctxwrld
+  ctxtree = buildCtxTree (Found cx) ctxs
+  Cl _ world = toClassification $ ctxtree
+  allCtx = map fromFoundCtx $ flatten ctxtree
 
-                           --DESCR -> enriching ctxwrld
-                           ctxtree = buildCtxTree (Found cx) ctxs
-                           Cl _ world = toClassification $ ctxtree
+  tc :: Concepts
+  tc = allCtxCpts(allCtx) 
+       --[cptnew "C1",cptnew "C2",cptnew "C3",cptnew "C4"]
+  tc0 :: Concepts
+  tc0 = [Anything,NOthing]
+  isatree = isaRels tc (allCtxGens(allCtx))
+            --[(cptnew "C1", cptnew "C3"), (cptnew "C2", cptnew "C4")]
+--  isa c1 c2 = elem (c1,c2) isatree
+  isaStmts = map fromIsa isatree
+  --DESCR -> All Relation decls in ctx
+  rv :: Declarations
+  rv = allCtxDecls (allCtx)
+       --[newdcl "x" (cptnew "C1") (cptnew "C2"), newdcl "y" (cptnew "C3") (cptnew "C4"), newdcl "amb1" (cptnew "Camb1") (cptnew "Camb1"), newdcl "amb1" (cptnew "Camb2") (cptnew "Camb2")]
+  rc :: Declarations
+  rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
+  --TODO -> !!!!!!!! 
+  exprs = (map fromExpression $ allCtxExprs [cx]) ++ (map fromRule $ allCtxRules [cx])
+          --map fromExpression ["x;x~","x/\\y","y/\\x","-(x;x~);x","amb1[Camb2*Camb2];undecl[Camb2*Cx]","x;undecl;x","amb1[Camb2*Camb2]","amb1","x;x;y"]
+  --TODO -> I could split gamma in two
+  gamma expr = (mphStmts expr)
+                ++ isaStmts
+  mphStmts :: AdlExpr -> [Statement]
+  mphStmts (Relation m@(Mph{mphnm=r1}) i t) =
+     let
+     --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
+     --          T-RelDecl won't be in the inference tree for this reason.
+     alternatives = [TypeOf $ Relation m i $ TT (CF (Generic,c1,c1)) (CF (Generic,c2,c2)) | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
+     in
+     if null alternatives
+     then [InfErr (UndeclRel (Relation m i t))]
+     else alternatives
+  mphStmts (Relation m@(I{mphats=[c1]}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,c1,c1)) (CF (Generic,c1,c1))]
+  mphStmts (Relation m@(I{}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,Anything,Anything)) (CF (Generic,Anything,Anything))]
+  mphStmts (Relation m@(V{mphats=[c1,c2]}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,c1,c1)) (CF (Generic,c2,c2))]
+  mphStmts (Relation m@(V{}) i _) = [TypeOf $ Relation m i $ TT (CF (Generic,Anything,Anything)) (CF (Generic,Anything,Anything))]
+  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
+  mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Union expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Intersect expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Complement expr _) = mphStmts expr
+  mphStmts (Flip expr _) = mphStmts expr
 
-                           --DESCR -> enriching ctxpats
-                           ctxpatterns = map bindPat (ctxpats cx)
-                           bindPat p@(Pat{}) = p {ptrls= map bindRule (ptrls p) ,ptkds= map bindKeyDef (ptkds p)}
+  --DESCR -> enriching ctxisa
+  --in AGtry -> isa = Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
+  hierarchy = Isa isar (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
+    where
+    isar = [case g of G{} -> (gengen g,genspc g) | g<-allCtxGens ctxs]
+    isac = foldr merge [] [map fst isar, map snd isar]
 
-                           --DESCR -> enriching ctxrs
-                           ctxrules = ctxrulesgens ++ ctxrulespats
-                           ctxrulespats = map bindRule $ allCtxRules [cx]
-                           --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
-                           --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
-                           --          have different numbers.
-                           bindRule r@(Ru{})
-                                 | rrsrt r==Truth =
-                                       let
-                                       bindcon = bindExpr (rrcon r) (AllCpt,AllCpt)
-                                       in
-                                       r {rrcon=bindcon, rrtyp=sign bindcon}
-                                 | otherwise =
-                                       let
-                                       [bindant,bindcon] = bindExprs [rrant r, rrcon r]
-                                       in
-                                       r {rrant=bindant, rrcon=bindcon, rrtyp=sign bindant}
-                           bindRule r@(Sg{}) =
-                                       let
-                                       bindsig = bindRule (srsig r)
-                                       binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
-                                       in
-                                       r {srsig=bindsig, srtyp=sign bindsig, srrel= binddecl}
-                           bindRule _ = error "Unsupported rule type while enriching the context. The type checker should have given an error."
-                           ctxrulesgens = [rulefromgen g  | g<-allCtxGens [cx]]
-                           --TODO -> move rulefromgen to function toRule in module Gen
-                           rulefromgen (G {genfp = posi, gengen = gen, genspc = spc} )
-                                       = Ru
-                                           Implication
-                                           (Tm (mIs spc))
-                                           posi
-                                           (Tm (mIs gen))
-                                           [Tm (mIs spc), Tm (mIs gen)]
-                                           []
-                                           (spc,gen)
-                                           0  --REMARK -> rules are renumbered after enriching the context
-                                           [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
+  --DESCR -> enriching ctxpats
+  ctxpatterns = map bindPat (ctxpats cx)
+  bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds}
+    where
+    bindrules = [br | (br,_,_)<-map bindRule (ptrls p)]
+    bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
 
-                           --DESCR -> enriching ctxds
-                           --         take all the declarations from all patterns included (not extended) in this context
-                           ctxdecls = declRels (allCtxPats [cx])
+  --DESCR -> enriching ctxds
+  --         take all the declarations from all patterns included (not extended) in this context
+  ctxdecls = allCtxDecls [cx]
 
-                           --DESCR -> enriching ctxos
-                           --         bind the expression and nested object defs of all object defs in the context
-                           ctxobjdefs :: ObjectDefs
-                           ctxobjdefs = [bindObjDef (AllCpt,AllCpt) od | od<-ctxos cx]
-                           --DESCR -> bind an obj def, given the most generic sign allowed
-                           bindObjDef ::  (Cpt,Cpt) -> ObjectDef ->ObjectDef
-                           bindObjDef (src,_) od =
-                                    let
-                                    --DESCR -> the bound expression of this object def
-                                    --         the source is limited to 'src' or more specific, the target is not limited
-                                    expr' = bindExpr (objctx od) (src,AllCpt)
-                                    --DESCR -> bind a child object def
-                                    --         the source is limited to 'middle' or more specific, the target is not limited.
-                                    bindobjatt :: ObjectDef -> ObjectDef
-                                    bindobjatt oa = bindObjDef (middle,AllCpt) oa
-                                          where
-                                          --DESCR -> the AETree for this child objdef
-                                          oatree = castObjectDefToAdlExprTree (isarel,rels) oa
-                                          -- DESCR -> the source of the child obj def
-                                          RelationType (src',_) = infer isarel $ topExprOfAETree $ oatree
-                                          --DESCR -> the lubcpt of the target of (compositionOfParentObjDefs;exprThisObjDef) and
-                                          --         the source of the child obj def
-                                          middle = lubcpt isarel (fromConcept (target (expr'))) (src')
-                                    --DESCR -> the bound child object defs of this object def
-                                    objats'= map (bindobjatt) (objats od)
-                                    in
-                                    od {objctx=expr', objats=objats'}
+  --DESCR -> enriching ctxrs
+  ctxrules :: [(Rule,Proof,FilePos)]
+  ctxrules = ctxrulesgens ++ ctxrulespats
+  ctxrulespats = map bindRule $ allCtxRules [cx]
+  --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
+  --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
+  --          have different numbers.
+  bindRule :: Rule -> (Rule,Proof,FilePos)
+  bindRule r@(Ru{})
+    | rrsrt r==Truth = 
+        let 
+        proof = infer (gamma adlexpr) adlexpr
+        adlexpr = fromRule r
+        bindcon = case proof of
+          Proven (inftree:_) -> bindSubexpr (rrcon r) $ evaltree (inftree,False) --bind subexpressions according to trees
+          _ -> rrcon r --copy rule as parsed
+        bindtype =  case proof of
+          Proven inftrees -> sign proof
+          NoProof{} -> rrtyp r
+        in
+        (r {rrcon=bindcon, rrtyp=bindtype},proof,rrfps r) 
+    | otherwise = 
+        let
+        proof = infer (gamma adlexpr) adlexpr
+        adlexpr = fromRule r
+        bindant = case proof of
+          Proven (inftree:_) -> bindSubexpr (rrant r) $ etant $ evaltree (inftree,False)
+          _ -> rrant r --copy rule as parsed 
+        bindcon = case proof of
+          Proven (inftree:_) -> bindSubexpr (rrcon r) $ etcon $ evaltree (inftree,False)
+          _ -> rrant r --copy rule as parsed
+        bindtype =  case proof of
+          Proven inftrees -> sign proof
+          NoProof{} -> rrtyp r
+        etant et = 
+          if rrsrt r==Implication 
+          then case et of (BoundTo (Implicate antex _ _),inv) -> (BoundTo antex,inv)
+          else case et of (BoundTo (Equality antex _ _),inv) -> (BoundTo antex,inv)
+        etcon et = 
+          if rrsrt r==Implication 
+          then case et of (BoundTo (Implicate _ conex _),inv) -> (BoundTo conex,inv)
+          else case et of (BoundTo (Equality _ conex _),inv) -> (BoundTo conex,inv)
+        in 
+        (r {rrant=bindant, rrcon=bindcon, rrtyp=bindtype},proof,rrfps r)
+  bindRule r@(Sg{}) = (r {srsig=bindsig, srtyp=sign bindsig, srrel= binddecl},proof,srfps r)
+    where
+    (bindsig,proof,_) = bindRule (srsig r)
+    binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
+  bindRule _ = error "Unsupported rule type while enriching the context. The type checker should have given an error."
+  ctxrulesgens :: [(Rule,Proof,FilePos)]
+  ctxrulesgens = [rulefromgen g | g<-allCtxGens [cx]]
+  --TODO -> move rulefromgen to function toRule in module Gen
+  --DESCR -> rules deducted from a gen are proven by the existence of a gen
+  rulefromgen :: Gen -> (Rule,Proof,FilePos)
+  rulefromgen (G {genfp = posi, gengen = gen, genspc = spc} )
+    = (Ru
+         Implication
+         (Tm (mIs spc))
+         posi
+         (Tm (mIs gen))
+         [Tm (mIs spc), Tm (mIs gen)]
+         []
+         (spc,gen)
+         0  --REMARK -> rules are renumbered after enriching the context
+         [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
+       , Proven [Stmt $ fromIsa (spc,gen)],posi) --TODO -> Type is not a good name for this proof tree
 
-                           --DESCR -> enriching ctxks
-                           ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]
-                           bindKeyDef :: KeyDef -> KeyDef
-                           bindKeyDef kd =
-                                    let
-                                    expr' = bindExpr (kdctx kd) (AllCpt,AllCpt)
-                                    (Obj {objats=kdats'}) = bindObjDef (AllCpt,AllCpt)
-                                                                       (Obj {objats=kdats kd,
-                                                                             objnm=kdlbl kd,
-                                                                             objpos=kdpos kd,
-                                                                             objctx=expr',
-                                                                             objstrs=[[]]})
-                                    in
-                                    kd {kdctx=expr', kdats=kdats'}
+  --DESCR -> enriching ctxos
+  --         bind the expression and nested object defs of all object defs in the context
+  ctxobjdefs :: [(ObjectDef,[(Proof,FilePos)])]
+  ctxobjdefs = [bindObjDef od Nothing | od<-ctxos cx]
+  --add the upper expression to me and infer me and bind type
+  --pass the new upper expression to the children and bindObjDef them
+  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos)])
+  bindObjDef od mbtopexpr =  (od {objctx=bindexpr, objats=bindats},(proof,objpos od):proofats)
+    where
+    expr = case mbtopexpr of
+      Nothing -> (objctx od)
+      Just topexpr -> F [topexpr,(objctx od)]
+    proof = infer (gamma adlexpr) adlexpr
+    adlexpr = fromExpression expr
+    bindexpr = case proof of
+      Proven (inftree:_) -> bindSubexpr (objctx od) $ removeF $ evaltree (inftree,False)
+      _ -> (objctx od)
+    inferats = [bindObjDef oa (Just expr) | oa<-objats od]
+    bindats = [oa|(oa,_)<-inferats]
+    proofats = foldr (++) [] [proofs|(_,proofs)<-inferats]
+    removeF et = case mbtopexpr of
+      Nothing -> et
+      Just _ -> case et of (BoundTo (Semicolon _ ex2 _),inv) -> (BoundTo ex2,inv)
+  
+  ctxkeys :: [(KeyDef,[(Proof,FilePos)])]
+  ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]   
+  bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos)])
+  bindKeyDef kd = (kd {kdctx=bindexpr, kdats=bindats},(proof,kdpos kd):proofats)
+    where
+    proof = infer (gamma adlexpr) adlexpr
+    adlexpr = fromExpression $ kdctx kd
+    bindexpr = case proof of
+      Proven (inftree:_) -> bindSubexpr (kdctx kd) $ evaltree (inftree,False)
+      _ -> (kdctx kd)
+    (Obj {objats=bindats},proofats) = bindObjDef 
+                   (Obj {objats=kdats kd,
+                         objnm=kdlbl kd,
+                         objpos=kdpos kd,
+                         objctx=bindexpr,
+                         objstrs=[[]]}) Nothing
 
+                                    
+--TODO
+--DESCR -> decomposing Statement is opposite of TypeInference.fromExpression
+bindSubexpr :: Expression -> (Statement,Bool) -> Expression
+bindSubexpr (Tc ex) x = Tc $ bindSubexpr ex x 
+bindSubexpr (K0 ex) x = K0 $ bindSubexpr ex x 
+bindSubexpr (K1 ex) x = K1 $ bindSubexpr ex x 
+bindSubexpr (Cp ex) (BoundTo (Complement adlex _),inv) = Cp $ bindSubexpr ex (BoundTo adlex,not inv) 
+bindSubexpr (F []) _ = F []
+bindSubexpr (F (ex:[])) x = F [bindSubexpr ex x]
+bindSubexpr (F (lex:rexs)) (BoundTo (Semicolon adlex1 adlex2 _),inv) = 
+  case rexs of
+    rex:[] -> F [bindSubexpr lex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
+    rex:rs -> let 
+              F bexs = bindSubexpr (F rexs) (BoundTo adlex2,inv) 
+              in
+              F (bindSubexpr lex (BoundTo adlex1,inv):bexs)
+bindSubexpr (Fd []) _ = Fd []
+bindSubexpr (Fd (ex:[])) x = Fd [bindSubexpr ex x]
+bindSubexpr (Fd (lex:rexs)) (BoundTo (Dagger adlex1 adlex2 _),inv) = 
+  case rexs of
+    rex:[] -> Fd [bindSubexpr lex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
+    rex:rs -> let 
+              Fd bexs = bindSubexpr (Fd rexs) (BoundTo adlex2,inv) 
+              in
+              Fd (bindSubexpr lex (BoundTo adlex1,inv):bexs)
+bindSubexpr (Fu []) _ = Fu []
+bindSubexpr (Fu (ex:[])) x = Fu [bindSubexpr ex x]
+bindSubexpr (Fu (lex:rexs)) (BoundTo (Union adlex1 adlex2 _),inv) = 
+  case rexs of
+    rex:[] -> Fu [bindSubexpr lex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
+    rex:rs -> let 
+              Fu bexs = bindSubexpr (Fu rexs) (BoundTo adlex2,inv) 
+              in
+              Fu (bindSubexpr lex (BoundTo adlex1,inv):bexs)
+bindSubexpr (Fi []) _ = Fi []
+bindSubexpr (Fi (ex:[])) x = Fi [bindSubexpr ex x]
+bindSubexpr (Fi (lex:rexs)) (BoundTo (Intersect adlex1 adlex2 _),inv) = 
+  case rexs of
+    rex:[] -> Fi [bindSubexpr lex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
+    rex:rs -> let 
+              Fi bexs = bindSubexpr (Fi rexs) (BoundTo adlex2,inv) 
+              in
+              Fi (bindSubexpr lex (BoundTo adlex1,inv):bexs)
+bindSubexpr (Tm mp) (BoundTo (Flip adlex _),inv) = bindSubexpr  (Tm mp) (BoundTo adlex,inv)
+bindSubexpr (Tm mp) (BoundTo adlex@(Relation{}),inv) = 
+  if (rel adlex)==mp 
+  then Tm $ case mp of
+    Mph{} -> mp {mphtyp=if mphyin mp then (ec1,ec2) else (ec2,ec1) } --REMARK -> not bound to mphdecl because this can be read from the inference tree 
+    I{} -> mp {mphgen=if gen==Anything then spc else gen, mphspc=spc}
+    V{} -> mp {mphtyp=(ec1,ec2)}
+    _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
+  else error $ "wrong mp bindSubexpr"
+    where
+    (ec1,ec2) = if inv then (evalCT $ inverseCT c1, evalCT $ inverseCT c2) else (evalCT c1,evalCT c2) 
+    c1=exprsrc adlex
+    c2=exprtgt adlex
+    (spc,gen) = case c1 of
+       CF (_,x,y) -> (x,y)
+       CT x -> (x,x)
+       CTake (_,cs) -> (takec (Specific,cs), takec (Generic,cs))
+bindSubexpr x y = error $ "mismatch bindSubexpr" ++ show x ++ show y
+
+{-
                            --DESCR -> Binding expressions and morphisms
                            bindExprs :: Expressions -> Expressions
                            bindExprs exprs = [bindExpr x (foldlubcpts (srcs exprs),foldlubcpts (tgts exprs))| x<-exprs]
                                     where
-                                    foldlubcpts cpts = foldr (lubcpt isarel) AllCpt cpts
+                                    foldlubcpts cpts = foldr (lubcpt isatree) AllCpt cpts
                                     srcs exprs' = map rtsrc (rts exprs')
                                     tgts exprs' = map rttgt (rts exprs')
-                                    rts exprs' = [infer isarel $ castExpressionToAdlExpr (isarel,rels) x | x<-exprs']
+                                    rts exprs' = [infer isatree $ castExpressionToAdlExpr (isatree,rv) x | x<-exprs']
                                     rtsrc (RelationType (s,_)) = s
                                     rtsrc _ = error "Error in function enrich -> bindExprs -> rtsrc: relation type could not be determined."
                                     rttgt (RelationType (_,t)) = t
@@ -244,10 +388,10 @@ module TypeChecker (typecheck, Error, Errors) where
                            bindExpr :: Expression -> (Cpt,Cpt) -> Expression
                            bindExpr expr (src,tgt) =
                                     let
-                                    adlexpr = castExpressionToAdlExpr (isarel,rels) expr
-                                    RelationType (src', tgt') = infer isarel adlexpr
-                                    bindsource = lubcpt isarel src src'
-                                    bindtarget = lubcpt isarel tgt tgt'
+                                    adlexpr = castExpressionToAdlExpr (isatree,rv) expr
+                                    RelationType (src', tgt') = infer isatree adlexpr
+                                    bindsource = lubcpt isatree src src'
+                                    bindtarget = lubcpt isatree tgt tgt'
                                     bindtype = (bindsource,bindtarget)
                                     in
                                     case expr of
@@ -264,16 +408,16 @@ module TypeChecker (typecheck, Error, Errors) where
                                                     bindF (x:[]) = F [bindExpr x (src,tgt)]
                                                     bindF (left:right:[]) =
                                                           let
-                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
-                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) right
-                                                          middle = lubcpt isarel targetleft sourceright
+                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
+                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) right
+                                                          middle = lubcpt isatree targetleft sourceright
                                                           in
                                                           F [bindExpr left (bindsource,middle), bindExpr right (middle,bindtarget)]
                                                     bindF (left:right) =
                                                           let
-                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
-                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) (F right)
-                                                          middle = lubcpt isarel targetleft sourceright
+                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
+                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) (F right)
+                                                          middle = lubcpt isatree targetleft sourceright
                                                           F boundright = (bindExpr (F right) (middle,bindtarget))
                                                           in
                                                           F $ (bindExpr left (bindsource,middle)):boundright
@@ -315,16 +459,16 @@ module TypeChecker (typecheck, Error, Errors) where
                                                     bindFd (x:[]) = Fd [bindExpr x (src,tgt)]
                                                     bindFd (left:right:[]) =
                                                           let
-                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
-                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) right
-                                                          middle = lubcpt isarel targetleft sourceright
+                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
+                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) right
+                                                          middle = lubcpt isatree targetleft sourceright
                                                           in
                                                           Fd [bindExpr left (bindsource,middle), bindExpr right (middle,bindtarget)]
                                                     bindFd (left:right) =
                                                           let
-                                                          RelationType (_,targetleft)  = infer isarel $ castExpressionToAdlExpr (isarel,rels) left
-                                                          RelationType (sourceright,_) = infer isarel $ castExpressionToAdlExpr (isarel,rels) (Fd right)
-                                                          middle = lubcpt isarel targetleft sourceright
+                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
+                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) (Fd right)
+                                                          middle = lubcpt isatree targetleft sourceright
                                                           Fd boundright = (bindExpr (Fd right) (middle,bindtarget))
                                                           in
                                                           Fd $ (bindExpr left (bindsource,middle)):boundright
@@ -332,36 +476,36 @@ module TypeChecker (typecheck, Error, Errors) where
                            bindMph :: Morphism -> (Cpt,Cpt) -> Morphism
                            bindMph mp@(Mph {}) (src,tgt) =
                                     let
-                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source mp)),
-                                          toConcept $ lubcpt isarel tgt (fromConcept (target mp)))
-                                    FoundDr dcl = srchDeclRelByMorphism rels mp
+                                    tp = (toConcept $ lubcpt isatree src (fromConcept (source mp)),
+                                          toConcept $ lubcpt isatree tgt (fromConcept (target mp)))
+                                    FoundDr dcl = srchDeclRelByMorphism rv mp
                                     in
                                     mp {mphtyp=tp, mphdcl=dcl} --TODO
                            bindMph i@(I {}) (src,tgt) =
                                     let
-                                    gen' = if isA isarel src tgt then src else tgt
-                                    spc  = if isA isarel tgt src then src else tgt
+                                    gen' = if isA isatree src tgt then src else tgt
+                                    spc  = if isA isatree tgt src then src else tgt
                                     gen  = if gen' == AllCpt then spc else gen' --DESCR -> gen is not allowed to stay Anything
                                     in
                                     i {mphgen=toConcept gen, mphspc=toConcept spc}
                            bindMph vm@(V {}) (src,tgt) =
                                     let
-                                    tp = (toConcept $ lubcpt isarel src (fromConcept (source vm)),
-                                          toConcept $ lubcpt isarel tgt (fromConcept (target vm)))
+                                    tp = (toConcept $ lubcpt isatree src (fromConcept (source vm)),
+                                          toConcept $ lubcpt isatree tgt (fromConcept (target vm)))
                                     in
                                     vm {mphtyp=tp}
                            bindMph x _ = x --TODO -> other morphisms are returned as parsed, is this correct?
 
-
+-}
 
    -----------------
    --Check functions
    -----------------
 
    --DESCR -> check rule: Every context must have a unique name
-   checkCtxNameUniqueness :: Contexts -> Errors
-   checkCtxNameUniqueness [] = []
-   checkCtxNameUniqueness (cx:ctxs) | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs
+checkCtxNameUniqueness :: Contexts -> Errors
+checkCtxNameUniqueness [] = []
+checkCtxNameUniqueness (cx:ctxs) | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs
                                     | otherwise    = checkCtxNameUniqueness ctxs
                                     where
                                     --DESCR -> return True if the names of the Contexts are equal
@@ -377,8 +521,8 @@ module TypeChecker (typecheck, Error, Errors) where
 
    --TODO -> check for loops in context extensions
    --USE -> Contexts names must be unique
-   checkCtxExtLoops :: Contexts -> Errors
-   checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
+checkCtxExtLoops :: Contexts -> Errors
+checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
                             where
                             composeError :: [ContextName] -> Errors
                             composeError [] = []
@@ -390,7 +534,7 @@ module TypeChecker (typecheck, Error, Errors) where
                             findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
                                                           , not (foundCtx cxf)
                                                           , foundCtx (srchContext ctxs (ctxName cxf))]
-
+{-
    --TODO -> argument Context indicating the current Context, only check that context
    checkArch :: Architecture -> Errors
    checkArch arch@(Arch{}) = dropWhile (==[])
@@ -437,30 +581,30 @@ module TypeChecker (typecheck, Error, Errors) where
    --         Return the list of error strings
    checkRules :: Environment -> Rules -> Errors
    checkRules env@(isarel,_) ruls = (processResult2 (map (inferWithInfo isarel) [castRuleToAdlExpr env rul | rul<-ruls] ))
-
+-}
    ------------------
    --Common functions
    ------------------
 
-   infixl 6 ++&&
-   infixl 6 ++||
+infixl 6 ++&&
+infixl 6 ++||
 
    --DESCR -> same as ++
    --USE   -> use ++&& and ++|| to combine multiple checks
-   (++&&) :: [a] -> [a] -> [a]
-   (++&&) e1 e2 = e1 ++ e2
+(++&&) :: [a] -> [a] -> [a]
+(++&&) e1 e2 = e1 ++ e2
 
    --DESCR -> only return errors of the right check if left check did not have errors
    --USE   -> use ++&& and ++|| to combine multiple checks
-   (++||) :: [a] -> [a] -> [a]
-   (++||) [] e2 = e2 -- if left contains no Errors then return the errors of the right
-   (++||) e1 _ = e1  -- if left contains Errors then return them and ignore the right
+(++||) :: [a] -> [a] -> [a]
+(++||) [] e2 = e2 -- if left contains no Errors then return the errors of the right
+(++||) e1 _ = e1  -- if left contains Errors then return them and ignore the right
 
    --DESCR -> function elem provided with own equality function
    --USE   -> use when not instance Eq a or if another predicate is needed then implemented by instance Eq a
-   elemBy :: (a->a->Bool)->a->[a]->Bool
-   elemBy _ _ [] = False --not in list
-   elemBy eq el (el':els) = (eq el el') || (elemBy eq el els)
+elemBy :: (a->a->Bool)->a->[a]->Bool
+elemBy _ _ [] = False --not in list
+elemBy eq el (el':els) = (eq el el') || (elemBy eq el els)
 
    ------------------
    {- DEBUG
@@ -477,150 +621,52 @@ module TypeChecker (typecheck, Error, Errors) where
 --Context part: later in separate module
 ------------------------------------------------------------------------------------------------
 
-   --USE    -> The ContextCheckResult is needed to communicate the environment from a context and potential errors
-   --REMARK -> From the environment only the Contexts containing the contexts in scope is used
-   type ContextName = String
-   data ContextFound = Found Context | NotFound ContextName
+--USE    -> The ContextCheckResult is needed to communicate the environment from a context and potential errors
+--REMARK -> From the environment only the Contexts containing the contexts in scope is used
+type ContextName = String
+data ContextFound = Found Context | NotFound ContextName
 
-   --DESCR -> data Tree a = Node a [Tree a]
-   type CtxTree = Tree ContextFound
+--DESCR -> data Tree a = Node a [Tree a]
+type CtxTree = Tree ContextFound
 
-   toClassification :: CtxTree -> Classification Context
-   toClassification (Node (NotFound cxnm) _) = error ("TypeChecker.toClassification: NotFound " ++ cxnm)
-   toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
+toClassification :: CtxTree -> Classification Context
+toClassification (Node (NotFound cxnm) _) = error ("TypeChecker.toClassification: NotFound " ++ cxnm)
+toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
 
-   ------------------------
-   --ContextFound functions
-   ------------------------
+------------------------
+--ContextFound functions
+------------------------
 
-   buildCtxTree :: ContextFound -> Contexts -> CtxTree
-   buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
-   buildCtxTree cxf@(Found cx) ctxs
-              --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
-              = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
+buildCtxTree :: ContextFound -> Contexts -> CtxTree
+buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
+buildCtxTree cxf@(Found cx) ctxs
+           --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
+           = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
 
-   --DESCR -> search for a context by name and return the first one found
-   srchContext :: Contexts -> String -> ContextFound
-   srchContext [] srchstr = NotFound srchstr
-   srchContext (cx:ctxs) srchstr
-            | case cx of Ctx{} -> (ctxnm cx==srchstr)
-                                  = Found cx
-            | otherwise = srchContext ctxs srchstr
+--DESCR -> search for a context by name and return the first one found
+srchContext :: Contexts -> String -> ContextFound
+srchContext [] srchstr = NotFound srchstr
+srchContext (cx:ctxs) srchstr
+         | case cx of Ctx{} -> (ctxnm cx==srchstr)
+                               = Found cx
+         | otherwise = srchContext ctxs srchstr
 
-   foundCtx :: ContextFound -> Bool
-   foundCtx (Found _) = True
-   foundCtx _         = False
+foundCtx :: ContextFound -> Bool
+foundCtx (Found _) = True
+foundCtx _         = False
 
-   ctxName :: ContextFound -> ContextName
-   ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
-   ctxName (NotFound cxnm) = cxnm
+ctxName :: ContextFound -> ContextName
+ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
+ctxName (NotFound cxnm) = cxnm
 
-   fromFoundCtx :: ContextFound -> Context
-   fromFoundCtx (NotFound cxnm) = error ("TypeChecker.fromFoundCtx: NotFound " ++ cxnm)
-   fromFoundCtx(Found cx)    = cx
-
-   -------------------
-   --context functions
-   -------------------
-
-   --DESCR -> removes a context from contexts
-   --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
-   --          context names should be unique
-   removeCtx :: Contexts -> Context -> Contexts
-   removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
-
-   --DESCR -> all the Gens of Contexts
-   allCtxGens :: Contexts -> Gens
-   allCtxGens ctxs = foldr (++) [] [case cx of Ctx{} -> allPatGens (ctxpats cx) | cx<-ctxs]
-
-   --DESCR -> all the Gens of patterns
-   allPatGens :: Patterns -> Gens
-   allPatGens ps = foldr (++) [] [case p of Pat{} -> ptgns p | p<-ps]
-
-   --DESCR -> all the patterns of contexts
-   allCtxPats :: Contexts -> Patterns
-   allCtxPats ctxs = foldr (++) [] [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
-
-   --DESCR -> all the ObjectDefs of Contexts
-   allCtxObjDefs :: Contexts -> ObjectDefs
-   allCtxObjDefs ctxs = foldr (++) [] [case cx of Ctx{} -> ctxos cx | cx<-ctxs]
-
-   --DESCR -> all the Rules of Contexts
-   allCtxRules :: Contexts -> Rules
-   allCtxRules ctxs = foldr (++) [] [case cx of Ctx{} -> ctxrs cx ++ allPatRules (ctxpats cx) | cx<-ctxs]
-
-   --DESCR -> all the Gens of patterns
-   allPatRules :: Patterns -> Rules
-   allPatRules ps = foldr (++) [] [case p of Pat{} -> ptrls p | p<-ps]
-
-   allCtxCpts :: Contexts -> Cpts
-   allCtxCpts ctxs = foldr Set.union Set.empty
-                            [allDeclCpts (declRels (allCtxPats ctxs)),
-                             allGenCpts (allCtxGens ctxs),
-                             allMphCpts (allExprMphs (allCtxExprs ctxs))
-                             ]
-
-   allMphCpts :: Morphisms -> Cpts
-   allMphCpts ms = Set.fromList $ map fromConcept $ foldr (++) []
-                   [case mph of Mph{} -> mphats mph;
-                                I{} -> mphats mph;
-                                V{} -> mphats mph;
-                                Mp1{} -> [mph1typ mph]
-                    |mph<-ms]
-
-   allExprMphs :: Expressions -> Morphisms
-   allExprMphs exprs = foldr (++) []
-                    [
-                     let
-                        mphs (Tc e') = mphs e'
-                        mphs (F es') = allExprMphs es'
-                        mphs (Fd es') = allExprMphs es'
-                        mphs (Fi es') = allExprMphs es'
-                        mphs (Fu es') = allExprMphs es'
-                        mphs (K0 e') = mphs e'
-                        mphs (K1 e') = mphs e'
-                        mphs (Cp e') = mphs e'
-                        mphs (Tm mph) = [mph]
-                     in mphs expr
-                     | expr<-exprs]
-
-
-   allCtxExprs :: Contexts -> Expressions
-   allCtxExprs ctxs = allObjDefExprs (allCtxObjDefs ctxs) ++
-                      allRuleExprs (allCtxRules ctxs)
-                      --TODO -> allKeyDefExprs
-
-   allObjDefExprs :: ObjectDefs -> Expressions
-   allObjDefExprs os = foldr (++) [] [case obj of Obj{} -> (objctx obj):(allObjDefExprs (objats obj))| obj<-os]
-
-   allRuleExprs :: Rules -> Expressions
-   allRuleExprs rs = foldr (++) [] [case rul of Ru{} -> if rrsrt rul==Truth
-                                                        then [rrcon rul]
-                                                        else [rrant rul,rrcon rul];
-                                                _    -> [] | rul<-rs]
-
-   allDeclCpts :: DeclRels -> Cpts
-   --allDeclCpts [] = []
-   allDeclCpts dls = Set.fromList $ [fromConcept (desrc d) | d@(Sgn{})<-dls] ++
-                                    [fromConcept (detgt d) | d@(Sgn{})<-dls]
-
-   allGenCpts :: Gens -> Cpts
-   --allGenCpts [] = []
-   allGenCpts gens = Set.fromList $ [case g of G{} -> fromConcept (gengen g) | g<-gens] ++
-                                    [case g of G{} -> fromConcept (genspc g) | g<-gens]
-                                    
-   allCtxKeyDefs :: Contexts -> KeyDefs
-   allCtxKeyDefs ctxs = (allPatKeyDefs (allCtxPats ctxs))
-   --TODO -> all context keydefs are already parsed into a pattern for some unknown reason
-   --          not needed: ++ (foldr (++) [] [case cx of Ctx{} -> ctxks cx | cx <-ctxs])
-
-   allPatKeyDefs :: Patterns -> KeyDefs
-   allPatKeyDefs ps = foldr (++) [] [case p of Pat{} -> ptkds p | p<-ps]
+fromFoundCtx :: ContextFound -> Context
+fromFoundCtx (NotFound cxnm) = error ("TypeChecker.fromFoundCtx: NotFound " ++ cxnm)
+fromFoundCtx(Found cx)    = cx
 
 ---------------------------------------------------------------------------------------------
 --Meta information part: later in separate module
 ---------------------------------------------------------------------------------------------
-
+{-
    ----------------------------------------------------
    --generic meta information structures and functions
    ----------------------------------------------------
@@ -1181,6 +1227,6 @@ module TypeChecker (typecheck, Error, Errors) where
 ---------------------------------------------------------------------------------------------
 --MORE COMMENTS
 ---------------------------------------------------------------------------------------------
-
+-}
 
 
