@@ -31,6 +31,7 @@ KEY patABkey : I[Ba] [Apropa : I[Aa], Dpropa : I[Da]]
 GEN Aa ISA Ba
 GEN Aa ISA Ca
 GEN Ba ISA Da
+sa :: Ba * Ba.
 ra :: Ba * Ea.
 ha :: Ha * Ha [SYM, ASY, TRN, RFX].
 I[Fa] = I[Fa]

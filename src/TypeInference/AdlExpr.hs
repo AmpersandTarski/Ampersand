@@ -1,18 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInference.AdlExpr where
 import Adl.MorphismAndDeclaration
-import Adl.FilePos
 import Adl.Concept
 import Adl.Expression
 import Adl.Rule
-
-import CommonClasses --for ghci only
-
---TODO -> temporary
---type Expression = String
-newmph nm = Mph nm Nowhere [] (Anything,Anything) True (Vs Anything Anything)
-newmphatt nm c1 c2 = Mph nm Nowhere [c1,c2] (Anything,Anything) True (Vs Anything Anything)
-newdcl nm c1 c2 = Sgn nm c1 c2 [] "" "" "" [] "" Nowhere 0 False
+import CommonClasses
 
 data AdlExpr =   Relation    {rel::Morphism, id::Int, tt::TypeTerm}
                | Implicate   {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
@@ -27,7 +19,7 @@ data AdlExpr =   Relation    {rel::Morphism, id::Int, tt::TypeTerm}
 
 --REMARK -> Equality is NOT on the type to be able to correlate a typed expression to its untyped declaration
 instance Eq AdlExpr where
-  (Relation m i _)==(Relation m' i' _) = (name m)==(name m') && i==i'
+  (Relation mp i _)==(Relation mp' i' _) = (name mp)==(name mp') && i==i'
   (Implicate expr1 expr2 _)==(Implicate expr1' expr2' _) = expr1==expr1' && expr2==expr2'
   (Equality expr1 expr2 _)==(Equality expr1' expr2' _) = expr1==expr1' && expr2==expr2'
   (Union expr1 expr2 _)==(Union expr1' expr2' _) = expr1==expr1' && expr2==expr2'
@@ -44,61 +36,61 @@ fromExpression expr = fst (uniqueMphsE 0 expr)
   
 --REMARK -> there will never be a Flip, because it is parsed flippedwise. The Flip is still implemented for other parse trees than the current ADL parse tree.
 uniqueMphsE :: Int -> Expression -> (AdlExpr,Int)
-uniqueMphsE i (Tm m@(Mph{mphyin=False})) = (Flip (Relation m (i+1) unknowntype) unknowntype,i+1)
-uniqueMphsE i (Tm m) = (Relation m (i+1) unknowntype,i+1)
-uniqueMphsE i (F []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
+uniqueMphsE i (Tm mp@(Mph{mphyin=False})) = (Flip (Relation mp (i+1) unknowntype) unknowntype,i+1)
+uniqueMphsE i (Tm mp) = (Relation mp (i+1) unknowntype,i+1)
+uniqueMphsE _ (F []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
                                "Expression has no sub expressions"++show (F [])++"." 
-uniqueMphsE i (F (ex:[])) = uniqueMphsE i ex
-uniqueMphsE i (F (lex:rexs)) = (Semicolon (fst left) (fst right) unknowntype, snd right)
+uniqueMphsE i (F (ex:rexs)) = (Semicolon (fst lft) (fst rght) unknowntype, snd rght)
    where
-   left = uniqueMphsE i lex
-   right = case rexs of
-     rex:[] -> uniqueMphsE (snd left) rex
-     rex:rs -> uniqueMphsE (snd left) (F rexs)
-uniqueMphsE i (Fd []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
+   lft = uniqueMphsE i ex
+   rght = case rexs of
+     rex:[] -> uniqueMphsE (snd lft) rex
+     _:_    -> uniqueMphsE (snd lft) (F rexs)
+     []     -> uniqueMphsE i ex
+uniqueMphsE _ (Fd []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
                                "Expression has no sub expressions"++show (Fd [])++"." 
-uniqueMphsE i (Fd (ex:[])) = uniqueMphsE i ex
-uniqueMphsE i (Fd (lex:rexs)) = (Dagger (fst left) (fst right) unknowntype, snd right)
+uniqueMphsE i (Fd (ex:rexs)) = (Dagger (fst lft) (fst rght) unknowntype, snd rght)
    where
-   left = uniqueMphsE i lex
-   right = case rexs of
-     rex:[] -> uniqueMphsE (snd left) rex
-     rex:rs -> uniqueMphsE (snd left) (Fd rexs)
-uniqueMphsE i (Fi []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
+   lft = uniqueMphsE i ex
+   rght = case rexs of
+     rex:[] -> uniqueMphsE (snd lft) rex
+     _:_    -> uniqueMphsE (snd lft) (Fd rexs)
+     []     -> uniqueMphsE i ex
+uniqueMphsE _ (Fi []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
                                "Expression has no sub expressions"++show (Fi [])++"." 
-uniqueMphsE i (Fi (ex:[])) = uniqueMphsE i ex
-uniqueMphsE i (Fi (lex:rexs)) = (Intersect (fst left) (fst right) unknowntype, snd right)
+uniqueMphsE i (Fi (ex:rexs)) = (Intersect (fst lft) (fst rght) unknowntype, snd rght)
    where
-   left = uniqueMphsE i lex
-   right = case rexs of
-     rex:[] -> uniqueMphsE (snd left) rex
-     rex:rs -> uniqueMphsE (snd left) (Fi rexs)
-uniqueMphsE i (Fu []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
+   lft = uniqueMphsE i ex
+   rght = case rexs of
+     rex:[] -> uniqueMphsE (snd lft) rex
+     _:_    -> uniqueMphsE (snd lft) (Fi rexs)
+     []     -> uniqueMphsE i ex
+uniqueMphsE _ (Fu []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
                                "Expression has no sub expressions"++show (Fu [])++"." 
-uniqueMphsE i (Fu (ex:[])) = uniqueMphsE i ex
-uniqueMphsE i (Fu (lex:rexs)) = (Union (fst left) (fst right) unknowntype, snd right)
+uniqueMphsE i (Fu (ex:rexs)) = (Union (fst lft) (fst rght) unknowntype, snd rght)
    where
-   left = uniqueMphsE i lex
-   right = case rexs of
-     rex:[] -> uniqueMphsE (snd left) rex
-     rex:rs -> uniqueMphsE (snd left) (Fu rexs)
-uniqueMphsE i (Cp ex) = (Complement (fst sub) unknowntype, snd sub)
+   lft = uniqueMphsE i ex
+   rght = case rexs of
+     rex:[] -> uniqueMphsE (snd lft) rex
+     _:_    -> uniqueMphsE (snd lft) (Fu rexs)
+     []     -> uniqueMphsE i ex
+uniqueMphsE i (Cp ex) = (Complement (fst sb) unknowntype, snd sb)
    where
-   sub = uniqueMphsE i ex
+   sb = uniqueMphsE i ex
 uniqueMphsE i (Tc ex) = uniqueMphsE i ex
 uniqueMphsE i (K0 ex) = uniqueMphsE i ex
 uniqueMphsE i (K1 ex) = uniqueMphsE i ex
 
 fromRule :: Rule -> AdlExpr
-fromRule (Ru{rrsrt=Implication,rrant=lex,rrcon=rex}) = Implicate (fst left) (fst right) unknowntype
+fromRule (Ru{rrsrt=Implication,rrant=ex,rrcon=rex}) = Implicate (fst lft) (fst rght) unknowntype
    where
-   left = uniqueMphsE 0 lex
-   right = uniqueMphsE (snd left) rex
-fromRule (Ru{rrsrt=Equivalence,rrant=lex,rrcon=rex}) = Equality (fst left) (fst right) unknowntype
+   lft = uniqueMphsE 0 ex
+   rght = uniqueMphsE (snd lft) rex
+fromRule (Ru{rrsrt=Equivalence,rrant=ex,rrcon=rex}) = Equality (fst lft) (fst rght) unknowntype
    where
-   left = uniqueMphsE 0 lex
-   right = uniqueMphsE (snd left) rex
-fromRule (Ru{rrsrt=Truth,rrcon=sub}) = fst (uniqueMphsE 0 sub)
+   lft = uniqueMphsE 0 ex
+   rght = uniqueMphsE (snd lft) rex
+fromRule (Ru{rrsrt=Truth,rrcon=sb}) = fst (uniqueMphsE 0 sb)
 fromRule (Sg{srsig=rule}) = fromRule rule
 fromRule rule = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function fromRule: " ++
                         "Rule type has not been implemented."++show rule++"." 
@@ -114,11 +106,10 @@ tttgt :: TypeTerm -> ConceptTerm
 tttgt (TT _ ct) = ct
      
 data TypeTerm = TT ConceptTerm ConceptTerm deriving (Show)
-evalTT :: TypeTerm -> Sign
-evalTT (TT ct1 ct2) = (evalCT ct1,evalCT ct2)
 instance Eq TypeTerm where
    (TT ct1 ct2)==(TT ct1' ct2') = ct1==ct1' && ct2==ct2'
 --   _ == _ = False
+unknowntype :: TypeTerm
 unknowntype = TT (CT Anything) (CT Anything)
 
 data ConceptTerm = CT Concept | CF (GenSpec, Concept, Concept) | CTake (GenSpec,Concepts) deriving (Show)
@@ -127,22 +118,5 @@ instance Eq ConceptTerm where
   (CT c)==(CT c') = c==c'
   (CF (f,c1,c2))==(CF (f',c1',c2')) = f==f' && c1==c1' && c2==c2'
   _ == _ = False 
-evalCT :: ConceptTerm -> Concept
-evalCT (CT c) = c
-evalCT (CF (f,c1,c2)) 
-  | f==Generic = c2
-  | f==Specific = c1 
-evalCT (CTake x) = takec x
-inverseCT :: ConceptTerm -> ConceptTerm
-inverseCT ct@(CT{}) = ct
-inverseCT (CF (f,c1,c2)) 
-  | f==Generic = CF (Specific,c1,c2)
-  | f==Specific = CF (Generic,c1,c2)
-inverseCT (CTake (f,cs))
-  | f==Generic = CTake (Specific,cs)
-  | f==Specific = CTake (Generic,cs)
 
-takec :: (GenSpec,Concepts) -> Concept
-takec (Generic,cs) = Anything --TODO
-takec (Specific,cs) = Anything --TODO
 
