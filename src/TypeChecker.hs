@@ -58,23 +58,30 @@ import TypeInferenceEngine
 type Errors = [Error]
 type Error = String
 
-printexpr gamma inv ex@(Relation mp _ tp)= show mp ++ "[" ++ (show $ evalstmt gamma (BoundTo ex, inv)) ++"]"
-printexpr gamma inv (Implicate expr1 expr2 _)= printexpr gamma inv expr1 ++ "|-" ++ printexpr gamma inv expr2
-printexpr gamma inv (Equality expr1 expr2 _)= printexpr gamma inv expr1 ++ "=" ++ printexpr gamma inv expr2
-printexpr gamma inv (Union expr1 expr2 _)= printexpr gamma inv expr1 ++ "\\/" ++ printexpr gamma inv expr2
-printexpr gamma inv (Intersect expr1 expr2 _)= printexpr gamma inv expr1 ++ "/\\" ++ printexpr gamma inv expr2
-printexpr gamma inv (Semicolon expr1 expr2 _)= printexpr gamma inv expr1 ++ ";" ++ printexpr gamma inv expr2
-printexpr gamma inv (Dagger expr1 expr2 _)= printexpr gamma inv expr1 ++ "!" ++ printexpr gamma inv expr2
-printexpr gamma inv (Complement expr _)= "-" ++ printexpr gamma inv expr
-printexpr gamma inv (Flip expr _)= printexpr gamma inv expr ++ "~"
+printexpr ex@(Relation mp _ _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
+printexpr (Implicate expr1 expr2 _)= printexpr expr1 ++ "|-" ++ printexpr expr2
+printexpr (Equality expr1 expr2 _)= printexpr expr1 ++ "=" ++ printexpr expr2
+printexpr (Union exprs _)= "UNION: " ++ (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
+printexpr (Intersect exprs _)= "DISJ: " ++  (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
+printexpr (Semicolon expr1 expr2 _)= printexpr expr1 ++ ";" ++ printexpr expr2
+printexpr (Dagger expr1 expr2 _)= printexpr expr1 ++ "!" ++ printexpr expr2
+printexpr (Complement expr _)= "-" ++ printexpr expr
+printexpr (Flip expr _)= printexpr expr ++ "~"
 
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
 --USE   -> This is the only function needed outside of the TypeChecker
 typecheck :: Architecture -> (Contexts, Errors)
 typecheck arch@(Arch ctxs) = (enriched, checkresult)  
---                   ["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
---                   ["(show $ evaltree (tree,False)) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
---                    [printexpr gamma inv ex |(gamma,(BoundTo ex,inv))<-[(g,evaltree (tree,False))|(Proven g trees,_)<-allproofs, tree<-trees]])
+--                    if null checkresult then
+--                   (enriched,["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
+--                   (enriched,[(show $ evaltree gamma tree) | (proof@(Proven gamma trees),_)<-allproofs, tree<-trees])
+--                     (enriched,[show (printexpr $ fromRule ex) ++ "\n"|ex<-(allCtxRules enriched)])
+--TODO -> stolen minnetje
+-- ra~;sa = ra~;sa
+-- -(ra~;sa) = -(ra~;sa) => geparsed als ra~;sa = ra~;-sa en ra~;sa=-(ra~;sa) (los gaan ze goed)
+--                      (enriched,[show (ex) ++ "\n"|ex<-(allCtxRules ctxs)])
+--                    (enriched,[printexpr ex |(BoundTo ex)<-[evaltree g tree|(Proven g trees,_)<-allproofs, tree<-trees]])
+--                     else (enriched,checkresult)
    where
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
@@ -164,24 +171,24 @@ enrichCtx cx@(Ctx{}) ctxs =
   gamma expr = (mphStmts expr) ++ gammaisa
   gammaisa = isaStmts
   mphStmts :: AdlExpr -> [Statement]
-  mphStmts (Relation mp@(Mph{mphnm=r1}) i t) =
+  mphStmts (Relation mp@(Mph{mphnm=r1}) i _ t) =
      let
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
-     alternatives = [TypeOf $ Relation mp i $ TT (CF (Generic,c1,c1)) (CF (Generic,c2,c2)) | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
+     --TODO -> Set homo rel on True
+     alternatives = [TypeOf $ Relation mp i False $ TT (CT c1) (CT c2) 1 | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
      in
      if null alternatives
-     then [InfErr (UndeclRel (Relation mp i t))]
+     then [InfErr (UndeclRel (Relation mp i False t))]
      else alternatives
-  mphStmts (Relation mp@(I{mphats=[c1]}) i _) = [TypeOf $ Relation mp i $ TT (CF (Generic,c1,c1)) (CF (Generic,c1,c1))]
-  mphStmts (Relation mp@(I{}) i _) = [TypeOf $ Relation mp i $ TT (CF (Generic,Anything,Anything)) (CF (Generic,Anything,Anything))]
-  mphStmts (Relation mp@(V{mphats=[c1,c2]}) i _) = [TypeOf $ Relation mp i $ TT (CF (Generic,c1,c1)) (CF (Generic,c2,c2))]
-  mphStmts (Relation mp@(V{}) i _) = [TypeOf $ Relation mp i $ TT (CF (Generic,Anything,Anything)) (CF (Generic,Anything,Anything))]
-  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
+  mphStmts (Relation mp@(I{mphats=[c1]}) i _ _) = [TypeOf $ Relation mp i True $ TT (CT c1) (CT c1) 1]
+  mphStmts (Relation mp@(I{}) i _ _) = [TypeOf $ Relation mp i True $ TT (CT Anything) (CT Anything) 1]
+  mphStmts (Relation mp@(V{}) i _ _) = [TypeOf $ Relation mp i False $ TT (CT Anything) (CT Anything) 1]
+  mphStmts (Relation (Mp1{}) _ _ _ ) = [] --TODO -> ???
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Union expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Intersect expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Union exprs _) = foldr (++) [] $ map mphStmts exprs
+  mphStmts (Intersect exprs _) = foldr (++) [] $ map mphStmts exprs
   mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Complement expr _) = mphStmts expr
@@ -219,48 +226,48 @@ enrichCtx cx@(Ctx{}) ctxs =
         proof = infer (gamma adlexpr) adlexpr
         adlexpr = fromRule r
         bindcon = case proof of
-          Proven _ (inftree:_) -> bindSubexpr (rrcon r) $ evaltree (inftree,False) --bind subexpressions according to trees
+          Proven gm (inftree:_) -> bindSubexpr (rrcon r) $ evaltree gm inftree --bind subexpressions according to trees
           _ -> rrcon r --copy rule as parsed
-        bindtype =  case proof of
+        bindrtype =  case proof of
           Proven _ _ -> sign proof
           NoProof{} -> rrtyp r
         in
-        (r {rrcon=bindcon, rrtyp=bindtype},proof,rrfps r) 
+        (r {rrcon=bindcon, rrtyp=bindrtype},proof,rrfps r) 
     | otherwise = 
         let
         proof = infer (gamma adlexpr) adlexpr
         adlexpr = fromRule r
         bindant = case proof of
-          Proven _ (inftree:_) -> bindSubexpr (rrant r) $ etant $ evaltree (inftree,False)
+          Proven gm (inftree:_) -> bindSubexpr (rrant r) $ etant $ evaltree gm inftree
           _ -> rrant r --copy rule as parsed 
         bindcon = case proof of
-          Proven _ (inftree:_) -> bindSubexpr (rrcon r) $ etcon $ evaltree (inftree,False)
+          Proven gm (inftree:_) -> bindSubexpr (rrcon r) $ etcon $ evaltree gm inftree
           _ -> rrant r --copy rule as parsed
-        bindtype =  case proof of
+        bindrtype =  case proof of
           Proven _ _ -> sign proof
           NoProof{} -> rrtyp r
         etant et = 
           if rrsrt r==Implication 
           then case et of 
-             (BoundTo (Implicate antex _ _),inv) -> (BoundTo antex,inv)
+             (BoundTo (Implicate antex _ _)) -> BoundTo antex
              _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etant: " ++
                           "Expected a BoundTo implication rule statement."++show et++"."
           else case et of 
-             (BoundTo (Equality antex _ _),inv) -> (BoundTo antex,inv)
+             (BoundTo (Equality antex _ _)) -> BoundTo antex
              _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etant: " ++
                           "Expected a BoundTo equivalence rule statement."++show et++"."
         etcon et = 
           if rrsrt r==Implication 
           then case et of 
-             (BoundTo (Implicate _ conex _),inv) -> (BoundTo conex,inv)
+             (BoundTo (Implicate _ conex _)) -> BoundTo conex
              _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etcon: " ++
                           "Expected a BoundTo implication rule statement."++show et++"."
           else case et of 
-             (BoundTo (Equality _ conex _),inv) -> (BoundTo conex,inv)
+             (BoundTo (Equality _ conex _)) -> BoundTo conex
              _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etcon: " ++
                           "Expected a BoundTo equivalence rule statement."++show et++"."
         in 
-        (r {rrant=bindant, rrcon=bindcon, rrtyp=bindtype},proof,rrfps r)
+        (r {rrant=bindant, rrcon=bindcon, rrtyp=bindrtype},proof,rrfps r)
   bindRule r@(Sg{}) = (r {srsig=bindsig, srtyp=sign bindsig, srrel= binddecl},proof,srfps r)
     where
     (bindsig,proof,_) = bindRule (srsig r)
@@ -299,7 +306,7 @@ enrichCtx cx@(Ctx{}) ctxs =
     proof = infer (gamma adlexpr) adlexpr
     adlexpr = fromExpression expr
     bindexpr = case proof of
-      Proven _ (inftree:_) -> bindSubexpr (objctx od) $ removeF $ evaltree (inftree,False)
+      Proven gm (inftree:_) -> bindSubexpr (objctx od) $ removeF $ evaltree gm inftree
       _ -> (objctx od)
     inferats = [bindObjDef oa (Just expr) | oa<-objats od]
     bindats = [oa|(oa,_)<-inferats]
@@ -307,7 +314,7 @@ enrichCtx cx@(Ctx{}) ctxs =
     removeF et = case mbtopexpr of
       Nothing -> et
       Just _ -> case et of 
-          (BoundTo (Semicolon _ ex2 _),inv) -> (BoundTo ex2,inv)
+          (BoundTo (Semicolon _ ex2 _)) -> BoundTo ex2
           _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindObjDef.removeF: " ++
                        "Expected a BoundTo relative composition expression statement."++show et++"."
   
@@ -319,7 +326,7 @@ enrichCtx cx@(Ctx{}) ctxs =
     proof = infer (gamma adlexpr) adlexpr
     adlexpr = fromExpression $ kdctx kd
     bindexpr = case proof of
-      Proven _ (inftree:_) -> bindSubexpr (kdctx kd) $ evaltree (inftree,False)
+      Proven gm (inftree:_) -> bindSubexpr (kdctx kd) $ evaltree gm inftree
       _ -> (kdctx kd)
     (Obj {objats=bindats},proofats) = bindObjDef 
                    (Obj {objats=kdats kd,
@@ -331,197 +338,57 @@ enrichCtx cx@(Ctx{}) ctxs =
                                     
   --TODO
   --DESCR -> decomposing Statement is opposite of TypeInference.fromExpression
-  bindSubexpr :: Expression -> (Statement,Bool) -> Expression
+  bindSubexpr :: Expression -> Statement -> Expression
   bindSubexpr (Tc ex) x = Tc $ bindSubexpr ex x 
   bindSubexpr (K0 ex) x = K0 $ bindSubexpr ex x 
   bindSubexpr (K1 ex) x = K1 $ bindSubexpr ex x 
-  bindSubexpr (Cp ex) (BoundTo (Complement adlex _),inv) = Cp $ bindSubexpr ex (BoundTo adlex,not inv) 
+  bindSubexpr (Cp ex) (BoundTo (Complement adlex _)) = Cp $ bindSubexpr ex (BoundTo adlex) 
   bindSubexpr (F []) _ = F []
-  bindSubexpr (F (ex:rexs)) x@(BoundTo (Semicolon adlex1 adlex2 _),inv) = 
+  bindSubexpr (F (ex:rexs)) x@(BoundTo (Semicolon adlex1 adlex2 _)) = 
     case rexs of
-      rex:[] -> F [bindSubexpr ex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
+      rex:[] -> F [bindSubexpr ex (BoundTo adlex1), bindSubexpr rex (BoundTo adlex2)]
       _:_    -> let 
-                F bexs = bindSubexpr (F rexs) (BoundTo adlex2,inv) 
+                F bexs = bindSubexpr (F rexs) (BoundTo adlex2) 
                 in
-                F (bindSubexpr ex (BoundTo adlex1,inv):bexs)
+                F (bindSubexpr ex (BoundTo adlex1):bexs)
       []     -> F [bindSubexpr ex x]
   bindSubexpr (Fd []) _ = Fd []
-  bindSubexpr (Fd (ex:rexs)) x@(BoundTo (Dagger adlex1 adlex2 _),inv) = 
+  bindSubexpr (Fd (ex:rexs)) x@(BoundTo (Dagger adlex1 adlex2 _)) = 
     case rexs of
-      rex:[] -> Fd [bindSubexpr ex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
+      rex:[] -> Fd [bindSubexpr ex (BoundTo adlex1), bindSubexpr rex (BoundTo adlex2)]
       _:_    -> let 
-                Fd bexs = bindSubexpr (Fd rexs) (BoundTo adlex2,inv) 
+                Fd bexs = bindSubexpr (Fd rexs) (BoundTo adlex2) 
                 in
-                Fd (bindSubexpr ex (BoundTo adlex1,inv):bexs)
+                Fd (bindSubexpr ex (BoundTo adlex1):bexs)
       []     -> Fd [bindSubexpr ex x]
-  bindSubexpr (Fu []) _ = Fu []
-  bindSubexpr (Fu (ex:rexs)) x@(BoundTo (Union adlex1 adlex2 _),inv) = 
-    case rexs of
-      rex:[] -> Fu [bindSubexpr ex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
-      _:_    -> let 
-                Fu bexs = bindSubexpr (Fu rexs) (BoundTo adlex2,inv) 
-                in
-                Fu (bindSubexpr ex (BoundTo adlex1,inv):bexs)
-      []     -> Fu [bindSubexpr ex x]
-  bindSubexpr (Fi []) _ = Fi []
-  bindSubexpr (Fi (ex:rexs)) x@(BoundTo (Intersect adlex1 adlex2 _),inv) = 
-    case rexs of
-      rex:[] -> Fi [bindSubexpr ex (BoundTo adlex1,inv), bindSubexpr rex (BoundTo adlex2,inv)]
-      _:_    -> let 
-                Fi bexs = bindSubexpr (Fi rexs) (BoundTo adlex2,inv) 
-                in
-                Fi (bindSubexpr ex (BoundTo adlex1,inv):bexs)
-      []     -> Fi [bindSubexpr ex x]
-  bindSubexpr (Tm mp) (BoundTo (Flip adlex _),inv) = bindSubexpr  (Tm mp) (BoundTo adlex,inv)
-  bindSubexpr (Tm mp) (BoundTo adlex@(Relation{}),inv) = 
+  bindSubexpr (Fu subexs) (BoundTo (Union adlexs _)) = Fu $ bindSubexprs subexs adlexs 
+  bindSubexpr (Fi subexs) (BoundTo (Intersect adlexs _)) = Fi $ bindSubexprs subexs adlexs
+  bindSubexpr (Tm mp) (BoundTo (Flip adlex _)) = bindSubexpr  (Tm mp) (BoundTo adlex)
+  bindSubexpr (Tm mp) stmt@(BoundTo adlex@(Relation{})) = 
+    let
+    (ec1,ec2) = evalstmt stmt
+    gen = (toGen $ exprsrc adlex)
+    in
     if (rel adlex)==mp 
     then Tm $ case mp of
       Mph{} -> mp {mphtyp=if mphyin mp then (ec1,ec2) else (ec2,ec1) } --REMARK -> not bound to mphdecl because this can be read from the inference tree 
-      I{} -> mp {mphgen=if gen==Anything then spc else gen, mphspc=spc}
+      I{} -> mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
-    else error $ "wrong mp bindSubexpr"
-      where
-      (ec1,ec2) = if inv then (evalCT gammaisa $ inverseCT c1, evalCT gammaisa $ inverseCT c2) else (evalCT gammaisa c1,evalCT gammaisa c2) 
-      c1=exprsrc adlex
-      c2=exprtgt adlex
-      (spc,gen) = case c1 of
-         CF (_,x,y) -> (x,y)
-         CT x -> (x,x)
-         CTake (_,cs) -> (takec gammaisa (Specific,cs), takec gammaisa (Generic,cs))
+    else error $ "wrong mp bindSubexpr"      
   bindSubexpr x y = error $ "mismatch bindSubexpr" ++ show x ++ show y
 
-{-
-                           --DESCR -> Binding expressions and morphisms
-                           bindExprs :: Expressions -> Expressions
-                           bindExprs exprs = [bindExpr x (foldlubcpts (srcs exprs),foldlubcpts (tgts exprs))| x<-exprs]
-                                    where
-                                    foldlubcpts cpts = foldr (lubcpt isatree) AllCpt cpts
-                                    srcs exprs' = map rtsrc (rts exprs')
-                                    tgts exprs' = map rttgt (rts exprs')
-                                    rts exprs' = [infer isatree $ castExpressionToAdlExpr (isatree,rv) x | x<-exprs']
-                                    rtsrc (RelationType (s,_)) = s
-                                    rtsrc _ = error "Error in function enrich -> bindExprs -> rtsrc: relation type could not be determined."
-                                    rttgt (RelationType (_,t)) = t
-                                    rttgt _ = error "Error in function enrich -> bindExprs -> rttgt: relation type could not be determined."
-                           bindExpr :: Expression -> (Cpt,Cpt) -> Expression
-                           bindExpr expr (src,tgt) =
-                                    let
-                                    adlexpr = castExpressionToAdlExpr (isatree,rv) expr
-                                    RelationType (src', tgt') = infer isatree adlexpr
-                                    bindsource = lubcpt isatree src src'
-                                    bindtarget = lubcpt isatree tgt tgt'
-                                    bindtype = (bindsource,bindtarget)
-                                    in
-                                    case expr of
-                                         Tm{} -> Tm $ bindMph (m expr) bindtype
-                                         Tc{} -> Tc $ bindExpr (e expr) (src,tgt)
-                                         K0{} -> K0 $ bindExpr (e expr) (src,tgt)
-                                         K1{} -> K1 $ bindExpr (e expr) (src,tgt)
-                                         Cp{} -> Cp $ bindExpr (e expr) (src,tgt)
-                                         Fu{} -> Fu $ bindExprs (es expr)
-                                         Fi{} -> Fi $ bindExprs (es expr)
-                                         F{}  -> bindF (es expr)
-                                                    where
-                                                    bindF [] = F []
-                                                    bindF (x:[]) = F [bindExpr x (src,tgt)]
-                                                    bindF (left:right:[]) =
-                                                          let
-                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
-                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) right
-                                                          middle = lubcpt isatree targetleft sourceright
-                                                          in
-                                                          F [bindExpr left (bindsource,middle), bindExpr right (middle,bindtarget)]
-                                                    bindF (left:right) =
-                                                          let
-                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
-                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) (F right)
-                                                          middle = lubcpt isatree targetleft sourceright
-                                                          F boundright = (bindExpr (F right) (middle,bindtarget))
-                                                          in
-                                                          F $ (bindExpr left (bindsource,middle)):boundright
-                                         --REMARK -> example Product 'voldoetAan' Eisen
-                                         --                  Certificering 'stelt' ExtraVoorwaarden
-                                         --                  GEN ExtraVoorwaarden ISA Eisen
-                                         --                  (-stelt ! voldoetAan~)~ :: Product * Certificering
-                                         --               -> voor alle extra voorwaarden geldt
-                                         --                  of het Product voldoetAan ExtraVoorwaarden
-                                         --                  of de ExtraVoorwaarden worden niet gesteld voor een certificering
-                                         --               => Product voldoet aan de extra voorwaarden die gesteld worden door een certificering
-                                         --                  Dus de b in het midden is ExtraVoorwaarden en niet Eisen, net als de relatieve compositie
-                                         --
-                                         --                  (-voldoetAan ! stelt~) :: Product * Certificering
-                                         --               -> voor alle eisen geldt
-                                         --                  of het is een Eis waar het Product niet aan voldoet
-                                         --                  of de Eis wordt gesteld door een Certificering
-                                         --               -> voor alle eisen geldt
-                                         --                  of het is een ExtraVoorwaarde waar het Product niet aan voldoet
-                                         --                  of de ExtraVoorwaarde wordt gesteld door een Certificering
-                                         --                  en het Product voldoet aan geen enkele Eis die geen ExtraVoorwaarde is
-                                         --               -> voor alle extra voorwaarden geldt
-                                         --                  of het is een ExtraVoorwaarde waar het Product niet aan voldoet
-                                         --                  of de ExtraVoorwaarde wordt gesteld door een Certificering
-                                         --                  en het Product voldoet aan geen enkel concept dat geen ExtraVoorwaarde is
-                                         --               => Het product is gerelateerd tot een certificering als het uitsluitend voldoet aan 
-                                         --                  ExtraVoorwaarden die gesteld worden door de certificering. Het product voldoet dus
-                                         --                  nooit aan een concept dat geen ExtraVoorwaarde is.
-                                         --                  Dus ik kan uit de voeten met een b van het type ExtraVoorwaarden
-                                         {-
-                                         Statement:
-                                         Als relatiealgebra wetten (zoals DeMorgan) in een type systeem met subtypes moet houden, dan
-                                         moet je een expressie met ; en zijn equivalent met !  over hetzelfde type b evalueren (en ook hetzelfde type a en hetzelfde type c)
-                                         (a b en c zijn de vrije variabelen in de evaluatieregels van ; en !)
-                                         -}
-                                         Fd{}  -> bindFd (es expr)
-                                                    where
-                                                    bindFd [] = Fd []
-                                                    bindFd (x:[]) = Fd [bindExpr x (src,tgt)]
-                                                    bindFd (left:right:[]) =
-                                                          let
-                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
-                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) right
-                                                          middle = lubcpt isatree targetleft sourceright
-                                                          in
-                                                          Fd [bindExpr left (bindsource,middle), bindExpr right (middle,bindtarget)]
-                                                    bindFd (left:right) =
-                                                          let
-                                                          RelationType (_,targetleft)  = infer isatree $ castExpressionToAdlExpr (isatree,rv) left
-                                                          RelationType (sourceright,_) = infer isatree $ castExpressionToAdlExpr (isatree,rv) (Fd right)
-                                                          middle = lubcpt isatree targetleft sourceright
-                                                          Fd boundright = (bindExpr (Fd right) (middle,bindtarget))
-                                                          in
-                                                          Fd $ (bindExpr left (bindsource,middle)):boundright
+  bindSubexprs :: Expressions ->  [AdlExpr] -> Expressions
+  bindSubexprs subexs [] = if null subexs then [] else error "not all subexprs matched"
+  bindSubexprs [] adlexs = if null adlexs then [] else error "not all subexprs matched"
+  bindSubexprs (subex:subexs) (adlex:adlexs) = 
+      (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
 
-                           bindMph :: Morphism -> (Cpt,Cpt) -> Morphism
-                           bindMph mp@(Mph {}) (src,tgt) =
-                                    let
-                                    tp = (toConcept $ lubcpt isatree src (fromConcept (source mp)),
-                                          toConcept $ lubcpt isatree tgt (fromConcept (target mp)))
-                                    FoundDr dcl = srchDeclRelByMorphism rv mp
-                                    in
-                                    mp {mphtyp=tp, mphdcl=dcl} --TODO
-                           bindMph i@(I {}) (src,tgt) =
-                                    let
-                                    gen' = if isA isatree src tgt then src else tgt
-                                    spc  = if isA isatree tgt src then src else tgt
-                                    gen  = if gen' == AllCpt then spc else gen' --DESCR -> gen is not allowed to stay Anything
-                                    in
-                                    i {mphgen=toConcept gen, mphspc=toConcept spc}
-                           bindMph vm@(V {}) (src,tgt) =
-                                    let
-                                    tp = (toConcept $ lubcpt isatree src (fromConcept (source vm)),
-                                          toConcept $ lubcpt isatree tgt (fromConcept (target vm)))
-                                    in
-                                    vm {mphtyp=tp}
-                           bindMph x _ = x --TODO -> other morphisms are returned as parsed, is this correct?
+-----------------
+--Check functions
+-----------------
 
--}
-
-   -----------------
-   --Check functions
-   -----------------
-
-   --DESCR -> check rule: Every context must have a unique name
+--DESCR -> check rule: Every context must have a unique name
 checkCtxNameUniqueness :: Contexts -> Errors
 checkCtxNameUniqueness [] = []
 checkCtxNameUniqueness (cx:ctxs) | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs

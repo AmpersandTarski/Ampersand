@@ -32,8 +32,10 @@ instance Eq Statement where
   (BoundTo expr)==(BoundTo expr') = expr==expr'
   _==_ = False
 
--------------------------
+
+------------------------
 type Gamma = [Statement]
+{-
 evalTT :: Gamma -> TypeTerm -> Sign
 evalTT gm (TT ct1 ct2) = (evalCT gm ct1,evalCT gm ct2)
 
@@ -53,25 +55,26 @@ inverseCT (CTake (f,cs))
   | f==Specific = CTake (Generic,cs)
 
 takec :: Gamma -> (GenSpec,Concepts) -> Concept
-takec gamma (Generic,cs) = Anything -- case cs of
---   [] -> Anything
---   c:[] -> c
---   c1:c2:cn -> if elem (fromIsa (c1,c2)) gamma
---               then takec gamma (Generic,c2:cn)
---               else
---                 if elem (fromIsa (c2,c1)) gamma
---                 then takec gamma (Generic,c1:cn)
---                 else error $ "Error in Statements.hs module Typeinference.Statements function takec: " ++
---                              "Concepts in list have no isa relation. C1: "++show c1++", C2: "++show c2++"\nGamma: "++show gamma++"."
-takec gamma (Specific,cs) = Anything -- case cs of
---   [] -> NOthing
---   c:[] -> c
---   c1:c2:cn -> if elem (fromIsa (c1,c2)) gamma
---               then takec gamma (Specific,c1:cn)
---               else
---                 if elem (fromIsa (c2,c1)) gamma
---                 then takec gamma (Specific,c2:cn)
---                 else error $ "Error in Statements.hs module Typeinference.Statements function takec: " ++
---                              "Concepts in list have no isa relation. C1: "++show c1++", C2: "++show c2++"\nGamma: "++show gamma++"."
-------------------------------------------
+takec gamma (Generic,cs) = case cs of
+   [] -> Anything
+   c:[] -> c
+   c1:c2:cn -> if elem (fromIsa (c1,c2)) gamma
+               then takec gamma (Generic,c2:cn)
+               else
+                 if elem (fromIsa (c2,c1)) gamma
+                 then takec gamma (Generic,c1:cn)
+                 else error $ "Error in Statements.hs module Typeinference.Statements function takec: " ++
+                              "Concepts in list have no isa relation. C1: "++show c1++", C2: "++show c2++"\nGamma: "++show gamma++"."
+takec gamma (Specific,cs) = case cs of
+   [] -> NOthing
+   c:[] -> c
+   c1:c2:cn -> if elem (fromIsa (c1,c2)) gamma
+               then takec gamma (Specific,c1:cn)
+               else
+                 if elem (fromIsa (c2,c1)) gamma
+                 then takec gamma (Specific,c2:cn)
+                 else error $ "Error in Statements.hs module Typeinference.Statements function takec: " ++
+                              "Concepts in list have no isa relation. C1: "++show c1++", C2: "++show c2++"\nGamma: "++show gamma++"."
+-----------------------------------------
+-}
 

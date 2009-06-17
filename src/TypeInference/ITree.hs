@@ -3,6 +3,7 @@ module TypeInference.ITree where
 import Adl.Concept
 import TypeInference.Statements
 import TypeInference.AdlExpr
+import Data.List
 
 --DESCR -> Or I have a type, proofed by the fact that all alternatives resulting in a type, result in the same type.
 --         Or I could not infer a type, proofed by the fact that all alternatives result in error(s).
@@ -12,10 +13,10 @@ data TypeErrorsType = NoType | AmbiguousType deriving (Show)
 
 instance Association Proof where
   source (Proven _ [] ) = Anything
-  source (Proven gm inftrees ) = source $ evalstmt gm $ evaltree (head inftrees,False)
+  source (Proven gm inftrees ) = source $ evalstmt $ evaltree gm (head inftrees)
   source (NoProof _ _ ) = NOthing
   target (Proven _ [] ) = Anything
-  target (Proven gm inftrees ) = target $ evalstmt gm $ evaltree (head inftrees,False)
+  target (Proven gm inftrees ) = target $ evalstmt $ evaltree gm (head inftrees)
   target (NoProof _ _ ) = NOthing
 
 --DESCR -> For type inference we defined rules to be able to construct an inference tree, to infer a type or type error, for all expressions.
@@ -24,142 +25,203 @@ instance Association Proof where
 --         SpecRule specifies the domain or range of the type in a TypeStat statement given a certain IsaStat statement
 --         DisjRule determines the BndStat statement of a disjunction expression based on the BndStat of its left and right expression
 --         RelCompRule determines the BndStat statement of a relative composition expression based on the BndStat of its left and right expression
-data ITree = Stmt Statement
-           | DisjRule ITree ITree
-           | UnionRule ITree ITree
-           | ImplyRule ITree ITree
-           | EqualRule ITree ITree
-           | RelcompRule ITree ITree
-           | AddcompRule ITree ITree
-           | BindRule BindType ITree
-           | ComplRule ITree
-           | FlipRule ITree
-           | SpecRule SpecType ITree ITree deriving (Show)
+data ITree = Stmt {baseax::Statement}
+           | DisjRule {axs1::[ITree], axs2::[ITree]}
+           | UnionRule {axs1::[ITree], axs2::[ITree]}
+           | ImplyRule {ax::ITree}
+           | EqualRule {ax::ITree}
+           | RelcompRule {comptype::CompType, ax1::ITree, ax2::ITree}
+           | AddcompRule {comptype::CompType, ax1::ITree, ax2::ITree}
+           | BindRule {bindtype::BindType, ax::ITree}
+           | DComplRule {ax::ITree}
+           | FlipRule {invtype::InvType, ax::ITree}
+           | SpecRule {spectype::SpecType, ax1::ITree, ax2::ITree} 
+           | DeMorganRule {dmtype::DMType, ax::ITree}
+           deriving (Show)
 
-data BindType = Bind | BindG1 | BindG2 | BindGG | BindS1 | BindS2 | BindSS | BindSG | BindGS deriving (Show)
+data BindType = Bind | BindCompl deriving (Show)
 data SpecType = SpecDomain | SpecRange deriving (Show) 
-
+data CompType = Comp | CompInv1 | CompInv2 | CompDInv deriving (Show) 
+data InvType = NoInv | Inv deriving (Show) 
+data DMType = FAddcomp | FRelcomp | FUnion | FDisj deriving (Show) 
+ 
 --DESCR -> returns all the Stmt statements in a tree
 stmts :: ITree -> [Statement]
 stmts (Stmt stmt) = [stmt]
-stmts (DisjRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (UnionRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (RelcompRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (AddcompRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (ImplyRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (EqualRule tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (FlipRule tr) = stmts tr
-stmts (ComplRule tr) = stmts tr
+stmts (DisjRule trs1 trs2) = foldr (++) [] $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
+stmts (UnionRule trs1 trs2) = foldr (++) [] $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
+stmts (ImplyRule tr) = stmts tr
+stmts (EqualRule tr) = stmts tr
+stmts (RelcompRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (AddcompRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
 stmts (BindRule _ tr) = stmts tr
+stmts (DComplRule tr) = stmts tr
+stmts (FlipRule _ tr) = stmts tr
 stmts (SpecRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (DeMorganRule _ tr) = stmts tr
 
-type Inverse = Bool
-evaltree :: (ITree,Inverse) -> (Statement,Inverse)
-evaltree (Stmt stmt,inv) = (stmt,inv)
-evaltree (DisjRule tr1 tr2,inv) = (BoundTo $ Intersect ex rex $ TT c1 c2,inv)
+--DESCR -> folds the tree to a single statement by evaluating all rules
+--TODO -> check on axioms, now I just draw the conclusion
+evaltree :: Gamma -> ITree -> Statement
+evaltree _ (Stmt stmt) = stmt
+evaltree gamma (DisjRule noinvs invs) = BoundTo $ Intersect sortedexs $ fromSign infT --this is the conclusion
    where
-   (BoundTo ex,_) = evaltree (tr1,inv)
-   (BoundTo rex,_) = evaltree (tr2,inv)
-   c1 = if (exprsrc ex)==(exprsrc rex) 
-        then exprsrc ex
-        else CT NOthing
-   c2 = if (exprtgt ex)==(exprtgt rex) 
-        then exprtgt ex
-        else CT NOthing
-evaltree (UnionRule tr1 tr2,inv) = (BoundTo $ Union ex rex $ TT c1 c2,inv)
+   --infer what T will be for the expression and all subexpressions
+   infT@(infsrc,inftgt) = 
+        if null disjinvsax --no complements
+        then if null disjax then  (NOthing,NOthing) --nothing
+             else (foldevalspec gamma gsrcsdisjax,foldevalspec gamma gtgtsdisjax) --only normal, take mostspec of declared normal
+        else if null disjax
+             then (foldevalgen gamma gsrcsdisjinvsax,foldevalgen gamma gtgtsdisjinvsax) --only complements, lub
+             else (foldevalspec gamma gsrcsdisjax,foldevalspec gamma gtgtsdisjax) --some normal, take mostspec of declared normal
+   disjax = map (evaltree gamma) noinvs
+   gsrcsdisjax = [toGen $ exprsrc x |(BoundTo x)<-disjax]
+   gtgtsdisjax = [toGen $ exprtgt x |(BoundTo x)<-disjax]
+   disjinvsax =  map (evaltree gamma) invs
+   gsrcsdisjinvsax = [toGen $ exprsrc x |(BoundTo x)<-disjinvsax]
+   gtgtsdisjinvsax = [toGen $ exprtgt x |(BoundTo x)<-disjinvsax]
+   --reassign the inferred T to all subexpressions and sort the subexpressions to their original order
+   disjcombax1 = [reassignexpr (Just infsrc,Just inftgt) x | (BoundTo x)<-disjax]
+   disjcombax2 = [reassignexpr (Just infsrc,Just inftgt) x | (BoundTo x)<-disjinvsax]
+   sortedexs = sort $ disjcombax1 ++ disjcombax2
+evaltree gamma (UnionRule noinvs invs) = BoundTo $ Union sortedexs $ fromSign infT --this is the conclusion
    where
-   (BoundTo ex,_) = evaltree (tr1,inv)
-   (BoundTo rex,_) = evaltree (tr2,inv)
-   c1 = if (exprsrc ex)==(exprsrc rex) 
-        then exprsrc ex
-        else CT NOthing
-   c2 = if (exprtgt ex)==(exprtgt rex) 
-        then exprtgt ex
-        else CT NOthing
-evaltree (RelcompRule tr1 tr2,inv) = (BoundTo $ Semicolon 
-                                        (ex {tt= TT c1 (CTake (Specific,[c2,c3,c4]))})
-                                        (rex {tt= TT (CTake (Specific,[c2,c3,c4])) c5})
-                                        $ TT c1 c5
-                                      ,inv) 
+   --infer what T will be for the expression and all subexpressions
+   infT@(infsrc,inftgt) = if null allaxs 
+          then (NOthing,NOthing)
+          else (foldevalgen gamma gsrcsallaxs,foldevalgen gamma gtgtsallaxs)
+   disjax = map (evaltree gamma) noinvs
+   disjinvsax =  map (evaltree gamma) invs
+   allaxs = disjax ++ disjinvsax
+   gsrcsallaxs = [toGen $ exprsrc x |(BoundTo x)<-allaxs]
+   gtgtsallaxs = [toGen $ exprtgt x |(BoundTo x)<-allaxs]
+   --reassign the inferred T to all subexpressions and sort the subexpressions to their original order
+   disjcombaxs = [reassignexpr (Just infsrc,Just inftgt) x|(BoundTo x)<-allaxs]
+   sortedexs = sort disjcombaxs
+evaltree gamma (RelcompRule ct tr1 tr2) = BoundTo $ Semicolon 
+                                        (reassignexpr (Nothing,Just c2) ex)
+                                        (reassignexpr (Just c2,Nothing) rex)
+                                        $ fromSign (c1,c3) --this is the conclusion
    where
-   (BoundTo ex,_) = evaltree (tr1,inv)
-   (BoundTo rex,_) = evaltree (tr2,inv)
-   c1 = exprsrc ex
-   c2 = if c2l==c2r then c2l else NOthing
-   CF (Specific,c2l,c3) = exprtgt ex
-   CF (Specific,c2r,c4) = exprsrc rex
-   c5 = exprtgt rex
-evaltree (AddcompRule tr1 tr2,inv) = (BoundTo $ Dagger 
-                                        (ex {tt= TT c1 (CTake (Generic,[c2,c3,c4]))})
-                                        (rex {tt= TT (CTake (Generic,[c2,c3,c4])) c5})
-                                        $ TT c1 c5
-                                      ,inv) 
+   --REMARK -> only mph expressions and complement mph expressions will have a CTAS
+   BoundTo ex = evaltree gamma tr1
+   BoundTo rex = evaltree gamma tr2
+   c1 = val $ exprsrc ex
+   c2 = case ct of
+      Comp -> val (exprtgt ex) --I already inferred the glb, (exprtgt ex)==(exprsrc rex)
+      CompInv1 -> toGen (exprsrc rex) --the declared concept from the source of the right, or just the source of the right expression, because left is a complement
+      CompInv2 -> toGen (exprtgt ex) --the declared concept from the target of the left morphism, or just the target of the left expression, because right is a complement
+      CompDInv -> evalgen gamma (toGen $ exprsrc rex) (toGen $ exprtgt ex) --the most general of the two declared
+   c3 = val $ exprtgt rex
+evaltree gamma (AddcompRule ct tr1 tr2) = BoundTo $ Dagger 
+                                        (reassignexpr (Nothing,Just c2) ex)
+                                        (reassignexpr (Just c2,Nothing) rex)
+                                        $ fromSign (c1,c3) --this is the conclusion
    where
-   (BoundTo ex,_) = evaltree (tr1,inv)
-   (BoundTo rex,_) = evaltree (tr2,inv)
-   c1 = exprsrc ex
-   c2 = if c2l==c2r then c2l else NOthing
-   CF (Generic,c2l,c3) = exprtgt ex
-   CF (Generic,c2r,c4) = exprsrc rex
-   c5 = exprtgt rex
-evaltree (ImplyRule tr1 tr2,inv) =  (BoundTo $ Implicate ex rex $ TT c1 c2,inv) 
+   --REMARK -> only mph expressions and complement mph expressions will have a CTAS
+   BoundTo ex = evaltree gamma tr1
+   BoundTo rex = evaltree gamma tr2
+   c1 = val $ exprsrc ex
+   c2 = case ct of
+      Comp -> evalgen gamma (toGen $ exprsrc rex) (toGen $ exprtgt ex) --the most general of the two declared
+      CompInv1 -> toGen (exprsrc rex) --the declared concept from the source of the right, or just the source of the right expression, because left is a complement
+      CompInv2 -> toGen (exprtgt ex) --the declared concept from the target of the left morphism, or just the target of the left expression, because right is a complement
+      CompDInv -> val (exprtgt ex) --I already inferred the glb, (exprtgt ex)==(exprsrc rex)
+   c3 = val $ exprtgt rex
+evaltree gamma (ImplyRule tr) =  BoundTo $ Implicate x y (tt ex) 
    where
-   (BoundTo ex,_) = evaltree (tr1,inv)
-   (BoundTo rex,_) = evaltree (tr2,inv)
-   c1 = if (exprsrc ex)==(exprsrc rex) 
-        then exprsrc ex
-        else CT NOthing
-   c2 = if (exprtgt ex)==(exprtgt rex) 
-        then exprtgt ex
-        else CT NOthing
-evaltree (EqualRule tr1 tr2,inv) = (BoundTo $ Equality ex rex $ TT c1 c2,inv) 
+   BoundTo ex = evaltree gamma tr
+   Union{lst=(invx:y:[])} = ex
+   Complement{sub=x} = invx
+evaltree gamma (EqualRule tr) = BoundTo $ Equality x y (tt implex1) 
    where
-   (BoundTo ex,_) = evaltree (tr1,inv)
-   (BoundTo rex,_) = evaltree (tr2,inv)
-   c1 = if (exprsrc ex)==(exprsrc rex) 
-        then exprsrc ex
-        else CT NOthing
-   c2 = if (exprtgt ex)==(exprtgt rex) 
-        then exprtgt ex
-        else CT NOthing
-evaltree (FlipRule tr,inv) = (BoundTo $ Flip sb $ TT c2 c1,inv) 
+   DisjRule (impltr1:_:[]) _ = tr
+   BoundTo (implex1@Implicate{left=x,right=y}) = evaltree gamma impltr1
+   --REMARK (for TODO of implementation of axiom check) -> Because evalTree Union sorts on mphid, I cannot use evaltree on second Implicate
+   --ImplyRule utr = impltr2
+   --BoundTo ex = evaltree gamma utr
+   --Union{lst=(y:invx:[])} = ex
+   --Complement{sub=x} = invx
+   --implex2 = Implicate x y (tt ex)
+evaltree gamma (FlipRule it tr) = BoundTo boundexpr 
    where
-   (BoundTo sb,_) = evaltree (tr,inv)
-   c1 = exprsrc sb
-   c2 = exprtgt sb
-evaltree (ComplRule tr,inv) = (BoundTo $ Complement sb $ TT c1 c2,not inv) 
+   BoundTo sb = evaltree gamma tr
+   infT = (tt sb){cts=exprtgt sb, ctt=exprsrc sb}
+   boundexpr = case it of
+     NoInv -> Flip {sub=sb, tt=infT}
+     Inv -> let Complement{sub=sb'} = sb 
+            in Complement{sub=Flip {sub=sb', tt=infT},tt=infT}
+evaltree gamma (DComplRule tr) = BoundTo $ Complement (Complement sb (tt sb)) (tt sb)
    where
-   (BoundTo sb,_) = evaltree (tr,not inv)
-   c1 = exprsrc sb
-   c2 = exprtgt sb
-evaltree (BindRule bt tr,inv) = (BoundTo (sb{tt=boundtype}),inv)  
+   BoundTo sb = evaltree gamma tr 
+evaltree gamma (BindRule bt tr) = BoundTo boundexpr
    where
-   (TypeOf sb,_) = evaltree (tr,inv)
-   CF (Generic,c1,c2) = exprsrc sb
-   CF (Generic,c3,c4) = exprtgt sb
-   boundtype = case bt of
-     Bind -> TT (CT c1) (CT c3)
-     BindG1 -> TT (CF (Generic,c1,c2)) (CT c3)
-     BindG2 -> TT (CT c1) (CF (Generic,c3,c4))
-     BindGG -> TT (CF (Generic,c1,c2)) (CF (Generic,c3,c4))
-     BindS1 -> TT (CF (Specific,c1,c2)) (CT c3)
-     BindS2 -> TT (CT c1) (CF (Specific,c3,c4))
-     BindSS -> TT (CF (Specific,c1,c2)) (CF (Specific,c3,c4))
-     BindGS -> TT (CF (Generic,c1,c2)) (CF (Specific,c3,c4))
-     BindSG -> TT (CF (Specific,c1,c2)) (CF (Generic,c3,c4))
-evaltree (SpecRule st tr1 tr2,inv) = (TypeOf (sb{tt=boundtype}),inv) 
+   TypeOf sb = evaltree gamma tr
+   boundexpr = case bt of
+     Bind -> sb
+     BindCompl -> Complement{sub=sb,tt=inversetype (tt sb)}
+evaltree gamma (SpecRule st tr1 tr2) = TypeOf (sb{tt=boundtype})
    where
-   (IsaStat c3 c1,_) = evaltree (tr1,inv)
-   (TypeOf sb,_) = evaltree (tr2,inv)
-   CF (Generic,lc1,lc2) = exprsrc sb
-   CF (Generic,rc1,rc2) = exprtgt sb
+   IsaStat c3 _ = evaltree gamma tr1
+   TypeOf sb = evaltree gamma tr2
    boundtype = case st of
-     SpecDomain -> if c1==lc1 then TT (CF (Generic,c3,lc2)) (exprtgt sb) else TT (CT NOthing) (CT NOthing)
-     SpecRange ->  if c1==rc1 then TT (exprsrc sb) (CF (Generic,c3,rc2)) else TT (CT NOthing) (CT NOthing)
+     SpecDomain -> (tt sb){cts=specval c3 (cts $ tt sb)}
+     SpecRange ->  (tt sb){ctt=specval c3 (ctt $ tt sb)}
+   specval :: Concept -> ConceptTerm -> ConceptTerm
+   specval cs (CT{val=cg}) = CTAS{val=cs,as=cg}
+   specval cs ct@(CTAS{}) = ct{val=cs}
+evaltree gamma (DeMorganRule dmt tr) = BoundTo boundexpr  
+   where
+   BoundTo ex = evaltree gamma tr
+   boundexpr = case dmt of
+      FAddcomp -> let 
+                  Semicolon{left=invx,right=invy} = ex
+                  Complement{sub=x} = invx
+                  Complement{sub=y} = invy
+                  in Complement{sub=Dagger{left=x,right=y,tt=tt ex}
+                               ,tt=inversetype (tt ex)}
+      FRelcomp -> let 
+                  Dagger{left=invx,right=invy} = ex
+                  Complement{sub=x} = invx
+                  Complement{sub=y} = invy
+                  in Complement{sub=Semicolon{left=x,right=y,tt=tt ex}
+                               ,tt=inversetype (tt ex)}
+      FUnion -> let 
+                Intersect{lst=invxs} = ex
+                in Complement{sub=Union{lst=[x|(Complement{sub=x})<-invxs],tt=tt ex}
+                             ,tt=inversetype (tt ex)}
+      FDisj -> let 
+               Union{lst=invxs} = ex
+               in Complement{sub=Intersect{lst=[x|(Complement{sub=x})<-invxs],tt=tt ex}
+                            ,tt=inversetype (tt ex)} 
+evalstmt :: Statement -> Sign
+evalstmt (BoundTo expr) = (val $ exprsrc expr,val $ exprtgt expr)
+evalstmt _ = (NOthing,NOthing)
 
-evalstmt :: Gamma -> (Statement, Inverse) -> Sign
-evalstmt gm (BoundTo expr,inv) = if inv then (evalCT gm $ inverseCT c1, evalCT gm $ inverseCT c2) else (evalCT gm c1,evalCT gm c2) 
-  where
-  c1=exprsrc expr
-  c2=exprtgt expr
-evalstmt _ _ = (NOthing,NOthing) --use inverseCT :: ConceptTerm -> ConceptTerm
+evalgen :: Gamma -> Concept -> Concept -> Concept
+--results in I[Anything] being set to something concrete
+evalgen _ c1 Anything = c1 
+evalgen _ Anything c2 = c2
+evalgen gamma c1 c2 = if elem (fromIsa (c1, c2)) gamma then c2
+                      else if elem (fromIsa (c2, c1)) gamma then c1
+                      else NOthing
+
+evalspec :: Gamma -> Concept -> Concept -> Concept
+evalspec gamma c1 c2 = if elem (fromIsa (c1, c2)) gamma then c1
+                       else if elem (fromIsa (c2, c1)) gamma then c2
+                       else NOthing
+
+foldevalgen :: Gamma -> Concepts -> Concept
+foldevalgen _ [] = Anything
+foldevalgen gamma cs = foldr (evalgen gamma) NOthing cs
+
+foldevalspec :: Gamma -> Concepts -> Concept
+foldevalspec _ [] = NOthing
+foldevalspec gamma cs = foldr (evalspec gamma) Anything cs
+
+toGen :: ConceptTerm -> Concept
+toGen (CTAS{as=x}) = x
+toGen (CT{val=x}) = x
+
+--toSpec :: ConceptTerm -> Concept
+--toSpec ct = val ct 

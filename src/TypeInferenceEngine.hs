@@ -19,6 +19,7 @@ type BndCptVar = (CptVar,Concept)
 --DESCR -> return a type inference tree(s) for an expression given a gamma
 infer :: Gamma -> AdlExpr -> Proof
 infer gamma exr  = step4combinetrees step3inferstmts step2tree
+                   --error $ show (step4combinetrees step3inferstmts step2tree)
   where
   step1tree = tree $ unboundtree freecptvars
   --DESCR -> Get all used concept variables and leave them unbound by relating them to themselves
@@ -33,15 +34,16 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
         where
         --DESCR -> bound alternatives of statement with concept vars without inference tree
         declAlts :: BndStmt -> Alternatives
-        declAlts (BoundTo relvar) =
+        declAlts (BoundTo expr) =
            let
+           relvar = case expr of 
+             Relation{} -> expr 
+             Complement{sub=Relation{}} -> sub expr
+             _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.step3inferstmts.bind2declAlts.declAlts: Other expressions than Complement on or just Relation are not expected: "++show expr++"."
            undeclerr = [(EmptyStmt, Just $ Stmt stmt') | stmt'@(InfErr (UndeclRel relvar'))<-gamma, relvar==relvar']
            in
            if null undeclerr
-           then -- case relvar of
-              --  (Relation (Mph{mphats=[explc1,explc2]}) _ _) -> [(BndStat relvar (explc1,explc2),Nothing)]
-               -- _ ->
-                [(stmt',Nothing) | stmt'@(TypeOf relvar')<-gamma, relvar==relvar']
+           then [(stmt',Nothing) | stmt'@(TypeOf relvar')<-gamma, relvar==relvar']
            else undeclerr
         declAlts stmt = error
           $ "Error in TypeInferenceTree.hs module InferenceRules function infer.step3inferstmts.declAlts: " ++
@@ -63,7 +65,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
     else if eqbindings noerrbindings --all alternatives without errors bind all the concept variables to the same concepts
          then Proven gamma allnoerrinftrees  --return inference trees of all alternatives without errors
          else NoProof AmbiguousType allnoerrinftrees --return inference trees of all alternatives without errors
-  ------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
   freecptvars = [cptnew $ "$C" ++ show i | i<-[1..]]
   tree (t, _) = t
   free (_, f) = f
@@ -74,63 +76,113 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                            "Provide an infinite list of free concept variables."
   unboundtree (_:[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
                            "Provide an infinite list of free concept variables."
-  unboundtree (c1:c2:fcpts) = bindsubexprs (bindto exr) (CT c1) (CT c2) fcpts False
-    where
-    bindto expr = \src tgt -> BoundTo expr{tt=TT src tgt}
-    bindsubexprs stmt = \src tgt (cb1:cb2:fcs) inv ->
-      case stmt src tgt of
-        BoundTo expr -> case expr of
-          Intersect{} -> (DisjRule (tree tree1) (tree tree2), free tree2)
+  --DESCR -> decomposing step1: every expression to infer is bound to two fresh cpt vars. 
+  unboundtree (c1:c2:fcpts) = bindsubexprs (bindto exr (CT c1) (CT c2) (expo exr 1)) fcpts
+    where 
+    expo:: AdlExpr -> Int -> Int
+    expo x i = if isCompl x then expo (sub x) (-i) else i
+    notexp1err subex = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
+                         "Rule pattern match failed while decomposing expression: " ++show exr++".\n" ++show subex++ "."   
+    bindto expr = \src tgt expt -> BoundTo expr{tt=TT src tgt expt}
+    bindsubexprlist [] vars = ([],vars)
+    bindsubexprlist (bt:bts) vars = (bt':bts',vars'')
+        where
+        (bt', vars') = bindsubexprs bt vars
+        (bts', vars'') = bindsubexprlist bts vars'
+    --DESCR -> decomposing step2: The BoundTo statement has been bound to cptvars. This statement will be proven by a matching rule resulting from the implemented algoritm below. The algoritm will only end if the statement binds a morphism or a complement on a morphism, because you cannot declare complex expressions in an ADL file and therefore a BindRule on a complex expression can never be inferred from an ADL file. For that reason if the statement binds a complex expression the algoritm ignores the match on the Bind rule. There will be exacly one other rule left which matches the statement on a complex expression.  Thus, the algoritm always terminates because all complex expressions will be decomposed by the only matching rule, eventually resulting in a set of BoundTo statements on morphism expressions and complement morphism expressions.
+    bindsubexprs (BoundTo expr) = \(cb1:cb2:cbs:fcs) -> case expr of
+          Intersect{tt=TT src tgt expt} -> if expt==1 
+            then (DisjRule{axs1=tree trees1, axs2=tree trees2}, free trees2)
+            else notexp1err expr
               where
-              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
-              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
-          Union{} -> (UnionRule (tree tree1) (tree tree2), free tree2)
+              noinvs = [bindto sb src tgt 1 |sb<-lst expr, (expo sb 1)==1]
+              invs = [bindto sb src tgt (-1) |sb<-lst expr, (expo sb 1)==(-1)]
+              trees1 = bindsubexprlist noinvs (cb1:cb2:cbs:fcs)
+              trees2 = bindsubexprlist invs (free trees1)
+          Union{tt=TT src tgt expt} ->  if expt==1 
+            then (UnionRule{axs1=tree trees1, axs2=tree trees2}, free trees2) 
+            else notexp1err expr
               where
-              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
-              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
-          Implicate{} -> (ImplyRule (tree tree1) (tree tree2), free tree2)
+              noinvs = [bindto sb src tgt 1 |sb<-lst expr, (expo sb 1)==1]
+              invs = [bindto sb src tgt (-1) |sb<-lst expr, (expo sb 1)==(-1)]
+              trees1 = bindsubexprlist noinvs (cb1:cb2:cbs:fcs)
+              trees2 = bindsubexprlist invs (free trees1) 
+          Implicate{tt=TT src tgt expt} -> if expt==1 then (ImplyRule (tree tree1), free tree1) else notexp1err expr
               where
-              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
-              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
-          Equality{} -> (EqualRule (tree tree1) (tree tree2), free tree2)
+              defimpl = Union{lst=[Complement{sub=(left expr),tt=unknowntype},right expr],tt=unknowntype}
+              tree1 = bindsubexprs (bindto defimpl src tgt expt) (cb1:cb2:cbs:fcs)
+          Equality{tt=TT src tgt expt} -> if expt==1 then (EqualRule (tree tree1), free tree1) else notexp1err expr
               where
-              tree1 = bindsubexprs (bindto $ left expr) src tgt (cb1:cb2:fcs) inv
-              tree2 = bindsubexprs (bindto $ right expr) src tgt (free tree1) inv
-          Semicolon{} -> (RelcompRule (tree tree1) (tree tree2), free tree2)
+              defeq = Intersect {lst=[Implicate{left=left expr,right=right expr,tt=unknowntype},
+                                      Implicate{left=right expr,right=left expr,tt=unknowntype}
+                                     ], tt=unknowntype}
+              tree1 = bindsubexprs (bindto defeq src tgt expt) (cb1:cb2:cbs:fcs)
+          Semicolon{tt=TT src tgt expt} ->  if expt==1 then (RelcompRule matchrule (tree tree1) (tree tree2), free tree2) else notexp1err expr             where
+             matchrule = 
+                if isCompl (left expr) && isCompl (right expr)
+                then  CompDInv
+                else if isCompl (left expr) then CompInv1
+                     else if isCompl (right expr) then CompInv2
+                          else Comp
+             tree1 = bindsubexprs (bindto (left expr) src (CTAS{val=cbs,as=cb1}) (expo (left expr) 1)) fcs              
+             tree2 = bindsubexprs (bindto (right expr) (CTAS{val=cbs,as=cb2}) tgt (expo (right expr) 1)) (free tree1)
+          Dagger{tt=TT src tgt expt} ->  if expt==1 then (AddcompRule matchrule (tree tree1) (tree tree2), free tree2) else notexp1err expr
              where
-             genspec = if not inv then Specific else Generic
-             tree1 = bindsubexprs (bindto $ left expr) src (CF (genspec,cb1,cb2)) fcs inv
-             tree2 = bindsubexprs (bindto $ right expr) (CF (genspec,cb1,cb2)) tgt (free tree1) inv
-          Dagger{} -> (AddcompRule (tree tree1) (tree tree2), free tree2)
-             where
-             genspec = if not inv then Generic else Specific
-             tree1 = bindsubexprs (bindto $ left expr) src (CF (genspec,cb1,cb2)) fcs inv
-             tree2 = bindsubexprs (bindto $ right expr) (CF (genspec,cb1,cb2)) tgt (free tree1) inv
-          Complement{} -> (ComplRule (tree tree1), free tree1)
+             matchrule = 
+                if isCompl (left expr) && isCompl (right expr)
+                then  CompDInv
+                else if isCompl (left expr) then CompInv1
+                     else if isCompl (right expr) then CompInv2
+                          else Comp
+             tree1 = bindsubexprs (bindto (left expr) src (CTAS{val=cbs,as=cb1}) (expo (left expr) 1)) fcs              
+             tree2 = bindsubexprs (bindto (right expr) (CTAS{val=cbs,as=cb2}) tgt (expo (right expr) 1)) (free tree1)
+          Complement{tt=TT src tgt expt} -> matchrule
               where
-              tree1 = bindsubexprs (bindto $ sub expr) src tgt (cb1:cb2:fcs) (not inv)
-          Flip{} -> (FlipRule (tree tree1), free tree1)
+              matchrule = case (sub expr) of
+                Complement{} -> let tree1 = bindsubexprs (bindto (sub (sub expr)) src tgt expt) (cb1:cb2:cbs:fcs)
+                                in (DComplRule (tree tree1), free tree1)
+                Dagger{} -> (DeMorganRule FAddcomp (tree tree1), free tree1)
+                   where
+                   tree1 = bindsubexprs (bindto dmexpr src tgt (-expt)) (cb1:cb2:cbs:fcs)
+                   dmexpr = Semicolon{left=Complement{sub=left (sub expr),tt=unknowntype},
+                                      right=Complement{sub=right (sub expr),tt=unknowntype},
+                                      tt=unknowntype }
+                Semicolon{} ->(DeMorganRule FRelcomp (tree tree1), free tree1)
+                   where
+                   tree1 = bindsubexprs (bindto dmexpr src tgt (-expt)) (cb1:cb2:cbs:fcs)
+                   dmexpr = Dagger{left=Complement{sub=left (sub expr),tt=unknowntype},
+                                   right=Complement{sub=right (sub expr),tt=unknowntype},
+                                   tt=unknowntype }
+                Intersect{} -> (DeMorganRule FDisj (tree tree1), free tree1)
+                   where
+                   tree1 = bindsubexprs (bindto dmexpr src tgt (-expt)) (cb1:cb2:cbs:fcs)
+                   dmexpr = Union{lst=map compl $ lst (sub expr), tt=unknowntype }
+                   compl ex = Complement{sub=ex,tt=unknowntype}
+                Union{} -> (DeMorganRule FUnion (tree tree1), free tree1)
+                   where
+                   tree1 = bindsubexprs (bindto dmexpr src tgt (-expt)) (cb1:cb2:cbs:fcs)
+                   dmexpr = Intersect{lst=map compl $ lst (sub expr), tt=unknowntype }
+                   compl ex = Complement{sub=ex,tt=unknowntype}
+                Flip{sub=flipsub} -> (FlipRule Inv (tree tree1), free tree1)  
+                   where 
+                   tree1 = bindsubexprs (bindto Complement{sub=flipsub,tt=unknowntype} tgt src expt) (cb1:cb2:cbs:fcs)   
+                Relation{} ->  (Stmt $ bindto expr src tgt (expt), (cb1:cb2:cbs:fcs)) 
+                _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree.bindsubexprs: complement not expected on rule expression: " ++show expr ++"."                  
+                 
+          Flip{tt=TT src tgt expt} -> (FlipRule NoInv (tree tree1), free tree1)
               where
-              tree1 = bindsubexprs (bindto $ sub expr) tgt src (cb1:cb2:fcs) inv
-          Relation{}     -> (Stmt $ bindto expr src tgt, (cb1:cb2:fcs))
-        _                    -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree.bindsubexprs: Only BoundTo expression are expected: "++show (stmt src tgt)++"." 
+              tree1 = bindsubexprs (bindto (sub expr) tgt src expt ) (cb1:cb2:cbs:fcs)
+          Relation{tt=TT src tgt expt}     -> (Stmt $ bindto expr src tgt expt, (cb1:cb2:cbs:fcs))
+    bindsubexprs stmt = \_ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree.bindsubexprs: Only BoundTo expression are expected: "++show (stmt)++"." 
   ------------------------------------------------------------------------------------
   --DESCR -> Given a Statement from an unboundtree, this tree, and the variable environment: bind the mphats of a Relation expression to certain concept variables in this expression.
   bindMphats :: Statement -> (ITree, [BndCptVar]) -> (ITree, [BndCptVar])
-  bindMphats stmt@(BoundTo r@(Relation{rel=Mph{mphats=[c1,c2]}, tt=TT ct1 ct2}) ) (itree,vars) =
+  bindMphats stmt@(BoundTo r@(Relation{rel=Mph{mphats=[c1,c2]}, tt=TT{cts=ct1,ctt=ct2}}) ) (itree,vars) =
      let
      --get the concept variable from the BoundTo statement to bind the first mphat to 
-     var1 = case ct1 of 
-        CT c -> c
-        CF (f,c1',c2') -> if f==Generic then c2' else c1'
-        CTake{} -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
-                           "ConceptTerm CTake is not expected: "++show ct1++"." 
+     var1 = val ct1
      --get the concept variable from the BoundTo statement to bind the second mphat to 
-     var2 = case ct2 of 
-        CT c -> c
-        CF (f,c1',c2') -> if f==Generic then c2' else c1'
-        CTake{} -> error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
-                           "ConceptTerm CTake is not expected: "++show ct2++"."
+     var2 = val ct2 
      --get the binding of var1 from the variable environment
      bndvar1 = [(var,cpt) |(var,cpt)<-vars, var==var1]
      (var',cpt') = if not (null bndvar1) then head bndvar1 else varnotfnderr var1
@@ -165,6 +217,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
         --variable binding to the unboundtree
         else (rebindtree itree vars'', vars'')
   bindMphats _ itree = itree
+
   ------------------------------------------------------------------------------------
   --DESCR -> infer all alternatives of all statements and bind concept vars in the var env along the way
   --EXTEND -> if the variable environment is changed then all previously inferred alts must be inferred again by deleting their inference trees!!!
@@ -207,25 +260,20 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
      inferalt :: BndStmt -> DeclStmt -> ((BndStmt, Alternatives),[BndCptVar], Bool)
      inferalt stmt@(BoundTo expr) alt =
        let
-       exprerror declexpr = error
-        $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts: " ++
-          "The alternative statement "++show declexpr ++" is not statement a statement on "++show expr++"."
-       TT ct1 ct2 = tt expr
+       ct1 = cts $ tt expr
+       ct2 = ctt $ tt expr
        in
        case alt of
-        TypeOf declexpr -> tryinfer 
+        TypeOf declexpr -> trydomain 
           where
-          TT (CF (Generic,_,c1')) (CF (Generic,_,c2')) = tt declexpr
-          tryinfer = if expr==declexpr then trydomain else exprerror declexpr
+          --TT (CF (Generic,_,c1')) (CF (Generic,_,c2')) = tt declexpr
+          c1' = declaredcpt $ cts (tt declexpr)
+          c2' = declaredcpt $ ctt (tt declexpr)
           trydomain = 
              let 
              --lookup concept var if it is actually a var
              c1 = if iscptvar var1 then lookupvar vars var1 else var1
-             var1 = case ct1 of
-                CT var1' -> var1'
-                CF (_,var1',_) -> var1'
-                _ -> error  $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
-                              "Concept term CTake is not expected: "++show ct1++"."
+             var1 = val ct1
              in
              if iscptvar c1 --var1 is not bound yet
              then tryrange (Stmt alt) (var1,bindvar vars var1 c1', True) --bind variable var1 to c1'
@@ -244,11 +292,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
              let 
              --lookup concept var if it is actually a var
              c2 = if iscptvar var2 then lookupvar varsdomain var2 else var2
-             var2 = case ct2 of
-                CT var2' -> var2'
-                CF (_,var2',_) -> var2'
-                _ -> error  $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
-                              "Concept term CTake is not expected: "++show ct2++"."
+             var2 = val ct2
              in
              if iscptvar c2 --var2 is not bound yet
              then ((stmt, [(alt, Just $ ruledomain)]),bindvar varsdomain var2 c2', True)
@@ -266,7 +310,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                         else  ((stmt, [(alt, Just $ ruledomain)]),bindvar varsdomain var2 c2', True) --rebind the var
                    else ((stmt, [(alt, Just $ Stmt $ InfErr $ IErr c2 c2' expr)]),varsdomain, envchanged)
         _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
-                     "The alternative statement "++show alt++" is not a TypeTo statement with two generic concept terms."
+                     "The alternative statement "++show alt++" is not a TypeTo statement."
      inferalt _ _  = error
         $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
           "This function only binds concept variables of BoundTo statements."
@@ -299,16 +343,17 @@ bindvar ((var,cpt):vars) var' cpt' | var==var' = (var,cpt'):vars
 
 --DESCR -> Bind the free concept variables in the tree to their bindings in the variable environment
 rebindtree :: ITree -> [BndCptVar] -> ITree
-rebindtree (DisjRule tree1 tree2) vars = DisjRule (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (RelcompRule tree1 tree2) vars = RelcompRule (rebindtree tree1 vars) (rebindtree tree2 vars)
+rebindtree (DisjRule ts1 ts2) vars = DisjRule [rebindtree tr vars|tr<-ts1] [rebindtree tr vars|tr<-ts2]
+rebindtree (RelcompRule ct tree1 tree2) vars = RelcompRule ct (rebindtree tree1 vars) (rebindtree tree2 vars)
 rebindtree (BindRule bt tree) vars = BindRule bt (rebindtree tree vars)
 rebindtree (SpecRule st tree1 tree2 ) vars = SpecRule st (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (AddcompRule tree1 tree2 ) vars = AddcompRule (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (UnionRule tree1 tree2 ) vars = UnionRule (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (ImplyRule tree1 tree2 ) vars = ImplyRule (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (EqualRule tree1 tree2 ) vars = EqualRule (rebindtree tree1 vars) (rebindtree tree2 vars)
-rebindtree (ComplRule tree1) vars = ComplRule (rebindtree tree1 vars)
-rebindtree (FlipRule tree1) vars = FlipRule (rebindtree tree1 vars)
+rebindtree (AddcompRule ct tree1 tree2 ) vars = AddcompRule ct (rebindtree tree1 vars) (rebindtree tree2 vars)
+rebindtree (UnionRule ts1 ts2 ) vars = UnionRule [rebindtree tr vars|tr<-ts1] [rebindtree tr vars|tr<-ts2]
+rebindtree (ImplyRule tree1) vars = ImplyRule (rebindtree tree1 vars)
+rebindtree (EqualRule tree1) vars = EqualRule (rebindtree tree1 vars)
+rebindtree (DComplRule tree1) vars = DComplRule (rebindtree tree1 vars)
+rebindtree (FlipRule it tree1) vars = FlipRule it (rebindtree tree1 vars)
+rebindtree (DeMorganRule dmt tree1) vars = DeMorganRule dmt (rebindtree tree1 vars)
 rebindtree (Stmt stmt) vars = Stmt (rebindstmt stmt)
   where
   rebindstmt :: BndStmt -> BndStmt
@@ -318,15 +363,13 @@ rebindtree (Stmt stmt) vars = Stmt (rebindstmt stmt)
   rebindstmt st = st
   rebindexpr :: AdlExpr -> AdlExpr
   rebindexpr expr@(Relation{}) = expr{tt=rebindtt (tt expr)}
+  rebindexpr expr@(Complement{}) = expr{sub=rebindexpr (sub expr) }
   rebindexpr expr = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindtree.rebindexpr: " ++
-                            "Other expressions than just Relation are not expected: "++show expr++"."
+                            "Other expressions than Complement on or just Relation are not expected: "++show expr++"."
   rebindtt :: TypeTerm -> TypeTerm
-  rebindtt (TT ct1 ct2) = TT (rebindct ct1) (rebindct ct2)
+  rebindtt tt1 = tt1{cts=rebindct $ cts tt1,ctt=rebindct $ ctt tt1}
   rebindct :: ConceptTerm -> ConceptTerm
-  rebindct (CT c) = CT $ rebindcpt c
-  rebindct (CF (f,c1,c2)) = CF (f,rebindcpt c1,rebindcpt c2)
-  rebindct ct@(CTake{}) = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindtree.rebindct: " ++
-                                  "Concept term CTake is not expected: "++show ct++"."
+  rebindct ct1 = ct1{val=rebindcpt $ val ct1}
   rebindcpt :: Concept -> Concept
   rebindcpt c = if iscptvar c then lookupvar vars c else c 
 
@@ -350,32 +393,31 @@ attachtrees (stms,vars) tree = rebindtree (foldr attachstmt tree stms) vars
 --USE -> A BoundTo must be bound to exactly one alternative with an inference tree
 attachstmt :: (BndStmt, Alternatives) -> ITree -> ITree
 attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') | stmt==stmt' = BindRule (matchbindtype stmt) $ treestmt bndstmt
-                                                  | otherwise   = baseleaf
-attachstmt bndstmt (DisjRule baseleaf1 baseleaf2) = DisjRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (RelcompRule baseleaf1 baseleaf2) = RelcompRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (BindRule bt baseleaf) = BindRule bt (attachstmt bndstmt baseleaf)
-attachstmt bndstmt (SpecRule st baseleaf1 baseleaf2 ) = SpecRule st (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (AddcompRule baseleaf1 baseleaf2 ) = AddcompRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (UnionRule baseleaf1 baseleaf2 ) = UnionRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (ImplyRule baseleaf1 baseleaf2 ) = ImplyRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (EqualRule baseleaf1 baseleaf2 ) = EqualRule (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
-attachstmt bndstmt (ComplRule baseleaf) = ComplRule (attachstmt bndstmt baseleaf)
-attachstmt bndstmt (FlipRule baseleaf) = FlipRule (attachstmt bndstmt baseleaf)
+                                                  | otherwise   = baseleaf --DESCR -> not the stmt looking for, skip
+attachstmt bndstmt (DisjRule ls1 ls2) = DisjRule (map (attachstmt bndstmt) ls1) (map (attachstmt bndstmt) ls2)
+attachstmt bndstmt (RelcompRule ct baseleaf1 baseleaf2) = RelcompRule ct (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
+attachstmt bndstmt (AddcompRule ct baseleaf1 baseleaf2 ) = AddcompRule ct (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
+attachstmt bndstmt (UnionRule ls1 ls2 ) = UnionRule (map (attachstmt bndstmt) ls1) (map (attachstmt bndstmt) ls2)
+attachstmt bndstmt (ImplyRule baseleaf1 ) = ImplyRule (attachstmt bndstmt baseleaf1) 
+attachstmt bndstmt (EqualRule baseleaf1 ) = EqualRule (attachstmt bndstmt baseleaf1) 
+attachstmt bndstmt (DComplRule baseleaf) = DComplRule (attachstmt bndstmt baseleaf)
+attachstmt bndstmt (FlipRule it baseleaf) = FlipRule it (attachstmt bndstmt baseleaf)
+attachstmt bndstmt (DeMorganRule dmt baseleaf) = DeMorganRule dmt (attachstmt bndstmt baseleaf)
+attachstmt _ branch = branch --DESCR -> other rules are not a result of any BoundTo statement, so skip whole branch
 
 --DESCR -> Returns the matching Bind rule given the conclusion of this rule
 matchbindtype :: BndStmt -> BindType
-matchbindtype (BoundTo expr) = case tt expr of
-   (TT (CT _) (CT _))                           -> Bind
-   (TT (CF (Generic,_,_)) (CT _))               -> BindG1
-   (TT (CT _) (CF (Generic,_,_)))               -> BindG2
-   (TT (CF (Generic,_,_)) (CF (Generic,_,_)))   -> BindGG
-   (TT (CF (Specific,_,_)) (CT _))              -> BindS1
-   (TT (CT _) (CF (Specific,_,_)))              -> BindS2
-   (TT (CF (Specific,_,_)) (CF (Specific,_,_))) -> BindSS
-   (TT (CF (Specific,_,_)) (CF (Generic,_,_)))  -> BindSG
-   (TT (CF (Generic,_,_)) (CF (Specific,_,_)))  -> BindGS
-   _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
-                "BoundTo statement does not match a Bind rule pattern: "++show (BoundTo expr)++"."
+matchbindtype (BoundTo expr) = case expr of 
+   Relation{} -> if expon (tt expr)==1 
+         then Bind 
+         else error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+                     "The exponent of a morphism expression must be 1: "++show expr++"."
+   Complement{sub=Relation{}} -> if expon (tt expr)==(-1) 
+         then BindCompl 
+         else error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+                      "The exponent of a complement morphism expression must be -1: "++show expr++"."
+   _ ->  error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+                 "The expression is complex: "++show expr++"."
 matchbindtype stmt = error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
                      "The statement "++show stmt++" is not a BoundTo."
 
