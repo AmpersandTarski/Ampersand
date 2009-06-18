@@ -1,15 +1,80 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInference.ITree where
 import Adl.Concept
-import TypeInference.Statements
 import TypeInference.AdlExpr
 import Data.List
 
+type Gamma = [Statement]
+data Statement = IsaStat  Concept Concept | --DESCR -> stating that the left concept IS-a right concepte
+                 InfErr InfErrType   | --DESCR -> stating that the type of an expression cannot be inferred, because the inference attempt ended because of this error
+                 EmptyStmt | --DESCR -> stating that there is no statement
+                 BoundTo AdlExpr |
+                 DeclExpr {declex::AdlExpr, homo::Bool} 
+                 
+data InfErrType = UndeclRel AdlExpr | 
+                  IErr Concept Concept AdlExpr | 
+                  TypeError {gam::Gamma, btree::ITree, errstmt::Statement, declexprs::[Statement]} 
+
+instance Show InfErrType where
+   showsPrec _ (UndeclRel expr) = showString $ 
+        "Undeclared expression " ++ printexpr expr ++ "."
+   showsPrec _ (IErr c1 c2 expr) = showString $ 
+        "Disjunct concepts " ++ show c1 ++ " and " ++ show c2 ++ " at expression " ++ printexpr expr ++ "."
+   showsPrec _ err@(TypeError{})  = showString $
+        "Expression " ++ show (evaltree (gam err) (btree err)) ++ " results in error:\n"
+        ++ show (errstmt err) ++ "\nGiven the next declared relations:\n" ++ (prlst [show de|de<-declexprs err])
+
+instance Show Statement where
+   showsPrec _ (IsaStat c1 c2) = showString $ show c1 ++ "is-a" ++ show c2
+   showsPrec _ (InfErr x) = showString $ show x
+   showsPrec _ (IsaStat c1 c2) = showString $ "No Statement"
+   showsPrec _ (BoundTo expr) = showString $ printexpr expr
+   showsPrec _ de@(DeclExpr{}) = showString $ printexpr (declex de) ++ (if homo de then " {HOMO}" else "")
+ 
+printexpr ex@(Relation mp _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
+printexpr (Implicate expr1 expr2 _)= printexpr expr1 ++ "|-" ++ printexpr expr2
+printexpr (Equality expr1 expr2 _)= printexpr expr1 ++ "=" ++ printexpr expr2
+printexpr (Union exprs _)= "UNION: " ++ (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
+printexpr (Intersect exprs _)= "DISJ: " ++  (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
+printexpr (Semicolon expr1 expr2 _)= printexpr expr1 ++ ";" ++ printexpr expr2
+printexpr (Dagger expr1 expr2 _)= printexpr expr1 ++ "!" ++ printexpr expr2
+printexpr (Complement expr _)= "-" ++ printexpr expr
+printexpr (Flip expr _)= printexpr expr ++ "~" 
+
+prlst xs = foldr (++) [] $ [x ++ "\n"|x<-xs]
+
+instance Eq InfErrType where
+   (UndeclRel expr)==(UndeclRel expr') = expr==expr'
+   (IErr c1 c2 expr)==(IErr c1' c2' expr') = expr==expr' && c1==c1' && c2==c2'
+   _ == _ = False
+
+--DESCR -> constructs an IsaStat statement from an isa definition (spc,gen)
+fromIsa :: (Concept,Concept) -> Statement
+fromIsa (c1,c2) = IsaStat c1 c2
+
+iserrstmt :: Statement -> Bool
+iserrstmt (InfErr {}) = True
+iserrstmt _ = False
+
+instance Eq Statement where
+  (IsaStat c1 c2)==(IsaStat c1' c2') = c1==c1' && c2==c2'
+  (InfErr tp )==(InfErr tp' ) = tp==tp'
+  EmptyStmt==EmptyStmt = True
+  (DeclExpr expr h)==(DeclExpr expr' h') = expr==expr' && h==h'
+  (BoundTo expr)==(BoundTo expr') = expr==expr'
+  _==_ = False
+------------------------------------------------------------
 --DESCR -> Or I have a type, proofed by the fact that all alternatives resulting in a type, result in the same type.
 --         Or I could not infer a type, proofed by the fact that all alternatives result in error(s).
 --         Or I have an ambiguous type, proofed by the fact that some alternatives result in different types.
-data Proof = Proven Gamma [ITree] | NoProof TypeErrorsType [ITree]  deriving (Show)
-data TypeErrorsType = NoType | AmbiguousType deriving (Show)
+data Proof = Proven Gamma [ITree] | NoProof TypeErrorsType [ITree]  
+data TypeErrorsType = NoType  | AmbiguousType Gamma deriving (Show)
+
+instance Show Proof where
+   showsPrec _ (Proven g ts) = showString $ show g ++ "\n" ++ show ts
+   showsPrec _ (NoProof x ts) = showString $ case x of
+      NoType ->  show x ++ "\n" ++ show [x|(Stmt x)<-ts]
+      AmbiguousType g ->  "Ambiguous types: " ++ show [evaltree g t|t<-ts]
 
 instance Association Proof where
   source (Proven _ [] ) = Anything

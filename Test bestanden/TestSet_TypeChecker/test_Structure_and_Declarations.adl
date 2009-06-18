@@ -31,6 +31,8 @@ KEY patABkey : I[Ba] [Apropa : I[Aa], Dpropa : I[Da]]
 GEN Aa ISA Ba
 GEN Aa ISA Ca
 GEN Ba ISA Da
+GEN Ba ISA Ca
+GEN Ca ISA Da
 sa :: Ba * Ba.
 ra :: Ba * Ea.
 ha :: Ha * Ha [SYM, ASY, TRN, RFX].
@@ -44,6 +46,8 @@ KEY patBBkey : I[Bb] [Apropb : I[Ab], Dpropb : I[Db]]
 GEN Ab ISA Bb
 GEN Ab ISA Cb
 GEN Bb ISA Db
+GEN Bb ISA Cb
+GEN Cb ISA Db
 rb :: Bb * Eb.
 I[Fb] = I[Fb]
 CONCEPT Xb "descrB"
@@ -75,6 +79,8 @@ KEY patABkey5 : I[Ba5] [Apropa5 : I[Aa5], Dpropa5 : I[Da5]]
 GEN Aa5 ISA Ba5
 GEN Aa5 ISA Ca5
 GEN Ba5 ISA Da5
+GEN Ba5 ISA Ca5
+GEN Ca5 ISA Da5
 r :: Ba5 * Ea5.
 I[Fa5] = I[Fa5]
 CONCEPT Xa5 "descrA5"
@@ -85,6 +91,8 @@ KEY patBBkey5 : I[Bb5] [Apropb5 : I[Ab5], Dpropb5 : I[Db5]]
 GEN Ab5 ISA Bb5
 GEN Ab5 ISA Cb5
 GEN Bb5 ISA Db5
+GEN Bb5 ISA Cb5
+GEN Cb5 ISA Db5
 r :: Bb5 * Eb5.
 I[Fb5] = I[Fb5]
 CONCEPT Xb5 "descrB5"

@@ -12,6 +12,8 @@ PATTERN PatA
 GEN Aa ISA Ba
 GEN Aa ISA Ca
 GEN Ba ISA Da
+GEN Ba ISA Ca
+GEN Ca ISA Da
 ra :: Ba * Ea.
 sa :: Aa * Ba.
 sa1 :: Ba * Aa.

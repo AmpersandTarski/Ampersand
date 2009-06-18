@@ -44,7 +44,6 @@ import Typology --USE -> Isa structure for enrichment
 import CC_aux (renumberRules)
 
 import TypeInference.ITree
-import TypeInference.Statements
 import TypeInference.AdlExpr
 import TypeInference.Input
 import TypeInferenceEngine
@@ -58,20 +57,10 @@ import TypeInferenceEngine
 type Errors = [Error]
 type Error = String
 
-printexpr ex@(Relation mp _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
-printexpr (Implicate expr1 expr2 _)= printexpr expr1 ++ "|-" ++ printexpr expr2
-printexpr (Equality expr1 expr2 _)= printexpr expr1 ++ "=" ++ printexpr expr2
-printexpr (Union exprs _)= "UNION: " ++ (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
-printexpr (Intersect exprs _)= "DISJ: " ++  (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
-printexpr (Semicolon expr1 expr2 _)= printexpr expr1 ++ ";" ++ printexpr expr2
-printexpr (Dagger expr1 expr2 _)= printexpr expr1 ++ "!" ++ printexpr expr2
-printexpr (Complement expr _)= "-" ++ printexpr expr
-printexpr (Flip expr _)= printexpr expr ++ "~"
-
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
 --USE   -> This is the only function needed outside of the TypeChecker
 typecheck :: Architecture -> (Contexts, Errors)
-typecheck arch@(Arch ctxs) = (enriched, checkresult)  
+typecheck arch@(Arch ctxs) =  (enriched, checkresult)  
 --                    if null checkresult then
 --                   (enriched,["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
 --                   (enriched,[(show $ evaltree gamma tree) | (proof@(Proven gamma trees),_)<-allproofs, tree<-trees])

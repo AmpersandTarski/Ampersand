@@ -6,7 +6,6 @@ import Adl.Concept
 import Adl.MorphismAndDeclaration
 import Data.Maybe
 import TypeInference.ITree
-import TypeInference.Statements
 import TypeInference.AdlExpr
 import CommonClasses 
 
@@ -57,14 +56,29 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
     errstmtsOfAlts = [((stms,vars), [treestmt stmt| stmt<-stms,iserrtree $ treestmt stmt]) | (stms,vars)<-alts]
     iserrtree (Stmt stmt) = iserrstmt stmt
     iserrtree _ = False
-    allinftrees = [attachtrees alt basetree | alt<-alts] 
+    --allinftrees = [attachtrees alt basetree | alt<-alts]
+    --DESCR -> all possible unambiguous gammas (alternatives) resulting in an error
+    allerrinftrees =  foldr (++) []
+                       [ --All alternatives resulting in an tree consisting of just an errorrule
+                        --ax1: expression |- basetree
+                        --ax2: unambiguous gamma |- basetree -> error
+                        --concl: expression, unambiguous gamma |- basetree -> error
+                        [Stmt $ InfErr $
+                              TypeError{gam=gamma
+                                       ,btree=basetree
+                                       ,errstmt=err
+                                       ,declexprs=[fst (head tstms) | (bstm,tstms)<-stms, not (null tstms)]}
+                         |  (bstm,tstms)<-stms, (_,Just (Stmt err@(InfErr _)) )<-tstms, length tstms==1]
+                      | (stms,vars)<-alts]
+    --DESCT -> all possible unambiguous gammas (alternatives) resulting in a type
     allnoerrinftrees = [attachtrees alt basetree | alt<-noerralts ] 
     in
     if null noerralts --there are no alternatives inferring a type
-    then NoProof NoType allinftrees  --return inference trees of all alternatives
-    else if eqbindings noerrbindings --all alternatives without errors bind all the concept variables to the same concepts
-         then Proven gamma allnoerrinftrees  --return inference trees of all alternatives without errors
-         else NoProof AmbiguousType allnoerrinftrees --return inference trees of all alternatives without errors
+    then NoProof NoType allerrinftrees  --return all alternatives resulting in an error
+    else if eqbindings noerrbindings --ax: all alts resulting in a type bind all the concept variables to the same concepts
+                                     --concl: expression, gamma |- typedexpression
+         then Proven gamma allnoerrinftrees  --return inference trees of all alts resulting in a type
+         else NoProof (AmbiguousType gamma) allnoerrinftrees --return inference trees of all alts resulting in a type
 ------------------------------------------------------------------------------------
   freecptvars = [cptnew $ "$C" ++ show i | i<-[1..]]
   tree (t, _) = t
@@ -222,12 +236,16 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
   --DESCR -> infer all alternatives of all statements and bind concept vars in the var env along the way
   --EXTEND -> if the variable environment is changed then all previously inferred alts must be inferred again by deleting their inference trees!!!
   inferstmts :: ([(BndStmt,Alternatives)],[BndCptVar]) ->  [( [(BndStmt, Alternatives)] , [BndCptVar])]
-  inferstmts (stms,vars) = if null toinfer || errsfnd --DONE!
-                            then [(stms,vars)] 
+  inferstmts (stms,vars) = if null toinfer || not (null errsfnd) --DONE!
+                            then --if null errsfnd then 
+                                 [(stms,vars)] 
+                                 --let all statements of this alternative fail with the first error found
+                                 --else [([(bstm,[(tstm,head errsfnd)|(tstm,_)<-alts])|(bstm,alts)<-stms],vars)]
                             --else: infer the next statement, and infer the other statements toinfer too
                             else foldr (++) [] [inferstmts alt |alt<-(inferalts $ head toinfer)]
      where
-     errsfnd =  not $ null [alt | (stmt,alts)<-stms, alt@(_,(Just (Stmt (InfErr _))))<-alts, length alts==1]
+     --DESCR -> if a stmt has only one alternative which is an error, then inference has failed
+     errsfnd =  [err | (_,alts)<-stms, (_,err@(Just (Stmt (InfErr _))))<-alts, length alts==1]
      --DESCR -> Get the next BoundTo statement and its alternatives that needs to be inferred
      toinfer = [(stmt,alts) | (stmt,alts)<-stms, uninferred alts]
      uninferred alts = not (null [alt | alt@(_,Nothing)<-alts])
@@ -412,8 +430,9 @@ attachtrees (stms,vars) tree = rebindtree (foldr attachstmt tree stms) vars
 --DESCR -> Attach the inference tree (which is the proof of a BoundTo statement in the main inference tree) using a Bind rule
 --USE -> A BoundTo must be bound to exactly one alternative with an inference tree
 attachstmt :: (BndStmt, Alternatives) -> ITree -> ITree
-attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') | stmt==stmt' = BindRule (matchbindtype stmt) $ treestmt bndstmt
-                                                  | otherwise   = baseleaf --DESCR -> not the stmt looking for, skip
+attachstmt bndstmt@(stmt,_) baseleaf@(Stmt stmt') 
+   | stmt==stmt' = BindRule (matchbindtype stmt) $ treestmt bndstmt
+   | otherwise   = baseleaf --DESCR -> not the stmt looking for, skip
 attachstmt bndstmt (DisjRule ls1 ls2) = DisjRule (map (attachstmt bndstmt) ls1) (map (attachstmt bndstmt) ls2)
 attachstmt bndstmt (RelcompRule ct baseleaf1 baseleaf2) = RelcompRule ct (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
 attachstmt bndstmt (AddcompRule ct baseleaf1 baseleaf2 ) = AddcompRule ct (attachstmt bndstmt baseleaf1) (attachstmt bndstmt baseleaf2)
