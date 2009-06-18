@@ -6,7 +6,7 @@ import Adl.Expression
 import Adl.Rule
 import CommonClasses
 
-data AdlExpr =   Relation    {rel::Morphism, mphid::Int, homo::Bool, tt::TypeTerm}
+data AdlExpr =   Relation    {rel::Morphism, mphid::Int, tt::TypeTerm}
                | Implicate   {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
                | Equality    {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
                | Complement  {sub::AdlExpr, tt::TypeTerm}
@@ -19,7 +19,7 @@ data AdlExpr =   Relation    {rel::Morphism, mphid::Int, homo::Bool, tt::TypeTer
 
 --REMARK -> Equality is NOT on the type to be able to correlate a typed expression to its untyped declaration
 instance Eq AdlExpr where
-  (Relation mp i _ _)==(Relation mp' i' _ _) = (name mp)==(name mp') && i==i'
+  (Relation mp i _)==(Relation mp' i' _) = (name mp)==(name mp') && i==i'
   (Implicate expr1 expr2 _)==(Implicate expr1' expr2' _) = expr1==expr1' && expr2==expr2'
   (Equality expr1 expr2 _)==(Equality expr1' expr2' _) = expr1==expr1' && expr2==expr2'
   (Union exprs _)==(Union exprs' _) = foldr (&&) True $ [elem ex exprs'|ex<-exprs]++[elem ex exprs|ex<-exprs']
@@ -55,8 +55,10 @@ fromExpression expr = fst (uniqueMphsE 0 expr)
   
 --REMARK -> there will never be a Flip, because it is parsed flippedwise. The Flip is still implemented for other parse trees than the current ADL parse tree.
 uniqueMphsE :: Int -> Expression -> (AdlExpr,Int)
-uniqueMphsE i (Tm mp@(Mph{mphyin=False})) = (Flip (Relation mp (i+1) False (fromSign $ sign mp)) unknowntype,i+1)
-uniqueMphsE i (Tm mp) = (Relation mp (i+1) False (fromSign $ sign mp),i+1)
+uniqueMphsE i (Tm mp@(Mph{mphyin=False})) = (Flip (Relation mp (i+1) (fromSign $ sign mp)) unknowntype,i+1)
+--REMARK -> implementation of sign of I{} is not the implementation needed.
+uniqueMphsE i (Tm mp@(I{})) = (Relation mp (i+1) (fromSign $ (mphspc mp, mphspc mp)),i+1)
+uniqueMphsE i (Tm mp) = (Relation mp (i+1) (fromSign $ sign mp),i+1)
 uniqueMphsE _ (F []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
                                "Expression has no sub expressions"++show (F [])++"." 
 uniqueMphsE i (F (ex:rexs)) = (Semicolon (fst lft) (fst rght) unknowntype, snd rght)

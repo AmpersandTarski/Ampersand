@@ -43,7 +43,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
            undeclerr = [(EmptyStmt, Just $ Stmt stmt') | stmt'@(InfErr (UndeclRel relvar'))<-gamma, relvar==relvar']
            in
            if null undeclerr
-           then [(stmt',Nothing) | stmt'@(TypeOf relvar')<-gamma, relvar==relvar']
+           then [(stmt',Nothing) | stmt'@(DeclExpr relvar' _)<-gamma, relvar==relvar']
            else undeclerr
         declAlts stmt = error
           $ "Error in TypeInferenceTree.hs module InferenceRules function infer.step3inferstmts.declAlts: " ++
@@ -124,8 +124,8 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                 else if isCompl (left expr) then CompInv1
                      else if isCompl (right expr) then CompInv2
                           else Comp
-             tree1 = bindsubexprs (bindto (left expr) src (CTAS{val=cbs,as=cb1}) (expo (left expr) 1)) fcs              
-             tree2 = bindsubexprs (bindto (right expr) (CTAS{val=cbs,as=cb2}) tgt (expo (right expr) 1)) (free tree1)
+             tree1 = bindsubexprs (bindto (left expr) src (CT cb1) (expo (left expr) 1)) (cb2:cbs:fcs)
+             tree2 = bindsubexprs (bindto (right expr) (CT cb1) tgt (expo (right expr) 1)) (free tree1)
           Dagger{tt=TT src tgt expt} ->  if expt==1 then (AddcompRule matchrule (tree tree1) (tree tree2), free tree2) else notexp1err expr
              where
              matchrule = 
@@ -134,8 +134,8 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                 else if isCompl (left expr) then CompInv1
                      else if isCompl (right expr) then CompInv2
                           else Comp
-             tree1 = bindsubexprs (bindto (left expr) src (CTAS{val=cbs,as=cb1}) (expo (left expr) 1)) fcs              
-             tree2 = bindsubexprs (bindto (right expr) (CTAS{val=cbs,as=cb2}) tgt (expo (right expr) 1)) (free tree1)
+             tree1 = bindsubexprs (bindto (left expr) src (CT cb1) (expo (left expr) 1)) (cb2:cbs:fcs)
+             tree2 = bindsubexprs (bindto (right expr) (CT cb1) tgt (expo (right expr) 1)) (free tree1)
           Complement{tt=TT src tgt expt} -> matchrule
               where
               matchrule = case (sub expr) of
@@ -222,11 +222,12 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
   --DESCR -> infer all alternatives of all statements and bind concept vars in the var env along the way
   --EXTEND -> if the variable environment is changed then all previously inferred alts must be inferred again by deleting their inference trees!!!
   inferstmts :: ([(BndStmt,Alternatives)],[BndCptVar]) ->  [( [(BndStmt, Alternatives)] , [BndCptVar])]
-  inferstmts (stms,vars) = if null toinfer --DONE!
-                            then [(stms,vars)] --bind env to stmts and trees of alts?
+  inferstmts (stms,vars) = if null toinfer || errsfnd --DONE!
+                            then [(stms,vars)] 
                             --else: infer the next statement, and infer the other statements toinfer too
                             else foldr (++) [] [inferstmts alt |alt<-(inferalts $ head toinfer)]
      where
+     errsfnd =  not $ null [alt | (stmt,alts)<-stms, alt@(_,(Just (Stmt (InfErr _))))<-alts, length alts==1]
      --DESCR -> Get the next BoundTo statement and its alternatives that needs to be inferred
      toinfer = [(stmt,alts) | (stmt,alts)<-stms, uninferred alts]
      uninferred alts = not (null [alt | alt@(_,Nothing)<-alts])
@@ -257,6 +258,8 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
      --DESCR -> infer the BoundTo statement given the declared TypeOf statement. 
      --         The inference tree is bound to the alternative
      --         If the variable environment has been updated the Bool will be True.
+     --         The algoritm will always end because the var env is only updated more specific
+     --         thus at some point the specific will match (do not initiate loop) or be disjunct (error)
      inferalt :: BndStmt -> DeclStmt -> ((BndStmt, Alternatives),[BndCptVar], Bool)
      inferalt stmt@(BoundTo expr) alt =
        let
@@ -264,17 +267,18 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
        ct2 = ctt $ tt expr
        in
        case alt of
-        TypeOf declexpr -> trydomain 
+        DeclExpr{declex=declexpr,homo=hm} -> trydomain 
           where
           --TT (CF (Generic,_,c1')) (CF (Generic,_,c2')) = tt declexpr
           c1' = declaredcpt $ cts (tt declexpr)
           c2' = declaredcpt $ ctt (tt declexpr)
+          returnerror c1 c2 vs = ((stmt, [(alt, Just $ Stmt $ InfErr $ IErr c1 c2 expr)]),vs, False)
           trydomain = 
              let 
              --lookup concept var if it is actually a var
              c1 = if iscptvar var1 then lookupvar vars var1 else var1
              var1 = val ct1
-             in
+             in 
              if iscptvar c1 --var1 is not bound yet
              then tryrange (Stmt alt) (var1,bindvar vars var1 c1', True) --bind variable var1 to c1'
              else --var1 is already bound
@@ -286,29 +290,45 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                  else 
                    if c1' `isa` c1
                    then tryrange (Stmt alt) (var1,bindvar vars var1 c1', True) --rebind the var
-                   else tryrange (Stmt $ InfErr $ IErr c1 c1' expr) (var1,vars, False)
+                   else returnerror c1 c1' vars
                
           tryrange ruledomain (var1, varsdomain, envchanged) = 
              let 
              --lookup concept var if it is actually a var
              c2 = if iscptvar var2 then lookupvar varsdomain var2 else var2
              var2 = val ct2
+             specto c = Just $ SpecRule SpecRange (Stmt $ fromIsa (c, c2')) ruledomain
              in
-             if iscptvar c2 --var2 is not bound yet
-             then ((stmt, [(alt, Just $ ruledomain)]),bindvar varsdomain var2 c2', True)
+             if iscptvar c2
+             --var2 is not bound yet, thus bind
+             then checkhomo (Just ruledomain) ((var1,var2), bindvar varsdomain var2 c2', True)
              else --c2 is already bound
-               if c2==c2' --alternative matches conclusion
-               then ((stmt, [(alt, Just $ ruledomain)]),varsdomain, envchanged)
+               if c2==c2' --alternative matches conclusion, thus pass what's calculated at trydomain
+               then checkhomo (Just ruledomain) ((var1,var2),varsdomain, envchanged)
                else
                  if c2 `isa` c2' --try specialization rule
-                 then ((stmt, [(alt, Just $ SpecRule SpecRange (Stmt $ fromIsa (c2, c2')) ruledomain)]),varsdomain, envchanged)
+                 then checkhomo (specto c2) ((var1,var2),varsdomain, envchanged)  
                  else 
                    if c2' `isa` c2
-                   then if var1==var2
+                   then if (iscptvar var1 && var1==var2) --if the source is the same variable as the target
                         --rebind the var and schedule this alt to be inferred again by setting the tree to Nothing
-                        then ((stmt, [(alt, Nothing)]),bindvar varsdomain var2 c2', True) 
-                        else  ((stmt, [(alt, Just $ ruledomain)]),bindvar varsdomain var2 c2', True) --rebind the var
-                   else ((stmt, [(alt, Just $ Stmt $ InfErr $ IErr c2 c2' expr)]),varsdomain, envchanged)
+                        then checkhomo Nothing ((var1,var2),bindvar varsdomain var2 c2', True) 
+                        else checkhomo (Just ruledomain) ((var1,var2),bindvar varsdomain var2 c2', True) --just rebind
+                   else returnerror c2 c2' varsdomain
+          checkhomo mbrulerange ((var1,var2), varsrange, envchanged) =
+             let 
+             --lookup concept vars if it is actually a var
+             c1 = if iscptvar var1 then lookupvar varsrange var1 else var1
+             c2 = if iscptvar var2 then lookupvar varsrange var2 else var2
+             rebindboth c =((stmt, [(alt, Nothing)]),bindvar (bindvar varsrange var1 c) var2 c, True)
+             reinferanyway = case mbrulerange of Nothing -> True; _ -> False
+             in
+             if (not hm) || c1==c2 || reinferanyway --if not a homo, or source==target, or to be reinferred anyway  
+             then ((stmt, [(alt, mbrulerange)]),varsrange, envchanged) --pass what's calculated at tryrange
+             else -- 
+               if c1 `isa` c2 then rebindboth c1
+               else if c2 `isa` c1 then rebindboth c2
+                 else returnerror c1 c2 varsrange
         _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
                      "The alternative statement "++show alt++" is not a TypeTo statement."
      inferalt _ _  = error

@@ -58,7 +58,7 @@ import TypeInferenceEngine
 type Errors = [Error]
 type Error = String
 
-printexpr ex@(Relation mp _ _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
+printexpr ex@(Relation mp _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
 printexpr (Implicate expr1 expr2 _)= printexpr expr1 ++ "|-" ++ printexpr expr2
 printexpr (Equality expr1 expr2 _)= printexpr expr1 ++ "=" ++ printexpr expr2
 printexpr (Union exprs _)= "UNION: " ++ (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
@@ -71,17 +71,17 @@ printexpr (Flip expr _)= printexpr expr ++ "~"
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
 --USE   -> This is the only function needed outside of the TypeChecker
 typecheck :: Architecture -> (Contexts, Errors)
-typecheck arch@(Arch ctxs) = (enriched, checkresult)  
---                    if null checkresult then
+typecheck arch@(Arch ctxs) = -- (enriched, checkresult)  
+                    if null checkresult then
 --                   (enriched,["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
 --                   (enriched,[(show $ evaltree gamma tree) | (proof@(Proven gamma trees),_)<-allproofs, tree<-trees])
---                     (enriched,[show (printexpr $ fromRule ex) ++ "\n"|ex<-(allCtxRules enriched)])
+                     (enriched,[ (printexpr $ fromRule ex) ++ "\n"|ex<-(allCtxRules enriched)])
 --TODO -> stolen minnetje
 -- ra~;sa = ra~;sa
 -- -(ra~;sa) = -(ra~;sa) => geparsed als ra~;sa = ra~;-sa en ra~;sa=-(ra~;sa) (los gaan ze goed)
 --                      (enriched,[show (ex) ++ "\n"|ex<-(allCtxRules ctxs)])
 --                    (enriched,[printexpr ex |(BoundTo ex)<-[evaltree g tree|(Proven g trees,_)<-allproofs, tree<-trees]])
---                     else (enriched,checkresult)
+                     else (enriched,checkresult)
    where
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
@@ -171,20 +171,23 @@ enrichCtx cx@(Ctx{}) ctxs =
   gamma expr = (mphStmts expr) ++ gammaisa
   gammaisa = isaStmts
   mphStmts :: AdlExpr -> [Statement]
-  mphStmts (Relation mp@(Mph{mphnm=r1}) i _ t) =
+  mphStmts (Relation mp@(Mph{mphnm=r1}) i t) =
      let
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
      --TODO -> Set homo rel on True
-     alternatives = [TypeOf $ Relation mp i False $ TT (CT c1) (CT c2) 1 | Sgn{decnm=decl,desrc=c1,detgt=c2}<-rv, decl==r1]
+     alternatives = [DeclExpr (Relation mp i $ fromSign (c1,c2)) (ishomo dclprops) 
+                    | Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops}<-rv, decl==r1]
+     ishomo :: [Prop] -> Bool
+     ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
      in
      if null alternatives
-     then [InfErr (UndeclRel (Relation mp i False t))]
+     then [InfErr (UndeclRel (Relation mp i t))]
      else alternatives
-  mphStmts (Relation mp@(I{mphats=[c1]}) i _ _) = [TypeOf $ Relation mp i True $ TT (CT c1) (CT c1) 1]
-  mphStmts (Relation mp@(I{}) i _ _) = [TypeOf $ Relation mp i True $ TT (CT Anything) (CT Anything) 1]
-  mphStmts (Relation mp@(V{}) i _ _) = [TypeOf $ Relation mp i False $ TT (CT Anything) (CT Anything) 1]
-  mphStmts (Relation (Mp1{}) _ _ _ ) = [] --TODO -> ???
+  mphStmts (Relation mp@(I{mphats=[c1]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
+  mphStmts (Relation mp@(I{}) i _) = [DeclExpr (Relation mp i unknowntype) True]
+  mphStmts (Relation mp@(V{}) i _) = [DeclExpr (Relation mp i unknowntype) False]
+  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Union exprs _) = foldr (++) [] $ map mphStmts exprs

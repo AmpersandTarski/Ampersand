@@ -156,14 +156,14 @@ evaltree gamma (DComplRule tr) = BoundTo $ Complement (Complement sb (tt sb)) (t
    BoundTo sb = evaltree gamma tr 
 evaltree gamma (BindRule bt tr) = BoundTo boundexpr
    where
-   TypeOf sb = evaltree gamma tr
+   DeclExpr sb _  = evaltree gamma tr
    boundexpr = case bt of
      Bind -> sb
      BindCompl -> Complement{sub=sb,tt=inversetype (tt sb)}
-evaltree gamma (SpecRule st tr1 tr2) = TypeOf (sb{tt=boundtype})
+evaltree gamma (SpecRule st tr1 tr2) = DeclExpr (sb{tt=boundtype}) hm
    where
    IsaStat c3 _ = evaltree gamma tr1
-   TypeOf sb = evaltree gamma tr2
+   DeclExpr sb hm = evaltree gamma tr2
    boundtype = case st of
      SpecDomain -> (tt sb){cts=specval c3 (cts $ tt sb)}
      SpecRange ->  (tt sb){ctt=specval c3 (ctt $ tt sb)}
