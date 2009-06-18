@@ -71,17 +71,17 @@ printexpr (Flip expr _)= printexpr expr ++ "~"
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
 --USE   -> This is the only function needed outside of the TypeChecker
 typecheck :: Architecture -> (Contexts, Errors)
-typecheck arch@(Arch ctxs) = -- (enriched, checkresult)  
-                    if null checkresult then
+typecheck arch@(Arch ctxs) = (enriched, checkresult)  
+--                    if null checkresult then
 --                   (enriched,["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
 --                   (enriched,[(show $ evaltree gamma tree) | (proof@(Proven gamma trees),_)<-allproofs, tree<-trees])
-                     (enriched,[ (printexpr $ fromRule ex) ++ "\n"|ex<-(allCtxRules enriched)])
+--                     (enriched,[ (printexpr $ fromRule ex) ++ "\n"|ex<-(allCtxRules enriched)])
 --TODO -> stolen minnetje
 -- ra~;sa = ra~;sa
 -- -(ra~;sa) = -(ra~;sa) => geparsed als ra~;sa = ra~;-sa en ra~;sa=-(ra~;sa) (los gaan ze goed)
 --                      (enriched,[show (ex) ++ "\n"|ex<-(allCtxRules ctxs)])
 --                    (enriched,[printexpr ex |(BoundTo ex)<-[evaltree g tree|(Proven g trees,_)<-allproofs, tree<-trees]])
-                     else (enriched,checkresult)
+--                     else (enriched,checkresult)
    where
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
