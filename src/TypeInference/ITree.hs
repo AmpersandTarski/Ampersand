@@ -27,7 +27,7 @@ instance Show InfErrType where
 instance Show Statement where
    showsPrec _ (IsaStat c1 c2) = showString $ show c1 ++ "is-a" ++ show c2
    showsPrec _ (InfErr x) = showString $ show x
-   showsPrec _ (IsaStat c1 c2) = showString $ "No Statement"
+   showsPrec _ (EmptyStmt) = showString $ "No Statement"
    showsPrec _ (BoundTo expr) = showString $ printexpr expr
    showsPrec _ de@(DeclExpr{}) = showString $ printexpr (declex de) ++ (if homo de then " {HOMO}" else "")
  
@@ -72,8 +72,8 @@ data TypeErrorsType = NoType  | AmbiguousType Gamma deriving (Show)
 
 instance Show Proof where
    showsPrec _ (Proven g ts) = showString $ show g ++ "\n" ++ show ts
-   showsPrec _ (NoProof x ts) = showString $ case x of
-      NoType ->  show x ++ "\n" ++ show [x|(Stmt x)<-ts]
+   showsPrec _ (NoProof tp ts) = showString $ case tp of
+      NoType ->  show tp ++ "\n" ++ show [x|(Stmt x)<-ts]
       AmbiguousType g ->  "Ambiguous types: " ++ show [evaltree g t|t<-ts]
 
 instance Association Proof where
@@ -126,7 +126,7 @@ stmts (SpecRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
 stmts (DeMorganRule _ tr) = stmts tr
 
 --DESCR -> folds the tree to a single statement by evaluating all rules
---TODO -> check on axioms, now I just draw the conclusion
+--TODO -> check on axioms, now I just draw the conclusion, which is save if there are no bugs. In case of bugs there can be ugly pattern mismatch errors. So check and throw nice errors.
 evaltree :: Gamma -> ITree -> Statement
 evaltree _ (Stmt stmt) = stmt
 evaltree gamma (DisjRule noinvs invs) = BoundTo $ Intersect sortedexs $ fromSign infT --this is the conclusion
@@ -140,6 +140,7 @@ evaltree gamma (DisjRule noinvs invs) = BoundTo $ Intersect sortedexs $ fromSign
              then (foldevalgen gamma gsrcsdisjinvsax,foldevalgen gamma gtgtsdisjinvsax) --only complements, lub
              else (foldevalspec gamma gsrcsdisjax,foldevalspec gamma gtgtsdisjax) --some normal, take mostspec of declared normal
    disjax = map (evaltree gamma) noinvs
+   --REMARK -> Take ToGen and not just val of the ConceptTerm, because val can be more specific if the disjunction contains a more specific complement subexpression. If there is no complement subexpression the foldevalspec will equal val.
    gsrcsdisjax = [toGen $ exprsrc x |(BoundTo x)<-disjax]
    gtgtsdisjax = [toGen $ exprtgt x |(BoundTo x)<-disjax]
    disjinvsax =  map (evaltree gamma) invs
@@ -288,5 +289,3 @@ toGen :: ConceptTerm -> Concept
 toGen (CTAS{as=x}) = x
 toGen (CT{val=x}) = x
 
---toSpec :: ConceptTerm -> Concept
---toSpec ct = val ct 

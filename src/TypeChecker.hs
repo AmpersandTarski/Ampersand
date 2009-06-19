@@ -60,7 +60,7 @@ type Error = String
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
 --USE   -> This is the only function needed outside of the TypeChecker
 typecheck :: Architecture -> (Contexts, Errors)
-typecheck arch@(Arch ctxs) =  (enriched, checkresult)  
+typecheck arch@(Arch ctxs) = (enriched, checkresult)  
 --                    if null checkresult then
 --                   (enriched,["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
 --                   (enriched,[(show $ evaltree gamma tree) | (proof@(Proven gamma trees),_)<-allproofs, tree<-trees])
@@ -137,7 +137,7 @@ enrichCtx cx@(Ctx{}) ctxs =
                               -}
   where
   --ctxinf = ctx
-
+  --TODO -> generate rules from props UNI etc
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs
   Cl _ world = toClassification $ ctxtree
@@ -175,6 +175,7 @@ enrichCtx cx@(Ctx{}) ctxs =
      else alternatives
   mphStmts (Relation mp@(I{mphats=[c1]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
   mphStmts (Relation mp@(I{}) i _) = [DeclExpr (Relation mp i unknowntype) True]
+  mphStmts (Relation mp@(V{mphats=[c1,c2]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c2)) False]
   mphStmts (Relation mp@(V{}) i _) = [DeclExpr (Relation mp i unknowntype) False]
   mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
