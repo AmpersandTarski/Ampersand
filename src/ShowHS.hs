@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module ShowHS (showHS)
+module ShowHS (showHS,ShowHS())
 where
 
    import Typology              (Inheritance(..))

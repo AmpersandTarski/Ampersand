@@ -1,16 +1,17 @@
-  module ObjBinGenLocalsettings ()
+  module Prototype.ObjBinGenLocalsettings 
   where
    import Strings(chain)
    import Adl (Object(attributes))
    import CommonClasses (Identified(name))
-   import RelBinGenBasics(addSlashes)
+   import Prototype.RelBinGenBasics(addSlashes)
 
-   localsettings context serviceObjects dbName = chain "\n"
+   localsettings :: (Identified t1) => String -> [t1] -> String
+   localsettings appname serviceObjects = chain "\n"
     (["<?php"
      ] ++ (map ((++) "  ") (
        ["// Select the monastir view"
        ,"$incPath = \"../inc/\";"
-       ,"$appName = \"" ++ (name context) ++ "\"; // full text name"
+       ,"$appName = \"" ++ appname ++ "\"; // full text name"
        ,"require $incPath.\"globalsettings.inc.php\";"
        ,"require \"connectToDataBase.inc.php\";"
        ,"require $incPath.\"monastir.inc.php\";"

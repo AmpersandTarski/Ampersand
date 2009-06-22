@@ -1,6 +1,7 @@
-  module ObjBinGenConnectToDataBase where
+  module Prototype.ObjBinGenConnectToDataBase where
  --  import Char
-   import Auxiliaries(chain,eqClass,commaNL,eqCl)
+   import Auxiliaries(eqClass,eqCl)
+   import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
    import Collection(rd)
  --  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
    import Adl
@@ -11,38 +12,42 @@
    import PredLogic -- (for error messages by dbCorrect)
  --  import Hatml     -- (for converting error messages to HTML)
  --  import Atlas     -- (for converting error messages to HTML)
-   import Calc (conjNF)
-   import RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,addSlashes,sqlMorName
+   import NormalForms (conjNF) --TODO -> correct replacement of Calc (conjNF)?
+
+   import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,addSlashes,sqlMorName
                         ,sqlConcept,sqlAttConcept,sqlMorSrc
                         ,sqlClosName,closE,sqlRelName,sqlRelSrc,sqlRelTrg
                         ,phpShow,insConcept
                         ,selectNormFiExpr,clos0,pDebug,noCollide)
    import Version (versionbanner)
+   import Data.Fspec
+   import Prototype.Garbage --TODO -> clean up Garbage
+
 
 
    type PHPcode = String
 
 
-   connectToDataBase context dbName
+   connectToDataBase fSpec dbName
     = (chain "\n  " 
       ([ "<?php // generated with "++versionbanner
        , "$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or die('Could not connect to MySql.');"
        , "$DB_slct = mysql_select_db('"++dbName++"',$DB_link);"
        , ""
-       ] ++ (ruleFunctions context)
+       ] ++ (ruleFunctions fSpec)
         ++
-       (createAndSelectDB context dbName False) ++
+       (createAndSelectDB fSpec dbName False) ++
        [""
        , "if($DB_debug>=3){"
        ] ++
           [ "  checkRule"++show (runum r)++"();"
-          | r<-rules context ] ++
+          | r<-vrules fSpec ] ++
        [ "}"
        ]
       )) ++ "?>"
 
-   createAndSelectDB :: Context -> String -> Bool -> [String] 
-   createAndSelectDB context dbName noTrans
+   createAndSelectDB :: Fspc -> String -> Bool -> [String] 
+   createAndSelectDB fSpec dbName noTrans
     =  [ ""
        , "if(!$DB_slct){"
        , "      DB_debug( \"Warning: error connecting to database, building database\",3 );"
@@ -50,32 +55,32 @@
        , "      $DB_slct = mysql_select_db('"++ dbName {- was: $DB_daba -} ++"',$DB_link) or die ('Could not select DB "++dbName++"');"
        , "      $DB_errs = false;"
        , "      set_time_limit(0);"
-       , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName context e++" ("++sqlExprSrc e++" varchar(380) NOT NULL default '', "++sqlExprTrg e++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
-                                      | e<-closE context, error ("clos: "++showADL e)]
-       , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlRelName context s++" ("++sqlRelSrc s++" varchar(380) NOT NULL default '', "++sqlRelTrg s++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlRelSrc s++","++sqlRelTrg s++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"++
+       , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlClosName fSpec e++" ("++sqlExprSrc e++" varchar(380) NOT NULL default '', "++sqlExprTrg e++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlExprSrc e++","++sqlExprTrg e++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
+                                      | e<-closE fSpec, error ("clos: "++showADL e)]
+       , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlRelName fSpec s++" ("++sqlRelSrc s++" varchar(380) NOT NULL default '', "++sqlRelTrg s++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlRelSrc s++","++sqlRelTrg s++") ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"++
                                         if null chn then "" else
-                                        "\n        DB_doquer(\"INSERT INTO "++sqlRelName context s++" ("++sqlRelSrc s++","++sqlRelTrg s++
+                                        "\n        DB_doquer(\"INSERT INTO "++sqlRelName fSpec s++" ("++sqlRelSrc s++","++sqlRelTrg s++
                                         ") VALUES "++chn++"\");"
-                                      | s<-rd (declarations context), not (isIdent s)
+                                      | s<-rd (declarations fSpec), not (isIdent s)
                                       , chn<-let truncate xs = if length xs>380 then take (380-if xs!!(380-1)=='\\' then 2 else 1) xs++"'" else xs
                                              in [ chain ", " (rd ["("++truncate (phpShow a)++","++truncate (phpShow b)++")"
                                                                  | [a,b]<-contents s, not (null a), not (null b)])
                                                 ]
                                       ]
-         ++if rd (declarations context)==declarations context then "" else
-           error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS "" s|s<-cl]|cl<-eqClass (==) (declarations context), length cl>1])
-       , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept context c++" ("++sqlAttConcept context c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept context c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
-                                      | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
+         ++if rd (declarations fSpec)==declarations fSpec then "" else
+           error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS "" s|s<-cl]|cl<-eqClass (==) (declarations fSpec), length cl>1])
+       , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept fSpec c++" ("++sqlAttConcept fSpec c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept fSpec c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
+                                      | c<-concs fSpec, ss<-[[s| s<-declarations fSpec, not (null (contents s)), c <= source s || c <= target s]]]
        , "      "++chain "\n        " [ if null ss then "" else
-                                        insConcept context c
-                                        ( chain " UNION " (["SELECT DISTINCT "++sqlRelSrc s++" FROM "++sqlRelName context s | s<-declarations context, not (null (contents s)), c <= source s]++
-                                                           ["SELECT DISTINCT "++sqlRelTrg s++" FROM "++sqlRelName context s | s<-declarations context, not (null (contents s)), c <= target s])
+                                        insConcept fSpec c
+                                        ( chain " UNION " (["SELECT DISTINCT "++sqlRelSrc s++" FROM "++sqlRelName fSpec s | s<-declarations fSpec, not (null (contents s)), c <= source s]++
+                                                           ["SELECT DISTINCT "++sqlRelTrg s++" FROM "++sqlRelName fSpec s | s<-declarations fSpec, not (null (contents s)), c <= target s])
                                         )
-                                      | c<-concs context, ss<-[[s| s<-declarations context, not (null (contents s)), c <= source s || c <= target s]]]
-       , "      "++chain "\n        " [ "\n        DB_doquer(\"INSERT IGNORE INTO "++sqlClosName context e++" "++selectNormFiExpr "$attrs" context 15 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
-                                        "\n        "++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName context e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');"
-                                      | e<-closE context]
-       , let checkers = [ "checkRule"++show (runum r)++"()" | r<-rules context ]
+                                      | c<-concs fSpec, ss<-[[s| s<-declarations fSpec, not (null (contents s)), c <= source s || c <= target s]]]
+       , "      "++chain "\n        " [ "\n        DB_doquer(\"INSERT IGNORE INTO "++sqlClosName fSpec e++" "++selectNormFiExpr "$attrs" fSpec 15 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
+                                        "\n        "++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName fSpec e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');"
+                                      | e<-closE fSpec]
+       , let checkers = [ "checkRule"++show (runum r)++"()" | r<-vrules fSpec ]
          in "      if($DB_errs"++ (if noTrans || null checkers then "" else " || !("++chain " && " checkers++")")++")"
        , "      {  DB_debug( \"DB errors, removing database\",5);"
        , "         mysql_query(\"DROP DATABASE "++ dbName {- was: $DB_daba -}++"\",$DB_link) or die('Could not delete DB "++dbName++"');"
@@ -90,20 +95,20 @@
        , "  }"
        ]
 
-   ruleFunctions :: Context -> [PHPcode]
-   ruleFunctions context
+   ruleFunctions :: Fspc -> [PHPcode]
+   ruleFunctions fSpec
     = [ "\n  function checkRule"++show (nr rule)++"(){\n    "++
            (if isFalse rule'
             then "// Tautology:  "++showADL rule++"\n     "
             else "// No violations should occur in ("++showADL rule++")\n    "++
                  concat [ "//            rule':: "++(showADL rule') ++"\n    " | pDebug] ++
                  concat [ "// sqlExprSrc rule':: "++src++"\n     " | pDebug] ++
-                 "$v=DB_doquer('"++selectExpr context 19 src trg rule'++"');\n     "++
+                 "$v=DB_doquer('"++selectExpr fSpec 19 src trg rule'++"');\n     "++
                  "if(count($v)) {\n    "++
                  "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++src++"'].'") ("'.$v[0]['"++trg++"'].'")) ++",3);\n    "++
                  "  return false;\n    }")++
                  "return true;\n  }"
-         | rule<-rules context, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
+         | rule<-vrules fSpec, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc rule'], trg<-[noCollide [src] (sqlExprTrg rule')] ]
 
 
 

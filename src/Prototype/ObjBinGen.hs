@@ -1,13 +1,13 @@
-  module ObjBinGen where
+  module Prototype.ObjBinGen where
    import Directory
-   import Auxiliaries
+   --import Auxiliaries
    import Adl
    import CommonClasses
    import Data.Fspec
-   import ObjBinGenLocalsettings
-   import ObjBinGenConnectToDataBase
-   import ObjBinGenObject
-   import ObjBinGenObjectWrapper
+   import Prototype.ObjBinGenLocalsettings
+   import Prototype.ObjBinGenConnectToDataBase
+   import Prototype.ObjBinGenObject
+   import Prototype.ObjBinGenObjectWrapper
 
    phpObjServices :: Context -- should become obsolete, as soon as fSpec takes over...
                   -> Fspc    -- should take over from Context in due time.
@@ -45,8 +45,9 @@
          ]
       >> putStr ("\n\n")
       where
-       ls   = localsettings context serviceObjects dbName
-       ctdb = connectToDataBase context dbName
+       ls   = let FS_id appname =  (fsfsid fSpec)
+              in localsettings appname serviceObjects
+       ctdb = connectToDataBase fSpec dbName
        wrapper o = objectWrapper (name o)
-       ojs o = objectServices context filename o
+       ojs o = objectServices fSpec filename o
        serviceObjects = if servGen then serviceG fSpec else attributes context

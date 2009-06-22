@@ -165,8 +165,8 @@ enrichCtx cx@(Ctx{}) ctxs =
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
      --TODO -> Set homo rel on True
-     alternatives = [DeclExpr (Relation mp i $ fromSign (c1,c2)) (ishomo dclprops) 
-                    | Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops}<-rv, decl==r1]
+     alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
+                    | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-rv, decl==r1]
      ishomo :: [Prop] -> Bool
      ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
      in
@@ -329,7 +329,6 @@ enrichCtx cx@(Ctx{}) ctxs =
                          objstrs=[[]]}) Nothing
 
                                     
-  --TODO
   --DESCR -> decomposing Statement is opposite of TypeInference.fromExpression
   bindSubexpr :: Expression -> Statement -> Expression
   bindSubexpr (Tc ex) x = Tc $ bindSubexpr ex x 
@@ -364,7 +363,7 @@ enrichCtx cx@(Ctx{}) ctxs =
     in
     if (rel adlex)==mp 
     then Tm $ case mp of
-      Mph{} -> mp {mphtyp=if mphyin mp then (ec1,ec2) else (ec2,ec1) } --REMARK -> not bound to mphdecl because this can be read from the inference tree 
+      Mph{} -> mp {mphtyp=if mphyin mp then (ec1,ec2) else (ec2,ec1)}
       I{} -> mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?

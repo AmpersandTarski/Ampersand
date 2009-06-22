@@ -20,6 +20,9 @@ import ShowADL      (showADLcode)
 import ShowXML      (showXML)
 import Strings      (chain)
 import Calc         (deriveProofs)
+import Prototype.ObjBinGen
+import Adl
+import Typology
 import Rendering.Doc2LaTeX
 import Rendering.Doc2Word
 import Fspec2Doc 
@@ -73,9 +76,21 @@ doGenXML fSpec flags
                = combine (dirOutput flags) (replaceExtension (baseName flags) ".xml")
                
 doGenProto :: Fspc -> Options -> IO()
-doGenProto _ flags
+doGenProto fSpec flags
    =  verboseLn flags "Generation of Prototype is currently not supported."
    >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
+--     >> phpObjServices cx fSpec appname appname (dirPrototype flags) True  
+  --        where 
+    --      FS_id appname = (fsfsid fSpec)
+      --    cx = Ctx "HARDCODED" [] (Isa [] []) [] [] [] [] [] [] [] []
+ 
+--   phpObjServices :: Context -- should become obsolete, as soon as fSpec takes over...
+--                  -> Fspc    -- should take over from Context in due time.
+--                  -> String  -- the file name to which these services are written
+--                  -> String  -- the database name
+--                  -> String  -- the directory to which the result is written
+--                  -> Bool    -- a boolean that tells whether to generate services or compile services. (TRUE=take services from Fspc, FALSE=take services from Context
+--                  -> IO()
 
 doGenFspecLaTeX :: Fspc -> Options -> IO()
 doGenFspecLaTeX fSpec flags

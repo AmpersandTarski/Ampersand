@@ -1,8 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XFlexibleContexts #-}
   module CC_aux ( 
-                  objectOfConcept
-                , pKey_pos
+                  pKey_pos
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
                 , renumberRules
@@ -35,9 +34,9 @@
    import Adl.Pair
    import Adl.Concept(Sign)
 
-   objectOfConcept :: Context -> Concept -> Maybe ObjectDef
-   objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
-     where os = [o|o<-attributes context,concept o == cpt]
+--   objectOfConcept :: Context -> Concept -> Maybe ObjectDef
+--   objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
+--     where os = [o|o<-attributes context,concept o == cpt]
 
 
 --   gEtable :: [Concept] -> String

@@ -1,6 +1,6 @@
-  module ObjBinGenObjectWrapper where
+  module Prototype.ObjBinGenObjectWrapper where
    import Strings(chain)
-   import RelBinGenBasics (phpIdentifier)
+   import Prototype.RelBinGenBasics (phpIdentifier)
   
 
    objectWrapper objectName

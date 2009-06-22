@@ -1,35 +1,43 @@
 {-# LANGUAGE ScopedTypeVariables#-}
-  module ObjBinGenObject where
+  module Prototype.ObjBinGenObject where
    import Char(toUpper)
    import Strings(chain)
-   import Calc( disjNF, triggers, allClauses, conjuncts, doClause)
+--   import Calc( disjNF, triggers, allClauses, conjuncts, doClause)
+   import Calc( doClause)
+   import NormalForms (disjNF) --TODO -> correct replacement of Calc?
+   import ComputeRule (triggers,conjuncts,allClauses) --TODO -> correct replacement of Calc?
+
    import Adl
    import ShowADL
    import CC_aux ( tot, fun
-                 , objectOfConcept
+      --          , objectOfConcept
                  )
    import Collection (Collection(rd))
-   import RelBinGenBasics
+   import Prototype.RelBinGenBasics
+   import Data.Fspec
+
+
+
 
  -- The service "getobject" communicates metadata to the interface.
 
-   generateService_getobject :: Context -> ObjectDef -> String
-   generateService_getobject context object
+   generateService_getobject :: Fspc -> ObjectDef -> String
+   generateService_getobject fSpec object
     = -- vastgesteld op 2008/12/6: gos/=[] dus is de volgende regel overbodig en uitgecommentarieerd:
       -- if null gos then error("Fail (Module ObjBinGenObject): unexpected pattern in generateService_getobject ("++show object++")") else
       "function getobject_"++ phpIdentifier (name object) ++"(){\n  "
       ++ chain "\n  " (("  return "++a):(addLst ";" as)) ++
       "\n  }\n"
        where a:as = [str++"  "| str<-gos]
-             gos  = getObject context object
+             gos  = getObject fSpec object
              addLst f (a:[]) = [a++f]
              addLst f (a:as) = a: addLst f as
              addLst f [] = [f]
 
 
 
-   objectServices :: Context -> String -> ObjectDef -> String
-   objectServices context filename object
+   objectServices :: Fspc -> String -> ObjectDef -> String
+   objectServices fSpec filename object
     = (chain "\n  "
       ([ "<?php // generated with ADL"
        , ""
@@ -37,13 +45,13 @@
        , showADL object
        , " *********/"
        , ""
-       , generateService_getobject context object   -- generate metadata for "object"
-       ] ++ showClasses context triggers [] object ++
-       [ generateService_getEach context capname object
-       , generateService_create  context capname object
-       , generateService_read    context capname object
-       , generateService_update  context capname object
-       , generateService_delete  context capname object]
+       , generateService_getobject fSpec object   -- generate metadata for "object"
+       ] ++ showClasses fSpec triggers [] object ++
+       [ generateService_getEach fSpec capname object
+       , generateService_create  capname object
+       , generateService_read    fSpec capname object
+       , generateService_update  fSpec capname object
+       , generateService_delete  fSpec capname object]
       )) ++ "\n?>"
      where
    -- The expressions of which the population can change inside this object (i.e. the transaction boundary)
@@ -52,7 +60,7 @@
          where atts o = o: [e| a<-attributes o, e<-atts a]
    -- The compute rules that may be used within this service.
       ecarules
-       = [ eca | rule<-declaredRules context
+       = [ eca | rule<-vrules fSpec     --was: declaredRules context
                , conjunct<-conjuncts rule
                , clause<-allClauses conjunct
                , eca<-doClause clause  -- was: hc<-hornCs rule clause
@@ -77,10 +85,10 @@
 
 
 
-   generateService_getEach :: Context -> String -> ObjectDef -> String
-   generateService_getEach context capname object
+   generateService_getEach :: Fspc -> String -> ObjectDef -> String
+   generateService_getEach fSpec capname object
     = "function getEach"++phpIdentifier capname++"(){"++
-      "\n      return DB_doquer('"++(selectExpr context
+      "\n      return DB_doquer('"++(selectExpr fSpec
                                              25
                                              (sqlExprTrg (ctx object)) -- was:  (sqlAttConcept context (concept object))
                                              (sqlExprSrc (ctx object)) -- was:  (sqlAttConcept context (concept object))
@@ -89,19 +97,19 @@
 
 
 
-   generateService_create :: Context -> String -> ObjectDef -> String
-   generateService_create context capname object
+   generateService_create :: String -> ObjectDef -> String
+   generateService_create capname object
     = "function create"++phpIdentifier capname++"("++phpIdentifier (name object)++" &$obj){\n  "++
       "    return update"++phpIdentifier capname++"($obj,true);\n  }"
 
 
 
-   generateService_read :: Context -> String -> ObjectDef -> String
-   generateService_read context capname object
+   generateService_read :: Fspc -> String -> ObjectDef -> String
+   generateService_read fSpec capname object
     = chain "\n  "
       (["function read"++phpIdentifier capname++"($id){"
        ,"    // check existence of $id"
-       ,"    $ctx = DB_doquer('"++(doesExistQuer context object "$id")++"');"
+       ,"    $ctx = DB_doquer('"++(doesExistQuer fSpec object "$id")++"');"
        ,"    if(count($ctx)==0) return false;"
        ,"    $obj = new "++phpIdentifier (name object)++"($id);"
        ,"    return $obj;"
@@ -113,8 +121,8 @@
    phpVar :: String -> String
    phpVar x = "$"++phpIdentifier x
 
-   generateService_update :: Context -> String -> ObjectDef -> String
-   generateService_update context capname object
+   generateService_update :: Fspc -> String -> ObjectDef -> String
+   generateService_update fSpec capname object
     = chain "\n  "
       (["function update"++phpIdentifier capname++"("++phpIdentifier (name object)++" "++(phpVar (name object))++",$new=false){"
        ,"    global $DB_link,$DB_err,$DB_lastquer;"
@@ -122,11 +130,11 @@
        ,"    DB_doquer('START TRANSACTION');"
        ,"    if($new){ // create a new object"
        ,"      if(!isset("++phpVar (name object)++"->id)){ // find a unique id"
-       ,"         $nextNum = DB_doquer('"++(autoIncQuer context (concept object))++"');"
+       ,"         $nextNum = DB_doquer('"++(autoIncQuer fSpec (concept object))++"');"
        ,"         "++phpVar (name object)++"->id = @$nextNum[0][0]+0;"
        ,"      }"
        ,"      if(DB_plainquer('" ++
-           (insertConcept context (concept object) (phpVar (name object)++"->id") False)
+           (insertConcept fSpec (concept object) (phpVar (name object)++"->id") False)
                                 ++"',$errno)===false){"
        ,"          $DB_err=$preErr.(($errno==1062) ? '"
           ++(addSlashes (name (concept object))) ++" \\''."++phpVar (name object)++
@@ -135,8 +143,8 @@
        ,"          return false;"
        ,"      }"
        ,"    }else"]
-       ++ updateObject context [name object] object
-       ++ checkRuls context object ++
+       ++ updateObject fSpec [name object] object
+       ++ checkRuls fSpec object ++
        ["    if(true){ // all rules are met"
        ,"        DB_doquer('COMMIT');"
        ,"        return "++phpVar (name object)++"->id;"
@@ -145,8 +153,8 @@
        ,"    return false;"
        ,"}"])
 
-   updateObject :: Object a => Context -> [String] -> a -> [String]
-   updateObject context nms o =
+   updateObject :: Object a => Fspc -> [String] -> a -> [String]
+   updateObject fSpec nms o =
      ( if null (termAtts o) then [] else
        ["    if(!$new){"
        ,"      // destroy old attribute values"
@@ -154,14 +162,14 @@
               [ [ ""
                 , "// When changed, retain the value of "++name a++" in "++phpVar (nm++"_"++name a++"_str")++"."
                 , "// It is obtained from "++showADL (objctx a)++"."
-                , "$affected = DB_doquer('"++ (selectExprForAttr context a o (phpVar nm++"->id")) ++"');"
+                , "$affected = DB_doquer('"++ (selectExprForAttr fSpec a o (phpVar nm++"->id")) ++"');"
                 , "$arr=array();"
                 , "foreach($affected as $i=>$v){"
                 , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (nm++"_"++name a++"_str")++"=join(',',$arr);"
                 , "// destroy old value of "++name a++" in the database."
-                , "DB_doquer( '"++(deleteExprForAttr context a o (phpVar nm++"->id"))++"');"
+                , "DB_doquer( '"++(deleteExprForAttr fSpec a o (phpVar nm++"->id"))++"');"
                 ]
               | a <- termAtts o -- door de definitie van termAtts heeft de expressie "ctx a" precies één morfisme.
               ]
@@ -171,10 +179,10 @@
               [ [ "foreach("++phpVar nm++"->"++phpIdentifier (name a)++" as $i=>"++phpVar (nm++"_"++name a)++"){"
                 ] ++ (concat (map (map ((++) "  "))
                       [ [ "if(isset("++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id)){"
-                        , "  if(count(DB_doquer('"++doesExistQuer context a (phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id")++"'))==0)"
-                        , "    DB_doquer('"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
-                        , "    print '"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"';"
-                        ] ++ updateObject context (nms++[name a,name as]) as ++
+                        , "  if(count(DB_doquer('"++doesExistQuer fSpec a (phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id")++"'))==0)"
+                        , "    DB_doquer('"++(insertConcept fSpec (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
+                        , "    print '"++(insertConcept fSpec (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"';"
+                        ] ++ updateObject fSpec (nms++[name a,name as]) as ++
                         [ "}"
                         , phpVar (nm++"_"++name a)++"->id = @"++phpVar (nm++"_"++name a)++"->"++phpIdentifier (name as)++"[0]->id;"
                         ]
@@ -184,15 +192,15 @@
                      ))
                  ++
                 [ "  if(!isset("++phpVar (nm++"_"++name a)++"->id)){"
-                , "     $nextNum = DB_doquer('"++autoIncQuer context (concept a)++"');"
+                , "     $nextNum = DB_doquer('"++autoIncQuer fSpec (concept a)++"');"
                 , "     "++phpVar (nm++"_"++name a)++"->id = @$nextNum[0][0]+0;"
                 , "  }"
-                , "  DB_doquer('"++(insertConcept context (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
+                , "  DB_doquer('"++(insertConcept fSpec (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
                 , "  DB_doquer('INSERT IGNORE INTO "
-                  ++(sqlMorName context (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
+                  ++(sqlMorName fSpec (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
                   ++" VALUES (\\''.addSlashes("++phpVar nm++"->id).'\\'"
                   ++        ",\\''.addSlashes("++phpVar (nm++"_"++name a)++"->id).'\\')');"
-                ] ++ updateObject context (nms++[name a]) a ++
+                ] ++ updateObject fSpec (nms++[name a]) a ++
                 [ "}"
                 ]
               | a <- termAtts o -- De expressie ctx a bevat precies één morfisme.
@@ -201,7 +209,7 @@
              ))
        ++ concat (map (map ((++) "    "))
                       [ [ "if(!$new && strlen("++phpVar (nm++"_"++name a)++"_str))"
-                        ] ++ (do_del_quer context a (phpVar (nm++"_"++name a)++"_str"))
+                        ] ++ (do_del_quer fSpec a (phpVar (nm++"_"++name a)++"_str"))
                       | a <- termAtts o
                       ]
                  )
@@ -209,8 +217,8 @@
 
 
 
-   generateService_delete :: Context -> String -> ObjectDef -> String
-   generateService_delete context capname object
+   generateService_delete :: Fspc -> String -> ObjectDef -> String
+   generateService_delete fSpec capname object
     = chain "\n  "
       (["function delete"++phpIdentifier capname++"($id){"
        ,"  global $DB_err;"
@@ -218,7 +226,7 @@
        ,"  DB_doquer('START TRANSACTION');"
        ,"  "] ++
        concat (map (map ((++) "    "))
-              [ ["$taken = DB_doquer('"++(selectExprWithF context (Tm m) cpt "$id")++"');"
+              [ ["$taken = DB_doquer('"++(selectExprWithF fSpec (Tm m) cpt "$id")++"');"
                 ,"if(count($taken)) {"
                 ,"  $DB_err = 'Cannot delete "++(name object)++": "
                  ++(prag d "\\''.addSlashes($id).'\\'" "\\''.addSlashes($taken[0]['"
@@ -228,15 +236,15 @@
                 ,"}"
                 ]
               | cpt <- [concept object]
-              , m@(Mph _ _ _ _ _ d) <- morsWithCpt context cpt
+              , m@(Mph _ _ _ _ _ d) <- morsWithCpt fSpec cpt
               , not (elem (makeInline m) (mors (map ctx (termAtts object))))  -- mors yields all morphisms inline.
               ])
        ++["/*"]
        ++ map show (mors (map ctx (termAtts object)))
        ++["*************"]
-       ++ map show (mors (morsWithCpt context (concept object)))
+       ++ map show (mors (morsWithCpt fSpec (concept object)))
        ++["*/"]
-       ++ deleteObject context object ++ checkRuls context object ++
+       ++ deleteObject fSpec object ++ checkRuls fSpec object ++
        ["  if(true) {"
        ,"    DB_doquer('COMMIT');"
        ,"    return true;"
@@ -247,90 +255,90 @@
        ])
 
  --  deleteObject :: Context -> a -> [String]
-   deleteObject context object =
+   deleteObject fSpec object =
        (concat (map (map ((++) "      "))
-              [ [ "$affected = DB_doquer('"++ (selectExprForAttr context a object "$id") ++"');"
+              [ [ "$affected = DB_doquer('"++ (selectExprForAttr fSpec a object "$id") ++"');"
                 , "$arr=array();"
                 , "foreach($affected as $i=>$v){"
                 , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (name a)++"_str=join(',',$arr);"
-                , "DB_doquer ('"++(deleteExprForAttr context a object "$id")++"');"
+                , "DB_doquer ('"++(deleteExprForAttr fSpec a object "$id")++"');"
                 ]
               | a <- termAtts object
               ]
              )) ++
-       ["  DB_doquer('DELETE FROM "++(sqlConcept context (concept object))
-        ++" WHERE "++(sqlAttConcept context (concept object))++"=\\''.addSlashes($id).'\\'');"
+       ["  DB_doquer('DELETE FROM "++(sqlConcept fSpec (concept object))
+        ++" WHERE "++(sqlAttConcept fSpec (concept object))++"=\\''.addSlashes($id).'\\'');"
        ] ++ (concat (map (map ((++) "  "))
               [ [ "if(strlen("++phpVar (name a++"_str")++"))"
-                ] ++ (do_del_quer context a (phpVar (name a++"_str")))
+                ] ++ (do_del_quer fSpec a (phpVar (name a++"_str")))
               | a <- termAtts object
               ])) 
 
    prag (Sgn _ _ _ _ p1 p2 p3 _ _ _ _ _) s1 s2 = (addSlashes p1) ++ s1 ++ (addSlashes p2) ++ s2 ++ (addSlashes p3)
-   morsWithCpt context cpt = rd ([m|m<-mors context, source m == cpt] ++ [flp m|m<-mors context, target m==cpt])
+   morsWithCpt fSpec cpt = rd ([m|m<-mors fSpec, source m == cpt] ++ [flp m|m<-mors fSpec, target m==cpt])
 
   --Precondition: ctx a  contains precisely one morphism and it is not V.
-   deleteExprForAttr context a parent id
+   deleteExprForAttr fSpec a parent id
     | isTrue (ctx a)  = error "Fatal: DELETE FROM V is no valid SQL"
-    | isIdent (ctx a) = "DELETE FROM "++sqlConcept context ((target.head.mors.ctx) a)++" WHERE "++sqlAttConcept context ((target.head.mors.ctx) a)++"=\\''.addSlashes("++id++").'\\'"
-    | otherwise       = "DELETE FROM "++sqlMorName context ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addSlashes("++id++").'\\'"
+    | isIdent (ctx a) = "DELETE FROM "++sqlConcept fSpec ((target.head.mors.ctx) a)++" WHERE "++sqlAttConcept fSpec ((target.head.mors.ctx) a)++"=\\''.addSlashes("++id++").'\\'"
+    | otherwise       = "DELETE FROM "++sqlMorName fSpec ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addSlashes("++id++").'\\'"
 
-   andNEXISTquer context e m
+   andNEXISTquer fSpec e m
     | isTrue m  = [ "      AND FALSE" ]
-    | otherwise = [ "      AND NOT EXISTS (SELECT * FROM "++(sqlMorName context m)
+    | otherwise = [ "      AND NOT EXISTS (SELECT * FROM "++(sqlMorName fSpec m)
                   , "                       WHERE "
-                    ++ (sqlConcept context (target e))++"."++(sqlAttConcept context (target e))++" = "
-                    ++ (sqlMorName context m)++"."++(sqlMorSrc context m)
+                    ++ (sqlConcept fSpec (target e))++"."++(sqlAttConcept fSpec (target e))++" = "
+                    ++ (sqlMorName fSpec m)++"."++(sqlMorSrc fSpec m)
                   , "                     )"
                   ]
 
-   autoIncQuer context cpt
-    = "SELECT max(1+"++(sqlAttConcept context cpt)
-      ++") FROM "++(sqlConcept context cpt)++" GROUP BY \\'1\\'"
+   autoIncQuer fSpec cpt
+    = "SELECT max(1+"++(sqlAttConcept fSpec cpt)
+      ++") FROM "++(sqlConcept fSpec cpt)++" GROUP BY \\'1\\'"
 
-   insertConcept context cpt var ignore
-    = "INSERT "++(if ignore then "IGNORE " else "") ++ "INTO "++(sqlConcept context cpt)++" ("
-      ++(sqlAttConcept context cpt)++") VALUES (\\''.addSlashes("++var++").'\\')"
+   insertConcept fSpec cpt var ignore
+    = "INSERT "++(if ignore then "IGNORE " else "") ++ "INTO "++(sqlConcept fSpec cpt)++" ("
+      ++(sqlAttConcept fSpec cpt)++") VALUES (\\''.addSlashes("++var++").'\\')"
 
-   checkRuls context object
+   checkRuls fSpec object
     = (concat
       [ ["  if (!checkRule"++show (nr rul)++"()){"
         ,"    $DB_err=$preErr.'"++(addSlashes (show(explain rul)))++"';"
         ,"  } else"
         ]
-      | rul <- rules context
+      | rul <- vrules fSpec
       , or (map (\m -> elem m (mors rul)) -- rule contains an element
                 (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
            )
       ])
 
-   doesExistQuer context object id
-    = ( selectExpr context
+   doesExistQuer fSpec object id
+    = ( selectExpr fSpec
                    25
-                   (sqlAttConcept context (concept object))
-                   (sqlAttConcept context (concept object))
+                   (sqlAttConcept fSpec (concept object))
+                   (sqlAttConcept fSpec (concept object))
                    (Fi [ Tm (mIs (concept object))
                        , Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") (concept object))
                        ]
                    )
       )
 
-   do_del_quer context a str
-            = [ "  DB_doquer('DELETE FROM "++(sqlConcept context (concept a))
-                , "    WHERE "++(sqlAttConcept context (concept a))++" IN ('."++str++".')"
+   do_del_quer fSpec a str
+            = [ "  DB_doquer('DELETE FROM "++(sqlConcept fSpec (concept a))
+                , "    WHERE "++(sqlAttConcept fSpec (concept a))++" IN ('."++str++".')"
                 ] ++ concat (
-                   [ andNEXISTquer context (ctx a) m
-                   | m@(Mph _ _ _ _ _ _) <- morsWithCpt context (concept a)
+                   [ andNEXISTquer fSpec (ctx a) m
+                   | m@(Mph _ _ _ _ _ _) <- morsWithCpt fSpec (concept a)
                    ]
                    ) ++
                 [ "  ');"]
    termAtts o = [a|a<-attributes o, Tm (Mph _ _ _ _ _ _)<-[ctx a]] -- Dit betekent: de expressie ctx a bevat precies één morfisme.
-   selectExprForAttr context a parent id
-     = selectExprWithF context (ctx a) (concept parent) id
-   selectExprWithF context e cpt id
-     = selectExpr context 25 (sqlExprSrc e) (sqlExprTrg e)
+   selectExprForAttr fSpec a parent id
+     = selectExprWithF fSpec (ctx a) (concept parent) id
+   selectExprWithF fSpec e cpt id
+     = selectExpr fSpec 25 (sqlExprSrc e) (sqlExprTrg e)
                    (F [Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") cpt), e])
 
 
@@ -344,7 +352,7 @@
    --   nms      : the name trail of all super-objects until the root of this service. This is used to generate unique names for every field.
    --   o        : the object to be transformed in a class.
 
-   showClasses context triggers nms o
+   showClasses fSpec triggers nms o
     = [ "class "++phpIdentifier (chain "_" (nms++[name o])) ++" {"] ++
       (map ((++) "  ") (
        ["var $id;"]
@@ -358,7 +366,7 @@
               [ [ "if(!isset("++phpVar (name a)++")){"
                 , "  if(isset($id)){"
                 , "    $this->"++phpIdentifier (name a)++" = array();"
-                , "    foreach(DB_doquer('"++ selectExprForAttr context a o "$id" ++"') as $i=>$v){"
+                , "    foreach(DB_doquer('"++ selectExprForAttr fSpec a o "$id" ++"') as $i=>$v){"
                 , "      $this->"++phpIdentifier (name a)++"[]=new "++phpObjRelName nms o a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
                 , "    }"
                 , "  } else $this->"++phpIdentifier (name a)++"=array();"
@@ -384,15 +392,15 @@
       -- The following function fills the drop-down boxes of an individual field in edit mode
             ,"function getEach_"++phpIdentifier (name a)++"(){"
             ,"  // currently, this returns all concepts.. why not let it return only the valid ones?"
-            ,"  $v = DB_doquer('"++selectExpr context
+            ,"  $v = DB_doquer('"++selectExpr fSpec
                                            30
-                                           (sqlAttConcept context (concept a))
-                                           (sqlAttConcept context (concept a))
+                                           (sqlAttConcept fSpec (concept a))
+                                           (sqlAttConcept fSpec (concept a))
                                            (Tm (mIs (concept a)))++"');"
             ,"// triggers:"++[]
             ,"  $res = array();"
             ,"  foreach($v as $i=>$j){"
-            ,"    $res[]=$j['"++addSlashes (sqlAttConcept context (concept a))++"'];"
+            ,"    $res[]=$j['"++addSlashes (sqlAttConcept fSpec (concept a))++"'];"
             ,"  }"
             ,"  return $res;"
             ,"}"
@@ -409,15 +417,15 @@
       ]
       )) ++
       [ "}"
-      ] ++ (concat [ showClasses context triggers (nms++[name o]) a |a <- attributes o ] )
+      ] ++ (concat [ showClasses fSpec triggers (nms++[name o]) a |a <- attributes o ] )
 
    phpObjRelName pth o r = phpIdentifier (chain "_" (pth++[name o,name r]))
 
 
-   getObject context o | null (attributes o) = 
-    [ "new object(\""++phpIdentifier (name o)++"\", array()"++mystrs (objectOfConcept context (concept o)) (isOne o)++")"
+   getObject fSpec o | null (attributes o) = 
+    [ "new object(\""++phpIdentifier (name o)++"\", array()"++mystrs (objectOfConcept fSpec (concept o)) (isOne o)++")"
     ]
-   getObject context o =
+   getObject fSpec o =
     [ "new object(\""++phpIdentifier (name o)++"\", array"
     ]
     ++ (concat(mapHeadTail  (mapHeadTail ((++) "   ( ")
@@ -429,11 +437,20 @@
                                                           ++ phpBool (Uni `elem` m) ++ ","
                                                           ++ phpBool (Sur `elem` m) ++ ","
                                                           ++ phpBool (Tot `elem` m) ++ " ) // derived from "++(showADL (ctx a))
-                               ], (mapHeadTail ((++) "  , ") ((++) "   ") (getObject context a))
+                               ], (mapHeadTail ((++) "  , ") ((++) "   ") (getObject fSpec a))
                                 , ["  ) "]]
                             | a <- attributes o, m <- [multiplicities (ctx a)]
                             ]
-       )       )++["   )"++mystrs (objectOfConcept context (concept o)) (isOne o) ++")"]
+       )       )++["   )"++mystrs (objectOfConcept fSpec (concept o)) (isOne o) ++")"]
+
+
+   objectOfConcept :: Fspc -> Concept -> Maybe ObjectDef
+   objectOfConcept fSpec cpt = if length os == 0 then Nothing else Just (head os)
+     where os = [o|o<-serviceG fSpec,concept o == cpt]
+--        copied from CC_aux (and commented, becuase no one else used it)
+--        objectOfConcept :: Context -> Concept -> Maybe ObjectDef
+--        objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
+--          where os = [o|o<-attributes context,concept o == cpt]
 
    isOne o = (fun.multiplicities.disjNF.F) [v (source (ctx o),source (ctx o)),ctx o]
    mapTail f (a:as) = a:(map f as)

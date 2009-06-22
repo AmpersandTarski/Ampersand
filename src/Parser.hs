@@ -9,7 +9,7 @@ import UU_Parsing(parseIO)
 import AGtry
 import TypeChecker
 import Adl
-import Test.AdlTestFunctions --temp -> for comparing new typechecker output with old AGtry output
+--import Test.AdlTestFunctions --temp -> for comparing new typechecker output with old AGtry output
 
  
 parseADL :: String      -- ^ The string to be parsed
@@ -27,7 +27,7 @@ parseADL adlstring flags fnFull =
 	        ( contexts,[]) -> case filteredContexts  of
 	                            []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))
 	                            cs   -> do{ verboseLn flags (fnFull++ " has been parsed.")
-	                                      ; verboseLn flags ("Comparing typechecker output with AGtry output:\n" ++ compareTCOutput (sem_Architecture slRes) (typecheck slRes))
+	                                    --  ; verboseLn flags ("Comparing typechecker output with AGtry output:\n" ++ compareTCOutput (sem_Architecture slRes) (typecheck slRes))
 	                                      ; return (head cs) -- Just take the first context encounterd. If there are more contexts no warning is generated.
                                           }
 	                          where filteredContexts   = case contextName flags of
