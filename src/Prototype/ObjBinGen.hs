@@ -2,6 +2,7 @@
    import Directory
    --import Auxiliaries
    import Adl
+
    import CommonClasses
    import Data.Fspec
    import Prototype.ObjBinGenLocalsettings
@@ -9,19 +10,11 @@
    import Prototype.ObjBinGenObject
    import Prototype.ObjBinGenObjectWrapper
 
-   phpObjServices :: Context -- should become obsolete, as soon as fSpec takes over...
-                  -> Fspc    -- should take over from Context in due time.
-                  -> String  -- the file name to which these services are written
-                  -> String  -- the database name
+   phpObjServices :: Fspc    -- should take over from Context in due time.
                   -> String  -- the directory to which the result is written
-                  -> Bool    -- a boolean that tells whether to generate services or compile services.
                   -> IO()
-   phpObjServices context
-                  fSpec
-                  filename
-                  dbName
+   phpObjServices fSpec
                   targetDir
-                  servGen
      =   putStr ("\n---------------------------\nGenerating php Object files with ADL\n---------------------------")
       >> putStr ("\n  Generating localsettings.inc.php")
       >> do { d <- doesDirectoryExist targetDir
@@ -45,9 +38,11 @@
          ]
       >> putStr ("\n\n")
       where
-       ls   = let FS_id appname =  (fsfsid fSpec)
-              in localsettings appname serviceObjects
+       ls   = localsettings appname serviceObjects
        ctdb = connectToDataBase fSpec dbName
        wrapper o = objectWrapper (name o)
        ojs o = objectServices fSpec filename o
-       serviceObjects = if servGen then serviceG fSpec else attributes context
+       serviceObjects = serviceG fSpec
+       FS_id appname =  (fsfsid fSpec)
+       filename = appname
+       dbName = appname

@@ -78,20 +78,9 @@ doGenXML fSpec flags
 doGenProto :: Fspc -> Options -> IO()
 doGenProto fSpec flags
    =  verboseLn flags "Generation of Prototype is currently not supported."
-   >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
---     >> phpObjServices cx fSpec appname appname (dirPrototype flags) True  
-  --        where 
-    --      FS_id appname = (fsfsid fSpec)
-      --    cx = Ctx "HARDCODED" [] (Isa [] []) [] [] [] [] [] [] [] []
+--   >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
+     >> phpObjServices fSpec (dirPrototype flags)   
  
---   phpObjServices :: Context -- should become obsolete, as soon as fSpec takes over...
---                  -> Fspc    -- should take over from Context in due time.
---                  -> String  -- the file name to which these services are written
---                  -> String  -- the database name
---                  -> String  -- the directory to which the result is written
---                  -> Bool    -- a boolean that tells whether to generate services or compile services. (TRUE=take services from Fspc, FALSE=take services from Context
---                  -> IO()
-
 doGenFspecLaTeX :: Fspc -> Options -> IO()
 doGenFspecLaTeX fSpec flags
    =  verboseLn flags "Generating LaTeX functional specification document..." >>

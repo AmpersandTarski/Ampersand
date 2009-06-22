@@ -17,7 +17,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    import NormalForms (conjNF)
  --  import MultRules
    import Data.Fspec
-   import Collection (Collection(uni))
+   import Collection (Collection(rd,uni))
    import Prototype.Garbage --TODO -> clean up Garbage
 
 
@@ -32,7 +32,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
      concs fspc = concs (vrels fspc) `uni` concs (vrules fspc) --I assumed that rules contains every expression from kd, obj, etc
      mors  fspc = mors (vrules fspc)
      morlist fspc = morlist (vrules fspc)
-     declarations fspc = vrels fspc
+     declarations fspc = rd $ [makeDeclaration m|m<-mors fspc] ++ [d|d<-vrels fspc, desrc d/=Anything, detgt d/=Anything]
      closExprs fspc = closExprs (vrules fspc)
 
  --sqlCodeComputeRule: 4th argument is (as of sept 25th 07) empty. It used to be:
@@ -536,7 +536,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
   --  if length ts>1 then error ("(module RelBinGenBasics) Declaration \""++show a++"\" is not unique in fSpec \""++appname++"\" (sqlRelName in module RelBinGenBasics) "++show ts) else
       head ts
       where ts = ["T"++show i++"_"++enc False (name s)
-                 |(i,s)<-zip [1..] (declarations fSpec), a==s]
+                 |(i,s)<-zip [1..] (declarations fSpec), a==s] 
                -- error(chain "\n" (map (showHS "") (filter isSgnl (declarations fSpec)))) --
             as = declarations m
             a = head as
