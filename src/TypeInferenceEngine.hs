@@ -194,7 +194,8 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
   bindMphats (BoundTo r@(Relation{rel=mp, tt=TT{cts=ct1,ctt=ct2}}) ) (itree,vars, Nothing) =
      let
      (c1,c2,hasmphats) = case mp of
-         Mph{mphats=[x,y]} -> (x,y,True)
+         Mph{mphats=[x,y], mphyin=True} -> (x,y,True)
+         Mph{mphats=[x,y], mphyin=False} -> (y,x,True)
          I{mphats=[x]} -> (x,x,True)
          V{mphats=[x,y]} -> (x,y,True)
          _ -> let nomphatserr = error $ show $ "Error in TypeInferenceTree.hs module InferenceRules function infer.bindMphats: Do not bind mphats because there aren't any."

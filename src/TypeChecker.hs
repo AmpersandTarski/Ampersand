@@ -355,7 +355,9 @@ enrichCtx cx@(Ctx{}) ctxs =
       []     -> Fd [bindSubexpr ex x]
   bindSubexpr (Fu subexs) (BoundTo (Union adlexs _)) = Fu $ bindSubexprs subexs adlexs 
   bindSubexpr (Fi subexs) (BoundTo (Intersect adlexs _)) = Fi $ bindSubexprs subexs adlexs
-  bindSubexpr (Tm mp) (BoundTo (Flip adlex _)) = bindSubexpr  (Tm mp) (BoundTo adlex)
+  bindSubexpr (Tm mp@(Mph{mphyin=False})) stmt@(BoundTo (Flip{})) = 
+    let (ec1,ec2) = evalstmt stmt
+    in Tm $ mp {mphtyp=(ec1,ec2)}
   bindSubexpr (Tm mp) stmt@(BoundTo adlex@(Relation{})) = 
     let
     (ec1,ec2) = evalstmt stmt
@@ -363,7 +365,8 @@ enrichCtx cx@(Ctx{}) ctxs =
     in
     if (rel adlex)==mp 
     then Tm $ case mp of
-      Mph{} -> mp {mphtyp=if mphyin mp then (ec1,ec2) else (ec2,ec1)}
+      Mph{mphyin=True} -> mp {mphtyp=(ec1,ec2)} 
+      Mph{mphyin=False} ->  error $ "Should have been pattern matched to bindSubexpr (Tm mp@(Mph{mphyin=False})) stmt@(BoundTo (Flip adlex _))"      
       I{} -> mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
@@ -467,4 +470,5 @@ ctxName (NotFound cxnm) = cxnm
 fromFoundCtx :: ContextFound -> Context
 fromFoundCtx (NotFound cxnm) = error ("TypeChecker.fromFoundCtx: NotFound " ++ cxnm)
 fromFoundCtx(Found cx)    = cx
+
 
