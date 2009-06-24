@@ -7,7 +7,7 @@
    import Adl         
    import ShowADL     (showADL)
    import CC_aux      (pKey_pos
-                      ,pVarid_val_pos, pConid_val_pos
+                      ,pVarid_val_pos, pConid_val_pos, pString_val_pos
                       )
 
    keywordstxt :: [String]
@@ -215,7 +215,7 @@
                       -- where c str = C str (==) []
 
    pLabel           :: Parser Token Label
-   pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos)
+   pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos)
                            <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
                        where lbl (nm,pos') strs = Lbl nm pos' strs

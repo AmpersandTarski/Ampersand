@@ -134,7 +134,7 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option []        ["language"]         (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"), Public)
           , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                    envlogName  ++ " )")), Hidden)
-          , ((Option []        ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" ), Hidden) -- Tijdelijk, zolang de TC nog onderhanden is. 
+          , ((Option []        ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" ), Public) -- Tijdelijk, zolang de TC nog onderhanden is. 
           ]
 
 defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
