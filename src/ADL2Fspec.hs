@@ -41,7 +41,8 @@
      = Fspc { fsfsid = makeFSid1 (name context)
             , themes   = themes'  --TODO: Bewijzen dat dit termineert!(dat doet het nu niet altijd...) -- TODO Aanpassen op nieuwe Document structuur
             , datasets = datasets'
-            , serviceS = []-- serviceS'  TODO: Loop verwijderen uit generatie serviceS.
+            , serviceS = serviceS' --TODO: Loop verwijderen uit generatie serviceS.
+                                       --GMI: Welke loop? ServiceS is gewoon 'attributes context'. Zie TODO in ServiceG'?
             , serviceG = serviceG'
             , services = [] --was: fservices --TODO: Herstellen, en bewijzen dat dit termineert!
             , vrules   = frules'
@@ -73,13 +74,14 @@
                    , objats  = [ Obj { objnm  = name mph++name (target mph)
                                      , objpos = Nowhere
                                      , objctx = Tm mph
-                                     , objats = let ats = [ Obj { objnm = concat [name mph'| mph'<-morlist att]++name (target att)
-                                                                , objpos = Nowhere
-                                                                , objctx = att
-                                                                , objats = []
-                                                                , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
-                                                                }
-                                                          | att<-recur [] (target mph)]
+                                     , objats = let ats = [] --TODO -> disabled because it causes loop problems at -p option
+                                                          --[ Obj { objnm = concat [name mph'| mph'<-morlist att]++name (target att)
+                                                          --      , objpos = Nowhere
+                                                          --      , objctx = att
+                                                          --      , objats = []
+                                                          --      , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
+                                                          --      }
+                                                          -- | att<-recur [] (target mph)]
                                                 in if null ats then []
                                                    else (( Obj { objnm = name (target mph)
                                                                , objpos = Nowhere

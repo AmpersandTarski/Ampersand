@@ -79,7 +79,7 @@ doGenProto :: Fspc -> Options -> IO()
 doGenProto fSpec flags
    =  verboseLn flags "Generation of Prototype is currently not supported."
 --   >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
-     >> phpObjServices fSpec (dirPrototype flags)   
+     >> phpObjServices fSpec (dirPrototype flags) (allServices flags)  
  
 doGenFspecLaTeX :: Fspc -> Options -> IO()
 doGenFspecLaTeX fSpec flags

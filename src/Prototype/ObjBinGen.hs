@@ -12,9 +12,11 @@
 
    phpObjServices :: Fspc    -- should take over from Context in due time.
                   -> String  -- the directory to which the result is written
+                  -> Bool    -- a boolean that tells whether to generate services or compile services.
                   -> IO()
    phpObjServices fSpec
                   targetDir
+                  servGen
      =   putStr ("\n---------------------------\nGenerating php Object files with ADL\n---------------------------")
       >> putStr ("\n  Generating localsettings.inc.php")
       >> do { d <- doesDirectoryExist targetDir
@@ -42,7 +44,7 @@
        ctdb = connectToDataBase fSpec dbName
        wrapper o = objectWrapper (name o)
        ojs o = objectServices fSpec filename o
-       serviceObjects = serviceG fSpec
+       serviceObjects = if servGen then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script
        FS_id appname =  (fsfsid fSpec)
        filename = appname
        dbName = appname
