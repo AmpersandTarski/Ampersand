@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose)
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..))
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -28,10 +28,8 @@ data Options = Options { contextName   :: Maybe String
 					   , uncheckedDirAtlas      :: Maybe String
 					   , dirAtlas      :: String
 					   , genXML        :: Bool
-					   , fspecLaTeX    :: Bool
-					   , fspecHtml     :: Bool
-					   , fspecWord     :: Bool
-					   , fspecPandoc   :: Bool
+                                           , genFspec      :: Bool
+                                           , fspecFormat   :: FspecFormat
 					   , proofs        :: Bool
 					   , haskell       :: Bool
 					   , uncheckedDirOutput     :: Maybe String
@@ -48,7 +46,9 @@ data Options = Options { contextName   :: Maybe String
                        , services      :: Bool
                        , skipTypechecker :: Bool  -- tijdelijke optie, totdat typechecker werkt.... 
                        } deriving Show
- 
+    
+data FspecFormat = FPandoc | FWord | FLatex | FHtml | FUnknown deriving (Show, Eq)
+
 getOptions :: IO Options
 getOptions = 
    do args     <- getArgs
@@ -92,7 +92,10 @@ checkOptions flags =
                                              then return flags2 { dirAtlas = s }
                                              else ioError (userError ("Directory does not exist: "++s))
                         else return flags2  {- No need to check if no atlas will be generated. -}
-           return flags3                  
+           flags4 <- if genFspec flags3 && fspecFormat flags3==FUnknown
+                        then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
+                        else return flags3  {- No need to check if no fspec will be generated. -}
+           return flags4                  
              
 data DisplayMode = Public | Hidden
     
@@ -121,10 +124,7 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
                                                                                    envdirAtlas ++ " )")), Public)
           , ((Option []        ["XML"]              (NoArg xmlOpt)              "generate XML output"), Public)
-          , ((Option ['L']     ["fspecLaTeX"]       (NoArg fspecLaTeXOpt)       "generate a functional specification document in LaTeX format"), Public)
-          , ((Option ['H']     ["fspecHtml"]        (NoArg fspecHtmlOpt)        "generate a functional specification document in Html format"), Public)
-          , ((Option ['W']     ["fspecWord"]        (NoArg fspecWordOpt)       "generate a functional specification document for microsoft's Word"), Public)
-          , ((Option ['P']     ["fspecPandoc"]      (NoArg fspecPandocOpt)     "generate a functional specification document in Pandoc format"), Public)
+          , ((Option ['f']     ["fspec"]      (ReqArg fspecRenderOpt "format")     "generate a functional specification document in specified format (Word, Html, Latex, Pandoc)"), Public)
           , ((Option []        ["proofs"]           (NoArg proofsOpt)           "generate correctness proofs"), Public)
           , ((Option []        ["haskell"]          (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"), Public)
           , ((Option ['o']     ["outputDir"]        (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
@@ -153,11 +153,9 @@ defaultOptions clocktime env fName pName
 		                 , genAtlas      = False   
             		     , uncheckedDirAtlas      = lookup envdirAtlas env
             		     , dirAtlas      = unchecked
-            		     , genXML        = False 
-	            	     , fspecLaTeX    = False
-	            	     , fspecHtml     = False
-	            	     , fspecWord     = False
-	            	     , fspecPandoc   = False
+            		     , genXML        = False
+                             , genFspec      = False 
+	            	     , fspecFormat   = FUnknown
 	            	     , proofs        = False
 	            	     , haskell       = False
 	            	     , uncheckedDirOutput     = lookup envdirOutput env
@@ -209,14 +207,17 @@ atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
                            ,genAtlas     = True}
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
-fspecLaTeXOpt :: Options -> Options
-fspecLaTeXOpt   opts = opts{fspecLaTeX   = True}
-fspecHtmlOpt  :: Options -> Options
-fspecHtmlOpt   opts = opts{fspecHtml     = True}
-fspecWordOpt   :: Options -> Options
-fspecWordOpt   opts = opts{fspecWord     = True}
-fspecPandocOpt   :: Options -> Options
-fspecPandocOpt   opts = opts{fspecPandoc = True}
+fspecRenderOpt :: String -> Options -> Options
+fspecRenderOpt w opts = opts{genFspec=True, fspecFormat= case map toUpper w of
+     "WORD"   -> FWord
+     "W"      -> FWord
+     "LATEX"  -> FLatex
+     "L"      -> FLatex
+     "HTML"   -> FHtml
+     "H"      -> FHtml
+     "PANDOC" -> FPandoc
+     "P"      -> FPandoc
+     _        -> FUnknown}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

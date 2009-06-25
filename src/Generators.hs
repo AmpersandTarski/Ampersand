@@ -3,10 +3,7 @@ module Generators (doGenAtlas
                   ,doGenXML
                   ,doGenHaskell
                   ,doGenProto
-                  ,doGenFspecLaTeX
-                  ,doGenFspecHtml
-                  ,doGenFspecWord
-                  ,doGenFspecPandoc
+                  ,doGenFspec
                   ,serviceGen
                   ,prove)
 where
@@ -22,10 +19,6 @@ import Strings      (chain)
 import Calc         (deriveProofs)
 import Prototype.ObjBinGen
 import Adl
-import Typology
-import Rendering.Doc2LaTeX
-import Rendering.Doc2Word
-import Fspec2Doc 
 import Fspec2Pandoc  -- Als je Pandoc niet hebt geinstalleerd, dan kan je deze regel disabelen door 
 --import Fspec2PandocDummy  -- maar dan moet je deze regel enabelen....
 import Version
@@ -81,40 +74,16 @@ doGenProto fSpec flags
 --   >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
      >> phpObjServices fSpec (dirPrototype flags) (allServices flags)  
  
-doGenFspecLaTeX :: Fspc -> Options -> IO()
-doGenFspecLaTeX fSpec flags
-   =  verboseLn flags "Generating LaTeX functional specification document..." >>
-      writeFile outputFile (render2LaTeX flags (fSpec2document fSpec flags)
-                           )   
-   >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
---   >> verboseLn flags ("Processing .tex file into .pdf...")
---   >> system ("pdftex outputFile ")
-   where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".tex")
-               
-doGenFspecHtml :: Fspc -> Options -> IO()
-doGenFspecHtml fSpec flags
-   =  verboseLn flags "Generating Html functional specification document..." >>
-      writeFile outputFile ( "leeg"
-                           )   
-   >> verboseLn flags ("Functional specification written into " ++ outputFile ++ ".")
-   where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".html")
-               
-doGenFspecWord :: Fspc -> Options -> IO()
-doGenFspecWord fSpec flags
-   =  verboseLn flags "Generating Word functional specification document..." >>
-      writeFile outputFile ( render2Word flags (fSpec2document fSpec flags)
-                           )   
-   >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
-   where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".doc")
-               
-doGenFspecPandoc :: Fspc -> Options -> IO()
-doGenFspecPandoc fSpec flags
-   =  verboseLn flags "Generating Pandoc functional specification document..." >>
+doGenFspec :: Fspc -> Options -> IO()
+doGenFspec fSpec flags
+   =  verboseLn flags "Generating functional specification document..." >>
       writeFile outputFile ( render2Pandoc flags (fSpec2Pandoc fSpec flags)
                            )   
    >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
-   where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".pandoc")         
+   where 
+   outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
+   outputExt FPandoc  = ".pandoc"
+   outputExt FWord    = ".doc"
+   outputExt FLatex   = ".tex"
+   outputExt FHtml    = ".html"
+   outputExt FUnknown = ".pandoc"

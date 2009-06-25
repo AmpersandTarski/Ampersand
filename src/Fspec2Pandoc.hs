@@ -12,10 +12,15 @@ where
                              --    als dat het geval is, kan deze module worden overruled in Generators.hs                                 
    import Version        (versionbanner)
    import Languages      (Lang(..))
-   import Options        (Options(..))
-   
+   import Options        (Options(..),FspecFormat(..))
+ 
    render2Pandoc :: Options -> Pandoc -> String
-   render2Pandoc _ pandoc = prettyPandoc pandoc
+   render2Pandoc flags pandoc = case fspecFormat flags of
+      FPandoc -> prettyPandoc pandoc
+      FWord -> writeRTF defaultWriterOptions pandoc
+      FLatex -> writeLaTeX defaultWriterOptions pandoc
+      FHtml -> writeHtmlString defaultWriterOptions pandoc
+      FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
 
    fSpec2Pandoc :: Fspc -> Options -> Pandoc
    fSpec2Pandoc fSpec flags = Pandoc meta docContents

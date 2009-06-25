@@ -41,8 +41,8 @@
      = Fspc { fsfsid = makeFSid1 (name context)
             , themes   = themes'  --TODO: Bewijzen dat dit termineert!(dat doet het nu niet altijd...) -- TODO Aanpassen op nieuwe Document structuur
             , datasets = datasets'
-            , serviceS = serviceS' --TODO: Loop verwijderen uit generatie serviceS.
-                                       --GMI: Welke loop? ServiceS is gewoon 'attributes context'. Zie TODO in ServiceG'?
+            , serviceS = serviceS' --was:[] TODO: Loop verwijderen uit generatie serviceS.
+                                   --GMI: Welke loop? ServiceS is gewoon 'attributes context'. Zie TODO in ServiceG'?
             , serviceG = serviceG'
             , services = [] --was: fservices --TODO: Herstellen, en bewijzen dat dit termineert!
             , vrules   = frules'
