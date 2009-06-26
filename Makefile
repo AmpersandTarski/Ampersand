@@ -11,7 +11,7 @@ default: adl
 
 WINDOWS = $(shell ghc-pkg list | grep -q Win32 && echo yes || echo no)
 
-SOURCES = $(wildcard src/*.lhs) $(wildcard src/*.hs)
+SOURCES = $(wildcard src/*.lhs) $(wildcard src/*.hs) $(wildcard src/*/*.hs)
 
 ifeq ($(WINDOWS), yes)
 EXE  = .exe
@@ -30,6 +30,7 @@ adl: bin/adl$(EXE)
 
 bin/adl$(EXE): $(SOURCES) out bin
 	ghc $(FLAGS) -o $@ src/Main.hs
+	cp src/Rendering/customheader.tex bin/customheader.tex
 	strip $@
 
 out:
@@ -37,3 +38,5 @@ out:
 	
 bin:
 	mkdir bin
+
+

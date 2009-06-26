@@ -37,6 +37,8 @@ data Options = Options { contextName   :: Maybe String
 					   , beeper        :: Bool
 					   , crowfoot      :: Bool
 					   , language      :: Lang
+                                           , dirExec       :: String --the base for relative paths to input files
+                                           , texHdrFile    :: String --FilePath to customheader.tex
                        , progrName     :: String
                        , adlFileName   :: String
                        , baseName      :: String
@@ -95,7 +97,18 @@ checkOptions flags =
            flags4 <- if genFspec flags3 && fspecFormat flags3==FUnknown
                         then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
                         else return flags3  {- No need to check if no fspec will be generated. -}
-           return flags4                  
+           mbexec <- findExecutable "adl" 
+           flags5 <- case mbexec of
+              Nothing -> ioError $ userError "Specify the path location of adl.exe in your system PATH variable."
+              Just s -> do 
+                        texfileexists <- doesFileExist uncheckedtexfile 
+                        if texfileexists 
+                          then return flags4{dirExec=takeDirectory s
+                                           , texHdrFile=uncheckedtexfile}
+                          else return flags4{dirExec=takeDirectory s
+                                           , texHdrFile=error $ "File does not exist: "++uncheckedtexfile} 
+                        where uncheckedtexfile = combine (takeDirectory s) (texHdrFile flags)
+           return flags5                  
              
 data DisplayMode = Public | Hidden
     
@@ -159,6 +172,8 @@ defaultOptions clocktime env fName pName
 	            	     , proofs        = False
 	            	     , haskell       = False
 	            	     , uncheckedDirOutput     = lookup envdirOutput env
+                         , dirExec       = unchecked
+                         , texHdrFile    = "customheader.tex"
                          , dirOutput     = unchecked
                          , beeper        = False
                          , crowfoot      = False

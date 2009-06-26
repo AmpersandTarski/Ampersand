@@ -76,11 +76,13 @@ doGenProto fSpec flags
  
 doGenFspec :: Fspc -> Options -> IO()
 doGenFspec fSpec flags
-   =  verboseLn flags "Generating functional specification document..." >>
-      writeFile outputFile ( render2Pandoc flags (fSpec2Pandoc fSpec flags)
+   =  do
+      verboseLn flags "Generating functional specification document..."
+      customheader <- readFile (texHdrFile flags)
+      writeFile outputFile ( render2Pandoc flags customheader (fSpec2Pandoc fSpec flags)
                            )   
-   >> verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
-   where 
+      verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
+   where  
    outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
    outputExt FPandoc  = ".pandoc"
    outputExt FWord    = ".doc"

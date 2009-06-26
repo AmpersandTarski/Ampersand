@@ -14,11 +14,20 @@ where
    import Languages      (Lang(..))
    import Options        (Options(..),FspecFormat(..))
  
-   render2Pandoc :: Options -> Pandoc -> String
-   render2Pandoc flags pandoc = case fspecFormat flags of
+   render2Pandoc :: Options -> String -> Pandoc -> String
+   render2Pandoc flags customheader pandoc = case fspecFormat flags of
       FPandoc -> prettyPandoc pandoc
-      FWord -> writeRTF defaultWriterOptions pandoc
-      FLatex -> writeLaTeX defaultWriterOptions pandoc
+      FWord -> let wropts = defaultWriterOptions{writerStandalone=True}
+               in writeRTF wropts pandoc
+      --DESCR -> FLatex
+      -- $ writerHeader options $$ extras $$ secnumline $$ verbatim $$ titletext $$ authorstext $$ datetext $$ "\\begin{document}" $$ maketitle $$ "" $$ "\\tableofcontents\n" $$ writerIncludeBefore options $$ main $$ writerIncludeAfter options $$ "\\end{document}"
+      --writerStandalone=True -> writes a header [header=all untill ($$ "\\tableofcontents\n")]
+      --                         writes ($$ "\\end{document}")
+      --writerTableOfContents -> writes ($$ "\\tableofcontents\n")
+      --writerIncludeBefore is empty
+      --writerIncludeAfter is empty
+      FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True}
+                in writeLaTeX wropts pandoc
       FHtml -> writeHtmlString defaultWriterOptions pandoc
       FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
 
@@ -39,7 +48,8 @@ where
                         ++ (dataAnalisys level fSpec flags)
                         ++ (glossary level fSpec flags)
              level = 1
-   
+             --Pandoc x y = readLaTeX defaultParserState customheader
+                
    introduction :: Int -> Fspc -> Options ->  [Block]
    introduction lev fSpec flags = header ++ introContents (language flags)
        where 
@@ -216,4 +226,62 @@ where
    xrefReference myLabel = [TeX ("\\ref{"++myLabel++"}")]
    xrefLabel :: String -> [Inline]        -- uitbreidbaar voor andere rendering dan LaTeX
    xrefLabel myLabel = [TeX ("\\label{"++myLabel++"}")]
+
+   latexintro :: Options -> String -> String
+   latexintro flags title 
+     = chain "\n"
+         [ "\\documentclass[10pt,a4paper]{report}"
+         , case language flags of
+              Dutch -> "\\usepackage[dutch]{babel}" 
+              English -> ""
+         , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
+         , "\\parindent 0em                      % Width of paragraph indentation."
+         , "\\usepackage{theorem}"
+         , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{"
+                   ++ (case language flags of
+                          Dutch -> "Definitie" 
+                          English -> "Definition"
+                       )++"}[section]"
+         , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{"++
+                  case language flags of
+                      Dutch -> "Ontwerpregel" 
+                      English -> "Design Rule"
+               ++"}"
+         , "\\usepackage{graphicx}"
+         , "\\usepackage{amssymb}"
+         , "\\usepackage{amsmath}"
+ --        , "\\usepackage{zed-csp}"
+         , "\\usepackage{longtable}"
+         , "\\def\\id#1{\\mbox{\\em #1\\/}}"
+         , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
+         , "\\newcommand{\\iden}{\\mathbb{I}}"
+         , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+         , "\\newcommand{\\full}{\\mathbb{V}}"
+         , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
+         , "\\newcommand{\\relAdd}{\\dagger}"
+         , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
+         , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+         , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+         , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
+         , "\\newcommand{\\rel}{\\times}"
+         , "\\newcommand{\\compose}{;}"
+         , "\\newcommand{\\subs}{\\vdash}"
+         , "\\newcommand{\\fun}{\\rightarrow}"
+         , "\\newcommand{\\isa}{\\sqsubseteq}"
+         , "\\newcommand{\\N}{\\mbox{\\msb N}}"
+         , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
+         , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{$\\rightarrow$}\\id{#3}}"
+         , "\\newcommand{\\signat}[3]{\\mbox{${#1}_{[{#2},{#3}]}$}}"
+         , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
+         , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"
+         , "\n\\begin{document}"
+         , case language flags of
+             English -> "\n" 
+             Dutch   -> "\n\\selectlanguage{dutch}\n"
+         , "\\title{" ++ title ++ "}"
+         , "\\maketitle"
+         , "\\tableofcontents"]
+
+   latexend :: String
+   latexend = "\n\\end{document}"
    
