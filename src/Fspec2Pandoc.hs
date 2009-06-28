@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
+--TODO -> Block: Header Int [Inline] - Int indicates level of header. If I look at pandoc code TexInfo.hs blockToTexinfo ln.208 I would expect chapter,section,sub,subsub respectively. But I get section,sub,subsub,plain text respectively. So now I've written chapters as 0 setting a [Inline] -> [Tex "\\chapter{...}"]. I do not know yet how this relates to other formats like rtf.
 module Fspec2Pandoc (fSpec2Pandoc,render2Pandoc,writeRTF,writeLaTeX)
 where
 
@@ -13,6 +14,7 @@ where
    import Version        (versionbanner)
    import Languages      (Lang(..))
    import Options        (Options(..),FspecFormat(..))
+   import Rendering.AdlExplanation
  
    render2Pandoc :: Options -> String -> Pandoc -> String
    render2Pandoc flags customheader pandoc = case fspecFormat flags of
@@ -26,7 +28,8 @@ where
       --writerTableOfContents -> writes ($$ "\\tableofcontents\n")
       --writerIncludeBefore is empty
       --writerIncludeAfter is empty
-      FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True}
+      --writerNumberSections=True to number all sections (no secnumline)
+      FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True,writerNumberSections=True}
                 in writeLaTeX wropts pandoc
       FHtml -> writeHtmlString defaultWriterOptions pandoc
       FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
@@ -47,9 +50,8 @@ where
                         ++ (conceptualAnalisys level fSpec flags)
                         ++ (dataAnalisys level fSpec flags)
                         ++ (glossary level fSpec flags)
-             level = 1
-             --Pandoc x y = readLaTeX defaultParserState customheader
-                
+             level = 0 --0=chapter, 1=section, 2=subsection, 3=subsubsection, _=plain text
+------------------------------------------------------------                
    introduction :: Int -> Fspc -> Options ->  [Block]
    introduction lev fSpec flags = header ++ introContents (language flags)
        where 
@@ -98,53 +100,48 @@ where
                 ++ [Str "This support consists of either preventing that a rule is violated,"]
                 ++ [Str "signalling violations (for human intervention),"]
                 ++ [Str "or fixing the content of databases (by automatic actions) to restore a rule."]
-                  )]
-   
-   
+                  )]  
+------------------------------------------------------------
    designPrinciples :: Int -> Fspc -> Options ->  [Block]
-   designPrinciples lev fSpec flags = header ++ dpContents
-       where 
-           header :: [Block]
-           header = labeledHeader lev (case (language flags) of
-                                          Dutch   ->  "Ontwerpregels"   
-                                          English ->  "Design Rules"
-                                      )
-           dpContents :: [Block]
-           dpContents = 
-            (case (language flags) of
-               Dutch -> [Para (
-                           [Str "Dit hoofdstuk definieert de ontwerpregels van "]
-                        ++ [Quoted  SingleQuote [Str (name fSpec)] ]
-                        ++ [Str ". Deze regels moeten door de oplossing worden nageleefd. "]
-                        ++ [Str "Controle daarop vindt plaats door het architectuurteam. "]
-                        ++ [Str "Tezamen vormen deze regels de architectuur van "]
-                        ++ [Quoted  DoubleQuote [Str (name fSpec)] ]
-                        ++ [Str "."]
-                               )
-                        ]
-            ) ++ dpTms (themes fSpec) [][] 
-              where
-                dpTms :: [Ftheme]        -- This function will take a list of themes still to be processed,
-                      -> [Ftheme]        -- and a list of themes that have been processed,
-                      -> [Declaration]   -- and a list of declarations already explained,
-                      -> [Block]         -- It will give this result.
-                dpTms [] _ _ = []
-                dpTms (t:tms) tmsProcessed dclsProcessed = 
-                     (newBlocks t (1 + length tmsProcessed))
-                   ++(dpTms tms 
-                           (t:tmsProcessed) 
-                           (dclsProcessed ++ (newDcls t)) 
-                     )
-                newDcls :: Ftheme -> [Declaration]
-                newDcls t = []  --TODO  WAAROM? Stef, wat vind jij? Gaan we dit in Adl2Fspec regelen, of moet dit in Fspec2Pandoc? Oftewel, wat willen we in FThemes laten komen? Mijn voorkeur gaat er naar uit dat dit rekenwerk al zichtbaar is in FThemes. Per thema zie ik daar al de lijst van declarations die ik moet behandelen. 
-                newBlocks :: Ftheme -> Int -> [Block]
-                newBlocks t num = [Header (lev+1) [Str (name t)]]  --TODO  
-
-
-
-
-
-
+   designPrinciples lev fSpec flags = foldr (++) [] $
+     [header] ++ [dpIntro] ++ [dpSection t|t<-themes fSpec]
+     where 
+     header :: [Block]
+     header = labeledHeader lev (case (language flags) of
+                                    Dutch   ->  "Ontwerpregels"   
+                                    English ->  "Design Rules"
+                                )
+     dpIntro :: [Block]
+     dpIntro = 
+       (case (language flags) of
+           Dutch -> [Para (
+                     [Str "Dit hoofdstuk definieert de ontwerpregels van "]
+                  ++ [Quoted  SingleQuote [Str (name fSpec)] ]
+                  ++ [Str ". Deze regels moeten door de oplossing worden nageleefd. "]
+                  ++ [Str "Controle daarop vindt plaats door het architectuurteam. "]
+                  ++ [Str "Tezamen vormen deze regels de architectuur van "]
+                  ++ [Quoted  DoubleQuote [Str (name fSpec)] ]
+                  ++ [Str "."]
+                         )
+                    ]
+           English -> [Para (
+                     [Str "This chapter defines de design principles of "]
+                  ++ [Quoted  SingleQuote [Str (name fSpec)] ]
+                  ++ [Str ". The implementation must assert these rules. "]
+                         )
+                    ]
+        )
+     dpSection :: Ftheme -> [Block]
+     dpSection t = (if null (themedecls ++ themerules) then [] --nothing to explain for this theme -> skip
+                    else [Header (lev+1) [Str (name t)]]) --new section to explain this theme
+                ++ [Para [Str d]|d<-themedecls] --explanation of all multiplicities in the theme
+                ++ [Para [Str r]|r<-themerules] --explanation of all (non-computed) rules in the theme
+       where
+       --query copied from FSpec.hs revision 174
+       themedecls = [explainDecl (language flags) d|u<-units t, d<-ptdcs (pattern u),(not.null) (multiplicities d)]
+       --query copied from FSpec.hs revision 174
+       themerules = [explainRule (language flags) r|u<-units t, r<-declaredRules (pattern u)++signals (pattern u), null (cpu r)]
+------------------------------------------------------------
    conceptualAnalisys :: Int -> Fspc -> Options ->  [Block]
    conceptualAnalisys lev fSpec flags = header ++ caContents
        where 
@@ -177,11 +174,7 @@ where
                                )
                         ]
             ) ++ fpa2Blocks lev fSpec flags
-
-           
-           
-           
-
+------------------------------------------------------------
    dataAnalisys :: Int -> Fspc -> Options ->  [Block]
    dataAnalisys lev fSpec flags = header ++ daContents
        where 
@@ -204,12 +197,13 @@ where
                                )
                                
                         ]
+               English -> [] --TODO
             ) ++ [Para [Image [Str "BlaDieBlah"] ( "eenplaatje.png", "TestPlaatje" )]]
               ++ [] --TODO daadwerkelijke gegevensanalyse toevoegen
-
+------------------------------------------------------------
    glossary :: Int -> Fspc -> Options ->  [Block]
    glossary lev fSpec flags = []  --TODO
-
+------------------------------------------------------------
    fpa2Blocks :: Int -> Fspc -> Options -> [Block]
    fpa2Blocks lev fSpec flags = []  -- TODO: paragraaf over FPA toevoegen
 
@@ -218,6 +212,9 @@ where
 ---   xrefTableReference :: String -> [Inline]
 --   xrefTableReference myLabel = [TeX ("\\ref{tab:"++myLabel++"}")]
    labeledHeader :: Int -> String -> [Block]
+   labeledHeader 0 str = 
+                    [Para [TeX ("\\chapter{"++str++"}")]]
+                 ++ [Para (xrefLabel str)]
    labeledHeader lev str =
                     [Header lev ([Str str])]
                  ++ [Para (xrefLabel str)]
@@ -227,61 +224,4 @@ where
    xrefLabel :: String -> [Inline]        -- uitbreidbaar voor andere rendering dan LaTeX
    xrefLabel myLabel = [TeX ("\\label{"++myLabel++"}")]
 
-   latexintro :: Options -> String -> String
-   latexintro flags title 
-     = chain "\n"
-         [ "\\documentclass[10pt,a4paper]{report}"
-         , case language flags of
-              Dutch -> "\\usepackage[dutch]{babel}" 
-              English -> ""
-         , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
-         , "\\parindent 0em                      % Width of paragraph indentation."
-         , "\\usepackage{theorem}"
-         , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{"
-                   ++ (case language flags of
-                          Dutch -> "Definitie" 
-                          English -> "Definition"
-                       )++"}[section]"
-         , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{"++
-                  case language flags of
-                      Dutch -> "Ontwerpregel" 
-                      English -> "Design Rule"
-               ++"}"
-         , "\\usepackage{graphicx}"
-         , "\\usepackage{amssymb}"
-         , "\\usepackage{amsmath}"
- --        , "\\usepackage{zed-csp}"
-         , "\\usepackage{longtable}"
-         , "\\def\\id#1{\\mbox{\\em #1\\/}}"
-         , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
-         , "\\newcommand{\\iden}{\\mathbb{I}}"
-         , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
-         , "\\newcommand{\\full}{\\mathbb{V}}"
-         , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
-         , "\\newcommand{\\relAdd}{\\dagger}"
-         , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
-         , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
-         , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
-         , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
-         , "\\newcommand{\\rel}{\\times}"
-         , "\\newcommand{\\compose}{;}"
-         , "\\newcommand{\\subs}{\\vdash}"
-         , "\\newcommand{\\fun}{\\rightarrow}"
-         , "\\newcommand{\\isa}{\\sqsubseteq}"
-         , "\\newcommand{\\N}{\\mbox{\\msb N}}"
-         , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
-         , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{$\\rightarrow$}\\id{#3}}"
-         , "\\newcommand{\\signat}[3]{\\mbox{${#1}_{[{#2},{#3}]}$}}"
-         , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
-         , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"
-         , "\n\\begin{document}"
-         , case language flags of
-             English -> "\n" 
-             Dutch   -> "\n\\selectlanguage{dutch}\n"
-         , "\\title{" ++ title ++ "}"
-         , "\\maketitle"
-         , "\\tableofcontents"]
-
-   latexend :: String
-   latexend = "\n\\end{document}"
    
