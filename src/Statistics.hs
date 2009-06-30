@@ -1,14 +1,15 @@
 
-module Statistics ()where
+module Statistics where
 
    import Adl
    import FspecDef
    import FPA
  -- TODO Deze module moet nog geheel worden ingekleurd...
+ -- TODO Is there a need for the number of Views or is FViewDef obsolete or is it a special kind of ServiceSpec?
  
    class Statistics a where
     nServices :: a -> Int      -- ^ The number of services in a
-    nPatterns :: a -> Int      -- ^ The number of services in a
+    nPatterns :: a -> Int      -- ^ The number of patterns in a
     nFpoints  :: a -> Int      -- ^ The number of function points in a
     
     
@@ -22,9 +23,9 @@ module Statistics ()where
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance Statistics Fspc where
-    nServices s = -1
-    nPatterns s = -2
-    nFpoints  s = -3
+    nServices fSpec = length (services fSpec) --TODO -> check correctness
+    nPatterns fSpec = nPatterns (themes fSpec)
+    nFpoints  fSpec = nFpoints (services fSpec) --TODO -> check correctness
  -- TODO Deze module moet nog geheel worden ingekleurd...
 
 --   instance Statistics Fspc where
@@ -36,48 +37,54 @@ module Statistics ()where
 -- \*** Eigenschappen met betrekking tot: Ftheme                        ***
 -- \***********************************************************************
 
---   instance Statistics Ftheme where
---    nServices (Tspc p us) = nServices us
---    nPatterns (Tspc p us) = 1
---    nFpoints  (Tspc p us) = sum (map nFpoints us)
+   instance Statistics Ftheme where
+    nServices t = nServices (units t)
+    nPatterns t = nPatterns (units t)
+    nFpoints  t = nFpoints (units t)
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Funit                         ***
 -- \***********************************************************************
 
---   instance Statistics Funit where
---    nServices (Uspc nm pat ents svs) = length svs
---    nPatterns x = 0
---    nFpoints (Uspc unm pat car specs) = sum[fPoints fpa| (_,fpa,_,_)<-car]+sum [fPoints fpa| Sspc _ _ _ fpa _ _ _ _ _<-specs]
+   instance Statistics Funit where
+    nServices u = length (servDefs u)  --TODO -> check correctness
+    nPatterns _ = 1
+    nFpoints u =  nFpoints (viewDefs u) + nFpoints (servDefs u) --TODO -> check correctness
 
-     
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************
+   instance Statistics Fservice where
+    nServices _ = 1 --TODO -> check correctness
+    nPatterns _ = 0
+    nFpoints  fSvc = nFpoints (methods fSvc) --TODO -> implement correct FPA qualification
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FViewDef                      ***
 -- \***********************************************************************
+   instance Statistics FViewDef where
+    nServices _ = 1 --TODO -> check correctness
+    nPatterns _ = 0
+    nFpoints fView = nFpoints (vdobjdef fView) --TODO -> check correctness
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
 -- \***********************************************************************
 
---   instance Statistics ServiceSpec where
---    nServices x = 1
---    nPatterns x = 0
---    nFpoints (Sspc nm sees changes fpa input output rs pre post) = fPoints fpa
+   instance Statistics ServiceSpec where
+    nServices _ = 1
+    nPatterns _ = 0
+    nFpoints _ = fPoints (ILGV Eenvoudig) --TODO -> implement correct FPA qualification
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Dataset                       ***
 -- \*** TODO: zowel datasets als services worden weergegeven middels een ObjectDef. Dit maakt voor de functiepuntentelling natuurlijk wel wat uit, dus dat kan zo niet....
    instance Statistics ObjectDef where
-    nServices (Obj nm _ _ []  _) = 2 -- dit is een associatie, en dus een binaire relatie
-    nServices (Obj nm _ _ ats _) = 4 -- dit is een entiteit met ��n of meer attributen.
-    nPatterns (Obj nm _ _ []  _) = 0
-    nPatterns (Obj nm _ _ ats _) = 0
-    nFpoints  (Obj nm _ _ []  _) = fPoints (ILGV Eenvoudig)
-    nFpoints  (Obj nm _ _ ats _) = fPoints (ILGV Eenvoudig)
+    nServices (Obj{objats=[]}) = 2 -- dit is een associatie, en dus een binaire relatie --TODO -> check correctness
+    nServices _ = 4 -- dit is een entiteit met ��n of meer attributen. --TODO -> check correctness
+    nPatterns _ = 0
+    nFpoints  _ = fPoints (ILGV Eenvoudig) --TODO -> implement correct FPA qualification
+
 -- \*** TODO: de functiepuntentelling voor Services zou er als volgt uit moeten zien....
 --   instance Statistics ObjectDef where
 --    nServices o = 4+sum [nServices a| a<-attributes o]

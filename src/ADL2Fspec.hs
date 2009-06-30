@@ -52,7 +52,7 @@
 
 -- Themes are made in order to get readable chapters in documentation. So a theme collects everything that
 -- needs to be introduced in the same unit of text. For that purpose everything is allocated to a theme only once.
-        themes'   = (  [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
+        themes'   = ( [makeFtheme context pat ds| (pat,ds)<-pats]                      -- one pattern yields one theme
                     ++ [makeFtheme context others remainingDS| not (null remainingDS)]  -- remaining datasets are discussed at the end
                    )
 -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set

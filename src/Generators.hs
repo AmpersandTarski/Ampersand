@@ -79,8 +79,9 @@ doGenFspec fSpec flags
    =  do
       verboseLn flags "Generating functional specification document..."
       customheader <- readFile (texHdrFile flags)
-      writeFile outputFile ( render2Pandoc flags customheader (fSpec2Pandoc fSpec flags)
-                           )   
+      writeFile outputFile  ( render2Pandoc flags customheader (fSpec2Pandoc fSpec flags))
+      --putStrLn ( render2Pandoc flags customheader (fSpec2Pandoc fSpec flags))
+      --putStrLn $ show $ length [u|t<-themes fSpec,u<-units t ,v<-viewDefs u]
       verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where  
    outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
