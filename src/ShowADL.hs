@@ -161,6 +161,7 @@
       where is = [ [Tm (mIs (target f `lub` source f'))| length ts>1]
                  | (f,f')<-zip fs (tail fs)
                  , ts<-[[t `lub` s'|(s,t)<-types fSpec f, (s',t')<-types fSpec f', t `order` s']]]
+    showADLcode fspec expr = show expr --TODO, but there is no error anymore
     showADL e = show e
 
 
