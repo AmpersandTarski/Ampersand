@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Expression (Expression(..),Expressions
                       ,v
-                      ,isPos,isNeg,notCp)
+                      ,isPos,isNeg,notCp,insParentheses)
 where
    import Adl.MorphismAndDeclaration  (Morphism(..),inline)
    import Adl.FilePos                 (Numbered(..))

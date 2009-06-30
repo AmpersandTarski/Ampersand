@@ -64,13 +64,14 @@
 -- definition from the ADL-script with the generated service definition and to signal missing items.
 -- Rule: a service must be large enough to allow the required transactions to take place within that service.
 -- TODO: afdwingen dat attributen van elk object unieke namen krijgen.
-        
+
+     
 
         serviceG'
          = concat
            [ [ Obj { objnm   = name c
                    , objpos  = Nowhere
-                   , objctx  = v (cptS,c)
+                   , objctx  = Tm $ I [c] c c True -- was: Tm $ V [cptS,c] (cptS,c)
                    , objats  = [ Obj { objnm  = name mph++name (target mph)
                                      , objpos = Nowhere
                                      , objctx = Tm mph
@@ -85,7 +86,7 @@
                                                 in if null ats then []
                                                    else (( Obj { objnm = name (target mph)
                                                                , objpos = Nowhere
-                                                               , objctx = Tm (mIs (target mph))
+                                                               , objctx = Tm $ I [target mph] (target mph) (target mph) True
                                                                , objats = []
                                                                , objstrs= []
                                                                }
@@ -111,13 +112,13 @@
                            | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
                in [ Obj { objnm  = name c++"s"
                         , objpos = Nowhere
-                        , objctx = Tm (mIs S)
+                        , objctx = Tm $ I [S] S S True
                         , objats = [ Obj { objnm  = name c++"s"
                                          , objpos = Nowhere
-                                         , objctx = v(S,c)
+                                         , objctx = Tm $ V [S,c] (S,c)
                                          , objats = ( Obj { objnm = "nr"
                                                           , objpos = Nowhere
-                                                          , objctx = Tm (mIs c)
+                                                          , objctx = Tm $ I [c] c c True
                                                           , objats = []
                                                           , objstrs= []
                                                           }): ats
@@ -130,19 +131,19 @@
                   ]
            | c<-concs context ]
            where
-            relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
-                         [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
-            recur :: [Morphism] -> Concept -> [Expression]
-            recur rs' c
+           relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
+                        [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
+           recur :: [Morphism] -> Concept -> [Expression]
+           recur rs' c
              = [ F [Tm mph| mph<-rs'++[n]] | n<-new, not (n `elem` rs')] ++
                [ rs'' | n<-new, not (n `elem` rs'), rs'' <-recur (rs'++[n]) (target n) ] 
                where new = [mph| mph<-relsFrom c, not (isSignal mph), not (isIdent mph), Tot `elem` multiplicities mph]
-            props ps = [if Sym `elem` ps && Asy `elem` ps then ["PROPERTY"] else
-                        if Tot `elem` ps && Uni `elem` ps then ["ATTRIBUTE"] else
-                        if Tot `elem` ps                  then ["NONEMPTY LIST"] else
-                        if                  Uni `elem` ps then ["OPTIONAL FIELD"] else
-                                                               ["LIST"]
-                       ]
+           props ps = [if Sym `elem` ps && Asy `elem` ps then ["PROPERTY"] else
+                       if Tot `elem` ps && Uni `elem` ps then ["ATTRIBUTE"] else
+                       if Tot `elem` ps                  then ["NONEMPTY LIST"] else
+                       if                  Uni `elem` ps then ["OPTIONAL FIELD"] else
+                                                              ["LIST"]
+                      ]
 
 -- serviceS contains the services defined in the ADL-script.
 -- services are meant to create user interfaces, programming interfaces and messaging interfaces.

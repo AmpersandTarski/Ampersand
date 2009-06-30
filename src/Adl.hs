@@ -6,7 +6,7 @@ module Adl ( Architecture(..)
            , KeyDef(..),KeyDefs,Key(..)
            , Population(..),Populations
            , ObjectDef(..),ObjectDefs
-           , Expression(..), Expressions,isPos,isNeg
+           , Expression(..), Expressions,isPos,isNeg,insParentheses
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
            , Declaration(..),Declarations,isSgn
@@ -40,7 +40,7 @@ where
    import Adl.Context                    (Context(..),Contexts
                                          ,Architecture(..))
    import Adl.Expression                 (Expression(..),Expressions
-                                         ,isPos,isNeg,v,notCp)
+                                         ,isPos,isNeg,v,notCp,insParentheses)
    import Adl.FilePos                    (FilePos(..)
                                          ,Numbered(..))
    import Adl.Gen                        (Gen(..),Gens)

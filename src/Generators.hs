@@ -13,7 +13,7 @@ import System.FilePath(combine,replaceExtension)
 import Options
 import FspecDef
 import ShowHS       (showHS)
-import ShowADL      (showADLcode)
+import ShowADL      (showADLcode, printadl)
 import ShowXML      (showXML)
 import Strings      (chain)
 import Calc         (deriveProofs)
@@ -24,8 +24,14 @@ import Fspec2Pandoc  -- Als je Pandoc niet hebt geinstalleerd, dan kan je deze r
 import Version
 --import System
 serviceGen :: Fspc -> Options -> IO()
-serviceGen    fSpec _
-    = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
+serviceGen    fSpec flags
+  --  = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
+  = putStr $ printadl fSpec 0 (serviceG fSpec)
+ -- =  do
+   --  writeFile (outputFile "GeneratedshowADl.adl") (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
+     --writeFile (outputFile "GeneratedprintADL.adl") $ printadl fSpec 0 (serviceG fSpec)
+    -- where
+    -- outputFile x = combine (dirOutput flags) x
 
 prove :: Fspc -> Options -> IO()
 prove fSpec _
