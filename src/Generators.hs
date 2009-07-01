@@ -26,7 +26,10 @@ import Version
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
   --  = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
-  = putStr $ printadl fSpec 0 (serviceG fSpec)
+  = (writeFile outputFile $ printadl fSpec' 0 fSpec')
+    >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
+    where fSpec'= fSpec{serviceS=serviceG fSpec} --copy the generated over the script services
+          outputFile = combine (dirOutput flags) "Generated.adl"
  -- =  do
    --  writeFile (outputFile "GeneratedshowADl.adl") (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
      --writeFile (outputFile "GeneratedprintADL.adl") $ printadl fSpec 0 (serviceG fSpec)

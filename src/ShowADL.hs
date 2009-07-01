@@ -30,18 +30,34 @@
    lb = "\n"
    indent :: Int -> String
    indent i = take (3*i) [' '|_<-[1..]]
-   printlist :: String -> String -> String -> [String] -> String 
-   printlist _ _ _ [] = [] --tail will not be on empty list
-   printlist start delim end xs = start ++ (drop (length delim) postfix) ++ end
+   printlist :: (String,String,String) -> [String] -> String 
+   printlist _ [] = [] --tail will not be on empty list
+   printlist (start,delim,end) xs = start ++ (drop (length delim) postfix) ++ end
           where
           postfix :: String
           postfix = [c|x<-xs, c<-(delim++x)]  
+   adlprintlist :: (PrintADL a) => Fspc -> Int -> (String,String,String) -> [a]  -> String
+   adlprintlist fSpec i opts xs = printlist opts [printadl fSpec i x|x<-xs, (not.null) $ printadl fSpec i x]
+   adlprintlistlb :: (PrintADL a) => Fspc -> Int -> [a]  -> String
+   adlprintlistlb fSpec i xs = adlprintlist fSpec i ("", lb, lb) xs
+   --DESCR -> put string in quotes if it contains strange characters (like spaces)
+   printquotes ss | and [isAlphaNum c| c<-ss] = ss
+                  | otherwise = "\""++ss++"\""
 
 --------------------------------------------------------------
    --TODO -> what about comments in original script?
    --TODO -> what about extends?
    --TODO -> Pat "CONTEXT" should become obsolete (declare ds cs ks in a pattern)
+   --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid, (etc?)?
    --REMARK -> original file positions are not preserved
+   --TODO -> I could sort on file position
+   --TODO -> ServiceG has ambiguous expressions
+   --TODO -> brackets of insParantheses are bad
+   --TODO -> sometimes there is no theme when there is a pattern, for example when it only contains gens and decls
+   --        you need to use concepts from the pattern in a rule in the pattern or something
+   --TODO -> where do all the Other Topics patterns come from, it's not just one pattern.
+   --TODO -> RULE cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
+   --TODO -> where are the populations in the fspec?
    -- <$ pKey "CONTEXT" <*> pConid <*> ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*> pList (pContextElement beep) <* pKey "ENDCONTEXT"
    -- ps   = [p| CPat p<-ces]
    -- ds   = [d| CDcl d<-ces]
@@ -50,17 +66,24 @@
    -- os   = [o| CObj o<-ces]
    -- pops = [Popu mph prs| CPop mph prs<-ces]
    -- pats = ps++[Pat "CONTEXT" [] [] ds cs ks| not (null ds && null cs && null ks)]
+   -- CPop ->  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
+   --WHY -> is a population name parsed as a Morphism? It may only be a declared relation name, and is not allowed to be I or V or Mp1?
    instance PrintADL Fspc where
     printadl fSpec _ _ = 
       let 
       FS_id conid = fsfsid fSpec
       i = 0
+      printpopulation pop = "POPULATION " ++ name (popm pop) 
+                            ++ printlist (lb++indent (i+1)++"= ["
+                                         ,";"++lb++indent (i+2)
+                                         ,lb++indent (i+1)++"]") 
+                                         [printlist ("(\"","\", \"","\")") rec| rec<-popps pop]
       in
       "CONTEXT " ++ conid ++ lb
-         --REMARK -> Pattern "CONTEXT" will be printed as a pattern
+         --REMARK -> Pattern "CONTEXT" will be printed as a pattern --> no ds cs ks outside the pattern only pops and objs
       ++ printadl fSpec i [pattern u | t<-themes fSpec,u<-units t]
       ++ printadl fSpec i (serviceS fSpec)
-      --show population
+  --TODO    ++ printlist ("",lb,lb) (ctxpops ??) 
       ++ "ENDCONTEXT"
 
    --pKey_pos "SERVICE" *> pObj
@@ -71,26 +94,20 @@
    instance PrintADL ObjectDef where
     printadl fSpec i obj = --showADLcode fSpec obj
       (if i==0 then "SERVICE " else "")
-       ++ name obj 
-       ++ printlist " {" ", " "}" [printlist "" " " "" (map str strs) | strs<-objstrs obj]
+       ++ objnm obj 
+       ++ printlist (" {",", ","}") [printlist (""," ","") (map printquotes strs) | strs<-objstrs obj]
        ++ " : " 
        --was: ++" : I["++(name (target (objctx obj)))++"]" --WHY -> not just objctx, which can be generated I[target]?
        ++ printadl fSpec i (objctx obj)
        --TODO -> Is ALWAYS pProps ignored? It looks like that (obj (Lbl nm pos' strs) expr _ ats)
        ++ printadl fSpec (i+1) (objats obj)
-       where
-       --TODO -> why is this needed?
-       str ss | and [isAlphaNum c| c<-ss] = ss
-              | otherwise                 = "\""++ss++"\""
 
    instance PrintADL [ObjectDef] where
     printadl fSpec i objs = 
        if i==0 then [c|obj<-objs, c<-((printadl fSpec i obj)++lb)] 
-       else printlist (lb++indent i ++ "= [ ") 
-                      (indent i ++ "  , ") 
-                      (indent i ++ "  ]")
-                      [printadl fSpec i obj | obj<-objs] 
-         ++ lb
+       else adlprintlist fSpec i (lb++indent i ++ "= [ "
+                                 ,","++lb++indent (i+1)++" "
+                                 ,"  ]" ++ lb) objs 
    
    --WHY -> are the brackets removed from ; expression while parsing?
    --WHY -> is there a "-" in the pre and poststring?
@@ -120,10 +137,10 @@
       in
       case expr of
         Tm{} -> printadl fSpec i (m expr)
-        Fu{} -> printlist "" "\\/" "" [printadl fSpec i x| x<-es expr]
-        Fi{} -> printlist "" "/\\" "" [printadl fSpec i x| x<-es expr]
-        F{}  -> printlist "" ";" "" [printadl fSpec i x| x<-es expr]
-        Fd{} -> printlist "" "!" "" [printadl fSpec i x| x<-es expr]
+        Fu{} -> adlprintlist fSpec i ("","\\/","") (es expr)
+        Fi{} -> adlprintlist fSpec i ("","/\\","") (es expr)
+        F{}  -> adlprintlist fSpec i ("",";","") (es expr)
+        Fd{} -> adlprintlist fSpec i ("","!","") (es expr)
         Cp{} -> "-" ++ printadl fSpec i (e expr)
         Tc{} -> "(" ++ printadl fSpec i (e expr) ++ ")"
         K0{} -> printadl fSpec i (e expr) ++ "*"
@@ -142,13 +159,158 @@
        V{} -> "V"
        Mp1{} -> name mph
 
+   -- <$ pKey "PATTERN" <*> (pConid <|> pString)
+   --                   <*> pList (pPatElem beep)
+   --                   <* pKey "ENDPATTERN
+   -- data PatElem      = Pr Rule
+   --                   | Pg Gen
+   --                   | Pm Declaration
+   --                   | Pc ConceptDef
+   --                   | Pk KeyDef
    instance PrintADL Pattern where
-    printadl fSpec i p = showADLcode fSpec p
+    printadl fSpec i p = if null patelems then "" else
+      "PATTERN " ++ ptnm p ++ lb
+      ++ patelems
+      ++ "ENDPATTERN" ++ lb
+      where patelems = printadl fSpec i (ptrls p)
+                    ++ printadl fSpec i (ptgns p)
+                    ++ printadl fSpec i (ptdcs p)
+                    ++ printadl fSpec i (ptcds p)
+                    ++ printadl fSpec i (ptkds p)
 
    instance PrintADL [Pattern] where
-    printadl fSpec i xs = [c|x<-xs, c<-((printadl fSpec i x)++lb)]
+    printadl fSpec i ps = adlprintlistlb fSpec i ps
 
+   --hc <$> pSignal <*> pExpr <*> pKey_pos "-:" <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` [])
+   --hc                                    "-|"
+   --kc                                    ":-"
+   --kc                                    "|-"
+   --dc                                    "="
+   --kc                 xxxxx              "RULE"
+   --gc <$> pSignal <*> pKey_pos "GLUE" <*> pMorphism <* pKey "=" <*> pExpr <*> pComputing
+   instance PrintADL Rule where
+    printadl fSpec i r = case r of
+       -- pSignal -> ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` 
+       --            (Mph "" Nowhere [] (cptAnything,cptAnything) True 
+       --                    (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False))
+       -- pMorphism -> Mph nm ... (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/=""))
+       --Declaration srrel only has a name of the parsed morphism. 
+       --So name on Morphism must be the inverse of pMorphism => the inverse of name on Declaration.
+       --reason:  name m = name (makeDeclaration m) 
+       --  and  
+       --         name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
+       --         name (Isn _ _)                      = "I"
+       --         name (Iscompl _ _)                  = "-I"
+       --         name (Vs _ _)                       = "V"
+       --This is not the inverse, but it is a bit what you want because it throws away flips and mphats and complements etc which we do not want in signal names, only I -I and V will return which we actually do not want, but probably nobody ever makes an attempt, thus...
+       --WHY -> is a signal name parsed as a Morphism?
+      --REMARK -> the rule in Sg is equivalent to the rule without SIGNAL .. ON prefix
+      Sg{} -> "SIGNAL" ++ name (srrel r) ++ "ON" ++ printadl fSpec i (srsig r)
+      Ru{rrsrt=rt} -> let
+                      str1 = if rt==Truth then "ALWAYS " 
+                             else printadl fSpec i (rrant r) 
+                                  ++ if rt==Implication then " |- " else " = "
+                      str2 = printadl fSpec i (rrcon r)
+                      str3 = if null (r_cpu r) then "" 
+                             else " COMPUTING " ++ adlprintlist fSpec i ("",", ","") (r_cpu r)
+                      str4 = if null (rrxpl r) then "" 
+                             else lb ++ "EXPLANATION \"" ++ (rrxpl r) ++ "\""
+                      in str1 ++ str2 ++ str3 ++ str4
+      _ -> "--GLUE rules and --beeper generated rules are obsolete" --TODO -> is this true? and what about COMPUTING?      
 
+   instance PrintADL [Rule] where
+    printadl fSpec i rs = adlprintlistlb fSpec i rs
+   
+   -- <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
+   --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid?
+   instance PrintADL Gen where
+    printadl fSpec i g = "GEN " ++ cnm (genspc g) ++ " ISA " ++ cnm (gengen g) 
+      where cnm c = case c of 
+                      C{} -> cptnm c
+                      _ -> error $ "Error in ShowADL.hs module ShowADL function instance PrintADL Gen: " 
+                                ++ "Anything, NOthing and ONE are not allowed on GEN .. ISA .."
+
+   instance PrintADL [Gen] where
+    printadl fSpec i gs = adlprintlistlb fSpec i gs
+
+   --rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept
+   --                            <*> (pProps `opt` []) <*> (pPragma `opt` [])
+   --                            <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
+   --                            <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
+   --  where rebuild nm pos' s fun t props pragma expla content
+   --  = Sgn nm s t (rd props `uni` if fun=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False
+   --               where pr = pragma++["","",""]
+   -- pConcept -> (cptS <$ (pKey "ONE")) <|> (cptnew <$> (pConid <|> pString))
+   -- pPragma  -> pKey "PRAGMA" *> pList1 pString
+   -- pContent -> pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'
+   -- pRecord  -> pSpec '(' *> pListSep (pSpec ',') pString <* pSpec ')'
+   instance PrintADL Declaration where
+    printadl fSpec i d = 
+       decnm d ++ " :: "
+       ++ printadl fSpec i (desrc d)
+       ++ (if isfunc then " -> " else " * ")
+       ++ printadl fSpec i  (detgt d)
+       ++ printadl fSpec i printprops
+       ++ " PRAGMA " ++ printlist ("\"","\" \"","\"") [decprL d,decprM d, decprR d]
+       ++ lb ++ "EXPLANATION  \"" ++ (decexpl d) ++ "\""
+       ++ printlist (lb++indent (i+1)++"= ["
+                    ,";"++lb++indent (i+2)
+                    ,lb++indent (i+1)++"]") 
+                    [printlist ("(\"","\", \"","\")") rec| rec<-decpopu d]
+       ++ "."
+       where isfunc = elem Uni (decprps d) && elem Tot (decprps d)
+             printprops = let rmfprps x = x==Uni||x==Tot
+                          in if isfunc then filter rmfprps (decprps d) else (decprps d)
+             
+
+   instance PrintADL [Declaration] where
+    printadl fSpec i ds = adlprintlistlb fSpec i ds
+
+   --k Uni "UNI" <|> k Inj "INJ" <|> k Sur "SUR" <|> k Tot "TOT"
+   --      <|> k Sym "SYM" <|> k Asy "ASY" <|> k Trn "TRN" <|> k Rfx "RFX"
+   --      where k obj str = f <$> pKey str where f _ = obj
+   --REMARK -> instance Show Prop implements inverse
+   instance PrintADL Prop where
+    printadl _ _ p = show p
+
+   -- pProps   -> pSpec '['  *> pListSep (pSpec ',') pProp <* pSpec ']'
+   instance PrintADL [Prop] where
+    printadl fSpec i ps = adlprintlist fSpec i (" [",", ","]") ps
+
+   -- pConcept -> (cptS <$ (pKey "ONE")) <|> (cptnew <$> (pConid <|> pString))
+   --REMARK -> name implements inverse (except for Anything and NOthing)
+   --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid?
+   instance PrintADL Concept where
+    printadl _ _ c = name c 
+ 
+   --Cd <$> pKey_pos "CONCEPT" <*> (pConid <|> pString) <*> pString <*> (pString `opt` "")
+   --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid?
+   --REMARK -> empty cdrefs are printed even when not written in original script
+   instance PrintADL ConceptDef where
+    printadl _ _ cd = "CONCEPT " ++ printlist ("\"","\" \"", "\"") [cdnm cd, cddef cd, cdref cd]
+
+   instance PrintADL [ConceptDef] where
+    printadl fSpec i cds = adlprintlistlb fSpec i cds 
+
+   --kd <$ pKey "KEY" <*> pLabel <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
+   --      where kd (Lbl nm pos' _) expr ats = Kd pos' nm expr ats
+   -- pAtt -> att <$> pLabel <*>  pExpr
+   --             where att (Lbl nm pos' strs) ctx' = Obj nm pos' ctx' [] strs
+   --REMARK -> only the name of the main label is used
+   instance PrintADL KeyDef where
+    printadl fSpec i kd = 
+       "KEY " ++ kdlbl kd ++ ": " 
+       ++ printadl fSpec i (kdctx kd)
+       ++ printlist (lb++indent (i+2)++"[", ","++lb++indent (i+2)++" ","]") [printkdat kdat|kdat<-kdats kd]
+       where 
+       printkdat obj =
+          objnm obj 
+          ++ printlist (" {",", ","}") [printlist (""," ","") (map printquotes strs) | strs<-objstrs obj]
+          ++ " : " 
+          ++ printadl fSpec i (objctx obj)
+
+   instance PrintADL [KeyDef] where
+    printadl fSpec i kds = adlprintlistlb fSpec i kds
 --------------------------------------------
 
    instance ShowADL ObjectDef where

@@ -21,6 +21,7 @@ sa :: Aa * Ba.
 sa1 :: Ba * Aa.
 sa2 :: Da * Ea.
 sa3 :: Ba * Da.
+RULE I[Aa]
 ENDPATTERN
 
 ENDCONTEXT
