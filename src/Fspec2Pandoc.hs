@@ -195,7 +195,7 @@ where
                          ,Str " wordt weergegeven door figuur "
                          ,xrefReference figlabel
                          ,Str "."]]
-                ++ [Para [xrefImage ((name t)++".png") figlabel]]
+--TODO                ++ [Para [xrefImage ((name t)++".png") figlabel]]
                 ++ rules2table)
          English -> (if null themerules then [] --nothing to explain for this theme -> skip
               else [Header (lev+1) [Str $ "Rules about " ++ (name t)]] --new section to explain this theme
@@ -204,7 +204,7 @@ where
                          ,Str " is represented in figure "
                          ,xrefReference figlabel
                          ,Str "."]]
-                ++ [Para [xrefImage ((name t)++".png") figlabel]]
+--TODO                ++ [Para [xrefImage ((name t)++".png") figlabel]]
                 ++ rules2table)
        )
        where
@@ -257,12 +257,12 @@ where
        printmph m = (printmphname m) ++ (printflip m)
        printflip m = case m of
           Mph{} -> if mphyin m then [] 
-                   else [TeX " $", Superscript [TeX "$",printsymbol "smile" flags, TeX "$"], TeX "$ " ]
+                   else [ Superscript [TeX "$",printsymbol "smile" flags, TeX "$"] ]
           _ -> []
        printmphname m = case m of
           Mph{} -> [Str (name m)]
-          I{}   -> [printsymbol "mathbb{I}" flags, TeX " $", Subscript [TeX "$",Str $ name (mphspc m), TeX "$"], TeX "$ " ]
-          V{}   -> [printsymbol "mathbb{V}" flags, TeX " $", Subscript ((TeX "$"):(printtype m)++[TeX "$"]), TeX "$ " ]
+          I{}   -> [printsymbol "mathbb{I}" flags, Subscript [TeX "$",Str $ name (mphspc m), TeX "$"] ]
+          V{}   -> [printsymbol "mathbb{V}" flags, Subscript ((TeX "$"):(printtype m)++[TeX "$"]) ]
           Mp1{} -> [Str "?"]
        printtype m = [ Str $ (name.source) m
                      , printsymbol "times" flags, Space

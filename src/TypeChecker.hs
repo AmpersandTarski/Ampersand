@@ -291,7 +291,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
   bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos)])
-  bindObjDef od mbtopexpr =  (od {objctx=bindexpr, objats=bindats},(proof,objpos od):proofats)
+  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},(proof,objpos od):proofats)
     where
     expr = case mbtopexpr of
       Nothing -> (objctx od)
@@ -301,7 +301,10 @@ enrichCtx cx@(Ctx{}) ctxs =
     bindexpr = case proof of
       Proven gm (inftree:_) -> bindSubexpr (objctx od) $ removeF $ evaltree gm inftree
       _ -> (objctx od)
-    inferats = [bindObjDef oa (Just expr) | oa<-objats od]
+    newtopexpr =  case mbtopexpr of
+      Nothing -> bindexpr
+      Just topexpr -> F [topexpr,bindexpr]
+    inferats = [bindObjDef oa (Just newtopexpr) | oa<-objats od]
     bindats = [oa|(oa,_)<-inferats]
     proofats = foldr (++) [] [proofs|(_,proofs)<-inferats]
     removeF et = case mbtopexpr of
@@ -355,9 +358,8 @@ enrichCtx cx@(Ctx{}) ctxs =
       []     -> Fd [bindSubexpr ex x]
   bindSubexpr (Fu subexs) (BoundTo (Union adlexs _)) = Fu $ bindSubexprs subexs adlexs 
   bindSubexpr (Fi subexs) (BoundTo (Intersect adlexs _)) = Fi $ bindSubexprs subexs adlexs
-  bindSubexpr (Tm mp@(Mph{mphyin=False})) stmt@(BoundTo (Flip{})) = 
-    let (ec1,ec2) = evalstmt stmt
-    in Tm $ mp {mphtyp=(ec1,ec2)}
+  bindSubexpr ex@(Tm mp@(Mph{mphyin=False})) stmt@(BoundTo (Flip adlex@(Relation{tt=TT{cts=c1,ctt=c2}}) _)) = 
+              bindSubexpr ex (BoundTo (adlex{tt=TT c2 c1 1}))
   bindSubexpr (Tm mp) stmt@(BoundTo adlex@(Relation{})) = 
     let
     (ec1,ec2) = evalstmt stmt
@@ -365,8 +367,7 @@ enrichCtx cx@(Ctx{}) ctxs =
     in
     if (rel adlex)==mp 
     then Tm $ case mp of
-      Mph{mphyin=True} -> mp {mphtyp=(ec1,ec2)} 
-      Mph{mphyin=False} ->  error $ "Should have been pattern matched to bindSubexpr (Tm mp@(Mph{mphyin=False})) stmt@(BoundTo (Flip adlex _))"      
+      Mph{} -> (rel adlex) {mphtyp=(ec1,ec2)} --REMARK -> bind to the morphism from the gamma (with mphdcl set)
       I{} -> mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
@@ -376,8 +377,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   bindSubexprs :: Expressions ->  [AdlExpr] -> Expressions
   bindSubexprs subexs [] = if null subexs then [] else error "not all subexprs matched"
   bindSubexprs [] adlexs = if null adlexs then [] else error "not all subexprs matched"
-  bindSubexprs (subex:subexs) (adlex:adlexs) = 
-      (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
+  bindSubexprs (subex:subexs) (adlex:adlexs) = (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
 
 -----------------
 --Check functions

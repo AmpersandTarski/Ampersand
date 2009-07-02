@@ -51,10 +51,7 @@
    --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid, (etc?)?
    --REMARK -> original file positions are not preserved
    --TODO -> I could sort on file position
-   --TODO -> ServiceG has ambiguous expressions
    --TODO -> brackets of insParantheses are bad
-   --TODO -> sometimes there is no theme when there is a pattern, for example when it only contains gens and decls
-   --        you need to use concepts from the pattern in a rule in the pattern or something
    --TODO -> where do all the Other Topics patterns come from, it's not just one pattern.
    --TODO -> RULE cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
    --TODO -> where are the populations in the fspec?
@@ -167,9 +164,10 @@
    --                   | Pm Declaration
    --                   | Pc ConceptDef
    --                   | Pk KeyDef
+   --TODO -> Pat "CONTEXT" should become obsolete (declare ds cs ks in a pattern)
    instance PrintADL Pattern where
     printadl fSpec i p = if null patelems then "" else
-      "PATTERN " ++ ptnm p ++ lb
+      "PATTERN " ++ (if (ptnm p)=="CONTEXT" then "AdlContext" else ptnm p) ++ lb
       ++ patelems
       ++ "ENDPATTERN" ++ lb
       where patelems = printadl fSpec i (ptrls p)

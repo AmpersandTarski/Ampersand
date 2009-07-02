@@ -74,7 +74,7 @@
                    , objctx  = Tm $ I [c] c c True -- was: Tm $ V [cptS,c] (cptS,c)
                    , objats  = [ Obj { objnm  = name mph++name (target mph)
                                      , objpos = Nowhere
-                                     , objctx = Tm mph
+                                     , objctx = Tm (preventAmbig mph)
                                      , objats = let ats = [] --TODO -> disabled because it causes loop problems at -p option
                                                           --[ Obj { objnm = concat [name mph'| mph'<-morlist att]++name (target att)
                                                           --      , objpos = Nowhere
@@ -105,7 +105,7 @@
                    }]
              ++let ats = [ Obj { objnm  = name mph++name (target mph)
                                , objpos = Nowhere
-                               , objctx = Tm mph
+                               , objctx = Tm (preventAmbig mph)
                                , objats = []
                                , objstrs= [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
                                }
@@ -131,6 +131,12 @@
                   ]
            | c<-concs context ]
            where
+           preventAmbig mp@(Mph{mphats=[]}) =  
+              if (length [d|d@(Sgn {})<-declarations context, name mp==name d]) > 1
+              then if mphyin mp 
+                   then mp{mphats=[source mp,target mp]} 
+                   else  mp{mphats=[target mp,source mp]}
+              else mp 
            relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
                         [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
            recur :: [Morphism] -> Concept -> [Expression]
@@ -201,6 +207,9 @@
         pats = [ (pat, [dg| (p,_,dg)<-pcsds0++pcsds1, name pat==name p]) | pat<-ctxpats context]
 
    makeFtheme :: Context -> Pattern -> [ObjectDef] -> Ftheme
+   --REMARK -> make a theme even if there aren't any datasets, because we do not want to throw these patterns
+   makeFtheme context pat [] = Tspc fid [makeFunit context pat [] [] []] pat
+      where fid = makeFSid1 (name pat)
    makeFtheme context pat dss -- dss zijn de datasets die afgeleid zijn van de context
     = Tspc fid units' pat
       where
