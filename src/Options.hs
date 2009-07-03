@@ -213,8 +213,7 @@ prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts = opts{uncheckedDirPrototype = nm
                            ,genPrototype = True}
 maxServicesOpt :: Options -> Options
-maxServicesOpt  opts = opts{genPrototype = True
-                           ,allServices  = True}                            
+maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: Maybe String -> Options -> Options
 dbNameOpt nm    opts = opts{dbName       = nm}
 atlasOpt :: Maybe String -> Options -> Options

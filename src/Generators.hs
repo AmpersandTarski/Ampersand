@@ -8,6 +8,10 @@ module Generators (doGenAtlas
                   ,prove)
 where
 
+import Classes.Graphics
+import Data.GraphViz
+import System (system, ExitCode(ExitSuccess,ExitFailure))
+import System.IO.Unsafe (unsafePerformIO) 
 
 import System.FilePath(combine,replaceExtension)
 import Options
@@ -25,16 +29,12 @@ import Version
 --import System
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
-  --  = putStr (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
   = (writeFile outputFile $ printadl fSpec' 0 fSpec')
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
-    where fSpec'= fSpec{serviceS=serviceG fSpec} --copy the generated over the script services
+    where fSpec'= if (allServices flags)
+                  then fSpec{serviceS=serviceG fSpec} 
+                  else fSpec
           outputFile = combine (dirOutput flags) "Generated.adl"
- -- =  do
-   --  writeFile (outputFile "GeneratedshowADl.adl") (chain "\n\n" (map (showADLcode fSpec) (serviceG fSpec)))
-     --writeFile (outputFile "GeneratedprintADL.adl") $ printadl fSpec 0 (serviceG fSpec)
-    -- where
-    -- outputFile x = combine (dirOutput flags) x
 
 prove :: Fspc -> Options -> IO()
 prove fSpec _
@@ -68,6 +68,22 @@ doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."
   >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
+  >> run "test"
+     where 
+     outputFile fnm = combine (dirOutput flags) fnm
+     testdot = toDot fSpec flags (head pts)
+     pts = [pattern u | t<-themes fSpec,u<-units t]
+     run fnm =
+         do 
+         writeFile (outputFile (fnm++".dot")) (show testdot)
+         putStrLn ("Processing "++fnm++".dot ... :")
+         result <- system $ "dot.exe -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
+         case result of
+            ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
+            ExitFailure x -> putStrLn $ "Failure: " ++ show x
+   --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
+   --    success <- runGraphviz testdot Png (outputFile fnm)
+   --    return ()
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
@@ -79,8 +95,8 @@ doGenXML fSpec flags
                
 doGenProto :: Fspc -> Options -> IO()
 doGenProto fSpec flags
-   =  verboseLn flags "Generation of Prototype is currently not supported."
---   >> verboseLn flags ("Prototype files would be written into " ++  (dirPrototype flags) ++ "." ) 
+   =  verboseLn flags "Generating prototype..."
+     >> verboseLn flags ("Prototype files are written to " ++  (dirPrototype flags) ++ "." ) 
      >> phpObjServices fSpec (dirPrototype flags) (allServices flags)  
  
 doGenFspec :: Fspc -> Options -> IO()
@@ -88,11 +104,12 @@ doGenFspec fSpec flags
    =  do
       verboseLn flags "Generating functional specification document..."
       customheader <- readFile (texHdrFile flags)
-      writeFile outputFile  ( render2Pandoc flags customheader (fSpec2Pandoc fSpec flags))
-      --putStrLn ( render2Pandoc flags customheader (fSpec2Pandoc fSpec flags))
-      --putStrLn $ show $ length [u|t<-themes fSpec,u<-units t ,v<-viewDefs u]
+      writeFile outputFile  ( render2Pandoc flags customheader (fSpec2Pandoc fSpec' flags))
       verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where  
+   fSpec'= if (allServices flags)
+           then fSpec{serviceS=serviceG fSpec} 
+           else fSpec
    outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
    outputExt FPandoc  = ".pandoc"
    outputExt FWord    = ".doc"

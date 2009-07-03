@@ -1,7 +1,7 @@
 
 module Classes.Graphics where
 -- TODO Deze module is nog onderHANden
-
+   import Data.GraphViz.Commands
    import Data.GraphViz
 --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
 --                             -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
@@ -11,9 +11,9 @@ module Classes.Graphics where
    import FspecDef
    import Options
    import Collection (Collection(rd))
-   import CC_aux (order,isProperty,tot,inj,sur,fun)
-   import HtmlFilenames
-   
+   import CC_aux (isProperty,tot,inj,sur,fun)
+   --import HtmlFilenames
+   --
    class Dotable a where
       toDot :: Fspc -> Options -> a -> DotGraph
 
@@ -39,7 +39,7 @@ module Classes.Graphics where
                                     {- , take 5(name m)/="Clos_"  -}
                                        , m'<-[m,flp m], inline m']++
                                     [Mph (name d) Nowhere [source d,target d] (source d,target d) True d
-                                       | d<-declarations pat, not (isSignal d), not (isProperty d)])
+                                       | d<-declarations pat, not (isSignal d)]) -- , not (isProperty d)])
                   conceptTable = case cpts of
                                    []   -> []
                                    c:cs -> zip cpts [1..(length cpts)]
@@ -63,7 +63,7 @@ module Classes.Graphics where
 
 
    doosje flags c = [Shape BoxShape]
-                 ++ [Unknown "href" (htmlFileUrl flags c)]
+                -- ++ [Unknown "href" (htmlFileUrl flags c)]
                  ++ [Unknown "title" (show (name c))]
    bolletje = [Shape PointShape]
            ++ [Style Filled]
