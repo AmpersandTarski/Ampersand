@@ -1,7 +1,7 @@
 
 module Classes.Graphics where
 -- TODO Deze module is nog onderHANden
-   import Data.GraphViz.Commands
+   --import Data.GraphViz.Commands
    import Data.GraphViz
 --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
 --                             -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
@@ -22,44 +22,55 @@ module Classes.Graphics where
         = DotGraph { graphAttributes = [BgColor transparent]
                                     ++ [Overlap False | crowfoot flags]
                                     ++ [Splines (Just True)  | crowfoot flags]
-                   , graphNodes = conceptNodes 
-                               ++ inBetweenNodes
-                   , graphEdges = []
+                   , graphNodes = [conceptNode c | c<-cpts] 
+                               ++ [inBetweenNode d | d<-arcs]
+                   , graphEdges = [x | d<-arcs, x<-decledges d] ++ isaedges
                    , directedGraph = True
                    }
-            where nodeAtts   = [FontSize 12]
-                            ++ [FontName "helvetica"]
-                  edgeAtts   = [Len (if crowfoot flags then 2.0 else 1.2)]
-                            ++ [FontSize 12]
-                            ++ [ArrowSize 0.8]
-                  
-                  cpts = rd(concs pat++concs (declarations (mors pat))) -- SJ: 2007/9/14: when ISA's are treated as first class relations, remove the concs (declarations pat)
-                  isas = [(p,c)| p<-cpts, c<-cpts, p<c ]
-                  arcs = rd ([m'|m<-mors pat++mors(specs pat), isMph m, not (isSignal (makeDeclaration m)), not (isProperty m)
-                                    {- , take 5(name m)/="Clos_"  -}
-                                       , m'<-[m,flp m], inline m']++
-                                    [Mph (name d) Nowhere [source d,target d] (source d,target d) True d
-                                       | d<-declarations pat, not (isSignal d)]) -- , not (isProperty d)])
-                  conceptTable = case cpts of
-                                   []   -> []
-                                   c:cs -> zip cpts [1..(length cpts)]
-                  conceptNodes = map conceptNode cpts                                    
-                  conceptNode c = DotNode { nodeID         = case lookup c conceptTable of
-                                                                 Just i -> i
-                                                                 _ -> undefined  --kan niet gebeuren.
-                                          , nodeAttributes = [Label (name c)]
-                                                          ++ nodeAtts 
-                                                          ++ if crowfoot flags then doosje flags c else bolletje
-                                          }
-                  arcsTable = case arcs of
-                                 []    -> []
-                                 c:cs  -> zip arcs [(length conceptTable + 1)..(length conceptTable + 1 + (length arcs))]                          
-                  inBetweenNodes = map inBetweenNode arcs
-                  inBetweenNode m = DotNode { nodeID          = case lookup m arcsTable of
-                                                                  Just i -> i
-                                                                  _ -> undefined  --kan niet gebeuren.
-                                            , nodeAttributes = [Label (name m)]
-                                            }
+            where 
+            nodeAtts   = [FontSize 12]
+                      ++ [FontName "helvetica"]
+            edgeAtts   = [Len (if crowfoot flags then 2.0 else 1.2)]
+                      ++ [FontSize 12]
+                      ++ [ArrowSize 0.8]
+              
+            cpts = rd (concs pat)
+            arcs = rd $ [d | d<-[makeDeclaration m|m<-mors pat++mors(specs pat), isMph m, not (isProperty m)]
+                           , not (isSignal d)]
+                        ++ (ptdcs pat)
+            conceptTable = case cpts of
+               []   -> []
+               c:cs -> zip cpts [1..]                                  
+            conceptNode c = DotNode { nodeID         = lkup c conceptTable
+                                    , nodeAttributes = [Label (name c)]
+                                                    ++ nodeAtts 
+                                                    ++ if crowfoot flags then doosje flags c else bolletje
+                                    }
+            arcsTable = case arcs of
+               []    -> []
+               c:cs  -> zip arcs [(length conceptTable + 1)..]    
+            inBetweenNode d = DotNode { nodeID          = lkup d arcsTable
+                                      , nodeAttributes = [Label (name d)]
+                                      }
+            decledges d = [DotEdge --attach source
+                            {edgeHeadNodeID = lkup (source d) conceptTable
+                            ,edgeTailNodeID = lkup d arcsTable
+                            ,edgeAttributes = edgeAtts
+                            ,directedEdge = True}
+                          ,DotEdge --attach target
+                            {edgeHeadNodeID = lkup d arcsTable
+                            ,edgeTailNodeID = lkup (target d) conceptTable
+                            ,edgeAttributes = edgeAtts
+                            ,directedEdge = True}]
+            isaedges = [ DotEdge
+                          {edgeHeadNodeID = lkup (genspc g) conceptTable
+                          ,edgeTailNodeID = lkup (gengen g) conceptTable
+                          ,edgeAttributes = edgeAtts
+                          ,directedEdge = True}
+                       | g<-ptgns pat ]
+            lkup x tbl = case lookup x tbl of
+                 Just i -> i
+                 _ -> error "element not found." --TODO
 
 
    doosje flags c = [Shape BoxShape]
@@ -75,4 +86,4 @@ module Classes.Graphics where
 
 
    transparent = RGBA 0 0 0 0 
-   black       = RGB 255 255 255   
+   black       = RGB 0 0 0   

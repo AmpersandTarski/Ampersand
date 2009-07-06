@@ -19,7 +19,7 @@ import FspecDef
 import ShowHS       (showHS)
 import ShowADL      (showADLcode, printadl)
 import ShowXML      (showXML)
-import Strings      (chain)
+import Strings      (firstCaps, chain)
 import Calc         (deriveProofs)
 import Prototype.ObjBinGen
 import Adl
@@ -68,14 +68,15 @@ doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."
   >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
-  >> run "test"
+  >> foldr (>>) (verboseLn flags "All pictures written..") dots
      where 
      outputFile fnm = combine (dirOutput flags) fnm
-     testdot = toDot fSpec flags (head pts)
-     pts = [pattern u | t<-themes fSpec,u<-units t]
-     run fnm =
+     dots = [run (tnm (ftsid t) ++ show i) $ toDot fSpec flags (pattern u) 
+            | t<-themes fSpec,(i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u)]
+     tnm (FS_id nm) = nm
+     run fnm dot =
          do 
-         writeFile (outputFile (fnm++".dot")) (show testdot)
+         writeFile (outputFile (fnm++".dot")) (show dot)
          putStrLn ("Processing "++fnm++".dot ... :")
          result <- system $ "dot.exe -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
          case result of
@@ -105,6 +106,7 @@ doGenFspec fSpec flags
       verboseLn flags "Generating functional specification document..."
       customheader <- readFile (texHdrFile flags)
       writeFile outputFile  ( render2Pandoc flags customheader (fSpec2Pandoc fSpec' flags))
+      doGenAtlas fSpec' flags
       verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where  
    fSpec'= if (allServices flags)

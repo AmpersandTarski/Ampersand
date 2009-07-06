@@ -190,28 +190,23 @@ where
       (case (language flags) of
          Dutch -> (if null themerules then [] --nothing to explain for this theme -> skip
               else [Header (lev+1) [Str $ "Regels over " ++ (name t)]] --new section to explain this theme
-                ++ [Para [Str "Een conceptuele analyse van "
-                         ,Str (name t)
-                         ,Str " wordt weergegeven door figuur "
-                         ,xrefReference figlabel
-                         ,Str "."]]
---TODO                ++ [Para [xrefImage ((name t)++".png") figlabel]]
+                ++ [x | (i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u), x<-printfigure i]
                 ++ rules2table)
          English -> (if null themerules then [] --nothing to explain for this theme -> skip
               else [Header (lev+1) [Str $ "Rules about " ++ (name t)]] --new section to explain this theme
-                ++ [Para [Str "A conceptual analysis of "
-                         ,Str (name t)
-                         ,Str " is represented in figure "
-                         ,xrefReference figlabel
-                         ,Str "."]]
---TODO                ++ [Para [xrefImage ((name t)++".png") figlabel]]
+                ++ [x | (i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u), x<-printfigure i]
                 ++ rules2table)
        )
        where
-       figlabel = "cafig:" ++ (name t) 
        --query copied from FSpec.hs revision 174
        themerules = [r|u<-units t, r<-declaredRules (pattern u)]
-
+       printfigure i = case (language flags) of
+         Dutch -> [Para [x | x<-[Str "Zie figuur ", xrefReference figlabel, Str ". "]] ]
+               ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++filenm) filenm figlabel ]]
+         English -> [Para [x | x<-[Str "See figure ", xrefReference figlabel, Str ". "]] ]
+                 ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++filenm) filenm figlabel ]]
+         where filenm = name t ++ show i
+               figlabel = "figca:" ++ filenm
        rules2table = case fspecFormat flags of
          --REMARK -> pandoc does not support longtable (or something similar?)
          FLatex -> [Plain $ 
@@ -339,10 +334,17 @@ where
    xrefReference myLabel = TeX ("\\ref{"++myLabel++"}")
    xrefLabel :: String -> Inline        -- uitbreidbaar voor andere rendering dan LaTeX
    xrefLabel myLabel = TeX ("\\label{"++myLabel++"}")
+
    --Image [Inline] Target
    --      alt.text (URL,title)
-   xrefImage :: String -> String -> Inline
-   xrefImage url lbl = Image [Str ("Missing figure " ++ url)] (url, lbl)
+   xrefFigure :: String -> String -> String -> [Inline]
+   xrefFigure caption filenm figlabel = 
+      [ TeX "\\begin{figure}[h]\n\\begin{center}\n\\scalebox{.3}[.3]{"
+      , Image [] (filenm ++ ".png", figlabel)
+      , TeX "}\n"
+      , TeX ("\\caption{"++caption++"}\n") 
+      , xrefLabel (figlabel )
+      , TeX "\n\\end{center}\n\\end{figure}"]
 
    --EXTEND -> symbol string must reflect latex symbol identifier
    printsymbol :: String -> Options -> Inline
