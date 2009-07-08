@@ -3,8 +3,8 @@ module Version (versionbanner)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. 0.8.10-334" -- the number behind the last digit is the SVN revision number.
+versionbanner = "ADL vs. 0.8.10-335" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-FilePos nu écht warningvrij gemaakt. 
+Op twee plekken in de Haskell-generator de themes onklaar gemaakt, zodat er in elk geval output gegenereerd wordt. Todo: Haskell generator herstellen.
 -}

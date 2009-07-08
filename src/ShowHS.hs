@@ -45,7 +45,8 @@ where
     showHS indent fspec
          = (chain (indent ++"    ") 
             ["Fspc{ fsfsid = " ++ showHS " " (fsid fspec)
-                  ,", themes   = " ++ "["++chain "," (map (showHS "") (themes fspec))++"]" 
+                  ,", themes   = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
+                                   -- "["++chain "," (map (showHS "") (themes fspec))++"]" 
                   ,", datasets = "++ "[ "++chain indentA (map showHSname (datasets fspec))++indent++"                 "++"]" 
                   ,", serviceS = serviceS'"
                   ,", serviceG = serviceG'"
@@ -59,8 +60,9 @@ where
        indent++"where"++
        indent++" isa' = "++ showHS (indent ++ "        ") (fsisa fspec)++
        indent++" gE = genEq (typology isa')"++
-        "\n -- ***THEMES***: "++
-       (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++indent++"  = "++showHS (indent++"    ") t|t<- themes   fspec ]++"\n")++
+   -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
+   --   "\n -- ***THEMES***: "++
+   --  (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++indent++"  = "++showHS (indent++"    ") t|t<- themes fspec ]++"\n")++
         "\n -- ***DATASETS***: "++
        (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
         "\n -- ***Services S***: "++

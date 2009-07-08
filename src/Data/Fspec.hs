@@ -78,8 +78,6 @@ where
    data ParamSpec   = Aspc 
                       {pname :: FSid         -- name of the parameter
                       ,ptype :: String }     -- type of the parameter
-                    --   WAAROM stond hieronder Pbool ?? HJO: Wat moet die Pbool hier?? Zat hier nog een gedachte achter? Zo niet, gooi deze regels dan maar weg, Stef.
-                    --   Pbool
 
    data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
            --  | NoName           -- some identified objects have no name...
