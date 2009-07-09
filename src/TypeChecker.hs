@@ -196,14 +196,18 @@ enrichCtx cx@(Ctx{}) ctxs =
 
   --DESCR -> enriching ctxpats
   ctxpatterns = map bindPat (ctxpats cx)
-  bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds}
+  bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds, ptdcs=addpopu}
     where
     bindrules = [br | (br,_,_)<-map bindRule (ptrls p)]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
+    addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, name (popm pop)==decnm d, pairx<-popps pop]}
+              |d<-ptdcs p]
+              
 
   --DESCR -> enriching ctxds
   --         take all the declarations from all patterns included (not extended) in this context
-  ctxdecls = allCtxDecls [cx]
+  ctxdecls =  [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, name (popm pop)==decnm d, pairx<-popps pop]}
+              |d<-allCtxDecls [cx]]
 
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]

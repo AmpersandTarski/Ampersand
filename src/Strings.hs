@@ -11,7 +11,6 @@
    firstCaps "_" = ""
    firstCaps ('_':'_':str) = firstCaps ('_':str)
    firstCaps ('_':c:str) = toUpper c:firstCaps str
-   firstCaps (' ':c:str) = toUpper c:firstCaps str
    firstCaps (c:str) = c:firstCaps str
 
    unCap :: String -> String

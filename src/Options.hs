@@ -128,12 +128,12 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option ['v']     ["version"]          (NoArg versionOpt)          "show version and exit"), Public)
           , ((Option ['h','?'] ["help"]             (NoArg helpOpt)             "get (this) usage information"), Public)
           , ((Option []        ["verbose"]          (NoArg verboseOpt)          "verbose error message format"), Public)
-          , ((Option ['p']     ["proto"]            (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file (dir overrides "++
+          , ((Option ['p']     ["proto"]            (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++
                                                                                    envdirPrototype ++ " )") ), Public)
-          , ((Option ['x']     ["maxServices"]      (NoArg maxServicesOpt)      "if specified, generate all services in the prototype"), Public)
+          , ((Option ['x']     ["maxServices"]      (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively"), Public)
           , ((Option ['d']     ["dbName"]           (OptArg dbNameOpt "name")   ("use database with name (name overrides "++
                                                                                    envdbName ++ " )")), Public)
-          , ((Option ['s']     ["services"]         (NoArg servicesOpt)         "generate service specifications in ADL format"), Public)
+          , ((Option ['s']     ["services"]         (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
           , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
                                                                                    envdirAtlas ++ " )")), Public)
           , ((Option []        ["XML"]              (NoArg xmlOpt)              "generate XML output"), Public)

@@ -19,7 +19,8 @@ import FspecDef
 import ShowHS       (showHS)
 import ShowADL      (showADLcode, printadl)
 import ShowXML      (showXML)
-import Strings      (firstCaps, chain)
+import Strings      (chain)
+import Char         (toUpper)
 import Calc         (deriveProofs)
 import Prototype.ObjBinGen
 import Adl
@@ -68,23 +69,7 @@ doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."
   >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
-  >> foldr (>>) (verboseLn flags "All pictures written..") dots
-     where 
-     outputFile fnm = combine (dirOutput flags) fnm
-     dots = [run (tnm (ftsid t) ++ show i) $ toDot fSpec flags (pattern u) 
-            | t<-themes fSpec,(i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u)]
-     tnm (FS_id nm) = nm
-     run fnm dot =
-         do 
-         writeFile (outputFile (fnm++".dot")) (show dot)
-         putStrLn ("Processing "++fnm++".dot ... :")
-         result <- system $ "dot.exe -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
-         case result of
-            ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
-            ExitFailure x -> putStrLn $ "Failure: " ++ show x
-   --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
-   --    success <- runGraphviz testdot Png (outputFile fnm)
-   --    return ()
+  >> generatepngs fSpec flags
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
@@ -106,7 +91,7 @@ doGenFspec fSpec flags
       verboseLn flags "Generating functional specification document..."
       customheader <- readFile (texHdrFile flags)
       writeFile outputFile  ( render2Pandoc flags customheader (fSpec2Pandoc fSpec' flags))
-      doGenAtlas fSpec' flags
+      generatepngs fSpec' flags
       verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where  
    fSpec'= if (allServices flags)
@@ -118,3 +103,27 @@ doGenFspec fSpec flags
    outputExt FLatex   = ".tex"
    outputExt FHtml    = ".html"
    outputExt FUnknown = ".pandoc"
+
+
+generatepngs :: Fspc -> Options -> IO() 
+generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") dots
+   where 
+   outputFile fnm = combine (dirOutput flags) fnm
+   dots = [run (tnm (ftsid t) ++ show i) $ toDot fSpec flags (pattern u) 
+          | t<-themes fSpec,(i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u)]
+   tnm (FS_id nm) =  remSpaces nm
+       where
+       remSpaces [] = []
+       remSpaces (' ':c:str) = toUpper c:remSpaces str 
+       remSpaces xs = xs
+   run fnm dot =
+       do 
+       writeFile (outputFile (fnm++".dot")) (show dot)
+       putStrLn ("Processing "++fnm++".dot ... :")
+       result <- system $ "neato.exe -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
+       case result of
+          ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
+          ExitFailure x -> putStrLn $ "Failure: " ++ show x
+ --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
+ --    success <- runGraphviz testdot Png (outputFile fnm)
+ --    return ()

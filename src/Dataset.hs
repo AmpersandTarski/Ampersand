@@ -21,7 +21,8 @@
  -}
 
    makeDataset :: Context -> Concept -> ObjectDef
-   makeDataset context c    -- TODO FOUT?? WAAROM Stef, de c wordt niet gebruikt. Ik kan me niet voorstellen dat dat goed is.....
+   makeDataset context c'    -- TODO FOUT?? WAAROM Stef, de c wordt niet gebruikt. Ik kan me niet voorstellen dat dat goed is.....
+   --TODO -> c2 was c', c was c, c1 was c, c' was c. => dat was fout door een loop tussen cl=..c `elem`.. en c=minimum..head cl.. Nu is het ook niet goed. Sowieso een objectdef met objctx I[ONE] resulteert in error.
     = Obj { objnm   = name c
           , objpos  = Nowhere
           , objctx  = v (one,c)
@@ -32,14 +33,14 @@
                            , objstrs = []
                            }| mph<-dss]
           , objstrs = []
-          }
+          } 
 --was:    = Obj (name c) Nowhere (v (one,c)) [Obj (name m++name(target m)) Nowhere (Tm m) [] []| m<-dss] []
       where
        c  = minimum [g|g<-concs context,g<=head cl]
-       cl = head ([cl'| cl'<-eqClass bi (concs context), c `elem` cl']
-              ++error ("!Fatal (module Fspec>dataset): cannot determine dataset for concept "++name c))
-       c `bi` c' = not (null [mph| mph<-declarations context, isFunction mph, isFunction (flp mph)
-                               , source mph<=c && target mph<=c'  ||  source mph<=c' && target mph<=c])
+       cl = head ([cl'| cl'<-eqClass bi (concs context), c' `elem` cl']
+              ++error ("!Fatal (module Fspec>dataset): cannot determine dataset for concept "++name c'))
+       c1 `bi` c2 = not (null [mph| mph<-declarations context, isFunction mph, isFunction (flp mph)
+                               , source mph<=c1 && target mph<=c2  ||  source mph<=c2 && target mph<=c1])
        dss = [     makeMph d | d<-declarations context, isFunction      d , source d `elem` cl]++
              [flp (makeMph d)| d<-declarations context, isFunction (flp d), target d `elem` cl]
 

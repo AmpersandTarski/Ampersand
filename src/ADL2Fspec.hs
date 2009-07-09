@@ -37,8 +37,8 @@
  -- Every theme will be explained in a chapter of its own.
 
    makeFspec :: Context -> Fspc
-   makeFspec context
-     = Fspc { fsfsid = makeFSid1 (name context)
+   makeFspec context =
+      Fspc { fsfsid = makeFSid1 (name context)
             , themes   = themes'  --TODO: Bewijzen dat dit termineert!(dat doet het nu niet altijd...) -- TODO Aanpassen op nieuwe Document structuur
             , datasets = datasets'
             , serviceS = serviceS' --was:[] TODO: Loop verwijderen uit generatie serviceS.
@@ -219,29 +219,33 @@
           objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
 
    makeFservice :: Context -> ObjectDef -> Fservice
-   makeFservice context o
-    = Fservice
-        o                                  -- the object from which the service is drawn
-        trBound                            -- the transaction boundary, i.e. all expressions that may be changed in a transaction
-        [ limit trBound eca                -- all ECA-rules that may be used in this object
-        | rule<-declaredRules context
-        , conjunct<-conjuncts rule
-        , clause<-allClauses conjunct
-        , eca<-doClause clause
-        ]
-        (makeDataset context (concept o))  -- the dataset in which the objects are stored
+   makeFservice context obj
+    = Fservice{
+        objectdef = obj  -- the object from which the service is drawn
+      , trBoundary = trBound -- the transaction boundary, i.e. all expressions that may be changed in a transaction
+      , ecaRules = [] --TEMP
+--        [ limit trBound eca                -- all ECA-rules that may be used in this object
+--        | rule<-declaredRules context
+--        , conjunct<-conjuncts rule
+--        , clause<-allClauses conjunct
+--        , eca<-doClause clause
+--        ]
+--        TODO -> makeDataset not correct
+      , dataset = makeDataset context (concept obj)  -- the dataset in which the objects are stored 
 -- obsolete services?
-        [ getEach context o
-        , createObj context o [] {-rs-}
-        , readObj context o
-        , deleteObj context o [] {-rs-}
-        , updateObj context o [] {-cs-} [] {-rs-} ]
-        [ r| r<-rules context, not (null (mors r `isc` mors o))]  -- include all valid rules that relate directly to o.
+      , methods = [] --TEMP
+                 -- [ getEach context obj
+                 --  , createObj context obj [] {-rs-}
+                 --  , readObj context obj
+                 --  , deleteObj context obj [] {-rs-}
+                 -- , updateObj context obj [] {-cs-} [] {-rs-} ]
+      , frules = [ r| r<-rules context, (not.null)(mors r `isc` mors obj)] -- include all valid rls that relate directly to o
+      }
       where
        trBound
-        = rd [conjNF e' | a<-atts o, e'<-[objctx a, flp (objctx a)] ]
+        = rd [conjNF e' | a<-atts obj, e'<-[objctx a, flp (objctx a)] ]
           where atts o' = o': [e'| a<-attributes o', e'<-atts a]
-       limit :: [Expression] -> ECArule -> ECArule
+{-       limit :: [Expression] -> ECArule -> ECArule
        limit rels (ECA ev clause) = ECA ev (simplPAclause (lim clause))   -- TODO Stef, kijk je even naar deze warning? Dit lijkt me niet goed...
         where
          lim (Choice clauses)              = Choice [c'| c<-clauses, c'<-[lim c], p c']
@@ -257,7 +261,7 @@
             | conjNF toExpr `elem` trBound = Do insdel toExpr delta
             | otherwise                    = Choice []
          lim (New c)                       = New c
-
+-}
 
    makeFdecl :: Context -> Declaration -> Declaration
    makeFdecl context d 
