@@ -32,7 +32,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
      concs fspc = concs (vrels fspc) `uni` concs (vrules fspc) --I assumed that rules contains every expression from kd, obj, etc
      mors  fspc = mors (vrules fspc)
      morlist fspc = morlist (vrules fspc)
-     declarations fspc = rd $ [makeDeclaration m|m<-mors fspc] ++ [d|d<-vrels fspc, desrc d/=Anything, detgt d/=Anything]
+     declarations fspc = vrels fspc
      closExprs fspc = closExprs (vrules fspc)
 
  --sqlCodeComputeRule: 4th argument is (as of sept 25th 07) empty. It used to be:
