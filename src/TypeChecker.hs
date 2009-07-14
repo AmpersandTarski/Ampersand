@@ -200,13 +200,28 @@ enrichCtx cx@(Ctx{}) ctxs =
     where
     bindrules = [br | (br,_,_)<-map bindRule (ptrls p)]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
-    addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, name (popm pop)==decnm d, pairx<-popps pop]}
+    addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (popm pop) d, pairx<-popps pop]}
               |d<-ptdcs p]
-              
+  --DESCR -> local compare function to compare the morphism identity of a population and a declaration
+  --         the population morphism is parsed with a declaration with source and target Anything 
+  --         so I need to use the mphats to compare and thus I can't use makeDeclaration
+  comparepopanddecl :: Morphism -> Declaration -> Bool
+  comparepopanddecl (Mph{mphnm=popnm, mphats=[c1,c2]}) d = popnm==name d && c1==source d && c2==target d
+  comparepopanddecl (Mph{mphnm=popnm, mphats=[], mphpos=pos}) d = 
+     case onedecl popnm (allCtxDecls [cx]) of
+          Just True -> True
+          _         -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.comparepopanddecl: " ++
+                               "Ambiguous population "++show popnm++" at "++show pos++"\nDefine a type on the population name."
+  onedecl _ [] = Nothing
+  onedecl nm (d:ds) = if nm==name d then
+                        case (onedecl nm ds) of 
+                             Nothing -> Just True
+                             _       -> Just False
+                      else (onedecl nm ds)
 
   --DESCR -> enriching ctxds
   --         take all the declarations from all patterns included (not extended) in this context
-  ctxdecls =  [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, name (popm pop)==decnm d, pairx<-popps pop]}
+  ctxdecls =  [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (popm pop) d, pairx<-popps pop]}
               |d<-allCtxDecls [cx]]
 
   --DESCR -> enriching ctxrs

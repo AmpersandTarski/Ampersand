@@ -28,6 +28,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,
 
    --TODO -> is this a correct translation ánd clean-up of Morphical Context? 
    --I think its better to make morphical redundant all along, and replace it with fspec and functions on fspec
+   --Gerard talked to Stef on the phone:
+   --   Fspc functions like vrels exist for the same reason as Morphical exists for Adl data types -> a common function for a certain information set
+   --   The difference is that Fspc as data type is introduced as the central data type with (precalculated) functions like vrels
+   --   Besides that the implementation of a Morphical instance is not clear anymore
+   --   For that reason the Morphical instance of Fspc is placed here instead of in Morphical.hs.
+   --   TODO -> We have to think about a structure to agree upon
    instance Morphical Fspc where
      concs fspc = concs (vrels fspc) `uni` concs (vrules fspc) --I assumed that rules contains every expression from kd, obj, etc
      mors  fspc = mors (vrules fspc)

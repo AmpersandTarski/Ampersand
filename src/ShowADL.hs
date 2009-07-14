@@ -67,12 +67,15 @@
       let 
       FS_id conid = fsfsid fSpec
       i = 0
+      printpopmph d = decnm d
+         ++ [c |c<-"["++ printadl fSpec i (desrc d) ++ " * " ++ printadl fSpec i (detgt d) ++ "]"
+               , (desrc d)/=Anything, (detgt d)/=Anything]
       in
       "CONTEXT " ++ conid ++ lb
          --REMARK -> Pattern "CONTEXT" will be printed as a pattern --> no ds cs ks outside the pattern only pops and objs
       ++ printadl fSpec i [pattern u | t<-themes fSpec,u<-units t]
       ++ printadl fSpec i (serviceS fSpec)
-      ++ printlist ("",lb,lb) [ "POPULATION " ++ decnm d ++ " CONTAINS"
+      ++ printlist ("",lb,lb) [ "POPULATION " ++ printpopmph d ++ " CONTAINS"
                                 ++ printlist (lb++indent (i+1)++"[ "
                                              ,";"++lb++indent (i+1)++"  "
                                              ,lb++indent (i+1)++"]"++lb) 
