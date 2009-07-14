@@ -9,6 +9,7 @@
    import Prototype.ObjBinGenConnectToDataBase
    import Prototype.ObjBinGenObject
    import Prototype.ObjBinGenObjectWrapper
+   import Prototype.Installer
 
    phpObjServices :: Fspc    -- should take over from Context in due time.
                   -> String  -- the directory to which the result is written
@@ -18,11 +19,13 @@
                   targetDir
                   servGen
      =   putStr ("\n---------------------------\nGenerating php Object files with ADL\n---------------------------")
-      >> putStr ("\n  Generating localsettings.inc.php")
       >> do { d <- doesDirectoryExist targetDir
             ; if d
               then putStr ""
               else createDirectory (targetDir) }
+      >> putStr ("\n  Generating Install.php")
+      >> writeFile (targetDir++"Install.php") ins
+      >> putStr ("\n  Generating localsettings.inc.php")
       >> writeFile (targetDir++"localsettings.inc.php") ls
       >> putStr ("\n  Generating connectToDataBase.inc.php")
       >> writeFile (targetDir++"connectToDataBase.inc.php") ctdb
@@ -40,6 +43,7 @@
          ]
       >> putStr ("\n\n")
       where
+       ins  = installer fSpec dbName
        ls   = localsettings appname serviceObjects
        ctdb = connectToDataBase fSpec dbName
        wrapper o = objectWrapper (name o)

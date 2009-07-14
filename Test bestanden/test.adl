@@ -1,9 +1,25 @@
 CONTEXT Test
-
-
-PATTERN Permits
- authentic -| authentic
-
- authentic  :: Person * IDdocument.
-ENDPATTERN
+  PATTERN Permits
+    authentic -| authentic
+    
+    name :: Person -> BLOB.
+    authentic  :: Person * IDdocument [INJ,SUR].
+    {- expected behaviour:
+        table for the Person concept containing the name relation
+        table for the IDdocument containing the authentic relation
+        Future: no table for BLOB since two BLOB's cannot be compared
+    -}
+    username :: User -> Name [INJ,SUR].
+    password :: User -> PASS.
+    {- expected behaviour:
+        table for User containing the username relation and the password relation
+        table for PASS. Future: with encrypted data / don't store these because passwords cannot be stored completely (like Num)
+        no table for Name since it is already fully described in the table for User
+    -}
+    indentified :: User * Person.
+    {- expected behaviour:
+        binary table for this relation, since it is not contained elsewhere
+    -}
+    
+  ENDPATTERN
 ENDCONTEXT

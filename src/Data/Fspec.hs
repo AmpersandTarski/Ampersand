@@ -28,7 +28,7 @@ where
    import Typology                      (Inheritance)
    data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                      , themes   :: [Ftheme]      -- ^ One for every pattern
-                     , datasets :: [ObjectDef]   -- ^ This list contains the data sets that are computed from the basic ontology.
+                     , datasets :: [ObjectDef]       -- ^ This list contains the data sets that are computed from the basic ontology.
                      , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
                      , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
                      , services :: [Fservice]    -- ^ One for every service 

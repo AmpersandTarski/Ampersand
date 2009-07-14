@@ -3,6 +3,7 @@ module ShowHS (showHS,ShowHS())
 where
 
    import Typology              (Inheritance(..))
+   import Data.Plug
    import FspecDef              (Fspc(..)
                                 ,Ftheme(..)
                                 ,Funit(..)
@@ -37,6 +38,14 @@ where
     showHS indent (a,b) = "("++showHS indent a++","++showHS indent b++")"
     
    
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Plug                          ***
+-- \***********************************************************************
+   instance ShowHS Plug where
+    showHSname plug = name plug
+    showHS indent plug = (chain (indent ++"    ")) [show plug]
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
