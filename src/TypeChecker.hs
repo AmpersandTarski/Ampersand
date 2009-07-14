@@ -1,4 +1,4 @@
---Words in comments in written in capitals only provide a certain of information to programmers:
+--Words inside comments that are written in capitals only, such as TODO, provide information to programmers:
 --     -> TODO                Describes some kind of improvement needed or things to be reexamined
 --                            If reexamination results in the conclusion that its correct, then remove the comment
 --     -> EXTEND              A place indicator defining the properties of potential functionality to be put there
@@ -18,7 +18,7 @@
 
 --TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
 --        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)
---REMARK -> meerdere fouten in expressie, dan binnenste fout, 1 per expressie
+--REMARK -> In any expression, in case of multiple type errors, choose the innermost errors and yield the first one.
 --REMARK -> The ADL.Rule contains all kinds of structures typechecker only supports the one with constructor Ru and Sg.
 --          Fr rules will generate a type error message, but the parser (see CC.hs) does not output Fr rules at the moment of writing this comment.
 --          Gc rules are or will be deprecated. Gc rules will generate a type error message too.
@@ -27,7 +27,7 @@
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 --TODO -> Checking sick.adl results in a lot of ambiguous relations in expressions, because
 --        this type checker just puts all patterns of this context and the extended contexts of this context on a heap
---        apparantly there is another definition for the objects in scope than the definition implemented.
+--        apparently there is another definition for the objects in scope than the definition implemented.
 --        Check the correctness of handling context extension and patterns.
 module TypeChecker (typecheck, Error, Errors) where
 

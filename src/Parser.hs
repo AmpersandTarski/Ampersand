@@ -7,7 +7,7 @@ import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
 import AGtry
-import TypeChecker
+import TypeChecker(typecheck)
 import Adl
 --import Test.AdlTestFunctions --temp -> for comparing new typechecker output with old AGtry output
 

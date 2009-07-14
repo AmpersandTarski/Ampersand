@@ -61,22 +61,22 @@
                                         if null chn then "" else
                                         "\n        DB_doquer(\"INSERT INTO "++sqlRelName fSpec s++" ("++sqlRelSrc s++","++sqlRelTrg s++
                                         ") VALUES "++chn++"\");"
-                                      | s<-rd (declarations fSpec), not (isIdent s)
+                                      | s<-vrels {-was declarations-} fSpec, not (isIdent s)
                                       , chn<-let truncate xs = if length xs>380 then take (380-if xs!!(380-1)=='\\' then 2 else 1) xs++"'" else xs
-                                             in [ chain ", " (rd ["("++truncate (phpShow a)++","++truncate (phpShow b)++")"
-                                                                 | [a,b]<-contents s, not (null a), not (null b)])
+                                             in [ chain ", " [ "("++truncate (phpShow a)++","++truncate (phpShow b)++")"
+                                                             | [a,b]<-contents s, not (null a), not (null b)]
                                                 ]
                                       ]
-         ++if rd (declarations fSpec)==declarations fSpec then "" else
-           error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS "" s|s<-cl]|cl<-eqClass (==) (declarations fSpec), length cl>1])
+         ++if rd (vrels fSpec)==vrels fSpec then "" else
+           error ("(module RelBinGenServiceLayer) Fatal: Some declarations are not unique."++concat ["\n"++chain "\n" [showHS "" s|s<-cl]|cl<-eqClass (==) (vrels fSpec), length cl>1])
        , "      "++chain "\n        " [ "DB_doquer(\"CREATE TABLE "++sqlConcept fSpec c++" ("++sqlAttConcept fSpec c++" varchar(380) NOT NULL default '', UNIQUE  ("++sqlAttConcept fSpec c++")) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
-                                      | c<-concs fSpec, ss<-[[s| s<-declarations fSpec, not (null (contents s)), c <= source s || c <= target s]]]
+                                      | c<-concs fSpec, ss<-[[s| s<-vrels fSpec, not (null (contents s)), c <= source s || c <= target s]]]
        , "      "++chain "\n        " [ if null ss then "" else
                                         insConcept fSpec c
-                                        ( chain " UNION " (["SELECT DISTINCT "++sqlRelSrc s++" FROM "++sqlRelName fSpec s | s<-declarations fSpec, not (null (contents s)), c <= source s]++
-                                                           ["SELECT DISTINCT "++sqlRelTrg s++" FROM "++sqlRelName fSpec s | s<-declarations fSpec, not (null (contents s)), c <= target s])
+                                        ( chain " UNION " (["SELECT DISTINCT "++sqlRelSrc s++" FROM "++sqlRelName fSpec s | s<-vrels fSpec, not (null (contents s)), c <= source s]++
+                                                           ["SELECT DISTINCT "++sqlRelTrg s++" FROM "++sqlRelName fSpec s | s<-vrels fSpec, not (null (contents s)), c <= target s])
                                         )
-                                      | c<-concs fSpec, ss<-[[s| s<-declarations fSpec, not (null (contents s)), c <= source s || c <= target s]]]
+                                      | c<-concs fSpec, ss<-[[s| s<-vrels fSpec, not (null (contents s)), c <= source s || c <= target s]]]
        , "      "++chain "\n        " [ "\n        DB_doquer(\"INSERT IGNORE INTO "++sqlClosName fSpec e++" "++selectNormFiExpr "$attrs" fSpec 15 e (sqlExprSrc e,sqlExprTrg e) [] e++"\");"++
                                         "\n        "++(if clos0 e then "closure0" else "closure1")++"('"++sqlClosName fSpec e++"', '"++sqlExprSrc e++"', '"++sqlExprTrg e++"');"
                                       | e<-closE fSpec]

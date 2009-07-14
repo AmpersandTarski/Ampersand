@@ -14,54 +14,47 @@ where
    class Populated a where
     contents  :: a -> Pairs
 
-   instance Populated Morphism where
-    contents mph = contents (makeDeclaration (makeInline mph))
--- Dit was in het verleden: (maar flp is hier niet bekend!)
---    contents m@(Mph _ _ _ _ False _) = map reverse (contents (flp m))
---    contents m = contents (makeDeclaration m)
-
    instance Populated Declaration where
     contents d 
        = case d of
            Sgn{}     -> decpopu d
            Isn{}     -> [[o,o] | o<-conts (despc d)]
-           Iscompl{} -> [[o,o']| o <-conts (despc d),o'<-conts (despc d),o/=o']
-           Vs{}      -> [[o,o']| o <-conts (despc d),o'<-conts (despc d)]
+           Iscompl{} -> [[o,o']| o<-conts (despc d), o'<-conts (despc d), o/=o']
+           Vs{}      -> [[o,o']| o<-conts (despc d), o'<-conts (despc d)]
+
+   instance Populated Morphism where
+    contents mph = contents (makeDeclaration (makeInline mph))
 
    instance Populated Expression where
-    contents (Tm mph)      = contents mph
-    contents (Tc f)        = contents f
-    contents f@(F ts)
-     | idsOnly ts
-        = if not (source f `order` target f) then error ("(module CC_aux) Fatal: no order in "++show f) else
-                             [[e',e']|e'<-os]
-     | otherwise
-        = if null css then error ("(module CC_aux) Fatal: no terms in F "++show ts) else
-                             foldr1 join css
-                             where os = conts (source f `lub` target f)
-                                   css = [contents t|t<-ts, not (idsOnly t)]
-    contents (Fd ts)
-      = if null ts then error ("(module CC_aux) Fatal: no terms in Fd "++show ts) else joinD ts
+    contents expr  
+       = case expr of
+            (Tm x)  -> contents x
+            (Tc x)  -> contents x
+            (F  x)  -> if null x 
+                         then error ("(module Populated) Fatal: no terms in contents ("++show expr++")") 
+                         else foldr1 join [contents t| t<-x ]
+            (Fd x)  -> if null x 
+                         then error ("(module Populated) Fatal: no terms in contents ("++show expr++")") 
+                         else let (dx,_,_,_)
+                                   = foldr1 dagg [(ct,compl ct st tt,st,tt)
+                                                 | t<-x, ct<-[contents t]
+                                                 , st<-[conts (source t)], tt<-[conts (target t)] ]
+                              in dx
+            (Fu x)  -> foldr uni [] [contents f| f<-x ]
+            (Fi x)  -> if null x 
+                         then error ("(module Populated) Fatal: no factors in contents ("++show expr++")") 
+                         else foldr1 isc [contents f| f<-x ]
+            (K0 x)  -> clos1 (contents x) `uni` [[a,a]|a <-conts (source x `lub` target x)]
+            (K1 x)  -> clos1 (contents x)
+            (Cp x)  -> [[a,b]| [a,b]<-diag [] (conts (source x)) [] (conts (target x)), not ([a,b] `elem` contents x)]
          where
-           joinD []        = undefined
-           joinD [s]       = contents s
-           joinD (r:s:ts') = [ [head (head rc),last (head sc)]
-                            | rc<-eqCl head (contents r)
-                            , sc<-eqCl last (joinD (s:ts'))
-                            , null (conts (target r `glb` source s) >-(map last rc `uni` map head sc))
-                            ]
-         
-    contents (Fu fs) = if null fs then [] else
-                       (foldr1 uni .map contents) fs
-    contents (Fi fs) = if null fs then [] else
-                       (foldr1 isc .map contents) fs
-    contents (K0 e')  = clos1 (contents e') `uni` [[c,c]|c <-conts (source e' `lub` target e')]
-    contents (K1 e')  = clos1 (contents e')
-    contents (Cp (Cp e')) = contents e'
-    contents (Cp e')  = [[a,b]| [a,b]<-diag [] (conts (source e')) [] (conts (target e')), not ([a,b] `elem` contents e')]
-
-
-    
---   joinD :: [Expression] -> [Paire]
-
-    
+          -- dagg is de tegenhanger van join. Hij krijgt systematisch viertallen mee: een rij tupels (a),
+          -- het complement van a (ca), de source van a (sa), en de target van a (ta).
+          -- TODO: dagg is razend inefficient. Daar kunnen we nog last van krijgen....
+          -- Aanpak: op basis van redeneren de hele expressie optimaliseren, en vervolgens een aantal varianten van dagg maken
+          -- die gebuik maken van de efficientere implementatie van -r!s en r!-s.
+          -- dagg (a,ca,sa,ta) (b,cb,sb,tb)
+             dagg (_,ca,sa,_)  (_,cb,_ ,tb)
+               = ([[x,y]| x<-sa, y<-tb, not ([x,y] `elem` jnab)], [[x,y]| x<-sa, y<-tb, [x,y] `elem` jnab], sa, tb)
+                 where jnab = join ca cb
+             compl a sa ta = [[x,y]|x<-sa, y<-ta, not ([x,y] `elem` a)]  -- complement van a

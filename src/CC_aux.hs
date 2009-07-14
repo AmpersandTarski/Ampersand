@@ -8,7 +8,6 @@
                 , applyM
                 , sur, inj, fun, tot
                 , mkVar
-                , Calc(calc)
                 , isProperty 
                 , Pop(..)
                 , makeConceptSpace , pMeaning
@@ -27,7 +26,7 @@
    import Collection   (Collection (..))
    import Strings      (chain,unCap)
    import Auxiliaries  (rEncode,commaEng
-                       ,sord,eqCl,eqClass,clos1,diag)
+                       ,sord,eqCl,eqClass)
    import Adl
    import ShowADL
    import ShowHS
@@ -91,8 +90,6 @@
    renumberRules _ [] = []
 
 
-   showS :: Declaration -> String
-   showS decl = name decl++"["++show (source decl)++","++show (target decl)++"]"
    showFullRelName :: Declaration -> String
    showFullRelName decl = rEncode (name decl++name (source decl)++name (target decl))
 
@@ -425,175 +422,17 @@
 --   oneMorphism (Cp e)    = oneMorphism e
 
 
-
-   mkVar :: (Identified a) => [String] -> [a] -> [String]      -- WAAROM? Stef, wat is dit voo een functie? Graag wat documentatie...
+-- mkVar is bedoeld om nieuwe variabelen te genereren, gegeven een set (ex) van reeds vergeven variabelen.
+-- mkVar garandeert dat het resultaat niet in ex voorkomt, dus postconditie:   not (mkVar ex cs `elem` ex)
+-- Dat gebeurt door het toevoegen van apostofes.
+-- Deze functie is bedoeld voor gebruik in PredLogic.
+-- WAAROM (SJ): waarom staat mkVar in CC_aux? Kan hij niet naar PredLogic?
+   mkVar :: (Identified a) => [String] -> [a] -> [String]
    mkVar ex cs = mknew ex [[(toLower.head.(++"x").name) c]|c<-cs]
     where
      mknew _ [] = []
      mknew ex' (x:xs) | x `elem` ex' = mknew ex' ((x++"'"):xs)
                       | otherwise = x: mknew (ex'++[x]) xs
-
-   class Calc a where
-    limit     :: (Concept,Concept) -> a -> a
-    calc      :: a -> [Declaration] -> [Paire]
-
-
-
-  {-  e `elemSgn` s  = e `elem` contents s
-
-   jnMph :: Morphism -> Morphism -> Morphism
-   s `jnMph` t   | isIdent s = Mph nm' p' [] (sign signat) True signat
-                 | isIdent t = Mph nm  p  [] (sign signat) True signat
-                 | source t `order` target s = Mph (name signat) p' [] (sign signat) True signat
-                 | otherwise = error ("(module CC_aux) unable to `;` (compose) nonequivalent relations "++show s++" and "++show t++".")
-                 where
-                  Mph nm  p  atts  sgn  yin  sg  = s
-                  Mph nm' p' atts' sgn' yin' sg' = t
-                  signat = (if yin then sg else flp sg) `jnSgn` (if yin then sg' else flp sg')
-
-   jnSgn :: Declaration -> Declaration -> Declaration
-   s `jnSgn` t   | isIdent s = Sgn nm' (a `lub` a') b' props' prL' prM' prR' cs' expla' pos' nr' False
-                 | isIdent t = Sgn nm  a' (b `lub` b') props  prL  prM  prR  cs  expla  pos  nr  False
-                 | source t `order` target s = Sgn (nm++";"++nm') a b' (h (multiplicities s) `isc` h (multiplicities t)) prL prM prR (cs `join` cs') "" Nowhere 0 False
-                 | otherwise = error ("(module CC_aux) unable to `;` (compose) nonequivalent relations "++show s++" and "++show t++".")
-                 where
-                  h ps = ps>-[Sym,Asy,Trn,Rfx]
-                  Sgn nm  a  b  props  prL  prM  prR  cs  expla  pos  nr  False = s
-                  Sgn nm' a' b' props' prL' prM' prR' cs' expla' pos' nr' False = t -}
-
-   instance Calc Declaration where
-    limit (a,b) decl
-      = case decl of
-          Sgn{}    -> if a `order` (desrc decl) && b `order` (detgt decl)
-                        then decl{ desrc = a `lub` (desrc decl)
-                                 , detgt = b `lub` (detgt decl)
-                                 , decpopu = [[x,y]| [x,y]<-contents decl, x `elem` conts a, y `elem` conts b]
-                                 }
-                        else error ("(module CC_aux) Cannot limit "++show (a,b)++" with limit (Sgn nm "++show (desrc decl)++" "++show (detgt decl)++" props prL prM prR cs pos nr sig)")
-          Isn{}    -> if (degen decl) <= a && (despc decl) <= b 
-                        then decl{ degen = a 
-                                 , despc = b
-                                 }
-                        else error ("(module CC_aux) Cannot limit "++show (a,b)++" with limit (Isn "++show (degen decl)++" "++show (despc decl)++")")
-          Iscompl{}-> if (degen decl) <= a && (despc decl) <= b 
-                        then decl{ degen = a 
-                                 , despc = b
-                                 }
-                        else error ("(module CC_aux) Cannot limit "++show (a,b)++" with limit (Iscompl "++show (degen decl)++" "++show (despc decl)++")")
-          Vs{}     -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
-    calc decl ss
-      = case decl of
-          Sgn{}     -> contents (head([x|x<-ss, source x <= source decl && target x <= target decl]++
-                                     error ("(module CC_aux) Scope error1 :"++name decl)
-                                )    )
-          Isn{}     -> contents decl
-          Iscompl{} -> contents decl
-          Vs{}      -> contents decl
-
-   instance Calc Morphism where
-    limit (a,b) mph
-       = case mph of
-           Mph{mphyin = True}  -> mph{ mphtyp = (a,b)
-                                     , mphdcl = limit (a,b) (mphdcl mph)
-                                     }
-           Mph{mphyin = False} -> mph{ mphtyp = (b,a)
-                                     , mphdcl = limit (b,a) (mphdcl mph)
-                                     }
-           I{}                 -> if a <= b 
-                                   then mph{ mphgen = if mphyin mph then b else a 
-                                           , mphspc = if mphyin mph then a else b
-                                           }
-                                   else error ("(module CC_aux) !Fatal error: "++show a++" <= "++show b++" expected.")
-           V{}                 -> mph{ mphtyp = (a,b)
-                                     }
-           Mp1{}               -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
-    calc mph ss
-      = case mph of
-          Mph{} -> case [x|x<-ss, x == mphdcl mph] of
-                     []   -> error ("(module CC_aux) Scope error :"++showS (mphdcl mph)++" "++show (map showS ss))
-                     [t]  -> if mphyin mph then contents t else map reverse (contents t)
-                     _:_ -> error ("(module CC_aux) Calculation error : ambiguous "++showS (mphdcl mph)++" in calc ("++show mph++") "++show (map showS ss))
-          I{}   -> contents mph
-          V{}   -> contents mph
-          Mp1{} -> contents mph            
-                           
-    
-   instance Calc Expression where
-    limit sgn expr 
-       = case expr of
-            (Tm x)  -> Tm (limit sgn x)
-            (Tc x)  -> Tc (limit sgn x)
-            (F  x)  -> F  (lim sgn x)
-            (Fd x)  -> Fd (lim sgn x)
-            (Fu x)  -> Fu (map (limit sgn) x)
-            (Fi x)  -> Fi (map (limit sgn) x)
-            (K0 x)  -> K0 (limit sgn x)
-            (K1 x)  -> K1 (limit sgn x)
-            (Cp x)  -> Cp (limit sgn x)
-          where lim (a,b) list = case list of
-                                    []   -> []
-                                    [p]  -> [limit sgn p]
-                                    p:ps -> [limit (a,c) p] ++ lim (c,b) ps
-                                            where c = if null ps then target p else   --TODO WAAROM? Stef, na herschrijven bleef dit over: Dit kan helemaal niet! (null ps is altijd False)
-                                                      if target p `order` source (head ps) then target p `lub` source (head ps) else 
-                                                      error ("(module CC_aux) Fatal: limit sgn ("++showHS "" expr++") has incompatible types inside...") 
-                 
--- was:              
---    limit sgn' (Tm mph) = Tm (limit sgn' mph)
---    limit sgn' (Tc f)   = Tc (limit sgn' f)
---    limit sgn (F ts)    = F (lim sgn ts)
---     where lim sgn  [x] = [limit sgn x]
---           lim sgn   [] = []
---           lim (a,b) (x:xs) = [limit (a,c) x]++lim (c,b) xs
---                              where c = if null xs then target x else
---                                        if target x `order` source (head xs) then target x `lub` source (head xs) else
---                                        error ("(module CC_aux) Fatal: limit sgn ("++showHS "" (F ts)++") has incompatible types inside...")
---    limit sgn (Fd ts)   = Fd (lim sgn ts)
---     where lim sgn  [x] = [limit sgn x]
---           lim sgn   [] = []
---           lim (a,b) (x:xs) = [limit (a,c) x]++lim (c,b) xs
---                              where c = if null xs then target x else
---                                        if target x `order` source (head xs) then target x `lub` source (head xs) else
---                                        error ("(module CC_aux) Fatal: limit sgn ("++showHS "" (Fd ts)++") has incompatible types inside...")
---    limit sgn (Fu fs)   = Fu (map (limit sgn) fs)
---    limit sgn (Fi fs)   = Fi (map (limit sgn) fs)
---    limit sgn' (K0 e)   = K0 (limit sgn' e)
---    limit sgn' (K1 e)   = K1 (limit sgn' e)
---    limit sgn' (Cp e)   = Cp (limit sgn' e)
-
-    calc expr ss  
-       = case expr of
-            (Tm x)  -> calc x ss
-            (Tc x)  -> calc x ss
-            (F  x)  -> if null x 
-                         then error ("(module CC_aux) Fatal: no terms in calc ("++showHS "" expr++")") 
-                         else foldr1 join [calc t ss| t<-x ]
-            (Fd _)  -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar?
-            (Fu x)  -> foldr uni [] [calc f ss| f<-x ]
-            (Fi x)  -> if null x 
-                         then error ("(module CC_aux) Fatal: no factors in calc ("++showHS "" expr++")") 
-                         else foldr1 isc [calc f ss| f<-x ]
-            (K0 x)  -> clos1 (calc x ss) `uni` [[a,a]|a <-conts (source x `lub` target x)]
-            (K1 x)  -> clos1 (calc x ss)
-            (Cp x)  -> [[a,b]| [a,b]<-diag [] (conts (source x)) [] (conts (target x)), not ([a,b] `elem` calc x ss)]
-
-
---was:
---    calc (Tm m) ss      = calc m ss
---    calc (Tc f) ss      = calc f ss
---    calc (F  ts) ss     = if null ts then error ("(module CC_aux) Fatal: no terms in calc (F "++showHS "" ts++")") else
---                          foldr1 join [calc t ss| t<-ts ]
---
---
---
---
---    calc (Fu fs) ss     = foldr uni [] [calc f ss| f<-fs ]
---    calc (Fi fs) ss     = if null fs then error ("(module CC_aux) Fatal: no factors in calc (Fi "++showHS "" fs++")") else
---                          foldr1 isc  [calc f ss| f<-fs ]
---    calc (K0 e) ss      = clos1 (calc e ss) `uni` [[a,a]|a <-conts (source e `lub` target e)]
---    calc (K1 e) ss      = clos1 (calc e ss)
---    calc (Cp e) ss      = --error ("(module CC_aux) Diagnosis:\nsource: "++show (conts (source e)) ++"\ntarget: "++show (conts (target e)))
---                          [[a,b]| [a,b]<-diag [] (conts (source e)) [] (conts (target e)), not ([a,b] `elem` calc e ss)]
 
    fun,tot,inj,sur :: [Prop]->Bool
    fun = elem Uni
