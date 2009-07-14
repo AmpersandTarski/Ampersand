@@ -67,35 +67,13 @@ where
     closExprs        = rd . concat . map closExprs . preCl
 
 
---   instance Morphical a => Morphical (Classification a) where
---    concs            = rd . concat . map concs . preCl
---    conceptDefs      = rd . concat . map conceptDefs . preCl
---    mors             = rd . concat . map mors . preCl
---    morlist          =      concat . map morlist . preCl
---    declarations     = rd . concat . map declarations . preCl
---    closExprs        = rd . concat . map closExprs . preCl
-
-
    instance Morphical Context where
     concs        c  = concs (ctxds c) `uni` concs (ctxpats c)
     conceptDefs  c = ctxcs c
     mors         c = mors (ctxpats c) `uni` mors (ctxos c)
     morlist      c = morlist (ctxpats c)++morlist (ctxos c)
-    declarations c = (map (makeFdecl c).rd) (ctxds c ++[d| pat<-ctxpats c, d<-declarations pat])
-     where makeFdecl context d 
-               = case d of
-                   Sgn{}     -> d{decpopu = rd( [link| Popu mph ps<-populations context, makeDeclaration mph==d, link<-ps]
-                                          ++(decpopu d))
-                                 }
-                   Isn{}     -> d
-                   Iscompl{} -> d
-                   Vs{}      -> d
-                    
---           makeFdecl context d@(Sgn nm a b props prL prM prR cs expla pos nr sig)
---                             = (Sgn nm a b props prL prM prR cs' expla pos nr sig)
---              where cs' = rd ([link| Popu m' ps<-populations context, makeDeclaration m'==d, link<-ps]++cs)
---           makeFdecl _ d = d
-  -- TODO: is dit wel de juiste plek om makeFdecl aan te roepen? Dat zou eigenlijk in MakeFspec moeten, maar alleen als de populatie voor de generator uit Fspc wordt gegenereerd.
+    declarations c = rd (ctxds c ++[d| pat<-ctxpats c, d<-declarations pat])
+  -- TOELICHTING: de populatie staat nog verspreid over declarations en populatie statements. In Fspc komen die bij elkaar.
     genE         c = genEq (typology (ctxisa c))
     closExprs    c = closExprs (ctxpats c) `uni` closExprs (ctxos c)
     objDefs      c = ctxos c
