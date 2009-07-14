@@ -1,0 +1,1346 @@
+CONTEXT OUNLarch
+
+PATTERN OUNLarch
+ in :: Dienst -> Proces.
+ naam :: Dienst -> Dienstnaam.
+ eigenaar :: Dienst * Orgaan [UNI].
+ uitvoerder :: Dienst * Orgaan.
+ omschrijving :: Dienst -> Dienstomschrijving.
+ input :: Dienst * Product.
+ output :: Dienst * Product.
+ gebruikt :: Dienst * Gegevensverzameling.
+ betrokkene :: Dienst * Orgaan.
+ systeem :: Dienst -> Systeem.
+
+ beleid :: Proces * Beleidsuitgangspunt.
+
+ deel :: Product * Product.
+ applicatie :: Product * Systeem.
+ opslag :: Product * Systeem.
+ componentvan :: Product * Product.
+ categorie :: Product * Productcategorie.
+
+ in :: Gegevensverzameling * Systeem [TOT].
+ deel :: Systeem * Systeem.
+ deel :: Orgaan  * Orgaan.
+ eigenaar :: Systeem * Orgaan [UNI].
+ eigenaar :: Gegevensverzameling * Orgaan [UNI].
+ concept :: Gegevensverzameling -> Concept.
+
+ naam :: Proces -> Procesnaam.
+ eigenaar :: Proces * Orgaan [UNI].
+ deel :: Proces  * Proces.
+ isa :: Proces * Proces.
+ omgeving :: Proces * Orgaan.
+ENDPATTERN
+
+  SERVICE signalen : I[ONE]
+   = [ "Organen zonder systeem" : -(-V[ONE*Systeem];eigenaar[Systeem*Orgaan])
+     , "Systemen zonder eigenaar" : V[ONE*Orgaan]!-eigenaar[Systeem*Orgaan]~
+     ]
+
+  SERVICE Gegevensverzameling : I[Gegevensverzameling]
+   = [ "in Systeem" : in[Gegevensverzameling*Systeem]
+     , eigenaar : eigenaar[Gegevensverzameling*Orgaan]
+     , gebruikt : gebruikt~
+     ]
+
+  SERVICE Gegevensverzamelingen : I[ONE]
+   = [ Gegevensverzamelingen : V[ONE*Gegevensverzameling]
+        = [ naam : I[Gegevensverzameling]
+          , "systeem" : in[Gegevensverzameling*Systeem]
+          , eigenaar : eigenaar[Gegevensverzameling*Orgaan]
+          ]
+     ]
+
+  SERVICE Systemen : I[ONE]
+   = [ Systemen : V[ONE*Systeem]
+        = [ naam : I[Systeem]
+          , eigenaar : eigenaar
+          , gegevens : in[Gegevensverzameling*Systeem]~
+          ]
+     ]
+
+  SERVICE Systeem : I[Systeem]
+   = [ eigenaar : eigenaar
+     , "gegevens" : in[Gegevensverzameling*Systeem]~
+     , "producten" : opslag~
+     , "diensten" : systeem~
+     , "bewerkt" : applicatie~
+     , "deel van" : deel[Systeem*Systeem]
+     , "onderdelen" : deel[Systeem*Systeem]~
+     , "wordt gebuikt in" : (gebruikt;in)~
+        = [ Dienst : I[Dienst]
+          , naam : naam
+          ]
+     ]
+
+  SERVICE Processen : I[ONE]
+   = [ Processen : V[ONE*Proces]
+        = [ nr : I[Proces]
+          , naam : naam
+          , eigenaar : eigenaar
+          ]
+     ]
+
+  SERVICE Proces : I[Proces]
+   = [ naam : naam
+     , eigenaar : eigenaar
+     , diensten : in~ \/ deel~;in~ \/  deel~;deel~;in~ \/ deel~;deel~;deel~;in~  -- moet worden deel~*;in
+        = [ Dienst : I[Dienst]
+          , naam : naam
+          , eigenaar : eigenaar
+          ]
+
+     , beleidsuitgangspunten : beleid
+     , omgeving : omgeving
+     , "deel van" : deel
+     , onderdelen : deel~
+     , "is een specifieke vorm van" : isa
+     , "specifieke invullingen" : isa~
+     ]
+
+  SERVICE Producten : I[ONE]
+   = [ Producten : V[ONE*Product]
+        = [ nr : I[Product]
+          , input : input~
+          , output : output~
+          , categorie : categorie
+          , "deel van" : deel
+          ]
+     ]
+
+  SERVICE Product : I[Product]
+   = [ "categorie" : categorie
+     , "bewerken met" : applicatie
+     , "opgeslagen in" : opslag
+     , "component van" : componentvan
+     , "componenten" : componentvan~
+     , "deel van" : deel
+        = [ Product : I[Product]
+          , categorie : categorie
+          ]
+     , "onderdelen" : deel~
+        = [ Product : I[Product]
+          , categorie : categorie
+          ]
+     , "input Dienst" : input~
+        = [ Dienst : I[Dienst]
+          , naam : naam
+          , eigenaar : eigenaar
+          , proces : in;naam
+          ]
+     , "output Dienst" : output~
+        = [ Dienst : I[Dienst]
+          , naam : naam
+          , eigenaar : eigenaar
+          , proces : in;naam
+          ]
+     ]
+
+  SERVICE Organen : I[ONE]
+   = [ "Organen en hun eigendom" : V[ONE*Orgaan]
+        = [ nr : I[Orgaan]
+          , gegevens  : eigenaar[Gegevensverzameling*Orgaan]~
+          , systemen  : eigenaar[Systeem*Orgaan]~
+          , processen : eigenaar[Proces*Orgaan]~;naam
+          , diensten  : eigenaar[Dienst*Orgaan]~;naam
+          ]
+     ]
+
+  SERVICE Orgaan : I[Orgaan]
+   = [ "deel van" : deel
+     , "onderdelen" : deel~
+     , "eigenaar van Gegevensverzamelingen" : eigenaar[Gegevensverzameling*Orgaan]~
+     , "eigenaar van Systemen" : eigenaar[Systeem*Orgaan]~
+     , "eigenaar van Processen"  : eigenaar[Proces*Orgaan]~
+        = [ Proces : I[Proces]
+          , naam : naam
+          ]
+     , "eigenaar van Diensten"  : eigenaar[Dienst*Orgaan]~
+        = [ Dienst : I[Dienst]
+          , proces : in
+          ]
+     , "omgeving Proces" : omgeving~
+     , "betrokken bij dienst" : betrokkene~
+        = [ Dienst : I[Dienst]
+          , proces : in
+          ]
+     , "uitvoerder van dienst" : uitvoerder~
+        = [ Dienst : I[Dienst]
+          , proces : in
+          ]
+     ]
+
+  SERVICE Diensten : I[ONE]
+   = [ Diensten : V[ONE*Dienst]
+        = [ nr : I[Dienst]
+          , naam : naam
+          , eigenaar : eigenaar
+          , procesnaam : in;naam
+          , systeem : systeem
+          ]
+     ]
+
+  SERVICE Dienst : I[Dienst]
+   = [ naam : naam
+     , omschrijving : omschrijving
+     , eigenaar : eigenaar
+     , gebruikt : gebruikt
+     , proces : in
+        = [ Proces : I[Proces]
+          , naam : naam
+          ]
+     , betrokkenen : betrokkene
+     , uitvoerder : uitvoerder
+     , input : input
+        = [ Product : I[Product]
+          , categorie : categorie
+          ]
+     , output : output
+        = [ Product : I[Product]
+          , categorie : categorie
+          ]
+     , systeem : systeem
+     ]
+
+
+POPULATION in[Gegevensverzameling*Systeem] CONTAINS
+  [ ("Studenten", "SPIL")
+  ; ("Studiepaden", "SRS")
+  ; ("OER", "SRS")
+  ; ("Beschikkingen", "SPIL")
+  ; ("Leertaken", "Studienet")
+  ; ("Tentamenresultaten", "OCS")
+  ]
+
+POPULATION deel[Systeem*Systeem] CONTAINS
+  [ ("Wervis", "SPIL")
+  ; ("OMR", "SPIL")
+  ; ("TIA", "SPIL")
+  ; ("KVA", "SPIL")
+  ; ("MVA", "SPIL")
+  ; ("IV", "SPIL")
+  ; ("TTM", "SPIL")
+  ; ("IT-pakket", "SPIL")
+  ]
+
+POPULATION deel[Proces*Proces] CONTAINS
+  [ ("2.01.01", "2.01")
+  ; ("2.01.02", "2.01")
+  ; ("2.01.03", "2.01")
+  ; ("2.01", "2")
+  ]
+
+POPULATION naam[Proces*Procesnaam] CONTAINS
+  [ ("2", "Ontwerpen en Ontwikkelen van onderwijs")
+  ; ("2.01", "Opstellen en invoeren OER")
+  ; ("2.01.01", "Ondersteuning OER-proces")
+  ; ("2.01.02", "Ondersteuning verwerking jaarovergang OER in SRS")
+  ; ("2.01.03", "Ondersteuning dagelijks beheer studiepaden in SRS")
+  ]
+
+POPULATION eigenaar[Systeem*Orgaan] CONTAINS
+  [ ("SPIL", "ICTS")
+  ; ("SRS", "ICTS")
+  ]
+
+POPULATION eigenaar[Gegevensverzameling*Orgaan] CONTAINS
+  [ ("Studenten", "OCS")
+  ; ("Tentamenresultaten", "OCS")
+  ; ("Leertaken", "Faculteiten")
+  ]
+
+POPULATION eigenaar[Proces*Orgaan] CONTAINS
+  [ ("2", "OSC")
+  ; ("2.01", "IOD")
+  ; ("2.01.01", "IOD")
+  ; ("2.01.02", "IOD")
+  ; ("2.01.03", "IOD")
+  ]
+
+POPULATION eigenaar[Dienst*Orgaan] CONTAINS
+  [ ("2.01.01.1", "afd.hoofd IOD")
+  ; ("2.01.01.2", "decaan")
+  ; ("2.01.01.3", "PC")
+  ]
+
+POPULATION naam[Dienst*Dienstnaam] CONTAINS
+  [ ("2.01.01.1", "format maken")
+  ; ("2.01.01.2", "wijziging voorstellen")
+  ; ("2.01.01.3", "cursuscode aanvragen")
+  ]
+
+POPULATION omschrijving[Dienst*Dienstomschrijving] CONTAINS
+  [ ("2.01.01.1", "opstellen en aanleveren elektronisch formats per faculteit op basis van de huidige (oude) OER en uitvoeringsregelingen, waarin reeds bekende wijzigingen zijn gemarkeerd; inclusief instructie voor het verwerken van de wijzigingsvoorstellen door de faculteiten")
+  ; ("2.01.01.2", "ondersteuning aan de faculteiten bij het opstellen van de uitvoeringsregelingen n.a.v. de wijzigingsvoorstellen in het curriculum; daarbij evt. knelpunten signaleren en voorstellen voor aanpassing doen bij niet sluitende regels (zowel tbv automatische verwerking in SRS als tbv eenduidige voorlichting/advisering aan studenten)")
+  ; ("2.01.01.3", "uitgifte cursuscodes voor nieuwe en gereviseerde cursussen; bijbehorend beheer cursuscodelijsten")
+  ]
+
+POPULATION in[Dienst*Proces] CONTAINS
+  [ ("2.01.01.01","2.01.01")
+  ; ("2.01.01.02","2.01.01")
+  ; ("2.01.01.03","2.01.01")
+  ; ("2.01.01.04","2.01.01")
+  ; ("2.01.01.05","2.01.01")
+  ; ("2.01.01.06","2.01.01")
+  ; ("2.01.01.07","2.01.01")
+  ; ("2.01.01.08","2.01.01")
+  ; ("2.01.01.09","2.01.01")
+  ; ("2.01.01.10","2.01.01")
+  ; ("2.01.01.11","2.01.01")
+  ; ("2.01.01.12","2.01.01")
+  ; ("2.01.01.13","2.01.01")
+  ; ("2.01.01.14","2.01.01")
+  ; ("2.01.01.15","2.01.01")
+  ; ("2.01.01.16","2.01.01")
+  ; ("2.01.02.01","2.01.02")
+  ; ("2.01.02.02","2.01.02")
+  ; ("2.01.02.03","2.01.02")
+  ; ("2.01.02.04","2.01.02")
+  ; ("2.01.02.05","2.01.02")
+  ; ("2.01.02.06","2.01.02")
+  ; ("2.01.02.07","2.01.02")
+  ; ("2.01.02.08","2.01.02")
+  ; ("2.01.03.01","2.01.03")
+  ; ("2.01.03.02","2.01.03")
+  ; ("2.02.01.01","2.02.01")
+  ; ("2.02.01.02","2.02.01")
+  ; ("2.02.01.03","2.02.01")
+  ; ("2.02.01.04","2.02.01")
+  ; ("2.02.01.05","2.02.01")
+  ; ("2.02.01.06","2.02.01")
+  ; ("2.02.01.07","2.02.01")
+  ; ("2.02.01.08","2.02.01")
+  ; ("2.02.02.01","2.02.02")
+  ; ("2.02.02.02","2.02.02")
+  ; ("2.02.02.03","2.02.02")
+  ; ("2.02.02.04","2.02.02")
+  ; ("2.02.02.05","2.02.02")
+  ; ("3.01.01.1","3.01.01")
+  ; ("3.01.01.2","3.01.01")
+  ; ("3.01.01.3","3.01.01")
+  ; ("3.01.01.4","3.01.01")
+  ; ("3.01.01.5","3.01.01")
+  ; ("3.01.01.6","3.01.01")
+  ; ("3.01.01.7","3.01.01")
+  ]
+
+POPULATION naam[Dienst*Dienstnaam] CONTAINS
+  [ ("2.01.01.01","maken OER-format")
+  ; ("2.01.01.02","voorstellen wijziging curriculum")
+  ; ("2.01.01.03","aanvragen cursuscode")
+  ; ("2.01.01.04","uitgeven cursuscode")
+  ; ("2.01.01.05","Verwerken wijzigingen OER")
+  ; ("2.01.01.06","oplossen knelpunten OER")
+  ; ("2.01.01.07","besluiten over knelpunten OER")
+  ; ("2.01.01.08","totaal OER maken en checken")
+  ; ("2.01.01.09","ondertekenen concept OER")
+  ; ("2.01.01.10","vaststellen concept OER")
+  ; ("2.01.01.11","beoordelen concept OER")
+  ; ("2.01.01.12","uitvoeringstoets in SRS")
+  ; ("2.01.01.13","beoordeling wijzigingsvoorstellen")
+  ; ("2.01.01.14","vaststellen uitvoerregels")
+  ; ("2.01.01.15","doorvoeren wijzigingsvoorstellen")
+  ; ("2.01.01.16","vaststellen definitieve OER")
+  ; ("2.01.02.01","invoeren definitieve OER")
+  ; ("2.01.02.02","overzetten studiepaden naar nieuwe OER")
+  ; ("2.01.02.03","beoordelen probleemmeldingen")
+  ; ("2.01.02.04","besluiten over aanpassing uitvoerregels of toekenning indiv. overgangs regel")
+  ; ("2.01.02.04","besluiten over aanpassing uitvoerregels of toekenning ind. overgangs regel")
+  ; ("2.01.02.05","vaststellen studiepaden")
+  ; ("2.01.02.06","raadplegen eigen studiepad")
+  ; ("2.01.02.07","raadplegen OER en studiepaden")
+  ; ("2.01.02.08","raadplegen OER en studiepaden")
+  ; ("2.01.03.01","afhandelen vragen")
+  ; ("2.01.03.02","beoordelen meldingen")
+  ; ("2.02.01.01","maken jaarplanning")
+  ; ("2.02.01.02","aanlevering checklist go-beslissing")
+  ; ("2.02.01.03","invulling checklist")
+  ; ("2.02.01.03","regelen voorwaarden")
+  ; ("2.02.01.04","verwerken checklist")
+  ; ("2.02.01.05","opstellen tentamenprofiel")
+  ; ("2.02.01.06","ondertekenen checklist")
+  ; ("2.02.01.07","beoordelen status")
+  ; ("2.02.01.08","nakomen afspraken")
+  ; ("2.02.02.01","autoriseren tekst")
+  ; ("2.02.02.02","overleggen met faculteit")
+  ; ("2.02.02.03","accorderen aanpassingen")
+  ; ("2.02.02.04","invoeren brief in SPIL")
+  ; ("2.02.02.05","publiceren brief op OSC site")
+  ; ("2.02.02.05","brief koppelen aan OU-product")
+  ; ("3.01.01.1","opstellen voorlichtingsplan")
+  ; ("3.01.01.2","opstellen kaderplan reg. voorl.")
+  ; ("3.01.01.3","Ondersteunen opstellen kaderplan")
+  ; ("3.01.01.4","opstellen act. plan reg. voorl.")
+  ; ("3.01.01.5","opstellen act. plan studiecentra")
+  ; ("3.01.01.6","opstellen act. plan SenI")
+  ; ("3.01.01.7","uitvoeren, registreren en evalueren")
+  ]
+
+POPULATION eigenaar[Dienst*Orgaan] CONTAINS
+  [ ("2.01.01.01","afd.hoofd IOD")
+  ; ("2.01.01.02","decaan")
+  ; ("2.01.01.04","afd.hoofd IOD")
+  ; ("2.01.01.05","afd.hoofd IOD")
+  ; ("2.01.01.06","decaan")
+  ; ("2.01.01.08","afd.hoofd IOD")
+  ; ("2.01.01.11","decaan")
+  ; ("2.01.01.12","afd.hoofd IOD")
+  ; ("2.01.01.15","afd.hoofd IOD")
+  ; ("2.01.02.01","afd.hoofd IOD")
+  ; ("2.01.02.02","afd.hoofd IOD")
+  ; ("2.01.02.03","afd.hoofd IOD")
+  ; ("2.01.02.04","decaan")
+  ; ("2.01.02.05","afd.hoofd IOD")
+  ; ("2.01.03.01","afd.hoofd IOD")
+  ; ("2.01.03.02","afd.hoofd IOD")
+  ; ("2.02.01.01","decaan")
+  ; ("2.02.01.02","afd.hoofd IOD")
+  ; ("2.02.01.03","decaan")
+  ; ("2.02.01.04","afd.hoofd IOD")
+  ; ("2.02.01.05","afd.hoofd IOD")
+  ; ("2.02.01.07","afd.hoofd IOD")
+  ; ("2.02.02.01","decaan")
+  ; ("2.02.02.02","afd.hoofd IOD")
+  ; ("2.02.02.03","decaan")
+  ]
+
+POPULATION uitvoerder[Dienst*Orgaan] CONTAINS
+  [ ("2.01.01.01","onderwijsadviseur")
+  ; ("2.01.01.02","decaan")
+  ; ("2.01.01.02","OC")
+  ; ("2.01.01.03","PC")
+  ; ("2.01.01.04","onderwijsadviseur")
+  ; ("2.01.01.05","onderwijsadviseur")
+  ; ("2.01.01.06","decaan")
+  ; ("2.01.01.06","OC")
+  ; ("2.01.01.07","CVB")
+  ; ("2.01.01.08","onderwijsadviseur")
+  ; ("2.01.01.09","decaan")
+  ; ("2.01.01.10","CVB")
+  ; ("2.01.01.11","Studentenraad")
+  ; ("2.01.01.11","Facultaire toetsingscommissie")
+  ; ("2.01.01.12","onderwijsadviseur")
+  ; ("2.01.01.13","decaan")
+  ; ("2.01.01.14","decaan")
+  ; ("2.01.01.15","onderwijsadviseur")
+  ; ("2.01.01.16","CVB")
+  ; ("2.01.02.01","onderwijsadviseur")
+  ; ("2.01.02.02","onderwijsadviseur")
+  ; ("2.01.02.03","onderwijsadviseur")
+  ; ("2.01.02.04","onderwijscoordinator")
+  ; ("2.01.02.04","Facultaire toetsingscommissie")
+  ; ("2.01.02.05","onderwijsadviseur")
+  ; ("2.01.02.06","student")
+  ; ("2.01.02.07","OSC")
+  ; ("2.01.02.08","faculteit")
+  ; ("2.01.03.01","SenI")
+  ; ("2.01.03.02","onderwijsadviseur")
+  ; ("2.02.01.01","projectcoordinator")
+  ; ("2.02.01.02","onderwijsadviseur")
+  ; ("2.02.01.03","onderwijscoordinator")
+  ; ("2.02.01.04","onderwijsadviseur")
+  ; ("2.02.01.05","sr. Medewerker TenC")
+  ; ("2.02.01.06","decaan")
+  ; ("2.02.01.07","sector man. O&E")
+  ; ("2.02.01.08","decaan")
+  ; ("2.02.02.01","onderwijscoordinator")
+  ; ("2.02.02.01","projectcoordinator")
+  ; ("2.02.02.01","redacteur")
+  ; ("2.02.02.02","onderwijsadviseur")
+  ; ("2.02.02.03","onderwijscoordinator")
+  ; ("2.02.02.03","projectcoordinator")
+  ; ("2.02.02.03","redacteur")
+  ; ("2.02.02.04","applicatiebeheerder")
+  ; ("2.02.02.05","applicatiebeheerder")
+  ; ("2.02.02.05","facilitair bedrijf")
+  ; ("3.01.01.1","Voorlichting")
+  ; ("3.01.01.2","Voorlichting")
+  ; ("3.01.01.2","SenI")
+  ; ("3.01.01.2","Studiecentrum")
+  ; ("3.01.01.3","Marketing")
+  ; ("3.01.01.4","Voorlichting")
+  ; ("3.01.01.4","RV")
+  ; ("3.01.01.5","RV")
+  ; ("3.01.01.6","RV")
+  ; ("3.01.01.6","hoofd SenI")
+  ; ("3.01.01.7","Voorlichting")
+  ; ("3.01.01.7","Studiecentrum")
+  ; ("3.01.01.7","SenI")
+  ]
+
+POPULATION omschrijving[Dienst*Dienstomschrijving] CONTAINS
+  [ ("2.01.01.01","opstellen en aanleveren elektronisch formats per faculteit op basis van de huidige (oude) OER en uitvoeringsregelingen, waarin reeds bekende wijzigingen zijn gemarkeerd; inclusief instructie voor het verwerken van de wijzigingsvoorstellen door de faculteiten")
+  ; ("2.01.01.02","ondersteuning aan de faculteiten bij het opstellen van de uitvoeringsregelingen n.a.v. de wijzigingsvoorstellen in het curriculum; daarbij evt. knelpunten signaleren en voorstellen voor aanpassing doen bij niet sluitende regels (zowel tbv automatische verwerking in SRS als tbv eenduidige voorlichting/advisering aan studenten)")
+  ; ("2.01.01.03","uitgifte cursuscodes voor nieuwe en gereviseerde cursussen; bijbehorend beheer cursuscodelijsten")
+  ; ("2.01.01.05","OER-voorstellen van faculteiten combineren tot een totaaloverzicht met alle OER-wijzigingsvoorstellen over alle opleidingen heen van cursussen die uit het aanbod gaan, nieuwe en gereviseerde cursussen. Signaleren knelpunten en in overleg met faculteiten oplossingen uitwerken. OER naar faculteiten en naar CvB sturen.")
+  ; ("2.01.01.12","uitvoeringstoets in SRS: invoer mutatieregels, signaleren knelpunten bij automatische verwerking OER-wijzigingen in studiepaden en in overleg met faculteiten oplossen; zonodig uitvoeringsregels aanpassen.")
+  ; ("2.01.01.15","evt. wijzigingen van faculteiten/CvB doorvoeren na reacties van Studentenraad en Facultaire  toetsingscommissies.")
+  ; ("2.01.02.01","Invoeren vastgestelde nieuwe OER in SRS via mutatieregels op bestaande OER (opbouw linkerkant studiepad).")
+  ; ("2.01.02.02","Omzetting studieresultaten-afspraken oude OER naar nieuwe OER.")
+  ; ("2.01.02.03","Analyse probleemmeldingen (niet automatisch verwerkt e.d.) en op basis daarvan advisering  aan de faculteiten bij evt. benodigde/mogelijke  aanpassing van de uitvoeringsregelingen indien automatische  inbreng van studieresultaten niet mogelijk is. Inclusief invoer nieuwe regel in SRS.")
+  ; ("2.01.02.04","Benodigde handmatige aanpassing studiepaden in SRS, zonodig met verzending schriftelijke individuele regeling (IOR)")
+  ; ("2.01.02.06","Aanvulling-aanpassing FAQ studiepaden")
+  ; ("2.02.02.02","Beoordeling aangeleverde brieven op OSC-/ uitvoeringszaken en overleg met-advies aan contactpersoon faculteit")
+  ; ("2.02.02.04","Invoer tekst in SPIL conform format en koppeling aan cursuscode")
+  ; ("2.02.02.05","Publicatie in omloop zijnde LP-brieven voor interne raadpleging")
+  ; ("3.01.01.4","RV=Regionale voorlichter ?")
+  ]
+
+POPULATION input[Dienst*Product] CONTAINS
+  [ ("2.01.01.02","OER-format")
+  ; ("2.01.01.03","aanvraag")
+  ; ("2.01.01.05","concept-OER")
+  ; ("2.01.01.10","concept-OER")
+  ; ("2.01.01.16","eind-concept-OER")
+  ; ("2.01.03.01","vraag")
+  ; ("2.01.03.02","melding")
+  ; ("2.02.01.01","OER")
+  ; ("2.02.01.02","planning beschikbaarheid cursus")
+  ; ("2.02.01.03","checklist go-beslissing")
+  ; ("2.02.01.03","ingevulde checklist go-beslissing")
+  ; ("2.02.01.04","ingevulde checklist go-beslissing")
+  ; ("2.02.01.04","cursusbeschrijving")
+  ; ("2.02.01.05","tentamenprofiel")
+  ; ("2.02.01.06","digitale checklist")
+  ; ("2.02.01.06","LP-brief")
+  ; ("2.02.01.06","cursusbeschrijving")
+  ; ("2.02.01.06","tentamenprofiel")
+  ; ("2.02.01.07","opdracht voor \"go\"")
+  ; ("2.02.01.07","no-go-beslissing")
+  ; ("2.02.01.08","no-go-beslissing")
+  ; ("2.02.02.01","go-beslissing")
+  ; ("2.02.02.01","wijziging o.v.v. examinator")
+  ; ("2.02.02.02","aangepaste tekst")
+  ; ("2.02.02.03","aangepaste tekst")
+  ; ("2.02.02.04","vastgestelde tekst")
+  ; ("2.02.02.05","vastgestelde tekst")
+  ; ("2.02.02.05","info van OSC")
+  ; ("3.01.01.1","beleiduitg. punten CvB")
+  ; ("3.01.01.1","marketingplan")
+  ; ("3.01.01.1","opdracht faculteit")
+  ; ("3.01.01.2","input marketing")
+  ; ("3.01.01.2","bijdrage faculteit")
+  ; ("3.01.01.2","voorlichtingsplan")
+  ; ("3.01.01.4","kaderplan")
+  ; ("3.01.01.4","bijdrage faculteit")
+  ; ("3.01.01.5","act. plan regionale voorl.")
+  ; ("3.01.01.5","bijdrage faculteit")
+  ; ("3.01.01.6","act. plan studiecentra")
+  ; ("3.01.01.6","bijdrage faculteit")
+  ; ("3.01.01.7","act. plan SenI")
+  ; ("3.01.01.7","bijdrage faculteit")
+  ]
+
+POPULATION output[Dienst*Product] CONTAINS
+  [ ("2.01.01.01","OER-format")
+  ; ("2.01.01.02","concept-OER")
+  ; ("2.01.01.03","cursuscode")
+  ; ("2.01.01.10","vastgesteld concept-OER")
+  ; ("2.01.01.16","definitief-OER")
+  ; ("2.01.03.01","antwoord")
+  ; ("2.01.03.02","aangepast studiepad")
+  ; ("2.02.01.01","planning beschikbaarheid cursus")
+  ; ("2.02.01.02","checklist go-beslissing")
+  ; ("2.02.01.03","ingevulde checklist go-beslissing")
+  ; ("2.02.01.03","tentamenprofiel")
+  ; ("2.02.01.03","LP-brief")
+  ; ("2.02.01.03","cursusbeschrijving")
+  ; ("2.02.01.04","digitale checklist")
+  ; ("2.02.01.04","LP-brief")
+  ; ("2.02.01.04","cursusbeschrijving")
+  ; ("2.02.01.05","tentamenprofiel")
+  ; ("2.02.01.06","opdracht voor \"go\"")
+  ; ("2.02.01.07","go-beslissing")
+  ; ("2.02.01.07","no-go-beslissing")
+  ; ("2.02.01.08","no-go-beslissing")
+  ; ("2.02.02.01","aangepaste tekst")
+  ; ("2.02.02.02","vastgestelde tekst")
+  ; ("2.02.02.03","vastgestelde tekst")
+  ; ("2.02.02.04","brief in SPIL")
+  ; ("2.02.02.05","brief op OSC site")
+  ; ("2.02.02.05","OU-product")
+  ; ("3.01.01.2","kaderplan reg. voorl.")
+  ; ("3.01.01.3","input voor kaderplan")
+  ]
+
+POPULATION gebruikt[Dienst*Gegevensverzameling] CONTAINS
+  [ ("2.01.01.01","OER")
+  ; ("2.01.01.02","OER")
+  ; ("2.01.01.05","OER")
+  ; ("2.01.01.06","OER")
+  ; ("2.01.01.07","OER")
+  ; ("2.01.01.08","OER")
+  ; ("2.01.01.09","OER")
+  ; ("2.01.01.10","OER")
+  ; ("2.01.01.11","OER")
+  ; ("2.01.01.12","OER")
+  ; ("2.01.01.13","OER")
+  ; ("2.01.01.14","OER")
+  ; ("2.01.01.15","OER")
+  ; ("2.01.01.16","OER")
+  ; ("2.01.02.01","OER")
+  ; ("2.01.02.02","OER")
+  ; ("2.01.02.03","OER")
+  ; ("2.01.02.04","OER")
+  ]
+
+POPULATION beleid[Proces*Beleidsuitgangspunt] CONTAINS
+  [ ("2.01.01","certificering en diplomering geschiedt op basis van vastgestelde OER")
+  ; ("2.01.01","beschikbaarheid van in de OER opgenomen cursussen is gegarandeerd")
+  ; ("2.01.01","CvB kan eisen stellen aan aantal modulen in exploitatie")
+  ; ("2.01.01","stabiliteit tijdens geldigheid OER en consistente overgangsbepalingen bij opeenvolgende OER-en")
+  ; ("2.01.01","uniformiteit over de faculteiten heen (bijv., opbouw, naamgeving)")
+  ; ("2.01.01","vastgesteld tijdpad")
+  ; ("2.01.01","OER is brondocument voor alle logistiek in exploitatie en voorlichting/advisering")
+  ; ("2.01.02","Definitieve invoer in SRS  op basis van vastgestelde, nieuwe OER")
+  ; ("2.01.02","Handmatige aanpassing studiepaden door onderwijsadviseur op basis van vastgestelde uitvoeringsregels c.q. binnen vastgestelde aanvullende afspraken met FTC")
+  ; ("2.01.02","Streven alle studiepaden op basis van de nieuwe OER (met ingangsdatum 1 september) per 1 juni daaraan voorafgaand vast te stellen en online beschikbaar te stellen aan studenten tbv bestelinformatie nieuwe academisch jaar (en tevens aan de interne OUNL-organisatie)")
+  ; ("2.01.03","Handmatige aanpassing studiepaden door onderwijsadviseur op basis van vastgestelde uitvoeringsregels c.q. binnen vastgestelde aanvullende afspraken met FTC")
+  ; ("2.01.03","Individuele regelingen ter accordering door FTC")
+  ; ("2.01.03","Dag/-weekverwerking om de studiepaden steeds zo snel mogelijk uptodate online beschikbaar te stellen aan studenten en interne organisatie")
+  ; ("2.02.01","Vastgestelde OER")
+  ; ("2.02.01","Heldere verantwoordelijkhedenverdeling / rollen  faculteiten \150 FB - OSC")
+  ; ("2.02.01","CvB beleid inzake beschikbaarheid cursusmateriaal voor studenten")
+  ; ("2.02.02","Op formulier go-beslissing wordt aangegeven of cursusspecifieke LP-brief van toepassing is")
+  ; ("2.02.02","Faculteit is verantwoordelijk voor de inhoud van de brief")
+  ; ("2.02.02","Brief gaat standaard mee met elke inschrijving op de betreffende cursuscode")
+  ; ("2.02.02","Brief is opgemaakt volgens bestaand, vastgesteld format")
+  ; ("3.01.01","CVB/Marketing/voorlichtingsstrategie")
+  ; ("3.01.01","Digitalisering")
+  ; ("3.01.01","Marketing/voorlichtingsstrategie")
+  ; ("3.01.01","WVR planning in de regio")
+  ; ("3.01.01","Bijdrage leveren aan werving nieuwe studenten")
+  ; ("3.01.01","Bijdrage aan binding bestaande studenten")
+  ; ("3.01.02","Digitalisering")
+  ; ("3.01.02","Marketing/voorlichtingsstrategie")
+  ; ("3.01.02","Bijdrage leveren aan werving nieuwe studenten")
+  ; ("3.01.02","Bijdrage aan binding bestaande studenten")
+  ]
+
+POPULATION applicatie[Product*Systeem] CONTAINS
+  [ ("OER-format","MS-word")
+  ; ("concept-OER","MS-word")
+  ; ("vastgesteld-OER","MS-word")
+  ; ("LP-brief","SPIL")
+  ; ("tentamenprofiel","SPIL")
+  ; ("tentamenprofiel","SYS5")
+  ; ("tentamenprofiel","Questionmark")
+  ; ("master-folder","MS-word")
+  ; ("leertaak","Sharepoint")
+  ]
+
+POPULATION opslag[Product*Systeem] CONTAINS
+  [ ("concept-OER","SRS")
+  ; ("vastgesteld-OER","SRS")
+  ; ("tentamenprofiel","SPIL")
+  ; ("tentamenprofiel","SYS5")
+  ; ("tentamenprofiel","Questionmark")
+  ; ("master-folder","MAIS")
+  ; ("leertaak","OpenER")
+  ; ("leertaak","TISO")
+  ]
+
+POPULATION deel[Product*Product] CONTAINS
+  [ ("leertaak","cursus")
+  ]
+
+POPULATION component_van[Product*Product] CONTAINS
+  [ ("master-folder","informatiepakket")
+  ]
+
+POPULATION categorie[Product*Productcategorie] CONTAINS
+  [ ("OER-format","intern document")
+  ; ("master-folder","informatiemateriaal")
+  ; ("leertaak","cursusmateriaal")
+  ]
+
+POPULATION in[Gegevensverzameling*Systeem] CONTAINS
+  [ ("Abonnementen","SPIL")
+  ; ("Afdelingen","SPIL")
+  ; ("Afspraken","SPIL")
+  ; ("Afstudeerrichtingen","SPIL")
+  ; ("Akkommodaties","SPIL")
+  ; ("Antwoordcoupons","SPIL")
+  ; ("Arbeidsmarktposities","SPIL")
+  ; ("Artikelen","SPIL")
+  ; ("Bedrijfssektoren","SPIL")
+  ; ("Belangstellenden","SPIL")
+  ; ("Belangstellingsbronnen","SPIL")
+  ; ("Belemmeringen","SPIL")
+  ; ("Beroepsgroepen","SPIL")
+  ; ("Bestellingen","SPIL")
+  ; ("Betaaldewerkkringen","SPIL")
+  ; ("Betalingen","SPIL")
+  ; ("Brieven","SPIL")
+  ; ("Dagafschriften","SPIL")
+  ; ("Diensttarieven","SPIL")
+  ; ("Diplomaprogrammas","SPIL")
+  ; ("Directoraten","SPIL")
+  ; ("Doorstroomregelingen","SPIL")
+  ; ("ELO autorisaties","SPIL")
+  ; ("ELO begeleiders","SPIL")
+  ; ("ELO extstudenten","SPIL")
+  ; ("ELO groepen","SPIL")
+  ; ("ELO rollen","SPIL")
+  ; ("Etiketten","SPIL")
+  ; ("Fasen","SPIL")
+  ; ("Formulieren","SPIL")
+  ; ("Getuigschriftsoorten","SPIL")
+  ; ("Getuigschriften","SPIL")
+  ; ("Hbowoinstellingen","SPIL")
+  ; ("Hernieuwingtentamenrechten","SPIL")
+  ; ("Hulpmiddelen","SPIL")
+  ; ("Incassoopdrachten","SPIL")
+  ; ("Incassoschrijven","SPIL")
+  ; ("Individueleafspraaksoorten","SPIL")
+  ; ("Individueleafspraken","SPIL")
+  ; ("Inschrijvingsvoorwaarden","SPIL")
+  ; ("Inschrijvingsvormen","SPIL")
+  ; ("KCOU beschikkingen","SPIL")
+  ; ("KCOU kortingen","SPIL")
+  ; ("Klantgroepen","SPIL")
+  ; ("Kortingsgroepen","SPIL")
+  ; ("Kortingsstaffels","SPIL")
+  ; ("Cursusdeelnamen","SPIL")
+  ; ("Cursusprijzen","SPIL")
+  ; ("Cursustoetsen","SPIL")
+  ; ("Cursusverlengingen","SPIL")
+  ; ("Cursussen","SPIL")
+  ; ("Cursustoetskorrektoren","SPIL")
+  ; ("Landen","SPIL")
+  ; ("Leerstofgebieden","SPIL")
+  ; ("Leverregels","SPIL")
+  ; ("Leveranciers","SPIL")
+  ; ("Leveringen","SPIL")
+  ; ("Medewerkers","SPIL")
+  ; ("Mutatiesoorten","SPIL")
+  ; ("Notities","SPIL")
+  ; ("Onderwijsdeelnamen","SPIL")
+  ; ("Onderwijscursussen","SPIL")
+  ; ("Onderwijsproducten","SPIL")
+  ; ("Onderwijsprogrammas","SPIL")
+  ; ("Onderwijsvormen","SPIL")
+  ; ("Opleidingen","SPIL")
+  ; ("Opleidingssoorten","SPIL")
+  ; ("OU klanten","SPIL")
+  ; ("OU producten","SPIL")
+  ; ("Persoonlijkeomstandigheden","SPIL")
+  ; ("Prestatiebonusverzilverd","SPIL")
+  ; ("Programmaprijzen","SPIL")
+  ; ("Redeneneinde","SPIL")
+  ; ("Redenenou","SPIL")
+  ; ("Relaties","SPIL")
+  ; ("Studentkaarten","SPIL")
+  ; ("Studiecentra","SPIL")
+  ; ("Tentamens","SPIL")
+  ; ("Toetsdeelnames","SPIL")
+  ; ("Toetshulpmiddelen","SPIL")
+  ; ("Toetssoorten","SPIL")
+  ; ("Toetswijzen","SPIL")
+  ; ("Vakgebieden","SPIL")
+  ; ("Verzendopdrachten","SPIL")
+  ; ("Verzendgroepen","SPIL")
+  ; ("Voorraadmutaties KVA","SPIL")
+  ; ("Voorraadmutaties MVA","SPIL")
+  ; ("Vrijstellingsbewijsstukken","SPIL")
+  ; ("Vrijstellingsbewijsstuksoort","SPIL")
+  ; ("Vrijstellingszaken","SPIL")
+  ; ("VRS producten","SPIL")
+  ; ("VTI AFG afstudeerrichtingen","SPIL")
+  ; ("VTI afgerondevooropleidingen","SPIL")
+  ; ("VTI leerstofgebieden","SPIL")
+  ; ("VTI soorten","SPIL")
+  ; ("VTI studieprogrammas","SPIL")
+  ; ("VTI vooropleidingen","SPIL")
+  ; ("Woonleefomstandigheden","SPIL")
+  ; ("TSS analysecasus","SYS5")
+  ; ("TSS analyse TSSOU","SYS5")
+  ; ("TSS clusters","SYS5")
+  ; ("TSS cursussen","SYS5")
+  ; ("TSS cursusversies","SYS5")
+  ; ("TSS groepdeelnames","SYS5")
+  ; ("TSS hulpmiddelen","SYS5")
+  ; ("TSS items","SYS5")
+  ; ("TSS nietwerkdagen","SYS5")
+  ; ("TSS opmerkingen","SYS5")
+  ; ("TSS sessiedeelnames","SYS5")
+  ; ("TSS sessies","SYS5")
+  ; ("TSS studenten","SYS5")
+  ; ("TSS studiecentra","SYS5")
+  ; ("TSS tentamenhulpmiddelen","SYS5")
+  ; ("TSS tentamens","SYS5")
+  ; ("TSS tentamenvragen","SYS5")
+  ; ("TSS voorzieningen","SYS5")
+  ; ("Aanvragers","KUBUS")
+  ; ("Afwijsgronden","KUBUS")
+  ; ("Bewijsstukken","KUBUS")
+  ; ("Bijstandcategorien","KUBUS")
+  ; ("IBG transacties","KUBUS")
+  ; ("KCOU aanvragen","KUBUS")
+  ; ("KCOU percentages","KUBUS")
+  ; ("KCOU reglementen","KUBUS")
+  ; ("Landen","KUBUS")
+  ; ("Maandinkomens","KUBUS")
+  ; ("Normbedragen","KUBUS")
+  ; ("Studiejaren","KUBUS")
+  ; ("Afwijkende inbreng","SRS")
+  ; ("Bepalingen","SRS")
+  ; ("Beschikkingen","SRS")
+  ; ("Cursusstatussen","SRS")
+  ; ("Cursussen","SRS")
+  ; ("Doorstroomprogrammainhoud","SRS")
+  ; ("Doorstroomprogrammas","SRS")
+  ; ("Faculteitmedewerkers","SRS")
+  ; ("Faculteiten","SRS")
+  ; ("Fasen","SRS")
+  ; ("FB vrijstellingen","SRS")
+  ; ("FB vrijstellingszaken","SRS")
+  ; ("Getuigschriftfouten","SRS")
+  ; ("Getuigschriftresultaten","SRS")
+  ; ("Getuigschriftrubrieken","SRS")
+  ; ("Getuigschriftsoorten","SRS")
+  ; ("Getuigschriftvarinhoud","SRS")
+  ; ("Getuigschriftvariabelen","SRS")
+  ; ("Getuigschriften","SRS")
+  ; ("Inbrengsoorten","SRS")
+  ; ("Individueleafspraaksoorten","SRS")
+  ; ("Individueleafspraken","SRS")
+  ; ("Inschrijvingverzoeken","SRS")
+  ; ("Landen","SRS")
+  ; ("Medewerkers","SRS")
+  ; ("OER","SRS")
+  ; ("OER implementatiefouten","SRS")
+  ; ("OER implementaties","SRS")
+  ; ("OER mutatieregels","SRS")
+  ; ("OER mutaties","SRS")
+  ; ("Oeropleidingen","SRS")
+  ; ("Omboekcategorien","SRS")
+  ; ("Omboekdossiers","SRS")
+  ; ("Omboekopleidingen","SRS")
+  ; ("Omboekvoorstellen","SRS")
+  ; ("Onderwijsclusters","SRS")
+  ; ("Onderwijseenheden","SRS")
+  ; ("Opleidingclusters","SRS")
+  ; ("Opleidingdoorstroom","SRS")
+  ; ("Opleidingfasen","SRS")
+  ; ("Opleidinggetuigschriften","SRS")
+  ; ("Opleidingonderdelen","SRS")
+  ; ("Opleidingsoorten","SRS")
+  ; ("Opleidingspecialisaties","SRS")
+  ; ("Opleidingsynoniemen","SRS")
+  ; ("Opleidingen","SRS")
+  ; ("Resultaatsoorten","SRS")
+  ; ("Specialisatiesoorten","SRS")
+  ; ("Studentbepalingen","SRS")
+  ; ("Studentoeropleidingen","SRS")
+  ; ("Studentonderwijsclusters","SRS")
+  ; ("Studentonderwijseenheden","SRS")
+  ; ("Studentopleidingfasen","SRS")
+  ; ("Studentopleidingonderdelen","SRS")
+  ; ("Studentopleidingspecs","SRS")
+  ; ("Studentopleidingen","SRS")
+  ; ("Studentuitvoeringen","SRS")
+  ; ("Studenten","SRS")
+  ; ("Studieresultaatinbreng","SRS")
+  ; ("Studieresultaten","SRS")
+  ; ("Studiestatusrechten","SRS")
+  ; ("Studiestatussen","SRS")
+  ; ("Uitvoeringen","SRS")
+  ; ("Verzoeksoorten","SRS")
+  ; ("Vooropleidinginformatie","SRS")
+  ; ("Vooropleidingsynoniemen","SRS")
+  ; ("Vooropleidingen","SRS")
+  ; ("Voorwaarden","SRS")
+  ; ("Vrijstonderwijsclusters","SRS")
+  ; ("Vrijstonderwijseenheden","SRS")
+  ; ("Vrijstellingen","SRS")
+  ; ("Afstudeerrichtingen","CUPIDO")
+  ; ("CONV cursussen","CUPIDO")
+  ; ("CUPIDO domains","CUPIDO")
+  ; ("Cursusaanbod","CUPIDO")
+  ; ("Cursuspublicatiemedia","CUPIDO")
+  ; ("Cursuspublicatieobjecten","CUPIDO")
+  ; ("Cursusstatuspublicaties","CUPIDO")
+  ; ("Cursusstatussen","CUPIDO")
+  ; ("Cursustoetsen","CUPIDO")
+  ; ("Cursusvervangingonderdelen","CUPIDO")
+  ; ("Cursusvervangingen","CUPIDO")
+  ; ("Cursussen","CUPIDO")
+  ; ("Fasen","CUPIDO")
+  ; ("Inschrijvingsgroepen","CUPIDO")
+  ; ("Inschrijvingsgroeppublicaties","CUPIDO")
+  ; ("Interessegebiedschemas","CUPIDO")
+  ; ("Interessegebieden","CUPIDO")
+  ; ("Leerstofgebieden","CUPIDO")
+  ; ("Onderwerpen","CUPIDO")
+  ; ("Opleidingen","CUPIDO")
+  ; ("Opleidingsfasen","CUPIDO")
+  ; ("Opleidingsonderdelen","CUPIDO")
+  ; ("Opleidingsschemas","CUPIDO")
+  ; ("Publicatiemedia","CUPIDO")
+  ; ("Publicatiemediumobjecten","CUPIDO")
+  ; ("Publicatieobjecten","CUPIDO")
+  ; ("Rubrieken","CUPIDO")
+  ; ("Systeemparameters","CUPIDO")
+  ; ("Tekstgeneratiemodules","CUPIDO")
+  ; ("Tentamenvormen","CUPIDO")
+  ; ("Tentamens","CUPIDO")
+  ; ("Vervangendecursussen","CUPIDO")
+  ]
+
+POPULATION concept[Gegevensverzameling*Concept] CONTAINS
+  [ ("Abonnementen","SPIL")
+  ; ("Afdelingen","SPIL")
+  ; ("Afspraken","SPIL")
+  ; ("Afstudeerrichtingen","SPIL")
+  ; ("Akkommodaties","SPIL")
+  ; ("Antwoordcoupons","SPIL")
+  ; ("Arbeidsmarktposities","SPIL")
+  ; ("Artikelen","SPIL")
+  ; ("Bedrijfssektoren","SPIL")
+  ; ("Belangstellenden","SPIL")
+  ; ("Belangstellingsbronnen","SPIL")
+  ; ("Belemmeringen","SPIL")
+  ; ("Beroepsgroepen","SPIL")
+  ; ("Bestellingen","SPIL")
+  ; ("Betaaldewerkkringen","SPIL")
+  ; ("Betalingen","SPIL")
+  ; ("Brieven","SPIL")
+  ; ("Dagafschriften","SPIL")
+  ; ("Diensttarieven","SPIL")
+  ; ("Diplomaprogrammas","SPIL")
+  ; ("Directoraten","SPIL")
+  ; ("Doorstroomregelingen","SPIL")
+  ; ("ELO autorisaties","SPIL")
+  ; ("ELO begeleiders","SPIL")
+  ; ("ELO extstudenten","SPIL")
+  ; ("ELO groepen","SPIL")
+  ; ("ELO rollen","SPIL")
+  ; ("Etiketten","SPIL")
+  ; ("Fasen","SPIL")
+  ; ("Formulieren","SPIL")
+  ; ("Getuigschriftsoorten","SPIL")
+  ; ("Getuigschriften","SPIL")
+  ; ("Hbowoinstellingen","SPIL")
+  ; ("Hernieuwingtentamenrechten","SPIL")
+  ; ("Hulpmiddelen","SPIL")
+  ; ("Incassoopdrachten","SPIL")
+  ; ("Incassoschrijven","SPIL")
+  ; ("Individueleafspraaksoorten","SPIL")
+  ; ("Individueleafspraken","SPIL")
+  ; ("Inschrijvingsvoorwaarden","SPIL")
+  ; ("Inschrijvingsvormen","SPIL")
+  ; ("KCOU beschikkingen","SPIL")
+  ; ("KCOU kortingen","SPIL")
+  ; ("Klantgroepen","SPIL")
+  ; ("Kortingsgroepen","SPIL")
+  ; ("Kortingsstaffels","SPIL")
+  ; ("Cursusdeelnamen","SPIL")
+  ; ("Cursusprijzen","SPIL")
+  ; ("Cursustoetsen","SPIL")
+  ; ("Cursusverlengingen","SPIL")
+  ; ("Cursussen","SPIL")
+  ; ("Cursustoetskorrektoren","SPIL")
+  ; ("Landen","SPIL")
+  ; ("Leerstofgebieden","SPIL")
+  ; ("Leverregels","SPIL")
+  ; ("Leveranciers","SPIL")
+  ; ("Leveringen","SPIL")
+  ; ("Medewerkers","SPIL")
+  ; ("Mutatiesoorten","SPIL")
+  ; ("Notities","SPIL")
+  ; ("Onderwijsdeelnamen","SPIL")
+  ; ("Onderwijscursussen","SPIL")
+  ; ("Onderwijsproducten","SPIL")
+  ; ("Onderwijsprogrammas","SPIL")
+  ; ("Onderwijsvormen","SPIL")
+  ; ("Opleidingen","SPIL")
+  ; ("Opleidingssoorten","SPIL")
+  ; ("OU klanten","SPIL")
+  ; ("OU producten","SPIL")
+  ; ("Persoonlijkeomstandigheden","SPIL")
+  ; ("Prestatiebonusverzilverd","SPIL")
+  ; ("Programmaprijzen","SPIL")
+  ; ("Redeneneinde","SPIL")
+  ; ("Redenenou","SPIL")
+  ; ("Relaties","SPIL")
+  ; ("Studentkaarten","SPIL")
+  ; ("Studiecentra","SPIL")
+  ; ("Tentamens","SPIL")
+  ; ("Toetsdeelnames","SPIL")
+  ; ("Toetshulpmiddelen","SPIL")
+  ; ("Toetssoorten","SPIL")
+  ; ("Toetswijzen","SPIL")
+  ; ("Vakgebieden","SPIL")
+  ; ("Verzendopdrachten","SPIL")
+  ; ("Verzendgroepen","SPIL")
+  ; ("Voorraadmutaties KVA","SPIL")
+  ; ("Voorraadmutaties MVA","SPIL")
+  ; ("Vrijstellingsbewijsstukken","SPIL")
+  ; ("Vrijstellingsbewijsstuksoort","SPIL")
+  ; ("Vrijstellingszaken","SPIL")
+  ; ("VRS producten","SPIL")
+  ; ("VTI AFG afstudeerrichtingen","SPIL")
+  ; ("VTI afgerondevooropleidingen","SPIL")
+  ; ("VTI leerstofgebieden","SPIL")
+  ; ("VTI soorten","SPIL")
+  ; ("VTI studieprogrammas","SPIL")
+  ; ("VTI vooropleidingen","SPIL")
+  ; ("Woonleefomstandigheden","SPIL")
+  ; ("TSS analysecasus","SYS5")
+  ; ("TSS analyse TSSOU","SYS5")
+  ; ("TSS clusters","SYS5")
+  ; ("TSS cursussen","SYS5")
+  ; ("TSS cursusversies","SYS5")
+  ; ("TSS groepdeelnames","SYS5")
+  ; ("TSS hulpmiddelen","SYS5")
+  ; ("TSS items","SYS5")
+  ; ("TSS nietwerkdagen","SYS5")
+  ; ("TSS opmerkingen","SYS5")
+  ; ("TSS sessiedeelnames","SYS5")
+  ; ("TSS sessies","SYS5")
+  ; ("TSS studenten","SYS5")
+  ; ("TSS studiecentra","SYS5")
+  ; ("TSS tentamenhulpmiddelen","SYS5")
+  ; ("TSS tentamens","SYS5")
+  ; ("TSS tentamenvragen","SYS5")
+  ; ("TSS voorzieningen","SYS5")
+  ; ("Aanvragers","KUBUS")
+  ; ("Afwijsgronden","KUBUS")
+  ; ("Bewijsstukken","KUBUS")
+  ; ("Bijstandcategorien","KUBUS")
+  ; ("IBG transacties","KUBUS")
+  ; ("KCOU aanvragen","KUBUS")
+  ; ("KCOU percentages","KUBUS")
+  ; ("KCOU reglementen","KUBUS")
+  ; ("Landen","KUBUS")
+  ; ("Maandinkomens","KUBUS")
+  ; ("Normbedragen","KUBUS")
+  ; ("Studiejaren","KUBUS")
+  ; ("Afwijkende inbreng","SRS")
+  ; ("Bepalingen","SRS")
+  ; ("Beschikkingen","SRS")
+  ; ("Cursusstatussen","SRS")
+  ; ("Cursussen","SRS")
+  ; ("Doorstroomprogrammainhoud","SRS")
+  ; ("Doorstroomprogrammas","SRS")
+  ; ("Faculteitmedewerkers","SRS")
+  ; ("Faculteiten","SRS")
+  ; ("Fasen","SRS")
+  ; ("FB vrijstellingen","SRS")
+  ; ("FB vrijstellingszaken","SRS")
+  ; ("Getuigschriftfouten","SRS")
+  ; ("Getuigschriftresultaten","SRS")
+  ; ("Getuigschriftrubrieken","SRS")
+  ; ("Getuigschriftsoorten","SRS")
+  ; ("Getuigschriftvarinhoud","SRS")
+  ; ("Getuigschriftvariabelen","SRS")
+  ; ("Getuigschriften","SRS")
+  ; ("Inbrengsoorten","SRS")
+  ; ("Individueleafspraaksoorten","SRS")
+  ; ("Individueleafspraken","SRS")
+  ; ("Inschrijvingverzoeken","SRS")
+  ; ("Landen","SRS")
+  ; ("Medewerkers","SRS")
+  ; ("OER","SRS")
+  ; ("OER implementatiefouten","SRS")
+  ; ("OER implementaties","SRS")
+  ; ("OER mutatieregels","SRS")
+  ; ("OER mutaties","SRS")
+  ; ("Oeropleidingen","SRS")
+  ; ("Omboekcategorien","SRS")
+  ; ("Omboekdossiers","SRS")
+  ; ("Omboekopleidingen","SRS")
+  ; ("Omboekvoorstellen","SRS")
+  ; ("Onderwijsclusters","SRS")
+  ; ("Onderwijseenheden","SRS")
+  ; ("Opleidingclusters","SRS")
+  ; ("Opleidingdoorstroom","SRS")
+  ; ("Opleidingfasen","SRS")
+  ; ("Opleidinggetuigschriften","SRS")
+  ; ("Opleidingonderdelen","SRS")
+  ; ("Opleidingsoorten","SRS")
+  ; ("Opleidingspecialisaties","SRS")
+  ; ("Opleidingsynoniemen","SRS")
+  ; ("Opleidingen","SRS")
+  ; ("Resultaatsoorten","SRS")
+  ; ("Specialisatiesoorten","SRS")
+  ; ("Studentbepalingen","SRS")
+  ; ("Studentoeropleidingen","SRS")
+  ; ("Studentonderwijsclusters","SRS")
+  ; ("Studentonderwijseenheden","SRS")
+  ; ("Studentopleidingfasen","SRS")
+  ; ("Studentopleidingonderdelen","SRS")
+  ; ("Studentopleidingspecs","SRS")
+  ; ("Studentopleidingen","SRS")
+  ; ("Studentuitvoeringen","SRS")
+  ; ("Studenten","SRS")
+  ; ("Studieresultaatinbreng","SRS")
+  ; ("Studieresultaten","SRS")
+  ; ("Studiestatusrechten","SRS")
+  ; ("Studiestatussen","SRS")
+  ; ("Uitvoeringen","SRS")
+  ; ("Verzoeksoorten","SRS")
+  ; ("Vooropleidinginformatie","SRS")
+  ; ("Vooropleidingsynoniemen","SRS")
+  ; ("Vooropleidingen","SRS")
+  ; ("Voorwaarden","SRS")
+  ; ("Vrijstonderwijsclusters","SRS")
+  ; ("Vrijstonderwijseenheden","SRS")
+  ; ("Vrijstellingen","SRS")
+  ; ("Afstudeerrichtingen","CUPIDO")
+  ; ("CONV cursussen","CUPIDO")
+  ; ("CUPIDO domains","CUPIDO")
+  ; ("Cursusaanbod","CUPIDO")
+  ; ("Cursuspublicatiemedia","CUPIDO")
+  ; ("Cursuspublicatieobjecten","CUPIDO")
+  ; ("Cursusstatuspublicaties","CUPIDO")
+  ; ("Cursusstatussen","CUPIDO")
+  ; ("Cursustoetsen","CUPIDO")
+  ; ("Cursusvervangingonderdelen","CUPIDO")
+  ; ("Cursusvervangingen","CUPIDO")
+  ; ("Cursussen","CUPIDO")
+  ; ("Fasen","CUPIDO")
+  ; ("Inschrijvingsgroepen","CUPIDO")
+  ; ("Inschrijvingsgroeppublicaties","CUPIDO")
+  ; ("Interessegebiedschemas","CUPIDO")
+  ; ("Interessegebieden","CUPIDO")
+  ; ("Leerstofgebieden","CUPIDO")
+  ; ("Onderwerpen","CUPIDO")
+  ; ("Opleidingen","CUPIDO")
+  ; ("Opleidingsfasen","CUPIDO")
+  ; ("Opleidingsonderdelen","CUPIDO")
+  ; ("Opleidingsschemas","Opleidingsschema")
+  ; ("Publicatiemedia","Publicatiemedium")
+  ; ("Publicatiemediumobjecten","CUPIDO")
+  ; ("Publicatieobjecten","Rubriek")
+  ; ("Rubrieken","Rubriek")
+  ; ("Systeemparameters","Systeemparameter")
+  ; ("Tekstgeneratiemodules","CUPIDO")
+  ; ("Tentamenvormen","Tentamenvorm")
+  ; ("Tentamens","Tentamen")
+  ; ("Vervangendecursussen","Cursus")
+  ]
+
+POPULATION naamICTS[Gegevensverzameling*Tekst] CONTAINS
+  [ ("Abonnementen","ABONNEMENTEN")
+  ; ("Afdelingen","AFDELINGEN")
+  ; ("Afspraken","AFSPRAKEN")
+  ; ("Afstudeerrichtingen","AFSTUDEER_RICHTINGEN")
+  ; ("Akkommodaties","AKKOMMODATIES")
+  ; ("Antwoordcoupons","ANTWOORD_COUPONS")
+  ; ("Arbeidsmarktposities","ARBEIDSMARKT_POSITIES")
+  ; ("Artikelen","ARTIKELEN")
+  ; ("Bedrijfssektoren","BEDRIJFSSEKTOREN")
+  ; ("Belangstellenden","BELANGSTELLENDEN")
+  ; ("Belangstellingsbronnen","BELANGSTELLINGS_BRONNEN")
+  ; ("Belemmeringen","BELEMMERINGEN")
+  ; ("Beroepsgroepen","BEROEPSGROEPEN")
+  ; ("Bestellingen","BESTELLINGEN")
+  ; ("Betaaldewerkkringen","BETAALDE_WERKKRINGEN")
+  ; ("Betalingen","BETALINGEN")
+  ; ("Brieven","BRIEVEN")
+  ; ("Dagafschriften","DAGAFSCHRIFTEN")
+  ; ("Diensttarieven","DIENST_TARIEVEN")
+  ; ("Diplomaprogrammas","DIPLOMA_PROGRAMMAS")
+  ; ("Directoraten","DIRECTORATEN")
+  ; ("Doorstroomregelingen","DOORSTROOM_REGELINGEN")
+  ; ("ELO autorisaties","ELO_AUTORISATIES")
+  ; ("ELO begeleiders","ELO_BEGELEIDERS")
+  ; ("ELO extstudenten","ELO_EXT_STUDENTEN")
+  ; ("ELO groepen","ELO_GROEPEN")
+  ; ("ELO rollen","ELO_ROLLEN")
+  ; ("Etiketten","ETIKETTEN")
+  ; ("Fasen","FASEN")
+  ; ("Formulieren","FORMULIEREN")
+  ; ("Getuigschriftsoorten","GETUIGSCHRIFT_SOORTEN")
+  ; ("Getuigschriften","GETUIGSCHRIFTEN")
+  ; ("HBO/WO instellingen","HBO_WO_INSTELLINGEN")
+  ; ("Hernieuwingtentamenrechten","HERNIEUWING_TENTAMENRECHTEN")
+  ; ("Hulpmiddelen","HULPMIDDELEN")
+  ; ("Incassoopdrachten","INCASSO_OPDRACHTEN")
+  ; ("Incassoschrijven","INCASSO_SCHRIJVEN")
+  ; ("Individueleafspraaksoorten","INDIVIDUELE_AFSPRAAK_SOORTEN")
+  ; ("Individueleafspraken","INDIVIDUELE_AFSPRAKEN")
+  ; ("Inschrijvingsvoorwaarden","INSCHRIJVINGS_VOORWAARDEN")
+  ; ("Inschrijvingsvormen","INSCHRIJVINGS_VORMEN")
+  ; ("KCOU beschikkingen","KCOU_BESCHIKKINGEN")
+  ; ("KCOU kortingen","KCOU_KORTINGEN")
+  ; ("Klantgroepen","KLANT_GROEPEN")
+  ; ("Kortingsgroepen","KORTINGSGROEPEN")
+  ; ("Kortingsstaffels","KORTINGSSTAFFELS")
+  ; ("Cursusdeelnamen","KURSUS_DEELNAMEN")
+  ; ("Cursusprijzen","KURSUS_PRIJZEN")
+  ; ("Cursustoetsen","KURSUS_TOETSEN")
+  ; ("Cursusverlengingen","KURSUS_VERLENGINGEN")
+  ; ("Cursussen","KURSUSSEN")
+  ; ("Cursustoetskorrektoren","KURSUS_TOETS_KORREKTOREN")
+  ; ("Landen","LANDEN")
+  ; ("Leerstofgebieden","LEERSTOFGEBIEDEN")
+  ; ("Leverregels","LEVER_REGELS")
+  ; ("Leveranciers","LEVERANCIERS")
+  ; ("Leveringen","LEVERINGEN")
+  ; ("Medewerkers","MEDEWERKERS")
+  ; ("Mutatiesoorten","MUTATIE_SOORTEN")
+  ; ("Notities","NOTITIES")
+  ; ("Onderwijsdeelnamen","ONDERWIJS_DEELNAMEN")
+  ; ("Onderwijscursussen","ONDERWIJS_CursusSEN")
+  ; ("Onderwijsproducten","ONDERWIJS_ProductEN")
+  ; ("Onderwijsprogrammas","ONDERWIJS_PROGRAMMAS")
+  ; ("Onderwijsvormen","ONDERWIJS_VORMEN")
+  ; ("Opleidingen","OPLEIDINGEN")
+  ; ("Opleidingssoorten","OPLEIDINGS_SOORTEN")
+  ; ("OU klanten","OU_KLANTEN")
+  ; ("OU producten","OU_ProductEN")
+  ; ("Persoonlijkeomstandigheden","PERSOONLIJKE_OMSTANDIGHEDEN")
+  ; ("Prestatiebonusverzilverd","PRESTATIEBONUS_VERZILVERD")
+  ; ("Programmaprijzen","PROGRAMMA_PRIJZEN")
+  ; ("Redeneneinde","REDENEN_EINDE")
+  ; ("Redenenou","REDENEN_OU")
+  ; ("Relaties","RELATIES")
+  ; ("Studentkaarten","STUDENT_KAARTEN")
+  ; ("Studiecentra","STUDIECENTRA")
+  ; ("Tentamens","TENTAMENS")
+  ; ("Toetsdeelnames","TOETS_DEELNAMES")
+  ; ("Toetshulpmiddelen","TOETS_HULPMIDDELEN")
+  ; ("Toetssoorten","TOETS_SOORTEN")
+  ; ("Toetswijzen","TOETS_WIJZEN")
+  ; ("Vakgebieden","VAKGEBIEDEN")
+  ; ("Verzendopdrachten","VERZEND_OPDRACHTEN")
+  ; ("Verzendgroepen","VERZENDGROEPEN")
+  ; ("Voorraadmutaties KVA","VOORRAAD_MUTATIES_KVA")
+  ; ("Voorraadmutaties MVA","VOORRAAD_MUTATIES_MVA")
+  ; ("Vrijstellingsbewijsstukken","VR_BEWIJSSTUKKEN")
+  ; ("Vrijstellingsbewijsstuksoort","VRIJSTELLINGS_BEWIJSSTUK_SOORT")
+  ; ("Vrijstellingszaken","VRIJSTELLINGS_ZAKEN")
+  ; ("VRS producten","VRS_ProductEN")
+  ; ("VTI AFG afstudeerrichtingen","VTI_AFG_AFSTUDEERRICHTINGEN")
+  ; ("VTI afgerondevooropleidingen","VTI_AFGERONDE_VOOROPLEIDINGEN")
+  ; ("VTI leerstofgebieden","VTI_LEERSTOFGEBIEDEN")
+  ; ("VTI soorten","VTI_SOORTEN")
+  ; ("VTI studieprogrammas","VTI_STUDIEPROGRAMMAS")
+  ; ("VTI vooropleidingen","VTI_VOOROPLEIDINGEN")
+  ; ("Woonleefomstandigheden","WOON_LEEF_OMSTANDIGHEDEN")
+  ; ("TSS analysecasus","TSS_ANALYSE_CASUS")
+  ; ("TSS analyse TSSOU","TSS_ANALYSE_TSSOU")
+  ; ("TSS clusters","TSS_CLUSTERS")
+  ; ("TSS cursussen","TSS_CURSUSSEN")
+  ; ("TSS cursusversies","TSS_CURSUS_VERSIES")
+  ; ("TSS groepdeelnames","TSS_GROEPDEELNAMES")
+  ; ("TSS hulpmiddelen","TSS_HULPMIDDELEN")
+  ; ("TSS items","TSS_ITEMS")
+  ; ("TSS nietwerkdagen","TSS_NIET_WERKDAGEN")
+  ; ("TSS opmerkingen","TSS_OPMERKINGEN")
+  ; ("TSS sessiedeelnames","TSS_SESSIEDEELNAMES")
+  ; ("TSS sessies","TSS_SESSIES")
+  ; ("TSS studenten","TSS_STUDENTEN")
+  ; ("TSS studiecentra","TSS_STUDIECENTRA")
+  ; ("TSS tentamenhulpmiddelen","TSS_TENTAMENHULPMIDDELEN")
+  ; ("TSS tentamens","TSS_TENTAMENS")
+  ; ("TSS tentamenvragen","TSS_TENTAMENVRAGEN")
+  ; ("TSS voorzieningen","TSS_VOORZIENINGEN")
+  ; ("Aanvragers","AANVRAGERS")
+  ; ("Afwijsgronden","AFWIJSGRONDEN")
+  ; ("Bewijsstukken","BEWIJSSTUKKEN")
+  ; ("Bijstandcategorien","BIJSTAND_CATEGORIEN")
+  ; ("IBG transacties","IBG_TRANSACTIES")
+  ; ("KCOU aanvragen","KCOU_AANVRAGEN")
+  ; ("KCOU percentages","KCOU_PERCENTAGES")
+  ; ("KCOU reglementen","KCOU_REGLEMENTEN")
+  ; ("Maandinkomens","MAANDINKOMENS")
+  ; ("Normbedragen","NORMBEDRAGEN")
+  ; ("Studiejaren","STUDIEJAREN")
+  ; ("Afwijkende inbreng","AFWIJKENDE_INBRENG")
+  ; ("Bepalingen","BEPALINGEN")
+  ; ("Beschikkingen","BESCHIKKINGEN")
+  ; ("Cursusstatussen","CURSUS_STATUSSEN")
+  ; ("Cursussen","CURSUSSEN")
+  ; ("Doorstroomprogrammainhoud","DOORSTROOM_PROGRAMMA_INHOUD")
+  ; ("Doorstroomprogrammas","DOORSTROOM_PROGRAMMAS")
+  ; ("Faculteitmedewerkers","FACULTEIT_MEDEWERKERS")
+  ; ("Faculteiten","FACULTEITEN")
+  ; ("FB vrijstellingen","FB_VRIJSTELLINGEN")
+  ; ("FB vrijstellingszaken","FB_VRIJSTELLINGS_ZAKEN")
+  ; ("Getuigschriftfouten","GETUIGSCHRIFT_FOUTEN")
+  ; ("Getuigschriftresultaten","GETUIGSCHRIFT_RESULTATEN")
+  ; ("Getuigschriftrubrieken","GETUIGSCHRIFT_RUBRIEKEN")
+  ; ("Getuigschriftvarinhoud","GETUIGSCHRIFT_VAR_INHOUD")
+  ; ("Getuigschriftvariabelen","GETUIGSCHRIFT_VARIABELEN")
+  ; ("Inbrengsoorten","INBRENG_SOORTEN")
+  ; ("Inschrijvingverzoeken","INSCHRIJVING_VERZOEKEN")
+  ; ("OER","OER")
+  ; ("OER implementatiefouten","OER_IMPLEMENTATIE_FOUTEN")
+  ; ("OER implementaties","OER_IMPLEMENTATIES")
+  ; ("OER mutatieregels","OER_MUTATIE_REGELS")
+  ; ("OER mutaties","OER_MUTATIES")
+  ; ("Oeropleidingen","OER_OPLEIDINGEN")
+  ; ("Omboekcategorien","OMBOEK_CATEGORIEN")
+  ; ("Omboekdossiers","OMBOEK_DOSSIERS")
+  ; ("Omboekopleidingen","OMBOEK_OPLEIDINGEN")
+  ; ("Omboekvoorstellen","OMBOEK_VOORSTELLEN")
+  ; ("Onderwijsclusters","ONDERWIJS_CLUSTERS")
+  ; ("Onderwijseenheden","ONDERWIJS_EENHEDEN")
+  ; ("Opleidingclusters","OPLEIDING_CLUSTERS")
+  ; ("Opleidingdoorstroom","OPLEIDING_DOORSTROOM")
+  ; ("Opleidingfasen","OPLEIDING_FASEN")
+  ; ("Opleidinggetuigschriften","OPLEIDING_GETUIGSCHRIFTEN")
+  ; ("Opleidingonderdelen","OPLEIDING_ONDERDELEN")
+  ; ("Opleidingsoorten","OPLEIDING_SOORTEN")
+  ; ("Opleidingspecialisaties","OPLEIDING_SPECIALISATIES")
+  ; ("Opleidingsynoniemen","OPLEIDING_SYNONIEMEN")
+  ; ("Resultaatsoorten","RESULTAAT_SOORTEN")
+  ; ("Specialisatiesoorten","SPECIALISATIE_SOORTEN")
+  ; ("Studentbepalingen","STUDENT_BEPALINGEN")
+  ; ("Studentoeropleidingen","STUDENT_OER_OPLEIDINGEN")
+  ; ("Studentonderwijsclusters","STUDENT_ONDERWIJS_CLUSTERS")
+  ; ("Studentonderwijseenheden","STUDENT_ONDERWIJS_EENHEDEN")
+  ; ("Studentopleidingfasen","STUDENT_OPLEIDING_FASEN")
+  ; ("Studentopleidingonderdelen","STUDENT_OPLEIDING_ONDERDELEN")
+  ; ("Studentopleidingspecs","STUDENT_OPLEIDING_SPECS")
+  ; ("Studentopleidingen","STUDENT_OPLEIDINGEN")
+  ; ("Studentuitvoeringen","STUDENT_UITVOERINGEN")
+  ; ("Studenten","STUDENTEN")
+  ; ("Studieresultaatinbreng","STUDIE_RESULTAAT_INBRENG")
+  ; ("Studieresultaten","STUDIE_RESULTATEN")
+  ; ("Studiestatusrechten","STUDIE_STATUS_RECHTEN")
+  ; ("Studiestatussen","STUDIE_STATUSSEN")
+  ; ("Uitvoeringen","UITVOERINGEN")
+  ; ("Verzoeksoorten","VERZOEK_SOORTEN")
+  ; ("Vooropleidinginformatie","VOOROPLEIDING_INFORMATIE")
+  ; ("Vooropleidingsynoniemen","VOOROPLEIDING_SYNONIEMEN")
+  ; ("Vooropleidingen","VOOROPLEIDINGEN")
+  ; ("Voorwaarden","VOORWAARDEN")
+  ; ("Vrijstonderwijsclusters","VRIJST_ONDERWIJS_CLUSTERS")
+  ; ("Vrijstonderwijseenheden","VRIJST_ONDERWIJS_EENHEDEN")
+  ; ("Vrijstellingen","VRIJSTELLINGEN")
+  ; ("Convcursussen","CONV_CURSUSSEN")
+  ; ("Cupidodomains","CUPIDO_DOMAINS")
+  ; ("Cursusaanbod","CURSUS_AANBOD")
+  ; ("Cursuspublicatiemedia","CURSUS_PUBLICATIE_MEDIA")
+  ; ("Cursuspublicatieobjecten","CURSUS_PUBLICATIE_OBJECTEN")
+  ; ("Cursusstatuspublicaties","CURSUS_STATUS_PUBLICATIES")
+  ; ("Cursustoetsen","CURSUS_TOETSEN")
+  ; ("Cursusvervangingonderdelen","CURSUS_VERVANGING_ONDERDELEN")
+  ; ("Cursusvervangingen","CURSUS_VERVANGINGEN")
+  ; ("Inschrijvingsgroepen","INSCHRIJVINGS_GROEPEN")
+  ; ("Inschrijvingsgroeppublicaties","INSCHRIJVINGSGROEP_PUBLICATIES")
+  ; ("Interessegebiedschemas","INTERESSE_GEBIED_SCHEMAS")
+  ; ("Interessegebieden","INTERESSE_GEBIEDEN")
+  ; ("Leerstofgebieden","LEERSTOF_GEBIEDEN")
+  ; ("Onderwerpen","ONDERWERPEN")
+  ; ("Opleidingsfasen","OPLEIDINGS_FASEN")
+  ; ("Opleidingsonderdelen","OPLEIDINGS_ONDERDELEN")
+  ; ("Opleidingsschemas","OPLEIDINGS_SCHEMAS")
+  ; ("Publicatiemedia","PUBLICATIE_MEDIA")
+  ; ("Publicatiemediumobjecten","PUBLICATIE_MEDIUM_OBJECTEN")
+  ; ("Publicatieobjecten","PUBLICATIE_OBJECTEN")
+  ; ("Rubrieken","RUBRIEKEN")
+  ; ("Systeemparameters","SYSTEEM_PARAMETERS")
+  ; ("Tekstgeneratiemodules","TEKSTGENERATIE_MODULES")
+  ; ("Tentamenvormen","TENTAMEN_VORMEN")
+  ; ("Vervangendecursussen","VERVANGENDE_CURSUSSEN")
+  ]
+
+ENDCONTEXT
