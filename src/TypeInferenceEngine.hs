@@ -180,7 +180,11 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                 Flip{sub=flipsub} -> (FlipRule Inv (tree tree1), free tree1)  
                    where 
                    tree1 = bindsubexprs (bindto Complement{sub=flipsub,tt=unknowntype} tgt src expt) (cb1:cb2:cbs:fcs)   
-                Relation{} ->  (Stmt $ bindto expr src tgt (expt), (cb1:cb2:cbs:fcs)) 
+                Relation{} ->  if expt==(-1) 
+                               --DESCR -> bind both the complement and sub expression of the complement
+                               then (Stmt $ bindto (expr{sub=(sub expr){tt=TT src tgt (-expt)}}) src tgt (expt)
+                                    , (cb1:cb2:cbs:fcs))
+                               else notexp1err expr                                                   
                 _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree.bindsubexprs: complement not expected on rule expression: " ++show expr ++"."                  
                  
           Flip{tt=TT src tgt expt} -> (FlipRule NoInv (tree tree1), free tree1)
@@ -236,6 +240,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
               Nothing -> (itree, vars, Just $ Stmt $ InfErr $ IErr c2 cpt'' r)
               Just vars'' -> (itree, vars'',Nothing)
      else (itree,vars, Nothing)
+  bindMphats (BoundTo compl@(Complement{})) (itree,vars, Nothing) = bindMphats (BoundTo (sub compl)) (itree,vars, Nothing)
   bindMphats _ itree = itree
 
   ------------------------------------------------------------------------------------
