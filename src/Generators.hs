@@ -120,7 +120,7 @@ generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..")
        do 
        writeFile (outputFile (fnm++".dot")) (show dot)
        putStrLn ("Processing "++fnm++".dot ... :")
-       result <- system $ "neato.exe -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
+       result <- system $ "neato -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
        case result of
           ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
           ExitFailure x -> putStrLn $ "Failure: " ++ show x
