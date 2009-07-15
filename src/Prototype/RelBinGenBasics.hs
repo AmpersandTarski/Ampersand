@@ -339,7 +339,13 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    selectExpr fSpec i src trg cl@(K1 e) = selectGeneric i (sqlExprSrc cl,src) (sqlExprTrg cl,trg) (sqlRelName fSpec cl) "1"
    selectExpr fSpec i src trg (Fd []  ) = error ("RelBinGenBasics.lhs: Cannot create query for Fd [] because type is unknown")
    selectExpr fSpec i src trg (Fd [e] ) = selectExpr fSpec i src trg e
+   selectExpr fSpec i src trg (Fd fxs) = selectExpr fSpec i src trg $ Cp {e=F (map addcompl fxs)}
+         where
+         addcompl fx@(Cp{}) = e fx
+         addcompl fx = Cp{e=fx}
+{-
    selectExpr fSpec i src trg (Fd (e:(f:fx))) =
+
         selectGeneric i ("dagger1."++src',src) ("dagger2."++trg',trg)
                         ((selectExprBrac fSpec (i) src' mid' e)++" AS dagger1, "++(selectExprBrac fSpec (i) mid2' trg' (F (f:fx)))++" AS dagger2")
                         ("NOT EXISTS ("
@@ -355,6 +361,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                               cptattr = cptname++"."++(sqlAttConcept fSpec (target e))
                               mid2'= noCollide [trg'] (sqlExprSrc f)
                               trg' = sqlExprTrg (Fd (f:fx))
+-}
 
  --  selectExpr _ _ _ _ e = error ("RelBinGenBasics.lhs: Non-exhaustive patterns in function selectExpr for "++(showADL e))
 
