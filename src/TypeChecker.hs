@@ -16,8 +16,6 @@
 --     -> RULE                The implementation is correct whenever this rule holds. If the rule does not hold anymore
 --                            then reexamine the implementation.                    
 
---TODO -> Put information in the trace to be able to present the user the reason why a type error has occurred
---        The phd thesis (book) of Bastiaan talks about this as an Explanation System (p.24)
 --REMARK -> In any expression, in case of multiple type errors, choose the innermost errors and yield the first one.
 --REMARK -> The ADL.Rule contains all kinds of structures typechecker only supports the one with constructor Ru and Sg.
 --          Fr rules will generate a type error message, but the parser (see CC.hs) does not output Fr rules at the moment of writing this comment.
@@ -25,10 +23,6 @@
 --DESCR ->
 --         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
---TODO -> Checking sick.adl results in a lot of ambiguous relations in expressions, because
---        this type checker just puts all patterns of this context and the extended contexts of this context on a heap
---        apparently there is another definition for the objects in scope than the definition implemented.
---        Check the correctness of handling context extension and patterns.
 module TypeChecker (typecheck, Error, Errors) where
 
 import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
@@ -40,7 +34,6 @@ import qualified Data.Set as Set --
 
 import Classification --USE -> cast from data.Tree to Classification for enrichment
 import Typology --USE -> Isa structure for enrichment
-
 import CC_aux (renumberRules)
 
 import TypeInference.ITree
@@ -58,36 +51,23 @@ type Errors = [Error]
 type Error = String
 
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
+--REMARK -> After type checking not only the types are bound to expressions, but also other
+--          enrichment functionality is implemented
 --USE   -> This is the only function needed outside of the TypeChecker
 typecheck :: Architecture -> (Contexts, Errors)
 typecheck arch@(Arch ctxs) = (enriched, checkresult)  
---                    if null checkresult then
---                   (enriched,["TYPE -> " ++ show (sign proof) | (proof@(Proven _ trees),_)<-allproofs, tree<-trees])
---                   (enriched,[(show $ evaltree gamma tree) | (proof@(Proven gamma trees),_)<-allproofs, tree<-trees])
---                     (enriched,[ (printexpr $ fromRule ex) ++ "\n"|ex<-(allCtxRules enriched)])
---TODO -> stolen minnetje
--- ra~;sa = ra~;sa
--- -(ra~;sa) = -(ra~;sa) => geparsed als ra~;sa = ra~;-sa en ra~;sa=-(ra~;sa) (los gaan ze goed)
---                      (enriched,[show (ex) ++ "\n"|ex<-(allCtxRules ctxs)])
---                    (enriched,[printexpr ex |(BoundTo ex)<-[evaltree g tree|(Proven g trees,_)<-allproofs, tree<-trees]])
---                     else (enriched,checkresult)
    where
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
    check1 = checkCtxNameUniqueness ctxs
    check2 = checkCtxExtLoops ctxs 
    (enriched, allproofs) = enrichArch arch  
-   check3 = [(proof,fp) | (proof@(NoProof{}),fp)<-allproofs] --all type errors TODO -> pretty printing
+   check3 = [(errproof,fp) | (errproof@(NoProof{}),fp)<-allproofs] --all type errors TODO -> pretty printing
    checkresult = if null check1 then if null check2 then if null check3 then [] else [show check3] else check2 else check1
-   ------------------
-   --Enrich functions
-   ------------------
 
-   --TODO -> put extra information, derived from the patterns (and ???), in the contexts, like :
-   --        Isa [] [] -> representing isa relations
-   --        Rules -> active rules
-   --        Declarations -> active declarations
-   --        ObjectDefs   p.e. types of expressions
+------------------
+--Enrich functions
+------------------
 enrichArch :: Architecture -> (Contexts,[(Proof,FilePos)])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
                             , foldr (++) [] [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
@@ -156,7 +136,6 @@ enrichCtx cx@(Ctx{}) ctxs =
   --REMARK -> rc is defined in specification but not needed in implementation to lookup the constant relations (see mphStmts)
   --rc :: Declarations
   --rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
-  --TODO -> I could split gamma in two
   gamma expr = (mphStmts expr) ++ gammaisa
   gammaisa = isaStmts
   mphStmts :: AdlExpr -> [Statement]
@@ -164,7 +143,6 @@ enrichCtx cx@(Ctx{}) ctxs =
      let
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
-     --TODO -> Set homo rel on True
      alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
                     | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-rv, decl==r1]
      ishomo :: [Prop] -> Bool
@@ -198,7 +176,12 @@ enrichCtx cx@(Ctx{}) ctxs =
   ctxpatterns = map bindPat (ctxpats cx)
   bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds, ptdcs=addpopu}
     where
-    bindrules = [br | (br,_,_)<-map bindRule (ptrls p)]
+    bindrules = [br | (br,_,_)<-map bindRule $ 
+                                (ptrls p)
+                  --REMARK -> no rules generated in pattern because of generation of func spec, showadl etc. 
+                   --           ++[r |d<-ptdcs p, r<-rulesfromdecl d]
+                    --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
+                  ]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
     addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (popm pop) d, pairx<-popps pop]}
               |d<-ptdcs p]
@@ -226,8 +209,8 @@ enrichCtx cx@(Ctx{}) ctxs =
 
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
-  ctxrules = ctxrulesgens ++ ctxrulespats
-  ctxrulespats = map bindRule $ allCtxRules [cx]
+  ctxrules = ctxrulesgens ++ (map bindRule $ allCtxRules [cx] ++ [r |d<-allCtxDecls [cx], r<-rulesfromdecl d] )
+
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
   --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
   --          have different numbers.
@@ -284,7 +267,8 @@ enrichCtx cx@(Ctx{}) ctxs =
     where
     (bindsig,proof,_) = bindRule (srsig r)
     binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
-  bindRule _ = error "Unsupported rule type while enriching the context. The type checker should have given an error."
+  bindRule _ = error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule: " ++
+                       "Unsupported rule type while enriching the context. The type checker should have given an error."
   ctxrulesgens :: [(Rule,Proof,FilePos)]
   ctxrulesgens = [rulefromgen g | g<-allCtxGens [cx]]
   --TODO -> move rulefromgen to function toRule in module Gen
@@ -293,16 +277,42 @@ enrichCtx cx@(Ctx{}) ctxs =
   rulefromgen (G {genfp = posi, gengen = gen, genspc = spc} )
     = (Ru
          Implication
-         (Tm (mIs spc))
+         iSpc
          posi
-         (Tm (mIs gen))
-         [Tm (mIs spc), Tm (mIs gen)]
+         iGen
+         [iSpc, iGen]
          []
          (spc,gen)
          0  --REMARK -> rules are renumbered after enriching the context
          [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
-       , Proven gammaisa [Stmt $ fromIsa (spc,gen)],posi) --TODO -> Type is not a good name for this proof tree
+       , Proven gammaisa [Stmt $ fromIsa (spc,gen)],posi)
+    where
+    iSpc = Tm $ I [spc] spc spc True
+    iGen = Tm $ I [gen] gen gen True
 
+  rulesfromdecl :: Declaration -> [Rule]
+  rulesfromdecl d@(Sgn{decfpos=posi}) = [rulefromprop p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]]
+    where
+    rulefromprop :: Prop -> Rule
+    rulefromprop p = case p of
+       Uni-> makerule Implication (F [flp r,r]) i
+       Tot-> makerule Implication i (F [r,flp r])
+       Inj-> makerule Implication (F [r,flp r]) i
+       Sur-> makerule Implication i (F [flp r,r])
+       Sym-> makerule Equivalence r (flp r)
+       Asy-> makerule Implication (Fi [flp r,r]) i
+       Trn-> makerule Implication (F [r,r]) r
+       Rfx-> makerule Implication i r
+       _ ->  error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.rulesfromdecl.rulefromprop: " ++
+                     "There is no rule for this prop."
+       where
+       i = Tm $ I [] Anything Anything True
+       r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d
+       makerule tp ant con = 
+         Ru tp ant posi con [] [] (Anything,Anything)
+             0  --REMARK -> rules are renumbered after enriching the context
+             [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
+  
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
   ctxobjdefs :: [(ObjectDef,[(Proof,FilePos)])]
@@ -390,56 +400,61 @@ enrichCtx cx@(Ctx{}) ctxs =
       I{} -> mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
-    else error $ "wrong mp bindSubexpr"      
-  bindSubexpr x y = error $ "mismatch bindSubexpr" ++ show x ++ show y
+    else error  $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindSubexpr: " ++
+                  "Morphisms are different: \nOriginal: " ++ show mp ++ "\nType checked: " ++ show (rel adlex)       
+  bindSubexpr x y = error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindSubexpr: " ++
+                           "Expressions are different: \nOrginal: " ++ show x ++ "\nType checked: " ++ show y
 
   bindSubexprs :: Expressions ->  [AdlExpr] -> Expressions
-  bindSubexprs subexs [] = if null subexs then [] else error "not all subexprs matched"
-  bindSubexprs [] adlexs = if null adlexs then [] else error "not all subexprs matched"
+  bindSubexprs subexs [] = if null subexs then [] 
+                           else error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.Subexprs: " ++
+                                        "Not all subexprs are matched. Too many originals."
+  bindSubexprs [] adlexs = if null adlexs then [] 
+                           else error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.Subexprs: " ++
+                                        "Not all subexprs are matched. Too many type checked."
   bindSubexprs (subex:subexs) (adlex:adlexs) = (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
 
 -----------------
 --Check functions
 -----------------
-
 --DESCR -> check rule: Every context must have a unique name
 checkCtxNameUniqueness :: Contexts -> Errors
 checkCtxNameUniqueness [] = []
-checkCtxNameUniqueness (cx:ctxs) | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs
-                                    | otherwise    = checkCtxNameUniqueness ctxs
-                                    where
-                                    --DESCR -> return True if the names of the Contexts are equal
-                                    eqCtx :: Context -> Context -> Bool
-                                    eqCtx cx1 cx2 =
-                                                case cx1 of Ctx{} -> (ctxnm cx1)
-                                                ==
-                                                case cx2 of Ctx{} -> (ctxnm cx2)
-                                    --REMARK -> Context objects do not carry FilePos information
-                                    notUniqError :: Context -> Error
-                                    notUniqError cx' = case cx' of
-                                                Ctx{} ->  "Context name " ++ (ctxnm cx')++ " is not unique"
+checkCtxNameUniqueness (cx:ctxs) 
+     | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs
+     | otherwise    = checkCtxNameUniqueness ctxs
+     where
+     --DESCR -> return True if the names of the Contexts are equal
+     eqCtx :: Context -> Context -> Bool
+     eqCtx cx1 cx2 =
+                 case cx1 of Ctx{} -> (ctxnm cx1)
+                 ==
+                 case cx2 of Ctx{} -> (ctxnm cx2)
+     --REMARK -> Context objects do not carry FilePos information
+     notUniqError :: Context -> Error
+     notUniqError cx' = case cx' of
+                 Ctx{} ->  "Context name " ++ (ctxnm cx')++ " is not unique"
 
-   --TODO -> check for loops in context extensions
-   --USE -> Contexts names must be unique
+--USE -> Contexts names must be unique
 checkCtxExtLoops :: Contexts -> Errors
 checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
-                            where
-                            composeError :: [ContextName] -> Errors
-                            composeError [] = []
-                            composeError cxnms = ["One or more CONTEXT loops have been detected involving contexts: "
-                                                   ++ foldr (++) "\n" [ cxnm++"\n" | cxnm<-cxnms]
-                                                   ]
-                            --DESCR -> there is a loop if a context is not found in the CtxTree, but it is found in the original Contexts
-                            findLoops :: Context -> [ContextName]
-                            findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
-                                                          , not (foundCtx cxf)
-                                                          , foundCtx (srchContext ctxs (ctxName cxf))]
-   ------------------
-   --Common functions
-   ------------------
+    where
+    composeError :: [ContextName] -> Errors
+    composeError [] = []
+    composeError cxnms = ["One or more CONTEXT loops have been detected involving contexts: "
+                           ++ foldr (++) "\n" [ cxnm++"\n" | cxnm<-cxnms]
+                           ]
+    --DESCR -> there is a loop if a context is not found in the CtxTree, but it is found in the original Contexts
+    findLoops :: Context -> [ContextName]
+    findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
+                                  , not (foundCtx cxf)
+                                  , foundCtx (srchContext ctxs (ctxName cxf))]
+------------------
+--Common functions
+------------------
 
-   --DESCR -> function elem provided with own equality function
-   --USE   -> use when not instance Eq a or if another predicate is needed then implemented by instance Eq a
+--DESCR -> function elem provided with own equality function
+--USE   -> use when not instance Eq a or if another predicate is needed then implemented by instance Eq a
 elemBy :: (a->a->Bool)->a->[a]->Bool
 elemBy _ _ [] = False --not in list
 elemBy eq el (el':els) = (eq el el') || (elemBy eq el els)
@@ -457,7 +472,9 @@ data ContextFound = Found Context | NotFound ContextName
 type CtxTree = Tree ContextFound
 
 toClassification :: CtxTree -> Classification Context
-toClassification (Node (NotFound cxnm) _) = error ("TypeChecker.toClassification: NotFound " ++ cxnm)
+toClassification (Node (NotFound cxnm) _) = 
+      error $ "Error in TypeChecker.hs module TypeChecker function toClassification: " ++
+              "NotFound " ++ cxnm
 toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
 
 ------------------------
@@ -487,7 +504,7 @@ ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
 ctxName (NotFound cxnm) = cxnm
 
 fromFoundCtx :: ContextFound -> Context
-fromFoundCtx (NotFound cxnm) = error ("TypeChecker.fromFoundCtx: NotFound " ++ cxnm)
+fromFoundCtx (NotFound cxnm) = error $ "Error in TypeChecker.hs module TypeChecker function fromFoundCtx: NotFound " ++ cxnm
 fromFoundCtx(Found cx)    = cx
 
 
