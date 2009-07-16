@@ -8,9 +8,6 @@ where
                                 ,Ftheme(..)
                                 ,Funit(..)
                                 ,Fservice(..)
-                                ,FViewDef(..)
-                                ,ServiceSpec(..)
-                                ,ParamSpec(..)
                                 ,FSid(..)
                                 ,Fidentified(..))
    import Strings               (chain)
@@ -118,8 +115,6 @@ where
     showHS indent funit
      = "Uspc "++showHS "" (fsid funit)
         ++" ("++showHSname (pattern funit)++" gE)"
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") v'| v'<-viewDefs(funit)]++indent++"     ]"
-       ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") s| s<-servDefs(funit) ]++indent++"     ]"
 
      
 -- \***********************************************************************
@@ -130,55 +125,10 @@ where
     showHSname fservice = typ fservice ++ "_" ++ showHSname (fsid fservice) --showHS "" (pfixFSid "f_Obj_" (fsid fservice))
     showHS indent fservice
      = "Fservice "
-       ++ datasetSection
        ++ objdefSection
-       ++ servicesSection
-       ++ rulesSection
-       ++indent++" -- Einde Fservice "++showHSname (dataset fservice)
+       ++indent++" -- Einde Fservice "++showHSname (objectdef fservice)
         where
-          datasetSection  = "("++ showHS "" (dataset fservice)++")"
           objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fservice)++")"
-          servicesSection = indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") svc| svc<-methods(fservice)]++indent++"     ]"
-          rulesSection    = indent++"     ["++chain ", " [showHSname fr| fr<-frules(fservice)]++"]"
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FViewDef                      ***
--- \***********************************************************************
-
-   instance ShowHS FViewDef where
-    showHSname fvd = error ("(module FspecDef) should not showHSname the FViewDef (Vdef): "++showHS "" fvd)
-    showHS indent fvd
-      = "Vdef ("++ showHS indent (vdobjdef fvd)++")" 
-          ++indent++"     [ "++chain (indent++"     ") [showHS (indent++"       ") m'| m'<-vdmorphs fvd]++indent++"     ]"
-          ++indent++"     [ "++chain (indent++"     ") [showtuple (indent++"       ") tup| tup<-vdExprRules fvd]++indent++"     ]"
-        where
-          showtuple :: String -> (Expression,Rule) -> String
-          showtuple indent' (expr,rule) = "( "++ showHS (indent'++"  ") expr
-                               ++indent'++", "++ showHS (indent'++"  ") rule
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
--- \***********************************************************************
-   instance ShowHS ServiceSpec where
-    showHSname sspc  = typ sspc ++ "_" ++ showHSname (fsid sspc) --"f_svc_"++showHS "" (fsid sspc)
-    showHS indent sspc
-      =            "Sspc " ++ showHS "" (fsid sspc)
-       ++indent++"     [ " ++chain (indent++"     , ") (map (showHS (indent++"       ")) (sees sspc)  )++indent++"     ] -- these are the visible morphisms: <sees> "
-       ++indent++"     [" ++(if null (changes sspc) then "]   -- no relations will be changed"  else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) (changes sspc))++indent++"     ] -- these are the morphisms that may be altered: <changes> ")
-       ++indent++"     [" ++(if null (input   sspc) then "]   -- there are no input parameters" else " "++chain "," (map (showHS "") (input sspc) )++"] -- these are the input parameters: <input>")
-       ++indent++"     [" ++(if null (output  sspc) then "]   -- no output parameters"          else " "++chain "," (map (showHS "") (output sspc) )++"] -- these are the output parameters: <output> ")
-       ++indent++"     [" ++(if null (rs      sspc) then "]   -- there are no rules"            else " "++chain (indent++"     , ") (map (showHS (indent++"       ")) (rs sspc) )++indent++"     ]")
-       ++indent++"     [" ++(if null (pre     sspc) then "]   -- there are no preconditions"    else " "++chain (indent++"     , ") (map  show                        (pre sspc))++indent++"     ] -- preconditions")
-       ++indent++"     [" ++(if null (post    sspc) then "]   -- there are no postconditions"   else " "++chain (indent++"     , ") (map  show                        (post sspc))++indent++"     ] -- postconditions")
-       
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
--- \***********************************************************************
-
-   instance ShowHS ParamSpec where
-    showHSname a = error ("(module FspecDef) should not showHSname the ParamSpec (Aspc): "++showHS "" a)
-    showHS _ (Aspc fid typ')
-     = "Aspc "++showHS "" fid++" "++show typ'
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***

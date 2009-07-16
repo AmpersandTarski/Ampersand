@@ -62,7 +62,7 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    check1 = checkCtxNameUniqueness ctxs
    check2 = checkCtxExtLoops ctxs 
    (enriched, allproofs) = enrichArch arch  
-   check3 = [(errproof,fp) | (errproof@(NoProof{}),fp)<-allproofs] --all type errors TODO -> pretty printing
+   check3 = [(errproof,fp) | (errproof@(NoProof{}),fp)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
    checkresult = if null check1 then if null check2 then if null check3 then [] else [show check3] else check2 else check1
 
 ------------------

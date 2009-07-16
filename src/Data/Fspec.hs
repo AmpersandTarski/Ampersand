@@ -12,9 +12,6 @@ module Data.Fspec (
              , Ftheme(..)
              , Funit(..)
              , Fservice(..)
-             , FViewDef(..)
-             , ServiceSpec(..)
-             , ParamSpec(..)
              , FSid(..)
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
@@ -44,40 +41,16 @@ where
 
    data Funit = Uspc 
                   { fusid    :: FSid
-                  , pattern  :: Pattern
-                  , viewDefs :: [FViewDef]
-                  , servDefs :: [ServiceSpec] -- services
+                  , pattern  :: Pattern --TODO-> Patterns op een hoop net als vrels?
                   }
               
+   --DESCR -> Fservice is like Fspc only within the scope of one ObjectDef
+   --         It contains the ObjectDef and precalculated structures
+   --EXTEND ->, trBoundary :: [Expression]
+   --         , ecaRules   :: [ECArule] -> see revision around 340
    data Fservice = Fservice 
                        { objectdef  :: ObjectDef
-                       , trBoundary :: [Expression]
-                       , ecaRules   :: [ECArule]
-                       , dataset    :: ObjectDef
-                       , methods    :: [ServiceSpec]
-                       , frules     :: [Rule]
                        }
-
-   data FViewDef = Vdef
-                  { vdobjdef :: ObjectDef
-                  , vdmorphs :: [Morphism]
-                  , vdExprRules :: [(Expression,Rule)]
-                  }
-
-   data ServiceSpec = Sspc 
-                       { ssid    :: FSid         -- name of the service
-                       , sees    :: [Morphism]   -- the list of relations this service may see
-                       , changes :: [Morphism]   -- the list of relations this service may change
-                       , input   :: [ParamSpec]  -- parameters
-                       , output  :: [ParamSpec]  -- results
-                       , rs      :: [Rule]       -- Invariants
-                       , pre     :: [String]     -- Preconditions
-                       , post    :: [String]     -- Postconditions
-                       }
-
-   data ParamSpec   = Aspc 
-                      {pname :: FSid         -- name of the parameter
-                      ,ptype :: String }     -- type of the parameter
 
    data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
            --  | NoName           -- some identified objects have no name...

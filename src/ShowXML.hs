@@ -112,57 +112,18 @@ where
 
    instance XML Funit where
      mkTag f = Tag "Funit" [nameToAttr f] 
-     mkXmlTree f@(Uspc _ aaa bbb ccc)
+     mkXmlTree f@(Uspc _ aaa )
         = Elem (mkTag f) (
              [ Elem (simpleTag "Pattern")  [mkXmlTree aaa]] 
-          ++ [ Elem (simpleTag "Views")    (map mkXmlTree bbb) |not (null bbb)] 
-          ++ [ Elem (simpleTag "Services") (map mkXmlTree ccc) |not (null ccc)] 
            )
 
 
    instance XML Fservice where
      mkTag _ = Tag "Fservice" [] 
-     mkXmlTree f@(Fservice aaa bbb ccc ddd eee fff )
+     mkXmlTree f@(Fservice aaa  )
         = Elem (mkTag f) (  
              [ Elem (simpleTag "Service")   [mkXmlTree aaa]] 
-          ++ [ Elem (simpleTag "TrBoundary")(map mkXmlTree bbb)] 
-          ++ [ Elem (simpleTag "EcaRules") (map mkXmlTree ccc) |not (null ccc)] 
-          ++ [ Elem (simpleTag "Dataset")  [mkXmlTree ddd]] 
-          ++ [ Elem (simpleTag "Methods")  (map mkXmlTree eee) |not (null eee)] 
-          ++ [ Elem (simpleTag "Rules")    (map mkXmlTree fff) |not (null fff)] 
            )
-
-
-   instance XML FViewDef where
-     mkTag _ = Tag "FViewDef" [] 
-     mkXmlTree f@(Vdef aaa bbb ccc)
-        = Elem (mkTag f) (
-             [ Elem (simpleTag "View")   [mkXmlTree aaa]] 
-          ++ [ Elem (simpleTag "Morphisms") (map mkXmlTree bbb) |not (null bbb)] 
-          ++ [ Elem (simpleTag "Expr_Rules")(map tuple (vdExprRules f)) |not (null ccc)] 
-                )   
-                where tuple :: (Expression,Rule) -> XTree
-                      tuple (expr,rul) = Elem (simpleTag "Tuple" ) 
-                                         ([mkXmlTree expr]++[mkXmlTree rul])
-
-   instance XML ServiceSpec where
-     mkTag f = Tag "ServiceSpec" [nameToAttr f] 
-     mkXmlTree f@(Sspc _ aaa bbb ccc ddd eee fff ggg)
-        = Elem (mkTag f) (
-             [ Elem (simpleTag "Sees")   (map mkXmlTree aaa)] 
-          ++ [ Elem (simpleTag "Changes") (map mkXmlTree bbb)] 
-          ++ [ Elem (simpleTag "InputParams") (map mkXmlTree ccc)] 
-          ++ [ Elem (simpleTag "OutputParams") (map mkXmlTree ddd)] 
-          ++ [ Elem (simpleTag "Invariants") (map mkXmlTree eee)] 
-          ++ [ Elem (simpleTag "Preconditions") [PlainText (show fff)]] 
-          ++ [ Elem (simpleTag "Postconditions")[PlainText (show ggg)]] 
-          )   
-
-   instance XML ParamSpec where
-     mkTag f = Tag "ParamSpec" ([ nameToAttr (pname f)]
-                             ++ [ mkAttr "type" (ptype f)]
-                               )
-     mkXmlTree f = Node (mkTag f)  
 
    instance XML Pattern where
      mkTag p = Tag "Pattern" [ nameToAttr p]

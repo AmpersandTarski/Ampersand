@@ -216,13 +216,13 @@
 
    makeFtheme :: Context -> Pattern -> [ObjectDef] -> Ftheme
    --REMARK -> make a theme even if there aren't any datasets, because we do not want to throw these patterns
-   makeFtheme context pat [] = Tspc fid [makeFunit context pat [] [] []] pat
+   makeFtheme context pat [] = Tspc fid [makeFunit context pat [] ] pat
       where fid = makeFSid1 (name pat)
    makeFtheme context pat dss -- dss zijn de datasets die afgeleid zijn van de context
     = Tspc fid units' pat
       where
         fid = makeFSid1 (name pat)
-        units' = [makeFunit context pat (objs ds) [] []| ds<-dss]
+        units' = [makeFunit context pat (objs ds) | ds<-dss]
          where
           objs ds = [o| o<-attributes context, makeDataset context (concept o)==ds]
 
@@ -230,46 +230,7 @@
    makeFservice context obj
     = Fservice{
         objectdef = obj  -- the object from which the service is drawn
-      , trBoundary = trBound -- the transaction boundary, i.e. all expressions that may be changed in a transaction
-      , ecaRules = [] --TEMP
---        [ limit trBound eca                -- all ECA-rules that may be used in this object
---        | rule<-declaredRules context
---        , conjunct<-conjuncts rule
---        , clause<-allClauses conjunct
---        , eca<-doClause clause
---        ]
---        TODO -> makeDataset not correct
-      , dataset = makeDataset context (concept obj)  -- the dataset in which the objects are stored 
--- obsolete services?
-      , methods = [] --TEMP
-                 -- [ getEach context obj
-                 --  , createObj context obj [] {-rs-}
-                 --  , readObj context obj
-                 --  , deleteObj context obj [] {-rs-}
-                 -- , updateObj context obj [] {-cs-} [] {-rs-} ]
-      , frules = [ r| r<-rules context, (not.null)(mors r `isc` mors obj)] -- include all valid rls that relate directly to o
       }
-      where
-       trBound
-        = rd [conjNF e' | a<-atts obj, e'<-[objctx a, flp (objctx a)] ]
-          where atts o' = o': [e'| a<-attributes o', e'<-atts a]
-{-       limit :: [Expression] -> ECArule -> ECArule
-       limit rels (ECA ev clause) = ECA ev (simplPAclause (lim clause))   -- TODO Stef, kijk je even naar deze warning? Dit lijkt me niet goed...
-        where
-         lim (Choice clauses)              = Choice [c'| c<-clauses, c'<-[lim c], p c']
-          where p (Do _ toExpr _) = conjNF toExpr `elem` trBound
-                p (Choice [])     = False
-                p _               = True
-         lim (All clauses)
-            | null [ 1 | Choice []<-cls]   = All cls
-            | otherwise                    = Choice []
-          where
-           cls = [lim c| c<-clauses]
-         lim (Do insdel toExpr delta) 
-            | conjNF toExpr `elem` trBound = Do insdel toExpr delta
-            | otherwise                    = Choice []
-         lim (New c)                       = New c
--}
 
    makeFdecl :: Context -> Declaration -> Declaration
    makeFdecl context d 
@@ -284,193 +245,11 @@
 --      where cs' = rd ([link| Popu m ps<-populations context, makeDeclaration m==d, link<-ps]++cs)
 --   makeFdecl context d = d
 
-   makeFunit :: Context -> Pattern -> [ObjectDef] -> [Concept] -> [ServiceSpec] -> Funit
-   makeFunit context pat objs _ _
-    = Uspc fid pat ents svs
+   makeFunit :: Context -> Pattern -> [ObjectDef] -> Funit
+   makeFunit context pat objs 
+    = Uspc fid pat 
         where
           fid  = (if null objs then (makeFSid1 "*NONAME*") else makeFSid1(name (head objs))) 
-          ents = [ Vdef o
-                -- ,ILGV Eenvoudig
-                   [] {-cs-}
-                   [] {-rs-}
-                   | o<-objs]
-          svs  = (concat [   [ createObj context o [] {-rs-} ]
-                          ++ [ readObj context o]
-                          ++ concat [ [keyEnt context o (key,ks), delKeyEnt context o (key,ks) [] {-rs-}]
-                                      | (e',key,ks)<-keys pat, e'==concept o]
-                          ++ [ deleteObj context o [] {-rs-} ]
-                          ++ [ updateObj context o [] {-cs-} [] {-rs-}| not (null [] {-cs-}) ]
-                     | o<-objs ])
-
-
-
-   getEach :: Context -> ObjectDef -> ServiceSpec 
-   getEach context o
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("getEach_"++name o)
-          maySee      = [mIs (concept o)]  -- see  concept o  only.
-          mayChange   = []                 -- change nothing
-          params      = []                 -- input parameters
-          results     = [ Aspc (makeFSid1 "objs") ("["++handle context o++"]")]  -- results
-          invariants  = []                 -- rules
-          preconds    = []                 -- Precondition
-          postconds   = (["objs"++"= I["++name (concept o)++"]"]) -- Postcondition
-
-   createObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec 
-   createObj context o ers
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("create_"++name o)
-          maySee      = ([mIs (concept o)]++mors o)      -- see the morphisms touched by this object
-          mayChange   = (mors o)                         -- change these morphisms
-      --     (IF Gemiddeld)
-          params      = [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-attributes o]  -- input parameters
-          results     = [ Aspc (makeFSid1("obj")) (handle context o)] -- results
-          invariants  = (dressRules
-                         [ (clause,rule)
-                         | (conj,rule)<-ers
-                         , clause@(Fu terms)<-[lClause conj]
-                         , not (null (mors o `isc` mors [t| Cp t<-terms]))])
-          preconds    =  []
- --    Post (example:) {o in Pair and o left l and o right r}
-          postconds   =  ([("obj."++name a)++"="++(varName (name a))|a<-attributes o])
-          varName :: String -> String
-          varName = uName (map name (attributes o))
-   readObj :: Context -> ObjectDef -> ServiceSpec
-   readObj context o
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("read_"++name o)
-          maySee      = ([mIs (concept o)]++mors o) -- sees
-          mayChange   = []                          -- change nothing
-       --    (OF Eenvoudig)
-          params      = [Aspc (makeFSid1 "x") (handle context o)]
-          results     = [Aspc (makeFSid1 (varName (name a))) (handle context a) | a<-attributes o]
-          invariants  = []
- --    Pre (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
-          preconds    = ([ ("x."++name a)++"="++idNam (nameAt a) |a<-attributes o])
- --    Post (example:) {left=l, right=r, src=s, and trg=t}
-          postconds   = [(varName (name a))++"="++idNam (nameAt a)|a<-attributes o]
-          varName :: String -> String
-          varName = uName (map name (attributes o))
-
-   keyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> ServiceSpec
-   keyEnt context o (key,ats')
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("sel_"++name o++"_by_"++if null key then chain "_" (map name ats') else key)
-     --     serviceName = (firstCaps ("sel"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
-          maySee      = (mors context) -- see everything
-          mayChange   = []             -- change nothing
-      --     (OF Eenvoudig)
-          params      = [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-ats']
-          results     = [Aspc (makeFSid1 "obj") (handle context o)]
-          invariants  = []
- --    Pre (example:) {Assume l=atom_left and r=atom_right}
-          preconds    = [let args = [("x."++name a)++"="++(varName (name a)) | a<-attributes o] ++
-                                    [("x."++name a)++"="++idNam (nameAt a)      | a<-attributes o, not (name a `elem` map name ats')]
-                         in
-                         "\\hbox{There is an {\\tt x}}\\in"++name (concept o)++"\\ \\hbox{such that}"++
-                         (if length args==1 then "\\ "++concat args else
-                          "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
-                          chain "\\\\\n" (map ('&':) args)++
-                          "&)\n\\end{array}$"
-                         )]
- --    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
-          postconds   = ([ "obj"++"="++"x"])
-          varName :: String -> String
-          varName = uName (map name (attributes o))
-
-   delKeyEnt :: Context -> ObjectDef -> (String,[ObjectDef]) -> [(Expression,Rule)] -> ServiceSpec
-   delKeyEnt context o (key,ats') ers
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("del_"++name o++"_by_"++if null key then chain "_" (map name ats') else key)
-       --   serviceName = (firstCaps ("del"++name o++"_by_"++if null key then chain "_" (map name ats') else key))
-          maySee      = (mors context)     -- see everything
-          mayChange   = (mors context)     -- change everything
-       --    (IF Gemiddeld)
-          params      = [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-ats']
-          results     = []
-          invariants  = (dressRules
-                        [ (clause,rule)
-                        | (conj,rule)<-ers
-                        , clause@(Fu terms)<-[rClause conj]
-                        , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
- --    Pre (example:) 
-          preconds    = []
- --    Post (example:) {Assume x=O, O left l, O right r, O src s, and O trg t}
-          postconds   = ["\\hbox{\\tt obj}\\in"++name o++"\\ \\hbox{implies that not}"++
-                         (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++("obj."++name a)++"="++showADL (ctx a)++")" else
-                         "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
-                         chain "\\\\\n" ["&"++("obj."++name a)++"="++(varName (name a))|a<-attributes o]++
-                         "&)\n\\end{array}$"
-                         )]
-          varName :: String -> String
-          varName = uName (map name (attributes o))
-
-   updateObj :: Context -> ObjectDef -> [Morphism] -> [(Expression,Rule)] -> ServiceSpec
-   updateObj context o _ ers
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("update_"++name o)
-          maySee      = (mors o)     -- see everything
-          mayChange   = (mors o)     -- change everything
-       --    (IF Gemiddeld)
-          params      = (Aspc (makeFSid1 "x") (handle context o): [ Aspc (makeFSid1(varName (name a))) (handle context a) | a<-attributes o])
-          results     = []
-          invariants  = (dressRules ers)
- --    Pre (example:) {Assume x left l, x right r, x src s, and x trg t}
-          preconds    = []
- --    Post (example:) {x left l, x right r, x src s, and x trg t}
-          postconds   = [ ("x."++name a)++"="++(varName (name a))|a<-attributes o]
-          varName :: String -> String
-          varName = uName (map name (attributes o))
-
-   deleteObj :: Context -> ObjectDef -> [(Expression,Rule)] -> ServiceSpec
-   deleteObj context o ers
-    = Sspc fid maySee mayChange
-           -- No more FPA here
-           params results invariants preconds postconds 
-        where
-          fid         = makeFSid1 ("delete_"++name o)
-          maySee      = [mIs (concept o)]     -- see everything
-          mayChange   = (mors o)              -- change everything
-       --    (IF Gemiddeld)
-          params      = [Aspc (makeFSid1 "x") (handle context o)] 
-          results     = []
-          invariants  = (dressRules
-                        [ (clause,rule)
-                        | (conj,rule)<-ers
-                        , clause@(Fu terms)<-[rClause conj]
-                        , not (null (mors o `isc` mors [t| t<-terms, isPos t]))])
- --    Pre
-          preconds    = [if length (attributes o)==1 then let a=head (attributes o) in ("x."++name a)++"="++idNam (nameAt a) else
-                         "$\\begin{array}[t]{lll}\n"++
-                         chain "\\\\\nand" ["&"++("x."++name a)++"="++idNam (nameAt a)|a<-(attributes o)]++
-                         "&\n\\end{array}$"
-                        | not (null (attributes o))]
- --    Post 
-          postconds   = [if null (attributes o) then "\\hbox{\\tt x}\\not\\in"++name (concept o) else
-                         "\\hbox{\\tt obj}\\in"++name (concept o)++"\\ \\hbox{implies that not}"++
-                         (if length (attributes o)==1 then let a=head (attributes o) in "\\ ("++("obj."++name a)++"="++idNam (nameAt a)++")" else
-                         "\\\\\\hspace{2em}$\\begin{array}[b]{lll}\n("++
-                         chain "\\\\\nand" ["&"++("obj."++name a)++"="++idNam (nameAt a)|a<-attributes o]++
-                         "&)\n\\end{array}$"
-                         )]
 
    handle :: Context -> ObjectDef -> String
    handle context c = firstCaps (name c)++if name c `elem` (map name (makeDatasets context)) then "Handle" else ""

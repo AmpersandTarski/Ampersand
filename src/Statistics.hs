@@ -38,43 +38,26 @@ module Statistics where
 -- \***********************************************************************
 
    instance Statistics Ftheme where
-    nServices t = nServices (units t)
+    nServices t = 0
     nPatterns t = nPatterns (units t)
-    nFpoints  t = nFpoints (units t)
+    nFpoints  t = 0
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Funit                         ***
 -- \***********************************************************************
 
    instance Statistics Funit where
-    nServices u = length (servDefs u)  --TODO -> check correctness
+    nServices u = 0 --TODO -> check correctness
     nPatterns _ = 1
-    nFpoints u =  nFpoints (viewDefs u) + nFpoints (servDefs u) --TODO -> check correctness
+    nFpoints u =  0
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************
    instance Statistics Fservice where
-    nServices _ = 1 --TODO -> check correctness
+    nServices fSvc = nServices (objectdef fSvc)
     nPatterns _ = 0
-    nFpoints  fSvc = nFpoints (methods fSvc) --TODO -> implement correct FPA qualification
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FViewDef                      ***
--- \***********************************************************************
-   instance Statistics FViewDef where
-    nServices _ = 1 --TODO -> check correctness
-    nPatterns _ = 0
-    nFpoints fView = nFpoints (vdobjdef fView) --TODO -> check correctness
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
--- \***********************************************************************
-
-   instance Statistics ServiceSpec where
-    nServices _ = 1
-    nPatterns _ = 0
-    nFpoints _ = fPoints (ILGV Eenvoudig) --TODO -> implement correct FPA qualification
+    nFpoints  fSvc = nFpoints (objectdef fSvc) --TODO -> implement correct FPA qualification
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Dataset                       ***

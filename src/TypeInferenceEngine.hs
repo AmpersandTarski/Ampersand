@@ -55,26 +55,29 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
     noerrbindings = [ vars | (_,vars)<-noerralts ]
     noerralts = [(stms,vars) 
                         | (stms,vars)<-alts
-                        ,null [err |  (_,tstmserr)<-stms, (_,Just (Stmt err@(InfErr _)) )<-tstmserr, length tstmserr==1]
-                ]
+                                    --(bnd,Alts)          (::,tree)                               
+                        ,null [err |  (_,tstmserr)<-stms, (_,Just (Stmt err@(InfErr _)) )<-tstmserr]
+                           --  only one ::-stmt
+                        , (_,trs)<-stms, length trs==1
+                ] 
     --DESCR -> all possible unambiguous gammas (alternatives) resulting in an error
-    allerrinftrees =  foldr (++) []
-                       [ --All alternatives resulting in an tree consisting of just an errorrule
+    allinftrees =  [attachtrees alt basetree | alt<-alts ] --foldr (++) []
+                      -- [ --All alternatives resulting in an tree consisting of just an errorrule
                         --ax1: expression |- basetree
                         --ax2: unambiguous gamma |- basetree -> error
                         --concl: expression, unambiguous gamma |- basetree -> error
-                        [Stmt $ InfErr $
-                              TypeError{gam=gamma
-                                       ,btree=basetree
-                                       ,errstmt=err
-                                       ,declexprs=[fst (head tstms) | (_,tstms)<-stms, not (null tstms)]}
-                         |  (_,tstmserr)<-stms, (_,Just (Stmt err@(InfErr _)) )<-tstmserr, length tstmserr==1]
-                      | (stms,_)<-alts]
+                      --  [Stmt $ InfErr $
+                        --      TypeError{gam=gamma
+                          --             ,btree=basetree
+                            --           ,errstmt=err
+                              --         ,declexprs=[fst (head tstms) | (_,tstms)<-stms, not (null tstms)]}
+                --         |  (_,tstmserr)<-stms, (_,Just (Stmt err@(InfErr _)) )<-tstmserr, length tstmserr==1]
+                  --    | (stms,_)<-alts]
     --DESCR -> all possible unambiguous gammas (alternatives) resulting in a type
     allnoerrinftrees = [attachtrees alt basetree | alt<-noerralts ] 
     in
     if null noerralts --there are no alternatives inferring a type
-    then NoProof NoType allerrinftrees  --return all alternatives resulting in an error
+    then NoProof NoType allinftrees  --return all alternatives
     else if eqbindings noerrbindings --ax: all alts resulting in a type bind all the concept variables to the same concepts
                                      --concl: expression, gamma |- typedexpression
          then Proven gamma allnoerrinftrees  --return inference trees of all alts resulting in a type

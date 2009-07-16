@@ -12,17 +12,17 @@ data Statement = IsaStat  Concept Concept | --DESCR -> stating that the left con
                  DeclExpr {declex::AdlExpr, homo::Bool} 
                  
 data InfErrType = UndeclRel AdlExpr | 
-                  IErr Concept Concept AdlExpr | 
-                  TypeError {gam::Gamma, btree::ITree, errstmt::Statement, declexprs::[Statement]} 
+                  IErr Concept Concept AdlExpr -- | 
+   --               TypeError {gam::Gamma, btree::ITree, errstmt::Statement, declexprs::[Statement]} 
 
 instance Show InfErrType where
    showsPrec _ (UndeclRel expr) = showString $ 
         "Undeclared expression " ++ printexpr expr ++ "."
    showsPrec _ (IErr c1 c2 expr) = showString $ 
         "Disjunct concepts " ++ show c1 ++ " and " ++ show c2 ++ " at expression " ++ printexpr expr ++ "."
-   showsPrec _ err@(TypeError{})  = showString $
-        "Expression " ++ show (evaltree (gam err) (btree err)) ++ " results in error:\n"
-        ++ show (errstmt err) ++ "\nGiven the next declared relations:\n" ++ (prlst [show de|de<-declexprs err])
+ --  showsPrec _ err@(TypeError{})  = showString $
+   --     "Expression " ++ show (evaltree (gam err) (btree err)) ++ " results in error:\n"
+     --   ++ show (errstmt err) ++ "\nGiven the next declared relations:\n" ++ (prlst [show de|de<-declexprs err])
 
 instance Show Statement where
    showsPrec _ (IsaStat c1 c2) = showString $ show c1 ++ "is-a" ++ show c2
@@ -68,12 +68,12 @@ instance Eq Statement where
 --         Or I could not infer a type, proofed by the fact that all alternatives result in error(s).
 --         Or I have an ambiguous type, proofed by the fact that some alternatives result in different types.
 data Proof = Proven Gamma [ITree] | NoProof TypeErrorsType [ITree]  
-data TypeErrorsType = NoType  | AmbiguousType Gamma deriving (Show)
+data TypeErrorsType = NoType | AmbiguousType Gamma deriving (Show)
 
 instance Show Proof where
    showsPrec _ (Proven g ts) = showString $ show g ++ "\n" ++ show ts
    showsPrec _ (NoProof tp ts) = showString $ case tp of
-      NoType ->  show tp ++ "\n" ++ show [x|(Stmt x)<-ts]
+      NoType ->  show tp ++ ": " ++ (show $ analyseerror ts)
       AmbiguousType g ->  "Ambiguous types: " ++ show [evaltree g t|t<-ts]
 
 instance Association Proof where
@@ -83,6 +83,20 @@ instance Association Proof where
   target (Proven _ [] ) = Anything
   target (Proven gm inftrees ) = target $ evalstmt $ evaltree gm (head inftrees)
   target (NoProof _ _ ) = NOthing
+
+analyseerror :: [ITree] -> TypeError
+analyseerror ts = TypeError (ErrCode 0) error
+   where
+   errors = [x|t<-ts, InfErr x<-stmts t]
+   error = if null errors then "no error statement in tree found." else show $ head errors
+analyseerror _ = TypeError (ErrCode 0) "No inference trees in proof." 
+
+data ErrorCode = ErrCode Int 
+instance Show ErrorCode where
+   showsPrec _ ec = showString "0:Undefined error"
+data TypeError = TypeError {errcode::ErrorCode, errmsg::String}
+instance Show TypeError where
+   showsPrec _ te =  showString $ show (errcode te) ++ ": "++ show (errmsg te)
 
 --DESCR -> For type inference we defined rules to be able to construct an inference tree, to infer a type or type error, for all expressions.
 --         Stmt is a basic statement

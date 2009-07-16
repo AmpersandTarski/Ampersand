@@ -90,25 +90,6 @@
      typ fservice = "f_Service"
    instance Fidentified Fservice where
      fsid fservice = fsid (objectdef fservice)
-   
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FViewDef                      ***
--- \***********************************************************************
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ServiceSpec                   ***
--- \***********************************************************************
-   instance Identified ServiceSpec where
-    typ sspc = "f_svc"
-    name sspc = name (ssid sspc)
-    
-   instance Fidentified ServiceSpec where
-      fsid ss = ssid ss 
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
--- \***********************************************************************
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***

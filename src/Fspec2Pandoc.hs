@@ -277,10 +277,10 @@ servicechap lev fSpec flags svc = header ++ svcContents  --TODO
   svcContents :: [Block]
   svcContents = 
    case (language flags) of
-      Dutch -> [Para $
-                  [inline | rl<-frules svc, inline<-printrule flags rl++printlb]
-               ++ [Str "TRBOUNDARY"]++printlb   
-               ++ [inline | rl<-trBoundary svc, inline<-[TeX "$ "]++printexpr flags rl++[TeX " $"] ++printlb]
+      Dutch -> [ --Para  $
+             --     [inline | rl<-frules svc, inline<-printrule flags rl++printlb]
+             --  ++ [Str "TRBOUNDARY"]++printlb   
+             --  ++ [inline | rl<-trBoundary svc, inline<-[TeX "$ "]++printexpr flags rl++[TeX " $"] ++printlb]
                ]
   --          ++ [sect | meth<-methods svc, sect<-printmethod meth]
       English -> [] --TODO
