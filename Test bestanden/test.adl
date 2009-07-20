@@ -1,4 +1,16 @@
 CONTEXT Test
+  SERVICE Person : I[Person]
+  = [ authentic : authentic
+    , users : identified~
+      = [name : username]
+    ]
+  SERVICE Name : I[Name]
+  = [ person : username~
+    = [ id : I
+      , name : username
+      , pass : password
+      , pers : identified]
+    ]
   PATTERN Permits
     authentic -| authentic
     
