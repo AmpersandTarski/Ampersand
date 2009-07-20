@@ -40,7 +40,7 @@
    makeFspec context =
       Fspc { fsfsid = makeFSid1 (name context)
             , themes   = themes'  --TODO: Bewijzen dat dit termineert!(dat doet het nu niet altijd...) -- TODO Aanpassen op nieuwe Document structuur
-            , datasets = datasets'
+            , datasets = datasets' --TODO: datasets vervangen voor plug's
             , serviceS = serviceS' --was:[] TODO: Loop verwijderen uit generatie serviceS.
                                    --GMI: Welke loop? ServiceS is gewoon 'attributes context'. Zie TODO in ServiceG'?
             , serviceG = serviceG'

@@ -1,4 +1,4 @@
-  {-# XXXOPTIONS_GHC -Wall #-}
+  {-# OPTIONS_GHC -Wall #-}
   module Dataset (makeDataset
                  ,makeDatasets
                  ,datasetMor)
