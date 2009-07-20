@@ -40,6 +40,7 @@ import TypeInference.ITree
 import TypeInference.AdlExpr
 import TypeInference.Input
 import TypeInferenceEngine
+import ShowADL
 
 ---------------
 --MAIN function
@@ -62,13 +63,22 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    check1 = checkCtxNameUniqueness ctxs
    check2 = checkCtxExtLoops ctxs 
    (enriched, allproofs) = enrichArch arch  
-   check3 = [(errproof,fp) | (errproof@(NoProof{}),fp)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
-   checkresult = if null check1 then if null check2 then if null check3 then [] else [show check3] else check2 else check1
+   check3 = [(errproof,fp,rule) | (errproof@(NoProof{}),fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
+   printcheck3 = [show errproof 
+                  ++ "\n   in " ++ printadl 0 rule   
+                  ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigRule rule)<-check3] 
+              ++ [show errproof 
+                  ++ "\n   in service definition expression " ++ printadl 0 expr  
+                  ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigObjDef expr)<-check3]
+              ++ [show errproof 
+                  ++ "\n   in key definition expression " ++ printadl 0 expr  
+                  ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
+   checkresult = if null check1 then if null check2 then if null check3 then [] else printcheck3 else check2 else check1
 
 ------------------
 --Enrich functions
 ------------------
-enrichArch :: Architecture -> (Contexts,[(Proof,FilePos)])
+enrichArch :: Architecture -> (Contexts,[(Proof,FilePos,OrigExpr)])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
                             , foldr (++) [] [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
 
@@ -89,7 +99,9 @@ addsgndecls ::Context -> Context
 addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
   where allsgndecls = [srrel sg | sg@(Sg{})<-allPatRules $ allCtxPats [cx]]
 
-enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos)])
+data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
+
+enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos,OrigExpr)])
 enrichCtx cx@(Ctx{}) ctxs = 
   (postenrich $ 
       cx {ctxisa=hierarchy, -- 
@@ -99,9 +111,9 @@ enrichCtx cx@(Ctx{}) ctxs =
           ctxds=ctxdecls, -- 
           ctxos=[od | (od,_)<-ctxobjdefs], 
           ctxks=[kd | (kd,_)<-ctxkeys]} 
-  ,  [(proof,fp)|(_,proof,fp)<-ctxrules]
-   ++[(proof,fp)|(_,proofs)<-ctxobjdefs, (proof,fp)<-proofs]
-   ++[(proof,fp)|(_,proofs)<-ctxkeys, (proof,fp)<-proofs])
+  ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxrules]
+   ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
+   ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxkeys, (proof,fp,expr)<-proofs])
                            {-
                            (ctxnm cx) --copy name
                            (ctxon cx) --copy extended ctxs
@@ -237,7 +249,7 @@ enrichCtx cx@(Ctx{}) ctxs =
           _ -> rrant r --copy rule as parsed 
         bindcon = case proof of
           Proven gm (inftree:_) -> bindSubexpr (rrcon r) $ etcon $ evaltree gm inftree
-          _ -> rrant r --copy rule as parsed
+          _ -> rrcon r --copy rule as parsed
         bindrtype =  case proof of
           Proven _ _ -> sign proof
           NoProof{} -> rrtyp r
@@ -315,12 +327,12 @@ enrichCtx cx@(Ctx{}) ctxs =
   
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
-  ctxobjdefs :: [(ObjectDef,[(Proof,FilePos)])]
+  ctxobjdefs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
   ctxobjdefs = [bindObjDef od Nothing | od<-ctxos cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
-  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos)])
-  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},(proof,objpos od):proofats)
+  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos,Expression)])
+  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},(proof,objpos od,expr):proofats)
     where
     expr = case mbtopexpr of
       Nothing -> (objctx od)
@@ -343,10 +355,10 @@ enrichCtx cx@(Ctx{}) ctxs =
           _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindObjDef.removeF: " ++
                        "Expected a BoundTo relative composition expression statement."++show et++"."
   
-  ctxkeys :: [(KeyDef,[(Proof,FilePos)])]
+  ctxkeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
   ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]   
-  bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos)])
-  bindKeyDef kd = (kd {kdctx=bindexpr, kdats=bindats},(proof,kdpos kd):proofats)
+  bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos,Expression)])
+  bindKeyDef kd = (kd {kdctx=bindexpr, kdats=bindats},(proof,kdpos kd,kdctx kd):proofats)
     where
     proof = infer (gamma adlexpr) adlexpr
     adlexpr = fromExpression $ kdctx kd

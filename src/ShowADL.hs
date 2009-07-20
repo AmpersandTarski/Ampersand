@@ -24,7 +24,7 @@
 
    class PrintADL a where
     --DESCR -> FSpec, Object to print, Indentation level
-    printadl :: Fspc -> Int -> a -> String
+    printadl :: Int -> a -> String
 
    lb :: String
    lb = "\n"
@@ -36,10 +36,10 @@
           where
           postfix :: String
           postfix = [c|x<-xs, c<-(delim++x)]  
-   adlprintlist :: (PrintADL a) => Fspc -> Int -> (String,String,String) -> [a]  -> String
-   adlprintlist fSpec i opts xs = printlist opts [printadl fSpec i x|x<-xs, (not.null) $ printadl fSpec i x]
-   adlprintlistlb :: (PrintADL a) => Fspc -> Int -> [a]  -> String
-   adlprintlistlb fSpec i xs = adlprintlist fSpec i ("", lb, lb) xs
+   adlprintlist :: (PrintADL a) => Int -> (String,String,String) -> [a]  -> String
+   adlprintlist i opts xs = printlist opts [printadl i x|x<-xs, (not.null) $ printadl i x]
+   adlprintlistlb :: (PrintADL a) => Int -> [a]  -> String
+   adlprintlistlb i xs = adlprintlist i ("", lb, lb) xs
    --DESCR -> put string in quotes if it contains strange characters (like spaces)
    printquotes ss | and [isAlphaNum c| c<-ss] = ss
                   | otherwise = "\""++ss++"\""
@@ -63,18 +63,18 @@
    -- pops = [Popu mph prs| CPop mph prs<-ces]
    -- CPop ->  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
    instance PrintADL Fspc where
-    printadl fSpec _ _ = 
+    printadl _ fSpec = 
       let 
       FS_id conid = fsfsid fSpec
       i = 0
       printpopmph d = decnm d
-         ++ [c |c<-"["++ printadl fSpec i (desrc d) ++ " * " ++ printadl fSpec i (detgt d) ++ "]"
+         ++ [c |c<-"["++ printadl i (desrc d) ++ " * " ++ printadl i (detgt d) ++ "]"
                , (desrc d)/=Anything, (detgt d)/=Anything]
       in
       "CONTEXT " ++ conid ++ lb
          --REMARK -> Pattern "CONTEXT" will be printed as a pattern --> no ds cs ks outside the pattern only pops and objs
-      ++ printadl fSpec i [pattern u | t<-themes fSpec,u<-units t]
-      ++ printadl fSpec i (serviceS fSpec)
+      ++ printadl i [pattern u | t<-themes fSpec,u<-units t]
+      ++ printadl i (serviceS fSpec)
       ++ printlist ("",lb,lb) [ "POPULATION " ++ printpopmph d ++ " CONTAINS"
                                 ++ printlist (lb++indent (i+1)++"[ "
                                              ,";"++lb++indent (i+1)++"  "
@@ -84,30 +84,30 @@
       ++ "ENDCONTEXT"
 
    instance PrintADL ObjectDef where
-    printadl fSpec i obj = 
+    printadl i obj = 
       (if i==0 then "SERVICE " else "")
        ++ objnm obj 
        ++ printlist (" {",", ","}") [printlist (""," ","") (map printquotes strs) | strs<-objstrs obj]
        ++ " : " 
-       ++ printadl fSpec i (objctx obj)
-       ++ printadl fSpec (i+1) (objats obj)
+       ++ printadl i (objctx obj)
+       ++ printadl (i+1) (objats obj)
 
    instance PrintADL [ObjectDef] where
-    printadl fSpec i objs = 
-       if i==0 then [c|obj<-objs, c<-((printadl fSpec i obj)++lb)] 
-       else adlprintlist fSpec i (lb++indent i ++ "= [ "
+    printadl i objs = 
+       if i==0 then [c|obj<-objs, c<-((printadl i obj)++lb)] 
+       else adlprintlist i (lb++indent i ++ "= [ "
                                  ,","++lb++indent (i+1)++" "
                                  ,"  ]" ++ lb) objs 
    
    --REMARK -> show Morphism does not print mphats, so I need my own show Expression and show Morphism
    --REMARK -> postfix complements are printed prefix
    instance PrintADL Expression where
-    printadl fSpec i expr' = printexpr (insParentheses expr') --REMARK -> insert minimal brackets
+    printadl i expr' = printexpr (insParentheses expr') --REMARK -> insert minimal brackets
       where  
       --REMARK -> cannot recursively use printadl, because insParentheses also removes redundant brackets 
       printexpr expr =  
         case expr of
-          Tm{} -> printadl fSpec i (m expr)
+          Tm{} -> printadl i (m expr)
           Fu{} -> printlist ("","\\/","") [printexpr x|x<-es expr]
           Fi{} -> printlist ("","/\\","") [printexpr x|x<-es expr]
           F{}  -> printlist ("",";","") [printexpr x|x<-es expr]
@@ -121,7 +121,7 @@
    --EXTEND -> print what has been written
    --REMARK -> show Morphism does not print mphats
    instance PrintADL Morphism where
-    printadl fSpec i mph = case mph of
+    printadl i mph = case mph of
        Mph{mphats=[c]} -> name mph ++ "[" ++ show c ++ "*" ++ show c ++ "]" ++ if inline mph then "" else "~"
        Mph{mphats=[c1,c2]} -> name mph ++ "[" ++ show c1 ++ "*" ++ show c2 ++ "]" ++ if inline mph then "" else "~"
        Mph{} -> name mph ++ if inline mph then "" else "~"
@@ -132,21 +132,21 @@
        Mp1{} -> name mph
 
    instance PrintADL Pattern where
-    printadl fSpec i p = if null patelems then "" else
+    printadl i p = if null patelems then "" else
       "PATTERN " ++ (if (ptnm p)=="CONTEXT" then "AdlContext" else ptnm p) ++ lb
       ++ patelems
       ++ "ENDPATTERN" ++ lb
-      where patelems = printadl fSpec i (ptrls p)
-                    ++ printadl fSpec i (ptgns p)
-                    ++ printadl fSpec i (ptdcs p)
-                    ++ printadl fSpec i (ptcds p)
-                    ++ printadl fSpec i (ptkds p)
+      where patelems = printadl i (ptrls p)
+                    ++ printadl i (ptgns p)
+                    ++ printadl i (ptdcs p)
+                    ++ printadl i (ptcds p)
+                    ++ printadl i (ptkds p)
 
    instance PrintADL [Pattern] where
-    printadl fSpec i ps = adlprintlistlb fSpec i ps
+    printadl i ps = adlprintlistlb i ps
 
    instance PrintADL Rule where
-    printadl fSpec i r = case r of
+    printadl i r = case r of
        -- pSignal -> ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` 
        --            (Mph "" Nowhere [] (cptAnything,cptAnything) True 
        --                    (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False))
@@ -162,39 +162,39 @@
        --This is not the inverse, but it is a bit what you want because it throws away flips and mphats and complements etc which we do not want in signal names, only I -I and V will return which we actually do not want, but probably nobody ever makes an attempt, thus...
        --WHY -> is a signal name parsed as a Morphism?
       --REMARK -> the rule in Sg is equivalent to the rule without SIGNAL .. ON prefix
-      Sg{} -> "SIGNAL" ++ name (srrel r) ++ "ON" ++ printadl fSpec i (srsig r)
+      Sg{} -> "SIGNAL" ++ name (srrel r) ++ "ON" ++ printadl i (srsig r)
       Ru{rrsrt=rt} -> let
-                      str1 = if rt==Truth then "ALWAYS " 
-                             else printadl fSpec i (rrant r) 
+                      str1 = if rt==Truth then "RULE " 
+                             else printadl i (rrant r) 
                                   ++ if rt==Implication then " |- " else " = "
-                      str2 = printadl fSpec i (rrcon r)
+                      str2 = printadl i (rrcon r)
                       str3 = if null (r_cpu r) then "" 
-                             else " COMPUTING " ++ adlprintlist fSpec i ("",", ","") (r_cpu r)
+                             else " COMPUTING " ++ adlprintlist i ("",", ","") (r_cpu r)
                       str4 = if null (rrxpl r) then "" 
                              else lb ++ "EXPLANATION \"" ++ (rrxpl r) ++ "\""
                       in str1 ++ str2 ++ str3 ++ str4
       _ -> "--GLUE rules and --beeper generated rules are obsolete" 
 
    instance PrintADL [Rule] where
-    printadl fSpec i rs = adlprintlistlb fSpec i rs
+    printadl i rs = adlprintlistlb i rs
 
    instance PrintADL Gen where
-    printadl fSpec i g = "GEN " ++ cnm (genspc g) ++ " ISA " ++ cnm (gengen g) 
+    printadl i g = "GEN " ++ cnm (genspc g) ++ " ISA " ++ cnm (gengen g) 
       where cnm c = case c of 
                       C{} -> cptnm c
                       _ -> error $ "Error in ShowADL.hs module ShowADL function instance PrintADL Gen: " 
                                 ++ "Anything, NOthing and ONE are not allowed on GEN .. ISA .."
 
    instance PrintADL [Gen] where
-    printadl fSpec i gs = adlprintlistlb fSpec i gs
+    printadl i gs = adlprintlistlb i gs
 
    instance PrintADL Declaration where
-    printadl fSpec i d = 
+    printadl i d = 
        decnm d ++ " :: "
-       ++ printadl fSpec i (desrc d)
+       ++ printadl i (desrc d)
        ++ (if isfunc then " -> " else " * ")
-       ++ printadl fSpec i  (detgt d)
-       ++ printadl fSpec i printprops
+       ++ printadl i  (detgt d)
+       ++ printadl i printprops
        ++ " PRAGMA " ++ printlist ("\"","\" \"","\"") [decprL d,decprM d, decprR d]
        ++ lb ++ "EXPLANATION  \"" ++ (decexpl d) ++ "\""
        --REMARK -> population printed to POPULATION
@@ -205,41 +205,41 @@
              
 
    instance PrintADL [Declaration] where
-    printadl fSpec i ds = adlprintlistlb fSpec i ds
+    printadl i ds = adlprintlistlb i ds
 
    --REMARK -> instance Show Prop implements inverse
    instance PrintADL Prop where
-    printadl _ _ p = show p
+    printadl _ p = show p
 
    instance PrintADL [Prop] where
-    printadl fSpec i ps = adlprintlist fSpec i (" [",", ","]") ps
+    printadl i ps = adlprintlist i (" [",", ","]") ps
 
    --REMARK -> name implements inverse (except for Anything and NOthing)
    instance PrintADL Concept where
-    printadl _ _ c = name c 
+    printadl _ c = name c 
  
    --REMARK -> empty cdrefs are printed even when not written in original script
    instance PrintADL ConceptDef where
-    printadl _ _ cd = "CONCEPT " ++ printlist ("\"","\" \"", "\"") [cdnm cd, cddef cd, cdref cd]
+    printadl _ cd = "CONCEPT " ++ printlist ("\"","\" \"", "\"") [cdnm cd, cddef cd, cdref cd]
 
    instance PrintADL [ConceptDef] where
-    printadl fSpec i cds = adlprintlistlb fSpec i cds 
+    printadl i cds = adlprintlistlb i cds 
 
    --REMARK -> only the name of the main label is used
    instance PrintADL KeyDef where
-    printadl fSpec i kd = 
+    printadl i kd = 
        "KEY " ++ kdlbl kd ++ ": " 
-       ++ printadl fSpec i (kdctx kd)
+       ++ printadl i (kdctx kd)
        ++ printlist (lb++indent (i+2)++"[", ","++lb++indent (i+2)++" ","]") [printkdat kdat|kdat<-kdats kd]
        where 
        printkdat obj =
           objnm obj 
           ++ printlist (" {",", ","}") [printlist (""," ","") (map printquotes strs) | strs<-objstrs obj]
           ++ " : " 
-          ++ printadl fSpec i (objctx obj)
+          ++ printadl i (objctx obj)
 
    instance PrintADL [KeyDef] where
-    printadl fSpec i kds = adlprintlistlb fSpec i kds
+    printadl i kds = adlprintlistlb i kds
 --------------------------------------------
 
    instance ShowADL ObjectDef where

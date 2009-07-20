@@ -1,28 +1,31 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInference.ITree where
 import Adl.Concept
+import Adl.MorphismAndDeclaration
+import Adl.Prop
+import CommonClasses
 import TypeInference.AdlExpr
 import Data.List
 
 type Gamma = [Statement]
+type Statements = [Statement]
 data Statement = IsaStat  Concept Concept | --DESCR -> stating that the left concept IS-a right concepte
                  InfErr InfErrType   | --DESCR -> stating that the type of an expression cannot be inferred, because the inference attempt ended because of this error
                  EmptyStmt | --DESCR -> stating that there is no statement
                  BoundTo AdlExpr |
                  DeclExpr {declex::AdlExpr, homo::Bool} 
                  
+data DisjType = DisjSrc | DisjTrg | DisjHomo deriving (Eq, Show)
 data InfErrType = UndeclRel AdlExpr | 
-                  IErr Concept Concept AdlExpr -- | 
-   --               TypeError {gam::Gamma, btree::ITree, errstmt::Statement, declexprs::[Statement]} 
+                  IErr DisjType Concept Concept AdlExpr
 
 instance Show InfErrType where
-   showsPrec _ (UndeclRel expr) = showString $ 
-        "Undeclared expression " ++ printexpr expr ++ "."
-   showsPrec _ (IErr c1 c2 expr) = showString $ 
-        "Disjunct concepts " ++ show c1 ++ " and " ++ show c2 ++ " at expression " ++ printexpr expr ++ "."
- --  showsPrec _ err@(TypeError{})  = showString $
-   --     "Expression " ++ show (evaltree (gam err) (btree err)) ++ " results in error:\n"
-     --   ++ show (errstmt err) ++ "\nGiven the next declared relations:\n" ++ (prlst [show de|de<-declexprs err])
+   showsPrec _ (UndeclRel (Relation{rel=mp})) = showString $ 
+        "Undeclared relation " ++ name mp ++ "."
+   showsPrec _ (UndeclRel expr) =  error $ "Error in ITree.hs module TypeInference.ITree instance Show InfErrType: " ++
+                                           "The expression of UndeclRel must be a relation." 
+   showsPrec _ (IErr _ c1 c2 _) = showString $ 
+        "Disjunct concepts " ++ show c1 ++ " and " ++ show c2 ++ "."
 
 instance Show Statement where
    showsPrec _ (IsaStat c1 c2) = showString $ show c1 ++ "is-a" ++ show c2
@@ -45,7 +48,7 @@ prlst xs = foldr (++) [] $ [x ++ "\n"|x<-xs]
 
 instance Eq InfErrType where
    (UndeclRel expr)==(UndeclRel expr') = expr==expr'
-   (IErr c1 c2 expr)==(IErr c1' c2' expr') = expr==expr' && c1==c1' && c2==c2'
+   (IErr dtp c1 c2 expr)==(IErr dtp' c1' c2' expr') = expr==expr' && c1==c1' && c2==c2' && dtp==dtp'
    _ == _ = False
 
 --DESCR -> constructs an IsaStat statement from an isa definition (spc,gen)
@@ -67,36 +70,205 @@ instance Eq Statement where
 --DESCR -> Or I have a type, proofed by the fact that all alternatives resulting in a type, result in the same type.
 --         Or I could not infer a type, proofed by the fact that all alternatives result in error(s).
 --         Or I have an ambiguous type, proofed by the fact that some alternatives result in different types.
-data Proof = Proven Gamma [ITree] | NoProof TypeErrorsType [ITree]  
-data TypeErrorsType = NoType | AmbiguousType Gamma deriving (Show)
+data Proof = Proven Gamma [ITree] | NoProof TypeErrorsType   
+data TypeErrorsType = NoType Gamma [(Statements,ITree)] | AmbiguousType Gamma [ITree] deriving (Show)
 
 instance Show Proof where
    showsPrec _ (Proven g ts) = showString $ show g ++ "\n" ++ show ts
-   showsPrec _ (NoProof tp ts) = showString $ case tp of
-      NoType ->  show tp ++ ": " ++ (show $ analyseerror ts)
-      AmbiguousType g ->  "Ambiguous types: " ++ show [evaltree g t|t<-ts]
+   showsPrec _ (NoProof tp) = showString $ case tp of
+      NoType g tts ->  show $ analyseerror g tts
+      AmbiguousType g ts ->  show $ analyseamb g ts
 
 instance Association Proof where
   source (Proven _ [] ) = Anything
   source (Proven gm inftrees ) = source $ evalstmt $ evaltree gm (head inftrees)
-  source (NoProof _ _ ) = NOthing
+  source (NoProof _ ) = NOthing
   target (Proven _ [] ) = Anything
   target (Proven gm inftrees ) = target $ evalstmt $ evaltree gm (head inftrees)
-  target (NoProof _ _ ) = NOthing
-
-analyseerror :: [ITree] -> TypeError
-analyseerror ts = TypeError (ErrCode 0) error
-   where
-   errors = [x|t<-ts, InfErr x<-stmts t]
-   error = if null errors then "no error statement in tree found." else show $ head errors
-analyseerror _ = TypeError (ErrCode 0) "No inference trees in proof." 
+  target (NoProof _ ) = NOthing
 
 data ErrorCode = ErrCode Int 
 instance Show ErrorCode where
-   showsPrec _ ec = showString "0:Undefined error"
+   showsPrec _ (ErrCode 1) = showString $ "[1] Type mismatch in rule"
+   showsPrec _ (ErrCode 2) = showString $ "[2] Ambiguous type"
+   showsPrec _ (ErrCode 3) = showString $ "[3] Relation undefined"
+   showsPrec _ (ErrCode 4) = showString $ "[4] Incompatible comparison" --union and disjunction
+   showsPrec _ (ErrCode 5) = showString $ "[5] Incompatible composition"
+   showsPrec _ (ErrCode 6) = showString $ "[6] Ambiguous composition"
+   showsPrec _ (ErrCode 7) = showString $ "[7] Homogeneous property on heterogeneous relation"
+   showsPrec _ (ErrCode 8) = showString $ "[8] Type is not homogeneous" 
+   --showsPrec _ (ErrCode 9) = showString $ "[9] Type is not homogeneous" --merged with 8
+   showsPrec _ (ErrCode i) = showString $ "[" ++ show i ++ "] Undefined error"
 data TypeError = TypeError {errcode::ErrorCode, errmsg::String}
 instance Show TypeError where
-   showsPrec _ te =  showString $ show (errcode te) ++ ": "++ show (errmsg te)
+   showsPrec _ te =  showString $ show (errcode te) ++ "\n"++ show (errmsg te)
+
+analyseerror :: Gamma -> [(Statements,ITree)] -> TypeError
+analyseerror g tts = case mberr of
+   Just (_,err@(UndeclRel _)) -> TypeError (ErrCode 3) (show err)
+   Just (ss,(IErr dtp c1 c2 expr)) -> analysedisjunction g ss dtp c1 c2 expr
+   Nothing                    -> TypeError (ErrCode 0) "No type error found in the proof. Contact the system administrator."
+   where
+   errors = [((ss,basetree),x)|(ss,basetree)<-tts, InfErr x<-ss]
+   mberr = if null errors then Nothing else Just $ head errors
+analyseerror _ _ = TypeError (ErrCode 0) "No inference trees in proof. Contact the system administrator." 
+
+analysedisjunction :: Gamma -> (Statements,ITree) -> DisjType -> Concept -> Concept -> AdlExpr -> TypeError
+analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
+   where
+   BoundTo infexpr =  evaltree g basetree
+   disjrel = case expr of
+      Relation{} -> expr
+      Complement{sub=dr@(Relation{})} -> dr
+      Complement{sub=Flip{sub=dr@(Relation{})}} -> dr
+      Flip{sub=Complement{sub=dr@(Relation{})}} -> dr
+      Flip{sub=dr@(Relation{})} -> dr
+      _ -> error $ "Error in ITree.hs module TypeInference.ITree function analysedisjunction: " ++
+                   "The expression of IErr must be a relation or a complement or flip or a combination."
+   Relation{rel=mp,mphid=i} = disjrel
+   dtp = case mp of 
+       Mph{mphyin=False} -> case dtp' of
+                                 DisjSrc -> DisjTrg
+                                 DisjTrg -> DisjSrc
+                                 _ -> dtp'
+       _ -> dtp'  
+   printdtp = case dtp of
+       DisjSrc -> "source"
+       DisjTrg -> "target"
+       DisjHomo -> "source or target"
+   basedonrelations :: AdlExpr -> [AdlExpr]
+   basedonrelations exprX= case exprX of
+      Dagger{left=x, right=y} -> case dtp of
+         DisjSrc -> basedonrelations x 
+         DisjTrg -> basedonrelations y
+         _ -> []
+      Semicolon{left=x, right=y} -> case dtp of
+         DisjSrc -> basedonrelations x 
+         DisjTrg -> basedonrelations y
+         _ -> []
+      Union{lst=xs} -> [r|x<-xs,r<-basedonrelations x]
+      Intersect{lst=xs} -> [r|x<-xs,r<-basedonrelations x] 
+      Implicate{left=x, right=y} -> basedonrelations x ++ basedonrelations y
+      Equality{left=x, right=y} -> basedonrelations x ++ basedonrelations y
+      Complement{sub=x} -> basedonrelations x
+      Flip{sub=x} -> basedonrelations x
+      Relation{} -> [exprX]
+   --DESCR -> If the disjunction is on the source or target of the antecedent or consequent 
+   --         of an Implicate or Equality, then code 1
+   intstr = show i ++ case i of 
+         1 -> "st"
+         2 -> "nd"
+         _ -> "th"
+   --USE -> first check7 and 8 before check1
+   check1 = let
+            err = case infexpr of
+               Implicate{} -> [() | elem disjrel (basedonrelations infexpr)]
+               Equality{} -> [() | elem disjrel (basedonrelations infexpr)]
+               _ -> []
+            msg = "The  " ++ printdtp ++ " of the antecedent does not match the " ++ printdtp ++ " of the consequent. "
+                  ++ (show $ IErr dtp c1 c2 expr)
+            in
+            if (not.null) err
+            then TypeError (ErrCode 1) msg
+            else check4
+   --USE -> first check1 before check4
+   check4 = let
+            err = case infexpr of
+               Implicate{} -> [() | elem disjrel (basedonrelations (left infexpr))]
+                           ++ [() | elem disjrel (basedonrelations (right infexpr))]
+               Equality{} ->  [() | elem disjrel (basedonrelations (left infexpr))]
+                           ++ [() | elem disjrel (basedonrelations (right infexpr))]
+               _ -> [() | elem disjrel (basedonrelations infexpr)]
+            msg = "The "++printdtp++" of the "++intstr++" relation "++name mp
+                  ++" does not match the "++printdtp++"s of expressions it is compared to. "
+                  ++ (show $ IErr dtp c1 c2 expr)
+            in
+            if (not.null) err
+            then TypeError (ErrCode 4) msg
+            else check5
+   --USE -> first check4 before check5
+   check5 = let msg = "The "++printdtp++" of the "++intstr++" relation "++name mp
+                   ++ " does not match the expression it is composed with. "
+                   ++ (show $ IErr dtp c1 c2 expr)
+            in TypeError (ErrCode 5) msg 
+   check7 = let
+            err = case infexpr of
+                Equality
+                   {left=r1,right=r2} -> if null (meandmyflip r1 r2) then [] 
+                                         else [(rel r,"symmetric")| r@(Relation{})<-meandmyflip r1 r2, hetero r]  
+                Implicate
+                   {left=Intersect{lst=[r1,r2]}
+                   ,right=Relation{rel=I{}}} -> if null (meandmyflip r1 r2) then [] 
+                                                     else [(rel r,"asymmetric")| r@(Relation{})<-meandmyflip r1 r2, hetero r]
+                Implicate
+                   {left=Semicolon{left=Relation{rel=r2@(Mph{})},right=Relation{rel=r3@(Mph{})}}
+                   ,right=rex@(Relation{rel=r1@(Mph{})})} -> [(r1,"transitive") | r1==r2, r2==r3, hetero rex]
+                Implicate
+                   {left=Relation{rel=(I{})}
+                   ,right=rex@(Relation{rel=r@(Mph{})})} -> [(r,"reflexive") | hetero rex]
+                _ -> []
+            meandmyflip r r' = case r of
+               r@(Relation{rel=mp1@(Mph{})}) -> case r' of
+                   Flip{sub=Relation{rel=mp2@(Mph{})}} -> [r|mp1==flp mp2]
+                   _ -> []
+               Flip{sub=Relation{rel=mp1@(Mph{})}} -> case r' of
+                   r@(Relation{rel=mp2@(Mph{})}) -> [r|flp mp1==mp2]
+                   _ -> []
+               _ -> []
+            hetero (Relation{tt=TT ct1 ct2 _}) = ct1 /= ct2
+            hetero _ = error $  "Error in ITree.hs module TypeInference.ITree function analysedisjunction.check7.hetero: " ++
+                                "The expression must be a Relation."  
+            msg = "Heterogeneous relation " ++ (name.fst.head) err ++ " cannot be " ++ (snd.head) err++"."
+            in
+            if (not.null) err
+            then TypeError (ErrCode 7) msg
+            else check8
+   check8 = let
+            err = case dtp of
+                DisjHomo -> [()] 
+                _ -> []
+            msg = "The source and target of the "++intstr++", homogeneous relation "++name mp++" do not match. "
+                  ++ (show $ IErr dtp c1 c2 expr)
+            in
+            if (not.null) err
+            then TypeError (ErrCode 8) msg
+            else check1
+--   return0 = TypeError (ErrCode 0) $ (show $ IErr dtp c1 c2 expr) -- ++ printexpr infexpr ++ show dtp ++ printexpr expr
+
+--DESCR -> if ambiguity is a consequent of an ambiguous composition, then code 6 else code 2
+analyseamb :: Gamma -> [ITree] -> TypeError
+analyseamb g ts = 
+   if not (sametype inftypes)
+   then TypeError (ErrCode 2) $ "The type can be " ++ prinftypes ++ "."
+   else if null (diffcomps exprrels)
+        then TypeError (ErrCode 0) 
+             "There appears to be an ambiguity, but details cannot be found. Contact the system administrator."
+        else TypeError (ErrCode 6) $ printdiffcomps
+   where
+   prinftypes = (savetail.savetail.savetail.savetail) [c|itp<-inftypes,c<-" or "++show itp]
+   infstmts = [evaltree g t|t<-ts]
+   inftypes = map evalstmt infstmts
+   sametype [] = True
+   sametype (x:[]) = True
+   sametype (x:y:xs) = x==y && sametype (y:xs)
+   exprrels = [relations expr | (BoundTo expr)<-infstmts]
+   printdiffcomps = (savetail.savetail) [c|str<-diffcomps exprrels, c<-". "++str]
+   savetail [] = []
+   savetail (x:xs) = xs
+   diffcomps [] = []
+   diffcomps (x:[]) = []
+   diffcomps (x:y:xs) = ["The type of "++intstr (mphid r1) ++" relation (" 
+                         ++ (name $ rel r1) ++ ") can be " ++ signstr r1
+                         ++ " or " ++ signstr r2
+                         |(r1,r2)<-zip x y, (tt r1)/=(tt r2),r1==r2 ] ++ diffcomps (y:xs)
+      where 
+      signstr r = show $ evalstmt (BoundTo r)
+      intstr i = show i ++ case i of 
+         1 -> "st"
+         2 -> "nd"
+         _ -> "th"
+
+-------------------------------------------------------------------------------------------
 
 --DESCR -> For type inference we defined rules to be able to construct an inference tree, to infer a type or type error, for all expressions.
 --         Stmt is a basic statement

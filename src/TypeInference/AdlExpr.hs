@@ -45,6 +45,18 @@ amphid adlex = case adlex of
   Semicolon{} -> amphid $ left adlex 
   Dagger{} -> amphid $ left adlex 
 
+relations :: AdlExpr -> [AdlExpr]
+relations adlex = case adlex of
+  Relation{} -> [adlex]
+  Implicate{} -> relations (left adlex) ++ relations (right adlex)
+  Equality{} -> relations (left adlex) ++ relations (right adlex)
+  Complement{} -> relations (sub adlex)
+  Flip{} -> relations (sub adlex)
+  Union{} -> [x| expr<-lst adlex, x<-relations expr] 
+  Intersect{} -> [x| expr<-lst adlex, x<-relations expr] 
+  Semicolon{} -> relations (left adlex) ++ relations (right adlex)
+  Dagger{} -> relations (left adlex) ++ relations (right adlex)
+
 isCompl :: AdlExpr -> Bool
 isCompl (Complement{}) = True
 isCompl _ = False
@@ -148,6 +160,10 @@ declaredcpt ct = case ct of
 
 fromSign :: Sign -> TypeTerm
 fromSign (x,y) = TT (CT x) (CT y) 1
+
+instance Association TypeTerm where
+   source (TT ct _ _) = val ct
+   target (TT _ ct _) = val ct
 
 reassignexpr :: (Maybe Concept,Maybe Concept) -> AdlExpr -> AdlExpr
 reassignexpr (x,y) expr = case expr of
