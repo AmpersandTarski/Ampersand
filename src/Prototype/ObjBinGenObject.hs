@@ -90,8 +90,8 @@
     = "function getEach"++phpIdentifier capname++"(){"++
       "\n      return DB_doquer('"++(selectExpr fSpec
                                              25
-                                             (sqlExprTrg (ctx object)) -- was:  (sqlAttConcept context (concept object))
-                                             (sqlExprSrc (ctx object)) -- was:  (sqlAttConcept context (concept object))
+                                             (sqlExprTrg fSpec (ctx object)) -- was:  (sqlAttConcept context (concept object))
+                                             (sqlExprSrc fSpec (ctx object)) -- was:  (sqlAttConcept context (concept object))
                                              (flp (ctx object)) -- was: (Tm (mIs (concept object)))
                                  )++"');\n  }"
 
@@ -165,7 +165,7 @@
                 , "$affected = DB_doquer('"++ (selectExprForAttr fSpec a o (phpVar nm++"->id")) ++"');"
                 , "$arr=array();"
                 , "foreach($affected as $i=>$v){"
-                , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
+                , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg fSpec (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (nm++"_"++name a++"_str")++"=join(',',$arr);"
                 , "// destroy old value of "++name a++" in the database."
@@ -197,7 +197,7 @@
                 , "  }"
                 , "  DB_doquer('"++(insertConcept fSpec (concept a) (phpVar (nm++"_"++name a)++"->id") True)++"');"
                 , "  DB_doquer('INSERT IGNORE INTO "
-                  ++(sqlMorName fSpec (head (mors m)))++" ("++(sqlExprSrc m)++","++(sqlExprTrg m)++")"
+                  ++(sqlMorName fSpec (head (mors m)))++" ("++(sqlExprSrc fSpec m)++","++(sqlExprTrg fSpec m)++")"
                   ++" VALUES (\\''.addSlashes("++phpVar nm++"->id).'\\'"
                   ++        ",\\''.addSlashes("++phpVar (nm++"_"++name a)++"->id).'\\')');"
                 ] ++ updateObject fSpec (nms++[name a]) a ++
@@ -230,7 +230,7 @@
                 ,"if(count($taken)) {"
                 ,"  $DB_err = 'Cannot delete "++(name object)++": "
                  ++(prag d "\\''.addSlashes($id).'\\'" "\\''.addSlashes($taken[0]['"
-                 ++(sqlExprTrg (Tm m))++"']).'\\'" )++"';" -- pragma
+                 ++(sqlExprTrg fSpec (Tm m))++"']).'\\'" )++"';" -- pragma
                 ,"  DB_doquer('ROLLBACK');"
                 ,"  return false;"
                 ,"}"
@@ -260,7 +260,7 @@
               [ [ "$affected = DB_doquer('"++ (selectExprForAttr fSpec a object "$id") ++"');"
                 , "$arr=array();"
                 , "foreach($affected as $i=>$v){"
-                , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg (ctx a))++"']).'\\'';"
+                , "    $arr[]='\\''.addSlashes($v['"++(sqlExprTrg fSpec (ctx a))++"']).'\\'';"
                 , "}"
                 , phpVar (name a)++"_str=join(',',$arr);"
                 , "DB_doquer ('"++(deleteExprForAttr fSpec a object "$id")++"');"
@@ -283,7 +283,7 @@
    deleteExprForAttr fSpec a parent id
     | isTrue (ctx a)  = error "Fatal: DELETE FROM V is no valid SQL"
     | isIdent (ctx a) = "DELETE FROM "++sqlConcept fSpec ((target.head.mors.ctx) a)++" WHERE "++sqlAttConcept fSpec ((target.head.mors.ctx) a)++"=\\''.addSlashes("++id++").'\\'"
-    | otherwise       = "DELETE FROM "++sqlMorName fSpec ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc (ctx a))++"=\\''.addSlashes("++id++").'\\'"
+    | otherwise       = "DELETE FROM "++sqlMorName fSpec ((head.mors.ctx) a)++" WHERE "++(sqlExprSrc fSpec (ctx a))++"=\\''.addSlashes("++id++").'\\'"
 
    andNEXISTquer fSpec e m
     | isTrue m  = [ "      AND FALSE" ]
@@ -338,7 +338,7 @@
    selectExprForAttr fSpec a parent id
      = selectExprWithF fSpec (ctx a) (concept parent) id
    selectExprWithF fSpec e cpt id
-     = selectExpr fSpec 25 (sqlExprSrc e) (sqlExprTrg e)
+     = selectExpr fSpec 25 (sqlExprSrc fSpec e) (sqlExprTrg fSpec e)
                    (F [Tm (Mp1 ("\\''.addSlashes("++id++").'\\'") cpt), e])
 
 
@@ -367,7 +367,7 @@
                 , "  if(isset($id)){"
                 , "    $this->"++phpIdentifier (name a)++" = array();"
                 , "    foreach(DB_doquer('"++ selectExprForAttr fSpec a o "$id" ++"') as $i=>$v){"
-                , "      $this->"++phpIdentifier (name a)++"[]=new "++phpObjRelName nms o a++"($v['" ++ sqlExprTrg (ctx a) ++ "']);"
+                , "      $this->"++phpIdentifier (name a)++"[]=new "++phpObjRelName nms o a++"($v['" ++ sqlExprTrg fSpec (ctx a) ++ "']);"
                 , "    }"
                 , "  } else $this->"++phpIdentifier (name a)++"=array();"
                 , "}"] ++

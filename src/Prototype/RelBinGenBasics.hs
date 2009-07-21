@@ -3,7 +3,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                         ,sqlConcept,sqlAttConcept,sqlMorSrc
                         ,sqlClosName,closE,sqlRelName,sqlRelSrc,sqlRelTrg
                         ,phpShow,insConcept
-                        ,selectNormFiExpr,clos0,pDebug,noCollide) where
+                        ,selectNormFiExpr,clos0,pDebug,noCollide,plugs) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum)
    --import Auxiliaries(chain,enc) --TODO -> see Garbage
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
@@ -17,14 +17,14 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    import NormalForms (conjNF)
  --  import MultRules
    import Data.Fspec
+   import Data.Plug
+   import Auxiliaries
+   import Collection (rd,(>-))
    import Collection (Collection(rd,uni))
    import Prototype.Garbage --TODO -> clean up Garbage
 
-
-
    pDebug   = True
    pNoDebug = not pDebug
-
 
    --TODO -> is this a correct translation ánd clean-up of Morphical Context? 
    --I think its better to make morphical redundant all along, and replace it with fspec and functions on fspec
@@ -68,10 +68,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,
             m'   = head (mors frExpr)
             srcFr | isIdent frExpr     = sqlConcept fSpec (source frExpr)
                   | otherwise          = if inline m' then sqlMorSrc fSpec m else sqlMorTrg fSpec m
-            srcTo = sqlExprSrc toExpr
+            srcTo = sqlExprSrc fSpec toExpr
             trgFr | isIdent frExpr     = sqlConcept fSpec (source frExpr)
                   | otherwise          = if inline m' then sqlMorTrg fSpec m else sqlMorSrc fSpec m
-            trgTo = sqlExprTrg toExpr -- may not collide with srcTo, but what if toExpr is a property (or identity)? (Bas?)
+            trgTo = sqlExprTrg fSpec toExpr -- may not collide with srcTo, but what if toExpr is a property (or identity)? (Bas?)
             frExpr' = doSubsExpr fSpec attrs subs frExpr
    sqlCodeComputeRule attrs i fSpec subs hc@(CR fOp e "DELETE FROM" toExpr (Cp frExpr) rule)
     = if null froms
@@ -116,12 +116,6 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                  -> Expression -- without substitutions made
                  -> Expression -- with substitutions made
 
-
-
-
-
-
-
    doSubsExpr _ _ [] expr = expr
    doSubsExpr fSpec  -- the current context
               to   -- "$attrs"
@@ -145,29 +139,6 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                                        | otherwise = F [mp1 to q (source m),v (source m,target m),mp1 to p (target m)]
             mp1 var a = Tm . Mp1 ("\\''.addSlashes("++var++"['"++a++"']).'\\'")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    selectRule :: Fspc -- current context
                  -> Int  -- indentation
                  -> Rule -- rule to be translated
@@ -175,10 +146,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    selectRule fSpec i r@(Ru _ _ _ _ _ _ _ _ _)
     = if src==trg && not (isProperty e) then error ("(Module RelBinGenBasics) Fatal: src and trg are equal ("++src++") in selectRule.\n"++showADL r) else
       selectExpr fSpec i src trg e
-      where src  = sqlExprSrc e
-            trg  = sqlExprTrg e -- may not collide with src, but what if toExpr is a property (or identity)? (Bas?)
-  -- was:   trg  = noCollide [src] (sqlExprTrg e)
-  -- might be?: trg  = noCollideUnlessTm e [src] (sqlExprTrg e)
+      where src  = sqlExprSrc fSpec e
+            trg  = sqlExprTrg fSpec e -- may not collide with src, but what if toExpr is a property (or identity)? (Bas?)
+  -- was:   trg  = noCollide [src] (sqlExprTrg fSpec e)
+  -- might be?: trg  = noCollideUnlessTm e [src] (sqlExprTrg fSpec e)
             e    = (conjNF.Cp .normExpr) r
    selectRule fSpec i r
     = error ("(module RelBinGenBasics) Fatal: This rule should never occur in selectRule fSpec i ("++showHS "" r++")") -- verified in AGtry.ag vs. 0.7.6 on May 1st 2006 (by SJO)
@@ -195,8 +166,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    selectExpr fSpec i src trg (Fi lst'@(_:_:_))
     = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                            (chain ", " exprbracs) (chain " AND " (wherecl))
-      where src'    = sqlExprSrc fst
-            trgC    = sqlExprTrg fst -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
+      where src'    = sqlExprSrc fSpec fst
+            trgC    = sqlExprTrg fSpec fst -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
             trg'    = noCollideUnlessTm fst [src'] trgC
             fst     = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
             mp1Tm   = take 1 ([t| t@(Tm (Mp1 _ _))<-lst']++[t| t@(F ((Tm (Mp1 _ _)):(Tm (V _ _)):(Tm (Mp1 _ _)):[])) <- lst'])
@@ -207,16 +178,16 @@ module Prototype.RelBinGenBasics(phpIdentifier,
             negTms' = [notCp t| t<-lst, isNeg t && isIdent t]++[notCp t| t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
             exprbracs = [ (selectExprBrac fSpec (i) src'' trg'' l) ++ " AS isect"++show n 
                         | (n,l)<-zip [0..] posTms
-                        , src''<-[sqlExprSrc l]
-                        , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
+                        , src''<-[sqlExprSrc fSpec l]
+                        , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg fSpec l)]
                         ]
             wherecl   = [if isIdent l
                          then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is longer
                          else "(isect0."++src'++" = isect"++show n++"."++src''
                          ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
                         | (n,l)<-tail (zip [0..] posTms) -- not empty because of definition of posTms
-                        , src''<-[sqlExprSrc l]
-                        , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
+                        , src''<-[sqlExprSrc fSpec l]
+                        , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg fSpec l)]
                         ]++
                         [ "isect0."++src'++" = "++s -- sorce and target are equal because this is the case with Mp1
                         | (Tm (Mp1 s _)) <- mp1Tm
@@ -232,8 +203,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                                                               ("isect0."++src' ++ "=cp."++src''++" AND isect0."++ trg'++"=cp."++trg'')
                                             )++")"
                         | (n,l)<-zip [0..] negTms
-                        , src''<-[sqlExprSrc l]
-                        , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg l)]
+                        , src''<-[sqlExprSrc fSpec l]
+                        , trg''<-[noCollideUnlessTm l [src''] (sqlExprTrg fSpec l)]
                         ]
 
 
@@ -249,20 +220,18 @@ module Prototype.RelBinGenBasics(phpIdentifier,
         selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                         (selectExprBrac fSpec (i) src' trg' (F (f:fx))++" AS fst")
                         ("fst."++src'++" = "++sr)
-                        where src' = sqlExprSrc e
-                              trg' = noCollideUnlessTm (F (f:fx)) [src'] (sqlExprTrg (F (f:fx)))
+                        where src' = sqlExprSrc fSpec e
+                              trg' = noCollideUnlessTm (F (f:fx)) [src'] (sqlExprTrg fSpec (F (f:fx)))
 
    selectExpr fSpec i src trg (F (e:((Tm (V _ _)):(f:fx)))) = -- prevent calculating V in this case
        if src==trg && not (isProperty e) then error ("(Module RelBinGenBasics: selectExpr 2) src and trg are equal ("++src++") in "++showADL e) else
        selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         ((selectExprBrac fSpec i src' mid' e)++" AS fst, "++(selectExprBrac fSpec i mid2' trg' f)++" AS snd")
                         "1"
-                        where src' = sqlExprSrc e
-                              mid' = sqlExprTrg e
-                              mid2'= sqlExprSrc f
-                              trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (sqlExprTrg (F (f:fx)))
-
-
+                        where src' = sqlExprSrc fSpec e
+                              mid' = sqlExprTrg fSpec e
+                              mid2'= sqlExprSrc fSpec f
+                              trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (sqlExprTrg fSpec (F (f:fx)))
 
 
    selectExpr fSpec i src trg (Tm (V _ (s,t))   ) 
@@ -299,16 +268,16 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                         (selectExprBrac fSpec (i) src' mid' e++" AS fst, "++selectExprBrac fSpec (i) mid2' trg' (F (f:fx))++" AS snd")
                         ("fst."++mid'++" = snd."++mid2')
    --  The values of  src', mid', mid2', and trg' can be anything, as long as they are distinct. Here they have been chosen (arbitrarily) to be meaningful names derived from source and targets.
-                        where src' = sqlExprSrc e
-                              mid' = noCollideUnlessTm e [src'] (sqlExprTrg e)
-                              mid2'= sqlExprSrc f
-                              trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (sqlExprTrg (F (f:fx)))
+                        where src' = sqlExprSrc fSpec e
+                              mid' = noCollideUnlessTm e [src'] (sqlExprTrg fSpec e)
+                              mid2'= sqlExprSrc fSpec f
+                              trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (sqlExprTrg fSpec (F (f:fx)))
    selectExpr fSpec i src trg (F  [e]       ) = selectExpr fSpec i src trg e
    selectExpr fSpec i src trg (Fi (e:(f:fx))) = selectGeneric i ("fst."++src',src) ("fst."++trg',trg) ((selectExprBrac fSpec (i) src' trg' e)++" AS fst, "++(selectExprBrac fSpec (i) src'' trg'' (Fi (f:fx)))++" AS snd") ("fst."++src'++" = snd."++src''++" AND fst."++trg'++"=snd."++trg'')
-                        where src'  = sqlExprSrc e
-                              trg'  = noCollide [src'] (sqlExprTrg e)
-                              src'' = sqlExprSrc f
-                              trg'' = noCollide [src''] (sqlExprTrg f)
+                        where src'  = sqlExprSrc fSpec e
+                              trg'  = noCollide [src'] (sqlExprTrg fSpec e)
+                              src'' = sqlExprSrc fSpec f
+                              trg'' = noCollide [src''] (sqlExprTrg fSpec f)
    selectExpr fSpec i src trg (Fi [e]) = selectExpr fSpec i src trg e
    selectExpr fSpec i src trg (Fi [] ) = error ("RelBinGenBasics.lhs: Cannot create query for Fi [] because type is unknown")
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
@@ -333,44 +302,16 @@ module Prototype.RelBinGenBasics(phpIdentifier,
                         )
                         where src' = sqlAttConcept fSpec (source e) 
                               trg' = noCollide [src'] (sqlAttConcept fSpec (target e))
-                              src2 = sqlExprSrc e
-                              trg2 = noCollideUnlessTm e [src2] (sqlExprTrg e)
-   selectExpr fSpec i src trg cl@(K0 e) = selectGeneric i (sqlExprSrc cl,src) (sqlExprTrg cl,trg) (sqlRelName fSpec cl) "1"
-   selectExpr fSpec i src trg cl@(K1 e) = selectGeneric i (sqlExprSrc cl,src) (sqlExprTrg cl,trg) (sqlRelName fSpec cl) "1"
+                              src2 = sqlExprSrc fSpec e
+                              trg2 = noCollideUnlessTm e [src2] (sqlExprTrg fSpec e)
+   selectExpr fSpec i src trg cl@(K0 e) = selectGeneric i (sqlExprSrc fSpec cl,src) (sqlExprTrg fSpec cl,trg) (sqlRelName fSpec cl) "1"
+   selectExpr fSpec i src trg cl@(K1 e) = selectGeneric i (sqlExprSrc fSpec cl,src) (sqlExprTrg fSpec cl,trg) (sqlRelName fSpec cl) "1"
    selectExpr fSpec i src trg (Fd []  ) = error ("RelBinGenBasics.lhs: Cannot create query for Fd [] because type is unknown")
    selectExpr fSpec i src trg (Fd [e] ) = selectExpr fSpec i src trg e
    selectExpr fSpec i src trg (Fd fxs) = selectExpr fSpec i src trg $ Cp {e=F (map addcompl fxs)}
          where
          addcompl fx@(Cp{}) = e fx
          addcompl fx = Cp{e=fx}
-{-
-   selectExpr fSpec i src trg (Fd (e:(f:fx))) =
-
-        selectGeneric i ("dagger1."++src',src) ("dagger2."++trg',trg)
-                        ((selectExprBrac fSpec (i) src' mid' e)++" AS dagger1, "++(selectExprBrac fSpec (i) mid2' trg' (F (f:fx)))++" AS dagger2")
-                        ("NOT EXISTS ("
-                            ++ (selectExists' (i+6)
-                                              (selectSelItem (cpt, cptname))
-                                              ("dagger1."++mid' ++"<>"++cptattr++" AND dagger2."++mid2'++"<>"++cptattr)
-                               ) ++ ")"
-                        )
-                        where src' = sqlExprSrc e
-                              mid' = noCollide [src'] (sqlExprTrg e)
-                              cpt  = sqlConcept fSpec (target e)
-                              cptname = noCollide [mid', mid2'] (sqlConcept fSpec (target e))
-                              cptattr = cptname++"."++(sqlAttConcept fSpec (target e))
-                              mid2'= noCollide [trg'] (sqlExprSrc f)
-                              trg' = sqlExprTrg (Fd (f:fx))
--}
-
- --  selectExpr _ _ _ _ e = error ("RelBinGenBasics.lhs: Non-exhaustive patterns in function selectExpr for "++(showADL e))
-
-
-
-
-
-
-
 
 
    selectExprBrac fSpec i src trg (Tc e  )                             = selectExprBrac fSpec i src trg e
@@ -380,9 +321,9 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    selectExprBrac fSpec i src trg (Tm m@(Mph{}))
     | (sqlMorSrc fSpec m,sqlMorTrg fSpec m)==(src,trg) = sqlMorName fSpec m
    selectExprBrac fSpec i src trg (K0 e)
-    | (sqlExprSrc e,sqlExprTrg e)==(src,trg)                         = sqlRelName fSpec (K0 e)
+    | (sqlExprSrc fSpec e,sqlExprTrg fSpec e)==(src,trg)                         = sqlRelName fSpec (K0 e)
    selectExprBrac fSpec i src trg (K1 e)
-    | (sqlExprSrc e,sqlExprTrg e)==(src,trg)                 = sqlRelName fSpec (K1 e)
+    | (sqlExprSrc fSpec e,sqlExprTrg fSpec e)==(src,trg)                 = sqlRelName fSpec (K1 e)
    selectExprBrac fSpec i src trg expr                                 = phpIndent (i+4) ++ "( " ++ selectExpr fSpec (i+6) src trg expr++ phpIndent(i+4)++")"
 
    noCollide :: [String] -> String -> String
@@ -400,9 +341,6 @@ module Prototype.RelBinGenBasics(phpIdentifier,
       int2string :: Int -> String
       int2string 0 = "0"
       int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
-
-
-
 
    noCollideUnlessTm (Tm _) _ name = name
    noCollideUnlessTm _  names name = noCollide names name
@@ -504,25 +442,6 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    addSlashes (c:cs) = c:addSlashes cs
    addSlashes "" = ""
 
-   phpRelName :: Fspc -> Declaration -> String
-   phpRelName fSpec s
-    = sqlRelName fSpec s
-
-   phpRelSrc :: Morphic a => Fspc -> a -> String
-   phpRelSrc fSpec s
-    | homogeneous s = "Src"++phpEncode (name (source s))
-    | otherwise     = "Att"++phpEncode (name (source s))
-
-   phpRelTrg :: Morphic a => Fspc -> a -> String
-   phpRelTrg fSpec s
-    | homogeneous s = "Trg"++phpEncode (name (target s))
-    | otherwise     = "Att"++phpEncode (name (target s))
-
-   phpMorName, phpMorSrc, phpMorTrg :: Fspc -> Morphism -> String
-   phpMorName = sqlMorName
-   phpMorSrc  = sqlMorSrc
-   phpMorTrg  = sqlMorTrg
-
    phpConcept :: Fspc -> Concept -> String
    phpConcept fSpec c | c == cptS = "ONE"
                         | otherwise 
@@ -537,157 +456,127 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    sqlRuleName fSpec r = error ("Illegal call to sqlRuleName ("++showADL r++" on "++show (pos r)++")")
 
 
-   -- WAAROM?? Onderstaande declaratie mag wel wat verduidelijking. Het lijkt me ook niet onderhoudbaar. Overigens is deze module de ENIGE die het noodzakelijk maakt om de Class ShowHS te exproteren in ShowHS. Jammer!
-   sqlRelName :: (ShowHS m,Morphic m,MorphicId m,Morphical m,IsClos m) => Fspc -> m -> String
+   -- WAAROM?? Onderstaande declaratie mag wel wat verduidelijking.
+   -- Het lijkt me ook niet onderhoudbaar.
+   -- Overigens is deze module de ENIGE die het noodzakelijk maakt om de Class ShowHS te exporteren in ShowHS. Jammer!
+   sqlRelName :: (Show m,Morphic m,MorphicId m,Morphical m,IsClos m) => Fspc -> m -> String
    sqlRelName fSpec m
     = if isIdent m then sqlConcept fSpec (source m) else
       if isClos m then sqlClosName fSpec m else
       if isTrue m then "V" else
-      if null as then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): No declarations in "++showHS "" m) else
-      if length as>1 then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): Multiple declarations in "++showHS "" m) else
-      if null ts then error ("(module RelBinGenBasics) Declaration \""++showHS "" m++"\" does not occur in fSpec \""++appname++"\" (sqlRelName in module RelBinGenBasics)\n"++showHS "" (declarations (closExprs fSpec) ++ declarations fSpec)) else
-  --  if length ts>1 then error ("(module RelBinGenBasics) Declaration \""++show a++"\" is not unique in fSpec \""++appname++"\" (sqlRelName in module RelBinGenBasics) "++show ts) else
-      head ts
-      where ts = ["T"++show i++"_"++enc False (name s)
-                 |(i,s)<-zip [1..] (declarations fSpec), a==s] 
-               -- error(chain "\n" (map (showHS "") (filter isSgnl (declarations fSpec)))) --
+      if null as then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): No declarations in "++show m) else
+      if length as>1 then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): Multiple declarations in "++show m) else
+      name plug
+      where (plug,_,_) = sqlRelPlug fSpec (Tm (makeMph a))
             as = declarations m
             a = head as
             FS_id appname = fsfsid fSpec
+    
+    --[PlugSql {fields = [Fld {fldname = "Application", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = True},Fld {fldname = "Decision", fldexpr = leadsto, fldtype = SQLId, fldnull = True, flduniq = True},Fld {fldname = "Employee", fldexpr = assigned, fldtype = SQLId, fldnull = True, flduniq = False},Fld {fldname = "Person", fldexpr = applicant, fldtype = SQLId, fldnull = False, flduniq = False},Fld {fldname = "Product", fldexpr = kind, fldtype = SQLId, fldnull = False, flduniq = False},Fld {fldname = "Product1", fldexpr = kind, fldtype = SQLId, fldnull = False, flduniq = False}], database = CurrentDb, plname = "Application"},PlugSql {fields = [Fld {fldname = "Application", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = True},Fld {fldname = "Decision", fldexpr = leadsto, fldtype = SQLId, fldnull = True, flduniq = True},Fld {fldname = "Decision1", fldexpr = leadsto;leadsto, fldtype = SQLId, fldnull = True, flduniq = True},Fld {fldname = "Employee", fldexpr = leadsto;assigned, fldtype = SQLId, fldnull = True, flduniq = False},Fld {fldname = "Person", fldexpr = leadsto;applicant, fldtype = SQLId, fldnull = True, flduniq = False},Fld {fldname = "Product", fldexpr = leadsto;kind, fldtype = SQLId, fldnull = True, flduniq = False},Fld {fldname = "Product1", fldexpr = leadsto;kind, fldtype = SQLId, fldnull = True, flduniq = False}], database = CurrentDb, plname = "ApplicationApplication"},PlugSql {fields = [Fld {fldname = "IDdocument", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = True},Fld {fldname = "Person", fldexpr = authentic~, fldtype = SQLId, fldnull = False, flduniq = False}], database = CurrentDb, plname = "authentic"},PlugSql {fields = [Fld {fldname = "Application", fldexpr = I/\checked;checked~, fldtype = SQLId, fldnull = False, flduniq = False},Fld {fldname = "IDdocument", fldexpr = checked, fldtype = SQLId, fldnull = False, flduniq = False}], database = CurrentDb, plname = "checked"},PlugSql {fields = [Fld {fldname = "Employee", fldexpr = I/\auth;auth~, fldtype = SQLId, fldnull = False, flduniq = False},Fld {fldname = "Product", fldexpr = auth, fldtype = SQLId, fldnull = False, flduniq = False}], database = CurrentDb, plname = "auth"},PlugSql {fields = [Fld {fldname = "Person", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = True},Fld {fldname = "Area", fldexpr = inhabitant, fldtype = SQLId, fldnull = False, flduniq = False}], database = CurrentDb, plname = "inhabitant"},PlugSql {fields = [Fld {fldname = "Area", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = False},Fld {fldname = "Employee", fldexpr = area~, fldtype = SQLId, fldnull = False, flduniq = False}], database = CurrentDb, plname = "area"},PlugSql {fields = [Fld {fldname = "Employee", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = True}], database = CurrentDb, plname = "Employee"},PlugSql {fields = [Fld {fldname = "Product", fldexpr = I, fldtype = SQLId, fldnull = False, flduniq = True}], database = CurrentDb, plname = "Product"}]
 
+    
+   sqlRelPlug :: Fspc -> Expression -> (Plug,SqlField,SqlField) --(plug,source,target)
+   sqlRelPlug fSpec expr = if null cs then error ("\n(module RelBinGenBasics) Expression \""++show expr++"\" does not occur in plugs of fSpec (sqlRelPlug in module RelBinGenBasics)") else
+                           head cs
+                           where cs = [ (plug,sf,tf)
+                                      | plug@PlugSql{}<-plugs fSpec
+                                      , sf<-[f|f<-fields plug,target (fldexpr f)==source e]
+                                      , tf<-[f|f<-fields plug,target (fldexpr f)==target e]
+                                      ,  ((Sur `elem` multiplicities (fldexpr sf))
+                                          &&(conjNF (F [fldexpr  sf,    e])==fldexpr tf)
+                                         )
+                                      || ((Sur `elem` multiplicities (fldexpr tf))
+                                          &&(conjNF (F [fldexpr  tf,flp e])==fldexpr sf)
+                                         )
+                                      || (source (fldexpr sf)==source e && fldexpr tf == e)
+                                      || (source (fldexpr tf)==target e && fldexpr sf == flp e)
+                                      ]
+                                 e  = expr
+   
+   sqlRelSrc :: Fspc->Declaration -> String
+   sqlRelSrc fSpec i@Vs{}      = name (target i)
+   sqlRelSrc fSpec i@Isn{}     = name (target i)
+   sqlRelSrc fSpec i@Iscompl{} = name (target i)
+   sqlRelSrc fSpec s = fldname src
+    where (_,src,_) = sqlRelPlug fSpec (Tm $makeMph s)
 
+   sqlRelTrg :: Fspc->Declaration -> String
+   sqlRelTrg fSpec i@Vs{}      = name (target i)
+   sqlRelTrg fSpec i@Isn{}     = name (target i)
+   sqlRelTrg fSpec i@Iscompl{} = name (target i)
+   sqlRelTrg fSpec s = fldname trg
+    where (_,_,trg) = sqlRelPlug fSpec (Tm $makeMph s)
 
-
-
-
-
-
-   sqlExprSrc :: Expression -> String
-   sqlExprSrc (F [])   = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
-   sqlExprSrc (F [f])  = sqlExprSrc f
-   sqlExprSrc (F fs)   = sqlExprSrc (head fs)
-   sqlExprSrc (Fu [])  = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fu [])")
-   sqlExprSrc (Fu [f]) = sqlExprSrc f
-   sqlExprSrc (Fu fs)  = sqlExprSrc (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-   sqlExprSrc (Fi [])  = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fi [])")
-   sqlExprSrc (Fi [f]) = sqlExprSrc f
-   sqlExprSrc (Fi fs)  = sqlExprSrc (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-   sqlExprSrc (Fd [])  = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fd [])")
-   sqlExprSrc (Fd [f]) = sqlExprSrc f
-   sqlExprSrc (Fd fs)  = sqlExprSrc (head fs)
-   sqlExprSrc (Cp e)   = sqlExprSrc e
-   sqlExprSrc (K0 e)   = sqlExprSrc e
-   sqlExprSrc (K1 e)   = sqlExprSrc e
-   sqlExprSrc (Tm (Mp1 _ t)) = "Att"++phpEncode (name t)
-   sqlExprSrc (Tm m) | inline m  = sqlRelSrc (makeDeclaration m)
-                     | otherwise = sqlRelTrg (makeDeclaration m)
-   sqlExprSrc e        = error ("unexhaustive pattern in RelBinGenBasics.lhs in sqlExprSrc for "++showHS "" e)
-
-   sqlExprTrg :: Expression -> String
-   sqlExprTrg e = sqlExprSrc (flp e)
-
-
-   sqlRelSrc :: Declaration -> String
-   sqlRelSrc s
-    | isIdent s = "Att"++phpEncode (name src)
-    | src==trg  = "Src"++phpEncode (name src)
-    | otherwise = "Att"++phpEncode (name src)
-    where src = source s
-          trg = target s
-
-   sqlRelTrg :: Declaration -> String
-   sqlRelTrg s
-    | isIdent s = "Att"++phpEncode (name trg)
-    | src==trg  = "Trg"++phpEncode (name trg)
-    | otherwise = "Att"++phpEncode (name trg)
-    where src = source s
-          trg = target s
+   sqlExprSrc :: Fspc->Expression -> String
+   sqlExprSrc fSpec (F [])   = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
+   sqlExprSrc fSpec (F [f])  = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (F fs)   = sqlExprSrc fSpec (head fs)
+   sqlExprSrc fSpec (Fu [])  = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fu [])")
+   sqlExprSrc fSpec (Fu [f]) = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (Fu fs)  = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+   sqlExprSrc fSpec (Fi [])  = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fi [])")
+   sqlExprSrc fSpec (Fi [f]) = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (Fi fs)  = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+   sqlExprSrc fSpec (Fd [])  = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fd [])")
+   sqlExprSrc fSpec (Fd [f]) = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (Fd fs)  = sqlExprSrc fSpec (head fs)
+   sqlExprSrc fSpec (Cp e)   = sqlExprSrc fSpec e
+   sqlExprSrc fSpec (K0 e)   = sqlExprSrc fSpec e
+   sqlExprSrc fSpec (K1 e)   = sqlExprSrc fSpec e
+   sqlExprSrc fSpec (Tm (Mp1 _ t)) = "Att"++phpEncode (name t)
+   sqlExprSrc fSpec (Tm m) = sqlMorSrc fSpec m
+   {-
+   sqlExprSrc fSpec e@(Tm m) | inline m  = sqlRelSrc fSpec (makeDeclaration m)
+                             | otherwise = sqlRelTrg fSpec (makeDeclaration m)
+   -}
+   
+   sqlExprTrg :: Fspc->Expression -> String
+   sqlExprTrg fSpec e = sqlExprSrc fSpec (flp e)
 
    sqlMorName :: Fspc -> Morphism -> String
    sqlMorName fSpec (Mph nm pos atts sgn yin s) = sqlRelName fSpec s
    sqlMorName fSpec (I atts g s yin)            = sqlConcept fSpec s
    sqlMorName fSpec m = error ("(module RelBinGenBasics) sqlMorName: illegal argument: "++showHS "" m)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
+   -- these functions are exact compies of sqlRelSrc and sqlRelTrg!
    sqlMorSrc :: Fspc -> Morphism -> String
-   sqlMorSrc fSpec m
-    | isIdent m                 = "Att"++phpEncode (name (source m))
-    | homogeneous d && inline m = "Src"++phpEncode (name (source d))
-    | homogeneous d             = "Trg"++phpEncode (name (target d))
-    | inline m                  = "Att"++phpEncode (name (source d))
-    | otherwise                 = "Att"++phpEncode (name (target d))
-    where d = makeDeclaration m
-
-
-
-
-
-
-
-
-
+   sqlMorSrc fSpec i@V{}   = name (source i)
+   sqlMorSrc fSpec i@I{}   = name (source i)
+   sqlMorSrc fSpec i@Mph{} = name (source i)
+   sqlMorSrc fSpec i@Mp1{} = name (source i)
+   sqlMorSrc fSpec s = fldname src
+    where (_,src,_) = sqlRelPlug fSpec (Tm s)
 
    sqlMorTrg :: Fspc -> Morphism -> String
-   sqlMorTrg fSpec m
-    | isIdent m                 = "Att"++phpEncode (name (target m))
-    | homogeneous d && inline m = "Trg"++phpEncode (name (target d))
-    | homogeneous d             = "Src"++phpEncode (name (source d))
-    | inline m                  = "Att"++phpEncode (name (target d))
-    | otherwise                 = "Att"++phpEncode (name (source d))
-    where d = makeDeclaration m
+   sqlMorTrg fSpec i@V{}   = name (target i)
+   sqlMorTrg fSpec i@I{}   = name (target i)
+   sqlMorTrg fSpec i@Mph{} = name (target i)
+   sqlMorTrg fSpec i@Mp1{} = name (target i)
+   sqlMorTrg fSpec s = fldname trg
+    where (_,_,trg) = sqlRelPlug fSpec (Tm s)
 
 
    sqlConcept :: Fspc -> Concept -> String
-   sqlConcept = sqlConc "C"
-   sqlEConcept :: Fspc -> Concept -> String
-   sqlEConcept = sqlConc "E"
-
-
-   sqlConc prefix fSpec c | c==cptS = "ONE"
-                            | otherwise
-                = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec \""++appname++"\" (sqlConcept in module RelBinGenBasics)") else
-                  if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in fSpec \""++appname++"\" (sqlConcept in module RelBinGenBasics)") else
+   sqlConcept fSpec c | c==cptS = "ONE" -- todo: throw error
+                      | otherwise
+                = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
                   head cs
-                  where cs = [prefix++show i++"_"++phpEncode (name c')|(c',i)<-zip (concs fSpec) [1..], c==c']
-                        FS_id appname = fsfsid fSpec
+                  where cs = [name plug|let plug=sqlConceptPlug fSpec c, c'<-concs plug, c'==c]
+   
+   sqlConceptPlug :: Fspc -> Concept -> Plug
+   sqlConceptPlug fSpec c = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec (sqlConceptPlug in module RelBinGenBasics)") else
+                            head cs
+                            where cs = [plug | plug@PlugSql{}<-plugs fSpec, c'<-concs plug, c'==c]
 
    sqlAttConcept :: Fspc -> Concept -> String
    sqlAttConcept fSpec c | c==cptS = "ONE"
                            | otherwise
-                = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
-                  if length cs>1 then error ("(module RelBinGenBasics) Concept \""++show c++"\" is not unique in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
+                = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
                   head cs
-                  where cs = ["Att"++phpEncode (name c')|(c',i)<-zip (concs fSpec) [1..], c==c']
+                  where cs = [fldname f|f<-fields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         FS_id appname =  fsfsid fSpec
 
    ifAs str str' = if str == str' then str else str'++" AS "++str
-
-
-
 
    phpCount var fSpec m = "count("++var++"['"++sqlMorName fSpec m++"'])"
    phpNtCnt var fSpec m = "!count("++var++"['"++sqlMorName fSpec m++"'])"
@@ -703,14 +592,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,
    doSrc fSpec subs x a             = head [if inline x then p else q| (r,p,q)<-subs, a==sqlMorName fSpec r]
    doTrg fSpec subs x a             = head [if inline x then q else p| (r,p,q)<-subs, a==sqlMorName fSpec r]
 
-
-
-
-
    phpEncode = enc True
-
-
-
 
    phpCodeTransactionStart fSpec noTransactions
     = if noTransactions then "" else
@@ -747,12 +629,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,
        [ "DB_doquer('INSERT IGNORE INTO "++sqlConcept fSpec c'++" ("++sqlAttConcept fSpec c'++") "++selStmt++"');"
        | c'<-concs fSpec, c' <= c]
    insConcepts fSpec hcs n c str excludeRels
-    = [' '|i<-[1..n]]++
-      chain ("\n"++[' '|i<-[1..n]])
+    = take n (repeat ' ')++
+      chain ("\n"++take n (repeat ' '))
        [ "DB_doquer('INSERT IGNORE INTO "++sqlConcept fSpec c'++" ("++sqlAttConcept fSpec c'++") VALUES (\\''.addSlashes($attrs['"++str++"']).'\\')');"
        | c'<-concs fSpec, c' <= c]++
       concat
-       [ "\n"++[' '|i<-[1..n-3]]++"// "++informalRule {-[sIs c]-} (CR fOp (Tm (mIs c)) bOp toExpr frExpr rule)++"\n"++[' '|i<-[1..n]]++
+       [ "\n"++take (n-3) (repeat ' ')++"// "++informalRule {-[sIs c]-} (CR fOp (Tm (mIs c)) bOp toExpr frExpr rule)++"\n"++[' '|i<-[1..n]]++
          "if(isset($attrs['"++str++"']))" ++
          "DB_doquer('INSERT IGNORE INTO "++sqlMorName fSpec s++" VALUES (\\''.addSlashes($attrs['"++str++"']).'\\', \\''.addSlashes($attrs['"++str++"']).'\\')');"
        | (CR fOp e bOp toExpr frExpr rule)<-computeOrder hcs "INSERT INTO" [Isn c c], isIdent toExpr
@@ -761,5 +643,180 @@ module Prototype.RelBinGenBasics(phpIdentifier,
        , s<-mors toExpr, not (makeDeclaration s `elem` excludeRels)]
 
    dbDelConcept fSpec i c atomVar
-    = [' '| x<-[1..i]]++"DB_doquer('DELETE FROM "++sqlConcept fSpec c++" WHERE "++sqlAttConcept fSpec c++"=\\''.addSlashes("++atomVar++").'\\' AND NOT EXISTS ("++chain " UNION " (["SELECT "++sqlRelSrc s++" FROM "++sqlRelName fSpec s++" WHERE "++sqlRelSrc s++"=\\''.addSlashes("++atomVar++").'\\'" | s<-declarations fSpec, source s==c]++["SELECT "++sqlRelTrg s++" FROM "++sqlRelName fSpec s++" WHERE "++sqlRelTrg s++"=\\''.addSlashes("++atomVar++").'\\'" | s<-declarations fSpec, target s==c])++")');"
+    = take i (repeat ' ')++"DB_doquer('DELETE FROM "++sqlConcept fSpec c++" WHERE "++sqlAttConcept fSpec c++"=\\''.addSlashes("++atomVar++").'\\' AND NOT EXISTS ("++chain " UNION " (["SELECT "++sqlRelSrc fSpec s++" FROM "++sqlRelName fSpec s++" WHERE "++sqlRelSrc fSpec s++"=\\''.addSlashes("++atomVar++").'\\'" | s<-declarations fSpec, source s==c]++["SELECT "++sqlRelTrg fSpec s++" FROM "++sqlRelName fSpec s++" WHERE "++sqlRelTrg fSpec s++"=\\''.addSlashes("++atomVar++").'\\'" | s<-declarations fSpec, target s==c])++")');"
 
+
+{-
+Code below is meant for inside the Fspec structure.
+In particular the function plugs 
+-}
+   plugs :: Fspc -> [Plug]
+   plugs spc = neededPlugs given spc ++ given
+     where given = []
+   
+   neededPlugs :: [Plug] -> Fspc -> [Plug] -- given [Plug], what plugs are still needed to implement Fspc?
+   neededPlugs given spec
+    = theplugs
+      where
+       otherRels      = looseRels >- mors (given ++ complexPlugs)
+       looseRels      = map makeMph (vrels spec) >- mors given
+       looseConcs     = concs (vrels spec) -- todo: we can make this less, since V[conc] isn't allways asked for..
+                        >- concs (given ++ relPlugs ++ complexPlugs)
+       -- complexPlugs are the plugs that consist of multiple relations
+       uniSurRels :: Morphisms
+       uniSurRels     = [r | r <- rd (looseRels++map flp looseRels) , null ([Uni,Sur,Inj] >- multiplicities r)]
+       complexPlugs   = [] {-
+       complexPlugs   = error$show [ show rclos
+                        | rclos <- [ foldl1 (\x y -> if length x <= length y then y else x) cl -- longest list in cl
+                                   | cl <- eqClass (\x y -> length x < length (x >- y)) -- there is overlap between x and y
+                                                   (clos source target uniSurRels)
+                                   ]
+                        ] -}
+       mkdataset rclos= error "mkdataset function not done yet"
+                        
+       relPlugs       = map morplug otherRels
+       theplugs       = (uniqueNames . joinPlugs) (complexPlugs ++ relPlugs ++ map concplug looseConcs)
+       
+   
+   -- todo, this algorithm is supposidly O(n^3), but this has never been measured
+   -- the orders O(..) are mere estimations
+   -- if the this algorithm is slower than n^3, it should be made faster
+   joinPlugs :: [Plug] -> [Plug]
+   joinPlugs ps = doJoin ps (joins inCols outCols) -- O(n^3)
+     where
+     outCols  = sort [(c,(p,f))|p<-ps,f<-fields p,flduniq f,Sur `elem` (multiplicities (fldexpr f)),let c=target(fldexpr f)]
+     inCols   = sort [(c,(p,f))|p<-ps,f<-fields p,not (fldnull f),flduniq f,let c=source (fldexpr f),c==target (fldexpr f)]
+     joins [] _ = []
+     joins _ [] = []
+     joins (i@(ci,pi):ins) (o@(co,po):outs) = -- joins is O(n)
+       if ci<co then joins ins (o:outs) else if ci>co then joins (i:ins) outs
+       else if fst pi == fst po then joins ins (o:outs) else (pi,po):joins ins (o:outs)
+   
+   doJoin :: [Plug] -> [((Plug, SqlField), (Plug, SqlField))] -> [Plug]
+   doJoin ps [] = ps -- O(n^3)
+   doJoin ps (j:js) = pair : doJoin rest js'
+     where
+     myIns  p = [fst i|(i,o)<-(j:js),fst o==p] -- O(n)
+     ins      = myIns (fst addTo) -- O(n)
+     addTo    = snd j --O(1)
+     pair     = (fst addTo){fields = (fields (fst addTo)) ++ [joinFields f|o<-ins,f<-tail (fields o)] --O(n^2)
+                           ,plname = (name . source) expr }
+     expr     = fldexpr (snd addTo) --O(1)
+     joinFields fld = fld{fldexpr = conjNF (F [expr,fldexpr fld]) -- O(1) ?
+                         ,fldnull = fldnull (snd addTo) || fldnull fld}
+     js'      = [(i',o')|(i,o)<-js,o /= addTo
+                        ,let i'=if (fst i) `elem` ins then (pair,joinFields (snd i)) else i
+                        ,let o'=if (fst o) `elem` ins then (pair,joinFields (snd o)) else o] -- O(n^2)
+     rest     = [p|p<-ps, p `notElem` (fst addTo:ins)] -- O(n^2)
+     --newFields = addFields (fields p) ps
+   
+   {-
+   addFields fs (p:ps) = (first newFields,unused ++ second newFields ns)
+     where
+     newFields    = addFields fs' ns
+     concexprs    = [e|e<-(map fldexpr (fs)),Sur `elem` (multiplicities e)]
+     matchCols    = [c|
+   -}
+   
+   uniqueNames :: [Plug]->[Plug]
+   {-
+   uniqueNames plgs = uN [] (map uniqueCols plgs) -- todo: de velden in elke plug moeten ook unieke namen hebben!
+    where uN :: [String] -> [Plug] -> [Plug]
+          uN _ [] = []
+          uN lst (p:ps) | (name p) `notElem` lst = p:(uN (name p:lst) ps)
+          uN lst (p:ps) | (n1 p)   `notElem` lst = p{plname=n1 p}:(uN (n1 p:lst) ps)
+          uN lst (p:ps) | (n2 p)   `notElem` lst = p{plname=n2 p}:(uN (n2 p:lst) ps)
+          uN lst ps     | otherwise              = (uNn lst ps 1)
+          uNn :: [String] -> [Plug] -> Integer -> [Plug]
+          uNn lst (p:ps) n | name p ++ show n `notElem` lst = p{plname=name p ++ show n}:(uN (name p:lst) ps)
+          uNn lst ps n | otherwise = uNn lst ps (n+1)
+          n1 p = name p ++ plsource p
+          n2 p = name p ++ pltarget p
+          plsource p = name (source (fldexpr (head (fields (p)))))
+          pltarget p = name (target (fldexpr (last (fields (p)))))
+          uniqueCols p = p{fields=uniqueFields [] $ fields p}
+          uniqueFields _ [] = []
+          --uniqueFields lst (f:fs) | name f `notElem` lst = 
+   -}
+   uniqueNames plgs = naming (\x y->x{plname=y}) -- renaming function for plugs
+                             (name:n1:n2:[(\x->name x ++ show n)|n<-[1..]]) -- ways to name a plug
+                             []                  -- no plug-names taken yet
+                             (map uniqueFields plgs)
+     where n1 p = name p ++ plsource p
+           n2 p = name p ++ pltarget p
+           plsource p = name (source (fldexpr (head (fields (p)))))
+           pltarget p = name (target (fldexpr (last (fields (p)))))
+           uniqueFields plug = plug{fields = naming (\x y->x{fldname=y}) -- renaming function for fields
+                                             (fldname:[(\x->fldname x ++ show n)|n<-[1..]])
+                                             []
+                                             (fields plug)
+                                   }
+   
+   {- naming - a naming function
+      The objective is to name all items in a list uniquely
+      
+      The call below will label allItems as 1,2,3 etc, skipping 4:
+      naming nameIt [(\x->show n)|n<-[1..]] ["4"] allItems
+      
+      Naming one item is done by: nameIt unnamedItem someName -> namedItem
+      There should be a list of functions to name an item,
+          the resulting names should form an infinite set.
+   -}
+   naming :: Eq a => (b->a->c) -- function used to asign name a to element b
+                  -> [b->a]    -- infinite list of functions to create a name for b
+                  -> [a]       -- list of forbidden names (names already taken)
+                  -> [b]       -- list of elements b that need a name
+                  -> [c]       -- result: named alements (matches [b])
+   naming _ _ _ [] = []
+   naming _ [] _ _ = error "(RelBinGenBasics) no naming functions given"
+   naming assignFunc as taken (l:ls)
+                   = head [assignFunc l (a l):naming assignFunc as (a l:taken) ls
+                          | a<-as, a l `notElem` taken]
+   
+--- uniqueNames p:ps | ((name p++(name source p)) `elem` (names ps)) = p:(uniqueNames ps)
+   
+   concplug :: Concept -> Plug
+   concplug c = plugsql (name c) [field (name c) (Tm (mIs c)) Nothing False True]
+   
+   morplug :: Morphism -> Plug
+   morplug  m
+    = {- If the morphism is UNI, INJ and SUR
+       we can identify the target by its source alone
+       we shoud, however do this afterwards, transforming ALL plugs
+      if ( isUni && isInj && isSur && fldtyp (target m) == SQLId ) || (isIdent m)
+      then plugsql (name (source m)) [field (name (source m)) (Tm (mIs (source m))) Nothing False True
+                                     ,field (name (target m)) (Tm m) (Just SQLBool) (not isTot) True]
+      else -}
+      if isInj && not isUni then morplug (flp m)
+      else if isUni || isTot
+      then plugsql (name m) [field (name (source m)) (Tm (mIs (source m))) Nothing False isUni
+                            ,field (name (target m)) (Tm m) Nothing (not isTot) isInj]
+      else if isInj || isSur then morplug (flp m)
+      else plugsql (name m) [field (name (source m)) (Fi {es=[Tm (mIs (source m)),F {es=[Tm m,flp (Tm m)]}]}
+                                                     )      Nothing False False
+                            ,field (name (target m)) (Tm m) Nothing False False]
+      where
+        mults = multiplicities m
+        isTot = Tot `elem` mults
+        isUni = Uni `elem` mults
+        isSur = Sur `elem` mults
+        isInj = Inj `elem` mults
+   
+   plugsql :: String -> [SqlField] -> Plug
+   plugsql nm fld = PlugSql {plname=nm,database=CurrentDb,fields=fld}
+   field :: String
+            -> Expression
+            -> Maybe SqlType
+            -> Bool
+            -> Bool
+            -> SqlField
+   field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq}
+   field nm expr (Just tp) nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=tp,fldnull=nul,flduniq=uniq}
+
+   
+   fldtyp :: (Identified a) => a -> SqlType
+   fldtyp nm = case name nm of { "BLOB"   -> SQLBlob;
+                                 "PASS"   -> SQLPass;
+                                 "STRING" -> SQLVarchar 255;
+                                 _        -> SQLId
+                               }

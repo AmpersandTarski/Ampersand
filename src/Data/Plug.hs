@@ -37,12 +37,12 @@ where
   showSQL :: SqlType -> String
   showSQL (SQLChar    n) = "CHAR("++show n++")"
   showSQL (SQLBlob     ) = "BLOB"
-  showSQL (SQLPass     ) = "STRING"
+  showSQL (SQLPass     ) = "VARCHAR(255)"
   showSQL (SQLSingle   ) = "FLOAT"
   showSQL (SQLDouble   ) = "FLOAT"
   showSQL (SQLuInt    n) = "INT("++show n++") UNSIGNED"
   showSQL (SQLsInt    n) = "INT("++show n++")"
-  showSQL (SQLId       ) = "INT auto_increment"
+  showSQL (SQLId       ) = "INT"
   showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
   showSQL (SQLBool     ) = "BOOLEAN"
           
@@ -71,18 +71,17 @@ where
               }
 
   instance Morphical SqlField where
-    concs        f = concs        (fldexpr f)
-    conceptDefs  f = conceptDefs  (fldexpr f)
+    concs        f = [target e'|let e'=fldexpr f,Sur `elem` (multiplicities e')]
+    conceptDefs  f = conceptDefs   (fldexpr f)
     mors         f = map makeInline (mors (fldexpr f))
-    morlist      f = morlist      (fldexpr f)
-    declarations f = declarations (fldexpr f)
-    closExprs    f = closExprs    (fldexpr f)
-    objDefs      f = objDefs      (fldexpr f)
-    keyDefs      f = keyDefs      (fldexpr f)
+    morlist      f = morlist       (fldexpr f)
+    declarations f = declarations  (fldexpr f)
+    closExprs    f = closExprs     (fldexpr f)
+    objDefs      f = objDefs       (fldexpr f)
+    keyDefs      f = keyDefs       (fldexpr f)
     
   instance Morphical Plug where
-    concs        p@PlugSql{} = rd ( [source e'|e'<-(map fldexpr (fields p)),Tot `elem` (multiplicities e')] 
-                                 ++ [target e'|e'<-(map fldexpr (fields p)),Sur `elem` (multiplicities e')] )
+    concs        p@PlugSql{} = concs        (fields p) --rd [target e'|e'<-(map fldexpr (fields p)),Sur `elem` (multiplicities e')]
     conceptDefs  p@PlugSql{} = conceptDefs  (fields p)
     mors         p@PlugSql{} = mors         (fields p)
     morlist      p@PlugSql{} = morlist      (fields p)
