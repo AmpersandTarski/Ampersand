@@ -46,7 +46,6 @@ data Options = Options { contextName   :: Maybe String
                        , genTime       :: ClockTime
                        , uncheckedLogName :: Maybe String
                        , services      :: Bool
-                       , skipTypechecker :: Bool  -- tijdelijke optie, totdat typechecker werkt.... 
                        } deriving Show
     
 data FspecFormat = FPandoc | FWord | FLatex | FHtml | FUnknown deriving (Show, Eq)
@@ -147,7 +146,6 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option []        ["language"]         (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"), Public)
           , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                    envlogName  ++ " )")), Hidden)
-          , ((Option []        ["skipTypechecker"]  (NoArg skipTCOpt)           "skip Typechecking" ), Public) -- Tijdelijk, zolang de TC nog onderhanden is. 
           ]
 
 defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
@@ -185,7 +183,6 @@ defaultOptions clocktime env fName pName
                          , logName       = "ADL.log"
                          , services      = False
                          , genTime       = clocktime
-                         , skipTypechecker = False
                          }
                     
 envdirPrototype :: String
@@ -251,8 +248,6 @@ languageOpt l   opts = opts{language     = case map toUpper l of
                                              _     -> Dutch}
 logOpt :: String -> Options -> Options
 logOpt nm       opts = opts{uncheckedLogName = Just nm}
-skipTCOpt :: Options -> Options
-skipTCOpt       opts = opts{skipTypechecker = True} 
 verbose :: Options -> String -> IO ()
 verbose flags x
     | verboseP flags = putStr x

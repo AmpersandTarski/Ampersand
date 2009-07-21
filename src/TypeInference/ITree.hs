@@ -113,6 +113,15 @@ analyseerror g tts = case mberr of
    mberr = if null errors then Nothing else Just $ head errors
 analyseerror _ _ = TypeError (ErrCode 0) "No inference trees in proof. Contact the system administrator." 
 
+
+intstr locnr = show locnr ++ case locnr of 
+         1 -> "st"
+         2 -> "nd"
+         _ -> "th"
+printrel mp i rels = [c |(locnr,i')<-allsamename, i==i',length allsamename>1, c<-"the "++intstr locnr++" "]
+                     ++ "relation "++name mp
+    where allsamename = zip [1..] $ sort [i'|(Relation{rel=mp',mphid=i'})<-rels, name mp'==name mp]
+
 analysedisjunction :: Gamma -> (Statements,ITree) -> DisjType -> Concept -> Concept -> AdlExpr -> TypeError
 analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
    where
@@ -136,61 +145,72 @@ analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
        DisjSrc -> "source"
        DisjTrg -> "target"
        DisjHomo -> "source or target"
-   basedonrelations :: AdlExpr -> [AdlExpr]
-   basedonrelations exprX= case exprX of
-      Dagger{left=x, right=y} -> case dtp of
-         DisjSrc -> basedonrelations x 
-         DisjTrg -> basedonrelations y
-         _ -> []
-      Semicolon{left=x, right=y} -> case dtp of
-         DisjSrc -> basedonrelations x 
-         DisjTrg -> basedonrelations y
-         _ -> []
-      Union{lst=xs} -> [r|x<-xs,r<-basedonrelations x]
-      Intersect{lst=xs} -> [r|x<-xs,r<-basedonrelations x] 
-      Implicate{left=x, right=y} -> basedonrelations x ++ basedonrelations y
-      Equality{left=x, right=y} -> basedonrelations x ++ basedonrelations y
-      Complement{sub=x} -> basedonrelations x
-      Flip{sub=x} -> basedonrelations x
-      Relation{} -> [exprX]
-   --DESCR -> If the disjunction is on the source or target of the antecedent or consequent 
-   --         of an Implicate or Equality, then code 1
-   intstr = show i ++ case i of 
-         1 -> "st"
-         2 -> "nd"
-         _ -> "th"
-   --USE -> first check7 and 8 before check1
-   check1 = let
-            err = case infexpr of
-               Implicate{} -> [() | elem disjrel (basedonrelations infexpr)]
-               Equality{} -> [() | elem disjrel (basedonrelations infexpr)]
-               _ -> []
-            msg = "The  " ++ printdtp ++ " of the antecedent does not match the " ++ printdtp ++ " of the consequent. "
-                  ++ (show $ IErr dtp c1 c2 expr)
-            in
-            if (not.null) err
-            then TypeError (ErrCode 1) msg
-            else check4
-   --USE -> first check1 before check4
-   check4 = let
-            err = case infexpr of
-               Implicate{} -> [() | elem disjrel (basedonrelations (left infexpr))]
-                           ++ [() | elem disjrel (basedonrelations (right infexpr))]
-               Equality{} ->  [() | elem disjrel (basedonrelations (left infexpr))]
-                           ++ [() | elem disjrel (basedonrelations (right infexpr))]
-               _ -> [() | elem disjrel (basedonrelations infexpr)]
-            msg = "The "++printdtp++" of the "++intstr++" relation "++name mp
-                  ++" does not match the "++printdtp++"s of expressions it is compared to. "
-                  ++ (show $ IErr dtp c1 c2 expr)
-            in
-            if (not.null) err
-            then TypeError (ErrCode 4) msg
-            else check5
-   --USE -> first check4 before check5
-   check5 = let msg = "The "++printdtp++" of the "++intstr++" relation "++name mp
-                   ++ " does not match the expression it is composed with. "
-                   ++ (show $ IErr dtp c1 c2 expr)
-            in TypeError (ErrCode 5) msg 
+   printrel' = printrel mp i (relations infexpr)
+
+   --TODO -> The error found at this moment is the disjunction of the source of lineSender and sees5
+   --        Finding the deeper error of the disjunction of target of lineSender and source of method5
+   --        would be nearer to the view of the user
+   --PATTERN Type5Error
+   --  lineSender :: Line*Object.
+   --  method5 :: Line*Method.
+   --  sees5 :: Comp*Comp.
+   --  lineSender;method5 /\ sees5 |- sees5
+   --ENDPATTERN
+   checklocation = godeep [(True,infexpr)] Nothing
+      where
+      --Bool=True then parent is first argument of his parent, False second
+      godeep :: [(Bool,AdlExpr)] -> Maybe AdlExpr -> Maybe TypeError
+      godeep xmes xparent = if null xmes then Nothing else case godeep xchilds (Just xme) of
+         Just terr -> Just terr
+         Nothing -> decideonme
+         where
+         (firstarg,xme) = head xmes
+         xinsub xsub = elem disjrel (relations xsub)
+         firstarg' =  if null xchilds then True else (fst.head) xchilds
+         xchilds = case xme of
+             Implicate{} -> [(True,left xme) | xinsub (left xme)] ++ [(True,right xme) | xinsub (right xme)]
+             Equality{} -> [(True,left xme) | xinsub (left xme)] ++ [(True,right xme) | xinsub (right xme)]
+             Semicolon{} -> [(True,left xme) | xinsub (left xme)] ++ [(False,right xme) | xinsub (right xme)]
+             Dagger{} -> [(True,left xme) | xinsub (left xme)] ++ [(False,right xme) | xinsub (right xme)]
+             Union{} -> [(True,x) | x<-lst xme, xinsub x]
+             Intersect{} -> [(True,x) | x<-lst xme, xinsub x]
+             Complement{} -> [(True,sub xme) | xinsub (sub xme)]
+             Flip{} -> [(True,sub xme) | xinsub (sub xme)]
+             Relation{} -> []
+             _ -> []
+         --Nothing indicates that my parent has the error
+         decideonme = 
+            if null xmes then Nothing
+            else case xme of
+             Semicolon{} -> case dtp of
+                 DisjSrc -> if firstarg' && hasparent then Nothing 
+                            else 
+                            Just $ TypeError (ErrCode 5) msg5
+                 DisjTrg -> if not firstarg' && hasparent then Nothing 
+                            else Just $ TypeError (ErrCode 5) msg5
+                 _ -> Just $ TypeError (ErrCode 5) msg5
+             Dagger{} -> case dtp of
+                 DisjSrc -> if firstarg' && hasparent then Nothing 
+                            else Just $ TypeError (ErrCode 5) msg5
+                 DisjTrg -> if not firstarg' && hasparent then Nothing 
+                            else Just $ TypeError (ErrCode 5) msg5
+                 _ -> Just $ TypeError (ErrCode 5) msg5
+             Union{} -> Just $ TypeError (ErrCode 4) msg4
+             Intersect{} -> Just $ TypeError (ErrCode 4) msg4
+             Implicate{} -> Just $ TypeError (ErrCode 1) msg1
+             Equality{} -> Just $ TypeError (ErrCode 1) msg1
+             _ -> Nothing
+         hasparent = case xparent of
+             Nothing -> False
+             _ -> True
+         msg1 = "The  " ++ printdtp ++ " of the antecedent "++" ("++ show c1' 
+                ++ ") does not match the " ++ printdtp ++ " of the consequent ("++ show c2' ++ "). "
+              where
+              (c1',c2') = if elem disjrel (relations (left infexpr)) then (c2,c1) else (c1,c2)
+         msg4 = "The "++printdtp++" of "++ printrel' ++ " ("++ show c2 ++ ")"
+                ++ " does not match the "++printdtp++"s of expressions it is compared to ("++show c1++"). "
+         msg5 = "The "++printdtp++" of "++ printrel' ++ " ("++ show c2 ++ ")"
+                ++ " does not match "++show c1++" of the expression it is composed with. "
    check7 = let
             err = case infexpr of
                 Equality
@@ -227,13 +247,14 @@ analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
             err = case dtp of
                 DisjHomo -> [()] 
                 _ -> []
-            msg = "The source and target of the "++intstr++", homogeneous relation "++name mp++" do not match. "
-                  ++ (show $ IErr dtp c1 c2 expr)
+            msg = "The source and target of "++ printrel' ++ " do not match ("
+                  ++ show c1 ++ " and " ++ show c2 ++ ")."
             in
             if (not.null) err
             then TypeError (ErrCode 8) msg
-            else check1
---   return0 = TypeError (ErrCode 0) $ (show $ IErr dtp c1 c2 expr) -- ++ printexpr infexpr ++ show dtp ++ printexpr expr
+            else (case checklocation of 
+                    Nothing -> TypeError (ErrCode 0) (show $ IErr dtp c1 c2 expr)
+                    Just x -> x)
 
 --DESCR -> if ambiguity is a consequent of an ambiguous composition, then code 6 else code 2
 analyseamb :: Gamma -> [ITree] -> TypeError
@@ -257,16 +278,11 @@ analyseamb g ts =
    savetail (x:xs) = xs
    diffcomps [] = []
    diffcomps (x:[]) = []
-   diffcomps (x:y:xs) = ["The type of "++intstr (mphid r1) ++" relation (" 
-                         ++ (name $ rel r1) ++ ") can be " ++ signstr r1
-                         ++ " or " ++ signstr r2
+   diffcomps (x:y:xs) = ["The type of "++ printrel (rel r1) (mphid r1) x
+                         ++ " can be " ++ signstr r1 ++ " or " ++ signstr r2
                          |(r1,r2)<-zip x y, (tt r1)/=(tt r2),r1==r2 ] ++ diffcomps (y:xs)
-      where 
+      where       
       signstr r = show $ evalstmt (BoundTo r)
-      intstr i = show i ++ case i of 
-         1 -> "st"
-         2 -> "nd"
-         _ -> "th"
 
 -------------------------------------------------------------------------------------------
 

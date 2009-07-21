@@ -6,11 +6,8 @@ import CC (pArchitecture,keywordstxt, keywordsops, specialchars, opchars)
 import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
-import AGtry
 import TypeChecker(typecheck)
 import Adl
---import Test.AdlTestFunctions --temp -> for comparing new typechecker output with old AGtry output
-
  
 parseADL :: String      -- ^ The string to be parsed
          -> Options     -- ^ flags to be taken into account
@@ -27,7 +24,6 @@ parseADL adlstring flags fnFull =
 	        ( contexts,[]) -> case filteredContexts  of
 	                            []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))
 	                            cs   -> do{ verboseLn flags (fnFull++ " has been parsed.")
-	                                    --  ; verboseLn flags ("Comparing typechecker output with AGtry output:\n" ++ compareTCOutput (sem_Architecture slRes) (typecheck slRes))
 	                                      ; return (head cs) -- Just take the first context encounterd. If there are more contexts no warning is generated.
                                           }
 	                          where filteredContexts   = case contextName flags of
@@ -38,9 +34,7 @@ parseADL adlstring flags fnFull =
 	                                                       Nothing   -> undefined   --Nothing is niet aan de orde hier
 	    }
 	    where
-            procParseRes arch = if (skipTypechecker flags) 
-                                then sem_Architecture arch
-                                else typecheck arch
+            procParseRes arch = typecheck arch
 
 
 
