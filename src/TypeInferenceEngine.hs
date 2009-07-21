@@ -7,6 +7,61 @@ import TypeInference.ITree
 import TypeInference.AdlExpr
 import CommonClasses 
 
+--------------------------------------
+import TypeInference.Input
+import Collection (Collection(uni))
+import Adl
+import Data.Fspec
+--DESCR -> Infer the type of an expression within the boundaries of an fspec
+--         Sign (NOthing,NOthing) indicates disjunct concepts
+--         In that case you can use show to get an error string
+--         or you can get a TypeError from analyseerror (NoType) or analyseamb (AmbiguousType)
+--         Use inferrule to infer the type of a rule
+data ExprOrRule = Eeor Expression | Reor Rule
+infertype :: Fspc -> ExprOrRule -> (Sign,Proof)
+infertype fSpec eor = (inftype,proof)
+  where
+  proof = infer (gamma adlexpr) adlexpr
+  inftype = case proof of
+                 Proven gm (inftree:_) -> evalstmt $ evaltree gm inftree
+                 _                     -> (NOthing,NOthing)
+  adlexpr = case eor of 
+       Eeor expr -> fromExpression expr 
+       Reor rule -> fromRule rule
+  tc :: Concepts
+  tc = concs (vrels fSpec) `uni` concs (vrules fSpec)
+  isatree = isaRels tc $ allPatGens [pattern u|t<-themes fSpec, u<-units t]
+  rv :: Declarations
+  rv = vrels fSpec
+  gamma expr = (mphStmts expr) ++ gammaisa
+  gammaisa = map fromIsa isatree
+  mphStmts :: AdlExpr -> [Statement]
+  mphStmts (Relation mp@(Mph{mphnm=r1}) i t) =
+     let
+     --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
+     --          T-RelDecl won't be in the inference tree for this reason.
+     alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
+                    | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-rv, decl==r1]
+     ishomo :: [Prop] -> Bool
+     ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
+     in
+     if null alternatives
+     then [InfErr (UndeclRel (Relation mp i t))]
+     else alternatives
+  mphStmts (Relation mp@(I{mphats=[c1]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
+  mphStmts (Relation mp@(I{}) i _) = [DeclExpr (Relation mp i unknowntype) True]
+  mphStmts (Relation mp@(V{mphats=[c1,c2]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c2)) False]
+  mphStmts (Relation mp@(V{}) i _) = [DeclExpr (Relation mp i unknowntype) False]
+  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
+  mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Union exprs _) = foldr (++) [] $ map mphStmts exprs
+  mphStmts (Intersect exprs _) = foldr (++) [] $ map mphStmts exprs
+  mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
+  mphStmts (Complement expr _) = mphStmts expr
+  mphStmts (Flip expr _) = mphStmts expr
+--------------------------------------
 type BndStmt = Statement
 type DeclStmt = Statement
 type Alternatives = [(DeclStmt,Maybe ITree)]
