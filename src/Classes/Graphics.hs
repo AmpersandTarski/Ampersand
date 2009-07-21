@@ -20,8 +20,8 @@ module Classes.Graphics where
    instance Dotable Pattern where
       toDot fspc flags pat 
         = DotGraph { graphAttributes = [BgColor transparent]
-                                    ++ [Overlap False | crowfoot flags]
-                                    ++ [Splines (Just True)  | crowfoot flags]
+                                    ++ [Overlap (Right False) | crowfoot flags]
+                                    ++ [Splines (Left True)  | crowfoot flags]
                    , graphNodes = [conceptNode c | c<-cpts] 
                                ++ [inBetweenNode d | d<-arcs]
                    , graphEdges = [x | d<-arcs, x<-decledges d] ++ isaedges
@@ -42,7 +42,7 @@ module Classes.Graphics where
                []   -> []
                c:cs -> zip cpts [1..]                                  
             conceptNode c = DotNode { nodeID         = lkup c conceptTable
-                                    , nodeAttributes = [Label (name c)]
+                                    , nodeAttributes = [Label (Left$name c)]
                                                     ++ nodeAtts 
                                                     ++ if crowfoot flags then doosje flags c else bolletje
                                     }
@@ -50,7 +50,7 @@ module Classes.Graphics where
                []    -> []
                c:cs  -> zip arcs [(length conceptTable + 1)..]    
             inBetweenNode d = DotNode { nodeID          = lkup d arcsTable
-                                      , nodeAttributes = [Label (name d)]
+                                      , nodeAttributes = [Label (Left$name d)]
                                       }
             decledges d = [DotEdge --attach source
                             {edgeHeadNodeID = lkup (source d) conceptTable
@@ -75,13 +75,13 @@ module Classes.Graphics where
 
    doosje flags c = [Shape BoxShape]
                 -- ++ [Unknown "href" (htmlFileUrl flags c)]
-                 ++ [Unknown "title" (show (name c))]
+                 ++ [Label (Left$show (name c))]
    bolletje = [Shape PointShape]
-           ++ [Style Filled]
-           ++ [Color black]
+           ++ [Style$Stl Filled Nothing]
+           ++ [Color$Left black]
            ++ [Width 0.2]
    onzichtbaarpuntje = [Shape PointShape]
-                     ++[Color transparent]
+                     ++[Color$Left transparent]
 
 
 
