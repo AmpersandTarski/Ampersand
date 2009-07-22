@@ -1,4 +1,4 @@
-
+--TODO -> Alles uitgezet vanwege nieuwe versie graphviz
 module Classes.Graphics where
 -- TODO Deze module is nog onderHANden
    --import Data.GraphViz.Commands
@@ -19,15 +19,15 @@ module Classes.Graphics where
 
    instance Dotable Pattern where
       toDot fspc flags pat 
-        = DotGraph { graphAttributes = [BgColor transparent]
+        = DotGraph { graphAttributes = [{-BgColor transparent]
                                     ++ [Overlap (Right False) | crowfoot flags]
-                                    ++ [Splines (Left True)  | crowfoot flags]
-                   , graphNodes = [conceptNode c | c<-cpts] 
-                               ++ [inBetweenNode d | d<-arcs]
-                   , graphEdges = [x | d<-arcs, x<-decledges d] ++ isaedges
+                                    ++ [Splines (Left True)  | crowfoot flags-}]
+                   , graphNodes = [{-conceptNode c | c<-cpts] 
+                               ++ [inBetweenNode d | d<-arcs-}]
+                   , graphEdges = [{-x | d<-arcs, x<-decledges d] ++ isaedges-}]
                    , directedGraph = True
                    }
-            where 
+{-            where 
             nodeAtts   = [FontSize 12]
                       ++ [FontName "helvetica"]
             edgeAtts   = [Len (if crowfoot flags then 2.0 else 1.2)]
@@ -87,3 +87,4 @@ module Classes.Graphics where
 
    transparent = RGBA 0 0 0 0 
    black       = RGB 0 0 0   
+-}

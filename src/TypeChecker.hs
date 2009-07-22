@@ -65,13 +65,13 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    (enriched, allproofs) = enrichArch arch  
    check3 = [(errproof,fp,rule) | (errproof@(NoProof{}),fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
    printcheck3 = [show errproof 
-                  ++ "\n   in " ++ printadl 0 rule   
+                  ++ "\n   in " ++ printadl Nothing 0 rule   
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigRule rule)<-check3] 
               ++ [show errproof 
-                  ++ "\n   in service definition expression " ++ printadl 0 expr  
+                  ++ "\n   in service definition expression " ++ printadl Nothing 0 expr  
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigObjDef expr)<-check3]
               ++ [show errproof 
-                  ++ "\n   in key definition expression " ++ printadl 0 expr  
+                  ++ "\n   in key definition expression " ++ printadl Nothing 0 expr  
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
    checkresult = if null check1 then if null check2 then if null check3 then [] else printcheck3 else check2 else check1
 

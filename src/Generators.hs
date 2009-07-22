@@ -30,7 +30,7 @@ import Version
 --import System
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
-  = (writeFile outputFile $ printadl 0 fSpec')
+  = (writeFile outputFile $ printadl (Just fSpec') 0 fSpec')
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
     where fSpec'= if (allServices flags)
                   then fSpec{serviceS=serviceG fSpec} 
