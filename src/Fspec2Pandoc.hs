@@ -5,7 +5,8 @@ module Fspec2Pandoc (fSpec2Pandoc,render2Pandoc,writeRTF,writeLaTeX)
 where
 import Adl
 import FspecDef
-import Text.Pandoc   
+import Text.Pandoc  
+import Char         (toUpper) 
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
                           -- 2) cabal-install pandoc  (onder windows: cabal install pandoc)
@@ -109,7 +110,7 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 , Str "or fixing the content of databases (by automatic actions) to restore a rule."]]  
 ------------------------------------------------------------
 designPrinciples :: Int -> Fspc -> Options ->  [Block]
-designPrinciples lev fSpec flags = header ++ dpIntro ++ [b|t<-themes fSpec,b<-dpSection t]
+designPrinciples lev fSpec flags = header ++ dpIntro ++ [b|p<-vpatterns fSpec,b<-dpSection p]
   where 
   header :: [Block]
   header = labeledHeader lev chpdplabel (case (language flags) of
@@ -133,19 +134,19 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ [b|t<-themes fSpec,b<-dp
                      , Str ". The implementation must assert these rules. "]
                  ]
      )
-  dpSection :: Ftheme -> [Block]
-  dpSection t = (if null (themedecls ++ themerules) then [] --nothing to explain for this theme -> skip
-           else [Header (lev+1) [Str (name t)]] --new section to explain this theme
+  dpSection :: Pattern -> [Block]
+  dpSection p = (if null (themedecls ++ themerules) then [] --nothing to explain for this theme -> skip
+           else [Header (lev+1) [Str (name p)]] --new section to explain this theme
              ++ [Para [Str d]|d<-themedecls] --explanation of all multiplicities in the theme
              ++ [Para [Str r]|r<-themerules]) --explanation of all (non-computed) rules in the theme
     where
     --query copied from FSpec.hs revision 174
-    themedecls = [explainDecl (language flags) d|u<-units t, d<-ptdcs (pattern u),(not.null) (multiplicities d)]
+    themedecls = [explainDecl (language flags) d|d<-ptdcs p,(not.null) (multiplicities d)]
     --query copied from FSpec.hs revision 174
-    themerules = [explainRule (language flags) r|u<-units t, r<-declaredRules (pattern u)++signals (pattern u), null (cpu r)]
+    themerules = [explainRule (language flags) r|r<-declaredRules p++signals p, null (cpu r)]
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options ->  [Block]
-conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|t<-themes fSpec,b<-caSection t]
+conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,b<-caSection p]
   where 
   header :: [Block]
   header = labeledHeader lev chpcalabel (case (language flags) of
@@ -181,33 +182,36 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|t<-themes fSpec,b<-
               [AlignLeft, AlignRight] --TODO -> how do I specify drawing of lines?
               [0.25,0.1] --TODO -> can't this be automatic or something
               [[Plain [Space]],[Plain [Str "points"]]] 
-              [ [ [Plain [Str (name t)]]
+              [ [ [Plain [Str (name p)]]
         --        , [Plain [Str (show $ nFpoints t)]] ] 
                   , [Plain [Str "?"]] ] --TODO -> there is a loop in fspc->ftheme->funit->fviewdef&servicespec, coming from adl2fspec (remainingDS & pats)
-              | t<-themes fSpec]
+              | p<-vpatterns fSpec]
        ]  
-  caSection :: Ftheme -> [Block]
-  caSection t = 
+  caSection :: Pattern -> [Block]
+  caSection p = 
    (case (language flags) of
       Dutch -> (if null themerules then [] --nothing to explain for this theme -> skip
-           else [Header (lev+1) [Str $ "Regels over " ++ (name t)]] --new section to explain this theme
-             ++ [x | (i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u), x<-printfigure i]
+           else [Header (lev+1) [Str $ "Regels over " ++ (name p)]] --new section to explain this theme
+             ++ [x | (not.null) (concs p),x<-printfigure]
              ++ rules2table)
       English -> (if null themerules then [] --nothing to explain for this theme -> skip
-           else [Header (lev+1) [Str $ "Rules about " ++ (name t)]] --new section to explain this theme
-             ++ [x | (i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u), x<-printfigure i]
+           else [Header (lev+1) [Str $ "Rules about " ++ (name p)]] --new section to explain this theme
+             ++ [x | (not.null) (concs p),x<-printfigure]
              ++ rules2table)
     )
     where
     --query copied from FSpec.hs revision 174
-    themerules = [r|u<-units t, r<-declaredRules (pattern u)]
-    printfigure i = case (language flags) of
+    themerules = declaredRules p
+    printfigure = case (language flags) of
       Dutch -> [Para [x | x<-[Str "Zie figuur ", xrefReference figlabel, Str ". "]] ]
             ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++filenm) filenm figlabel ]]
       English -> [Para [x | x<-[Str "See figure ", xrefReference figlabel, Str ". "]] ]
               ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++filenm) filenm figlabel ]]
-      where filenm = name t ++ show i
+      where filenm = remSpaces (name p)
             figlabel = "figca:" ++ filenm
+            remSpaces [] = []
+            remSpaces (' ':c:str) = toUpper c:remSpaces str 
+            remSpaces xs = xs
     rules2table = case fspecFormat flags of
       --REMARK -> pandoc does not support longtable (or something similar?)
       FLatex -> [Plain $ 

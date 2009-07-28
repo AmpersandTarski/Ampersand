@@ -5,8 +5,6 @@ where
    import Typology              (Inheritance(..))
    import Data.Plug
    import FspecDef              (Fspc(..)
-                                ,Ftheme(..)
-                                ,Funit(..)
                                 ,Fservice(..)
                                 ,FSid(..)
                                 ,Fidentified(..))
@@ -95,28 +93,7 @@ where
         "\n"
            where indentA = indent ++"                 , "
                  indentB = indent ++"              "
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Ftheme                        ***
--- \***********************************************************************
-
-   instance ShowHS Ftheme where
-    showHSname ftheme = typ ftheme ++ "_" ++ showHSname (fsid ftheme)
-    showHS indent ftheme
-     = "Tspc ("++showHS "" (fsid ftheme)++")"
-              ++indent++"     [ "++chain (indent++"     , ") [showHS (indent++"       ") u| u<-units(ftheme)]++indent++"     ]"
-              ++indent++"("++showHSname (ftpat ftheme)++" gE)"
   
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Funit                         ***
--- \***********************************************************************
-
-   instance ShowHS Funit where
-    showHSname funit = typ funit ++ "_" ++ showHSname (fsid funit) 
-    showHS indent funit
-     = "Uspc "++showHS "" (fsid funit)
-        ++" ("++showHSname (pattern funit)++" gE)"
-
-     
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************

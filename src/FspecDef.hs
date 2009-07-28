@@ -58,28 +58,6 @@
     fsid    spec = fsfsid spec
   --  typ     _ = "f_Ctx"
 
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Ftheme                        ***
--- \***********************************************************************
-   
-   instance Identified Ftheme where
-     name theme = name (ftsid theme)
-     typ  _     = "f_Thm"
-   instance Fidentified Ftheme where
-     fsid theme = ftsid theme
-   
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Funit                         ***
--- \***********************************************************************
-     
-   instance Identified Funit where
-     name funit = name (fusid funit)
-     typ _      = "f_Unit"
-
-   instance Fidentified Funit where
-     fsid funit = fusid funit 
-
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***

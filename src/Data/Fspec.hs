@@ -9,8 +9,6 @@ are merely different ways to show Fspc.
 -}
 module Data.Fspec ( 
                Fspc(..)
-             , Ftheme(..)
-             , Funit(..)
              , Fservice(..)
              , FSid(..)
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
@@ -24,7 +22,6 @@ import Adl.MorphismAndDeclaration    (Morphism,Declaration)
 import Adl.Concept                   (Concept)
 import Typology                      (Inheritance)
 data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
-                  , themes   :: [Ftheme]      -- ^ One for every pattern
                   , datasets :: [ObjectDef]       -- ^ This list contains the data sets that are computed from the basic ontology.
                   , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
                   , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
@@ -32,17 +29,8 @@ data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , vrules   :: [Rule]        -- ^ One for every rule
                   , vrels    :: [Declaration] -- ^ One for every declaration
                   , fsisa    :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
+                  , vpatterns:: [Pattern]
                   }
-data Ftheme = Tspc
-                  { ftsid    :: FSid     -- ^ The name of the theme (aka pattern)
-                  , units    :: [Funit]  -- ^ The units of the theme
-                  , ftpat    :: Pattern  -- ^ Het pattern van de unit -- Obsolete
-                  }
-
-data Funit = Uspc 
-               { fusid    :: FSid
-               , pattern  :: Pattern --TODO-> Patterns op een hoop net als vrels?
-               }
            
 --DESCR -> Fservice is like Fspc only within the scope of one ObjectDef
 --         It contains the ObjectDef and precalculated structures

@@ -24,7 +24,7 @@ module Statistics where
 -- \***********************************************************************
    instance Statistics Fspc where
     nServices fSpec = length (services fSpec) --TODO -> check correctness
-    nPatterns fSpec = nPatterns (themes fSpec)
+    nPatterns fSpec = nPatterns (vpatterns fSpec)
     nFpoints  fSpec = nFpoints (services fSpec) --TODO -> check correctness
  -- TODO Deze module moet nog geheel worden ingekleurd...
 
@@ -32,21 +32,12 @@ module Statistics where
 --    nServices fspc = nServices (serviceS fspc `uni` serviceG fspc)  -- TODO: Stef, is het reeel om deze services op deze manier te tellen?
 --    nPatterns (Fctx context themes datasets objects vrules) = nPatterns themes+nPatterns objects
 --    nFpoints  (Fctx context themes datasets objects vrules) = nFpoints datasets + nFpoints objects
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Ftheme                        ***
--- \***********************************************************************
-
-   instance Statistics Ftheme where
-    nServices t = 0
-    nPatterns t = nPatterns (units t)
-    nFpoints  t = 0
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Funit                         ***
 -- \***********************************************************************
 
-   instance Statistics Funit where
+   instance Statistics Pattern where
     nServices u = 0 --TODO -> check correctness
     nPatterns _ = 1
     nFpoints u =  0

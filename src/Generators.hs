@@ -109,13 +109,11 @@ generatepngs :: Fspc -> Options -> IO()
 generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") dots
    where 
    outputFile fnm = combine (dirOutput flags) fnm
-   dots = [run (tnm (ftsid t) ++ show i) $ toDot fSpec flags (pattern u) 
-          | t<-themes fSpec,(i,u)<-zip [1..] (units t), (not.null) (concs $ pattern u)]
-   tnm (FS_id nm) =  remSpaces nm
-       where
-       remSpaces [] = []
-       remSpaces (' ':c:str) = toUpper c:remSpaces str 
-       remSpaces xs = xs
+   dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
+          | p<-vpatterns fSpec, (not.null) (concs p)]
+   remSpaces [] = []
+   remSpaces (' ':c:str) = toUpper c:remSpaces str 
+   remSpaces xs = xs
    run fnm dot =
        do 
        writeFile (outputFile (fnm++".dot")) (show dot)

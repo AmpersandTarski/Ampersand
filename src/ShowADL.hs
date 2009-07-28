@@ -96,7 +96,7 @@
       in
       "CONTEXT " ++ conid ++ lb
          --REMARK -> Pattern "CONTEXT" will be printed as a pattern --> no ds cs ks outside the pattern only pops and objs
-      ++ printadl (Just fSpec) i [pattern u | t<-themes fSpec,u<-units t]
+      ++ printadl (Just fSpec) i (vpatterns fSpec)
       ++ printadl (Just fSpec) i (serviceS fSpec)
       ++ printlist ("",lb,lb) [printadl (Just fSpec) i (Popu{popm=popmph d,popps=decpopu d})
                               | d<-vrels fSpec, (not.null)(decpopu d)]

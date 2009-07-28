@@ -90,7 +90,7 @@ where
      mkTag f = Tag "Fspec" [ nameToAttr f] 
      mkXmlTree f@(Fspc _ _ _ _ _ _ _ _ _)
         = Elem (mkTag f) (
-             [ Elem (simpleTag "Themes")   (map mkXmlTree (themes f))] 
+             [ Elem (simpleTag "Patterns")   (map mkXmlTree (vpatterns f))] 
           ++ [ Elem (simpleTag "Datasets") (map mkXmlTree (datasets f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
@@ -99,24 +99,6 @@ where
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
                    )
-
-
-   instance XML Ftheme where
-     mkTag f = Tag "Ftheme" [nameToAttr f] 
-     mkXmlTree f@(Tspc _ aaa bbb)
-        = Elem (mkTag f) (
-             [ Elem (simpleTag "Units")    (map mkXmlTree aaa) |not (null aaa)] 
-          ++ [ Elem (simpleTag "Pattern")  [mkXmlTree bbb]]
-          ) 
-
-
-   instance XML Funit where
-     mkTag f = Tag "Funit" [nameToAttr f] 
-     mkXmlTree f@(Uspc _ aaa )
-        = Elem (mkTag f) (
-             [ Elem (simpleTag "Pattern")  [mkXmlTree aaa]] 
-           )
-
 
    instance XML Fservice where
      mkTag _ = Tag "Fservice" [] 
