@@ -82,7 +82,8 @@ doGenXML fSpec flags
 doGenProto :: Fspc -> Options -> IO()
 doGenProto fSpec flags
    =  verboseLn flags "Generating prototype..."
-     >> verboseLn flags ("Prototype files are written to " ++  (dirPrototype flags) ++ "." ) 
+     >> verboseLn flags ("Prototype files are written to " ++  (dirPrototype flags) ++ "." )
+     >> verboseLn flags (show $ vplugs fSpec) 
      >> phpObjServices fSpec (dirPrototype flags) (allServices flags)  
  
 doGenFspec :: Fspc -> Options -> IO()

@@ -110,9 +110,11 @@ enrichCtx cx@(Ctx{}) ctxs =
           ctxrs=[rule | (rule,_,_)<-ctxrules], 
           ctxds=ctxdecls, -- 
           ctxos=[od | (od,_)<-ctxobjdefs], 
-          ctxks=[kd | (kd,_)<-ctxkeys]} 
+          ctxks=[kd | (kd,_)<-ctxkeys],
+          ctxsql=[plug | (plug,_)<-ctxsqlplugs]} 
   ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxrules]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
+   ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxsqlplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxkeys, (proof,fp,expr)<-proofs])
                            {-
                            (ctxnm cx) --copy name
@@ -329,6 +331,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   --         bind the expression and nested object defs of all object defs in the context
   ctxobjdefs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
   ctxobjdefs = [bindObjDef od Nothing | od<-ctxos cx]
+  ctxsqlplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
+  ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
   bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos,Expression)])

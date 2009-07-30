@@ -88,7 +88,7 @@ where
 
    instance XML Fspc where
      mkTag f = Tag "Fspec" [ nameToAttr f] 
-     mkXmlTree f@(Fspc _ _ _ _ _ _ _ _ _)
+     mkXmlTree f@(Fspc{})
         = Elem (mkTag f) (
              [ Elem (simpleTag "Patterns")   (map mkXmlTree (vpatterns f))] 
           ++ [ Elem (simpleTag "Datasets") (map mkXmlTree (datasets f))] 

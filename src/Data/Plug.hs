@@ -2,7 +2,6 @@ module Data.Plug (Plug(..),SqlField(..),SqlDb(..),SqlType(..),showSQL)
 where
   import CommonClasses  (Identified(..))
   import Classes.Morphical (Morphical(..))
-  import Data.Fspec
   import Collection(rd)
   import Adl
   --import MorphismAndD

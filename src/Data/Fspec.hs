@@ -21,8 +21,10 @@ import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism,Declaration)
 import Adl.Concept                   (Concept)
 import Typology                      (Inheritance)
+import Data.Plug
 data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , datasets :: [ObjectDef]       -- ^ This list contains the data sets that are computed from the basic ontology.
+                  , vplugs    :: [Plug]
                   , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
                   , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
                   , services :: [Fservice]    -- ^ One for every service 

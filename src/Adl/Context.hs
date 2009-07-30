@@ -31,6 +31,7 @@ where
             , ctxks    :: KeyDefs                   -- ^ A list of key definitions defined in this context, outside the scope of patterns
             , ctxos    :: ObjectDefs                -- ^ A list of attributes defined in this context, outside the scope of patterns
             , ctxpops  :: Populations               -- ^ A list of populations defined in this context
+            , ctxsql   :: ObjectDefs  --a list of sqlplugs
             }               --deriving (Show) -- voor debugging
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***

@@ -25,6 +25,7 @@
    import PredLogic
    import Languages
    import NormalForms(disjNF)
+   import Data.Plug
  -- The story:
  -- A number of datasets for this context is identified.
  -- Every pattern is considered to be a theme and every object is treated as a separate object specification.
@@ -38,6 +39,7 @@
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Monastir interface) is already available.
+            , vplugs   = map makePlug (ctxsql context)
             , serviceS = attributes context
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
@@ -153,6 +155,29 @@
              Isn{}     -> d
              Iscompl{} -> d
              Vs{}      -> d
+  
+   makePlug :: ObjectDef -> Plug
+   makePlug plug = PlugSql{fields=makeFields Nothing plug,database=CurrentDb,plname=name plug}
+      where
+      makeFields :: Maybe Expression -> ObjectDef -> [SqlField]
+      makeFields mbexpr obj = 
+          (Fld{fldname=name obj,fldexpr=fexpr,fldtype=sqltp obj,fldnull=False,flduniq=False})
+          :[f | objat<-objats obj, f<-makeFields (Just fexpr) objat]
+          where fexpr=case mbexpr of 
+                          Nothing -> objctx obj
+                          Just expr -> F [expr,objctx obj]
+      sqltp obj = head $ [makeSqltype sqltp | ("SQLTYPE=":sqltp)<-objstrs obj]++[SQLVarchar 255]
+      makeSqltype str = case str of
+          ("Varchar":xs) -> SQLVarchar 255 --TODO number
+          ("Char":xs) -> SQLChar 255 --TODO number
+          ("Blob":xs) -> SQLBlob
+          ("Single":xs) -> SQLSingle
+          ("Double":xs) -> SQLDouble
+          ("uInt":xs) -> SQLuInt 4 --TODO number
+          ("sInt":xs) -> SQLsInt 4 --TODO number
+          ("Id":xs) -> SQLId 
+          ("Bool":xs) -> SQLBool
+          _ -> SQLVarchar 255 --TODO number
 
    makeFservice :: Context -> ObjectDef -> Fservice
    makeFservice _ obj
