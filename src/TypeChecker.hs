@@ -111,10 +111,12 @@ enrichCtx cx@(Ctx{}) ctxs =
           ctxds=ctxdecls, -- 
           ctxos=[od | (od,_)<-ctxobjdefs], 
           ctxks=[kd | (kd,_)<-ctxkeys],
-          ctxsql=[plug | (plug,_)<-ctxsqlplugs]} 
+          ctxsql=[plug | (plug,_)<-ctxsqlplugs],
+          ctxphp=[plug | (plug,_)<-ctxphpplugs]} 
   ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxrules]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxsqlplugs, (proof,fp,expr)<-proofs]
+   ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxkeys, (proof,fp,expr)<-proofs])
                            {-
                            (ctxnm cx) --copy name
@@ -333,6 +335,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   ctxobjdefs = [bindObjDef od Nothing | od<-ctxos cx]
   ctxsqlplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
   ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
+  ctxphpplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
+  ctxphpplugs = [bindObjDef plug Nothing | plug<-ctxphp cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
   bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos,Expression)])

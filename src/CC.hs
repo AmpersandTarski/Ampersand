@@ -13,7 +13,7 @@
    keywordstxt :: [String]
    keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"
-                       , "SERVICE", "INITIAL", "SQLPLUG"
+                       , "SERVICE", "INITIAL", "SQLPLUG", "PHPPLUG"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP"
                        , "ALWAYS", "RELATION", "CONCEPT", "KEY"
@@ -39,7 +39,7 @@
    pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
                                   ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
                                   pList (pContextElement beep) <* pKey "ENDCONTEXT"
-                       where rebuild nm on ces = Ctx nm on empty [] pats [] ds cs ks os pops sqlplugs
+                       where rebuild nm on ces = Ctx nm on empty [] pats [] ds cs ks os pops sqlplugs phpplugs
                               where
                                ps   = [p| CPat p<-ces]
                                ds   = [d| CDcl d<-ces]
@@ -48,7 +48,8 @@
                                os   = [o| CObj o<-ces]
                                pops = [Popu mph prs| CPop mph prs<-ces]
                                pats = ps++[Pat "CONTEXT" [] [] ds cs ks| not (null ds && null cs && null ks)]
-                               sqlplugs = [plug| CPlug plug<-ces]
+                               sqlplugs = [plug| CSqlPlug plug<-ces]
+                               phpplugs = [plug| CPhpPlug plug<-ces]
 
    data ContextElement = CPat Pattern
                        | CDcl Declaration
@@ -56,7 +57,8 @@
                        | CKey KeyDef
                        | CObj ObjectDef
                        | CPop Morphism Pairs
-                       | CPlug ObjectDef
+                       | CSqlPlug ObjectDef
+                       | CPhpPlug ObjectDef
 
    pContextElement  :: Bool -> Parser Token ContextElement
    pContextElement beep = CPat <$> pPattern beep <|>
@@ -64,7 +66,8 @@
                           CCon <$> pConceptDef   <|>
                           CKey <$> pKeyDef       <|>
                           CObj <$> pObjDef       <|>
-                          CPlug<$> pSqlplug      <|>
+                          CSqlPlug<$> pSqlplug      <|>
+                          CPhpPlug<$> pPhpplug      <|>
                           CPop <$ pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
 
    pPattern         :: Bool -> Parser Token Pattern
@@ -238,6 +241,9 @@
 
    pSqlplug          :: Parser Token ObjectDef
    pSqlplug           = pKey_pos "SQLPLUG" *> pObj
+
+   pPhpplug          :: Parser Token ObjectDef
+   pPhpplug           = pKey_pos "PHPPLUG" *> pObj
 
 
 

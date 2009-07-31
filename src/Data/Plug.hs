@@ -1,15 +1,40 @@
-module Data.Plug (Plug(..),SqlField(..),SqlDb(..),SqlType(..),showSQL)
+module Data.Plug (Plug(..),SqlField(..),SqlDb(..),SqlType(..),showSQL,PhpValue(..),PhpType(..),PhpArgs(..),PhpReturn(..),PhpAction(..),ActionType(..))
 where
   import CommonClasses  (Identified(..))
   import Classes.Morphical (Morphical(..))
   import Collection(rd)
   import Adl
-  --import MorphismAndD
+  --import MorphismAndDeclaration
   
   data Plug = PlugSql { fields   :: [SqlField]
                       , database :: SqlDb
-                      , plname:: String
-                      } deriving (Eq, Ord, Show)
+                      , plname   :: String
+                      }
+            | PlugPhp { args     :: PhpArgs
+                      , returns  :: PhpReturn
+                      , function :: PhpAction
+                      , phpfile  :: String
+                      , plname   :: String 
+                      } deriving (Show)
+
+  data PhpValue = PhpNull | PhpObject {object::ObjectDef,phptype::PhpType} deriving (Show)
+  data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
+  type PhpArgs = [(Int,PhpValue)]
+  data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
+  --DO you need on::[Morphism]? makeFspec sets an empty list
+  data PhpAction = PhpAction {action::ActionType, on::[Morphism]} deriving (Show)
+  data ActionType = Create | Read | Update | Delete deriving (Show)
+  
+  instance Identified PhpValue where
+    name p = case p of {PhpNull -> "0"; PhpObject{object=x} -> name x}
+
+  --WHY -> do you want to order plugs, do you not only want to order the fields of sqlplugs?
+  instance Eq Plug where
+    (PlugSql{fields=x})==(PlugSql{fields=y}) = x==y
+    x==y = True
+  instance Ord Plug where
+    compare (PlugSql{fields=x}) (PlugSql{fields=y}) = compare x y
+    compare x y = EQ
   
   data SqlField = Fld { fldname     :: String
                       , fldexpr     :: Expression
@@ -66,7 +91,8 @@ where
   instance Identified Plug where
     name p = plname p
     typ  p = case p of
-              { PlugSql{} -> "SQL"
+              { PlugSql{} -> "SQL";
+                PlugPhp{} -> "PHP"
               }
 
   instance Morphical SqlField where

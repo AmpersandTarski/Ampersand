@@ -39,7 +39,7 @@
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Monastir interface) is already available.
-            , vplugs   = map makePlug (ctxsql context)
+            , vplugs   = map makeSqlPlug (ctxsql context) ++ map makePhpPlug (ctxphp context)
             , serviceS = attributes context
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
@@ -156,8 +156,8 @@
              Iscompl{} -> d
              Vs{}      -> d
   
-   makePlug :: ObjectDef -> Plug
-   makePlug plug = PlugSql{fields=makeFields Nothing plug,database=CurrentDb,plname=name plug}
+   makeSqlPlug :: ObjectDef -> Plug
+   makeSqlPlug plug = PlugSql{fields=makeFields Nothing plug,database=CurrentDb,plname=name plug}
       where
       makeFields :: Maybe Expression -> ObjectDef -> [SqlField]
       makeFields mbexpr obj = 
@@ -166,18 +166,49 @@
           where fexpr=case mbexpr of 
                           Nothing -> objctx obj
                           Just expr -> F [expr,objctx obj]
-      sqltp obj = head $ [makeSqltype sqltp | ("SQLTYPE=":sqltp)<-objstrs obj]++[SQLVarchar 255]
+      sqltp obj = head $ [makeSqltype sqltp | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp)<-strs]
+                         ++[SQLVarchar 255]
       makeSqltype str = case str of
-          ("Varchar":xs) -> SQLVarchar 255 --TODO number
-          ("Char":xs) -> SQLChar 255 --TODO number
-          ("Blob":xs) -> SQLBlob
-          ("Single":xs) -> SQLSingle
-          ("Double":xs) -> SQLDouble
-          ("uInt":xs) -> SQLuInt 4 --TODO number
-          ("sInt":xs) -> SQLsInt 4 --TODO number
-          ("Id":xs) -> SQLId 
-          ("Bool":xs) -> SQLBool
+          ('V':'a':'r':'c':'h':'a':'r':xs) -> SQLVarchar 255 --TODO number
+          ('C':'h':'a':'r':xs) -> SQLChar 255 --TODO number
+          ('B':'l':'o':'b':xs) -> SQLBlob
+          ('S':'i':'n':'g':'l':'e':xs) -> SQLSingle
+          ('D':'o':'u':'b':'l':'e':xs) -> SQLDouble
+          ('u':'I':'n':'t':xs) -> SQLuInt 4 --TODO number
+          ('s':'I':'n':'t':xs) -> SQLsInt 4 --TODO number
+          ('I':'d':xs) -> SQLId 
+          ('B':'o':'o':'l':xs) -> SQLBool
           _ -> SQLVarchar 255 --TODO number
+
+   makePhpPlug :: ObjectDef -> Plug
+   makePhpPlug plug = PlugPhp{args=makeArgs,returns=makeReturns,function=PhpAction{action=makeActiontype,on=[]}
+                             ,phpfile="phpPlugs.inc.php",plname=name plug}
+      where
+      makeActiontype = head $ [case str of {"SELECT"->Read;
+                                            "CREATE"->Create;
+                                            "UPDATE"->Update;
+                                            "DELETE"->Delete;
+                                            _ -> error $ "Choose from ACTION=[SELECT|CREATE|UPDATE|DELETE].\n"  
+                                                         ++ show (objpos plug)
+                                           }
+                     | strs<-objstrs plug,'A':'C':'T':'I':'O':'N':'=':str<-strs]
+                     ++ [error $ "Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
+      makeReturns = head $ [PhpReturn {retval=PhpObject{object=oa,phptype=makePhptype oa}}
+                           | oa<-objats plug, strs<-objstrs oa,"PHPRETURN"<-strs]
+                           ++ [PhpReturn {retval=PhpNull}]
+      makeArgs = [(i,PhpObject{object=oa,phptype=makePhptype oa})
+                 | (i,oa)<-zip [1..] (objats plug), strs<-(objstrs oa), elem "PHPARG" strs]
+   makePhptype :: ObjectDef -> PhpType
+   makePhptype objat = head $ [case str of {"String"->PhpString;
+                                            "Int"->PhpInt;
+                                            "Float"->PhpFloat;
+                                            "Array"->PhpArray;
+                                            _ -> error $ "Choose from PHPTYPE=[String|Int|Float|Array].\n"  
+                                                        ++ show (objpos objat)
+                                           }
+                     | strs<-objstrs objat,'P':'H':'P':'T':'Y':'P':'E':'=':str<-strs]
+                     ++ [error $ "Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
+                                 ++ show (objpos objat)]
 
    makeFservice :: Context -> ObjectDef -> Fservice
    makeFservice _ obj

@@ -10,9 +10,9 @@ Ik heb in commentaar mijn bedoeling gepoogd te verwoorden:
 -- ROLE Docent ISA User
 -- ROLE Student ISA User
 -- ROLE Beheerder ISA User
--- SERVICE Student SERVICES Student EDITS own, I[File], I[Action], name, password
+-- SERVICE Student SERVICES Student EDITS own, I[File], I[Actie], name, password
 -- SERVICE Docent SERVICES Docent EDITS I[User], I[Right]
--- SERVICE Beheerder SERVICES Beheerder EDITS I[Right], I[User], I[Session], I[File], I[Action], I[Widget], I[Operation]
+-- SERVICE Beheerder SERVICES Beheerder EDITS I[Right], I[User], I[Session], I[File], I[Actie], I[Widget], I[Operation]
 -}
 
 PATTERN Meterkast
@@ -90,7 +90,7 @@ SERVICE login SERVICES anyone
      , sessies   : user[Session*User]~
         = [ sessie : I[Session]
           , acties : session~
-             = [ actie     : I[Action]
+             = [ actie     : I[Actie]
                , widget    : widget
                , bestanden : object
                ]
@@ -98,7 +98,7 @@ SERVICE login SERVICES anyone
      , rechten   : user[Right*User]~
      ]
 
--- SERVICE Student SERVICES Student EDITS own, session, object, widget, I[File], I[Action], name, password
+-- SERVICE Student SERVICES Student EDITS own, session, object, widget, I[File], I[Actie], name, password
 
   SERVICE Student : master~;master /\ I
    = [ naam    : name
@@ -123,7 +123,7 @@ SERVICE login SERVICES anyone
      ]
 -}
 
--- SERVICE Beheerder SERVICES Beheerder EDITS I[Right], I[User], I[Session], I[File], I[Action], I[Widget], I[Operation]
+-- SERVICE Beheerder SERVICES Beheerder EDITS I[Right], I[User], I[Session], I[File], I[Actie], I[Widget], I[Operation]
   SERVICE Beheerder : I[ONE]
    = [ users : V[ONE*User]
         = [ naam      : name

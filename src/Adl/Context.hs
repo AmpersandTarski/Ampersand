@@ -32,6 +32,7 @@ where
             , ctxos    :: ObjectDefs                -- ^ A list of attributes defined in this context, outside the scope of patterns
             , ctxpops  :: Populations               -- ^ A list of populations defined in this context
             , ctxsql   :: ObjectDefs  --a list of sqlplugs
+            , ctxphp   :: ObjectDefs  --a list of phpplugs
             }               --deriving (Show) -- voor debugging
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***
