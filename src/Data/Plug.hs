@@ -28,13 +28,11 @@ where
   instance Identified PhpValue where
     name p = case p of {PhpNull -> "0"; PhpObject{object=x} -> name x}
 
-  --WHY -> do you want to order plugs, do you not only want to order the fields of sqlplugs?
+  --DESCR -> plugs are sorted to optimize some algoritms. 
   instance Eq Plug where
-    (PlugSql{fields=x})==(PlugSql{fields=y}) = x==y
-    x==y = True
+    x==y = plname x==plname y
   instance Ord Plug where
-    compare (PlugSql{fields=x}) (PlugSql{fields=y}) = compare x y
-    compare x y = EQ
+    compare x y = compare (plname x) (plname y)
   
   data SqlField = Fld { fldname     :: String
                       , fldexpr     :: Expression
