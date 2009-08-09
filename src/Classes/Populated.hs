@@ -6,10 +6,9 @@ where
    import Adl.Expression                 (Expression(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..)
                                          ,makeDeclaration,makeInline)
-   import CommonClasses                  (Conceptual(conts),order,lub,glb)    
-   import Classes.Morphical              (idsOnly)
-   import Collection                     (Collection (uni,(>-),isc))   
-   import Auxiliaries                    (clos1,diag,eqCl) 
+   import CommonClasses                  (Conceptual(conts),lub)    
+   import Collection                     (Collection (uni,isc))   
+   import Auxiliaries                    (clos1,diag) 
 
    class Populated a where
     contents  :: a -> Pairs

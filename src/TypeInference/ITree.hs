@@ -2,7 +2,7 @@
 module TypeInference.ITree where
 import Adl.Concept
 import Adl.MorphismAndDeclaration
-import Adl.Prop
+--import Adl.Prop
 import CommonClasses
 import TypeInference.AdlExpr
 import Data.List
@@ -22,7 +22,7 @@ data InfErrType = UndeclRel AdlExpr |
 instance Show InfErrType where
    showsPrec _ (UndeclRel (Relation{rel=mp})) = showString $ 
         "Undeclared relation " ++ name mp ++ "."
-   showsPrec _ (UndeclRel expr) =  error $ "Error in ITree.hs module TypeInference.ITree instance Show InfErrType: " ++
+   showsPrec _ (UndeclRel _) =  error $ "Error in ITree.hs module TypeInference.ITree instance Show InfErrType: " ++
                                            "The expression of UndeclRel must be a relation." 
    showsPrec _ (IErr _ c1 c2 _) = showString $ 
         "Disjunct concepts " ++ show c1 ++ " and " ++ show c2 ++ "."
@@ -34,6 +34,7 @@ instance Show Statement where
    showsPrec _ (BoundTo expr) = showString $ printexpr expr
    showsPrec _ de@(DeclExpr{}) = showString $ printexpr (declex de) ++ (if homo de then " {HOMO}" else "")
  
+printexpr :: AdlExpr -> String
 printexpr ex@(Relation mp _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
 printexpr (Implicate expr1 expr2 _)= printexpr expr1 ++ "|-" ++ printexpr expr2
 printexpr (Equality expr1 expr2 _)= printexpr expr1 ++ "=" ++ printexpr expr2
@@ -44,6 +45,7 @@ printexpr (Dagger expr1 expr2 _)= printexpr expr1 ++ "!" ++ printexpr expr2
 printexpr (Complement expr _)= "-" ++ printexpr expr
 printexpr (Flip expr _)= printexpr expr ++ "~" 
 
+prlst :: [String] -> String
 prlst xs = foldr (++) [] $ [x ++ "\n"|x<-xs]
 
 instance Eq InfErrType where
@@ -111,19 +113,22 @@ analyseerror g tts = case mberr of
    where
    errors = [((ss,basetree),x)|(ss,basetree)<-tts, InfErr x<-ss]
    mberr = if null errors then Nothing else Just $ head errors
-analyseerror _ _ = TypeError (ErrCode 0) "No inference trees in proof. Contact the system administrator." 
+--analyseerror _ _ = TypeError (ErrCode 0) "No inference trees in proof. Contact the system administrator." 
 
 
+intstr :: (Num a) => a -> String
 intstr locnr = show locnr ++ case locnr of 
          1 -> "st"
          2 -> "nd"
          _ -> "th"
+printrel :: (Identified a) => a -> Int -> [AdlExpr] -> String
 printrel mp i rels = [c |(locnr,i')<-allsamename, i==i',length allsamename>1, c<-"the "++intstr locnr++" "]
                      ++ "relation "++name mp
-    where allsamename = zip [1..] $ sort [i'|(Relation{rel=mp',mphid=i'})<-rels, name mp'==name mp]
-
+    where allsamename = zip allPositiveIntegers $ sort [i'|(Relation{rel=mp',mphid=i'})<-rels, name mp'==name mp]
+          allPositiveIntegers :: [Integer]
+          allPositiveIntegers = [1..]
 analysedisjunction :: Gamma -> (Statements,ITree) -> DisjType -> Concept -> Concept -> AdlExpr -> TypeError
-analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
+analysedisjunction g (_,basetree) dtp' c1 c2 expr = check7
    where
    BoundTo infexpr =  evaltree g basetree
    disjrel = case expr of
@@ -164,7 +169,7 @@ analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
          Just terr -> Just terr
          Nothing -> decideonme
          where
-         (firstarg,xme) = head xmes
+         (_,xme) = head xmes
          xinsub xsub = elem disjrel (relations xsub)
          firstarg' =  if null xchilds then True else (fst.head) xchilds
          xchilds = case xme of
@@ -177,7 +182,7 @@ analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
              Complement{} -> [(True,sub xme) | xinsub (sub xme)]
              Flip{} -> [(True,sub xme) | xinsub (sub xme)]
              Relation{} -> []
-             _ -> []
+             --_ -> []
          --Nothing indicates that my parent has the error
          decideonme = 
             if null xmes then Nothing
@@ -227,7 +232,7 @@ analysedisjunction g (ss,basetree) dtp' c1 c2 expr = check7
                    {left=Relation{rel=(I{})}
                    ,right=rex@(Relation{rel=r@(Mph{})})} -> [(r,"reflexive") | hetero rex]
                 _ -> []
-            meandmyflip r r' = case r of
+            meandmyflip r2 r' = case r2 of
                r@(Relation{rel=mp1@(Mph{})}) -> case r' of
                    Flip{sub=Relation{rel=mp2@(Mph{})}} -> [r|mp1==flp mp2]
                    _ -> []
@@ -270,14 +275,14 @@ analyseamb g ts =
    infstmts = [evaltree g t|t<-ts]
    inftypes = map evalstmt infstmts
    sametype [] = True
-   sametype (x:[]) = True
+   sametype (_:[]) = True
    sametype (x:y:xs) = x==y && sametype (y:xs)
    exprrels = [relations expr | (BoundTo expr)<-infstmts]
    printdiffcomps = (savetail.savetail) [c|str<-diffcomps exprrels, c<-". "++str]
    savetail [] = []
-   savetail (x:xs) = xs
+   savetail (_:xs) = xs
    diffcomps [] = []
-   diffcomps (x:[]) = []
+   diffcomps (_:[]) = []
    diffcomps (x:y:xs) = ["The type of "++ printrel (rel r1) (mphid r1) x
                          ++ " can be " ++ signstr r1 ++ " or " ++ signstr r2
                          |(r1,r2)<-zip x y, (tt r1)/=(tt r2),r1==r2 ] ++ diffcomps (y:xs)

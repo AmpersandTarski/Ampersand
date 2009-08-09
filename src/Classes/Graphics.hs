@@ -1,5 +1,6 @@
+{-# OPTIONS_GHC -Wall #-}
 --TODO -> Alles uitgezet vanwege nieuwe versie graphviz
-module Classes.Graphics where
+module Classes.Graphics (Dotable(toDot)) where
 -- TODO Deze module is nog onderHANden
 -- TODO crowfoot flag (implement setCrowfoot, see below)
 -- TODO url links for atlas
@@ -25,16 +26,16 @@ class Dotable a where
 --         arcs and concepts are points attached to a label
 data PictureObject = ArcSrcEdge Declaration 
                    | ArcTgtEdge Declaration
-                   | ArcPoint Declaration
+                   | ArcPoint 
                    | ArcLabel Declaration
-                   | ArcEdge Declaration
+                   | ArcEdge 
                    | CptPoint Concept
                    | CptLabel Concept
-                   | CptEdge Concept
+                   | CptEdge
                    | IsaEdge 
                    | TotalPicture
 instance Dotable Pattern where
-   toDot fspc flags pat 
+   toDot _ flags pat 
      = DotGraph { graphAttributes = handleFlags TotalPicture 
                 , graphNodes = [conceptLabel c | c<-cpts]
                             ++ [conceptPoint c | c<-cpts] 
@@ -55,16 +56,16 @@ instance Dotable Pattern where
          edgeAtts   = [Len 1.2,ArrowSize 0.8]
          --DESCR -> get concepts and arcs from pattern
          cpts = rd (concs pat)
-         arcs = rd $ [d | d<-[makeDeclaration m|m<-mors pat++mors(specs pat), isMph m, not (isProperty m)]
+         arcs = rd $ [d | d<-[makeDeclaration mph|mph<-mors pat++mors(specs pat), isMph mph, not (isProperty mph)]
                         , not (isSignal d)]
                      ++ (ptdcs pat)
          --DESCR -> assign ID to concept related nodes
          conceptTable = case cpts of
-            []   -> []
-            c:cs -> zip cpts [1..] 
+            [] -> []
+            _  -> zip cpts [1..] 
          conceptPointTable = case cpts of
-            []   -> []
-            c:cs -> zip cpts [(length conceptTable + 1)..]             
+            [] -> []
+            _  -> zip cpts [(length conceptTable + 1)..]             
          --DESCR -> construct concept point related picture objects                                
          conceptLabel c = 
             DotNode { nodeID         = lkup c conceptTable
@@ -77,28 +78,28 @@ instance Dotable Pattern where
          conceptEdge c  = 
             DotEdge {edgeHeadNodeID = lkup c conceptTable
                     ,edgeTailNodeID = lkup c conceptPointTable
-                    ,edgeAttributes = handleFlags (CptEdge c) 
+                    ,edgeAttributes = handleFlags CptEdge 
                     ,directedEdge = True
                     }
          --DESCR -> assign ID to arc related nodes
          arcsTable = case arcs of
-            []    -> []
-            c:cs  -> zip arcs [(length conceptTable + length conceptPointTable + 1)..]   
+            [] -> []
+            _  -> zip arcs [(length conceptTable + length conceptPointTable + 1)..]   
          arcsPointTable = case arcs of
-            []    -> []
-            c:cs  -> zip arcs [(length conceptTable + length conceptPointTable + length arcsTable + 1)..]            
+            [] -> []
+            _  -> zip arcs [(length conceptTable + length conceptPointTable + length arcsTable + 1)..]            
          --DESCR -> construct arc point related picture objects   
          inBetweenNode d = DotNode { nodeID          = lkup d arcsTable
                                    , nodeAttributes = handleFlags (ArcLabel d)
                                    }   
          inBetweenPoint d = 
             DotNode { nodeID = lkup d arcsPointTable
-                    , nodeAttributes = handleFlags (ArcPoint d)
+                    , nodeAttributes = handleFlags ArcPoint
                     }
          inBetweenEdge d  = 
             DotEdge {edgeHeadNodeID = lkup d arcsTable
                     ,edgeTailNodeID = lkup d arcsPointTable
-                    ,edgeAttributes = handleFlags (ArcEdge d) 
+                    ,edgeAttributes = handleFlags ArcEdge  
                     ,directedEdge = True
                     }          
          --DESCR -> construct arc edges
@@ -138,9 +139,9 @@ instance Dotable Pattern where
                                     [ArrowTail NoArrow] 
                               else  [ArrowHead NoArrow] ++
                                     [ArrowTail NoArrow]
-              ArcPoint d -> [Shape PointShape,Style$Stl Invisible Nothing,Width 0.1]
+              ArcPoint   -> [Shape PointShape,Style$Stl Invisible Nothing,Width 0.1]
               ArcLabel d -> nodeAtts ++ [Label$StrLabel (name d), Shape Plaintext]
-              ArcEdge d -> [Len 0.1, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
+              ArcEdge    -> [Len 0.1, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
               CptPoint c -> if crowfoot flags
                             then nodeAtts ++ [Label$StrLabel (name c),Shape Plaintext,Style$Stl Filled Nothing
                                       ,LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}]
@@ -148,9 +149,9 @@ instance Dotable Pattern where
               CptLabel c -> if crowfoot flags
                             then [Shape PointShape,Style$Stl Invisible Nothing,Width 0.1]
                             else nodeAtts ++ [Label$StrLabel (name c),Shape Plaintext,Style$Stl Filled Nothing
-                                      ,LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}]++[cyan]
-              CptEdge c -> [Len 0.4, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
-              IsaEdge -> edgeAtts ++ [yellow]
+                                      ,LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}]
+              CptEdge    -> [Len 0.4, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
+              IsaEdge    -> edgeAtts 
               TotalPicture -> [Splines SplineEdges] -- [BgColor transparent]
                               --   ++ [Overlap (Right False) | crowfoot flags]
                               --   ++ [Splines (Left True)  | crowfoot flags]
@@ -159,11 +160,12 @@ instance Dotable Pattern where
 --symbols for different cardinalities. Whenever the Graphviz library will support the needed arrowheads,
 --it is very easy to use these symbols.
          crowfootArrow :: Bool -> Bool -> ArrowType
-         crowfootArrow a b = case [a, b] of
-                              [True , True ] -> Box
-                              [True , False] -> Tee
-                              [False, True ] -> Diamond
-                              [False, False] -> Crow  
+         crowfootArrow a b = if a then
+                                  if b then Box
+                                       else Tee
+                                  else
+                                  if b then Diamond
+                                       else Crow
 
 --DESCR -> lookup the integer id of an object
 lkup :: (Eq a) => a -> [(a,Int)] -> Int
@@ -176,12 +178,17 @@ lkup x tbl = case lookup x tbl of
 
 
 -- hulpfuncties, voor tijdelijk. TODO, opschonen
-orange :: Attribute
-orange = Color [ColorName "orange"]
-yellow :: Attribute
-yellow = Color [ColorName "yellow"]
-purple = Color [ColorName "purple"]
-cyan = Color [ColorName "cyan"]
-brown = Color [ColorName "brown"]
-cgreen = Color [ColorName "green"]
-cred = Color [ColorName "red"]
+--orange :: Attribute
+--orange = Color [ColorName "orange"]
+--yellow :: Attribute
+--yellow = Color [ColorName "yellow"]
+--purple :: Attribute
+--purple = Color [ColorName "purple"]
+--cyan :: Attribute
+--cyan = Color [ColorName "cyan"]
+--brown :: Attribute
+--brown = Color [ColorName "brown"]
+--cgreen :: Attribute
+--cgreen = Color [ColorName "green"]
+--cred :: Attribute
+--cred = Color [ColorName "red"]

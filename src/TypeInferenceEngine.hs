@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInferenceEngine where
 import Adl.Concept
-import Adl.MorphismAndDeclaration
+--import Adl.MorphismAndDeclaration
 import Data.Maybe
 import TypeInference.ITree
 import TypeInference.AdlExpr
-import CommonClasses 
+--import CommonClasses 
 
 --------------------------------------
 import TypeInference.Input
@@ -73,7 +73,7 @@ infer :: Gamma -> AdlExpr -> Proof
 infer gamma exr  = step4combinetrees step3inferstmts step2tree
   where
   --DESCR -> Checks if gamma contains an isa statement stating that c1 is-a c2
-  isa c1 c2 = elem (fromIsa (c1, c2)) gamma
+  isa' c1 c2 = elem (fromIsa (c1, c2)) gamma
   step1tree = tree $ unboundtree freecptvars
   --DESCR -> Get all used concept variables and leave them unbound by relating them to themselves
   step1cptvars = [(var,var) | var<-(takeWhile ((/=)(head $ free $ unboundtree freecptvars)) freecptvars)]
@@ -142,7 +142,10 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
          then Proven gamma allnoerrinftrees  --return inference trees of all alts resulting in a type
          else NoProof (AmbiguousType gamma allnoerrinftrees)  --return inference trees of all alts resulting in a type
 ------------------------------------------------------------------------------------
-  freecptvars = [cptnew $ "$C" ++ show i | i<-[1..]]
+  freecptvars :: [Concept]
+  freecptvars = [cptnew $ "$C" ++ show i | i<-allPositiveIntegers]
+     where allPositiveIntegers :: [Integer]
+           allPositiveIntegers = [1..]
   tree (t, _) = t
   free (_, f) = f
   --DESCR -> construct a base inference tree of BoundTo statements by decomposing the expr to infer, and put concept variables at all concept locations. Return all unused concept variable names too.
@@ -278,22 +281,22 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                     Just vars' -> if iscptvar var2 then lookupvar vars' var2 else notvarerr var2
              else if iscptvar var2 then lookupvar vars var2 else notvarerr var2
      mvars'  =
-        if var1==cpt' || c1 `isa` cpt' -- is unbound or more specific
+        if var1==cpt' || c1 `isa'` cpt' -- is unbound or more specific
         then Just $ bindvar vars var1 c1 --bind more specific
-        else if cpt' `isa` c1 --already bound to the same or more specific concept by other mphats
+        else if cpt' `isa'` c1 --already bound to the same or more specific concept by other mphats
              then Just vars --variable is already bound to this mphat
              else Nothing
      --try to bind var2 to the second mphat
      mvars'' = case mvars' of 
         Nothing -> Nothing 
-        Just vars' -> if var2==cpt'' || c2 `isa` cpt'' -- is unbound or more specific
+        Just vars' -> if var2==cpt'' || c2 `isa'` cpt'' -- is unbound or more specific
                       then Just $ bindvar vars' var2 c2 --bind more specific
                       else 
-                        if cpt'' `isa` c2 --already bound to the same or more specific concept by other mphats
+                        if cpt'' `isa'` c2 --already bound to the same or more specific concept by other mphats
                         then Just vars' --variable is already bound to this mphat
                         else Nothing
-     notvarerr v = error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
-                              "Concept variable "++show v++" is not a concept variable."
+     notvarerr v' = error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
+                              "Concept variable "++show v'++" is not a concept variable."
      in
      if hasmphats
      then case mvars' of 
@@ -351,8 +354,8 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
        let
        ct1 = cts $ tt expr
        ct2 = ctt $ tt expr
-       notvarerr v = error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
-                              "Concept variable "++show v++" is not a concept variable."
+       notvarerr v' = error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
+                              "Concept variable "++show v'++" is not a concept variable."
        in
        case alt of
         DeclExpr{declex=declexpr,homo=hm} -> trydomain 
@@ -373,10 +376,10 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                if c1==c1' --alternative matches conclusion
                then tryrange (Stmt alt) (var1,vars, False)
                else 
-                 if c1 `isa` c1' --try specialization rule
+                 if c1 `isa'` c1' --try specialization rule
                  then tryrange (SpecRule SpecDomain (Stmt $ fromIsa (c1, c1')) (Stmt alt)) (var1,vars, False)
                  else 
-                   if c1' `isa` c1
+                   if c1' `isa'` c1
                    then tryrange (Stmt alt) (var1,bindvar vars var1 c1', True) --rebind the var
                    else returnerror DisjSrc c1 c1' vars
                
@@ -394,10 +397,10 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                if c2==c2' --alternative matches conclusion, thus pass what's calculated at trydomain
                then checkhomo (Just ruledomain) ((var1,var2),varsdomain, envchanged)
                else
-                 if c2 `isa` c2' --try specialization rule
+                 if c2 `isa'` c2' --try specialization rule
                  then checkhomo (specto c2) ((var1,var2),varsdomain, envchanged)  
                  else 
-                   if c2' `isa` c2
+                   if c2' `isa'` c2
                    then if (iscptvar var1 && var1==var2) --if the source is the same variable as the target
                         --rebind the var and schedule this alt to be inferred again by setting the tree to Nothing
                         then checkhomo Nothing ((var1,var2),bindvar varsdomain var2 c2', True) 
@@ -414,8 +417,8 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
              if (not hm) || c1==c2 || reinferanyway --if not a homo, or source==target, or to be reinferred anyway  
              then ((stmt, [(alt, mbrulerange)]),varsrange, envchanged) --pass what's calculated at tryrange
              else -- 
-               if c1 `isa` c2 then rebindboth c1
-               else if c2 `isa` c1 then rebindboth c2
+               if c1 `isa'` c2 then rebindboth c1
+               else if c2 `isa'` c1 then rebindboth c2
                  else returnerror DisjHomo c1 c2 varsrange
         _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
                      "The alternative statement "++show alt++" is not a TypeTo statement."
@@ -539,8 +542,8 @@ treestmt (stmt@(BoundTo{}),[]) = error $ "Error in TypeInferenceTree.hs module I
                                               "The statement "++show stmt++" is not bound to any alternative."
 treestmt ((BoundTo{}),[(_, Just inftree )]) = inftree
 --DESCR -> an alternative can be without inference tree if inference is aborted because of a type error
-treestmt (stmt@(BoundTo{}),[(alt, Nothing)]) = Stmt EmptyStmt
+treestmt ((BoundTo{}),[( _ , Nothing)]) = Stmt EmptyStmt
 --DESCR -> there can be more than one alternative if inference is aborted because of a type error
-treestmt (stmt@(BoundTo{}),alts) = Stmt EmptyStmt
+treestmt ((BoundTo{}),_) = Stmt EmptyStmt
 treestmt (stmt,_) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
                             "The statement "++show stmt++" is not a BoundTo."
