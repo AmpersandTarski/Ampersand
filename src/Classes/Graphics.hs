@@ -23,13 +23,19 @@ class Dotable a where
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept
 --         arcs and concepts are points attached to a label
-data PictureObject = ArcSrcEdge | ArcTgtEdge | ArcPoint | ArcLabel | ArcEdge
-                     | CptPoint | CptLabel | CptEdge
-                     | IsaEdge
-                     | TotalPicture
+data PictureObject = ArcSrcEdge Declaration 
+                   | ArcTgtEdge Declaration
+                   | ArcPoint Declaration
+                   | ArcLabel Declaration
+                   | ArcEdge Declaration
+                   | CptPoint Concept
+                   | CptLabel Concept
+                   | CptEdge Concept
+                   | IsaEdge 
+                   | TotalPicture
 instance Dotable Pattern where
    toDot fspc flags pat 
-     = DotGraph { graphAttributes = setCrowfoot TotalPicture [Splines SplineEdges] -- [BgColor transparent]
+     = DotGraph { graphAttributes = handleFlags TotalPicture 
                 , graphNodes = [conceptLabel c | c<-cpts]
                             ++ [conceptPoint c | c<-cpts] 
                             ++ [inBetweenNode d | d<-arcs]
@@ -62,19 +68,16 @@ instance Dotable Pattern where
          --DESCR -> construct concept point related picture objects                                
          conceptLabel c = 
             DotNode { nodeID         = lkup c conceptTable
-                    , nodeAttributes = setCrowfoot CptLabel$
-                                      [Label$StrLabel (name c),Shape Plaintext,Style$Stl Filled Nothing
-                                      ,LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}]
-                                    ++ nodeAtts 
+                    , nodeAttributes = handleFlags (CptLabel c)
                     }
          conceptPoint c = 
             DotNode { nodeID = lkup c conceptPointTable
-                    , nodeAttributes = setCrowfoot CptPoint [Shape PointShape,Style$Stl Filled Nothing,Width 0.1]
+                    , nodeAttributes = handleFlags (CptPoint c) 
                     }
          conceptEdge c  = 
             DotEdge {edgeHeadNodeID = lkup c conceptTable
                     ,edgeTailNodeID = lkup c conceptPointTable
-                    ,edgeAttributes = setCrowfoot CptEdge [Len 0.4, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
+                    ,edgeAttributes = handleFlags (CptEdge c) 
                     ,directedEdge = True
                     }
          --DESCR -> assign ID to arc related nodes
@@ -86,56 +89,81 @@ instance Dotable Pattern where
             c:cs  -> zip arcs [(length conceptTable + length conceptPointTable + length arcsTable + 1)..]            
          --DESCR -> construct arc point related picture objects   
          inBetweenNode d = DotNode { nodeID          = lkup d arcsTable
-                                   , nodeAttributes = setCrowfoot ArcLabel$
-                                                      [Label$StrLabel (name d), Shape Plaintext]
-                                                      ++ nodeAtts
+                                   , nodeAttributes = handleFlags (ArcLabel d)
                                    }   
          inBetweenPoint d = 
             DotNode { nodeID = lkup d arcsPointTable
-                    , nodeAttributes = setCrowfoot ArcPoint [Shape PointShape,Style$Stl Invisible Nothing,Width 0.1]
+                    , nodeAttributes = handleFlags (ArcPoint d)
                     }
          inBetweenEdge d  = 
             DotEdge {edgeHeadNodeID = lkup d arcsTable
                     ,edgeTailNodeID = lkup d arcsPointTable
-                    ,edgeAttributes = setCrowfoot ArcEdge [Len 0.1, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
+                    ,edgeAttributes = handleFlags (ArcEdge d) 
                     ,directedEdge = True
                     }          
          --DESCR -> construct arc edges
          decledges d = [DotEdge --attach source
                          {edgeHeadNodeID = lkup (source d) conceptPointTable
                          ,edgeTailNodeID = lkup d arcsPointTable
-                         ,edgeAttributes = setCrowfoot ArcSrcEdge$ edgeAtts ++ [ArrowHead Open, ArrowTail NoArrow]
+                         ,edgeAttributes = handleFlags (ArcSrcEdge d) 
                          ,directedEdge = True}
                        ,DotEdge --attach target
                          {edgeHeadNodeID = lkup d arcsPointTable
                          ,edgeTailNodeID = lkup (target d) conceptPointTable
-                         ,edgeAttributes = setCrowfoot ArcTgtEdge$ edgeAtts ++ [ArrowHead NoArrow, ArrowTail NoArrow]
+                         ,edgeAttributes = handleFlags (ArcTgtEdge d)
                          ,directedEdge = True}]          
          --DESCR -> construct isa edges 
          isaedges = [ DotEdge
                        {edgeHeadNodeID = lkup (genspc g) conceptPointTable
                        ,edgeTailNodeID = lkup (gengen g) conceptPointTable
-                       ,edgeAttributes = setCrowfoot IsaEdge edgeAtts
+                       ,edgeAttributes = handleFlags (IsaEdge )
                        ,directedEdge = True}
                     | g<-ptgns pat ]
-         --DESCR -> changes the set of attributes on a certain type of picture object to crowfoot format
-         setCrowfoot :: PictureObject -> [Attribute] -> [Attribute]
-         setCrowfoot po atts = 
-            if crowfoot flags 
-            then case po of
-              ArcSrcEdge -> atts --used to be something like: Len (if crowfoot flags then 2.0 else 1.2)
-              ArcTgtEdge -> atts --used to be something like: Len (if crowfoot flags then 2.0 else 1.2)
-              ArcPoint -> atts
-              ArcLabel -> atts
-              ArcEdge -> atts
-              CptPoint -> atts --used to be something like: if crowfoot flags then doosje flags c else bolletje
-              CptLabel -> atts
-              CptEdge -> atts
-              IsaEdge -> atts
-              TotalPicture -> atts
+         --DESCR -> Take care of the crowfoot flag 
+         --construct the set of attributes on a certain type of picture object based on flag settings (currently only crowfoot)
+         handleFlags :: PictureObject  -> [Attribute]
+         handleFlags po = 
+            case po of
+              ArcSrcEdge d -> edgeAtts ++
+                              if crowfoot flags
+                              then  [ArrowHead Empty] ++
+                                    [ArrowTail (crowfootArrow (inj (multiplicities d)) 
+                                                              (sur (multiplicities d)))]
+                              else  [ArrowHead Open] ++
+                                    [ArrowTail NoArrow]
+              ArcTgtEdge d -> edgeAtts ++
+                              if crowfoot flags
+                              then  [ArrowHead (crowfootArrow (fun (multiplicities d)) 
+                                                              (tot (multiplicities d)))] ++
+                                    [ArrowTail NoArrow] 
+                              else  [ArrowHead NoArrow] ++
+                                    [ArrowTail NoArrow]
+              ArcPoint d -> [Shape PointShape,Style$Stl Invisible Nothing,Width 0.1]
+              ArcLabel d -> nodeAtts ++ [Label$StrLabel (name d), Shape Plaintext]
+              ArcEdge d -> [Len 0.1, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
+              CptPoint c -> if crowfoot flags
+                            then nodeAtts ++ [Label$StrLabel (name c),Shape Plaintext,Style$Stl Filled Nothing
+                                      ,LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}]
+                            else [Shape PointShape,Style$Stl Filled Nothing,Width 0.1] --used to be something like: if crowfoot flags then doosje flags c else bolletje
+              CptLabel c -> if crowfoot flags
+                            then [Shape PointShape,Style$Stl Invisible Nothing,Width 0.1]
+                            else nodeAtts ++ [Label$StrLabel (name c),Shape Plaintext,Style$Stl Filled Nothing
+                                      ,LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}]++[cyan]
+              CptEdge c -> [Len 0.4, Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
+              IsaEdge -> edgeAtts ++ [yellow]
+              TotalPicture -> [Splines SplineEdges] -- [BgColor transparent]
                               --   ++ [Overlap (Right False) | crowfoot flags]
                               --   ++ [Splines (Left True)  | crowfoot flags]
-            else atts
+--The current implementation of the Graphviz library (version of Graphviz of 25th of July 2009)
+--does not support the combinators for arrowheads. For the time being, I just use different
+--symbols for different cardinalities. Whenever the Graphviz library will support the needed arrowheads,
+--it is very easy to use these symbols.
+         crowfootArrow :: Bool -> Bool -> ArrowType
+         crowfootArrow a b = case [a, b] of
+                              [True , True ] -> Box
+                              [True , False] -> Tee
+                              [False, True ] -> Diamond
+                              [False, False] -> Crow  
 
 --DESCR -> lookup the integer id of an object
 lkup :: (Eq a) => a -> [(a,Int)] -> Int
@@ -146,3 +174,14 @@ lkup x tbl = case lookup x tbl of
  --  doosje flags c = [Shape BoxShape]
    --              ++ [Label$StrLabel (show (name c))]
 
+
+-- hulpfuncties, voor tijdelijk. TODO, opschonen
+orange :: Attribute
+orange = Color [ColorName "orange"]
+yellow :: Attribute
+yellow = Color [ColorName "yellow"]
+purple = Color [ColorName "purple"]
+cyan = Color [ColorName "cyan"]
+brown = Color [ColorName "brown"]
+cgreen = Color [ColorName "green"]
+cred = Color [ColorName "red"]
