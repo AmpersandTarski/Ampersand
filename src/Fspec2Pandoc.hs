@@ -16,7 +16,7 @@ import Version        (versionbanner)
 import Languages      (Lang(..))
 import Options        (Options(..),FspecFormat(..))
 import Rendering.AdlExplanation
-import Statistics
+--import Statistics
 
 render2Pandoc :: Options -> String -> Pandoc -> String
 render2Pandoc flags customheader pandoc = case fspecFormat flags of
@@ -36,10 +36,15 @@ render2Pandoc flags customheader pandoc = case fspecFormat flags of
    FHtml -> writeHtmlString defaultWriterOptions pandoc
    FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
 
+chpintrolabel :: String
 chpintrolabel="chpIntro"
+chpdplabel :: String
 chpdplabel="chpDesignPrinciples"
+chpcalabel :: String
 chpcalabel="chpConceptualAnalysis"
+chpdalabel :: String
 chpdalabel="chpDataAnalysis"
+chpgloslabel :: String
 chpgloslabel="chpGlossary"
 fSpec2Pandoc :: Fspc -> Options -> Pandoc
 fSpec2Pandoc fSpec flags = Pandoc meta docContents
@@ -219,7 +224,7 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
                   , TeX "\\begin{longtable}{|r|p{\\columnwidth}|} \n"
                   , TeX "\\hline \n"
                   ]
-               ++ [ inline | r<-themerules, inline<-explainCaRule r]
+               ++ [ inline' | r<-themerules, inline'<-explainCaRule r]
                ++ [ TeX "\\end{longtable} \n"
                   , TeX "\\end{center} \n"
                   ]
@@ -240,7 +245,7 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
                    ++ [Str "Relations:"]
                    ++ printlb
                    ++ [ TeX " \\( \\begin{array}{rcl} \n"]
-                   ++ [ inline | m<-morlist r, inline<-printmphdetail flags m]
+                   ++ [ inline' | m<-morlist r, inline'<-printmphdetail flags m]
                    ++ [ TeX " \\end{array} \\) "]
                    ++ printlb
                    ++ [Str "Rule:"]
@@ -325,7 +330,7 @@ xrefFigure caption filenm figlabel =
 
 addinfix :: Inline -> [[Inline]] -> [Inline] 
 addinfix _ [] = [] --tail will not be on empty list
-addinfix delim xs = tail [inline | inlines<-postfix, inline<-inlines]
+addinfix delim xs = tail [inline' | inlines<-postfix, inline'<-inlines]
    where
    postfix :: [[Inline]] 
    postfix = [delim:x|x<-xs] 
@@ -351,34 +356,33 @@ printsymbol flags symb = case fspecFormat flags of
 
 --DESCR -> pandoc print functions for Adl data structures
 printcompl :: Options -> [Inline] -> [Inline]
-printmphdetail :: Options -> Morphism -> [Inline]
-printmph :: Options -> Morphism -> [Inline]
-printflip :: Options -> Morphism -> [Inline]
-printmphname :: Options -> Morphism -> [Inline]
-printtype :: Options -> Morphism -> [Inline]
-printrule :: Options -> Rule -> [Inline]
-printexpr :: Options -> Expression -> [Inline]
 printcompl flags inlines = case fspecFormat flags of
   FLatex -> [TeX " \\overline{"] ++ inlines ++ [TeX "} "]
   _ -> (Str "-"):inlines
-printmphdetail flags m = printmphname flags m
+printmphdetail :: Options -> Morphism -> [Inline]
+printmphdetail flags mph = printmphname flags mph
              ++ [TeX " &", Str ":", TeX "& "]
-             ++ printtype flags m
+             ++ printtype flags mph
              ++ [TeX " \\\\ ", Str "\n" ]
-printmph flags m = (printmphname flags m) ++ (printflip flags m)
-printflip flags m = case m of
-   Mph{} -> if mphyin m then [] 
+printmph :: Options -> Morphism -> [Inline]
+printmph flags mph = (printmphname flags mph) ++ (printflip flags mph)
+printflip :: Options -> Morphism -> [Inline]
+printflip flags mph = case mph of
+   Mph{} -> if mphyin mph then [] 
             else [ Superscript [TeX "$",printsymbol flags "smile", TeX "$"] ]
    _ -> []
-printmphname flags m = case m of
-   Mph{} -> [Str (name m)]
-   I{}   -> [printsymbol flags "mathbb{I}", Subscript [TeX "$",Str $ name (mphspc m), TeX "$"] ]
-   V{}   -> [printsymbol flags "mathbb{V}", Subscript ((TeX "$"):(printtype flags m)++[TeX "$"]) ]
+printmphname :: Options -> Morphism -> [Inline]
+printmphname flags mph = case mph of
+   Mph{} -> [Str (name mph)]
+   I{}   -> [printsymbol flags "mathbb{I}", Subscript [TeX "$",Str $ name (mphspc mph), TeX "$"] ]
+   V{}   -> [printsymbol flags "mathbb{V}", Subscript ((TeX "$"):(printtype flags mph)++[TeX "$"]) ]
    Mp1{} -> [Str "?"]
-printtype flags m = [ Str $ (name.source) m
+printtype :: Options -> Morphism -> [Inline]
+printtype flags mph = [ Str $ (name.source) mph
               , printsymbol flags "times", Space
-              , Str $ (name.target) m
+              , Str $ (name.target) mph
               ]
+printrule :: Options -> Rule -> [Inline]
 printrule flags r = case r of
    Ru {} -> case rrsrt r of 
      Implication -> [TeX " $ "] ++ lexpr ++ [printsymbol flags "vdash"] ++ rexpr ++ [TeX " $ "]
@@ -389,6 +393,7 @@ printrule flags r = case r of
      rexpr = printexpr flags (rrcon r)
    Sg {} -> (Str "[SIGNAL] "):(printrule flags (srsig r))
    _ -> [Str "?"]
+printexpr :: Options -> Expression -> [Inline]
 printexpr flags expr = case expr of
    Tm {} -> printmph flags (m expr)
    Tc {} -> [Str "("] ++ (printexpr flags (e expr)) ++ [Str ")"]

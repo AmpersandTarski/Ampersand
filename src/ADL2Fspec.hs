@@ -1,15 +1,12 @@
   {-# OPTIONS_GHC -Wall #-}
   module ADL2Fspec (makeFspec)
   where
---   import CommonClasses ( Identified(name))
-   import Collection     ( Collection (isc,(>-),rd) )
-   import Auxiliaries    (sort',eqCl)
+   import Collection     ( Collection (rd) )
    import Strings        (firstCaps)
    import Adl            (Context(..)
                          ,ObjectDef(..)
                          ,Expression(..),notCp
                          ,Rule(..),normExpr
-                         ,Pattern(..)
                          ,Morphism(..),makeDeclaration
                          ,Declaration(..)
                          ,Object(..)
@@ -166,18 +163,20 @@
           where fexpr=case mbexpr of 
                           Nothing -> objctx obj
                           Just expr -> F [expr,objctx obj]
-      sqltp obj = head $ [makeSqltype sqltp | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp)<-strs]
+      sqltp :: ObjectDef -> SqlType
+      sqltp obj = head $ [makeSqltype sqltp' | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                          ++[SQLVarchar 255]
+      makeSqltype :: String -> SqlType
       makeSqltype str = case str of
-          ('V':'a':'r':'c':'h':'a':'r':xs) -> SQLVarchar 255 --TODO number
-          ('C':'h':'a':'r':xs) -> SQLChar 255 --TODO number
-          ('B':'l':'o':'b':xs) -> SQLBlob
-          ('S':'i':'n':'g':'l':'e':xs) -> SQLSingle
-          ('D':'o':'u':'b':'l':'e':xs) -> SQLDouble
-          ('u':'I':'n':'t':xs) -> SQLuInt 4 --TODO number
-          ('s':'I':'n':'t':xs) -> SQLsInt 4 --TODO number
-          ('I':'d':xs) -> SQLId 
-          ('B':'o':'o':'l':xs) -> SQLBool
+          ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
+          ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
+          ('B':'l':'o':'b':_) -> SQLBlob
+          ('S':'i':'n':'g':'l':'e':_) -> SQLSingle
+          ('D':'o':'u':'b':'l':'e':_) -> SQLDouble
+          ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
+          ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
+          ('I':'d':_) -> SQLId 
+          ('B':'o':'o':'l':_) -> SQLBool
           _ -> SQLVarchar 255 --TODO number
 
    makePhpPlug :: ObjectDef -> Plug
@@ -219,7 +218,7 @@
    makeFSid1 :: String -> FSid
    makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
 
-   fst3 :: (a,b,c) -> a
-   fst3 (a,_,_) = a
-   snd3 :: (a,b,c) -> b
-   snd3 (_,b,_) = b
+--   fst3 :: (a,b,c) -> a
+--   fst3 (a,_,_) = a
+--   snd3 :: (a,b,c) -> b
+--   snd3 (_,b,_) = b

@@ -1,8 +1,18 @@
-module Data.Plug (Plug(..),SqlField(..),SqlDb(..),SqlType(..),showSQL,PhpValue(..),PhpType(..),PhpArgs(..),PhpReturn(..),PhpAction(..),ActionType(..))
+module Data.Plug (Plug(..)
+                 ,SqlField(..)
+                 ,SqlDb(..)
+                 ,SqlType(..)
+                 ,showSQL
+                 ,PhpValue(..)
+                 ,PhpType(..)
+                 ,PhpArgs
+                 ,PhpReturn(..)
+                 ,PhpAction(..)
+                 ,ActionType(..))
 where
-  import CommonClasses  (Identified(..))
-  import Classes.Morphical (Morphical(..))
-  import Collection(rd)
+--  import CommonClasses  (Identified(..))
+--  import Classes.Morphical (Morphical(..))
+--  import Collection(rd)
   import Adl
   --import MorphismAndDeclaration
   
@@ -26,6 +36,7 @@ where
   data ActionType = Create | Read | Update | Delete deriving (Show)
   
   instance Identified PhpValue where
+    typ _ = "PhpValue"
     name p = case p of {PhpNull -> "0"; PhpObject{object=x} -> name x}
 
   --DESCR -> plugs are sorted to optimize some algoritms. 

@@ -9,24 +9,20 @@ module Generators (doGenAtlas
 where
 
 import Classes.Graphics
-import Data.GraphViz
 import System (system, ExitCode(ExitSuccess,ExitFailure))
-import System.IO.Unsafe (unsafePerformIO) 
 
 import System.FilePath(combine,replaceExtension)
 import Options
 import FspecDef
 import ShowHS       (showHS)
-import ShowADL      (showADLcode, printadl)
+import ShowADL      (printadl)
 import ShowXML      (showXML)
-import Strings      (chain)
 import Char         (toUpper)
 import Calc         (deriveProofs)
-import Prototype.ObjBinGen
+import Prototype.ObjBinGen (phpObjServices)
 import Adl
-import Fspec2Pandoc  -- Als je Pandoc niet hebt geinstalleerd, dan kan je deze regel disabelen door 
---import Fspec2PandocDummy  -- maar dan moet je deze regel enabelen....
-import Version
+import Fspec2Pandoc (render2Pandoc,fSpec2Pandoc)
+import Version      (versionbanner)
 --import System
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags

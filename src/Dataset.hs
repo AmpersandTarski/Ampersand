@@ -46,16 +46,16 @@
 
    makeDatasets :: Context -> [ObjectDef]
    makeDatasets context
-    = [ Obj (name c) Nowhere (v (one,c)) [Obj (name m++name(target m)) Nowhere (Tm m) [] []| m<-dss cl] []
+    = [ Obj (name c) Nowhere (v (one,c)) [Obj (name mph++name(target mph)) Nowhere (Tm mph) [] []| mph<-dss cl] []
       | cl<-eqClass bi (concs context), c<-[minimum [g|g<-concs context,g<=head cl]] ]
       where
-       c `bi` c' = not (null [m| m<-declarations context, isFunction m, isFunction (flp m)
-                               , source m<=c && target m<=c'  ||  source m<=c' && target m<=c])
+       c `bi` c' = not (null [mph| mph<-declarations context, isFunction mph, isFunction (flp mph)
+                               , source mph<=c && target mph<=c'  ||  source mph<=c' && target mph<=c])
        dss cl = [     makeMph d | d<-declarations context, isFunction      d , source d `elem` cl]++
                 [flp (makeMph d)| d<-declarations context, isFunction (flp d), target d `elem` cl]
 
    datasetMor :: Context -> Morphism -> ObjectDef
-   datasetMor context m | isFunction      m  = makeDataset context (source m)
-                        | isFunction (flp m) = makeDataset context (target m)
-                        | otherwise          = Obj (name m) Nowhere (Tm m) [] []
+   datasetMor context mph | isFunction      mph  = makeDataset context (source mph)
+                          | isFunction (flp mph) = makeDataset context (target mph)
+                          | otherwise            = Obj (name mph) Nowhere (Tm mph) [] []
 
