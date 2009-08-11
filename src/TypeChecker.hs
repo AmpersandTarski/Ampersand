@@ -73,7 +73,15 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
               ++ [show errproof 
                   ++ "\n   in key definition expression " ++ printadl Nothing 0 expr  
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
-   checkresult = if null check1 then if null check2 then if null check3 then [] else printcheck3 else check2 else check1
+   check4 = checkSvcNameUniqueness ctxs
+   checkresult = if null check1 then 
+                    if null check2 then 
+                       if null check4 then 
+                          if null check3 then [] 
+                          else printcheck3 
+                       else check4
+                    else check2
+                 else check1
 
 ------------------
 --Enrich functions
@@ -469,6 +477,16 @@ checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
     findLoops cx = [ctxName cxf | cxf <- flatten (buildCtxTree (Found cx) ctxs)
                                   , not (foundCtx cxf)
                                   , foundCtx (srchContext ctxs (ctxName cxf))]
+
+--DESCR -> check rule: Every SERVICE, PHPPLUG, and SQLPLUG must have a unique name
+checkSvcNameUniqueness :: Contexts -> Errors
+checkSvcNameUniqueness ctxs = case checknotuniq [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx] of
+    Nothing -> []
+    Just svc -> ["Service or plug name " ++ objnm svc ++ " is not unique " ++ show (objpos svc)]
+    where
+    checknotuniq [] = Nothing
+    checknotuniq (x:[]) = Nothing
+    checknotuniq (x:xs) = if elem (objnm x) (map objnm xs) then Just x else checknotuniq (tail xs)
 ------------------
 --Common functions
 ------------------

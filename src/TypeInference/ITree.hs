@@ -397,8 +397,8 @@ evaltree gamma (AddcompRule ct tr1 tr2) = BoundTo $ Dagger
    c1 = val $ exprsrc ex
    c2 = case ct of
       Comp -> evalgen gamma (toGen $ exprsrc rex) (toGen $ exprtgt ex) --the most general of the two declared
-      CompInv1 -> toGen (exprsrc rex) --the declared concept from the source of the right, or just the source of the right expression, because left is a complement
-      CompInv2 -> toGen (exprtgt ex) --the declared concept from the target of the left morphism, or just the target of the left expression, because right is a complement
+      CompInv1 -> toGen (exprsrc ex) --the declared concept from the target of the left, or just the target of the left expression, because left is a complement
+      CompInv2 -> toGen (exprtgt rex) --the declared concept from the source of the right, or just the source of the right expression, because right is a complement
       CompDInv -> val (exprtgt ex) --I already inferred the glb, (exprtgt ex)==(exprsrc rex)
    c3 = val $ exprtgt rex
 evaltree gamma (ImplyRule tr) =  BoundTo $ Implicate x y (tt ex) 
