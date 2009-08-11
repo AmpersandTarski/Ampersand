@@ -23,6 +23,7 @@
    import Languages
    import NormalForms(disjNF)
    import Data.Plug
+   import Rendering.ClassDiagram
  -- The story:
  -- A number of datasets for this context is identified.
  -- Every pattern is considered to be a theme and every object is treated as a separate object specification.
@@ -44,6 +45,7 @@
             , vrels    = [makeFdecl d| d <-declarations context]
             , fsisa    = ctxisa context
             , vpatterns= patterns context
+            , classdiagrams = [cdAnalysis context True pat | pat<-patterns context]
             } where
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
         -- of relations together with multiplicity constraints. That is what serviceG does.

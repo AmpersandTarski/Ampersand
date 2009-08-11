@@ -23,6 +23,7 @@ import Prototype.ObjBinGen (phpObjServices)
 import Adl
 import Fspec2Pandoc (render2Pandoc,fSpec2Pandoc)
 import Version      (versionbanner)
+import Rendering.ClassDiagram
 --import System
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
@@ -103,7 +104,7 @@ doGenFspec fSpec flags
 
 
 generatepngs :: Fspc -> Options -> IO() 
-generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") dots
+generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") (dots ++ cds)
    where 
    outputFile fnm = combine (dirOutput flags) fnm
    dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
@@ -111,6 +112,15 @@ generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..")
    remSpaces [] = []
    remSpaces (' ':c:str) = toUpper c:remSpaces str 
    remSpaces xs = xs
+   cds = [run_cd (remSpaces$"CD_"++fnm) cd|cd@(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec] 
+   run_cd fnm cd =
+       do
+       writeFile (outputFile (fnm++".dot")) (classdiagram2dot cd)
+       putStrLn ("Processing "++fnm++".dot ... :")
+       result <- system $ "dot -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
+       case result of
+          ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
+          ExitFailure x -> putStrLn $ "Failure: " ++ show x
    run fnm dot =
        do 
        writeFile (outputFile (fnm++".dot")) (show dot)

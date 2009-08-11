@@ -22,6 +22,7 @@ import Adl.MorphismAndDeclaration    (Morphism,Declaration)
 import Adl.Concept                   (Concept)
 import Typology                      (Inheritance)
 import Data.Plug
+import Rendering.ClassDiagram 
 data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , datasets :: [ObjectDef]       -- ^ This list contains the data sets that are computed from the basic ontology.
                   , vplugs    :: [Plug]
@@ -32,6 +33,7 @@ data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , vrels    :: [Declaration] -- ^ One for every declaration
                   , fsisa    :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
                   , vpatterns:: [Pattern]
+                  , classdiagrams :: [ClassDiag]
                   }
            
 --DESCR -> Fservice is like Fspc only within the scope of one ObjectDef
