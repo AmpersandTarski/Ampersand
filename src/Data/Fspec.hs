@@ -11,11 +11,12 @@ module Data.Fspec (
                Fspc(..)
              , Fservice(..)
              , FSid(..)
+             , FTheme(..)
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
 where
 import Adl.Pattern                   (Pattern)
-import Adl.Rule                      (Rule)
+import Adl.Rule                      (Rule(..))
 import Adl.ObjectDef                 (ObjectDef)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism,Declaration)
@@ -34,6 +35,7 @@ data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , fsisa    :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
                   , vpatterns:: [Pattern]
                   , classdiagrams :: [ClassDiag]
+                  , themes :: [FTheme]
                   }
            
 --DESCR -> Fservice is like Fspc only within the scope of one ObjectDef
@@ -43,6 +45,11 @@ data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
 data Fservice = Fservice 
                     { objectdef  :: ObjectDef
                     }
+
+--DESCR -> a theme is about a concept that is maintained by plugs under certain rules
+--         a SQL plug implies four CRUD plugs
+--         PHP plugs are already differentiated
+data FTheme = FTheme {tconcept :: Concept, tplugs :: [Plug], trules :: [Rule]}
 
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...

@@ -6,7 +6,7 @@
    import Adl            (Context(..)
                          ,ObjectDef(..)
                          ,Expression(..),notCp
-                         ,Rule(..),normExpr
+                         ,Rule(..),normExpr,cpu
                          ,Morphism(..),makeDeclaration
                          ,Declaration(..)
                          ,Object(..)
@@ -37,7 +37,7 @@
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Monastir interface) is already available.
-            , vplugs   = map makeSqlPlug (ctxsql context) ++ map makePhpPlug (ctxphp context)
+            , vplugs   = vsqlplugs ++ vphpplugs
             , serviceS = attributes context
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
@@ -46,7 +46,10 @@
             , fsisa    = ctxisa context
             , vpatterns= patterns context
             , classdiagrams = [cdAnalysis context True pat | pat<-patterns context]
+            , themes = themes'
             } where
+        vsqlplugs = map makeSqlPlug (ctxsql context)
+        vphpplugs = map makePhpPlug (ctxphp context)
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
         -- of relations together with multiplicity constraints. That is what serviceG does.
         -- This is meant to help a developer to build his own list of services, by providing a set of services that works.
@@ -154,6 +157,16 @@
              Isn{}     -> d
              Iscompl{} -> d
              Vs{}      -> d
+        --TODO -> assign themerules to themes and remove them from the Anything theme
+        themes' = FTheme{tconcept=Anything,tplugs=[],trules=themerules}
+                  :(map maketheme$orderby [(plugtheme pl, pl)|pl<-vsqlplugs++vphpplugs, plugtheme pl /= Nothing])
+        --query copied from FSpec.hs revision 174
+        themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]
+        maketheme (Just c,ps) = FTheme{tconcept=c,tplugs=ps,trules=[]}
+        maketheme _ = error $ "Error in ADL2Fspec.hs module ADL2Fspec function makeFspec.maketheme: "
+                           ++ "The theme must involve a concept."
+        orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
+        orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
   
    makeSqlPlug :: ObjectDef -> Plug
    makeSqlPlug plug = PlugSql{fields=makeFields Nothing plug,database=CurrentDb,plname=name plug}

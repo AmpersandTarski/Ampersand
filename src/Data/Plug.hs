@@ -8,7 +8,8 @@ module Data.Plug (Plug(..)
                  ,PhpArgs
                  ,PhpReturn(..)
                  ,PhpAction(..)
-                 ,ActionType(..))
+                 ,ActionType(..)
+                 ,plugtheme)
 where
 --  import CommonClasses  (Identified(..))
 --  import Classes.Morphical (Morphical(..))
@@ -123,4 +124,25 @@ where
     closExprs    p@PlugSql{} = closExprs    (fields p)
     objDefs      p@PlugSql{} = objDefs      (fields p)
     keyDefs      p@PlugSql{} = keyDefs      (fields p)
+
+    --DESCR -> returns the concept on which the plug acts if there is only one such concept
+    --         in all other cases it returns nothing
+  plugtheme :: Plug -> Maybe Concept
+  plugtheme p@PlugSql{} = 
+     let exprsrcs = [source$fldexpr f|f<-fields p ]
+     in if sameconcepts exprsrcs then Just (head exprsrcs) else Nothing
+  plugtheme p@PlugPhp{} = 
+     let valsrcs = [source$objctx obj|PhpObject{object=obj}<-vals]
+         vals = case (action$function p) of
+            Create -> [val|(_,val)<-args p]
+            Read -> [retval$returns p]
+            Update -> [val|(_,val)<-args p]
+            Delete -> [val|(_,val)<-args p]
+     in if sameconcepts valsrcs then Just (head valsrcs) else Nothing
+
+  --REMARK -> called sameconcepts because only used on lists of concepts
+  sameconcepts :: (Eq a) => [a] -> Bool
+  sameconcepts [] = False
+  sameconcepts (_:[]) = True
+  sameconcepts (c:c':cs) = if c==c' then sameconcepts (c':cs) else False
     

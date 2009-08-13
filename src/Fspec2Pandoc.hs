@@ -16,8 +16,22 @@ import Version        (versionbanner)
 import Languages      (Lang(..))
 import Options        (Options(..),FspecFormat(..))
 import Rendering.AdlExplanation
+import Rendering.ClassDiagram
 --import Statistics
 
+--DESCR ->
+--The functional specification starts with an introduction
+--The second chapter defines the functionality of the system by datasets and rules.
+--Datasets are specified through PLUGS in ADL. The dataset is build around one concept, 
+--also called the theme. Functionalities defined on the theme by one or more plugs are
+--described together with the rules that apply to the dataset. Rules not described by
+--the dataset are described in the last section of chapter 2.
+--The third chapter is intended for the analyst. It contains all the rules mentioned in
+--natural language in the second chapter. It presents the trace from natural language
+--to the formal rule.
+--The fourth chapter presents a datamodel together with all the multiplicity rules.
+--The following chapters each present a SERVICE
+--The specification end with a glossary.
 render2Pandoc :: Options -> String -> Pandoc -> String
 render2Pandoc flags customheader pandoc = case fspecFormat flags of
    FPandoc -> prettyPandoc pandoc
@@ -115,7 +129,9 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 , Str "or fixing the content of databases (by automatic actions) to restore a rule."]]  
 ------------------------------------------------------------
 designPrinciples :: Int -> Fspc -> Options ->  [Block]
-designPrinciples lev fSpec flags = header ++ dpIntro ++ [b|p<-vpatterns fSpec,b<-dpSection p]
+designPrinciples lev fSpec flags = header ++ dpIntro 
+                                   ++ [b|t<-themes fSpec,b<-dpSection t,tconcept t/=Anything]
+                                   ++ [b|t<-themes fSpec,b<-remainingrulesSection (trules t),tconcept t==Anything]
   where 
   header :: [Block]
   header = labeledHeader lev chpdplabel (case (language flags) of
@@ -139,16 +155,19 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ [b|p<-vpatterns fSpec,b<
                      , Str ". The implementation must assert these rules. "]
                  ]
      )
-  dpSection :: Pattern -> [Block]
-  dpSection p = (if null (themedecls ++ themerules) then [] --nothing to explain for this theme -> skip
-           else [Header (lev+1) [Str (name p)]] --new section to explain this theme
-             ++ [Para [Str d]|d<-themedecls] --explanation of all multiplicities in the theme
-             ++ [Para [Str r]|r<-themerules]) --explanation of all (non-computed) rules in the theme
-    where
-    --query copied from FSpec.hs revision 174
-    themedecls = [explainDecl (language flags) d|d<-ptdcs p,(not.null) (multiplicities d)]
-    --query copied from FSpec.hs revision 174
-    themerules = [explainRule (language flags) r|r<-declaredRules p++signals p, null (cpu r)]
+  dpSection :: FTheme -> [Block]
+  dpSection t = [Header (lev+1) [Str (name$tconcept t)]] --new section to explain this theme
+             ++ [Para [Str$explainRule (language flags) r]|r<-trules t] --explanation of all rules in the theme
+  remainingrulesSection :: [Rule] -> [Block]
+  remainingrulesSection rs = 
+    (case (language flags) of
+        Dutch -> 
+                [Header (lev+1) [Str "Algemene ontwerpregels"]] --new section to explain this theme
+             ++ [Para [Str$explainRule (language flags) r]|r<-rs] --explanation of all rules in the theme
+        English ->  
+                [Header (lev+1) [Str "General designrules"]] --new section to explain this theme
+             ++ [Para [Str$explainRule (language flags) r]|r<-rs] --explanation of all rules in the theme
+     )
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options ->  [Block]
 conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,b<-caSection p]
@@ -206,7 +225,7 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
     )
     where
     --query copied from FSpec.hs revision 174
-    themerules = declaredRules p
+    themerules = [r|r<-declaredRules p++signals p, null (cpu r)]
     printfigure = case (language flags) of
       Dutch -> [Para [x | x<-[Str "Zie figuur ", xrefReference figlabel, Str ". "]] ]
             ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++filenm) filenm figlabel ]]
@@ -253,6 +272,8 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
                    ++ (printrule flags r)
                    ++ [ TeX " \\\\ \\hline \n"]
 ------------------------------------------------------------
+--DESCR -> the data analysis contains a section for each class diagram in the fspec
+--         the class diagram and multiplicity rules are printed
 dataAnalysis :: Int -> Fspc -> Options ->  [Block]
 dataAnalysis lev fSpec flags = header ++ daContents
   where 
@@ -264,18 +285,35 @@ dataAnalysis lev fSpec flags = header ++ daContents
 --    fpalabel = "tableFPA2"
   daContents :: [Block]
   daContents = 
-   (case (language flags) of
-      Dutch -> [Para
-                 [ Str "De keuzes, zoals beschreven in hoofdstuk "
-                 , xrefReference chpdplabel
-                 , Str " zijn in een gegevensanalyse vertaald naar het klassediagram in figuur "
-                 , xrefReference ("fig:"++baseName flags++"CD")
-                 , Str "Dit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties. "
-         --        , xrefReference fpalabel
-                 , Str "."]]
-      English -> [] --TODO
-   ) -- ++ [Para [Image [Str "BlaDieBlah"] ( "eenplaatje.png", "TestPlaatje" )]]
-     ++ [] --TODO daadwerkelijke gegevensanalyse toevoegen
+ --  (case (language flags) of
+ --     Dutch -> [Para
+ --                [ Str "De keuzes, zoals beschreven in hoofdstuk "
+ --                , xrefReference chpdplabel
+ --                , Str " zijn in een gegevensanalyse vertaald naar klassediagram(men)."
+ --                , Str "Dit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties. "
+ --                ]]
+ --     English -> [] --TODO
+ --  )
+ --  ++
+      [x|(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec, x<-describeCD (remSpaces fnm)]
+      where 
+      describeCD cdnm = 
+       (case (language flags) of
+          Dutch ->
+                [ Header (lev+1) [Str cdnm]
+                , Plain$xrefFigure ("Klassediagram van "++cdnm) filenm figlabel
+             ]++[ Para [Str d]|d<-themedecls] --explanation of all multiplicities]
+          English -> []) --TODO
+          where       
+          filenm = "CD_"++ cdnm
+          figlabel = "figcd:" ++  cdnm
+          --REMARK -> cdnm should be implemented as (name pattern) in ClassDiagram.hs
+          p = let pats = [pat|pat<-vpatterns fSpec, name pat==cdnm]
+              in if length pats==1 then head pats
+                 else error $ "Error in Fspec2Pandoc.hs module Fspec2Pandoc function dataAnalysis.daContents.describeCD: "
+                           ++ "Pattern names need to be unique."
+          --query copied from FSpec.hs revision 174
+          themedecls = [explainDecl (language flags) d|d<-ptdcs p,(not.null) (multiplicities d)]
 ------------------------------------------------------------
 servicechap :: Int -> Fspc -> Options -> Fservice ->  [Block]
 servicechap lev fSpec flags svc = header ++ svcContents  --TODO
@@ -391,7 +429,7 @@ printrule flags r = case r of
      where
      lexpr = printexpr flags (rrant r)
      rexpr = printexpr flags (rrcon r)
-   Sg {} -> (Str "[SIGNAL] "):(printrule flags (srsig r))
+   Sg {} -> (Str "SIGNAL "):(printrule flags (srsig r))
    _ -> [Str "?"]
 printexpr :: Options -> Expression -> [Inline]
 printexpr flags expr = case expr of
@@ -404,3 +442,8 @@ printexpr flags expr = case expr of
    K0 {} -> printexpr flags (e expr) ++ [Superscript [Str "*"]]
    K1 {} -> printexpr flags (e expr) ++ [Superscript [Str "+"]]
    Cp {} -> printcompl flags $ printexpr flags (e expr)
+
+remSpaces :: String -> String
+remSpaces [] = []
+remSpaces (' ':c:str) = toUpper c:remSpaces str 
+remSpaces xs = xs
