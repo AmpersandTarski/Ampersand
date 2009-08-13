@@ -74,11 +74,14 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
                   ++ "\n   in key definition expression " ++ printadl Nothing 0 expr  
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
    check4 = checkSvcNameUniqueness ctxs
+   check5 = checkPopulations ctxs
    checkresult = if null check1 then 
                     if null check2 then 
-                       if null check4 then 
-                          if null check3 then [] 
-                          else printcheck3 
+                       if null check4 then
+                          if null check5 then 
+                             if null check3 then [] 
+                             else printcheck3 
+                          else check5 
                        else check4
                     else check2
                  else check1
@@ -207,28 +210,12 @@ enrichCtx cx@(Ctx{}) ctxs =
                     --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
-    addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (popm pop) d, pairx<-popps pop]}
+    addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
               |d<-ptdcs p]
-  --DESCR -> local compare function to compare the morphism identity of a population and a declaration
-  --         the population morphism is parsed with a declaration with source and target Anything 
-  --         so I need to use the mphats to compare and thus I can't use makeDeclaration
-  comparepopanddecl :: Morphism -> Declaration -> Bool
-  comparepopanddecl (Mph{mphnm=popnm, mphats=[c1,c2]}) d = popnm==name d && c1==source d && c2==target d
-  comparepopanddecl (Mph{mphnm=popnm, mphats=[], mphpos=pos}) d = 
-     case onedecl popnm (allCtxDecls [cx]) of
-          Just True -> True
-          _         -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.comparepopanddecl: " ++
-                               "Ambiguous population "++show popnm++" at "++show pos++"\nDefine a type on the population name."
-  onedecl _ [] = Nothing
-  onedecl nm (d:ds) = if nm==name d then
-                        case (onedecl nm ds) of 
-                             Nothing -> Just True
-                             _       -> Just False
-                      else (onedecl nm ds)
 
   --DESCR -> enriching ctxds
   --         take all the declarations from all patterns included (not extended) in this context
-  ctxdecls =  [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (popm pop) d, pairx<-popps pop]}
+  ctxdecls =  [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
               |d<-allCtxDecls [cx]]
 
   --DESCR -> enriching ctxrs
@@ -336,6 +323,7 @@ enrichCtx cx@(Ctx{}) ctxs =
          Ru tp ant posi con [] [] (Anything,Anything)
              0  --REMARK -> rules are renumbered after enriching the context
              [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
+  rulesfromdecl _ = []
   
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
@@ -415,7 +403,7 @@ enrichCtx cx@(Ctx{}) ctxs =
       []     -> Fd [bindSubexpr ex x]
   bindSubexpr (Fu subexs) (BoundTo (Union adlexs _)) = Fu $ bindSubexprs subexs adlexs 
   bindSubexpr (Fi subexs) (BoundTo (Intersect adlexs _)) = Fi $ bindSubexprs subexs adlexs
-  bindSubexpr ex@(Tm mp@(Mph{mphyin=False})) stmt@(BoundTo (Flip adlex@(Relation{tt=TT{cts=c1,ctt=c2}}) _)) = 
+  bindSubexpr ex@(Tm (Mph{mphyin=False})) (BoundTo (Flip adlex@(Relation{tt=TT{cts=c1,ctt=c2}}) _)) = 
               bindSubexpr ex (BoundTo (adlex{tt=TT c2 c1 1}))
   bindSubexpr (Tm mp) stmt@(BoundTo adlex@(Relation{})) = 
     let
@@ -485,8 +473,25 @@ checkSvcNameUniqueness ctxs = case checknotuniq [svc|cx<-ctxs, svc<-ctxos cx ++ 
     Just svc -> ["Service or plug name " ++ objnm svc ++ " is not unique " ++ show (objpos svc)]
     where
     checknotuniq [] = Nothing
-    checknotuniq (x:[]) = Nothing
+    checknotuniq (_:[]) = Nothing
     checknotuniq (x:xs) = if elem (objnm x) (map objnm xs) then Just x else checknotuniq (tail xs)
+
+--DESCR -> check rule: Every POPULATION must relate to a declaration
+checkPopulations :: Contexts -> Errors
+checkPopulations ctxs = if null unrelated then []
+    else if null (related$head$unrelated)
+         then ["Population of " ++ show (popm$head unrelated) ++ " cannot be related to any relation declaration " 
+            ++ show (mphpos$popm$head unrelated)]
+         else ["Population "++show (popm$head unrelated)++" at "++show (mphpos$popm$head unrelated)++"\n"
+              ++ "can be related to multiple relation declarations:\n" 
+              ++ (foldr (++) [] (related$head$unrelated))]
+    where
+    unrelated = [pop| cx<-ctxs, pop<-ctxpops cx
+                    , length (related pop) /= 1]
+    related pop = [name d++"["++show (source d)++"*"++show (target d)++"]"++" "++show (decfpos d)++"\n"
+                  | d<-allCtxDecls ctxs, comparepopanddecl (allCtxDecls ctxs) (popm pop) d]
+
+
 ------------------
 --Common functions
 ------------------
@@ -496,6 +501,26 @@ checkSvcNameUniqueness ctxs = case checknotuniq [svc|cx<-ctxs, svc<-ctxos cx ++ 
 elemBy :: (a->a->Bool)->a->[a]->Bool
 elemBy _ _ [] = False --not in list
 elemBy eq el (el':els) = (eq el el') || (elemBy eq el els)
+
+--DESCR -> compare function to compare the morphism identity of a population and a declaration
+--         the population morphism is parsed with a declaration with source and target Anything 
+--         so I need to use the mphats to compare and thus I can't use makeDeclaration
+comparepopanddecl :: Declarations -> Morphism -> Declaration -> Bool
+comparepopanddecl _ (Mph{mphnm=popnm, mphats=[c1,c2]}) d = popnm==name d && c1==source d && c2==target d
+comparepopanddecl ds (Mph{mphnm=popnm, mphats=[], mphpos=mpos}) _ = 
+   case onedecl popnm ds of
+        Just True -> True
+        _         -> error $ "Error in TypeChecker.hs module TypeChecker function comparepopanddecl: " ++
+                     "Ambiguous population "++show popnm++" at "++show mpos++"\nDefine a type on the population name."
+comparepopanddecl _ _ _ = False
+
+onedecl :: String -> Declarations -> Maybe Bool
+onedecl _ [] = Nothing
+onedecl nm (d:ds) = if nm==name d then
+                      case (onedecl nm ds) of 
+                           Nothing -> Just True
+                           _       -> Just False
+                    else (onedecl nm ds)
 
 ------------------------------------------------------------------------------------------------
 --Context part: later in separate module
