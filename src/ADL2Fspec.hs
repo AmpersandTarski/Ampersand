@@ -33,7 +33,7 @@
    makeFspec :: Context -> Fspc
    makeFspec context =
       Fspc { fsfsid = makeFSid1 (name context)
-            , datasets = datasets' --TODO: datasets vervangen voor plug's
+            , datasets = datasets'
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Monastir interface) is already available.
@@ -160,10 +160,12 @@
         --TODO -> assign themerules to themes and remove them from the Anything theme
         themes' = FTheme{tconcept=Anything,tfunctions=[],trules=themerules}
                   :(map maketheme$orderby [(wsopertheme oper, oper)
-                                          |od<-(ctxsql context)
-                                          ,oper<-makeDSOperations od
-                                               ++[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
-                                          ,wsopertheme oper /= Nothing])
+                                          |oper<-themeoperations, wsopertheme oper /= Nothing])
+        --TODO -> by default CRUD operations of datasets, possibly overruled by SQL or PHP plugs
+        themeoperations = datasetoperations++phpoperations++sqloperations
+        phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
+        sqloperations =[oper|obj<-(ctxsql context), oper<-makeDSOperations obj]
+        datasetoperations = [oper|obj<-datasets', oper<-makeDSOperations obj, objtheme obj /=S]
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
@@ -229,25 +231,26 @@
                                  ++ show (objpos objat)]
 
    --DESCR -> Use for plugs that describe a single operation like PHP plugs
-   makeDSOperation :: Plug -> FWSOperation
+   makeDSOperation :: Plug -> WSOperation
    makeDSOperation PlugSql{} = error $ "Error in ADL2Fspec.hs module ADL2Fspec function makeDSOperation: "
                                     ++ "SQL plugs do not describe a single operation."
    makeDSOperation p@PlugPhp{} = 
        let nullval val = case val of
                          PhpNull    -> True
                          PhpObject{}-> False
-       in FWSOper{wsaction=action$function p
+           towsaction x = case x of {Create->WSCreate;Read->WSRead;Update->WSUpdate;Delete->WSDelete}
+       in WSOper{wsaction=towsaction$action$function p
                  ,wsmsgin=[object arg|(_,arg)<-args p,nullval$arg]
                  ,wsmsgout=[object$retval$returns p|nullval$retval$returns p]
                  }
    --DESCR -> Use for objectdefs that describe all four CRUD operations like SQL plugs
-   makeDSOperations :: ObjectDef -> [FWSOperation]
-   makeDSOperations od = [FWSOper{wsaction=Create,wsmsgin=[od],wsmsgout=[]}
-                         ,FWSOper{wsaction=Read,wsmsgin=[],wsmsgout=[od]}
-                         ,FWSOper{wsaction=Update,wsmsgin=[od],wsmsgout=[]}
-                         ,FWSOper{wsaction=Delete,wsmsgin=[od],wsmsgout=[]}]
+   makeDSOperations :: ObjectDef -> [WSOperation]
+   makeDSOperations od = [WSOper{wsaction=WSCreate,wsmsgin=[od],wsmsgout=[]}
+                         ,WSOper{wsaction=WSRead,wsmsgin=[],wsmsgout=[od]}
+                         ,WSOper{wsaction=WSUpdate,wsmsgin=[od],wsmsgout=[]}
+                         ,WSOper{wsaction=WSDelete,wsmsgin=[od],wsmsgout=[]}]
 
-   wsopertheme :: FWSOperation -> Maybe Concept
+   wsopertheme :: WSOperation -> Maybe Concept
    wsopertheme oper = 
       let msgthemes = map objtheme (wsmsgin oper++wsmsgout oper)
       in if samethemes msgthemes then Just$head msgthemes else Nothing

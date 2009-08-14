@@ -160,7 +160,11 @@ designPrinciples lev fSpec flags = header ++ dpIntro
              ++ [b|f<-tfunctions t, b<-explainFunction f] --explain the functions in the theme
              ++ [Para [Str$explainRule (language flags) r]|r<-trules t] --explanation of all rules in the theme
      where
-     explainFunction f = [Para [Str "A function has been defined and it should have been described here."]]
+     explainFunction f = case wsaction f of
+        WSCreate ->  [Para [Str "A create function has been defined and it should have been described here."]]
+        WSRead -> [Para [Str "A read function has been defined and it should have been described here."]]
+        WSUpdate -> [Para [Str "An update function has been defined and it should have been described here."]]
+        WSDelete -> [Para [Str "A delete function has been defined and it should have been described here."]]
   remainingrulesSection :: [Rule] -> [Block]
   remainingrulesSection rs = 
     (case (language flags) of

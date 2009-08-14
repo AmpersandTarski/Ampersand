@@ -12,7 +12,7 @@ module Data.Fspec (
              , Fservice(..)
              , FSid(..)
              , FTheme(..)
-             , FWSOperation(..)
+             , WSOperation(..), WSAction(..)
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
 where
@@ -49,14 +49,15 @@ data Fservice = Fservice
 
 --DESCR -> a theme is dataset service with functions under certain rules
 --         the dataset is identified by one root concept
-data FTheme = FTheme {tconcept :: Concept, tfunctions :: [FWSOperation], trules :: [Rule]}
+data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: [Rule]}
 {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
  - "The properties of the Interface Operation component are as follows:
  - ...
  - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
  - ..."
  -}
-data FWSOperation = FWSOper {wsaction::ActionType, wsmsgin::[ObjectDef], wsmsgout::[ObjectDef]}
+data WSOperation = WSOper {wsaction::WSAction, wsmsgin::[ObjectDef], wsmsgout::[ObjectDef]}
+data WSAction = WSCreate | WSRead | WSUpdate |WSDelete
 
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...

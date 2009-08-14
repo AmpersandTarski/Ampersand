@@ -25,7 +25,7 @@
    --TODO -> c2 was c', c was c, c1 was c, c' was c. => dat was fout door een loop tussen cl=..c `elem`.. en c=minimum..head cl.. Nu is het ook niet goed. Sowieso een objectdef met objctx I[ONE] resulteert in error.
     = Obj { objnm   = name c
           , objpos  = Nowhere
-          , objctx  = v (one,c)
+          , objctx  = v (S,c)
           , objats  = [Obj { objnm   = name mph++name(target mph)
                            , objpos  = Nowhere
                            , objctx  = Tm mph
@@ -34,7 +34,7 @@
                            }| mph<-dss]
           , objstrs = []
           } 
---was:    = Obj (name c) Nowhere (v (one,c)) [Obj (name m++name(target m)) Nowhere (Tm m) [] []| m<-dss] []
+--was:    = Obj (name c) Nowhere (v (S,c)) [Obj (name m++name(target m)) Nowhere (Tm m) [] []| m<-dss] []
       where
        c  = minimum [g|g<-concs context,g<=head cl]
        cl = head ([cl'| cl'<-eqClass bi (concs context), c' `elem` cl']
@@ -46,7 +46,7 @@
 
    makeDatasets :: Context -> [ObjectDef]
    makeDatasets context
-    = [ Obj (name c) Nowhere (v (one,c)) [Obj (name mph++name(target mph)) Nowhere (Tm mph) [] []| mph<-dss cl] []
+    = [ Obj (name c) Nowhere (v (S,c)) [Obj (name mph++name(target mph)) Nowhere (Tm mph) [] []| mph<-dss cl] []
       | cl<-eqClass bi (concs context), c<-[minimum [g|g<-concs context,g<=head cl]] ]
       where
        c `bi` c' = not (null [mph| mph<-declarations context, isFunction mph, isFunction (flp mph)
