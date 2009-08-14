@@ -158,11 +158,15 @@
              Iscompl{} -> d
              Vs{}      -> d
         --TODO -> assign themerules to themes and remove them from the Anything theme
-        themes' = FTheme{tconcept=Anything,tplugs=[],trules=themerules}
-                  :(map maketheme$orderby [(plugtheme pl, pl)|pl<-vsqlplugs++vphpplugs, plugtheme pl /= Nothing])
+        themes' = FTheme{tconcept=Anything,tfunctions=[],trules=themerules}
+                  :(map maketheme$orderby [(wsopertheme oper, oper)
+                                          |od<-(ctxsql context)
+                                          ,oper<-makeDSOperations od
+                                               ++[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
+                                          ,wsopertheme oper /= Nothing])
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]
-        maketheme (Just c,ps) = FTheme{tconcept=c,tplugs=ps,trules=[]}
+        maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
         maketheme _ = error $ "Error in ADL2Fspec.hs module ADL2Fspec function makeFspec.maketheme: "
                            ++ "The theme must involve a concept."
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
@@ -223,6 +227,44 @@
                      | strs<-objstrs objat,'P':'H':'P':'T':'Y':'P':'E':'=':str<-strs]
                      ++ [error $ "Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
                                  ++ show (objpos objat)]
+
+   --DESCR -> Use for plugs that describe a single operation like PHP plugs
+   makeDSOperation :: Plug -> FWSOperation
+   makeDSOperation PlugSql{} = error $ "Error in ADL2Fspec.hs module ADL2Fspec function makeDSOperation: "
+                                    ++ "SQL plugs do not describe a single operation."
+   makeDSOperation p@PlugPhp{} = 
+       let nullval val = case val of
+                         PhpNull    -> True
+                         PhpObject{}-> False
+       in FWSOper{wsaction=action$function p
+                 ,wsmsgin=[object arg|(_,arg)<-args p,nullval$arg]
+                 ,wsmsgout=[object$retval$returns p|nullval$retval$returns p]
+                 }
+   --DESCR -> Use for objectdefs that describe all four CRUD operations like SQL plugs
+   makeDSOperations :: ObjectDef -> [FWSOperation]
+   makeDSOperations od = [FWSOper{wsaction=Create,wsmsgin=[od],wsmsgout=[]}
+                         ,FWSOper{wsaction=Read,wsmsgin=[],wsmsgout=[od]}
+                         ,FWSOper{wsaction=Update,wsmsgin=[od],wsmsgout=[]}
+                         ,FWSOper{wsaction=Delete,wsmsgin=[od],wsmsgout=[]}]
+
+   wsopertheme :: FWSOperation -> Maybe Concept
+   wsopertheme oper = 
+      let msgthemes = map objtheme (wsmsgin oper++wsmsgout oper)
+      in if samethemes msgthemes then Just$head msgthemes else Nothing
+   
+   --REMARK -> called samethemes because only used in this context
+   samethemes :: (Eq a) => [a] -> Bool
+   samethemes [] = False
+   samethemes (_:[]) = True
+   samethemes (c:c':cs) = if c==c' then samethemes (c':cs) else False
+
+   --DESCR -> returns the concept on which the objectdef acts 
+   objtheme :: ObjectDef -> Concept
+   objtheme obj = case source$objctx obj of
+      S -> let objattheme = [objtheme objat|objat<-objats obj]
+           in if (not.null) objattheme then head objattheme
+              else S
+      c -> c
 
    makeFservice :: Context -> ObjectDef -> Fservice
    makeFservice _ obj

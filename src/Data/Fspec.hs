@@ -12,6 +12,7 @@ module Data.Fspec (
              , Fservice(..)
              , FSid(..)
              , FTheme(..)
+             , FWSOperation(..)
              , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
 where
@@ -46,10 +47,16 @@ data Fservice = Fservice
                     { objectdef  :: ObjectDef
                     }
 
---DESCR -> a theme is about a concept that is maintained by plugs under certain rules
---         a SQL plug implies four CRUD plugs
---         PHP plugs are already differentiated
-data FTheme = FTheme {tconcept :: Concept, tplugs :: [Plug], trules :: [Rule]}
+--DESCR -> a theme is dataset service with functions under certain rules
+--         the dataset is identified by one root concept
+data FTheme = FTheme {tconcept :: Concept, tfunctions :: [FWSOperation], trules :: [Rule]}
+{- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
+ - "The properties of the Interface Operation component are as follows:
+ - ...
+ - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
+ - ..."
+ -}
+data FWSOperation = FWSOper {wsaction::ActionType, wsmsgin::[ObjectDef], wsmsgout::[ObjectDef]}
 
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...

@@ -157,7 +157,10 @@ designPrinciples lev fSpec flags = header ++ dpIntro
      )
   dpSection :: FTheme -> [Block]
   dpSection t = [Header (lev+1) [Str (name$tconcept t)]] --new section to explain this theme
+             ++ [b|f<-tfunctions t, b<-explainFunction f] --explain the functions in the theme
              ++ [Para [Str$explainRule (language flags) r]|r<-trules t] --explanation of all rules in the theme
+     where
+     explainFunction f = [Para [Str "A function has been defined and it should have been described here."]]
   remainingrulesSection :: [Rule] -> [Block]
   remainingrulesSection rs = 
     (case (language flags) of
