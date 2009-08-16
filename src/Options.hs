@@ -72,7 +72,7 @@ checkOptions flags =
            verboseLn flags0 ("Checking output directories...")
            currDir <- getCurrentDirectory
            flags1  <- case uncheckedDirOutput flags0 of
-                          Nothing -> return flags0 { dirOutput = currDir }
+                          Nothing -> return flags0 { dirOutput = "" }
                           Just s  -> do exists <- doesDirectoryExist s
                                         if exists
                                           then return flags0 { dirOutput =  s}
