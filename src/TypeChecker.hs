@@ -41,6 +41,7 @@ import TypeInference.AdlExpr
 import TypeInference.Input
 import TypeInferenceEngine
 import ShowADL
+import Collection     ( Collection (rd) )
 
 ---------------
 --MAIN function
@@ -468,13 +469,14 @@ checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
 
 --DESCR -> check rule: Every SERVICE, PHPPLUG, and SQLPLUG must have a unique name
 checkSvcNameUniqueness :: Contexts -> Errors
-checkSvcNameUniqueness ctxs = case checknotuniq [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx] of
-    Nothing -> []
-    Just svc -> ["Service or plug name " ++ objnm svc ++ " is not unique " ++ show (objpos svc)]
-    where
-    checknotuniq [] = Nothing
-    checknotuniq (_:[]) = Nothing
-    checknotuniq (x:xs) = if elem (objnm x) (map objnm xs) then Just x else checknotuniq (tail xs)
+checkSvcNameUniqueness ctxs = 
+    let svcs = [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx]
+        orderby :: (Eq a, Eq b) => [(a,b)] ->  [(a,[b])]
+        orderby xs =  [(x,rd [y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
+        notuniqsvcs = orderby [(objnm svc,objpos svc)|svc<-svcs, svc'<-svcs, objnm svc==objnm svc', objpos svc/=objpos svc']
+    in  ["Service or plug name " ++ svcnm ++ " is not unique:"++ (foldr (++) [] ["\n"++show svcpos |svcpos<-svcposs])
+        |(svcnm,svcposs)<-notuniqsvcs]
+   
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
 checkPopulations :: Contexts -> Errors
