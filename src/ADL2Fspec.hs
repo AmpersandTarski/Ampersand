@@ -5,6 +5,7 @@
    import Strings        (firstCaps)
    import Adl            (Context(..)
                          ,ObjectDef(..)
+                         ,KeyDef(..)
                          ,Expression(..),notCp
                          ,Rule(..),normExpr,cpu
                          ,Morphism(..),makeDeclaration
@@ -164,8 +165,8 @@
         --TODO -> by default CRUD operations of datasets, possibly overruled by SQL or PHP plugs
         themeoperations = datasetoperations++phpoperations++sqloperations
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
-        sqloperations =[oper|obj<-(ctxsql context), oper<-makeDSOperations obj]
-        datasetoperations = [oper|obj<-datasets', oper<-makeDSOperations obj, objtheme obj /=S]
+        sqloperations =[oper|obj<-(ctxsql context), oper<-makeDSOperations (ctxks context) obj]
+        datasetoperations = [oper|obj<-datasets', oper<-makeDSOperations (ctxks context) obj, objtheme obj /=S]
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
@@ -244,12 +245,15 @@
                  ,wsmsgout=[objectdf$retval$returns p|nullval$retval$returns p]
                  }
    --DESCR -> Use for objectdefs that describe all four CRUD operations like SQL plugs
-   makeDSOperations :: ObjectDef -> [WSOperation]
-   makeDSOperations od = [WSOper{wsaction=WSCreate,wsmsgin=[od],wsmsgout=[]}
-                         ,WSOper{wsaction=WSRead,wsmsgin=[],wsmsgout=[od]}
-                         ,WSOper{wsaction=WSUpdate,wsmsgin=[od],wsmsgout=[]}
-                         ,WSOper{wsaction=WSDelete,wsmsgin=[od],wsmsgout=[]}]
-
+   makeDSOperations :: [KeyDef] -> ObjectDef -> [WSOperation]
+   makeDSOperations kds obj = 
+       [WSOper{wsaction=WSCreate,wsmsgin=[obj],wsmsgout=[]}
+       ,WSOper{wsaction=WSUpdate,wsmsgin=[obj],wsmsgout=[]}
+       ,WSOper{wsaction=WSDelete,wsmsgin=[obj],wsmsgout=[]}]
+     ++(if null keydefs then [readby []] else map readby keydefs)
+       where
+       keydefs = [kdats kd|kd<-kds,objtheme obj==keytheme kd]
+       readby keyobj = WSOper{wsaction=WSRead,wsmsgin=keyobj,wsmsgout=[obj]}
    wsopertheme :: WSOperation -> Maybe Concept
    wsopertheme oper = 
       let msgthemes = map objtheme (wsmsgin oper++wsmsgout oper)
@@ -268,6 +272,10 @@
            in if (not.null) objattheme then head objattheme
               else S
       c -> c
+
+   --DESCR -> returns the concept on which the keydef is defined 
+   keytheme :: KeyDef -> Concept
+   keytheme kd = source$kdctx kd
 
    makeFservice :: Context -> ObjectDef -> Fservice
    makeFservice _ obj

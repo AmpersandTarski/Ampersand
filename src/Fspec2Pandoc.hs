@@ -17,6 +17,7 @@ import Languages      (Lang(..))
 import Options        (Options(..),FspecFormat(..))
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
+import Collection     ( Collection (rd) )
 --import Statistics
 
 --DESCR ->
@@ -155,16 +156,43 @@ designPrinciples lev fSpec flags = header ++ dpIntro
                      , Str ". The implementation must assert these rules. "]
                  ]
      )
+  --TODO -> It may be nice to print the class of the dataset from the class diagram
   dpSection :: FTheme -> [Block]
   dpSection t = [Header (lev+1) [Str (name$tconcept t)]] --new section to explain this theme
-             ++ [b|f<-tfunctions t, b<-explainFunction f] --explain the functions in the theme
+             ++ [b|f<-tfunctions t, b<-explainFunctionNL f, language flags==Dutch] --explain the functions in the theme
              ++ [Para [Str$explainRule (language flags) r]|r<-trules t] --explanation of all rules in the theme
-     where
-     explainFunction f = case wsaction f of
-        WSCreate ->  [Para [Str "A create function has been defined and it should have been described here."]]
-        WSRead -> [Para [Str "A read function has been defined and it should have been described here."]]
-        WSUpdate -> [Para [Str "An update function has been defined and it should have been described here."]]
-        WSDelete -> [Para [Str "A delete function has been defined and it should have been described here."]]
+    where
+    listDataset obj = 
+                  [BulletList 
+                     [[Plain [Str$objnm objat]]|objat<-objats obj]
+                  ]
+    listKeys keys = Emph [il|objat<-keys, il<-[Str " ",Str$objnm objat]]
+    explainFunctionNL f = case wsaction f of {
+         WSCreate -> [Para [Emph [Str$"Nieuw ",Str$name$tconcept t]]]
+                   ++ [Para [Str "Voor het aanmaken van een ",Str$name$tconcept t
+                            ,Str " moeten de volgende datavelden aangeleverd worden:"]]
+                   ++ describemsgs;
+         WSRead -> [Para [Emph [Str$"Bekijk "++(name$tconcept t)]]]
+                   ++ describereadmsgs;
+         WSUpdate -> [Para [Emph [Str$"Bewerk "++(name$tconcept t)]]]
+                   ++ [Para [Str "Van een ",Str$name$tconcept t
+                            ,Str " kunnen de volgende datavelden gewijzigd worden:"]]
+                   ++ describemsgs;
+         WSDelete -> [Para [Emph [Str$"Verwijder "++(name$tconcept t)]]]
+                   ++ [Para [Str "Als een ",Str$name$tconcept t
+                            ,Str " verwijderd wordt, dan worden de volgende datavelden verwijderd:"]]
+                   ++ describemsgs}
+         where
+         describemsgs = [b|obj<-wsmsgin f++wsmsgout f, b<-listDataset obj]
+         describereadmsgs = [Para [Str "Een ",Str$name$tconcept t
+                                  ,Str " kan geselecteerd worden op basis van "
+                                  ,listKeys$wsmsgin f
+                                  ,Str "."]|(not.null) (wsmsgin f)]
+                         ++ [b|obj<-wsmsgout f
+                               , b<-[Para [Str "De volgende datavelden van een ",Str$name$tconcept t
+                                          ,Str " kunnen bekeken worden:"]]
+                                 ++ listDataset obj
+                            ]
   remainingrulesSection :: [Rule] -> [Block]
   remainingrulesSection rs = 
     (case (language flags) of
