@@ -3,8 +3,8 @@ module Version (versionbanner)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. 0.8.10-383" -- the number behind the last digit is the SVN revision number.
+versionbanner = "ADL vs. 0.8.10-384" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-Grote verandering: nieuwe interface.. Voortaan eerst Installer.php draaien
+Eerste twee foutjes die Stef al snel gevonden had opgelost: getId() en PHP_SELF fouten
 -}

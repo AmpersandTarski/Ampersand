@@ -327,7 +327,7 @@
           ,"  $new=true;"
           ,"} else $new=false;"]
       ) ++
-      [ "$me=array(\"id\"=>$this->getId()"
+      [ "$me=array(\"id\"=>" ++ (if isOne object then "1" else "$this->getId()")
         ++ concat [ ", "++show (name a) ++ " => $this->_"++phpIdentifier (name a)
                   | a<-objats object ]
         ++ ");"
@@ -338,7 +338,7 @@
       ++ checkRuls fSpec object ++
       [ "if(true){ // all rules are met"
       , "  DB_doquer('COMMIT');"
-      , "  return $this->getId();"
+      , "  return "++ if isOne object then "true;" else "$this->getId();"
       , "}"
       , "DB_doquer('ROLLBACK');"
       , "return false;"

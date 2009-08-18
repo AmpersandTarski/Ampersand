@@ -46,26 +46,26 @@
       ( if isOne o
         then ["$"++objectId++"=new "++objectId++"();"]
              ++ indentBlock 2 showObjectCode
-             ++ [ "if(!$edit) $buttons.=ifaceButton($PHP_SELF.\"?edit=1\",\"Edit\"); else"
-                , "$buttons.=ifaceButton(\"JavaScript:save('\".$PHP_SELF.\"?save=1');\",\"Save\");"
+             ++ [ "if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1\",\"Edit\"); else"
+                , "$buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1');\",\"Save\");"
                 ]
         else [ "if(isset($_REQUEST['"++objectId++"'])) $"++objectId++"=read"
                ++objectId++"($_REQUEST['"++objectId++"']); else $"++objectId++"=false;"
              , "if($"++objectId++"){"]
              ++ indentBlock 2 showObjectCode ++
              [ " if($edit)"
-             , "   $buttons.=ifaceButton(\"JavaScript:save('\".$PHP_SELF.\"?save=1',"++
+             , "   $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
                               "'\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\")"
-             , "             .ifaceButton($PHP_SELF.\"?" ++ objectId ++
+             , "             .ifaceButton($_SERVER['PHP_SELF'].\"?" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Cancel\");"
-             , "  else $buttons.=ifaceButton($PHP_SELF.\"?edit=1&" ++ objectId ++
+             , "  else $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1&" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Edit\")"
-             , "               .ifaceButton($PHP_SELF.\"?del=1&" ++ objectId ++
+             , "               .ifaceButton($_SERVER['PHP_SELF'].\"?del=1&" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Delete\");"
              , "}else{ // toon selectiescherm"
              , "  writeHead(\"<TITLE>No "++objectName++" object selected - "
                   ++ appname ++" - ADL Prototype</TITLE>\");"
-             , "  $buttons.=ifaceButton($PHP_SELF.\"?new=1\",\"New\");"
+             , "  $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?new=1\",\"New\");"
              , "  ?><i>No "++objectName++" object selected</i><?php "
              , "}"
              ]
