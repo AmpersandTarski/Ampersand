@@ -11,7 +11,7 @@ module Adl ( Architecture(..)
            , Morphism(..),Morphisms,inline,makeMph,makeInline
            , Declaration(..),Declarations,isSgn
            , ConceptDef(..),ConceptDefs
-           , Concept(..), GenR, Concepts, one,v,cptnew,cptS
+           , Concept(..), GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
            , Prop(..)
            , FilePos(..), Numbered(..)
@@ -32,7 +32,7 @@ module Adl ( Architecture(..)
            )
 where
 
-   import Adl.Concept                    (Concept(..),Concepts,one,cptnew,cptS,cptAnything
+   import Adl.Concept                    (Concept(..),Concepts,cptnew,cptS,cptAnything
                                          ,GenR()
                                          ,Association(..)
                                          ,MorphicId(..),Morphic(..))

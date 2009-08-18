@@ -5,7 +5,6 @@ module Adl.Concept ( Concept(..),Concepts
                    , Association(..),Morphic(..),MorphicId(..)
                    , isSingleton
                    , cptnew,cptAnything,cptS
-                   , one
                    ) 
 where
    import Adl.Prop       ( Prop(..))
@@ -60,11 +59,6 @@ where
     _ <= Anything = False
     a@(C _ gE _) <= b = a `gE` b
     a <= b = a==b
-
-   one :: Concept
-   one = C "ONE" (error "!Bug in module ADLdef: Illegal reference to gE in ONE. Please program the right gE into ONE.")
-                 (error "!Fatal (module ADLdef): Illegal reference to content of the universal singleton.")
-
 
    instance ABoolAlg Concept where
     glb a b | b <= a = b
