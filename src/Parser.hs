@@ -12,7 +12,7 @@ import Adl
 parseADL :: String      -- ^ The string to be parsed
          -> Options     -- ^ flags to be taken into account
          -> String      -- ^ The name of the .adl file (used for error messages)
-         -> IO(Context) -- ^ The IO modad with the context. 
+         -> IO(Context) -- ^ The IO monad with the context. 
 parseADL adlstring flags fnFull =
     do { slRes <- parseIO (pArchitecture (beeper flags))(scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
 	   ; case procParseRes slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:

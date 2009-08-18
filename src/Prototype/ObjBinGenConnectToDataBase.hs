@@ -1,48 +1,98 @@
   module Prototype.ObjBinGenConnectToDataBase where
- --  import Char
-   import Auxiliaries(eqClass,eqCl)
+   --import Auxiliaries(eqClass,eqCl)
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
-   import Collection(rd)
- --  import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
-   import Adl
+   --import Collection(rd)
+   --import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
+   import Adl (runum,nr,isFalse,normExpr,Rule,Expression(..))
    import ShowADL(showADL)
-   import ShowHS(showHS)
-   import CC_aux( applyM )
-   import CommonClasses(explain,name)
-   import PredLogic -- (for error messages by dbCorrect)
- --  import Hatml     -- (for converting error messages to HTML)
- --  import Atlas     -- (for converting error messages to HTML)
+   import CommonClasses(explain,{- name -})
    import NormalForms (conjNF) --TODO -> correct replacement of Calc (conjNF)?
-
-   import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,addSlashes,sqlMorName
-                        ,sqlConcept,sqlAttConcept,sqlMorSrc
-                        ,sqlClosName,closE,sqlRelName,sqlRelSrc,sqlRelTrg
-                        ,phpShow,insConcept
-                        ,selectNormFiExpr,clos0,pDebug,noCollide)
+   import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,phpShow,pDebug,noCollide)
    import Version (versionbanner)
    import Data.Fspec
-   import Prototype.Garbage --TODO -> clean up Garbage
 
-   type PHPcode = String
-
+   
+   connectToDataBase :: Fspc -> String -> String
    connectToDataBase fSpec dbName
     = (chain "\n  " 
       ([ "<?php // generated with "++versionbanner
-       , "$DB_link = @mysql_connect($DB_host,$DB_user,$DB_pass) or require \"dbsettings.php\";"
+       , "require \"dbsettings.php\";"
+       , ""
+       , "function stripslashes_deep(&$value) "
+       , "{ $value = is_array($value) ? "
+       , "           array_map('stripslashes_deep', $value) : "
+       , "           stripslashes($value); "
+       , "    return $value; "
+       , "} "
+       , "if((function_exists(\"get_magic_quotes_gpc\") && get_magic_quotes_gpc()) "
+       , "    || (ini_get('magic_quotes_sybase') && (strtolower(ini_get('magic_quotes_sybase'))!=\"off\")) ){ "
+       , "    stripslashes_deep($_GET); "
+       , "    stripslashes_deep($_POST); "
+       , "    stripslashes_deep($_REQUEST); "
+       , "    stripslashes_deep($_COOKIE); "
+       , "} "
        , "$DB_slct = mysql_select_db('"++dbName++"',$DB_link);"
+       , "function firstRow($rows){ return $rows[0]; }"
+       , "function firstCol($rows){ foreach ($rows as $i=>&$v) $v=$v[0]; return $rows; }"
+       , "function DB_debug($txt,$lvl=0){"
+       , "  global $DB_debug;"
+       , "  if($lvl<=$DB_debug) {"
+       , "    echo \"<i title=\\\"debug level $lvl\\\">$txt</i>\\n<P />\\n\";"
+       , "    return true;"
+       , "  }else return false;"
+       , "}"
+       , ""
+       , "$DB_errs = array();"
+       , "// wrapper function for MySQL"
+       , "function DB_doquer($quer,$debug=5)"
+       , "{"
+       , "  global $DB_link,$DB_errs;"
+       , "  DB_debug($quer,$debug);"
+       , "  $result=mysql_query($quer,$DB_link);"
+       , "  if(!$result){"
+       , "    DB_debug('Error '.($ernr=mysql_errno($DB_link)).' in query \"'.$quer.'\": '.mysql_error(),2);"
+       , "    $DB_errs[]='Error '.($ernr=mysql_errno($DB_link)).' in query \"'.$quer.'\"';"
+       , "    return false;"
+       , "  }"
+       , "  $rows=Array();"
+       , "  while (($row = @mysql_fetch_array($result))!==false) {"
+       , "    $rows[]=$row;"
+       , "    unset($row);"
+       , "  }"
+       , "  return $rows;"
+       , "}"
+       , "function DB_plainquer($quer,&$errno,$debug=5)"
+       , "{"
+       , "  global $DB_link,$DB_errs,$DB_lastquer;"
+       , "  $DB_lastquer=$quer;"
+       , "  DB_debug($quer,$debug);"
+       , "  $result=mysql_query($quer,$DB_link);"
+       , "  if(!$result){"
+       , "    $errno=mysql_errno($DB_link);"
+       , "    return false;"
+       , "  }else{"
+       , "    if(($p=stripos($quer,'INSERT'))!==false"
+       , "       && (($q=stripos($quer,'UPDATE'))==false || $p<$q)"
+       , "       && (($q=stripos($quer,'DELETE'))==false || $p<$q)"
+       , "      )"
+       , "    {"
+       , "      return mysql_insert_id();"
+       , "    } else return mysql_affected_rows();"
+       , "  }"
+       , "}"
        , ""
        ] ++ (ruleFunctions fSpec)
        ++
-       [""
+       [ ""
        , "if($DB_debug>=3){"
        ] ++
           [ "  checkRule"++show (runum r)++"();"
           | r<-vrules fSpec ] ++
        [ "}"
        ]
-      )) ++ "?>"
+      )) ++ "\n?>"
 
-   ruleFunctions :: Fspc -> [PHPcode]
+   ruleFunctions :: Fspc -> [String]
    ruleFunctions fSpec
     = [ "\n  function checkRule"++show (nr rule)++"(){\n    "++
            (if isFalse rule'
@@ -60,13 +110,5 @@
 
 
    dbError :: Rule -> String -> String -> String
-   dbError rule x y
+   dbError rule _ _
     = "Overtreding van de regel: \""++(if null (explain rule) then "Artificial explanation: "++showADL rule else explain rule)++"\"<BR>"
-      where
-       charVars q vs
-        = if null vs then "" else
-          q++" "++chain "; " (map zet vss)
-          where
-           vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
-           zet ([v], dType) = dType++", "++v++", "
-           zet (vs , dType) = commaNL "en" vs++"("++dType++")"

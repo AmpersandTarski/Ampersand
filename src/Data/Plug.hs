@@ -10,9 +10,8 @@ module Data.Plug (Plug(..)
                  ,PhpAction(..)
                  ,ActionType(..))
 where
---  import CommonClasses  (Identified(..))
---  import Classes.Morphical (Morphical(..))
---  import Collection(rd)
+  import CommonClasses  (Identified(..))
+  import Classes.Morphical (Morphical(..))
   import Adl
   --import MorphismAndDeclaration
   
@@ -27,7 +26,7 @@ where
                       , plname   :: String 
                       } deriving (Show)
 
-  data PhpValue = PhpNull | PhpObject {object::ObjectDef,phptype::PhpType} deriving (Show)
+  data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
   data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
   type PhpArgs = [(Int,PhpValue)]
   data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
@@ -37,7 +36,7 @@ where
   
   instance Identified PhpValue where
     typ _ = "PhpValue"
-    name p = case p of {PhpNull -> "0"; PhpObject{object=x} -> name x}
+    name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> name x}
 
   --DESCR -> plugs are sorted to optimize some algoritms. 
   instance Eq Plug where
@@ -115,7 +114,7 @@ where
     keyDefs      f = keyDefs       (fldexpr f)
     
   instance Morphical Plug where
-    concs        p@PlugSql{} = concs        (fields p) --rd [target e'|e'<-(map fldexpr (fields p)),Sur `elem` (multiplicities e')]
+    concs        p@PlugSql{} = concs        (fields p)
     conceptDefs  p@PlugSql{} = conceptDefs  (fields p)
     mors         p@PlugSql{} = mors         (fields p)
     morlist      p@PlugSql{} = morlist      (fields p)

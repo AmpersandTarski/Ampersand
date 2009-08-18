@@ -17,7 +17,7 @@
    unCap [] = [] ; unCap (h:t) = toLower h:t
    
 
-   chain :: String -> [String] -> String
+   chain :: [b] -> [[b]] -> [b]
    chain _ [] = []
    chain str xs = foldl f (head xs) (tail xs) where f x y = x++str++y
 

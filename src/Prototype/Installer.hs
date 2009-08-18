@@ -1,12 +1,11 @@
  module Prototype.Installer where
   import Adl
-  import Auxiliaries
   import Strings    (chain)
   import Data.Plug
   import Data.Fspec
-  import Collection (rd,(>-))
-  import NormalForms(conjNF)
-  import Prototype.RelBinGenBasics(phpShow,plugs)
+  import Collection (rd)
+--  import NormalForms(conjNF)
+  import Prototype.RelBinGenBasics(phpShow,plugs,indentBlock)
   
   installer :: Fspc -> String -> String
   installer fSpec dbName = "<?php\n  " ++ chain "\n  "
@@ -34,13 +33,13 @@
         , "  $DB_slct = @mysql_select_db('"++dbName++"');"
         , "}"
         , "if(!$DB_slct){"
-        , "  echo die(\"Install failed: cannot not connect to MySQL or error selecting database\");" --todo: full error report
+        , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database\");" --todo: full error report
         , "}else{"
         ] ++ map ((++) "  ")
         (
           [ "if(!$included && !file_exists(\"dbsettings.php\")){ // we have a link now; try to write the dbsettings.php file"
           , "   if($fh = @fopen(\"dbsettings.php\", 'w')){"
-          , "     fwrite($fh, '<'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); ?'.'>');"
+          , "     fwrite($fh, '<'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); $DB_debug = 3; ?'.'>');"
           , "     fclose($fh);"
           , "   }"
           , "}\n"
@@ -51,16 +50,14 @@
           ] ++ map ((++) "  ") (concat (map checkPlugexists (plugs fSpec)))
           ++ ["}"]
           ++ concat (map plugCode (plugs fSpec))
--- onderstaande regel werkt niet omdat het verwijderen van dit bestand niet tijdens het uitvoeren ervan kan
---          ++ ["if(!$error) unlink(__FILE__); // this script should self-destruct to avoid resetting the database"]
-          ++ ["DB_doquer('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
+          ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
         ) ++
         [ "}" ]
      ) ++ "\n?>\n"
     where plugCode plug
            = [ "/* Plug "++plname plug++", fields: "++(show $ map fldexpr $fields plug)++" */"
              , "mysql_query(\"CREATE TABLE `"++plname plug++"`"]
-             ++ map ((++) "                  ")
+             ++ indentBlock 17
                     ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ "" ++ nul
                       | (f,comma)<-zip (fields plug) ('(':repeat ','), let nul = if fldnull f then "" else " NOT NULL"
                       ] ++
@@ -72,12 +69,12 @@
              ++ (if (null $ mdata plug) then [] else
                  [ "else"
 				 , "mysql_query(\"INSERT INTO `"++plname plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
-				 ]++ map ((++)   "          ")
+				 ]++ indentBlock 12
 						 ( [ comma++ " (" ++md++ ")"
 						   | (md,comma)<-zip (mdata plug) ("VALUES":repeat "      ,")
 						   ]
 						 )
-				 ++ ["          \");"
+				 ++ ["            \");"
 				 , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              )
           checkPlugexists plug
@@ -85,11 +82,22 @@
              , "  mysql_query(\"DROP TABLE `"++(plname plug)++"`\");" --todo: incremental behaviour
              , "}" ]
           mdata plug
-           = [ chain ", " [ head ([phpShow b
-                                  | [a',b]<-contents$fldexpr f,a==a' -- we know by the definition of these tables that this results in max 1 value for b
+           = if length (fields plug)==2 -- treat binary tables differently
+             then
+             [ phpShow a ++", "++ phpShow b
+             | Tm m' <- map fldexpr (fields plug), [a,b]<-contents m']
+             else
+             [ chain ", " [ head ([phpShow b
+                                  | [a',b]<-(map binarify)$contents$fldexpr f,a==a'
+                                  ]++
+                                  [phpShow a
+                                  | isIdent (fldexpr f) -- this should go automatically, but does not
                                   ]++["NULL"])
                           | f<-fields plug]
-             | [a,b]<-contents (fldexpr$head$fields plug) -- be sure that the concepts return their respective populations
+             | a<-rd $ map head (concat (map (contents.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
              ]
-  
-
+  binarify :: [String] -> [String]
+  binarify [a] = [a,a]
+  binarify [a,b]=[a,b]
+  binarify _ = error "Error in binarify: list of one or two required"
+    

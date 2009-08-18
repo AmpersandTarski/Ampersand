@@ -5,7 +5,7 @@ where
    import Adl.Pair                       (Pairs,join)
    import Adl.Expression                 (Expression(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..)
-                                         ,makeDeclaration,makeInline)
+                                         ,makeDeclaration,makeInline,inline)
    import CommonClasses                  (Conceptual(conts),lub)    
    import Collection                     (Collection (uni,isc))   
    import Auxiliaries                    (clos1,diag) 
@@ -22,7 +22,8 @@ where
            Vs{}      -> [[o,o']| o<-conts (despc d), o'<-conts (despc d)]
 
    instance Populated Morphism where
-    contents mph = contents (makeDeclaration (makeInline mph))
+    contents mph | inline mph = contents (makeDeclaration mph)
+    contents mph | otherwise = map reverse (contents (makeDeclaration (makeInline mph)))
 
    instance Populated Expression where
     contents expr  

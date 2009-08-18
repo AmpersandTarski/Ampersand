@@ -213,10 +213,10 @@
                                            }
                      | strs<-objstrs plug,'A':'C':'T':'I':'O':'N':'=':str<-strs]
                      ++ [error $ "Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
-      makeReturns = head $ [PhpReturn {retval=PhpObject{object=oa,phptype=makePhptype oa}}
+      makeReturns = head $ [PhpReturn {retval=PhpObject{objectdf=oa,phptype=makePhptype oa}}
                            | oa<-objats plug, strs<-objstrs oa,"PHPRETURN"<-strs]
                            ++ [PhpReturn {retval=PhpNull}]
-      makeArgs = [(i,PhpObject{object=oa,phptype=makePhptype oa})
+      makeArgs = [(i,PhpObject{objectdf=oa,phptype=makePhptype oa})
                  | (i,oa)<-zip [1..] (objats plug), strs<-(objstrs oa), elem "PHPARG" strs]
    makePhptype :: ObjectDef -> PhpType
    makePhptype objat = head $ [case str of {"String"->PhpString;
@@ -240,8 +240,8 @@
                          PhpObject{}-> False
            towsaction x = case x of {Create->WSCreate;Read->WSRead;Update->WSUpdate;Delete->WSDelete}
        in WSOper{wsaction=towsaction$action$function p
-                 ,wsmsgin=[object arg|(_,arg)<-args p,nullval$arg]
-                 ,wsmsgout=[object$retval$returns p|nullval$retval$returns p]
+                 ,wsmsgin=[objectdf arg|(_,arg)<-args p,nullval$arg]
+                 ,wsmsgout=[objectdf$retval$returns p|nullval$retval$returns p]
                  }
    --DESCR -> Use for objectdefs that describe all four CRUD operations like SQL plugs
    makeDSOperations :: ObjectDef -> [WSOperation]
