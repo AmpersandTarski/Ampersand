@@ -119,7 +119,7 @@
         isString object = not (isOne object) -- todo
         showObjectCode
          = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - ADL Prototype</TITLE>\""
-           , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"edit.js\"></SCRIPT>':'') );"
+           , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"edit.js\"></SCRIPT>':'<SCRIPT type=\"text/javascript\" src=\"navigate.js\"></SCRIPT>') );"
            , "if($edit)"
            , "    echo '<FORM name=\"editForm\" action=\"'"
            ,"          .$_SERVER['PHP_SELF'].'\" method=\"POST\" class=\"Edit\">';"]++
@@ -155,8 +155,7 @@
         attributeWrapper depth path cls att
          = [ "<DIV class=\"Floater\">"
            , "  <DIV class=\"FloaterHeader\">"++(name att)++"</DIV>"
-           , "  <DIV class=\"FloaterContent\">"
-           , "    <?php"
+           , "  <DIV class=\"FloaterContent\"><?php"
            , "      $"++ phpIdentifier (name att) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att)++"();"
            ] ++ indentBlock 6 content ++
            [ "    ?> "
@@ -240,18 +239,42 @@
            where content = [ "echo "++var++";"]
                  mults   = multiplicities (objctx att)
         uniAtt var depth path cls att
-         = (["echo '"
-           ,"<DIV>';"]
-           ++ chain ["echo '</DIV>"
-                    ,"<DIV>';"] content
-           ++ ["echo '"
-              ,"</DIV>';"
-              ,"if($edit) echo '"
-              ,"<INPUT TYPE=\"hidden\" name=\""++path++".ID\" VALUE=\"'."++var++"['id'].'\" />';"
-              ],newBlocks)
+         = ((if null gotoPages then []
+             else if length gotoPages == 1
+                  then [ "if(!$edit){"
+                       , "  echo '"
+                       , "<A HREF=\""++(fst$head gotoPages)++"\">';"
+                       , "  echo '<DIV class=\"GotoArrow\">&rarr;</DIV></A>';"
+                       , "}" ]
+                  else [ "if(!$edit){"
+                       , "  echo '"
+                       , "<DIV class=\"GotoArrow\" id=\"To"++path++"\">&rArr;</DIV>';"
+                       , "  echo '<DIV class=\"Goto\" id=\"GoTo"++path++"\"><UL>';"] ++
+                       [ "  echo '<LI><A HREF=\""++link++"\">"++txt++"</A></LI>';"
+                       | (link,txt) <- gotoPages ] ++
+                       [ "  echo '</UL></DIV>';"
+                       , "}" ]
+            )++
+            ["echo '"
+            ,"<DIV>';"]
+            ++ chain ["echo '</DIV>"
+                     ,"<DIV>';"] content
+            ++ ["echo '"
+               ,"</DIV>';"
+               ,"if($edit) echo '"
+               ,"<INPUT TYPE=\"hidden\" name=\""++path++".ID\" VALUE=\"'."++var++"['id'].'\" />';"
+               ]
+               ,newBlocks)
            where
             newBlocks = concat $ map snd stuff
             content = map fst stuff
+            gotoPages :: [(String,String)]
+            gotoPages
+             = [ (name serv++".php?"++(phpIdentifier$name serv)++"='."++var++"['id'].'"
+                 ,name serv)
+               | serv<-(serviceS fSpec)
+               , target (objctx serv) == target (objctx att)
+               ]
             stuff
              = [ (indentBlock 2 c, b)
                | (a,n)<-zip (objats att) [(0::Integer)..]
