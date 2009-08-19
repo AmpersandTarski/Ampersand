@@ -1531,6 +1531,7 @@ POPULATION concept[Gegevensverzameling*Concept] CONTAINS
   ; ("Vervangendecursussen","Cursus")
   ]
 
+{-
 POPULATION naamICTS[Gegevensverzameling*Tekst] CONTAINS
   [ ("Abonnementen","ABONNEMENTEN")
   ; ("Afdelingen","AFDELINGEN")
@@ -1793,6 +1794,7 @@ POPULATION naamICTS[Gegevensverzameling*Tekst] CONTAINS
   ; ("Ta_Statussen","TA_STATUSSEN")
   ; ("TentamenAanmeldingen","TENTAMEN_AANMELDINGEN")
   ]
+-}
 
 POPULATION applicatie[Product*Systeem] CONTAINS
   [ ("OER-format","MS-word")
@@ -1922,9 +1924,9 @@ POPULATION naam[Functie*Functienaam] CONTAINS
   ; ("EB172","Overzicht bekende correctoren")
   ; ("EB173","Aanmaken correctoretiketten")
   ; ("EB181","Overzicht cursustoetsen")
-  ; ("","TENTAMEN VERWERKING EN UITSLAGBEPALING")
-  ; ("","TENTAMENVERWERKING")
-  ; ("","BEHEER TENTAMENGEGEVENS")
+--  ; ("","TENTAMEN VERWERKING EN UITSLAGBEPALING")
+--  ; ("","TENTAMENVERWERKING")
+--  ; ("","BEHEER TENTAMENGEGEVENS")
   ; ("EB21111","Verwerk vaststellingsverslag")
   ; ("EB21112","Verwerk voorlopig antwoordmodel")
   ; ("EB21113","Raadplegen tentamengegevens")
@@ -2355,7 +2357,7 @@ POPULATION verwerking[Functie*Verwerking] CONTAINS
   ; ("EB172","On line")
   ; ("EB173","On line")
   ; ("EB181","On line")
-  ; ("","On line")
+--  ; ("","On line")
   ; ("EB21111","On line")
   ; ("EB21112","On line")
   ; ("EB21113","On line")
