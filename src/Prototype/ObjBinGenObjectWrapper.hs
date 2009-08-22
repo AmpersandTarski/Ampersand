@@ -1,18 +1,8 @@
   module Prototype.ObjBinGenObjectWrapper where
---   import Char(toUpper)
    import Strings(chain)
---   import Calc( doClause)
---   import NormalForms (disjNF) --TODO -> correct replacement of Calc?
---   import ComputeRule (triggers,conjuncts,allClauses) --TODO -> correct replacement of Calc?
---   import Auxiliaries (eqCl,sort')
    import Adl
---   import ShowADL
---   import CC_aux ( tot, fun )
---   import Collection (Collection(rd))
    import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,isOne,commentBlock,addToLast)
    import Data.Fspec
---   import Data.Plug
---   import Debug.Trace
    import Version (versionbanner)
 
    objectWrapper :: Fspc -> ObjectDef -> String
@@ -26,8 +16,8 @@
       , "  require \""++objectName++".inc.php\";"
       , "  require \"connectToDataBase.inc.php\";"
       , "  if(isset($_REQUEST['save'])) { // handle ajax save request (do not show the interface)"
-      , "    $ID=@$_REQUEST['ID'];"
-      , "    // we posted . characters, but something converts them to _ (HTTP 1.1 standard)"
+      ] ++ (if isOne o then [] else [ "    $ID=@$_REQUEST['ID'];" ]) ++
+      [ "    // we posted . characters, but something converts them to _ (HTTP 1.1 standard)"
       , "    $r=array();"
       , "    foreach($_REQUEST as $i=>$v){"
       , "      $r[join('.',explode('_',$i))]=$v; //convert _ back to ."
@@ -35,8 +25,8 @@
       indentBlock 4 (concat [phpList2Array 0 ("$"++phpIdentifier (name a)) (show n) a
                             | (a,n)<-zip (objats o) [(0::Integer)..]]
                     ) ++
-      [ "    $"++objectId++"=new "++objectId++"($ID" ++ 
-        concat [", $"++phpIdentifier (name a) | a<-objats o]++");"
+      [ "    $"++objectId++"=new "++objectId++"(" ++ (if isOne o then [] else "$ID,") ++
+        chain ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
       , "    if($"++objectId++"->save()) die('ok'); else die('Please fix errors!');"
       , "    exit(); // do not show the interface"
       , "  }"

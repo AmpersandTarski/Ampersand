@@ -1,51 +1,33 @@
 CONTEXT Meterkast
-{- Dit is de nulversie van de Meterkast.
-Hij is gevuld met de gegevens uit de werkelijke meterkast, d.d. 30 juni 2009, waar de vervuiling uit verwijderd is.
-Dit is de minimale applicatie die in productie genomen moet worden.
-Todo: zorgen dat studenten en docenten precies de juiste functionaliteit krijgen.
-Ik heb in commentaar mijn bedoeling gepoogd te verwoorden:
--- SERVICE User SERVICES User HIDES password, user[Session*User], user[Right*User] EDITS I[Session]
--- SERVICE User SERVICES Docent
--- ROLE User ISA Anyone
--- ROLE Docent ISA User
--- ROLE Student ISA User
--- ROLE Beheerder ISA User
--- SERVICE Student SERVICES Student EDITS own, I[File], I[Actie], name, password
--- SERVICE Docent SERVICES Docent EDITS I[User], I[Right]
--- SERVICE Beheerder SERVICES Beheerder EDITS I[Right], I[User], I[Session], I[File], I[Actie], I[Widget], I[Operation]
+{- Dit is de ŽŽnversie van de Meterkast.
+zo geven we straks PHPPLUG's aan:
+  PHPPLUG GetPersonByNameAndAge {"ACTION=SELECT"} : I[Persoon]
+ÊÊ= [ name {"PHPARG","PHPTYPE=String"} : naam
+ÊÊÊÊ, age {"PHPARG","PHPTYPE=Int"} : leeftijd
+ÊÊÊÊ, persoon {"PHPRETURN", "PHPTYPE=Array"} : I[Persoon]
+ÊÊÊÊÊÊÊÊ= [ name : naam
+ÊÊÊÊÊÊÊÊÊÊ, age Ê: leeftijd
+ÊÊÊÊÊÊÊÊÊÊ, dateOfBirth : geboortedatum]
+ÊÊÊÊ]
 -}
+
+SQLPLUG UserTbl : I[User]
+ = [name{"SQLTYPE=Text"} : name
+   ,password{"SQLTYPE=Password"} : password
+   ,id{"SQLTYPE=Id"} : I
+   ]
 
 PATTERN Meterkast
 
 name      :: User->Text.
+name      :: Operation->Text.
 password  :: User->Password.
-own       :: User * Bestand PRAGMA "" " owns ".
-master    :: User * User PRAGMA "" " is the teacher of ".
-user      :: Session -> User PRAGMA "" " runs on behalf of ".
-user      :: Right * User PRAGMA "" " may be exercised by ".
-operation :: Right * Operation PRAGMA "" " gives access to operations of type ".
-operation :: Widget -> Operation PRAGMA "" " represents " " in user interfaces".
+owner     :: Bestand -> User PRAGMA "the owner of " " is ".
+teacher   :: User * User [UNI] PRAGMA "the teacher of " " is ".
+right     :: User * Operation PRAGMA "" " may exercise ".
 object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
-session   :: Actie -> Session PRAGMA "" " is being executed in session ".
-widget    :: Actie -> Widget PRAGMA "" " is being executed by activating ".
-
-su :: User*User [SYM,ASY] PRAGMA "The uperuser is ".
-
-su;V;su = su EXPLANATION "There is at most one superuser."
-V;su;V  = V  EXPLANATION "There is at least one superuser."
-
--- su;user~ |- V[ONE*Operation];operation~;menu~
---  EXPLANATION "All operation types are in the menu of any superuser session."
-object |- session;user;own
- EXPLANATION "Every action on a file is being executed by the file's owner or by someone who has a right to execute that operation on that particular file."
--- The following is unneccessary, because the definition of menu is only used in SERVICEs.
--- menu      :: Session * Widget PRAGMA "" " has " " in its menu".
--- menu = user;user~;operation;operation~
---  EXPLANATION "The widgets in a session are those for which the user has a right to access the operations represented by those widgets in the user interface."
--- The following is unneccessary, because the definition of access is only used in SERVICEs.
--- access    :: Session * Bestand PRAGMA "" " has access to ".
--- access = user;own \/ user;su;V
---  EXPLANATION "A user has access to all of his own files or to all files if the user happens to be superuser."
+user      :: Actie -> User PRAGMA "" " is being executed by user ".
+right     :: Actie -> Operation PRAGMA "" " is being executed by activating ".
 
 ENDPATTERN
 
@@ -55,166 +37,72 @@ ENDPATTERN
         = [ nr      : I[User]
           , user    : name
           , pwd     : password
-          , rechten : user[Right*User]~
-          , sessies : user[Session*User]~
+          , rechten : right
           ]
      ]
-
--- SERVICE User SERVICES User HIDES password, user[Session*User], user[Right*User]
--- SERVICE User SERVICES Docent
--- ROLE Docent ISA User
--- ROLE Student ISA User
 
   SERVICE User : I[User]
    = [ naam    : name
      , pwd     : password
-     , files   : own
-     , menu    : user~;operation;operation[Widget*Operation]~
+     , files   : owner~
      ]
 
   SERVICE Userbeheer : I[User]
    = [ naam      : name
-     , su        : su
      , pwd       : password
-     , bestanden : own
-     , studenten : master
-     , docenten  : master~
-     , sessies   : user[Session*User]~
-        = [ sessie : I[Session]
-          , acties : session~
-             = [ actie     : I[Actie]
-               , widget    : widget
-               , bestanden : object
-               ]
-          ]
-     , rechten   : user[Right*User]~
+     , bestanden : owner~
+     , studenten : teacher~
+     , docent    : teacher
+     , rechten   : right
      ]
 
--- SERVICE Student SERVICES Student EDITS own, session, object, widget, I[File], I[Actie], name, password
 
-  SERVICE Student : master~;master /\ I
+  SERVICE Student : teacher;teacher~ /\ I
    = [ naam    : name
-     , docent  : master~;name
-     , files   : own
-     , menu    : user~;operation;operation[Widget*Operation]~
-     , sessies   : user[Session*User]~
-        = [ sessie : I[Session]
-          , acties : session~
-             = [ widget : widget
-               , bestanden : object
-               ]
-          ]
+     , docentNaam  : teacher;name
+     , files   : owner~
      ]
 
 -- De volgende definitie wordt incorrect vertaald:
   SERVICE Docenten : I[ONE]
-   = [ Docenten : V[ONE*User];(master;master~ /\ I)
+   = [ Docenten : V[ONE*User];(teacher~;teacher /\ I)
         = [ nr               : I[User]
           , user             : name
           ]
      ]
 
--- SERVICE Beheerder SERVICES Beheerder EDITS I[Right], I[User], I[Session], I[File], I[Actie], I[Widget], I[Operation]
-  SERVICE Beheerder : I[ONE]
-   = [ users : V[ONE*User]
-        = [ naam      : name
-          , pwd       : password
-          , bestanden : own
-          , studenten : master
-          , docenten  : master~
-          , sessies   : user[Session*User]~
-          , rechten   : user[Right*User]~
-          ]
-     ]
-
 -- SERVICE Docent SERVICES Docent EDITS I[User], I[Right]
-  SERVICE Docent : master;master~ /\ I
+  SERVICE Docent : teacher~;teacher /\ I
    = [ naam      : name
-     , bestanden : own
-     , menu      : user~;operation;operation[Widget*Operation]~
-     , studenten : master
+     , bestanden : owner~
+     , studenten : teacher~
         = [ naam      : name
-          , bestanden : own
-          , rechten   : user~;operation
-             = [ nr : I[Operation]
-               , recht : operation[Widget*Operation]~
-               ]
+          , bestanden : owner~
           ]
      ]
 
   SERVICE Bestand : I[Bestand]
-   = [ eigenaar : own~
+   = [ eigenaar : owner
+        = [ naam : name ]
      , acties   : object[Actie*Bestand]~
-        = [ nr       : I[Actie]
-          , sessie   : session
-          , widget   : widget
-          , door     : session;user;name
-          , operatie : widget;operation
-          ]
-     ]
-
-  SERVICE Sessie : I[Session]
-   = [ gebruiker : user
-     , naam : user;name
-     , "menu items" : user;user~;operation;operation[Widget*Operation]~
-        = [ nr           : I[Widget]
-          , operatie     : operation
-          ]
-     , bestanden : user;own
-     , "lopende acties" : session~
-        = [ nr       : I[Actie]
-          , file     : object
-          , operatie : widget;operation
-          , widget   : widget
-          ]
-     ]
-
-  SERVICE Sessies : I[ONE]
-   = [ Sessies : V[ONE*Session]
-        = [ nr               : I[Session]
-          , user             : user;name
-          , "lopende acties" : session~
-          ]
-     ]
-
-  SERVICE Widget : I[Widget]
-   = [ "operatie nr"     : operation
-     , "toegestaan voor" :   operation;operation~;user;name
-     , "verboden voor"   : -(operation;operation~;user;name)
-     ]
-
-  SERVICE Right : I[Right]
-   = [ gebrNr   : user
-     , naam     : user;name
-     , operatie : operation
-     , widget   : operation;operation[Widget*Operation]~
-     ]
-
-  SERVICE Rechten : I[ONE]
-   = [ Rechten : V[ONE*Right]
-        = [ nr     : I[Right]
-          , naam   : user;name
-          , widget : operation;operation[Widget*Operation]~
+        = [ nr   : I[Actie]
+          , user : user
+          , type : right
           ]
      ]
 
   SERVICE Actie : I[Actie]
    = [ file     : object
-     , sessie   : session
-     , widget   : widget
-     , door     : session;user;name
-     , operatie : widget;operation
+     , user     : user
+     , operatie : right
      ]
 
   SERVICE Acties : I[ONE]
    = [ Acties : V[ONE*Actie]
-        = [ nr       : I[Actie]
-          , file     : object
-          , sessie   : session
-          , widget   : widget
-          , door     : session;user;name
-          , operatie : widget;operation
-          ]
+       = [ file     : object
+         , user     : user
+         , operatie : right
+         ]
      ]
 
 

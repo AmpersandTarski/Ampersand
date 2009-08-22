@@ -1,6 +1,6 @@
 module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,strReplace
  ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlMorName,sqlConcept,sqlAttConcept
- ,sqlMorSrc,indentBlock,phpShow,isOne,addToLast
+ ,sqlPlugFields,sqlMorSrc,indentBlock,phpShow,isOne,addToLast
  ,pDebug,noCollide -- both are used in ObjBinGenConnectToDatabase
  ,plugs) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
@@ -8,7 +8,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    import Adl
    import ShowADL(showADL)
    import CC_aux(fun)
-   import NormalForms (conjNF)
+   import NormalForms (conjNF,disjNF)
    import Data.Fspec
    import Data.Plug
    import List(isPrefixOf)
@@ -67,7 +67,13 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                  -> String     -- SQL name of the target of this expression, as assigned by the environment
                  -> Expression -- expression to be translated
                  -> String     -- resulting SQL expression
-
+   
+   -- quote the attributes (such that column-names such as `Right` or `in` won't yield errors)
+   selectExpr f i s@(_:_) t       e' | head s /= '`'
+    = selectExpr f i ('`':s++"`") t            e'
+   selectExpr f i s       t@(_:_) e' | head t /= '`'
+    = selectExpr f i s            ('`':t++"`") e'
+   
    selectExpr fSpec i src trg (Fi lst'@(_:_:_))
     = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                            (chain ", " exprbracs) (chain " AND " (wherecl))
@@ -202,8 +208,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               src'' = sqlExprSrc fSpec f
                               trg'' = noCollide [src''] (sqlExprTrg fSpec f)
    selectExpr fSpec i src trg (Fi [e']) = selectExpr fSpec i src trg e'
-   selectExpr _     _ _   _   (F  [] ) = error ("RelBinGenBasics.lhs: Cannot create query for F [] because type is unknown")
-   selectExpr _     _ _   _   (Fi [] ) = error ("RelBinGenBasics.lhs: Cannot create query for Fi [] because type is unknown")
+   selectExpr _     _ _   _   (F  [] ) = error ("RelBinGenBasics: Cannot create query for F [] because type is unknown")
+   selectExpr _     _ _   _   (Fi [] ) = error ("RelBinGenBasics: Cannot create query for Fi [] because type is unknown")
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
    selectExpr _     i src trg (Fu [] ) = selectGeneric i ("\\'\\'",src) ("\\'\\'",trg) ("(SELECT 1) AS a") ("0")
@@ -221,9 +227,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               trg' = noCollide [src'] (sqlAttConcept fSpec (target e'))
                               src2 = sqlExprSrc fSpec e'
                               trg2 = noCollideUnlessTm e' [src2] (sqlExprTrg fSpec e')
-   selectExpr fSpec i src trg cl@(K0 _) = selectGeneric i (sqlExprSrc fSpec cl,src) (sqlExprTrg fSpec cl,trg) (sqlRelName fSpec cl) "1"
-   selectExpr fSpec i src trg cl@(K1 _) = selectGeneric i (sqlExprSrc fSpec cl,src) (sqlExprTrg fSpec cl,trg) (sqlRelName fSpec cl) "1"
-   selectExpr _     _ _   _   (Fd []  ) = error ("RelBinGenBasics.lhs: Cannot create query for Fd [] because type is unknown")
+   selectExpr _ _ _ _ (K0 _)
+      = error ("error in selectExpr - RelBinGenBasics: SQL cannot create closures K0")
+   selectExpr _ _ _ _ (K1 _)
+      = error ("error in selectExpr - RelBinGenBasics: SQL cannot create closures K1")
+   selectExpr _     _ _   _   (Fd []  ) = error ("RelBinGenBasics: Cannot create query for Fd [] because type is unknown")
    selectExpr fSpec i src trg (Fd [e']) = selectExpr fSpec i src trg e'
    selectExpr fSpec i src trg (Fd fxs ) = selectExpr fSpec i src trg $ Cp {e=F (map addcompl fxs)}
          where
@@ -254,13 +262,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExprBrac fSpec i src trg (Fi [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (Fu [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec _ src trg (Tm m'@(Mph{}))
-    | lowerCase(sqlMorSrc fSpec m')==(lowerCase$src) && lowerCase(sqlMorTrg fSpec m')==(lowerCase$trg)  = sqlMorName fSpec m'
-   selectExprBrac fSpec _ src trg (K0 e')
-    | (lowerCase(sqlExprSrc fSpec e'),(lowerCase$sqlExprTrg fSpec e'))==(lowerCase$src,lowerCase$trg) = sqlRelName fSpec (K0 e')
-   selectExprBrac fSpec _ src trg (K1 e')
-    | (lowerCase(sqlExprSrc fSpec e')==(lowerCase$src) || src=="")
-    &&(lowerCase(sqlExprTrg fSpec e')==(lowerCase$trg) || trg=="") = sqlRelName fSpec (K1 e')
-   selectExprBrac fSpec i src trg expr                                 = phpIndent (i+4) ++ "( " ++ selectExpr fSpec (i+6) src trg expr++ phpIndent(i+4)++")"
+    | lowerCase(sqlMorSrc fSpec m')==(lowerCase$src)
+      && lowerCase(sqlMorTrg fSpec m')==(lowerCase$trg) 
+      = "`"++sqlMorName fSpec m'++"`"
+   selectExprBrac fSpec i src trg expr
+    = phpIndent (i+4) ++ "( " ++ selectExpr fSpec (i+6) src trg expr++ phpIndent(i+4)++")"
 
    noCollide :: [String] -> String -> String
    noCollide names nm | nm `elem` names = noCollide names (namepart (reverse nm) ++ changeNr (numberpart (reverse nm)))
@@ -298,7 +304,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                       (sqlConcept fSpec (source mph) ++ " AS vfst, "++sqlConcept fSpec (target mph) ++ " AS vsnd")
                       "1"
    selectExprMorph _ _ src trg (Mp1 str _)
-    | src == ""&&trg=="" = error ("Fatal in selectExprMorph (RelBinGenBasics.hs): Source and target are \"\", use selectExists' for this purpose")
+    | src == ""&&trg=="" = error ("Fatal in selectExprMorph (RelBinGenBasics): Source and target are \"\", use selectExists' for this purpose")
     | src == ""  = "SELECT "++str++" AS "++trg
     | trg == ""  = "SELECT "++str++" AS "++src
     | src == trg = "SELECT "++str++" AS "++src
@@ -317,7 +323,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     = selectcl ++
       phpIndent i ++ "  FROM "++tbl++
       (if whr=="1" then "" else phpIndent i ++ " WHERE "++whr)
-      where selectcl | snd src=="" && snd trg=="" = error ("Fatal in selectGeneric (RelBinGenBasics.hs): Source and target are \"\", use selectExists' for this purpose")
+      where selectcl | snd src=="" && snd trg=="" = error ("Fatal in selectGeneric (RelBinGenBasics): Source and target are \"\", use selectExists' for this purpose")
                      | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
                      | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
                      | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
@@ -376,17 +382,32 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlRelPlugs :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e' = rd [ (plug,sf,tf)
                              | plug@PlugSql{}<-plugs fSpec
-                             , sf<-[f|f<-fields plug,target (fldexpr f)==source e']
-                             , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
-                             ,  ((Sur `elem` multiplicities (fldexpr sf))
-                                 &&(conjNF (F [fldexpr  sf,    e'])==fldexpr tf)
-                                )
-                             || ((Sur `elem` multiplicities (fldexpr tf))
-                                 &&(conjNF (F [fldexpr  tf,flp e'])==fldexpr sf)
-                                )
-                             || (source (fldexpr sf)==source e' && fldexpr tf ==     e')
-                             || (source (fldexpr tf)==target e' && fldexpr sf == flp e')
+                             , (sf,tf)<-sqlPlugFields plug e'
                              ]
+   sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
+   sqlPlugFields plug e' = [ (sf,tf)
+                           | sf<-[f|f<-fields plug,target (fldexpr f)==source e']
+                           , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
+                           , (  (isTrue $disjNF$Fu [Cp e',F [flp$fldexpr sf,fldexpr tf]]) &&
+                                (isFalse$disjNF$Fi [Cp e',F [flp$fldexpr sf,fldexpr tf]])
+                             )
+                           {- the above should be enough.. but the relation algebra calculations
+                              are not good enough yet. In particular:
+                                isFalse ((I/\x);e /\ -e)
+                              and
+                                isTrue  ((I/\e;e~);e \/ -e)
+                              do not work (should yield True in both cases, but yield False)
+                              
+                              The code below fixes exactly these ommissions
+                           -}
+                           || (isProp (fldexpr sf) && (fldexpr tf == e')
+                              && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [e',flp e'] ]
+                                                   ,Cp$fldexpr sf]))
+                           || (isProp (fldexpr tf) && (fldexpr sf == flp e')
+                              && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [flp e',e'] ]
+                                                   ,Cp$fldexpr tf]))
+                           ]
+
    
    sqlExprSrc :: Fspc->Expression -> String
    sqlExprSrc _     (F [])    = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
@@ -470,20 +491,18 @@ In particular the function plugs
        looseConcs     = concs (vrels spec) -- todo: we can make this less, since V[conc] isn't allways asked for..
                         >- concs (given ++ relPlugs ++ complexPlugs)
        -- complexPlugs are the plugs that consist of multiple relations
-       {-uniSurRels :: Morphisms
-       uniSurRels     = [r | r <- rd (looseRels++map flp looseRels) , null ([Uni,Sur,Inj] >- multiplicities r)]
-       -}
-       complexPlugs   = [] {-
-       complexPlugs   = [ mkdataset rclos
-                        | rclos <- [ foldl1 (\x y -> if length x <= length y then y else x) cl -- longest list in cl
-                                   | cl <- eqClass (\x y -> length x < length (x >- y)) -- there is overlap between x and y
-                                                   (clos source target uniSurRels)
-                                   ]
-                        ] -}
-       --mkdataset rclos= error "mkdataset function not done yet"
+       complexPlugs   = [] 
                         
        relPlugs       = map mor2plug otherRels
-       theplugs       = uniqueNames (map name given) (complexPlugs ++ relPlugs ++ map conc2plug looseConcs)
+       theplugs       = uniqueNames forbiddenNames (complexPlugs ++ relPlugs ++ map conc2plug looseConcs)
+       -- using forbiddenNames is a ad hock trick to prevent syntax errors with tables.
+       -- the best thing to do would be quote all table names, eg: `right`.`from` (tblname,fldname)
+       -- we forbid these names anyways
+       forbiddenNames = ["in","avg","sum","count","not","and","or"
+                        ,"left","right","inner","join","on"
+                        ,"select","from","where","password","order","by","having","asc","desc"
+                        ,"update","delete","insert","replace","ignore","set","values"
+                        ] ++ (map name given)
    
    uniqueNames :: [String]->[Plug]->[Plug]
    -- MySQL is case insensitive! (hence the lowerCase)
@@ -508,16 +527,18 @@ In particular the function plugs
                                    }
    lowerCase :: String->String
    lowerCase = map toLower -- from Char
-   {- naming - a naming function
-      The objective is to name all items in a list uniquely
-      
-      The call below will label allItems as 1,2,3 etc, skipping 4:
-      naming nameIt [(\x->show n)|n<-[(1::Integer)..]] ["4"] allItems
-      
-      Naming one item is done by: nameIt unnamedItem someName -> namedItem
-      There should be a list of functions to name an item,
-          the resulting names should form an infinite set.
-   -}
+
+
+{- naming - a naming function
+  The objective is to name all items in a list uniquely
+  
+  The call below will label allItems as 1,2,3 etc, skipping 4:
+  naming nameIt [(\x->show n)|n<-[(1::Integer)..]] ["4"] allItems
+  
+  Naming one item is done by: nameIt unnamedItem someName -> namedItem
+  There should be a list of functions to name an item,
+      the resulting names should form an infinite set.
+-}
    naming :: Eq a => (b->a->c) -- function used to asign name a to element b
                   -> [b->a]    -- infinite list of functions to create a name for b
                   -> [a]       -- list of forbidden names (names already taken)

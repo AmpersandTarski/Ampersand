@@ -1,12 +1,8 @@
  module Prototype.InterfaceDef where
   import Adl
---  import Auxiliaries
   import Strings    (chain)
---  import Data.Plug
   import Data.Fspec
---  import Collection (rd,(>-))
---  import NormalForms(conjNF)
-  import Prototype.RelBinGenBasics({- phpShow,plugs, -} commentBlock, indentBlock)
+  import Prototype.RelBinGenBasics(isOne, commentBlock, indentBlock)
   import Version (versionbanner)
    
   interfaceDef :: Fspc -> [ObjectDef] -> String -> String
@@ -61,5 +57,5 @@
                             , "  "++objname++""
                             , "</A></LI>"
                             ]
-                          | o<-serviceObjects, let objname = name o
+                          | o<-serviceObjects, isOne o, let objname = name o
                           ]

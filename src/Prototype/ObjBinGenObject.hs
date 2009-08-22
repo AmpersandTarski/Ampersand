@@ -2,7 +2,7 @@
   module Prototype.ObjBinGenObject(objectServices) where
    import Char(toUpper)
    import Strings(chain)
-   import NormalForms (disjNF,conjNF)
+   import NormalForms (disjNF)
    import Auxiliaries (eqCl,sort')
    import Adl (source,target
               ,Concept(..),ObjectDef(..),Numbered(..),Declaration(..)
@@ -14,7 +14,7 @@
    import Collection (Collection(rd,(>-)))
    import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,plugs,selectExprBrac,indentBlock
      ,sqlRelPlugs,addToLast,isOne,phpIdentifier,sqlAttConcept,selectExpr,sqlConcept
-     ,sqlMorName,addSlashes,sqlMorSrc,commentBlock)
+     ,sqlMorName,addSlashes,sqlMorSrc,commentBlock,sqlPlugFields)
    import Data.Fspec
    import Data.Plug
    --import Debug.Trace
@@ -461,20 +461,10 @@
    plugAts' :: Plug -> ObjectDef           -- parent
                -> ObjectDef                -- object itself
                -> [((ObjectDef, SqlField), -- source
-                  (ObjectDef,SqlField))]   --target
+                  (ObjectDef,SqlField))]   -- target
    plugAts' plug p o = [ ((p,sf),(o,tf))
-                       | let e'=objctx o
-                       , not $ isIdent e'
-                       , sf<-[f|f<-fields plug,target (fldexpr f)==source e']
-                       , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
-                       ,  ((Sur `elem` multiplicities (fldexpr sf))
-                           &&(conjNF (F [fldexpr  sf,    e'])==fldexpr tf)
-                          )
-                       || ((Sur `elem` multiplicities (fldexpr tf))
-                           &&(conjNF (F [fldexpr  tf,flp e'])==fldexpr sf)
-                          )
-                       || (isIdent (fldexpr sf) && fldexpr tf ==     e')
-                       || (isIdent (fldexpr tf) && fldexpr sf == flp e')
+                       | not $ isIdent $ objctx o
+                       , (sf,tf)<-sqlPlugFields plug $ objctx o
                        ] ++ concat (map (plugAts' plug o) (objats o))
                        
    
