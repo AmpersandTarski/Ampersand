@@ -12,7 +12,7 @@
    import ShowADL
    import CC_aux ( fun )
    import Collection (Collection(rd,(>-)))
-   import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,plugs,selectExprBrac,indentBlock
+   import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,selectExprBrac,indentBlock
      ,sqlRelPlugs,addToLast,isOne,phpIdentifier,sqlAttConcept,selectExpr,sqlConcept
      ,sqlMorName,addSlashes,sqlMorSrc,commentBlock,sqlPlugFields)
    import Data.Fspec
@@ -344,7 +344,7 @@
       , "return false;"
       ]
     where
-      saveCodeLines = concat (map fst saveCodeElems)
+      saveCodeLines = concat $ map fst saveCodeElems
       saveCodeAtts  = rd $ concat $ map snd saveCodeElems
       saveCodeElems = [saveCodeElem object p | p<-objPlugs fSpec object]
       allAtts :: ObjectDef->[ObjectDef]
@@ -370,11 +370,15 @@
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                         ++"`='\".addslashes("++var++"['id']).\"'\",5);"])
       inscode is@(((a,s),_):_)
-       = ["$vals = ''; // list of ("++names++") to INSERT into "++name plug] ++
+       = [ "$vals = ''; // list of ("++names++") to INSERT into "++name plug
+         -- , "// fieldnames  : "++show (map (fldname . snd . snd) is)
+         -- , "// object atts : "++show (map (name . fst . snd) is)
+         -- , "// (obj,fldSrc): "++show (name a,fldname s)
+         ] ++
          nestTo a
                 (\var ->
                  [take (2*n) (repeat ' ') ++
-                  "foreach(" ++ var ++ "['"++(name o)++"'] as $"++(phpIdentifier $ name o)++"){"
+                  "foreach  (" ++ var ++ "['"++(name o)++"'] as $"++(phpIdentifier $ name o)++"){"
                  |(o,n)<-zip nunios [0..]] ++
                  indentBlock (2*length nunios)
                  [ "$vals .= \",(" ++
@@ -397,13 +401,13 @@
                  [take (2*n) (repeat ' ') ++ "}"|(_,n)<-reverse $ zip nunios [0..]]
                 ) ++
          ["if(strlen($vals)) DB_doquer(\"INSERT IGNORE INTO `"++name plug++"` ("
-           ++names ++") VALUES \".substr($vals,1),5);"
+           ++ names ++") VALUES \".substr($vals,1),5);"
          ]
-         where attrs  = ownAts ++ -- ook alle indentiteit-velden toevoegen (meestal de SQL-`id`)
+         where attrs  = ownAts ++ -- ook het identiteit-veld toevoegen (meestal de SQL-`id`)
                         [ (a, s) | s `notElem` (map snd ownAts)]
                names  = chain "," $ map (fldname.snd) attrs
                 -- nunios: Not UNI ObjectS: objects that are not Uni
-               nunios = [o|(o,_)<-(map snd is), not $ Uni `elem` multiplicities (objctx o)]
+               nunios = [o|(o,_)<-ownAts, a/=o, not $ Uni `elem` multiplicities (objctx o)]
                ownAts = map snd is
       updcode attrs = []
       nestTo :: ObjectDef -> (String->[String]) -> [String]
@@ -423,23 +427,7 @@
                                    then var++"['"++name a'++"']"
                                    else "$v"++show d
                       , ans<-nestToRecur attr fnc a' (mvar) (d+1)]
-      {-
-      // finally update
-      // update code is for attributes that are uni
-      // in our case there is gebied
-      foreach($me['Bewoners'] as $i0=>$v0){
-              // gebied is Uni, so UPDATE:
-        if(!isset($v0['naam'])){
-          DB_doquer("INSERT INTO inhabitant (area) VALUES ('".addslashes($v0['gebied'])."')",1);
-        }else
-        if(DB_doquer("UPDATE inhabitant SET area='".addslashes($v0['gebied'])."' WHERE person='".addslashes($v0['naam'])."'",1)==0){
-          DB_doquer("INSERT INTO inhabitant (area,person) VALUES ('".addslashes($v0['gebied'])."','".addslashes($v0['naam'])."')",1);
-        }
-      }
-      -}
-      -- occurencesForDelete = 
-      occurences = group $ rd $ concat (map (plugAts' plug object) (objats object))
-      group lsts = eqCl fst lsts
+      occurences = (eqCl fst) $ rd $ concat (map (plugAts plug object) (objats object))
       fullOccurences = fullGroups (fields plug) occurences
       largeOccurences = fullGroups requiredFields occurences
       fullGroups :: [SqlField] -> [[((ObjectDef,SqlField),(ObjectDef,SqlField))]]
@@ -452,25 +440,23 @@
                           , not $ isIdent $ fldexpr f
                           ]
       nonFullOccurences = occurences >- fullOccurences
-   {-
-   plugAts :: Plug -> ObjectDef -> [(ObjectDef,SqlField)]
-   plugAts plug o =   ( [(o,r) | s<-[objctx o],r<-fields plug,(fldexpr r == s) || (fldexpr r == flp s)]
-                         ++ concat (map (plugAts plug) (objats o))
-                       )
-   -}
-   plugAts' :: Plug -> ObjectDef           -- parent
-               -> ObjectDef                -- object itself
-               -> [((ObjectDef, SqlField), -- source
-                  (ObjectDef,SqlField))]   -- target
-   plugAts' plug p o = [ ((p,sf),(o,tf))
-                       | not $ isIdent $ objctx o
-                       , (sf,tf)<-sqlPlugFields plug $ objctx o
-                       ] ++ concat (map (plugAts' plug o) (objats o))
-                       
-   
+   plugAts :: Plug -> ObjectDef           -- parent (wrong values are allowed, see source)
+              -> ObjectDef                -- object itself
+              -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
+                 (ObjectDef,SqlField))]   -- target
+   plugAts plug p o = ( [ ((o,sf),(o,tf))
+                        | not $ isIdent $ objctx o
+                        , (sf,tf)<-sqlPlugFields plug (Tm$mIs$target$objctx o)
+                        ] ++
+                        [ ((p,sf),(o,tf))
+                        | not $ isIdent $ objctx o
+                        , (sf,tf)<-sqlPlugFields plug $ objctx o
+                        ]
+                      ) ++ concat (map (plugAts plug o) (objats o))
+                           
    objPlugs :: Fspc -> ObjectDef -> [Plug]
    objPlugs fSpec object
-     = rd ([p|(p,_,_)<-sqlRelPlugs fSpec (objctx object)] ++ concat [objPlugs fSpec a|a<-objats object])
+     = [plug|plug<-plugs fSpec,((_,_),(_,_))<-take 1 $ plugAts plug object object]
    
    isObjUni :: ObjectDef -> Bool
    isObjUni obj = Uni `elem` multiplicities (objctx obj)
@@ -615,9 +601,9 @@
                               , let r=if null$head l then tail l else l
                               , not (null r)
                               ]
-            joinOn ([t],jn) = [(if isOne' then "     , "      else "  LEFT JOIN ")++t
+            joinOn ([t],jn) = [ (if isOne' then "     , "      else "  LEFT JOIN ")++t
                               ++(if isOne' then "" else " ON "++jn)]
-            joinOn (ts,jn)  = [(if isOne' then "     , " else "  LEFT JOIN ")++(head ts)]
+            joinOn (ts,jn)  = [ (if isOne' then "     , " else "  LEFT JOIN ")++(head ts)]
                               ++indentBlock (if isOne' then 7 else 12) (tail ts)++(if isOne' then [] else (["    ON "++jn]))
             restLines (outAtt,n)
               = splitLineBreak (selectExprBrac fSpec (-4)

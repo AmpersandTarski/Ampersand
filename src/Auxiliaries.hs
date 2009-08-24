@@ -11,6 +11,7 @@ module Auxiliaries(
    , sord
    , eqCl 
    , eqClass
+   , naming
 --   , rd'
    , enumerate
    , sort'
@@ -28,7 +29,27 @@ module Auxiliaries(
    import Collection (Collection(isc,uni,(>-),rd))
    import Strings (chain)
 
-
+{- naming - a naming function
+  The objective is to name all items in a list uniquely
+  
+  The call below will label allItems as 1,2,3 etc, skipping 4:
+  naming nameIt [(\x->show n)|n<-[(1::Integer)..]] ["4"] allItems
+  
+  Naming one item is done by: nameIt unnamedItem someName -> namedItem
+  There should be a list of functions to name an item,
+      the resulting names should form an infinite set.
+-}
+   naming :: Eq a => (b->a->c) -- function used to asign name a to element b
+                  -> [b->a]    -- infinite list of functions to create a name for b
+                  -> [a]       -- list of forbidden names (names already taken)
+                  -> [b]       -- list of elements b that need a name
+                  -> [c]       -- result: named alements (matches [b])
+   naming _ _ _ [] = []
+   naming _ [] _ _ = error "(RelBinGenBasics) no naming functions given"
+   naming assignFunc as taken (l:ls)
+                   = head [assignFunc l (a l):naming assignFunc as (a l:taken) ls
+                          | a<-as, a l `notElem` taken]
+   
    rEncode :: String -> String
    rEncode str = charEncode False str
      where

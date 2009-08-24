@@ -26,8 +26,9 @@ import Typology                      (Inheritance)
 import Data.Plug
 import Rendering.ClassDiagram 
 data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
-                  , datasets :: [ObjectDef]       -- ^ This list contains the data sets that are computed from the basic ontology.
-                  , vplugs    :: [Plug]
+                  , datasets :: [ObjectDef]   -- ^ This list contains the data sets that are computed from the basic ontology.
+                  , vplugs   :: [Plug]        -- ^ all plugs defined in the ADL-script
+                  , plugs    :: [Plug]        -- ^ all plugs (defined and derived)
                   , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
                   , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
                   , services :: [Fservice]    -- ^ One for every service 

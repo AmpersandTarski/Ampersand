@@ -2,10 +2,13 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
  ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlMorName,sqlConcept,sqlAttConcept
  ,sqlPlugFields,sqlMorSrc,indentBlock,phpShow,isOne,addToLast
  ,pDebug,noCollide -- both are used in ObjBinGenConnectToDatabase
- ,plugs) where
+ ) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
-   import Adl
+   import Adl(Concept(..),Morphism(..),Expression(..),isIdent,mIs,flp,MorphicId(..),Morphical(..)
+             ,multiplicities,concs,cptS,Association(..),Morphic(..),Identified(..),ObjectDef(..)
+             ,v,ctx,notCp,isPos,isNeg,makeMph,Prop(..)
+             )
    import ShowADL(showADL)
    import CC_aux(fun)
    import NormalForms (conjNF,disjNF)
@@ -13,6 +16,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    import Data.Plug
    import List(isPrefixOf)
    import Collection ((>-),Collection(rd,uni))
+   import Auxiliaries (naming)
 
    pDebug :: Bool
    pDebug = True
@@ -30,8 +34,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
    -- als dit zo is, hoeven we alleen dat ene concept te tonen
+   isOneExpr :: Expression -> Bool
+   isOneExpr e' = (fun.multiplicities.conjNF.F) [v (source (e'),source (e')),e']
    isOne :: ObjectDef -> Bool
-   isOne o = (fun.multiplicities.conjNF.F) [v (source (ctx o),source (ctx o)),ctx o]
+   isOne o = isOneExpr$ctx o
 
    
    strReplace :: String -> String -> String -> String
@@ -385,28 +391,39 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                              , (sf,tf)<-sqlPlugFields plug e'
                              ]
    sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
-   sqlPlugFields plug e' = [ (sf,tf)
-                           | sf<-[f|f<-fields plug,target (fldexpr f)==source e']
-                           , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
-                           , (  (isTrue $disjNF$Fu [Cp e',F [flp$fldexpr sf,fldexpr tf]]) &&
-                                (isFalse$disjNF$Fi [Cp e',F [flp$fldexpr sf,fldexpr tf]])
-                             )
-                           {- the above should be enough.. but the relation algebra calculations
-                              are not good enough yet. In particular:
-                                isFalse ((I/\x);e /\ -e)
-                              and
-                                isTrue  ((I/\e;e~);e \/ -e)
-                              do not work (should yield True in both cases, but yield False)
-                              
-                              The code below fixes exactly these ommissions
-                           -}
-                           || (isProp (fldexpr sf) && (fldexpr tf == e')
-                              && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [e',flp e'] ]
-                                                   ,Cp$fldexpr sf]))
-                           || (isProp (fldexpr tf) && (fldexpr sf == flp e')
-                              && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [flp e',e'] ]
-                                                   ,Cp$fldexpr tf]))
-                           ]
+   sqlPlugFields plug e'
+                = [ (sf,tf)
+                  | sf<-[f|f<-fields plug,target (fldexpr f)==source e']
+                  , let se = fldexpr sf
+                  , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
+                  , let te = fldexpr tf
+                  , (  (isTrue $conjNF$conjNF$Fu [Cp e',F [flp se,te]])
+                    && (isFalse$conjNF$conjNF$Fi [Cp e',F [flp se,te]])
+                    )
+                  {- the above should be enough.. but the relation algebra calculations
+                     are not good enough yet. In particular:
+                       isFalse ((I/\x);e /\ -e)
+                     and
+                       isTrue  ((I/\e;e~);e \/ -e)
+                     do not work (these should yield True instead of False in both cases)
+                     
+                     The code below fixes exactly these ommissions
+                  -}
+                  || (isProp (se) && (te == e')
+                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [e',flp e'] ]
+                                          ,Cp$se]))
+                  || (isProp (te) && (se == flp e')
+                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [flp e',e'] ]
+                                          ,Cp$te]))
+                  {- found another exception:
+                       isFalse (I;I /\ -I)
+                     and
+                       isTrue  (I;I \/ -I)
+                     yield False, but should yield True
+                  -}
+                  || ((se == te) && isIdent e' && (Sur `elem` multiplicities se)
+                     )
+                  ]
 
    
    sqlExprSrc :: Fspc->Expression -> String
@@ -474,128 +491,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   where cs = [fldname f|f<-fields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         FS_id appname =  fsfsid fSpec
 
-{-
-Code below is meant for inside the Fspec structure.
-In particular the function plugs 
--}
-   plugs :: Fspc -> [Plug]
-   plugs spc = neededPlugs given spc ++ given
-     where given = vplugs spc
-   
-   neededPlugs :: [Plug] -> Fspc -> [Plug] -- given [Plug], what plugs are still needed to implement Fspc?
-   neededPlugs given spec
-    = theplugs
-      where
-       otherRels      = looseRels >- mors (given ++ complexPlugs)
-       looseRels      = map makeMph (vrels spec) >- mors given
-       looseConcs     = concs (vrels spec) -- todo: we can make this less, since V[conc] isn't allways asked for..
-                        >- concs (given ++ relPlugs ++ complexPlugs)
-       -- complexPlugs are the plugs that consist of multiple relations
-       complexPlugs   = [] 
-                        
-       relPlugs       = map mor2plug otherRels
-       theplugs       = uniqueNames forbiddenNames (complexPlugs ++ relPlugs ++ map conc2plug looseConcs)
-       -- using forbiddenNames is a ad hock trick to prevent syntax errors with tables.
-       -- the best thing to do would be quote all table names, eg: `right`.`from` (tblname,fldname)
-       -- we forbid these names anyways
-       forbiddenNames = ["in","avg","sum","count","not","and","or"
-                        ,"left","right","inner","join","on"
-                        ,"select","from","where","password","order","by","having","asc","desc"
-                        ,"update","delete","insert","replace","ignore","set","values"
-                        ] ++ (map name given)
-   
-   uniqueNames :: [String]->[Plug]->[Plug]
-   -- MySQL is case insensitive! (hence the lowerCase)
-   uniqueNames given plgs = naming (\x y->x{plname=y}) -- renaming function for plugs
-                                   (map ((.) lowerCase) -- functions that name a plug (lowercase!)
-                                        (name:n1:n2:[(\x->lowerCase(name x ++ show n))
-                                                    |n<-[(1::Integer)..]])
-                                   )
-                                   (map lowerCase given) -- the plug-names taken
-                                   (map uniqueFields plgs)
-     where n1 p = name p ++ plsource p
-           n2 p = name p ++ pltarget p
-           plsource p = name (source (fldexpr (head (fields (p)))))
-           pltarget p = name (target (fldexpr (last (fields (p)))))
-           uniqueFields plug = plug{fields = naming (\x y->x{fldname=y}) -- renaming function for fields
-                                             (map ((.) lowerCase) -- lowercase-yielding
-                                                  (fldname:[(\x->fldname x ++ show n)
-                                                           |n<-[(1::Integer)..]])
-                                             )
-                                             [] -- no field-names are taken
-                                             (fields plug)
-                                   }
    lowerCase :: String->String
    lowerCase = map toLower -- from Char
 
 
-{- naming - a naming function
-  The objective is to name all items in a list uniquely
-  
-  The call below will label allItems as 1,2,3 etc, skipping 4:
-  naming nameIt [(\x->show n)|n<-[(1::Integer)..]] ["4"] allItems
-  
-  Naming one item is done by: nameIt unnamedItem someName -> namedItem
-  There should be a list of functions to name an item,
-      the resulting names should form an infinite set.
--}
-   naming :: Eq a => (b->a->c) -- function used to asign name a to element b
-                  -> [b->a]    -- infinite list of functions to create a name for b
-                  -> [a]       -- list of forbidden names (names already taken)
-                  -> [b]       -- list of elements b that need a name
-                  -> [c]       -- result: named alements (matches [b])
-   naming _ _ _ [] = []
-   naming _ [] _ _ = error "(RelBinGenBasics) no naming functions given"
-   naming assignFunc as taken (l:ls)
-                   = head [assignFunc l (a l):naming assignFunc as (a l:taken) ls
-                          | a<-as, a l `notElem` taken]
-   
---- uniqueNames p:ps | ((name p++(name source p)) `elem` (names ps)) = p:(uniqueNames ps)
-   
-   conc2plug :: Concept -> Plug
-   conc2plug c = plugsql (name c) [field (name c) (Tm (mIs c)) Nothing False True]
-   
-   mor2plug :: Morphism -> Plug
-   mor2plug  m'
-    = {- If the morphism is UNI, INJ and SUR
-       we can identify the target by its source alone
-       we shoud, however do this afterwards, transforming ALL plugs
-      if ( isUni && isInj && isSur && fldtyp (target m) == SQLId ) || (isIdent m)
-      then plugsql (name (source m)) [field (name (source m)) (Tm (mIs (source m))) Nothing False True
-                                     ,field (name (target m)) (Tm m) (Just SQLBool) (not isTot) True]
-      else -}
-      if isInj && not isUni then mor2plug (flp m')
-      else if isUni || isTot
-      then plugsql (name m') [field (name (source m')) (Tm (mIs (source m'))) Nothing False isUni
-                            ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]
-      else if isInj || isSur then mor2plug (flp m')
-      else plugsql (name m') [field (name (source m')) (Fi {es=[Tm (mIs (source m')),F {es=[Tm m',flp (Tm m')]}]}
-                                                     )      Nothing False False
-                            ,field (name (target m')) (Tm m') Nothing False False]
-      where
-        mults = multiplicities m'
-        isTot = Tot `elem` mults
-        isUni = Uni `elem` mults
-        isSur = Sur `elem` mults
-        isInj = Inj `elem` mults
-   
-   plugsql :: String -> [SqlField] -> Plug
-   plugsql nm fld = PlugSql {plname=nm,database=CurrentDb,fields=fld}
-   field :: String
-         -> Expression
-         -> Maybe SqlType
-         -> Bool
-         -> Bool
-         -> SqlField
-   field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq}
-   field nm expr (Just tp) nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=tp,fldnull=nul,flduniq=uniq}
 
-   fldtyp :: (Identified a) => a -> SqlType
-   fldtyp nm = case name nm of { "BLOB"   -> SQLBlob;
-                                 "PASS"   -> SQLPass;
-                                 "STRING" -> SQLVarchar 255;
-                                 _        -> SQLVarchar 255
-                               }
+--- uniqueNames p:ps | ((name p++(name source p)) `elem` (names ps)) = p:(uniqueNames ps)
    
    addToLast :: [a] -> [[a]] -> [[a]]
    addToLast _ [] = error "(RelBinGenBasics) addToLast: empty list"

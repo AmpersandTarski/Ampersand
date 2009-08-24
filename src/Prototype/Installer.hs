@@ -5,7 +5,7 @@
   import Data.Fspec
   import Collection (rd)
 --  import NormalForms(conjNF)
-  import Prototype.RelBinGenBasics(phpShow,plugs,indentBlock)
+  import Prototype.RelBinGenBasics(phpShow,indentBlock)
   
   installer :: Fspc -> String -> String
   installer fSpec dbName = "<?php\n  " ++ chain "\n  "
@@ -58,8 +58,12 @@
            = [ "/* Plug "++plname plug++", fields: "++(show $ map fldexpr $fields plug)++" */"
              , "mysql_query(\"CREATE TABLE `"++plname plug++"`"]
              ++ indentBlock 17
-                    ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ "" ++ nul
-                      | (f,comma)<-zip (fields plug) ('(':repeat ','), let nul = if fldnull f then "" else " NOT NULL"
+                    ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ nul
+                      | (f,comma)<-zip (fields plug) ('(':repeat ',')
+                      , let nul = if fldnull f then "" else " NOT NULL"
+                      , let autoIncr = if (fldtype f==SQLId) && not (fldnull f)
+                                          && (flduniq f) && isIdent (fldexpr f)
+                                       then " AUTO_INCREMENT" else ""
                       ] ++
                       [", UNIQUE KEY (`"++fldname key++"`)"
                       | key <- fields plug, flduniq key, not (fldnull key)]

@@ -12,21 +12,38 @@ zo geven we straks PHPPLUG's aan:
 -}
 
 SQLPLUG UserTbl : I[User]
- = [name{"SQLTYPE=Text"} : name
+ = [Id{"SQLTYPE=Id"} : I
+   ,name{"SQLTYPE=Text"} : name
    ,password{"SQLTYPE=Password"} : password
-   ,id{"SQLTYPE=Id"} : I
+   ,teacher{"SQLTYPE=Id"} : teacher
+   ]
+SQLPLUG RightTbl : I[Operation]
+ = [Id{"SQLTYPE=Id"} : I
+   ,name{"SQLTYPE=Text"} : name
+   ]
+SQLPLUG ActieTbl : I[Actie]
+ = [Id{"SQLTYPE=Id"} : I
+   ,object{"SQLTYPE=Id"} : object
+   ,type{"SQLTYPE=Id"} : right
+   ]
+SQLPLUG BestandTbl : I[Bestand]
+ = [Id{"SQLTYPE=Id"} : I
+   ,owner{"SQLTYPE=Id"} : owner
+   ,path{"SQLTYPE=Text"} : path
    ]
 
 PATTERN Meterkast
 
-name      :: User->Text.
+name      :: User->Text [INJ].
 name      :: Operation->Text.
+path      :: Bestand->Text.
 password  :: User->Password.
 owner     :: Bestand -> User PRAGMA "the owner of " " is ".
 teacher   :: User * User [UNI] PRAGMA "the teacher of " " is ".
 right     :: User * Operation PRAGMA "" " may exercise ".
 object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
-user      :: Actie -> User PRAGMA "" " is being executed by user ".
+-- user      :: Actie -> User PRAGMA "" " is being executed by user ".
+-- user=object;owner
 right     :: Actie -> Operation PRAGMA "" " is being executed by activating ".
 
 ENDPATTERN
@@ -35,24 +52,25 @@ ENDPATTERN
   SERVICE Users : I[ONE]
    = [ Users : V[ONE*User]
         = [ nr      : I[User]
-          , user    : name
+          , name    : name
           , pwd     : password
           , rechten : right
+          , files   : owner~
           ]
      ]
 
   SERVICE User : I[User]
    = [ naam    : name
      , pwd     : password
-     , files   : owner~
      ]
 
   SERVICE Userbeheer : I[User]
-   = [ naam      : name
-     , pwd       : password
+   = [ credentials : I = [ naam      : name
+                         , pwd       : password
+                         , teacher   : teacher
+                         ]
      , bestanden : owner~
      , studenten : teacher~
-     , docent    : teacher
      , rechten   : right
      ]
 
@@ -67,7 +85,7 @@ ENDPATTERN
   SERVICE Docenten : I[ONE]
    = [ Docenten : V[ONE*User];(teacher~;teacher /\ I)
         = [ nr               : I[User]
-          , user             : name
+          , name             : name
           ]
      ]
 
@@ -80,29 +98,18 @@ ENDPATTERN
           , bestanden : owner~
           ]
      ]
-
+  
   SERVICE Bestand : I[Bestand]
    = [ eigenaar : owner
-        = [ naam : name ]
      , acties   : object[Actie*Bestand]~
         = [ nr   : I[Actie]
-          , user : user
           , type : right
           ]
      ]
 
   SERVICE Actie : I[Actie]
    = [ file     : object
-     , user     : user
      , operatie : right
-     ]
-
-  SERVICE Acties : I[ONE]
-   = [ Acties : V[ONE*Actie]
-       = [ file     : object
-         , user     : user
-         , operatie : right
-         ]
      ]
 
 

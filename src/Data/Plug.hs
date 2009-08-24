@@ -3,6 +3,7 @@ module Data.Plug (Plug(..)
                  ,SqlDb(..)
                  ,SqlType(..)
                  ,showSQL
+                 ,field
                  ,PhpValue(..)
                  ,PhpType(..)
                  ,PhpArgs
@@ -95,7 +96,14 @@ where
   dbHost :: SqlDb -> Maybe DbHost
   dbHost (Db host _)    = Just host
   dbHost _              = Nothing
-  
+  field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq}
+  field nm expr (Just tp) nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=tp,fldnull=nul,flduniq=uniq}
+  fldtyp nm = case name nm of { "BLOB"   -> SQLBlob;
+                                "PASS"   -> SQLPass;
+                                "STRING" -> SQLVarchar 255;
+                                _        -> SQLVarchar 255
+                              }
+
   instance Identified Plug where
     name p = plname p
     typ  p = case p of

@@ -1,7 +1,7 @@
   {-# OPTIONS_GHC -Wall #-}
   module ADL2Fspec (makeFspec)
   where
-   import Collection     ( Collection (rd) )
+   import Collection     ( Collection (rd,(>-)) )
    import Strings        (firstCaps)
    import Adl            (Context(..)
                          ,ObjectDef(..)
@@ -17,13 +17,16 @@
                          ,Language(..)
                          ,FilePos(..)
                          ,Association(..),Morphic(..),Morphical(..)
+                         ,mIs,makeMph
                          )
    import Dataset
+   import Auxiliaries    (naming)
    import FspecDef
    import PredLogic
    import Languages
    import NormalForms(disjNF)
    import Data.Plug
+   import Char(toLower)
    import Rendering.ClassDiagram
  -- The story:
  -- A number of datasets for this context is identified.
@@ -38,17 +41,69 @@
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Monastir interface) is already available.
-            , vplugs   = vsqlplugs ++ vphpplugs
+            , vplugs   = definedplugs
+            , plugs    = allplugs
             , serviceS = attributes context
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
             , vrules   = rules context
-            , vrels    = [makeFdecl d| d <-declarations context]
+            , vrels    = allrels
             , fsisa    = ctxisa context
             , vpatterns= patterns context
             , classdiagrams = [cdAnalysis context True pat | pat<-patterns context]
             , themes = themes'
             } where
+        definedplugs = vsqlplugs ++ vphpplugs
+        allrels = [makeFdecl d| d <-declarations context]
+        allplugs = definedplugs ++ uniqueNames forbiddenNames (relPlugs ++ map conc2plug looseConcs)
+          where
+           otherRels      = looseRels >- mors definedplugs
+           looseRels      = map makeMph (allrels) >- mors definedplugs
+           looseConcs     = concs (allrels) -- todo: we can make this less, since V[conc] isn't allways asked for..
+                            >- concs (definedplugs ++ relPlugs)
+           relPlugs       = map mor2plug otherRels
+           forbiddenNames = map name definedplugs
+           conc2plug :: Concept -> Plug
+           conc2plug c = plugsql (name c) [field (name c) (Tm (mIs c)) Nothing False True]
+           mor2plug :: Morphism -> Plug
+           mor2plug  m'
+            = if isInj && not isUni then mor2plug (flp m')
+              else if isUni || isTot
+              then plugsql (name m') [field (name (source m')) (Tm (mIs (source m'))) Nothing False isUni
+                                    ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]
+              else if isInj || isSur then mor2plug (flp m')
+              else plugsql (name m') [field (name (source m')) (Fi {es=[Tm (mIs (source m')),F {es=[Tm m',flp (Tm m')]}]}
+                                                             )      Nothing False False
+                                    ,field (name (target m')) (Tm m') Nothing False False]
+              where
+                mults = multiplicities m'
+                isTot = Tot `elem` mults
+                isUni = Uni `elem` mults
+                isSur = Sur `elem` mults
+                isInj = Inj `elem` mults
+           plugsql nm fld = PlugSql {plname=nm,database=CurrentDb,fields=fld}
+   
+           uniqueNames :: [String]->[Plug]->[Plug]
+           -- MySQL is case insensitive! (hence the lowerCase)
+           uniqueNames given plgs = naming (\x y->x{plname=y}) -- renaming function for plugs
+                                           (map ((.) lowerCase) -- functions that name a plug (lowercase!)
+                                                (name:n1:n2:[(\x->lowerCase(name x ++ show n))
+                                                            |n<-[(1::Integer)..]])
+                                           )
+                                           (map lowerCase given) -- the plug-names taken
+                                           (map uniqueFields plgs)
+             where n1 p = name p ++ plsource p
+                   n2 p = name p ++ pltarget p
+                   plsource p = name (source (fldexpr (head (fields (p)))))
+                   pltarget p = name (target (fldexpr (last (fields (p)))))
+                   uniqueFields plug = plug{fields = naming (\x y->x{fldname=y}) -- renaming function for fields
+                                                     (map ((.) lowerCase) -- lowercase-yielding
+                                                          (fldname:[(\x->fldname x ++ show n)
+                                                                   |n<-[(1::Integer)..]])
+                                                     )
+                                                     [] -- no field-names are taken
+                                                     (fields plug)
+                                           }
         vsqlplugs = map makeSqlPlug (ctxsql context)
         vphpplugs = map makePhpPlug (ctxphp context)
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
@@ -176,21 +231,26 @@
         orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
   
    makeSqlPlug :: ObjectDef -> Plug
-   makeSqlPlug plug = PlugSql{fields=makeFields Nothing plug,database=CurrentDb,plname=name plug}
+   makeSqlPlug plug = PlugSql{fields=makeFields plug,database=CurrentDb,plname=name plug}
       where
-      makeFields :: Maybe Expression -> ObjectDef -> [SqlField]
-      makeFields mbexpr obj = 
-          (Fld{fldname=name obj,fldexpr=fexpr,fldtype=sqltp obj,fldnull=False,flduniq=False})
-          :[f | objat<-objats obj, f<-makeFields (Just fexpr) objat]
-          where fexpr=case mbexpr of 
-                          Nothing -> objctx obj
-                          Just expr -> F [expr,objctx obj]
+      makeFields :: ObjectDef -> [SqlField]
+      makeFields obj =
+        [Fld{fldname=name att
+            ,fldexpr=objctx att
+            ,fldtype=sqltp att
+            ,fldnull=not (Tot `elem` multiplicities (objctx att))
+            ,flduniq=if null [0::Int|a' <- objats obj
+                             ,Uni `notElem` multiplicities (disjNF$F[flp$objctx att,objctx a'])]
+                     then True else False
+            }
+        | att<-objats obj]
       sqltp :: ObjectDef -> SqlType
       sqltp obj = head $ [makeSqltype sqltp' | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                          ++[SQLVarchar 255]
       makeSqltype :: String -> SqlType
       makeSqltype str = case str of
           ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
+          ('P':'a':'s':'s':_) -> SQLPass
           ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
           ('B':'l':'o':'b':_) -> SQLBlob
           ('S':'i':'n':'g':'l':'e':_) -> SQLSingle
@@ -285,6 +345,9 @@
 
    makeFSid1 :: String -> FSid
    makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
+
+   lowerCase :: String->String
+   lowerCase = map toLower -- from Char
 
 --   fst3 :: (a,b,c) -> a
 --   fst3 (a,_,_) = a
