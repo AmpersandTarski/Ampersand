@@ -236,9 +236,9 @@
        ["function "++myName++"(" ++ (if isOne o then "" else "$id=null, ")
                                   ++ (chain ", " [phpVar (name a)++"=null" | a<-attributes o])
                                   ++"){"
-       ]++["    $this->_id=$id;" | not (isOne o)]
-       ++ ["    $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
-       ++ concat (take 1 [  [ "    if(!isset("++phpVar (name a')++")"++(if isOne o then "" else "&& isset($id)")++"){"
+       ]++["  $this->_id=$id;" | not (isOne o)]
+       ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
+       ++ concat (take 1 [  [ "  if(!isset("++phpVar (name a')++")"++(if isOne o then "" else "&& isset($id)")++"){"
                             , "    // get a "++(myName)++" based on its identifier"
                             , "    // this function will fill the attributes"
                             ] ++
@@ -254,9 +254,9 @@
                                                          )
                                                          o
                                                )
-                            ++["  $this->set_"++phpIdentifier (name a)++"($me['"++(name a)++"']);"
+                            ++["    $this->set_"++phpIdentifier (name a)++"($me['"++(name a)++"']);"
                               |a<-attributes o]
-                            ++["}"]
+                            ++["  }"]
                          | a' <- attributes o]
                  ) ++
        ["}"
@@ -377,13 +377,23 @@
          ] ++
          nestTo a
                 (\var ->
-                 [take (2*n) (repeat ' ') ++
-                  "foreach  (" ++ var ++ "['"++(name o)++"'] as $"++(phpIdentifier $ name o)++"){"
-                 |(o,n)<-zip nunios [0..]] ++
+                 concat [indentBlock (2*n)
+                                     ( ( if not (fldnull f)
+                                         then id
+                                         else (:)("if(count("++var++"['"++(name o)++"'])==0) "
+                                                  ++var++"['"++(name o)++"'] = [null];")
+                                       )
+                                       ["foreach  (" ++ var ++ "['"++(name o)++"'] as $"
+                                                       ++(phpIdentifier $ name o)++"){"
+                                       ]
+                                     )
+                        |((o,f),n)<-zip nunios [0..]] ++
                  indentBlock (2*length nunios)
                  [ "$vals .= \",(" ++
                    chain ", "
-                   [ "'\".addslashes("++phpvar++").\"'"
+                   [ if Tot `elem` multiplicities (objctx o)
+                     then "'\".addslashes("++phpvar++").\"'"
+                     else "\".(isset("++phpvar++")?\"'\".addslashes("++phpvar++").\"'\":\"NULL\").\""
                    | (o,_)<-attrs
                    , let phpvar = if a == o
                                   then var++"['id']"
@@ -407,7 +417,7 @@
                         [ (a, s) | s `notElem` (map snd ownAts)]
                names  = chain "," $ map (fldname.snd) attrs
                 -- nunios: Not UNI ObjectS: objects that are not Uni
-               nunios = [o|(o,_)<-ownAts, a/=o, not $ Uni `elem` multiplicities (objctx o)]
+               nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ Uni `elem` multiplicities (objctx o)]
                ownAts = map snd is
       updcode attrs = []
       nestTo :: ObjectDef -> (String->[String]) -> [String]

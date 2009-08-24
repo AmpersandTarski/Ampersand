@@ -78,7 +78,7 @@
                                  ) ++
                 [ "}"]
            else if Tot `notElem` multiplicities (objctx a)
-                then ["if(isset($r['"++rqvar++"'])){"]
+                then ["if(@$r['"++rqvar++"']!=''){"]
                      ++ indentBlock 2 (phpList2ArrayUni depth var rqvar a) ++
                      ["}else "++var++"=null;"]
                 else (phpList2ArrayUni depth var rqvar a)

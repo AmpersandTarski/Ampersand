@@ -33,29 +33,29 @@ SQLPLUG BestandTbl : I[Bestand]
    ]
 
 PATTERN Meterkast
-
-name      :: User->Text [INJ].
-name      :: Operation->Text.
-path      :: Bestand->Text.
-password  :: User->Password.
-owner     :: Bestand -> User PRAGMA "the owner of " " is ".
-teacher   :: User * User [UNI] PRAGMA "the teacher of " " is ".
-right     :: User * Operation PRAGMA "" " may exercise ".
-object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
--- user      :: Actie -> User PRAGMA "" " is being executed by user ".
--- user=object;owner
-right     :: Actie -> Operation PRAGMA "" " is being executed by activating ".
-
+    
+    name      :: User->Text [INJ].
+    name      :: Operation->Text [INJ].
+    path      :: Bestand->Text [INJ].
+    password  :: User->Password.
+    owner     :: Bestand -> User PRAGMA "the owner of " " is ".
+    teacher   :: User * User [UNI,ASY] PRAGMA "the teacher of " " is ".
+    right     :: User * Operation PRAGMA "" " may exercise ".
+    object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
+    -- user      :: Actie -> User PRAGMA "" " is being executed by user ".
+    -- user=object;owner
+    right     :: Actie -> Operation PRAGMA "" " is being executed by activating ".
+    
+    teacher;teacher = -V EXPLANATION "No pupil may teach, and no teacher may be tought."
+    
 ENDPATTERN
 
-
+  
   SERVICE Users : I[ONE]
    = [ Users : V[ONE*User]
-        = [ nr      : I[User]
+        = [ nr {"TEST"}     : I[User]
           , name    : name
           , pwd     : password
-          , rechten : right
-          , files   : owner~
           ]
      ]
 
@@ -65,28 +65,18 @@ ENDPATTERN
      ]
 
   SERVICE Userbeheer : I[User]
-   = [ credentials : I = [ naam      : name
-                         , pwd       : password
-                         , teacher   : teacher
-                         ]
+   = [ naam      : name
+     , pwd       : password
+     , teacher   : teacher
      , bestanden : owner~
      , studenten : teacher~
      , rechten   : right
      ]
 
-
   SERVICE Student : teacher;teacher~ /\ I
    = [ naam    : name
-     , docentNaam  : teacher;name
+     , docent  : teacher
      , files   : owner~
-     ]
-
--- De volgende definitie wordt incorrect vertaald:
-  SERVICE Docenten : I[ONE]
-   = [ Docenten : V[ONE*User];(teacher~;teacher /\ I)
-        = [ nr               : I[User]
-          , name             : name
-          ]
      ]
 
 -- SERVICE Docent SERVICES Docent EDITS I[User], I[Right]
@@ -94,23 +84,21 @@ ENDPATTERN
    = [ naam      : name
      , bestanden : owner~
      , studenten : teacher~
-        = [ naam      : name
-          , bestanden : owner~
-          ]
      ]
   
   SERVICE Bestand : I[Bestand]
    = [ eigenaar : owner
+     , path     : path
      , acties   : object[Actie*Bestand]~
-        = [ nr   : I[Actie]
-          , type : right
-          ]
      ]
 
   SERVICE Actie : I[Actie]
    = [ file     : object
      , operatie : right
      ]
-
-
+  
+  SERVICE Operatie : I[Operation]
+   = [ naam : name
+     ]
+  
 ENDCONTEXT
