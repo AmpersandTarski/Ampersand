@@ -17,7 +17,7 @@
      ,sqlMorName,addSlashes,sqlMorSrc,commentBlock,sqlPlugFields)
    import Data.Fspec
    import Data.Plug
-   --import Debug.Trace
+   -- import Debug.Trace
    import Version (versionbanner)
 
 
@@ -618,8 +618,26 @@
                                          ++ concat (map joinOn (tail tbls)) ++
                                       (if isOne' then [] else [" WHERE " ++ snd (head tbls)])
                                 )
-      where comboGroups::[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
-            comboGroups      = reduce (sort' (length) (eqCl fst combos))
+      where comboGroups'::[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
+            comboGroups'     = reduce (sort' (length) (eqCl fst combos))
+            comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
+            keyGroups   = take 1 ( [gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s] ++ 
+                                   [((p,(objIn,s)),[(objIn,t)])
+                                   | (p,s,t)<-sqlRelPlugs fSpec (Tm$mIs$target (objctx objIn))]
+                                   -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
+                                   -- dan hebben we dus geen keyGroup, maar dat geeft niet voor ONE
+                                   -- in andere gevallen geeft dat wel.
+                                   -- reden: het eerste item in de SELECT expressie wordt in de
+                                   -- FROM neergezet ipv in de LEFT JOIN, met een WHERE daarbij
+                                   -- het gevolg is dat zo de mogelijkheid ontstaat dat er geen
+                                   -- resultaten teruggegeven worden, terwijl een rij met NULL
+                                   -- verwacht werd. Dit levert een PHP-runtime fout, omdat PHP
+                                   -- tenminste 1 rij verwacht. (bovendien is het semantisch fout)
+                                   -- Voor debuggen onderstaande trace regel uitcommentaren
+                                   -- en Debug.trace aan de imports toevoegen
+                                   -- ++ trace ("Geen keyGroup voor "++name objOut) []
+                                   ++ if isOne' then [] else error ("doSqlGet in ObjBinGenObject: Cannot create keyGroups")
+                                 )
             reduce :: [[((Plug,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
                       -> [((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
             reduce [] = []
@@ -649,7 +667,7 @@
                                   ] [(1::Integer)..]
             fieldNames      = [ "`"++tableReName p++"`.`"++(fldname f)++"`"
                                 ++(if fldname f == name a then [] else " AS `"++name a++"`")
-                              | ((p,_),as)<-comboGroups,(a,f)<-as
+                              | ((p,_),as)<-comboGroups',(a,f)<-as
                               ] ++
                               [if isIdent (objctx a)
                                then "'\".addslashes("++name (objIn)++").\"'"++" AS `"++name a++"`"

@@ -87,13 +87,13 @@
                           indentBlock (8 + length var) (tail (phpList2ArrayVal var rqvar a))
                          ) ++
            concat
-           [ phpList2Array depth (var++"['"++phpIdentifier (name a')++"']") (rqvar++"."++show n) a'
+           [ phpList2Array depth (var++"['"++name a'++"']") (rqvar++"."++show n) a'
            | (a',n)<-zip (objats a) [(0::Integer)..],Uni `notElem` multiplicities (objctx a')]
         phpList2ArrayVal :: String->String->ObjectDef->[String]
         phpList2ArrayVal var rqvar a
          = if null (objats a) then ["@$r['"++rqvar++"']"]
            else [ "array( 'id' => @$r['"++rqvar'++"']"] ++ 
-                [ ", '" ++ phpIdentifier (name a') ++ "' => "
+                [ ", '" ++ name a' ++ "' => "
                   ++ concat (phpList2ArrayVal var (rqvar++'.':show n) a')
                 | (a',n)<-zip (objats a) [(0::Integer)..], Uni `elem` multiplicities (objctx a')] ++
                 [ ")"]

@@ -41,19 +41,9 @@ PATTERN OUNLarch
 ENDPATTERN
 
   SERVICE signalen : I[ONE]
-   = [ "Systemen zonder eigenaar1" : V[ONE*Systeem]--;(-(eigenaar[Systeem*Orgaan];eigenaar[Systeem*Orgaan]~) /\ I)
-     , "Systemen zonder eigenaar2" : V[ONE*Systeem];eigenaar[Systeem*Orgaan]
-     , "Systemen zonder eigenaar3" : (V[ONE*Orgaan];eigenaar[Systeem*Orgaan]~)
-     , "Systemen zonder eigenaar4" : V[ONE*Orgaan]!-eigenaar[Systeem*Orgaan]~
-     , "Gegevensverzamelingen zonder systeem" : -(-V[ONE*Systeem];in[Gegevensverzameling * Systeem]~)
-     , "Diensten zonder proces" : -(-V[ONE*Proces];in[Dienst*Proces]~)
-     , "Diensten zonder omschrijving" : -(-V[ONE*Dienstomschrijving];omschrijving[Dienst*Dienstomschrijving]~)
-     , "Processen zonder naam" : -(-V[ONE*Procesnaam];naam[Proces * Procesnaam]~)
-     , "Diensten die niet door een systeem worden ondersteund" :
-         -(-V[ONE*Systeem];systeem[Dienst*Systeem]~)
+   = [ "Systemen zonder eigenaar" : V[ONE*Systeem];(-(eigenaar[Systeem*Orgaan];eigenaar[Systeem*Orgaan]~) /\ I[Systeem])
      , "Dubbel gebruikte dienstnamen" : V[ONE*Dienstnaam];(naam~;naam /\ -I)
      , "Concept dat in meerdere gegevensverzamelingen centraal staat" : V[ONE*Concept];(concept~;concept /\ -I)
-     , "Gegevensverzamelingen zonder concept" : -(-V[ONE*Concept];concept[Gegevensverzameling * Concept]~)
      ]
 
   SERVICE Gegevensverzameling : I[Gegevensverzameling]
