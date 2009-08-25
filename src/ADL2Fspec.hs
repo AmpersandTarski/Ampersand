@@ -17,7 +17,7 @@
                          ,Language(..)
                          ,FilePos(..)
                          ,Association(..),Morphic(..),Morphical(..)
-                         ,mIs,makeMph
+                         ,mIs,makeMph,isIdent
                          )
    import Dataset
    import Auxiliaries    (naming)
@@ -81,7 +81,7 @@
                 isUni = Uni `elem` mults
                 isSur = Sur `elem` mults
                 isInj = Inj `elem` mults
-           plugsql nm fld = PlugSql {plname=nm,database=CurrentDb,fields=fld}
+           plugsql nm fld = PlugSql {plname=nm,fields=fld}
    
            uniqueNames :: [String]->[Plug]->[Plug]
            -- MySQL is case insensitive! (hence the lowerCase)
@@ -203,7 +203,8 @@
    This is used for function point analysis (in which data sets are counted).
    It can also be used in code generate towards SQL, allowing the code generator to
    implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
-   Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.) -}
+   Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.)
+-}
         datasets'  = makeDatasets context
         makeFdecl d 
          = case d of
@@ -229,21 +230,28 @@
                            ++ "The theme must involve a concept."
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
         orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
-  
+
    makeSqlPlug :: ObjectDef -> Plug
-   makeSqlPlug plug = PlugSql{fields=makeFields plug,database=CurrentDb,plname=name plug}
+   makeSqlPlug plug = PlugSql{fields=makeFields plug,plname=name plug}
       where
       makeFields :: ObjectDef -> [SqlField]
       makeFields obj =
         [Fld{fldname=name att
             ,fldexpr=objctx att
             ,fldtype=sqltp att
-            ,fldnull=not (Tot `elem` multiplicities (objctx att))
-            ,flduniq=if null [0::Int|a' <- objats obj
-                             ,Uni `notElem` multiplicities (disjNF$F[flp$objctx att,objctx a'])]
-                     then True else False
+            ,fldnull= nul att
+            ,flduniq= uniq att
+            ,fldauto= att `elem` autoFields
             }
-        | att<-objats obj]
+        | att<-objats obj
+        ]
+        where nul  att = not (Tot `elem` multiplicities (objctx att))
+              uniq att = if null [0::Int|a' <- objats obj
+                                 ,Uni `notElem` multiplicities (disjNF$F[flp$objctx att,objctx a'])]
+                         then True else False
+              autoFields = take 1 [a'| a'<-objats obj
+                                     , sqltp a'==SQLId, not $ nul a'
+                                     , uniq a', isIdent $ objctx a' ]
       sqltp :: ObjectDef -> SqlType
       sqltp obj = head $ [makeSqltype sqltp' | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                          ++[SQLVarchar 255]

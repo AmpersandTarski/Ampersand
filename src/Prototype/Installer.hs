@@ -61,8 +61,7 @@
                     ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ nul
                       | (f,comma)<-zip (fields plug) ('(':repeat ',')
                       , let nul = if fldnull f then "" else " NOT NULL"
-                      , let autoIncr = if (fldtype f==SQLId) && not (fldnull f)
-                                          && (flduniq f) && isIdent (fldexpr f)
+                      , let autoIncr = if fldauto f
                                        then " AUTO_INCREMENT" else ""
                       ] ++
                       [", UNIQUE KEY (`"++fldname key++"`)"

@@ -357,69 +357,134 @@
     = ( -- only delete if we have ALL information needed for refill, so use fullOccurences
         -- if we delete more, the plug would violate its transaction boundary
           concat (map delcode fullOccurences)
+       ++ concat (map delUpdt [(o,s)|(((o,s),_):_)<-occurences >- fullOccurences,fldnull s])
         -- only insert if every mandatory field has a value, so use largeOccurences
-       ++ concat (map inscode largeOccurences)
-        -- I don't really know when to update
-        -- I do know that if delete and insert took place, it is not needed to update
-       ++ concat (map updcode nonFullOccurences)
-      , -- function should send back all ObjectDef's that have been saved somewhere
-       rd $ map (fst . snd) (concat largeOccurences))
+       ++ concat (map inscode occurences)
+      , -- function should send back all ObjectDef's that have been saved everywhere properly
+       rd $ map (fst . snd) (concat occurences))
     where
-      delcode (((a,f),_):_)
+      delUpdt (o,s)
+       = nestTo o (\var -> [ "DB_doquer(\"UPDATE `"++name plug++"` SET `"++fldname s++
+                             "`=NULL WHERE `"++fldname s++
+                             "`='\".addslashes("++var++"['id']).\"'\",5);"]
+                  )
+      delcode [] = [] -- there are probably no empty groups, and we cannot delete them anyways
+      delcode (((a,f),_):_) -- this code is a lot like updel
        = nestTo a
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                         ++"`='\".addslashes("++var++"['id']).\"'\",5);"])
+      inscode [] = [] -- there are probably no empty groups, and we cannot modify them anyways
       inscode is@(((a,s),_):_)
-       = [ "$vals = ''; // list of ("++names++") to INSERT into "++name plug
-         -- , "// fieldnames  : "++show (map (fldname . snd . snd) is)
-         -- , "// object atts : "++show (map (name . fst . snd) is)
-         -- , "// (obj,fldSrc): "++show (name a,fldname s)
-         ] ++
+       = if not (isLargeOccurance is) && null keys  -- cannot generate code...
+         then ["// no code for "++name a++","++fldname s++" in "++name plug]
+         else
          nestTo a
-                (\var ->
-                 concat [indentBlock (2*n)
-                                     ( ( if not (fldnull f)
-                                         then id
-                                         else (:)("if(count("++var++"['"++(name o)++"'])==0) "
-                                                  ++var++"['"++(name o)++"'] = [null];")
-                                       )
-                                       ["foreach  (" ++ var ++ "['"++(name o)++"'] as $"
-                                                       ++(phpIdentifier $ name o)++"){"
-                                       ]
-                                     )
-                        |((o,f),n)<-zip nunios [0..]] ++
-                 indentBlock (2*length nunios)
-                 [ "$vals .= \",(" ++
-                   chain ", "
-                   [ if Tot `elem` multiplicities (objctx o)
-                     then "'\".addslashes("++phpvar++").\"'"
-                     else "\".(isset("++phpvar++")?\"'\".addslashes("++phpvar++").\"'\":\"NULL\").\""
-                   | (o,_)<-attrs
-                   , let phpvar = if a == o
-                                  then var++"['id']"
-                                  else
-                                  ( if Uni `elem` multiplicities (objctx o)
-                                    then var++"['"++(name o)++"']"
-                                    else "$"++(phpIdentifier $ name o)
-                                  ) ++
-                                  ( if null $ objats o
-                                    then ""
-                                    else "['id']"
-                                  )
-                   ] ++ ")\";"
-                 ] ++
-                 [take (2*n) (repeat ' ') ++ "}"|(_,n)<-reverse $ zip nunios [0..]]
-                ) ++
-         ["if(strlen($vals)) DB_doquer(\"INSERT IGNORE INTO `"++name plug++"` ("
-           ++ names ++") VALUES \".substr($vals,1),5);"
-         ]
+                (\var
+                  -> concat [indentBlock (2*n)
+                                         ( ( if fldnull f
+                                             then (:)("if(count("++var++"['"++(name o)++"'])==0) "
+                                                      ++var++"['"++(name o)++"'][] = null;")
+                                             else id
+                                           )
+                                           ["foreach  (" ++ var ++ "['"++(name o)++"'] as $"
+                                             ++(phpIdentifier $ name o)++"){" -- de } staat verderop
+                                           ]
+                                         )
+                            | ((o,f),n) <-zip nunios [0..]] ++
+                     indentBlock (2*length nunios)
+                     ( if isLargeOccurance is -- attempt INSERT first
+                       then ( if (isFullOccurance is || null keys)
+                              then -- na een DELETE, of bij null keys kán geen UPDATE
+                                   -- reden: een UPDATE heeft een key nodig om zich te hechten
+                                   -- (en na een delete hebben we die waarde nét weggegooid)
+                                   [ "$lastid="++insQuery var++";" ] ++
+                                   
+                                   [ "if($lastid!==false && !isset("++var++"['id']))"
+                                   , "  "++var++"['id']=$lastid;" ]
+                              else
+                              [ insQuery var ++";"
+                                -- zoals hierboven gezegd: een key is nodig voor een UPDATE
+                                -- daarom moeten we checken of var[id] een waarde heeft
+                                -- zo niet, dan is ofwel de key null, ofwel de te inserten waarde
+                              , "if(mysql_affected_rows()==0 && "++var++"['id']!=null){"
+                              , "  //nothing inserted, try updating:"
+                              , "  "++updQuery var++";"
+                              , "}"
+                              ]
+                            )
+                       else -- we cannot INSERT because we do not have all required information
+                            [ "if(isset("++var++"['id']))"
+                            , "  "++ updQuery var++";"
+                            ]
+                     ) ++
+                     [take (2*n) (repeat ' ')                          -- de { staat een stuk eerder
+                                              ++ "}"
+                     | (_,n)<-reverse $ zip nunios [0..]
+                     ]
+                )
          where attrs  = ownAts ++ -- ook het identiteit-veld toevoegen (meestal de SQL-`id`)
                         [ (a, s) | s `notElem` (map snd ownAts)]
                names  = chain "," $ map (fldname.snd) attrs
+               keys :: [(ObjectDef,SqlField)]
+               keys   = if length attrs==1
+                        then [] -- het kan gebeuren dat er maar één attr is
+                                -- aangezien dit keys voor UPDATE zijn, stelt deze key dan niet
+                                -- echt veel meer voor. Gevolg van deze keuze is dat de UPDATE
+                                -- expressies met UPDATE .. SET (lege lijst) WHERE key=val
+                                -- niet meer voorkomen, netjes weggefilterd worden
+                        else filter (iskey.snd) $ reverse attrs -- eerst de voor de hand liggende
+               key    = if null keys
+                        then error ("\nObjBinGenObject-saveCodeElem-inscode: Cannot get a key for the plug "++name plug)
+                        else head keys
                 -- nunios: Not UNI ObjectS: objects that are not Uni
                nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ Uni `elem` multiplicities (objctx o)]
                ownAts = map snd is
-      updcode attrs = []
+               insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
+               insQuery = query ("INSERT IGNORE INTO `"++name plug++"` ("++ names ++") VALUES (")
+                                (\f -> fldnull f || fldauto f)
+                                (\_ s'->s')
+                                ")"
+                                (\_->True)
+               updQuery var = query ("UPDATE `"++name plug++"` SET ")
+                                    (\f -> fldnull f && not (f==s))
+                                    (\f s'->f++"="++s')
+                                    (" WHERE `"++(fldname$snd key)
+                                      ++"`='\".addslashes("++varname var (fst key)++").\"'")
+                                    (\o->fst key/=o)
+                                    var
+               varname var o = if a == o
+                               then var++"['id']"
+                               else ( if Uni `elem` multiplicities (objctx o)
+                                      then var++"['"++(name o)++"']"
+                                      else "$"++(phpIdentifier $ name o)
+                                    ) ++
+                                    ( if null $ objats o
+                                      then ""
+                                      else "['id']"
+                                    )
+               query :: String  -- header: initial part of the query (such as "INSERT..")
+                                -- dit is exclucief de " aan het begin
+                     -> ( SqlField -> Bool) -- should we test for NULL?
+                     -> ( String  -- fieldname: escaped name of the Sql Field
+                        ->String  -- fieldvalue: PHP value (NULL or '.addslashes(..).')
+                        ->String) -- result to be part-of-query, such as 'fieldname=fieldvalue'
+                     -> String  -- tail: final part of the query (such as "WHERE..")
+                                -- dit is exclucief de " aan het eind
+                     -> (ObjectDef->Bool) -- should this object participate in the query?
+                     -> String  -- variable name given by nestTo
+                     -> String  -- resulting query
+               query hdr cond fnc tl selector var
+                = "DB_doquer(\"" ++ hdr ++
+                  chain ", "
+                        [ fnc ("`"++fldname f++"`")
+                          ( if cond f
+                            then "\".(isset(" ++ varname var o ++ ")?\"'\".addslashes("
+                                 ++ varname var o ++ ").\"'\":\"NULL\").\""
+                            else "'\".addslashes("++varname var o++").\"'"
+                          )
+                        | (o,f)<-attrs
+                        , selector o
+                        ] ++ tl ++"\", 5)"
       nestTo :: ObjectDef -> (String->[String]) -> [String]
       nestTo attr fnc = if null nt then error ("saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)")
                         else head nt
@@ -438,18 +503,16 @@
                                    else "$v"++show d
                       , ans<-nestToRecur attr fnc a' (mvar) (d+1)]
       occurences = (eqCl fst) $ rd $ concat (map (plugAts plug object) (objats object))
-      fullOccurences = fullGroups (fields plug) occurences
-      largeOccurences = fullGroups requiredFields occurences
-      fullGroups :: [SqlField] -> [[((ObjectDef,SqlField),(ObjectDef,SqlField))]]
-                   -> [[((ObjectDef,SqlField),(ObjectDef,SqlField))]]
-      fullGroups set as = [a | a<-as, null (set >- (map (snd . snd) a ++ [snd$fst$head a]))]
+      fullOccurences = filter isFullOccurance occurences
+      isFullGroup set a = null (set >- (map (snd . snd) a ++ [snd$fst$head a]))
+      isFullOccurance = isFullGroup (fields plug)
+      isLargeOccurance = isFullGroup requiredFields
       requiredFields  = [f| f <- fields plug
                           , Tot `elem` multiplicities (fldexpr f)
                           -- strictly speaking, ident fields ARE required, but we can fill in their
                           -- values easily since their value IS their source
                           , not $ isIdent $ fldexpr f
                           ]
-      nonFullOccurences = occurences >- fullOccurences
    plugAts :: Plug -> ObjectDef           -- parent (wrong values are allowed, see source)
               -> ObjectDef                -- object itself
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
@@ -627,100 +690,7 @@
                                       (name:[(\_->"plug"++show n)|n<-[(1::Integer)..]]) -- infinite list of functions to create a name for b
                                       ['f':show n|n<-[1..(length rest)]]      -- list of forbidden names (names already taken)
                                       (plugs fSpec)                                 -- list of elements b that need a name
-                   
-                   {- -- een aanzet om het bovenstaande te verbeteren:
-                      recurDown::([a]->[b])->(a->[a])->[a]->[b]
-                   recurDown f1 f2 itms = f1 itms ++ concat (map ((recurDown f1 f2).f2) itms)
-                
-                   -- onderstaande functie selecteert alle attributen plat op de source gemapt, dwz:
-                   -- a=[b,c] wordt I=[a;b,a;b], wat alleent hetzelfde is als a UNI is
-                   doSqlGet :: Fspc -> ObjectDef -> ObjectDef -> [String]
-                   doSqlGet fSpec objIn objOut = ["SELECT DISTINCT " ++ head allFieldNames  ]
-                                                    ++ map ((++) "     , ") (tail allFieldNames  ) ++
-                                                 ["  FROM " ++ head (fst (head allTbls))]
-                                                    ++ (indentBlock 7 (tail (fst (head allTbls))))
-                                                    ++ concat (map joinOn (tail allTbls)) ++
-                                                 ( if null$snd$head allTbls
-                                                   then []
-                                                   else [" WHERE " ++ snd (head allTbls)]
-                                                 )
-                     where comboGroups::[ObjectDef]->[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
-                           comboGroups atts     = reduce (sort' (length) (eqCl fst (combos atts)))
-                           reduce :: [[((Plug,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
-                                     -> [((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
-                           reduce [] = []
-                           reduce (g:gs)    = (fst (head g),map snd g):reduce
-                                              [ res
-                                              | group<-gs
-                                              , let ga=fst$snd$head g
-                                              , let res=[((plug,(ai,sf)),(a,tf))
-                                                        |((plug,(ai,sf)),(a,tf))<-group,ga/=a]
-                                              , not (null res)]
-                           combos atts       = [ ((plug,(ai,sf)),(a,tf))
-                                              | ai<-(objats (flattenOdef objIn))++[objIn]
-                                              , a<-atts
-                                              , Just e' <-[takeOff (objctx ai) (objctx a)]
-                                              , (plug,sf,tf)<-sqlRelPlugs fSpec e'
-                                              ]
-                           takeOff :: Expression->Expression->(Maybe Expression)
-                           takeOff (F (a:as)) (F (b:bs)) | disjNF a==disjNF b = takeOff (F as) (F bs)
-                           takeOff a (F (b:bs)) | disjNF a== disjNF b = Just (F bs)
-                           takeOff a e' | isIdent a = Just e'
-                           takeOff _ _ = Nothing
-                           isOne' = isOne objOut
-                           rest :: [ObjectDef]->[(ObjectDef,Integer)]
-                           rest atts        = zip [ a | a<-atts
-                                                      , a `notElem` [a' | g <- comboGroups atts, (a',_) <- snd g] 
-                                                  ] [(1::Integer)..]
-                           fieldNames atts  = [ "`"++tableReName atts p++"`.`"++(fldname f)++"`"
-                                                ++(if fldname f == name a then [] else " AS `"++name a++"`")
-                                              | ((p,_),as)<-comboGroups atts,(a,f)<-as
-                                              ] ++ ["`f"++(show n)++"`.`"++(sqlExprTrg fSpec (objctx a))++"`" ++
-                                                    (if name a == (sqlExprTrg fSpec (objctx a))
-                                                     then []
-                                                     else " AS `"++name a++"`")
-                                                   |(a,n)<-rest atts]
-                           allFieldNames = recurDown fieldNames objats (objats objOut)
-                           allTbls = tbls objOut{objnm = (name objIn)}
-                           tbls obj         = [ ( [tableName (objats obj) p]
-                                                , "`"++tableReName (objats obj) p++"`.`"++(fldname f)++
-                                                  "`='\".addslashes("++(name a)++").\"'"
-                                                )
-                                              | ((p,(a,f)),_)<-comboGroups (objats obj)
-                                              ] ++
-                                              [ ( r
-                                                , if source (objctx a)==cptS
-                                                  then ""
-                                                  else "`f"++(show n)++"`.`"++(sqlExprSrc fSpec (objctx a))++
-                                                       "`='\".addslashes("++name obj++").\"'"
-                                                )
-                                              | (a,n)<-rest (objats obj)
-                                              , let l=restLines (a,n), not (null l)
-                                              , let r=if null$head l then tail l else l
-                                              , not (null r)
-                                              ]
-                           joinOn ([t],jn)  = [(if null jn then "     , "      else "  LEFT JOIN ")++t
-                                              ++(if null jn then "" else " ON "++jn)]
-                           joinOn (ts,jn)   = [(if null jn then "     , " else "  LEFT JOIN ")++(head ts)]
-                                              ++indentBlock (if null jn then 7 else 12) (tail ts)
-                                              ++(if isOne' then [] else (["    ON "++jn]))
-                           restLines (outAtt,n)
-                             = splitLineBreak (selectExprBrac fSpec (-4)
-                                                              ( if (source$objctx outAtt)==cptS
-                                                                then ""
-                                                                else sqlExprSrc fSpec (objctx outAtt))
-                                                              (sqlExprTrg fSpec (objctx outAtt))
-                                                              (objctx outAtt) ++ " AS f"++show n) -- better names?
-                           tableName atts p  = if name p == tableReName atts p then "`"++name p++"`" else "`"++name p ++ "` AS "++tableReName atts p
-                           tableReName :: [ObjectDef]->Plug -> String
-                           tableReName atts p = head [nm | (nm,p')<-renamedTables atts,p'==p]
-                           renamedTables atts = naming (\p nm->(nm,p))                               -- function used to asign name a to element b
-                                                       (name:[(\_->"plug"++show n)|n<-[(1::Integer)..]]) -- infinite list of functions to create a name for b
-                                                       ['f':show n|n<-[1..(length (rest atts))]]      -- list of forbidden names (names already taken)
-                                                       (plugs fSpec)                                 -- list of elements b that need a name
-                   -}
-   
-   
+
    
    splitLineBreak :: String -> [String]
    splitLineBreak [] = []

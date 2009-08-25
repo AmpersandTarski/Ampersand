@@ -1,6 +1,5 @@
 module Data.Plug (Plug(..)
                  ,SqlField(..)
-                 ,SqlDb(..)
                  ,SqlType(..)
                  ,showSQL
                  ,field
@@ -9,15 +8,12 @@ module Data.Plug (Plug(..)
                  ,PhpArgs
                  ,PhpReturn(..)
                  ,PhpAction(..)
+                 ,iskey
                  ,ActionType(..))
 where
-  import CommonClasses  (Identified(..))
-  import Classes.Morphical (Morphical(..))
   import Adl
-  --import MorphismAndDeclaration
   
   data Plug = PlugSql { fields   :: [SqlField]
-                      , database :: SqlDb
                       , plname   :: String
                       }
             | PlugPhp { args     :: PhpArgs
@@ -35,6 +31,12 @@ where
   data PhpAction = PhpAction {action::ActionType, on::[Morphism]} deriving (Show)
   data ActionType = Create | Read | Update | Delete deriving (Show)
   
+  field :: String->Expression->(Maybe SqlType)->Bool->Bool->SqlField
+  field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq
+                                         ,fldauto = (fldtyp (target expr)==SQLId) && not nul && uniq && isIdent expr}
+  field nm expr (Just tp) nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=tp,fldnull=nul,flduniq=uniq
+                                         ,fldauto = (tp==SQLId) && not nul && uniq && isIdent expr}
+  
   instance Identified PhpValue where
     typ _ = "PhpValue"
     name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> name x}
@@ -50,15 +52,17 @@ where
                       , fldtype     :: SqlType
                       , fldnull     :: Bool -- can there be empty field-values?
                       , flduniq     :: Bool -- are all field-values unique?
+                      , fldauto     :: Bool -- is the field auto increment?
                       } deriving (Eq, Show)
   instance Ord SqlField where
     compare a b = compare (fldname a) (fldname b)
   
   data SqlType = SQLChar    Int
-               | SQLBlob              -- cannot compare, but can show
+               | SQLBlob              -- cannot compare, but can show (as a file)
                | SQLPass              -- password, encrypted: cannot show, but can compare
                | SQLSingle  
                | SQLDouble  
+               | SQLText              -- cannot compare, but can show (as a text)
                | SQLuInt    Int
                | SQLsInt    Int
                | SQLId                -- autoincrement integer
@@ -71,36 +75,22 @@ where
   showSQL (SQLChar    n) = "CHAR("++show n++")"
   showSQL (SQLBlob     ) = "BLOB"
   showSQL (SQLPass     ) = "VARCHAR(255)"
-  showSQL (SQLSingle   ) = "FLOAT"
+  showSQL (SQLSingle   ) = "FLOAT" -- todo
   showSQL (SQLDouble   ) = "FLOAT"
+  showSQL (SQLText     ) = "TEXT"
   showSQL (SQLuInt    n) = "INT("++show n++") UNSIGNED"
   showSQL (SQLsInt    n) = "INT("++show n++")"
   showSQL (SQLId       ) = "INT"
   showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
   showSQL (SQLBool     ) = "BOOLEAN"
           
-  data SqlDb = Db DbHost String
-             | LocalDb String
-             | CurrentDb
-             deriving (Eq, Ord,Show)
-          
-  data DbHost = Host  { dbhost :: String
-                      , dbuser :: String
-                      , dbpass :: String}
-                deriving(Eq, Ord,Show)
-  
-  dbName :: SqlDb -> Maybe String
-  dbName (Db _ n)       = Just n
-  dbName (LocalDb n)    = Just n
-  dbName CurrentDb      = Nothing
-  dbHost :: SqlDb -> Maybe DbHost
-  dbHost (Db host _)    = Just host
-  dbHost _              = Nothing
-  field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq}
-  field nm expr (Just tp) nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=tp,fldnull=nul,flduniq=uniq}
+  iskey :: SqlField->Bool
+  iskey f = flduniq f && not (fldnull f)
+  fldtyp :: Concept->SqlType
   fldtyp nm = case name nm of { "BLOB"   -> SQLBlob;
                                 "PASS"   -> SQLPass;
                                 "STRING" -> SQLVarchar 255;
+                                "TEXT"   -> SQLText;
                                 _        -> SQLVarchar 255
                               }
 
