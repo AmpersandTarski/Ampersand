@@ -1,4 +1,4 @@
-  module Prototype.ObjBinGenConnectToDataBase where
+  module Prototype.ConnectToDataBase where
    --import Auxiliaries(eqClass,eqCl)
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
    --import Collection(rd)

@@ -1,4 +1,4 @@
-  module Prototype.ObjBinGenObjectWrapper where
+  module Prototype.Wrapper (objectWrapper) where
    import Strings(chain)
    import Adl
    import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,isOne,commentBlock,addToLast)
@@ -9,7 +9,7 @@
    objectWrapper fSpec o
     = chain "\n" $
       [ "<?php // generated with "++versionbanner ]
-      ++ commentBlock (commentBlock ["","  Interface V1.3.1","  (c) Bas Joosten Jun 2005-Aug 2009  ","","  Using interfaceDef",""]) ++
+      ++ commentBlock ["","  Interface V1.3.1","  (c) Bas Joosten Jun 2005-Aug 2009  ","","  Using interfaceDef",""] ++
       [ "  error_reporting(E_ALL); "
       , "  ini_set(\"display_errors\", 1);"
       , "  require \"interfaceDef.inc.php\";"
@@ -27,43 +27,61 @@
                     ) ++
       [ "    $"++objectId++"=new "++objectId++"(" ++ (if isOne o then [] else "$ID,") ++
         chain ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
-      , "    if($"++objectId++"->save()) die('ok'); else die('Please fix errors!');"
+      , "    if($"++objectId++"->save()!==false) die('ok:'.$_SERVER['PHP_SELF']"++
+               (if isOne o then [] else ".'?" ++ objectId ++"='.urlencode($"++objectId++"->getId())")
+               ++"); else die('Please fix errors!');"
       , "    exit(); // do not show the interface"
       , "  }"
-      , "  $buttons=\"\";"
-      , "  if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;"] ++
+      , "  $buttons=\"\";"] ++
       indentBlock 2
       ( if isOne o
-        then ["$"++objectId++"=new "++objectId++"();"]
+        then [ "if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;"
+             , "$"++objectId++"=new "++objectId++"();"]
              ++ indentBlock 2 showObjectCode
-             ++ [ "if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1\",\"Edit\"); else"
-                , "$buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1');\",\"Save\");"
+             ++ [ "if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1\",\"Edit\");"
+                , "else"
+                , "  $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1');"
+                                                                                  ++ "\",\"Save\")"
+                , "           .ifaceButton($_SERVER['PHP_SELF'],\"Cancel\");"
                 ]
-        else [ "if(isset($_REQUEST['"++objectId++"'])) $"++objectId++"=read"
-               ++objectId++"($_REQUEST['"++objectId++"']); else $"++objectId++"=false;"
+        else [ "if(isset($_REQUEST['new'])) $new=true; else $new=false;"
+             , "if(isset($_REQUEST['edit'])||$new) $edit=true; else $edit=false;"
+             , "$del=isset($_REQUEST['del']);"
+             , "if(isset($_REQUEST['"++objectId++"'])){"
+             , "  if(!$del || !del"++objectId++"($_REQUEST['"++objectId++"']))" 
+             , "    $"++objectId++" = read"++objectId++"($_REQUEST['"++objectId++"']);"
+             , "  else $"++objectId++" = false; // delete was a succes!"
+             , "} else if($new) $"++objectId++" = new "++objectId++"();"
+             , "else $"++objectId++" = false;"
              , "if($"++objectId++"){"]
              ++ indentBlock 2 showObjectCode ++
-             [ " if($edit)"
+             [ " if($del) echo \"<P><I>Delete failed</I></P>\";"
+             , " if($edit){"
              , "   $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
-                              "'\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\")"
-             , "             .ifaceButton($_SERVER['PHP_SELF'].\"?" ++ objectId ++
+                              "'\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\");"
+             , "   if(!$new)"
+             , "     $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Cancel\");"
-             , "  else $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1&" ++ objectId ++
+             , "} else $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1&" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Edit\")"
              , "               .ifaceButton($_SERVER['PHP_SELF'].\"?del=1&" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Delete\");"
-             , "}else{ // toon selectiescherm"
-             , "  writeHead(\"<TITLE>No "++objectName++" object selected - "
-                  ++ appname ++" - ADL Prototype</TITLE>\");"
+             , "}else{"
+             , "  if($del){"
+             , "    writeHead(\"<TITLE>Delete geslaagd</TITLE>\");"
+             , "    echo 'The "++objectName++" is deleted';"
+             , "  }else{  // deze pagina zou onbereikbaar moeten zijn"
+             , "    writeHead(\"<TITLE>No "++objectName++" object selected - "
+                    ++ appname ++" - ADL Prototype</TITLE>\");"
+             , "    ?><i>No "++objectName++" object selected</i><?php "
+             , "  }"
              , "  $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?new=1\",\"New\");"
-             , "  ?><i>No "++objectName++" object selected</i><?php "
              , "}"
              ]
       ) ++
       [ "  writeTail($buttons);"
       , "?>"
       ]
-      
       where
         phpList2Array :: Int->String->String->ObjectDef->[String]
         phpList2Array depth var rqvar a

@@ -1,6 +1,6 @@
 module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,strReplace
- ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlMorName,sqlConcept,sqlAttConcept
- ,sqlPlugFields,sqlMorSrc,indentBlock,phpShow,isOne,addToLast
+ ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlAttConcept
+ ,sqlPlugFields,indentBlock,phpShow,isOne,addToLast
  ,pDebug,noCollide -- both are used in ObjBinGenConnectToDatabase
  ) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
@@ -92,7 +92,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
       where src'    = quote$sqlExprSrc fSpec fstm
             trgC    = quote$sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
             trg'    = noCollideUnlessTm fstm [src'] trgC
-            fstm     = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
+            fstm    = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
             mp1Tm   = take 1 ([t| t@(Tm (Mp1 _ _))<-lst']++[t| t@(F ((Tm (Mp1 _ _)):(Tm (V _ _)):(Tm (Mp1 _ _)):[])) <- lst'])
             lst     = [t|t<-lst', not (elem t mp1Tm)]
             posTms  = if null posTms' then map notCp (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
@@ -269,13 +269,17 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   -> String
                   -> Expression
                   -> [Char]
+   selectExprBrac    f i s@(_:_)   t         e' | head s /= '`'
+    = selectExprBrac f i (quote s) t         e'
+   selectExprBrac    f i s         t@(_:_)   e' | head t /= '`'
+    = selectExprBrac f i s         (quote t) e'
    selectExprBrac fSpec i src trg (Tc  e' )                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (F  [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (Fi [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (Fu [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec _ src trg (Tm m'@(Mph{}))
-    | lowerCase(sqlMorSrc fSpec m')==(lowerCase$src)
-      && lowerCase(sqlMorTrg fSpec m')==(lowerCase$trg) 
+    | lowerCase(quote$sqlMorSrc fSpec m')==(quote$lowerCase$src)
+      && lowerCase(quote$sqlMorTrg fSpec m')==(quote$lowerCase$trg) 
       = quote$sqlMorName fSpec m'
    selectExprBrac fSpec i src trg expr
     = phpIndent (i+4) ++ "( " ++ selectExpr fSpec (i+6) src trg expr++ phpIndent(i+4)++")"

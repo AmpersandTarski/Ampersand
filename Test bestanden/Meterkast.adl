@@ -1,104 +1,77 @@
 CONTEXT Meterkast
-{- Dit is de ŽŽnversie van de Meterkast.
-zo geven we straks PHPPLUG's aan:
-  PHPPLUG GetPersonByNameAndAge {"ACTION=SELECT"} : I[Persoon]
-ÊÊ= [ name {"PHPARG","PHPTYPE=String"} : naam
-ÊÊÊÊ, age {"PHPARG","PHPTYPE=Int"} : leeftijd
-ÊÊÊÊ, persoon {"PHPRETURN", "PHPTYPE=Array"} : I[Persoon]
-ÊÊÊÊÊÊÊÊ= [ name : naam
-ÊÊÊÊÊÊÊÊÊÊ, age Ê: leeftijd
-ÊÊÊÊÊÊÊÊÊÊ, dateOfBirth : geboortedatum]
-ÊÊÊÊ]
--}
+  {-
+  zo geven we straks PHPPLUG's aan:
+    PHPPLUG GetPersonByNameAndAge {"ACTION=SELECT"} : I[Persoon]
+  ÊÊ= [ name {"PHPARG","PHPTYPE=String"} : naam
+  ÊÊÊÊ, age {"PHPARG","PHPTYPE=Int"} : leeftijd
+  ÊÊÊÊ, persoon {"PHPRETURN", "PHPTYPE=Array"} : I[Persoon]
+  ÊÊÊÊÊÊÊÊ= [ name : naam
+  ÊÊÊÊÊÊÊÊÊÊ, age Ê: leeftijd
+  ÊÊÊÊÊÊÊÊÊÊ, dateOfBirth : geboortedatum]
+  ÊÊÊÊ]
+  -}
+  
+  SQLPLUG OperationTbl : I[Operation]
+   = [Id{"SQLTYPE=Id"} : I
+     ,name{"SQLTYPE=Text"} : name
+     ,call{"SQLTYPE=Text"} : call
+     ]
+  SQLPLUG ActieTbl : I[Actie]
+   = [Id{"SQLTYPE=Id"}     : I
+     ,object{"SQLTYPE=Id"} : object
+     ,type{"SQLTYPE=Id"}   : type
+     ]
+  SQLPLUG BestandTbl : I[Bestand]
+   = [Id{"SQLTYPE=Id"} : I
+     ,session{"SQLTYPE=Text"} : session
+     ,path{"SQLTYPE=Text"} : path
+     ]
+  SQLPLUG SessieTbl : I[Session]
+   = [Id{"SQLTYPE=Text"} : I
+     -- ipV6 heeft max 39 tekens: 8 groepen van 4 hex-digits met 7 : ertussen
+     ,ip{"SQLTYPE=VARCHAR 40"} : ip
+     ]
 
-SQLPLUG UserTbl : I[User]
- = [Id{"SQLTYPE=Id"} : I
-   ,name{"SQLTYPE=Text"} : name
-   ,password{"SQLTYPE=Password"} : password
-   ,teacher{"SQLTYPE=Id"} : teacher
-   ]
-SQLPLUG RightTbl : I[Operation]
- = [Id{"SQLTYPE=Id"} : I
-   ,name{"SQLTYPE=Text"} : name
-   ]
-SQLPLUG ActieTbl : I[Actie]
- = [Id{"SQLTYPE=Id"} : I
-   ,object{"SQLTYPE=Id"} : object
-   ,type{"SQLTYPE=Id"} : right
-   ]
-SQLPLUG BestandTbl : I[Bestand]
- = [Id{"SQLTYPE=Id"} : I
-   ,owner{"SQLTYPE=Id"} : owner
-   ,path{"SQLTYPE=Text"} : path
-   ]
-
-PATTERN Meterkast
-    
-    name      :: User->Text [INJ].
-    name      :: Operation->Text [INJ].
+  PATTERN Meterkast
     path      :: Bestand->Text [INJ].
-    password  :: User->Password.
-    owner     :: Bestand -> User PRAGMA "the owner of " " is ".
-    teacher   :: User * User [UNI,ASY] PRAGMA "the teacher of " " is ".
-    right     :: User * Operation PRAGMA "" " may exercise ".
+    session   :: Bestand->Session PRAGMA "the owner of " " is ".
+    ip        :: Session->Text.
     object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
-    -- user      :: Actie -> User PRAGMA "" " is being executed by user ".
-    -- user=object;owner
-    right     :: Actie -> Operation PRAGMA "" " is being executed by activating ".
-    
-    teacher;teacher = -V EXPLANATION "No pupil may teach, and no teacher may be tought."
-    
-ENDPATTERN
+    type      :: Actie -> Operation PRAGMA "" " is being executed by activating ".
+    name      :: Operation->Text [INJ].
+    call      :: Operation->Text.
+  ENDPATTERN
 
   
-  SERVICE Users : I[ONE]
-   = [ Users : V[ONE*User]
-        = [ nr {"TEST"}     : I[User]
-          , name    : name
-          , pwd     : password
+  SERVICE Ops       : I[ONE]
+   = [ Operations   : V[ONE*Operation]
+        = [ name    : name
+          , call    : call
           ]
      ]
 
-  SERVICE User : I[User]
-   = [ naam    : name
-     , pwd     : password
-     ]
-
-  SERVICE Userbeheer : I[User]
-   = [ naam      : name
-     , pwd       : password
-     , teacher   : teacher
-     , bestanden : owner~
-     , studenten : teacher~
-     , rechten   : right
-     ]
-
-  SERVICE Student : teacher;teacher~ /\ I
-   = [ naam    : name
-     , docent  : teacher
-     , files   : owner~
-     ]
-
--- SERVICE Docent SERVICES Docent EDITS I[User], I[Right]
-  SERVICE Docent : teacher~;teacher /\ I
-   = [ naam      : name
-     , bestanden : owner~
-     , studenten : teacher~
+  SERVICE Sessions  : I[ONE]
+   = [ Session      : V[ONE*Session]
+        = [ id      : I
+          , ip      : ip
+          , files   : session~
+          ]
      ]
   
-  SERVICE Bestand : I[Bestand]
-   = [ eigenaar : owner
-     , path     : path
-     , acties   : object[Actie*Bestand]~
-     ]
-
-  SERVICE Actie : I[Actie]
-   = [ file     : object
-     , operatie : right
+  SERVICE Bestand   : I[Bestand]
+   = [ path         : path
+     , session      : session
+     , compilations : object~
      ]
   
-  SERVICE Operatie : I[Operation]
-   = [ naam : name
+  SERVICE Actie     : I[Actie]
+   = [ file         : object
+     , operatie     : type
+     ]
+  
+  SERVICE Operatie  : I[Operation]
+   = [ naam         : name
+     , call         : call
      ]
   
 ENDCONTEXT
