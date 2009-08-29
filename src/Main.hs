@@ -37,24 +37,13 @@ phase3 :: Options -> Fspc -> IO()
 phase3 flags fSpec = 
     sequence_ 
        ([ verboseLn flags "Generating..."]++
-      --[ anal context ("-p" `elem` switches) (lineStyle switches) | null switches || "-h" `elem` switches]++
-      --[ makeXML_depreciated context| "-XML" `elem` switches]++
         [ doGenAtlas fSpec flags | genAtlas flags] ++
         [ doGenXML   fSpec flags | genXML flags] ++
         [ doGenHaskell fSpec flags | haskell flags] ++ 
         [ doGenProto fSpec flags | genPrototype flags]++
         [ serviceGen  fSpec flags | services flags] ++
-      --[ diagnose context| "-diag" `elem` switches]++
         [ doGenFspec fSpec flags | genFspec flags] ++ 
-      --[ cdModel context | "-CD" `elem` switches]++
-      --[ phpObjServices context fSpec filename dbName ("./"++filename++"/") | "-phpcode" `elem` switches]++
-      --[ phpServices context filename dbName True True | "-beeper" `elem` switches]++
-      --[ phpServices context filename dbName ("-notrans" `elem` switches) False| "-checker" `elem` switches]++
         [ prove fSpec flags| proofs flags]++
- --               ++[ projectSpecText context (lang switches) | "-project" `elem` switches]
- --               ++[ csvcontent context | "-csv" `elem` switches]
- --               ++[ putStr (show slRes) | "-dump" `elem` switches ]
- --    ) 
         [ verbose flags "Done."]
        ) 
                                

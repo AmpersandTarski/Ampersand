@@ -1,4 +1,6 @@
-  module Prototype.ConnectToDataBase where
+{-# OPTIONS_GHC -Wall #-}
+  module Prototype.ConnectToDataBase (connectToDataBase) 
+  where
    --import Auxiliaries(eqClass,eqCl)
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
    --import Collection(rd)

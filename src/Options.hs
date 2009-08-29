@@ -10,7 +10,7 @@ import System.Console.GetOpt
 import System.FilePath
 import System.Directory
 import Time          
---import System.FilePath.Posix
+
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
@@ -23,13 +23,13 @@ data Options = Options { contextName   :: Maybe String
 					   , uncheckedDirPrototype  :: Maybe String
 					   , dirPrototype  :: String
 					   , allServices   :: Bool
-					   , dbName        :: Maybe String
+					   , dbName        :: String
 					   , genAtlas      :: Bool
 					   , uncheckedDirAtlas      :: Maybe String
 					   , dirAtlas      :: String
 					   , genXML        :: Bool
-                                           , genFspec      :: Bool
-                                           , fspecFormat   :: FspecFormat
+                       , genFspec      :: Bool
+                       , fspecFormat   :: FspecFormat
 					   , proofs        :: Bool
 					   , haskell       :: Bool
 					   , uncheckedDirOutput     :: Maybe String
@@ -37,9 +37,9 @@ data Options = Options { contextName   :: Maybe String
 					   , beeper        :: Bool
 					   , crowfoot      :: Bool
 					   , language      :: Lang
-                                           , dirExec       :: String --the base for relative paths to input files
-                                           , texHdrFile    :: String --FilePath to customheader.tex
-                       , progrName     :: String
+                       , dirExec       :: String --the base for relative paths to input files
+                       , texHdrFile    :: String --FilePath to customheader.tex
+                       , progrName     :: String --The name of the adl executable
                        , adlFileName   :: String
                        , baseName      :: String
                        , logName       :: String
@@ -47,6 +47,7 @@ data Options = Options { contextName   :: Maybe String
                        , uncheckedLogName :: Maybe String
                        , services      :: Bool
                        , test          :: Bool
+                       , verbosephp    :: Bool
                        } deriving Show
     
 data FspecFormat = FPandoc | FWord | FLatex | FHtml | FUnknown deriving (Show, Eq)
@@ -71,7 +72,7 @@ checkOptions flags =
                           Nothing -> return flags { logName = "ADL.log"}
                           Just s  -> return flags { logName = s } 
            verboseLn flags0 ("Checking output directories...")
-           currDir <- getCurrentDirectory
+--           currDir <- getCurrentDirectory
            flags1  <- case uncheckedDirOutput flags0 of
                           Nothing -> return flags0 { dirOutput = "" }
                           Just s  -> do exists <- doesDirectoryExist s
@@ -83,13 +84,9 @@ checkOptions flags =
                              Nothing -> return flags1 { dirPrototype = dirOutput flags1 }
                              Just s  -> do { d <- doesDirectoryExist s
                                                   ; if d
-                                                    then putStr ""
+                                                    then doNothing
                                                     else createDirectory s
                                                   ; return flags1 {dirPrototype = s} }
-       --                      Just s  -> do exists <- doesDirectoryExist s
-       --                                    if exists
-       --                                      then return flags1 { dirPrototype = s }
-       --                                      else ioError (userError ("Directory does not exist: "++s))
                         else return flags1  {- No need to check if no prototype will be generated. -}
            flags3 <- if genAtlas flags2
                         then case uncheckedDirAtlas flags2 of
@@ -102,9 +99,9 @@ checkOptions flags =
            flags4 <- if genFspec flags3 && fspecFormat flags3==FUnknown
                         then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
                         else return flags3  {- No need to check if no fspec will be generated. -}
-           mbexec <- findExecutable "adl" 
+           mbexec <- findExecutable (progrName flags) 
            flags5 <- case mbexec of
-              Nothing -> ioError $ userError "Specify the path location of adl.exe in your system PATH variable."
+              Nothing -> ioError $ userError ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")
               Just s -> do 
                         texfileexists <- doesFileExist uncheckedtexfile 
                         if texfileexists 
@@ -113,8 +110,15 @@ checkOptions flags =
                           else return flags4{dirExec=takeDirectory s
                                            , texHdrFile=error $ "File does not exist: "++uncheckedtexfile} 
                         where uncheckedtexfile = combine (takeDirectory s) (texHdrFile flags)
-           return flags5                  
-             
+           flags6 <- if genPrototype flags5
+                        then return flags5 {dbName = (case dbName flags5 of
+                                                        ""  -> baseName flags5
+                                                        str -> str
+                                                     )}
+                        else return flags5 {- No need for a databasename if no prototype will be generated. -}
+           return flags6                  
+
+            
 data DisplayMode = Public | Hidden
     
 usageInfo' :: String -> String
@@ -136,7 +140,7 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option ['p']     ["proto"]            (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++
                                                                                    envdirPrototype ++ " )") ), Public)
           , ((Option ['x']     ["maxServices"]      (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively"), Public)
-          , ((Option ['d']     ["dbName"]           (OptArg dbNameOpt "name")   ("use database with name (name overrides "++
+          , ((Option ['d']     ["dbName"]           (ReqArg dbNameOpt "name")   ("use database with name (name overrides "++
                                                                                    envdbName ++ " )")), Public)
           , ((Option ['s']     ["services"]         (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
           , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
@@ -153,6 +157,7 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                    envlogName  ++ " )")), Hidden)
           , ((Option []        ["test"]             (NoArg testOpt)             "Used for test purposes"), Hidden)
+          , ((Option []        ["verbosePhp"]       (NoArg verbosephpOpt)       "generates loads of comments in PHP-code. Useful for debugging."), Public)
           ]
 
 defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
@@ -163,11 +168,14 @@ defaultOptions clocktime env fName pName
                    --      , verbose       = donothing
 			       --      , verboseLn     = donothing
 			             , verboseP      = False
+			             , verbosephp    = False
 			             , genPrototype  = False
 					     , uncheckedDirPrototype  = lookup envdirPrototype env
             		     , dirPrototype  = unchecked
             		     , allServices   = False
-		                 , dbName        = lookup envdbName env
+		                 , dbName        = case lookup envdbName env of
+		                                           Just str -> str
+		                                           Nothing  -> ""
 		                 , genAtlas      = False   
             		     , uncheckedDirAtlas      = lookup envdirAtlas env
             		     , dirAtlas      = unchecked
@@ -211,15 +219,15 @@ versionOpt      opts = opts{showVersion  = True}
 helpOpt :: Options -> Options
 helpOpt         opts = opts{showHelp     = True}            
 verboseOpt :: Options -> Options
-verboseOpt      opts = opts{ -- verbose      = putStr
-                            --,verboseLn    = putStrLn
-                            verboseP     = True}            
+verboseOpt      opts = opts{ verboseP     = True} 
+verbosephpOpt  :: Options -> Options
+verbosephpOpt opts = opts{verbosephp  = True}          
 prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts = opts{uncheckedDirPrototype = nm
                            ,genPrototype = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
-dbNameOpt :: Maybe String -> Options -> Options
+dbNameOpt :: String -> Options -> Options
 dbNameOpt nm    opts = opts{dbName       = nm}
 atlasOpt :: Maybe String -> Options -> Options
 atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
@@ -261,15 +269,15 @@ testOpt opts = opts{test = True}
 verbose :: Options -> String -> IO ()
 verbose flags x
     | verboseP flags = putStr x
-    | otherwise      = donothing
+    | otherwise      = doNothing
    
 verboseLn :: Options -> String -> IO ()
 verboseLn flags x
     | verboseP flags = putStrLn x
-    | otherwise      = donothing
+    | otherwise      = doNothing
     
-donothing :: IO()
-donothing = putStr ""   -- Ik weet zo gauw niet hoe dit anders moet....
+doNothing :: IO()
+doNothing = putStr ""   -- Ik weet zo gauw niet hoe dit anders moet....
 unchecked :: String
 unchecked = "."
                              

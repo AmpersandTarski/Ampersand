@@ -1,36 +1,31 @@
-  module Prototype.ObjBinGen where
-   import Directory
-
+  {-# OPTIONS_GHC -Wall #-}
+  module Prototype.ObjBinGen  (phpObjServices)
+  where
+ 
    import CommonClasses
    import Data.Fspec
-   import Prototype.ConnectToDataBase
-   import Prototype.Object
-   import Prototype.Wrapper
-   import Prototype.Installer
-   import Prototype.InterfaceDef
-   import System.FilePath(combine,addExtension)
+   import Prototype.ConnectToDataBase   (connectToDataBase)
+   import Prototype.Object              (objectServices)
+   import Prototype.Wrapper             (objectWrapper)
+   import Prototype.Installer           (installer)
+   import Prototype.InterfaceDef        (interfaceDef)
+   import System.FilePath               (combine,addExtension)
    import Options
-   phpObjServices :: Fspc    -- should take over from Context in due time.
-                  -> Options
-     --             -> String  -- the directory to which the result is written
-     --             -> Bool    -- a boolean that tells whether to generate services or compile services.
-                  -> IO()
+
+   phpObjServices :: Fspc -> Options -> IO()
    phpObjServices fSpec flags
-     --             targetDir -- (dirPrototype flags) 
-     --             servGen   -- (allServices flags)
      =   verboseLn flags "---------------------------"
       >> verboseLn flags "Generating php Object files with ADL"
       >> verboseLn flags "---------------------------"
---      >> do { d <- doesDirectoryExist targetDir
---            ; if d
---              then putStr ""
---              else createDirectory (targetDir) }
       >> verboseLn flags ("  Generating Installer.php")
-      >> writeFile (combine targetDir "Installer.php") ins
+      >> writeFile (combine targetDir "Installer.php")
+                   (installer fSpec (dbName flags))
       >> verboseLn flags ("  Generating interfaceDef.inc.php")
-      >> writeFile (combine targetDir "interfaceDef.inc.php") ifd
+      >> writeFile (combine targetDir "interfaceDef.inc.php")
+                   (interfaceDef fSpec serviceObjects (dbName flags))
       >> verboseLn flags ("  Generating connectToDataBase.inc.php")
-      >> writeFile (combine targetDir "connectToDataBase.inc.php") ctdb
+      >> writeFile (combine targetDir "connectToDataBase.inc.php")
+                   (connectToDataBase fSpec (dbName flags))
       >> verboseLn flags ("  Writing Static file: edit.js")
       >> writeFile (combine targetDir "edit.js") edit
       >> verboseLn flags ("  Writing Static file: navigate.js")
@@ -42,27 +37,21 @@
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
          [ verboseLn flags ("  Generating "++addExtension (name o) ".inc.php")
-           >> writeFile (combine targetDir (addExtension (name o) ".inc.php")) (ojs o)
+           >> writeFile (combine targetDir (addExtension (name o) ".inc.php")) 
+                        (objectServices fSpec (baseName flags) o)
          | o <- serviceObjects
          ]
       >> verboseLn flags ("Wrapper files for all objects:")
       >> sequence_
          [ verboseLn flags ("  Generating "++addExtension (name o) ".php")
-           >> writeFile (combine targetDir (addExtension (name o) ".php")) (wrapper o)
+           >> writeFile (combine targetDir (addExtension (name o) ".php"))
+                        (objectWrapper fSpec o)
          | o <- serviceObjects
          ]
       >> verboseLn flags ("\n")
       where
        targetDir = dirPrototype flags
-       ins  = installer fSpec dbName
-       ifd  = interfaceDef fSpec serviceObjects dbName
-       ctdb = connectToDataBase fSpec dbName
-       wrapper o = objectWrapper fSpec o
-       ojs o = objectServices fSpec filename o
        serviceObjects = if (allServices flags) then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script
-       FS_id appname =  (fsfsid fSpec)
-       filename = appname
-       dbName = appname
        -- to place a file, first open it
        -- replace \ by \\, turn on grep and replace \r, \n and " by \\r, \\n and \\" respectively
        -- replace the line below with .. = "", and paste (you cannot edit long lines in most editors)
