@@ -8,50 +8,58 @@
    import Prototype.Wrapper
    import Prototype.Installer
    import Prototype.InterfaceDef
-
+   import System.FilePath(combine,addExtension)
+   import Options
    phpObjServices :: Fspc    -- should take over from Context in due time.
-                  -> String  -- the directory to which the result is written
-                  -> Bool    -- a boolean that tells whether to generate services or compile services.
+                  -> Options
+     --             -> String  -- the directory to which the result is written
+     --             -> Bool    -- a boolean that tells whether to generate services or compile services.
                   -> IO()
-   phpObjServices fSpec
-                  targetDir
-                  servGen
-     =   putStr ("\n---------------------------\nGenerating php Object files with ADL\n---------------------------")
-      >> do { d <- doesDirectoryExist targetDir
-            ; if d
-              then putStr ""
-              else createDirectory (targetDir) }
-      >> putStr ("\n  Generating Installer.php")
-      >> writeFile (targetDir++"Installer.php") ins
-      >> putStr ("\n  Generating interfaceDef.inc.php")
-      >> writeFile (targetDir++"interfaceDef.inc.php") ifd
-      >> putStr ("\n  Generating connectToDataBase.inc.php")
-      >> writeFile (targetDir++"connectToDataBase.inc.php") ctdb
-      >> putStr ("\nStatic files: edit.js, navigate.js, jquery-1.3.2.min.js, style.css")
-      >> writeFile (targetDir++"edit.js") edit
-      >> writeFile (targetDir++"navigate.js") navigate
-      >> writeFile (targetDir++"jquery-1.3.2.min.js") jquery
-      >> writeFile (targetDir++"style.css") stylesheet
-      >> putStr ("\nIncludable files for all objects:")
+   phpObjServices fSpec flags
+     --             targetDir -- (dirPrototype flags) 
+     --             servGen   -- (allServices flags)
+     =   verboseLn flags "---------------------------"
+      >> verboseLn flags "Generating php Object files with ADL"
+      >> verboseLn flags "---------------------------"
+--      >> do { d <- doesDirectoryExist targetDir
+--            ; if d
+--              then putStr ""
+--              else createDirectory (targetDir) }
+      >> verboseLn flags ("  Generating Installer.php")
+      >> writeFile (combine targetDir "Installer.php") ins
+      >> verboseLn flags ("  Generating interfaceDef.inc.php")
+      >> writeFile (combine targetDir "interfaceDef.inc.php") ifd
+      >> verboseLn flags ("  Generating connectToDataBase.inc.php")
+      >> writeFile (combine targetDir "connectToDataBase.inc.php") ctdb
+      >> verboseLn flags ("  Writing Static file: edit.js")
+      >> writeFile (combine targetDir "edit.js") edit
+      >> verboseLn flags ("  Writing Static file: navigate.js")
+      >> writeFile (combine targetDir "navigate.js") navigate
+      >> verboseLn flags ("  Writing Static file: jquery-1.3.2.min.js")
+      >> writeFile (combine targetDir "jquery-1.3.2.min.js") jquery
+      >> verboseLn flags ("  Writing Static file: style.css")
+      >> writeFile (combine targetDir "style.css") stylesheet
+      >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
-         [ putStr ("\n  Generating "++name o++".inc.php")
-           >> writeFile (targetDir++name o++".inc.php") (ojs o)
+         [ verboseLn flags ("  Generating "++addExtension (name o) ".inc.php")
+           >> writeFile (combine targetDir (addExtension (name o) ".inc.php")) (ojs o)
          | o <- serviceObjects
          ]
-      >> putStr ("\nWrapper files for all objects:")
+      >> verboseLn flags ("Wrapper files for all objects:")
       >> sequence_
-         [ putStr ("\n  Generating "++name o++".php")
-           >> writeFile (targetDir++name o++".php") (wrapper o)
+         [ verboseLn flags ("  Generating "++addExtension (name o) ".php")
+           >> writeFile (combine targetDir (addExtension (name o) ".php")) (wrapper o)
          | o <- serviceObjects
          ]
-      >> putStr ("\n\n")
+      >> verboseLn flags ("\n")
       where
+       targetDir = dirPrototype flags
        ins  = installer fSpec dbName
        ifd  = interfaceDef fSpec serviceObjects dbName
        ctdb = connectToDataBase fSpec dbName
        wrapper o = objectWrapper fSpec o
        ojs o = objectServices fSpec filename o
-       serviceObjects = if servGen then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script
+       serviceObjects = if (allServices flags) then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script
        FS_id appname =  (fsfsid fSpec)
        filename = appname
        dbName = appname

@@ -46,6 +46,7 @@ data Options = Options { contextName   :: Maybe String
                        , genTime       :: ClockTime
                        , uncheckedLogName :: Maybe String
                        , services      :: Bool
+                       , test          :: Bool
                        } deriving Show
     
 data FspecFormat = FPandoc | FWord | FLatex | FHtml | FUnknown deriving (Show, Eq)
@@ -80,10 +81,15 @@ checkOptions flags =
            flags2 <- if genPrototype flags1
                         then case uncheckedDirPrototype flags1 of
                              Nothing -> return flags1 { dirPrototype = dirOutput flags1 }
-                             Just s  -> do exists <- doesDirectoryExist s
-                                           if exists
-                                             then return flags1 { dirPrototype = s }
-                                             else ioError (userError ("Directory does not exist: "++s))
+                             Just s  -> do { d <- doesDirectoryExist s
+                                                  ; if d
+                                                    then putStr ""
+                                                    else createDirectory s
+                                                  ; return flags1 {dirPrototype = s} }
+       --                      Just s  -> do exists <- doesDirectoryExist s
+       --                                    if exists
+       --                                      then return flags1 { dirPrototype = s }
+       --                                      else ioError (userError ("Directory does not exist: "++s))
                         else return flags1  {- No need to check if no prototype will be generated. -}
            flags3 <- if genAtlas flags2
                         then case uncheckedDirAtlas flags2 of
@@ -146,6 +152,7 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option []        ["language"]         (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"), Public)
           , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                    envlogName  ++ " )")), Hidden)
+          , ((Option []        ["test"]             (NoArg testOpt)             "Used for test purposes"), Hidden)
           ]
 
 defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
@@ -160,7 +167,7 @@ defaultOptions clocktime env fName pName
 					     , uncheckedDirPrototype  = lookup envdirPrototype env
             		     , dirPrototype  = unchecked
             		     , allServices   = False
-		                 , dbName        = lookup "CCdbName" env
+		                 , dbName        = lookup envdbName env
 		                 , genAtlas      = False   
             		     , uncheckedDirAtlas      = lookup envdirAtlas env
             		     , dirAtlas      = unchecked
@@ -183,6 +190,7 @@ defaultOptions clocktime env fName pName
                          , logName       = "ADL.log"
                          , services      = False
                          , genTime       = clocktime
+                         , test          = False
                          }
                     
 envdirPrototype :: String
@@ -248,6 +256,8 @@ languageOpt l   opts = opts{language     = case map toUpper l of
                                              _     -> Dutch}
 logOpt :: String -> Options -> Options
 logOpt nm       opts = opts{uncheckedLogName = Just nm}
+testOpt :: Options -> Options
+testOpt opts = opts{test = True}
 verbose :: Options -> String -> IO ()
 verbose flags x
     | verboseP flags = putStr x
