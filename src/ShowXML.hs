@@ -15,11 +15,16 @@ where
 --     -- Onder debian kreeg ik het ook niet voor elkaar met de standaard installatie manier, omdat in de standaard
 --     -- distributie voor debian nog gebruik wordt gemaakt van ghc 6.6 
 --     -- Wie weet komt dit later dus nog wel een keer....
+
+
+-- TODO: Als het ADL bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
+
    import FspecDef
    import Adl
    import ShowADL
    import Time(ClockTime)
    import Version(versionbanner)
+   import Data.Plug
    showXML :: Fspc -> ClockTime -> String
    showXML fSpec now 
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
@@ -88,9 +93,11 @@ where
 
    instance XML Fspc where
      mkTag f = Tag "Fspec" [ nameToAttr f] 
-     mkXmlTree f@(Fspc{})
+     mkXmlTree f@(Fspc  _ _ _ _ _ _ _ _ _ _ _ _ _)
         = Elem (mkTag f) (
-             [ Elem (simpleTag "Patterns")   (map mkXmlTree (vpatterns f))] 
+             [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
+          ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
+          ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (vpatterns f))] 
           ++ [ Elem (simpleTag "Datasets") (map mkXmlTree (datasets f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
@@ -98,7 +105,7 @@ where
           ++ [ Elem (simpleTag "Rules")    (map mkXmlTree (vrules f))] 
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
-                   )
+                 )
 
    instance XML Fservice where
      mkTag _ = Tag "Fservice" [] 
@@ -316,7 +323,28 @@ where
      mkTag _ = Tag "ECArule" []
      mkXmlTree _ = still2bdone "ECArule"
    
-   
+   instance XML Plug where
+     mkTag p = Tag plugType [ nameToAttr p]
+                 where plugType = case p of
+                                     PlugSql{} -> "PlugSql"
+                                     PlugPhp{} -> "PlugPhp" 
+     mkXmlTree p 
+      = Elem (mkTag p) 
+          (case p of
+            PlugSql{} ->  [ Elem (simpleTag "Fields") (map mkXmlTree (fields p))]
+            PlugPhp{} ->( [])-- Elem (simpleTag "Arguments") (map mkXmlTree (fields p))]
+                   --     ++[ Elem (simpleTag "Fields") (map mkXmlTree (fields p))]
+          )
+   instance XML SqlField where
+      mkTag x = Tag "Field" (   [mkAttr "name" (fldname x)]
+                              ++[mkAttr "type" (showSQL (fldtype x))]
+                              ++[mkAttr "null" (show (fldnull x))]
+                              ++[mkAttr "uniq" (show (flduniq x))]
+                              ++[mkAttr "auto" (show (fldauto x))]
+                              )
+      mkXmlTree sf = Elem (mkTag sf)
+                        [Elem (simpleTag "Expression") [mkXmlTree (fldexpr sf)]]
+                        
    attributesTree :: ObjectDefs -> [XTree]
    attributesTree atts = [Elem (simpleTag "Attributes") 
                                (map mkXmlTree atts)    |not(null atts)]
@@ -329,4 +357,4 @@ where
    explainTree str = [Elem (simpleTag "Explanation")
                            [PlainText str] | not (null str)]
                           
-                             
+                               

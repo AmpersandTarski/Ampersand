@@ -3,8 +3,9 @@ module Version (versionbanner)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. 0.8.10-400" -- the number behind the last digit is the SVN revision number.
+versionbanner = "ADL vs. 0.8.10-401" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-Opmerking van Stef over de plek van fSpec2Haskell gewaardeerd. Alles netjes op z'n plek gezet....
+ShowXML uitgebreid met Plug informatie. Het blijkt dat showXML niet goed omgaat met '&' en met '"' characters. 
+Ik heb OUNL.adl hierom een beetje aangepast. Eigenlijk zou showXML hier uiteindelijk wel tegen moeten kunnen....
 -}
