@@ -44,9 +44,9 @@ doGenHaskell fSpec flags
    >> writeFile outputFile haskellCode 
    >> verboseLn flags ("Haskell written into " ++ outputFile ++ ".")
    where outputFile
-               = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
-         haskellCode =
-                ("{-# OPTIONS_GHC -Wall #-}"
+           = combine (dirOutput flags) (replaceExtension (baseName flags) ".hs")
+         haskellCode
+           = "{-# OPTIONS_GHC -Wall #-}"
              ++"\n{-Generated code by "++versionbanner++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
@@ -55,13 +55,17 @@ doGenHaskell fSpec flags
              ++"\n  import Adl"
              ++"\n  import ShowHS (showHS)"
              ++"\n  import Data.Fspec"
+             ++"\n  import Data.Plug"
              ++"\n"
              ++"\n  main :: IO ()"
              ++"\n  main = putStr (showHS \"\\n  \" fSpec_"++baseName flags++")"
              ++"\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS "\n     " fSpec
-                ) 
+--WAAROM?  staat deze Haskell code in Generators, terwijl die eigenlijk in ShowHS zou moeten staan?
+--DAAROM?  Ik denk dat het komt omdat we niet willen dat de vlaggen bij ShowHS naar binnen gaan...
+--         Maar eigenlijk vind ik dat niet zo'n goede reden.
+
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."

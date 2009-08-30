@@ -38,8 +38,83 @@ where
 -- \*** Eigenschappen met betrekking tot: Plug                          ***
 -- \***********************************************************************
    instance ShowHS Plug where
-    showHSname plug = name plug
-    showHS indent plug = (chain (indent ++"    ")) [show plug]
+    showHSname plug = "plug_"++haskellIdentifier (name plug)
+    showHS indent plug   
+      = case plug of
+           PlugSql{} -> (chain newIndent 
+                          ["PlugSql{ fields   = " ++ "["++chain "," (map (showHS "") (fields plug))++"]"
+                                 ,", plname   = " ++ show (plname plug)
+                          ])++"}"
+           PlugPhp{} -> (chain newIndent 
+                          ["PlugPhp{ args     = " ++ "["++chain ", " [ "("++show i++","++showHS "" a++")"|(i,a)<-args plug]++"]"
+                                 ,", returns  = " ++ showHS "" (returns plug)
+                                 ,", function = " ++ showHS "" (function plug)
+                                 ,", phpfile  = " ++ show (phpfile plug)
+                                 ,", plname   = " ++ show (plname  plug)
+                          ])++"}"
+        where newIndent = indent ++"    "
+
+   instance ShowHS PhpValue where
+    showHSname _ = error ("(module ShowHS) PhpValue is anonymous with respect to showHS.")
+    showHS indent phpVal
+      = case phpVal of
+           PhpNull{}   -> "PhpNull"
+           PhpObject{} -> "PhpObject{ objectdf = " ++ showHSname (objectdf phpVal) ++ ", phptype  = " ++ showHS "" (phptype phpVal) ++ "}"
+
+   instance ShowHS PhpType where
+    showHSname _ = error ("(module ShowHS) PhpType is anonymous with respect to showHS.")
+    showHS indent PhpString = indent++"PhpString"
+    showHS indent PhpInt    = indent++"PhpInt"
+    showHS indent PhpFloat  = indent++"PhpFloat"
+    showHS indent PhpArray  = indent++"PhpArray"
+
+   instance ShowHS PhpReturn where
+    showHSname _ = error ("(module ShowHS) PhpReturn is anonymous with respect to showHS.")
+    showHS indent ret = indent++"PhpReturn {retval = "++showHS indent (retval ret)++"}"
+
+   instance ShowHS PhpAction where
+    showHSname _ = error ("(module ShowHS) PhpAction is anonymous with respect to showHS.")
+    showHS indent act
+      = (chain (indent ++"    ") 
+          [ "PhpAction{ action = " ++ showHS "" (action act)
+          , "         , on     = " ++ "["++chain ", " (map (showHS "") (on act))++"]"
+          , "         }"
+          ])
+
+   instance ShowHS ActionType where
+    showHSname _ = error ("(module ShowHS) ActionType is anonymous with respect to showHS.")
+    showHS indent Create = indent++"Create"
+    showHS indent Read   = indent++"Read"
+    showHS indent Update = indent++"Update"
+    showHS indent Delete = indent++"Delete"
+
+   instance ShowHS SqlField where
+    showHSname _ = error ("(module ShowHS) SqlField is anonymous with respect to showHS.")
+    showHS indent sqFd
+      = (chain (indent ++"    ") 
+          [ "Fld { fldname = " ++ show (fldname sqFd)
+          , "    , fldexpr = " ++ showHS "" (fldexpr sqFd)
+          , "    , fldtype = " ++ showHS "" (fldtype sqFd)
+          , "    , fldnull = " ++ show (fldnull sqFd) -- can there be empty field-values?
+          , "    , flduniq = " ++ show (flduniq sqFd) -- are all field-values unique?
+          , "    , fldauto = " ++ show (fldauto sqFd) -- is the field auto increment?
+          , "    }"
+          ])
+
+   instance ShowHS SqlType where
+    showHSname _ = error ("(module ShowHS) SqlType is anonymous with respect to showHS.")
+    showHS indent (SQLChar i)    = indent++"SQLChar   "++show i
+    showHS indent SQLBlob        = indent++"SQLBlob   "
+    showHS indent SQLPass        = indent++"SQLPass   "
+    showHS indent SQLSingle      = indent++"SQLSingle "
+    showHS indent SQLDouble      = indent++"SQLDouble "
+    showHS indent SQLText        = indent++"SQLText   "
+    showHS indent (SQLuInt i)    = indent++"SQLuInt   "++show i
+    showHS indent (SQLsInt i)    = indent++"SQLsInt   "++show i
+    showHS indent SQLId          = indent++"SQLId     "
+    showHS indent (SQLVarchar i) = indent++"SQLVarchar "++show i
+    showHS indent (SQLEval strs) = indent++"SQLEval ["++chain ", " (map show strs)++"]"
+    showHS indent SQLBool        = indent++"SQLBool   "
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
@@ -47,20 +122,22 @@ where
    instance ShowHS Fspc where
     showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS "" (pfixFSid "f_Ctx_" (fsid fspec)) 
     showHS indent fspec
-         = (chain (indent ++"    ") 
+     = chain (indent ++"    ") 
             ["Fspc{ fsfsid = " ++ showHS " " (fsid fspec)
                   ,", themes   = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
+                                           -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
                                    -- "["++chain "," (map (showHS "") (themes fspec))++"]" 
-                  ,", datasets = "++ "[ "++chain indentA (map showHSname (datasets fspec))++indent++"                 "++"]" 
+                  ,", datasets = "++ "[ "++chain (indentA++", ") (map showHSname (datasets fspec))++indentA++"]" 
+                  ,", vplugs   = "++ "[ "++chain (indentA++", ") (map showHSname (vplugs fspec))++indentA++"]"
+                  ,", plugs    = "++ "[ "++chain (indentA++", ") (map showHSname (plugs fspec))++indentA++"]"
                   ,", serviceS = serviceS'"
                   ,", serviceG = serviceG'"
                   ,", services = services'"
-                  ,", vrules   = " ++ "[ "++chain indentA (map showHSname (vrules fspec))++indent++"                 "++"]"
-                  ,", vrels    = " ++ "[ "++chain indentA (map showHSname (vrels  fspec))++indent++"                 "++"]"
+                  ,", vrules   = " ++ "[ "++chain (indentA++", ") (map showHSname (vrules fspec))++indentA++"]"
+                  ,", vrels    = " ++ "[ "++chain (indentA++", ") (map showHSname (vrels  fspec))++indentA++"]"
                   ,", fsisa = isa'"
                   ,"}" 
-                    ]) ++   
-
+                  ] ++   
        indent++"where"++
        indent++" isa' = "++ showHS (indent ++ "        ") (fsisa fspec)++
        indent++" gE = genEq (typology isa')"++
@@ -69,15 +146,25 @@ where
    --  (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++indent++"  = "++showHS (indent++"    ") t|t<- themes fspec ]++"\n")++
         "\n -- ***DATASETS***: "++
        (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
+        "\n -- ***PLUGS***: "++
+       (if null (plugs fspec ) then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p|p<-plugs fspec ]++"\n")++
         "\n -- ***Services S***: "++
-       indent++" serviceS' = "++"["++chain (indentB++",") (map (showHS indentB) (serviceS fspec))++"]"++
+       indent++" serviceS' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (serviceS fspec))++indentB++"]"++
         "\n -- ***Services G***: "++
-       indent++" serviceG' = "++"["++chain (indentB++",") (map (showHS indentB) (serviceG fspec))++"]"++
+       indent++" serviceG' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (serviceG fspec))++indentB++"]"++
         "\n -- ***Services***: "++
-       indent++" services' = "++"["++chain (indentB++",") (map (showHS indentB) (services fspec))++"]"++
+       indent++" services' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (FspecDef.services fspec))++indentB++"]"++
 
 -- WAAROM?  Stef, je had hier ooit de intentie om de verschillende soorten servicedefinities apart op te sommen. Echter, dan moeten ze wel te onderscheiden zijn. de namen moeten
 --          dan ook netjes uniek worden gemaakt. Dat is nu nog niet het geval. Is dat nodig/ wenselijk? Waarom wel, waarom niet?
+-- DAAROM!  Een ADL-engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
+--          alle services met de hand te verzinnen.
+--          Je kunt natuurlijk ook een services-generator aan het werk zetten, die een aantal services klaarzet bij wijze
+--          van steiger (scaffold). Dat bespaart een hoop werk. De functie serviceG is zo'n generator.
+--          Door de gegenereerde services af te drukken, kun je dus heel snel ADL-sourcecode maken met correct-vertaalbare services.
+--          Heb je eenmaal een goed werkend pakket services, dan wil je wellicht alleen de door jezelf gespecificeerde services
+--          gebruiken. Dat gebeurt in serviceS.
+--          De functie services is oude meuk; het definieert CRUD-services voor alle concepten, geloof ik.
 
 --        "\n -- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++  
 --       (if null 
@@ -91,7 +178,7 @@ where
 --        "\n -- ***PATTERNS***: "++
 ----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
         "\n"
-           where indentA = indent ++"                 , "
+           where indentA = indent ++"                 "
                  indentB = indent ++"              "
   
 -- \***********************************************************************
@@ -115,9 +202,6 @@ where
     showHSname (FS_id nm ) = haskellIdentifier nm 
     showHS _ (FS_id nm) 
       = "(FS_id " ++ show nm ++ ")"
---    showHS indent NoName = "NoName"
-
-
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Architecture                  ***

@@ -54,6 +54,7 @@ where
                       , flduniq     :: Bool -- are all field-values unique?
                       , fldauto     :: Bool -- is the field auto increment?
                       } deriving (Eq, Show)
+
   instance Ord SqlField where
     compare a b = compare (fldname a) (fldname b)
   
