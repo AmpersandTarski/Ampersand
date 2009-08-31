@@ -11,13 +11,13 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
              )
    import ShowADL(showADL)
    import CC_aux(fun)
-   import NormalForms (conjNF,disjNF)
+   import NormalForms (conjNF,disjNF,simplify)
    import Data.Fspec
    import Data.Plug
    import List(isPrefixOf)
    import Collection (Collection(rd,uni))
    import Auxiliaries (naming)
---   import Debug.trace
+--   import Debug.Trace
 
    pDebug :: Bool
    pDebug = True
@@ -412,8 +412,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   , let se = fldexpr sf
                   , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
                   , let te = fldexpr tf
-                  , (  (isTrue $conjNF$conjNF$Fu [Cp e',F [flp se,te]])
-                    && (isFalse$conjNF$conjNF$Fi [Cp e',F [flp se,te]])
+                  , (  (isTrue $disjNF$Fu [Cp e',simplF [flp se,te]])
+                    && (isFalse$disjNF$Fi [Cp e',simplF [flp se,te]])
                     )
                   {- the above should be enough.. but the relation algebra calculations
                      are not good enough yet. In particular:
@@ -425,10 +425,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      The code below fixes exactly these ommissions
                   -}
                   || (isProp (se) && (te == e')
-                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [e',flp e'] ]
+                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), simplF [e',flp e'] ]
                                           ,Cp$se]))
                   || (isProp (te) && (se == flp e')
-                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), F [flp e',e'] ]
+                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')), simplF [flp e',e'] ]
                                           ,Cp$te]))
                   {- found another exception:
                        isFalse (I;I /\ -I)
@@ -440,8 +440,21 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      && (Sur `elem` multiplicities se)
                      )
                   ]
-
-   
+     where -- simplF: replace a;a~ by I if INJ&TOT
+      simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
+        where fs = [m | F m <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
+               -- null occurs especialy in cases of [I;e] and [e;I]
+      replF (k:k2:ks) | k == flp k2 && Inj `elem` multiplicities k && Tot `elem` multiplicities k
+             = if null ks then Tm$mIs$source k else replF ks
+      replF [a] = F [a]
+      replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF
+        = if null fs then F [k,res] else replF (k:head fs) -- we might replace something again!
+        where res = replF (k2:ks)
+              fs  = [m | F m <- [res]]
+      replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
+       = error ("Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
+               -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
+      replF ks = F (ks)
    sqlExprSrc :: Fspc->Expression -> String
    sqlExprSrc _     (F [])    = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
    sqlExprSrc fSpec (F [f])   = sqlExprSrc fSpec f

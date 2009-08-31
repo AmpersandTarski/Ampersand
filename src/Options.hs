@@ -193,7 +193,7 @@ defaultOptions clocktime env fName pName
                          , language      = Dutch
                          , progrName     = pName
                          , adlFileName   = replaceExtension fName ".adl"
-                         , baseName      = dropExtension  fName
+                         , baseName      = takeBaseName fName -- was: dropExtension fName, changed because the file_path/filename is no valid databasename
                          , uncheckedLogName = lookup envlogName env
                          , logName       = "ADL.log"
                          , services      = False

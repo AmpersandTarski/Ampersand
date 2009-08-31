@@ -13,7 +13,6 @@
    import Version (versionbanner)
    import Data.Fspec
 
-   
    connectToDataBase :: Fspc -> String -> String
    connectToDataBase fSpec dbName
     = (chain "\n  " 
@@ -56,6 +55,7 @@
        , "    $DB_errs[]='Error '.($ernr=mysql_errno($DB_link)).' in query \"'.$quer.'\"';"
        , "    return false;"
        , "  }"
+       , "  if($result===true) return true; // succes.. but no contents.."
        , "  $rows=Array();"
        , "  while (($row = @mysql_fetch_array($result))!==false) {"
        , "    $rows[]=$row;"
@@ -108,8 +108,6 @@
                  "  return false;\n    }"
            ) ++ "return true;\n  }"
          | rule<-vrules fSpec, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc fSpec rule'], trg<-[noCollide [src] (sqlExprTrg fSpec rule')] ]
-
-
 
    dbError :: Rule -> String -> String -> String
    dbError rule _ _

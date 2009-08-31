@@ -2,13 +2,13 @@ CONTEXT Meterkast
   {-
   zo geven we straks PHPPLUG's aan:
     PHPPLUG GetPersonByNameAndAge {"ACTION=SELECT"} : I[Persoon]
-  ÊÊ= [ name {"PHPARG","PHPTYPE=String"} : naam
-  ÊÊÊÊ, age {"PHPARG","PHPTYPE=Int"} : leeftijd
-  ÊÊÊÊ, persoon {"PHPRETURN", "PHPTYPE=Array"} : I[Persoon]
-  ÊÊÊÊÊÊÊÊ= [ name : naam
-  ÊÊÊÊÊÊÊÊÊÊ, age Ê: leeftijd
-  ÊÊÊÊÊÊÊÊÊÊ, dateOfBirth : geboortedatum]
-  ÊÊÊÊ]
+    = [ name {"PHPARG","PHPTYPE=String"} : naam
+      , age {"PHPARG","PHPTYPE=Int"} : leeftijd
+      , persoon {"PHPRETURN", "PHPTYPE=Array"} : I[Persoon]
+          = [ name : naam
+            , age  : leeftijd
+            , dateOfBirth : geboortedatum]
+      ]
   -}
   
   SQLPLUG OperationTbl : I[Operation]
@@ -21,27 +21,24 @@ CONTEXT Meterkast
      ,object{"SQLTYPE=Id"} : object
      ,type{"SQLTYPE=Id"}   : type
      ]
-  SQLPLUG BestandTbl : I[Bestand]
-   = [Id{"SQLTYPE=Id"} : I
-     ,session{"SQLTYPE=Text"} : session
-     ,path{"SQLTYPE=Text"} : path
-     ]
   SQLPLUG SessieTbl : I[Session]
    = [Id{"SQLTYPE=Text"} : I
      -- ipV6 heeft max 39 tekens: 8 groepen van 4 hex-digits met 7 : ertussen
      ,ip{"SQLTYPE=VARCHAR 40"} : ip
+     ,bestand{"SQLTYPE=Id"} : session~
+     ,bestandpath{"SQLTYPE=Text"} : session~;path
      ]
 
   PATTERN Meterkast
     path      :: Bestand->Text [INJ].
-    session   :: Bestand->Session PRAGMA "the owner of " " is ".
+    session   :: Bestand->Session [INJ] PRAGMA "the owner of " " is ".
     ip        :: Session->Text.
     object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
     type      :: Actie -> Operation PRAGMA "" " is being executed by activating ".
     name      :: Operation->Text [INJ].
     call      :: Operation->Text.
   ENDPATTERN
-
+  
   
   SERVICE Ops       : I[ONE]
    = [ Operations   : V[ONE*Operation]

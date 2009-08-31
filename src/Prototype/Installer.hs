@@ -35,19 +35,22 @@
         , "if(!$DB_slct){"
         , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database\");" --todo: full error report
         , "}else{"
-        ] ++ map ((++) "  ")
+        ] ++ indentBlock 2
         (
           [ "if(!$included && !file_exists(\"dbsettings.php\")){ // we have a link now; try to write the dbsettings.php file"
           , "   if($fh = @fopen(\"dbsettings.php\", 'w')){"
           , "     fwrite($fh, '<'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); $DB_debug = 3; ?'.'>');"
           , "     fclose($fh);"
-          , "   }"
+          , "   }else die('<P>Error: could not write dbsettings.php, make sure that the directory of Installer.php is writable"
+          , "              or create dbsettings.php in the same directory as Installer.php"
+          , "              and paste the following code into it:</P><code>'."
+          , "             '&lt;'.'?php $DB_link=mysql_connect($DB_host=\"'.$DB_host.'\", $DB_user=\"'.$DB_user.'\", $DB_pass=\"'.$DB_pass.'\"); $DB_debug = 3; ?'.'&gt;</code>');"
           , "}\n"
           , "$error=false;"
           , "/*** Create new SQL tables ***/"
           , "//// Number of plugs: "++(show (length (plugs fSpec)))
           , "if($existing==true){"
-          ] ++ map ((++) "  ") (concat (map checkPlugexists (plugs fSpec)))
+          ] ++ indentBlock 2 (concat (map checkPlugexists (plugs fSpec)))
           ++ ["}"]
           ++ concat (map plugCode (plugs fSpec))
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
