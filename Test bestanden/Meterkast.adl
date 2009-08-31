@@ -51,8 +51,13 @@ CONTEXT Meterkast
    = [ Session      : V[ONE*Session]
         = [ id      : I
           , ip      : ip
-          , files   : session~
+          , file    : session~
           ]
+     ]
+  
+  SERVICE Session : I[Session]
+   = [ ip      : ip
+     , file    : session~
      ]
   
   SERVICE Bestand   : I[Bestand]

@@ -2,7 +2,7 @@
   module Prototype.Object(objectServices) where
    --import Char(toUpper)
    import Strings(chain)
-   import NormalForms (disjNF)
+   import NormalForms (disjNF,simplify)
    import Auxiliaries (eqCl,sort')
    import Adl (source,target
               --,Concept(..),Declaration(..),isTrue,makeInline
@@ -13,7 +13,7 @@
    import ShowADL
    import Collection (Collection(rd,(>-)))
    import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,selectExprBrac,indentBlock
-     ,sqlRelPlugs,addToLast,isOne,phpIdentifier,sqlAttConcept,selectExpr
+     ,sqlRelPlugs,addToLast,isOne,phpIdentifier,selectExpr
      ,addSlashes,commentBlock,sqlPlugFields)
    import Data.Fspec
    import Data.Plug
@@ -36,62 +36,41 @@
        ] ++ showClasses fSpec o ++
        ( if isOne o
          then []
-         else [ generateService_getEach fSpec (name o) o
-              , generateService_read    fSpec (name o) o
-              , generateService_delete  fSpec (name o) o]
+         else generateService_getEach fSpec (name o) o ++
+              generateService_read    fSpec (name o) o ++
+              generateService_delete  fSpec (name o) o
        )
       )) ++ "\n?>"
 
-   generateService_getEach :: Fspc -> String -> ObjectDef -> String
+   generateService_getEach :: Fspc -> String -> ObjectDef -> [String]
    generateService_getEach fSpec nm o
-    = "function getEach"++phpIdentifier nm++"(){"++
-      "\n      return DB_doquer('"++(selectExpr fSpec
-                                             25
-                                             (sqlExprTrg fSpec (ctx o))
-                                             (sqlExprSrc fSpec (ctx o))
-                                             (flp (ctx o))
-                                 )++"');\n  }"
+    = ["function getEach"++phpIdentifier nm++"(){"
+      ,"  return DB_doquer('"++(selectExpr fSpec
+                                           22
+                                           (sqlExprTrg fSpec (ctx o))
+                                           ""
+                                           (flp (ctx o))
+                               )++"');"
+      ,"}\n"]
 
-   generateService_read :: Fspc -> String -> ObjectDef -> String
-   generateService_read fSpec nm object
-    = chain "\n  "
-      (["function read"++phpIdentifier nm++"($id){"
-       ,"    // check existence of $id"
-       ,"    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
-       ,"    if(count($ctx)==0) return false;"
-       ,"    $obj = new "++phpIdentifier (name object)++"($id);"
-       ,"    return $obj;"
-       ,"}"])
-    where
-       doesExistQuer :: [Char] -> String
-       doesExistQuer var
-
-   
-             = ( selectExpr fSpec
-                            25
-       
-
-                   (sqlAttConcept fSpec (concept object))
-                            (sqlAttConcept fSpec (concept object))
-                            (Fi [ Tm (mIs (concept object))
-                                , Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") (concept object))
-                                ]
-
-                   
-                            )
-               )
+   generateService_read :: Fspc -> String -> ObjectDef -> [String]
+   generateService_read _ nm object
+    = ["function read"++phpIdentifier nm++"($id){"
+      ,"    // check existence of $id"
+      ,"    $obj = new "++phpIdentifier (name object)++"($id);"
+      ,"    if($obj->isNew()) return false; else return $obj;"
+      ,"}\n"]
 
    phpVar :: String -> String
    phpVar x = "$"++phpIdentifier x
 
-   generateService_delete :: Fspc -> String -> ObjectDef -> String
+   generateService_delete :: Fspc -> String -> ObjectDef -> [String]
    generateService_delete _ nm _
-    = chain "\n  "
-      (["function del"++phpIdentifier nm++"($id){"
-       ,"  $tobeDeleted = new "++phpIdentifier nm++"($id);"
-       ,"  if($tobeDeleted->del()) return true; else return $tobeDeleted;"
-       ,"}"
-       ])
+    = ["function del"++phpIdentifier nm++"($id){"
+      ,"  $tobeDeleted = new "++phpIdentifier nm++"($id);"
+      ,"  if($tobeDeleted->isNew()) return true; // item never existed in the first place"
+      ,"  if($tobeDeleted->del()) return true; else return $tobeDeleted;"
+      ,"}\n"]
 
    checkRuls :: Fspc -> ObjectDef -> [String]
    checkRuls fSpec object
@@ -118,72 +97,91 @@
    showClasses :: Fspc -> ObjectDef -> [String]
    showClasses fSpec o
     = [ "class "++myName ++" {"] ++
-      (map ((++) "  ") (
-       ["protected $_id=false;"| not (isOne o)]
-       ++ ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]++
-       ["function "++myName++"(" ++ (if isOne o then "" else "$id=null, ")
-                                  ++ (chain ", " [phpVar (name a)++"=null" | a<-attributes o])
-                                  ++"){"
-       ]++["  $this->_id=$id;" | not (isOne o)]
-       ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
-       ++ concat (take 1 [  [ "  if(!isset("++phpVar (name a')++")"++(if isOne o then "" else "&& isset($id)")++"){"
-                            , "    // get a "++(myName)++" based on its identifier"
-                            , "    // this function will fill the attributes"
-                            ] ++
-                            ( if null [a|a<-objats o,Uni `elem` multiplicities (objctx a)]
-                              then ["    $me=array();"]
-                              else []
-                            ) ++ indentBlock 4 (doPhpGet fSpec
-                                                         "$me"
-                                                         0
-                                                         (o  {objnm =if isOne o then "1" else "$id"
-                                                             ,objctx=Tm(mIs(concept o))
-                                                             ,objats=[]}
-                                                         )
-                                                         o
-                                               )
-                            ++["    $this->set_"++phpIdentifier (name a)++"($me['"++(name a)++"']);"
-                              |a<-attributes o]
-                            ++["  }"]
-                         | a' <- attributes o]
-                 ) ++
-       ["}"
-       ,""]++
-       saveTransactions fSpec o
-       ++ (concat
-          [ ["function set_"++phpIdentifier (name a)++"($val){"
-            ,"  $this->_"++phpIdentifier (name a)++"=$val;"
-            ,"}"
-            ,"function get_"++phpIdentifier (name a)++"(){"
-            ,"  return ($this->_"++phpIdentifier (name a)++");"
-            ,"}"
-            ]
-          | a <- attributes o
-          ]
-          )++
-       ( if isOne o
-         then []
-         else ["function setId($id){"
-              ,"  $this->_id=$id;"
-              ,"  return $this->_id;"
-              ,"}"
-              ,"function getId(){"
-              ,"  if($this->_id==null) return false;"
-              ,"  return $this->_id;"
-              ,"}"]
-       ) ++
-       ["function addGen($type,$value){"
-       ]++ [ "  if($type=='"++phpIdentifier (name a)++"') return $this->add_"
-               ++ phpIdentifier (name a)++"($value);"
-           | a <- attributes o
-           ] ++
-       ["  else return false;"|length (attributes o) > 0] ++
-       ["}"]
-      )) ++
-      [ "}"
-      ]
-    where myName = name o
-   
+      indentBlock 2 (
+            ( if isOne o then [] else ["protected $_id=false;","protected $_new=true;"] )
+            ++ ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]++
+            ["function "++myName++"(" ++ (if isOne o then "" else "$id=null, ")
+                                        ++ (chain ", " [phpVar (name a)++"=null" | a<-attributes o])
+                                        ++"){"
+            ]++["  $this->_id=$id;" | not (isOne o)]
+            ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
+            ++ concat (take 1 [  [ "  if(!isset("++phpVar (name a')++")"++(if isOne o then "" else " && isset($id)")++"){"
+                                  , "    // get a "++(myName)++" based on its identifier"] ++
+                                  ( if isOne o then [] else
+                                    [ "    // check if it exists:"
+                                    , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
+                                    , "    if(count($ctx)==0) $this->_new=true; else"       
+                                    , "    {"
+                                    , "      $this->_new=false;"] ) ++
+                                  indentBlock (if isOne o then 4 else 6)
+                                  ( [ "// fill the attributes"
+                                    ] ++
+                                    ( if null [a|a<-objats o,Uni `elem` multiplicities (objctx a)]
+                                      then ["$me=array();"]
+                                      else []            
+                                    ) ++ (doPhpGet fSpec
+                                                  "$me"
+                                                  0
+                                                  (o  {objnm =if isOne o then "1" else "$id"
+                                                      ,objctx=Tm(mIs(concept o))
+                                                      ,objats=[]}
+                                                  )
+                                                  o
+                                        ) 
+                                    ++["$this->set_"++phpIdentifier (name a)++"($me['"++(name a)++"']);"
+                                      |a<-attributes o]
+                                  ) ++
+                                  ( if isOne o then [] else ["    }"] )
+                                  ++["  }"] ++
+                                  if isOne o then [] else
+                                  [ "  else if(isset($id)){ // just check if it exists"    
+                                  , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
+                                  , "    $this->_new=(count($ctx)==0);"       
+                                  , "  }" ]
+                              | a' <- attributes o]
+                      ) ++
+            ["}\n"]++
+            saveTransactions fSpec o
+            ++ (concat
+                [ ["function set_"++phpIdentifier (name a)++"($val){"
+                  ,"  $this->_"++phpIdentifier (name a)++"=$val;"
+                  ,"}"
+                  ,"function get_"++phpIdentifier (name a)++"(){"
+                  ,"  return $this->_"++phpIdentifier (name a)++";"
+                  ,"}"
+                  ]
+                | a <- attributes o
+                ]
+                )++
+            if isOne o
+            then []
+            else ["function setId($id){"
+                  ,"  $this->_id=$id;"
+                  ,"  return $this->_id;"
+                  ,"}"
+                  ,"function getId(){"
+                  ,"  if($this->_id==null) return false;"
+                  ,"  return $this->_id;"
+                  ,"}"
+                  ,"function isNew(){"
+                  ,"  return $this->_new;"
+                  ,"}"
+                  ]
+            ) ++
+      [ "}\n" ]
+    where
+     myName = name o
+     doesExistQuer :: [Char] -> String
+     doesExistQuer var
+      = selectExpr fSpec
+                   25
+                   (sqlExprSrc fSpec ctx')
+                   ""
+                   expr
+      where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
+            tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") (concept o))
+            ctx' = simplify $ flp (ctx o)
+            fs   = [es' | F es' <- [ctx']]
    saveTransactions :: Fspc -> ObjectDef -> [String]
    saveTransactions fSpec object
     = [ "function save(){"
@@ -192,7 +190,7 @@
       (
         (commentBlock ( ["Attributes that will not be saved are:"
                         ,"--------------------------------------"]++map name unsavedAtts))
-        ++ ( if isOne object then [] else ["$new = ($this->getId()===false);"]) ++
+        ++ ( if isOne object then [] else ["$newID = ($this->getId()===false);"]) ++
         setMe ++ saveCodeLines ++ close (if isOne object then "true" else "$this->getId()")
       ) ++ [ "}" ] ++ 
       if isOne object then [] else
@@ -302,7 +300,7 @@
                                      -- (en na een delete hebben we die waarde nét weggegooid)
                                      [ "$lastid="++insQuery var++";" ] ++
                                      if(a==object)
-                                     then [ "if($new) $this->setId(mysql_insert_id());"]
+                                     then [ "if($newID) $this->setId(mysql_insert_id());"]
                                      else [ "if($lastid!==false && !isset("++var++"['id']))"
                                            , "  "++var++"['id']=mysql_insert_id();" ]
                                  else
@@ -383,7 +381,7 @@
                            [ fnc ("`"++fldname f++"`")
                              ( if cond f
                                then "\".(" ++ ( if fldauto f && o==object
-                                                then "!$new"
+                                                then "!$newID"
                                                 else "(null!=" ++ varname var o ++ ")"
                                               ) ++ "?\"'\".addslashes("
                                    ++ varname var o ++ ").\"'\":\"NULL\").\""

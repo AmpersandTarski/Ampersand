@@ -127,12 +127,12 @@
         isString object = not (isOne object) -- todo
         showObjectCode
          = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - ADL Prototype</TITLE>\""
-           , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"edit.js\"></SCRIPT>':'<SCRIPT type=\"text/javascript\" src=\"navigate.js\"></SCRIPT>') );"
+           , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"edit.js\"></SCRIPT>':'<SCRIPT type=\"text/javascript\" src=\"navigate.js\"></SCRIPT>').\"\\n\" );"
            , "if($edit)"
            , "    echo '<FORM name=\"editForm\" action=\"'"
            ,"          .$_SERVER['PHP_SELF'].'\" method=\"POST\" class=\"Edit\">';"]++
            ( if isString o
-             then ["if($edit && $"++objectId++"->getId()==null)"
+             then ["if($edit && $"++objectId++"->isNew())"
                   ,"     echo '<P><INPUT TYPE=\"TEXT\" NAME=\"ID\" VALUE=\"'.addslashes($"++objectId++"->getId()).'\" /></P>';"
                   ,"else echo '<H1>'.$"++objectId++"->getId().'</H1>';"
                   ,"?>"
