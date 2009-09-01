@@ -17,12 +17,12 @@ import FspecDef
 import ShowHS       (fSpec2Haskell)
 import ShowADL      (printadl)
 import ShowXML      (showXML)
-import Char         (toUpper)
 import Calc         (deriveProofs)
 import Prototype.ObjBinGen (phpObjServices)
 import Adl
 import Fspec2Pandoc (render2Pandoc,fSpec2Pandoc)
 import Rendering.ClassDiagram
+import Strings      (remSpaces)
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
@@ -94,9 +94,6 @@ generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..")
    outputFile fnm = combine (dirOutput flags) fnm
    dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
           | p<-vpatterns fSpec, (not.null) (concs p)]
-   remSpaces [] = []
-   remSpaces (' ':c:str) = toUpper c:remSpaces str 
-   remSpaces xs = xs
    cds = [run_cd (remSpaces$"CD_"++fnm) cd|cd@(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec] 
    run_cd fnm cd =
        do

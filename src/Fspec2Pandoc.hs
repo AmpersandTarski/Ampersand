@@ -6,7 +6,7 @@ where
 import Adl
 import FspecDef
 import Text.Pandoc  
-import Char         (toUpper) 
+import Strings      (remSpaces)
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
                           -- 2) cabal-install pandoc  (onder windows: cabal install pandoc)
@@ -17,7 +17,7 @@ import Languages      (Lang(..))
 import Options        (Options(..),FspecFormat(..))
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
-import Collection     ( Collection (rd) )
+
 --import Statistics
 
 --DESCR ->
@@ -59,8 +59,8 @@ chpcalabel :: String
 chpcalabel="chpConceptualAnalysis"
 chpdalabel :: String
 chpdalabel="chpDataAnalysis"
-chpgloslabel :: String
-chpgloslabel="chpGlossary"
+--chpgloslabel :: String
+--chpgloslabel="chpGlossary"
 fSpec2Pandoc :: Fspc -> Options -> Pandoc
 fSpec2Pandoc fSpec flags = Pandoc meta docContents
     where meta = Meta title authors date
@@ -166,7 +166,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro
                   [BulletList 
                      [[Plain [Str$objnm objat]]|objat<-objats obj]
                   ]
-    listKeys keys = Emph [il|objat<-keys, il<-[Str " ",Str$objnm objat]]
+    listKeys keys' = Emph [il|objat<-keys', il<-[Str " ",Str$objnm objat]]
     explainFunctionNL f = case wsaction f of {
          WSCreate -> [Para [Emph [Str$"Nieuw ",Str$name$tconcept t]]]
                    ++ [Para [Str "Voor het aanmaken van een ",Str$name$tconcept t
@@ -268,9 +268,6 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
               ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++filenm) filenm figlabel ]]
       where filenm = remSpaces (name p)
             figlabel = "figca:" ++ filenm
-            remSpaces [] = []
-            remSpaces (' ':c:str) = toUpper c:remSpaces str 
-            remSpaces xs = xs
     rules2table = case fspecFormat flags of
       --REMARK -> pandoc does not support longtable (or something similar?)
       FLatex -> [Plain $ 
@@ -299,7 +296,7 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
                    ++ [Str "Relations:"]
                    ++ printlb
                    ++ [ TeX " \\( \\begin{array}{rcl} \n"]
-                   ++ [ inline' | m<-morlist r, inline'<-printmphdetail flags m]
+                   ++ [ inline' | mph<-morlist r, inline'<-printmphdetail flags mph]
                    ++ [ TeX " \\end{array} \\) "]
                    ++ printlb
                    ++ [Str "Rule:"]
@@ -332,18 +329,18 @@ dataAnalysis lev fSpec flags = header ++ daContents
  --  ++
       [x|(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec, x<-describeCD (remSpaces fnm)]
       where 
-      describeCD cdnm = 
+      describeCD cdnm' = 
        (case (language flags) of
           Dutch ->
-                [ Header (lev+1) [Str cdnm]
-                , Plain$xrefFigure ("Klassediagram van "++cdnm) filenm figlabel
+                [ Header (lev+1) [Str cdnm']
+                , Plain$xrefFigure ("Klassediagram van "++cdnm') filenm figlabel
              ]++[ Para [Str d]|d<-themedecls] --explanation of all multiplicities]
           English -> []) --TODO
           where       
-          filenm = "CD_"++ cdnm
-          figlabel = "figcd:" ++  cdnm
-          --REMARK -> cdnm should be implemented as (name pattern) in ClassDiagram.hs
-          p = let pats = [pat|pat<-vpatterns fSpec, name pat==cdnm]
+          filenm = "CD_"++ cdnm'
+          figlabel = "figcd:" ++  cdnm'
+          --REMARK -> cdnm' should be implemented as (name pattern) in ClassDiagram.hs
+          p = let pats = [pat|pat<-vpatterns fSpec, name pat==cdnm']
               in if length pats==1 then head pats
                  else error $ "Error in Fspec2Pandoc.hs module Fspec2Pandoc function dataAnalysis.daContents.describeCD: "
                            ++ "Pattern names need to be unique."
@@ -351,7 +348,7 @@ dataAnalysis lev fSpec flags = header ++ daContents
           themedecls = [explainDecl (language flags) d|d<-ptdcs p,(not.null) (multiplicities d)]
 ------------------------------------------------------------
 servicechap :: Int -> Fspc -> Options -> Fservice ->  [Block]
-servicechap lev fSpec flags svc = header ++ svcContents  --TODO
+servicechap lev _ flags svc = header ++ svcContents  --TODO
   where
   svcname = name (objectdef svc)
   header :: [Block]
@@ -370,7 +367,7 @@ servicechap lev fSpec flags svc = header ++ svcContents  --TODO
   
 ------------------------------------------------------------
 glossary :: Int -> Fspc -> Options ->  [Block]
-glossary lev fSpec flags = []  --TODO
+glossary _ _ _ = []  --TODO
 ------------------------------------------------------------
 
 --   xrefChptReference :: String -> [Inline]
@@ -461,11 +458,14 @@ printrule flags r = case r of
      Implication -> [TeX " $ "] ++ lexpr ++ [printsymbol flags "vdash"] ++ rexpr ++ [TeX " $ "]
      Equivalence -> [TeX " $ "] ++ lexpr ++ [printsymbol flags "equiv"] ++ rexpr ++ [TeX " $ "]
      Truth -> [TeX " $ "] ++ rexpr ++ [TeX " $ "]
+     Generalization -> undefined
+     Automatic -> undefined
      where
      lexpr = printexpr flags (rrant r)
      rexpr = printexpr flags (rrcon r)
    Sg {} -> (Str "SIGNAL "):(printrule flags (srsig r))
-   _ -> [Str "?"]
+   Gc {} -> [Str "?"]
+   Fr {} -> [Str "?"]
 printexpr :: Options -> Expression -> [Inline]
 printexpr flags expr = case expr of
    Tm {} -> printmph flags (m expr)
@@ -478,7 +478,3 @@ printexpr flags expr = case expr of
    K1 {} -> printexpr flags (e expr) ++ [Superscript [Str "+"]]
    Cp {} -> printcompl flags $ printexpr flags (e expr)
 
-remSpaces :: String -> String
-remSpaces [] = []
-remSpaces (' ':c:str) = toUpper c:remSpaces str 
-remSpaces xs = xs
