@@ -45,12 +45,9 @@
    generateService_getEach :: Fspc -> String -> ObjectDef -> [String]
    generateService_getEach fSpec nm o
     = ["function getEach"++phpIdentifier nm++"(){"
-      ,"  return DB_doquer('"++(selectExpr fSpec
-                                           22
-                                           (sqlExprTrg fSpec (ctx o))
-                                           ""
-                                           (flp (ctx o))
-                               )++"');"
+      ,"  return firstCol(DB_doquer('" ++
+        ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
+        ++"'));"
       ,"}\n"]
 
    generateService_read :: Fspc -> String -> ObjectDef -> [String]
@@ -72,18 +69,6 @@
       ,"  if($tobeDeleted->del()) return true; else return $tobeDeleted;"
       ,"}\n"]
 
-   checkRuls :: Fspc -> ObjectDef -> [String]
-   checkRuls fSpec object
-    = (concat
-      [ ["  if (!checkRule"++show (nr rul)++"()){"
-        ,"    $DB_err=$preErr.'"++(addSlashes (show(explain rul)))++"';"
-        ,"  } else"
-        ]
-      | rul <- vrules fSpec
-      , or (map (\mpm -> elem mpm (mors rul)) -- rule contains an element
-                (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
-           )
-      ])
    
    -- | The function showClasses defines the PHP class of an object o and also (recursively) the
    --   PHP-classes of all subordinate objects (i.e. the attributes) of o.
@@ -110,7 +95,9 @@
                                   ( if isOne o then [] else
                                     [ "    // check if it exists:"
                                     , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
-                                    , "    if(count($ctx)==0) $this->_new=true; else"       
+                                    , "    if(count($ctx)==0) $this->_new=true; else"
+
+       
                                     , "    {"
                                     , "      $this->_new=false;"] ) ++
                                   indentBlock (if isOne o then 4 else 6)
@@ -136,7 +123,9 @@
                                   if isOne o then [] else
                                   [ "  else if(isset($id)){ // just check if it exists"    
                                   , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
-                                  , "    $this->_new=(count($ctx)==0);"       
+                                  , "    $this->_new=(count($ctx)==0);"
+
+       
                                   , "  }" ]
                               | a' <- attributes o]
                       ) ++
@@ -201,12 +190,24 @@
       ) ++
       [ "}" ]
     where
+     maybeId a = ( if null $ objats a then "" else "['id']" )
      setMe = [ "$me=array(\"id\"=>" ++ (if isOne object then "1" else "$this->getId()")
                ++ concat [ ", "++show (name a) ++ " => $this->_"++phpIdentifier (name a)
                          | a<-objats object ]
                ++ ");"
              ]
-     close result = checkRuls fSpec object ++
+     close result
+      = (concat
+          [ ["if (!checkRule"++show (nr rul)++"()){"
+            ,"  $DB_err=$preErr.'"++(addSlashes (show(explain rul)))++"';"
+            ,"} else"
+            ]
+          | rul <- vrules fSpec
+          , or (map (\mpm -> elem mpm (mors rul)) -- rule contains an element
+                    (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
+              )
+          ]
+        ) ++
         [ "if(true){ // all rules are met"
         , "  DB_doquer('COMMIT');"
         , "  return "++ result ++ ";"
@@ -252,7 +253,7 @@
      delcode plug (((a,f),_):_) -- this code is a lot like updel
        = nestTo a
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
-                        ++"`='\".addslashes("++var++"['id']).\"'\",5);"])
+                        ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
      delCodeElem :: Plug->([String],[ObjectDef])
      delCodeElem plug
        = (   concat (map (delcode plug) (fullOccurences plug))
@@ -263,17 +264,17 @@
        = ( -- only delete if we have ALL information needed for refill, so use fullOccurences
            -- if we delete more, the plug would violate its transaction boundary
              concat (map (delcode plug) (fullOccurences plug))
-         ++ concat (map delUpdt [(o,s)|(((o,s),_):_)<-(occurences plug) >- (fullOccurences plug),fldnull s])
            -- only insert if every mandatory field has a value, so use largeOccurences
          ++ concat (map inscode (occurences plug))
          , -- function should send back all ObjectDef's that have been saved everywhere properly
          rd $ map (fst . snd) (concat (occurences plug)))
        where
-        delUpdt (o,s)
-          = nestTo o (\var -> [ "DB_doquer(\"UPDATE `"++name plug++"` SET `"++fldname s++
-                               "`=NULL WHERE `"++fldname s++
-                               "`='\".addslashes("++var++"['id']).\"'\",5);"]
-                     )
+        delUpdt (o,s) var
+          =  if fldnull s then
+             [ "if(isset("++var++maybeId o++")) DB_doquer(\"UPDATE `"++name plug
+               ++"` SET `"++fldname s++"`=NULL WHERE `"
+               ++ fldname s++"`='\".addslashes("++var++maybeId o++").\"'\",5);"]
+             else []
         inscode [] = [] -- there are probably no empty groups, and we cannot modify them anyways
         inscode is@(((a,s),_):_)
          = if not ((isLargeOccurance plug) is) && null keys  -- cannot generate code...
@@ -281,7 +282,8 @@
            else
            nestTo a
                    (\var
-                     -> concat [indentBlock (2*n)
+                     -> (if is `elem` fullOccurences plug then [] else delUpdt (a,s) var) ++
+                        concat [indentBlock (2*n)
                                            ( ( if fldnull f
                                                then (:)("if(count("++var++"['"++(name o)++"'])==0) "
                                                          ++var++"['"++(name o)++"'][] = null;")
@@ -295,13 +297,13 @@
                        indentBlock (2*length nunios)
                        ( if (isLargeOccurance plug) is -- attempt INSERT first
                          then ( if ((isFullOccurance plug) is || null keys)
-                                 then -- na een DELETE, of bij null keys kÃ¡n geen UPDATE
+                                 then -- na een DELETE, of bij null keys kán geen UPDATE
                                      -- reden: een UPDATE heeft een key nodig om zich te hechten
-                                     -- (en na een delete hebben we die waarde nÃ©t weggegooid)
-                                     [ "$lastid="++insQuery var++";" ] ++
+                                     -- (en na een delete hebben we die waarde nét weggegooid)
+                                     [ "$res="++insQuery var++";" ] ++
                                      if(a==object)
-                                     then [ "if($newID) $this->setId(mysql_insert_id());"]
-                                     else [ "if($lastid!==false && !isset("++var++"['id']))"
+                                     then [ "if($newID) $this->setId($me['id']=mysql_insert_id());"]
+                                     else [ "if($res!==false && !isset("++var++"['id']))"
                                            , "  "++var++"['id']=mysql_insert_id();" ]
                                  else
                                  [ insQuery var ++";"
@@ -359,22 +361,18 @@
                                    else if Uni `elem` multiplicities (objctx o)
                                          then var++"['"++(name o)++"']"
                                          else "$"++(phpIdentifier $ name o)
-                                 ) ++
-                                 ( if null $ objats o
-                                   then ""
-                                   else "['id']"
-                                 )
-                 query :: String  -- header: initial part of the query (such as "INSERT..")
-                                   -- dit is exclucief de " aan het begin
+                                 ) ++ maybeId o
+                 query :: String     -- header: initial part of the query (such as "INSERT..")
+                                     -- dit is exclucief de " aan het begin
                        -> ( SqlField -> Bool) -- should we test for NULL?
-                       -> ( String  -- fieldname: escaped name of the Sql Field
+                       -> ( String   -- fieldname: escaped name of the Sql Field
                            ->String  -- fieldvalue: PHP value (NULL or '.addslashes(..).')
                            ->String) -- result to be part-of-query, such as 'fieldname=fieldvalue'
-                       -> String  -- tail: final part of the query (such as "WHERE..")
-                                   -- dit is exclucief de " aan het eind
+                       -> String     -- tail: final part of the query (such as "WHERE..")
+                                     -- dit is exclucief de " aan het eind
                        -> (ObjectDef->Bool) -- should this object participate in the query?
-                       -> String  -- variable name given by nestTo
-                       -> String  -- resulting query
+                       -> String     -- variable name given by nestTo
+                       -> String     -- resulting query
                  query hdr cond fnc tl selector var
                    = "DB_doquer(\"" ++ hdr ++
                      chain ", "
