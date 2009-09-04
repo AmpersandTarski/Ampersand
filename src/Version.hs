@@ -3,8 +3,9 @@ module Version (versionbanner)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. 0.8.10-405" -- the number behind the last digit is the SVN revision number.
+versionbanner = "ADL vs. 0.8.10-408" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-ObjBinGen aanpasbaar gemaakt voor Stef straks
+MySQL hostname, root en password op een veilige manier propageren naar de database. Zij kunnen nu
+als option op de commandline worden meegegeven.
 -}

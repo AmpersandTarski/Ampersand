@@ -47,6 +47,10 @@ data Options = Options { contextName   :: Maybe String
                        , uncheckedLogName :: Maybe String
                        , services      :: Bool
                        , test          :: Bool
+                       , sqlLogPwdDefd :: Bool
+                       , sqlHost       :: String
+                       , sqlLogin      :: String
+                       , sqlPwd        :: String
                        , verbosephp    :: Bool
                        } deriving Show
     
@@ -57,7 +61,7 @@ getOptions =
    do args     <- getArgs
       progName <- getProgName
       env      <- getEnvironment
-      genTime'  <- getClockTime
+      genTime' <- getClockTime
       flags    <- case getOpt Permute (each options) args of
                       (o,[n],[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
                       (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
@@ -143,7 +147,7 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option ['d']     ["dbName"]           (ReqArg dbNameOpt "name")   ("use database with name (name overrides "++
                                                                                    envdbName ++ " )")), Public)
           , ((Option ['s']     ["services"]         (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
-          , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir" )    ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
+          , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
                                                                                    envdirAtlas ++ " )")), Public)
           , ((Option []        ["XML"]              (NoArg xmlOpt)              "generate XML output"), Public)
           , ((Option ['f']     ["fspec"]      (ReqArg fspecRenderOpt "format")     "generate a functional specification document in specified format (Word, Html, Latex, Pandoc)"), Public)
@@ -157,6 +161,9 @@ options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  
           , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
                                                                                    envlogName  ++ " )")), Hidden)
           , ((Option []        ["test"]             (NoArg testOpt)             "Used for test purposes"), Hidden)
+          , ((Option []        ["sqlHost"]          (OptArg sqlHostOpt "hostname") "specify database host name"), Hidden)
+          , ((Option []        ["sqlLogin"]         (OptArg sqlLoginOpt "login")   "specify database login name"), Hidden)
+          , ((Option []        ["sqlPwd"]           (OptArg sqlPwdOpt "password")  "specify database password"), Hidden)
           , ((Option []        ["verbosePhp"]       (NoArg verbosephpOpt)       "generates loads of comments in PHP-code. Useful for debugging."), Public)
           ]
 
@@ -199,6 +206,10 @@ defaultOptions clocktime env fName pName
                          , services      = False
                          , genTime       = clocktime
                          , test          = False
+                         , sqlLogPwdDefd = False
+                         , sqlHost       = "localhost"
+                         , sqlLogin      = "root"
+                         , sqlPwd        = ""
                          }
                     
 envdirPrototype :: String
@@ -264,6 +275,15 @@ languageOpt l   opts = opts{language     = case map toUpper l of
                                              _     -> Dutch}
 logOpt :: String -> Options -> Options
 logOpt nm       opts = opts{uncheckedLogName = Just nm}
+sqlHostOpt  :: Maybe String -> Options -> Options
+sqlHostOpt  (Just nm) opts = opts{sqlHost  = nm}
+sqlHostOpt   Nothing  opts = opts
+sqlLoginOpt :: Maybe String -> Options -> Options
+sqlLoginOpt (Just nm) opts = opts{sqlLogin = nm, sqlLogPwdDefd=True}
+sqlLoginOpt  Nothing  opts = opts
+sqlPwdOpt   :: Maybe String -> Options -> Options
+sqlPwdOpt   (Just nm) opts = opts{sqlPwd   = nm, sqlLogPwdDefd=True}
+sqlPwdOpt    Nothing  opts = opts
 testOpt :: Options -> Options
 testOpt opts = opts{test = True}
 verbose :: Options -> String -> IO ()

@@ -9,6 +9,7 @@
    import Prototype.Wrapper             (objectWrapper)
    import Prototype.Installer           (installer)
    import Prototype.InterfaceDef        (interfaceDef)
+   import Prototype.RelBinGenBasics     (addSlashes)
    import System.FilePath               (combine,addExtension)
    import Options
 
@@ -19,7 +20,7 @@
       >> verboseLn flags "---------------------------"
       >> verboseLn flags ("  Generating Installer.php")
       >> writeFile (combine targetDir "Installer.php")
-                   (installer fSpec (dbName flags))
+                   (installer fSpec flags)
       >> verboseLn flags ("  Generating interfaceDef.inc.php")
       >> writeFile (combine targetDir "interfaceDef.inc.php")
                    (interfaceDef fSpec serviceObjects (dbName flags))
@@ -34,7 +35,7 @@
       >> writeFile (combine targetDir "jquery-1.3.2.min.js") jquery
       >> verboseLn flags ("  Writing Static file: style.css")
       >> writeFile (combine targetDir "style.css") stylesheet
-      >> (if issetUsernameAndPassword then 
+      >> (if sqlLogPwdDefd flags then -- if either login or password for SQL has been specified then make a dbsettings file
              verboseLn flags ("  Writing username and password: dbsettings.php")
           >> writeFile (combine targetDir "dbsettings.php") dbsettings
           else
@@ -56,11 +57,11 @@
          ]
       >> verboseLn flags ("\n")
       where
-       issetUsernameAndPassword = False
-       username = error "SQL Username not known"
-       password = error "SQL Password not known"
-       dbsettings = "<?php $DB_link=mysql_connect($DB_host=\"localhost\", $DB_user=\""++username
-                    ++"\", $DB_pass=\""++password++"\") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
+       dbsettings = "<?php $DB_link=mysql_connect("
+                    ++  "$DB_host=\""++addSlashes (sqlHost flags)++"\""
+                    ++", $DB_user=\""++addSlashes (sqlLogin flags)++"\""
+                    ++", $DB_pass=\""++addSlashes (sqlPwd flags)++"\""
+                    ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
        serviceObjects = if (allServices flags) then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script
        -- to place a file, first open it

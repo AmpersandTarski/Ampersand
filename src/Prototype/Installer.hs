@@ -4,11 +4,12 @@
   import Data.Plug
   import Data.Fspec
   import Collection (rd)
+  import Options
 --  import NormalForms(conjNF)
-  import Prototype.RelBinGenBasics(phpShow,indentBlock)
+  import Prototype.RelBinGenBasics(phpShow,indentBlock,addSlashes)
   
-  installer :: Fspc -> String -> String
-  installer fSpec dbName = "<?php\n  " ++ chain "\n  "
+  installer :: Fspc -> Options -> String
+  installer fSpec flags = "<?php\n  " ++ chain "\n  "
      (
         [ "// Try to connect to the database\n"
         , "if(isset($DB_host)&&!isset($_REQUEST['DB_host'])){"
@@ -18,19 +19,18 @@
         , "  $included = false; // get user/pass elsewhere"
         , "  if(file_exists(\"dbsettings.php\")) include \"dbsettings.php\";"
         , "  else { // no settings found.. try some default settings"
-        , "    if(!( $DB_link=@mysql_connect($DB_host='localhost',$DB_user='root',$DB_pass='')"
-        , "       or $DB_link=@mysql_connect($DB_host='localhost',$DB_user='ADL',$DB_pass='ADL')))"
+        , "    if(!( $DB_link=@mysql_connect($DB_host='"++addSlashes (sqlHost flags)++"',$DB_user='"++addSlashes (sqlLogin flags)++"',$DB_pass='"++addSlashes (sqlPwd flags)++"')))"
         , "    { // we still have no working settings.. ask the user!"
         , "      die(\"Install failed: cannot connect to MySQL\"); // todo" --todo
         , "    }"
         , "  } "
         , "}"
-        , "if($DB_slct = @mysql_select_db('"++dbName++"')){"
+        , "if($DB_slct = @mysql_select_db('"++dbName flags++"')){"
         , "  $existing=true;"
         , "}else{"
         , "  $existing = false; // db does not exist, so try to create it"
-        , "  @mysql_query(\"CREATE DATABASE `"++dbName++"` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
-        , "  $DB_slct = @mysql_select_db('"++dbName++"');"
+        , "  @mysql_query(\"CREATE DATABASE `"++dbName flags++"` DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
+        , "  $DB_slct = @mysql_select_db('"++dbName flags++"');"
         , "}"
         , "if(!$DB_slct){"
         , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database\");" --todo: full error report
