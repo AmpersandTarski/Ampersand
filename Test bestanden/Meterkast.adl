@@ -21,16 +21,19 @@ CONTEXT Meterkast
      ,object{"SQLTYPE=Id"} : object
      ,type{"SQLTYPE=Id"}   : type
      ]
+  SQLPLUG BestandTbl : I[Bestand]
+   = [ Id{"SQLTYPE=Id"} : I
+     , path{"SQLTYPE=Text"} : path
+     ]
   SQLPLUG SessieTbl : I[Session]
    = [Id{"SQLTYPE=Text"} : I
      -- ipV6 heeft max 39 tekens: 8 groepen van 4 hex-digits met 7 : ertussen
      ,ip{"SQLTYPE=VARCHAR 40"} : ip
      ,bestand{"SQLTYPE=Id"} : session~
-     ,bestandpath{"SQLTYPE=Text"} : session~;path
      ]
 
   PATTERN Meterkast
-    path      :: Bestand->Text [INJ].
+    path      :: Bestand->Text.
     session   :: Bestand->Session [INJ] PRAGMA "the owner of " " is ".
     ip        :: Session->Text.
     object    :: Actie -> Bestand PRAGMA "" " is being executed on ".
@@ -64,6 +67,7 @@ CONTEXT Meterkast
    = [ path         : path
      , session      : session
      , compilations : object~
+       = [ id: I, operatie : type ]
      ]
   
   SERVICE Actie     : I[Actie]

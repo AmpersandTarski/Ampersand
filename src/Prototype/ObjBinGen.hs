@@ -9,6 +9,7 @@
    import Prototype.Wrapper             (objectWrapper)
    import Prototype.Installer           (installer)
    import Prototype.InterfaceDef        (interfaceDef)
+   import Prototype.Index               (htmlindex)
    import Prototype.RelBinGenBasics     (addSlashes)
    import System.FilePath               (combine,addExtension)
    import Options
@@ -18,6 +19,9 @@
      =   verboseLn flags "---------------------------"
       >> verboseLn flags "Generating php Object files with ADL"
       >> verboseLn flags "---------------------------"
+      >> verboseLn flags ("  Generating index.htm")
+      >> writeFile (combine targetDir "index.htm")
+                   (htmlindex fSpec serviceObjects flags)
       >> verboseLn flags ("  Generating Installer.php")
       >> writeFile (combine targetDir "Installer.php")
                    (installer fSpec flags)
