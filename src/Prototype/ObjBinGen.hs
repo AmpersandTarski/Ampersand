@@ -62,9 +62,9 @@
       >> verboseLn flags ("\n")
       where
        dbsettings = "<?php $DB_link=mysql_connect("
-                    ++  "$DB_host=\""++addSlashes (sqlHost flags)++"\""
-                    ++", $DB_user=\""++addSlashes (sqlLogin flags)++"\""
-                    ++", $DB_pass=\""++addSlashes (sqlPwd flags)++"\""
+                    ++  "$DB_host='"++addSlashes (sqlHost flags)++"'"
+                    ++", $DB_user='"++addSlashes (sqlLogin flags)++"'"
+                    ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
        serviceObjects = if (allServices flags) then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script

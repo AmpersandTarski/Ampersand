@@ -244,7 +244,7 @@
          = (if Tot `notElem` mults && Uni `elem` mults
            then [ "if(isset("++var++")){" ] ++ indentBlock 2 content ++ ["}"]
            else content,[])
-           where content = [ "echo "++var++";"]
+           where content = [ "echo htmlspecialchars("++var++");"]
                  mults   = multiplicities (objctx att)
         uniAtt var depth path cls att
          = ((if null gotoPages then []
