@@ -198,7 +198,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   hierarchy = Isa isar (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
     isar = [case g of G{} -> (gengen g,genspc g) | g<-allCtxGens ctxs]
-    isac = foldr merge [] [map fst isar, map snd isar]
+    isac = rd (map fst isar++map snd isar)
 
   --DESCR -> enriching ctxpats
   ctxpatterns = map bindPat (ctxpats cx)

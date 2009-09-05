@@ -80,7 +80,6 @@ where
                           ,"       , plname   = " ++ show (plname  plug)
                           ,"       }"
                           ])
-        where newIndent = indent ++"    "
 
    instance ShowHS PhpValue where
     showHSname _ = error ("(module ShowHS) PhpValue is anonymous with respect to showHS.")

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.Input (isaRels,allPatGens,allPatRules,allCtxGens,allCtxPats,allCtxCpts,allCtxDecls,allCtxRules,allCtxKeyDefs,removeCtx,merge) where
+module TypeInference.Input (isaRels,allPatGens,allPatRules,allCtxGens,allCtxPats,allCtxCpts,allCtxDecls,allCtxRules,allCtxKeyDefs,removeCtx) where
 import Auxiliaries (eqCl)
 import Collection (rd,uni)
 import Adl  
@@ -23,10 +23,6 @@ allPatGens ps = foldr (++) [] [case p of Pat{} -> ptgns p | p<-ps]
 allCtxPats :: Contexts -> Patterns
 allCtxPats ctxs = foldr (++) [] [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
 
---DESCR -> all the ObjectDefs of Contexts
-allCtxObjDefs :: Contexts -> ObjectDefs
-allCtxObjDefs ctxs = foldr (++) [] [case cx of Ctx{} -> ctxos cx | cx<-ctxs]
-
 --DESCR -> all the Rules of Contexts
 allCtxRules :: Contexts -> Rules
 allCtxRules ctxs = foldr (++) [] [case cx of Ctx{} -> ctxrs cx ++ allPatRules (ctxpats cx) | cx<-ctxs]
@@ -34,14 +30,6 @@ allCtxRules ctxs = foldr (++) [] [case cx of Ctx{} -> ctxrs cx ++ allPatRules (c
 --DESCR -> all the Rules of patterns
 allPatRules :: Patterns -> Rules
 allPatRules ps = foldr (++) [] [case p of Pat{} -> ptrls p | p<-ps]
-
---DESCR -> all the Concepts of Contexts
--- allCtxCpts :: Contexts -> Concepts
--- allCtxCpts ctxs = foldr merge []
---                  [ allDeclCpts (allPatDecls (allCtxPats ctxs))
---                  , allGenCpts (allCtxGens ctxs)                -- WAAROM? uitgecommentaard? DAAROM! voegt nooit nieuwe elementen toe.
---                  , allMphCpts (allExprMphs (allCtxExprs ctxs)) -- WAAROM? uitgecommentaard? DAAROM! voegt nooit nieuwe elementen toe.
---                  ]
 
 allCtxCpts :: Contexts -> Concepts
 allCtxCpts ctxs
@@ -51,65 +39,15 @@ allCtxCpts ctxs
    , (c@C{},_)<-take 1 cl
    ] `uni` [S]
   where 
-   pps = [ pop | ctx<-ctxs, pop<-ctxpops ctx]
+   pps = [ pop | cx<-ctxs, pop<-ctxpops cx]
    dls = allPatDecls (allCtxPats ctxs)
-   dom r ps = if Inj `elem` multiplicities r then [ a | [a,b]<-ps ] else rd [ a | [a,b]<-ps ]
-   cod r ps = if Uni `elem` multiplicities r then [ b | [a,b]<-ps ] else rd [ b | [a,b]<-ps ]
+   dom r ps = if Inj `elem` multiplicities r then [ a | [a,_]<-ps ] else rd [ a | [a,_]<-ps ]
+   cod r ps = if Uni `elem` multiplicities r then [ b | [_,b]<-ps ] else rd [ b | [_,b]<-ps ]
 
 --DESCR -> all the Declarations of Contexts
 allCtxDecls :: Contexts -> Declarations
 allCtxDecls ctxs = allPatDecls (allCtxPats ctxs)
 
---DESCR -> all the Concepts of Morphisms
---allMphCpts :: Morphisms -> Concepts
---allMphCpts ms = foldr merge []
---                [case mph of Mph{} -> mphats mph;
---                             I{} -> mphats mph;
---                             V{} -> mphats mph;
---                             Mp1{} -> [mph1typ mph]
---                 |mph<-ms]
-
---DESCR -> all the Morphisms of Expressions
-allExprMphs :: Expressions -> Morphisms
-allExprMphs exprs = foldr (++) []
-                 [
-                  let
-                     mphs (Tc e') = mphs e'
-                     mphs (F es') = allExprMphs es'
-                     mphs (Fd es') = allExprMphs es'
-                     mphs (Fi es') = allExprMphs es'
-                     mphs (Fu es') = allExprMphs es'
-                     mphs (K0 e') = mphs e'
-                     mphs (K1 e') = mphs e'
-                     mphs (Cp e') = mphs e'
-                     mphs (Tm mph) = [mph]
-                  in mphs expr
-                  | expr<-exprs]
-
-
-allCtxExprs :: Contexts -> Expressions
-allCtxExprs ctxs = allObjDefExprs (allCtxObjDefs ctxs) ++
-                   allRuleExprs (allCtxRules ctxs)
-                   --TODO -> allKeyDefExprs
-
-allObjDefExprs :: ObjectDefs -> Expressions
-allObjDefExprs os = foldr (++) [] [case obj of Obj{} -> (objctx obj):(allObjDefExprs (objats obj))| obj<-os]
-
-allRuleExprs :: Rules -> Expressions
-allRuleExprs rs = foldr (++) [] [case rul of Ru{} -> if rrsrt rul==Truth
-                                                     then [rrcon rul]
-                                                     else [rrant rul,rrcon rul];
-                                             _    -> [] | rul<-rs]
-
-allDeclCpts :: Declarations -> Concepts
-allDeclCpts dls = rd ([desrc d | d@(Sgn{})<-dls]++[detgt d | d@(Sgn{})<-dls])
-
---allGenCpts :: Gens -> Concepts
---allGenCpts [] = []
---allGenCpts gens = foldr merge [] 
---                  [[case g of G{} -> (gengen g) | g<-gens]
---                  ,[case g of G{} -> (genspc g) | g<-gens]]
-                                 
 allCtxKeyDefs :: Contexts -> KeyDefs
 allCtxKeyDefs ctxs = (allPatKeyDefs (allCtxPats ctxs))
 --TODO -> all context keydefs are already parsed into a pattern for some unknown reason
@@ -121,11 +59,6 @@ allPatKeyDefs ps = foldr (++) [] [case p of Pat{} -> ptkds p | p<-ps]
 --DESCR -> concatenate the declarations of relations from the patterns
 allPatDecls :: Patterns -> Declarations
 allPatDecls ps = foldr (++) [] [ptdcs p | p@(Pat{})<-ps]
-
---DESCR -> add first list to second list and remove duplicates
-merge :: (Eq a) => [a] -> [a] -> [a]
-merge [] to = to
-merge (add:adds) to = if elem add to then merge adds to else merge adds (add:to) 
 
 
 ---------------------------------------------------------------------------------------------
