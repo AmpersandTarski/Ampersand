@@ -25,7 +25,7 @@ where
       | S  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything']
       | Anything -- ^Really Anything!
       | NOthing  -- ^Nothing at all
-            
+
    instance Typologic Concept
 
 
@@ -98,6 +98,7 @@ where
    class Association a => Morphic a where
     multiplicities :: a -> [Prop]
     multiplicities _ = []  --WAAROM? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
+                           --DAAROM! Als default regel is er niets mis mee. Als je niets specificeert heeft het ding geen multipliciteitseigenschappen....
     flp            :: a -> a
 --    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     isProp         :: a -> Bool  -- > tells whether the argument is a property

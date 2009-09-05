@@ -34,9 +34,6 @@ where
              ++"\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS "\n     " fSpec
---WAAROM?  staat deze Haskell code in Generators, terwijl die eigenlijk in ShowHS zou moeten staan?
---DAAROM?  Ik denk dat het komt omdat we niet willen dat de vlaggen bij ShowHS naar binnen gaan...
---         Maar eigenlijk vind ik dat niet zo'n goede reden.
 
 
    class ShowHS a where
@@ -66,17 +63,23 @@ where
     showHSname plug = "plug_"++haskellIdentifier (name plug)
     showHS indent plug   
       = case plug of
-           PlugSql{} -> (chain newIndent 
-                          ["PlugSql{ fields   = " ++ "["++chain "," (map (showHS "") (fields plug))++"]"
-                                 ,", plname   = " ++ show (plname plug)
-                          ])++"}"
-           PlugPhp{} -> (chain newIndent 
-                          ["PlugPhp{ args     = " ++ "["++chain ", " [ "("++show i++","++showHS "" a++")"|(i,a)<-args plug]++"]"
-                                 ,", returns  = " ++ showHS "" (returns plug)
-                                 ,", function = " ++ showHS "" (function plug)
-                                 ,", phpfile  = " ++ show (phpfile plug)
-                                 ,", plname   = " ++ show (plname  plug)
-                          ])++"}"
+           PlugSql{} -> (chain indent 
+                          ["PlugSql{ fields = " ++ "[ "++
+                                              chain (indent++"                  , ") (map (showHS (indent++"                    ")) (fields plug))++
+                                              indent++"                  ]"
+                          ,"       , plname = " ++ show (plname plug)
+                          ,"       }"
+                          ])
+           PlugPhp{} -> (chain indent 
+                          ["PlugPhp{ args = " ++ "[ "++
+                                            chain (indent++"                , ") [ "("++show i++","++showHS "" a++")"|(i,a)<-args plug]++
+                                            "                ]"
+                          ,"       , returns  = " ++ showHS "" (returns plug)
+                          ,"       , function = " ++ showHS "" (function plug)
+                          ,"       , phpfile  = " ++ show (phpfile plug)
+                          ,"       , plname   = " ++ show (plname  plug)
+                          ,"       }"
+                          ])
         where newIndent = indent ++"    "
 
    instance ShowHS PhpValue where
@@ -116,7 +119,7 @@ where
    instance ShowHS SqlField where
     showHSname _ = error ("(module ShowHS) SqlField is anonymous with respect to showHS.")
     showHS indent sqFd
-      = (chain (indent ++"    ") 
+      = (chain indent
           [ "Fld { fldname = " ++ show (fldname sqFd)
           , "    , fldexpr = " ++ showHS "" (fldexpr sqFd)
           , "    , fldtype = " ++ showHS "" (fldtype sqFd)

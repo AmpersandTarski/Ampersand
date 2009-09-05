@@ -7,7 +7,8 @@
   import Options
 --  import NormalForms(conjNF)
   import Prototype.RelBinGenBasics(phpShow,indentBlock,addSlashes)
-  
+  import Debug.Trace
+
   installer :: Fspc -> Options -> String
   installer fSpec flags = "<?php\n  " ++ chain "\n  "
      (
@@ -100,7 +101,8 @@
                                   | isIdent (fldexpr f) -- this should go automatically, but does not
                                   ]++["NULL"])
                           | f<-fields plug]
-             | a<-rd $ map head (concat (map (contents.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
+             | a<- (if (plname plug) == "dienstnaam" then (\x->trace ("Aantal concepten op sources van dienstnaam: "++(show$length x)) x) else (\x-> x))
+               (rd $ map head (concat (map (contents.fldexpr) (fields plug)))) -- be sure that the concepts return their respective populations
              ]
   binarify :: [String] -> [String]
   binarify [a] = [a,a]

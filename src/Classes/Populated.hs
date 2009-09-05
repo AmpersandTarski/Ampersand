@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Classes.Populated                 (Populated(contents))
 where
-   import Adl.Concept                    (Association(..))
+   import Adl.Concept                    (Association(..),Concept(..))
    import Adl.Pair                       (Pairs,join)
    import Adl.Expression                 (Expression(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..)
@@ -12,6 +12,14 @@ where
 
    class Populated a where
     contents  :: a -> Pairs
+
+   instance Populated Concept where
+    contents c 
+       = case c of
+           C {}     -> [[s,s]|s<-cptos c]
+           S        -> error ("(Module Populated) Cannot refer to the contents of the universal singleton")
+           Anything -> error ("(Module Populated) Cannot refer to the contents of Anything")
+           NOthing  -> error ("(Module Populated) Cannot refer to the contents of Nothing")
 
    instance Populated Declaration where
     contents d 

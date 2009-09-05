@@ -131,15 +131,15 @@ enrichCtx cx@(Ctx{}) ctxs =
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxkeys, (proof,fp,expr)<-proofs])
                            {-
-                           (ctxnm cx) --copy name
-                           (ctxon cx) --copy extended ctxs
-                           (hierarchy) --construct Isa with all Concepts in scope
-                           (world)     --construct the world with this cx on top of the world
-                           (ctxpats cx)--bind rules and keydefs in patterns
-                           (ctxrules)  --rules from gens and patterns of this context only
-                           (ctxdecls)  --declarations of this context only
-                           (ctxcptdefs)--concept defs of this context only
-                           (ctxks cx)  --bind keydefs
+                           (ctxnm cx)   --copy name
+                           (ctxon cx)   --copy extended ctxs
+                           (hierarchy)  --construct Isa with all Concepts in scope
+                           (world)      --construct the world with this cx on top of the world
+                           (ctxpats cx) --bind rules and keydefs in patterns
+                           (ctxrules)   --rules from gens and patterns of this context only
+                           (ctxdecls)   --declarations of this context only
+                           (ctxcptdefs) --concept defs of this context only
+                           (ctxks cx)   --bind keydefs
                            (ctxos cx)   --change mphdcl and mphtyp on morphisms in expressions
                            (ctxpops cx) --copy populations
                               -}

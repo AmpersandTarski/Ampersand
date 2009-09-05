@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.Input where
+module TypeInference.Input (isaRels,allPatGens,allPatRules,allCtxGens,allCtxPats,allCtxCpts,allCtxDecls,allCtxRules,allCtxKeyDefs,removeCtx,merge) where
+import Auxiliaries (eqCl)
+import Collection (rd)
 import Adl  
 import qualified Data.Set as Set
 
@@ -29,20 +31,39 @@ allCtxObjDefs ctxs = foldr (++) [] [case cx of Ctx{} -> ctxos cx | cx<-ctxs]
 allCtxRules :: Contexts -> Rules
 allCtxRules ctxs = foldr (++) [] [case cx of Ctx{} -> ctxrs cx ++ allPatRules (ctxpats cx) | cx<-ctxs]
 
---DESCR -> all the Gens of patterns
+--DESCR -> all the Rules of patterns
 allPatRules :: Patterns -> Rules
 allPatRules ps = foldr (++) [] [case p of Pat{} -> ptrls p | p<-ps]
 
+--DESCR -> all the Concepts of Contexts
 allCtxCpts :: Contexts -> Concepts
-allCtxCpts ctxs = foldr merge []
-                  [allDeclCpts (allPatDecls (allCtxPats ctxs)),
-                   allGenCpts (allCtxGens ctxs),
-                   allMphCpts (allExprMphs (allCtxExprs ctxs))
+allCtxCpts ctxs = --allDeclCpts (allPatDecls (allCtxPats ctxs))
+                  foldr merge []
+                  [ allDeclCpts (allPatDecls (allCtxPats ctxs))
+                  , allGenCpts (allCtxGens ctxs)                -- WAAROM? uitgecommentaard? DAAROM! voegt nooit nieuwe elementen toe.
+                  , allMphCpts (allExprMphs (allCtxExprs ctxs)) -- WAAROM? uitgecommentaard? DAAROM! voegt nooit nieuwe elementen toe.
                   ]
 
+{- alternatief, bedoeld om de populatie mee te nemen...
+allCtxCpts :: Contexts -> Concepts
+allCtxCpts ctxs
+ = [ c { cptos = rd (concat [atoms| (_,atoms)<-cl])  }
+   | cl<-eqCl fst ([(source d,dom d (decpopu d))| d@(Sgn{})<-dls]++[(target d,cod d (decpopu d))| d@(Sgn{})<-dls]++
+                   [(source pop,dom (popm pop) (popps pop))| pop<-pps]++[(target pop,cod (popm pop) (popps pop))| pop<-pps])
+   , (c@C{},_)<-take 1 cl
+   ]
+  where 
+   pps = [ pop | ctx<-ctxs, pop<-ctxpops ctx]
+   dls = allPatDecls (allCtxPats ctxs)
+   dom r ps = if Inj `elem` multiplicities r then [ a | [a,b]<-ps ] else rd [ a | [a,b]<-ps ]
+   cod r ps = if Uni `elem` multiplicities r then [ b | [a,b]<-ps ] else rd [ b | [a,b]<-ps ]
+-}
+
+--DESCR -> all the Declarations of Contexts
 allCtxDecls :: Contexts -> Declarations
 allCtxDecls ctxs = allPatDecls (allCtxPats ctxs)
 
+--DESCR -> all the Concepts of Morphisms
 allMphCpts :: Morphisms -> Concepts
 allMphCpts ms = foldr merge []
                 [case mph of Mph{} -> mphats mph;
@@ -51,6 +72,7 @@ allMphCpts ms = foldr merge []
                              Mp1{} -> [mph1typ mph]
                  |mph<-ms]
 
+--DESCR -> all the Morphisms of Expressions
 allExprMphs :: Expressions -> Morphisms
 allExprMphs exprs = foldr (++) []
                  [
@@ -83,13 +105,10 @@ allRuleExprs rs = foldr (++) [] [case rul of Ru{} -> if rrsrt rul==Truth
                                              _    -> [] | rul<-rs]
 
 allDeclCpts :: Declarations -> Concepts
---allDeclCpts [] = []
-allDeclCpts dls = foldr merge []
-                  [[(desrc d) | d@(Sgn{})<-dls]
-                  ,[(detgt d) | d@(Sgn{})<-dls]]
+allDeclCpts dls = rd ([desrc d | d@(Sgn{})<-dls]++[detgt d | d@(Sgn{})<-dls])
 
 allGenCpts :: Gens -> Concepts
---allGenCpts [] = []
+allGenCpts [] = []
 allGenCpts gens = foldr merge [] 
                   [[case g of G{} -> (gengen g) | g<-gens]
                   ,[case g of G{} -> (genspc g) | g<-gens]]
