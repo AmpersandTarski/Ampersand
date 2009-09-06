@@ -242,7 +242,7 @@
             tot = (Tot `elem` multiplicities(objctx att))
         gotoPages :: ObjectDef->String->[(String,String)]
         gotoPages att var
-          = [ (name serv++".php?"++(phpIdentifier$name serv)++"='."++var++"['id'].'"
+          = [ (name serv++".php?"++(phpIdentifier$name serv)++"='.urlencode("++var++").'"
               ,name serv)
             | serv<-(serviceS fSpec)
             , target (objctx serv) == target (objctx att)
@@ -296,7 +296,7 @@
                ]
                ,newBlocks)
            where
-            gotoP = gotoPages att var
+            gotoP = gotoPages att (var ++ "['id']")
             newBlocks = concat $ map snd stuff
             content = map fst stuff
             stuff

@@ -333,7 +333,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     | src == trg = "SELECT "++str++" AS "++src
     | otherwise  = "SELECT "++str++" AS "++src++", "++str++" AS "++trg
    selectExprMorph fSpec i src trg mph -- made for both Mph and I
-    | isIdent mph = selectGeneric i (sqlAttConcept fSpec (source mph),src) (sqlAttConcept fSpec (target mph),trg) (sqlConcept fSpec (source mph)) "1"
+    | isIdent mph = selectGeneric i (quote$sqlAttConcept fSpec (source mph),src) (quote$sqlAttConcept fSpec (target mph),trg) (quote$sqlConcept fSpec (source mph)) "1"
     | otherwise   = selectGeneric i (sqlMorSrc fSpec mph,src) (sqlMorTrg fSpec mph,trg) (quote$sqlMorName fSpec mph) "1"
 
    selectExists' :: Int -> String -> String -> String
