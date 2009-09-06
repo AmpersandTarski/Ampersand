@@ -89,7 +89,8 @@
              , "  mysql_query(\"DROP TABLE `"++(plname plug)++"`\");" --todo: incremental behaviour
              , "}" ]
           mdata plug
-           = if length (fields plug)==2 -- treat binary tables differently
+           = if name plug==name S then [ "1" ] else
+             if length (fields plug)==2 -- treat binary tables differently
              then
              [ phpShow a ++", "++ phpShow b
              | Tm m' <- map fldexpr (fields plug), [a,b]<-contents m']
@@ -101,8 +102,7 @@
                                   | isIdent (fldexpr f) -- this should go automatically, but does not
                                   ]++["NULL"])
                           | f<-fields plug]
-             | a<- (if (plname plug) == "dienstnaam" then (\x->trace ("Aantal concepten op sources van dienstnaam: "++(show$length x)) x) else (\x-> x))
-               (rd $ map head (concat (map (contents.fldexpr) (fields plug)))) -- be sure that the concepts return their respective populations
+             | a<- rd $ map head (concat (map (contents.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
              ]
   binarify :: [String] -> [String]
   binarify [a] = [a,a]

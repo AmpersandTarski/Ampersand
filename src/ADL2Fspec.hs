@@ -42,7 +42,7 @@
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Monastir interface) is already available.
             , vplugs   = definedplugs
-            , plugs    = allplugs
+            , plugs    = allplugs++[conc2plug S]
             , serviceS = attributes context
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
@@ -54,6 +54,25 @@
             , themes = themes'
             } where
         definedplugs = vsqlplugs ++ vphpplugs
+        conc2plug :: Concept -> Plug
+        conc2plug c = plugsql (name c) [field (name c) (Tm (mIs c)) Nothing False True]
+        plugsql nm fld = PlugSql {plname=nm,fields=fld}
+        mor2plug :: Morphism -> Plug
+        mor2plug  m'
+         = if isInj && not isUni then mor2plug (flp m')
+           else if isUni || isTot
+           then plugsql (name m') [field (name (source m')) (Tm (mIs (source m'))) Nothing False isUni
+                                 ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]
+           else if isInj || isSur then mor2plug (flp m')
+           else plugsql (name m') [field (name (source m')) (Fi {es=[Tm (mIs (source m')),F {es=[Tm m',flp (Tm m')]}]}
+                                                          )      Nothing False False
+                                 ,field (name (target m')) (Tm m') Nothing False False]
+           where
+             mults = multiplicities m'
+             isTot = Tot `elem` mults
+             isUni = Uni `elem` mults
+             isSur = Sur `elem` mults
+             isInj = Inj `elem` mults
         allrels = [makeFdecl d| d <-declarations context]
         allplugs = definedplugs ++ uniqueNames forbiddenNames (relPlugs ++ map conc2plug looseConcs)
           where
@@ -63,25 +82,6 @@
                             >- concs (definedplugs ++ relPlugs)
            relPlugs       = map mor2plug otherRels
            forbiddenNames = map name definedplugs
-           conc2plug :: Concept -> Plug
-           conc2plug c = plugsql (name c) [field (name c) (Tm (mIs c)) Nothing False True]
-           mor2plug :: Morphism -> Plug
-           mor2plug  m'
-            = if isInj && not isUni then mor2plug (flp m')
-              else if isUni || isTot
-              then plugsql (name m') [field (name (source m')) (Tm (mIs (source m'))) Nothing False isUni
-                                    ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]
-              else if isInj || isSur then mor2plug (flp m')
-              else plugsql (name m') [field (name (source m')) (Fi {es=[Tm (mIs (source m')),F {es=[Tm m',flp (Tm m')]}]}
-                                                             )      Nothing False False
-                                    ,field (name (target m')) (Tm m') Nothing False False]
-              where
-                mults = multiplicities m'
-                isTot = Tot `elem` mults
-                isUni = Uni `elem` mults
-                isSur = Sur `elem` mults
-                isInj = Inj `elem` mults
-           plugsql nm fld = PlugSql {plname=nm,fields=fld}
    
            uniqueNames :: [String]->[Plug]->[Plug]
            -- MySQL is case insensitive! (hence the lowerCase)
