@@ -240,28 +240,50 @@
            where
             (content,newBlocks) = uniAtt (var) depth path cls att
             tot = (Tot `elem` multiplicities(objctx att))
-        uniAtt var _ _ _ att | objats att==[]
+        gotoPages :: ObjectDef->String->[(String,String)]
+        gotoPages att var
+          = [ (name serv++".php?"++(phpIdentifier$name serv)++"='."++var++"['id'].'"
+              ,name serv)
+            | serv<-(serviceS fSpec)
+            , target (objctx serv) == target (objctx att)
+            ]
+        gotoDiv gotoP path
+         = [ "echo '<DIV class=\"Goto\" id=\"GoTo"++path++"\"><UL>';"] ++
+           [ "echo '<LI><A HREF=\""++link++"\">"++txt++"</A></LI>';"
+           | (link,txt) <- gotoP] ++
+           [ "echo '</UL></DIV>';" ]
+        uniAtt var _ path _ att | null (objats att)
          = (if Tot `notElem` mults && Uni `elem` mults
            then [ "if(isset("++var++")){" ] ++ indentBlock 2 content ++ ["}"]
            else content,[])
-           where content = [ "echo htmlspecialchars("++var++");"]
-                 mults   = multiplicities (objctx att)
+           where
+            content=if null gotoP || isIdent (ctx att) then ["echo "++echobit++";"]
+                    else if length gotoP == 1
+                         then ["if(!$edit) echo '"
+                              ,"<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
+                              ,"else echo "++echobit++";"]
+                         else ["if(!$edit){"
+                              ,"  echo '"
+                              ,"<A class=\"GotoLink\" id=\"To"++path++"\">';"
+                              ,"  echo "++echobit++".'</A>';"]
+                              ++ indentBlock 2 (gotoDiv gotoP path) ++
+                              [ "}" ]
+            echobit= "htmlspecialchars("++var++")"
+            mults = multiplicities (objctx att)
+            gotoP = gotoPages att var
         uniAtt var depth path cls att
-         = ((if null gotoPages then []
-             else if length gotoPages == 1
+         = ((if null gotoP then []
+             else if length gotoP == 1
                   then [ "if(!$edit){"
                        , "  echo '"
-                       , "<A HREF=\""++(fst$head gotoPages)++"\">';"
+                       , "<A HREF=\""++(fst$head gotoP)++"\">';"
                        , "  echo '<DIV class=\"GotoArrow\">&rarr;</DIV></A>';"
                        , "}" ]
                   else [ "if(!$edit){"
                        , "  echo '"
-                       , "<DIV class=\"GotoArrow\" id=\"To"++path++"\">&rArr;</DIV>';"
-                       , "  echo '<DIV class=\"Goto\" id=\"GoTo"++path++"\"><UL>';"] ++
-                       [ "  echo '<LI><A HREF=\""++link++"\">"++txt++"</A></LI>';"
-                       | (link,txt) <- gotoPages ] ++
-                       [ "  echo '</UL></DIV>';"
-                       , "}" ]
+                       , "<DIV class=\"GotoArrow\" id=\"To"++path++"\">&rArr;</DIV>';"]
+                       ++ indentBlock 2 (gotoDiv gotoP path) ++
+                       [ "}" ]
             )++
             ["echo '"
             ,"<DIV>';"]
@@ -274,15 +296,9 @@
                ]
                ,newBlocks)
            where
+            gotoP = gotoPages att var
             newBlocks = concat $ map snd stuff
             content = map fst stuff
-            gotoPages :: [(String,String)]
-            gotoPages
-             = [ (name serv++".php?"++(phpIdentifier$name serv)++"='."++var++"['id'].'"
-                 ,name serv)
-               | serv<-(serviceS fSpec)
-               , target (objctx serv) == target (objctx att)
-               ]
             stuff
              = [ (indentBlock 2 c, b)
                | (a,n)<-zip (objats att) [(0::Integer)..]

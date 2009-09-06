@@ -79,5 +79,12 @@ CONTEXT Meterkast
    = [ naam         : name
      , call         : call
      ]
+     
+  SERVICE VolleOperatie  : I[Operation]
+   = [ naam         : name
+     , call         : call
+     , acties : type~
+       = [ bestand : object ]
+     ]
   
 ENDCONTEXT

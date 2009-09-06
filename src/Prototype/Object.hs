@@ -149,7 +149,7 @@
                   ,"  return $this->_id;"
                   ,"}"
                   ,"function getId(){"
-                  ,"  if($this->_id==null) return false;"
+                  ,"  if($this->_id===null) return false;"
                   ,"  return $this->_id;"
                   ,"}"
                   ,"function isNew(){"
