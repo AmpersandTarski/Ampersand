@@ -89,28 +89,45 @@ doGenFspec fSpec flags
 
 
 generatepngs :: Fspc -> Options -> IO() 
-generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") (dots ++ cds)
+generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") (dots)-- ++ cds)
    where 
    outputFile fnm = combine (dirOutput flags) fnm
    dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
           | p<-vpatterns fSpec, (not.null) (concs p)]
-   cds = [run_cd (remSpaces$"CD_"++fnm) cd|cd@(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec] 
-   run_cd fnm cd =
-       do
-       writeFile (outputFile (fnm++".dot")) (classdiagram2dot cd)
-       putStrLn ("Processing "++fnm++".dot ... :")
-       result <- system $ "dot -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
-       case result of
-          ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
-          ExitFailure x -> putStrLn $ "Failure: " ++ show x
-   run fnm dot =
-       do 
-       writeFile (outputFile (fnm++".dot")) (show dot)
-       putStrLn ("Processing "++fnm++".dot ... :")
-       result <- system $ "neato -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
-       case result of
-          ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
-          ExitFailure x -> putStrLn $ "Failure: " ++ show x
+--   cds = [run_cd (remSpaces$"CD_"++fnm) cd|cd@(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec] 
+--   run_cd fnm cd =
+--       do
+--       writeFile (outputFile (fnm++".dot")) (classdiagram2dot cd)
+--       putStrLn ("Processing "++fnm++".dot ... :")
+--       result <- system $ "dot -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
+--       result <- runGraphvizCommand Neato (classdiagram2dot cd) Png (outputFile (fnm++".png"))
+--       case result of
+--          ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
+--          ExitFailure x -> putStrLn $ "Failure: " ++ show x
+   run fnm dot = makeGraphic (outputFile fnm) dot
+--       do 
+--       writeFile (outputFile (fnm++".dot")) (show dot)
+--       putStrLn ("Processing "++fnm++".dot ... :")
+--       result <- system $ "neato -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
+--       succes <- runGraphvizCommand Neato dot Canon (outputFile (fnm++".dot"))
+--       if succes 
+--          then putStrLn ("  "++fnm++".png created.")
+--          else putStrLn ("Failure: could not create " ++ fnm++".png")
  --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
  --    success <- runGraphviz testdot Png (outputFile fnm)
  --    return ()
+   makeGraphic fullFile dot
+     = do 
+       succes <- runGraphvizCommand Neato dot Canon dotfile
+       if succes
+          then do
+            result <- system ("neato -Tpng "++dotfile++ " -o "++pngfile)
+            case result of 
+               ExitSuccess   -> putStrLn (" "++pngfile++" created.")
+               ExitFailure x -> putStrLn ("Failure: " ++ show x)
+          else putStrLn ("Failure: could not create " ++ dotfile) 
+     where
+       dotfile = replaceExtension fullFile "dot"
+       pngfile = replaceExtension fullFile "png"
+       
+            
