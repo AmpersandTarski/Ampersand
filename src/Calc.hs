@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Calc ( 
-                deriveProofs
+module Calc (   deriveProofs
               , computeOrder
               , lClause
               , rClause
@@ -16,6 +15,7 @@ module Calc (
    import FspecDef           (Fspc,vrules,chain,serviceS,ECArule(..),Event(..),InsDel(..),PAclause(..),showL)
    import ShowADL            (showADL)
    import ShowHS             (showHS)
+   import ShowSQL            (showSQL)
    import CommonClasses      (ABoolAlg(..))
    import ComputeRule        (ComputeRule(..),triggers,conjuncts,allClauses,hornCs)
    import NormalForms        (conjNF,disjNF,nfProof,nfPr,simplify)
@@ -503,27 +503,6 @@ module Calc (
    informalRule hc --(CR (fOps, e, bOp, toExpr, frExpr, rule))
     = "ON "++commaEng "OR" [fOp++" "++if isSgn r then name r else showADL r|(fOp,r)<-crOps hc] ++" DO "++crbOp hc++" "++showADL (crto hc)++" SELECTFROM "++sh (crfrm hc)
       where sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
-
-   class SQL a where
-    showSQL :: a -> String
-
-   instance SQL ECArule where
-    showSQL (ECA event pa) = (showSQL event++"\nEXECUTE "++showSQL pa)
-   instance SQL Event where
-    showSQL (On Ins m') = "ON INSERT Delta IN   "++show m'
-    showSQL (On Del m') = "ON DELETE Delta FROM "++show m'
-
-   instance SQL PAclause where
-    showSQL fragm = showFragm "\n        " fragm
-     where
-      showFragm _ (Do Ins tExpr delt) = "INSERT INTO "++sh tExpr++" SELECTFROM "++sh delt
-      showFragm _ (Do Del tExpr delt) = "DELETE FROM "++sh tExpr++" SELECTFROM "++sh delt
-      showFragm _ (New _) = error "In the definition of `showFragm': Patterns not matched: _ (New _)" -- WAAROM? Stef, was deze vergeten?
-      showFragm indent (Choice ds)
-        = "ONE of "++chain (indent++"       ") [showFragm (indent++"       ") d | d<-ds]
-      showFragm indent (All ds)
-        = "ALL of "++chain (indent++"       ") [showFragm (indent++"       ") d | d<-ds]
-      sh x = if isTrue x then "V["++(chain ",".rd.map name) [source x,target x]++"]" else showADL x
 
 
 --   recalc :: Context -> Context
