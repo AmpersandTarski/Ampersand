@@ -3,6 +3,7 @@ module Parser (parseADL)where
 
 
 import CC (pArchitecture,keywordstxt, keywordsops, specialchars, opchars)
+import XSDparser --(pXSDocument, xsdkeywordstxt, xsdkeywordsops, xsdspecialchars, xsdopchars)
 import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
@@ -37,6 +38,12 @@ parseADL adlstring flags fnFull =
             procParseRes arch = typecheck arch
 
 
-
-
+parseXSD :: String     -- ^ The string to be parsed
+         -> Options     -- ^ flags to be taken into account
+         -> String      -- ^ The name of the .xsd file (used for error messages)
+         -> IO(XSDocument) -- ^ The IO monad with the context. 
+parseXSD xsdstring flags fnFull =
+    do { slRes <- parseIO pXSDocument (scan xsdkeywordstxt xsdkeywordsops xsdspecialchars xsdopchars fnFull initPos xsdstring)
+	   ; return slRes
+       }
 
