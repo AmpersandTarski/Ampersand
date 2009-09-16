@@ -204,7 +204,25 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
    selectExpr fSpec i src trg (Tm mrph      ) = selectExprMorph fSpec i src trg mrph
    selectExpr fSpec i src trg (Tc expr      ) = selectExpr fSpec i src trg expr
-   selectExpr fSpec i src trg (F  (e':(f:fx)))
+
+   selectExpr fSpec i src trg (F  [e']       ) = selectExpr fSpec i src trg e'
+   selectExpr fSpec i src trg (F lst'@(fstm:_:_))
+    = selectGeneric i ("r0."++src',src) ("r"++show (length lst'-1)++"."++trg',trg)
+                           (chain ", " exprbracs) (chain " AND " wherecl)
+      where src'    = quote$sqlExprSrc fSpec fstm
+            trg'    = noCollideUnlessTm fstm [src'] (quote$sqlExprTrg fSpec (last lst'))
+            exprbracs = [ (selectExprBrac fSpec (i) src'' trg'' l) ++ " AS r"++show n 
+                        | (n,l)<-zip [(0::Integer)..] lst'
+                        , src''<-[quote$sqlExprSrc fSpec l]
+                        , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
+                        ]
+            wherecl   = [ "r"++show n++"."++trg'++" = r"++show n'++"."++src''
+                        | ((n,l),(n',l'))<-zip (init (zip [(0::Integer)..] lst')) (tail (zip [(0::Integer)..] lst'))
+                        , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
+                        , src''<-[quote$sqlExprSrc fSpec l']
+                        ]
+
+{-
       = selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         (selectExprBrac fSpec (i) src' mid' e'++" AS fst, "++selectExprBrac fSpec (i) mid2' trg' (F (f:fx))++" AS snd")
                         ("fst."++mid'++" = snd."++mid2')
@@ -213,7 +231,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               mid' = noCollideUnlessTm e' [src'] (quote$sqlExprTrg fSpec e')
                               mid2'= quote$sqlExprSrc fSpec f
                               trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (F (f:fx)))
-   selectExpr fSpec i src trg (F  [e']       ) = selectExpr fSpec i src trg e'
+-}
    selectExpr fSpec i src trg (Fi (e':(f:fx))) = selectGeneric i ("fst."++src',src) ("fst."++trg',trg) ((selectExprBrac fSpec (i) src' trg' e')++" AS fst, "++(selectExprBrac fSpec (i) src'' trg'' (Fi (f:fx)))++" AS snd") ("fst."++src'++" = snd."++src''++" AND fst."++trg'++"=snd."++trg'')
                         where src'  = quote$sqlExprSrc fSpec e'
                               trg'  = noCollide [src'] (quote$sqlExprTrg fSpec e')
