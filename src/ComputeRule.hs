@@ -11,7 +11,6 @@ where
    import CommonClasses (ABoolAlg(..))
    import ShowADL       (showADL)
    import ShowHS        (showHS)
-   import CC_aux        (fun,inj,sur,tot)
    import NormalForms   (simplify,conjNF,disjNF)
    
    data ComputeRule = CR { crOps :: [(String,Declaration)]

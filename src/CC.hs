@@ -266,8 +266,8 @@
                                <*> (pProps `opt` []) <*> (pPragma `opt` [])
                                <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
                                <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
-                       where rebuild nm pos' s fun t props pragma expla content
-                               = Sgn nm s t (rd props `uni` if fun=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False
+                       where rebuild nm pos' s fun' t props pragma expla content
+                               = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False
                                  where pr = pragma++["","",""]
 
    pContent         :: Parser Token Pairs

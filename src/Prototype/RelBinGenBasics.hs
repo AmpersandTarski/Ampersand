@@ -5,12 +5,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
  ) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
-   import Adl(Concept(..),Morphism(..),Expression(..),mIs,MorphicId(..),Morphical(..)
-             ,cptS,Association(..),Morphic(..),Identified(..),ObjectDef(..)
-             ,v,ctx,notCp,isPos,isNeg,makeMph,Prop(..)
-             )
+   import Adl
    import ShowADL(showADL)
-   import CC_aux(fun)
    import NormalForms (conjNF,disjNF,simplify)
    import Data.Fspec
    import Data.Plug

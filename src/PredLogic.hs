@@ -19,7 +19,6 @@
    import ShowADL
    import ShowHS
    import CC_aux ( applyM 
-                 , sur, inj, fun, tot 
                  , mkVar
             )
    import Languages (Lang(English,Dutch), plural)

@@ -13,9 +13,9 @@ module Adl ( Architecture(..)
            , ConceptDef(..),ConceptDefs
            , Concept(..), GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
-           , Prop(..)
+           , Prop(..), sur, inj, fun, tot
            , FilePos(..), Numbered(..)
-           , makeDeclaration,mIs,ruleType
+           , makeDeclaration,mIs,ruleType,isProperty
            , antecedent,notCp,cptAnything,cpu
            , Object(..)
            , Language(..)
@@ -28,7 +28,7 @@ module Adl ( Architecture(..)
            , Identified(..)
            , Explained(..)
            , Label(..)
-           , Paire,Pairs
+           , Paire,Pairs,srcPair,trgPair
            )
 where
 
@@ -51,14 +51,14 @@ where
                                          ,isSgn
                                          ,makeMph,makeDeclaration
                                          ,inline,makeInline
-                                         ,mIs)
+                                         ,mIs,isProperty)
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
-   import Adl.Pair                       (Paire(),Pairs)
+   import Adl.Pair                       (Paire,Pairs,srcPair,trgPair)
                                          
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)
    import Adl.Population                 (Population(..),Populations)
-   import Adl.Prop                       (Prop(..))
+   import Adl.Prop                       (Prop(..), sur, inj, fun, tot)
    import Adl.Rule                       (Rule(..),Rules
                                          ,RuleType(..)
                                          ,consequent,antecedent,cpu,ruleType

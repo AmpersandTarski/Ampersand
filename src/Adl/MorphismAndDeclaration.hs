@@ -5,13 +5,13 @@ module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
                                   ,makeInline,inline
                                   ,isIdent
                                   ,isSgn,mIs
-                                  )
+                                  ,isProperty)
 where
    import Adl.FilePos      (FilePos(..),Numbered(..))
    import Adl.Concept      (Concept,Association(..),Sign,MorphicId(..),Morphic(..)
                            ,isSingleton)
    import Adl.Prop         (Prop(..),Props,flipProps)
-   import Adl.Pair         (Pairs) 
+   import Adl.Pair         (Pairs,flipPair) 
    import Strings          (chain)
    import CommonClasses    (Identified(name,typ)
                            , Explained(explain)
@@ -171,8 +171,10 @@ where
                V{}   -> Vs { degen = source  (sign m), despc = target (sign m)}
                Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}
 
+   isProperty :: Morphism -> Bool
+   isProperty mph   = null([Sym,Asy]>-multiplicities mph)
     
-   inline::Morphism -> Bool
+   inline :: Morphism -> Bool
    inline m =  case m of
                 Mph{} -> mphyin m
                 I{}   -> True
@@ -266,7 +268,7 @@ where
                             , decprL  = ""
                             , decprM  = ""
                             , decprR  = ""
-                            , decpopu = map reverse (decpopu d)
+                            , decpopu = map flipPair (decpopu d)
                             }
            Isn{}        -> d
            Iscompl{}    -> d

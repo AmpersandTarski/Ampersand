@@ -6,6 +6,6 @@ versionbanner :: String
 versionbanner = "ADL vs. 0.8.10-418" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-In de codegenerator het aantal nestingsniveaus van F verlaagd.
-Nog doen: code voor F efficienter maken
+Enkele functies naar de juiste module verplaatst. 
+Ook aanzet gemaakt om tuples te gebruiken bij Paire (in plaats van een lijst)
 -}

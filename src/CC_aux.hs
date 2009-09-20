@@ -1,14 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XFlexibleContexts #-}
-  module CC_aux ( 
-                  pKey_pos
+  module CC_aux ( pKey_pos
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
                 , renumberRules
                 , applyM
-                , sur, inj, fun, tot
                 , mkVar
-                , isProperty 
                 , Pop(..)
                 , makeConceptSpace , pMeaning
                 , anything, shSigns , gEtabG
@@ -30,8 +27,8 @@
    import Adl
    import ShowADL
    import ShowHS
-   import Adl.Pair
-   import Adl.Concept(Sign)
+--   import Adl.Pair
+--   import Adl.Concept(Sign)
 
 --   objectOfConcept :: Context -> Concept -> Maybe ObjectDef
 --   objectOfConcept context cpt = if length os == 0 then Nothing else Just (head os)
@@ -54,9 +51,9 @@
 
 
    dom :: Declaration -> [String]
-   dom s = rd [src l| l<-contents s]
+   dom s = rd [srcPair l| l<-contents s]
    cod :: Declaration -> [String]
-   cod s = rd [trg l| l<-contents s]
+   cod s = rd [trgPair l| l<-contents s]
 
    pMeaning :: Prop -> String
    pMeaning Uni   = "univalent"
@@ -68,8 +65,6 @@
    pMeaning Trn   = "transitive"
    pMeaning Rfx   = "reflexive"
    pMeaning Aut   = "automatic if possible"
-   isProperty :: Morphism -> Bool
-   isProperty mph   = null([Sym,Asy]>-multiplicities mph)
 
 
    renumberRule :: Int -> Rule -> Rule
@@ -93,7 +88,7 @@
    showFullRelName :: Declaration -> String
    showFullRelName decl = rEncode (name decl++name (source decl)++name (target decl))
 
-   shSigns :: [Sign] -> String
+   shSigns :: [(Concept,Concept)] -> String
    shSigns [(a,b)] = "["++show a++"*"++show b++"]"
    shSigns ss = commaEng "or" ["["++show a++"*"++show b++"]"|(a,b)<-ss]
 
@@ -433,12 +428,6 @@
      mknew _ [] = []
      mknew ex' (x:xs) | x `elem` ex' = mknew ex' ((x++"'"):xs)
                       | otherwise = x: mknew (ex'++[x]) xs
-
-   fun,tot,inj,sur :: [Prop]->Bool
-   fun = elem Uni
-   tot = elem Tot
-   inj = elem Inj
-   sur = elem Sur
 
    applyM :: Declaration -> String -> String -> String
    applyM decl d c =

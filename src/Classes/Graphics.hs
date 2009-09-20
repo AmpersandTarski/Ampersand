@@ -15,7 +15,6 @@ import Adl
 import FspecDef
 import Options
 import Collection (Collection(rd))
-import CC_aux (isProperty,tot,inj,sur,fun)
 
 class Dotable a where
    toDot :: Fspc -> Options -> a -> DotGraph Int

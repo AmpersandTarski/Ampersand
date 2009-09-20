@@ -2,7 +2,7 @@
 module Classes.Populated                 (Populated(contents))
 where
    import Adl.Concept                    (Association(..),Concept(..))
-   import Adl.Pair                       (Pairs,join)
+   import Adl.Pair                       (Pairs,join,flipPair,aPair)
    import Adl.Expression                 (Expression(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..)
                                          ,makeDeclaration,makeInline,inline)
@@ -16,7 +16,7 @@ where
    instance Populated Concept where
     contents c 
        = case c of
-           C {}     -> [[s,s]|s<-cptos c]
+           C {}     -> [aPair s s|s<-cptos c]
            S        -> error ("(Module Populated) Cannot refer to the contents of the universal singleton")
            Anything -> error ("(Module Populated) Cannot refer to the contents of Anything")
            NOthing  -> error ("(Module Populated) Cannot refer to the contents of Nothing")
@@ -25,13 +25,13 @@ where
     contents d 
        = case d of
            Sgn{}     -> decpopu d
-           Isn{}     -> [[o,o] | o<-conts (despc d)]
-           Iscompl{} -> [[o,o']| o<-conts (despc d), o'<-conts (despc d), o/=o']
-           Vs{}      -> [[o,o']| o<-conts (despc d), o'<-conts (despc d)]
+           Isn{}     -> [aPair o o | o<-conts (despc d)]
+           Iscompl{} -> [aPair o o'| o<-conts (despc d), o'<-conts (despc d), o/=o']
+           Vs{}      -> [aPair o o'| o<-conts (despc d), o'<-conts (despc d)]
 
    instance Populated Morphism where
     contents mph | inline mph = contents (makeDeclaration mph)
-    contents mph | otherwise = map reverse (contents (makeDeclaration (makeInline mph)))
+    contents mph | otherwise = map flipPair (contents (makeDeclaration (makeInline mph)))
 
    instance Populated Expression where
     contents expr  
@@ -52,7 +52,7 @@ where
             (Fi x)  -> if null x 
                          then error ("(module Populated) Fatal: no factors in contents ("++show expr++")") 
                          else foldr1 isc [contents f| f<-x ]
-            (K0 x)  -> clos1 (contents x) `uni` [[a,a]|a <-conts (source x `lub` target x)]
+            (K0 x)  -> clos1 (contents x) `uni` [aPair a a |a <-conts (source x `lub` target x)]
             (K1 x)  -> clos1 (contents x)
             (Cp x)  -> [[a,b]| [a,b]<-diag [] (conts (source x)) [] (conts (target x)), not ([a,b] `elem` contents x)]
          where
@@ -63,6 +63,6 @@ where
           -- die gebuik maken van de efficientere implementatie van -r!s en r!-s.
           -- dagg (a,ca,sa,ta) (b,cb,sb,tb)
              dagg (_,ca,sa,_)  (_,cb,_ ,tb)
-               = ([[x,y]| x<-sa, y<-tb, not ([x,y] `elem` jnab)], [[x,y]| x<-sa, y<-tb, [x,y] `elem` jnab], sa, tb)
+               = ([aPair x y| x<-sa, y<-tb, not (aPair x y `elem` jnab)], [aPair x y| x<-sa, y<-tb, aPair x y `elem` jnab], sa, tb)
                  where jnab = join ca cb
-             compl a sa ta = [[x,y]|x<-sa, y<-ta, not ([x,y] `elem` a)]  -- complement van a
+             compl a sa ta = [aPair x y|x<-sa, y<-ta, not (aPair x y `elem` a)]  -- complement van a
