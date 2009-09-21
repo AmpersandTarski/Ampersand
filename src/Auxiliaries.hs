@@ -4,7 +4,6 @@ module Auxiliaries(
    , rEncode
    , commaEng
 --   , commaNL
-   , clos1
    , clos
    , diag
    , sort
@@ -26,7 +25,7 @@ module Auxiliaries(
   )
   where
    import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper)
-   import Collection (Collection(isc,uni,(>-),rd))
+   import Collection (Collection((>-),rd))
    import Strings (chain)
 
 {- naming - a naming function
@@ -60,18 +59,6 @@ module Auxiliaries(
                  t casePrev (c:cs) | not (isAlpha c) || isUpper c == casePrev = c: t casePrev cs
                                    | otherwise                                = '_': c: t (not casePrev) cs
                  t _ []      = []
-
-   --DESCR -> [b] is a list of two: [c1,c2] indicating a path from c1 to c2
-   --TODO -> if [b] == [] then head results in Prelude.head: empty list error
-   --        if not length b == 2 then that element will be ignored
-   clos1 :: (Eq b) => [[b]] -> [[b]] 
-   clos1 xs
-     --DESCR -> rd - remove duplicates; isc - intersection
-     --         the snd arg is a set of every c which is domain [[b]] /\ range [[b]] (b is a tuple)
-     = f xs (rd (map head xs) `isc` rd (map last xs))
-       where
-        f q (x:xs') = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs'
-        f q []      = q
 
 
 

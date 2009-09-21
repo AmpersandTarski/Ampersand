@@ -2,13 +2,13 @@
 module Classes.Populated                 (Populated(contents))
 where
    import Adl.Concept                    (Association(..),Concept(..))
-   import Adl.Pair                       (Pairs,join,flipPair,aPair)
+   import Adl.Pair                       (Pairs,join,flipPair,aPair,closPair)
    import Adl.Expression                 (Expression(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..)
                                          ,makeDeclaration,makeInline,inline)
    import CommonClasses                  (Conceptual(conts),lub)    
    import Collection                     (Collection (uni,isc))   
-   import Auxiliaries                    (clos1,diag) 
+   import Auxiliaries                    (diag) 
 
    class Populated a where
     contents  :: a -> Pairs
@@ -52,8 +52,8 @@ where
             (Fi x)  -> if null x 
                          then error ("(module Populated) Fatal: no factors in contents ("++show expr++")") 
                          else foldr1 isc [contents f| f<-x ]
-            (K0 x)  -> clos1 (contents x) `uni` [aPair a a |a <-conts (source x `lub` target x)]
-            (K1 x)  -> clos1 (contents x)
+            (K0 x)  -> closPair (contents x) `join` [aPair a a |a <-conts (source x `lub` target x)]
+            (K1 x)  -> closPair (contents x)
             (Cp x)  -> [[a,b]| [a,b]<-diag [] (conts (source x)) [] (conts (target x)), not ([a,b] `elem` contents x)]
          where
           -- dagg is de tegenhanger van join. Hij krijgt systematisch viertallen mee: een rij tupels (a),
