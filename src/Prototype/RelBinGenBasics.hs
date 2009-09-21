@@ -77,10 +77,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                  -> String     -- resulting SQL expression
    
    -- quote the attributes (such that column-names such as `Right` or `in` won't yield errors)
-   selectExpr f i s@(_:_) t       e' | head s /= '`'
-    = selectExpr f i ('`':s++"`") t            e'
-   selectExpr f i s       t@(_:_) e' | head t /= '`'
-    = selectExpr f i s            ('`':t++"`") e'
+   selectExpr fSpec i src@(_:_) trg       e' | head src /= '`'
+    = selectExpr fSpec i ('`':src++"`") trg            e'
+   selectExpr fSpec i src       trg@(_:_) e' | head trg /= '`'
+    = selectExpr fSpec i src            ('`':trg++"`") e'
    
    selectExpr fSpec i src trg (Fi lst'@(_:_:_))
     = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
@@ -135,7 +135,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExpr fSpec i src trg (F (s1@(Tm (Mp1 _ _)):(s2@(Tm (V _ _)):(s3@(Tm (Mp1 _ _)):fx@(_:_))))) -- to make more use of the thing below
      =  selectExpr fSpec i src trg (F ((F (s1:s2:s3:[])):fx))
 
-   selectExpr _ _ src trg (F ((Tm (Mp1 sr _)):((Tm (V _ _)):((Tm (Mp1 tr _)):[])))) -- this will occur quite often because of doSubsExpr
+   selectExpr fSpec i src trg (F ((Tm (Mp1 sr _)):((Tm (V _ _)):((Tm (Mp1 tr _)):[])))) -- this will occur quite often because of doSubsExpr
      = "SELECT "++sr++" AS "++src++", "++tr++" AS "++trg
 
    selectExpr fSpec i src trg (F (e'@(Tm (Mp1 sr _)):(f:fx)))
@@ -269,17 +269,19 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               mid2'= quote$sqlExprSrc fSpec f
                               trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (F (f:fx)))
 -}
+-- WAAROM? Stef, de volgende definitie staat hier van de kat z'n staart. Wat is de bedoeling hiervan? (zie ook de gegenereerde warning...)
    selectExpr fSpec i src trg (Fi (e':(f:fx))) = selectGeneric i ("fst."++src',src) ("fst."++trg',trg) ((selectExprBrac fSpec i src' trg' e')++" AS fst, "++(selectExprBrac fSpec i src'' trg'' (Fi (f:fx)))++" AS snd") ("fst."++src'++" = snd."++src''++" AND fst."++trg'++"=snd."++trg'')
                         where src'  = quote$sqlExprSrc fSpec e'
                               trg'  = noCollide [src'] (quote$sqlExprTrg fSpec e')
                               src'' = quote$sqlExprSrc fSpec f
                               trg'' = noCollide [src''] (quote$sqlExprTrg fSpec f)
+
    selectExpr fSpec i src trg (Fi [e']) = selectExpr fSpec i src trg e'
-   selectExpr _     _ _   _   (F  [] ) = error ("RelBinGenBasics: Cannot create query for F [] because type is unknown")
-   selectExpr _     _ _   _   (Fi [] ) = error ("RelBinGenBasics: Cannot create query for Fi [] because type is unknown")
+   selectExpr fSpec i src trg (F  [] ) = error ("RelBinGenBasics: Cannot create query for F [] because type is unknown")
+   selectExpr fSpec i src trg (Fi [] ) = error ("RelBinGenBasics: Cannot create query for Fi [] because type is unknown")
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
-   selectExpr _     i src trg (Fu [] ) = selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
+   selectExpr fSpec i src trg (Fu [] ) = selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
    selectExpr fSpec i src trg (Fu es') = (phpIndent i) ++ "(" ++ (selectExprInUnion fSpec i src trg (Fu es')) ++ (phpIndent i) ++ ")"
    selectExpr fSpec i src trg (Cp (Tm (V _ _))) = selectExpr fSpec i src trg (Fu [])
    selectExpr fSpec i src trg (Cp e' )
@@ -294,11 +296,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               trg' = noCollide [src'] (sqlAttConcept fSpec (target e'))
                               src2 = quote$sqlExprSrc fSpec e'
                               trg2 = noCollideUnlessTm e' [src2] (quote$sqlExprTrg fSpec e')
-   selectExpr _ _ _ _ (K0 _)
+   selectExpr fSpec i src trg (K0 _)
       = error ("error in selectExpr - RelBinGenBasics: SQL cannot create closures K0")
-   selectExpr _ _ _ _ (K1 _)
+   selectExpr fSpec i src trg (K1 _)
       = error ("error in selectExpr - RelBinGenBasics: SQL cannot create closures K1")
-   selectExpr _     _ _   _   (Fd []  ) = error ("RelBinGenBasics: Cannot create query for Fd [] because type is unknown")
+   selectExpr fSpec i src trg (Fd []  ) = error ("RelBinGenBasics: Cannot create query for Fd [] because type is unknown")
    selectExpr fSpec i src trg (Fd [e']) = selectExpr fSpec i src trg e'
    selectExpr fSpec i src trg (Fd fxs ) = selectExpr fSpec i src trg $ Cp {e=F (map addcompl fxs)}
          where
@@ -313,7 +315,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      -> [Char]
    selectExprInUnion fSpec i src trg (Tc  e'        ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg (F  [e']       ) =  selectExprInUnion fSpec i src trg e'
+
    selectExprInUnion fSpec i src trg (Fi [e']       ) =  selectExprInUnion fSpec i src trg e'
+-- WAAROM? Stef, waarom is onderstaand niet:
+-- selectExprInUnion fSpec i src trg (Fu (e':f     )) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec i src trg (Fu f     )) ++ (phpIndent i) ++ ""
+
    selectExprInUnion fSpec i src trg (Fu (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec i src trg (Fu (f:fx))) ++ (phpIndent i) ++ ""
    selectExprInUnion fSpec i src trg (Fu [e']       ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg e'               =  selectExpr        fSpec (i+4) src trg e'
