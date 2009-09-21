@@ -95,8 +95,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
             negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
             posTms' = [t| t<-lst, isPos t && not (isIdent t)]++[t| t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
             negTms' = [notCp t| t<-lst, isNeg t && isIdent t]++[notCp t| t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
-            exprbracs = [ (selectExprBrac fSpec (i) src'' trg'' l) ++ " AS isect"++show n 
-                        | (n,l)<-zip [(0::Integer)..] posTms
+            exprbracs = [ (selectExprBrac fSpec i src'' trg'' l) ++ " AS isect"++show n 
+                        | (n,l)<-zip [0..] posTms
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
                         ]
@@ -104,7 +104,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                          then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is longer
                          else "(isect0."++src'++" = isect"++show n++"."++src''
                          ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
-                        | (n,l)<-tail (zip [(0::Integer)..] posTms) -- not empty because of definition of posTms
+                        | (n,l)<-tail (zip [0..] posTms) -- not empty because of definition of posTms
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++
@@ -121,7 +121,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                                               ((selectExprBrac fSpec (i+12) src'' trg'' l) ++ " AS cp")
                                                               ("isect0."++src' ++ "=cp."++src''++" AND isect0."++ trg'++"=cp."++trg'')
                                             )++")"
-                        | (_,l)<-zip [(0::Integer)..] negTms
+                        | (_,l)<-zip [0..] negTms
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++["isect0."++src'++" IS NOT NULL"]
@@ -140,7 +140,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
    selectExpr fSpec i src trg (F (e'@(Tm (Mp1 sr _)):(f:fx)))
       = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
-                        (selectExprBrac fSpec (i) src' trg' (F (f:fx))++" AS fst")
+                        (selectExprBrac fSpec i src' trg' (F (f:fx))++" AS fst")
                         ("fst."++src'++" = "++sr)
                         where src' = quote$sqlExprSrc fSpec e'
                               trg' = noCollideUnlessTm (F (f:fx)) [src'] (quote$sqlExprTrg fSpec (F (f:fx)))
@@ -166,8 +166,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               mid' = quote$sqlExprTrg fSpec e'
                               mid2'= quote$sqlExprSrc fSpec f
                               trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (F (f:fx)))
-                              b1 = selectExprBrac fSpec (i) mid' src' (flp e')
-                              b2 = selectExprBrac fSpec (i) mid2' trg' (F (f:fx))
+                              b1 = selectExprBrac fSpec i mid' src' (flp e')
+                              b2 = selectExprBrac fSpec i mid2' trg' (F (f:fx))
                               vs = [v'|(Tm v'@V{})<-[e',f]++fx]
 -}
 
@@ -185,7 +185,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                                 ("1"
                                                 )
          | otherwise          = selectGeneric i ("cfst."++src',src) ("csnd."++trg'',trg)
-                                                (sqlConcept fSpec s ++ " AS cfst, "++selectExprBrac fSpec (i) trg'' trg'' (Tm (mIs t))++" AS csnd")
+                                                (sqlConcept fSpec s ++ " AS cfst, "++selectExprBrac fSpec i trg'' trg'' (Tm (mIs t))++" AS csnd")
                                                 ("1"
                                                 )
                         where src'  = if s==Anything
@@ -203,24 +203,65 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
    selectExpr fSpec i src trg (F  [e']       ) = selectExpr fSpec i src trg e'
    selectExpr fSpec i src trg (F lst'@(fstm:_:_))
-    = selectGeneric i ("r0."++src',src) ("r"++show (length lst'-1)++"."++trg',trg)
-                           (chain ", " exprbracs) (chain " AND " wherecl)
-      where src'    = quote$sqlExprSrc fSpec fstm
+    = selectGeneric i (mainSrc,src) (mainTrg,trg)
+                           (chain ", " (concExprs++exprbracs)) (chain ("\n"++[' '|n<-[0..i+1]]++" AND ") wherecl)
+{-  De F gedraagt zich als een join. Het is dus zaak om enigszins efficiente code te genereren.
+    Dat doen we door de complement-operatoren van de elementen uit lst' te betrekken in de codegeneratie.
+    De concepten in lst' noemen we c0, c1, ... cn (met n de lengte van lst')
+    De elementen in lst' zelf noemen we r0, r1, ... r (n-1).
+    Deze namen worden aangehouden in de SQL-aliasing. Dat voorkomt naamconflicten op een wat ruwe manier, maar wel overzichtelijk en effectief.
+-}
+      where mainSrc = (if isNeg (head lst') then "c" else "r")++"0."++src'
+            mainTrg = (if isNeg (last lst') then "c"++show (length lst') else "r"++show (length lst'-1))++"."++trg'
+            -- de strings die de source en target van F lst' weergeven. Bij gelijke namen vindt ontdubbeling van naam plaats met noCollideUnlessTm
+            src'    = quote$sqlExprSrc fSpec fstm
             trg'    = noCollideUnlessTm fstm [src'] (quote$sqlExprTrg fSpec (last lst'))
-            exprbracs = [ (selectExprBrac fSpec (i) src'' trg'' l) ++ " AS r"++show n 
-                        | (n,l)<-zip [(0::Integer)..] lst'
-                        , src''<-[quote$sqlExprSrc fSpec l]
-                        , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
+            -- ncs geeft alleen de concepten uit lst', die in SQL doorlopen moeten worden, inclusief rangnummer
+            ncs     = [ (0,source (head lst'))  | isNeg (head lst') ]++
+                      [ (n',c)
+                      | ((n,l),(n',l'))<-zip (init (zip [0..] lst')) (tail (zip [0..] lst'))
+                      , isNeg l && isNeg l'
+                      , c<-[if target l<=source l' then target l else source l']
+                      ]++
+                      [ (length lst',target (last lst'))  | isNeg (last lst') ]
+            -- de SQL-expressies voor de concepten van lst', maar nu in SQL
+            concExprs = [ selectExprBrac fSpec i (quote$sqlExprSrc fSpec tm) (quote$sqlExprSrc fSpec tm) tm ++ " AS c"++show n
+                        | (n,c)<-ncs,tm<-[Tm $ mIs c] ]
+            -- de SQL-expressies voor de elementen uit lst', die elk een ADL-expressie representeren
+            exprbracs = [ selectExprBrac fSpec i src' trg' (if isNeg l then notCp l else l) ++ " AS r"++show n 
+                        | (n,l)<-zip [0..] lst'
+                        , not (isNeg l)
+                        , src'<-[quote$sqlExprSrc fSpec l]
+                        , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
                         ]
-            wherecl   = [ "r"++show n++"."++trg'++" = r"++show n'++"."++src''
-                        | ((n,l),(n',l'))<-zip (init (zip [(0::Integer)..] lst')) (tail (zip [(0::Integer)..] lst'))
+            -- de where expressies bevatten alle "magie". Dit is zgn. "terse code", die omzichtig behandeld moet worden.
+            wherecl   = (filter (not.null))
+                        [ if isNeg l
+                          then "NOT EXISTS ("++selectExists' (i+12)
+                                                             (selectExprBrac fSpec i src' trg' (if isNeg l then notCp l else l) ++ " AS r"++show n) -- op deze plek alleen selectExprBrac
+                                                             (chain " AND " ([(if inCs n then "c" else "r")++show n++"."++src' ++ "=r"++show  n   ++"."++src']++
+                                                                             ["r"++show n++"."++trg' ++ (if inCs (n+1) then "=c" else "=r")++show (n+1)++"."++trg']))
+                                               ++")"
+                          else chain " AND " (["c"++show n++"."++src' ++ "=r"++show  n   ++"."++src'| inCs n]++
+                                              ["r"++show n++"."++trg' ++ "=c"++show (n+1)++"."++trg'| inCs (n+1)])
+                        | (n,l)<-zip [0..] lst'
+                        , src'<-[quote$sqlExprSrc fSpec l]
+                        , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
+                        ]++
+                        [ "r"++show n++"."++trg' ++ "=r"++show n'++"."++src''
+                        | ((n,l),(n',l'))<-zip (init (zip [0..] lst')) (tail (zip [0..] lst'))
+                        , not (isNeg l), not (isNeg l')
+                        , src'<-[quote$sqlExprSrc fSpec l]
                         , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
                         , src''<-[quote$sqlExprSrc fSpec l']
-                        ]
+                        ]++
+                        [ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm $ mIs c))++" IS NOT NULL"
+                        | (n,c)<-ncs
+                        ] where inCs n = n `elem` map fst ncs
 
 {-
       = selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
-                        (selectExprBrac fSpec (i) src' mid' e'++" AS fst, "++selectExprBrac fSpec (i) mid2' trg' (F (f:fx))++" AS snd")
+                        (selectExprBrac fSpec i src' mid' e'++" AS fst, "++selectExprBrac fSpec i mid2' trg' (F (f:fx))++" AS snd")
                         ("fst."++mid'++" = snd."++mid2')
    --  The values of  src', mid', mid2', and trg' can be anything, as long as they are distinct. Here they have been chosen (arbitrarily) to be meaningful names derived from source and targets.
                         where src' = quote$sqlExprSrc fSpec e'
@@ -228,7 +269,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               mid2'= quote$sqlExprSrc fSpec f
                               trg' = noCollideUnlessTm (F (f:fx)) [mid2'] (quote$sqlExprTrg fSpec (F (f:fx)))
 -}
-   selectExpr fSpec i src trg (Fi (e':(f:fx))) = selectGeneric i ("fst."++src',src) ("fst."++trg',trg) ((selectExprBrac fSpec (i) src' trg' e')++" AS fst, "++(selectExprBrac fSpec (i) src'' trg'' (Fi (f:fx)))++" AS snd") ("fst."++src'++" = snd."++src''++" AND fst."++trg'++"=snd."++trg'')
+   selectExpr fSpec i src trg (Fi (e':(f:fx))) = selectGeneric i ("fst."++src',src) ("fst."++trg',trg) ((selectExprBrac fSpec i src' trg' e')++" AS fst, "++(selectExprBrac fSpec i src'' trg'' (Fi (f:fx)))++" AS snd") ("fst."++src'++" = snd."++src''++" AND fst."++trg'++"=snd."++trg'')
                         where src'  = quote$sqlExprSrc fSpec e'
                               trg'  = noCollide [src'] (quote$sqlExprTrg fSpec e')
                               src'' = quote$sqlExprSrc fSpec f
@@ -239,11 +280,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
    selectExpr _     i src trg (Fu [] ) = selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
-   selectExpr fSpec i src trg (Fu es') = (phpIndent i) ++ "(" ++ (selectExprInUnion fSpec (i) src trg (Fu es')) ++ (phpIndent i) ++ ")"
+   selectExpr fSpec i src trg (Fu es') = (phpIndent i) ++ "(" ++ (selectExprInUnion fSpec i src trg (Fu es')) ++ (phpIndent i) ++ ")"
    selectExpr fSpec i src trg (Cp (Tm (V _ _))) = selectExpr fSpec i src trg (Fu [])
    selectExpr fSpec i src trg (Cp e' )
       = selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
-                        (sqlConcept fSpec (source e') ++ " AS cfst, "++selectExprBrac fSpec (i) trg' trg' (Tm (mIs (target e')))++" AS csnd")
+                        (sqlConcept fSpec (source e') ++ " AS cfst, "++selectExprBrac fSpec i trg' trg' (Tm (mIs (target e')))++" AS csnd")
                         ("NOT EXISTS ("++ (selectExists' (i+12)
                                                          ((selectExprBrac fSpec (i+12) src2 trg2 e') ++ " AS cp")
                                                          ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
@@ -273,7 +314,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExprInUnion fSpec i src trg (Tc  e'        ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg (F  [e']       ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg (Fi [e']       ) =  selectExprInUnion fSpec i src trg e'
-   selectExprInUnion fSpec i src trg (Fu (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec (i) src trg (Fu (f:fx))) ++ (phpIndent i) ++ ""
+   selectExprInUnion fSpec i src trg (Fu (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec i src trg (Fu (f:fx))) ++ (phpIndent i) ++ ""
    selectExprInUnion fSpec i src trg (Fu [e']       ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg e'               =  selectExpr        fSpec (i+4) src trg e'
 
