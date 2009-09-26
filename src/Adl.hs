@@ -28,7 +28,7 @@ module Adl ( Architecture(..)
            , Identified(..)
            , Explained(..)
            , Label(..)
-           , Paire,Pairs,srcPair,trgPair
+           , Paire,Pairs,srcPaire,trgPaire,mkPaire
            )
 where
 
@@ -53,7 +53,7 @@ where
                                          ,inline,makeInline
                                          ,mIs,isProperty)
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
-   import Adl.Pair                       (Paire,Pairs,srcPair,trgPair)
+   import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPaire)
                                          
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)

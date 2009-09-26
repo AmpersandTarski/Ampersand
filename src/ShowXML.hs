@@ -277,7 +277,7 @@ where
                                 | not (null (prL++prM++prR))]
                   ++ explainTree (decexpl d)
                   ++[Elem (simpleTag "Population") 
-                             (map mkXmlTreeOfPaire (decpopu d)) 
+                             (map mkXmlTreeOfPair (decpopu d)) 
                                 | not (null (decpopu d))]                 
           Isn _ _ 
                 ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
@@ -297,14 +297,14 @@ where
          prL = decprL d
          prM = decprM d
          prR = decprR d
-         mkXmlTreeOfPaire :: Paire -> XTree
-         mkXmlTreeOfPaire p 
+         mkXmlTreeOfPair :: Paire -> XTree
+         mkXmlTreeOfPair p 
              = Elem tag []
              where tag :: XTag
                    tag = Tag "link" atts
                    atts :: [XAtt]
-                   atts = [mkAttr "from" (head p)]
-                        ++[mkAttr "to"   (last p)]
+                   atts = [mkAttr "from" (srcPaire p)]
+                        ++[mkAttr "to"   (trgPaire p)]
 
 
    instance XML ConceptDef where

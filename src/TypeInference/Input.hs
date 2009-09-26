@@ -41,8 +41,8 @@ allCtxCpts ctxs
   where 
    pps = [ pop | cx<-ctxs, pop<-ctxpops cx]
    dls = allPatDecls (allCtxPats ctxs)
-   dom r ps = if Inj `elem` multiplicities r then [ a | [a,_]<-ps ] else rd [ a | [a,_]<-ps ]
-   cod r ps = if Uni `elem` multiplicities r then [ b | [_,b]<-ps ] else rd [ b | [_,b]<-ps ]
+   dom r ps = if Inj `elem` multiplicities r then [ srcPaire p | p<-ps ] else rd [ srcPaire p | p<-ps ]
+   cod r ps = if Uni `elem` multiplicities r then [ trgPaire p | p<-ps ] else rd [ trgPaire p | p<-ps ]
 
 --DESCR -> all the Declarations of Contexts
 allCtxDecls :: Contexts -> Declarations

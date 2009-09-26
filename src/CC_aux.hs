@@ -51,9 +51,9 @@
 
 
    dom :: Declaration -> [String]
-   dom s = rd [srcPair l| l<-contents s]
+   dom s = rd [srcPaire l| l<-contents s]
    cod :: Declaration -> [String]
-   cod s = rd [trgPair l| l<-contents s]
+   cod s = rd [trgPaire l| l<-contents s]
 
    pMeaning :: Prop -> String
    pMeaning Uni   = "univalent"
@@ -384,7 +384,7 @@
        = case decl of
           Sgn{}    -> decl{ desrc = x
                           , detgt = y
-                          , decpopu = [[a,b]|[a,b]<-(decpopu decl),a `elem` conts (desrc decl), b `elem` conts (detgt decl)]
+                          , decpopu = [p|p<-(decpopu decl),(srcPaire p) `elem` conts (desrc decl), trgPaire p `elem` conts (detgt decl)]
                           }
           Isn{}    -> if x <= y 
                        then decl{degen = x

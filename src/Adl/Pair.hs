@@ -1,42 +1,42 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Pair    (Paire,Pairs
                     , join
-                    , srcPair,trgPair
-                    , flipPair,aPair
+                    , srcPaire,trgPaire
+                    , flipPair,mkPaire
                     , closPair
                    ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
    import Auxiliaries(sort',eqCl)
    import Collection (Collection(isc,uni,rd))
-   
+ 
    type Pairs     = [Paire]  -- WAAROM? Stef, zouden dit niet tweetallen moeten zijn? In dit geval mogen Paire ook uit meer dan twee bestaan...
                              --         Op die manier zouden we ook van standaard Tuples gebruik kunnen maken....
                              -- DAAROM! Han, je hebt gelijk. Het is er ooit ingeslopen op grond van een denkfout. Graag tuples van maken...
-
-   srcPair :: Paire -> String
-   trgPair :: Paire -> String
-   aPair   :: String -> String -> Paire
---   type Paire     = (String,String)
---   aPair a b = (a,b)
---   srcPair = fst
---   trgPair = snd
-   type Paire     = [String]
-   srcPair xs    = if null xs then error ("(module Adl.Pair) Fatal: src []") else head xs
-   trgPair xs    = if null xs then error ("(module Adl.Pair) Fatal: trg []") else last xs
-   aPair a b = a:[b]
+                             -- Opgelost! Paire zijn Tuples geworden
+   srcPaire :: Paire -> String
+   trgPaire :: Paire -> String
+   mkPaire   :: String -> String -> Paire
+   type Paire     = (String,String)
+   mkPaire a b = (a,b)
+   srcPaire = fst
+   trgPaire = snd
+--   type Paire     = [String]
+--   srcPaire xs    = if null xs then error ("(module Adl.Pair) Fatal: src []") else head xs
+--   trgPaire xs    = if null xs then error ("(module Adl.Pair) Fatal: trg []") else last xs
+--   mkPaire a b = a:[b]
 
    join::Pairs->Pairs->Pairs
-   join a b = merge ((sort' (trgPair.head).eqCl trgPair) a)
-                    ((sort' (srcPair.head).eqCl srcPair) b)
+   join a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
+                    ((sort' (srcPaire.head).eqCl srcPaire) b)
               where merge (xs:xss) (ys:yss)
-                     | trgPair (head xs)<srcPair (head ys) = merge xss (ys:yss)
-                     | trgPair (head xs)>srcPair (head ys) = merge (xs:xss) yss
-                     | otherwise = [aPair (srcPair x) (trgPair y) |x<-xs,y<-ys]++ merge xss yss
+                     | trgPaire (head xs)<srcPaire (head ys) = merge xss (ys:yss)
+                     | trgPaire (head xs)>srcPaire (head ys) = merge (xs:xss) yss
+                     | otherwise = [mkPaire (srcPaire x) (trgPaire y) |x<-xs,y<-ys]++ merge xss yss
                     merge _ _ = []
 
    flipPair :: Paire -> Paire
-   flipPair p = aPair (trgPair p) (srcPair p)
+   flipPair p = mkPaire (trgPaire p) (srcPaire p)
 
    --DESCR -> [b] is a list of two: [c1,c2] indicating a path from c1 to c2
    --TODO -> if [b] == [] then head results in Prelude.head: empty list error
@@ -46,10 +46,10 @@ where
      where
        toPairs :: [[String]] -> Pairs
        toPairs [] = []
-       toPairs (p:pps) = (aPair (head p) (last p)) : (toPairs pps)
+       toPairs (p:pps) = (mkPaire (head p) (last p)) : (toPairs pps)
        toList :: Pairs -> [[String]]
        toList [] = []
-       toList (p:pps) = [(srcPair p) : [trgPair p]] ++ (toList pps)
+       toList (p:pps) = [(srcPaire p) : [trgPaire p]] ++ (toList pps)
 
  --TODO :: Dit moet nog even een stuk vereenvoudigd worden! (En daardoor efficienter, ongetwijfeld!!)       
 

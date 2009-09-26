@@ -88,24 +88,21 @@
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(plname plug)++"`\")){"
              , "  mysql_query(\"DROP TABLE `"++(plname plug)++"`\");" --todo: incremental behaviour
              , "}" ]
+          mdata :: Plug -> [String]
           mdata plug
            = if name plug==name S then [ "1" ] else
              if length (fields plug)==2 -- treat binary tables differently
              then
-             [ phpShow a ++", "++ phpShow b
-             | Tm m' <- map fldexpr (fields plug), [a,b]<-contents m']
+             [ phpShow (srcPaire p) ++", "++ phpShow (trgPaire p)
+             | Tm m' <- map fldexpr (fields plug), p<-contents m']
              else
-             [ chain ", " [ head ([phpShow b
-                                  | [a',b]<-(map binarify)$contents$fldexpr f,a==a'
+             [ chain ", " [ head ([phpShow (trgPaire p)
+                                  | p<-contents$fldexpr f,a==srcPaire p
                                   ]++
                                   [phpShow a
                                   | isIdent (fldexpr f) -- this should go automatically, but does not
                                   ]++["NULL"])
                           | f<-fields plug]
-             | a<- rd $ map head (concat (map (contents.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
+             | a<- rd $ map srcPaire (concat (map (contents.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
              ]
-  binarify :: [String] -> [String]
-  binarify [a] = [a,a]
-  binarify [a,b]=[a,b]
-  binarify _ = error "Error in binarify: list of one or two required"
-    
+   

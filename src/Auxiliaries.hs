@@ -5,7 +5,7 @@ module Auxiliaries(
    , commaEng
 --   , commaNL
    , clos
-   , diag
+--   , diag
    , sort
    , sord
    , eqCl 
@@ -114,14 +114,11 @@ module Auxiliaries(
 
 
 
-
-
-   diag :: [a] -> [a] -> [a] -> [a] -> [[a]]
-   diag xt (x:xs) yt (y:ys)
-    = [x,y]: [[x,t]|t<-yt]++[[t,y]|t<-xt]++diag (x:xt) xs (y:yt) ys
-   diag xt [] _ ys = [[t,y]|y<-ys, t<-xt]
-   diag _  xs yt [] = [[x,t]|x<-xs, t<-yt]
-
+--   diag :: [a] -> [a] -> [a] -> [a] -> [[a]]
+--   diag xt (x:xs) yt (y:ys)
+--    = [x,y]: [[x,t]|t<-yt]++[[t,y]|t<-xt]++diag (x:xt) xs (y:yt) ys
+--   diag xt [] _ ys = [[t,y]|y<-ys, t<-xt]
+--   diag _  xs yt [] = [[x,t]|x<-xs, t<-yt]
    showL   :: [String] -> String
    showL xs = "["++chain "," xs++"]"
 

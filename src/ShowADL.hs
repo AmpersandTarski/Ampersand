@@ -107,7 +107,7 @@
                                 ++ printlist (lb++indent (i+1)++"[ "
                                              ,";"++lb++indent (i+1)++"  "
                                              ,lb++indent (i+1)++"]"++lb) 
-                                             [printlist ("(",", ",")") (map show rec)| rec<-popps pop]
+                                             [printlist ("(",", ",")") [show rec]| rec<-popps pop]
 
    instance PrintADL ObjectDef where
     printadl fSpec i obj = 

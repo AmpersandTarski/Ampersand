@@ -75,6 +75,7 @@
                                <*> pList (pPatElem beep)
                                <* pKey "ENDPATTERN"
                        where
+                         rebuild :: String -> [PatElem] -> Pattern
                          rebuild nm pes = Pat nm [r|Pr r<-pes] [gen |Pg gen<-pes] [mph| Pm mph<-pes] [c| Pc c<-pes] [k| Pk k<-pes]
 
    data PatElem      = Pr Rule
@@ -224,7 +225,8 @@
    pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos)
                            <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
-                       where lbl (nm,pos') strs = Lbl nm pos' strs
+                       where lbl :: (String, FilePos) -> [[String]] -> Label
+                             lbl (nm,pos') strs = Lbl nm pos' strs
 
    phpId            :: Parser Token String
    phpId             = pVarid <|> pConid <|> pString
@@ -234,7 +236,8 @@
 
    pKeyDef          :: Parser Token KeyDef
    pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
-                        where kd (Lbl nm pos' _) expr ats = Kd pos' nm expr ats
+                        where kd :: Label -> Expression -> ObjectDefs -> KeyDef 
+                              kd (Lbl nm pos' _) expr ats = Kd pos' nm expr ats
 
    pObjDef          :: Parser Token ObjectDef
    pObjDef           = pKey_pos "SERVICE" *> pObj
@@ -262,11 +265,25 @@
                        where att (Lbl nm pos' strs) ctx' = Obj nm pos' ctx' [] strs
 
    pDeclaration     :: Parser Token Declaration
-   pDeclaration      = rebuild <$> pVarid <*> pKey_pos "::" <*> pConcept <*> (pKey "*" <|> pKey "->" ) <*> pConcept
+   pDeclaration      = rebuild <$> pVarid 
+                               <*> pKey_pos "::" 
+                               <*> pConcept 
+                               <*> (pKey "*" <|> pKey "->" ) 
+                               <*> pConcept
                                <*> (pProps `opt` []) <*> (pPragma `opt` [])
                                <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
                                <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
-                       where rebuild nm pos' s fun' t props pragma expla content
+                       where rebuild :: String
+                                     -> FilePos
+                                     -> Concept
+                                     -> [Char]
+                                     -> Concept
+                                     -> [Prop]
+                                     -> [String]
+                                     -> String
+                                     -> Pairs
+                                     -> Declaration
+                             rebuild nm pos' s fun' t props pragma expla content
                                = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False
                                  where pr = pragma++["","",""]
 
@@ -286,10 +303,11 @@
 
    pProps'          :: Parser Token [Prop]
    pProps'           = f <$> pList pProp'
-                       where f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
+                       where f :: [String] -> [Prop]
+                             f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
                              k "TOT" = Tot
                              k "UNI" = Uni
-                             k _ = undefined  -- WAAROM? Stef, waarom ontbrak dit? Is dat vergeten? TODO Deze match is toegevoegd om de warning kwijt te raken. Maar is dit ook op deze manier bedoeld?
+                             k _ = undefined  --TODO : Moet nog een foutmelding, dat er een onbekende tag is gebruikt.
 
    pProp'           :: Parser Token String
    pProp'            = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"
@@ -297,5 +315,7 @@
    pPragma          :: Parser Token [String]
    pPragma           = pKey "PRAGMA" *> pList1 pString
 
-   pRecord          :: Parser Token [String]
-   pRecord           = pSpec '(' *> pListSep (pSpec ',') pString <* pSpec ')'
+   pRecord          :: Parser Token Paire
+   pRecord           = mkPaire<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
+                                
+                                
