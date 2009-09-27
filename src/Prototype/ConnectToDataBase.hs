@@ -5,7 +5,7 @@
    import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
    --import Collection(rd)
    --import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
-   import Adl (runum,nr,isFalse,normExpr,Rule,Expression(..))
+   import Adl (source,target,runum,nr,isFalse,normExpr,Rule,Expression(..))
    import ShowADL(showADL)
    import CommonClasses(explain,{- name -})
    import NormalForms (conjNF) --TODO -> correct replacement of Calc (conjNF)?
@@ -104,11 +104,12 @@
                  concat [ "// sqlExprSrc fSpec rule':: "++src++"\n     " | pDebug] ++
                  "$v=DB_doquer('"++selectExpr fSpec 19 src trg rule'++"');\n     "++
                  "if(count($v)) {\n    "++
-                 "  DB_debug("++ phpShow (dbError rule ("'.$v[0]['"++src++"'].'") ("'.$v[0]['"++trg++"'].'")) ++",3);\n    "++
+                 "  DB_debug("++dbError rule++",3);\n    "++
                  "  return false;\n    }"
            ) ++ "return true;\n  }"
          | rule<-vrules fSpec, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc fSpec rule'], trg<-[noCollide [src] (sqlExprTrg fSpec rule')] ]
-
-   dbError :: Rule -> String -> String -> String
-   dbError rule _ _
-    = "Overtreding van de regel: \""++(if null (explain rule) then "Artificial explanation: "++showADL rule else explain rule)++"\"<BR>"
+      where
+       dbError :: Rule -> String
+       dbError rule
+        = phpShow("Overtreding ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
+          phpShow(")\nreden: \""++(if null (explain rule) then "Artificial explanation: "++showADL rule else explain rule)++"\"<BR>")++""

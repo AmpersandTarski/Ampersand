@@ -22,7 +22,7 @@
                        , "ONE"
                        ]
    keywordsops :: [String]
-   keywordsops       = [ "-|", "|-", ":-", "-:", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\" ]
+   keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\" ]
    specialchars :: String
    specialchars      = "()[].,{}"
    opchars :: String

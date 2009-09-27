@@ -124,8 +124,6 @@
                                   [ "  else if(isset($id)){ // just check if it exists"    
                                   , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
                                   , "    $this->_new=(count($ctx)==0);"
-
-       
                                   , "  }" ]
                               | a' <- attributes o]
                       ) ++
@@ -135,8 +133,11 @@
                 [ ["function set_"++phpIdentifier (name a)++"($val){"
                   ,"  $this->_"++phpIdentifier (name a)++"=$val;"
                   ,"}"
-                  ,"function get_"++phpIdentifier (name a)++"(){"
-                  ,"  return $this->_"++phpIdentifier (name a)++";"
+                  ,"function get_"++phpIdentifier (name a)++"(){"] ++
+                  ( if (isObjUni a) then [] else
+                    ["  if(!isset($this->_"++phpIdentifier (name a)++")) return array();"]
+                  ) ++
+                  ["  return $this->_"++phpIdentifier (name a)++";"
                   ,"}"
                   ]
                 | a <- attributes o
@@ -199,7 +200,7 @@
      close result
       = (concat
           [ ["if (!checkRule"++show (nr rul)++"()){"
-            ,"  $DB_err=$preErr.'"++(addSlashes (show(explain rul)))++"';"
+            ,"  $DB_err='"++(addSlashes (show(explain rul)))++"';"
             ,"} else"
             ]
           | rul <- vrules fSpec
@@ -245,9 +246,7 @@
      isLargeOccurance plug = isFullGroup (requiredFields plug)
      requiredFields   plug = [f| f <- fields plug
                                , Tot `elem` multiplicities (fldexpr f)
-                               -- strictly speaking, ident fields ARE required, but we can fill in their
-                               -- values easily since their value IS their source
-                               , not $ isIdent $ fldexpr f
+                               -- I used to remove ident fields from the requiredFields, but they ARE required
                                ]
      delcode _ [] = [] -- there are probably no empty groups, and we cannot delete them anyways
      delcode plug (((a,f),_):_) -- this code is a lot like updel
@@ -277,7 +276,7 @@
              else []
         inscode [] = [] -- there are probably no empty groups, and we cannot modify them anyways
         inscode is@(((a,s),_):_)
-         = if not ((isLargeOccurance plug) is) && null keys  -- cannot generate code...
+         = if not ((isLargeOccurance plug) is) -- cannot generate code... There used to be a " && null keys" here (dont know why)
            then ["// no code for "++name a++","++fldname s++" in "++name plug]
            else
            nestTo a

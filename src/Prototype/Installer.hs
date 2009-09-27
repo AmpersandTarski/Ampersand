@@ -6,7 +6,7 @@
   import Collection (rd)
   import Options
 --  import NormalForms(conjNF)
-  import Prototype.RelBinGenBasics(phpShow,indentBlock,addSlashes)
+  import Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
   import Debug.Trace
 
   installer :: Fspc -> Options -> String
@@ -59,8 +59,9 @@
         [ "}" ]
      ) ++ "\n?>\n"
     where plugCode plug
-           = [ "/* Plug "++plname plug++", fields: "++(show $ map fldexpr $fields plug)++" */"
-             , "mysql_query(\"CREATE TABLE `"++plname plug++"`"]
+           = commentBlock (["Plug "++plname plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (fields plug)))
+             ++
+             [ "mysql_query(\"CREATE TABLE `"++plname plug++"`"]
              ++ indentBlock 17
                     ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ nul
                       | (f,comma)<-zip (fields plug) ('(':repeat ',')

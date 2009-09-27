@@ -57,11 +57,15 @@
              ++ indentBlock 2 showObjectCode ++
              [ " if($del) echo \"<P><I>Delete failed</I></P>\";"
              , " if($edit){"
-             , "   $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
+             , "   if($new) "
+             , "     $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
+                              "document.forms[0].ID.value);\",\"Save\");"
+             , "   else { "
+             , "     $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
                               "'\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\");"
-             , "   if(!$new)"
              , "     $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Cancel\");"
+             , "   } "
              , "} else $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1&" ++ objectId ++
                               "=\".urlencode($"++objectId++"->getId()),\"Edit\")"
              , "               .ifaceButton($_SERVER['PHP_SELF'].\"?del=1&" ++ objectId ++
