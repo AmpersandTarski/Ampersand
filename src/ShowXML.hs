@@ -25,6 +25,7 @@ where
    import Time(ClockTime)
    import Version(versionbanner)
    import Data.Plug
+   import XML.TinyXML
    showXML :: Fspc -> ClockTime -> String
    showXML fSpec now 
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
@@ -36,51 +37,9 @@ where
               showXTree ( mkXmlTree fSpec) ++
               "</tns:ADL>"   
 
-   -----------------some new data types for simple XML structures--------
-   data XTree = Elem { etag  :: XTag
-                     , etrees :: [XTree]
-                     }
-              | Node { ntag  :: XTag
-                     }
-              | PlainText {ptstr :: String}
-   data XTag =  Tag  { tName :: String
-                     , tAtts :: [XAtt]
-                     }
-   data XAtt = Att { attName :: String
-                   , attValue :: String
-                   }
-
-
-   showXTree :: XTree -> String
-   showXTree tree = case tree of
-                        Elem{} -> showStart tag
-                               ++ (foldr (++) [] (map showXTree (etrees tree)))
-                               ++ showEnd tag
-                                   where tag = etag tree
-                        Node{} -> showNode (ntag tree)
-                        PlainText{} -> show (ptstr tree)
-   showStart :: XTag -> String
-   showStart a = "<" ++ tName a ++ showAtts (tAtts a) ++ ">" 
-  
-   showAtts :: [XAtt] -> String
-   showAtts xs = foldr (++) [] (map showAtt xs)
-      where showAtt :: XAtt -> String
-            showAtt a= " "++attName a++"="++show (attValue a)
-
-   showEnd :: XTag -> String
-   showEnd a = "</" ++ tName a ++ ">"   
-   
-   showNode :: XTag -> String
-   showNode a = "<" ++ tName a ++ showAtts (tAtts a) ++ "/>"   
-
-   mkAttr :: String -> String -> XAtt
-   mkAttr nm value = Att nm value
-   
-   simpleTag :: String -> XTag
-   simpleTag nm = Tag nm []
-   
    nameToAttr :: Identified x => x -> XAtt 
    nameToAttr x = mkAttr "name" (name x)
+
    ----------------------------------------------------------------------
   
    class XML a where 
