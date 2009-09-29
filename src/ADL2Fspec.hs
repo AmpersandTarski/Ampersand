@@ -3,22 +3,7 @@
   where
    import Collection     ( Collection (rd,(>-)) )
    import Strings        (firstCaps)
-   import Adl            (Context(..)
-                         ,ObjectDef(..)
-                         ,KeyDef(..)
-                         ,Expression(..),notCp
-                         ,Rule(..),normExpr,cpu
-                         ,Morphism(..),makeDeclaration
-                         ,Declaration(..)
-                         ,Object(..)
-                         ,Population(..)
-                         ,Prop(..)
-                         ,Concept(..)
-                         ,Language(..)
-                         ,FilePos(..)
-                         ,Association(..),Morphic(..),Morphical(..)
-                         ,mIs,makeMph,isIdent
-                         )
+   import Adl
    import Dataset
    import Auxiliaries    (naming)
    import FspecDef
@@ -74,12 +59,18 @@
              isSur = Sur `elem` mults
              isInj = Inj `elem` mults
         allrels = [makeFdecl d| d <-declarations context]
+        --DESCR -> Add population to concept
+        --USE   -> Concepts in the Context are without population, apply if population is needed.
+        populate :: Concept -> Concept
+        populate c@(C{}) = c{cptos=rd$[srcPaire p|r<-allrels,p<-contents r,source r==c]
+                                    ++[trgPaire p|r<-allrels,p<-contents r,target r==c]}
+        populate c       = c
         allplugs = definedplugs ++ uniqueNames forbiddenNames (relPlugs ++ map conc2plug looseConcs)
           where
            otherRels      = looseRels >- mors definedplugs
            looseRels      = map makeMph (allrels) >- mors definedplugs
-           looseConcs     = concs (allrels) -- todo: we can make this less, since V[conc] isn't allways asked for..
-                            >- concs (definedplugs ++ relPlugs)
+           looseConcs     = map populate$concs (allrels) >- concs (definedplugs ++ relPlugs)
+                            -- todo: we can make this less, since V[conc] isn't allways asked for..
            relPlugs       = map mor2plug otherRels
            forbiddenNames = map name definedplugs
    
