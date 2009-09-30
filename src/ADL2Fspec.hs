@@ -37,6 +37,7 @@
             , vpatterns= patterns context
             , classdiagrams = [cdAnalysis context True pat | pat<-patterns context]
             , themes = themes'
+            , popuviolations = []
             } where
         definedplugs = vsqlplugs ++ vphpplugs
         conc2plug :: Concept -> Plug

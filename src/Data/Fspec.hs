@@ -22,6 +22,7 @@ import Adl.ObjectDef                 (ObjectDef)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism,Declaration)
 import Adl.Concept                   (Concept)
+import Adl.Pair
 import Typology                      (Inheritance)
 import Data.Plug
 import Rendering.ClassDiagram 
@@ -38,6 +39,7 @@ data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , vpatterns:: [Pattern]
                   , classdiagrams :: [ClassDiag]
                   , themes :: [FTheme]
+                  , popuviolations :: [(Rule,Paire)]
                   }
            
 --DESCR -> Fservice is like Fspc only within the scope of one ObjectDef
