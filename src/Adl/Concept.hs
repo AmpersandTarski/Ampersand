@@ -73,7 +73,7 @@ where
    cptAnything :: Concept
    cptAnything = Anything      -- constructor
    cptnew :: String -> Concept
-   cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = []}
+   cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = error ("(module Adl.Concept) Concept has never been populated: " ++ nm)}
 
    class Association a where
      source, target :: a -> Concept

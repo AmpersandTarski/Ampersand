@@ -59,18 +59,12 @@
              isUni = Uni `elem` mults
              isSur = Sur `elem` mults
              isInj = Inj `elem` mults
-        allrels = [makeFdecl d| d <-declarations context]
-        --DESCR -> Add population to concept
-        --USE   -> Concepts in the Context are without population, apply if population is needed.
-        populate :: Concept -> Concept
-        populate c@(C{}) = c{cptos=rd$[srcPaire p|r<-allrels,p<-contents r,source r==c]
-                                    ++[trgPaire p|r<-allrels,p<-contents r,target r==c]}
-        populate c       = c
+        allrels = declarations context
         allplugs = definedplugs ++ uniqueNames forbiddenNames (relPlugs ++ map conc2plug looseConcs)
           where
            otherRels      = looseRels >- mors definedplugs
            looseRels      = map makeMph (allrels) >- mors definedplugs
-           looseConcs     = map populate$concs (allrels) >- concs (definedplugs ++ relPlugs)
+           looseConcs     = concs (allrels) >- concs (definedplugs ++ relPlugs)
                             -- todo: we can make this less, since V[conc] isn't allways asked for..
            relPlugs       = map mor2plug otherRels
            forbiddenNames = map name definedplugs
@@ -198,14 +192,6 @@
    Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.)
 -}
         datasets'  = makeDatasets context
-        makeFdecl d 
-         = case d of
-             Sgn{}     -> d{decpopu = rd( [link| Popu mph ps<-populations context, makeDeclaration mph==d, link<-ps]
-                                          ++(decpopu d))
-                           }
-             Isn{}     -> d
-             Iscompl{} -> d
-             Vs{}      -> d
         --TODO -> assign themerules to themes and remove them from the Anything theme
         themes' = FTheme{tconcept=Anything,tfunctions=[],trules=themerules}
                   :(map maketheme$orderby [(wsopertheme oper, oper)

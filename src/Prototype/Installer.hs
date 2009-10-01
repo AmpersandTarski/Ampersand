@@ -94,8 +94,11 @@
            = if name plug==name S then [ "1" ] else
              if length (fields plug)==2 -- treat binary tables differently
              then
+             --DESCR -> the first field contains an expression::[A*A] which can be the expression I[A]
+             --         the second field contains an expression Mph[A*B]
+             --         we need the contents of the relation morphism only
              [ phpShow (srcPaire p) ++", "++ phpShow (trgPaire p)
-             | Tm m' <- map fldexpr (fields plug), p<-contents m']
+             | Tm (m'@Mph{}) <- map fldexpr (fields plug), p<-contents m']
              else
              [ chain ", " [ head ([phpShow (trgPaire p)
                                   | p<-contents$fldexpr f,a==srcPaire p

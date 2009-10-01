@@ -211,13 +211,30 @@ enrichCtx cx@(Ctx{}) ctxs =
                     --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
-    addpopu = [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
-              |d<-ptdcs p]
+    addpopu = [d |d<-ptdcs p, d'<-ctxdecls, d==d']
 
   --DESCR -> enriching ctxds
   --         take all the declarations from all patterns included (not extended) in this context
-  ctxdecls =  [d{decpopu=decpopu d++[pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
-              |d<-allCtxDecls [cx]]
+  ctxdecls =  populateCpts 
+                [d{decpopu=decpopu d++
+                           [pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
+                |d<-allCtxDecls [cx]]
+
+  --DESCR -> Fills C{cptos}
+  --USE -> population of declarations must be final
+  populateCpts :: [Declaration] -> [Declaration]
+  populateCpts ds =  
+        [case d of
+           Sgn{} -> d{desrc=populate$desrc d, detgt=populate$detgt d}
+           _     -> d --correct?
+        |d<-ds]
+        where
+        --DESCR -> Add population to concept
+        --USE   -> Concepts in the Context are without population, apply if population is needed.
+        populate :: Concept -> Concept
+        populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-ds,p<-contents d,source d==c]
+                                    ++[trgPaire p|d<-ds,p<-contents d,target d==c]}
+        populate c       = c
 
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
