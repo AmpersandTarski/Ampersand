@@ -39,7 +39,7 @@ data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
                   , vpatterns:: [Pattern]
                   , classdiagrams :: [ClassDiag]
                   , themes :: [FTheme]
-                  , popuviolations :: [(Rule,Paire)]
+                  , violations :: [(Rule,Paire)]
                   }
            
 --DESCR -> Fservice is like Fspc only within the scope of one ObjectDef

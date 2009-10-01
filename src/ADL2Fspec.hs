@@ -37,8 +37,15 @@
             , vpatterns= patterns context
             , classdiagrams = [cdAnalysis context True pat | pat<-patterns context]
             , themes = themes'
-            , popuviolations = []
+            , violations = [(r,viol) |r<-rules context, viol<-ruleviols r]
             } where
+        ruleviols r@(Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
+            | rtyp==Truth = contents$Cp con --everything not in con
+            | rtyp==Implication = ant `contentsnotin` con 
+            | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
+            where
+            contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
+        ruleviols _ = [] 
         definedplugs = vsqlplugs ++ vphpplugs
         conc2plug :: Concept -> Plug
         conc2plug c = plugsql (name c) [field (name c) (Tm (mIs c)) Nothing False True]

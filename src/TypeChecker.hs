@@ -211,30 +211,44 @@ enrichCtx cx@(Ctx{}) ctxs =
                     --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
-    addpopu = [d |d<-ptdcs p, d'<-ctxdecls, d==d']
+    addpopu = let matches = [d' |d@(Sgn{})<-ptdcs p, d'@(Sgn{})<-ctxdecls, decfpos d==decfpos d']
+              in matches ++ [d|d@(Sgn{})<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
 
   --DESCR -> enriching ctxds
   --         take all the declarations from all patterns included (not extended) in this context
-  ctxdecls =  populateCpts 
-                [d{decpopu=decpopu d++
-                           [pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
-                |d<-allCtxDecls [cx]]
-
-  --DESCR -> Fills C{cptos}
-  --USE -> population of declarations must be final
-  populateCpts :: [Declaration] -> [Declaration]
-  populateCpts ds =  
-        [case d of
-           Sgn{} -> d{desrc=populate$desrc d, detgt=populate$detgt d}
-           _     -> d --correct?
-        |d<-ds]
-        where
-        --DESCR -> Add population to concept
-        --USE   -> Concepts in the Context are without population, apply if population is needed.
-        populate :: Concept -> Concept
-        populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-ds,p<-contents d,source d==c]
-                                    ++[trgPaire p|d<-ds,p<-contents d,target d==c]}
-        populate c       = c
+  --         Use the sign of the declaration to populate the source and target
+  --REMARK -> Only Sgn{} in list of all declarations context
+  ctxdecls =  [d{desrc=populate$desrc d, detgt=populate$detgt d} | d@(Sgn{})<-popuRels]
+  --DESCR -> Determines domain and range population per declaration (i.e. relation)
+  --REMARK -> concepts have no population, use ctxdecls instead if needed.
+  popuRels = [d{decpopu=decpopu d++
+                        [pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
+             |d<-allCtxDecls [cx]]
+  --DESCR -> Determines source and target population based on domains and ranges of all decls
+  --         Source and target need to be provided, because it can differ from the sign of the declaration
+  --         The morphism (in an expression) refering to this declaration determines the type.
+  popuMphDecl :: Morphism -> Morphism
+  popuMphDecl mp = case mp of
+      Mph{} -> mp {mphtyp=popusign$mphtyp mp
+                  ,mphats=map populate (mphats mp)
+                  ,mphdcl=popudecl$mphdcl mp}
+      I{} -> mp {mphgen=populate$mphgen mp
+                , mphspc=populate$mphspc mp
+                , mphats=map populate (mphats mp)}
+      V{} -> mp {mphtyp=popusign$mphtyp mp
+                ,mphats=map populate (mphats mp)}
+      _  -> mp
+      where popusign (s,t) = (populate s, populate t)
+            popudecl d = let matches = [d'|d'<-ctxdecls, d==d']
+                         in if length matches==1 then head matches
+                            else error$"Error in TypeChecker.hs module TypeChecker function enrichCtx.popuMphDecl: " ++
+                                       "Morphism cannot be matched to just one declaration.\nMorphism:"++show mp++"." ++
+                                       "\nDeclarations:"++show matches++"."
+  --DESCR -> Add population to concept
+  populate :: Concept -> Concept
+  populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,source d==c]
+                              ++[trgPaire p|d<-popuRels,p<-contents d,target d==c]}
+  populate c       = c
 
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
@@ -424,15 +438,16 @@ enrichCtx cx@(Ctx{}) ctxs =
   bindSubexpr ex@(Tm (Mph{mphyin=False})) (BoundTo (Flip adlex@(Relation{tt=TT{cts=c1,ctt=c2}}) _)) = 
               bindSubexpr ex (BoundTo (adlex{tt=TT c2 c1 1}))
   bindSubexpr (Tm mp) stmt@(BoundTo adlex@(Relation{})) = 
-    let
-    (ec1,ec2) = evalstmt stmt
-    gen = (toGen $ exprsrc adlex)
+    let    
+    (ec1,ec2)= evalstmt stmt
+    gen = toGen $ exprsrc adlex
     in
     if (rel adlex)==mp 
     then Tm $ case mp of
-      Mph{} -> (rel adlex) {mphtyp=(ec1,ec2)} --REMARK -> bind to the morphism from the gamma (with mphdcl set)
-      I{} -> mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
-      V{} -> mp {mphtyp=(ec1,ec2)}
+      Mph{} -> popuMphDecl$ (rel adlex) {mphtyp=(ec1,ec2)}
+                           --REMARK -> bind to the morphism from the gamma (with mphdcl set) = rel adlex
+      I{} -> popuMphDecl$mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
+      V{} -> popuMphDecl$mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
     else error  $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindSubexpr: " ++
                   "Morphisms are different: \nOriginal: " ++ show mp ++ "\nType checked: " ++ show (rel adlex)       
