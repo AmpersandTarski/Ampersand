@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS -XTypeSynonymInstances #-}
 module ShowXML (showXML)
 where
 --   import Text.XML.HaXml
@@ -52,7 +53,7 @@ where
 
    instance XML Fspc where
      mkTag f = Tag "Fspec" [ nameToAttr f] 
-     mkXmlTree f@(Fspc{})
+     mkXmlTree f@(Fspc  _ _ _ _ _ _ _ _ _ _ _ _ _ _)
         = Elem (mkTag f) (
              [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
           ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
@@ -63,9 +64,17 @@ where
           ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 
           ++ [ Elem (simpleTag "Rules")    (map mkXmlTree (vrules f))] 
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
+          ++ [ Elem (simpleTag "Violations") (map violation2XmlTree (violations f))]
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
                  )
-
+             where violation2XmlTree :: (Rule,Paire) -> XTree
+                   violation2XmlTree (r,p) = 
+                     Elem (Tag "Violation" [] )
+                      (
+                       [Elem (simpleTag "ViolatedRule") [mkXmlTree r]]
+                     ++[Elem (simpleTag "Culprit")[mkXmlTree p]]
+                      )
+                     
    instance XML Fservice where
      mkTag _ = Tag "Fservice" [] 
      mkXmlTree f@(Fservice aaa  )
@@ -236,7 +245,7 @@ where
                                 | not (null (prL++prM++prR))]
                   ++ explainTree (decexpl d)
                   ++[Elem (simpleTag "Population") 
-                             (map mkXmlTreeOfPair (decpopu d)) 
+                             (map mkXmlTree (decpopu d)) 
                                 | not (null (decpopu d))]                 
           Isn _ _ 
                 ->  [Elem (simpleTag "Generic") [mkXmlTree (source d)]]
@@ -256,16 +265,14 @@ where
          prL = decprL d
          prM = decprM d
          prR = decprR d
-         mkXmlTreeOfPair :: Paire -> XTree
-         mkXmlTreeOfPair p 
-             = Elem tag []
-             where tag :: XTag
-                   tag = Tag "link" atts
-                   atts :: [XAtt]
+
+   instance XML Paire where
+     mkTag p = Tag "link" atts
+                where
                    atts = [mkAttr "from" (srcPaire p)]
                         ++[mkAttr "to"   (trgPaire p)]
-
-
+     mkXmlTree p = Elem (mkTag p) []
+                        
    instance XML ConceptDef where
      mkTag f = Tag "ConceptDef" ( [nameToAttr f]
                                 ++[mkAttr "Trace" (cdref f) |not (null (cdref f))])
