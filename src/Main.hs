@@ -31,7 +31,7 @@ phase1 flags
 
 phase2 :: Options -> Context -> IO(Fspc)
 phase2 flags context = do verboseLn flags "Calculating..."
-                          return (makeFspec context)
+                          return (makeFspec flags context)
                           
 phase3 :: Options -> Fspc -> IO()
 phase3 flags fSpec = 

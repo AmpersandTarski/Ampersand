@@ -7,8 +7,8 @@
    import Dataset
    import Auxiliaries    (naming)
    import FspecDef
-   import PredLogic
    import Languages
+   import Options(Options(language))
    import NormalForms(disjNF)
    import Data.Plug
    import Char(toLower)
@@ -19,8 +19,8 @@
  -- Every dataset is discussed in precisely one theme
  -- Every theme will be explained in a chapter of its own.
 
-   makeFspec :: Context -> Fspc
-   makeFspec context =
+   makeFspec :: Options -> Context -> Fspc
+   makeFspec flags context =
       Fspc { fsfsid = makeFSid1 (name context)
             , datasets = datasets'
               -- serviceS contains the services defined in the ADL-script.
@@ -39,7 +39,7 @@
             , themes = themes'
             , violations = [(r,viol) |r<-rules context, viol<-ruleviols r]
             } where
-        ruleviols r@(Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
+        ruleviols (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
             | rtyp==Truth = contents$Cp con --everything not in con
             | rtyp==Implication = ant `contentsnotin` con 
             | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
@@ -113,33 +113,12 @@
            [ [ Obj { objnm   = name c
                    , objpos  = Nowhere
                    , objctx  = Tm $ I [c] c c True -- was: Tm $ V [cptS,c] (cptS,c)
-                   , objats  = [ Obj { objnm  = name mph++name (target mph)
-                                     , objpos = Nowhere
-                                     , objctx = Tm (preventAmbig mph)
-                                     , objats = let ats = [] --TODO -> disabled because it causes loop problems at -p option
-                                                          --[ Obj { objnm = concat [name mph'| mph'<-morlist att]++name (target att)
-                                                          --      , objpos = Nowhere
-                                                          --      , objctx = att
-                                                          --      , objats = []
-                                                          --      , objstrs = [["DISPLAYTEXT", showADL att++" "++name (target att)]]++props (multiplicities att)
-                                                          --      }
-                                                          -- | att<-recur [] (target mph)]
-                                                in if null ats then []
-                                                   else (( Obj { objnm = name (target mph)
-                                                               , objpos = Nowhere
-                                                               , objctx = Tm $ I [target mph] (target mph) (target mph) True
-                                                               , objats = []
-                                                               , objstrs= []
-                                                               }
-                                                          ):ats)
-                                     , objstrs = [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
-                                     }
-                                | mph<-relsFrom c, not (isSignal mph)]++
+                   , objats  = [ recur [] mph | mph<-relsFrom c]++
                                 [ Obj { objnm =  name (srrel s)
                                       , objpos = Nowhere
                                       , objctx = disjNF (notCp (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
                                       , objats = []
-                                      , objstrs = [["DISPLAYTEXT", if null (srxpl s) then (lang English .assemble.normRule) (srsig s) else srxpl s]]
+                                      , objstrs = [] -- [["DISPLAYTEXT", if null (srxpl s) then (lang lng .assemble.normRule) (srsig s) else srxpl s]]
                                       }
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
@@ -148,13 +127,13 @@
                                , objpos = Nowhere
                                , objctx = Tm (preventAmbig mph)
                                , objats = []
-                               , objstrs= [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
+                               , objstrs= [] -- [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
                                }
                            | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
-               in [ Obj { objnm  = name c++"s"
+               in [ Obj { objnm  = plural (language flags) (name c)
                         , objpos = Nowhere
                         , objctx = Tm $ I [S] S S True
-                        , objats = [ Obj { objnm  = name c++"s"
+                        , objats = [ Obj { objnm  = plural (language flags) (name c)
                                          , objpos = Nowhere
                                          , objctx = Tm $ V [S,c] (S,c)
                                          , objats = ( Obj { objnm = "nr"
@@ -181,17 +160,26 @@
            preventAmbig mp = mp
            relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
                         [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
-         -- recur :: [Morphism] -> Concept -> [Expression]
-          -- recur rs' c
-           --  = [ F [Tm mph| mph<-rs'++[n]] | n<-new, not (n `elem` rs')] ++
-             --  [ rs'' | n<-new, not (n `elem` rs'), rs'' <-recur (rs'++[n]) (target n) ] 
-               --where new = [mph| mph<-relsFrom c, not (isSignal mph), not (isIdent mph), Tot `elem` multiplicities mph]
+           recur :: [Morphism] -> Morphism -> ObjectDef
+  -- WAAROM: Han, als de "shadow m" warning  (hieronder in recur) storend is, kan die dan in Adl opgelost worden?
+  -- Ik stel voor de shadow warning helemaal uit te zetten, want ik vind het juist een voordeel om overal zoveel mogelijk dezelfde identifier
+  -- te gebruiken (als conventie dus). Een van mijn conventies is een m voor morphisms te gebruiken... Shadowing is zelden lastig... Groetjes, Stef
+           recur ms m
+            = Obj { objnm   = name m++name (target m)
+                  , objpos  = Nowhere
+                  , objctx  = Tm (preventAmbig m)
+                  , objats  = [ recur (ms++[mph]) mph | mph<-relsFrom (target m), not (isSignal mph), Tot `elem` multiplicities mph, not (mph `elem` ms)]
+                  , objstrs = [] -- [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
+                  }
+ 
+{- alleen nodig voor DISPLAYTEXT; herzien i.c.m. interface
            props ps = [if Sym `elem` ps && Asy `elem` ps then ["PROPERTY"] else
                        if Tot `elem` ps && Uni `elem` ps then ["ATTRIBUTE"] else
                        if Tot `elem` ps                  then ["NONEMPTY LIST"] else
                        if                  Uni `elem` ps then ["OPTIONAL FIELD"] else
                                                               ["LIST"]
                       ]
+-}
 {- A dataset combines all functions that share the same source.
    This is used for function point analysis (in which data sets are counted).
    It can also be used in code generate towards SQL, allowing the code generator to
@@ -206,7 +194,7 @@
         --TODO -> by default CRUD operations of datasets, possibly overruled by SQL or PHP plugs
         themeoperations = datasetoperations++phpoperations++sqloperations
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
-        sqloperations =[oper|obj<-(ctxsql context), oper<-makeDSOperations (ctxks context) obj]
+        sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (ctxks context) obj]
         datasetoperations = [oper|obj<-datasets', oper<-makeDSOperations (ctxks context) obj, objtheme obj /=S]
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]

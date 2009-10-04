@@ -76,7 +76,7 @@
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ mdata plug) then [] else
                  [ "else"
-				 , "mysql_query(\"INSERT INTO `"++plname plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
+				 , "mysql_query(\"INSERT IGNORE INTO `"++plname plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
 				 ]++ indentBlock 12
 						 ( [ comma++ " (" ++md++ ")"
 						   | (md,comma)<-zip (mdata plug) ("VALUES":repeat "      ,")

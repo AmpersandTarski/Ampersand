@@ -476,14 +476,18 @@
                         )
    
    flattenOdef :: ObjectDef->ObjectDef
-   flattenOdef objDef = objDef{objats=map prefixwithrel atts,objctx=Tm$mIs$source$objctx objDef}
-     where atts :: [ObjectDef]
-           atts = objats objDef ++ concat ((map (objats . flattenOdef) $ objats objDef))
-           prefixwithrel :: ObjectDef->ObjectDef
+   flattenOdef objDef = objDef{objats=objats objDef ++ concat ((map (objats . flat) $ objats objDef)),objctx=Tm$mIs$source$objctx objDef}
+     where prefixwithrel :: ObjectDef->ObjectDef
            prefixwithrel att = att{objctx = disjNF (F [objctx objDef,objctx att])}
+           flat objDef = objDef{objats=map prefixwithrel atts,objctx=Tm$mIs$source$objctx objDef}
+            where atts :: [ObjectDef]
+                  atts = objats objDef ++ concat ((map (objats . flat) $ objats objDef))
 
     -- onderstaande functie selecteert alle attributen plat op de source gemapt, dwz:
-    -- a=[b,c] wordt I=[a;b,a;b], wat alleent hetzelfde is als a UNI is
+    -- a=[b,c] wordt I=[a;b,a;b], wat alleen hetzelfde is als a UNI is
+    -- WAAROM Bas, gebeurt deze flattening-truc. De nette manier lijkt me, dat doSqlGet de recursie van het object volgt.
+    -- Zonodig maakt doSqlGet een geplette afbeelding naar de output (de gegenereerde interface). Groet, Stef.
+    -- (Het pad vanaf de wortel van het oject geef je zonodig als parameter mee in de recursie....)
    doSqlGet :: Fspc -> ObjectDef -> ObjectDef -> [String]
    doSqlGet fSpec objIn objOut = ["SELECT DISTINCT " ++ head fieldNames      ]
                                     ++ map ((++) "     , ") (tail fieldNames  ) ++

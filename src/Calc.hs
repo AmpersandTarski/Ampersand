@@ -112,7 +112,7 @@ module Calc (   deriveProofs
                                            |conjunct<-conjuncts rule, clause<-allClauses conjunct])
                        , "")
                      , ("\nniClauses:\n     "++
-                        chain "\n     " (map (showHS "") (rd [clause|conjunct<-conjuncts rule, clause<-niClauses conjunct]))
+                        chain "\n     " (map (showADL) (rd [clause|conjunct<-conjuncts rule, clause<-niClauses conjunct]))
                        , "")
                      , ( "\nAvailable Triggers on rule "++show (nr rule)++":\n     "++
                          chain "\n     " [showADL (makeRule rule clause)++ " yields"++concat
@@ -639,41 +639,8 @@ module Calc (   deriveProofs
                      Cp{}     -> "-"
                      K0{}     -> "*"
                      K1{}     -> "+"
-                     (Tm mph) -> if inline mph then "" else "~"
-                     Tc{}     -> undefined    --WAAROM? Stef, ben je dit vergeten? TODO
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                     Tm mph   -> if inline mph then "" else "~"
+                     Tc{}     -> error("Fatal: call to showOp (Tc x) in module Calc.hs")
 
 
 
@@ -719,8 +686,8 @@ module Calc (   deriveProofs
               (K1 x)   -> [(expr,(\x'->K1 x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
               (Cp x)   -> [(expr,(\x'->Cp x'),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e3 x]
               (Tc x)   -> lam tOp e3 x
-              (Tm _)   -> undefined              -- WAAROM?? Stef, na het opschonen van deze code zag ik ook nog een stukje uitgecomentariseerde code, die hier eventueel op zijn plaats zou zijn. Dit laat ik graag aan jou deskundigheid over....
---              (Tm m)  ->  [[(e3,(\x->x),[],"")]]
+--              (Tm _)   -> error("WAAROM?? Stef, na het opschonen van deze code zag ik ook nog een stukje uitgecomentariseerde code, die hier eventueel op zijn plaats zou zijn. Dit laat ik graag aan jou deskundigheid over....")
+              (Tm _)  ->  [[(e3,(\x->x),[],"")]]
 
            where
              deMrg expr'' = case expr'' of

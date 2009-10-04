@@ -598,7 +598,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
 
    sqlConcept :: Fspc -> Concept -> String
-   sqlConcept fSpec c | c==cptS = "ONEsqlConcept"
+   sqlConcept fSpec c | c==cptS = "ONE"
                       | otherwise
                 = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
                   head cs
@@ -610,7 +610,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                             where cs = [plug | plug@PlugSql{}<-plugs fSpec, c'<-concs plug, c'==c]
 
    sqlAttConcept :: Fspc -> Concept -> String
-   sqlAttConcept fSpec c | c==cptS = "ONEsqlAttConcept"
+   sqlAttConcept fSpec c | c==cptS = "ONE"
                          | otherwise
                 = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
                   head cs
