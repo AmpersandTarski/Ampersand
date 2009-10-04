@@ -475,19 +475,10 @@
                          ]
                         )
    
-   flattenOdef :: ObjectDef->ObjectDef
-   flattenOdef objDef = objDef{objats=objats objDef ++ concat ((map (objats . flat) $ objats objDef)),objctx=Tm$mIs$source$objctx objDef}
-     where prefixwithrel :: ObjectDef->ObjectDef
-           prefixwithrel att = att{objctx = disjNF (F [objctx objDef,objctx att])}
-           flat objDef = objDef{objats=map prefixwithrel atts,objctx=Tm$mIs$source$objctx objDef}
-            where atts :: [ObjectDef]
-                  atts = objats objDef ++ concat ((map (objats . flat) $ objats objDef))
-
-    -- onderstaande functie selecteert alle attributen plat op de source gemapt, dwz:
-    -- a=[b,c] wordt I=[a;b,a;b], wat alleen hetzelfde is als a UNI is
-    -- WAAROM Bas, gebeurt deze flattening-truc. De nette manier lijkt me, dat doSqlGet de recursie van het object volgt.
-    -- Zonodig maakt doSqlGet een geplette afbeelding naar de output (de gegenereerde interface). Groet, Stef.
-    -- (Het pad vanaf de wortel van het oject geef je zonodig als parameter mee in de recursie....)
+{- objIn representeert een PHP-object dat een subset is van PHP-object objOut.
+   objIn representeert het deel van objOut dat bij aanroep reeds gevuld is.
+   Dit voorkomt onnodige database accessen.
+-}
    doSqlGet :: Fspc -> ObjectDef -> ObjectDef -> [String]
    doSqlGet fSpec objIn objOut = ["SELECT DISTINCT " ++ head fieldNames      ]
                                     ++ map ((++) "     , ") (tail fieldNames  ) ++
@@ -529,7 +520,7 @@
                                          |((plug,(ai,sf)),(a,tf))<-group,ga/=a]
                                , not (null res)]
             combos           = [ ((plug,(ai,sf)),(a,tf))
-                               | ai<-(objats (flattenOdef objIn))++[objIn]
+                               | ai<-(objats (objIn))++[objIn]
                                , a<-aOuts
                                , Just e' <-[takeOff (objctx ai) (objctx a)]
                                , (plug,sf,tf)<-sqlRelPlugs fSpec e'
@@ -540,7 +531,7 @@
             takeOff a e' | isIdent a = Just e'
             takeOff _ _ = Nothing
             isOne' = isOne objOut
-            aOuts           = [a|a<-objats(flattenOdef objOut)]
+            aOuts           = [a|a<-objats( objOut)]
             rest :: [(ObjectDef,Integer)]
             rest            = zip [ a | a<-aOuts
                                       , a `notElem` [a' | g <- comboGroups, (a',_) <- snd g] 

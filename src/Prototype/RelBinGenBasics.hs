@@ -124,7 +124,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         | (_,l)<-zip [0..] negTms
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
-                        ]++["isect0."++src'++" IS NOT NULL"]
+                        ]++["isect0."++src'++" IS NOT NULL", "isect0."++trg'++" IS NOT NULL"]
    selectExpr fSpec i src trg (Fi [e']) = selectExpr fSpec i src trg e'
    selectExpr _     _ _   _   (Fi [] ) = error ("RelBinGenBasics: Cannot create query for Fi [] because type is unknown")
 

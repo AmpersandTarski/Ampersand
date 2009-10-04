@@ -168,7 +168,7 @@
             = Obj { objnm   = name m++name (target m)
                   , objpos  = Nowhere
                   , objctx  = Tm (preventAmbig m)
-                  , objats  = [ recur (ms++[mph]) mph | mph<-relsFrom (target m), not (isSignal mph), Tot `elem` multiplicities mph, not (mph `elem` ms)]
+                  , objats  = [ recur (ms++[mph]) mph | mph<-relsFrom (target m), not (isSignal mph), Tot `elem` multiplicities mph, not (isProperty mph), not (mph `elem` ms)]
                   , objstrs = [] -- [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
                   }
  
