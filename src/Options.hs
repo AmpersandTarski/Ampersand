@@ -10,6 +10,7 @@ import System.Console.GetOpt
 import System.FilePath
 import System.Directory
 import Time          
+import Strings               (chain)
 
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
@@ -63,12 +64,10 @@ getOptions =
       env      <- getEnvironment
       genTime' <- getClockTime
       flags    <- case getOpt Permute (each options) args of
-                      (o,[n],[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
-                      (_,[],[] )    -> ioError (userError ("no file to parse" ++usageInfo' progName))
-                      (_,x:xs,[])   -> ioError (userError ("too many files: "++ show [x:xs] ++usageInfo' progName))
-                      (_,_,errs)    -> ioError (userError (concat errs ++ usageInfo' progName))
-      flags'   <- checkOptions flags
-      return flags'
+                      (o,n,[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
+                      (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
+      flags''  <- checkOptions flags
+      return flags''
 
 checkOptions :: Options -> IO Options
 checkOptions flags = 
@@ -123,11 +122,15 @@ checkOptions flags =
            return flags6                  
 
             
-data DisplayMode = Public | Hidden
+data DisplayMode = Public | Hidden 
     
-usageInfo' :: String -> String
-usageInfo' progName = usageInfo (infoHeader progName) (publics options)
+usageInfo' :: Options -> String
+-- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.  
+usageInfo' opts = usageInfo (infoHeader (progrName opts)) (if (verboseP opts) then each options else publics options)
           
+usageInfo'' :: String -> String 
+usageInfo'' progName = usageInfo (infoHeader progName) (publics options)
+
 infoHeader :: String -> String
 infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nList of options:"
 
@@ -137,38 +140,48 @@ each :: [(a, DisplayMode) ] -> [a]
 each opts = [o|(o,_) <- opts]
 
 options :: [(OptDescr (Options -> Options), DisplayMode) ]
-options = [ ((Option ['C']     ["context"]          (OptArg contextOpt "name")  "use context with name"), Public)
-          , ((Option ['v']     ["version"]          (NoArg versionOpt)          "show version and exit"), Public)
-          , ((Option ['h','?'] ["help"]             (NoArg helpOpt)             "get (this) usage information"), Public)
-          , ((Option []        ["verbose"]          (NoArg verboseOpt)          "verbose error message format"), Public)
-          , ((Option ['p']     ["proto"]            (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++
-                                                                                   envdirPrototype ++ " )") ), Public)
-          , ((Option ['x']     ["maxServices"]      (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively"), Public)
-          , ((Option ['d']     ["dbName"]           (ReqArg dbNameOpt "name")   ("use database with name (name overrides "++
-                                                                                   envdbName ++ " )")), Public)
-          , ((Option ['s']     ["services"]         (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
-          , ((Option ['a']     ["atlas"]            (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides "++
-                                                                                   envdirAtlas ++ " )")), Public)
-          , ((Option []        ["XML"]              (NoArg xmlOpt)              "generate XML output"), Public)
-          , ((Option ['f']     ["fspec"]      (ReqArg fspecRenderOpt "format")     "generate a functional specification document in specified format (Word, Html, Latex, Pandoc)"), Public)
-          , ((Option []        ["proofs"]           (NoArg proofsOpt)           "generate correctness proofs"), Public)
-          , ((Option []        ["haskell"]          (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)"), Public)
-          , ((Option ['o']     ["outputDir"]        (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides "++
-                                                                                   envdirOutput ++ " )")        ), Public)
-          , ((Option []        ["beeper"]           (NoArg beeperOpt)           "generate beeper instead of checker"), Public)
-          , ((Option []        ["crowfoot"]         (NoArg crowfootOpt)         "generate crowfoot notation in graphics"), Public)
-          , ((Option []        ["language"]         (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')"), Public)
-          , ((Option []        ["log"]              (ReqArg logOpt "name")       ("log to file with name (name overrides "++
-                                                                                   envlogName  ++ " )")), Hidden)
-          , ((Option []        ["test"]             (NoArg testOpt)             "Used for test purposes"), Hidden)
-          , ((Option []        ["sqlHost"]          (OptArg sqlHostOpt "hostname") "specify database host name"), Hidden)
-          , ((Option []        ["sqlLogin"]         (OptArg sqlLoginOpt "login")   "specify database login name"), Hidden)
-          , ((Option []        ["sqlPwd"]           (OptArg sqlPwdOpt "password")  "specify database password"), Hidden)
-          , ((Option []        ["verbosePhp"]       (NoArg verbosephpOpt)       "generates loads of comments in PHP-code. Useful for debugging."), Public)
-          ]
+options = map pp
+          [ ((Option ['v']     ["version"]     (NoArg versionOpt)          "show version and exit."), Public)
+          , ((Option ['h','?'] ["help"]        (NoArg helpOpt)             "get (this) usage information."), Public)
+          , ((Option []        ["verbose"]     (NoArg verboseOpt)          "verbose error message format."), Public)
+          , ((Option ['C']     ["context"]     (OptArg contextOpt "name")  "use context with name."), Public)
 
-defaultOptions :: ClockTime -> [(String, String)] -> String -> String -> Options
-defaultOptions clocktime env fName pName 
+          , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
+          , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively."), Public)
+          , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
+
+          , ((Option ['o']     ["outputDir"]   (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides environment variable "++ envdirOutput ++ ").")), Public)
+          , ((Option []        ["log"]         (ReqArg logOpt "name")      ("log to file with name (name overrides environment variable "++ envlogName  ++ ").")), Hidden)
+          , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("use database with name (name overrides environment variable "++ envdbName ++ ").")), Public)
+
+          , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
+          , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  "generate a functional specification document in specified format (Word, Html, Latex, Pandoc)."), Public)
+          , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
+          , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
+          , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
+
+          , ((Option []        ["beeper"]      (NoArg beeperOpt)           "generate beeper instead of checker."), Public)
+          , ((Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics."), Public)
+          , ((Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')."), Public)
+          , ((Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only."), Hidden)
+
+          , ((Option []        ["sqlHost"]     (OptArg sqlHostOpt "hostname") "specify database host name."), Hidden)
+          , ((Option []        ["sqlLogin"]    (OptArg sqlLoginOpt "login")   "specify database login name."), Hidden)
+          , ((Option []        ["sqlPwd"]      (OptArg sqlPwdOpt "password")  "specify database password."), Hidden)
+          , ((Option []        ["verbosePhp"]  (NoArg verbosephpOpt)       "generates loads of comments in PHP-code. Useful for debugging."), Public)
+          ]
+     where pp :: (OptDescr (Options -> Options), DisplayMode) -> (OptDescr (Options -> Options), DisplayMode)
+           pp (Option a b' c d,e) = (Option a b' c d',e)
+              where d' =  afkappen [] [] (words d) 40
+                    afkappen :: [[String]] -> [String] -> [String] -> Int -> String
+                    afkappen regels []    []   _ = chain ("\n") (map unwords regels)
+                    afkappen regels totnu []   b = afkappen (regels++[totnu]) [] [] b
+                    afkappen regels totnu (w:ws) b 
+                          | length (unwords totnu) < b - length w = afkappen regels (totnu++[w]) ws b
+                          | otherwise                             = afkappen (regels++[totnu]) [w] ws b     
+           
+defaultOptions :: ClockTime -> [(String, String)] -> [String] -> String -> Options
+defaultOptions clocktime env fNames pName 
                = Options { contextName   = Nothing
                          , showVersion   = False
                          , showHelp      = False
@@ -199,8 +212,14 @@ defaultOptions clocktime env fName pName
                          , crowfoot      = False
                          , language      = Dutch
                          , progrName     = pName
-                         , adlFileName   = replaceExtension fName ".adl"
-                         , baseName      = takeBaseName fName -- was: dropExtension fName, changed because the file_path/filename is no valid databasename
+                         , adlFileName   = case fNames of
+                                              []      -> error ("no file to parse" ++usageInfo'' pName)
+                                              [fName] -> replaceExtension fName ".adl"
+                                              x:xs    -> error ("too many files: "++ show (x:xs) ++usageInfo'' pName)
+                         , baseName      = case fNames of
+                                              []      -> error ("no file to parse" ++usageInfo'' pName)
+                                              [fName] -> takeBaseName fName -- was: dropExtension fName, changed because the file_path/filename is no valid databasename
+                                              x:xs    -> error ("too many files: "++ show (x:xs) ++usageInfo'' pName)
                          , uncheckedLogName = lookup envlogName env
                          , logName       = "ADL.log"
                          , services      = False

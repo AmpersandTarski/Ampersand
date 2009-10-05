@@ -1,6 +1,6 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | Deze module bevat operaties op strings.
-  module Strings (chain,unCap,firstCaps,remSpaces)
+  module Strings (chain,unCap,firstCaps,remSpaces,spaces)
   where
 
    import Char (toUpper, toLower)
@@ -26,5 +26,7 @@
    remSpaces (' ':c:str) = toUpper c:remSpaces str 
    remSpaces xs = xs
 
-
-
+   spaces :: Int -> String
+   spaces x 
+      | x < 1     = ""
+      | otherwise = " "++spaces (x - 1)

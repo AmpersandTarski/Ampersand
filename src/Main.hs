@@ -14,10 +14,8 @@ main
       if showVersion flags
        then putStrLn versionbanner
        else if showHelp flags 
-       then mapM_ putStrLn [(usageInfo' (progrName flags))]
-       else do if (test flags) then verboseLn flags (show flags)
-                               else verboseLn flags "" 
-               context <- phase1 flags 
+       then mapM_ putStrLn [usageInfo' flags]
+       else do context <- phase1 flags 
                fSpec   <- phase2 flags context
                phase3 flags fSpec
 

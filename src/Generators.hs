@@ -16,7 +16,7 @@ import Options
 import FspecDef
 import ShowHS       (fSpec2Haskell)
 import ShowADL      (printadl)
-import ShowXML      (showXML)
+import XML.ShowXMLtiny      (showXML)
 import Calc         (deriveProofs)
 import Prototype.ObjBinGen (phpObjServices)
 import Adl

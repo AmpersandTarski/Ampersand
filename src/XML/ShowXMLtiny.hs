@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XTypeSynonymInstances #-}
-module ShowXML (showXML)
+module XML.ShowXMLtiny (showXML)
 where
 --   import Text.XML.HaXml
 --     --Als de compiler hierover struikelt, dan moet je xml installeren. Dat is overigens in de volgende 3 stappen:
