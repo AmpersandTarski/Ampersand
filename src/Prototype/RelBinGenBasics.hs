@@ -224,15 +224,15 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                                 ("1"
                                                 )
          | s==cptS            = selectGeneric i ("1",src) ("csnd."++trg',trg) 
-                                                (sqlConcept fSpec t ++ " AS csnd")
+                                                (quote (sqlConcept fSpec t) ++ " AS csnd")
                                                 ("1"
                                                 )
          | t==cptS            = selectGeneric i ("cfst."++src',src) ("1",trg)
-                                                (sqlConcept fSpec s ++ " AS cfst")
+                                                (quote (sqlConcept fSpec s) ++ " AS cfst")
                                                 ("1"
                                                 )
          | otherwise          = selectGeneric i ("cfst."++src',src) ("csnd."++trg'',trg)
-                                                (sqlConcept fSpec s ++ " AS cfst, "++selectExprBrac fSpec i trg'' trg'' (Tm (mIs t))++" AS csnd")
+                                                (quote (sqlConcept fSpec s) ++ " AS cfst, "++selectExprBrac fSpec i trg'' trg'' (Tm (mIs t))++" AS csnd")
                                                 ("1"
                                                 )
                         where src'  = if s==Anything
@@ -255,7 +255,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExpr fSpec i src trg (Cp (Tm (V _ _))) = selectExpr fSpec i src trg (Fu [])
    selectExpr fSpec i src trg (Cp e' )
       = selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
-                        (sqlConcept fSpec (source e') ++ " AS cfst, "++selectExprBrac fSpec i trg' trg' (Tm (mIs (target e')))++" AS csnd")
+                        (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "++selectExprBrac fSpec i trg' trg' (Tm (mIs (target e')))++" AS csnd")
                         ("NOT EXISTS ("++ (selectExists' (i+12)
                                                          ((selectExprBrac fSpec (i+12) src2 trg2 e') ++ " AS cp")
                                                          ("cfst." ++ src' ++ "=cp."++src2++" AND csnd."++ trg'++"=cp."++trg2)
@@ -371,7 +371,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExprBrac fSpec _ src trg (Tm m'@(I{}))
     | lowerCase(quote$sqlMorSrc fSpec m')==(quote$lowerCase$src)
       && lowerCase(quote$sqlMorTrg fSpec m')==(quote$lowerCase$trg) 
-      = quote$sqlConcept fSpec (source m')
+      = quote (sqlConcept fSpec (source m'))
    selectExprBrac fSpec _ src trg (Tm m'@(Mph{}))
     | lowerCase(quote$sqlMorSrc fSpec m')==(quote$lowerCase$src)
       && lowerCase(quote$sqlMorTrg fSpec m')==(quote$lowerCase$trg) 
@@ -417,7 +417,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
    selectExprMorph fSpec i src trg mph@(V _ _)
     = selectGeneric i (src',src) (trg',trg)
-                      (sqlConcept fSpec (source mph) ++ " AS vfst, "++sqlConcept fSpec (target mph) ++ " AS vsnd")
+                      (quote (sqlConcept fSpec (source mph)) ++ " AS vfst, "++quote (sqlConcept fSpec (target mph)) ++ " AS vsnd")
                       (src'++" IS NOT NULL AND "++trg'++" IS NOT NULL")
     where src'="vfst."++sqlAttConcept fSpec (source mph)
           trg'="vsnd."++sqlAttConcept fSpec (target mph)
@@ -428,7 +428,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     | src == trg = "SELECT "++str++" AS "++src
     | otherwise  = "SELECT "++str++" AS "++src++", "++str++" AS "++trg
    selectExprMorph fSpec i src trg mph -- made for both Mph and I
-    | isIdent mph = selectGeneric i (quote$sqlAttConcept fSpec (source mph),src) (quote$sqlAttConcept fSpec (target mph),trg) (quote$sqlConcept fSpec (source mph)) "1"-- (quote (sqlConcept fSpec (source mph))++" IS NOT NULL")
+    | isIdent mph = selectGeneric i (quote$sqlAttConcept fSpec (source mph),src) (quote$sqlAttConcept fSpec (target mph),trg) (quote (sqlConcept fSpec (source mph))) "1"-- (quote (sqlConcept fSpec (source mph))++" IS NOT NULL")
     | otherwise   = selectGeneric i (sqlMorSrc fSpec mph,src) (sqlMorTrg fSpec mph,trg) (quote$sqlMorName fSpec mph) "1"
 
    selectExists' :: Int -> String -> String -> String

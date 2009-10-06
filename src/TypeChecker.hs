@@ -25,6 +25,7 @@
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 module TypeChecker (typecheck, Error, Errors) where
 
+import Auxiliaries  -- USE -> eqClass
 import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 import Data.List    -- USE -> unionBy
@@ -41,7 +42,7 @@ import TypeInference.AdlExpr
 import TypeInference.Input
 import TypeInferenceEngine
 import ShowADL
-import Collection     ( Collection (rd) )
+import Collection     ( Collection (rd,uni) )
 
 ---------------
 --MAIN function
@@ -229,21 +230,17 @@ enrichCtx cx@(Ctx{}) ctxs =
   --         The morphism (in an expression) refering to this declaration determines the type.
   popuMphDecl :: Morphism -> Morphism
   popuMphDecl mp = case mp of
-      Mph{} -> mp {mphtyp=popusign$mphtyp mp
-                  ,mphats=map populate (mphats mp)
-                  ,mphdcl=popudecl$mphdcl mp}
-      I{} -> mp {mphgen=populate$mphgen mp
-                , mphspc=populate$mphspc mp
-                , mphats=map populate (mphats mp)}
-      V{} -> mp {mphtyp=popusign$mphtyp mp
-                ,mphats=map populate (mphats mp)}
-      _  -> mp
+      Mph{} -> mp { mphtyp=popusign$mphtyp mp
+                  , mphats=map populate (mphats mp)
+                  , mphdcl=popudecl$mphdcl mp}
+      I{}   -> mp { mphgen=populate$mphgen mp
+                  , mphspc=populate$mphspc mp
+                  , mphats=map populate (mphats mp)}
+      V{}   -> mp { mphtyp=popusign$mphtyp mp
+                  , mphats=map populate (mphats mp)}
+      _     -> mp
       where popusign (s,t) = (populate s, populate t)
-            popudecl d = let matches = [d'|d'<-ctxdecls, d==d']
-                         in if length matches==1 then head matches
-                            else error$"Error in TypeChecker.hs module TypeChecker function enrichCtx.popuMphDecl: " ++
-                                       "Morphism cannot be matched to just one declaration.\nMorphism:"++show mp++"." ++
-                                       "\nDeclarations:"++show matches++"."
+            popudecl d = head [ (head cl){decpopu = foldr1 uni (map decpopu cl)} |cl<-eqClass (==) ctxdecls, head cl==d]
   --DESCR -> Add population to concept
   populate :: Concept -> Concept
   populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,source d==c]

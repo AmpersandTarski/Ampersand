@@ -2,6 +2,7 @@
               ( normRule
               , normRL
               , assemble
+              , expr2predLogic
               , PredLogic(Forall, Exists, Implies, Equiv, Conj, Disj, Not, Pred, Rel, Funs)
               , predLshow
               , mathVars
@@ -11,13 +12,13 @@
               )
    where
 
-   import CommonClasses ( Identified(name),ABoolAlg(..))
+   import CommonClasses ( Identified(name),ABoolAlg(..),Explained(..))
    import Collection (Collection((>-)))
    import Strings(chain)
    import Auxiliaries (eqCl)
    import Adl
-   import ShowADL
    import ShowHS
+   import ShowADL
    import CC_aux ( applyM 
                  , mkVar
             )
@@ -186,7 +187,7 @@
     where
       [s,t] = mkVar [] [source(r), target(r)]
       transform (Forall vs (Implies (Exists es antc) cons)) = Forall (vs++es) (Implies antc cons)
-      transform expr = expr
+      transform plExpr = plExpr
       (ra,avars) | ruleType r==Equivalence = assembleF [s,t] (antecedent r) s t
                  | ruleType r==Implication = assembleF [s,t] (antecedent r) s t
                  | ruleType r==Truth = assembleF [s,t] (consequent r) s t
@@ -194,6 +195,15 @@
       (rc,cvars) | ruleType r==Equivalence = assembleF avars (consequent r) s t
                  | ruleType r==Implication = assembleF avars (consequent r) s t
                  | ruleType r==Truth = assembleF [s,t] (consequent r) s t
+
+   expr2predLogic :: Expression -> PredLogic
+   expr2predLogic e = Forall [(s,source(e)),(t,target(e))] rc
+    where
+      [s,t] = mkVar [] [source e, target e]
+      (rc,cvars) = assembleF [s,t] e s t
+
+   instance Explained Expression where
+    explain e = lang English (expr2predLogic e)
 
    assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t

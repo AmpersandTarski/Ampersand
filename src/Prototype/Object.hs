@@ -455,7 +455,7 @@
                                )
        idAt = objOut{objctx=targetCpt,objnm="id",objats=[]}
        targetCpt = Tm$mIs$target$objctx objOut
-       sqlUnis = doSqlGet fSpec objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt})
+       sqlUnis = doSqlGet fSpec False objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt})
        trunc        att = att{objats=[]}
        truncKeepUni = trunc -- de SQL functie gaat (nog) niet goed om met recursie!
                             -- bovendien doet deze PHP functie dit evenmin als de recursie
@@ -468,9 +468,9 @@
        mname aout = objVar++"['"++(name aout)++"']"
        -- singleQuer below: code for leaves or for nodes (in the objDef tree) is different. For leaves: use firstCol to show them
        singleQuer aout = doQuer (mname aout ++ "="++(if null(objats aout) then "firstCol" else ""))
-                                (doSqlGet fSpec
-                                          objIn
-                                          objOut{objats=[truncKeepUni (if null(objats aout) then aout else aout{objnm="id"})]})
+                                (doSqlGet fSpec True
+                                               objIn
+                                               objOut{objats=[truncKeepUni (if null(objats aout) then aout else aout{objnm="id"})]})
        nesting var idvar aout = (doPhpGet fSpec
                                           var
                                           (depth+1)
@@ -488,9 +488,10 @@
    objIn representeert het deel van objOut dat bij aanroep reeds gevuld is.
    Dit voorkomt onnodige database accessen.
 -}
-   doSqlGet :: Fspc -> ObjectDef -> ObjectDef -> [String]
-   doSqlGet fSpec objIn objOut = ["SELECT DISTINCT " ++ head fieldNames      ]
-                                    ++ map ((++) "     , ") (tail fieldNames  ) ++
+   doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
+   doSqlGet fSpec isArr objIn objOut
+     = ["SELECT DISTINCT " ++ head fieldNames      ]
+       ++ map ((++) "     , ") (tail fieldNames  ) ++
                                 (if null tbls
                                  then []
                                  else ["  FROM " ++ head (fst (head tbls))]
@@ -572,9 +573,9 @@
                               , let r=if null$head l then tail l else l
                               , not (null r)
                               ]
-            joinOn ([t],jn) = [ (if isOne' then "     , "      else "  LEFT JOIN ")++t
+            joinOn ([t],jn) = [ (if isOne' then "     , "      else (if isArr then "      " else "  LEFT")++" JOIN ")++t
                               ++(if isOne' then "" else " ON "++jn)]
-            joinOn (ts,jn)  = [ (if isOne' then "     , " else "  LEFT JOIN ")++(head ts)]
+            joinOn (ts,jn)  = [ (if isOne' then "     , " else (if isArr then "      " else "  LEFT")++" JOIN ")++(head ts)]
                               ++indentBlock (if isOne' then 7 else 12) (tail ts)++(if isOne' then [] else (["    ON "++jn]))
             restLines (outAtt,n)
               = splitLineBreak (selectExprBrac fSpec (-4)

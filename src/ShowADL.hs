@@ -1,10 +1,11 @@
- -- | DAAROM (HJ) Wat is precies het doel van Show vs ShowADL ??
-  -- ANTWOORD (SJ): ShowADL is bedoeld om ADL source code te genereren.
-  --                De standaard-show is alleen bedoeld voor simpele foutmeldingen tijdens het testen.
-  --                showADL is contextonafhankelijk, en produceert syntactisch correcte ADL-code.
-  --                showADLcode maakt gebruik van ontologische informatie in Fspc, namelijk vRels en isa.
-  --                Daarmee produceert showADLcode volledig correcte ADL-code,
-  --                dus typecorrect en zonder service-warnings.
+  -- | DAAROM (HJ) Wat is precies het doel van Show vs ShowADL ??
+  -- ANTWOORD (SJ): De standaard-show is alleen bedoeld voor simpele foutmeldingen tijdens het testen.
+  --                showADL is bedoeld om ADL source code te genereren.
+  --                showADL is contextonafhankelijk, en produceert syntactisch correcte ADL-code, die echter wel typefouten zou kunnen bevatten,
+  --                namelijk dubbelzinnigheden die met een expliciet type opgelost hadden kunnen worden.
+  --                showADLcode maakt gebruik van ontologische informatie in Fspc, namelijk vRels en isa, om in dit soort gevallen het type
+  --                expliciet te maken.
+  --                Daarmee produceert showADLcode volledig correcte ADL-code, dus typecorrect en zonder service-warnings.
 {-# OPTIONS_GHC -XFlexibleInstances #-}
   module ShowADL ( ShowADL(..), PrintADL(..) )
   where
