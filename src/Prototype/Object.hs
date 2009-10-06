@@ -247,6 +247,9 @@
      requiredFields   plug = [f| f <- fields plug
                                , Tot `elem` multiplicities (fldexpr f)
                                -- I used to remove ident fields from the requiredFields, but they ARE required
+                               -- The reason I did this, was because auto increment fields are not
+                               -- So let's remove the auto increment fields:
+                               , not (fldauto f)
                                ]
      delcode _ [] = [] -- there are probably no empty groups, and we cannot delete them anyways
      delcode plug (((a,f),_):_) -- this code is a lot like updel
@@ -276,7 +279,7 @@
              else []
         inscode [] = [] -- there are probably no empty groups, and we cannot modify them anyways
         inscode is@(((a,s),_):_)
-         = if not ((isLargeOccurance plug) is) -- cannot generate code... There used to be a " && null keys" here (dont know why)
+         = if not ((isLargeOccurance plug) is) && null keys -- if we have keys, we may use them to UPDATE
            then ["// no code for "++name a++","++fldname s++" in "++name plug]
            else
            nestTo a
@@ -296,14 +299,19 @@
                        indentBlock (2*length nunios)
                        ( if (isLargeOccurance plug) is -- attempt INSERT first
                          then ( if ((isFullOccurance plug) is || null keys)
-                                 then -- na een DELETE, of bij null keys kán geen UPDATE
+                                 then -- na een DELETE, of bij null keys kan geen UPDATE
                                      -- reden: een UPDATE heeft een key nodig om zich te hechten
-                                     -- (en na een delete hebben we die waarde nét weggegooid)
+                                     -- (en na een delete hebben we die waarde net weggegooid)
                                      [ "$res="++insQuery var++";" ] ++
-                                     if(a==object)
-                                     then [ "if($newID) $this->setId($me['id']=mysql_insert_id());"]
-                                     else [ "if($res!==false && !isset("++var++"['id']))"
-                                           , "  "++var++"['id']=mysql_insert_id();" ]
+                                     if null keys
+                                     then []
+                                     else if(a==object)
+                                          then [ "if($newID) $this->setId($me['id']=mysql_insert_id());"]
+                                          else if null (objats a)
+                                               then [ "if($res!==false && !isset("++var++"))"
+                                                    , "  "++var++"=mysql_insert_id();" ]
+                                               else [ "if($res!==false && !isset("++var++"['id']))"
+                                                    , "  "++var++"['id']=mysql_insert_id();" ]
                                  else
                                  [ insQuery var ++";"
                                    -- zoals hierboven gezegd: een key is nodig voor een UPDATE
