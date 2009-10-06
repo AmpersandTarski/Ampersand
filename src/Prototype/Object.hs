@@ -96,8 +96,6 @@
                                     [ "    // check if it exists:"
                                     , "    $ctx = DB_doquer('"++(doesExistQuer "$id")++"');"
                                     , "    if(count($ctx)==0) $this->_new=true; else"
-
-       
                                     , "    {"
                                     , "      $this->_new=false;"] ) ++
                                   indentBlock (if isOne o then 4 else 6)
@@ -251,16 +249,28 @@
                                -- So let's remove the auto increment fields:
                                , not (fldauto f)
                                ]
-     delcode _ [] = [] -- there are probably no empty groups, and we cannot delete them anyways
-     delcode plug (((a,f),_):_) -- this code is a lot like updel
+     delUpdt plug (o,s) var
+       = [ "if(isset("++var++maybeId o++")) DB_doquer(\"UPDATE `"++name plug
+           ++"` SET `"++fldname s++"`=NULL WHERE `"
+           ++ fldname s++"`='\".addslashes("++var++maybeId o++").\"'\",5);"]
+     delcode plug (((a,f),_):_)
        = nestTo a
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                         ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
      delCodeElem :: Plug->([String],[ObjectDef])
      delCodeElem plug
        = (   concat (map (delcode plug) (fullOccurences plug))
+          ++ concat (map updelcd (occurences plug))
          ,   rd $ map (fst . snd) (concat (fullOccurences plug))
          )
+       where
+         updelcd [] = []
+         updelcd is@(((a,s),_):_)
+          = if is `elem` fullOccurences plug || not (fldnull s)
+            then []
+            else
+            nestTo a
+                   (\var -> delUpdt plug (a,s) var)
      saveCodeElem :: Plug->([String],[ObjectDef])
      saveCodeElem plug
        = ( -- only delete if we have ALL information needed for refill, so use fullOccurences
@@ -271,20 +281,14 @@
          , -- function should send back all ObjectDef's that have been saved everywhere properly
          rd $ map (fst . snd) (concat (occurences plug)))
        where
-        delUpdt (o,s) var
-          =  if fldnull s then
-             [ "if(isset("++var++maybeId o++")) DB_doquer(\"UPDATE `"++name plug
-               ++"` SET `"++fldname s++"`=NULL WHERE `"
-               ++ fldname s++"`='\".addslashes("++var++maybeId o++").\"'\",5);"]
-             else []
         inscode [] = [] -- there are probably no empty groups, and we cannot modify them anyways
         inscode is@(((a,s),_):_)
-         = if not ((isLargeOccurance plug) is) && null keys -- if we have keys, we may use them to UPDATE
+         = if not (isLargeOccurance plug is) && null keys -- if we have keys, we may use them to UPDATE
            then ["// no code for "++name a++","++fldname s++" in "++name plug]
            else
            nestTo a
                    (\var
-                     -> (if is `elem` fullOccurences plug then [] else delUpdt (a,s) var) ++
+                     -> (if is `elem` fullOccurences plug || not (fldnull s) then [] else delUpdt plug (a,s) var) ++
                         concat [indentBlock (2*n)
                                            ( ( if fldnull f
                                                then (:)("if(count("++var++"['"++(name o)++"'])==0) "
@@ -307,11 +311,8 @@
                                      then []
                                      else if(a==object)
                                           then [ "if($newID) $this->setId($me['id']=mysql_insert_id());"]
-                                          else if null (objats a)
-                                               then [ "if($res!==false && !isset("++var++"))"
-                                                    , "  "++var++"=mysql_insert_id();" ]
-                                               else [ "if($res!==false && !isset("++var++"['id']))"
-                                                    , "  "++var++"['id']=mysql_insert_id();" ]
+                                          else [ "if($res!==false && !isset("++var++maybeId a++"))"
+                                               , "  "++var++maybeId a++"=mysql_insert_id();" ]
                                  else
                                  [ insQuery var ++";"
                                    -- zoals hierboven gezegd: een key is nodig voor een UPDATE
