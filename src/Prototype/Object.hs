@@ -267,7 +267,7 @@
          updelcd [] = []
          updelcd is@(((a,s),_):_)
           = if is `elem` fullOccurences plug || not (fldnull s)
-            then []
+            then []--"//Cannot (or should not) delete using UPDATE in plug "++name plug++", field "++fldname s]
             else
             nestTo a
                    (\var -> delUpdt plug (a,s) var)
@@ -403,15 +403,14 @@
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
                  (ObjectDef,SqlField))]   -- target
    plugAts plug p o = ( [ ((o,sf),(o,tf))
-                        | not $ isIdent $ objctx o
-                        , (sf,tf)<-sqlPlugFields plug (Tm$mIs$target$objctx o)
+                        | (sf,tf)<-sqlPlugFields plug (Tm$mIs$target$objctx o)
                         ] ++
                         [ ((p,sf),(o,tf))
-                        | not $ isIdent $ objctx o
-                        , (sf,tf)<-sqlPlugFields plug $ objctx o
+                        | (sf,tf)<-sqlPlugFields plug $ objctx o
                         ]
-                      ) ++ concat (map (plugAts plug o) (objats o))
-                           
+                      ) ++ concat (map (plugAts plug o) (noIdents o))
+     where noIdents obj = [att | att <- objats obj, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
+
    objPlugs :: Fspc -> ObjectDef -> [Plug]
    objPlugs fSpec object
      = [plug|plug<-plugs fSpec,((_,_),(_,_))<-take 1 $ plugAts plug object object]
