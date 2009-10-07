@@ -118,13 +118,14 @@
        ++ " : " 
        ++ printadl fSpec i (objctx obj)
        ++ printadl fSpec (i+1) (objats obj)
+       ++ (if i==0 then lb else "")
 
    instance PrintADL [ObjectDef] where
     printadl fSpec i objs = 
        if i==0 then [c|obj<-objs, c<-((printadl fSpec i obj)++lb)] 
-       else adlprintlist fSpec i (lb++indent i ++ "= [ "
-                                 ,","++lb++indent (i+1)++" "
-                                 ,"  ]" ++ lb) objs 
+       else adlprintlist fSpec (i+1) (lb++indent i ++ "= [ "
+                                     ,lb++indent i++"  ,"++" "
+                                     ,"]") objs 
    
    --REMARK -> show Morphism does not print mphats, so I need my own show Expression and show Morphism
    --REMARK -> postfix complements are printed prefix

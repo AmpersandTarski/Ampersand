@@ -13,6 +13,7 @@
    import Data.Plug
    import Char(toLower)
    import Rendering.ClassDiagram
+   import Rendering.AdlExplanation
  -- The story:
  -- A number of datasets for this context is identified.
  -- Every pattern is considered to be a theme and every object is treated as a separate object specification.
@@ -123,7 +124,7 @@
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
                    }]
-             ++let ats = [ Obj { objnm  = name mph++name (target mph)
+             ++let ats = [ Obj { objnm  = composedname mph
                                , objpos = Nowhere
                                , objctx = Tm (preventAmbig mph)
                                , objats = []
@@ -151,6 +152,8 @@
                   ]
            | c<-concs context ]
            where
+           composedname mph | inline mph = name mph++name (target mph)
+                            | otherwise  = name (target mph) ++ "_of_" ++ name mph
            preventAmbig mp@(Mph{mphats=[]}) =  
               if (length [d|d@(Sgn {})<-declarations context, name mp==name d]) > 1
               then if mphyin mp 
@@ -160,12 +163,15 @@
            preventAmbig mp = mp
            relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
                         [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
+           --TODO -> Explain all expressions (recursive) in the generated services
+           --explained :: ObjectDef -> ObjectDef
+           --explained obj@(Obj{objstrs=xs,objctx=e}) = obj{objstrs=["EXPLANATION: ", explain e]:xs} 
            recur :: [Morphism] -> Morphism -> ObjectDef
   -- WAAROM: Han, als de "shadow m" warning  (hieronder in recur) storend is, kan die dan in Adl opgelost worden?
   -- Ik stel voor de shadow warning helemaal uit te zetten, want ik vind het juist een voordeel om overal zoveel mogelijk dezelfde identifier
   -- te gebruiken (als conventie dus). Een van mijn conventies is een m voor morphisms te gebruiken... Shadowing is zelden lastig... Groetjes, Stef
            recur ms m
-            = Obj { objnm   = name m++name (target m)
+            = Obj { objnm   = composedname m
                   , objpos  = Nowhere
                   , objctx  = Tm (preventAmbig m)
                   , objats  = (map head.eqCl objnm)
@@ -338,3 +344,5 @@
 --   fst3 (a,_,_) = a
 --   snd3 :: (a,b,c) -> b
 --   snd3 (_,b,_) = b
+
+
