@@ -165,7 +165,7 @@
                                       ++"\" ID=\""++n++"\">new "++(name a)++"</LI></UL>"
              acls c a = c++"_"++(phpIdentifier (name a))
         attributeWrapper depth path cls att
-         = [ "<DIV class=\"Floater\">"
+         = [ "<DIV class=\"Floater "++(name att)++"\">"
            , "  <DIV class=\"FloaterHeader\">"++(name att)++"</DIV>"
            , "  <DIV class=\"FloaterContent\"><?php"
            , "      $"++ phpIdentifier (name att) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att)++"();"

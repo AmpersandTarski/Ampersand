@@ -175,8 +175,7 @@
     = [ "function save(){"
       , "  DB_doquer('START TRANSACTION');"
       ] ++ indentBlock 2
-      (
-        (commentBlock ( ["Attributes that will not be saved are:"
+      ( (commentBlock ( ["Attributes that will not be saved are:"
                         ,"--------------------------------------"]++map name unsavedAtts))
         ++ ( if isOne object then [] else ["$newID = ($this->getId()===false);"]) ++
         setMe ++ saveCodeLines ++ close (if isOne object then "true" else "$this->getId()")
@@ -409,7 +408,7 @@
                         | (sf,tf)<-sqlPlugFields plug $ objctx o
                         ]
                       ) ++ concat (map (plugAts plug o) (noIdents o))
-     where noIdents obj = [att | att <- objats obj, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
+     where noIdents obj = [att | att <- objats obj]--, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
 
    objPlugs :: Fspc -> ObjectDef -> [Plug]
    objPlugs fSpec object
