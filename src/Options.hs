@@ -77,27 +77,34 @@ checkOptions flags =
            verboseLn flags0 ("Checking output directories...")
 --           currDir <- getCurrentDirectory
            flags1  <- case uncheckedDirOutput flags0 of
-                          Nothing -> return flags0 { dirOutput = "" }
+                          Nothing -> return flags0 { dirOutput = "." }
                           Just s  -> do exists <- doesDirectoryExist s
                                         if exists
                                           then return flags0 { dirOutput =  s}
                                           else ioError (userError ("Directory does not exist: "++s))  
            flags2 <- if genPrototype flags1
-                        then case uncheckedDirPrototype flags1 of
-                             Nothing -> return flags1 { dirPrototype = dirOutput flags1 }
-                             Just s  -> do { d <- doesDirectoryExist s
-                                                  ; if d
-                                                    then doNothing
-                                                    else createDirectory s
-                                                  ; return flags1 {dirPrototype = s} }
+                        then do { d <- doesDirectoryExist (dirPrototype flags0)
+                                ; if d
+                                  then doNothing
+                                  else createDirectory (dirPrototype flags0)
+                                ; e <- doesDirectoryExist (combine (dirPrototype flags0) (baseName flags0))
+                                ; if e
+                                  then doNothing
+                                  else createDirectory (combine (dirPrototype flags0) (baseName flags0))
+                                ; return flags1 {dirPrototype = combine (dirPrototype flags0) (baseName flags0)}
+                                }
                         else return flags1  {- No need to check if no prototype will be generated. -}
            flags3 <- if genAtlas flags2
-                        then case uncheckedDirAtlas flags2 of
-                             Nothing -> return flags2 { dirAtlas = dirOutput flags2 }
-                             Just s  -> do exists <- doesDirectoryExist s
-                                           if exists
-                                             then return flags2 { dirAtlas = s }
-                                             else ioError (userError ("Directory does not exist: "++s))
+                        then do { d <- doesDirectoryExist (dirAtlas flags0)
+                                ; if d
+                                  then doNothing
+                                  else createDirectory (dirAtlas flags0)
+                                ; e <- doesDirectoryExist (combine (dirAtlas flags0) (baseName flags0))
+                                ; if e
+                                  then doNothing
+                                  else createDirectory (combine (dirAtlas flags0) (baseName flags0))
+                                ; return flags2 {dirAtlas = combine (dirAtlas flags0) (baseName flags0)}
+                                }
                         else return flags2  {- No need to check if no atlas will be generated. -}
            flags4 <- if genFspec flags3 && fspecFormat flags3==FUnknown
                         then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
@@ -185,8 +192,6 @@ defaultOptions clocktime env fNames pName
                = Options { contextName   = Nothing
                          , showVersion   = False
                          , showHelp      = False
-                   --      , verbose       = donothing
-			       --      , verboseLn     = donothing
 			             , verboseP      = False
 			             , verbosephp    = False
 			             , genPrototype  = False
@@ -253,15 +258,27 @@ verboseOpt      opts = opts{ verboseP     = True}
 verbosephpOpt  :: Options -> Options
 verbosephpOpt opts = opts{verbosephp  = True}          
 prototypeOpt :: Maybe String -> Options -> Options
-prototypeOpt nm opts = opts{uncheckedDirPrototype = nm
-                           ,genPrototype = True}
+prototypeOpt nm opts 
+  = opts { dirPrototype = 
+            case nm of
+              Just s  -> s
+              Nothing -> case uncheckedDirPrototype opts of
+                           Just s -> s
+                           Nothing -> "."
+         ,genPrototype = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: String -> Options -> Options
 dbNameOpt nm    opts = opts{dbName       = nm}
 atlasOpt :: Maybe String -> Options -> Options
-atlasOpt nm     opts = opts{uncheckedDirAtlas     =  nm
-                           ,genAtlas     = True}
+atlasOpt nm opts 
+  = opts { dirAtlas = 
+            case nm of
+              Just s  -> s
+              Nothing -> case uncheckedDirAtlas opts of
+                           Just s -> s
+                           Nothing -> "."
+         ,genAtlas = True}
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
