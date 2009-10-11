@@ -157,6 +157,7 @@ where
                   ,", datasets = "++ "[ "++chain (indentA++", ") (map showHSname (datasets fspec))++indentA++"]" 
                   ,", vplugs   = "++ "[ "++chain (indentA++", ") (map showHSname (vplugs fspec))++indentA++"]"
                   ,", plugs    = "++ "[ "++chain (indentA++", ") (map showHSname (plugs fspec))++indentA++"]"
+                  ,", gplugs   = "++ "[ "++chain (indentA++", ") (map showHSname (gplugs fspec))++indentA++"]"
                   ,", serviceS = serviceS'"
                   ,", serviceG = serviceG'"
                   ,", services = services'"
@@ -171,10 +172,12 @@ where
    -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
    --   "\n -- ***THEMES***: "++
    --  (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++indent++"  = "++showHS (indent++"    ") t|t<- themes fspec ]++"\n")++
-        "\n -- ***DATASETS***: "++
-       (if null (datasets fspec ) then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
-        "\n -- ***PLUGS***: "++
-       (if null (plugs fspec ) then "" else concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p|p<-plugs fspec ]++"\n")++
+        
+       (if null (datasets fspec ) then "" else "\n -- ***DATASETS***: "++concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
+        
+       (if null (plugs fspec ) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p|p<-plugs fspec ]++"\n")++
+        
+       (if null (gplugs fspec ) then "" else "\n -- ***Generated PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p|p<-gplugs fspec ]++"\n")++
         "\n -- ***Services S***: "++
        indent++" serviceS' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (serviceS fspec))++indentB++"]"++
         "\n -- ***Services G***: "++

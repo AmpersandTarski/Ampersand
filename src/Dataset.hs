@@ -5,13 +5,16 @@
   where
    import Auxiliaries (eqClass)
    import Adl
+   import NormalForms (disjNF)
 
-{- Datasets zijn bedoeld voor functiepuntentellingen en voor mogelijke efficiency-redenen in SQL-implementaties.
-   Ze brengen een aantal relaties bijeen die zich als één SQL-tabel laten implementeren.
-   Om praktische redenen krijgt een dataset geen eigen zelfstandige type, maar wordt het weergegeven als een ObjectDef.
-   De volgende drie functies, makeDataset, makeDatasets en datasetMor, horen bij elkaar
-   en moeten onderling consistent blijven.
+{- The type Dataset is designed to implement the populations of ADL in data sets in a relational database.
+   (They can also be used for counting function points, because function point theory is founded on the same data sets.)
+   In a relational database, we prefer to implement a model in tables that are as few and as wide as possible, without minimal data duplication.
+   ADL knows the concept of SQL-plugs, which can be used to implement an ADL model on existing data sets.
+   The idea is to generate SQL-plugs from an ADL-model, unless the user defines his own SQL-plugs to overrule that.
+
 -}
+
 
  {- Bericht aan Stef van Han:
     In onderstaande codes wordt momenteel erg veel variabelen geshadowd. Dit maakt de code ondoorzichtig, en
@@ -20,6 +23,10 @@
     Het pragma bovenaan deze module kan je hiermee helpen. (even de XXX weghalen en de pragma werkt...) Succes!
  -}
 
+{-
+   De volgende drie functies, makeDataset, makeDatasets en datasetMor, horen bij elkaar
+   en moeten onderling consistent blijven.
+-}
    makeDataset :: Context -> Concept -> ObjectDef
    makeDataset context c'    -- TODO FOUT?? WAAROM Stef, de c wordt niet gebruikt. Ik kan me niet voorstellen dat dat goed is.....
    --TODO -> c2 was c', c was c, c1 was c, c' was c. => dat was fout door een loop tussen cl=..c `elem`.. en c=minimum..head cl.. Nu is het ook niet goed. Sowieso een objectdef met objctx I[ONE] resulteert in error.

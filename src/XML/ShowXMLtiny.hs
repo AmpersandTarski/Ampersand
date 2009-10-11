@@ -53,7 +53,7 @@ where
 
    instance XML Fspc where
      mkTag f = Tag "Fspec" [ nameToAttr f] 
-     mkXmlTree f@(Fspc  _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+     mkXmlTree f@(Fspc{})
         = Elem (mkTag f) (
              [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
           ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
