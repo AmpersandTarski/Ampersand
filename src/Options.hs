@@ -87,11 +87,16 @@ checkOptions flags =
                                 ; if d
                                   then doNothing
                                   else createDirectory (dirPrototype flags0)
+                              {- Genereren van een niet-instelbare-directory is erg irritant
+                              -- en bovendien geeft het een probleem voor de inrichting op de
+                              -- OU server: het bestand index.htm wordt niet meer automatisch
+                              -- getoond (in plaats daarvan zien we 'directory listing denied')
                                 ; e <- doesDirectoryExist (combine (dirPrototype flags0) (baseName flags0))
-                                ; if e
-                                  then doNothing
-                                  else createDirectory (combine (dirPrototype flags0) (baseName flags0))
-                                ; return flags1 {dirPrototype = combine (dirPrototype flags0) (baseName flags0)}
+                                  ; if e
+                                    then doNothing
+                                    else createDirectory (combine (dirPrototype flags0) (baseName flags0))
+                              -}
+                                ; return flags1 --{dirPrototype = combine (dirPrototype flags0) (baseName flags0)}
                                 }
                         else return flags1  {- No need to check if no prototype will be generated. -}
            flags3 <- if genAtlas flags2
@@ -99,11 +104,13 @@ checkOptions flags =
                                 ; if d
                                   then doNothing
                                   else createDirectory (dirAtlas flags0)
+                              {-
                                 ; e <- doesDirectoryExist (combine (dirAtlas flags0) (baseName flags0))
                                 ; if e
                                   then doNothing
                                   else createDirectory (combine (dirAtlas flags0) (baseName flags0))
-                                ; return flags2 {dirAtlas = combine (dirAtlas flags0) (baseName flags0)}
+                              -}
+                                ; return flags2 --{dirAtlas = combine (dirAtlas flags0) (baseName flags0)}
                                 }
                         else return flags2  {- No need to check if no atlas will be generated. -}
            flags4 <- if genFspec flags3 && fspecFormat flags3==FUnknown
@@ -111,7 +118,8 @@ checkOptions flags =
                         else return flags3  {- No need to check if no fspec will be generated. -}
            mbexec <- findExecutable (progrName flags) 
            flags5 <- case mbexec of
-              Nothing -> ioError $ userError ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")
+              Nothing -> return flags4{dirExec=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")
+                                      ,texHdrFile=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")}
               Just s -> do 
                         texfileexists <- doesFileExist uncheckedtexfile 
                         if texfileexists 

@@ -4,7 +4,7 @@
    import Strings(chain)
    import NormalForms (disjNF,simplify)
    import Auxiliaries (eqCl,sort')
-   import Adl (source,target
+   import Adl (target -- source is not used
               --,Concept(..),Declaration(..),isTrue,makeInline
               ,ObjectDef(..),Numbered(..)
               ,Identified(..),mors,explain,Morphism(..),Prop(..)
@@ -252,6 +252,7 @@
        = [ "if(isset("++var++maybeId o++")) DB_doquer(\"UPDATE `"++name plug
            ++"` SET `"++fldname s++"`=NULL WHERE `"
            ++ fldname s++"`='\".addslashes("++var++maybeId o++").\"'\",5);"]
+     delcode _ [] = [] -- should not occur, but generating no code for no request seems OK
      delcode plug (((a,f),_):_)
        = nestTo a
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
@@ -489,16 +490,17 @@
    doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
    doSqlGet fSpec isArr objIn objOut
      = ["SELECT DISTINCT " ++ head fieldNames      ]
-       ++ map ((++) "     , ") (tail fieldNames  ) ++
-                                (if null tbls
-                                 then []
-                                 else ["  FROM " ++ head (fst (head tbls))]
-                                         ++ (indentBlock 7 (tail (fst (head tbls))))
-                                         ++ concat (map joinOn (tail tbls)) ++
-                                      (if isOne' then [] else [" WHERE " ++ snd (head tbls)])
-                                )
+       ++ map ((++) "     , ")
+              (tail fieldNames) 
+               ++ (if null tbls
+                   then []
+                   else ["  FROM " ++ head (fst (head tbls))]
+                        ++ (indentBlock 7 (tail (fst (head tbls))))
+                        ++ concat (map joinOn (tail tbls)) ++
+                        (if isOne' then [] else [" WHERE " ++ snd (head tbls)])
+                  )
       where comboGroups'::[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
-            comboGroups'     = reduce (sort' (length) (eqCl fst combos))
+            comboGroups'= reduce (sort' (length) (eqCl fst combos))
             comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
             keyGroups   = take 1 ( [gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s] ++ 
                                    [((p,(objIn,s)),[(objIn,t)])
@@ -544,9 +546,9 @@
             rest            = zip [ a | a<-aOuts
                                       , a `notElem` [a' | g <- comboGroups, (a',_) <- snd g] 
                                   ] [(1::Integer)..]
-            fieldNames      = [ "`"++tableReName p++"`.`"++(fldname f)++"`"
+            fieldNames      = [ "`"++tableReName gr++"`.`"++(fldname f)++"`"
                                 ++(if fldname f == name a then [] else " AS `"++name a++"`")
-                              | ((p,_),as)<-comboGroups',(a,f)<-as
+                              | (gr@(_,_),as)<-comboGroups',(a,f)<-as
                               ] ++
                               [if isIdent (objctx a)
                                then "'\".addslashes("++name (objIn)++").\"'"++" AS `"++name a++"`"
@@ -555,11 +557,11 @@
                                      then []
                                      else " AS `"++name a++"`")
                                    |(a,n)<-rest]
-            tbls            = [ ([tableName p]
-                                ,"`"++tableReName p++"`.`"++(fldname f)++
+            tbls            = [ ([tableName gr]
+                                ,"`"++tableReName gr++"`.`"++(fldname f)++
                                  "`='\".addslashes("++(name a)++").\"'"
                                 )
-                              |((p,(a,f)),_)<-comboGroups
+                              |(gr@(_,(a,f)),_)<-comboGroups
                               ] ++
                               [ (r
                                  ,"`f"++(show n)++"`.`"++(sqlExprSrc fSpec (objctx a))++
@@ -571,22 +573,25 @@
                               , let r=if null$head l then tail l else l
                               , not (null r)
                               ]
-            joinOn ([t],jn) = [ (if isOne' then "     , "      else (if isArr then "      " else "  LEFT")++" JOIN ")++t
+            joinOn ([t],jn) = [ (if isOne' then "     , "      else (if isArr then " " else "  LEFT")++" JOIN ")++t
                               ++(if isOne' then "" else " ON "++jn)]
-            joinOn (ts,jn)  = [ (if isOne' then "     , " else (if isArr then "      " else "  LEFT")++" JOIN ")++(head ts)]
+            joinOn (ts,jn)  = [ (if isOne' then "     , " else (if isArr then " " else "  LEFT")++" JOIN ")++(head ts)]
                               ++indentBlock (if isOne' then 7 else 12) (tail ts)++(if isOne' then [] else (["    ON "++jn]))
             restLines (outAtt,n)
               = splitLineBreak (selectExprBrac fSpec (-4)
                                                (if isOne' then "" else sqlExprSrc fSpec (objctx outAtt))
                                                (sqlExprTrg fSpec (objctx outAtt))
                                                (objctx outAtt) ++ " AS f"++show n) -- better names?
-            tableName p      = if name p == tableReName p then "`"++name p++"`" else "`"++name p ++ "` AS "++tableReName p
-            tableReName :: Plug -> String
-            tableReName p    = head [nm | (nm,p')<-renamedTables,p'==p]
-            renamedTables    = naming (\p nm->(nm,p))                               -- function used to asign name a to element b
-                                      (name:[(\_->"plug"++show n)|n<-[(1::Integer)..]]) -- infinite list of functions to create a name for b
-                                      ['f':show n|n<-[1..(length rest)]]      -- list of forbidden names (names already taken)
-                                      (plugs fSpec)                                 -- list of elements b that need a name
+            tableName gr@(p,_) = if name p == tableReName gr then "`"++name p++"`" else "`"++name p ++ "` AS "++tableReName gr
+            tableReName :: (Plug,(ObjectDef,SqlField)) -> String
+            tableReName gr   = head [nm | (nm,gr')<-renamedTables,gr'==gr]
+            renamedTables :: [(String,(Plug,(ObjectDef,SqlField)))]
+            renamedTables
+              = naming (\p nm->(nm,p))                                                   -- function used to asign name a to element b
+                       ( (\x->name(fst x))                                               
+                        :[(\x->name(fst x)++show n)|n<-[(1::Integer)..]])                -- infinite list of functions to create a name for b
+                       (['f':show n|n<-[1..(length rest)]])                              -- list of forbidden names (names already taken)
+                       (map fst comboGroups)                                             -- list of elements b that need a name
 
    
    splitLineBreak :: String -> [String]

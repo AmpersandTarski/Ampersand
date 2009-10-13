@@ -1,15 +1,4 @@
 CONTEXT Meterkast
-  {-
-  zo geven we straks PHPPLUG's aan:
-    PHPPLUG GetPersonByNameAndAge {"ACTION=SELECT"} : I[Persoon]
-    = [ name {"PHPARG","PHPTYPE=String"} : naam
-      , age {"PHPARG","PHPTYPE=Int"} : leeftijd
-      , persoon {"PHPRETURN", "PHPTYPE=Array"} : I[Persoon]
-          = [ name : naam
-            , age  : leeftijd
-            , dateOfBirth : geboortedatum]
-      ]
-  -}
   
   SQLPLUG OperationTbl : I[Operation]
    = [Id{"SQLTYPE=Id"} : I
