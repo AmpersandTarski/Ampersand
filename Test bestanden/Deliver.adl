@@ -1,6 +1,6 @@
 CONTEXT Deliveries
 
-VIEW Customer : I[Client]
+SERVICE Customer : I[Client]
  = [ Order : from[Order*Client]~
       = [ Store: addressedTo
         , Items : item
@@ -21,14 +21,14 @@ VIEW Customer : I[Client]
 
    ]
 
-VIEW Provider : I[Provider]
+SERVICE Provider : I[Provider]
  = [ Order : addressedTo~
       = [ ordernumber: I[Order]
-        , from
+        , from : from
         , Items : item
         , accepted: accepted~;addressedTo~ /\ I
         ]
-   , accepted
+   , accepted : accepted
    , Delivery: provided
       = [ DeliveryNr: I[Delivery]
         , provider: provided~
@@ -38,40 +38,40 @@ VIEW Provider : I[Provider]
         ]
    , Invoice : from~
       = [ invoiceNr: I[Invoice]
-        , delivery
+        , delivery : delivery
         , paid : paid~
         , klant : sentTo
         , Store: from;addressedTo~
         ]
    ]
 
-VIEW Bestellingen : I[Order]
+SERVICE Bestellingen : I[Order]
  = [ van : from
    , aan : addressedTo
-   , betaald[Order] : from;paid;delivery;of;V[Order*ONE]
+   , betaaldeOrders : from;paid;delivery;of;V[Order*ONE]
    ]
 
-VIEW Rekeningen : I[Invoice]
+SERVICE Rekeningen : I[Invoice]
  = [ leverancier : from
    , leverantie : delivery
    , klant : sentTo
-   , betaald[Order] : paid~;paid
+   , betaaldeOrders : paid~;paid
    ]
 
-VIEW Levering : I[Delivery]
+SERVICE Levering : I[Delivery]
  = [ leverancier : provided~
    , Order : of
    , klant : deliveredTo
    , betaald : deliveredTo;paid;delivery;V[Delivery*ONE]
    ]
 
-VIEW Orderitem : I[Product]
+SERVICE Orderitem : I[Product]
  = [ klant : item~;from
    , leverancier : item~;provided~
    ]
 
 
-VIEW Bestellijst : I[ONE]
+SERVICE Bestellijst : I[ONE]
  = [ LijstItem : V[ONE*Delivery]
       = [ leverancier : provided~	
         , klant : deliveredTo

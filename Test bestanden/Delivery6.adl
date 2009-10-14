@@ -15,14 +15,14 @@ SERVICE Klanten : I[Client]
 SERVICE Bestellingen : I[Order]
  = [ van : from
    , aan : issuedTo
-   , betaald[Order] : from;paid;delivery;of;V[Order*ONE]
+   , betaaldeOrders : from;paid;delivery;of;V[Order*ONE]
    ]
 
 SERVICE Rekeningen : I[Invoice]
  = [ leverancier : sentBy
    , leverantie : delivery
    , klant : sent
-   , betaald[Order] : paid~;paid
+   , betaaldeOrders : paid~;paid
    ]
 
 SERVICE Levering : I[Delivery]

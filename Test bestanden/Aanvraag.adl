@@ -140,16 +140,16 @@ CONTEXT Aanvraag
  
 PATTERN Permits
  
- leadsto~;kind -: kind COMPUTING kind[Decision*Product]
+ leadsto~;kind |- kind COMPUTING kind[Decision*Product]
   EXPLANATION "Every application leads to a decision. An application for a particular product (the type of permit) leads to a decision about that same product."
  
- assigned~;applicant;inhabitant -: area
+ assigned~;applicant;inhabitant |- area
   EXPLANATION "Employees get assigned to particular areas. This means that an assigned employee treats request from these areas only."
  
- applicant -: (checked;authentic~)
+ applicant |- (checked;authentic~)
   EXPLANATION "An application for a permit is accepted only from individuals whose identity is authenticated."
  
- assigned -: kind;auth~
+ assigned |- kind;auth~
   EXPLANATION "Applications for permits are treated by authorized personnel only."
  
 
