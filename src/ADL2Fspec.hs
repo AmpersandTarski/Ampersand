@@ -243,8 +243,10 @@
                        , fldtype = if isSQLId then SQLId else SQLVarchar 255
                        , fldnull = not (Tot `elem` multiplicities m)          -- can there be empty field-values? 
                        , flduniq = Inj `elem` multiplicities m                -- are all field-values unique?
-                       , fldauto = isSQLId }  -- is the field auto increment?
-                   where isSQLId = isIdent m && null (contents (source m))
+                       , fldauto = isAuto                                     -- is the field auto increment?
+                       } 
+                   where isSQLId = isIdent m && isAuto
+                         isAuto  = isIdent m && not (null [key| key<-ctxks context, target (kdctx key)==source m]) -- if there are any keys around, make this plug autoincrement.
        c `bi` c' = not (null [mph| mph<-decls, isFunction mph, isFunction (flp mph)
                                  , source mph<=c && target mph<=c'
                                    || source mph<=c' && target mph<=c])
@@ -272,21 +274,20 @@ Hence, we do not need a separate plug for c' and it will be skipped.
       where
       makeFields :: ObjectDef -> [SqlField]
       makeFields obj =
-        [Fld{fldname=name att
-            ,fldexpr=objctx att
-            ,fldtype=sqltp att
-            ,fldnull= nul att
-            ,flduniq= uniq att
-            ,fldauto= att `elem` autoFields
+        [Fld{fldname = name att
+            ,fldexpr = objctx att
+            ,fldtype = sqltp att
+            ,fldnull = nul att
+            ,flduniq = uniq att
+            ,fldauto = att `elem` autoFields
             }
         | att<-objats obj
         ]
         where nul  att = not (Tot `elem` multiplicities (objctx att))
-              uniq att = if null [0::Int|a' <- objats obj
-                                 ,Uni `notElem` multiplicities (disjNF$F[flp$objctx att,objctx a'])]
-                         then True else False
+              uniq att = null [a' | a' <- objats obj
+                                  , Uni `notElem` multiplicities (disjNF$F[flp$objctx att,objctx a'])]
               autoFields = take 1 [a'| a'<-objats obj
-                                     , sqltp a'==SQLId, not $ nul a'
+                                     , sqltp a'==SQLId, Tot `elem` multiplicities (objctx a')
                                      , uniq a', isIdent $ objctx a' ]
       sqltp :: ObjectDef -> SqlType
       sqltp obj = head $ [makeSqltype sqltp' | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]

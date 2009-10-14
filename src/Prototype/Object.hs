@@ -4,14 +4,14 @@
    import Strings(chain)
    import NormalForms (disjNF,simplify)
    import Auxiliaries (eqCl,sort')
-   import Adl (target -- source is not used
+   import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
               ,ObjectDef(..),Numbered(..)
               ,Identified(..),mors,explain,Morphism(..),Prop(..)
               ,Object(..),multiplicities,isIdent,Expression(..),mIs
               ,flp)
    import ShowADL
-   import Collection (Collection(rd,(>-)))
+   import Collection (Collection (rd,rd',(>-)))
    import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,selectExprBrac,indentBlock
      ,sqlRelPlugs,addToLast,isOne,phpIdentifier,selectExpr
      ,addSlashes,commentBlock,sqlPlugFields)
@@ -252,11 +252,11 @@
        = [ "if(isset("++var++maybeId o++")) DB_doquer(\"UPDATE `"++name plug
            ++"` SET `"++fldname s++"`=NULL WHERE `"
            ++ fldname s++"`='\".addslashes("++var++maybeId o++").\"'\",5);"]
-     delcode _ [] = [] -- should not occur, but generating no code for no request seems OK
      delcode plug (((a,f),_):_)
        = nestTo a
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                         ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
+     delcode _ [] = error "Fatal (module Object.hs): should not occur" -- , but generating no code for no request seems OK
      delCodeElem :: Plug->([String],[ObjectDef])
      delCodeElem plug
        = (   concat (map (delcode plug) (fullOccurences plug))
@@ -291,7 +291,7 @@
                      -> (if is `elem` fullOccurences plug || not (fldnull s) then [] else delUpdt plug (a,s) var) ++
                         concat [indentBlock (2*n)
                                            ( ( if fldnull f
-                                               then (:)("if(count("++var++"['"++(name o)++"'])==0) "
+                                               then (:)("if(count("++var++"['"++name o++"'])==0) "
                                                          ++var++"['"++(name o)++"'][] = null;")
                                                else id
                                              )
@@ -336,7 +336,6 @@
                    )
            where attrs  = ownAts ++ -- ook het identiteit-veld toevoegen (meestal de SQL-`id`)
                            [ (a, s) | s `notElem` (map snd ownAts)]
-                 names  = chain "," $ map (\x->"`"++(fldname$snd x)++"`") attrs
                  keys :: [(ObjectDef,SqlField)]
                  keys   = if length attrs==1
                            then [] -- het kan gebeuren dat er maar één attr is
@@ -352,52 +351,39 @@
                  nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ Uni `elem` multiplicities (objctx o)]
                  ownAts = map snd is
                  insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
-                 insQuery = query ("INSERT IGNORE INTO `"++name plug++"` ("++ names ++") VALUES (")
-                                   (\f -> fldnull f || fldauto f)
-                                   (\_ s'->s')
-                                   ")"
-                                   (\_->True)
-                 updQuery var = query ("UPDATE `"++name plug++"` SET ")
-                                       (\f -> fldnull f && not (f==s))
-                                       (\f s'->f++"="++s')
-                                       (" WHERE `"++(fldname$snd key)
-                                         ++"`='\".addslashes("++varname var (fst key)++").\"'")
-                                       (\o->fst key/=o)
-                                       var
+                 insQuery var
+                   = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug++"` ("++chain "," ["`"++fldname f++"`" | (o,f)<-rd' (fldname.snd) attrs] ++
+                     ") VALUES (" ++
+                     chain ", "
+                           [ if fldnull f || fldauto f
+                             then "\".(" ++ ( if fldauto f && o==object
+                                              then "!$newID"
+                                              else "(null!=" ++ varname var o ++ ")"
+                                            ) ++ "?\"'\".addslashes("
+                                 ++ varname var o ++ ").\"'\":\"NULL\").\""
+                             else "'\".addslashes("++varname var o++").\"'"
+                           | (o,f)<-rd' (fldname.snd) attrs
+                           ] ++ ")\", 5)"
+                 updQuery var
+                   = "DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
+                     chain ", "
+                           [ "`"++fldname f++"`="++
+                             if fldnull f && not (f==s)
+                             then "\".(" ++ ( if fldauto f && o==object
+                                              then "!$newID"
+                                              else "(null!=" ++ varname var o ++ ")"
+                                            ) ++ "?\"'\".addslashes("
+                                 ++ varname var o ++ ").\"'\":\"NULL\").\""
+                             else "'\".addslashes("++varname var o++").\"'"
+                           | (o,f)<-attrs, fst key/=o
+                           ] ++ " WHERE `"++fldname (snd key)++"`='\".addslashes("++varname var (fst key)++").\"'" ++"\", 5)"
                  varname var o = ( if a == o
                                    then var
                                    else if Uni `elem` multiplicities (objctx o)
                                          then var++"['"++(name o)++"']"
                                          else "$"++(phpIdentifier $ name o)
                                  ) ++ maybeId o
-                 query :: String     -- header: initial part of the query (such as "INSERT..")
-                                     -- dit is exclucief de " aan het begin
-                       -> ( SqlField -> Bool) -- should we test for NULL?
-                       -> ( String   -- fieldname: escaped name of the Sql Field
-                           ->String  -- fieldvalue: PHP value (NULL or '.addslashes(..).')
-                           ->String) -- result to be part-of-query, such as 'fieldname=fieldvalue'
-                       -> String     -- tail: final part of the query (such as "WHERE..")
-                                     -- dit is exclucief de " aan het eind
-                       -> (ObjectDef->Bool) -- should this object participate in the query?
-                       -> String     -- variable name given by nestTo
-                       -> String     -- resulting query
-                 query hdr cond fnc tl selector var
-                   = "DB_doquer(\"" ++ hdr ++
-                     chain ", "
-                           [ fnc ("`"++fldname f++"`")
-                             ( if cond f
-                               then "\".(" ++ ( if fldauto f && o==object
-                                                then "!$newID"
-                                                else "(null!=" ++ varname var o ++ ")"
-                                              ) ++ "?\"'\".addslashes("
-                                   ++ varname var o ++ ").\"'\":\"NULL\").\""
-                               else "'\".addslashes("++varname var o++").\"'"
-                             )
-                           | (o,f)<-attrs
-                           , selector o
-                           ] ++ tl ++"\", 5)"
-   
-   
+
    plugAts :: Plug -> ObjectDef           -- parent (wrong values are allowed, see source)
               -> ObjectDef                -- object itself
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
@@ -486,6 +472,7 @@
 {- objIn representeert een PHP-object dat een subset is van PHP-object objOut.
    objIn representeert het deel van objOut dat bij aanroep reeds gevuld is.
    Dit voorkomt onnodige database accessen.
+   De parameter 'isArr' vertelt of het een array betreft of een enkel veld.
 -}
    doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
    doSqlGet fSpec isArr objIn objOut
@@ -593,7 +580,6 @@
                        (['f':show n|n<-[1..(length rest)]])                              -- list of forbidden names (names already taken)
                        (map fst comboGroups)                                             -- list of elements b that need a name
 
-   
    splitLineBreak :: String -> [String]
    splitLineBreak [] = []
    splitLineBreak ('\n':s) = []:(splitLineBreak s)
