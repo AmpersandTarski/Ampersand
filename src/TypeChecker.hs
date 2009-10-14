@@ -77,12 +77,15 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
    check4 = checkSvcNameUniqueness ctxs
    check5 = checkPopulations ctxs
+  -- check6 = checkSvcLabels ctxs
    checkresult = if null check1 then 
                     if null check2 then 
                        if null check4 then
                           if null check5 then 
-                             if null check3 then [] 
-                             else printcheck3 
+                        --     if null check6 then 
+                                if null check3 then [] 
+                                else printcheck3 
+                        --     else check6 
                           else check5 
                        else check4
                     else check2
@@ -500,11 +503,24 @@ checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
 checkSvcNameUniqueness :: Contexts -> Errors
 checkSvcNameUniqueness ctxs = 
     let svcs = [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx]
-        orderby :: (Eq a, Eq b) => [(a,b)] ->  [(a,[b])]
+        printerrs [] = []
+        printerrs (svcnms:lblnms) = 
+          ["Service or plug name " ++ svcnm ++ " is not unique:"++ (foldr (++) [] ["\n"++show svcpos |svcpos<-svcposs])
+          |(svcnm,svcposs)<-svcnms] 
+          ++
+          ["Label " ++ lblnm ++ " in service or plug must be unique on sibling level:"
+                    ++ (foldr (++) [] ["\n"++show lblpos |lblpos<-lblposs])
+          |lbl<-lblnms, (lblnm,lblposs)<-lbl]
+    in  printerrs$checkLabels svcs
+
+--DESCR -> group the services and sibling labels with the same name but different file positions
+checkLabels :: [ObjectDef] -> [[(String,[FilePos])]]
+checkLabels svcs =
+    let orderby :: (Eq a, Eq b) => [(a,b)] ->  [(a,[b])]
         orderby xs =  [(x,rd [y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
-        notuniqsvcs = orderby [(objnm svc,objpos svc)|svc<-svcs, svc'<-svcs, objnm svc==objnm svc', objpos svc/=objpos svc']
-    in  ["Service or plug name " ++ svcnm ++ " is not unique:"++ (foldr (++) [] ["\n"++show svcpos |svcpos<-svcposs])
-        |(svcnm,svcposs)<-notuniqsvcs]
+    in  (orderby [(objnm svc,objpos svc)|svc<-svcs, svc'<-svcs, objnm svc==objnm svc', objpos svc/=objpos svc'])
+        :[check | checks<-map checkLabels (map objats svcs), check<-checks]
+
    
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
