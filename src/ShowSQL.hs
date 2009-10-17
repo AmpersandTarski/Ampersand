@@ -10,7 +10,7 @@ module ShowSQL (showSQL) where
     showSQL :: a -> String
 
    instance SQL ECArule where
-    showSQL (ECA event pa) = (showSQL event++"\nEXECUTE "++showSQL pa)
+    showSQL (ECA event pa n) = (showSQL event++"\nEXECUTE "++showSQL pa)
    instance SQL Event where
     showSQL (On Ins m') = "ON INSERT Delta IN   "++show m'
     showSQL (On Del m') = "ON DELETE Delta FROM "++show m'

@@ -8,6 +8,7 @@
    import Auxiliaries    (naming, eqCl, eqClass, sort')
    import FspecDef
    import Languages
+   import Calc
    import Options(Options(language))
    import NormalForms(disjNF)
    import Data.Plug
@@ -26,13 +27,15 @@
             , datasets = datasets'
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
-              -- A generic user interface (the Monastir interface) is already available.
+              -- A generic user interface (the Lonneker interface) is already available.
             , vplugs   = definedplugs
             , plugs    = allplugs
             , serviceS = attributes context
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
             , vrules   = rules context
+            , ecaRules = let f eca i = eca i in
+                         zipWith f [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ] [0..]
             , vrels    = declarations context
             , fsisa    = ctxisa context
             , vpatterns= patterns context
@@ -125,14 +128,26 @@
                                       }
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
-                   }]
+                   }]++
+             [ Obj { objnm   = (if language flags==Dutch then "nieuwe" else "new")++name c
+                   , objpos  = Nowhere
+                   , objctx  = Tm $ I [c] c c True -- was: Tm $ V [cptS,c] (cptS,c)
+                   , objats  = [ Obj { objnm =  name mph
+                                     , objpos = Nowhere
+                                     , objctx = Tm mph
+                                     , objats = []
+                                     , objstrs = [] -- [["DISPLAYTEXT", if null (srxpl s) then (lang lng .assemble.normRule) (srsig s) else srxpl s]]
+                                     }
+                               | mph<-fats c ]
+                   , objstrs = []
+                   } | not (null (fats c))]
              ++let ats = [ Obj { objnm  = composedname mph
                                , objpos = Nowhere
                                , objctx = Tm (preventAmbig mph)
                                , objats = []
                                , objstrs= [] -- [["DISPLAYTEXT", name mph++" "++name (target mph)]]++props (multiplicities mph)
                                }
-                           | mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph]
+                         | mph<-fats c]
                in [ Obj { objnm  = plural (language flags) (name c)
                         , objpos = Nowhere
                         , objctx = Tm $ I [S] S S True
@@ -154,6 +169,7 @@
                   ]
            | c<-concs context ]
            where
+           fats c = [mph| mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph, Uni `elem` multiplicities mph]
            composedname mph | inline mph = name mph++name (target mph)
                             | otherwise  = name (target mph) ++ "_of_" ++ name mph
            preventAmbig mp@(Mph{mphats=[]}) =  

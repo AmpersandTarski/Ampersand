@@ -29,6 +29,10 @@ module Adl ( Architecture(..)
            , Explained(..)
            , Label(..)
            , Paire,Pairs,srcPaire,trgPaire,mkPaire
+           , InsDel(..)
+           , ECArule(..)
+           , Event(..)
+           , PAclause(..)
            )
 where
 
@@ -53,6 +57,7 @@ where
                                          ,inline,makeInline
                                          ,mIs,isProperty)
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
+   import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPaire)
                                          
    import Classes.Populated              (Populated(..))

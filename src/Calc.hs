@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module Calc (   deriveProofs
               , computeOrder
+              , conjuncts
+              , simplify
               , lClause
               , rClause
               , makeRule
@@ -12,7 +14,8 @@ module Calc (   deriveProofs
    import Collection         (Collection (uni,isc,rd))
    import Auxiliaries        (sort',eqCl,commaEng,elem')
    import Adl
-   import FspecDef           (Fspc,vrules,chain,serviceS,ECArule(..),Event(..),InsDel(..),PAclause(..),showL)
+   import FspecDef           (Fspc,vrules,chain,serviceS,showL)
+   import Adl.ECArule        (ECArule(..),Event(..),InsDel(..),PAclause(..))
    import ShowADL            (showADL)
    import ShowHS             (showHS)
    import ShowSQL            (showSQL)
@@ -31,7 +34,8 @@ module Calc (   deriveProofs
 --      processDotgraphFile ("CF"++fnm)
 --      where
 --       codeFragments :: [ECArule]
---       codeFragments = [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ]
+--       codeFragments = zipWith f [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ] [0..]
+--                       where f eca i = eca i
 
    deriveProofs :: Fspc -> String
    deriveProofs fSpec
@@ -140,8 +144,8 @@ module Calc (   deriveProofs
                                                   then "A reaction is not required, because  r -: r'. Proof:"++(showProof.cfProof) (Fu[Cp r,r'])++"\n"
                                                   else if checkMono r ev m'
                                                   then "A reaction is not required, because  r -: r'. Proof:"{-++(showProof.derivMono r ev) m'-}++"NIET TYPECORRECT: (showProof.derivMono r ev) m'"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
-                                                  else "The correct reaction on this event is\n"++showSQL (ECA (On ev m') (doCode viols Ins r'))++"\n"++
-                                                       "\ndoClause :\n"++showSQL (ECA (On ev m') (doCode (Fi [Cp r,nr']) Ins r))
+                                                  else "The correct reaction on this event is\n"++showSQL (ECA (On ev m') (doCode viols Ins r') 0)++"\n"++
+                                                       "\ndoClause :\n"++showSQL (ECA (On ev m') (doCode (Fi [Cp r,nr']) Ins r) 0)
                                             )
                                           | m'<-rd [m'|x<-mors r, m'<-[x,flp x], inline m', not (isIdent m')] -- TODO: include proofs that allow: isIdent m'
                                           , ev<-[Ins,Del]
@@ -188,7 +192,7 @@ module Calc (   deriveProofs
 --             "\ntoExpr `elem` r_cpu rule: "++show ((map name.morlist) toExpr `elem` map (map name.morlist) (r_cpu rule))
 --           | (CR (_, _, _, toExpr, _, _))<-hornCs rule clause ]
 
-   doClause :: Expression -> [ECArule]
+   doClause :: Expression -> [Int->ECArule]
    doClause r
     = {- if error("Diagnostic: \n"++
                showADL r++"\n"++
@@ -201,12 +205,12 @@ module Calc (   deriveProofs
                                                 ])++"\n"
               ) then res else -} res
     where
-     res = -- [ ECA (On Del (V [] (sign to))) (doCode (Cp r) Ins to) | null [t| t<-ts, isNeg t],  to<-[t| t<-ts, isPos t]]++
+     res = -- Example: [ ECA (On Del (V [] (sign to))) (doCode (Cp r) Ins to) | null [t| t<-ts, isNeg t],  to<-[t| t<-ts, isPos t]]++
            [ ECA (On ev m') (doCode phi Ins r)
            | m'<-rd [m'|x<-mors r, m'<-[x,flp x], inline m']
            , ev<-[Ins,Del]
            , r'<-[(conjNF.subst (Tm m',actSem ev (Tm m') (delta (sign m'))) ) r]
-           , phi<-[(Fi [Cp r,r'])]
+           , phi<-[Fi [Cp r,r']]
         {- , (not.isTrue) r' -} ]
 
    actSem :: InsDel -> Expression -> Expression -> Expression

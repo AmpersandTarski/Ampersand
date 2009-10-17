@@ -103,20 +103,43 @@ where
     showHSname _ = error ("(module ShowHS) PhpAction is anonymous with respect to showHS.")
     showHS indent act
       = (chain (indent ++"    ") 
-          [ "PhpAction{ action = " ++ showHS "" (action act)
-          , "         , on     = " ++ "["++chain ", " (map (showHS "") (on act))++"]"
-          , "         }"
+          [ "PhpAction { action = " ++ showHS "" (action act)
+          , "          , on     = " ++ "["++chain ", " (map (showHS "") (on act))++"]"
+          , "          }"
           ])
 
+   instance ShowHS ECArule where
+    showHSname r = "ecaRule"++show (ecaNum r)
+    showHS indent r   
+      = "ECA (" ++ showHS "" (ecaTriggr r)++")" ++ indent++"    (" ++ showHS (indent++"     ")  (ecaAction r)++ indent++"    )"++indent++show (ecaNum r)
+
+   instance ShowHS Event where
+    showHSname e = error ("(module ShowHS) \"Event\" is anonymous with respect to showHS.")
+    showHS indent e   
+      = if take 1 indent == "\n"
+        then "On (" ++ show (eSrt e)++")" ++ indent++"   (" ++ showHS (indent++"    ") (eMhp e)++indent++"   )"
+        else "On (" ++ show (eSrt e)++") (" ++ showHS "" (eMhp e)++")"
+
+   instance ShowHS PAclause where
+    showHSname p = error ("(module ShowHS) \"Event\" is anonymous with respect to showHS.")
+    showHS indent p   
+      = case p of
+           Choice{} -> "Choice [ "++chain (indent++"       , ") (map (showHS (indent++"         ")) (paCls p))++indent++"       ]"
+           All{}    ->    "All [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"
+           Do{}     ->     "Do "++show (paSrt p)++ " ("++showHS (indent++"        ") (paTo p)++indent++"       )"++
+                                  indent++"       ("++showHS (indent++"        ") (paDelta p)++indent++"       )"
+           New{}    ->    "New [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"
+           Rmv{}    ->    "Rmv [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"
+
    instance ShowHS ActionType where
-    showHSname _ = error ("(module ShowHS) ActionType is anonymous with respect to showHS.")
+    showHSname _ = error ("(module ShowHS) \"ActionType\" is anonymous with respect to showHS.")
     showHS indent Create = indent++"Create"
     showHS indent Read   = indent++"Read"
     showHS indent Update = indent++"Update"
     showHS indent Delete = indent++"Delete"
 
    instance ShowHS SqlField where
-    showHSname _ = error ("(module ShowHS) SqlField is anonymous with respect to showHS.")
+    showHSname _ = error ("(module ShowHS) \"SqlField\" is anonymous with respect to showHS.")
     showHS indent sqFd
       = (chain indent
           [ "Fld { fldname = " ++ show (fldname sqFd)
@@ -161,6 +184,7 @@ where
                   ,", serviceG = serviceG'"
                   ,", services = services'"
                   ,", vrules   = " ++ "[ "++chain (indentA++", ") (map showHSname (vrules fspec))++indentA++"]"
+                  ,", ecaRules = " ++ "[ "++chain (indentA++", ") (map showHSname (ecaRules fspec))++indentA++"]"
                   ,", vrels    = " ++ "[ "++chain (indentA++", ") (map showHSname (vrels  fspec))++indentA++"]"
                   ,", fsisa = isa'"
                   ,"}" 
@@ -199,10 +223,12 @@ where
 --            (uni (serviceS fspec)  (serviceG fspec)) then "" 
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
-        "\n -- ***Declarations of RULES***: "++
-       (if null (vrules   fspec ) then "" else concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
-        "\n -- ***Declarations OF RELATIONS***: "++
-       (if null (vrels fspec)     then "" else concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
+        
+       (if null (vrules   fspec ) then "" else "\n -- ***Declarations of RULES***: "++concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
+        
+       (if null (ecaRules   fspec ) then "" else "\n -- ***Declarations of ECArules***: "++concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- ecaRules   fspec ]++"\n")++
+        
+       (if null (vrels fspec)     then "" else "\n -- ***Declarations OF RELATIONS***: "++concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
 --        "\n -- ***PATTERNS***: "++
 ----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
         "\n"

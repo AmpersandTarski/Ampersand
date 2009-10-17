@@ -13,11 +13,11 @@ module Data.Fspec (
              , FSid(..)
              , FTheme(..)
              , WSOperation(..), WSAction(..)
-             , InsDel(..), ECArule(..), Event(..), PAclause(..)
              )
 where
 import Adl.Pattern                   (Pattern)
 import Adl.Rule                      (Rule(..))
+import Adl.ECArule                   (ECArule(..))
 import Adl.ObjectDef                 (ObjectDef)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism,Declaration)
@@ -26,15 +26,16 @@ import Adl.Pair
 import Typology                      (Inheritance)
 import Data.Plug
 import Rendering.ClassDiagram 
-data Fspc = Fspc  { fsfsid   :: FSid          -- ^ The name of the specification
-                  , datasets :: [ObjectDef]   -- ^ This list contains the data sets that are computed from the basic ontology.
-                  , vplugs   :: [Plug]        -- ^ all plugs defined in the ADL-script
-                  , plugs    :: [Plug]        -- ^ all plugs (defined and derived)
-                  , serviceS :: [ObjectDef]   -- ^ all services defined in the ADL-script
-                  , serviceG :: [ObjectDef]   -- ^ all services derived from the basic ontology
-                  , services :: [Fservice]    -- ^ One for every service 
-                  , vrules   :: [Rule]        -- ^ One for every rule
-                  , vrels    :: [Declaration] -- ^ One for every declaration
+data Fspc = Fspc  { fsfsid   :: FSid                  -- ^ The name of the specification
+                  , datasets :: [ObjectDef]           -- ^ This list contains the data sets that are computed from the basic ontology.
+                  , vplugs   :: [Plug]                -- ^ all plugs defined in the ADL-script
+                  , plugs    :: [Plug]                -- ^ all plugs (defined and derived)
+                  , serviceS :: [ObjectDef]           -- ^ all services defined in the ADL-script
+                  , serviceG :: [ObjectDef]           -- ^ all services derived from the basic ontology
+                  , services :: [Fservice]            -- ^ One for every service 
+                  , vrules   :: [Rule]                -- ^ One for every rule
+                  , ecaRules :: [ECArule]             -- ^ event-condition-action rules derived from the context
+                  , vrels    :: [Declaration]         -- ^ One for every declaration
                   , fsisa    :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
                   , vpatterns:: [Pattern]
                   , classdiagrams :: [ClassDiag]
@@ -65,32 +66,3 @@ data WSAction = WSCreate | WSRead | WSUpdate |WSDelete
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 
--- | The following datatypes form a process algebra. ADL derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
---   An example: suppose you have large shoes, which means that there is no way you can fit you shoes through your trousers. What does this mean for the process of dressing in the morning? Well, if the shoes won't fit through your trousers, you must first put on your trousers, and then put on your shoes. So the order of putting on trousers and putting on shoes is dictated by the (static) fact that your shoes are too big to fit through your trousers. When undressing, the order is reversed: you must take off your shoes before taking off your trousers. This example ilustrates how the order of activities is restricted by an invariant property. So it is possible to derive some dynamic behaviour from static properties.
-
-data InsDel   = Ins | Del
-                deriving (Eq,Show)
-data ECArule  = ECA { ecaTriggr :: Event
-                    , ecaAction :: PAclause
-                    }
-data Event    = On { eSrt :: InsDel
-                   , eMhp :: Morphism
-                   }
-data PAclause = Choice { paCls:: [PAclause]
-                       }
-              | All { paCls   :: [PAclause]}
-              | Do  { paSrt   :: InsDel         -- do Insert or Delete
-                    , paTo    :: Expression     -- into toExpr    or from toExpr
-                    , paDelta ::Expression     -- delta
-                    }
-              | New { paNew :: Concept }        -- makes a new instance of type c
- --                  deriving Show
-
---   instance Show ECArule where
---    showsPrec p (ECA event pa) = showString (show event++" "++show pa)
---   instance Show Event where
---    showsPrec p (On Ins m) = showString ("ON INSERT Delta IN "++show m)
---    showsPrec p (On Del m) = showString ("ON DELETE Delta FROM "++show m)
-
---   instance Show PAclause where
---    showsPrec p fragm = showString ("ON "++show "\n  " fragm)
