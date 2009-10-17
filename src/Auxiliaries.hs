@@ -15,9 +15,8 @@ module Auxiliaries(
    , enumerate
    , sort'
 --   , enc
---   , sord'
+   , sord'
    , elem'
---   , mumble
 --   , fixSpaces
    , haskellIdentifier
 --
@@ -171,9 +170,9 @@ module Auxiliaries(
 
 
 
---   sord' :: Ord b => (a -> b) -> [a] -> [a]
---   sord' _ [] = []
---   sord' f (x:xs) = sord' f [e|e<-xs, f e<f x] ++ [x] ++ sord' f [e|e<-xs, f e>f x]
+   sord' :: Ord b => (a -> b) -> [a] -> [a]
+   sord' _ [] = []
+   sord' f (x:xs) = sord' f [e|e<-xs, f e<f x] ++ [x] ++ sord' f [e|e<-xs, f e>f x]
 
    elem' :: (a -> a -> Bool) -> a -> [a] -> Bool
    elem' eq e xs = not (null [x|x<-xs, eq e x])

@@ -5,6 +5,8 @@ module Typology
           ( Inheritance(Isa)
           , Typologic(typology)
           , genEq
+          , Typology(..)
+          , IsaPath(..)
           )
 where
    import Auxiliaries    ( clos )

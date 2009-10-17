@@ -24,6 +24,7 @@ import Fspec2Pandoc (render2Pandoc,fSpec2Pandoc)
 import Rendering.ClassDiagram
 import Strings      (remSpaces)
 import Rendering.AdlExplanation
+import Atlas.Atlas
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
@@ -50,8 +51,9 @@ doGenHaskell fSpec flags
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."
-  >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
+  >> verboseLn flags ("Atlas would be generated in " ++ show (dirOutput flags) ++ ".")
   >> generatepngs fSpec flags
+  >> anal fSpec False [] (dirOutput flags)
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
