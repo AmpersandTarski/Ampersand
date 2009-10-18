@@ -448,10 +448,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      | otherwise = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
    selectSelItem :: (String, String) -> String
    selectSelItem (att,alias)
-     | selectSameName (att,alias) = att
-     | otherwise                  = att++" AS "++alias
-   selectSameName :: (String,String)->Bool
-   selectSameName (att,alias) = afterPoint att == alias || "`"++afterPoint att++"`"==alias
+     | unquote (afterPoint att) == unquote alias = att
+     | otherwise                                 = att++" AS "++alias
     where myafterPoint ('.':xs) = xs
           myafterPoint ( _ :xs) = myafterPoint xs
           myafterPoint []       = []

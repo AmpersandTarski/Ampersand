@@ -271,7 +271,7 @@
                               ,"<A class=\"GotoLink\" id=\"To"++path++"\">';"
                               ,"  echo "++echobit++".'</A>';"]
                               ++ indentBlock 2 (gotoDiv gotoP path) ++
-                              [ "}" ]
+                              [ "} else echo "++echobit++";" ]
             echobit= "htmlspecialchars("++var++")"
             mults = multiplicities (objctx att)
             gotoP = gotoPages att var
