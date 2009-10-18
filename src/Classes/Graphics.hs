@@ -185,8 +185,8 @@ crowfootArrow a b =
     AType (case (a,b) of
             (True ,True ) -> [my_tee          ]
             (True ,False) -> [my_tee , my_crow]
-            (False,True ) -> [my_odot, my_tee ]
-            (False,False) -> [my_odot, my_crow]
+            (False,True ) -> [my_tee, my_odot ]
+            (False,False) -> [my_crow, my_odot]
           )
 noMod :: ArrowModifier
 noMod = ArrMod { arrowFill = FilledArrow
