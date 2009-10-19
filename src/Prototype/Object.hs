@@ -352,8 +352,9 @@
                  ownAts = map snd is
                  insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
                  insQuery var
-                   = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug++"` ("++chain "," ["`"++fldname f++"`" | (o,f)<-rd' (fldname.snd) attrs] ++
-                     ") VALUES (" ++
+                   = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug
+                     ++ "` ("++chain "," ["`"++fldname f++"`" | (_,f)<-rd' (fldname.snd) attrs]
+                     ++ ") VALUES (" ++
                      chain ", "
                            [ if fldnull f || fldauto f
                              then "\".(" ++ ( if fldauto f && o==object
