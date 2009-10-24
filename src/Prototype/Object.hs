@@ -6,7 +6,7 @@
    import Auxiliaries (eqCl,sort')
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
-              ,ObjectDef(..),Numbered(..)
+              ,ObjectDef(..),Numbered(..),Rule
               ,Identified(..),mors,explain,Morphism(..),Prop(..)
               ,Object(..),multiplicities,isIdent,Expression(..),mIs
               ,flp)
@@ -19,13 +19,14 @@
    import Data.Plug
    -- import Debug.Trace
    import Version (versionbanner)
+   import Options
+   import PredLogic
 
-
-   objectServices :: Fspc
-                  -> String -- filename
+   objectServices :: Options 
+                  -> Fspc
                   -> ObjectDef
                   -> String
-   objectServices fSpec _ o
+   objectServices flags fSpec o
     = (chain "\n  "
       ([ "<?php // generated with "++versionbanner
        , ""
@@ -33,7 +34,7 @@
        , showADL o
        , " *********/"
        , ""
-       ] ++ showClasses fSpec o ++
+       ] ++ showClasses flags fSpec o ++
        ( if isOne o
          then []
          else generateService_getEach fSpec (name o) o ++
@@ -79,8 +80,8 @@
    --              In due time, this parameter will become a selection from the entire set of triggers in Fspc.
    --   nms      : the name trail of all super-objects until the root of this service. This is used to generate unique names for every field.
    --   o        : the object to be transformed in a class.
-   showClasses :: Fspc -> ObjectDef -> [String]
-   showClasses fSpec o
+   showClasses :: Options -> Fspc -> ObjectDef -> [String]
+   showClasses flags fSpec o
     = [ "class "++myName ++" {"] ++
       indentBlock 2 (
             ( if isOne o then [] else ["protected $_id=false;","protected $_new=true;"] )
@@ -126,7 +127,7 @@
                               | a' <- attributes o]
                       ) ++
             ["}\n"]++
-            saveTransactions fSpec o
+            saveTransactions flags fSpec o
             ++ (concat
                 [ ["function set_"++phpIdentifier (name a)++"($val){"
                   ,"  $this->_"++phpIdentifier (name a)++"=$val;"
@@ -170,8 +171,8 @@
             tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") (concept o))
             ctx' = simplify $ flp (ctx o)
             fs   = [es' | F es' <- [ctx']]
-   saveTransactions :: Fspc -> ObjectDef -> [String]
-   saveTransactions fSpec object
+   saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
+   saveTransactions flags fSpec object
     = [ "function save(){"
       , "  DB_doquer('START TRANSACTION');"
       ] ++ indentBlock 2
@@ -197,7 +198,7 @@
      close result
       = (concat
           [ ["if (!checkRule"++show (nr rul)++"()){"
-            ,"  $DB_err='"++(addSlashes (show(explain rul)))++"';"
+            ,"  $DB_err='"++(addSlashes (show(explainArt flags fSpec rul)))++"';"
             ,"} else"
             ]
           | rul <- vrules fSpec

@@ -160,7 +160,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro
   dpSection :: FTheme -> [Block]
   dpSection t = [Header (lev+1) [Str (name$tconcept t)]] --new section to explain this theme
              ++ [b|f<-tfunctions t, b<-explainFunctionNL f, language flags==Dutch] --explain the functions in the theme
-             ++ [Para [Str$explainRule (language flags) r]|r<-trules t] --explanation of all rules in the theme
+             ++ [Para [Str$explainRule flags r]|r<-trules t] --explanation of all rules in the theme
     where
     listDataset obj = 
                   [BulletList 
@@ -195,14 +195,14 @@ designPrinciples lev fSpec flags = header ++ dpIntro
                             ]
   remainingrulesSection :: [Rule] -> [Block]
   remainingrulesSection rs = 
-    (case (language flags) of
-        Dutch -> 
-                [Header (lev+1) [Str "Algemene ontwerpregels"]] --new section to explain this theme
-             ++ [Para [Str$explainRule (language flags) r]|r<-rs] --explanation of all rules in the theme
-        English ->  
-                [Header (lev+1) [Str "General designrules"]] --new section to explain this theme
-             ++ [Para [Str$explainRule (language flags) r]|r<-rs] --explanation of all rules in the theme
-     )
+     [Header (lev+1) [Str (case language flags of
+                             Dutch   -> "Algemene ontwerpregels"
+                             English -> "General designrules"
+                          )
+                     ]
+     ] --new section to explain this theme
+     ++ [Para [Str$explainRule flags r]|r<-rs] --explanation of all rules in the theme
+     
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options ->  [Block]
 conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,b<-caSection p]
@@ -291,7 +291,7 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
     --query copied from FSpec.hs revision 174   latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
     explainCaRule r = [ Str $ show (nr r)
                       , TeX "\n & "
-                      , Str (explainRule (language flags) r)] --TODO -> alignment is incorrect
+                      , Str (explainRule flags r)] --TODO -> alignment is incorrect
                    ++ printlb
                    ++ [Str "Relations:"]
                    ++ printlb

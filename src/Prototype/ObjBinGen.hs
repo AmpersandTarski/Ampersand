@@ -49,7 +49,7 @@
       >> sequence_
          [ verboseLn flags ("  Generating "++addExtension (name o) ".inc.php")
            >> writeFile (combine targetDir (addExtension (name o) ".inc.php")) 
-                        (objectServices fSpec (baseName flags) o)
+                        (objectServices flags fSpec o)
          | o <- serviceObjects
          ]
       >> verboseLn flags ("Wrapper files for all objects:")

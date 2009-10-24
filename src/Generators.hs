@@ -51,9 +51,9 @@ doGenHaskell fSpec flags
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."
-  >> verboseLn flags ("Atlas would be generated in " ++ show (dirOutput flags) ++ ".")
+  >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
   >> generatepngs fSpec flags
-  >> anal fSpec False [] (dirOutput flags)
+  >> anal flags fSpec
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 

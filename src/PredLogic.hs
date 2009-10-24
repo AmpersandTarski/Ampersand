@@ -8,24 +8,24 @@
               , mathVars
               , lang
               , objOrShow
+              , explainArtObsolete  -- obsolete
               , explainArt
+              , applyM  
               )
    where
 
-   import CommonClasses ( Identified(name),ABoolAlg(..),Explained(..))
+   import CommonClasses (ABoolAlg(..))
    import Collection (Collection((>-)))
-   import Strings(chain)
+   import Strings(chain,unCap)
    import Auxiliaries (eqCl)
    import Adl
    import ShowHS
    import ShowADL
-   import CC_aux ( applyM 
-                 , mkVar
-            )
    import Languages (Lang(English,Dutch), plural)
- --  import Calc
-
-
+   import Options
+   import Data.Fspec
+   import Char (toLower)
+ 
 
 
 
@@ -44,7 +44,11 @@
           PredLogic                         |
       Funs String [Morphism]
 
-   predLshow (forall, exists, implies, equiv, equal, nequal, or, and, not, rel, fun, showVars, break, space) e = charshow 0 e
+--   predKeyWords flags = 
+--     case language flags of
+--        English  -> 
+
+   predLshow flags (forall, exists, implies, equiv, equal, nequal, or, and, not, rel, fun, showVars, break, space) e = charshow 0 e
      where
       wrap i j str = if i<=j then str else "("++str++")"
       charshow i (Forall vars restr)
@@ -73,11 +77,11 @@
               | isNot e   = nequal
               | otherwise = showADL e
 
-   instance Show PredLogic where
-    showsPrec p x = showString (predLshow ("For all", "Exists", implies, "<=>", "=", "\\=", "||", "&", "not", rel, fun, mathVars, "", " ") x)
-                    where rel m lhs rhs = lhs++" "++name m++" "++rhs
-                          fun m x = name m++"("++x++")"
-                          implies antc cons = antc++" ==> "++cons
+--   instance Show PredLogic where
+--    showsPrec p x = showString (predLshow flags ("For all", "Exists", implies, "<=>", "=", "\\=", "||", "&", "not", rel, fun, mathVars, "", " ") x)
+--                    where rel m lhs rhs = lhs++" "++name m++" "++rhs
+--                          fun m x = name m++"("++x++")"
+--                          implies antc cons = antc++" ==> "++cons
 
    mathVars :: String -> [(String,Concept)] -> String
    mathVars q vs
@@ -86,23 +90,39 @@
       where
        vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
 
-   explainArt :: Context -> Lang -> Rule -> String
-   explainArt thisCtx l r
+   explainArt :: Options -> Fspc -> Rule ->  String
+   explainArt flags fspc rul  -- TODO Geef een mooie uitleg van deze regel. 
+    = if null (explain rul)
+      then case language flags of
+              English   -> "Artificial explanation: "
+              Dutch     -> "Kunstmatige uitleg: " 
+           ++(lang flags (language flags) .assemble.normRule) rul
+      else explain rul
+
+   explainArtObsolete ::  Context -> Lang -> Rule -> String
+   explainArtObsolete thisCtx l r
     = if null (explain r)
-      then (if l==English then "Artificial explanation: " else
-            if l==Dutch   then "Kunstmatige uitleg: " else
-            error("Module PredLogic: unsupported language"))++(lang l .assemble.normRule) r
+      then case l of
+              English   -> "Artificial explanation: "
+              Dutch     -> "Kunstmatige uitleg: " 
+    --       ++(lang flags l .assemble.normRule) r
       else explain r
 
-   lang :: Lang -> PredLogic -> String
-   lang English x = predLshow ("For all", "There exists", implies, "is equivalent to", "equals", "is unequal to", "or", "and", "not", rel, fun, langVars English, "\n  ", " ") x
-                    where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
-                          fun m x = name m++"("++x++")"
-                          implies antc cons = "If "++antc++", then "++cons
-   lang Dutch   x = predLshow ("Voor elke", "Er is een", implies, "is equivalent met", "gelijk aan", "is ongelijk aan", "of", "en", "niet", rel, fun, langVars Dutch, "\n  ", " ") x
-                    where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
-                          fun m x = name m++"("++x++")"
-                          implies antc cons = "Als "++antc++", dan "++cons
+   lang :: Options -> Lang -> PredLogic -> String
+   lang flags l x =
+     case l of
+       English -> predLshow flags ("For each", "There exists", implies, "is equivalent to", "equals", "is unequal to", "or", "and", "not", rel, fun, langVars English, "\n  ", " ") x
+       Dutch   -> predLshow flags ("Voor elke", "Er is een", implies, "is equivalent met", "gelijk aan", "is ongelijk aan", "of", "en", "niet", rel, fun, langVars Dutch, "\n  ", " ") x
+     where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
+           fun m x = name m++"("++x++")"
+           implies antc cons = case l of 
+                                   English  -> "If "++antc++", then "++cons
+                                   Dutch    -> "Als "++antc++", dan "++cons
+
+ --  langVars l q vs
+ --    = case (l,q,vs) of
+ --        (English,_,null) -> ""
+ --        
 
    langVars English q vs
     = if null vs then "" else
@@ -121,8 +141,8 @@
 
 
 
-   objOrShow :: PredLogic -> String
-   objOrShow = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars English, "\n", " ")
+   objOrShow :: Options -> PredLogic -> String
+   objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars English, "\n", " ")
                where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
                      fun m x = x++"."++name m
                      implies antc cons = "IF "++antc++" THEN "++cons
@@ -202,8 +222,8 @@
       [s,t] = mkVar [] [source e, target e]
       (rc,cvars) = assembleF [s,t] e s t
 
-   instance Explained Expression where
-    explain e = lang English (expr2predLogic e)
+--   instance Explained Expression where
+--    explain e = lang English (expr2predLogic e)
 
    assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t
@@ -343,3 +363,31 @@
         Flr `eq` Flr = True
         Frl `eq` Frl = True
         x `eq` y     = False
+
+        
+-- mkVar is bedoeld om nieuwe variabelen te genereren, gegeven een set (ex) van reeds vergeven variabelen.
+-- mkVar garandeert dat het resultaat niet in ex voorkomt, dus postconditie:   not (mkVar ex cs `elem` ex)
+-- Dat gebeurt door het toevoegen van apostofes.
+-- Deze functie is bedoeld voor gebruik in PredLogic.
+-- WAAROM (SJ): waarom staat mkVar in CC_aux? Kan hij niet naar PredLogic?
+   mkVar :: (Identified a) => [String] -> [a] -> [String]
+   mkVar ex cs = mknew ex [[(toLower.head.(++"x").name) c]|c<-cs]
+    where
+     mknew _ [] = []
+     mknew ex' (x:xs) | x `elem` ex' = mknew ex' ((x++"'"):xs)
+                      | otherwise = x: mknew (ex'++[x]) xs
+
+   applyM :: Declaration -> String -> String -> String
+   applyM decl d c =
+      case decl of
+        Sgn{}     -> if null (prL++prM++prR) 
+                       then d++" "++decnm decl++" "++c 
+                       else prL++(if null prL then d else unCap d)++prM++c++prR
+           where prL = decprL decl
+                 prM = decprM decl
+                 prR = decprR decl
+        Isn{}     -> d++" equals "++c
+        Iscompl{} -> d++" differs from "++c
+        Vs{}      -> show True
+        
+ 

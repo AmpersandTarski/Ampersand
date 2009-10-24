@@ -1,14 +1,13 @@
 module Atlas.Atlas (anal) where
 import System.IO.Unsafe (unsafePerformIO) -- maakt het aanroepen van neato vanuit Haskell mogelijk.
 import Char (isUpper,chr,ord)
-import CommonClasses (  Identified(name))
 import Collection (Collection(empty, (>-),rd))
 import Auxiliaries (eqCl, sort', sord') 
 import Strings (chain)
 import Classification 
          ( Classification(..)
           , root, preCl )
-import Typology 
+import Typology
     --     ( Inheritance(Isa)
   --        ,Typology(Typ), Typologic(typology)
 --          ,makeTrees)
@@ -18,7 +17,6 @@ import ShowHS
 import CC_aux ( 
                 conts, dom, cod
               , clearG
-              , applyM
               )
 import Languages(Lang(English), plural)
 import Calc  -- only because of two calls of subst
@@ -31,13 +29,13 @@ import Atlas.HtmlFilenames
          ( fnContext,fnPatConcept,fnPattern,fnConcept
           ,fnRelation, fnRule, fnFspec)
 import PredLogic 
-         ( explainArt,lang,assemble,normRule,objOrShow
-          ,PredLogic,predLshow,mathVars)
+         ( explainArtObsolete,lang,assemble,normRule,objOrShow
+          ,PredLogic,predLshow,mathVars, applyM)
 import Rendering.ClassDiagram  
 import Classes.Graphics
 import FspecDef
 import System.FilePath(combine)
-
+import Options
 testing = False
 
 --copied from Auxiliaries rev:195
@@ -73,8 +71,8 @@ sub :: Eq a => IsaPath a -> IsaPath a -> Bool
 (x:xs) `sub` (y:ys) = if x==y then xs `sub` ys else xs `sub` (y:ys)
 xs     `sub`    ys  = null ys
 
-anal :: Fspc -> Bool -> String -> String -> IO ()
-anal fSpec predLogic graphicstyle dir
+anal :: Options -> Fspc -> IO ()
+anal flags fSpec
  = putStr ("\nGenerating Atlas for "++name fSpec++" in the current directory."++
            "\n  (current directory must already contain the directory \"treemenutils\""++
            " with its complete contents)\n")                                               >>
@@ -95,7 +93,7 @@ anal fSpec predLogic graphicstyle dir
       putStr "\nStarting generation of analysis\n"                                          --  >>
  --TODO     sequence_ [genAnalysis c predLogic| c<-preCl (Cl context world)]
       where
-      filenm = combine dir
+      filenm = combine (dirAtlas flags)
  --TODO     cTrees   = makeTrees (Typ (map reverse pths))
  --TODO     Typ pths = typology (isa context)
  --TODO     gE    = genE context
@@ -325,7 +323,7 @@ genAnalysis context predLogic
                 if null viol then "" else "\n<P>\n"++chain "\n\n" viol
    hv r = if null ruleviol then "" else
           htmlAnchor (fnRule context r++".html") ("Rule") []++
-          ": \'"++htmlBold (explainArt context English r)++"\' "++
+          ": \'"++htmlBold (explainArtObsolete context English r)++"\' "++
           " is violated in the following cases:\n<BR />"++
           ruleviol++"<BR />\n"
           where ruleviol = htmlViolations r
@@ -457,16 +455,16 @@ htmlRule context r predLogic
                                 "<A HREF=\""++fnRule context (prevRule context r)++".html\">Previous rule</A>\n")++
                                htmlHeadinglevel 3 ("Rule "++show (runum r)) []++"\n<P>\n"++
                                (if null (explain r)
-                                then "Artificial explanation:<BR />\n<BLOCKQUOTE>"++(lang English .assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
+                                then explainArtObsolete context English r ++"</BLOCKQUOTE>\n<P>\n"--"Artificial explanation:<BR />\n<BLOCKQUOTE>"++(lang English .assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
                                 else "Explanation:<BR />\n<BLOCKQUOTE>"++explain r++"</BLOCKQUOTE>\n<P>\n")++
                                "ADL representation<BR />\n<BLOCKQUOTE>"++showADL r++"</BLOCKQUOTE>\n<P>\n"++
                                (if predLogic
                                 then (if null (explain r) then "" else
-                                      "Artificial explanation:<BR />\n<BLOCKQUOTE>"    ++(lang English .assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
-                                     )++
+                                      explainArtObsolete context English r ++"</BLOCKQUOTE>\n<P>\n"--"Artificial explanation:<BR />\n<BLOCKQUOTE>"    ++(lang English .assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
+                                     ) -- ++
  --useful for diagnosis:             "Internal logic representation<BR />\n<BLOCKQUOTE>"++(show.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"++
-                                  "Predicate logic representation<BR />\n<BLOCKQUOTE>"++(hshow.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"++
-                                  "Object oriented representation<BR />\n<BLOCKQUOTE>"++(objOrShow.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
+                              --    "Predicate logic representation<BR />\n<BLOCKQUOTE>"++(hshow.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n" ++
+                              --    "Object oriented representation<BR />\n<BLOCKQUOTE>"++(objOrShow.assemble.normRule) r++"</BLOCKQUOTE>\n<P>\n"
                              else "") ++
                             (if testing then "Test\n<P>\n"++showHS "" r++"\n<P>\n"++show r++"\n<P>\n" else "") ++
                             imageMap (fnRule context r)++"\n<P>\n"++
@@ -662,9 +660,10 @@ htmlViewpoint context fnm pat c (Cl r cls) predLogic
         else ""
 
 explainverder :: Context -> Rule -> String
-explainverder thisCtx r = explainArt thisCtx English r++" "++ htmlAnchor (fnRule thisCtx r++".html") "More..." []
+explainverder thisCtx r = explainArtObsolete thisCtx English r++" "++ htmlAnchor (fnRule thisCtx r++".html") "More..." []
 hgenR thisCtx predLogic r
- = (nr r, (if predLogic then (hshow.assemble.normRule) r++"\n<BR />\n" else "")++explainverder thisCtx r++"\n")
+ = (nr r,  --(if predLogic then (hshow.assemble.normRule) r++"\n<BR />\n" else "")++
+         explainverder thisCtx r++"\n")
 
 vptTitle c = htmlHeadinglevel 2 ("Concept: "++c) []++"\n"
 
@@ -754,11 +753,11 @@ instance HTML Expression where
           | isNot e   = "&neq;"
           | otherwise = showADL e
 
-instance HTML PredLogic where
- hshow x = predLshow ("&forall;", "&exist;", implies, "<IMG SRC=\"treemenutils/arboth.gif\" ALT=\" <=> \">", "=", "&neq;", "&or;", "&and;", "&not;", rel, fun, mathVars, "<BR />\n", " ") x
-           where rel m lhs rhs = lhs++" "++hshow m++" "++rhs
-                 fun m x = name m++"("++x++")"
-                 implies antc cons = antc++" <IMG SRC=\"treemenutils/arright.gif\" ALT=\" ==> \"> "++cons
+--instance HTML PredLogic where
+-- hshow x = predLshow ("&forall;", "&exist;", implies, "<IMG SRC=\"treemenutils/arboth.gif\" ALT=\" <=> \">", "=", "&neq;", "&or;", "&and;", "&not;", rel, fun, mathVars, "<BR />\n", " ") x
+--           where rel m lhs rhs = lhs++" "++hshow m++" "++rhs
+--                 fun m x = name m++"("++x++")"
+--                 implies antc cons = antc++" <IMG SRC=\"treemenutils/arright.gif\" ALT=\" ==> \"> "++cons
 
 
 

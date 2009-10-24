@@ -4,15 +4,12 @@
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
                 , renumberRules
-                , applyM
-                , mkVar
                 , Pop(..)
                 , makeConceptSpace , pMeaning
                 , anything, shSigns , gEtabG
                 , conts , cod, clearG, dom
                 , showFullRelName
    ) where
-   import Char (toLower)
    import UU_Scanner
    import UU_Parsing
    import CommonClasses ( Identified(..)
@@ -21,7 +18,7 @@
                         , Morphics(..)
                         )
    import Collection   (Collection (..))
-   import Strings      (chain,unCap)
+   import Strings      (chain)
    import Auxiliaries  (rEncode,commaEng
                        ,sord,eqCl,eqClass)
    import Adl
@@ -417,36 +414,6 @@
 --   oneMorphism (Cp e)    = oneMorphism e
 
 
--- mkVar is bedoeld om nieuwe variabelen te genereren, gegeven een set (ex) van reeds vergeven variabelen.
--- mkVar garandeert dat het resultaat niet in ex voorkomt, dus postconditie:   not (mkVar ex cs `elem` ex)
--- Dat gebeurt door het toevoegen van apostofes.
--- Deze functie is bedoeld voor gebruik in PredLogic.
--- WAAROM (SJ): waarom staat mkVar in CC_aux? Kan hij niet naar PredLogic?
-   mkVar :: (Identified a) => [String] -> [a] -> [String]
-   mkVar ex cs = mknew ex [[(toLower.head.(++"x").name) c]|c<-cs]
-    where
-     mknew _ [] = []
-     mknew ex' (x:xs) | x `elem` ex' = mknew ex' ((x++"'"):xs)
-                      | otherwise = x: mknew (ex'++[x]) xs
-
-   applyM :: Declaration -> String -> String -> String
-   applyM decl d c =
-      case decl of
-        Sgn{}     -> if null (prL++prM++prR) 
-                       then d++" "++decnm decl++" "++c 
-                       else prL++(if null prL then d else unCap d)++prM++c++prR
-           where prL = decprL decl
-                 prM = decprM decl
-                 prR = decprR decl
-        Isn{}     -> d++" equals "++c
-        Iscompl{} -> d++" differs from "++c
-        Vs{}      -> show True
-        
---   applyM (Sgn nm _ _ _ prL prM prR _ _ _ _ _) d c = if null (prL++prM++prR) then d++" "++nm++" "++c else prL++(if null prL then d else unCap d)++prM++c++prR
---   applyM (Isn _ _)                            d c = d++" equals "++c
---   applyM (Iscompl _ _)                        d c = d++" differs from "++c
---   applyM (Vs _ _)                             d c = show True
---
 
 
 

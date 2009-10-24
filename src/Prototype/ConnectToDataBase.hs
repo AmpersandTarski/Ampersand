@@ -2,13 +2,12 @@
   module Prototype.ConnectToDataBase (connectToDataBase) 
   where
    --import Auxiliaries(eqClass,eqCl)
-   import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
+   import Strings (chain) 
    --import Collection(rd)
    --import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
-   import Adl (source,target,runum,nr,isFalse,normExpr,Rule,Expression(..))
+   import Adl
    import ShowADL(showADL)
-   import CommonClasses(explain,{- name -})
-   import NormalForms (conjNF) --TODO -> correct replacement of Calc (conjNF)?
+   import NormalForms (conjNF)
    import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,phpShow,pDebug,noCollide)
    import Version (versionbanner)
    import Data.Fspec

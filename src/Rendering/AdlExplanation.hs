@@ -4,16 +4,17 @@ module Rendering.AdlExplanation where
 import Adl
 import Collection (Collection (isc,(>-),empty, rd))
 import Strings (unCap)
-import CC_aux (applyM)
 import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
-import PredLogic (lang, assemble, normRule)
+import PredLogic (lang, assemble, normRule,applyM)
+import Options
    
-explainRule :: Lang -> Rule -> String
-explainRule l r
+explainRule :: Options -> Rule -> String
+explainRule flags r
   = if null (explain r)
-    then (if l==English then "Artificial explanation: " else
-          if l==Dutch   then "Kunstmatige uitleg: " else
-          error("Module PredLogic: unsupported language"))++(lang l .assemble.normRule) r
+    then case language flags of
+            English -> "Artificial explanation: "
+            Dutch   -> "Kunstmatige uitleg: "
+         ++(lang flags (language flags) .assemble.normRule) r
     else (if explain r=="NONE" then "" else explain r)
 
 explainDecl :: Lang -> Declaration -> String
