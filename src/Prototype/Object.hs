@@ -6,11 +6,11 @@
    import Auxiliaries (eqCl,sort')
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
-              ,ObjectDef(..),Numbered(..),Rule
-              ,Identified(..),mors,explain,Morphism(..),Prop(..)
+              ,ObjectDef(..),Numbered(..)
+              ,Identified(..),mors,Morphism(..),Prop(..)
               ,Object(..),multiplicities,isIdent,Expression(..),mIs
               ,flp)
-   import ShowADL
+   import ShowADL (showADL)
    import Collection (Collection (rd,rd',(>-)))
    import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,selectExprBrac,indentBlock
      ,sqlRelPlugs,addToLast,isOne,phpIdentifier,selectExpr
@@ -60,7 +60,7 @@
       ,"}\n"]
 
    phpVar :: String -> String
-   phpVar x = "$"++phpIdentifier x
+   phpVar x = "$_"++phpIdentifier x
 
    generateService_delete :: Fspc -> String -> ObjectDef -> [String]
    generateService_delete _ nm _
@@ -84,12 +84,12 @@
    showClasses flags fSpec o
     = [ "class "++myName ++" {"] ++
       indentBlock 2 (
-            ( if isOne o then [] else ["protected $_id=false;","protected $_new=true;"] )
+            ( if isOne o then [] else ["protected $id=false;","protected $_new=true;"] )
             ++ ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]++
             ["function "++myName++"(" ++ (if isOne o then "" else "$id=null, ")
                                         ++ (chain ", " [phpVar (name a)++"=null" | a<-attributes o])
                                         ++"){"
-            ]++["  $this->_id=$id;" | not (isOne o)]
+            ]++["  $this->id=$id;" | not (isOne o)]
             ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
             ++ concat (take 1 [  [ "  if(!isset("++phpVar (name a')++")"++(if isOne o then "" else " && isset($id)")++"){"
                                   , "    // get a "++(myName)++" based on its identifier"] ++
@@ -145,17 +145,17 @@
             if isOne o
             then []
             else ["function setId($id){"
-                  ,"  $this->_id=$id;"
-                  ,"  return $this->_id;"
-                  ,"}"
-                  ,"function getId(){"
-                  ,"  if($this->_id===null) return false;"
-                  ,"  return $this->_id;"
-                  ,"}"
-                  ,"function isNew(){"
-                  ,"  return $this->_new;"
-                  ,"}"
-                  ]
+                 ,"  $this->id=$id;"
+                 ,"  return $this->id;"
+                 ,"}"
+                 ,"function getId(){"
+                 ,"  if($this->id===null) return false;"
+                 ,"  return $this->id;"
+                 ,"}"
+                 ,"function isNew(){"
+                 ,"  return $this->_new;"
+                 ,"}"
+                 ]
             ) ++
       [ "}\n" ]
     where
