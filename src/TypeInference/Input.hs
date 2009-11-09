@@ -120,7 +120,7 @@ isaRels cs gens = if null checkrels
   rs = Set.toList $ isaRelSet (Set.fromList $ (map fromConcept cs))
   checkrels :: [(Cpt,Cpt,Cpt)]
   checkrels = [(c1,c2,c3) | (c1,c2)<-rs,(c1',c3)<-rs,c1==c1',not (elem (c2,c3) rs || elem (c3,c2) rs)
-                                     ,not(c1==NoCpt),not(c2==AllCpt),not(c3==AllCpt)]
+                                     ,not(c1==NoCpt),not(c2==AllCpt),not(c3==AllCpt),c2/=c3]
   --DESCR -> if is in isaRel then predicate isa is true. reflects axiom 15-19
   --         reflexive transitive closure (R0 \/ transclose) of the declared GEN relations
   --         including that every concept has a top (NoCpt) and bottom (AllCpt)

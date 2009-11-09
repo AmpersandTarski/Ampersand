@@ -79,9 +79,7 @@ where
    instance Association Rule where
     source r  = fst (sign r)
     target r  = snd (sign r)
-    sign r   | ruleType r==Truth = sign (consequent r)
-             | otherwise         = if sign (antecedent r) `order` sign (consequent r) then sign (antecedent r) `lub` sign (consequent r) else
-                                            error ("(module Rule) Fatal: incompatible signs in "++show r)
+    sign r = rrtyp r
 
    instance Explained Rule where
     explain r = case r of

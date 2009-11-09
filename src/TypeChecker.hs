@@ -246,9 +246,10 @@ enrichCtx cx@(Ctx{}) ctxs =
             popudecl d = head [ (head cl){decpopu = foldr1 uni (map decpopu cl)} |cl<-eqClass (==) ctxdecls, head cl==d]
   --DESCR -> Add population to concept
   populate :: Concept -> Concept
-  populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,source d==c]
-                              ++[trgPaire p|d<-popuRels,p<-contents d,target d==c]}
+  populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,elem (source d,c) isatree]
+                              ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
+
 
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
@@ -317,7 +318,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   --TODO -> move rulefromgen to function toRule in module Gen
   --DESCR -> rules deducted from a gen are proven by the existence of a gen
   rulefromgen :: Gen -> (Rule,Proof,FilePos)
-  rulefromgen (G {genfp = posi, gengen = gen, genspc = spc} )
+  rulefromgen (G {genfp = posi, gengen = gen', genspc = spc'} )
     = (Ru
          Implication
          iSpc
@@ -325,11 +326,13 @@ enrichCtx cx@(Ctx{}) ctxs =
          iGen
          [iSpc, iGen]
          []
-         (spc,gen)
+         (gen,gen)
          0  --REMARK -> rules are renumbered after enriching the context
          [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
        , Proven gammaisa [Stmt $ fromIsa (spc,gen)],posi)
     where
+    spc = populate spc'
+    gen = populate gen'
     iSpc = Tm $ I [spc] spc spc True
     iGen = Tm $ I [gen] gen gen True
 
