@@ -23,13 +23,13 @@ data Event    = On { eSrt :: InsDel
                    , eMhp :: Morphism
                    }
                   deriving Eq
-data PAclause = Choice { paCls:: [PAclause]
-                       }
-              | All { paCls   :: [PAclause]}
-              | Do  { paSrt   :: InsDel         -- do Insert or Delete
-                    , paTo    :: Expression     -- into toExpr    or from toExpr
-                    , paDelta ::Expression     -- delta
+data PAclause = Choice { paCls :: [PAclause] }
+              | All { paCls    :: [PAclause] }
+              | Do  { paSrt    :: InsDel         -- do Insert or Delete
+                    , paTo     :: Expression     -- into toExpr    or from toExpr
+                    , paDelta  :: Expression     -- delta
                     }
+              | NoOp
               | New { paNew :: Concept }        -- make a new instance of type c
               | Rmv { paNew :: Concept }        -- remove an instance of type c
                   deriving (Eq, Show)

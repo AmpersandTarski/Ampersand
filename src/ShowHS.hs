@@ -4,10 +4,11 @@ where
 
    import Typology              (Inheritance(..))
    import Data.Plug
-   import FspecDef              (Fspc(..)
-                                ,Fservice(..)
-                                ,FSid(..)
-                                ,Fidentified(..))
+   import FspecDef              ( Fspc(..)
+                                , Fservice(..) , Field(..)
+                                , FSid(..)
+                                , Fidentified(..)
+                                )
    import Strings               (chain)
    import Adl
    import UU_Scanner            (Pos(..))
@@ -45,7 +46,7 @@ where
     showHS indent = chain "\n".map (showHS indent)
 
    instance ShowHS a => ShowHS (Inheritance a) where
-    showHSname i = error ("(module CC_aux) every inheritance is anonymous with respect to showHS. Detected at: "++ showHS "" i)
+    showHSname i = error ("(module ShowHS) every inheritance is anonymous with respect to showHS. Detected at: "++ showHS "" i)
     showHS indent (Isa ts cs) = "Isa "++showL ["("++showHS "" g++","++showHS "" s++")"|(g,s)<-ts] ++indent++"    "++ showL (map (showHS "") cs)
 
 
@@ -177,12 +178,12 @@ where
                   ,", themes   = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
                                            -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
                                    -- "["++chain "," (map (showHS "") (themes fspec))++"]" 
-                  ,", datasets = "++ "[ "++chain (indentA++", ") (map showHSname (datasets fspec))++indentA++"]" 
-                  ,", vplugs   = "++ "[ "++chain (indentA++", ") (map showHSname (vplugs fspec))++indentA++"]"
-                  ,", plugs    = "++ "[ "++chain (indentA++", ") (map showHSname (plugs fspec))++indentA++"]"
+                  ,", datasets = " ++ "[ "++chain (indentA++", ") (map showHSname (datasets fspec))++indentA++"]" 
+                  ,", vplugs   = " ++ "[ "++chain (indentA++", ") (map showHSname (vplugs fspec))++indentA++"]"
+                  ,", plugs    = " ++ "[ "++chain (indentA++", ") (map showHSname (plugs fspec))++indentA++"]"
                   ,", serviceS = serviceS'"
                   ,", serviceG = serviceG'"
-                  ,", services = services'"
+                  ,", services = " ++ "[ "++chain (indentA++", ") (map showHSname (FspecDef.services fspec))++indentA++"]"
                   ,", vrules   = " ++ "[ "++chain (indentA++", ") (map showHSname (vrules fspec))++indentA++"]"
                   ,", ecaRules = " ++ "[ "++chain (indentA++", ") (map showHSname (ecaRules fspec))++indentA++"]"
                   ,", vrels    = " ++ "[ "++chain (indentA++", ") (map showHSname (vrels  fspec))++indentA++"]"
@@ -204,11 +205,8 @@ where
        indent++" serviceS' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (serviceS fspec))++indentB++"]"++
         "\n -- ***Services G***: "++
        indent++" serviceG' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (serviceG fspec))++indentB++"]"++
-        "\n -- ***Services***: "++
-       indent++" services' = "++"[ "++chain (indentB++", ") (map (showHS indentB) (FspecDef.services fspec))++indentB++"]"++
 
--- WAAROM?  Stef, je had hier ooit de intentie om de verschillende soorten servicedefinities apart op te sommen. Echter, dan moeten ze wel te onderscheiden zijn. de namen moeten
---          dan ook netjes uniek worden gemaakt. Dat is nu nog niet het geval. Is dat nodig/ wenselijk? Waarom wel, waarom niet?
+-- WAAROM?  staan hier verschillende lijstjes met services?
 -- DAAROM!  Een ADL-engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
 --          alle services met de hand te verzinnen.
 --          Je kunt natuurlijk ook een services-generator aan het werk zetten, die een aantal services klaarzet bij wijze
@@ -216,7 +214,6 @@ where
 --          Door de gegenereerde services af te drukken, kun je dus heel snel ADL-sourcecode maken met correct-vertaalbare services.
 --          Heb je eenmaal een goed werkend pakket services, dan wil je wellicht alleen de door jezelf gespecificeerde services
 --          gebruiken. Dat gebeurt in serviceS.
---          De functie services is oude meuk; het definieert CRUD-services voor alle concepten, geloof ik.
 
 --        "\n -- ***Service definitions (both serviceS and serviceG, but each one exactly once. ***: "++  
 --       (if null 
@@ -224,11 +221,18 @@ where
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
         
-       (if null (vrules   fspec ) then "" else "\n -- ***Declarations of RULES***: "++concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- vrules   fspec ]++"\n")++
-        
-       (if null (ecaRules   fspec ) then "" else "\n -- ***Declarations of ECArules***: "++concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<- ecaRules   fspec ]++"\n")++
-        
-       (if null (vrels fspec)     then "" else "\n -- ***Declarations OF RELATIONS***: "++concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
+       (if null (FspecDef.services fspec ) then "" else
+        "\n -- ***Declarations of Services ***: "++
+        concat [indent++" "++showHSname s++indent++"  = "++showHS (indent++"    ") s|s<-FspecDef.services fspec ]++"\n")++
+       (if null (vrules   fspec ) then "" else
+        "\n -- ***Declarations of RULES ***: "++
+        concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-vrules   fspec ]++"\n")++        
+       (if null (ecaRules fspec ) then "" else
+        "\n -- ***Declarations of ECArules ***: "++
+        concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-ecaRules fspec ]++"\n")++        
+       (if null (vrels fspec)     then "" else
+        "\n -- ***Declarations OF RELATIONS ***: "++
+        concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- vrels fspec]++"\n")++
 --        "\n -- ***PATTERNS***: "++
 ----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
         "\n"
@@ -243,10 +247,41 @@ where
     showHSname fservice = typ fservice ++ "_" ++ showHSname (fsid fservice) --showHS "" (pfixFSid "f_Obj_" (fsid fservice))
     showHS indent fservice
      = "Fservice "
-       ++ objdefSection
-       ++indent++" -- Einde Fservice "++showHSname (objectdef fservice)
-        where
-          objdefSection   = indent++"     ("++showHS (indent++"      ") (objectdef fservice)++")"
+       ++ indent++"     ("++showHS (indent++"      ") (fsv_objectdef fservice)++")"
+       ++ indent++"     [ "++chain (indent++"     , ") (map (showHS (indent++"       ")) (fsv_rels     fservice))++indent++"     ]"
+       ++ indent++"     [ "++chain (indent++"     , ")
+          [showHSname r ++ if null (explain r) then "" else "    -- " ++ explain r| r<-fsv_rules fservice]
+          ++indent++"     ]"
+       ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_ecaRules fservice))++indent++"     ]"
+       ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_signals  fservice))++indent++"     ]"
+       ++ indent++"     [ "++chain (indent++"     , ") (map (showHS (indent++"       ")) (fsv_fields  fservice))++indent++"     ]"
+       ++ (if null (fsv_ecaRules fservice ) then "" else
+           indent++"where  -- definitions of ECA-rules for service: "++showHSname (fsv_objectdef fservice)++
+           concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-fsv_ecaRules fservice ]++"\n")
+       ++ indent++" -- Einde Fservice "++showHSname (fsv_objectdef fservice)
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: Field                         ***
+-- \***********************************************************************
+
+   instance ShowHS Field where
+    showHSname field = "fld_" ++ (fld_name field)
+    showHS indent field
+     = "Att "++       "{ fld_name     = "++                     show (fld_name     field)
+       ++ indent++"    , fld_expr     = "++showHS (indent++"      ") (fld_expr     field)
+       ++ ( if fld_editable field
+            then indent++"    , fld_mph      = "++showHS (indent++"      ") (fld_mph     field)
+            else "" )
+       ++ indent++"    , fld_editable = "++                     show (fld_editable field)
+       ++ indent++"    , fld_list     = "++                     show (fld_list     field)
+       ++ indent++"    , fld_must     = "++                     show (fld_must     field)
+       ++ indent++"    , fld_new      = "++                     show (fld_new      field)
+       ++ (if null (fld_fields field) then indent++"    , fld_fields   = []" else
+           indent++"    , fld_fields   = [ "
+           ++ chain (indent++"                     , ")
+                    (map (showHS (indent++"                       ")) (fld_fields field))
+           ++ indent++"                     ]")
+       ++ indent++"    }"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
@@ -262,7 +297,7 @@ where
 -- \***********************************************************************
 
 --   instance ShowHS Architecture where
---    showHSname _ = error ("(module CC_aux) an architecture is anonymous with respect to showHS.")
+--    showHSname _ = error ("(module ShowHS) an architecture is anonymous with respect to showHS.")
 --    showHS indent arch = concat (map (showHS indent) (archContexts arch))
 
 -- \***********************************************************************
@@ -427,8 +462,8 @@ where
     showHS indent (Tc f)   = showHS indent f
     showHS _ (F [])   = "F [] <Id>"
     showHS _ (Fd [])  = "Fd [] <nId>"
-    showHS _ (Fu [])  = "Fu [] <False>"
-    showHS _ (Fi [])  = "Fi [] <True>"
+    showHS _ (Fu [])  = "Fu [] {- False -}"
+    showHS _ (Fi [])  = "Fi [] {- True -}"
     showHS indent (F [t])  = "F ["++showHS (indent++"   ") t++"]"
     showHS indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS (indent++"    ") t| t<-ts]++indent++"  ]"
     showHS indent (Fd [t]) = "Fd ["++showHS (indent++"    ") t++"]"
@@ -454,7 +489,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Morphism where
-    showHSname mph = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
+    showHSname mph = error ("(module showHS) Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
     showHS _ mph 
        = case mph of
             Mph{} -> "Mph "++show (mphnm mph)++" "++showPos++" "++showAtts
@@ -517,7 +552,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Concept where
-    showHSname c = error ("(module CC_aux: showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
+    showHSname c = error ("(module showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
     showHS _ c = case c of
                        C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
                        S        -> "S "
@@ -533,7 +568,7 @@ where
 -- \***********************************************************************
    
    instance ShowHS Prop where
-    showHSname p = error ("(module CC_aux) should not showHS the name of multiplicities (Prop): "++showHS "" p)
+    showHSname p = error ("(module ShowHS) should not showHS the name of multiplicities (Prop): "++showHS "" p)
     showHS _ Uni = "Uni"
     showHS _ Inj = "Inj"
     showHS _ Sur = "Sur"
@@ -549,7 +584,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS FilePos where
-    showHSname p = error ("(module CC_aux: showHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
+    showHSname p = error ("(module ShowHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
     showHS _ (FilePos (fn,Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
     showHS _ Nowhere

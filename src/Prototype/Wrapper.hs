@@ -221,10 +221,16 @@
                       (path ++".'.$i"++show depth++".'") cls att
             atnm = if "$"++phpIdentifier (name att)==var then "$v"++show depth else "$"++phpIdentifier (name att)
         attContent  var depth path cls att | objats att==[]
-         = ([ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" ]
-           ++ content ++
-           [ "echo '</SPAN>';" ],newBlocks)
+         = if Tot `elem` multiplicities (objctx att)
+           then ([ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" ]
+                ++ content ++ [ "echo '</SPAN>';" ],newBlocks)
+           else ([ "if (isset("++var++")){"
+                 , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"
+                 , "  echo '</DIV>';"] ++ indentBlock 2 content ++
+                 [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
+                 ],newBlocks)
            where (content,newBlocks) = uniAtt (var) depth path cls att
+                 spanordiv = if Tot `elem` multiplicities (objctx att) then "SPAN" else "DIV"
         attContent  var depth path cls att | (Tot `elem` multiplicities(objctx att))
          = ([ "echo '<DIV CLASS=\"UI"++cls++"\" ID=\""++path++"\">';" ]
            ++ indentBlock 2 content ++

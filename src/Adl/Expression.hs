@@ -12,7 +12,7 @@ where
    import Collection                  (Collection (..))
    import Strings                     (chain)
    import CommonClasses               (Identified(..), ABoolAlg(..))
-   import Auxiliaries                 (eqClass)
+   import Auxiliaries                 (eqClass, sord')
 
    type Expressions = [Expression]
    data Expression  = Tm { m :: Morphism}     -- ^ simple morphism, possibly conversed     ~
@@ -32,8 +32,8 @@ where
    instance Eq Expression where
     F  ts == F  ts' = ts==ts'
     Fd ts == Fd ts' = ts==ts'
-    Fu fs == Fu fs' = rd fs==rd fs'
-    Fi fs == Fi fs' = rd fs==rd fs'
+    Fu fs == Fu fs' = sord' show fs==sord' show fs'
+    Fi fs == Fi fs' = sord' show fs==sord' show fs'
     Cp expr  == Cp expr'  = expr==expr'
     K0 expr  == K0 expr'  = expr==expr'
     K1 expr  == K1 expr'  = expr==expr'

@@ -7,16 +7,19 @@ module Calc (   deriveProofs
               , rClause
               , makeRule
               , doClause
+              , filterPA
               , simplPAclause
+              , assembleClauses
               , informalRule ) 
   where 
 
-   import Collection         (Collection (uni,isc,rd))
+   import Collection         (Collection (uni,isc,rd,(>-)))
    import Auxiliaries        (sort',eqCl,commaEng,elem')
    import Adl
+   import Data.Fspec
    import FspecDef           (Fspc,vrules,chain,serviceS,showL)
-   import Adl.ECArule        (ECArule(..),Event(..),InsDel(..),PAclause(..))
-   import ShowADL            (showADL)
+   import Adl.ECArule        (InsDel(..),ECArule(..),Event(..),PAclause(..))
+   import ShowADL            (showADL,showADLcode)
    import ShowHS             (showHS)
    import ShowSQL            (showSQL)
    import CommonClasses      (ABoolAlg(..))
@@ -61,34 +64,86 @@ module Calc (   deriveProofs
                         (computeOrder hcs "DELETE FROM" (Isn c c:map makeDeclaration (mors o)))++          -- taken from phpCodeEntDelete
                        "\n"
                       | o<-serviceS fSpec, c<-[concept o]]++
+      "\n--------------\n"++
+      "Analyzing services: \n     "++
+      chain "\n     " [analyseService fSpec o| o<-serviceG fSpec]++
       "\n--------------\n"
       where
        hcs = [hc| rule<-vrules fSpec, hc<-triggers rule ]
        condNull header fold f xs = if null xs then "" else header++fold (map f xs)
 
 
+-- assembleClauses :: [Expression] -> [Expression]
+-- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
+-- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
+-- assembleClauses levert altijd een disjunctieve normaalvorm op.
+   assembleClauses :: [Expression] -> [Expression]
+   assembleClauses clauses
+    = rd ([ disjNF (Fu[antecedent (head cs), Fi (map consequent cs)]) | cs<-antcEq, length cs>1] ++
+          [ disjNF (Fu[Fi (map antecedent cs), consequent (head cs)]) | cs<-cseqEq, length cs>1]) ++
+      [ c| [c]<-antcEq, [c] `elem` cseqEq]
+      where
+       antcEq = eqCl (antecedent) clauses
+       cseqEq = eqCl (consequent) clauses
+       antecedent (Fu fs) = Fu (sort' (showHS "") [f| f<-fs, isNeg f])
+       antecedent e = antecedent (disjNF e)
+       consequent (Fu fs) = Fu (sort' (showHS "") [f| f<-fs, isPos f])
+       consequent e = consequent (disjNF e)
 
-
---   delMors :: Context -> Concept -> [Morphism]
---   delMors context e = [m| m<-rd (ms++[ m| m<-rd (ms'++map flp ms'), sur (multiplicities m)]), source m == e]
---    where ms' = mors (rules context)
---          ms = rd [ if null (morlist term) then error "Module Calc: head error 1" else
---                    head (morlist term)
---                  | rule<-rules context
---                  , conjunct<-conjuncts rule
---                  , Fu terms<-ilClauses conjunct
---                  , F ts<-terms, ts'<-[[t| t<-ts, length (morlist t)==1]]
---                  , if null ts' then error(" module Calc "++show (nr rule)++" ("++show (pos rule)++") in "++showADL rule++"\nterms = "++showHS "" (Fu terms)++"\nts = "++showHS "" (F ts)) else True
---                  , term<-[flp (head ts'), last ts']--, term `elem` r_cpu rule
---                  ]
-
---   delFrs :: Context -> Concept -> [Rule]
---   delFrs context e
---        = [ makeRule rule (Fu terms)
---          | rule<-rules context
---          , conjunct<-conjuncts rule
---          , clause@(Fu terms)<-allClauses conjunct
---          , and [idsOnly t| Cp t<-terms], source clause==e]
+-- analyseService :: Fspc -> ObjectDef -> String
+-- Deze functie is bedoeld om te bedenken hoe services moeten worden afgeleid uit een vers vertaalde ObjectDef.
+-- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
+   analyseService :: Fspc -> ObjectDef -> String
+   analyseService fSpec obj
+    = "\nService "++ objnm obj++"("++chain ", " [showADL m++":"++name (target m)| m<-rels]++")\n"++
+      " - The parameters correspond to editable fields in a UI-service.\n   "++
+      showADLcode fSpec obj++"\n"++
+      "\n Various events in this service trigger the following behaviour:\n"++
+      chain "\n" [ showSQL ( ECA (On ev m) action 0)
+                 | m<-rd (map makeInline rels)
+                 , ev<-[Ins,Del]
+                 , action<-[ All [ doCode visible Ins r viols
+                                 | r<-assembleClauses [clause| rule<-invariants     
+                                                             , conjunct<-conjuncts rule     
+                                                             , makeInline m `elem` map makeInline (mors conjunct)     
+                                                             , clause<-allClauses conjunct    
+                                                      ]     
+                                 , (not.null.lambda ev (Tm m)) r     
+                                 , not (checkMono r ev m)     
+                                 , r'<-[subst (Tm m,actSem ev (Tm m) (delta (sign m))) r]     
+                                 , (not.isTrue.conjNF) (Fu[Cp r,r']) -- the system must act to restore invariance     
+                                 , viols<-[conjNF (Cp r')]     
+                                 , True ]     -- (isTrue.conjNF) (Fu[Cp r,r'])     
+                           ]
+                 , action/=All [], action/=Choice []
+                 ]++"\n"++
+      " - Invariants:\n   "++chain "\n   " [showADLcode fSpec rule| rule<-invariants]++"\n"++
+      " - Clauses:\n   "++
+      (chain "\n   " . map (showADLcode fSpec) . assembleClauses)
+        [clause| rule<-invariants, conjunct<-conjuncts rule, clause<-allClauses conjunct]++"\n"
+    where
+        visible = rd (map makeInline rels++map (mIs.target) rels)
+        rels = rd (recur obj)
+         where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
+        invariants = [rule| rule<-vrules fSpec, not (null (map makeInline (mors rule) `isc` map makeInline (rels)))]
+        fields     = map fld (objats obj)
+        fld obj
+         = Att { fld_name     = objnm obj
+               , fld_expr     = objctx obj
+               , fld_mph      = if editable (objctx obj)
+                                then editMph (objctx obj)
+                                else error("Fatal (module Calc): cannot edit a composite expression: "++show (objctx obj))
+               , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
+               , fld_list     = not (Uni `elem` multiplicities (objctx obj))   -- can there be multiple values in this field?
+               , fld_must     = Tot `elem` multiplicities (objctx obj)         -- is this field obligatory?
+               , fld_new      = True                                           -- can new elements be filled in? (if no, only existing elements can be selected)
+               , fld_fields   = map fld (objats obj)
+               }
+        editable (Tm m@Mph{}) = True
+        editable _            = False
+        editMph (Tm m@Mph{}) = m
+        editMph e            = error("Fatal (module Calc): cannot determine an editable declaration in a composite expression: "++show e)
+     
 
    proof :: [Rule] -> String
    proof rs
@@ -130,6 +185,8 @@ module Calc (   deriveProofs
                                             showADL r++"["++showADL m'++":="++showADL (actSem ev (Tm m') (delta (sign m')))++"] = r'\n"++
                                             "r'    = "++(showProof.cfProof) r'++"\n"++
                                             "viols = r'-"++(showProof.cfProof) (Cp r')++"\n"++
+                                            "violations, considering that the valuation of "++showADL m'++" has just been changed to "++showADL (actSem ev (Tm m') (delta (sign m')))++
+                                            "            "++(showProof.cfProof) (Cp r)++"\n"++
                                       --      "reaction? evaluate r -: r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
                                       --         (showProof.cfProof) (Fu[Cp r,r'])++"\n"++
                                       --      "delta: r-/\\r' = "++(showProof.cfProof) (Fi[notCp r,r'])++
@@ -144,8 +201,7 @@ module Calc (   deriveProofs
                                                   then "A reaction is not required, because  r -: r'. Proof:"++(showProof.cfProof) (Fu[Cp r,r'])++"\n"
                                                   else if checkMono r ev m'
                                                   then "A reaction is not required, because  r -: r'. Proof:"{-++(showProof.derivMono r ev) m'-}++"NIET TYPECORRECT: (showProof.derivMono r ev) m'"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
-                                                  else "The correct reaction on this event is\n"++showSQL (ECA (On ev m') (doCode viols Ins r') 0)++"\n"++
-                                                       "\ndoClause :\n"++showSQL (ECA (On ev m') (doCode (Fi [Cp r,nr']) Ins r) 0)
+                                                  else "An appropriate reaction on this event is\n"++showSQL (ECA (On ev m') (doCode (rd (map makeInline (mors r))) Ins r viols) 0)
                                             )
                                           | m'<-rd [m'|x<-mors r, m'<-[x,flp x], inline m', not (isIdent m')] -- TODO: include proofs that allow: isIdent m'
                                           , ev<-[Ins,Del]
@@ -159,9 +215,6 @@ module Calc (   deriveProofs
                          chain "\n     " ([ informalRule {-(declarations frExpr)-} hc | hc<-triggers rule]), "")
                      ] where prf = nfProof (normExpr rule)
                              cfProof expr = nfPr True False (simplify expr)
-                             checkMono expr ev m' = simplify expr == simplify (antecedent conclusion) &&
-                                                    simplify (subst (Tm m',actSem ev (Tm m') (delta (sign m'))) expr) == simplify (consequent conclusion)
-                               where (conclusion,_,_) = last (derivMono expr ev m')
           Sg{} ->    [ (showADL rule          , if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
                      , (showProof prf      , "")
                      ]++
@@ -192,8 +245,14 @@ module Calc (   deriveProofs
 --             "\ntoExpr `elem` r_cpu rule: "++show ((map name.morlist) toExpr `elem` map (map name.morlist) (r_cpu rule))
 --           | (CR (_, _, _, toExpr, _, _))<-hornCs rule clause ]
 
-   doClause :: Expression -> [Int->ECArule]
-   doClause r
+   checkMono expr ev m' = simplify expr == simplify (antecedent conclusion) &&
+                          simplify (subst (Tm m',actSem ev (Tm m') (delta (sign m'))) expr) ==
+                          simplify (consequent conclusion)
+     where (conclusion,_,_) = last (derivMono expr ev m')
+
+-- doClause produces the ECA rules for a given expression, restricted to the ones that change a predefined set of relations (the editable morphisms)
+   doClause :: Morphisms -> Expression -> [Int->ECArule]
+   doClause editableMorphisms r@(Fu fs)
     = {- if error("Diagnostic: \n"++
                showADL r++"\n"++
                showHS "   " r++"\n"++
@@ -205,13 +264,18 @@ module Calc (   deriveProofs
                                                 ])++"\n"
               ) then res else -} res
     where
-     res = -- Example: [ ECA (On Del (V [] (sign to))) (doCode (Cp r) Ins to) | null [t| t<-ts, isNeg t],  to<-[t| t<-ts, isPos t]]++
-           [ ECA (On ev m') (doCode phi Ins r)
-           | m'<-rd [m'|x<-mors r, m'<-[x,flp x], inline m']
+     res = [ ECA (On ev m') (doCode editableMorphisms Ins r phi)
+           | m'<-rd [makeInline m|m<-editableMorphisms]
            , ev<-[Ins,Del]
-           , r'<-[(conjNF.subst (Tm m',actSem ev (Tm m') (delta (sign m'))) ) r]
+           , case ev of
+              Ins -> let antc = Fu [f| f<-fs, isNeg f] in
+                     disjNF antc == Tm m' || disjNF antc == flp (Tm m')
+              Del -> let cons = Fu [f| f<-fs, isPos f] in
+                     disjNF cons == Tm m' || disjNF cons == flp (Tm m')
+           , r'<-[(subst (Tm m',actSem ev (Tm m') (delta (sign m'))) ) r]
            , phi<-[Fi [Cp r,r']]
         {- , (not.isTrue) r' -} ]
+   doClause editableMorphisms arg = error ("Fatal (module Calc): function doClause must be called in disjunctive normal form. However, it was called with "++showADL arg)
 
    actSem :: InsDel -> Expression -> Expression -> Expression
    actSem Ins e' delta' = Fu[e',delta']
@@ -246,42 +310,70 @@ module Calc (   deriveProofs
                                    , deciss  = True
                                    }))
 
--- TODO: De volgende code voor simplPAclause stinkt. Opzoeken: procesalgebra herschrijfregels.
+-- Retain only clauses that change relations that are editable within this service
+   filterPA :: [Morphism]  -- the list of editable relations
+            -> PAclause    -- the clause
+            -> PAclause    -- the same clause, but with only those actions that change relations that are editable within this service
+   filterPA ms = simplifyPA (\e->null ((rd.map makeInline.mors.paTo) e >- ms))
 
    simplPAclause :: PAclause -> PAclause
-   simplPAclause (Choice [c])             = simplPAclause c
-   simplPAclause (Choice [])              = Choice []
--- ?   simplPAclause (Choice (All []:cs))  = simplPAclause (Choice cs) -- TODO: wat moet er in dit geval gebeuren?
-   simplPAclause (Choice (Choice cs:cs')) = simplPAclause (Choice (cs++cs'))
-   simplPAclause (Choice (c:cs))          = f (simplPAclause (Choice cs))
-                                            where f (Choice [])  = Choice []
-                                                  f (Choice cs') = Choice (simplPAclause c:cs')
-                                                  f _            = error ("Module Calc: something funny in simplPAclause (Choice ("++showL(map showSQL (c:cs))++"))")
-   simplPAclause (All [c])                = simplPAclause c
-   simplPAclause (All [])                 = All []
-   simplPAclause (All (Choice []:_ ))     = Choice []
-   simplPAclause (All (All cs:cs'))       = simplPAclause (All (cs++cs'))
-   simplPAclause (All (c:cs))             = f (simplPAclause (All cs))
-                                            where f (Choice []) = Choice []
-                                                  f (All cs')   = All (c:cs')
-                                                  f _           = error ("Module Calc: something funny in simplPAclause (All ("++showL(map showSQL (c:cs))++"))")
-   simplPAclause c                        = c
+   simplPAclause = simplifyPA (\e->True)
+
+   simplifyPA :: (PAclause->Bool) -> PAclause -> PAclause
+   simplifyPA leafcondition c -- = let sc = fPA c in head ([x| e@(All [x])<-[sc]]++[x| e@(Choice [x])<-[sc]]++[sc])
+    = case fPA c of
+       e@(All [])       -> NoOp
+       e@(All [x])      -> x
+       e@(Choice [])    -> NoOp
+       e@(Choice [x])   -> x
+       e                -> e
+    where
+      fPA (Choice [])  = NoOp
+      fPA (Choice [c]) = fPA c
+      fPA (Choice cs)  = Choice [e| c<-cs
+                                  , e<-case fPA c of
+                                        Choice xs  -> xs
+                                        All [x]    -> [x]
+                                        e@(All xs) -> [e]
+                                        e@Do{}     -> [e| leafcondition e]
+                                        NoOp       -> []
+                                  , e/=NoOp
+                                ]
+      fPA (All [])     = NoOp
+      fPA (All [c])    = fPA c
+      fPA (All cs)     = All    [e|c<-cs, sc<-[fPA c], sc/=NoOp
+                                  , e<-[x| e@(Choice [x])<-[sc]]++
+                                       [e| e@(Choice xs) <-[sc], length xs>1]++
+                                       [x| e@(All xs)    <-[sc], x<-xs]++
+                                       [e| e@Do{}<-[sc], leafcondition e]
+                                ]
+      fPA  c           = c
+
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
-   doCode :: Expression -> InsDel -> Expression -> PAclause
-   doCode delta1 tOp' expr1 = {- simplPAclause -} (doCod delta1 tOp' expr1)
+   doCode :: Morphisms    -- the morphisms that may be changed
+          -> InsDel
+          -> Expression
+          -> Expression
+          -> PAclause
+   doCode editables tOp' expr1 delta1 = simplPAclause (doCod delta1 tOp' expr1)
     where
       doCod deltaX tOp exprX =
         case (tOp, exprX) of
           (_ ,  Fu [])   -> error ("!Fail (Module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fu [])++",\n"++
-                                     "within function doCode ("++showADL delta1++") "++show tOp'++" ("++showHS "" (F [])++").")
+                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
           (_ ,  Fi [])   -> error ("!Fail (Module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fi [])++",\n"++
-                                     "within function doCode ("++showADL delta1++") "++show tOp'++" ("++showHS "" (F [])++").")
+                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
           (_ ,  F [])    -> error ("!Fail (Module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
-                                     "within function doCode ("++showADL delta1++") "++show tOp'++" ("++showHS "" (F [])++").")
-          (_ ,  F [t])   -> doCod deltaX Ins t
+                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
+          (_ ,  Fd [])   -> error ("!Fail (Module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
+                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
+          (_ ,  Fu [t])  -> doCod deltaX tOp t
+          (_ ,  Fi [t])  -> doCod deltaX tOp t
+          (_ ,  F [t])   -> doCod deltaX tOp t
+          (_ ,  Fd [t])  -> doCod deltaX tOp t
           (Ins, Cp x)    -> doCod deltaX Del x
-          (Ins, Fu fs)   -> Choice [ doCod deltaX Ins f | f<-fs ]
+          (Ins, Fu fs)   -> Choice [ doCod deltaX Ins f | f<-fs, not (f==expr1 && Ins/=tOp') ] -- the filter prevents self compensating PA-clauses.
           (Ins, Fi fs)   -> All    [ doCod deltaX Ins f | f<-fs ]
           (Ins, F ts)    -> All [ c | (l,r)<-chop ts 
                                     , one1 <- [Tm (Mph "One" Nowhere [] (source (F r),target (F l)) True             -- Stef, WAAROM? gebruik je hier niet Mp1{}?
@@ -303,19 +395,9 @@ module Calc (   deriveProofs
           (_  , Fd ts)   -> doCod deltaX tOp (Cp (F (map Cp ts)))
           (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x
           (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x
-          (_  , Tm _)    -> Do tOp exprX deltaX
---          (_  , Tm m')    -> if name m'=="Delta" then Choice [] else
---                                if name m'=="One"
---                                then New (source m')
---                                else if tOp==Ins 
---                                     then Do Ins (Tm m') (f Ins (conjNF (Fi [Cp (Tm m'),deltaX])))
---                                     else Do Del (Tm m') (f Del (conjNF (Fi [    Tm m' ,deltaX])))
---                                where -- De functie f versimpelt de uitdrukking (en dus de SELECT expressie), maar nu moet wel INSERT IGNORE gebruikt worden (DELETE is al IGNORE)
---                                  f Ins (Fi fs) = simplify (Fi [f'| f'<-fs, not (isNeg f' && notCp f'==Tm m')])
---                                  f Del (Fi fs) = simplify (Fi [f'| f'<-fs, not (isPos f' &&      (f'==Tm m' || (isIdent f' && isIdent m')) )])
---                                  f _ e' = e'
-          (_ , Tc _)     -> error ("!Fail (Module Calc): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showHS "" exprX++"),\n"++
-                                   "within function doCode ("++showADL delta1++") "++show tOp'++" ("++showHS "" exprX++").")
+          (_  , Tm m)    -> if m `elem` editables then Do tOp exprX deltaX else NoOp
+          (_ , _)        -> error ("!Fail (Module Calc): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showHS "" exprX++"),\n"++
+                                   "within function doCode "++show tOp'++" ("++showHS "" exprX++") ("++showADL delta1++").")
       delta3 = Fi[delta1,Cp expr1]
 
                                              
@@ -729,84 +811,6 @@ module Calc (   deriveProofs
              
 
 
-
-
---       lam tOp e (F [f])   = lam tOp e f
---       lam tOp e f@(F fs)  | e==f                = [[(e,(\x->x),[],"")]]
---                           | and [isNeg f|f<-fs] = [(f,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg f) f],"==") :prf| prf<-lam tOp e (deMrg f)] -- isNeg is nog niet helemaal correct.
---                           | or[null p|p<-fPrfs] = []
---                           | otherwise           = [(f,(\x->f),[derivtext tOp "mono" (first lc) f],"<--"): lc]
---                             where fPrfs = [lam tOp e f|f<-fs, isVar f e]
---                                   vars  = map head fPrfs -- wordt niet aangeroepen als er een lege afleiding in fPrfs zit
---                                   deMrg (F fs) = notCp (Fd [notCp f| f<-fs])
---                                   lc    = longstcomn vars++concat (drop (length rc-1) (sort' length rc))
---                                   rc    = remainders vars vars
---       lam tOp e  (Fu [f]) = lam tOp e f
---       lam tOp e f@(Fu fs) | e==f                = [[(e,(\x->x),[],"")]]
---                           | length const>0      = [(f,(\x->f),      [derivtext tOp "mono" inter f],"<--") :prf     | prf<-lam tOp e inter]
---                           | and [isNeg f|f<-fs] = [(f,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg f) f],"==") :prf| prf<-lam tOp e (deMrg f)]
---                           | or[null p|p<-fPrfs] = []
---                           | otherwise           = [(f,(\x->f),      [derivtext tOp "mono" (first lc) f],"<--") : lc]
---                             where fPrfs = [lam tOp e f|f<-fs, isVar f e]
---                                   vars  = map head fPrfs
---                                   const = [f|f<-fs, isConst f e]
---                                   inter = Fu [f|f<-fs, isVar f e]
---                                   deMrg (Fu fs) = notCp (Fi [notCp f| f<-fs])
---                                   lc    = longstcomn vars++concat (drop (length rc-1) (sort' length rc))
---                                   rc    = remainders vars vars
---
---
---
---
---       lam tOp e (Fd[f])   = lam tOp e f
---       lam tOp e f@(Fd fs) | e==f                = [[(e,(\x->x),[],"")]]
---                           | and [isNeg f|f<-fs] = [(f,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg f) f],"==") :prf| prf<-lam tOp e (deMrg f)] -- isNeg is nog niet helemaal correct.
---                           | or[null p|p<-fPrfs] = []
---                           | otherwise           = [(f,(\x->f),[derivtext tOp "mono" (first lc) f],"<--"): lc]
---                             where fPrfs = [lam tOp e f|f<-fs, isVar f e]
---
---
---
---                                   vars  = map head fPrfs -- wordt niet aangeroepen als er een lege afleiding in fPrfs zit
---                                   deMrg (Fd fs) = notCp (F [notCp f| f<-fs])
---                                   lc    = longstcomn vars++concat (drop (length rc-1) (sort' length rc))
---                                   rc    = remainders vars vars
---       lam tOp e  (Fi [f]) = lam tOp e f
---       lam tOp e f@(Fi fs) | e==f                = [[(e,(\x->x),[],"")]]
---                           | length const>0      = [(f,(\x->f),      [derivtext tOp "mono" inter f],"<--") :prf     | prf<-lam tOp e inter]
---                           | and [isNeg f|f<-fs] = [(f,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg f) f],"==") :prf| prf<-lam tOp e (deMrg f)]
---                           | or[null p|p<-fPrfs] = []
---                           | otherwise           = [(f,(\x->f),      [derivtext tOp "mono" (first lc) f],"<--") : lc]
---                             where fPrfs = [lam tOp e f|f<-fs, isVar f e]
---                                   vars  = map head fPrfs
---                                   const = [f|f<-fs, isConst f e]
---                                   inter = Fi [f|f<-fs, isVar f e]
---                                   deMrg (Fi fs) = notCp (Fu [notCp f| f<-fs])
---                                   lc    = longstcomn vars++concat (drop (length rc-1) (sort' length rc))
---                                   rc    = remainders vars vars
---       lam tOp e f@(K0 x)  = [(f,(\x->K0 x),[derivtext tOp "mono" x f],"<--") :prf   | prf<-lam tOp e x]
---       lam tOp e f@(K1 x)  = [(f,(\x->K1 x),[derivtext tOp "mono" x f],"<--") :prf   | prf<-lam tOp e x]
---       lam tOp e f@(Cp x)  = [(f,(\x->Cp x),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e x]
---       lam tOp e   (Tc x)  = lam tOp e x
---
---
---
---
---
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  --      lam tOp e f       = []
   -- longstcomn determines the longest prefix common to all xs in xss.
        longstcomn xss | or [null xs| xs<-xss]      = []
@@ -828,219 +832,3 @@ module Calc (   deriveProofs
        first ((e'',_,_,_):_) = e''
        first _ = error "Module Calc: wrong pattern in first"
 
-
-
---   normR r@(Ru Truth antc pos cons cpu expla sgn nr pn) = Ru Truth err pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
---    where err = error ("Module Calc: erroneous reference to antc of rule "++showADL r)
---   normR r@(Ru c antc pos cons cpu expla sgn nr pn)   = Ru c (disjNF antc) pos (conjNF cons) (r_cpu r) expla sgn nr (r_pat r)
---   normR r@(Sg p rule expla sgn nr pn signal)         = Sg p (normR rule) expla sgn nr (r_pat r) signal
---   normR r@(Gc pos m expr cpu sgn nr pn)              = error "Calc.lhs: normR op glue regel. Gc pos m (conjNF expr) (r_cpu r) sgn nr (r_pat r)"
---
-
-
-
---   unVee (Fi es) | or [ x==Cp y | x<-es, y<-es ] = Cp (v (sign (Fi es)))
---                 | or [ isFalse x | x<-es ]      = Cp (v (sign (Fi es)))
---                 | otherwise                     = Fi [e| e<-es, not (isTrue e)]
---   unVee (Fu es) | or [ x==Cp y | x<-es, y<-es ] = v (sign (Fi es))
---                 | or [ isTrue x | x<-es ]       = v (sign (Fi es))
---                 | otherwise                     = Fu [e| e<-es, not (isFalse e)]
---   unVee x = x
-
-
-
-
-
---   cl::Expression -> Expression
---   cl (Fu [F [t]]) = t
---   cl (Fu rs)
---    | length (eqCl headEq [ts| F ts<-rs])>1 = cr (Fu rs)
---    | otherwise = Fu ([ F ([prefix]++[expr])
---                      | tss  <- eqCl headEq [ts| F ts<-rs], prefix<-take 1 [head ts| ts<-tss, not (null (tail ts))]
---                      , expr <- [cl (Fu [F (tail ts)| ts<-tss, not (null (tail ts))])]
---                      ] ++
---                      [ expr
---                      | tss<-eqCl headEq [ts| F ts<-rs], expr<-take 1 [head ts| ts<-tss, null (tail ts)] ]
---                     )
---                  where headEq x = (showADL (head x),sign (head x))
---   cl (Fi [F [t]]) = t
---   cl (Fi rs)
---    | length (eqCl headEq [ts| F ts<-rs])>1 = cr (Fi rs)
---    | otherwise = Fi ([ F ([prefix]++[expr])
---                      | tss  <- eqCl headEq [ts| F ts<-rs], prefix<-take 1 [head ts| ts<-tss, not (null (tail ts))]
---                      , expr <- [cl (Fi [F (tail ts)| ts<-tss, not (null (tail ts))])]
---                      ] ++
---                      [ expr
---                      | tss<-eqCl headEq [ts| F ts<-rs], expr<-take 1 [head ts| ts<-tss, null (tail ts)] ]
---                     )
---                  where headEq x = (showADL (head x),sign (head x))
-
---   cr::Expression -> Expression
---   cr (Fu [F [t]]) = t
---   cr (Fu rs)
---     = Fu ([ F ([expr]++[postfix])
---           | tss  <- eqCl lastEq [ts| F ts<-rs], postfix<-take 1 [last ts| ts<-tss, not (null (init ts))]
---           , expr <- [cr (Fu [F (init ts)| ts<-tss, not (null (init ts))])]
---           ] ++
---           [ expr
---           | tss<-eqCl lastEq [ts| F ts<-rs], expr<-take 1 [last ts| ts<-tss, null (init ts)] ]
---          )
---       where lastEq x = (showADL (last x),sign (last x))
---   cr (Fi [F [t]]) = t
---   cr (Fi rs)
---     = Fi ([ F ([expr]++[postfix])
---           | tss  <- eqCl lastEq [ts| F ts<-rs], postfix<-take 1 [last ts| ts<-tss, not (null (init ts))]
---           , expr <- [cr (Fi [F (init ts)| ts<-tss, not (null (init ts))])]
---           ] ++
---           [ expr
---           | tss<-eqCl lastEq [ts| F ts<-rs], expr<-take 1 [last ts| ts<-tss, null (init ts)] ]
---          )
---       where lastEq x = (showADL (last x),sign (last x))
-
-
-  {- Wat gebeurt hier precies???
-
-   data Deduction = Deduce Expression DedNode DedNode
-                  | DedAnd Expression DedNode DedNode DedNode
-                  | DedOr  Expression DedNode DedNode DedNode
-                  | Ded0              DedNode DedNode
-                  | Deriv  [Deduction] [DedNode] [DedNode]
-                    deriving Eq
-   data DedNode   = Dn Prop Expression
-   instance Eq DedNode where
-    n==n'= showNode n == showNode n'
-   mults pat = [Dn p (Tm (makeMph d))|d<-declarations pat, p<-multiplicities d]
-
-   showClause :: Expression -> String
-   showClause (Fu terms)
-    = sh "/\\" antc++" -: "++sh "\\/" cons
-      where
-       antc = [t|t<-terms, isNeg t]
-       cons = [t|t<-terms, isPos t]
-       sh str es = chain str (map showADL es)
-   showClause e = error ("(module Calc: function showClause) '"++showADL e++"' has the wrong form and should never occur\nshowHS: "++showHS "" e)
-
-   showMLink (Deduce clause (Dn pl l) (Dn pr r))           = "Deduce ("++showADL clause++")  "++showNode (Dn pl l)++" implies "++showNode (Dn pr r)
-   showMLink (DedAnd clause (Dn pl l) (Dn pr r) (Dn pc c)) = "Deduce ("++showADL clause++")  "++showNode (Dn pl l)++" and "++showNode (Dn pr r)++" implies "++showNode (Dn pc c)
-   showMLink (DedOr  clause (Dn pl l) (Dn pr r) (Dn pc c)) = "Deduce ("++showADL clause++")  "++showNode (Dn pl l)++" or " ++showNode (Dn pr r)++" implies "++showNode (Dn pc c)
-   showMLink (Ded0          (Dn pl l) (Dn pc c))           = "Ded0 "++showNode (Dn pl l)++" implies "++showNode (Dn pc c)
-   showMLink (Deriv clauses fs ts)
-    = "Derivation\n     "++showNode (head (froms (head clauses)))++chain "" [showDer c| c<-clauses]
-      where
-       showDer (Deduce clause (Dn pl l) (Dn pr r))           = "\n  =>  { "++showClause clause++" }\n     "++showNode (Dn pr r)
-       showDer (DedAnd clause (Dn pl l) (Dn pr r) (Dn pc c)) = "\n  =>  { "++showClause clause++" }\n     "++showNode (Dn pc c)
-       showDer (DedOr  clause (Dn pl l) (Dn pr r) (Dn pc c)) = "\n  =>  { "++showClause clause++" }\n     "++showNode (Dn pc c)
-       showDer (Ded0          (Dn pl l) (Dn pc c))           = "\n  =>\n     "++showNode (Dn pc c)
-
-   froms (Deduce clause (Dn pl l) (Dn pr r))           = [Dn pl l]
-   froms (DedAnd clause (Dn pl l) (Dn pr r) (Dn pc c)) = [Dn pl l,Dn pr r]
-   froms (DedOr  clause (Dn pl l) (Dn pr r) (Dn pc c)) = [Dn pl l,Dn pr r]
-   froms (Ded0          (Dn pl l) (Dn pc c))           = [Dn pl l]
-   froms (Deriv clauses fs ts)                         = fs
-   tos (Deduce clause (Dn pl l) (Dn pr r))             = [Dn pr r]
-   tos (DedAnd clause (Dn pl l) (Dn pr r) (Dn pc c))   = [Dn pc c]
-   tos (DedOr  clause (Dn pl l) (Dn pr r) (Dn pc c))   = [Dn pc c]
-   tos (Ded0          (Dn pl l) (Dn pc c))             = [Dn pc c]
-   tos (Deriv clauses fs ts)                           = ts
-   derivLength (Deriv clauses fs ts)                   = sum (map derivLength clauses)
-   derivLength _                                       = 1
-
-   showNode (Dn Uni e) = "univalent("++showADL e++")"
-   showNode (Dn Tot e) = "total("++showADL e++")"
-   showNode (Dn Inj e) = "injective("++showADL e++")"
-   showNode (Dn Sur e) = "surjective("++showADL e++")"
-   showNode (Dn x e) = show x++"("++showADL e++")"
-
-
-
-   deduce :: [Deduction] -> [Deduction]
-   deduce xs
-    = f xs' (rd (concat (map froms xs)) `isc` rd (concat (map tos xs)))
-       where
-        xs' = [ Deriv [d] (froms d) (tos d) | d<-sort' sortCrit xs]
-        f q (n:nodes) = f (q `uni` sort' sortCrit [ Deriv [ded,ded'] [a] [b']
-                                                  | ded <-q, a <-froms ded,  b <-tos ded,  b==n
-                                                  , ded'<-q, a'<-froms ded', b'<-tos ded', a'==n, a/=b']) nodes
-        f q []        = q
-        sortcrit (Dn p e) = (length (morlist e),show p, showADL e)
-        sortCrit d = map sortcrit (tos d++froms d)
-        [] `uni` ds' = ds'
-        ds `uni` []  = ds
-        (d:ds) `uni` (d':ds')
-         | sortCrit d<sortCrit d' = d: ds `uni` (d':ds')
-         | sortCrit d>sortCrit d' = d': (d:ds) `uni` ds'
-         | derivLength d<derivLength d' = d: ds `uni` ds'
-         | otherwise = d': ds `uni` ds'
-
-   type DeduceG = [Deduction]
-   multDerivations :: Language pat => pat -> DeduceG
-   multDerivations pat
-    = [ Deriv (flatten deriv) fs ts
-      | deriv@(Deriv clauses fs ts)<-(deduce.rd.filter uneq) (fliplinks ++ frs)
-      , and[oneMorphism e&&inline m|Dn p e<-fs++ts, m<-morlist e]
-      ]
-      where
-       flatten (Deriv clauses froms tos) = concat (map flatten clauses)
-       flatten d = [d]
-       frs = concat
-             ( [ if idsOnly antc then (if length cons==1 then crule clause (head cons) else []) else
-                 if idsOnly cons then (if length antc==1 then arule clause (head antc) else []) else
-                 [ Deduce clause (Dn Inj (Fu cons)) (Dn Inj (Fu antc))
-                 , Deduce clause (Dn Uni (Fu cons)) (Dn Uni (Fu antc))
-                 , Deduce clause (Dn Tot (Fu antc)) (Dn Tot (Fu cons))
-                 , Deduce clause (Dn Sur (Fu antc)) (Dn Sur (Fu cons))]
-               | rule<-rules pat, conjunct<-conjuncts rule, clause@(Fu terms)<-allClauses conjunct
-               , antc<-[[t|t<-terms, isNeg t]]
-               , cons<-[[t|t<-terms, isPos t]]
-               ])
-       crule clause (F ts) = concat [ [Deduce clause (Dn Inj s) (Dn Tot r), Deduce clause (Dn Uni r) (Dn Sur s)] | (s,r)<-split ts ]
-       arule clause (F ts) = concat [ [Deduce clause (Dn Tot s) (Dn Inj r), Deduce clause (Dn Sur r) (Dn Uni s)] | (s,r)<-split ts ]
-       arule clause x = error ("in module Calc, arule: unexpected pattern: "++showADL x) 
-       split []     = []
-       split [r]    = []
-       split [r,s]  = [(F [r],F [s])]
-       split (r:rs) = (F [r],F rs): [(F (r:r'), F (r:s')) | (F r',F s')<-split rs]
- --      uneq (Deduce clause (Dn pa antc) (Dn pc cons)) = pa/=pc || showADL antc/=showADL cons
-       uneq ded = null (map showNode (froms ded) `isc` map showNode (tos ded))
-       harmonize deduction@(Deduce clause (Dn pa antc) (Dn pc cons))
-        = Deduce clause (Dn pa' antc') (Dn pc' cons')
-          where
-           Dn pa' antc' = if length [a| a<-mors antc, not (inline a)] > length [a| a<-mors antc] `div` 2 
-                          then flip (Dn pa antc)
-                          else Dn pa antc
-           Dn pc' cons' = if length [c| c<-mors cons, not (inline c)] > length [c| c<-mors cons] `div` 2 
-                          then flip (Dn pc cons)
-                          else Dn pc cons
-       flip (Dn p e) = Dn (flipProp p) (flp e)
-       fliplinks :: [Deduction]
-       fliplinks
-        = [ Deduce (Fu [Cp cons, antc']) (Dn pc cons) (Dn pa' antc')
-          | Deduce clause (Dn pa antc) (Dn pc cons)<-frs
-          , Deduce clause' (Dn pa' antc') (Dn pc' cons')<-frs, pc==flipProp pa'&& cons==flp antc'] ++
-          [ Ded0 (flip (Dn pa antc)) (Dn pa antc)
-          | Deduce clause (Dn pa antc) (Dn pc cons)<-frs
-          , length [a| a<-mors antc, not (inline a)] > length [a| a<-mors antc] `div` 2] ++
-          [ Ded0 (Dn pc cons) (flip (Dn pc cons))
-          | Deduce clause (Dn pa antc) (Dn pc cons)<-frs
-          , length [c| c<-mors cons, not (inline c)] > length [c| c<-mors cons] `div` 2]
-  
-   instance Graphic DeduceG where
-    dotGraph context style nm links
-     = "digraph "++show [x|x<-nm,not(isSpace x)]++introG++newline
-             ++ chain newline
-                ( [ line "" (Dn pa antc) (Dn pc cons) | link@(Ded0 (Dn pa antc) (Dn pc cons))<-links]++
-                  [ line (showADL clause) (Dn pa antc) (Dn pc cons) | link@(Deduce clause (Dn pa antc) (Dn pc cons))<-links])
-             ++ "\n   }"
-       where
-         introG = "\n   { bgcolor=transparent"++newline
-               ++ " { node [shape=box,fontsize=18,font=helvetica] "++chain "; " [quote(showNode (Dn p e))| (Dn p e)<-nodes links, oneMorphism e, m<-mors e, inline m, p `elem` multiplicities (makeDeclaration m)]++" }"++newline
-               ++ "node [shape=plaintext,fontsize=18,font=helvetica]"++newline
-               ++ "edge [fontsize=12,arrowsize=0.8]"
-         nodes links = rd ([ Dn pa antc | Deduce clause (Dn pa antc) (Dn pc cons)<-links]++
-                           [ Dn pc cons | Deduce clause (Dn pa antc) (Dn pc cons)<-links])
-         line s p1 p2 = quote (showNode p1) ++ edgearrow ++ quote (showNode p2) ++if null s then "" else " [label="++quote s++"]"
-         --- Nog wat hulpfuncties. Die horen overigens waarschijnlijk niet hier...
-         edgearrow = " -> "
-         newline = "\n   ; "
-         quote s = "\"" ++ s ++ "\" "
-  -}

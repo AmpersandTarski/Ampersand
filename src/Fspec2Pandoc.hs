@@ -38,14 +38,6 @@ render2Pandoc flags customheader pandoc = case fspecFormat flags of
    FPandoc -> prettyPandoc pandoc
    FWord -> let wropts = defaultWriterOptions{writerStandalone=True}
             in writeRTF wropts pandoc
-   --DESCR -> FLatex
-   -- $ writerHeader options $$ extras $$ secnumline $$ verbatim $$ titletext $$ authorstext $$ datetext $$ "\\begin{document}" $$ maketitle $$ "" $$ "\\tableofcontents\n" $$ writerIncludeBefore options $$ main $$ writerIncludeAfter options $$ "\\end{document}"
-   --writerStandalone=True -> writes a header [header=all untill ($$ "\\tableofcontents\n")]
-   --                         writes ($$ "\\end{document}")
-   --writerTableOfContents -> writes ($$ "\\tableofcontents\n")
-   --writerIncludeBefore is empty
-   --writerIncludeAfter is empty
-   --writerNumberSections=True to number all sections (no secnumline)
    FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True,writerNumberSections=True}
              in writeLaTeX wropts pandoc
    FHtml -> writeHtmlString defaultWriterOptions pandoc
@@ -350,7 +342,7 @@ dataAnalysis lev fSpec flags = header ++ daContents
 servicechap :: Int -> Fspc -> Options -> Fservice ->  [Block]
 servicechap lev _ flags svc = header ++ svcContents  --TODO
   where
-  svcname = name (objectdef svc)
+  svcname = name (fsv_objectdef svc)
   header :: [Block]
   header = labeledHeader lev ("chpSvc"++svcname) ("Service: " ++ svcname)
   svcContents :: [Block]

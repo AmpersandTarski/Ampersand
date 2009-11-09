@@ -7,13 +7,12 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module Data.Fspec ( 
-               Fspc(..)
-             , Fservice(..)
-             , FSid(..)
-             , FTheme(..)
-             , WSOperation(..), WSAction(..)
-             )
+module Data.Fspec ( Fspc(..)
+                  , Fservice(..), Field(..)
+                  , FSid(..)
+                  , FTheme(..)
+                  , WSOperation(..), WSAction(..)
+                  )
 where
 import Adl.Pattern                   (Pattern)
 import Adl.Rule                      (Rule(..))
@@ -43,13 +42,29 @@ data Fspc = Fspc  { fsfsid   :: FSid                  -- ^ The name of the speci
                   , violations :: [(Rule,Paire)]
                   }
            
---DESCR -> Fservice is like Fspc only within the scope of one ObjectDef
---         It contains the ObjectDef and precalculated structures
---EXTEND ->, trBoundary :: [Expression]
---         , ecaRules   :: [ECArule] -> see revision around 340
+--DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
+--         All "intelligence" is put in assembling an Fservice.
+--         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
 data Fservice = Fservice 
-                    { objectdef  :: ObjectDef
+                    { fsv_objectdef :: ObjectDef  -- The service declaration that was specified by the programmer,
+                                                  -- and which has been type checked by the compiler.
+                    , fsv_rels      :: [Morphism] -- The declarations that may be changed by the user of this service
+                    , fsv_rules     :: [Rule]     -- The rules that may be affected by this service
+                    , fsv_ecaRules  :: [ECArule]  -- The ECA-rules that may be used by this service to restore invariants.
+                    , fsv_signals   :: [Rule]     -- All signals that are visible in this service
+                    , fsv_fields    :: [Field]    -- All fields/parameters of this service
                     }
+
+data Field    = Att { fld_name      :: String     -- The name of this field
+                    , fld_expr      :: Expression -- The expression by which this field is attached to the service
+                    , fld_mph       :: Morphism   -- The morphism to which the database table is attached.
+                    , fld_editable  :: Bool       -- can this field be changed by the user of this service?
+                    , fld_list      :: Bool       -- can there be multiple values in this field?
+                    , fld_must      :: Bool       -- is this field obligatory?
+                    , fld_new       :: Bool       -- can new elements be filled in? (if no, only existing elements can be selected)
+                    , fld_fields    :: [Field]    -- All fields/parameters of this service
+                    } deriving (Eq, Show)
+
 
 --DESCR -> a theme is dataset service with functions under certain rules
 --         the dataset is identified by one root concept

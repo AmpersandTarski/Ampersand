@@ -187,19 +187,29 @@
       Just fSpec ->  case infertype fSpec (Eeor expr) of
            (_,NoProof (AmbiguousType _ _)) -> mphatson expr
            _ -> expr
+   mapExpr :: (Morphism->Morphism) -> Expression -> Expression
+   mapExpr f expr = case expr of
+      F xs  -> F  [mapExpr f x| x<-xs]
+      Fd xs -> Fd [mapExpr f x| x<-xs]
+      Fu xs -> Fu [mapExpr f x| x<-xs]
+      Fi xs -> Fi [mapExpr f x| x<-xs]
+      Tm mp -> Tm (f mp)
+      Tc x  -> Tc $ mapExpr f x
+      Cp x  -> Cp $ mapExpr f x
+      K0 x  -> K0 $ mapExpr f x
+      K1 x  -> K1 $ mapExpr f x
+
    mphatson :: Expression -> Expression
-   mphatson expr = case expr of
-      F xs -> F $ map mphatson xs
-      Fd xs -> Fd $ map mphatson xs
-      Fu xs -> Fu $ map mphatson xs
-      Fi xs -> Fi $ map mphatson xs
-      Tm mp -> Tm (case mp of
-            Mph{mphats=[], mphtyp=(c1,c2)}->if mphyin mp then mp{mphats=[c1,c2]} else  mp{mphats=[c2,c1]}
-            _ -> mp)
-      Tc x -> Tc $ mphatson x
-      Cp x -> Cp $ mphatson x
-      K0 x -> K0 $ mphatson x
-      K1 x -> K1 $ mphatson x
+   mphatson = mapExpr f
+    where f mp = case mp of
+                 Mph{mphats=[], mphtyp=(c1,c2)}->if mphyin mp then mp{mphats=[c1,c2]} else  mp{mphats=[c2,c1]}
+                 _ -> mp
+
+   mphatsoff :: Expression -> Expression
+   mphatsoff = mapExpr f
+    where f mp = case mp of
+                 Mph{} -> mp{mphats=[]}
+                 _     -> mp
 
    instance PrintADL Rule where
     printadl fSpec i r' = 
@@ -394,23 +404,105 @@
 
    instance ShowADL KeyDef where
     showADL kd 
-    -- Oorspronkelijk: = "KEY "++kdlbl kd++">"++name (target (kdctx kd))++"("++chain "," (map showADL (kdats kd))++")"
      = "KEY "++kdlbl kd
              ++">"++"name (target("++showADL (kdctx kd)++")"
              ++"("++chain "," (map showADL (kdats kd))++")"
     showADLcode fSpec kd 
-    -- Oorspronkelijk: = "KEY "++kdlbl kd++">"++name (target (kdctx kd))++"("++chain "," (map showADLcode fSpec (kdats kd))++")"
      = "KEY "++kdlbl kd
              ++">"++"name (target("++showADLcode fSpec (kdctx kd)++")"
              ++"("++chain "," (map (showADLcode fSpec) (kdats kd))++")"
 
+-- disambiguate :: Fspc -> Expression -> Expression
+-- This function must ensure that an expression, when printed, can be parsed with no ambiguity.
+-- Besides, it must be readable as well.
+   disambiguate :: Fspc -> Expression -> Expression
+   disambiguate fSpec (Tm mph) = Tm mph
+   disambiguate fSpec (Fu fs)  = Fu [disambiguate fSpec f| f<-fs]
+   disambiguate fSpec (Fi fs)  = Fi [disambiguate fSpec f| f<-fs]
+   disambiguate fSpec (Fd [])  = Fd []
+   disambiguate fSpec (Fd [t]) = Fd [disambiguate fSpec t]
+   disambiguate fSpec (Fd ts)  = Fd (disamb fSpec [disambiguate fSpec t| t<-ts])
+   disambiguate fSpec (F [])   = F  []
+   disambiguate fSpec (F [t])  = F  [disambiguate fSpec t]
+   disambiguate fSpec (F ts)   = F  (disamb fSpec [disambiguate fSpec t| t<-ts])
+   disambiguate fSpec (K0 e')  = K0 (disambiguate fSpec e')
+   disambiguate fSpec (K1 e')  = K1 (disambiguate fSpec e')
+   disambiguate fSpec (Cp e')  = Cp (disambiguate fSpec e')
+   disambiguate fSpec (Tc f)   = Tc (disambiguate fSpec f)
+
+-- Disamb disambiguates a list of terms (expressions) that come from an Fd or F expression.
+-- This is done by looking at the concept sets between two adjacent terms.
+   disamb :: Fspc -> [Expression] -> [Expression]
+   disamb fSpec ts
+     = let ims=strands1 triples in
+       if length ims==1 then head ims++[t|(s,m,t)<-[last triples]] else disamb fSpec (concat ims++[t|(s,m,t)<-[last triples]])
+       where
+-- The list 'triples' contains the concept sets between two adjacent terms.
+-- A concept set contains all possibilities for allocating a concept (i.e. type) between two adjacent terms
+-- A concept set with more than one concept shows a possible ambiguity,  that 'disamb' will resolve.
+        triples
+         = [ (t, (rd.map last.types) t `isc` (rd.map head.types) t', t')
+           | (t,t')<-zip (init ts) (tail ts)]
+-- First we make alternating strands of triples:
+--  triples without a problem (i.e. the concept set is not longer than 1); these are dealt with by p1
+--  and triples with an ambiguity; these are partially disambiguated by pn.
+--  Since pn does its job partially, we have put a fixpoint over the entire function 'disamb', making sure the whole job is done.
+        strands1 :: [(Expression,[Concept],Expression)] -> [[Expression]]
+        strands1 []  = []
+        strands1 iss = p1 (takeWhile select iss): strandsn (dropWhile select iss)
+                       where select (s,m,t) = length m<=1
+        strandsn []  = []
+        strandsn iss = pn (takeWhile select iss): strands1 (dropWhile select iss)
+                       where select (s,m,t) = length m>1
+        p1 iss = [s| (s,m,t)<-iss]
+        pn [] = error("Fatal (module ShowADL): calling pn with empty list")
+        pn [(s,m,t)] = [s,Tm (mIs (target s `lub` source t))]
+        pn iss = [s|(s,m,t)<-lss]++[mphatson s|(s,m,t)<-[head rss]]++[s|(s,m,t)<-tail rss]
+                 where lss = take halfway iss
+                       rss = drop halfway iss
+                       halfway = length iss `div` 2
+-- The following function is used to force the type of a relation to be printed.
+        types (Tm mph) = if null (mphats mph) then rd [if mphyin mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
+        types (Fu fs)  = foldr isc [] [types f| f<-fs]
+        types (Fi fs)  = foldr isc [] [types f| f<-fs]
+        types (Fd ts)  = types (F ts) -- a nifty trick to save code. After all, the type computation is identical to F...
+        types (F  [])  = [[Anything,Anything]]
+        types (F  ts)  = [[s,t]| s<-(rd.map head.head) ttyps, t<-(rd.map last.last) ttyps]
+                         where
+                          iscSets 
+                           = [(rd.map head.types.head) ts] ++
+                             [ (rd.map last.types) t `isc` (rd.map head.types) t
+                             | (t,t')<-zip (init ts) (tail ts)] ++
+                             [(rd.map last.types.last) ts]
+                          ttyps
+                           = [ [d| d<-types t, head d `elem` scs, last d `elem` tgs]
+                             | ((scs,tgs),t)<-zip (zip (init iscSets) (tail iscSets)) ts
+                             ]
+        types (K0 e')  = types e'
+        types (K1 e')  = types e'
+        types (Cp e')  = types e'
+        types (Tc f)   = types f
+
    instance ShowADL Expression where
-    showADLcode fSpec (F fs) = show (F [ e| (f,i)<-zip fs (is++[[]]), es<-[[f],i], e<-es])
-      where is = [ [Tm (mIs (target f `lub` source f'))| length ts>1]
-                 | (f,f')<-zip fs (tail fs)
-                 , ts<-[[t `lub` s'|(s,t)<-types fSpec f, (s',t')<-types fSpec f', t `order` s']]]
-    showADLcode fspec expr = show expr --TODO, but there is no error anymore
     showADL e = show e
+    showADLcode fSpec expr  = showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") expr
+      where
+       showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr'
+        = (showchar.insParentheses.disambiguate fSpec.mphatsoff) expr'
+         where
+          showchar (Tm mph) = showADLcode fSpec mph
+          showchar (Fu [])  = "-V"
+          showchar (Fu fs)  = chain union [showchar f| f<-fs]
+          showchar (Fi [])  = "V"
+          showchar (Fi fs)  = chain inter [showchar f| f<-fs]
+          showchar (Fd [])  = "-I"
+          showchar (Fd ts)  = chain rAdd [showchar t| t<-ts]
+          showchar (F [])   = "I"
+          showchar (F ts)   = chain rMul [showchar t| t<-ts]
+          showchar (K0 e')  = showchar e'++clos0
+          showchar (K1 e')  = showchar e'++clos1
+          showchar (Cp e')  = compl++showchar e'
+          showchar (Tc f)   = lpar++showchar f++rpar
 
    instance ShowADL Morphism where
     showADL m@(Mph nm pos atts sgn@(a,b) yin s)
@@ -425,17 +517,15 @@
      = "V"++if null atts then "" else showSign atts
     showADL (Mp1 str sgn)
      = "'"++str++"'"++(showSign [sgn])
-    showADLcode fSpec m@(Mph nm pos atts sgn@(a,b) yin s)
-     = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} decnm s)++
-       (if null atts
-            then (if name m `elem` dss then showSign [a,b] else "")
-            else showSign atts)++
-       if yin then "" else "~"
-       where dss = [(name.head) cl| cl<-eqCl name (vrels fSpec), length cl>1]
+    showADLcode fSpec mph@Mph{}
+     = decnm (mphdcl mph)++
+       (if null (mphats mph) then "" else showSign (mphats mph))++
+       if mphyin mph then "" else "~"
+       -- where dss = [(name.head) cl| cl<-eqCl name (vrels fSpec), length cl>1]
     showADLcode fSpec (I atts g s yin)
-     = "I"++if null atts then "" else showSign atts++if g==s then "" else if yin then "" else "~"
+     = "I"++if null atts then showSign [g,s] else showSign atts++if g==s then "" else if yin then "" else "~"
     showADLcode fSpec (V atts (a,b))
-     = "V"++if null atts then "" else showSign atts
+     = "V"++if null atts then showSign [a,b] else showSign atts
     showADLcode fSpec (Mp1 str sgn)
      = "'"++str++"'"++(showSign [sgn])
 
@@ -520,6 +610,6 @@
 
 
 
-   showSign cs = "["++chain "*" (map name cs)++"]"
+   showSign cs = "["++(chain "*".rd.map name) cs++"]"
 
 

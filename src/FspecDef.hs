@@ -64,10 +64,10 @@
 -- \***********************************************************************
      
    instance Identified Fservice where
-     name fservice = name (objectdef fservice)
+     name fservice = name (fsv_objectdef fservice)
      typ fservice = "f_Service"
    instance Fidentified Fservice where
-     fsid fservice = fsid (objectdef fservice)
+     fsid fservice = fsid (fsv_objectdef fservice)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***

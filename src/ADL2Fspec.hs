@@ -1,13 +1,14 @@
   {-# OPTIONS_GHC -Wall #-}
   module ADL2Fspec (makeFspec)
   where
-   import Collection     ( Collection (rd,(>-)) )
+   import Collection     ( Collection (rd,isc,(>-)) )
    import Strings        (firstCaps)
    import Adl
    import Dataset
    import Auxiliaries    (naming, eqCl, eqClass, sort')
    import FspecDef
    import Languages
+   import ComputeRule
    import Calc
    import Options(Options(language))
    import NormalForms(disjNF)
@@ -34,8 +35,9 @@
             , serviceG = serviceG'
             , services = [makeFservice context a | a <-attributes context]
             , vrules   = rules context
-            , ecaRules = let f eca i = eca i in
-                         zipWith f [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (simplify clause) ] [0..]
+            , ecaRules = []
+--                       let f eca i = eca i in
+--                       zipWith f [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (declarations context) (simplify clause) ] [0..]
             , vrels    = declarations context
             , fsisa    = ctxisa context
             , vpatterns= patterns context
@@ -185,7 +187,6 @@
            --explained :: ObjectDef -> ObjectDef
            --explained obj@(Obj{objstrs=xs,objctx=e}) = obj{objstrs=["EXPLANATION: ", explain e]:xs} 
            recur :: [Morphism] -> Morphism -> ObjectDef
-  -- WAAROM: Han, als de "shadow m" warning  (hieronder in recur) storend is, kan die dan in de module Adl opgelost worden?
            recur ms m
             = Obj { objnm   = composedname m
                   , objpos  = Nowhere
@@ -262,7 +263,9 @@
                        , fldauto = isAuto                                     -- is the field auto increment?
                        } 
                    where isSQLId = isIdent m && isAuto
-                         isAuto  = isIdent m && not (null [key| key<-ctxks context, target (kdctx key)==source m]) -- if there are any keys around, make this plug autoincrement.
+                         isAuto  = isIdent m
+                                    && not (null [key| key<-ctxks context, target (kdctx key)==target m]) -- if there are any keys around, make this plug autoincrement.
+                                    && null (contents m) -- and the the field may not contain any strings
        c `bi` c' = not (null [mph| mph<-decls, isFunction mph, isFunction (flp mph)
                                  , source mph<=c && target mph<=c'
                                    || source mph<=c' && target mph<=c])
@@ -398,11 +401,56 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    keytheme :: KeyDef -> Concept
    keytheme kd = source$kdctx kd
 
+   editable (Tm m@Mph{}) = True
+   editable (Tm m@I{})   = True
+   editable _            = False
+
+   editMph (Tm m@Mph{}) = m
+   editMph (Tm m@I{})   = m
+   editMph e            = error("Fatal (module ADL2Fspec): cannot determine an editable declaration in a composite expression: "++show e)
+
    makeFservice :: Context -> ObjectDef -> Fservice
-   makeFservice _ obj
-    = Fservice{
-        objectdef = obj  -- the object from which the service is drawn
-      }
+   makeFservice ctx obj
+    = Fservice{ fsv_objectdef = obj  -- the object from which the service is drawn
+-- The declarations that may be changed by the user of this service are represented by fsv_rels
+              , fsv_rels      = rels
+-- The rules that may be affected by this service
+              , fsv_rules     = invariants
+-- The ECA-rules that may be used by this service to restore invariants.
+              , fsv_ecaRules  = [e i| (i,e)<-zip [1..] [ e| c<-clauses, e<-doClause rels c]]
+-- All signals that are visible in this service
+              , fsv_signals   = []
+-- All fields/parameters of this service
+              , fsv_fields    = map fld (objats obj)
+              }
+    where
+        visible = rd (map makeInline rels++map (mIs.target) rels)
+        rels = rd (recur obj)
+         where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
+        invariants = [rule| rule<-rules ctx, not (null (map makeInline (mors rule) `isc` map makeInline (rels)))]
+        clauses    = assembleClauses
+                       [clause| rule<-invariants, conjunct<-conjuncts rule, clause<-allClauses conjunct]
+        fld obj
+         = Att { fld_name     = objnm obj
+               , fld_expr     = objctx obj
+               , fld_mph      = if editable (objctx obj)
+                                then editMph (objctx obj)
+                                else error("Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj))
+               , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
+               , fld_list     = not (Uni `elem` multiplicities (objctx obj))   -- can there be multiple values in this field?
+               , fld_must     = Tot `elem` multiplicities (objctx obj)         -- is this field obligatory?
+               , fld_new      = True                                           -- can new elements be filled in? (if no, only existing elements can be selected)
+               , fld_fields   = map fld (objats obj)
+               }
+-- Comment on fld_new:
+-- Consider this: New elements cannot be filled in
+--    if there is a total relation r with type obj==source r  (i.e. r comes from obj),
+--    which is outside the scope of this service.
+-- Why? If you were to insert a new obj, x, then r would require a new link (x,y).
+--    However, since r is out of scope, you cannot insert (x,y) into r.
+-- More generally, if there is an ECA rule with I[type obj] in its left hand side,
+--    and a right hand side that is out of scope of this service,
+--    you may not insert a new element in obj.
 
    makeFSid1 :: String -> FSid
    makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.

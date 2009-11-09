@@ -35,7 +35,7 @@
        , " *********/"
        , ""
        ] ++ showClasses flags fSpec o ++
-       ( if isOne o
+       ( if isOne o  -- If the current object is the universal singleton...
          then []
          else generateService_getEach fSpec (name o) o ++
               generateService_read    fSpec (name o) o ++
@@ -176,8 +176,9 @@
     = [ "function save(){"
       , "  DB_doquer('START TRANSACTION');"
       ] ++ indentBlock 2
-      ( (commentBlock ( ["Attributes that will not be saved are:"
-                        ,"--------------------------------------"]++map name unsavedAtts))
+      ( (if null unsavedAtts then commentBlock ["All attributes are saved"] else
+        (commentBlock ( ["Attributes that will not be saved are:"
+                        ,"--------------------------------------"]++map name unsavedAtts)))
         ++ ( if isOne object then [] else ["$newID = ($this->getId()===false);"]) ++
         setMe ++ saveCodeLines ++ close (if isOne object then "true" else "$this->getId()")
       ) ++ [ "}" ] ++ 

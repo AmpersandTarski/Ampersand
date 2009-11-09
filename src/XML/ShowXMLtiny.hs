@@ -77,10 +77,29 @@ where
                      
    instance XML Fservice where
      mkTag _ = Tag "Fservice" [] 
-     mkXmlTree f@(Fservice aaa  )
+     mkXmlTree f
         = Elem (mkTag f) (  
-             [ Elem (simpleTag "Service")   [mkXmlTree aaa]] 
+             [ Elem (simpleTag "Service")   [mkXmlTree (fsv_objectdef f)]] 
+          ++ [ Elem (simpleTag "Relations") (map mkXmlTree (fsv_rels     f))|not (null (fsv_rels     f))] 
+          ++ [ Elem (simpleTag "Rules")     (map mkXmlTree (fsv_rules    f))|not (null (fsv_rules    f))] 
+          ++ [ Elem (simpleTag "ECArules")  (map mkXmlTree (fsv_ecaRules f))|not (null (fsv_ecaRules f))] 
+          ++ [ Elem (simpleTag "Signals")   (map mkXmlTree (fsv_signals  f))|not (null (fsv_signals  f))] 
+          ++ [ Elem (simpleTag "Fields")    (map mkXmlTree (fsv_fields   f))|not (null (fsv_fields   f))] 
            )
+
+   instance XML Field where
+     mkTag _ = Tag "Field" [] 
+     mkXmlTree f
+        = Elem (Tag "Field"
+                    [ mkAttr "Editable" (show (fld_editable f))
+                    , mkAttr "list"     (show (fld_list     f))
+                    , mkAttr "Must"     (show (fld_must     f))
+                    , mkAttr "New"      (show (fld_new      f))
+                    ])
+               ( [ Elem (simpleTag "Expression") [mkXmlTree (fld_expr f)]] ++
+                 [ Elem (simpleTag "Morphism")   [mkXmlTree (fld_mph f)]] ++
+                 [ Elem (simpleTag "Fields")    (map mkXmlTree (fld_fields   f))|not (null (fld_fields f)) ]
+               ) 
 
    instance XML Pattern where
      mkTag p = Tag "Pattern" [ nameToAttr p]

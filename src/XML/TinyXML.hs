@@ -5,7 +5,7 @@ module XML.TinyXML where
    data XTree = Elem { etag  :: XTag
                      , etrees :: [XTree]
                      }
-              | Node { ntag  :: XTag
+              | Node { ntag  :: XTag  -- WAAROM? is Node nodig? Immers een Elem met een lege etrees doet precies hetzelfde...
                      }
               | PlainText {ptstr :: String}
    data XTag =  Tag  { tName :: String
