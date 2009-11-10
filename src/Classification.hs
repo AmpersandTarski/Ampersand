@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Classification (
-               Classification(..)
+               Classification(Cl)
              , root
              , makeClassifications
              , preCl
