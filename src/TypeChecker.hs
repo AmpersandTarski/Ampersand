@@ -199,9 +199,9 @@ enrichCtx cx@(Ctx{}) ctxs =
 
   --DESCR -> enriching ctxisa
   --in AGtry -> isa = Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
-  hierarchy = Isa isar (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
+  hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
-    isar = [case g of G{} -> (gengen g,genspc g) | g<-allCtxGens ctxs]
+    isar = [case g of G{} -> (populate$gengen g,populate$genspc g) | g<-allCtxGens ctxs]
     isac = rd (map fst isar++map snd isar)
 
   --DESCR -> enriching ctxpats

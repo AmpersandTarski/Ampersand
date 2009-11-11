@@ -52,11 +52,19 @@ where
              frdec :: Declaration       -- ^ where the result is to be stored
            , frcmp :: Expression        -- ^ expression to be computed
            , r_pat :: String            -- ^ name of pattern in which it was defined.
-           } deriving (Eq,Show)
+           } deriving (Eq)
    data RuleType = Implication | Equivalence | Truth | Generalization | Automatic deriving (Eq,Show)
 
    -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
 --   data AutType = Clos0 | Clos1 deriving (Eq,Show)
+   instance Show Rule where
+    showsPrec _ x@(Sg{})  = showString$ "SIGNAL: " ++ (show$srsig x)
+    showsPrec _ x@(Gc{})  = showString$ "Gc " ++ (show$grgen x)
+    showsPrec _ x@(Fr{})  = showString$ "Fr " ++ (show$grgen x)
+    showsPrec _ x@(Ru{}) 
+       | rrsrt x==Implication = showString$ show(rrant x) ++ " |- " ++ (show$rrcon x)
+       | rrsrt x==Equivalence = showString$ show(rrant x) ++ " = " ++ (show$rrcon x)
+       | rrsrt x==Truth = showString$ show(rrcon x)
         
    instance Numbered Rule where
     pos r = case r of

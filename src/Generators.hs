@@ -53,7 +53,10 @@ doGenAtlas fSpec flags =
      verboseLn flags "Generation of Atlas is currently not supported."
   >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
 --  >> generatepngs fSpec flags
-  >> doGenProto (atlas fSpec) flags{dirPrototype=dirAtlas flags}
+--  krijg ik plaatjes in de database?
+  >> fillAtlas fSpec flags
+--  data in de atlas database pompen
+--  data in autorisatiecontext (=student) plaatsen
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
