@@ -1,0 +1,103 @@
+CONTEXT Atlas
+PATTERN Atlas
+--GEN Rule ISA Expression
+--GEN Relation ISA Expression
+source::Expression->Concept.
+target::Expression->Concept.
+source::Rule->Concept.
+target::Rule->Concept.
+source::Relation->Concept.
+target::Relation->Concept.
+
+violates::Pair*Rule.
+explanation::Rule->Explanation.
+thepicture::MainPicture*MainPicture.
+
+contains::Relation*Pair.
+contains::Concept*Atom.
+ENDPATTERN
+
+SERVICE Rules : I[ONE]
+   = [ Rules : V[ONE*Rule]
+         = [ rule : I[Rule]
+           , source : source
+           , target : target
+           , violations : violates~]
+     , "Conceptual diagram": V[ONE*MainPicture]]
+
+SERVICE Rule : I[Rule]
+   = [ source : source
+     , target : target
+     , violations : violates~
+     , explanation : explanation]
+
+SERVICE Relations : I[ONE]
+   = [ Relations : V[ONE*Relation]]
+
+SERVICE Relation : I[Relation]
+   = [ source : source
+     , target : target
+     , population : contains]
+
+SERVICE Concepts : I[ONE]
+   = [ Concepts : V[ONE*Concept]]
+
+SERVICE Concept : I[Concept]
+   = [ population : contains]
+
+{-
+POPULATION source[Expression*Concept] CONTAINS
+   [ {-%sources%-} ]
+POPULATION target[Expression*Concept] CONTAINS
+   [ {-%targets%-} ]
+POPULATION violates[Pair*Rule] CONTAINS
+   [ {-%violations%-} ]
+POPULATION explanation[Rule*Explanation] CONTAINS
+   [ {-%explanations%-} ]
+POPULATION visual[ONE*Picture] CONTAINS
+   [ {-%picture%-} ]
+POPULATION contains[Relation*Pair] CONTAINS
+   [ {-%relationsets%-} ]
+POPULATION contains[Concept*Atom] CONTAINS
+   [ {-%conceptsets%-} ]
+-}
+
+POPULATION source[Rule*Concept] CONTAINS
+[("r;s|-t","A")
+]
+POPULATION target[Rule*Concept] CONTAINS
+[("r;s|-t","C")
+]
+POPULATION source[Relation*Concept] CONTAINS
+[("r","A")
+;("s","B")
+;("t","A")
+]
+POPULATION target[Relation*Concept] CONTAINS
+[("r","B")
+;("s","C")
+;("t","C")
+]
+POPULATION violates[Pair*Rule] CONTAINS
+[ ]
+POPULATION explanation[Rule*Explanation] CONTAINS
+[("r;s|-t","r;s is a subset of t")]
+POPULATION thepicture[MainPicture*MainPicture] CONTAINS
+[("atlas.png","atlas.png")]
+POPULATION contains[Relation*Pair] CONTAINS
+[("r","(a1,b1)")
+;("r","(a2,b2)")
+;("s","(b1,c1)")
+;("s","(b2,c1)")
+;("t","(a1,c1)")
+;("t","(a2,c1)")
+]
+POPULATION contains[Concept*Atom] CONTAINS
+[("A","a1")
+;("A","a2")
+;("B","b1")
+;("B","b2")
+;("C","c1")
+]
+
+ENDCONTEXT
