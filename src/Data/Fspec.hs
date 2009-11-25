@@ -8,7 +8,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show Fspc.
 -}
 module Data.Fspec ( Fspc(..)
-                  , Fservice(..), Field(..)
+                  , Fservice(..), Field(..), Clauses(..)
                   , FSid(..)
                   , FTheme(..)
                   , WSOperation(..), WSAction(..)
@@ -26,7 +26,6 @@ import Typology                      (Inheritance)
 import Data.Plug
 import Rendering.ClassDiagram 
 data Fspc = Fspc  { fsfsid   :: FSid                  -- ^ The name of the specification
-                  , datasets :: [ObjectDef]           -- ^ This list contains the data sets that are computed from the basic ontology.
                   , vplugs   :: [Plug]                -- ^ all plugs defined in the ADL-script
                   , plugs    :: [Plug]                -- ^ all plugs (defined and derived)
                   , serviceS :: [ObjectDef]           -- ^ all services defined in the ADL-script
@@ -46,28 +45,38 @@ data Fspc = Fspc  { fsfsid   :: FSid                  -- ^ The name of the speci
 --         All "intelligence" is put in assembling an Fservice.
 --         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
 data Fservice = Fservice 
-                    { fsv_objectdef :: ObjectDef  -- The service declaration that was specified by the programmer,
-                                                  -- and which has been type checked by the compiler.
-                    , fsv_rels      :: [Morphism] -- The declarations that may be changed by the user of this service
-                    , fsv_rules     :: [Rule]     -- The rules that may be affected by this service
-                    , fsv_ecaRules  :: [ECArule]  -- The ECA-rules that may be used by this service to restore invariants.
-                    , fsv_signals   :: [Rule]     -- All signals that are visible in this service
-                    , fsv_fields    :: [Field]    -- All fields/parameters of this service
+                  { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
+                                                            -- and which has been type checked by the compiler.
+                  , fsv_rels      :: [Morphism]             -- The declarations that may be changed by the user of this service
+                  , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service
+                  , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants.
+                  , fsv_signals   :: [Rule]                 -- All signals that are visible in this service
+                  , fsv_fields    :: [Field]                -- All fields/parameters of this service
+                  }                                         
+
+data Field    = Att
+                  { fld_name      :: String                 -- The name of this field
+                  , fld_expr      :: Expression             -- The expression by which this field is attached to the service
+                  , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
+                  , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
+                  , fld_list      :: Bool                   -- can there be multiple values in this field?
+                  , fld_must      :: Bool                   -- is this field obligatory?
+                  , fld_new       :: Bool                   -- can new elements be filled in? (if no, only existing elements can be selected)
+                  , fld_fields    :: [Field]                -- All fields/parameters of this service
+                  , fld_insAble   :: Bool                   -- can the user insert in this field?
+                  , fld_onIns     :: Declaration->ECArule   -- the PAclause to be executed after an insert on this field
+                  , fld_delAble   :: Bool                   -- can the user delete this field?
+                  , fld_onDel     :: Declaration->ECArule   -- the PAclause to be executed after a delete on this field
+                  } 
+
+-- The data structure Clauses is meant for calculation purposes.
+-- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| conj<-cl_conjNF cl, disj<-[conj!!i]]
+-- Every rule is transformed to this form, as a step to derive eca-rules
+data Clauses  = Clauses
+                    {cl_conjNF :: [[Expression]]  -- The conjunctive normal form of the clause
+                    ,cl_rule   :: Rule            -- The rule that is restored by this clause (for traceability purposes)
                     }
 
-data Field    = Att { fld_name      :: String     -- The name of this field
-                    , fld_expr      :: Expression -- The expression by which this field is attached to the service
-                    , fld_mph       :: Morphism   -- The morphism to which the database table is attached.
-                    , fld_editable  :: Bool       -- can this field be changed by the user of this service?
-                    , fld_list      :: Bool       -- can there be multiple values in this field?
-                    , fld_must      :: Bool       -- is this field obligatory?
-                    , fld_new       :: Bool       -- can new elements be filled in? (if no, only existing elements can be selected)
-                    , fld_fields    :: [Field]    -- All fields/parameters of this service
-                    } deriving (Eq, Show)
-
-
---DESCR -> a theme is dataset service with functions under certain rules
---         the dataset is identified by one root concept
 data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: [Rule]}
 {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
  - "The properties of the Interface Operation component are as follows:

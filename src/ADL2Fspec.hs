@@ -1,31 +1,23 @@
   {-# OPTIONS_GHC -Wall #-}
   module ADL2Fspec (makeFspec)
   where
-   import Collection     ( Collection (rd,isc,(>-)) )
+   import Collection     (Collection(rd,isc,(>-)))
    import Strings        (firstCaps)
    import Adl
-   import Dataset
+   import Adl.ECArule    (isBlk,isDry)
    import Auxiliaries    (naming, eqCl, eqClass, sort')
    import FspecDef
    import Languages
-   import ComputeRule
    import Calc
    import Options(Options(language))
-   import NormalForms(disjNF)
+   import NormalForms(disjNF,normECA)
    import Data.Plug
    import Char(toLower)
    import Rendering.ClassDiagram
---   import Rendering.AdlExplanation
- -- The story:
- -- A number of datasets for this context is identified.
- -- Every pattern is considered to be a theme and every object is treated as a separate object specification.
- -- Every dataset is discussed in precisely one theme
- -- Every theme will be explained in a chapter of its own.
 
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context =
       Fspc { fsfsid = makeFSid1 (name context)
-            , datasets = datasets'
               -- serviceS contains the services defined in the ADL-script.
               -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
               -- A generic user interface (the Lonneker interface) is already available.
@@ -53,8 +45,9 @@
             contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
         ruleviols _ = [] 
         definedplugs = vsqlplugs ++ vphpplugs
-        conc2plug :: Concept -> Plug
-        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True]}
+-- maybe useful later...
+--        conc2plug :: Concept -> Plug
+--        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True]}
         mor2plug :: Morphism -> Plug
         mor2plug  m'
          = if isInj && not isUni then mor2plug (flp m')
@@ -64,7 +57,7 @@
                                    ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
            else if isInj || isSur then mor2plug (flp m')
            else PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Fi {es=[Tm (mIs (source m')),F {es=[Tm m',flp (Tm m')]}]}
+                        , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]
                                                            )      Nothing False False
                                    ,field (name (target m')) (Tm m') Nothing False False]}
            where
@@ -207,31 +200,22 @@
                                                               ["LIST"]
                       ]
 -}
-{- A dataset combines all functions that share the same source.
-   This is used for function point analysis (in which data sets are counted).
-   It can also be used in code generate towards SQL, allowing the code generator to
-   implement relations wider than 2, for likely (but yet to be proven) reasons of efficiency.
-   Datasets are constructed from the basic ontology (i.e. the set of relations with their multiplicities.)
--}
-        datasets'  = makeDatasets context
         --TODO -> assign themerules to themes and remove them from the Anything theme
         themes' = FTheme{tconcept=Anything,tfunctions=[],trules=themerules}
                   :(map maketheme$orderby [(wsopertheme oper, oper)
                                           |oper<-themeoperations, wsopertheme oper /= Nothing])
-        --TODO -> by default CRUD operations of datasets, possibly overruled by SQL or PHP plugs
-        themeoperations = datasetoperations++phpoperations++sqloperations
+        --TODO -> by default CRUD operations of datasets, possibly overruled by ECA or PHP plugs
+        themeoperations = phpoperations++sqloperations
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
         sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (ctxks context) obj]
-        datasetoperations = [oper|obj<-datasets', oper<-makeDSOperations (ctxks context) obj, objtheme obj /=S]
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
-        maketheme _ = error $ "Error in ADL2Fspec.hs module ADL2Fspec function makeFspec.maketheme: "
-                           ++ "The theme must involve a concept."
+        maketheme _ = error("!Fatal (module ADL2Fspec) function makeFspec.maketheme: The theme must involve a concept.")
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
         orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
 
-{- makePlugs computes a set of SQL plugs to obtain wide tables with minimal redundancy.
+{- makePlugs computes a set of ECA plugs to obtain wide tables with minimal redundancy.
    First, we determine classes of concepts that are related by bijective relations.   Code:   eqClass bi (concs context)
    Secondly, we choose one concept as the kernel of that plug. Code:   c = minimum [g|g<-concs context,g<=head cl]
    Thirdly, we need all univalent relations that depart from this class to be the attributes. Code:   dss cl
@@ -285,7 +269,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 
        kernel :: Plug -> Concept -- determines the core concept of p. The plug serves as concept table for (kernel p).
        kernel p@(PlugSql{}) = source (fldexpr (head (fields p)))
-       kernel _ = error("Fatal error in module ADL2Fspec, function \"kernel\"")
+       kernel _ = error("!Fatal (module ADL2Fspec): function \"kernel\"")
 
 
    makeSqlPlug :: ObjectDef -> Plug
@@ -333,11 +317,11 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                             "CREATE"->Create;
                                             "UPDATE"->Update;
                                             "DELETE"->Delete;
-                                            _ -> error $ "Choose from ACTION=[SELECT|CREATE|UPDATE|DELETE].\n"  
+                                            _ -> error $ "!Fatal (module ADL2Fspec): Choose from ACTION=[SELECT|CREATE|UPDATE|DELETE].\n"  
                                                          ++ show (objpos plug)
                                            }
                      | strs<-objstrs plug,'A':'C':'T':'I':'O':'N':'=':str<-strs]
-                     ++ [error $ "Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
+                     ++ [error $ "!Fatal (module ADL2Fspec): Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
       makeReturns = head $ [PhpReturn {retval=PhpObject{objectdf=oa,phptype=makePhptype oa}}
                            | oa<-objats plug, strs<-objstrs oa,"PHPRETURN"<-strs]
                            ++ [PhpReturn {retval=PhpNull}]
@@ -348,17 +332,17 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                             "Int"->PhpInt;
                                             "Float"->PhpFloat;
                                             "Array"->PhpArray;
-                                            _ -> error $ "Choose from PHPTYPE=[String|Int|Float|Array].\n"  
+                                            _ -> error $ "!Fatal (module ADL2Fspec): Choose from PHPTYPE=[String|Int|Float|Array].\n"  
                                                         ++ show (objpos objat)
                                            }
                      | strs<-objstrs objat,'P':'H':'P':'T':'Y':'P':'E':'=':str<-strs]
-                     ++ [error $ "Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
+                     ++ [error $ "!Fatal (module ADL2Fspec): Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
                                  ++ show (objpos objat)]
 
    --DESCR -> Use for plugs that describe a single operation like PHP plugs
    makeDSOperation :: Plug -> WSOperation
-   makeDSOperation PlugSql{} = error $ "Error in ADL2Fspec.hs module ADL2Fspec function makeDSOperation: "
-                                    ++ "SQL plugs do not describe a single operation."
+   makeDSOperation PlugSql{} = error $ "!Fatal (module ADL2Fspec): function makeDSOperation: "
+                                    ++ "ECA plugs do not describe a single operation."
    makeDSOperation p@PlugPhp{} = 
        let nullval val = case val of
                          PhpNull    -> True
@@ -368,7 +352,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                  ,wsmsgin=[objectdf arg|(_,arg)<-args p,nullval$arg]
                  ,wsmsgout=[objectdf$retval$returns p|nullval$retval$returns p]
                  }
-   --DESCR -> Use for objectdefs that describe all four CRUD operations like SQL plugs
+   --DESCR -> Use for objectdefs that describe all four CRUD operations like ECA plugs
    makeDSOperations :: [KeyDef] -> ObjectDef -> [WSOperation]
    makeDSOperations kds obj = 
        [WSOper{wsaction=WSCreate,wsmsgin=[obj],wsmsgout=[]}
@@ -401,47 +385,65 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    keytheme :: KeyDef -> Concept
    keytheme kd = source$kdctx kd
 
-   editable (Tm m@Mph{}) = True
-   editable (Tm m@I{})   = True
-   editable _            = False
+   editable :: Expression -> Bool
+   editable (Tm Mph{})  = True
+   editable (Tm I{})    = True
+   editable _           = False
 
+   editMph :: Expression -> Morphism
    editMph (Tm m@Mph{}) = m
    editMph (Tm m@I{})   = m
-   editMph e            = error("Fatal (module ADL2Fspec): cannot determine an editable declaration in a composite expression: "++show e)
+   editMph e            = error("!Fatal (module ADL2Fspec): cannot determine an editable declaration in a composite expression: "++show e)
 
    makeFservice :: Context -> ObjectDef -> Fservice
-   makeFservice ctx obj
-    = Fservice{ fsv_objectdef = obj  -- the object from which the service is drawn
+   makeFservice context object
+    = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
 -- The declarations that may be changed by the user of this service are represented by fsv_rels
               , fsv_rels      = rels
 -- The rules that may be affected by this service
               , fsv_rules     = invariants
 -- The ECA-rules that may be used by this service to restore invariants.
-              , fsv_ecaRules  = [e i| (i,e)<-zip [1..] [ e| c<-clauses, e<-doClause rels c]]
+              , fsv_ecaRules  = nECArules
 -- All signals that are visible in this service
               , fsv_signals   = []
 -- All fields/parameters of this service
-              , fsv_fields    = map fld (objats obj)
+              , fsv_fields    = map fld (objats object)
               }
     where
-        visible = rd (map makeInline rels++map (mIs.target) rels)
-        rels = rd (recur obj)
+        rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
-        invariants = [rule| rule<-rules ctx, not (null (map makeInline (mors rule) `isc` map makeInline (rels)))]
-        clauses    = assembleClauses
-                       [clause| rule<-invariants, conjunct<-conjuncts rule, clause<-allClauses conjunct]
+        vis        = rd (map makeInline rels++map (mIs.target) rels)
+        visible m  = makeInline m `elem` vis
+        invariants = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
+        ecaRs      = assembleECAs visible invariants
+        nECArules  = map normECA ecaRs
+        fld :: ObjectDef -> Field
         fld obj
          = Att { fld_name     = objnm obj
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)
-                                else error("Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj))
+                                else error("!Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj))
                , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
                , fld_list     = not (Uni `elem` multiplicities (objctx obj))   -- can there be multiple values in this field?
                , fld_must     = Tot `elem` multiplicities (objctx obj)         -- is this field obligatory?
                , fld_new      = True                                           -- can new elements be filled in? (if no, only existing elements can be selected)
                , fld_fields   = map fld (objats obj)
+               , fld_insAble  = not (null insTrgs)                             -- can the user insert in this field?
+               , fld_onIns    = case insTrgs of
+                                 []  ->  error("!Fatal (module ADL2Fspec): no insert functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 [t] ->  t
+                                 _   ->  error("!Fatal (module ADL2Fspec): multiple insert triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+               , fld_delAble  = not (null delTrgs)                             -- can the user delete this field?
+               , fld_onDel    = case delTrgs of
+                                 []  ->  error("!Fatal (module ADL2Fspec): no delete functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 [t] ->  t
+                                 _   ->  error("!Fatal (module multiple delete triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                }
+           where triggers = [c | editable (objctx obj), c<-nECArules, not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) ]
+                 insTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Ins (makeInline (editMph (objctx obj))) ]
+                 delTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Del (makeInline (editMph (objctx obj))) ]
+                 arg = error("!Todo (module ADL2Fspec 446): declaratie Delta invullen")
 -- Comment on fld_new:
 -- Consider this: New elements cannot be filled in
 --    if there is a total relation r with type obj==source r  (i.e. r comes from obj),

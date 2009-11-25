@@ -1,10 +1,87 @@
 {-# OPTIONS_GHC -Wall #-}
-module NormalForms (conjNF,disjNF,nfProof,nfPr,simplify,negRight)
+module NormalForms (conjNF,disjNF,normECA,nfProof,proofPA,nfPr,simplify,distribute)
 where
    import Adl
-   import Collection (Collection (..))
-   import ShowADL    (showADL)
-   
+   import Collection     (Collection (..))
+   import ShowADL        (showADL)
+   import Adl.ECArule    (ECArule(..),PAclause(..),isBlk,isDry,isNop)
+   import Adl.Expression (isF,isFd,isFi,isFu)
+
+{- Normalization of process algebra clauses -}
+
+   normECA :: ECArule -> (Declaration->ECArule)    -- TODO: hier nog naar kijken: er gebeurt nog niets met het argument!
+   normECA (ECA tr delt act n) d = ECA tr delt (normPA act) n
+
+   normPA :: PAclause -> PAclause
+   normPA expr = expr' 
+       where (expr',_,_) = last (proofPA expr)
+
+   proofPA :: PAclause -> [(PAclause, [String], String)]
+   proofPA expr
+    = if null steps
+      then [(expr,[],"<=>")]
+      else (expr,steps,equ):proofPA res
+    where (res,steps,equ) = normstepPA expr
+
+   normstepPA :: PAclause -> (PAclause,[String],String)
+   normstepPA expr = (res,ss,"<=>")
+    where
+     (res,ss) = norm expr
+     norm :: PAclause -> (PAclause,[String])
+     norm (Chc [] ms)  = (Dry ms, ["Run out of options"])
+     norm (Chc [d] ms) = (d{paMotiv = case d of Blk{} -> paMotiv d
+                                                Dry{} -> paMotiv d
+                                                _     -> ms
+                           }, ["Flatten Singleton"])
+     norm (Chc ds ms)  | (not.null) msgs = (Chc ops ms, msgs)
+                       | (not.null) [d| d@(Chc{}) <- ds] = (Chc (rd ds') ms, ["flatten Chc"])  -- flatten
+                       | (not.null) [Nop| Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
+                       | (not.null) ([Blk| Blk{}<-ops]++[Dry| Dry{}<-ops]) = (Chc [op| op<-ops, not (isBlk op), not (isDry op)] ms, ["Choose anything but block"])
+                       | otherwise = (Chc ds ms, [])
+                       where ds' = [ d'
+                                   | d<-ds, d'<-case d of
+                                                  Chc xs _ -> xs
+                                                  _        -> [d] ]
+                             nds = map norm ds
+                             msgs = (concat.map snd) nds
+                             ops  = map fst nds
+     norm (All [] ms)  = (Nop ms, ["All [] = No Operation"])
+     norm (All [d] ms) = (d{paMotiv = case d of Blk{} -> paMotiv d
+                                                Dry{} -> paMotiv d
+                                                _     -> ms
+                           }, ["Flatten Singleton"])
+     norm (All ds ms)  | (not.null) msgs = (All ops ms, msgs)
+                       | (not.null) [d| d@(All{}) <- ds] = (All (rd ds') ms, ["flatten All"])  -- flatten
+                       | (not.null) [Blk| Blk{}<-ops] = (Blk{paMotiv = [m| op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
+                       | (not.null) [Dry| Dry{}<-ops] = (Dry{paMotiv = [m| op@Dry{}<-ops,m<-paMotiv op]}, ["Block all"])
+                       | (not.null) [Nop| Nop{}<-ops] = (All [op| op<-ops, not (isNop op)] ms, ["Ignore Nop"])
+                       | otherwise = (All ds ms, [])
+                       where ds' = [ d'
+                                   | d<-ds, d'<-case d of
+                                                  All xs _ -> xs
+                                                  _        -> [d] ]
+                             nds  = map norm ds
+                             msgs = (concat.map snd) nds
+                             ops  = map fst nds
+     norm (New c p ms)        = case p' of
+                                  Blk{} -> (p'{paMotiv = ms}, msgs)
+                                  Dry{} -> (p'{paMotiv = ms}, msgs)
+                                  _     -> (New c (\x->let (p'', _) = norm (p x) in p'') ms, msgs)
+                                where (p', msgs) = norm (p "x")
+     norm (Rmv c p ms)        = case p' of
+                                  Blk{} -> (p'{paMotiv = ms}, msgs)
+                                  Dry{} -> (p'{paMotiv = ms}, msgs)
+                                  _     -> (Rmv c (\x->let (p'', _) = norm (p x) in p'') ms, msgs)
+                                where (p', msgs) = norm (p "x")
+     norm (Sel c e p ms)      = case p' of
+                                  Blk{} -> (p'{paMotiv = ms}, msgs)
+                                  Dry{} -> (p'{paMotiv = ms}, msgs)
+                                  _     -> (Sel c e (\x->let (p'', _) = norm (p x) in p'') ms, msgs)
+                                where (p', msgs) = norm (p "x")
+     norm p                   = (p, [])
+
+{- Normalization of expressions -}
+
    simplify :: Expression -> Expression
    simplify expr = expr' 
        where (expr',_,_) = last (simpProof expr)
@@ -40,7 +117,7 @@ where
      norm (Cp e')      _    = (notCp res',steps,equ')
                                where (res',steps,equ') = norm e' []
      norm (Tc f)       _    = norm f []
-     norm (F [t])      _   = norm t []
+     norm (F [t])      _    = norm t []
      norm (F (k:ks))   rs   | or [isF x|x<-k:ks]          = norm (F [y| x<-k:ks, y<-if isF x then unF x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
                             | or [isIdent x|x<-k:ks]      = (F [x|x<-k:ks,not (isIdent x)], ["x;I = x"], "<=>")
                             | not simpl && not eq && length ks>1 && isFd g && length gs>1
@@ -111,22 +188,6 @@ where
    fEqu :: [String] -> String
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 
-   isFu :: Expression -> Bool
-   isFu Fu{}  = True
-   isFu _     = False
-
-   isFi :: Expression -> Bool
-   isFi Fi{}  = True
-   isFi _     = False
-   
-   isF :: Expression -> Bool
-   isF  F{}   = True
-   isF _      = False
-
-   isFd :: Expression -> Bool
-   isFd Fd{}  = True
-   isFd _     = False
-   
    unF :: Expression -> Expressions
    unF (Fi es')  = es'
    unF (Fu es')  = es'

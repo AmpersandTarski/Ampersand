@@ -32,5 +32,5 @@ module Collection
     elems        = id
     rd []        = []
     rd (x:xs)    = x: rd [e|e<-xs, e/=x]
-    rd' f []     = []
+    rd' _ []     = []
     rd' f (x:xs) = x: rd' f [e|e<-xs, f e/=f x]

@@ -168,7 +168,7 @@
                    ""
                    expr
       where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
-            tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") (concept o))
+            tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
             ctx' = simplify $ flp (ctx o)
             fs   = [es' | F es' <- [ctx']]
    saveTransactions :: Options -> Fspc -> ObjectDef -> [String]

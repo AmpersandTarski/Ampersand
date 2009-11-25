@@ -37,22 +37,33 @@ where
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS "\n     " fSpec
 
 
+   wrap :: String->String->(String->a->String)->[a]->String
+   wrap initStr _      _ []  = initStr++"[]"
+   wrap initStr indent f [x] = initStr++"[ "++f (indent++"  ") x++" ]"
+   wrap initStr indent f xs  = initStr++"[ "++chain (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
+
    class ShowHS a where
     showHSname :: a -> String
     showHS     :: String -> a -> String
 
    instance ShowHS a => ShowHS [a] where
-    showHSname _ = error ("(module ShowHS) lists are anonymous with respect to showHS.")
+    showHSname xs = "["++chain "," (map showHSname xs)++"]"
     showHS indent = chain "\n".map (showHS indent)
 
+   instance ShowHS a => ShowHS (Maybe a) where
+    showHSname Nothing  = "Nothing"
+    showHSname (Just x) = showHSname x
+    showHS _ Nothing  = "Nothing"
+    showHS indent (Just x) = showHS indent x
+
    instance ShowHS a => ShowHS (Inheritance a) where
-    showHSname i = error ("(module ShowHS) every inheritance is anonymous with respect to showHS. Detected at: "++ showHS "" i)
+    showHSname i = error ("!Fatal (module ShowHS): every inheritance is anonymous with respect to showHS. Detected at: "++ showHS "" i)
     showHS indent (Isa ts cs) = "Isa "++showL ["("++showHS "" g++","++showHS "" s++")"|(g,s)<-ts] ++indent++"    "++ showL (map (showHS "") cs)
 
 
    -- | The following is used to showHS for signs: (Concept, Concept)
    instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
-    showHSname _ = error ("(module ShowHS) Tuples of Concepts are anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): Tuples of Concepts are anonymous with respect to showHS.")
     showHS indent (a,b) = "("++showHS indent a++","++showHS indent b++")"
     
    
@@ -83,25 +94,25 @@ where
                           ])
 
    instance ShowHS PhpValue where
-    showHSname _ = error ("(module ShowHS) PhpValue is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): PhpValue is anonymous with respect to showHS.")
     showHS _ phpVal
       = case phpVal of
            PhpNull{}   -> "PhpNull"
            PhpObject{} -> "PhpObject{ objectdf = " ++ showHSname (objectdf phpVal) ++ ", phptype  = " ++ showHS "" (phptype phpVal) ++ "}"
 
    instance ShowHS PhpType where
-    showHSname _ = error ("(module ShowHS) PhpType is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): PhpType is anonymous with respect to showHS.")
     showHS indent PhpString = indent++"PhpString"
     showHS indent PhpInt    = indent++"PhpInt"
     showHS indent PhpFloat  = indent++"PhpFloat"
     showHS indent PhpArray  = indent++"PhpArray"
 
    instance ShowHS PhpReturn where
-    showHSname _ = error ("(module ShowHS) PhpReturn is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): PhpReturn is anonymous with respect to showHS.")
     showHS indent ret = indent++"PhpReturn {retval = "++showHS indent (retval ret)++"}"
 
    instance ShowHS PhpAction where
-    showHSname _ = error ("(module ShowHS) PhpAction is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): PhpAction is anonymous with respect to showHS.")
     showHS indent act
       = (chain (indent ++"    ") 
           [ "PhpAction { action = " ++ showHS "" (action act)
@@ -112,35 +123,54 @@ where
    instance ShowHS ECArule where
     showHSname r = "ecaRule"++show (ecaNum r)
     showHS indent r   
-      = "ECA (" ++ showHS "" (ecaTriggr r)++")" ++ indent++"    (" ++ showHS (indent++"     ")  (ecaAction r)++ indent++"    )"++indent++show (ecaNum r)
+      = "ECA (" ++ showHS "" (ecaTriggr r)++")" ++
+        indent++"    (" ++ showHS (indent++"     ")  (ecaDelta r)++")"++
+        indent++"    (" ++ showHS (indent++"     ")  (ecaAction r)++indent++"    )" ++
+        indent++show (ecaNum r)
 
    instance ShowHS Event where
-    showHSname e = error ("(module ShowHS) \"Event\" is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): \"Event\" is anonymous with respect to showHS.")
     showHS indent e   
       = if take 1 indent == "\n"
         then "On (" ++ show (eSrt e)++")" ++ indent++"   (" ++ showHS (indent++"    ") (eMhp e)++indent++"   )"
         else "On (" ++ show (eSrt e)++") (" ++ showHS "" (eMhp e)++")"
 
    instance ShowHS PAclause where
-    showHSname p = error ("(module ShowHS) \"Event\" is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): \"PAclause\" is anonymous with respect to showHS.")
     showHS indent p   
       = case p of
-           Choice{} -> "Choice [ "++chain (indent++"       , ") (map (showHS (indent++"         ")) (paCls p))++indent++"       ]"
-           All{}    ->    "All [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"
-           Do{}     ->     "Do "++show (paSrt p)++ " ("++showHS (indent++"        ") (paTo p)++indent++"       )"++
-                                  indent++"       ("++showHS (indent++"        ") (paDelta p)++indent++"       )"
-           New{}    ->    "New [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"
-           Rmv{}    ->    "Rmv [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"
+           Chc{} -> wrap "Chc " (indent ++"    ") showHS (paCls p)++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           All{} -> "All [ "++chain (indent++"    , ") (map (showHS (indent++"      ")) (paCls p))++indent++"    ]"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           Do{}  ->  "Do "++show (paSrt p)++ " ("++showHS (indent++"        ") (paTo p)++indent++"       )"++
+                            indent++"       ("++showHS (indent++"        ") (paDelta p)++indent++"       )"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           New{} -> "New ("++showHS "" (paCpt p)++")"++
+                    indent++"    (\\x->"++showHS (indent++"        ") (paCl p "x")++indent++"    )"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           Rmv{} -> "Rmv ("++showHS "" (paCpt p)++")"++
+                    indent++"    (\\x->"++showHS (indent++"        ") (paCl p "x")++indent++"    )"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           Sel{} -> "Sel ("++showHS "" (paCpt p)++")"++
+                    indent++"    ( "++showHS (indent++"      ") (paExp p)++indent++"    )"++
+                    indent++"    (\\x->"++showHS (indent++"        ") (paCl p "x")++indent++"    )"++
+                    wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
+           Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
+           Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
+           Dry{} -> "Dry "++wrap "" (indent ++"    ") showMotiv ms
+        where ms = paMotiv p
+              showMotiv ind (conj,rs) = "("++showHS ind conj++", "++showHSname rs++")"
 
    instance ShowHS ActionType where
-    showHSname _ = error ("(module ShowHS) \"ActionType\" is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): \"ActionType\" is anonymous with respect to showHS.")
     showHS indent Create = indent++"Create"
     showHS indent Read   = indent++"Read"
     showHS indent Update = indent++"Update"
     showHS indent Delete = indent++"Delete"
 
    instance ShowHS SqlField where
-    showHSname _ = error ("(module ShowHS) \"SqlField\" is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): \"SqlField\" is anonymous with respect to showHS.")
     showHS indent sqFd
       = (chain indent
           [ "Fld { fldname = " ++ show (fldname sqFd)
@@ -153,7 +183,7 @@ where
           ])
 
    instance ShowHS SqlType where
-    showHSname _ = error ("(module ShowHS) SqlType is anonymous with respect to showHS.")
+    showHSname _ = error ("!Fatal (module ShowHS): SqlType is anonymous with respect to showHS.")
     showHS indent (SQLChar i)    = indent++"SQLChar   "++show i
     showHS indent SQLBlob        = indent++"SQLBlob   "
     showHS indent SQLPass        = indent++"SQLPass   "
@@ -175,29 +205,26 @@ where
     showHS indent fspec
      = chain (indent ++"    ") 
             ["Fspc{ fsfsid = " ++ showHS " " (fsid fspec)
-                  ,", themes   = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
-                                           -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
-                                   -- "["++chain "," (map (showHS "") (themes fspec))++"]" 
-                  ,", datasets = " ++ "[ "++chain (indentA++", ") (map showHSname (datasets fspec))++indentA++"]" 
-                  ,", vplugs   = " ++ "[ "++chain (indentA++", ") (map showHSname (vplugs fspec))++indentA++"]"
-                  ,", plugs    = " ++ "[ "++chain (indentA++", ") (map showHSname (plugs fspec))++indentA++"]"
-                  ,", serviceS = serviceS'"
-                  ,", serviceG = serviceG'"
-                  ,", services = " ++ "[ "++chain (indentA++", ") (map showHSname (FspecDef.services fspec))++indentA++"]"
-                  ,", vrules   = " ++ "[ "++chain (indentA++", ") (map showHSname (vrules fspec))++indentA++"]"
-                  ,", ecaRules = " ++ "[ "++chain (indentA++", ") (map showHSname (ecaRules fspec))++indentA++"]"
-                  ,", vrels    = " ++ "[ "++chain (indentA++", ") (map showHSname (vrels  fspec))++indentA++"]"
-                  ,", fsisa = isa'"
+                  ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
+                  ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
+                  ,", serviceS      = serviceS'"
+                  ,", serviceG      = serviceG'"
+                  ,wrap ", services      = " indentA (\_->showHSname) (FspecDef.services fspec)
+                  ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
+                  ,wrap ", ecaRules      = " indentA (\_->showHSname) (ecaRules fspec)
+                  ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
+                  ,", fsisa         = isa'"
+                  ,", vpatterns     = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [Pattern]
+                  ,", classdiagrams = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [ClassDiag]
+                  ,", themes        = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
+                                                -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
+                                        -- "["++chain "," (map (showHS "") (themes fspec))++"]" 
+                  ,", violations    = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [(Rule,Paire)]
                   ,"}" 
                   ] ++   
        indent++"where"++
        indent++" isa' = "++ showHS (indent ++ "        ") (fsisa fspec)++
        indent++" gE = genEq (typology isa')"++
-   -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
-   --   "\n -- ***THEMES***: "++
-   --  (if null (themes fspec)    then "" else concat [indent++" "++showHSname t++indent++"  = "++showHS (indent++"    ") t|t<- themes fspec ]++"\n")++
-        
-       (if null (datasets fspec ) then "" else "\n -- ***DATASETS***: "++concat [indent++" "++showHSname d++indent++"  = "++showHS (indent++"    ") d|d<- datasets fspec ]++"\n")++
         
        (if null (plugs fspec ) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS (indent++"    ") p|p<-plugs fspec ]++"\n")++
         
@@ -236,7 +263,7 @@ where
 --        "\n -- ***PATTERNS***: "++
 ----       (if null (fspc_patterns fspec) then "" else concat ["\n\n   "++showHSname pat++" gE"++"\n>   = "++showHS "\n>     " pat|pat<-fspc_patterns fspec]++
         "\n"
-           where indentA = indent ++"                 "
+           where indentA = indent ++"                      "
                  indentB = indent ++"              "
   
 -- \***********************************************************************
@@ -252,12 +279,14 @@ where
        ++ indent++"     [ "++chain (indent++"     , ")
           [showHSname r ++ if null (explain r) then "" else "    -- " ++ explain r| r<-fsv_rules fservice]
           ++indent++"     ]"
-       ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_ecaRules fservice))++indent++"     ]"
+       ++ indent++"     [ "++chain (indent++"     , ") [showHSname r| f<-fsv_ecaRules fservice, r<-[f (error("!Fatal (module ShowHS 279): reference to argument of ECA rule"))]]++indent++"     ]"
        ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_signals  fservice))++indent++"     ]"
        ++ indent++"     [ "++chain (indent++"     , ") (map (showHS (indent++"       ")) (fsv_fields  fservice))++indent++"     ]"
        ++ (if null (fsv_ecaRules fservice ) then "" else
            indent++"where  -- definitions of ECA-rules for service: "++showHSname (fsv_objectdef fservice)++
-           concat [indent++" "++showHSname r++indent++"  = "++showHS (indent++"    ") r|r<-fsv_ecaRules fservice ]++"\n")
+           concat [ indent++" "++showHSname r++" "++showHSname (mphdcl (ecaDelta r))++
+                    indent++"  = "++showHS (indent++"    ") r
+                  | f<-fsv_ecaRules fservice, r<-[f (error("!Fatal (module ShowHS 286): reference to argument of ECA rule"))]]++"\n")
        ++ indent++" -- Einde Fservice "++showHSname (fsv_objectdef fservice)
 
 -- \***********************************************************************
@@ -265,23 +294,35 @@ where
 -- \***********************************************************************
 
    instance ShowHS Field where
-    showHSname field = "fld_" ++ (fld_name field)
-    showHS indent field
-     = "Att "++       "{ fld_name     = "++                     show (fld_name     field)
-       ++ indent++"    , fld_expr     = "++showHS (indent++"      ") (fld_expr     field)
-       ++ ( if fld_editable field
-            then indent++"    , fld_mph      = "++showHS (indent++"      ") (fld_mph     field)
-            else "" )
-       ++ indent++"    , fld_editable = "++                     show (fld_editable field)
-       ++ indent++"    , fld_list     = "++                     show (fld_list     field)
-       ++ indent++"    , fld_must     = "++                     show (fld_must     field)
-       ++ indent++"    , fld_new      = "++                     show (fld_new      field)
-       ++ (if null (fld_fields field) then indent++"    , fld_fields   = []" else
+    showHSname fld = "fld_" ++ (fld_name fld)
+    showHS indent fld
+     = "Att "++       "{ fld_name     = "++                     show (fld_name     fld)
+       ++ indent++"    , fld_expr     = "++showHS (indent++"      ") (fld_expr     fld)
+       ++ indent++"    , fld_mph      = "++
+          ( if fld_editable fld
+            then showHS (indent++"      ") (fld_mph     fld)
+            else "error(\"!Fatal: reference to undefined editrelation in field "++fld_name fld++"\")" )
+       ++ indent++"    , fld_editable = "++                     show (fld_editable fld)
+       ++ indent++"    , fld_list     = "++                     show (fld_list     fld)
+       ++ indent++"    , fld_must     = "++                     show (fld_must     fld)
+       ++ indent++"    , fld_new      = "++                     show (fld_new      fld)
+       ++ (if null (fld_fields fld) then indent++"    , fld_fields   = []" else
            indent++"    , fld_fields   = [ "
            ++ chain (indent++"                     , ")
-                    (map (showHS (indent++"                       ")) (fld_fields field))
+                    (map (showHS (indent++"                       ")) (fld_fields fld))
            ++ indent++"                     ]")
+       ++ indent++"    , fld_insAble  = "++                     show (fld_insAble fld)
+       ++ indent++"    , fld_onIns    = "++
+          ( if fld_insAble fld
+            then "(\\d->"++showHSname (fld_onIns fld arg)++" d)"
+            else "error(\"!Fatal: reference to undefined insert action in field "++fld_name fld++"\")" )
+       ++ indent++"    , fld_delAble  = "++                     show (fld_delAble fld)
+       ++ indent++"    , fld_onDel    = "++
+          ( if fld_delAble fld
+            then "(\\d->"++showHSname (fld_onDel fld arg)++" d)"
+            else "error(\"!Fatal: reference to undefined delete action in field "++fld_name fld++"\")" )
        ++ indent++"    }"
+       where arg = error ("!Fatal: reference to undefined argument of ECA rule")
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
@@ -297,7 +338,7 @@ where
 -- \***********************************************************************
 
 --   instance ShowHS Architecture where
---    showHSname _ = error ("(module ShowHS) an architecture is anonymous with respect to showHS.")
+--    showHSname _ = error ("!Fatal (module ShowHS): an architecture is anonymous with respect to showHS.")
 --    showHS indent arch = concat (map (showHS indent) (archContexts arch))
 
 -- \***********************************************************************
@@ -407,7 +448,7 @@ where
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
    instance ShowHS RuleType where
-     showHSname _ = error "showHSname undefined for Type 'RuleType'"
+     showHSname _ = error "!Fatal (module ShowHS): showHSname undefined for Type 'RuleType'"
      showHS _ Truth          = "Truth"
      showHS _ Equivalence    = "Equivalence"
      showHS _ Implication    = "Implication"
@@ -457,7 +498,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Expression where
-    showHSname expr = error ("(module ShowHS) an expression is anonymous with respect to showHS. Detected at: "++ showADL expr)
+    showHSname expr = error ("!Fatal (module ShowHS): an expression is anonymous with respect to showHS. Detected at: "++ showADL expr)
     showHS _ (Tm m')   = "Tm ("++showHS "" m'++") "
     showHS indent (Tc f)   = showHS indent f
     showHS _ (F [])   = "F [] <Id>"
@@ -481,7 +522,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Gen where
-    showHSname g = error ("(module ShowHS) Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
+    showHSname g = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
     showHS _ gen = "G ("++showHS "" (genfp gen)++") ("++showHS "" (gengen gen)++") ("++showHS "" (genspc gen)++")"
    
 -- \***********************************************************************
@@ -489,14 +530,15 @@ where
 -- \***********************************************************************
 
    instance ShowHS Morphism where
-    showHSname mph = error ("(module showHS) Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
+    showHSname mph = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
     showHS _ mph 
        = case mph of
             Mph{} -> "Mph "++show (mphnm mph)++" "++showPos++" "++showAtts
                          ++" "++showSgn++" "++show (mphyin mph)++" "++showHSname (mphdcl mph)
             I{}   -> "I "++showAtts++" "++showGen++" "++showSpc++" "++show (mphyin mph)
             V{}   -> "V "++showAtts++" "++showSgn
-            Mp1{} -> "Mp1 "++show (mph1val mph)++" ("++showHS "" (mph1typ mph)++")"
+            Mp1{} -> "Mp1 "++mph1val mph++" "++showAtts++" ("++showHS "" (mph1typ mph)++")"  -- WAAROM wordt mph1val mph zonder quotes afgedrukt?
+  -- DAAROM: mph1val mph wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
            where showPos  = "("++showHS "" (mphpos mph)++")"
                  showAtts = showL(map (showHS "") (mphats mph))
                  showGen  = "("++showHS "" (mphgen mph)++")"
@@ -552,7 +594,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Concept where
-    showHSname c = error ("(module showHS) Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
+    showHSname c = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
     showHS _ c = case c of
                        C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
                        S        -> "S "
@@ -568,7 +610,7 @@ where
 -- \***********************************************************************
    
    instance ShowHS Prop where
-    showHSname p = error ("(module ShowHS) should not showHS the name of multiplicities (Prop): "++showHS "" p)
+    showHSname p = error ("!Fatal (module ShowHS): should not showHS the name of multiplicities (Prop): "++showHS "" p)
     showHS _ Uni = "Uni"
     showHS _ Inj = "Inj"
     showHS _ Sur = "Sur"
@@ -584,7 +626,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS FilePos where
-    showHSname p = error ("(module ShowHS) Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
+    showHSname p = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++showHS "" p++"). A position gets no definition in Haskell code.")
     showHS _ (FilePos (fn,Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
     showHS _ Nowhere

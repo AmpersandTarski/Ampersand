@@ -89,7 +89,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
             trgC    = quote$sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
             trg'    = noCollideUnlessTm fstm [src'] trgC
             fstm    = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)
-            mp1Tm   = take 1 ([t| t@(Tm (Mp1 _ _))<-lst']++[t| t@(F ((Tm (Mp1 _ _)):(Tm (V _ _)):(Tm (Mp1 _ _)):[])) <- lst'])
+            mp1Tm   = take 1 ([t| t@(Tm (Mp1{}))<-lst']++[t| t@(F ((Tm (Mp1{})):(Tm (V _ _)):(Tm (Mp1{})):[])) <- lst'])
             lst     = [t|t<-lst', not (elem t mp1Tm)]
             posTms  = if null posTms' then map notCp (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
             negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
@@ -108,12 +108,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++
-                        [ "isect0."++src'++" = "++s -- sorce and target are equal because this is the case with Mp1
-                        | (Tm (Mp1 s _)) <- mp1Tm
+                        [ "isect0."++src'++" = "++mph1val m -- sorce and target are equal because this is the case with Mp1
+                        | (Tm m@(Mp1{})) <- mp1Tm
                         ]++
-                        [ "isect0."++src'++" = "++s1 -- sorce and target are unequal
-                          ++ " AND isect0."++trg'++" = "++s2 -- sorce and target are unequal
-                        | (F ((Tm (Mp1 s1 _)):(Tm (V _ _)):(Tm (Mp1 s2 _)):[])) <- mp1Tm
+                        [ "isect0."++src'++" = "++mph1val m1 -- sorce and target are unequal
+                          ++ " AND isect0."++trg'++" = "++mph1val m2 -- sorce and target are unequal
+                        | (F ((Tm m1@(Mp1{})):(Tm (V _ _)):(Tm m2@(Mp1{})):[])) <- mp1Tm
                         ]++
                         [if isIdent l
                          then  "isect0."++src'++" <> isect0."++trg' -- this code will calculate ../\-I
@@ -134,16 +134,16 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                        ("fst."++trg'++" IS NOT NULL")
                        where src' = noCollideUnlessTm (F fs) [trg'] (quote$sqlExprSrc fSpec (F fs))
                              trg' = quote$sqlExprTrg fSpec (F fs)
-   selectExpr fSpec i src trg (F (s1@(Tm (Mp1 _ _)):(s2@(Tm (V _ _)):(s3@(Tm (Mp1 _ _)):fx@(_:_))))) -- to make more use of the thing below
+   selectExpr fSpec i src trg (F (s1@(Tm (Mp1{})):(s2@(Tm (V _ _)):(s3@(Tm (Mp1{})):fx@(_:_))))) -- to make more use of the thing below
      =  selectExpr fSpec i src trg (F ((F (s1:s2:s3:[])):fx))
 
-   selectExpr fSpec i src trg (F ((Tm (Mp1 sr _)):((Tm (V _ _)):((Tm (Mp1 tr _)):[])))) -- this will occur quite often because of doSubsExpr
-     = "SELECT "++sr++" AS "++src++", "++tr++" AS "++trg
+   selectExpr fSpec i src trg (F ((Tm sr@(Mp1{})):((Tm (V _ _)):((Tm tr@(Mp1{})):[])))) -- this will occur quite often because of doSubsExpr
+     = "SELECT "++mph1val sr++" AS "++src++", "++mph1val tr++" AS "++trg
 
-   selectExpr fSpec i src trg (F (e'@(Tm (Mp1 sr _)):(f:fx)))
+   selectExpr fSpec i src trg (F (e'@(Tm sr@(Mp1{})):(f:fx)))
       = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                         (selectExprBrac fSpec i src' trg' (F (f:fx))++" AS fst")
-                        ("fst."++src'++" = "++sr)
+                        ("fst."++src'++" = "++mph1val sr)
                         where src' = quote$sqlExprSrc fSpec e'
                               trg' = noCollideUnlessTm (F (f:fx)) [src'] (quote$sqlExprTrg fSpec (F (f:fx)))
 
@@ -421,12 +421,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                       (src'++" IS NOT NULL AND "++trg'++" IS NOT NULL")
     where src'="vfst."++sqlAttConcept fSpec (source mph)
           trg'="vsnd."++sqlAttConcept fSpec (target mph)
-   selectExprMorph _ _ src trg (Mp1 str _)
+   selectExprMorph _ _ src trg mph@(Mp1{})
     | src == ""&&trg=="" = error ("Fatal in selectExprMorph (RelBinGenBasics): Source and target are \"\", use selectExists' for this purpose")
-    | src == ""  = "SELECT "++str++" AS "++trg
-    | trg == ""  = "SELECT "++str++" AS "++src
-    | src == trg = "SELECT "++str++" AS "++src
-    | otherwise  = "SELECT "++str++" AS "++src++", "++str++" AS "++trg
+    | src == ""  = "SELECT "++mph1val mph++" AS "++trg
+    | trg == ""  = "SELECT "++mph1val mph++" AS "++src
+    | src == trg = "SELECT "++mph1val mph++" AS "++src
+    | otherwise  = "SELECT "++mph1val mph++" AS "++src++", "++mph1val mph++" AS "++trg
    selectExprMorph fSpec i src trg mph -- made for both Mph and I
     | isIdent mph = selectGeneric i (quote$sqlAttConcept fSpec (source mph),src) (quote$sqlAttConcept fSpec (target mph),trg) (quote (sqlConcept fSpec (source mph))) "1"-- (quote (sqlConcept fSpec (source mph))++" IS NOT NULL")
     | otherwise   = selectGeneric i (sqlMorSrc fSpec mph,src) (sqlMorTrg fSpec mph,trg) (quote$sqlMorName fSpec mph) "1"
@@ -551,24 +551,25 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
       replF ks = F (ks)
    sqlExprSrc :: Fspc->Expression -> String
-   sqlExprSrc _     (F [])    = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
-   sqlExprSrc fSpec (F [f])   = sqlExprSrc fSpec f
-   sqlExprSrc fSpec (F fs)    = sqlExprSrc fSpec (head fs)
-   sqlExprSrc _     (Fu [])   = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fu [])")
-   sqlExprSrc fSpec (Fu [f])  = sqlExprSrc fSpec f
-   sqlExprSrc fSpec (Fu fs)   = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-   sqlExprSrc _     (Fi [])   = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fi [])")
-   sqlExprSrc fSpec (Fi [f])  = sqlExprSrc fSpec f
-   sqlExprSrc fSpec (Fi fs)   = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-   sqlExprSrc _     (Fd [])   = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fd [])")
-   sqlExprSrc fSpec (Fd [f])  = sqlExprSrc fSpec f
-   sqlExprSrc fSpec (Fd fs)   = sqlExprSrc fSpec (head fs)
-   sqlExprSrc fSpec (Cp e')   = sqlExprSrc fSpec e'
-   sqlExprSrc fSpec (K0 e')   = sqlExprSrc fSpec e'
-   sqlExprSrc fSpec (K1 e')   = sqlExprSrc fSpec e'
-   sqlExprSrc fSpec (Tc e')   = sqlExprSrc fSpec e'
-   sqlExprSrc _     (Tm (Mp1 _ t)) = "Att"++(name t)
-   sqlExprSrc fSpec (Tm m') = sqlMorSrc fSpec m'
+   sqlExprSrc _     (F [])         = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
+   sqlExprSrc fSpec (F [f])        = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (F fs)         = sqlExprSrc fSpec (head fs)
+   sqlExprSrc _     (Fu [])        = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fu [])")
+   sqlExprSrc fSpec (Fu [f])       = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (Fu fs)        = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+   sqlExprSrc _     (Fi [])        = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fi [])")
+   sqlExprSrc fSpec (Fi [f])       = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (Fi fs)        = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+   sqlExprSrc _     (Fd [])        = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fd [])")
+   sqlExprSrc fSpec (Fd [f])       = sqlExprSrc fSpec f
+   sqlExprSrc fSpec (Fd fs)        = sqlExprSrc fSpec (head fs)
+   sqlExprSrc fSpec (Cp e')        = sqlExprSrc fSpec e'
+   sqlExprSrc fSpec (K0 e')        = sqlExprSrc fSpec e'
+   sqlExprSrc fSpec (K1 e')        = sqlExprSrc fSpec e'
+   sqlExprSrc fSpec (Tc e')        = sqlExprSrc fSpec e'
+   sqlExprSrc _     (Tm m@(Mp1{})) = "Att"++(name (mph1typ m))
+   sqlExprSrc fSpec (Tm m')        = sqlMorSrc fSpec m'
+
    sqlExprTrg :: Fspc->Expression -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 

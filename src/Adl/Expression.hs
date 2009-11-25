@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Expression (Expression(..),Expressions
+module Adl.Expression (Expression(..),Expressions,isF,isFd,isFi,isFu
                       ,v
                       ,isPos,isNeg,notCp,insParentheses)
 where
@@ -15,17 +15,33 @@ where
    import Auxiliaries                 (eqClass, sord')
 
    type Expressions = [Expression]
-   data Expression  = Tm { m :: Morphism}     -- ^ simple morphism, possibly conversed     ~
-                    | Tc { e :: Expression}   -- ^ bracketed expression                 ( ... )
-                    | F  { es :: Expressions} -- ^ composition                             ;
-                    | Fd { es :: Expressions} -- ^ relative addition                       !
-                    | Fi { es :: Expressions} -- ^ intersection                            /\
-                    | Fu { es :: Expressions} -- ^ union                                   \/
-                    | K0 { e :: Expression}   -- ^ Reflexive and transitive closure        *
-                    | K1 { e :: Expression}   -- ^ Transitive closure                      +
-                    | Cp { e :: Expression}   -- ^ Complement                              -
+   data Expression  = Tm Morphism     -- m  ^ simple morphism, possibly conversed     ~
+                    | Tc Expression   -- e  ^ bracketed expression                 ( ... )
+                    | F  Expressions  -- ts ^ composition                             ;
+                    | Fd Expressions  -- ts ^ relative addition                       !
+                    | Fi Expressions  -- fs ^ intersection                            /\
+                    | Fu Expressions  -- fs ^ union                                   \/
+                    | K0 Expression   -- e  ^ Reflexive and transitive closure        *
+                    | K1 Expression   -- e  ^ Transitive closure                      +
+                    | Cp Expression   -- e  ^ Complement                              -
                                  --               deriving (Show)
-                      
+
+   isFu :: Expression -> Bool
+   isFu Fu{}  = True
+   isFu _     = False
+
+   isFi :: Expression -> Bool
+   isFi Fi{}  = True
+   isFi _     = False
+   
+   isF :: Expression -> Bool
+   isF  F{}   = True
+   isF _      = False
+
+   isFd :: Expression -> Bool
+   isFd Fd{}  = True
+   isFd _     = False
+   
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
 -- \***********************************************************************
@@ -34,13 +50,15 @@ where
     Fd ts == Fd ts' = ts==ts'
     Fu fs == Fu fs' = sord' show fs==sord' show fs'
     Fi fs == Fi fs' = sord' show fs==sord' show fs'
-    Cp expr  == Cp expr'  = expr==expr'
-    K0 expr  == K0 expr'  = expr==expr'
-    K1 expr  == K1 expr'  = expr==expr'
-    Tm mph  == Tm mph'  = mph==mph'
-    Tc expr  == expr'     = expr==expr'
-    expr     == Tc expr'  = expr==expr'
+    Cp e  == Cp e'  = e==e'
+    K0 e  == K0 e'  = e==e'
+    K1 e  == K1 e'  = e==e'
+    Tm m  == Tm m'  = m==m'
+    Tc e  == Tc e'  = e==e'
+    Tc e  == e'     = e==e'
+    e     == Tc e'  = e==e'
     _     == _      = False
+
 -- {-
    instance Show Expression where
     showsPrec _ expr  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") expr)
@@ -82,23 +100,23 @@ where
 
     source (Tm mph)        = source mph
     source (Tc f)          = source f
-    source (F  [])         = Anything -- error ("(module CC_aux) Fatal: source (F [])")
+    source (F  [])         = Anything -- error ("!Fatal (module Expression): source (F [])")
     source (F  ts)         = source (head ts)
-    source (Fd [])         = Anything -- error ("(module CC_aux) Fatal: source (Fd [])")
+    source (Fd [])         = Anything -- error ("!Fatal (module Expression): source (Fd [])")
     source (Fd ts)         = source (head ts)
     source (Fu fs)         = if length (eqClass order (map source fs))==1 then minimum (map source fs)
-                             else Anything -- error ("(module CC_aux) Fatal: source ("++showHS "" (Fu fs)++")")
+                             else Anything -- error ("(!Fatal (module Expression): source ("++showHS "" (Fu fs)++")")
     source (Fi fs)         = if length (eqClass order (map source fs))==1 then maximum (map source fs)
-                             else Anything -- error ("(module CC_aux) Fatal: source ("++showHS "" (Fi fs)++")")
+                             else Anything -- error ("!Fatal (module Expression): source ("++showHS "" (Fi fs)++")")
     source (K0 e')         = source e'
     source (K1 e')         = source e'
     source (Cp e')         = source e'
 
     target (Tm mph)        = target mph
     target (Tc f)          = target f
-    target (F  [])         = Anything -- error ("(module CC_aux) Fatal: target (F [])")
+    target (F  [])         = Anything -- error ("!Fatal (module Expression): target (F [])")
     target (F  ts)         = target (last ts)
-    target (Fd [])         = Anything -- error ("(module CC_aux) Fatal: target (Fd [])")
+    target (Fd [])         = Anything -- error ("!Fatal (module Expression): target (Fd [])")
     target (Fd ts)         = target (last ts)
     target (Fu fs)         = if length (eqClass order (map target fs))==1 then minimum (map target fs)
                              else Anything
@@ -111,17 +129,17 @@ where
     sign (Tm mph)          = sign mph
     sign (Tc f)            = sign f
     sign (F ts)            = if null ts 
-                              then error ("(module CC_aux) Fatal: no terms in sign (F "++show ts++")")
+                              then error ("!Fatal (module Expression): no terms in sign (F "++show ts++")")
                               else foldr1 jnSign (map sign ts)
                               where (s , _ ) `jnSign` ( _ ,t') = (s,t')
     sign (Fd ts)           = if null ts 
-                              then error ("(module CC_aux) Fatal: no terms in sign (Fd "++show ts++")")
+                              then error ("!Fatal (module Expression): no terms in sign (Fd "++show ts++")")
                               else foldr1 jnSign (map sign ts)
                               where (s , _ ) `jnSign` ( _ ,t') = (s,t')
-    sign (Fu fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fu fs) not defined\nwith map sign fs="++show (map sign fs)) else
+    sign (Fu fs)           = if length (eqClass order (map sign fs))>1 then error ("!Fatal (module Expression): sign (Fu fs) not defined\nwith map sign fs="++show (map sign fs)) else
                              if null fs then (Anything, Anything) else
                              foldr1 lub (map sign fs)
-    sign (Fi fs)           = if length (eqClass order (map sign fs))>1 then error ("(module CC_aux) Fatal: sign (Fi fs) not defined\nwith map sign fs="++show (map sign fs)) else
+    sign (Fi fs)           = if length (eqClass order (map sign fs))>1 then error ("!Fatal (module Expression): sign (Fi fs) not defined\nwith map sign fs="++show (map sign fs)) else
                              if null fs then (Anything, Anything) else
                              foldr1 lub (map sign fs)
     sign (K0 e')           = sign e'
@@ -131,10 +149,10 @@ where
    instance Numbered Expression where
     pos (Tm mph)  = pos mph
     pos (Tc f)  = pos f
-    pos (F ts)  = if not (null ts) then pos (head ts) else error "(module Expression) !!Software error 813. Please submit a complete bug report to your dealer"
-    pos (Fd ts) = if not (null ts) then pos (head ts) else error "(module Expression) !!Software error 814. Please submit a complete bug report to your dealer"
-    pos (Fu fs) = if not (null fs) then pos (head fs) else error "(module Expression) !!Software error 815. Please submit a complete bug report to your dealer"
-    pos (Fi fs) = if not (null fs) then pos (head fs) else error "(module Expression) !!Software error 816. Please submit a complete bug report to your dealer"
+    pos (F ts)  = if not (null ts) then pos (head ts) else error "!Fatal (module Expression): error 813. Please submit a complete bug report to your dealer"
+    pos (Fd ts) = if not (null ts) then pos (head ts) else error "!Fatal (module Expression): error 814. Please submit a complete bug report to your dealer"
+    pos (Fu fs) = if not (null fs) then pos (head fs) else error "!Fatal (module Expression): error 815. Please submit a complete bug report to your dealer"
+    pos (Fi fs) = if not (null fs) then pos (head fs) else error "!Fatal (module Expression): error 816. Please submit a complete bug report to your dealer"
     pos (K0 e')  = pos e'
     pos (K1 e')  = pos e'
     pos (Cp e')  = pos e'

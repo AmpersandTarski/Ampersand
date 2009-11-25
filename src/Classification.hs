@@ -73,7 +73,7 @@ where
     empty = Bottom
     elems Bottom = []
     elems (Cl r cls) = r: [c| cl<-cls, c<-elems cl]
-    rd _ = error ("Module Classifications needs a fix....")
+    rd  _ = error ("!Fatal (module Classifications): rd needs a fix....")
 
     lcl `isc` rcl | length trees==1 = head trees
                   | otherwise       = Bottom
@@ -90,7 +90,7 @@ where
      | root x==root y     = foldl insert x (subs y)
      | aINb && not bINa   = insert y x
      | not aINb && bINa   = insert x y
-     | otherwise          = error "!Err: uni of Collections"
+     | otherwise          = error "!Fatal (module Classifications): uni of Collections"
      where
       aINb = root x `isDefinedIn` y && not (or [c `isDefinedIn` y|cl<-subs x,c<-elems cl])
       bINa = root y `isDefinedIn` x && not (or [c `isDefinedIn` x|cl<-subs y,c<-elems cl])
@@ -113,7 +113,7 @@ where
    insert wls cls
     | (root cls) `isDefinedIn` wls = update up (root cls==) wls
     | or[c `isDefinedIn` wls|c<-rd[c|cl<-subs cls, c<-elems cl]]
-        = error ("insert error!")
+        = error ("!Fatal (module Classifications): insert error!")
     | otherwise                    = Cl (root wls) (subs wls++[cls])
     where up wls' = foldl insert wls' (subs cls)
 

@@ -10,7 +10,7 @@
   module ShowADL ( ShowADL(..), PrintADL(..) )
   where
    import Char                            (isAlphaNum,isUpper)
-   import CommonClasses                   (Identified(..),ABoolAlg(..))
+   import CommonClasses
    import Collection                      (Collection(..))
    import Adl
    
@@ -135,27 +135,27 @@
       --REMARK -> cannot recursively use printadl, because insParentheses also removes redundant brackets 
       printexpr expr =  
         case expr of
-          Tm{} -> printadl fSpec i (m expr)
-          Fu{} -> printlist ("","\\/","") [printexpr x|x<-es expr]
-          Fi{} -> printlist ("","/\\","") [printexpr x|x<-es expr]
-          F{}  -> printlist ("",";","") [printexpr x|x<-es expr]
-          Fd{} -> printlist ("","!","") [printexpr x|x<-es expr]
-          Cp{} -> "-" ++ printexpr (e expr)
-          Tc{} -> "(" ++ printexpr (e expr) ++ ")"
-          K0{} -> printexpr (e expr) ++ "*"
-          K1{} -> printexpr (e expr) ++ "+"
+          Tm m  -> printadl fSpec i m
+          Fu fs -> printlist ("","\\/","") [printexpr x|x<-fs]
+          Fi fs -> printlist ("","/\\","") [printexpr x|x<-fs]
+          F  ts -> printlist ("",";","") [printexpr x|x<-ts]
+          Fd ts -> printlist ("","!","") [printexpr x|x<-ts]
+          Cp e  -> "-" ++ printexpr e
+          Tc e  -> "(" ++ printexpr e ++ ")"
+          K0 e  -> printexpr e ++ "*"
+          K1 e  -> printexpr e ++ "+"
 
    --REMARK -> if you want mphats to be printed then fill the mphats
    --EXTEND -> print what has been written
    --REMARK -> show Morphism does not print mphats
    instance PrintADL Morphism where
     printadl fSpec i mph = case mph of
-       Mph{mphats=[c]} -> name mph ++ "[" ++ show c ++ "*" ++ show c ++ "]" ++ if inline mph then "" else "~"
-       Mph{mphats=[c1,c2]} -> name mph ++ "[" ++ show c1 ++ "*" ++ show c2 ++ "]" ++ if inline mph then "" else "~"
+       Mph{mphats=[c]} -> name mph ++ showSign[c,c] ++ if inline mph then "" else "~"
+       Mph{mphats=[c1,c2]} -> name mph ++ showSign[c1,c2] ++ if inline mph then "" else "~"
        Mph{} -> name mph ++ if inline mph then "" else "~"
-       I{mphats=[c]} -> "I" ++ "[" ++ show c ++ "]" 
+       I{mphats=[c]} -> "I" ++ showSign[c] 
        I{} -> "I" 
-       V{mphats=[c1,c2]} -> "V" ++ "[" ++ show c1 ++ "*" ++ show c2 ++ "]" 
+       V{mphats=[c1,c2]} -> "V" ++ showSign[c1,c2] 
        V{} -> "V"
        Mp1{} -> name mph
 
@@ -325,8 +325,8 @@
             = ind++" = [ "++
               chain (ind++"   , ") [ name o++
                                      (if null (objstrs o) then "" else " {"++chain ", " [chain " " (map str ss)| ss<-objstrs o]++"}")++
-                                     " : "++(if isIdent (objctx o) then "["++str (name (target (objctx o)))++"]" else
-                                             if isTrue  (objctx o) then "[ONE*"++str (name (target (objctx o)))++"]" else
+                                     " : "++(if isIdent (objctx o) then showSign[target (objctx o)] else
+                                             if isTrue  (objctx o) then showSign[S,target (objctx o)] else
                                              showADL (objctx o))++
                                      if null (objats o) then "" else recur (ind++"     ") (objats o)
                                    | o<-objs ]++
@@ -515,8 +515,8 @@
      = "I"++if null atts then "" else showSign atts++if g==s then "" else if yin then "" else "~"
     showADL (V atts (a,b))
      = "V"++if null atts then "" else showSign atts
-    showADL (Mp1 str sgn)
-     = "'"++str++"'"++(showSign [sgn])
+    showADL m@(Mp1{})
+     = "'"++mph1val m++"'"++(showSign [mph1typ m])
     showADLcode fSpec mph@Mph{}
      = decnm (mphdcl mph)++
        (if null (mphats mph) then "" else showSign (mphats mph))++
@@ -526,8 +526,8 @@
      = "I"++if null atts then showSign [g,s] else showSign atts++if g==s then "" else if yin then "" else "~"
     showADLcode fSpec (V atts (a,b))
      = "V"++if null atts then showSign [a,b] else showSign atts
-    showADLcode fSpec (Mp1 str sgn)
-     = "'"++str++"'"++(showSign [sgn])
+    showADLcode fSpec m@(Mp1{})
+     = "'"++mph1val m++"'"++(showSign [mph1typ m])
 
    instance ShowADL Declaration where
     showADL decl@(Sgn nm a b props prL prM prR cs expla _ _ sig)
@@ -607,9 +607,5 @@
    types fSpec (Cp e) = types fSpec e
    types fSpec (K0 e) = types fSpec e
    types fSpec (K1 e) = types fSpec e
-
-
-
-   showSign cs = "["++(chain "*".rd.map name) cs++"]"
 
 

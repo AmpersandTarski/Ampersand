@@ -13,35 +13,36 @@ where
    import Adl.Prop         (Prop(..),Props,flipProps)
    import Adl.Pair         (Pairs,flipPair) 
    import Strings          (chain)
-   import CommonClasses    (Identified(name,typ)
+   import CommonClasses    (Identified(name,typ),showSign
                            , Explained(explain)
                            , ABoolAlg)    
    import Collection       (Collection ((>-)))
    
    type Morphisms = [Morphism]
    data Morphism  = 
-                   Mph { mphnm :: String             -- ^ the name of the morphism. This is the same name as
+                   Mph  { mphnm :: String            -- ^ the name of the morphism. This is the same name as
                                                      --   the declaration that is bound to the morphism.
                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het Morphism is gekoppeld, moet de naam van het Morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
-                       , mphpos :: FilePos           -- ^ the position of the rule in which the morphism occurs
-                       , mphats :: [Concept]         -- ^ the attributes specified inline
-                       , mphtyp :: Sign              -- ^ the allocated type. Together with the name, this forms the declaration.
-                       , mphyin :: Bool              -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
-                       , mphdcl :: Declaration       -- ^ the declaration bound to this morphism.
-                       }
-                  | I  { mphats :: [Concept]         -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
-                       , mphgen ::  Concept          -- ^ the generic concept  
-                       , mphspc ::  Concept          -- ^ the specific concept
-                       , mphyin ::  Bool             -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
-                       } 
-                  | V  { mphats :: [Concept]         -- ^ the (optional) attributes specified inline.
-                       , mphtyp :: Sign              -- ^ the allocated type.
-                       }
+                        , mphpos :: FilePos          -- ^ the position of the rule in which the morphism occurs
+                        , mphats :: [Concept]        -- ^ the attributes specified inline
+                        , mphtyp :: Sign             -- ^ the allocated type. Together with the name, this forms the declaration.
+                        , mphyin :: Bool             -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
+                        , mphdcl :: Declaration      -- ^ the declaration bound to this morphism.
+                        }
+                  | I   { mphats :: [Concept]        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
+                        , mphgen ::  Concept         -- ^ the generic concept  
+                        , mphspc ::  Concept         -- ^ the specific concept
+                        , mphyin ::  Bool            -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
+                        } 
+                  | V   { mphats :: [Concept]        -- ^ the (optional) attributes specified inline.
+                        , mphtyp :: Sign             -- ^ the allocated type.
+                        }
                   | Mp1 { mph1val :: String          -- ^ the value of the one morphism
+                        , mphats :: [Concept]        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
                         , mph1typ :: Concept         -- ^ the allocated type.
                         }  
-                           --  deriving (Show)
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Morphism                      ***
 -- \***********************************************************************
@@ -59,21 +60,20 @@ where
    instance Eq Morphism where
  --   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
     Mph nm _ _ (a,b) yin _ == Mph nm' _ _ (a',b') yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
-    Mph _ _ _ (_,_) _ _    == _ = False
-    I _ g s yin            == I _ g' s' yin'             =            if yin==yin' then g==g' && s==s' else g==s' && s==g'
-    I _ _ _ _              == _ = False
+    I _ g s yin            == I _ g' s' yin'             = if yin==yin' then g==g' && s==s' else g==s' && s==g'
     V _ (a,b)              == V _ (a',b')                = a==a' && b==b'
-    V _ (_,_)              == _ = False
-    Mp1 s c                == Mp1 s' c'                  = s==s' && c==c'
-    Mp1 _ _                == _ = False
---  {-
+    Mp1 s _ c              == Mp1 s' _ c'                = s==s' && c==c'
+    _ == _ = False
+
    instance Show Morphism where
     showsPrec _ m = case m of
-           Mph{} -> showString ((mphnm m) ++ if mphyin m then "" else "~")
-           I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
-           V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
-           Mp1{} -> undefined
---  -}
+      Mph{} -> showString (mphnm m++
+               (if mphyin m then showSign [source m,target m] else showSign [target m,source m])++
+               if mphyin m then "" else "~")
+      I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
+      V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
+      Mp1{} -> showString ("Mp1 "++show (mph1val m)++" "++ if null (mphats m) then "" else show (mphats m))
+
    instance Ord Morphism where
     a <= b = source a <= source b && target a <= target b
 
@@ -91,9 +91,9 @@ where
 --    target (V atts (a,b))              = b
 --    target (Mp1 _ t) = t
     sign   (Mph _ _ _ (a,b) _ _) = (a,b)
-    sign   (I _ g s yin)            = if yin then (s,g) else (g,s)
-    sign   (V _ (a,b))              = (a,b)
-    sign   (Mp1 _ s) = (s,s)
+    sign   (I _ g s yin)         = if yin then (s,g) else (g,s)
+    sign   (V _ (a,b))           = (a,b)
+    sign   m@Mp1{}               = if null (mphats m) then (mph1typ m,mph1typ m) else (head (mphats m),last (mphats m))
     source m = source (sign m)
     target m = target (sign m)
    instance Numbered Morphism where
@@ -308,7 +308,6 @@ where
                   , mphdcl = d
                   }
 
-                   
    mIs :: Concept -> Morphism
    mIs c = I [] c c True
 

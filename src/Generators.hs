@@ -21,9 +21,7 @@ import Calc         (deriveProofs)
 import Prototype.ObjBinGen (phpObjServices)
 import Adl
 import Fspec2Pandoc (render2Pandoc,fSpec2Pandoc)
---import Rendering.ClassDiagram
 import Strings      (remSpaces)
---import Rendering.AdlExplanation
 import Atlas.Atlas
 
 serviceGen :: Fspc -> Options -> IO()

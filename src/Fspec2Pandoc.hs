@@ -460,13 +460,13 @@ printrule flags r = case r of
    Fr {} -> [Str "?"]
 printexpr :: Options -> Expression -> [Inline]
 printexpr flags expr = case expr of
-   Tm {} -> printmph flags (m expr)
-   Tc {} -> [Str "("] ++ (printexpr flags (e expr)) ++ [Str ")"]
-   F  {} -> addinfix (Str ";") [printexpr flags sub | sub<-es expr]
-   Fd {} -> addinfix (printsymbol flags "dagger") [printexpr flags sub | sub<-es expr]
-   Fi {} -> addinfix (printsymbol flags "cap") [printexpr flags sub | sub<-es expr]
-   Fu {} -> addinfix (printsymbol flags "cup") [printexpr flags sub | sub<-es expr]
-   K0 {} -> printexpr flags (e expr) ++ [Superscript [Str "*"]]
-   K1 {} -> printexpr flags (e expr) ++ [Superscript [Str "+"]]
-   Cp {} -> printcompl flags $ printexpr flags (e expr)
+   Tm m  -> printmph flags m
+   Tc e  -> [Str "("] ++ (printexpr flags e) ++ [Str ")"]
+   F  ts -> addinfix (Str ";") [printexpr flags sub | sub<-ts]
+   Fd ts -> addinfix (printsymbol flags "dagger") [printexpr flags sub | sub<-ts]
+   Fi fs -> addinfix (printsymbol flags "cap") [printexpr flags sub | sub<-fs]
+   Fu fs -> addinfix (printsymbol flags "cup") [printexpr flags sub | sub<-fs]
+   K0 e  -> printexpr flags e ++ [Superscript [Str "*"]]
+   K1 e  -> printexpr flags e ++ [Superscript [Str "+"]]
+   Cp e  -> printcompl flags $ printexpr flags e
 

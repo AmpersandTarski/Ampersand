@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# OPTIONS -XTypeSynonymInstances #-}
+{-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
 module XML.ShowXMLtiny (showXML)
 where
 --   import Text.XML.HaXml
@@ -58,7 +58,6 @@ where
              [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
           ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
           ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (vpatterns f))] 
-          ++ [ Elem (simpleTag "Datasets") (map mkXmlTree (datasets f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
           ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 
@@ -225,16 +224,12 @@ where
      mkTag f = Tag "Morphism" [nameToAttr f] 
      mkXmlTree mph = Elem (mkTag mph) 
       (case mph of  
-          Mph _ _ _ _ _ _ 
-                ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats mph))]
-                  ++[Elem (simpleTag "Source") [mkXmlTree (source mph)]]
-                  ++[Elem (simpleTag "Target") [mkXmlTree (target mph)]]                  
-          I _ _ _ _ 
-                ->  [still2bdone "Morphism_I"]
-          V _ _
-                ->  [still2bdone "Morphism_V"]
-          Mp1 _ _
-                ->  [still2bdone "Morphism_ONE"]
+          Mph{} ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats mph))]
+                    ++[Elem (simpleTag "Source") [mkXmlTree (source mph)]]
+                    ++[Elem (simpleTag "Target") [mkXmlTree (target mph)]]                  
+          I{}   ->  [still2bdone "Morphism_I"]
+          V{}   ->  [still2bdone "Morphism_V"]
+          Mp1{} ->  [still2bdone "Morphism_ONE"]
            ) 
 
 
@@ -308,6 +303,10 @@ where
      mkTag _ = Tag "ECArule" []
      mkXmlTree _ = still2bdone "ECArule"
    
+   instance XML (Declaration->ECArule) where
+     mkTag _ = Tag "ECArule" []
+     mkXmlTree _ = still2bdone "Declaration->ECArule"
+
    instance XML Plug where
      mkTag p = Tag plugType [ nameToAttr p]
                  where plugType = case p of
