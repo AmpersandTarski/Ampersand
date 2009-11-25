@@ -165,7 +165,14 @@
                                       ++"\" ID=\""++n++"\">new "++(name a)++"</LI></UL>"
              acls c a = c++"_"++(phpIdentifier (name a))
         attributeWrapper depth path cls att
-         = [ "<DIV class=\"Floater "++(name att)++"\">"
+         = if elem "PICTURE" [x|xs<-objstrs att,x<-xs] 
+           then   
+           [ "<?php"
+           , "      $"++ phpIdentifier (name att) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att)++"();"
+           ] ++ indentBlock 6 embedimage ++
+           [ "    ?> "]
+           else
+           [ "<DIV class=\"Floater "++(name att)++"\">"
            , "  <DIV class=\"FloaterHeader\">"++(name att)++"</DIV>"
            , "  <DIV class=\"FloaterContent\"><?php"
            , "      $"++ phpIdentifier (name att) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att)++"();"
@@ -181,7 +188,14 @@
            ++ indentBlock 2 (concat [showBlockJS c a | (c,a)<-newBlocks]) ++
            [ "</SCRIPT>"
            , "<?php } ?>"]
-           where
+           where 
+            embedimage
+              = ["foreach("++var++" as $i"++show depth++"=>"++atnm ++"){"
+                , "  echo '<IMG src=\"'."++atnm++".'\"/>';"
+                , "}"]
+                where
+                var =  ("$"++phpIdentifier (name att))
+                atnm = "$v"++show depth
             (content,newBlocks)
               = (attContent ("$"++phpIdentifier (name att)) depth path cls att)
         -- attHeading shows a heading and its value
