@@ -11,6 +11,7 @@
 
    import Collection(rd)
    import Strings(chain)
+   import Options
    ----------------------------------------------
    class Identified a where
     name   :: a->String
@@ -30,10 +31,10 @@
     order :: a -> a -> Bool
     glb a b | b <= a = b
             | a <= b = a
-            | otherwise  = error "(module CommonClasses) glb undefined"
+            | otherwise  = error "!Fatal (module CommonClasses 34): glb undefined"
     lub a b | a <= b = b
             | b <= a = a
-            | otherwise = error "(module CommonClasses) lub undefined"
+            | otherwise = error "!Fatal (module CommonClasses 37): lub undefined"
     order a b | a <= b = True
               | b <= a = True
               | otherwise = False
@@ -41,14 +42,15 @@
    instance (ABoolAlg a,ABoolAlg b) => ABoolAlg (a,b) where
     glb a b | a <= b = a
             | b <= a = b
-            | otherwise = error ("(module CommonClasses) Fatal: glb undefined: a="++show a++", b="++show b)
+            | otherwise = error ("!Fatal (module CommonClasses 45): glb undefined: a="++show a++", b="++show b)
     lub a b | b <= a = a
             | a <= b = b
-            | otherwise = error ("(module CommonClasses) Fatal: lub undefined: a="++show a++", b="++show b)
+            | otherwise = error ("!Fatal (module CommonClasses 48): lub undefined: a="++show a++", b="++show b)
 
    class Explained a where
-    explain :: a -> String
-    explain _ = error "(module CommonClasses) explain undefined"
+    explain :: Options -> a -> String
+    explain _ _
+     = error "!Fatal (module CommonClasses 54): explain undefined"
 
    class Conceptual a where
     conts      :: a -> [String]                   -- the set of all instances in a concept

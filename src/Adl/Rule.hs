@@ -11,7 +11,6 @@ where
    import Adl.Expression                ( Expression(..),Expressions,v)
    import Adl.Prop
    import CommonClasses                 ( Identified(name,typ)
-                                        , ABoolAlg(lub,order)
                                         , Explained(explain))
                                            
    type Rules = [Rule]
@@ -60,13 +59,13 @@ where
    -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
 --   data AutType = Clos0 | Clos1 deriving (Eq,Show)
    instance Show Rule where
+    showsPrec _ x@(Ru{})  | rrsrt x==Implication = showString$ show(rrant x) ++ " |- " ++ (show$rrcon x)
+                          | rrsrt x==Equivalence = showString$ show(rrant x) ++ " = " ++ (show$rrcon x)
+                          | rrsrt x==Truth = showString$ show(rrcon x)
+                          | otherwise = showString$ show$grgen x
     showsPrec _ x@(Sg{})  = showString$ "SIGNAL: " ++ (show$srsig x)
     showsPrec _ x@(Gc{})  = showString$ "Gc " ++ (show$grgen x)
     showsPrec _ x@(Fr{})  = showString$ "Fr " ++ (show$grgen x)
-    showsPrec _ x@(Ru{}) 
-       | rrsrt x==Implication = showString$ show(rrant x) ++ " |- " ++ (show$rrcon x)
-       | rrsrt x==Equivalence = showString$ show(rrant x) ++ " = " ++ (show$rrcon x)
-       | rrsrt x==Truth = showString$ show(rrcon x)
         
    instance Numbered Rule where
     pos r = case r of
@@ -75,10 +74,8 @@ where
               Gc{}  ->  grfps r
               Fr{}  ->  Nowhere
     nr r = case r of
-              Ru{}  ->  runum r
-              Sg{}  ->  runum r
-              Gc{}  ->  runum r
               Fr{}  ->  0
+              _     ->  runum r
 
       
    instance Identified Rule where
@@ -89,14 +86,16 @@ where
    instance Association Rule where
     source r  = fst (sign r)
     target r  = snd (sign r)
-    sign r = rrtyp r
+    sign r@Ru{} = rrtyp r
+    sign r@Sg{} = srtyp r
+    sign r@Gc{} = grtyp r
+    sign _      = error("!Fatal (module Rule 93): undefined sign")
 
    instance Explained Rule where
-    explain r = case r of
+    explain _ r = case r of         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
                    Ru{}  ->  rrxpl r
                    Sg{}  ->  srxpl r
-                   Gc{}  ->  ""
-                   Fr{}  ->  ""
+                   _     ->  ""
 
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)
@@ -105,24 +104,20 @@ where
     multiplicities _  = []
     isMph r = case r of
                 Ru{rrsrt=Truth} -> isMph (rrcon r)
-                Ru{}            -> False
                 Sg{}            -> isMph (srsig r)
-                Gc{}            -> False
-                Fr{}            -> False
+                _               -> False
                 
 --    isMph r  | ruleType r==Truth = isMph (consequent r)
 --             | otherwise       = False
     flp r = case r of
                 Ru{} -> r{rrant = if rrsrt r == Truth
-                                  then error ("(Module Classes.Morphic:) illegal call to antecedent in flp ("++show r++")")
+                                  then error ("!Fatal (module Rule 118): illegal call to antecedent in flp ("++show r++")")
                                   else flp (rrant r)
                          ,rrcon = flp (rrcon r)
                          ,rrtyp = (target (rrtyp r),source (rrtyp r))
                          }
-                Sg{}            -> undefined
-                Gc{}            -> undefined
-                Fr{}            -> undefined
-  --  isIdent r = error ("(module CC_aux: isIdent) not applicable to any rule:\n "++showHS "" r)
+                _    -> error ("!Fatal (module Rule 118): flp undefined for rule:\n "++show r)
+  --  isIdent r = error ("!Fatal (module Rule 126): isIdent not applicable to any rule:\n "++showHS "" r)
     typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
                | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 --    isIdent r = isIdent (normExpr r)
@@ -144,7 +139,7 @@ where
     | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
     | ruleType rule==Equivalence = Fi [ Fu [antecedent rule, Cp (consequent rule)]
                               , Fu [Cp (antecedent rule), consequent rule]]
-    | otherwise          = error("Fatal (module CC_aux): Cannot make an expression of "++show rule)
+    | otherwise          = error("!Fatal (module Rule 148): Cannot make an expression of "++show rule)
 
 
 
@@ -157,7 +152,7 @@ where
 
    antecedent :: Rule -> Expression
    antecedent r = case r of
-                   Ru{rrsrt = Truth} -> error ("(Module Adl.Rule:) illegal call to antecedent of rule "++show r)
+                   Ru{rrsrt = Truth} -> error ("!Fatal (module Rule 161): illegal call to antecedent of rule "++show r)
                    Ru{} -> rrant r
                    Sg{} -> antecedent (srsig r)
                    Gc{} -> Tm (grspe r)
@@ -168,14 +163,14 @@ where
                    Ru{} -> rrcon r
                    Sg{} -> consequent (srsig r)
                    Gc{} -> grgen r
-                   Fr{} -> error (" Tm (makeMph (frdec r)) genereert wellicht een loop.")
+                   Fr{} -> error ("!Fatal (module Rule 172):  Tm (makeMph (frdec r)) might generate a loop.")
 
    cpu :: Rule -> Expressions
    cpu r = case r of
                    Ru{} -> r_cpu r
                    Sg{} -> [] -- TODO nakijken: Moet dit niet de signaalrelatie zijn?
                    Gc{} -> r_cpu r
-                   Fr{} -> error (" [Tm (makeMph (frdec r))] genereert wellicht een loop.")
+                   Fr{} -> error ("!Fatal (module Rule 179): [Tm (makeMph (frdec r))] might generate a loop.")
 
 --   uncomp :: Rule -> Rule
 --   uncomp r = case r of

@@ -30,7 +30,7 @@
                    (interfaceDef fSpec serviceObjects (dbName flags))
       >> verboseLn flags ("  Generating connectToDataBase.inc.php")
       >> writeFile (combine targetDir "connectToDataBase.inc.php")
-                   (connectToDataBase fSpec (dbName flags))
+                   (connectToDataBase fSpec flags (dbName flags))
       >> verboseLn flags ("  Writing Static file: edit.js")
       >> writeFile (combine targetDir "edit.js") edit
       >> verboseLn flags ("  Writing Static file: navigate.js")

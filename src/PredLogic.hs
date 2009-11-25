@@ -8,7 +8,7 @@
               , mathVars
               , lang
               , objOrShow
-              , explainArtObsolete  -- obsolete
+--            , explainArtObsolete  -- obsolete
               , explainArt
               , applyM  
               )
@@ -23,6 +23,7 @@
    import ShowADL
    import Languages (Lang(English,Dutch), plural)
    import Options
+   import NormalForms
    import Data.Fspec
    import Char (toLower)
  
@@ -92,30 +93,32 @@
 
    explainArt :: Options -> Fspc -> Rule ->  String
    explainArt flags fspc rul  -- TODO Geef een mooie uitleg van deze regel. 
-    = if null (explain rul)
+    = if null (explain flags rul)
       then case language flags of
               English   -> "Artificial explanation: "
               Dutch     -> "Kunstmatige uitleg: " 
-           ++(lang flags (language flags) .assemble.normRule) rul
-      else explain rul
+           ++(lang flags.assemble.normRule) rul
+      else explain flags rul
 
+{-
    explainArtObsolete ::  Context -> Lang -> Rule -> String
    explainArtObsolete thisCtx l r
     = if null (explain r)
       then case l of
               English   -> "Artificial explanation: "
               Dutch     -> "Kunstmatige uitleg: " 
-    --       ++(lang flags l .assemble.normRule) r
+    --       ++(lang flags.assemble.normRule) r
       else explain r
+-}
 
-   lang :: Options -> Lang -> PredLogic -> String
-   lang flags l x =
-     case l of
+   lang :: Options -> PredLogic -> String
+   lang flags x =
+     case language flags of
        English -> predLshow flags ("For each", "There exists", implies, "is equivalent to", "equals", "is unequal to", "or", "and", "not", rel, fun, langVars English, "\n  ", " ") x
        Dutch   -> predLshow flags ("Voor elke", "Er is een", implies, "is equivalent met", "gelijk aan", "is ongelijk aan", "of", "en", "niet", rel, fun, langVars Dutch, "\n  ", " ") x
      where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
            fun m x = name m++"("++x++")"
-           implies antc cons = case l of 
+           implies antc cons = case language flags of 
                                    English  -> "If "++antc++", then "++cons
                                    Dutch    -> "Als "++antc++", dan "++cons
 
@@ -148,28 +151,6 @@
                      implies antc cons = "IF "++antc++" THEN "++cons
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    normRL r = normRule r -- try this (not quite OK, though...): head [ (makeRule r) c| c <- (simplify . shiftL . normExpr) r]
 
    ruleToPL :: Rule -> PredLogic
@@ -177,7 +158,7 @@
 
    normRule :: Rule -> Rule
    normRule r@(Ru{rrsrt=Truth,rrfps=pos,rrcon=cons,r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
-    = Ru Truth (error ("(Module PredLogic:) illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn Nothing nr pn
+    = Ru Truth (error ("!Fatal (module PredLogic 161): illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn Nothing nr pn
    normRule (Ru{rrsrt=Implication,rrant=a@(F ants),rrfps=pos,rrcon=c@(F cons),r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
     | idsOnly ants = Ru Implication (F [Tm (mIs idA)]) pos (F cons) cpu expla (idC,idC) Nothing nr pn
     | otherwise    = Ru Implication (F as) pos (F cs) cpu expla (sac,tac) Nothing nr pn
@@ -217,13 +198,18 @@
                  | ruleType r==Truth = assembleF [s,t] (consequent r) s t
 
    expr2predLogic :: Expression -> PredLogic
-   expr2predLogic e = Forall [(s,source(e)),(t,target(e))] rc
-    where
+   expr2predLogic e
+    = case (source(e), target(e)) of
+           (S, S) -> rc
+           (_, S) -> Forall [(s,source(e))] rc
+           (S, _) -> Forall [(s,target(e))] rc
+           (_, _) -> Forall [(s,source(e)),(t,target(e))] rc
+     where
       [s,t] = mkVar [] [source e, target e]
       (rc,cvars) = assembleF [s,t] e s t
 
---   instance Explained Expression where
---    explain e = lang English (expr2predLogic e)
+   instance Explained Expression where
+    explain options e = lang options (expr2predLogic e)
 
    assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t
@@ -232,19 +218,16 @@
                "exclVars = "++show exclVars++"\n          "++
                "ics = "++show ics++"\n          "++
                "ivs = "++show ivs++"\n         "++
-               "(F ts) = "++showHS "" (F ts)++"\n        "++
+               "(F ts) = "++showHS options "" (F ts)++"\n        "++
                "yields: "++show (Exists (zip ivs ics) (Conj (frels "alpha" "omega"))::PredLogic)) then error ("") else -}
       if null ics then (head (frels s t), exclVars) else
       (Exists (zip ivs ics) (Conj (frels s t)), ivs++exclVars)
       where
        res       = pars3 exclVars (split ts)  -- levert drietallen (r,s,t)
        frels s t = [r v w|((r,_,_),v,w)<-zip3 res ([s]++ivs) (ivs++[t]) ]
-       ics       = [if v `order` w then v `lub` w else error("Fatal: assembleF")
+       ics       = [if v `order` w then v `lub` w else error("!Fatal (module PredLogic 221): assembleF")
                    |(v,w)<-zip [s|(_,s,_)<-tail res] [t|(_,_,t)<-init res]]
        ivs       = mkVar exclVars ics
-
-
-
 
    assembleF exclVars (Fd ts) s t
     = {- debug 
@@ -254,7 +237,7 @@
                "ics cons = "++show icscons++"\n          "++
                (if null antc then "" else "ivsantc = "++show ivsantc++"\n         ")++
                "ivscons = "++show ivscons++"\n         "++
-               "(Fd ts) = "++showHS "" (Fd ts)++"\n        "++
+               "(Fd ts) = "++showHS options "" (Fd ts)++"\n        "++
                "yields: "++show res) then error ("") else -}
       res
       where
@@ -280,7 +263,7 @@
        icsantc   = ics antc
        ivsantc   = mkVar exclVars (ci:icsantc)
        ivscons   = mkVar exclVars icscons
-       unite v w = if v `order` w then v `lub` w else error("Fatal: assembleFd")
+       unite v w = if v `order` w then v `lub` w else error("!Fatal (module PredLogic 259): assembleFd")
        ci        = ca `unite` cc
        ivs       = ivsantc++ivscons
    assembleF exclVars (Fu fs) s t
@@ -291,7 +274,7 @@
     = (Not  (fst (assembleF exclVars e s t)), exclVars)
    assembleF exclVars e s t
     = if length (morlist e)==1 then (res, exclVars) else
-      error ("Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showHS "" e++")")
+      error ("!Fatal (module PredLogic 270): Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showADL e++")")
       where
        res | denote e==Flr = Rel (Funs s (mors e)) (mIs (target e)) (Funs t [])
            | denote e==Frl = Rel (Funs s []) (mIs (source e)) (Funs t (map flp (mors e)))

@@ -23,8 +23,8 @@
               -- A generic user interface (the Lonneker interface) is already available.
             , vplugs   = definedplugs
             , plugs    = allplugs
-            , serviceS = attributes context
-            , serviceG = serviceG'
+            , serviceS = attributes context -- services specified in the ADL script
+            , serviceG = serviceG'          -- generated services
             , services = [makeFservice context a | a <-attributes context]
             , vrules   = rules context
             , ecaRules = []
@@ -98,6 +98,7 @@
                                                   [] -- no field-names are taken
                                                   (fields plug)
                                         }
+                lowerCase = map toLower -- from Char
         vsqlplugs = map makeSqlPlug (ctxsql context)
         vphpplugs = map makePhpPlug (ctxphp context)
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
@@ -105,8 +106,7 @@
         -- This is meant to help a developer to build his own list of services, by providing a set of services that works.
         -- The developer will want to assign his own labels and maybe add or rearrange attributes.
         -- This is easier than to invent a set of services from scratch.
-        -- At a later stage, serviceG will be used to generate semantic error messages. The idea is to compare a service 
-        -- definition from the ADL-script with the generated service definition and to signal missing items.
+
         -- Rule: a service must be large enough to allow the required transactions to take place within that service.
         -- TODO: afdwingen dat attributen van elk object unieke namen krijgen.
         serviceG'
@@ -397,18 +397,22 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 
    makeFservice :: Context -> ObjectDef -> Fservice
    makeFservice context object
-    = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
+    = let s = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
 -- The declarations that may be changed by the user of this service are represented by fsv_rels
-              , fsv_rels      = rels
+                      , fsv_rels      = rels
 -- The rules that may be affected by this service
-              , fsv_rules     = invariants
+                      , fsv_rules     = invariants
 -- The ECA-rules that may be used by this service to restore invariants.
-              , fsv_ecaRules  = nECArules
+                      , fsv_ecaRules  = trigs object
 -- All signals that are visible in this service
-              , fsv_signals   = []
+                      , fsv_signals   = []
 -- All fields/parameters of this service
-              , fsv_fields    = map fld (objats object)
-              }
+                      , fsv_fields    = map fld (objats object)
+-- All concepts of which this service can create new instances
+                      , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Ins (mIs c)]
+-- All concepts of which this service can delete instances
+                      , fsv_deleting  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Del (mIs c)]
+                      } in s
     where
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
@@ -417,6 +421,9 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         invariants = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
         ecaRs      = assembleECAs visible invariants
         nECArules  = map normECA ecaRs
+        trigs :: ObjectDef -> [Declaration->ECArule]
+        trigs obj  = [c | editable (objctx obj), c<-nECArules, not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) ]
+        arg = error("!Todo (module ADL2Fspec 424): declaratie Delta invullen")
         fld :: ObjectDef -> Field
         fld obj
          = Att { fld_name     = objnm obj
@@ -440,10 +447,9 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                  [t] ->  t
                                  _   ->  error("!Fatal (module multiple delete triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                }
-           where triggers = [c | editable (objctx obj), c<-nECArules, not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) ]
+           where triggers = trigs obj
                  insTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Ins (makeInline (editMph (objctx obj))) ]
                  delTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Del (makeInline (editMph (objctx obj))) ]
-                 arg = error("!Todo (module ADL2Fspec 446): declaratie Delta invullen")
 -- Comment on fld_new:
 -- Consider this: New elements cannot be filled in
 --    if there is a total relation r with type obj==source r  (i.e. r comes from obj),
@@ -457,8 +463,6 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    makeFSid1 :: String -> FSid
    makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
 
-   lowerCase :: String->String
-   lowerCase = map toLower -- from Char
 
 --   fst3 :: (a,b,c) -> a
 --   fst3 (a,_,_) = a

@@ -14,7 +14,7 @@ where
    import Adl.Pair         (Pairs,flipPair) 
    import Strings          (chain)
    import CommonClasses    (Identified(name,typ),showSign
-                           , Explained(explain)
+                           , Explained(..)
                            , ABoolAlg)    
    import Collection       (Collection ((>-)))
    
@@ -314,8 +314,8 @@ where
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
                   
    instance Explained Declaration where
-    explain d@Sgn{} = decexpl d
-    explain _       = ""
+    explain _ d@Sgn{} = decexpl d    -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
+    explain _ _ = ""
 
    isSgn :: Declaration -> Bool
    isSgn Sgn{} = True

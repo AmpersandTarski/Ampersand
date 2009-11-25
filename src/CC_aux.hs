@@ -18,12 +18,11 @@
                         , Morphics(..)
                         )
    import Collection   (Collection (..))
-   import Strings      (chain)
-   import Auxiliaries  (rEncode,commaEng
+   import Strings      (chain,commaEng)
+   import Auxiliaries  (rEncode
                        ,sord,eqCl,eqClass)
    import Adl
    import ShowADL
-   import ShowHS
 --   import Adl.Pair
 --   import Adl.Concept(Sign)
 
@@ -112,8 +111,7 @@
             where h x = case x of
                          C{} ->  x{cptgE = gE}
                          _   ->  x
-
-    specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("(module CC_aux) Fatal: specialize 1 ("++show a++","++show b++") "++showHS "" c) else
+    specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("!Fatal (module CC_aux 115): specialize 1 ("++show a++","++show b++") "++show c) else
                          (a `glb` b) `lub` c
 
    instance Pop KeyDef where
@@ -387,12 +385,12 @@
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS "" (despc decl))
+                       else error ("!Fatal (module CC_aux): specialize 7 "++show (x,y)++show (despc decl))
           Iscompl{}-> if x <= y 
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("(module CC_aux) Fatal: specialize 7 "++show (x,y)++showHS "" (despc decl))
+                       else error ("!Fatal (module CC_aux): specialize 7 "++show (x,y)++show (despc decl))
           Vs{}     -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
                     
 

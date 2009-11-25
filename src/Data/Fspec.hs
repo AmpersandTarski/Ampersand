@@ -52,6 +52,8 @@ data Fservice = Fservice
                   , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants.
                   , fsv_signals   :: [Rule]                 -- All signals that are visible in this service
                   , fsv_fields    :: [Field]                -- All fields/parameters of this service
+                  , fsv_creating  :: [Concept]              -- All concepts of which this service can create new instances
+                  , fsv_deleting  :: [Concept]              -- All concepts of which this service can delete instances
                   }                                         
 
 data Field    = Att

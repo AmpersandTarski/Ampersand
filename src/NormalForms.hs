@@ -9,7 +9,7 @@ where
 
 {- Normalization of process algebra clauses -}
 
-   normECA :: ECArule -> (Declaration->ECArule)    -- TODO: hier nog naar kijken: er gebeurt nog niets met het argument!
+   normECA :: ECArule -> Declaration -> ECArule    -- TODO: hier nog naar kijken: er gebeurt nog niets met het argument!
    normECA (ECA tr delt act n) d = ECA tr delt (normPA act) n
 
    normPA :: PAclause -> PAclause

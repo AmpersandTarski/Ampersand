@@ -13,12 +13,12 @@ module Calc ( deriveProofs
 
    import Collection         (Collection (isc,rd,rd'))
    import Auxiliaries        (sort',eqCl,eqClass)
+   import Strings            (spread)
    import Adl
    import Data.Fspec
    import FspecDef           (Fspc,vrules,chain,serviceS)
    import Adl.ECArule        (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import ShowADL            (showADL,showADLcode)
-   import ShowHS             (showHS)
    import ShowECA            (showECA)
    import CommonClasses      (ABoolAlg(..))
    import NormalForms        (conjNF,disjNF,normECA,nfProof,proofPA,nfPr,simplify)
@@ -57,11 +57,11 @@ module Calc ( deriveProofs
        normFlp (Fu []) = Fu []
        normFlp (Fu fs) = if length [m| f<-fs, m<-morlist f, mphyin m] <= length [m| f<-fs, m<-morlist f, not (mphyin m)]
                          then Fu (map flp fs) else (Fu fs)
-       normFlp _ = error ("!Fatal (module Calc): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
+       normFlp _ = error ("!Fatal (module Calc 61): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
 
    shiftL :: Expression -> [Expression]
    shiftL r
-    | length antss+length conss /= length fus = error ("!Fatal (module Calc): shiftL will not handle argument of the form "++showHS "" r)
+    | length antss+length conss /= length fus = error ("!Fatal (module Calc 65): shiftL will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
     | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F conss)]
     | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
@@ -69,20 +69,20 @@ module Calc ( deriveProofs
                                                      [ F (if null ts then id' ass else ts)
                                                      | ts<-css++if null css then [id' ass] else []])
                                                 | (ass,css)<-rd(move antss conss)
-                                                , if null css then error "!Fatal (module Calc): null css in shiftL" else True
-                                                , if null ass then error "!Fatal (module Calc): null ass in shiftL" else True
+                                                , if null css then error "!Fatal (module Calc 73): null css in shiftL" else True
+                                                , if null ass then error "!Fatal (module Calc 74): null ass in shiftL" else True
                                                 ]
     where
      Fu fs = disjuncts r
      fus = filter (not.isIdent) fs
      antss = [ts | Cp (F ts)<-fus]
      conss = [ts | F ts<-fus]
-     srcA = -- if null antss  then error ("Fatal (module Calc): empty antecedent in shiftL ("++showHS "" r++")") else
-            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc): shiftL ("++showHS "" r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
+     srcA = -- if null antss  then error ("!Fatal (module Calc 81): empty antecedent in shiftL ("++showHS options "" r++")") else
+            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
             foldr1 lub [ source (head ants) | ants<-antss]
      id' ass = [Tm (mIs c)]
       where a = (source.head.head) ass
-            c = if not (a `order` b) then error ("!Fatal (module Calc): shiftL ("++showHS "" r++")\n"++showADL r++"\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
+            c = if not (a `order` b) then error ("!Fatal (module Calc 86): shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
                 a `lub` b
             b = (target.last.last) ass
    -- It is imperative that both ass and css are not empty.
@@ -102,7 +102,7 @@ module Calc ( deriveProofs
 
    shiftR :: Expression -> [Expression]
    shiftR r
-    | length antss+length conss /= length fus = error ("!Fatal (module Calc): shiftR will not handle argument of the form "++showHS "" r)
+    | length antss+length conss /= length fus = error ("!Fatal (module Calc 106): shiftR will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
     | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F antss)]
     | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
@@ -115,13 +115,15 @@ module Calc ( deriveProofs
      fus = filter (not.isIdent) fs
      antss = [ts | Cp (F ts)<-fus]
      conss = [ts | F ts<-fus]
-     srcA = if null conss then error ("!Fatal (module Calc): empty consequent in shiftR ("++showHS "" r++")") else
-            if length (eqClass order [ source (head cons) | cons<-conss])>1 then error ("Fatal (module Calc): shiftR ("++showHS "" r++")\n"++showADL r++"\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss])) else
-            foldr1 lub [ source (head cons) | cons<-conss]
+     srcA = if null conss then error ("!Fatal (module Calc 119): empty consequent in shiftR ("++showADL r++")") else
+            if length (eqClass order [ source (head cons) | cons<-conss])>1
+            then error ("Fatal (module Calc120): shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss]))
+            else foldr1 lub [ source (head cons) | cons<-conss]
      id' css = [Tm (mIs c)]
       where a = (source.head.head) css
-            c = if not (a `order` b) then error ("!Fatal (module Calc): shiftR ("++showHS "" r++")\n"++showADL r++"\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
-                a `lub` b
+            c = if not (a `order` b)
+                then error ("!Fatal (module Calc 126): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b)
+                else a `lub` b
             b = (target.last.last) css
      move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
      move [] css = [([],css)]
@@ -355,14 +357,14 @@ module Calc ( deriveProofs
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
-          (_ ,  Fu [])   -> error ("!Fatal (module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fu [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
-          (_ ,  Fi [])   -> error ("!Fatal (module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fi [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
-          (_ ,  F [])    -> error ("!Fatal (module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
-          (_ ,  Fd [])   -> error ("!Fatal (module Calc): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showHS "" expr1++") ("++showADL delta1++").")
+          (_ ,  Fu [])   -> error ("!Fatal (module Calc 361): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fu [])++",\n"++
+                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
+          (_ ,  Fi [])   -> error ("!Fatal (module Calc 363): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fi [])++",\n"++
+                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
+          (_ ,  F [])    -> error ("!Fatal (module Calc 365): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
+                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
+          (_ ,  Fd [])   -> error ("!Fatal (module Calc 367): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
+                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
           (_ ,  Fu [t])  -> doCod deltaX tOp t motiv
           (_ ,  Fi [t])  -> doCod deltaX tOp t motiv
           (_ ,  F [t])   -> doCod deltaX tOp t motiv
@@ -394,8 +396,8 @@ module Calc ( deriveProofs
           (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
           (_  , Tm m)    -> (if editable m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m,rd' nr [r|(_,rs)<-motiv, r<-rs])])
-          (_ , _)        -> error ("!Fatal (module Calc): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showHS "" exprX++"),\n"++
-                                   "within function doCode "++show tOp'++" ("++showHS "" exprX++") ("++showADL delta1++").")
+          (_ , _)        -> error ("!Fatal (module Calc 400): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
+                                   "within function doCode "++show tOp'++" ("++showADL exprX++") ("++showADL delta1++").")
 
 
    chop :: [t] -> [([t], [t])]
@@ -460,7 +462,7 @@ module Calc ( deriveProofs
    showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
                                       "\n"++(if null ss then "\n   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain "; " ss++" }")++
                                       showProof sh prf
-                                      --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS "" expr 
+                                      --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
    showProof _  []                  = ""
 
 
@@ -488,6 +490,7 @@ module Calc ( deriveProofs
                                        , r_cpu = []
                                        , rrxpl = ""
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
+                                       , rrdcl = Nothing
                                        , runum = 0
                                        , r_pat = ""}
                     | otherwise   = Ru { rrsrt = Implication
@@ -497,6 +500,7 @@ module Calc ( deriveProofs
                                        , r_cpu = []
                                        , rrxpl = ""
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
+                                       , rrdcl = Nothing
                                        , runum = 0
                                        , r_pat = ""}
      showOp expr' = case expr' of
@@ -612,11 +616,3 @@ module Calc ( deriveProofs
        inv Del = Ins
        first ((e'',_,_,_):_) = e''
        first _ = error "!Fatal (module Calc): wrong pattern in first"
-
-   spread :: Int -> String -> [String] -> [String]
-   spread n str = f ""
-    where f stored []       = [stored| not (null stored)]
-          f [] (cs:css)     = f cs css
-          f stored (cs:css) = if length stored > n then stored: f cs css else
-                              if length new <= n then f new css else stored: f cs css
-                              where new = stored++str++cs

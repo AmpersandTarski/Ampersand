@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module ShowECA (showECA) where
-   import Auxiliaries (commaEng)
+   import Strings (commaEng)
    import Data.Fspec
    import Adl
    import ShowADL            (showADLcode)

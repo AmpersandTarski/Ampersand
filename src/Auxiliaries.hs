@@ -2,8 +2,6 @@
 module Auxiliaries(
      showL
    , rEncode
-   , commaEng
---   , commaNL
    , clos
 --   , diag
    , sort
@@ -120,20 +118,6 @@ module Auxiliaries(
 --   diag _  xs yt [] = [[x,t]|x<-xs, t<-yt]
    showL   :: [String] -> String
    showL xs = "["++chain "," xs++"]"
-
-   commaEng :: String -> [String] -> String
-   commaEng str [a,b,c]= a++", "++b++", "++str++" "++c
-   commaEng str [a,b]  = a++" "++str++" "++b
-   commaEng _ [a]    = a
-   commaEng str (a:as) = a++", "++commaEng str as
-   commaEng _ []     = ""
-
---   commaNL :: String -> [String] -> String
---   commaNL str [a,b,c]= a++", "++b++" "++str++" "++c
---   commaNL str [a,b]  = a++" "++str++" "++b
---   commaNL _ [a]    = a
---   commaNL str (a:as) = a++", "++commaNL str as
---   commaNL _ []     = ""
 
    enumerate :: [String] -> String
    enumerate [] = []

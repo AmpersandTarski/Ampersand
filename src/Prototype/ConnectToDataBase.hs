@@ -6,14 +6,17 @@
    --import Collection(rd)
    --import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
    import Adl
-   import ShowADL(showADL)
+   import Options
+   import Languages
+   import ShowADL(showADLcode)
+   import PredLogic(explainArt)
    import NormalForms (conjNF)
    import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,phpShow,pDebug,noCollide)
    import Version (versionbanner)
    import Data.Fspec
 
-   connectToDataBase :: Fspc -> String -> String
-   connectToDataBase fSpec dbName
+   connectToDataBase :: Fspc -> Options -> String -> String
+   connectToDataBase fSpec options dbName
     = (chain "\n  " 
       ([ "<?php // generated with "++versionbanner
        , "require \"dbsettings.php\";"
@@ -82,7 +85,7 @@
        , "  }"
        , "}"
        , ""
-       ] ++ (ruleFunctions fSpec)
+       ] ++ (ruleFunctions options fSpec)
        ++
        [ ""
        , "if($DB_debug>=3){"
@@ -93,13 +96,18 @@
        ]
       )) ++ "\n?>"
 
-   ruleFunctions :: Fspc -> [String]
-   ruleFunctions fSpec
+   ruleFunctions :: Options -> Fspc -> [String]
+   ruleFunctions options fSpec
     = [ "\n  function checkRule"++show (nr rule)++"(){\n    "++
            (if isFalse rule'
-            then "// Tautology:  "++showADL rule++"\n     "
-            else "// No violations should occur in ("++showADL rule++")\n    "++
-                 concat [ "//            rule':: "++(showADL rule') ++"\n    " | pDebug] ++
+            then case language options of
+                  Dutch   ->"// Tautologie: "++showADLcode fSpec rule++"\n     "
+                  English ->"// Tautology:  "++showADLcode fSpec rule++"\n     "
+            else (case language options of
+                  Dutch   ->"// Overtredingen behoren niet voor te komen in ("
+                  English ->"// No violations should occur in ("
+                 )++showADLcode fSpec rule++")\n    "++
+                 concat [ "//            rule':: "++(showADLcode fSpec rule') ++"\n    " | pDebug] ++
                  concat [ "// sqlExprSrc fSpec rule':: "++src++"\n     " | pDebug] ++
                  "$v=DB_doquer('"++selectExpr fSpec 19 src trg rule'++"');\n     "++
                  "if(count($v)) {\n    "++
@@ -110,5 +118,8 @@
       where
        dbError :: Rule -> String
        dbError rule
-        = phpShow("Overtreding ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-          phpShow(")\nreden: \""++(if null (explain rule) then "Artificial explanation: "++showADL rule else explain rule)++"\"<BR>")++""
+        = case language options of
+           Dutch   -> phpShow("Overtreding ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
+                      phpShow(")\nreden: \""++explainArt options fSpec rule++"\"<BR>")++""
+           English -> phpShow("Violation ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
+                      phpShow(")\nreason: \""++explainArt options fSpec rule++"\"<BR>")++""
