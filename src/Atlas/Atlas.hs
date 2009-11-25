@@ -18,13 +18,18 @@ data ATableId =
   |ATContainsConcept
   |ATExplanation
 --  |ATExpression
+  |ATHomoRule
+  |ATIsa
   |ATMainPicture
+  |ATMultRule
   |ATPair
+  |ATProp
   |ATRelation
   |ATRelVar
   |ATRule
   |ATThePicture
   |ATType
+  |ATUserRule
   |ATViolates
   |ATViolation deriving (Eq,Show)
 tables::[ATable]
@@ -35,13 +40,18 @@ tables =
    ,ATable ATContainsConcept "containsconcept" ["concept","atom"] 
    ,ATable ATExplanation "explanation" ["i"] 
   -- ,ATable ATExpression "expression" ["i","source","target"] 
+   ,ATable ATHomoRule "homogeneousrule" ["i","property","on"] 
+   ,ATable ATIsa "isarelation" ["i","specific","general"] 
    ,ATable ATMainPicture "mainpicture" ["i"] 
+   ,ATable ATMultRule "multiplicityrule" ["i","property","on"] 
    ,ATable ATPair "pair" ["i"] 
+   ,ATable ATProp "prop" ["i"] 
    ,ATable ATRelation "relation" ["i"]
    ,ATable ATRelVar "relvar" ["relation","type"]
    ,ATable ATRule "rule" ["i","type","explanation"] 
    ,ATable ATThePicture "thepicture" ["mainpicture","mainpicture1"] 
    ,ATable ATType "type" ["i","source","target"] 
+   ,ATable ATUserRule "userrule" ["i"] 
    ,ATable ATViolates "violates" ["violation","rule"]
    ,ATable ATViolation "violation" ["i"]
    ]
@@ -79,25 +89,31 @@ insertpops conn fSpec flags (tbl:tbls) =
    where
    pop x = [map toSql ys|ys<-rd (pop' x)]
    pop':: ATableId -> [[String]]
+   pop' ATAtom = [[x]|(_,x)<-cptsets]
+   pop' ATConcept = [[name x]|x<-cpts]
+   pop' ATContains = [[name x,show y]| x<-vrels fSpec, y<-contents x]
+   pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets]
+   pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
+ --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
+   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d])$rrdcl x |x<-homorules]
+   pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-vpatterns fSpec, x<-ptgns p]
+   pop' ATMainPicture = [[name fSpec++".png"]]
+   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d])$rrdcl x |x<-multrules]
+   pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]
+   pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
    pop' ATRelation = [[name x]|x<-vrels fSpec]
    pop' ATRelVar = [[name x,name(source x)++"*"++(name$target x)]|x<-vrels fSpec]
-   pop' ATRule = [[cptrule x,name(source x)++"*"++(name$target x),explainRule flags x]|x<-vrules fSpec]
-   --differentiate between normal rules and multiplicities, gens and homoprops
-   pop' ATType = [t x|x<-vrels fSpec] ++ [t x|x<-vrules fSpec]
+   pop' ATRule = [[cptrule x,name(source x)++"*"++(name$target x),explainRule flags x]|x<-atlasrules]
+   pop' ATThePicture = [[name fSpec++".png",name fSpec++".png"]]
+   pop' ATType = [t x|x<-vrels fSpec] ++ [t x|x<-atlasrules]
         where t x = [name(source x)++"*"++(name$target x), name$source x, name$target x]
+   pop' ATUserRule = [[cptrule x]|x<-userrules]
    --convert pair to violation message
    pop' ATViolates = [[show y,cptrule x] | (x,y)<-violations fSpec]
    pop' ATViolation = [[show y] | (_,y)<-violations fSpec]
-   pop' ATThePicture = [[name fSpec++".png",name fSpec++".png"]]
-   pop' ATContains = [[name x,show y]| x<-vrels fSpec, y<-contents x]
-   pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets]
-   pop' ATAtom = [[x]|(_,x)<-cptsets]
-   pop' ATConcept = [[x]|(x,_)<-cptsets]
-   pop' ATExplanation = [[explainRule flags x]|x<-vrules fSpec]
- --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
-   pop' ATMainPicture = [[name fSpec++".png"]]
-   pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]
-   cptsets = (\(Isa _ cs) -> [(name c,x)|c@(C{})<-cs, x<-cptos c]) (fsisa fSpec)
+   --------------------------------------------------------
+   cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (fsisa fSpec)
+   cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
    cptrule x@(Sg{})  = "SIGNAL: " ++ (cptrule$srsig x)
    cptrule x@(Gc{})  = "Gc " ++ (printadl (Just fSpec) 0$grgen x)
    cptrule x@(Fr{})  = "Fr " ++ (printadl (Just fSpec) 0$grgen x)
@@ -106,6 +122,24 @@ insertpops conn fSpec flags (tbl:tbls) =
        | rrsrt x==Equivalence = printadl (Just fSpec) 0 (rrant x) ++ " = " ++ (printadl (Just fSpec) 0$rrcon x)
        | rrsrt x==Truth = printadl (Just fSpec) 0 (rrcon x)
        | otherwise = []
+   --DESCR -> userrules are user-defined rules, 
+   --         multrules are rules defined by a multiplicity, 
+   --         homorules by a homogeneous property
+   --         the rule from an ISA declaration (I[spec] |- I[gen]) is not presented as a rule in the atlas
+   atlasrules = userrules ++ multrules ++ homorules
+   userrules = [x|x<-vrules fSpec, rrdcl x==Nothing, not (isIsaRule x)]
+      where 
+      isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
+      isI (Tm (I{})) = True
+      isI _ = False
+   multrules = [x|x<-vrules fSpec, isMultRule (rrdcl x) ]
+      where 
+      isMultRule (Just (p,_)) = elem p [Uni,Tot,Inj,Sur]
+      isMultRule Nothing = False      
+   homorules = [x|x<-vrules fSpec, isHomoRule (rrdcl x) ]
+      where 
+      isHomoRule (Just (p,_)) = elem p [Rfx,Sym,Asy,Trn] 
+      isHomoRule Nothing = False
 
 placeholders :: [a] -> String
 placeholders [] = []

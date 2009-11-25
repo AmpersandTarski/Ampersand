@@ -156,7 +156,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   allCtx = map fromFoundCtx $ flatten ctxtree
 
   tc :: Concepts
-  tc = allCtxCpts(allCtx) 
+  tc = allCtxCpts(allCtx)
   --REMARK -> tc0 is defined in specification but not needed in implementation to lookup these constants. They are just used when needed
   --tc0 :: Concepts
   --tc0 = [Anything,NOthing]
@@ -202,7 +202,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
     isar = [case g of G{} -> (populate$gengen g,populate$genspc g) | g<-allCtxGens ctxs]
-    isac = rd (map fst isar++map snd isar)
+    isac = map populate$rd (map fst isar++map snd isar)
 
   --DESCR -> enriching ctxpats
   ctxpatterns = map bindPat (ctxpats cx)
@@ -327,6 +327,7 @@ enrichCtx cx@(Ctx{}) ctxs =
          [iSpc, iGen]
          []
          (gen,gen)
+         Nothing
          0  --REMARK -> rules are renumbered after enriching the context
          [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
        , Proven gammaisa [Stmt $ fromIsa (spc,gen)],posi)
@@ -353,9 +354,9 @@ enrichCtx cx@(Ctx{}) ctxs =
                      "There is no rule for this prop."
        where
        i = Tm $ I [] Anything Anything True
-       r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d
+       r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
        makerule tp ant con = 
-         Ru tp ant posi con [] [] (Anything,Anything)
+         Ru tp ant posi con [] [] (Anything,Anything) (Just (p,d))
              0  --REMARK -> rules are renumbered after enriching the context
              [] --REMARK -> if somebody cares then I think it is consistent that the Gen keeps track of the pattern too
   rulesfromdecl _ = []

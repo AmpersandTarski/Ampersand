@@ -9,6 +9,7 @@ where
                                         , MorphicId(..),Morphic(..))
    import Adl.MorphismAndDeclaration    ( Morphism,Declaration)
    import Adl.Expression                ( Expression(..),Expressions,v)
+   import Adl.Prop
    import CommonClasses                 ( Identified(name,typ)
                                         , ABoolAlg(lub,order)
                                         , Explained(explain))
@@ -26,6 +27,7 @@ where
            , r_cpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
            , rrxpl :: String            -- ^ Explanation
            , rrtyp :: (Concept,Concept) -- ^ Sign of this rule
+           , rrdcl :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
            , runum :: Int               -- ^ Rule number
            , r_pat :: String            -- ^ Name of pattern in which it was defined.
            }

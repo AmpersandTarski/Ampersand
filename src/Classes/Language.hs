@@ -81,14 +81,14 @@ where
      = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
               error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
-      where h Sym = Ru Equivalence (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn (nr d) ""
-            h Asy = Ru Implication (Fi [F [Tm r], F [Tm r']]) (pos d) id' [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn (nr d) ""
-            h Trn = Ru Implication (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn (nr d) ""
-            h Rfx = Ru Implication id' (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn (nr d) ""
-            h Uni = Ru Implication (F [Tm r',Tm r]) (pos d) id''          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn (nr d) ""
-            h Sur = Ru Implication id'' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn (nr d) ""
-            h Inj = Ru Implication (F [Tm r,Tm r']) (pos d) id'           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn (nr d) ""
-            h Tot = Ru Implication id' (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn (nr d) ""
+      where h Sym = Ru Equivalence (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn Nothing (nr d) ""
+            h Asy = Ru Implication (Fi [F [Tm r], F [Tm r']]) (pos d) id' [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn Nothing (nr d) ""
+            h Trn = Ru Implication (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn Nothing (nr d) ""
+            h Rfx = Ru Implication id' (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn Nothing (nr d) ""
+            h Uni = Ru Implication (F [Tm r',Tm r]) (pos d) id''          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn Nothing (nr d) ""
+            h Sur = Ru Implication id'' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn Nothing (nr d) ""
+            h Inj = Ru Implication (F [Tm r,Tm r']) (pos d) id'           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn Nothing (nr d) ""
+            h Tot = Ru Implication id' (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn Nothing (nr d) ""
             h Aut = error("!Fatal (module Language): multRules not defined for property 'Aut'")
             sgn   = (source d,source d)
             r     = Mph (name d)                (pos d) [] (source d,target d) True d
@@ -99,10 +99,10 @@ where
  
 
    instance Language Pattern where
-    declaredRules pat = [r|r@(Ru _ _ _ _ _ _ _ _ _)<-ptrls pat]
+    declaredRules pat = [r|r@(Ru{})<-ptrls pat]
     rules _           = []
-    signals pat       = [r|r@(Sg _ _ _ _ _ _ _)<-ptrls pat]
-    specs pat         = [r|r@(Gc _ _ _ _ _ _ _)<-ptrls pat]
+    signals pat       = [r|r@(Sg{})<-ptrls pat]
+    specs pat         = [r|r@(Gc{})<-ptrls pat]
     patterns pat      = [pat]
     isa pat           = Isa ts (singles>-[e'| G _ g s<-ptgns pat,e'<-[g,s]])
                         where Isa tuples singles = isa (ptdcs pat)

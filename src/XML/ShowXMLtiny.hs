@@ -129,7 +129,7 @@ where
                                  _    -> Equivalence           
      mkXmlTree r = Elem (mkTag r)
         (case r of  
-          Ru _ _ _ _ _ _ _ _ _
+          Ru{}
                 -> [Elem (simpleTag "Invariant") 
                             [PlainText invariantString ]
                    ]
@@ -146,12 +146,12 @@ where
                                       [mkXmlTree (consequent r)]] 
                      Generalization -> undefined
                      Automatic      -> undefined    
-          Sg _ _ _ _ _ _ _
+          Sg{}
                 ->  explainTree (srxpl r)
                  ++ [mkXmlTree (srsig r)]
-          Gc _ _ _ _ _ _ _
+          Gc{}
                 ->  [still2bdone "Rule_Gc"]
-          Fr _ _ _  -- represents an automatic computation, such as * or +.
+          Fr{}  -- represents an automatic computation, such as * or +.
                 ->  [still2bdone "Rule_Fr"]
         )
       where invariantString ::  String

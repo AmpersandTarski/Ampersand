@@ -176,11 +176,11 @@
    ruleToPL = assemble . normRule
 
    normRule :: Rule -> Rule
-   normRule r@(Ru Truth _ pos cons cpu expla sgn nr pn)
-    = Ru Truth (error ("(Module PredLogic:) illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn nr pn
-   normRule (Ru Implication a@(F ants) pos c@(F cons) cpu expla sgn nr pn)
-    | idsOnly ants = Ru Implication (F [Tm (mIs idA)]) pos (F cons) cpu expla (idC,idC) nr pn
-    | otherwise    = Ru Implication (F as) pos (F cs) cpu expla (sac,tac) nr pn
+   normRule r@(Ru{rrsrt=Truth,rrfps=pos,rrcon=cons,r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
+    = Ru Truth (error ("(Module PredLogic:) illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn Nothing nr pn
+   normRule (Ru{rrsrt=Implication,rrant=a@(F ants),rrfps=pos,rrcon=c@(F cons),r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
+    | idsOnly ants = Ru Implication (F [Tm (mIs idA)]) pos (F cons) cpu expla (idC,idC) Nothing nr pn
+    | otherwise    = Ru Implication (F as) pos (F cs) cpu expla (sac,tac) Nothing nr pn
     where
      idC = source c `lub` target c `lub` idA
      idA = foldr lub (target (last ants)) (map source ants)
