@@ -1,58 +1,76 @@
-CONTEXT Atlas
+CONTEXT Atlasx
+--WHILE GEN does not work well in prototype it is best to first define relations on 
+--specific concept -> general properties are translated into columns at the end, so they can be removed more easily
 PATTERN Atlas
---GEN Rule ISA Expression
---GEN Morphism ISA Expression
---type::Expression->Type.
-type::Rule->Type.
---type::Morphism->Type.
+thepicture::Picture->Picture.
+
 -- a relation variable can be overloaded -> no function
 -- TODO -> namespaces?
 relvar::Relation*Type.
+contains::Relation*Pair.
+contains::Concept*Atom.
 
 source::Type->Concept.
 target::Type->Concept.
 
-violates::Violation*Rule.
-explanation::Rule->Explanation.
-thepicture::MainPicture*MainPicture.
+--IsaRelation contains only user-defined isa relations, not derived ones
+specific::IsaRelation->Concept. 
+general::IsaRelation->Concept.
+ENDPATTERN
+PATTERN Rules
 
-contains::Relation*Pair.
-contains::Concept*Atom.
-
-GEN UserRule ISA Rule
-GEN MultiplicityRule ISA Rule
-GEN HomogeneousRule ISA Rule
+{--SPECIFIC RULE DECLARATIONS--}
+--GEN UserRule ISA Rule
+--GEN MultiplicityRule ISA Rule
+--GEN HomogeneousRule ISA Rule
 property::MultiplicityRule->Prop.
 on::MultiplicityRule->Relation.
 property::HomogeneousRule->Prop.
 on::HomogeneousRule->Relation.
 
---IsaRelation contains only user-defined isa relations, not derived ones
-specific::IsaRelation->Concept. 
-general::IsaRelation->Concept. 
+{--GENERAL RULE DECLARATIONS--}
+--GEN Rule ISA Expression
+--GEN Morphism ISA Expression
+--type::Expression->Type.
+type::Rule->Type.
+type::UserRule->Type.
+type::MultiplicityRule->Type.
+type::HomogeneousRule->Type.
+--type::Morphism->Type.
+violates::Violation*Rule.
+violates::Violation*UserRule.
+violates::Violation*MultiplicityRule.
+violates::Violation*HomogeneousRule.
+explanation::Rule->Explanation.
+explanation::UserRule->Explanation.
+explanation::MultiplicityRule->Explanation.
+explanation::HomogeneousRule->Explanation.
+
+
 
 ENDPATTERN
 
 
 SERVICE Rules : I[ONE]
-   = [ "Conceptual diagram"{"PICTURE"}: V[ONE*MainPicture]
+   = [ "Conceptual diagram"{"PICTURE"}: V[ONE*Picture]
      , "User-defined rules" : V[ONE*UserRule]
          = [ rule : I[UserRule]
---           , source : type;source
-  --         , target : type;target
-    --       , violations : violates~
+           , source : type;source
+           , target : type;target
+           , violations : violates~
            ]
      , Multiplicities : V[ONE*MultiplicityRule]
          = [ property : property
+           , source : type;source
            , on : on
            , rule : I[MultiplicityRule]
-      --     , violations : violates~
+           , violations : violates~
            ]
      , "Homogeneous properties" : V[ONE*HomogeneousRule]
          = [ property : property
            , on : on
            , rule : I[HomogeneousRule]
-        --   , violations : violates~
+           , violations : violates~
            ]
       ] 
 
@@ -60,6 +78,21 @@ SERVICE Rules : I[ONE]
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
 --        nu wordt default de specieke tabel gebruikt voor alle relaties!
 SERVICE Rule : I[Rule]
+   = [ source : type;source
+     , target : type;target
+     , violations : violates~
+     , explanation : explanation]
+SERVICE Rule1 : I[UserRule]
+   = [ source : type;source
+     , target : type;target
+     , violations : violates~
+     , explanation : explanation]
+SERVICE Rule2 : I[MultiplicityRule]
+   = [ source : type;source
+     , target : type;target
+     , violations : violates~
+     , explanation : explanation]
+SERVICE Rule3 : I[HomogeneousRule]
    = [ source : type;source
      , target : type;target
      , violations : violates~
@@ -91,3 +124,118 @@ SERVICE Concept : I[Concept]
    = [ population : contains]
 
 ENDCONTEXT
+
+
+{- Gezocht wordt naar de kolom UserRule, omdat dit zo bepaald is door het
+type in de expressie. Maar deze kolom heeft de naam van het generale type Rule, omdat dit zo gedeclareerd is.
+Eén of andere join nodig?
+
+SELECT DISTINCT `f1`.`UserRule` AS `id`
+FROM  ( SELECT DISTINCT csnd.i AS `UserRule`
+FROM `userrule` AS csnd
+) AS f1
+
+
+
+SELECT DISTINCT 
+  `f3`.`UserRule` AS `id`
+  ,`f3`.`UserRule` AS `rule`
+  , `f3`.`source`
+FROM `userrule`
+LEFT JOIN  
+  ( SELECT DISTINCT F0.`UserRule`, F1.`source`
+    FROM `rule` AS F0, `type` AS F1
+    WHERE F0.`Type`=F1.`i`
+   ) AS f3
+ON `f3`.`UserRule`='accepted |- addressedTo~'
+WHERE `userrule`.`i`='accepted |- addressedTo~'
+
+
+SELECT DISTINCT 
+     'paid |- sentTo~' AS `id` 
+   , 'paid |- sentTo~' AS `rule`
+   , `f3`.`source` 
+FROM `userrule` 
+LEFT JOIN 
+     ( SELECT DISTINCT 
+            F0.`UserRule`
+          , F1.`source` 
+       FROM `rule` AS F0, `type` AS F1 
+       WHERE F0.`Type`=F1.`i` ) AS f3 
+ON `f3`.`UserRule`='paid |- sentTo~' 
+WHERE `userrule`.`i`='paid |- sentTo~'
+
+SELECT DISTINCT 
+     'paid |- sentTo~' AS `id` 
+   , 'paid |- sentTo~' AS `rule`
+   , `f3`.`source` 
+FROM `userrule` 
+LEFT JOIN 
+     ( SELECT DISTINCT 
+            F0.`i`
+          , F1.`source` 
+       FROM `rule` AS F0, `type` AS F1 
+       WHERE F0.`Type`=F1.`i` ) AS f3 
+ON `f3`.`i`='paid |- sentTo~' 
+WHERE `userrule`.`i`='paid |- sentTo~'
+
+-------------------------------------
+SELECT DISTINCT `f1`.`Violation` AS `violations` FROM `userrule` JOIN `violates` AS f1 ON `f1`.`UserRule`='accepted;of~ |- provided' WHERE `userrule`.`i`='accepted;of~ |- provided'
+----------------------------------------------------
+SELECT DISTINCT 
+    'sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' AS `id` 
+  , `f2`.`property` 
+  , `f3`.`source` 
+  , `f4`.`on` 
+  , 'sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' AS `rule` 
+FROM `multiplicityrule` 
+LEFT JOIN `multiplicityrule` AS f2 
+ON `f2`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+LEFT JOIN 
+  ( SELECT DISTINCT 
+        F0.`MultiplicityRule`
+      , F1.`source` 
+    FROM `rule` AS F0, `type` AS F1 
+    WHERE F0.`Type`=F1.`i` ) AS f3 
+ON `f3`.`MultiplicityRule`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+LEFT JOIN `multiplicityrule` AS f4 
+ON `f4`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+WHERE `multiplicityrule`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I'
+
+SELECT DISTINCT 
+    'sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' AS `id` 
+  , `f2`.`property` 
+  , `f3`.`source` 
+  , `f4`.`on` 
+  , 'sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' AS `rule` 
+FROM `multiplicityrule` 
+LEFT JOIN `multiplicityrule` AS f2 
+ON `f2`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+LEFT JOIN 
+  ( SELECT DISTINCT 
+        F0.`i`
+      , F1.`source` 
+    FROM `rule` AS F0, `type` AS F1 
+    WHERE F0.`Type`=F1.`i` ) AS f3 
+ON `f3`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+LEFT JOIN `multiplicityrule` AS f4 
+ON `f4`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+WHERE `multiplicityrule`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I'
+
+
+SELECT DISTINCT 
+    'sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' AS `id` 
+  , `multiplicityrule`.`property` 
+  , `f3`.`source` 
+  , `multiplicityrule`.`on` 
+  , 'sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' AS `rule` 
+FROM `multiplicityrule` 
+LEFT JOIN 
+  ( SELECT DISTINCT 
+        F0.`i`
+      , F1.`source` 
+    FROM `rule` AS F0, `type` AS F1 
+    WHERE F0.`Type`=F1.`i` ) AS f3 
+ON `f3`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
+WHERE `multiplicityrule`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I'
+-}

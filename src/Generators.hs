@@ -48,13 +48,9 @@ doGenHaskell fSpec flags
 
 doGenAtlas :: Fspc -> Options -> IO()
 doGenAtlas fSpec flags =
-     verboseLn flags "Generation of Atlas is currently not supported."
-  >> verboseLn flags ("Atlas would be generated in " ++ show (dirAtlas flags) ++ ".")
---  >> generatepngs fSpec flags
---  krijg ik plaatjes in de database?
+     verboseLn flags "Generating Atlas ..."
+  >> verboseLn flags ("The atlas application should have been installed in " ++ show (dirAtlas flags) ++ ".")
   >> fillAtlas fSpec flags
---  data in de atlas database pompen
---  data in autorisatiecontext (=student) plaatsen
    
 doGenXML :: Fspc -> Options -> IO()
 doGenXML fSpec flags 
