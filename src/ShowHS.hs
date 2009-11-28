@@ -390,16 +390,16 @@ where
     showHSname pat = "pat_"++haskellIdentifier (name pat)
     showHS options indent pat
      = "Pat "++show (name pat)++
-       (if null (declaredRules pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-declaredRules pat] ++            "]")++
-       (if null (ptgns pat)         then " []" else indent++"    [ "++chain (indent++"    , ") [showHS options (indent++"     ") g| g<-ptgns         pat] ++indent++"    ]")++
-       (if null (ptdcs pat)         then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-ptdcs         pat] ++            "]")++
-       (if null (ptcds pat)         then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-ptcds         pat] ++            "]")++
-       (if null (ptkds pat)         then " []" else indent++"    [ "++chain (indent++"    , ") [showHS options (indent++"     ") k| k<-ptkds         pat] ++indent++"    ]")++
+       (if null (rules pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname r              | r<-rules pat] ++            "]")++
+       (if null (ptgns pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS options (indent++"     ") g| g<-ptgns         pat] ++indent++"    ]")++
+       (if null (ptdcs pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname d              | d<-ptdcs         pat] ++            "]")++
+       (if null (ptcds pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname c              | c<-ptcds         pat] ++            "]")++
+       (if null (ptkds pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS options (indent++"     ") k| k<-ptkds         pat] ++indent++"    ]")++
        indent++"where"++
-       (if null (ptdcs pat)         then "" else concat [indent++" "++showHSname d ++" = "++ showHS options (indent++"   ") d |d <-ptdcs         pat] )++
-       (if null (declaredRules pat) then "" else concat [indent++" "++showHSname r ++" = "++ showHS options (indent++"   ") r |r <-declaredRules pat] )++
-       (if null (ptcds pat)         then "" else concat [indent++" "++showHSname cd++" = "++ showHS options (indent++"   ") cd|cd<-ptcds         pat] )++
-       (if null (ptkds pat)         then "" else concat [indent++" "++showHSname k ++" = "++ showHS options (indent++"   ") k |k <-ptkds         pat] )
+       (if null (ptdcs pat) then "" else concat [indent++" "++showHSname d ++" = "++ showHS options (indent++"   ") d |d <-ptdcs         pat] )++
+       (if null (rules pat) then "" else concat [indent++" "++showHSname r ++" = "++ showHS options (indent++"   ") r |r <-rules pat] )++
+       (if null (ptcds pat) then "" else concat [indent++" "++showHSname cd++" = "++ showHS options (indent++"   ") cd|cd<-ptcds         pat] )++
+       (if null (ptkds pat) then "" else concat [indent++" "++showHSname k ++" = "++ showHS options (indent++"   ") k |k <-ptkds         pat] )
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***

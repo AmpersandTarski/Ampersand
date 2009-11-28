@@ -15,7 +15,7 @@ import Text.Pandoc
                           -- 3) Het kan zijn dat dit nog niet werkt, zie http://groups.google.com/group/pandoc-discuss/browse_thread/thread/a8fc3a627aeec7f2
                           --    als dat het geval is, kan deze module worden overruled in Generators.hs                                 
 import Version        (versionbanner)
-import Languages      (Lang(..))
+import Languages      (Lang(..),plural)
 import PredLogic      (lang,expr2predLogic)
 import Options        (Options(..),FspecFormat(..))
 import ShowECA        (showECA)
@@ -103,6 +103,7 @@ fSpec2Pandoc fSpec flags = Pandoc meta docContents
            = (introduction       level fSpec flags)             ++
              (designPrinciples   level fSpec flags)             ++
              (conceptualAnalysis level fSpec flags)             ++
+             (dataAnalysis       level fSpec flags)             ++
              [chpbs | svc  <-FspecDef.services fSpec              
                     , chpbs<-servicechap level fSpec flags svc] ++
              (fpAnalysis         level fSpec flags)             ++
@@ -278,15 +279,15 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
       Dutch -> (if null themerules then [] --nothing to explain for this theme -> skip
            else [Header (lev+1) [Str $ "Regels over " ++ (name p)]] --new section to explain this theme
              ++ [x | (not.null) (concs p),x<-printfigure]
-             ++ rules2table)
+             ++ longtable flags themerules)
       English -> (if null themerules then [] --nothing to explain for this theme -> skip
            else [Header (lev+1) [Str $ "Rules about " ++ (name p)]] --new section to explain this theme
              ++ [x | (not.null) (concs p),x<-printfigure]
-             ++ rules2table)
+             ++ longtable flags themerules)
     )
     where
     --query copied from FSpec.hs revision 174
-    themerules = [r|r<-declaredRules p++signals p, null (cpu r)]
+    themerules = [Plain [Str $ "R"++show (nr r),Str $ explainRule flags r]|r<-rules p++signals p, null (cpu r)]
     printfigure = case (language flags) of
       Dutch -> [Para [x | x<-[Str "Zie figuur ", xrefReference figlabel, Str ". "]] ]
             ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++filenm) filenm figlabel ]]
@@ -294,109 +295,74 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
               ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++filenm) filenm figlabel ]]
       where filenm = remSpaces (name p)
             figlabel = "figca:" ++ filenm
-    rules2table = case fspecFormat flags of
-      --REMARK -> pandoc does not support longtable (or something similar?)
-      FLatex -> [Plain $ 
-                  [ TeX "\\begin{center} \n"
-                  , TeX "\\begin{longtable}{|r|p{\\columnwidth}|} \n"
-                  , TeX "\\hline \n"
-                  ]
-               ++ [ inline' | r<-themerules, inline'<-explainCaRule r]
-               ++ [ TeX "\\end{longtable} \n"
-                  , TeX "\\end{center} \n"
-                  ]
-                ]            
-      _ -> [Table [] 
-                  [AlignCenter, AlignLeft] --TODO -> how do I specify drawing of lines?
-                  [0.05,0.8] --TODO -> can't this be automatic or something
-                  [] 
-                  [ [ [Plain [Str $ show (nr r)]]
-                      , [Para (explainCaRule r)] ]
-                  | r<-themerules]
-           ] 
-    --query copied from FSpec.hs revision 174   latex "longtable" ["{|r|p{\\columnwidth}|}\\hline"]
-    explainCaRule r = [ Str $ show (nr r)
-                      , TeX "\n & "
-                      , Str (explainRule flags r)] --TODO -> alignment is incorrect
-                   ++ printlb
-                   ++ [Str "Relations:"]
-                   ++ printlb
-                   ++ [ TeX " \\( \\begin{array}{rcl} \n"]
-                   ++ [ inline' | mph<-morlist r, inline'<-printmphdetail flags mph]
-                   ++ [ TeX " \\end{array} \\) "]
-                   ++ printlb
-                   ++ [Str "Rule:"]
-                   ++ printlb
-                   ++ (printrule flags r)
-                   ++ [ TeX " \\\\ \\hline \n"]
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
- --dataAnalysis :: Int -> Fspc -> Options ->  [Block]
- --dataAnalysis lev fSpec flags = header ++ daContents
- --  where 
- --  header :: [Block]
- --  header = labeledHeader lev chpdalabel (case (language flags) of
- --                                     Dutch   ->  "Kennisstructuur"   
- --                                     English ->  "Knowledge structure"
- --                                 )
- --  fpalabel = "tableFPA2"
- --  daContents :: [Block]
- --  daContents = 
- --   (case (language flags) of
- --     Dutch -> [Para
- --                [ Str "De keuzes, zoals beschreven in hoofdstuk "
- --                , xrefReference chpdplabel
- --                , Str " zijn in een gegevensanalyse vertaald naar klassediagram(men)."
- --                , Str "Dit hoofdstuk geeft een uitwerking van de gegevensanalyse in de vorm van functionele specificaties. "
- --                ]]
- --     English -> [] --TODO
- --   )++[x|(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec, x<-describeCD (remSpaces fnm)]
- --      where 
- --      describeCD cdnm' = 
- --       (case (language flags) of
- --          Dutch ->
- --                [ Header (lev+1) [Str cdnm']
- --                , Plain$xrefFigure ("Klassediagram van "++cdnm') filenm figlabel
- --             ]++[ Para [Str d]|d<-themedecls] --explanation of all multiplicities]
- --          English -> []) --TODO
- --          where       
- --          filenm = "CD_"++ cdnm'
- --          figlabel = "figcd:" ++  cdnm'
- --          --REMARK -> cdnm' should be implemented as (name pattern) in ClassDiagram.hs
- --          p = let pats = [pat|pat<-vpatterns fSpec, name pat==cdnm']
- --              in if length pats==1 then head pats
- --                 else error $ "!Fatal (module Fspec2Pandoc 370): function dataAnalysis.daContents.describeCD: "
- --                           ++ "Pattern names need to be unique."
- --          --query copied from FSpec.hs revision 174
- --          themedecls = [explainDecl (language flags) d|d<-ptdcs p,(not.null) (multiplicities d)]
+dataAnalysis :: Int -> Fspc -> Options ->  [Block]
+dataAnalysis lev fSpec flags = header ++ daContents
+  where 
+  header :: [Block]
+  header = labeledHeader lev chpdalabel (case (language flags) of
+                                     Dutch   ->  "Gegevensstructuur"   
+                                     English ->  "Data structure"
+                                 )
+  fpalabel = "tableFPA2"
+  daContents :: [Block]
+  daContents = 
+   (case (language flags) of
+     Dutch   -> [Para
+                  [ Str $ "De eisen, die in hoofdstuk "
+                  , xrefReference chpdplabel
+                  , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
+                  , xrefReference figlabel
+                  , Str $ ". Er zijn "++count flags (length classes) "gegevensverzameling"++","
+                  , Str $ " "++count flags (length assocs) "associatie"++","
+                  , Str $ " "++count flags (length geners) "generalisatie"++" en"
+                  , Str $ " "++count flags (length aggrs) "aggregatie"++"."
+                  , Str $ " "++nm++" kent in totaal "++count flags (length cs) "concept"++"."
+                  ]]
+     English -> [Para
+                  [ Str $ "The requirements, which are listed in chapter "
+                  , xrefReference chpdplabel
+                  , Str $ ", have been translated into the class diagram in figure "
+                  , xrefReference figlabel
+                  , Str $ ". There are "++count flags (length classes) "data set"++","
+                  , Str $ " "++count flags (length assocs) "association"++","
+                  , Str $ " "++count flags (length geners) "generalisation"++", and"
+                  , Str $ " "++count flags (length aggrs) "aggregation"++"."
+                  , Str $ " "++nm++" has a total of "++count flags (length cs) "concept"++"."
+                  ]] --TODO
+   )++ [ Plain $ xrefFigure captionText cdFilename figlabel ]  -- TODO: explain all multiplicities]
+      where
+       (cd@(OOclassdiagram classes assocs aggrs geners (nm, cs)),cdFilename) = classdiagram fSpec
+       figlabel = "fig:" ++ cdFilename
+       captionText
+        = case (language flags) of
+          Dutch   -> "Class diagram of "++name fSpec
+          English -> "Klassediagram van "++name fSpec
+
 ------------------------------------------------------------
 servicechap :: Int -> Fspc -> Options -> Fservice ->  [Block]
-servicechap lev fSpec flags svc = header ++ svcParameters ++ svcRelations ++ svcInvariants
+servicechap lev fSpec flags svc = header ++ svcIntro ++ longtable flags [ b| f<-fsv_fields svc, b<-svcField f ] ++ svcRelations ++ svcInvariants
  where
   svcname    = name (fsv_objectdef svc)
   header :: [Block]
   header = labeledHeader lev ("chpSvc"++svcname) ("Service: " ++ svcname)
-  svcParameters :: [Block]
-  svcParameters
+  svcIntro :: [Block]
+  svcIntro
    = case (language flags) of
       Dutch ->   [ Para
                     ([ Str $ "Service "++svcname++" werkt vanuit een instantie van "++name (target (objctx (fsv_objectdef svc)))++"." ]++
-                     f (objctx (fsv_objectdef svc))
-                     
-                    )
-                 , Para
-                    [ Str $ "Service "++svcname++"("++chain ", " [showADL (makeInline m)++":"++name (target m)| m<-fsv_rels svc]++")\n"
-                    ]
-                 , Para
-                    [ Str $ "Deze parameters corresponderen met de velden van een grafische user interface."
-                    , Str $ svcInsDelConcepts
-                    ]
+                     f (objctx (fsv_objectdef svc))++
+                     [ Str $ svcInsDelConcepts ] )
+                 , Para [ Str $ "In deze service zijn de volgende velden zichtbaar. " ]
                  ]
       English -> [ Para
-                    [ Str $ "These parameters correspond to editable fields in a graphical user interface."
-                    ]
-               ] --TODO
+                    ([ Str $ "Service "++svcname++" operates from one instance of "++name (target (objctx (fsv_objectdef svc)))++"." ]++
+                     f (objctx (fsv_objectdef svc))++
+                     [ Str $ svcInsDelConcepts ] )
+                 , Para [ Str $ "This service has the following fields. " ]
+                 ]
      where
       f (Tm _) = []
       f expr   = [Str $ lang flags (expr2predLogic (conjNF(F[v (S,source expr),expr])))]
@@ -427,6 +393,42 @@ servicechap lev fSpec flags svc = header ++ svcParameters ++ svcRelations ++ svc
           "This service can create new instances of concept"++f ics++". It can delete instances of concept"++f dcs++", and instances of concept"++f ucs++" can be either created and removed."
           where f [x] = " "++name x
                 f xs  = "s "++commaEng "and" (map name xs)
+
+  svcField f
+   = case (language flags) of
+      Dutch ->   [ Plain [TeX $ "Veld: "++fld_name f] ]++ -- The name of this field
+                 tabular flags 2 
+                   ( [ ["expr"       , show $ fld_expr     f]  --  Expression           -- The expression by which this field is attached to the service
+                     , ["wijzigbaar" , show $ fld_editable f]  --  Bool                 -- can this field be changed by the user of this service?
+                     ]++
+                     [ ["relatie"    , show $ fld_mph      f]  --  Morphism             -- The morphism to which the database table is attached.
+                     | fld_editable f]++
+                     [ ["lijst"      , show $ fld_list     f]  --  Bool                 -- can there be multiple values in this field?
+                     , ["verplicht"  , show $ fld_must     f]  --  Bool                 -- is this field obligatory?
+                     , ["nieuw"      , show $ fld_new      f]  --  Bool                 -- can new elements be filled in? (if no, only existing elements can be selected)
+--                     , ["velden"     , show $ fld_fields   f]  --  [Field]              -- All fields/parameters of this service
+                     , ["invoegen"   , show $ fld_insAble  f]  --  Bool                 -- can the user insert in this field?
+--                     , ["onIns"    , show $ fld_onIns    f]  --  Declaration->ECArule -- the PAclause to be executed after an insert on this field
+                     , ["verwijderen", show $ fld_delAble  f]  --  Bool                 -- can the user delete this field?
+--                     , ["onDel"    , show $ fld_onDel    f]  --  Declaration->ECArule -- the PAclause to be executed after a delete on this field
+                     ])
+
+      English -> [ Plain [TeX $ "Field: "++fld_name f] ]++ -- The name of this field
+                 tabular flags 2 
+                   ( [ ["expr"       , show $ fld_expr     f]  --  Expression           -- The expression by which this field is attached to the service
+                     , ["editable"   , show $ fld_editable f]  --  Bool                 -- can this field be changed by the user of this service?
+                     ]++
+                     [ ["relation"   , show $ fld_mph      f]  --  Morphism             -- The morphism to which the database table is attached.
+                     | fld_editable f]++
+                     [ ["list"       , show $ fld_list     f]  --  Bool                 -- can there be multiple values in this field?
+                     , ["must"       , show $ fld_must     f]  --  Bool                 -- is this field obligatory?
+                     , ["new"        , show $ fld_new      f]  --  Bool                 -- can new elements be filled in? (if no, only existing elements can be selected)
+--                     , ["fields"     , show $ fld_fields   f]  --  [Field]              -- All fields/parameters of this service
+                     , ["insertable" , show $ fld_insAble  f]  --  Bool                 -- can the user insert in this field?
+--                     , ["onIns"    , show $ fld_onIns    f]  --  Declaration->ECArule -- the PAclause to be executed after an insert on this field
+                     , ["deletable"  , show $ fld_delAble  f]  --  Bool                 -- can the user delete this field?
+--                     , ["onDel"    , show $ fld_onDel    f]  --  Declaration->ECArule -- the PAclause to be executed after a delete on this field
+                     ])
 
   svcRelations :: [Block]
   svcRelations
@@ -513,6 +515,28 @@ showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
                                    showProof sh prf
                                    --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
 showProof _  []                  = ""
+-----Linguistic goodies--------------------------------------
+
+count :: Options -> Int -> String -> String
+count flags n x
+ = case (language flags, n) of
+      (Dutch  , 0) -> "geen "++plural Dutch x
+      (Dutch  , 1) -> "een "++x
+      (Dutch  , 2) -> "twee "++plural Dutch x
+      (Dutch  , 3) -> "drie "++plural Dutch x
+      (Dutch  , 4) -> "vier "++plural Dutch x
+      (Dutch  , 5) -> "vijf "++plural Dutch x
+      (Dutch  , 6) -> "zes "++plural Dutch x
+      (Dutch  , _) -> show n++" "++plural Dutch x
+      (English, 0) -> "no "++plural English x
+      (English, 1) -> "one "++x
+      (English, 2) -> "two "++plural English x
+      (English, 3) -> "three "++plural English x
+      (English, 4) -> "four "++plural English x
+      (English, 5) -> "five "++plural English x
+      (English, 6) -> "six "++plural English x
+      (English, _) -> show n++" "++plural English x
+
 ------------------------------------------------------------
 
 --   xrefChptReference :: String -> [Inline]
@@ -624,4 +648,44 @@ printexpr flags expr = case expr of
    K0 e  -> printexpr flags e ++ [Superscript [Str "*"]]
    K1 e  -> printexpr flags e ++ [Superscript [Str "+"]]
    Cp e  -> printcompl flags $ printexpr flags e
+
+longtable :: Options -> [Block] -> [Block]
+longtable flags lines
+  = case fspecFormat flags of
+      --REMARK -> pandoc does not support longtable (or something similar?)
+      FLatex -> [Plain $ 
+                  [ TeX "\\begin{center}\n"
+                  , TeX "\\begin{longtable}{|r|p{10cm}|}\n"
+                  , TeX "\\hline\n"
+                  ]
+               ++ [ TeX $ chain "&" [ entry | TeX entry<-line]++ "\\\\ \\hline\n" | Plain line<-lines]
+               ++ [ TeX "\\end{longtable} \n"
+                  , TeX "\\end{center} \n"
+                  ]
+                ]            
+      _      -> [Plain $ 
+                  [ Str "???" ]
+                ]            
+
+matharray flags lines
+  = case fspecFormat flags of
+      FLatex -> [Plain $ 
+                  [ TeX $ " \\( \\begin{array}{rcl} \n"
+                  , TeX $ chain "&" [ entry | line<-lines, entry<-line] ++ "\\\\" 
+                  , TeX $ " \\end{array} \\) "]
+                ]            
+      _      -> [Plain $ 
+                  [ Str "???" ]
+                ]            
+
+tabular flags n lines
+  = case fspecFormat flags of
+      FLatex -> [Plain $ 
+                  [ TeX $ "\\begin{tabular}{"++['l'|i<-[1..n]]++"}\n" ++
+                          chain "\\\\\n" [ chain "&" [ entry | entry<-line] | line<-lines] ++
+                          "\\end{tabular}" ]
+                ]            
+      _      -> [Plain $ 
+                  [ Str "???" ]
+                ]            
 

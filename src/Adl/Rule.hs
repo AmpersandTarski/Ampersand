@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Rule    ( Rule(..),Rules
                    , RuleType(..)
-                   , consequent, antecedent, cpu, ruleType, normExpr)     
+                   , consequent, antecedent, cpu, ruleType, normExpr, multRules)     
 where
    import Adl.FilePos                   ( FilePos(..),Numbered(..))
    import Adl.Concept                   ( Concept
                                         , Association(..)
                                         , MorphicId(..),Morphic(..))
-   import Adl.MorphismAndDeclaration    ( Morphism,Declaration)
+   import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration)
    import Adl.Expression                ( Expression(..),Expressions,v)
    import Adl.Prop
    import CommonClasses                 ( Identified(name,typ)
@@ -172,11 +172,24 @@ where
                    Gc{} -> r_cpu r
                    Fr{} -> error ("!Fatal (module Rule 179): [Tm (makeMph (frdec r))] might generate a loop.")
 
---   uncomp :: Rule -> Rule
---   uncomp r = case r of
---                   Ru{} -> r{r_cpu = []}
---                   Sg{} -> r
---                   Gc{} -> r{r_cpu = []}
---                   Fr{} -> r
---
-                       
+   multRules :: Declaration -> [Rule]
+   multRules d
+     = [h p| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
+           , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
+              error ("!Fatal (module CC_aux): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
+      where h Sym = Ru Equivalence (F [Tm r]) (pos d) (F [Tm r'])        [] (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")     sgn Nothing (nr d) ""
+            h Asy = Ru Implication (Fi [F [Tm r], F [Tm r']]) (pos d) id' [] (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.") sgn Nothing (nr d) ""
+            h Trn = Ru Implication (F [Tm r, Tm r]) (pos d) (F [Tm r])   [] (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")    sgn Nothing (nr d) ""
+            h Rfx = Ru Implication id' (pos d) (F [Tm r])                 [] (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")     sgn Nothing (nr d) ""
+            h Uni = Ru Implication (F [Tm r',Tm r]) (pos d) id''          [] (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")      sgn Nothing (nr d) ""
+            h Sur = Ru Implication id'' (pos d) (F [Tm r',Tm r])          [] (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")     sgn Nothing (nr d) ""
+            h Inj = Ru Implication (F [Tm r,Tm r']) (pos d) id'           [] (name d++"["++name (source d)++"*"++name (target d)++"] is injective")      sgn Nothing (nr d) ""
+            h Tot = Ru Implication id' (pos d) (F [Tm r,Tm r'])           [] (name d++"["++name (source d)++"*"++name (target d)++"] is total")          sgn Nothing (nr d) ""
+            h Aut = error("!Fatal (module Language): multRules not defined for property 'Aut'")
+            sgn   = (source d,source d)
+            r     = Mph (name d)                (pos d) [] (source d,target d) True d
+            r'    = flp (r ) 
+ --           r'' t = Mph (t++"["++(name d)++"]") (pos d) [] (source d,target d) True d
+            id'    = F [Tm (I [source d] (source d) (source d) True)]
+            id''    = F [Tm (I [target d] (target d) (target d) True)]
+ 

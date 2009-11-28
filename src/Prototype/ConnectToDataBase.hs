@@ -91,7 +91,7 @@
        , "if($DB_debug>=3){"
        ] ++
           [ "  checkRule"++show (runum r)++"();"
-          | r<-vrules fSpec ] ++
+          | r<-rules fSpec ] ++
        [ "}"
        ]
       )) ++ "\n?>"
@@ -114,7 +114,7 @@
                  "  DB_debug("++dbError rule++",3);\n    "++
                  "  return false;\n    }"
            ) ++ "return true;\n  }"
-         | rule<-vrules fSpec, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc fSpec rule'], trg<-[noCollide [src] (sqlExprTrg fSpec rule')] ]
+         | rule<-rules fSpec, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc fSpec rule'], trg<-[noCollide [src] (sqlExprTrg fSpec rule')] ]
       where
        dbError :: Rule -> String
        dbError rule

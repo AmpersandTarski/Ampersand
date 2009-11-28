@@ -1,5 +1,5 @@
 --TODO -> clean and stuff. Among which moving classdiagram2dot to Graphviz library implementation (see Classes/Graphics.hs).
---        I only helped it on its feed and I have putted in the fSpec, now it generates stuff. I like stuff :)
+--        I only helped it on its feed and I have put in the fSpec, now it generates stuff. I like stuff :)
 
   module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
@@ -7,16 +7,20 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Strings (chain) -- , eqCl, enc)
    import Typology (Inheritance(Isa))
-   import Adl(Contexts,declaredRules,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
+   import Adl(Contexts,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
                 ,multiplicities
                 ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign
                 ,Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
    import Auxiliaries (eqCl)
+   import Data.Plug
+   import Options
+   import FspecDef
+
  --  import ShowADL
  --  import CC_aux  
          --     ( Context, Concept, Object(concept, attributes, ctx)
          --     , showADL, Morphical
-         --     , Language( rules, declaredRules )
+         --     , Language( rules)
          --     , isProperty, target, concs, source
          --     , declaration, declarations, keys
          --     , flp, multiplicities, isa, isFunction, isFlpFunction
@@ -38,7 +42,7 @@
       where
        layout  = "neato" -- nongravitational layout
             -- = "dot"   -- vertical layout (default)
-       rs      = declaredRules context
+       rs      = rules context
        shR r   = showADL r
        fnm     = fnContext context++"_CD"
 -}
@@ -55,123 +59,56 @@
     nodes :: a->[String]
 
    
-   data ClassDiag = OOclassdiagram {classes::[Class]            --
-                                   ,assocs::[Association]      --
-                                   ,aggrs::[Aggregation]      --
-                                   ,geners::[Generalization]   --
-                                   ,nameandcpts::(String,[Concept])}
-                               deriving Show
+
    instance CdNode ClassDiag where
     nodes (OOclassdiagram cs as rs gs _) = rd (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
 
-   data Class          = OOClass        String             --
-                                        [Attribute]        --
-                                        [Method]           --
-                                    deriving Show
    instance CdNode Class where
     nodes (OOClass c as ms) = [c]
    instance CdNode a => CdNode [a] where
     nodes = concat.map nodes
 
-   data Attribute      = OOAttr         String             -- name of the attribute
-                                        String             -- type of the attribute (Concept name or built-in type)
-                                    deriving Show
    instance CdNode Attribute where
     nodes (OOAttr nm t) = [t]
 
-   data Method         = OOMethodC      Name               -- name of this method, which creates a new object (producing a handle)
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodR      Name               -- name of this method, which yields the attribute values of an object (using a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodS      Name               -- name of this method, which selects an object using key attributes (producing a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodU      Name               -- name of this method, which updates an object (using a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodD      Name               -- name of this method, which deletes an object (using nothing but a handle).
-                       | OOMethod       Name               -- name of this method, which deletes an object (using nothing but a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                                        String             -- result: a type
    instance CdNode Method where
     nodes m = []
 
-   instance Show Method where
-    showsPrec p (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n t<-cs]++"):handle")
-    showsPrec p (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n t<-as]++"]")
-    showsPrec p (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n t<-ks]++"):handle")
-    showsPrec p (OOMethodD nm)     = showString (nm++"(handle)")
-    showsPrec p (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n t<-cs]++")")
-    showsPrec p (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n t<-cs]++"): "++r)
-
-   data Association    = OOAssoc        String             -- source: the left hand side class
-                                        Mult               -- left hand side multiplicities
-                                        Name               -- left hand side role
-                                        String             -- target: the right hand side class
-                                        Mult               -- right hand side multiplicities
-                                        Name               -- right hand side role
-                                    deriving Show
    instance CdNode Association where
     nodes (OOAssoc s ml rl t mr rr) = [s,t]
 
-   data Aggregation    = OOAggr         Deleting           --
-                                        String             --
-                                        String             --
-                                    deriving (Show, Eq)
    instance CdNode Aggregation where
     nodes (OOAggr d s t) = [s,t]
 
-   data Generalization = OOGener        String             --
-                                        [String]           --
-                                    deriving (Show, Eq)
    instance CdNode Generalization where
     nodes (OOGener g ss) = g:ss
 
-   type Mult           = String                            --
-   type Name           = String                            --
-   data Deleting       = Open | Close                      --
-                                    deriving (Show, Eq)
 
-   cdAnalysis :: ( Morphical a, Language a, Identified a ) => Context -> Bool -> a -> ClassDiag
-   cdAnalysis context full pat = OOclassdiagram classes assocs aggrs geners (name pat, concs pat)
+   cdAnalysis :: Fspc -> Options -> ClassDiag
+   cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
-       classes    = [ OOClass (name c)
-                              [ OOAttr (name a) (if null([Sym,Asy]>-multiplicities a) then "Bool" else name (target a)) | a<-as]
-                              (if full then ms else [])
-                    | c<-used, c `elem` concs pat
-                      -- all attributes:
-                    , as<-[[a| a<-attrs, source a == c, not (null([Sym,Asy]>-multiplicities a))]]
-                      -- all editable attributes:
-                    , cs<-[[ OOAttr (name a++if null [v| v<-as, name v==name a, v/=a] then "" else name (target a)) (name (target a)) | a<-as, not (makeDeclaration a `elem` comp)]]
-                      -- all methods:
-                    , ms<-[[ OOMethodC ("new"++name c) cs | not (null as) ] ++
-                           [ OOMethodR ("get"++name c) [ OOAttr (if null [v| v<-as, name v==name a, v/=a] then name a else name a++name (target a)) (name (target a)) | a<-as] | not (null as) ] ++
-                           [ OOMethodR ("sel"++name c++"_by_"++key) [ OOAttr (if null [v| v<-ks, name v==name a, v/=a] then name a else name a++name (target (ctx a))) (name (target (ctx a))) | a<-ks] | k@(cpt,key,ks)<-keys context, cpt==c, not (null ks)] ++
-                           [ OOMethodD ("del"++name c) | not (null as) ] ++
-                           [ OOMethodU ("upd"++name c) cs | not (null cs) ] ++
-                           [ OOMethod  (name s) [] "Bool" | s<-scs, null([Sym,Asy]>-multiplicities s), source s == c ]]
-                    , not (null as) || not (null ms)
+       classes    = [ OOClass (name c) [ OOAttr a atype | (a,atype)<-attrs plug] []
+                    | plug <- classPlugs, fld<-fields plug, fldname fld=="i", c<-[source (fldexpr fld)]
+                    , not (null (attrs plug))
                     ]
        assocs     = [ OOAssoc (name (source s)) (multiplicity s) "" (name (target s)) (multiplicity (flp s)) (name s)
-                    | s<-sps, not (s `elem` declarations attrs), s `elem` declarations pat, not (null([Sym,Asy]>-multiplicities s))]
+                    | s<-sps, not (s `elem` attrels), not (null([Sym,Asy]>-multiplicities s))]
                     where
                      multiplicity s | Sur `elem` multiplicities s && Inj `elem` multiplicities s = "1"
                                     |                                Inj `elem` multiplicities s = "0..1"
                                     | Sur `elem` multiplicities s                                = "1..n"
                                     | otherwise                                                  = ""
        aggrs      = []
-       geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa pat], gs<-eqCl fst pcs]
-       attrs      = [     Mph (name s++if isFlpFunction s then "Fun" else "") Nowhere [] (source s,target s) True s | s<-scs, isFunction s] ++
-                    [flp (Mph (name s++if isFunction s then "Inv" else "") Nowhere [] (source s,target s) True s)| s<-scs, isFlpFunction s]
-   -- obsolete:     ++ [     Mph (name s) posNone [] (source s,target s) True s | s<-scs, isProperty s]
+       geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa fSpec], gs<-eqCl fst pcs]
+       classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld])]
+       assocPlugs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)>1]
+       scalarPlgs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)<=1]
+       attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)))
+                    | fld<-fields plug, fldname fld/="i"]
+       attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-declarations (fldexpr fld)]
                     
-       comp = rd [s| rule<-declaredRules context, toExpr<-cpu rule, s<-declarations toExpr]  -- all computed relations
-       sps = [d|d<-declarations pat, not (isSignal d)]
-       scs = [d|d<-declarations context, not (isSignal d)]
-       ms = mors (declaredRules context)
-       used :: [Concept]
-       used = rd (concs ms ++                                                                   -- involved in aggregations
-                  [c| Isa pcs cs<-[isa pat], (a,b)<-pcs, c<-[a,b]] ++                           -- involved in generalizations
-                  [c| s<-sps, not (s `elem` declarations attrs), (a,b)<-[sign s], c<-[a,b]]  -- involved in associations
-                 )
+       sps = [d|d<-declarations fSpec, not (isSignal d)] -- was: for a single pattern
+       scs = [d|d<-declarations fSpec, not (isSignal d)] -- was: for the entire context
 
    shDataModel (OOclassdiagram cs as rs gs _)
     = "OOclassdiagram\n>     "++chain "\n>     "
@@ -181,11 +118,6 @@
           lijstopmaak (map show gs)]
     where lijstopmaak [] = "[]"
           lijstopmaak xs = "[ "++chain "\n>     , " xs++"\n>     ]"
-{-
-   cdDataModel :: Language pat => Context -> Bool -> String -> pat -> String
-   cdDataModel context full layout pat = classdiagram2dot (cdAnalysis context full pat)
-    where 
- -}
 
    classdiagram2dot  cd@(OOclassdiagram cs as rs gs (_, concspat))
             = "digraph G {bgcolor=transparent\n" ++        

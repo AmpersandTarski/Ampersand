@@ -11,18 +11,19 @@ where
 import Classes.Graphics
 import System (system, ExitCode(ExitSuccess,ExitFailure))
 
-import System.FilePath(combine,replaceExtension)
+import System.FilePath        (combine,replaceExtension)
 import Options
 import FspecDef
-import ShowHS       (fSpec2Haskell)
-import ShowADL      (printadl)
-import XML.ShowXMLtiny      (showXML)
-import Calc         (deriveProofs)
-import Prototype.ObjBinGen (phpObjServices)
+import ShowHS                 (fSpec2Haskell)
+import ShowADL                (printadl)
+import XML.ShowXMLtiny        (showXML)
+import Calc                   (deriveProofs)
+import Prototype.ObjBinGen    (phpObjServices)
 import Adl
-import Fspec2Pandoc (render2Pandoc,fSpec2Pandoc)
-import Strings      (remSpaces)
+import Fspec2Pandoc           (render2Pandoc,fSpec2Pandoc)
+import Strings                (remSpaces)
 import Atlas.Atlas
+import Rendering.ClassDiagram (classdiagram2dot)
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
@@ -78,14 +79,22 @@ doGenFspec fSpec flags
    =  do
       verboseLn flags "Generating functional specification document..."
       customheader <- readFile (texHdrFile flags)
-      writeFile outputFile  ( render2Pandoc flags customheader (fSpec2Pandoc fSpec' flags))
+      writeFile (cdFilename++".dot") (classdiagram2dot cd)
+      verboseLn flags ("Processing "++cdFilename++".dot ... :")
+      verboseLn flags ("dot -Tpng "++cdFilename++".dot -o "++cdFilename++".png")
+      system $ "neato -Tpng "++cdFilename++".dot -o "++cdFilename++".png"
+      verboseLn flags (cdFilename++".png"++" written.")
+      verboseLn flags ("Processing "++name fSpec)
+      writeFile outputFile    ( render2Pandoc flags customheader (fSpec2Pandoc fSpec' flags))
+      verboseLn flags ("Generating .png files in "++name fSpec)
       generatepngs fSpec' flags
       verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where  
    fSpec'= if (allServices flags)
            then fSpec{serviceS=serviceG fSpec} 
            else fSpec
-   outputFile = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
+   (cd,cdFilename)    = classdiagram fSpec
+   outputFile         = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
    outputExt FPandoc  = ".pandoc"
    outputExt FWord    = ".doc"
    outputExt FLatex   = ".tex"
@@ -99,25 +108,7 @@ generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..")
    outputFile fnm = combine (dirOutput flags) fnm
    dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
           | p<-vpatterns fSpec, (not.null) (concs p)]
---   cds = [run_cd (remSpaces$"CD_"++fnm) cd|cd@(OOclassdiagram{nameandcpts=(fnm,_)})<-classdiagrams fSpec] 
---   run_cd fnm cd =
---       do
---       writeFile (outputFile (fnm++".dot")) (classdiagram2dot cd)
---       putStrLn ("Processing "++fnm++".dot ... :")
---       result <- system $ "dot -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
---       result <- runGraphvizCommand Neato (classdiagram2dot cd) Png (outputFile (fnm++".png"))
---       case result of
---          ExitSuccess   -> putStrLn ("  "++fnm++".png created.")
---          ExitFailure x -> putStrLn $ "Failure: " ++ show x
    run fnm dot = makeGraphic (outputFile fnm) dot
---       do 
---       writeFile (outputFile (fnm++".dot")) (show dot)
---       putStrLn ("Processing "++fnm++".dot ... :")
---       result <- system $ "neato -Tpng "++(outputFile (fnm++".dot"))++" -o "++(outputFile (fnm++".png"))
---       succes <- runGraphvizCommand Neato dot Canon (outputFile (fnm++".dot"))
---       if succes 
---          then putStrLn ("  "++fnm++".png created.")
---          else putStrLn ("Failure: could not create " ++ fnm++".png")
  --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
  --    success <- runGraphviz testdot Png (outputFile fnm)
  --    return ()

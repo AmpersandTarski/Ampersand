@@ -7,7 +7,7 @@
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
               ,ObjectDef(..),Numbered(..)
-              ,Identified(..),mors,Morphism(..),Prop(..)
+              ,Identified(..),mors,Morphism(..),Language(..),Prop(..)
               ,Object(..),multiplicities,isIdent,Expression(..),mIs
               ,flp)
    import ShowADL (showADL)
@@ -202,9 +202,9 @@
             ,"  $DB_err='"++(addSlashes (show(explainArt flags fSpec rul)))++"';"
             ,"} else"
             ]
-          | rul <- vrules fSpec
+          | rul <- rules fSpec
           , or (map (\mpm -> elem mpm (mors rul)) -- rule contains an element
-                    (mors object) -- effected mors  ; SJ: mors yields all morphisms inline.
+                    (mors object) -- affected mors  ; SJ: mors yields all morphisms inline.
               )
           ]
         ) ++

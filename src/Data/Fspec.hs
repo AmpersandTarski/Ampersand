@@ -12,83 +12,162 @@ module Data.Fspec ( Fspc(..)
                   , FSid(..)
                   , FTheme(..)
                   , WSOperation(..), WSAction(..)
+                  , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
                   )
-where
-import Adl.Pattern                   (Pattern)
-import Adl.Rule                      (Rule(..))
-import Adl.ECArule                   (ECArule(..))
-import Adl.ObjectDef                 (ObjectDef)
-import Adl.Expression                (Expression)
-import Adl.MorphismAndDeclaration    (Morphism,Declaration)
-import Adl.Concept                   (Concept)
-import Adl.Pair
-import Typology                      (Inheritance)
-import Data.Plug
-import Rendering.ClassDiagram 
-data Fspc = Fspc  { fsfsid   :: FSid                  -- ^ The name of the specification
-                  , vplugs   :: [Plug]                -- ^ all plugs defined in the ADL-script
-                  , plugs    :: [Plug]                -- ^ all plugs (defined and derived)
-                  , serviceS :: [ObjectDef]           -- ^ all services defined in the ADL-script
-                  , serviceG :: [ObjectDef]           -- ^ all services derived from the basic ontology
-                  , services :: [Fservice]            -- ^ One for every service 
-                  , vrules   :: [Rule]                -- ^ One for every rule
-                  , ecaRules :: [ECArule]             -- ^ event-condition-action rules derived from the context
-                  , vrels    :: [Declaration]         -- ^ One for every declaration
-                  , fsisa    :: (Inheritance Concept) -- ^ The data structure containing the generalization structure of concepts
-                  , vpatterns:: [Pattern]
-                  , classdiagrams :: [ClassDiag]
-                  , themes :: [FTheme]
-                  , violations :: [(Rule,Paire)]
-                  }
-           
---DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
---         All "intelligence" is put in assembling an Fservice.
---         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
-data Fservice = Fservice 
-                  { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
-                                                            -- and which has been type checked by the compiler.
-                  , fsv_rels      :: [Morphism]             -- The declarations that may be changed by the user of this service
-                  , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service
-                  , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants.
-                  , fsv_signals   :: [Rule]                 -- All signals that are visible in this service
-                  , fsv_fields    :: [Field]                -- All fields/parameters of this service
-                  , fsv_creating  :: [Concept]              -- All concepts of which this service can create new instances
-                  , fsv_deleting  :: [Concept]              -- All concepts of which this service can delete instances
-                  }                                         
-
-data Field    = Att
-                  { fld_name      :: String                 -- The name of this field
-                  , fld_expr      :: Expression             -- The expression by which this field is attached to the service
-                  , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
-                  , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
-                  , fld_list      :: Bool                   -- can there be multiple values in this field?
-                  , fld_must      :: Bool                   -- is this field obligatory?
-                  , fld_new       :: Bool                   -- can new elements be filled in? (if no, only existing elements can be selected)
-                  , fld_fields    :: [Field]                -- All fields/parameters of this service
-                  , fld_insAble   :: Bool                   -- can the user insert in this field?
-                  , fld_onIns     :: Declaration->ECArule   -- the PAclause to be executed after an insert on this field
-                  , fld_delAble   :: Bool                   -- can the user delete this field?
-                  , fld_onDel     :: Declaration->ECArule   -- the PAclause to be executed after a delete on this field
-                  } 
-
--- The data structure Clauses is meant for calculation purposes.
--- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| conj<-cl_conjNF cl, disj<-[conj!!i]]
--- Every rule is transformed to this form, as a step to derive eca-rules
-data Clauses  = Clauses
-                    {cl_conjNF :: [[Expression]]  -- The conjunctive normal form of the clause
-                    ,cl_rule   :: Rule            -- The rule that is restored by this clause (for traceability purposes)
+ where
+   import Adl.ConceptDef                (ConceptDef)
+   import Adl.Concept                   (Concept,isSignal)
+   import Adl.Pair
+   import Adl.Pattern                   (Pattern)
+   import Adl.Rule                      (Rule(..))
+   import Adl.ECArule                   (ECArule(..))
+   import Adl.ObjectDef                 (ObjectDef)
+   import Adl.Expression                (Expression)
+   import Adl.MorphismAndDeclaration    (Morphism,Declaration)
+   import Classes.Morphical
+   import Classes.Language
+   import Collection                    (uni)
+   import Strings                       (chain)
+   import Typology                      (Inheritance)
+   import Data.Plug
+   
+   data Fspc = Fspc { fsfsid       :: FSid                  -- ^ The name of the specification, taken from the ADL-script
+                    , vplugs       :: [Plug]                -- ^ all plugs defined in the ADL-script
+                    , plugs        :: [Plug]                -- ^ all plugs (defined and derived)
+                    , serviceS     :: [ObjectDef]           -- ^ all services defined in the ADL-script
+                    , serviceG     :: [ObjectDef]           -- ^ all services derived from the basic ontology
+                    , services     :: [Fservice]            -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , vrules       :: [Rule]                -- ^ All rules that apply in the entire Fspc, including all signals
+                    , ecaRules     :: [ECArule]             -- ^ generated: event-condition-action rules derived from the context
+                    , vrels        :: [Declaration]         -- ^ All declarations in this specification
+                    , fsisa        :: (Inheritance Concept) -- ^ generated: The data structure containing the generalization structure of concepts
+                    , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
+                    , vConceptDefs :: [ConceptDef]          -- ^ all conceptDefs defined in the ADL-script
+                    , classdiagram :: (ClassDiag,String)    -- ^ generated: class diagram that defines the data sets of this specification, together with its filename
+                    , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
+                    , violations   :: [(Rule,Paire)]        -- ^ generated: the violations of rules, as computed from the populations specified in the ADL-script
                     }
+              
+   instance Morphical Fspc where
+    concs        fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
+    conceptDefs  fSpec = vConceptDefs fSpec                                  -- The set of all concept definitions in this Fspc
+    mors         fSpec = mors (vplugs fSpec) `uni` mors (serviceS fSpec) `uni` mors (vrules fSpec)
+    morlist      fSpec = morlist (vplugs fSpec) ++ morlist (serviceS fSpec) ++ morlist (vrules fSpec)
+    declarations fSpec = vrels fSpec
+    genE         fSpec = genE (vrels fSpec++declarations [r| r<-(vrules fSpec),isSignal r ])  
+    closExprs    fSpec = closExprs (vrules fSpec)
 
-data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: [Rule]}
-{- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
- - "The properties of the Interface Operation component are as follows:
- - ...
- - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
- - ..."
- -}
-data WSOperation = WSOper {wsaction::WSAction, wsmsgin::[ObjectDef], wsmsgout::[ObjectDef]}
-data WSAction = WSCreate | WSRead | WSUpdate |WSDelete
+   instance Language Fspc where
+    --Interpretation of fSpec as a language means to describe the classification tree,
+    --the set of declarations and the rules that apply in that fSpec. Inheritance of
+    --properties is achieved as a result.
+    rules         fSpec = [r| r<-vrules fSpec, not (isSignal r)]
+    signals       fSpec = [r| r<-vrules fSpec,      isSignal r ]
+    specs         fSpec = []    -- obsolete: TODO remove together with all Glue rules.
+    patterns      fSpec = vpatterns fSpec
+    objectdefs    fSpec = serviceS fSpec ++ serviceG fSpec
+    isa           fSpec = fsisa  fSpec
 
-data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
-        --  | NoName           -- some identified objects have no name...
 
+   --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
+   --         All "intelligence" is put in assembling an Fservice.
+   --         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
+   data Fservice = Fservice 
+                     { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
+                                                               -- and which has been type checked by the compiler.
+                     , fsv_rels      :: [Morphism]             -- The declarations that may be changed by the user of this service
+                     , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service
+                     , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants.
+                     , fsv_signals   :: [Rule]                 -- All signals that are visible in this service
+                     , fsv_fields    :: [Field]                -- All fields/parameters of this service
+                     , fsv_creating  :: [Concept]              -- All concepts of which this service can create new instances
+                     , fsv_deleting  :: [Concept]              -- All concepts of which this service can delete instances
+                     }                                         
+   
+   data Field    = Att
+                     { fld_name      :: String                 -- The name of this field
+                     , fld_expr      :: Expression             -- The expression by which this field is attached to the service
+                     , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
+                     , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
+                     , fld_list      :: Bool                   -- can there be multiple values in this field?
+                  , fld_must      :: Bool                   -- is this field obligatory?
+                     , fld_new       :: Bool                   -- can new elements be filled in? (if no, only existing elements can be selected)
+                     , fld_fields    :: [Field]                -- All fields/parameters of this service
+                     , fld_insAble   :: Bool                   -- can the user insert in this field?
+                     , fld_onIns     :: Declaration->ECArule   -- the PAclause to be executed after an insert on this field
+                     , fld_delAble   :: Bool                   -- can the user delete this field?
+                     , fld_onDel     :: Declaration->ECArule   -- the PAclause to be executed after a delete on this field
+                     } 
+   
+   -- The data structure Clauses is meant for calculation purposes.
+   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| conj<-cl_conjNF cl, disj<-[conj!!i]]
+   -- Every rule is transformed to this form, as a step to derive eca-rules
+   data Clauses  = Clauses
+                       {cl_conjNF :: [[Expression]]  -- The conjunctive normal form of the clause
+                       ,cl_rule   :: Rule            -- The rule that is restored by this clause (for traceability purposes)
+                       }
+   
+   data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: [Rule]}
+   {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
+    - "The properties of the Interface Operation component are as follows:
+    - ...
+    - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
+    - ..."
+    -}
+   data WSOperation = WSOper {wsaction::WSAction, wsmsgin::[ObjectDef], wsmsgout::[ObjectDef]}
+   data WSAction = WSCreate | WSRead | WSUpdate |WSDelete
+   
+   data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
+           --  | NoName           -- some identified objects have no name...
+   
+-------------- Class Diagrams ------------------
+   data ClassDiag = OOclassdiagram {classes     :: [Class]            --
+                                   ,assocs      :: [Association]      --
+                                   ,aggrs       :: [Aggregation]      --
+                                   ,geners      :: [Generalization]   --
+                                   ,nameandcpts :: (String,[Concept])}
+                            deriving Show
+
+   data Class          = OOClass        String             --
+                                        [Attribute]        --
+                                        [Method]           --
+                                    deriving Show
+   data Attribute      = OOAttr         String             -- name of the attribute
+                                        String             -- type of the attribute (Concept name or built-in type)
+                                    deriving Show
+   data Association    = OOAssoc        String             -- source: the left hand side class
+                                        String             -- left hand side multiplicities
+                                        String             -- left hand side role
+                                        String             -- target: the right hand side class
+                                        String             -- right hand side multiplicities
+                                        String             -- right hand side role
+                                    deriving Show
+   data Aggregation    = OOAggr         Deleting           --
+                                        String             --
+                                        String             --
+                                    deriving (Show, Eq)
+   data Generalization = OOGener        String             --
+                                        [String]           --
+                                    deriving (Show, Eq)
+   data Deleting       = Open | Close                      --
+                                    deriving (Show, Eq)
+   data Method         = OOMethodC      String             -- name of this method, which creates a new object (producing a handle)
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodR      String             -- name of this method, which yields the attribute values of an object (using a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodS      String             -- name of this method, which selects an object using key attributes (producing a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodU      String             -- name of this method, which updates an object (using a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodD      String             -- name of this method, which deletes an object (using nothing but a handle).
+                       | OOMethod       String             -- name of this method, which deletes an object (using nothing but a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                                        String             -- result: a type
+
+   instance Show Method where
+    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n _<-cs]++"):handle")
+    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n _<-as]++"]")
+    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n _<-ks]++"):handle")
+    showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
+    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n _<-cs]++")")
+    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n _<-cs]++"): "++r)

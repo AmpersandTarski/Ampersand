@@ -12,7 +12,7 @@ import Data.GraphViz
 --              -- 3) er is geen stap 3!
 --              -- 4) build on graphviz-2999.5.0.0
 import Adl
-import FspecDef
+import FspecDef hiding (Attribute)
 import Options
 import Collection (Collection(rd))
 

@@ -16,27 +16,27 @@
    import Rendering.ClassDiagram
 
    makeFspec :: Options -> Context -> Fspc
-   makeFspec flags context =
-      Fspc { fsfsid = makeFSid1 (name context)
-              -- serviceS contains the services defined in the ADL-script.
-              -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
-              -- A generic user interface (the Lonneker interface) is already available.
-            , vplugs   = definedplugs
-            , plugs    = allplugs
-            , serviceS = attributes context -- services specified in the ADL script
-            , serviceG = serviceG'          -- generated services
-            , services = [makeFservice context a | a <-attributes context]
-            , vrules   = rules context
-            , ecaRules = []
---                       let f eca i = eca i in
---                       zipWith f [ eca | rule<-declaredRules context, clause<-conjuncts rule, eca<-doClause (declarations context) (simplify clause) ] [0..]
-            , vrels    = declarations context
-            , fsisa    = ctxisa context
-            , vpatterns= patterns context
-            , classdiagrams = [cdAnalysis context True pat | pat<-patterns context]
-            , themes = themes'
-            , violations = [(r,viol) |r<-rules context, viol<-ruleviols r]
-            } where
+   makeFspec flags context = fSpec where
+        fSpec =
+           Fspc { fsfsid         = makeFSid1 (name context)
+                   -- serviceS contains the services defined in the ADL-script.
+                   -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
+                   -- A generic user interface (the Lonneker interface) is already available.
+                 , vplugs       = definedplugs
+                 , plugs        = allplugs
+                 , serviceS     = attributes context -- services specified in the ADL script
+                 , serviceG     = serviceG'          -- generated services
+                 , services     = [makeFservice context a | a <-attributes context]
+                 , vrules       = rules context++signals context
+                 , ecaRules     = []
+                 , vrels        = declarations context
+                 , fsisa        = ctxisa context
+                 , vpatterns    = patterns context
+                 , vConceptDefs = conceptDefs context
+                 , classdiagram = (cdAnalysis fSpec flags, "CD_"++[c|c<-name context, c/=' '])
+                 , themes       = themes'
+                 , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
+                 }
         ruleviols (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
             | rtyp==Truth = contents$Cp con --everything not in con
             | rtyp==Implication = ant `contentsnotin` con 
@@ -209,7 +209,7 @@
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
         sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (ctxks context) obj]
         --query copied from FSpec.hs revision 174
-        themerules = [r|p<-patterns context, r<-declaredRules p++signals p, null (cpu r)]
+        themerules = [r|p<-patterns context, r<-rules p++signals p, null (cpu r)]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
         maketheme _ = error("!Fatal (module ADL2Fspec) function makeFspec.maketheme: The theme must involve a concept.")
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
@@ -430,7 +430,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)
-                                else error("!Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj))
+                                else error("!Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
                , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
                , fld_list     = not (Uni `elem` multiplicities (objctx obj))   -- can there be multiple values in this field?
                , fld_must     = Tot `elem` multiplicities (objctx obj)         -- is this field obligatory?

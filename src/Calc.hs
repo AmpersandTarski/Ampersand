@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+ {-# OPTIONS_GHC -Wall #-}
 module Calc ( deriveProofs
             , conjuncts
             , simplify
@@ -9,14 +9,14 @@ module Calc ( deriveProofs
             , actSem
             , assembleECAs
             , delta ) 
-  where 
+  where
 
    import Collection         (Collection (isc,rd,rd'))
    import Auxiliaries        (sort',eqCl,eqClass)
    import Strings            (spread)
    import Adl
    import Data.Fspec
-   import FspecDef           (Fspc,vrules,chain,serviceS)
+   import FspecDef           (Fspc,chain,serviceS)
    import Adl.ECArule        (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import ShowADL            (showADL,showADLcode)
    import ShowECA            (showECA)
@@ -212,7 +212,7 @@ module Calc ( deriveProofs
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis        = rd (map makeInline rels++map (mIs.target) rels)
         visible m  = makeInline m `elem` vis
-        invariants = [rule| rule<-vrules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
+        invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
         ecaRs      = assembleECAs visible invariants
         editable (Tm Mph{})  = True
         editable _           = False
@@ -226,10 +226,9 @@ module Calc ( deriveProofs
       --proof (signals fSpec)++
       "\nRules for "++name fSpec++"\n--------------\n"++
       chain "\n--------------\n"
-      [ (if isSignal rule then "SIGNAL\n" else "")++
-        chain "\n" ["   "++stmt++if null comment then "" else "\n<=> { "++comment++". }"
+      [ chain "\n" ["   "++stmt++if null comment then "" else "\n<=> { "++comment++". }"
                    | (stmt,comment)<-cleanup (derivation rule)]
-      | rule<-vrules fSpec]++
+      | rule<-rules fSpec]++
       "\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
       "Ontological analysis: \n  "++
       chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
