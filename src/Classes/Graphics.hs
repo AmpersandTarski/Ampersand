@@ -128,8 +128,8 @@ handleFlags po flags =
               ArcSrcEdge d -> defaultEdgeAtts ++
                               if crowfoot flags
                               then  [ArrowHead noArrow] ++ --Empty] ++
-                                    [ArrowTail (crowfootArrow (inj (multiplicities d)) 
-                                                              (sur (multiplicities d)))]
+                                    [ArrowTail (crowfootArrow (isInj d) 
+                                                              (isSur d))]
                               else  [ArrowHead (AType[( ArrMod {arrowFill = OpenArrow
                                                                ,arrowSide = BothSides
                                                                }
@@ -141,8 +141,8 @@ handleFlags po flags =
                                     [ArrowTail noArrow]
               ArcTgtEdge d -> defaultEdgeAtts ++
                               if crowfoot flags
-                              then  [ArrowHead (crowfootArrow (fun (multiplicities d)) 
-                                                              (tot (multiplicities d)))] ++
+                              then  [ArrowHead (crowfootArrow (isFunction d) 
+                                                              (isTot d))] ++
                                     [ArrowTail noArrow] 
                               else  [ArrowHead noArrow] ++
                                     [ArrowTail noArrow]

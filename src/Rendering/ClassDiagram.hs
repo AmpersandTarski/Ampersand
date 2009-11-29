@@ -7,10 +7,10 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Strings (chain) -- , eqCl, enc)
    import Typology (Inheritance(Isa))
-   import Adl(Contexts,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
-                ,multiplicities
-                ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign
-                ,Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
+   import Adl (Contexts,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
+              ,Morphic(..)
+              ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign
+              ,Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options
@@ -94,9 +94,9 @@
        assocs     = [ OOAssoc (name (source s)) (multiplicity s) "" (name (target s)) (multiplicity (flp s)) (name s)
                     | s<-sps, not (s `elem` attrels), not (null([Sym,Asy]>-multiplicities s))]
                     where
-                     multiplicity s | Sur `elem` multiplicities s && Inj `elem` multiplicities s = "1"
-                                    |                                Inj `elem` multiplicities s = "0..1"
-                                    | Sur `elem` multiplicities s                                = "1..n"
+                     multiplicity s | isSur s && isInj s = "1"
+                                    |                                isInj s = "0..1"
+                                    | isSur s                                = "1..n"
                                     | otherwise                                                  = ""
        aggrs      = []
        geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa fSpec], gs<-eqCl fst pcs]

@@ -103,7 +103,7 @@ where
               }
 
   instance Morphical SqlField where
-    concs        f = [target e'|let e'=fldexpr f,Sur `elem` (multiplicities e')]
+    concs        f = [target e'|let e'=fldexpr f,isSur e']
     conceptDefs  f = conceptDefs   (fldexpr f)
     mors         f = map makeInline (mors (fldexpr f))
     morlist      f = morlist       (fldexpr f)

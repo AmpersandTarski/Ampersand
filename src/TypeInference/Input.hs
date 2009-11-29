@@ -42,8 +42,8 @@ allCtxCpts ctxs
    inject cs = cs ++ [x{cptos=[]}|x@(C{})<-rd$concat[[gengen g,genspc g]|g<-allCtxGens ctxs], not$elem x cs] 
    pps = [ pop | cx<-ctxs, pop<-ctxpops cx]
    dls = allPatDecls (allCtxPats ctxs)
-   dom r ps = if Inj `elem` multiplicities r then [ srcPaire p | p<-ps ] else rd [ srcPaire p | p<-ps ]
-   cod r ps = if Uni `elem` multiplicities r then [ trgPaire p | p<-ps ] else rd [ trgPaire p | p<-ps ]
+   dom r ps = if isInj r then [ srcPaire p | p<-ps ] else rd [ srcPaire p | p<-ps ]
+   cod r ps = if isUni r then [ trgPaire p | p<-ps ] else rd [ trgPaire p | p<-ps ]
 
 --DESCR -> all the Declarations of Contexts
 allCtxDecls :: Contexts -> Declarations

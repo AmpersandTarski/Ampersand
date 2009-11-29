@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Prop (Prop(..),Props
-                , sur, inj, fun, tot
                 ,flipProps)
 where
 
@@ -39,11 +38,4 @@ where
    flipProp Sur = Tot
    flipProp Inj = Uni
    flipProp x = x
-
-   fun,tot,inj,sur :: [Prop]->Bool
-   fun = elem Uni
-   tot = elem Tot
-   inj = elem Inj
-   sur = elem Sur
-
-                 
+                

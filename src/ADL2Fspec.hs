@@ -51,22 +51,16 @@
 --        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True]}
         mor2plug :: Morphism -> Plug
         mor2plug  m'
-         = if isInj && not isUni then mor2plug (flp m')
-           else if isUni || isTot
+         = if (isInj m') && not (isUni m') then mor2plug (flp m')
+           else if isUni m' || isTot m'
            then PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing False isUni
-                                   ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
-           else if isInj || isSur then mor2plug (flp m')
+                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing False (isUni m')
+                                   ,field (name (target m')) (Tm m') Nothing (not (isTot m')) (isInj m')]}
+           else if isInj m' || isSur m' then mor2plug (flp m')
            else PlugSql { plname = name m'
                         , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]
                                                            )      Nothing False False
                                    ,field (name (target m')) (Tm m') Nothing False False]}
-           where
-             mults = multiplicities m'
-             isTot = Tot `elem` mults
-             isUni = Uni `elem` mults
-             isSur = Sur `elem` mults
-             isInj = Inj `elem` mults
 
         allplugs = uniqueNames []
                     (definedplugs ++                  -- all plugs defined by the user
@@ -165,7 +159,7 @@
                   ]
            | c<-concs context ]
            where
-           fats c = [mph| mph<-relsFrom c, not (isSignal mph), Tot `elem` multiplicities mph, Uni `elem` multiplicities mph]
+           fats c = [mph| mph<-relsFrom c, not (isSignal mph), isTot mph, isUni mph]
            composedname mph | inline mph = name mph++name (target mph)
                             | otherwise  = name (target mph) ++ "_of_" ++ name mph
            preventAmbig mp@(Mph{mphats=[]}) =  
@@ -188,7 +182,7 @@
                   , objats  = (map head.eqCl objnm)
                                 [ recur (ms++[mph]) mph
                                 | mph<-relsFrom (target m), not (isSignal mph)
-                                , Tot `elem` multiplicities mph, not (isProperty mph)
+                                , isTot mph, not (isProperty mph)
                                 , not (mph `elem` ms)]
                   , objstrs = [] -- [["DISPLAYTEXT", name m++" "++name (target m)]]++props (multiplicities m)
                   }
@@ -243,8 +237,8 @@
        mph2fld m = Fld { fldname = name m
                        , fldexpr = Tm m
                        , fldtype = if isSQLId then SQLId else SQLVarchar 255
-                       , fldnull = not (Tot `elem` multiplicities m)          -- can there be empty field-values? 
-                       , flduniq = Inj `elem` multiplicities m                -- are all field-values unique?
+                       , fldnull = not (isTot m)          -- can there be empty field-values? 
+                       , flduniq = isInj m                -- are all field-values unique?
                        , fldauto = isAuto                                     -- is the field auto increment?
                        } 
                    where isSQLId = isIdent m && isAuto
@@ -255,8 +249,8 @@
                                  , source mph<=c && target mph<=c'
                                    || source mph<=c' && target mph<=c])
 {- The attributes of a plug are determined by the univalent relations that depart from the kernel. -}
-       dss cl = [     makeMph d | d<-decls, Uni `elem` multiplicities      d , source d `elem` cl]++
-                [flp (makeMph d)| d<-decls, Uni `elem` multiplicities (flp d), target d `elem` cl]
+       dss cl = [     makeMph d | d<-decls, isUni      d , source d `elem` cl]++
+                [flp (makeMph d)| d<-decls, isUni (flp d), target d `elem` cl]
 
 {- Absorb
 If a concept is represented by plug p, and there is a surjective path between concept c' and c, then c' can be represented in the same table.
@@ -266,7 +260,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
        absorb (p:ps) = p: absorb [p'| p'<-ps
                                     , kernel p' `notElem` [target m| f<-fields p
                                                                    , Tm m<-[fldexpr f]
-                                                                   , Sur `elem` multiplicities m]]
+                                                                   , isSur m]]
 
        kernel :: Plug -> Concept -- determines the core concept of p. The plug serves as concept table for (kernel p).
        kernel p@(PlugSql{}) = source (fldexpr (head (fields p)))
@@ -287,11 +281,11 @@ Hence, we do not need a separate plug for c' and it will be skipped.
             }
         | att<-objats obj
         ]
-        where nul  att = not (Tot `elem` multiplicities (objctx att))
+        where nul  att = not (isTot (objctx att))
               uniq att = null [a' | a' <- objats obj
-                                  , Uni `notElem` multiplicities (disjNF$F[flp$objctx att,objctx a'])]
+                                  , not (isUni (disjNF$F[flp$objctx att,objctx a']))]
               autoFields = take 1 [a'| a'<-objats obj
-                                     , sqltp a'==SQLId, Tot `elem` multiplicities (objctx a')
+                                     , sqltp a'==SQLId, isTot (objctx a')
                                      , uniq a', isIdent $ objctx a' ]
       sqltp :: ObjectDef -> SqlType
       sqltp obj = head $ [makeSqltype sqltp' | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
@@ -433,8 +427,8 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                 then editMph (objctx obj)
                                 else error("!Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
                , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
-               , fld_list     = not (Uni `elem` multiplicities (objctx obj))   -- can there be multiple values in this field?
-               , fld_must     = Tot `elem` multiplicities (objctx obj)         -- is this field obligatory?
+               , fld_list     = not (isUni (objctx obj))   -- can there be multiple values in this field?
+               , fld_must     = isTot (objctx obj)         -- is this field obligatory?
                , fld_new      = True                                           -- can new elements be filled in? (if no, only existing elements can be selected)
                , fld_fields   = map fld (objats obj)
                , fld_insAble  = not (null insTrgs)                             -- can the user insert in this field?

@@ -89,7 +89,7 @@
       where
         phpList2Array :: Int->String->String->ObjectDef->[String]
         phpList2Array depth var rqvar a
-         = if Uni `notElem` multiplicities (objctx a)
+         = if not (isUni (objctx a))
            then [ var++"=array();"
                 , "for($i"++show depth++"=0;isset($r['"++rqvar++".'.$i"++show depth++"]);$i"
                        ++show depth++"++){"]
@@ -99,7 +99,7 @@
                                                    a
                                  ) ++
                 [ "}"]
-           else if Tot `notElem` multiplicities (objctx a)
+           else if not (isTot (objctx a))
                 then ["if(@$r['"++rqvar++"']!=''){"]
                      ++ indentBlock 2 (phpList2ArrayUni depth var rqvar a) ++
                      ["}else "++var++"=null;"]
@@ -110,19 +110,19 @@
                          ) ++
            concat
            [ phpList2Array depth (var++"['"++name a'++"']") (rqvar++"."++show n) a'
-           | (a',n)<-zip (objats a) [(0::Integer)..],Uni `notElem` multiplicities (objctx a')]
+           | (a',n)<-zip (objats a) [(0::Integer)..],not (isUni (objctx a'))]
         phpList2ArrayVal :: String->String->ObjectDef->[String]
         phpList2ArrayVal var rqvar a
          = if null (objats a) then ["@$r['"++rqvar++"']"]
            else [ "array( 'id' => @$r['"++rqvar'++"']"] ++ 
                 [ ", '" ++ name a' ++ "' => "
                   ++ concat (phpList2ArrayVal var (rqvar++'.':show n) a')
-                | (a',n)<-zip (objats a) [(0::Integer)..], Uni `elem` multiplicities (objctx a')] ++
+                | (a',n)<-zip (objats a) [(0::Integer)..], isUni (objctx a')] ++
                 [ ")"]
                  -- we gebruiken voor rqvar' liever iets waarvan het attribuut ingesteld wordt:
            where rqvar' = head ( [(rqvar++'.':show n)
                                  | (a',n)<-zip (objats a) [(0::Integer)..]
-                                 , Uni `elem` multiplicities (objctx a')
+                                 , isUni (objctx a')
                                  , isIdent (objctx a')
                                  ] ++ [rqvar] )
         objectName      = name o
@@ -155,8 +155,8 @@
              attCode' = map (\x->"'"++x++"'") (attCode "'+id+'." cls att)
              attCode strt c at = ["<DIV>"++(name a)++": "++(specifics c (strt ++ show n) a)++"</DIV>"
                                  | (n,a)<-zip [(0::Integer)..] (objats at)]
-             specifics c n a = if Uni `elem` multiplicities (objctx a)
-                                 then if Tot `elem` multiplicities (objctx a)
+             specifics c n a = if isUni (objctx a)
+                                 then if isTot (objctx a)
                                       then "<SPAN CLASS=\"item UI"++acls c a++"\" ID=\""++n
                                            ++"\">" ++ concat (attCode n (acls c a) a) ++"</SPAN>"
                                       else "<DIV CLASS=\"new UI"++acls c a++"\" ID=\""
@@ -214,7 +214,7 @@
            ],newBlocks)
            where (content,newBlocks) = attContent var depth path cls att
         -- attContent shows a list of values, using uniAtt if it is only one
-        attContent var depth path cls att | Uni `notElem` multiplicities (objctx att)
+        attContent var depth path cls att | not (isUni (objctx att))
          = ([ "echo '"
            , "<UL>';"
            , "foreach("++var++" as $i"++show depth++"=>"++atnm ++"){"
@@ -235,7 +235,7 @@
                       (path ++".'.$i"++show depth++".'") cls att
             atnm = if "$"++phpIdentifier (name att)==var then "$v"++show depth else "$"++phpIdentifier (name att)
         attContent  var depth path cls att | objats att==[]
-         = if Tot `elem` multiplicities (objctx att)
+         = if isTot (objctx att)
            then ([ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" ]
                 ++ content ++ [ "echo '</SPAN>';" ],newBlocks)
            else ([ "if (isset("++var++")){"
@@ -244,8 +244,8 @@
                  [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
                  ],newBlocks)
            where (content,newBlocks) = uniAtt (var) depth path cls att
-                 spanordiv = if Tot `elem` multiplicities (objctx att) then "SPAN" else "DIV"
-        attContent  var depth path cls att | (Tot `elem` multiplicities(objctx att))
+                 spanordiv = if isTot (objctx att) then "SPAN" else "DIV"
+        attContent  var depth path cls att | (isTot(objctx att))
          = ([ "echo '<DIV CLASS=\"UI"++cls++"\" ID=\""++path++"\">';" ]
            ++ indentBlock 2 content ++
            [ "echo '</DIV>';" ],newBlocks)
@@ -263,7 +263,7 @@
            )
            where
             (content,newBlocks) = uniAtt (var) depth path cls att
-            tot = (Tot `elem` multiplicities(objctx att))
+            tot = (isTot(objctx att))
         gotoPages :: ObjectDef->String->[(String,String)]
         gotoPages att var
           = [ (name serv++".php?"++(phpIdentifier$name serv)++"='.urlencode("++var++").'"
@@ -277,7 +277,7 @@
            | (link,txt) <- gotoP] ++
            [ "echo '</UL></DIV>';" ]
         uniAtt var _ path _ att | null (objats att)
-         = (if Tot `notElem` mults && Uni `elem` mults
+         = (if not (isTot (objctx att)) && isUni (objctx att)
            then [ "if(isset("++var++")){" ] ++ indentBlock 2 content ++ ["}"]
            else content,[])
            where
@@ -293,7 +293,6 @@
                               ++ indentBlock 2 (gotoDiv gotoP path) ++
                               [ "} else echo "++echobit++";" ]
             echobit= "htmlspecialchars("++var++")"
-            mults = multiplicities (objctx att)
             gotoP = gotoPages att var
         uniAtt var depth path cls att
          = ((if null gotoP then []

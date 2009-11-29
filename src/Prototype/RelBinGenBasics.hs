@@ -37,7 +37,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
    -- als dit zo is, hoeven we alleen dat ene concept te tonen
    isOneExpr :: Expression -> Bool
-   isOneExpr e' = (fun.multiplicities.conjNF.F) [v (source (e'),source (e')),e']
+   isOneExpr e' = (isFunction.conjNF.F) [v (source (e'),source (e')),e']
    isOne :: ObjectDef -> Bool
    isOne o = isOneExpr$ctx o
 
@@ -517,14 +517,14 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      yield False, but should yield True
                   -}
                   || (  (se == te) && isIdent e'
-                     && (Sur `elem` multiplicities se)
+                     && (isSur se)
                      )
                   ]
      where -- simplF: replace a;a~ by I if INJ&TOT
       simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
         where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
                -- null occurs especialy in cases of [I;e] and [e;I]
-      replF (k:k2:ks) | k == flp k2 && Inj `elem` multiplicities k && Tot `elem` multiplicities k
+      replF (k:k2:ks) | k == flp k2 && isInj k && isTot k
              = if null ks then Tm$mIs$source k else replF ks
       replF [a] = F [a]
       replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF

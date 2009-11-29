@@ -169,8 +169,8 @@
      (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
      move [] cs = ([(Tm . mIs . source . head) cs],cs)
      move as cs
-      | sur (multiplicities h) && inj (multiplicities h) = move (tail as) ([flp h]++cs)
-      | fun (multiplicities l) && tot (multiplicities l) = move (init as) (cs++[flp l])
+      | (isSur h) && (isInj h) = move (tail as) ([flp h]++cs)
+      | (isUni l) && (isTot l) = move (init as) (cs++[flp l])
       | otherwise      = (as,cs)
       where h=head as; l=last as
    normRule (Sg p rule expla sgn nr pn signal)
@@ -325,11 +325,10 @@
 
    denote :: Expression -> Notation
    denote (Tm m)
-    | null([Uni,Inj,Tot,Sur] >- ps)  = Rn
-    | Uni `elem` ps && Tot `elem` ps = Flr
-    | Inj `elem` ps && Sur `elem` ps = Frl
-    | otherwise                      = Rn
-    where ps = multiplicities m
+    | null([Uni,Inj,Tot,Sur] >- multiplicities m)  = Rn
+    | (isUni m) && (isTot m) = Flr
+    | (isInj m) && (isSur m) = Frl
+    | otherwise              = Rn 
    denote e = Rn
    denotes = denote . head
 

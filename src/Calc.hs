@@ -92,10 +92,10 @@ module Calc ( deriveProofs
       = (ass,css):
         if and ([not (idsOnly (F cs))| cs<-css]) -- idsOnly (F [])=True, so:  and [not (null cs)| cs<-css]
         then [ts| length (eqClass (==) (map head css)) == 1
-                , fun (multiplicities h)
+                , isFunction h
                 , ts<-move [[flp h]++as|as<-ass] (map tail css)]++
              [ts| length (eqClass (==) (map last css)) == 1
-                , inj (multiplicities l)
+                , isInj l
                 , ts<-move [as++[flp l]|as<-ass] (map init css)]
         else []
         where h=head (map head css); l=head (map last css)
@@ -131,10 +131,10 @@ module Calc ( deriveProofs
       = (ass,css):
         if and [not (null as)| as<-ass]
         then [ts| length (eqClass (==) (map head ass)) == 1
-                , sur (multiplicities h)
+                , isSur h
                 , ts<-move (map tail ass) [[flp h]++cs|cs<-css]]++
              [ts| length (eqClass (==) (map last ass)) == 1
-                , tot (multiplicities l)
+                , isTot l
                 , ts<-move (map init ass) [cs++[flp l]|cs<-css]]
         else []
         where h=head (map head ass); l=head (map last ass)

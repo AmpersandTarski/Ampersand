@@ -6,9 +6,9 @@
    import Auxiliaries (eqCl,sort')
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
-              ,ObjectDef(..),Numbered(..)
+              ,ObjectDef(..),Numbered(..),Morphic(..)
               ,Identified(..),mors,Morphism(..),Language(..),Prop(..)
-              ,Object(..),multiplicities,isIdent,Expression(..),mIs
+              ,Object(..),isIdent,Expression(..),mIs
               ,flp)
    import ShowADL (showADL)
    import Collection (Collection (rd,rd',(>-)))
@@ -102,7 +102,7 @@
                                   indentBlock (if isOne o then 4 else 6)
                                   ( [ "// fill the attributes"
                                     ] ++
-                                    ( if null [a|a<-objats o,Uni `elem` multiplicities (objctx a)]
+                                    ( if null [a|a<-objats o,isUni (objctx a)]
                                       then ["$me=array();"]
                                       else []            
                                     ) ++ (doPhpGet fSpec
@@ -230,11 +230,11 @@
      nestToRecur :: ObjectDef -> (String->[String]) -> ObjectDef -> String -> Integer -> [[String]]
      nestToRecur attr fnc a var d
        | attr==a   = [ if null (objats a) then fnc var else fnc (var)]
-       | otherwise = [ if Uni `elem` multiplicities (objctx a') then ans
+       | otherwise = [ if isUni (objctx a') then ans
                        else ["foreach("++var++"['"++name a'++"'] as $i"++show d++"=>$v"++show d++"){"]
                            ++ indentBlock 2 ans ++ ["}"]
                      | a'<-objats a
-                     , let mvar = if Uni `elem` multiplicities (objctx a')
+                     , let mvar = if isUni (objctx a')
                                  then var++"['"++name a'++"']"
                                  else "$v"++show d
                      , ans<-nestToRecur attr fnc a' (mvar) (d+1)]
@@ -244,7 +244,7 @@
      isFullOccurance  plug = isFullGroup (fields plug)
      isLargeOccurance plug = isFullGroup (requiredFields plug)
      requiredFields   plug = [f| f <- fields plug
-                               , Tot `elem` multiplicities (fldexpr f)
+                               , isTot (fldexpr f)
                                -- I used to remove ident fields from the requiredFields, but they ARE required
                                -- The reason I did this, was because auto increment fields are not
                                -- So let's remove the auto increment fields:
@@ -350,7 +350,7 @@
                            then error ("\nObjBinGenObject-saveCodeElem-inscode: Cannot get a key for the plug "++name plug)
                            else head keys
                    -- nunios: Not UNI ObjectS: objects that are not Uni
-                 nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ Uni `elem` multiplicities (objctx o)]
+                 nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ isUni (objctx o)]
                  ownAts = map snd is
                  insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
                  insQuery var
@@ -382,7 +382,7 @@
                            ] ++ " WHERE `"++fldname (snd key)++"`='\".addslashes("++varname var (fst key)++").\"'" ++"\", 5)"
                  varname var o = ( if a == o
                                    then var
-                                   else if Uni `elem` multiplicities (objctx o)
+                                   else if isUni (objctx o)
                                          then var++"['"++(name o)++"']"
                                          else "$"++(phpIdentifier $ name o)
                                  ) ++ maybeId o
@@ -405,7 +405,7 @@
      = [plug|plug<-plugs fSpec,((_,_),(_,_))<-take 1 $ plugAts plug object object]
    
    isObjUni :: ObjectDef -> Bool
-   isObjUni obj = Uni `elem` multiplicities (objctx obj)
+   isObjUni obj = isUni (objctx obj)
    
    doPhpGet :: Fspc -> String->Integer-> ObjectDef -> ObjectDef -> [String]
    doPhpGet fSpec objVar depth objIn objOut

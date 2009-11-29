@@ -13,7 +13,7 @@ module Adl ( Architecture(..)
            , ConceptDef(..),ConceptDefs
            , Concept(..), GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
-           , Prop(..), sur, inj, fun, tot
+           , Prop(..)
            , FilePos(..), Numbered(..)
            , makeDeclaration,mIs,ruleType,isProperty
            , antecedent,notCp,cptAnything,cpu
@@ -63,7 +63,7 @@ where
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)
    import Adl.Population                 (Population(..),Populations)
-   import Adl.Prop                       (Prop(..), sur, inj, fun, tot)
+   import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
                                          ,RuleType(..)
                                          ,consequent,antecedent,cpu,ruleType

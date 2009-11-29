@@ -267,9 +267,9 @@ where
 --                  ++[Elem (simpleTag "Specific")[mkXmlTree (target d)]]
 --           ) 
 --       where
---         multiplicity s | Sur `elem` multiplicities s && Inj `elem` multiplicities s = "1"
---                        |                                Inj `elem` multiplicities s = "0..1"
---                        | Sur `elem` multiplicities s                                = "1..n"
+--         multiplicity s | isSur s && isInj s = "1"
+--                        |                                isInj s = "0..1"
+--                        | isSur s                                = "1..n"
 --                        | otherwise                                                  = "0..n"
 --         prL = decprL d
 --         prM = decprM d
