@@ -9,12 +9,13 @@
    import FspecDef
    import Languages
    import Calc
-   import Options(Options(language))
+   import Options        (Options(language,dirOutput))
    import NormalForms(disjNF,normECA)
    import Data.Plug
    import Char(toLower)
    import Rendering.ClassDiagram
-
+   import System.FilePath
+   
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec where
         fSpec =
@@ -33,7 +34,7 @@
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
                  , vConceptDefs = conceptDefs context
-                 , classdiagram = (cdAnalysis fSpec flags, "CD_"++[c|c<-name context, c/=' '])
+                 , classdiagram = (cdAnalysis fSpec flags, combine (dirOutput flags)("CD_"++[c|c<-name context, c/=' ']))
                  , themes       = themes'
                  , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
                  }
