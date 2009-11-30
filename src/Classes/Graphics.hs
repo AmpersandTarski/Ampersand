@@ -141,7 +141,7 @@ handleFlags po flags =
                                     [ArrowTail noArrow]
               ArcTgtEdge d -> defaultEdgeAtts ++
                               if crowfoot flags
-                              then  [ArrowHead (crowfootArrow (isFunction d) 
+                              then  [ArrowHead (crowfootArrow (isUni d) 
                                                               (isTot d))] ++
                                     [ArrowTail noArrow] 
                               else  [ArrowHead noArrow] ++

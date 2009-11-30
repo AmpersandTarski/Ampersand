@@ -92,7 +92,7 @@ module Calc ( deriveProofs
       = (ass,css):
         if and ([not (idsOnly (F cs))| cs<-css]) -- idsOnly (F [])=True, so:  and [not (null cs)| cs<-css]
         then [ts| length (eqClass (==) (map head css)) == 1
-                , isFunction h
+                , isUni h
                 , ts<-move [[flp h]++as|as<-ass] (map tail css)]++
              [ts| length (eqClass (==) (map last css)) == 1
                 , isInj l

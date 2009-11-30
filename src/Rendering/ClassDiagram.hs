@@ -95,9 +95,9 @@
                     | s<-sps, not (s `elem` attrels), not (null([Sym,Asy]>-multiplicities s))]
                     where
                      multiplicity s | isSur s && isInj s = "1"
-                                    |                                isInj s = "0..1"
-                                    | isSur s                                = "1..n"
-                                    | otherwise                                                  = ""
+                                    | isInj s            = "0..1"
+                                    | isSur s            = "1..n"
+                                    | otherwise          = ""
        aggrs      = []
        geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa fSpec], gs<-eqCl fst pcs]
        classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld])]

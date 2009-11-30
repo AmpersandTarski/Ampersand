@@ -37,7 +37,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
    -- als dit zo is, hoeven we alleen dat ene concept te tonen
    isOneExpr :: Expression -> Bool
-   isOneExpr e' = (isFunction.conjNF.F) [v (source (e'),source (e')),e']
+   isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
    isOne :: ObjectDef -> Bool
    isOne o = isOneExpr$ctx o
 
