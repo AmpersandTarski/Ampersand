@@ -3,15 +3,20 @@ module Adl.ECArule (InsDel(..)
                    ,ECArule(..)
                    ,Event(..)
                    ,PAclause(..)
+                   ,isAll
+                   ,isChc
                    ,isBlk
                    ,isDry
                    ,isNop
+                   ,isDo
                    )
 where
 import Adl.Rule                      (Rule)
+import Adl.FilePos                   (nr)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism)
 import Adl.Concept                   (Concept)
+import Strings                       (commaEng)
 
 
 -- | The following datatypes form a process algebra. ADL derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
@@ -23,11 +28,10 @@ data ECArule  = ECA { ecaTriggr :: Event         -- The event on which this rule
                     , ecaDelta  :: Morphism      -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
                     , ecaAction :: PAclause      -- The action to be taken when triggered.
                     , ecaNum    :: Int           -- A unique number that identifies the ECArule within its scope.
-                    }
+                    } deriving Show
 data Event    = On { eSrt :: InsDel
                    , eMhp :: Morphism
-                   }
-                  deriving Eq
+                   } deriving (Show,Eq)
 data PAclause = Chc { paCls   :: [PAclause]
                     , paMotiv :: [(Expression,[Rule])] -- tells which conjunct from which rule is being maintained
                     }
@@ -59,6 +63,14 @@ data PAclause = Chc { paCls   :: [PAclause]
               | Dry { paMotiv :: [(Expression,[Rule])]  -- same as block, but for a lack of viable options to choose from.
                     }
 
+isAll :: PAclause -> Bool
+isAll All{} = True
+isAll _     = False
+
+isChc :: PAclause -> Bool
+isChc Chc{} = True
+isChc _     = False
+
 isBlk :: PAclause -> Bool
 isBlk Blk{} = True
 isBlk _     = False
@@ -71,6 +83,10 @@ isNop :: PAclause -> Bool
 isNop Nop{} = True
 isNop _     = False
 
+isDo :: PAclause -> Bool
+isDo Do{}   = True
+isDo _      = False
+
 instance Eq PAclause where
  Chc ds _ == Chc ds' _ = ds==ds'
  All ds _ == All ds' _ = ds==ds'
@@ -80,6 +96,31 @@ instance Eq PAclause where
  p@Rmv{}  ==  p'@Rmv{} = paCpt p==paCpt p'
  _ == _ = False
 
+      
+instance Show PAclause where
+    showsPrec _ p = showString (showFragm "\n" p)
+     where
+      showFragm indent pa@Do{}
+       = ( case paSrt pa of
+            Ins -> "INSERT INTO "
+            Del -> "DELETE FROM ")++
+         show (paTo pa)++
+         " SELECTFROM "++
+         show (paDelta pa)
+         ++motivate indent "TO MAINTAIN" (paMotiv pa)
+      showFragm indent (New c clause m) = "CREATE x:"++show c++";"++indent++"    "++show (clause "x")++motivate indent "MAINTAINING" m
+      showFragm indent (Rmv c clause m) = "REMOVE x:"++show c++";"++indent++"    "++show (clause "x")++motivate indent "MAINTAINING" m
+      showFragm indent (Sel c e r m)    = "SELECT x:"++show c++" FROM codomain("++show e++");"
+                                          ++indent++"    "++show (r "x")++motivate indent "MAINTAINING" m
+      showFragm indent (Chc ds m)       = "ONE of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+      showFragm indent (All ds m)       = "ALL of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+      showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
+      showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
+      showFragm indent (Dry m)          = "BLOCK"++motivate indent "NO RULES TO HANDLE" m
+
+      motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
+       where showConj (conj,rs) = "("++motive++" "++show conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"
+      
 {-
 instance Show ECArule where
  showsPrec p er = showString (show (ecaTriggr er)++" "++show (ecaAction er))
@@ -87,6 +128,4 @@ instance Show Event where
  showsPrec p (On Ins m) = showString ("ON INSERT Delta IN "++show m)
  showsPrec p (On Del m) = showString ("ON DELETE Delta FROM "++show m)
 -}
--- instance Show PAclause where
---  showsPrec p fragm = showString ("ON "++show "\n  " fragm)
 

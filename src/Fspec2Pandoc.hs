@@ -6,6 +6,7 @@ where
 import Collection     (Collection (..))
 import Adl
 import ShowADL
+import CommonClasses  (showSign)
 import FspecDef
 import Strings        (remSpaces, spread, commaNL, commaEng)
 import Text.Pandoc  
@@ -19,7 +20,7 @@ import Languages      (Lang(..),plural)
 import PredLogic      (lang,expr2predLogic)
 import Options        (Options(..),FspecFormat(..))
 import ShowECA        (showECA)
-import NormalForms    (conjNF,normECA,proofPA)
+import NormalForms    (conjNF,normECA) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
 
@@ -38,6 +39,7 @@ import Rendering.ClassDiagram
 --The fourth chapter presents a datamodel together with all the multiplicity rules.
 --The following chapters each present a SERVICE
 --The specification end with a glossary.
+
 render2Pandoc :: Options -> String -> Pandoc -> String
 render2Pandoc flags customheader pandoc = case fspecFormat flags of
    FPandoc -> prettyPandoc pandoc
@@ -56,6 +58,8 @@ chpcalabel :: String
 chpcalabel="chpConceptualAnalysis"
 chpdalabel :: String
 chpdalabel="chpDataAnalysis"
+chpfpalabel :: String
+chpfpalabel="chpFPAnalysis"
 chpgloslabel :: String
 chpgloslabel="chpGlossary"
 
@@ -104,7 +108,7 @@ fSpec2Pandoc fSpec flags = Pandoc meta docContents
              (designPrinciples   level fSpec flags)             ++
              (conceptualAnalysis level fSpec flags)             ++
              (dataAnalysis       level fSpec flags)             ++
-             [chpbs | svc  <-FspecDef.services fSpec              
+             [chpbs | svc  <-FspecDef.services fSpec
                     , chpbs<-servicechap level fSpec flags svc] ++
              (fpAnalysis         level fSpec flags)             ++
              (glossary level fSpec flags)
@@ -120,25 +124,36 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                                    )
 
         introContents Dutch = 
-         [Para 
-                [Str "Dit document definieert de servicelaag van een systeem genaamd "
+         [ Para 
+                [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "
                 , Quoted  SingleQuote [Str (name fSpec)] 
-                , Str ". Het definieert infrastructuur-services in een systeem waarin mensen en applicaties samenwerken "
-                , Str "om afspraken na te leven die gelden in de context van "
-                , Quoted  SingleQuote [Str (name fSpec)] 
-                , Str ". Deze afspraken worden weergegeven door bedrijfsregels. "
-                , Str "Deze regels staan beschreven in hoofdstuk "
-                , xrefReference chpdplabel
-                , Str ", geordend op thema. "
-                , Str "Een gegevensanalyse volgt in hoofdstuk "
+                , Str ". Het definieert business-services in een systeem waarin mensen en applicaties samenwerken om afspraken na te leven. "
+                , Str "Een aantal van deze afspraken is gebruikt om deze functionele specificatie samen te stellen. "
+                , Str "De betreffende afspraken staan opgesomd in hoofdstuk ", xrefReference chpdplabel, Str ", geordend op thema. "
+                , Str "Elk informatiesysteem wat voldoet aan deze functionele specificatie ondersteunt het naleven van deze afspraken. "
+                , Str "Om dit doel te bereiken, bestaat ", Str (name fSpec), Str " uit een verzameling business services. "
+                , Str "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt ", Str (name fSpec)
+                , Str " dat gebruikers de afspraken uit hoofdstuk ", xrefReference chpdplabel, Str " naleven. "
+                ]
+          , Para 
+                [ Str "De conceptuele analyse in hoofdstuk ", xrefReference chpcalabel
+                , Str " is bedoeld voor informatici om ", Str (name fSpec), Str " te bouwen. "
+                , Str "Tevens is het bedoeld voor testers om te valideren of alle afspraken uit hoofdstuk ", xrefReference chpdplabel, Str " worden nageleefd. "
+                , Str "Hoofdstuk ", xrefReference chpcalabel, Str " bevat dan ook een formele representatie van elke afspraak. "
+                , Str "Daarmee ligt de consistentie van alle afspraken vast en is de interpretatie van de afspraken eenduidig."
+                ]
+          , Para 
+                [ Str "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van ", Str (name fSpec), Str ". "
+                , Str "De gegevensanalyse in hoofdstuk "
                 , xrefReference chpdalabel
-                , Str ". In de daarop volgende hoofdstukken is elk thema "
-                , Str "uitgewerkt in definities van services. "
-                , Str "Deze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk "
-                , xrefReference chpdplabel
+                , Str " beschrijft de gegevensverzamelingen waarop het systeem wordt gebouwd. "
+                , Str "Elk volgend hoofdstuk definieert een business service definities van services. "
+                , Str "Deze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk ", xrefReference chpdplabel
                 , Str ". Deze ondersteuning bestaat uit het voorkomen dat een afspraak wordt overtreden, "
                 , Str "of het signaleren van overtredingen (opdat mensen kunnen ingrijpen), "
-                , Str "of het herstellen van een regel (door automatische acties op de database uit te voeren)."]]
+                , Str "of het herstellen van een regel (door automatische acties op de database uit te voeren)."
+                ]
+         ]
 
         introContents English = 
          [Para
@@ -161,37 +176,74 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 , Str "or fixing the content of databases (by automatic actions) to restore a rule."]]  
 ------------------------------------------------------------
 designPrinciples :: Int -> Fspc -> Options ->  [Block]
-designPrinciples lev fSpec flags = header ++ dpIntro 
-                                   ++ [b|t<-themes fSpec,b<-dpSection t,tconcept t/=Anything]
-                                   ++ [b|t<-themes fSpec,b<-remainingrulesSection (trules t),tconcept t==Anything]
-  where 
+designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pat (rules fSpec++signals fSpec))) [] []
+  where
   header :: [Block]
   header = labeledHeader lev chpdplabel (case (language flags) of
-                                 Dutch   ->  "Ontwerpregels"   
-                                 English ->  "Design Rules"
+                                 Dutch   ->  "Functionele Eisen"   
+                                 English ->  "Functional Requirements"
                              )
   dpIntro :: [Block]
   dpIntro = 
     (case (language flags) of
         Dutch -> [Para
-                  [ Str "Dit hoofdstuk definieert de ontwerpregels van "
-                  , Quoted  SingleQuote [Str (name fSpec)] 
-                  , Str ". Deze regels moeten door de oplossing worden nageleefd. "
-                  , Str "Controle daarop vindt plaats door het architectuurteam. "
-                  , Str "Tezamen vormen deze regels de architectuur van "
-                  , Quoted  DoubleQuote [Str (name fSpec)] 
-                  , Str "."]]
+                  [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str ". "
+                  , Str "Elke afspraak die gebruikers gezamenlijk naleven "
+                  , Str "en door ", Str (name fSpec), Str " moet worden ondersteund, "
+                  , Str "is opgenomen als functionele eis in dit hoofdstuk. "
+                  , Str "Formuleringen in dit hoofdstuk dienen dan ook zorgvuldig te worden getoetst met en door "
+                  , Str "al degenen die op welke wijze dan ook gezag hebben over deze afspraken. "
+                  , Str "Zij zijn immers verantwoordelijk voor de geldende regels. "
+                  , Str "De hoofdarchitect is verantwoordelijk voor de onderlinge consistentie van deze afspraken "
+                  , Str "en het bouwbaar zijn van het daaruit afgeleide systeem. "
+                  , Str "Om deze reden schrijft de architect de afspraken zelf op, "
+                  , Str "om ze te laten toetsen door de betrokkenen uit de organisatie. "
+                  , Str "Van het voorliggende document is dit hoofdstuk het enige dat het fiat van gebruikers nodig heeft. "
+                  , Str "Alle hierop volgende hoofdstukken zijn technisch van aard en bedoeld voor bouwers, testers en auditors. "
+                  ]]
         English -> [Para
-                     [ Str "This chapter defines de design principles of "
-                     , Quoted  SingleQuote [Str (name fSpec)] 
+                     [ Str "This chapter defines de design rules of "
+                     , Quoted SingleQuote [Str (name fSpec)] 
                      , Str ". The implementation must assert these rules. "]
                  ]
      )
+
   --TODO -> It may be nice to print the class of the dataset from the class diagram
+  dpSections [] _ _ = []
+  dpSections (thm:thms)     -- The name of the patterns that are used in this specification.
+             seenConcepts   -- All concepts that have been defined in earlier sections
+             seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
+   = [Header (lev+1) [Str thm]] --new section to explain this theme
+     ++ ( if null newConcepts then [] else
+          [ Para $ [Str $ "Deze sectie introduceert de concepten "]++
+                   [Str $ commaNL "en" [name c|c<-newConcepts]]++
+                   [Str $ "."]
+          ])
+     ++ if null patRules
+        then [ Para [Str$ "Dit thema voegt geen regels toe."]]
+        else [ Para [Str$ "Dit thema voegt de volgende regels toe."] ]++
+             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
+             |r<-patRules]
+     ++ if null patSignals
+        then [ Para [Str$ "Dit thema voegt geen signalen toe."]]
+        else [ Para [Str$ "Dit thema voegt de volgende signalen toe."] ]++
+             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
+             |r<-patSignals]
+     ++ dpSections thms (seenConcepts++newConcepts) (seenRelations++newRelations)
+    where
+     patRules     = [r| r<-rules fSpec,   r_pat r==thm]
+     patSignals   = [s| s<-signals fSpec, r_pat s==thm]
+     newConcepts  = concs        (patRules++patSignals) >- seenConcepts
+     newRelations = declarations (patRules++patSignals) >- seenRelations
+     dpRule (r:rs) seenConcepts
+      = ([Para [Str$ "Een "++name c++" is "++cddef cd]|(c,cd)<-cds]++[ Para [Str$explainRule flags r] ]++pNext, seen')
+        where
+         cds = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]
+         ncs = concs r >- seenConcepts
+         (pNext,seen') = dpRule rs (concs r `uni` seenConcepts)
+
   dpSection :: FTheme -> [Block]
-  dpSection t = [Header (lev+1) [Str (name$tconcept t)]] --new section to explain this theme
-             ++ [b|f<-tfunctions t, b<-explainFunctionNL f, language flags==Dutch] --explain the functions in the theme
-             ++ [Para [Str$explainRule flags r]|r<-trules t] --explanation of all rules in the theme
+  dpSection t = []
     where
     listDataset obj = 
                   [BulletList 
@@ -224,6 +276,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro
                                           ,Str " kunnen bekeken worden:"]]
                                  ++ listDataset obj
                             ]
+
   remainingrulesSection :: [Rule] -> [Block]
   remainingrulesSection rs = 
      [Header (lev+1) [Str (case language flags of
@@ -236,14 +289,13 @@ designPrinciples lev fSpec flags = header ++ dpIntro
      
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options ->  [Block]
-conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,b<-caSection p]
+conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (vpatterns fSpec)
   where 
   header :: [Block]
   header = labeledHeader lev chpcalabel (case (language flags) of
                                 Dutch   ->  "Conceptuele Analyse"   
                                 English ->  "Conceptual Analysis"
                                )
-  fpalabel = "tableFPA"
   caIntro :: [Block]
   caIntro = 
    (case (language flags) of
@@ -259,54 +311,38 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ [b|p<-vpatterns fSpec,
                   , Str ". Each section in that chapter is analysed in terms of relations "
                   , Str "and each principle is then translated in a rule. "
                   ]]
-   ) ++ fpa2Blocks
-  --TODO -> is an fpa on themes correct or should it be on the total fspec, or should it not matter, i.e. is the sum of services in the fspec equivalent to the sum of services of all themes? 
-  --Table [Inline] [Alignment] [Double]      [[Block]] [[[Block]]]
-  --      Caption  Clm algnmt  rel.clm.width clm hdrs  rows
-  fpa2Blocks  = 
-       [Table [Str "Function Point Analysis", xrefLabel fpalabel] 
-              [AlignLeft, AlignRight] --TODO -> how do I specify drawing of lines?
-              [0.25,0.1] --TODO -> can't this be automatic or something
-              [[Plain [Space]],[Plain [Str "points"]]] 
-              [ [ [Plain [Str (name p)]]
-        --        , [Plain [Str (show $ nFpoints t)]] ] 
-                  , [Plain [Str "?"]] ] --TODO -> there is a loop in fspc->ftheme->funit->fviewdef&servicespec, coming from adl2fspec (remainingDS & pats)
-              | p<-vpatterns fSpec]
-       ]  
-  caSection :: Pattern -> [Block]
-  caSection p = 
-   (case (language flags) of
-      Dutch -> (if null themerules then [] --nothing to explain for this theme -> skip
-           else [Header (lev+1) [Str $ "Regels over " ++ (name p)]] --new section to explain this theme
-             ++ [x | (not.null) (concs p),x<-printfigure]
-             ++ longtable flags themerules)
-      English -> (if null themerules then [] --nothing to explain for this theme -> skip
-           else [Header (lev+1) [Str $ "Rules about " ++ (name p)]] --new section to explain this theme
-             ++ [x | (not.null) (concs p),x<-printfigure]
-             ++ longtable flags themerules)
-    )
-    where
+   )
+  caSections :: [Pattern] -> [Block]
+  caSections pats = iterat 1 pats
+   where
+    iterat n (pat:pats)
+     = [Header (lev+1) [Str $ name pat]] --new section to explain this theme
+     ++ printfigure pat
+     ++ (if null (themerules pat) then [] else [OrderedList (n, Decimal, DefaultDelim) (themerules pat)])
+     ++ iterat (n+length (themerules pat)) pats
+    iterat n [] = []
     --query copied from FSpec.hs revision 174
-    themerules = [Plain [Str $ "R"++show (nr r),Str $ explainRule flags r]|r<-rules p++signals p, null (cpu r)]
-    printfigure = case (language flags) of
-      Dutch -> [Para [x | x<-[Str "Zie figuur ", xrefReference figlabel, Str ". "]] ]
-            ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++filenm) filenm figlabel ]]
-      English -> [Para [x | x<-[Str "See figure ", xrefReference figlabel, Str ". "]] ]
-              ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++filenm) filenm figlabel ]]
-      where filenm = remSpaces (name p)
-            figlabel = "figca:" ++ filenm
+    themerules  :: Pattern -> [[Block]]
+    themerules pat = [[Plain [Str $ "R"++show (nr r),Str $ latexEsc (explainRule flags r)]]|r<-rules pat]
+    printfigure :: Pattern -> [Block]
+    printfigure pat = case language flags of
+      Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference figlabel, Str " geeft een conceptuele analyse van dit thema."]] ]
+                 ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++name pat) filenm figlabel ]]
+      English -> [Para [x | x<-[Str "Figure ", xrefReference figlabel, Str " shows a conceptual analysis of this theme."]] ]
+                 ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++name pat) filenm figlabel ]]
+      where filenm = remSpaces (name pat)
+            figlabel = "fig:" ++ name pat
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
 dataAnalysis :: Int -> Fspc -> Options ->  [Block]
-dataAnalysis lev fSpec flags = header ++ daContents
-  where 
+dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInvariants ++ daSignals
+ where 
   header :: [Block]
   header = labeledHeader lev chpdalabel (case (language flags) of
                                      Dutch   ->  "Gegevensstructuur"   
                                      English ->  "Data structure"
                                  )
-  fpalabel = "tableFPA2"
   daContents :: [Block]
   daContents = 
    (case (language flags) of
@@ -332,7 +368,7 @@ dataAnalysis lev fSpec flags = header ++ daContents
                   , Str $ " "++count flags (length aggrs) "aggregation"++"."
                   , Str $ " "++nm++" has a total of "++count flags (length cs) "concept"++"."
                   ]] --TODO
-   )++ [ Plain $ xrefFigure captionText cdFilename figlabel ]  -- TODO: explain all multiplicities]
+   ) ++ [ Plain $ xrefFigure captionText cdFilename figlabel ]  -- TODO: explain all multiplicities]
       where
        (cd@(OOclassdiagram classes assocs aggrs geners (nm, cs)),cdFilename) = classdiagram fSpec
        figlabel = "fig:" ++ cdFilename
@@ -341,9 +377,87 @@ dataAnalysis lev fSpec flags = header ++ daContents
           Dutch   -> "Class diagram of "++name fSpec
           English -> "Klassediagram van "++name fSpec
 
+  daMultiplicities :: [Block]
+  daMultiplicities
+   = [ if language flags==Dutch
+       then Para [ Str $ "De relaties in "++name fSpec++" hebben de volgende multipliciteitsrestricties. "
+                 ]
+       else Para [ Str $ "The relations in "++name fSpec++" have the following multiplicity constraints. "
+                 ]
+     , Para  $ [ TeX $ "\\begin{tabular}{|l|cccc|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "relatie&totaal&univalent&surjectief&injectief\\\\ \\hline\\hline\n"
+                 else TeX $ "relation&total&univalent&surjective&injective\\\\ \\hline\\hline\n"
+               ]++
+               [ TeX $ chain "&" [ "\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}"              -- veld
+                                 , if isTot d || d `elem` tots then "\\(\\surd\\)" else ""
+                                 , if isUni d || d `elem` unis then "\\(\\surd\\)" else ""
+                                 , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
+                                 , if isInj d || d `elem` injs then "\\(\\surd\\)" else ""
+                                 ]++"\\\\\n"
+               | d<-declarations fSpec
+               ]++
+               [ TeX $ "\\hline\n\\end{tabular}"
+               ]
+     ]++
+     [ Para [ if language flags==Dutch
+                then TeX $ latexEsc "Een relatie, \\id{"++name d++"}, is homogeen en heeft de volgende eigenschappen: "
+                else TeX $ latexEsc "One relation, \\id{"++name d++"}, is homogeneous and has the following properties: "]
+     | length hMults==1, d<-hMults ]++
+     [ Para [ if language flags==Dutch
+                then TeX $ latexEsc "In aanvulling daarop hebben de homogene relaties de volgende eigenschappen: "
+                else TeX $ latexEsc "Additionally, the homogeneous relations come with the following properties: "]
+     | length hMults>1 ]++
+     [ Para  $ [ TeX $ "\\begin{tabular}{|l|ccccc|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "relatie&Reflexief&Transitief&Symmetrisch&Antisymmetrisch&Eigenschap\\\\ \\hline\\hline\n"
+                 else TeX $ "relation&Reflexive&Transitive&Symmetric&Antisymmetric$Property\\\\ \\hline\\hline\n"
+               ]++
+               [ TeX $ chain "&" [ "\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}"              -- veld
+                                 , if isRfx d            then "\\(\\surd\\)" else ""
+                                 , if isTrn d            then "\\(\\surd\\)" else ""
+                                 , if isSym d            then "\\(\\surd\\)" else ""
+                                 , if isAsy d            then "\\(\\surd\\)" else ""
+                                 , if isAsy d && isSym d then "\\(\\surd\\)" else ""
+                                 ]++"\\\\\n"
+               | d<-hMults
+               ]++
+               [ TeX $ "\\hline\n\\end{tabular}"
+               ]
+     | length hMults>0 ]
+     where
+      hMults = [d| d<-declarations fSpec, homogeneous d]
+      clauses = rd [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
+      strands (F fs) = [fs]
+      strands _      = []    -- <--  we could maybe do better than this...
+      is = rd [m| Fu fus<-clauses
+                , isIdent (Fi [notCp f| f<-fus, isPos f])
+                , f<-filter isNeg fus
+                , s<-strands f
+                , e<-[head s, flp (last s)]
+                , m<-mors e
+                ]
+      ts = rd [m| Fu fus<-clauses
+                , isIdent (Fi [notCp f| f<-fus, isNeg f])
+                , f<-filter isPos fus
+                , s<-strands f
+                , e<-init s++map flp (tail s)
+                , m<-mors e
+                ]
+      tots = [d| t<-ts, inline t, d<-declarations t]
+      unis = [d| t<-is, inline t, d<-declarations t]
+      surs = [d| t<-ts, not (inline t), d<-declarations t]
+      injs = [d| t<-is, not (inline t), d<-declarations t]
+
+  daInvariants :: [Block]
+  daInvariants = [Para [ Math InlineMath $ showADLcode fSpec r ] | r<-rules fSpec, r_usr r]  -- show only user defined rules (multiplicity rules, for example, are not printed)
+
+  daSignals :: [Block]
+  daSignals = [Para [ Math InlineMath $ showADLcode fSpec (srsig s) ] |s<-signals fSpec]
+
 ------------------------------------------------------------
 servicechap :: Int -> Fspc -> Options -> Fservice ->  [Block]
-servicechap lev fSpec flags svc = header ++ svcIntro ++ longtable flags [ b| f<-fsv_fields svc, b<-svcField f ] ++ svcRelations ++ svcInvariants
+servicechap lev fSpec flags svc = header ++ svcIntro ++ svcFieldTables
  where
   svcname    = name (fsv_objectdef svc)
   header :: [Block]
@@ -355,13 +469,11 @@ servicechap lev fSpec flags svc = header ++ svcIntro ++ longtable flags [ b| f<-
                     ([ Str $ "Service "++svcname++" werkt vanuit een instantie van "++name (target (objctx (fsv_objectdef svc)))++"." ]++
                      f (objctx (fsv_objectdef svc))++
                      [ Str $ svcInsDelConcepts ] )
-                 , Para [ Str $ "In deze service zijn de volgende velden zichtbaar. " ]
                  ]
       English -> [ Para
                     ([ Str $ "Service "++svcname++" operates from one instance of "++name (target (objctx (fsv_objectdef svc)))++"." ]++
                      f (objctx (fsv_objectdef svc))++
                      [ Str $ svcInsDelConcepts ] )
-                 , Para [ Str $ "This service has the following fields. " ]
                  ]
      where
       f (Tm _) = []
@@ -393,72 +505,63 @@ servicechap lev fSpec flags svc = header ++ svcIntro ++ longtable flags [ b| f<-
           "This service can create new instances of concept"++f ics++". It can delete instances of concept"++f dcs++", and instances of concept"++f ucs++" can be either created and removed."
           where f [x] = " "++name x
                 f xs  = "s "++commaEng "and" (map name xs)
+  svcFieldTables
+   = [ Para  $ [ if language flags==Dutch
+                 then Str $ "In deze service zijn de volgende velden zichtbaar. "
+                 else Str $ "This service has the following fields. "
+               ]
+     , Para  $ [ TeX $ "\\begin{tabular}{|lll|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "veld&concept&relatie\\\\ \\hline\\hline\n"
+                 else TeX $ "field&concept&relation\\\\ \\hline\\hline\n"
+               ]++
+               [ TeX $ chain "&" [ latexEsc (fld_name f)              -- veld
+                                 , latexEscShw (target (fld_expr f))  -- concept
+                                 , "\\("++rel f++"\\)"                -- relatie
+                                 ]++"\\\\\n"
+               | f<-fsv_fields svc
+               ]++
+               [ TeX $ "\\hline\n\\end{tabular}"
+               ]
+     , Para  $ [ if language flags==Dutch
+                 then Str $ "Deze velden hebben de volgende eigenschappen. "
+                 else Str $ "These fields have the following properties. "
+               ]
+     , Para  $ [ TeX $ "\\begin{tabular}{|l|cccc|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "veld&lijst&verplicht&nieuw&verwijderbaar\\\\ \\hline\\hline\n"
+                 else TeX $ "field&list&obligatory&new&remove\\\\ \\hline\\hline\n"
+               ]++
+               [ TeX $ chain "&" [ latexEsc (fld_name f)              -- veld
+                                 , s fld_list f                       -- lijst
+                                 , s fld_must f                       -- verplicht veld
+                                 , s fld_insAble f                    -- nieuwe waardes mogen (anders alleen selecteren)
+                                 , s fld_delAble f]++"\\\\\n"         -- waardes mogen verwijderd worden
+               | f<-fsv_fields svc
+               ]++
+               [ TeX $ "\\hline\n\\end{tabular}"
+               ]
+     ]
+     where s f fld = if f fld then "\\(\\surd\\)" else ""
+           rel f = if fld_editable f
+                   then showMathcode fSpec (makeInline (fld_mph f))
+                   else ""
 
-  svcField f
-   = case (language flags) of
-      Dutch ->   [ Plain [TeX $ "Veld: "++fld_name f] ]++ -- The name of this field
-                 tabular flags 2 
-                   ( [ ["expr"       , show $ fld_expr     f]  --  Expression           -- The expression by which this field is attached to the service
-                     , ["wijzigbaar" , show $ fld_editable f]  --  Bool                 -- can this field be changed by the user of this service?
-                     ]++
-                     [ ["relatie"    , show $ fld_mph      f]  --  Morphism             -- The morphism to which the database table is attached.
-                     | fld_editable f]++
-                     [ ["lijst"      , show $ fld_list     f]  --  Bool                 -- can there be multiple values in this field?
-                     , ["verplicht"  , show $ fld_must     f]  --  Bool                 -- is this field obligatory?
-                     , ["nieuw"      , show $ fld_new      f]  --  Bool                 -- can new elements be filled in? (if no, only existing elements can be selected)
---                     , ["velden"     , show $ fld_fields   f]  --  [Field]              -- All fields/parameters of this service
-                     , ["invoegen"   , show $ fld_insAble  f]  --  Bool                 -- can the user insert in this field?
---                     , ["onIns"    , show $ fld_onIns    f]  --  Declaration->ECArule -- the PAclause to be executed after an insert on this field
-                     , ["verwijderen", show $ fld_delAble  f]  --  Bool                 -- can the user delete this field?
---                     , ["onDel"    , show $ fld_onDel    f]  --  Declaration->ECArule -- the PAclause to be executed after a delete on this field
-                     ])
 
-      English -> [ Plain [TeX $ "Field: "++fld_name f] ]++ -- The name of this field
-                 tabular flags 2 
-                   ( [ ["expr"       , show $ fld_expr     f]  --  Expression           -- The expression by which this field is attached to the service
-                     , ["editable"   , show $ fld_editable f]  --  Bool                 -- can this field be changed by the user of this service?
-                     ]++
-                     [ ["relation"   , show $ fld_mph      f]  --  Morphism             -- The morphism to which the database table is attached.
-                     | fld_editable f]++
-                     [ ["list"       , show $ fld_list     f]  --  Bool                 -- can there be multiple values in this field?
-                     , ["must"       , show $ fld_must     f]  --  Bool                 -- is this field obligatory?
-                     , ["new"        , show $ fld_new      f]  --  Bool                 -- can new elements be filled in? (if no, only existing elements can be selected)
---                     , ["fields"     , show $ fld_fields   f]  --  [Field]              -- All fields/parameters of this service
-                     , ["insertable" , show $ fld_insAble  f]  --  Bool                 -- can the user insert in this field?
---                     , ["onIns"    , show $ fld_onIns    f]  --  Declaration->ECArule -- the PAclause to be executed after an insert on this field
-                     , ["deletable"  , show $ fld_delAble  f]  --  Bool                 -- can the user delete this field?
---                     , ["onDel"    , show $ fld_onDel    f]  --  Declaration->ECArule -- the PAclause to be executed after a delete on this field
-                     ])
 
-  svcRelations :: [Block]
-  svcRelations
-   = case (language flags) of
-      Dutch   -> [ Para
-                   ([ Str $ "Relaties die gewijzigd kunnen worden:" ]++
-                    map Str (spread 80 ", " [showADLcode fSpec (makeInline m) | m<-fsv_rels svc]))
-                 ]
-      English -> [Para
-                   ([ Str $ "Relations that can be changed:" ]++
-                    map Str (spread 80 ", " [showADLcode fSpec (makeInline m) | m<-fsv_rels svc]))
-                 ] --TODO
-  svcInvariants :: [Block]
-  svcInvariants
-   = case (language flags) of
-      Dutch   -> [ Para [ Str "Invarianten:\n   " ] ] ++
-                 [ Para [ Str $ showADLcode fSpec rule ]
-                 | rule<-fsv_rules svc]
-      English -> [] --TODO
   svcECA :: [Block]
   svcECA
    = case (language flags) of
-      Dutch   -> [ Para [ Str "ECA rules:\n   " ] ] ++
-                 [ Para
+      Dutch   -> [ Para [ Str "ECA rules:\n   ",Str "tijdelijk ongedocumenteerd" ] ]
+{-                 [ Para
                     [ Str $ showECA fSpec "\n>     "  (normECA (eca arg) arg)
 -- Dit inschakelen          ++"\n------ Derivation ----->"
 --  voor het bewijs         ++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction (eca arg)))
 --                          ++"\n<------End Derivation --"
                     ]
-                 | eca<-fsv_ecaRules svc, arg<-[error ("TODO: hier moet een declaratie \"Delta\" staan")]]
+                 | eca<-fsv_ecaRules svc, arg<-[error ("TODO: hier moet een declaratie \"Delta\" staan")]
+                 ]
+-}
       English -> [] --TODO
 
 ------------------------------------------------------------
@@ -466,7 +569,7 @@ fpAnalysis :: Int -> Fspc -> Options ->  [Block]
 fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
  where 
   header :: [Block]
-  header = labeledHeader lev chpcalabel (case (language flags) of
+  header = labeledHeader lev chpfpalabel (case (language flags) of
                                 Dutch   ->  "Functiepunt Analyse"   
                                 English ->  "Function Point Analysis"
                                )
@@ -562,11 +665,11 @@ xrefCitation myLabel = TeX ("\\cite{"++myLabel++"}")
 --      alt.text (URL,title)
 xrefFigure :: String -> String -> String -> [Inline]
 xrefFigure caption filenm figlabel = 
-   [ TeX "\\begin{figure}[h]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [] (filenm ++ ".png", figlabel)
+   [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
+   , Image [Str $ "Here, "++filenm ++ ".png should have been visible"] (filenm ++ ".png", figlabel)
    , TeX "}\n"
    , TeX ("\\caption{"++caption++"}\n") 
-   , xrefLabel (figlabel )
+   , xrefLabel (figlabel)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
 addinfix :: Inline -> [[Inline]] -> [Inline] 
@@ -579,113 +682,101 @@ addinfix delim xs = tail [inline' | inlines<-postfix, inline'<-inlines]
 printlb :: [Inline]
 printlb = [TeX "\n \\linebreak ", Str "\n"]
 
---EXTEND -> symbol string must reflect latex symbol identifier
-printsymbol :: Options -> String -> Inline
-printsymbol flags symb = case fspecFormat flags of
-  FLatex -> TeX $ "\\" ++ symb ++ " "
-  _ -> case symb of
-    "times" -> Str "X"
-    "mathbb{I}" -> Str "I"
-    "mathbb{V}" -> Str "V"
-    "vdash" -> Str "|-"
-    "equiv" -> Str "="
-    "smile" -> Str "~"
-    "cup" -> Str "\\/"
-    "cap" -> Str "/\\"
-    "dagger" -> Str "!"
-    _ -> Str $ "%" ++ symb ++ "%"
 
 --DESCR -> pandoc print functions for Adl data structures
-printcompl :: Options -> [Inline] -> [Inline]
-printcompl flags inlines = case fspecFormat flags of
-  FLatex -> [TeX " \\overline{"] ++ inlines ++ [TeX "} "]
-  _ -> (Str "-"):inlines
-printmphdetail :: Options -> Morphism -> [Inline]
-printmphdetail flags mph = printmphname flags mph
-             ++ [TeX " &", Str ":", TeX "& "]
-             ++ printtype flags mph
-             ++ [TeX " \\\\ ", Str "\n" ]
-printmph :: Options -> Morphism -> [Inline]
-printmph flags mph = (printmphname flags mph) ++ (printflip flags mph)
-printflip :: Options -> Morphism -> [Inline]
-printflip flags mph = case mph of
-   Mph{} -> if mphyin mph then [] 
-            else [ Superscript [TeX "$",printsymbol flags "smile", TeX "$"] ]
-   _ -> []
-printmphname :: Options -> Morphism -> [Inline]
-printmphname flags mph = case mph of
-   Mph{} -> [Str (name mph)]
-   I{}   -> [printsymbol flags "mathbb{I}", Subscript [TeX "$",Str $ name (mphspc mph), TeX "$"] ]
-   V{}   -> [printsymbol flags "mathbb{V}", Subscript ((TeX "$"):(printtype flags mph)++[TeX "$"]) ]
-   Mp1{} -> [Str "?"]
-printtype :: Options -> Morphism -> [Inline]
-printtype flags mph = [ Str $ (name.source) mph
-              , printsymbol flags "times", Space
-              , Str $ (name.target) mph
-              ]
-printrule :: Options -> Rule -> [Inline]
-printrule flags r = case r of
-   Ru {} -> case rrsrt r of 
-     Implication -> [TeX " $ "] ++ lexpr ++ [printsymbol flags "vdash"] ++ rexpr ++ [TeX " $ "]
-     Equivalence -> [TeX " $ "] ++ lexpr ++ [printsymbol flags "equiv"] ++ rexpr ++ [TeX " $ "]
-     Truth -> [TeX " $ "] ++ rexpr ++ [TeX " $ "]
-     Generalization -> undefined
-     Automatic -> undefined
-     where
-     lexpr = printexpr flags (rrant r)
-     rexpr = printexpr flags (rrcon r)
-   Sg {} -> (Str "SIGNAL "):(printrule flags (srsig r))
-   Gc {} -> [Str "?"]
-   Fr {} -> [Str "?"]
-printexpr :: Options -> Expression -> [Inline]
-printexpr flags expr = case expr of
-   Tm m  -> printmph flags m
-   Tc e  -> [Str "("] ++ (printexpr flags e) ++ [Str ")"]
-   F  ts -> addinfix (Str ";") [printexpr flags sub | sub<-ts]
-   Fd ts -> addinfix (printsymbol flags "dagger") [printexpr flags sub | sub<-ts]
-   Fi fs -> addinfix (printsymbol flags "cap") [printexpr flags sub | sub<-fs]
-   Fu fs -> addinfix (printsymbol flags "cup") [printexpr flags sub | sub<-fs]
-   K0 e  -> printexpr flags e ++ [Superscript [Str "*"]]
-   K1 e  -> printexpr flags e ++ [Superscript [Str "+"]]
-   Cp e  -> printcompl flags $ printexpr flags e
+---------------------------------------
+-- LaTeX math markup
+---------------------------------------
 
-longtable :: Options -> [Block] -> [Block]
-longtable flags lines
-  = case fspecFormat flags of
-      --REMARK -> pandoc does not support longtable (or something similar?)
-      FLatex -> [Plain $ 
-                  [ TeX "\\begin{center}\n"
-                  , TeX "\\begin{longtable}{|r|p{10cm}|}\n"
-                  , TeX "\\hline\n"
-                  ]
-               ++ [ TeX $ chain "&" [ entry | TeX entry<-line]++ "\\\\ \\hline\n" | Plain line<-lines]
-               ++ [ TeX "\\end{longtable} \n"
-                  , TeX "\\end{center} \n"
-                  ]
-                ]            
-      _      -> [Plain $ 
-                  [ Str "???" ]
-                ]            
+class ShowMath a where
+ showMath :: a -> String
+ showMathcode :: Fspc -> a -> String
+ showMathcode fSpec x = showMath x
 
-matharray flags lines
+instance ShowMath Rule where
+ showMath r = error ("!Fatal (module Fspec2Pandoc 585): Please supply specification of the context in showMath "++showADL r)
+ showMathcode fSpec r@(Sg p rule expla sgn nr pn signal) = "\\verb#SIGNAL # \\id{"++name signal++"}\\ \\verb# ON #"++ showMathcode fSpec rule
+ showMathcode fSpec r@(Fr d expr _) = showMath d ++ "\n" ++ show (name d)++" = "++showMathcode fSpec expr
+ showMathcode fSpec r
+  | rrsrt r==Truth = "\\verb#ALWAYS # "++showMathcode fSpec (rrcon r)
+  | rrsrt r==Implication = showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)
+  | rrsrt r==Equivalence = showMathcode fSpec (rrant r) ++"\\ =\\ " ++showMathcode fSpec (rrcon r)
+
+instance ShowMath Expression where
+ showMath e           = (showchar.insParentheses) e
+ showMathcode fSpec e = (showchar.insParentheses.disambiguate fSpec.mphatsoff) e
+
+showchar (Tm mph) = showMath mph
+showchar (Fu [])  = "\\cmpl{\\full}"
+showchar (Fu fs)  = chain "\\cup" [showchar f| f<-fs]     -- union
+showchar (Fi [])  = "\\full"
+showchar (Fi fs)  = chain "\\cap" [showchar f| f<-fs]     -- intersection
+showchar (Fd [])  = "\\cmpl{\\iden}"
+showchar (Fd ts)  = chain "\\relAdd" [showchar t| t<-ts]  -- relative addition (dagger)
+showchar (F [])   = "\\iden"
+showchar (F ts)   = chain "\\compose" [showchar t| t<-ts] -- relative multiplication (semicolon)
+showchar (K0 e')  = "\\kleenestar{"++showchar e'++"}"
+showchar (K1 e')  = "\\kleeneplus{"++showchar e'++"}"
+showchar (Cp e')  = "\\cmpl{"++showchar e'++"}"
+showchar (Tc f)   = "("++showchar f++")"
+
+instance ShowMath Morphism where
+ showMath mph@(Mph nm pos atts sgn@(a,b) yin s)
+  = if yin then mstr else "\\flip{"++mstr++"}"
+    where
+      mstr = "\\id{"++latexEsc (name mph)++"}"++
+             if null (mphats mph)
+             then (if yin && sgn==(source s, target s) || not yin && sgn==(target s,source s) then "" else showSign [a,b])
+             else showSign (mphats mph)
+ showMath (I atts g s yin)
+  = if null atts then "\\iden" else "\\ident{"++showSign atts++"}"
+ showMath (V atts (a,b))
+  = if null atts then "\\full" else "\\fullt{"++showSign atts++"}"
+ showMath m@(Mp1{})
+  = "'"++mph1val m++"'"++(showSign [mph1typ m])
+
+
+instance ShowMath Declaration where
+ showMath decl@(Sgn nm a b props prL prM prR cs expla _ _ sig)
+  = if sig then "\\verb#SIGNAL# "++"\\id{"++latexEsc nm++")" else
+    "\\declare{"++latexEsc nm++"}{"++latexEsc (name a)++"}{"++latexEsc (name b)++"}"
+--       (if null props then "" else showL(map showMath props))++
+--       (if null(prL++prM++prR) then "" else " \\verb#PRAGMA# "++chain " " (map show [prL,prM,prR]))++
+--       (if null expla then "" else " \\verb#EXPLANATION# \"\\text{"++expla++"}\"")
+ showMath (Isn g s)
+  = "\\iden"
+ showMath (Vs g s)
+  = "\\full"
+ showMath (Iscompl g s)
+  = "\\cmpl{\\iden}"
+
+
+-- matharray :: Options -> [Block] -> [Block]
+matharray flags regels
   = case fspecFormat flags of
       FLatex -> [Plain $ 
                   [ TeX $ " \\( \\begin{array}{rcl} \n"
-                  , TeX $ chain "&" [ entry | line<-lines, entry<-line] ++ "\\\\" 
+                  , TeX $ chain "&" [ entry | regel<-regels, entry<-regel] ++ "\\\\" 
                   , TeX $ " \\end{array} \\) "]
                 ]            
       _      -> [Plain $ 
                   [ Str "???" ]
                 ]            
 
-tabular flags n lines
+tabular flags n regels
   = case fspecFormat flags of
       FLatex -> [Plain $ 
-                  [ TeX $ "\\begin{tabular}{"++['l'|i<-[1..n]]++"}\n" ++
-                          chain "\\\\\n" [ chain "&" [ entry | entry<-line] | line<-lines] ++
+                  [ TeX $ "\\begin{tabular}{"++['l'|_<-[1..n]]++"}\n" ++
+                          chain "\\\\\n" [ chain "&" [ entry | entry<-regel] | regel<-regels] ++
                           "\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 
                   [ Str "???" ]
                 ]            
 
+latexEscShw x = latexEsc (show x)
+latexEsc x
+ = f x
+   where f "" = ""
+         f ('_':str) = "\\underline{\\ }"++f str
+         f (c:str)   = c: f str

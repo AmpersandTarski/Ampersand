@@ -13,12 +13,13 @@ module Adl ( Architecture(..)
            , ConceptDef(..),ConceptDefs
            , Concept(..), GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
-           , Prop(..)
+           , Prop(..), isSur, isInj, isUni, isTot, isRfx, isSym, isAsy, isTrn
+           , rulefromProp
            , FilePos(..), Numbered(..)
            , makeDeclaration,mIs,ruleType,isProperty
-           , antecedent,notCp,cptAnything,cpu
+           , antecedent,notCp,cptAnything
            , Object(..)
-           , Language(..)
+           , ViewPoint(..)
            , Morphical(..)
            , Association(..)
            , Morphic(..),normExpr
@@ -65,14 +66,14 @@ where
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
-                                         ,RuleType(..)
-                                         ,consequent,antecedent,cpu,ruleType
+                                         ,RuleType(..),rulefromProp
+                                         ,consequent,antecedent,ruleType
                                          ,normExpr)
    import Classes.Morphical              (Morphical(..))
    import Classes.Substitutive           (Substitutive(..))
    import Classes.Key                    (Key(..))
    import Classes.Object                 (Object(..))
-   import Classes.Language               (Language(..))
+   import Classes.ViewPoint              (ViewPoint(..))
    import CommonClasses                  (Identified(..)
                                          ,Explained(..))
 

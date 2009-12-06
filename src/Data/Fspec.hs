@@ -8,7 +8,7 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show Fspc.
 -}
 module Data.Fspec ( Fspc(..)
-                  , Fservice(..), Field(..), Clauses(..)
+                  , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
                   , WSOperation(..), WSAction(..)
@@ -16,16 +16,18 @@ module Data.Fspec ( Fspc(..)
                   )
  where
    import Adl.ConceptDef                (ConceptDef)
-   import Adl.Concept                   (Concept,isSignal)
+   import Adl.Concept                   (Concept(..),isSignal)
    import Adl.Pair
+   import Adl.FilePos
    import Adl.Pattern                   (Pattern)
    import Adl.Rule                      (Rule(..))
    import Adl.ECArule                   (ECArule(..))
-   import Adl.ObjectDef                 (ObjectDef)
-   import Adl.Expression                (Expression)
-   import Adl.MorphismAndDeclaration    (Morphism,Declaration)
+   import Adl.ObjectDef                 (ObjectDef(..))
+   import Adl.Expression                (Expression(..))
+   import Adl.MorphismAndDeclaration    (Morphism,Declaration,mIs)
    import Classes.Morphical
-   import Classes.Language
+   import Classes.ViewPoint
+   import CommonClasses
    import Collection                    (uni)
    import Strings                       (chain)
    import Typology                      (Inheritance)
@@ -38,7 +40,8 @@ module Data.Fspec ( Fspc(..)
                     , serviceG     :: [ObjectDef]           -- ^ all services derived from the basic ontology
                     , services     :: [Fservice]            -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , vrules       :: [Rule]                -- ^ All rules that apply in the entire Fspc, including all signals
-                    , ecaRules     :: [ECArule]             -- ^ generated: event-condition-action rules derived from the context
+                    , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
+                    , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec) from non-signal rules
                     , vrels        :: [Declaration]         -- ^ All declarations in this specification
                     , fsisa        :: (Inheritance Concept) -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
@@ -47,7 +50,7 @@ module Data.Fspec ( Fspc(..)
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , violations   :: [(Rule,Paire)]        -- ^ generated: the violations of rules, as computed from the populations specified in the ADL-script
                     }
-              
+
    instance Morphical Fspc where
     concs        fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
     conceptDefs  fSpec = vConceptDefs fSpec                                  -- The set of all concept definitions in this Fspc
@@ -57,15 +60,19 @@ module Data.Fspec ( Fspc(..)
     genE         fSpec = genE (vrels fSpec++declarations [r| r<-(vrules fSpec),isSignal r ])  
     closExprs    fSpec = closExprs (vrules fSpec)
 
-   instance Language Fspc where
+   instance ViewPoint Fspc where
     --Interpretation of fSpec as a language means to describe the classification tree,
     --the set of declarations and the rules that apply in that fSpec. Inheritance of
     --properties is achieved as a result.
     rules         fSpec = [r| r<-vrules fSpec, not (isSignal r)]
     signals       fSpec = [r| r<-vrules fSpec,      isSignal r ]
-    specs         fSpec = []    -- obsolete: TODO remove together with all Glue rules.
     patterns      fSpec = vpatterns fSpec
-    objectdefs    fSpec = serviceS fSpec ++ serviceG fSpec
+    objectdef     fSpec = Obj { objnm   = let FS_id str = fsfsid fSpec in str
+                              , objpos  = Nowhere
+                              , objctx  = Tm (mIs S)
+                              , objats  = serviceS fSpec ++ serviceG fSpec
+                              , objstrs = []
+                              }
     isa           fSpec = fsisa  fSpec
 
 
@@ -76,21 +83,35 @@ module Data.Fspec ( Fspc(..)
                      { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
                                                                -- and which has been type checked by the compiler.
                      , fsv_rels      :: [Morphism]             -- The declarations that may be changed by the user of this service
-                     , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service
-                     , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants.
+                     , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service (provided by the parser)
+                     , fsv_quads     :: [Quad]                 -- The Quads that are used to make a switchboard. (generated by ADL2Fspec)
+                     , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants. (generated by ADL2Fspec)
                      , fsv_signals   :: [Rule]                 -- All signals that are visible in this service
                      , fsv_fields    :: [Field]                -- All fields/parameters of this service
                      , fsv_creating  :: [Concept]              -- All concepts of which this service can create new instances
                      , fsv_deleting  :: [Concept]              -- All concepts of which this service can delete instances
-                     }                                         
-   
+                     }
+
+   instance Show Fservice where
+    showsPrec _ svc@(Fservice{})
+     = showString ("\n!Diagnosis error (module Fspec 95): empty show(Fservice)"
+                   ++show (fsv_objectdef svc)++"\n"
+                   ++show (fsv_rels      svc)++"\n"
+                   ++show (fsv_rules     svc)++"\n"
+--                   ++show [e delt| e<-fsv_ecaRules svc]++"\n"  -- levert een lastige infinite loop op
+                   ++show (fsv_signals   svc)++"\n"
+--                   ++show (fsv_fields    svc)++"\n"
+                   ++show (fsv_creating  svc)++"\n"
+                   ++show (fsv_deleting  svc)++"\n"
+                  ) where delt::Declaration; delt = error "Undef declaration"
+
    data Field    = Att
                      { fld_name      :: String                 -- The name of this field
                      , fld_expr      :: Expression             -- The expression by which this field is attached to the service
                      , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
                      , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
                      , fld_list      :: Bool                   -- can there be multiple values in this field?
-                  , fld_must      :: Bool                   -- is this field obligatory?
+                     , fld_must      :: Bool                   -- is this field obligatory?
                      , fld_new       :: Bool                   -- can new elements be filled in? (if no, only existing elements can be selected)
                      , fld_fields    :: [Field]                -- All fields/parameters of this service
                      , fld_insAble   :: Bool                   -- can the user insert in this field?
@@ -103,10 +124,19 @@ module Data.Fspec ( Fspc(..)
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| conj<-cl_conjNF cl, disj<-[conj!!i]]
    -- Every rule is transformed to this form, as a step to derive eca-rules
    data Clauses  = Clauses
-                       {cl_conjNF :: [[Expression]]  -- The conjunctive normal form of the clause
-                       ,cl_rule   :: Rule            -- The rule that is restored by this clause (for traceability purposes)
-                       }
-   
+                     { cl_conjNF     :: [(Expression,[Expression])]  -- The list of pairs (conj, hcs) in which conj is a conjunct of the rule
+                                                                     -- and hcs contains all derived expressions to be used for eca-rule construction.
+                                                                     -- hcs contains only disjunctive normal forms.
+                     , cl_rule       :: Rule            -- The rule that is restored by this clause (for traceability purposes)
+                     }
+   -- A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
+   -- whenever qMorph is affected (i.e. tuples in qMorph are inserted or deleted), qRule may have to be restored using functionality from qClauses.
+   -- The rule is taken along for traceability.
+   data Quad     = Quad
+                     { qMorph        :: Morphism        -- The morphism that, when affected, triggers a restore action.
+                     , qClauses      :: Clauses         -- The clauses
+                     }
+
    data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: [Rule]}
    {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
     - "The properties of the Interface Operation component are as follows:
@@ -134,6 +164,7 @@ module Data.Fspec ( Fspc(..)
                                     deriving Show
    data Attribute      = OOAttr         String             -- name of the attribute
                                         String             -- type of the attribute (Concept name or built-in type)
+                                        Bool               -- fNull:  says whether the attribute may be left open
                                     deriving Show
    data Association    = OOAssoc        String             -- source: the left hand side class
                                         String             -- left hand side multiplicities
@@ -165,9 +196,9 @@ module Data.Fspec ( Fspc(..)
                                         String             -- result: a type
 
    instance Show Method where
-    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n _<-cs]++"):handle")
-    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n _<-as]++"]")
-    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n _<-ks]++"):handle")
+    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"):handle")
+    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n _ _<-as]++"]")
+    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-ks]++"):handle")
     showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
-    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n _<-cs]++")")
-    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n _<-cs]++"): "++r)
+    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n _ _<-cs]++")")
+    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"): "++r)

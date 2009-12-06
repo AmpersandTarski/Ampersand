@@ -73,7 +73,6 @@
           Sg{}                  -> rule{srsig = renumberRule n (srsig rule)
                                        ,runum = n
                                        }
-          Gc{}                  -> rule{runum = n}
           Fr{}                  -> rule
 
    renumberRules :: Int -> [Rule] -> [Rule]
@@ -205,16 +204,10 @@
                                  then error ("(Module CC_aux:) illegal call to antecedent in put_gE cs ("++showADL rule++")")
                                  else put_gE gE cs (rrant rule)
                       , rrcon = put_gE gE cs (rrcon rule)
-                      , r_cpu = map (put_gE gE cs) (r_cpu rule)
                       , rrtyp = put_gE gE cs (rrtyp rule)
                       }
           Sg{} -> rule{ srsig = put_gE gE cs (srsig rule)
                       , srtyp = put_gE gE cs (srtyp rule)
-                      }
-          Gc{} -> rule{ grspe = put_gE gE cs (grspe rule)
-                      , grgen = put_gE gE cs (grgen rule)
-                      , r_cpu = map (put_gE gE cs) (r_cpu rule)
-                      , grtyp = put_gE gE cs (grtyp rule)
                       }
           Fr{} -> rule{ frdec = put_gE gE cs (frdec rule)
                       , frcmp = put_gE gE cs (frcmp rule)
@@ -225,16 +218,10 @@
                                  then error ("(Module CC_aux:) illegal call to antecedent in update ss ("++showADL rule++")")
                                  else update ss (rrant rule)
                       , rrcon = update ss (rrcon rule)
-                      , r_cpu = map (update ss) (r_cpu rule)
                       , rrtyp = update ss (rrtyp rule)
                       }
           Sg{} -> rule{ srsig = update ss (srsig rule)
                       , srtyp = update ss (rrtyp rule)
-                      }
-          Gc{} -> rule{ grspe = update ss (grspe rule)
-                      , grgen = update ss (grgen rule)
-                      , r_cpu = map (update ss) (r_cpu rule)
-                      , grtyp = update ss (grtyp rule)
                       }
           Fr{} -> rule{ frdec = update ss (frdec rule)
                       , frcmp = update ss (frcmp rule)
@@ -245,16 +232,10 @@
                                  then error ("(Module CC_aux:) illegal call to antecedent in specialize t ("++showADL rule++")")
                                  else specialize t (rrant rule)
                       , rrcon = specialize t (rrcon rule)
-                      , r_cpu = map (specialize t) (r_cpu rule)
                       , rrtyp = specialize t (rrtyp rule)
                       }
           Sg{} -> rule{ srsig = specialize t (srsig rule)
                       , srtyp = specialize t (rrtyp rule)
-                      }
-          Gc{} -> rule{ grspe = specialize t (grspe rule)
-                      , grgen = specialize t (grgen rule)
-                      , r_cpu = map (specialize t) (r_cpu rule)
-                      , grtyp = specialize t (grtyp rule)
                       }
           Fr{} -> rule{ frdec = specialize t (frdec rule)
                       , frcmp = specialize t (frcmp rule)

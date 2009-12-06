@@ -24,15 +24,16 @@ import Fspec2Pandoc           (render2Pandoc,fSpec2Pandoc)
 import Strings                (remSpaces)
 import Atlas.Atlas
 import Rendering.ClassDiagram (classdiagram2dot)
+import Switchboard            (toDotFspc)
+import Data.GraphViz.Types
+import Text.Pandoc.Writers.LaTeX
+import Text.Pandoc.Shared
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
-  = (writeFile outputFile $ printadl (Just fSpec') 0 fSpec')
+  = (writeFile outputFile $ printadl (Just fSpec) 0 fSpec)
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
-    where fSpec'= if (allServices flags)
-                  then fSpec{serviceS=serviceG fSpec} 
-                  else fSpec
-          outputFile = combine (dirOutput flags) "Generated.adl"
+    where  outputFile = combine (dirOutput flags) "Generated.adl"
 
 prove :: Fspc -> Options -> IO()
 prove fSpec _
@@ -72,24 +73,42 @@ doGenProto fSpec flags
      >> if (test flags) then verboseLn flags (show $ vplugs fSpec) else verboseLn flags ""
      where 
      explainviols = foldr (++) [] [show p++": "++printadl (Just fSpec) 0 r++"\n"|(r,p)<-violations fSpec]
-     
- 
+
 doGenFspec :: Fspc -> Options -> IO()
 doGenFspec fSpec flags
    =  do
       verboseLn flags "Generating functional specification document..."
       customheader <- readFile (texHdrFile flags)
-      writeFile (cdFilename++".dot") (classdiagram2dot cd)
+{-
+ -- Switchboard
+      verboseLn flags ("Processing "++switchboardname++".dot ... :")
+      writeFile (switchboardname++".dot") (printDotGraph (toDotFspc fSpec flags fSpec))
+      verboseLn flags ("dot -Tpng "++switchboardname++".dot -o "++switchboardname++".png")
+      resultSwitchboard <- system $ "dot -Tpng "++switchboardname++".dot -o "++switchboardname++".png"
+      case resultSwitchboard of 
+         ExitSuccess   -> verboseLn flags (switchboardname++".png"++" written.")
+         ExitFailure x -> putStrLn ("Failure: " ++ show x)
+      verboseLn flags (switchboardname++".png"++" written.")
+-}
+ -- Class Diagram
       verboseLn flags ("Processing "++cdFilename++".dot ... :")
+      writeFile (cdFilename++".dot") (classdiagram2dot cd)
       verboseLn flags ("dot -Tpng "++cdFilename++".dot -o "++cdFilename++".png")
-      system $ "neato -Tpng "++cdFilename++".dot -o "++cdFilename++".png"
-      verboseLn flags (cdFilename++".png"++" written.")
-      verboseLn flags ("Processing "++name fSpec)
-      writeFile outputFile    ( render2Pandoc flags customheader (fSpec2Pandoc fSpec' flags))
-      verboseLn flags ("Generating .png files in "++name fSpec)
-      generatepngs fSpec' flags
+      resultCD <- system $ "dot -Tpng "++cdFilename++".dot -o "++cdFilename++".png"
+      case resultCD of 
+         ExitSuccess   -> verboseLn flags (cdFilename++".png"++" written.")
+         ExitFailure x -> putStrLn ("Failure: " ++ show x)
+ -- Functional Specification Document
+      verboseLn flags ("Processing "++name fSpec'++" towards "++outputFile)
+      writeFile outputFile
+        (let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True,writerNumberSections=True}
+         in writeLaTeX wropts (fSpec2Pandoc fSpec flags))   -- om Pandoc te snappen, vervang writeLaTeX wropts voor prettyPandoc
+      verboseLn flags (outputFile++" written.")
+      verboseLn flags ("Generating .png files in "++name fSpec')
+      generatepngs fSpec flags
       verboseLn flags ("Functional specification  written into " ++ outputFile ++ ".")
    where  
+   switchboardname = "SB_"++baseName flags
    fSpec'= if (allServices flags)
            then fSpec{serviceS=serviceG fSpec} 
            else fSpec
@@ -107,21 +126,15 @@ generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..")
    where 
    outputFile fnm = combine (dirOutput flags) fnm
    dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
-          | p<-vpatterns fSpec, (not.null) (concs p)]
+          | p<-vpatterns fSpec]
    run fnm dot = makeGraphic (outputFile fnm) dot
  --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
  --    success <- runGraphviz testdot Png (outputFile fnm)
  --    return ()
    makeGraphic fullFile dot
      = do 
-       succes <- runGraphvizCommand Neato dot Canon dotfile
-       if succes
-          then do
-            result <- system ("neato -Tpng "++dotfile++ " -o "++pngfile)
-            case result of 
-               ExitSuccess   -> putStrLn (" "++pngfile++" created.")
-               ExitFailure x -> putStrLn ("Failure: " ++ show x)
-          else putStrLn ("Failure: could not create " ++ dotfile) 
+       success <- runGraphvizCommand Neato dot Png dotfile
+       verboseLn flags ("runGraphvizCommand("++dotfile++") " ++ (if success then "" else "un") ++ "successfully executed.")
      where
        dotfile = replaceExtension fullFile "dot"
        pngfile = replaceExtension fullFile "png"

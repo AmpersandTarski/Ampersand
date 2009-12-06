@@ -217,37 +217,31 @@ where
                 Ru{rrsrt = Truth } -> concs (rrant r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere concepten in de expressies aanwezig zijn in de lhs dan in de rhs??
                 Ru{}               -> concs (rrant r) `uni` concs (rrcon r)
                 Sg{}               -> concs (srsig r)
-                Gc{}               -> concs (grspe r) `uni` concs (grgen r)
                 Fr{}               -> concs (frdec r) `uni` concs (frcmp r)
     mors r = case r of
                 Ru{rrsrt = Truth } -> mors (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
                 Ru{}               -> mors (rrant r) `uni` mors (rrcon r)
                 Sg{}               -> mors (srsig r)
-                Gc{}               -> mors (grspe r) `uni` mors (grgen r)
                 Fr{}               -> mors (frdec r) `uni` mors (frcmp r)
     morlist r = case r of
                 Ru{rrsrt = Truth } -> morlist (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
                 Ru{}               -> morlist (rrant r) ++ morlist (rrcon r)
                 Sg{}               -> morlist (srsig r)
-                Gc{}               -> morlist (grspe r) ++ morlist (grgen r)
                 Fr{}               -> morlist (frcmp r)
     genE r = case r of
                 Ru{rrsrt = Truth } -> genE (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
                 Ru{}               -> genE [(rrant r),(rrcon r)]
                 Sg{}               -> genE (srsig r)
-                Gc{}               -> genE (grspe r) 
                 Fr{}               -> genE (frcmp r)
     declarations r = case r of
                 Ru{rrsrt = Truth } -> declarations (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
                 Ru{}               -> declarations [(rrant r),(rrcon r)]
                 Sg{}               -> [srrel r] `uni` declarations (srsig r)
-                Gc{}               -> declarations (grspe r) 
                 Fr{}               -> declarations (frcmp r)
     closExprs r = case r of
                 Ru{rrsrt = Truth } -> closExprs (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
                 Ru{}               -> closExprs (rrant r) `uni` closExprs (rrcon r)
                 Sg{}               -> closExprs (srsig r)
-                Gc{}               -> closExprs (grgen r) 
                 Fr{}               -> [frcmp r]
 
 

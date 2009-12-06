@@ -2,9 +2,11 @@
 module NormalForms (conjNF,disjNF,normECA,nfProof,proofPA,nfPr,simplify,distribute)
 where
    import Adl
+   import Strings        (commaEng)
    import Collection     (Collection (..))
+   import Auxiliaries    (eqCl)
    import ShowADL        (showADL)
-   import Adl.ECArule    (ECArule(..),PAclause(..),isBlk,isDry,isNop)
+   import Adl.ECArule    (ECArule(..),PAclause(..),isAll,isChc,isBlk,isDry,isNop,isDo)
    import Adl.Expression (isF,isFd,isFi,isFu)
 
 {- Normalization of process algebra clauses -}
@@ -34,15 +36,11 @@ where
                                                 _     -> ms
                            }, ["Flatten Singleton"])
      norm (Chc ds ms)  | (not.null) msgs = (Chc ops ms, msgs)
-                       | (not.null) [d| d@(Chc{}) <- ds] = (Chc (rd ds') ms, ["flatten Chc"])  -- flatten
+                       | (not.null) [d| d@(Chc{}) <- ds] = (Chc (rd [ d' | d<-ds, d'<-if isChc d then ds else [d] ]) ms, ["flatten Chc"])  -- flatten
                        | (not.null) [Nop| Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
                        | (not.null) ([Blk| Blk{}<-ops]++[Dry| Dry{}<-ops]) = (Chc [op| op<-ops, not (isBlk op), not (isDry op)] ms, ["Choose anything but block"])
                        | otherwise = (Chc ds ms, [])
-                       where ds' = [ d'
-                                   | d<-ds, d'<-case d of
-                                                  Chc xs _ -> xs
-                                                  _        -> [d] ]
-                             nds = map norm ds
+                       where nds = map norm ds
                              msgs = (concat.map snd) nds
                              ops  = map fst nds
      norm (All [] ms)  = (Nop ms, ["All [] = No Operation"])
@@ -51,18 +49,23 @@ where
                                                 _     -> ms
                            }, ["Flatten Singleton"])
      norm (All ds ms)  | (not.null) msgs = (All ops ms, msgs)
-                       | (not.null) [d| d@(All{}) <- ds] = (All (rd ds') ms, ["flatten All"])  -- flatten
+                       | (not.null) [d| d@(All{}) <- ds] = (All (rd [ d' | d<-ds, d'<-if isAll d then ds else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk| Blk{}<-ops] = (Blk{paMotiv = [m| op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Dry| Dry{}<-ops] = (Dry{paMotiv = [m| op@Dry{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop| Nop{}<-ops] = (All [op| op<-ops, not (isNop op)] ms, ["Ignore Nop"])
+                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.morlist.paTo.head) cl|cl<-long]++"together"])
                        | otherwise = (All ds ms, [])
-                       where ds' = [ d'
-                                   | d<-ds, d'<-case d of
-                                                  All xs _ -> xs
-                                                  _        -> [d] ]
+                       where ds' = [ let p=head cl in
+                                     if length cl==1 then p else p{paTo=disjNF (Fu[paDelta c| c<-cl]), paMotiv=concat (map paMotiv cl)}
+                                   | cl<-dCls ]
+                                   ++[d| d<-ds, not (isDo d)]
                              nds  = map norm ds
                              msgs = (concat.map snd) nds
                              ops  = map fst nds
+                             dCls = eqCl to [d| d<-ds, isDo d]
+                             long = [cl| cl<-dCls, length cl>1]
+                             to d@(Do{}) = (paSrt d,paTo d)
+                             to _        = error("!Fatal (module NormalForms 68): illegal call of to(d)")
      norm (New c p ms)        = case p' of
                                   Blk{} -> (p'{paMotiv = ms}, msgs)
                                   Dry{} -> (p'{paMotiv = ms}, msgs)

@@ -54,7 +54,7 @@
      name fspc = name (fsid fspc)
      typ   _   = "Fspc_"
    
-   instance Fidentified Fspc where
+   instance Fidentified Fspc where  -- WAAROM moet er een tweede vorm van Identified zijn? Dit is in tegenspraak met het principe van code-ontdubbeling.
     fsid    spec = fsfsid spec
   --  typ     _ = "f_Ctx"
 

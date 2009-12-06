@@ -81,7 +81,7 @@ where
              [ Elem (simpleTag "Service")   [mkXmlTree (fsv_objectdef f)]] 
           ++ [ Elem (simpleTag "Relations") (map mkXmlTree (fsv_rels     f))|not (null (fsv_rels     f))] 
           ++ [ Elem (simpleTag "Rules")     (map mkXmlTree (fsv_rules    f))|not (null (fsv_rules    f))] 
-          ++ [ Elem (simpleTag "ECArules")  (map mkXmlTree (fsv_ecaRules f))|not (null (fsv_ecaRules f))] 
+--          ++ [ Elem (simpleTag "ECArules")  (map mkXmlTree (fsv_ecaRules f))|not (null (fsv_ecaRules f))] 
           ++ [ Elem (simpleTag "Signals")   (map mkXmlTree (fsv_signals  f))|not (null (fsv_signals  f))] 
           ++ [ Elem (simpleTag "Fields")    (map mkXmlTree (fsv_fields   f))|not (null (fsv_fields   f))] 
            )
@@ -149,8 +149,6 @@ where
           Sg{}
                 ->  explainTree (srxpl r)
                  ++ [mkXmlTree (srsig r)]
-          Gc{}
-                ->  [still2bdone "Rule_Gc"]
           Fr{}  -- represents an automatic computation, such as * or +.
                 ->  [still2bdone "Rule_Fr"]
         )

@@ -99,17 +99,6 @@ where
     multiplicities :: a -> [Prop]
     multiplicities _ = []  --WAAROM? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
                            --DAAROM! Als default regel is er niets mis mee. Als je niets specificeert heeft het ding geen multipliciteitseigenschappen....
-    isTot          :: a -> Bool  -- > tells whether the argument is Total
-    isTot m = Tot `elem` multiplicities m
-    isUni          :: a -> Bool  -- > tells whether the argument is Univalent
-    isUni m = Uni `elem` multiplicities m
-    isSur          :: a -> Bool  -- > tells whether the argument is Surjective
-    isSur m = Sur `elem` multiplicities m
-    isInj          :: a -> Bool  -- > tells whether the argument is Injective
-    isInj m = Inj `elem` multiplicities m
-
-    
-    
     flp            :: a -> a
 --    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     isProp         :: a -> Bool  -- > tells whether the argument is a property
@@ -127,9 +116,25 @@ where
     isFunction m   = null ([Uni,Tot]>-multiplicities m)
     isFlpFunction :: a -> Bool
     isFlpFunction m = null ([Sur,Inj]>-multiplicities m)
+    isTot :: a -> Bool  -- 
+    isTot d = Tot `elem` multiplicities d
+    isUni :: a -> Bool  -- 
+    isUni d = Uni `elem` multiplicities d
+    isSur :: a -> Bool  -- 
+    isSur d = Sur `elem` multiplicities d
+    isInj :: a -> Bool  -- 
+    isInj d = Inj `elem` multiplicities d
+    isRfx :: a -> Bool  -- 
+    isRfx d = Rfx `elem` multiplicities d
+    isTrn :: a -> Bool  -- 
+    isTrn d = Trn `elem` multiplicities d
+    isSym :: a -> Bool  -- 
+    isSym d = Sym `elem` multiplicities d
+    isAsy :: a -> Bool  -- 
+    isAsy d = Asy `elem` multiplicities d
 
    instance Morphic Concept where
-    multiplicities _ = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx]
+    multiplicities _ = [Uni,Tot,Sur,Inj,Sym,Trn,Rfx,Asy]
     flp c = c
 --    isIdent c = True    -- > tells whether the argument is equivalent to I
     isProp _ = True    -- > tells whether the argument is equivalent to I

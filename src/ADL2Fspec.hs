@@ -10,7 +10,7 @@
    import Languages
    import Calc
    import Options        (Options(language,dirOutput))
-   import NormalForms(disjNF,normECA)
+   import NormalForms(conjNF,disjNF,normECA)
    import Data.Plug
    import Char(toLower)
    import Rendering.ClassDiagram
@@ -18,6 +18,7 @@
    
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec where
+        allQuads = quads (\_->True) (rules context)
         fSpec =
            Fspc { fsfsid         = makeFSid1 (name context)
                    -- serviceS contains the services defined in the ADL-script.
@@ -27,9 +28,11 @@
                  , plugs        = allplugs
                  , serviceS     = attributes context -- services specified in the ADL script
                  , serviceG     = serviceG'          -- generated services
-                 , services     = [makeFservice context a | a <-attributes context]
+                 , services     = [makeFservice context allQuads a | a <-attributes context]
                  , vrules       = rules context++signals context
-                 , ecaRules     = []
+                 , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
+                 , vquads       = allQuads
+--                 , ecaRules     = []
                  , vrels        = declarations context
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
@@ -49,18 +52,42 @@
 -- maybe useful later...
 --        conc2plug :: Concept -> Plug
 --        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True]}
+
+-- mor2plug creates associations between plugs that represent wide tables.
+-- this concerns relations that are not univalent nor injective,
+-- Univalent and injective relations cannot be associations, as they are used as attributes in wide tables.
         mor2plug :: Morphism -> Plug
         mor2plug  m'
-         = if (isInj m') && not (isUni m') then mor2plug (flp m')
-           else if isUni m' || isTot m'
+         = if isInj || isUni then error ("!Fatal (module ADL2Fspec 56): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
+           -- Omdat not(isInj||isUni) kan de onderstaande code heel wat korter... (TODO)
+           if isTot
            then PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing False (isUni m')
-                                   ,field (name (target m')) (Tm m') Nothing (not (isTot m')) (isInj m')]}
-           else if isInj m' || isSur m' then mor2plug (flp m')
+                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing (not isSur) isUni
+                                   ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
+           else if isSur then mor2plug (flp m')
            else PlugSql { plname = name m'
                         , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]
-                                                           )      Nothing False False
-                                   ,field (name (target m')) (Tm m') Nothing False False]}
+                                                           )      Nothing (not isSur) isUni
+                                   ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
+           where
+             mults = multiplicities m'
+             isTot = Tot `elem` mults || m' `elem` totals
+             isUni = Uni `elem` mults
+             isSur = Sur `elem` mults || flp m' `elem` totals
+             isInj = Inj `elem` mults
+        totals
+         = rd [ m | q<-quads visible (rules fSpec), isIdent (qMorph q)
+                  , (conj,hcs)<-cl_conjNF (qClauses q), Fu fus<-hcs
+                  , antc<-[(conjNF.Fi) [notCp f| f<-fus, isNeg f]], isIdent antc
+                  , f<-fus, isPos f
+                  , m<-tots f
+                  ]
+           where tots (F []) = error("!Fatal (module ClassDiagram 126): cannot compute totals for "++show (F []))
+                 tots (F fs) = morlist (init fs)  -- TODO: this is wrong when it is an Fd
+                 tots (K0 e) = tots e             -- TODO: is this correct?
+                 tots (K1 e) = tots e             -- TODO: is this correct?
+                 tots f = error("!Fatal (module ClassDiagram 130): cannot compute totals for "++show f++" yet.")
+                 visible _ = True -- for computing totality, we take all quads into account.
 
         allplugs = uniqueNames []
                     (definedplugs ++                  -- all plugs defined by the user
@@ -204,7 +231,7 @@
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
         sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (ctxks context) obj]
         --query copied from FSpec.hs revision 174
-        themerules = [r|p<-patterns context, r<-rules p++signals p, null (cpu r)]
+        themerules = [r|p<-patterns context, r<-rules p++signals p]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
         maketheme _ = error("!Fatal (module ADL2Fspec) function makeFspec.maketheme: The theme must involve a concept.")
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
@@ -390,23 +417,24 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    editMph (Tm m@I{})   = m
    editMph e            = error("!Fatal (module ADL2Fspec): cannot determine an editable declaration in a composite expression: "++show e)
 
-   makeFservice :: Context -> ObjectDef -> Fservice
-   makeFservice context object
+   makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
+   makeFservice context allQuads object
     = let s = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
 -- The declarations that may be changed by the user of this service are represented by fsv_rels
                       , fsv_rels      = rels
 -- The rules that may be affected by this service
                       , fsv_rules     = invariants
+                      , fsv_quads     = qs
 -- The ECA-rules that may be used by this service to restore invariants.
-                      , fsv_ecaRules  = trigs object
+                      , fsv_ecaRules  = nECArules
 -- All signals that are visible in this service
                       , fsv_signals   = []
 -- All fields/parameters of this service
                       , fsv_fields    = map fld (objats object)
 -- All concepts of which this service can create new instances
-                      , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Ins (mIs c)]
+                      , fsv_creating  = [c| c<-rd (map target rels), t<-[] {- fsv_ecaRules s -} , ecaTriggr (t arg)==On Ins (mIs c)]
 -- All concepts of which this service can delete instances
-                      , fsv_deleting  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Del (mIs c)]
+                      , fsv_deleting  = [c| c<-rd (map target rels), t<-[] {- fsv_ecaRules s -} , ecaTriggr (t arg)==On Del (mIs c)]
                       } in s
     where
         rels = rd (recur object)
@@ -414,10 +442,15 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         vis        = rd (map makeInline rels++map (mIs.target) rels)
         visible m  = makeInline m `elem` vis
         invariants = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
-        ecaRs      = assembleECAs visible invariants
+        qs         = [q| q@(Quad m ccrs)<-allQuads, m `elem` vis
+                       , (conj,shifts)<-cl_conjNF ccrs
+                       , Fu fus<-shifts, f<-fus, isPos f, m'<-mors f, m' `elem` vis]
+        conjuncts  = rd [conj   | Quad _ ccrs<-qs, (conj,_)<-cl_conjNF ccrs]
+        clauses    = rd [clause | Quad _ ccrs<-qs, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
+        ecaRs      = assembleECAs visible qs
         nECArules  = map normECA ecaRs
         trigs :: ObjectDef -> [Declaration->ECArule]
-        trigs obj  = [c | editable (objctx obj), c<-nECArules, not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) ]
+        trigs obj  = [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
         arg = error("!Todo (module ADL2Fspec 424): declaratie Delta invullen")
         fld :: ObjectDef -> Field
         fld obj
@@ -445,6 +478,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
            where triggers = trigs obj
                  insTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Ins (makeInline (editMph (objctx obj))) ]
                  delTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Del (makeInline (editMph (objctx obj))) ]
+
 -- Comment on fld_new:
 -- Consider this: New elements cannot be filled in
 --    if there is a total relation r with type obj==source r  (i.e. r comes from obj),

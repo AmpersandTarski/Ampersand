@@ -16,7 +16,7 @@ where
                     deriving (Eq,Ord)
 
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Prop                          ***
+-- \*** Eigenschappen met betrekking isTot: Prop                          ***
 -- \***********************************************************************
    instance Show Prop where
     showsPrec _ Uni = showString "UNI"     -- WAAROM? Stef, waarom is dit nodig? wat doet dit? 

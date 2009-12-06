@@ -40,4 +40,3 @@ module ShowECA (showECA) where
 
       motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
        where showConj (conj,rs) = "("++motive++" "++showADLcode fSpec conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"
-      

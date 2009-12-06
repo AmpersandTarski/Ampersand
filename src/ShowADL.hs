@@ -7,7 +7,7 @@
   --                expliciet te maken.
   --                Daarmee produceert showADLcode volledig correcte ADL-code, dus typecorrect en zonder service-warnings.
 {-# OPTIONS_GHC -XFlexibleInstances #-}
-  module ShowADL ( ShowADL(..), PrintADL(..) )
+  module ShowADL ( ShowADL(..), PrintADL(..), disambiguate, mphatsoff)
   where
    import Char                            (isAlphaNum,isUpper)
    import CommonClasses
@@ -83,7 +83,6 @@
    --TODO -> move the flips from Morphism to Expression data type
    --TODO -> remove application of double complement rule from the parser
    --TODO -> remove removal of brackets on ; expression from the parser
-   --TODO -> GLUE rules and --beeper generated rules are obsolete --TODO -> is this true? and what about COMPUTING?  
 
    -- pops = [Popu mph prs| CPop mph prs<-ces]
    -- CPop ->  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
@@ -237,12 +236,9 @@
                              else printadl fSpec i (rrant r) 
                                   ++ if rt==Implication then " |- " else " = "
                       str2 = printadl fSpec i (rrcon r)
-                      str3 = if null (r_cpu r) then "" 
-                             else " COMPUTING " ++ adlprintlist fSpec i ("",", ","") (r_cpu r)
-                      str4 = if null (rrxpl r) then "" 
+                      str3 = if null (rrxpl r) then "" 
                              else lb ++ "EXPLANATION \"" ++ (rrxpl r) ++ "\""
-                      in str1 ++ str2 ++ str3 ++ str4
-      _ -> "--GLUE rules and --beeper generated rules are obsolete" 
+                      in str1 ++ str2 ++ str3
 
    instance PrintADL [Rule] where
     printadl fSpec i rs = adlprintlistlb fSpec i rs
@@ -374,28 +370,16 @@
    instance ShowADL Rule where
     showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
     showADL r@(Fr d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
-    showADL r@(Ru{rrsrt=c,rrant=antc,rrfps=p,rrcon=cons,r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
-     | c==Truth = "ALWAYS "++showADL cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu 
-     | c==Implication = showADL antc ++" |- "++showADL cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu 
-     | c==Equivalence = showADL antc ++" = " ++showADL cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu 
-    showADL r@(Gc _ antc cons cpu _ _ _)
-              = "GLUE "++showADL antc++" = "++showADL cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu
+    showADL r@(Ru{rrsrt=c,rrant=antc,rrfps=p,rrcon=cons,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
+     | c==Truth = "ALWAYS "++showADL cons
+     | c==Implication = showADL antc ++" |- "++showADL cons
+     | c==Equivalence = showADL antc ++" = " ++showADL cons
     showADLcode fSpec r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADLcode fSpec rule
     showADLcode fSpec r@(Fr d expr _) = showADLcode fSpec d ++ "\n" ++ show (name d)++" = "++showADLcode fSpec expr
-    showADLcode fSpec r@(Ru{rrsrt=c,rrant=antc,rrfps=p,rrcon=cons,r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
-     | c==Truth = "ALWAYS "++showADLcode fSpec cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu 
-     | c==Implication = showADLcode fSpec antc ++" |- "++showADLcode fSpec cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu 
-     | c==Equivalence = showADLcode fSpec antc ++" = " ++showADLcode fSpec cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu 
-    showADLcode fSpec r@(Gc _ antc cons cpu _ _ _)
-              = "GLUE "++showADLcode fSpec antc++" = "++showADLcode fSpec cons++
-                  if null cpu then "" else " COMPUTING " ++ show cpu
+    showADLcode fSpec r@(Ru{rrsrt=c,rrant=antc,rrfps=p,rrcon=cons,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
+     | c==Truth = "ALWAYS "++showADLcode fSpec cons
+     | c==Implication = showADLcode fSpec antc ++" |- "++showADLcode fSpec cons
+     | c==Equivalence = showADLcode fSpec antc ++" = " ++showADLcode fSpec cons
 
    instance ShowADL Gen where
     showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g

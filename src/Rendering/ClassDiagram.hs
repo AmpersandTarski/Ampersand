@@ -7,26 +7,27 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Strings (chain) -- , eqCl, enc)
    import Typology (Inheritance(Isa))
-   import Adl (Contexts,Morphical,Language,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
-              ,Morphic(..)
-              ,isa,isFlpFunction,isFunction,cpu,isSignal,mors,sign
-              ,Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
+   import Adl ( Contexts,Morphical,ViewPoint,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
+              , Morphic(..)
+              , isa,isFlpFunction,isFunction,isSignal,mors,sign
+              , Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options
    import FspecDef
+   import Adl.ECArule
 
  --  import ShowADL
  --  import CC_aux  
          --     ( Context, Concept, Object(concept, attributes, ctx)
          --     , showADL, Morphical
-         --     , Language( rules)
+         --     , ViewPoint( rules)
          --     , isProperty, target, concs, source
          --     , declaration, declarations, keys
          --     , flp, multiplicities, isa, isFunction, isFlpFunction
          --     , Morphism(Mph)
          --     , Prop(Sur,Inj)
-         --     , posNone, cpu, isSignal, mors, sign
+         --     , posNone, isSignal, mors, sign
          --     )
    --import HtmlFilenames (fnContext)
            -- ( genGraphics)
@@ -69,7 +70,7 @@
     nodes = concat.map nodes
 
    instance CdNode Attribute where
-    nodes (OOAttr nm t) = [t]
+    nodes (OOAttr nm t fNull) = [t]
 
    instance CdNode Method where
     nodes m = []
@@ -87,28 +88,31 @@
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
-       classes    = [ OOClass (name c) [ OOAttr a atype | (a,atype)<-attrs plug] []
+       classes    = [ OOClass (name c) [ OOAttr a atype fNull| (a,atype,fNull)<-attrs plug] []
                     | plug <- classPlugs, fld<-fields plug, fldname fld=="i", c<-[source (fldexpr fld)]
                     , not (null (attrs plug))
                     ]
-       assocs     = [ OOAssoc (name (source s)) (multiplicity s) "" (name (target s)) (multiplicity (flp s)) (name s)
-                    | s<-sps, not (s `elem` attrels), not (null([Sym,Asy]>-multiplicities s))]
+       assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name plug)
+                    | plug <- assocPlugs
+                    , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 95): irregular association, because it has "++show ()++" fields.")
+                    , [s,t]<-[fields plug]
+                    ]
                     where
-                     multiplicity s | isSur s && isInj s = "1"
-                                    | isInj s            = "0..1"
-                                    | isSur s            = "1..n"
-                                    | otherwise          = ""
+                     multiplicity f | fldnull f = ""
+                                    | otherwise = "1..n"
+                     nm f = name.f.fldexpr
+                     
        aggrs      = []
        geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa fSpec], gs<-eqCl fst pcs]
        classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld])]
        assocPlugs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)>1]
        scalarPlgs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)<=1]
-       attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)))
+       attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-fields plug, fldname fld/="i"]
        attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-declarations (fldexpr fld)]
-                    
-       sps = [d|d<-declarations fSpec, not (isSignal d)] -- was: for a single pattern
-       scs = [d|d<-declarations fSpec, not (isSignal d)] -- was: for the entire context
+       isProp d   = null([Sym,Asy]>-multiplicities d)
+       sps = [d|d<-declarations fSpec] -- was: for a single pattern
+       scs = [d|d<-declarations fSpec] -- was: for the entire context
 
    shDataModel (OOclassdiagram cs as rs gs _)
     = "OOclassdiagram\n>     "++chain "\n>     "
@@ -170,7 +174,7 @@
               attribs2dot as = (dottable notableborderopts (chain "" (map attrib2dot as)))
  
               attrib2dot :: Attribute -> [Char]
-              attrib2dot (OOAttr n t) = dotrow "" (dotcell " ALIGN=\"left\"" ("+ " ++ n ++ " : " ++ t))
+              attrib2dot (OOAttr n t fNull) = dotrow "" (dotcell " ALIGN=\"left\"" ((if fNull then "o " else "+ ") ++ n ++ " : " ++ t))
 
               methods2dot :: [Method] -> [Char]
               methods2dot [] = emptydottable notableborderopts
@@ -194,8 +198,8 @@
               "      edge [ \n" ++
               "              arrowhead = \"none\" \n" ++
               "              arrowtail = \"none\" \n" ++
-              (if null (nametable m1) then "" else "              headlabel = " ++ nametable m1 ++ "\n") ++
-              (if null (nametable m1) then "" else "              taillabel = " ++ nametable m2 ++ "\n") ++
+              (if null (nametable m2) then "" else "              headlabel = " ++ nametable m2 ++ "\n") ++
+              (if null (nametable m1) then "" else "              taillabel = " ++ nametable m1 ++ "\n") ++
               "              label = \"" ++ n2 ++ "\" \n" ++
               "      ]\n" ++
               "       " ++ alias from ++ " -> " ++ alias to
@@ -390,13 +394,13 @@
 
    testCD
     = OOclassdiagram
-      [ OOClass "Plan" [OOAttr "afkomst" "Actor"] []
-      , OOClass "Formulier" [OOAttr "plan" "Plan",OOAttr "van" "Actor",OOAttr "aan" "Actor",OOAttr "sessie" "Sessie"] []
-      , OOClass "Dossier" [OOAttr "eigenaar" "Actor"] []
-      , OOClass "Gegeven" [OOAttr "type" "Gegevenstype",OOAttr "in" "Dossier",OOAttr "veldnaam" "Veldnaam",OOAttr "waarde" "Waarde"] []
-      , OOClass "Veld" [OOAttr "type" "Veldtype",OOAttr "waarde" "Waarde"] []
-      , OOClass "Veldtype" [OOAttr "veldnaam" "Veldnaam",OOAttr "formuliertype" "Plan",OOAttr "gegevenstype" "Gegevenstype"] []
-      , OOClass "Sessie" [OOAttr "dossier" "Dossier",OOAttr "uitgevoerd" "Actor"] []
+      [ OOClass "Plan" [ooAttr "afkomst" "Actor"] []
+      , OOClass "Formulier" [ooAttr "plan" "Plan",ooAttr "van" "Actor",ooAttr "aan" "Actor",ooAttr "sessie" "Sessie"] []
+      , OOClass "Dossier" [ooAttr "eigenaar" "Actor"] []
+      , OOClass "Gegeven" [ooAttr "type" "Gegevenstype",ooAttr "in" "Dossier",ooAttr "veldnaam" "Veldnaam",ooAttr "waarde" "Waarde"] []
+      , OOClass "Veld" [ooAttr "type" "Veldtype",ooAttr "waarde" "Waarde"] []
+      , OOClass "Veldtype" [ooAttr "veldnaam" "Veldnaam",ooAttr "formuliertype" "Plan",ooAttr "gegevenstype" "Gegevenstype"] []
+      , OOClass "Sessie" [ooAttr "dossier" "Dossier",ooAttr "uitgevoerd" "Actor"] []
       ]
       [ OOAssoc "Plan" "0..n" "" "Plan" "0..n" "stap"
       , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "inzage"
@@ -423,3 +427,4 @@
       ]
       []
       ("NoPat",[])
+      where ooAttr nm t = OOAttr nm t True

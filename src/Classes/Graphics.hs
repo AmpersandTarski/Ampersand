@@ -17,7 +17,7 @@ import Options
 import Collection (Collection(rd))
 
 class Dotable a where
-   toDot :: Fspc -> Options -> a -> DotGraph Int
+   toDot :: Fspc -> Options -> a -> DotGraph String
 
 instance Dotable Pattern where
    toDot _ flags pat 
@@ -40,16 +40,16 @@ instance Dotable Pattern where
          where 
          --DESCR -> get concepts and arcs from pattern
          cpts = rd (concs pat)
-         arcs = rd $ [d | d<-[makeDeclaration mph|mph<-mors pat++mors(specs pat), isMph mph, not (isProperty mph)]
+         arcs = rd $ [d | d<-[makeDeclaration mph|mph<-mors pat, isMph mph, not (isProperty mph)]
                         , not (isSignal d)]
                      ++ (ptdcs pat)
          --DESCR -> assign ID to concept related nodes
          conceptTable = case cpts of
             [] -> []
-            _  -> zip cpts [1..] 
+            _  -> zip cpts (map show [(1::Int)..])
          conceptPointTable = case cpts of
             [] -> []
-            _  -> zip cpts [(length conceptTable + 1)..]             
+            _  -> zip cpts (map show [(length conceptTable + 1)..])
          --DESCR -> construct concept point related picture objects                                
          conceptLabel c = 
             DotNode { nodeID         = lkup c conceptTable
@@ -68,10 +68,10 @@ instance Dotable Pattern where
          --DESCR -> assign ID to arc related nodes
          arcsTable = case arcs of
             [] -> []
-            _  -> zip arcs [(length conceptTable + length conceptPointTable + 1)..]   
+            _  -> zip arcs (map show [(length conceptTable + length conceptPointTable + 1)..])
          arcsPointTable = case arcs of
             [] -> []
-            _  -> zip arcs [(length conceptTable + length conceptPointTable + length arcsTable + 1)..]            
+            _  -> zip arcs (map show [(length conceptTable + length conceptPointTable + length arcsTable + 1)..])
          --DESCR -> construct arc point related picture objects   
          inBetweenNode d = DotNode { nodeID          = lkup d arcsTable
                                    , nodeAttributes = handleFlags (ArcLabel d) flags
@@ -185,7 +185,7 @@ crowfootArrow a b =
     AType (case (a,b) of
             (True ,True ) -> [my_tee          ]
             (True ,False) -> [my_tee , my_crow]
-            (False,True ) -> [my_tee, my_odot ]
+            (False,True ) -> [my_tee,  my_odot]
             (False,False) -> [my_crow, my_odot]
           )
 noMod :: ArrowModifier
@@ -201,10 +201,10 @@ my_crow :: ( ArrowModifier , ArrowShape )
 my_crow= ( open, Crow )
 
 --DESCR -> lookup the integer id of an object
-lkup :: (Eq a) => a -> [(a,Int)] -> Int
+lkup :: (Eq a) => a -> [(a,b)] -> b
 lkup x tbl = case lookup x tbl of
    Just i -> i
-   _ -> error "element not found." --TODO
+   _ -> error "!Fatal (module Graphics): element not found." --TODO
 
  --  doosje flags c = [Shape BoxShape]
    --              ++ [Label$StrLabel (show (name c))]

@@ -157,11 +157,11 @@
    ruleToPL = assemble . normRule
 
    normRule :: Rule -> Rule
-   normRule r@(Ru{rrsrt=Truth,rrfps=pos,rrcon=cons,r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
-    = Ru Truth (error ("!Fatal (module PredLogic 161): illegal reference to antecedent in normRule ("++showADL r++")")) pos (cons) cpu expla sgn Nothing nr pn
-   normRule (Ru{rrsrt=Implication,rrant=a@(F ants),rrfps=pos,rrcon=c@(F cons),r_cpu=cpu,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn})
-    | idsOnly ants = Ru Implication (F [Tm (mIs idA)]) pos (F cons) cpu expla (idC,idC) Nothing nr pn
-    | otherwise    = Ru Implication (F as) pos (F cs) cpu expla (sac,tac) Nothing nr pn
+   normRule r@(Ru{rrsrt=Truth,rrfps=pos,rrcon=cons,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn,r_usr=usr})
+    = r{rrant=error ("!Fatal (module PredLogic 161): illegal reference to antecedent in normRule ("++showADL r++")")}
+   normRule r@(Ru{rrsrt=Implication,rrant=a@(F ants),rrcon=c@(F cons),rrxpl=expla,rrtyp=sgn})
+    | idsOnly ants = r{rrant=F [Tm (mIs idA)],rrtyp=(idC,idC)}
+    | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
     where
      idC = source c `lub` target c `lub` idA
      idA = foldr lub (target (last ants)) (map source ants)
@@ -169,13 +169,12 @@
      (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
      move [] cs = ([(Tm . mIs . source . head) cs],cs)
      move as cs
-      | (isSur h) && (isInj h) = move (tail as) ([flp h]++cs)
-      | (isUni l) && (isTot l) = move (init as) (cs++[flp l])
+      | isSur h && isInj h = move (tail as) ([flp h]++cs)
+      | isUni l && isTot l = move (init as) (cs++[flp l])
       | otherwise      = (as,cs)
       where h=head as; l=last as
-   normRule (Sg p rule expla sgn nr pn signal)
-     = Sg p r' expla (sign r') nr pn signal
-       where r'= normRule rule
+   normRule s@Sg{}
+     = s{srsig=r,srtyp=sign r} where r=normRule (srsig s)
    normRule r = r
 
    assemble :: Rule -> PredLogic

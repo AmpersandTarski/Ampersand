@@ -211,10 +211,9 @@ where
                   ,", serviceG      = serviceG'"
                   ,wrap ", services      = " indentA (\_->showHSname) (FspecDef.services fspec)
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
-                  ,wrap ", ecaRules      = " indentA (\_->showHSname) (ecaRules fspec)
                   ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
                   ,", fsisa         = isa'"
-                  ,", vpatterns     = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [Pattern]
+                  ,wrap ", vpatterns     = " indentA (\_->showHSname) (vpatterns fspec)
                   ,", classdiagrams = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [ClassDiag]
                   ,", themes        = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
                                                 -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
@@ -232,6 +231,7 @@ where
        indent++" serviceS' = "++"[ "++chain (indentB++", ") (map (showHS options indentB) (serviceS fspec))++indentB++"]"++
         "\n -- ***Services G***: "++
        indent++" serviceG' = "++"[ "++chain (indentB++", ") (map (showHS options indentB) (serviceG fspec))++indentB++"]"++
+       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS options (indent++"    ") p|p<-vpatterns fspec ]++"\n")++
 
 -- WAAROM?  staan hier verschillende lijstjes met services?
 -- DAAROM!  Een ADL-engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
@@ -254,9 +254,6 @@ where
        (if null (vrules   fspec ) then "" else
         "\n -- ***Declarations of RULES ***: "++
         concat [indent++" "++showHSname r++indent++"  = "++showHS options (indent++"    ") r|r<-vrules   fspec ]++"\n")++        
-       (if null (ecaRules fspec ) then "" else
-        "\n -- ***Declarations of ECArules ***: "++
-        concat [indent++" "++showHSname r++indent++"  = "++showHS options (indent++"    ") r|r<-ecaRules fspec ]++"\n")++        
        (if null (vrels fspec)     then "" else
         "\n -- ***Declarations OF RELATIONS ***: "++
         concat [indent++" "++showHSname d++indent++"  = "++showHS options (indent++"    ") d|d<- vrels fspec]++"\n")++
@@ -279,14 +276,8 @@ where
        ++ indent++"     [ "++chain (indent++"     , ")
           [showHSname r ++ if null (explain options r) then "" else "    -- " ++ explain options r| r<-fsv_rules fservice]
           ++indent++"     ]"
-       ++ indent++"     [ "++chain (indent++"     , ") [showHSname r| f<-fsv_ecaRules fservice, r<-[f (error("!Fatal (module ShowHS 279): reference to argument of ECA rule"))]]++indent++"     ]"
        ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_signals  fservice))++indent++"     ]"
        ++ indent++"     [ "++chain (indent++"     , ") (map (showHS options (indent++"       ")) (fsv_fields  fservice))++indent++"     ]"
-       ++ (if null (fsv_ecaRules fservice ) then "" else
-           indent++"where  -- definitions of ECA-rules for service: "++showHSname (fsv_objectdef fservice)++
-           concat [ indent++" "++showHSname r++" "++showHSname (mphdcl (ecaDelta r))++
-                    indent++"  = "++showHS options (indent++"    ") r
-                  | f<-fsv_ecaRules fservice, r<-[f (error("!Fatal (module ShowHS 286): reference to argument of ECA rule"))]]++"\n")
        ++ indent++" -- Einde Fservice "++showHSname (fsv_objectdef fservice)
 
 -- \***********************************************************************
@@ -411,32 +402,26 @@ where
       = case r of
            Ru{} -> (chain newIndent 
                     ["Ru{ rrsrt = " ++ showHS options "" (rrsrt r)
-                        ,", rrant = " ++ "("++showHS options "" (rrant r)++")"
-                        ,", rrfps = " ++ "("++showHS options "" (rrfps r)++")"
-                        ,", rrcon = " ++ "("++showHS options "" (rrcon r)++")"
-                        ,", r_cpu = " ++ "["++chain "," (map (showHS options "") (r_cpu r))++"]"
-                        ,", rrxpl = " ++ show(rrxpl r)
-                        ,", rrtyp = " ++ showHS options "" (rrtyp r)
-                        ,", runum = " ++ show (runum r)
-                        ,", r_pat = " ++ show (r_pat r)
+                      ,", rrant = " ++ "("++showHS options "" (rrant r)++")"
+                      ,", rrfps = " ++ "("++showHS options "" (rrfps r)++")"
+                      ,", rrcon = " ++ "("++showHS options "" (rrcon r)++")"
+                      ,", rrxpl = " ++ show(rrxpl r)
+                      ,", rrtyp = " ++ showHS options "" (rrtyp r)
+                      ,", rrdcl = " ++ case rrdcl r of
+                                        Nothing   -> "Nothing"
+                                        Just(p,d) -> "Just("++showHS options "" p++","++showHS options "" d++")"
+                      ,", runum = " ++ show (runum r)
+                      ,", r_pat = " ++ show (r_pat r)
+                      ,", r_usr = " ++ show (r_usr r)
                     ])++"}"
            Sg{} -> (chain newIndent
                     ["Sg{ srfps = " ++ "("++showHS options "" (srfps r)++")"
-                        ,", srsig = " ++ "("++showHS options "" (srsig r)++")"
-                        ,", srxpl = " ++ show (srxpl r)
-                        ,", srtyp = " ++ "("++showHS options "" (srtyp r)++")"
-                        ,", runum = " ++ show (runum r)
-                        ,", r_pat = " ++ show (r_pat r)
-                        ,", srrel = " ++ show(srrel r)
-                    ])++"}"
-           Gc{} -> (chain newIndent
-                    ["Gc{ grfps = " ++ "("++showHS options "" (grfps r)++")"
-                        ,", grspe = " ++ "("++showHS options "" (grspe r)++")"
-                        ,", grgen = " ++ "("++showHS options "" (grgen r)++")"
-                        ,", r_cpu = " ++ "["++chain "," (map (showHS options "") (r_cpu r))++"]"
-                        ,", grtyp = " ++ showHS options "" (grtyp r)
-                        ,", runum = " ++ show (runum r)
-                        ,", r_pat = " ++ show (r_pat r)
+                      ,", srsig = " ++ "("++showHS options "" (srsig r)++")"
+                      ,", srxpl = " ++ show (srxpl r)
+                      ,", srtyp = " ++ "("++showHS options "" (srtyp r)++")"
+                      ,", runum = " ++ show (runum r)
+                      ,", r_pat = " ++ show (r_pat r)
+                      ,", srrel = " ++ show(srrel r)
                     ])++"}"
            Fr{} -> (chain newIndent
                     ["Fr{ frdec = " ++ showHS options "" (frdec r)

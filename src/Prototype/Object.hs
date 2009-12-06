@@ -7,7 +7,7 @@
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
               ,ObjectDef(..),Numbered(..),Morphic(..)
-              ,Identified(..),mors,Morphism(..),Language(..),Prop(..)
+              ,Identified(..),mors,Morphism(..),ViewPoint(..),Prop(..)
               ,Object(..),isIdent,Expression(..),mIs
               ,flp)
    import ShowADL (showADL)

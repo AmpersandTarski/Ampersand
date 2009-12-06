@@ -3,11 +3,13 @@ module Calc ( deriveProofs
             , conjuncts
             , simplify
             , allClauses
-            , makeRule
+            , reprAsRule
+            , quads
             , lambda
             , checkMono
             , actSem
             , assembleECAs
+            , positiveIn
             , delta ) 
   where
 
@@ -21,7 +23,7 @@ module Calc ( deriveProofs
    import ShowADL            (showADL,showADLcode)
    import ShowECA            (showECA)
    import CommonClasses      (ABoolAlg(..))
-   import NormalForms        (conjNF,disjNF,normECA,nfProof,proofPA,nfPr,simplify)
+   import NormalForms        (conjNF,disjNF,normECA,nfProof,nfPr,simplify) -- ,proofPA) -- proofPA may be used to test derivations of PAclauses.
 
    conjuncts :: Rule -> [Expression]
    conjuncts = fiRule.conjNF.normExpr
@@ -40,16 +42,15 @@ module Calc ( deriveProofs
 
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
-    = "\nRule: "++showADLcode fSpec rule ++concat
-       [if null conj then "\nNo clauses" else
-        "\nConjunct: "++showADLcode fSpec conjunct++
-        concat ["\n   Clause: "++showADLcode fSpec d| d<-conj]
-       | (conjunct, conj)<-zip (conjuncts rule) (cl_conjNF cl)]
-      where rule = cl_rule cl
+    = "\nRule: "++showADLcode fSpec (cl_rule cl) ++concat
+       [if null shifts then "\nNo clauses" else
+        "\nConjunct: "++showADLcode fSpec conj++
+        concat ["\n   Clause: "++showADLcode fSpec clause| clause<-shifts]
+       | (conj, shifts)<-cl_conjNF cl]
 
 -- The function allClauses yields an expression which has constructor Fu in every case.
    allClauses :: Rule -> Clauses
-   allClauses rule = Clauses [allShifts conj| conj<-conjuncts rule] rule
+   allClauses rule = Clauses [(conj,allShifts conj)| conj<-conjuncts rule] rule
 
    allShifts :: Expression -> [Expression]
    allShifts conjunct = rd [simplify (normFlp e')| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
@@ -139,25 +140,45 @@ module Calc ( deriveProofs
         else []
         where h=head (map head ass); l=head (map last ass)
 
--- assembleECAs :: [Rule] -> [ECArule]
+   -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
+   -- whenever Morphism m is affected (i.e. tuples in m are inserted or deleted),
+   -- the rule may have to be restored using functionality from one of the clauses.
+   -- The rule is taken along for traceability.
+   quads :: (Morphism->Bool) -> [Rule] -> [Quad]
+   quads visible rs
+    = [ Quad m (Clauses [ (conj,allShifts conj)
+                        | conj <- conjuncts rule
+      --                , (not.null.lambda Ins (Tm m)) conj  -- causes infinite loop
+      --                , not (checkMono conj Ins m)         -- causes infinite loop
+                        , conj'<- [subst (m, actSem Ins m (delta (sign m))) conj]
+                        , (not.isTrue.conjNF) (Fu[Cp conj,conj']) -- the system must act to restore invariance     
+                        ]
+                        rule)
+      | rule<-rs
+      , m<-rd (map makeInline (mors rule))
+      , visible m
+      ]
+
+-- assembleECAs :: [Quad] -> [ECArule]
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
-   assembleECAs :: (Morphism->Bool) -> [Rule] -> [ECArule]
-   assembleECAs visible ruls = [ecarule i| (ecarule,i) <- zip protoECAs [1..]]
+   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
+   assembleECAs visible qs = [ecarule i| (ecarule,i) <- zip ecas [1..]]
       where
-       protoECAs
+       ecas
         = [ ECA (On ev m) delt action
-          | quads<-eqCl fst4 mccrs, (m,_,_,_)<-take 1 quads, Tm delt<-[delta (sign m)]
+          | mphEq <- eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+          , m <- map fst4 (take 1 mphEq), Tm delt<-[delta (sign m)]
           , ev<-[Ins,Del]
           , action <- [ All
-                        [ Chc [ (if isFalse viols   then Nop else
---                               if not (visible m) then Blk [(viols,causes)] else
+                        [ Chc [ (if isTrue  clause'   then Nop else
+                                 if isFalse clause'   then Blk else
+--                               if not (visible m) then Blk else
                                  doCode visible ev toExpr viols)
-                                 [(conj,rd' nr causes)]  -- the motivation for these actions
-                              | clEq <- eqCl snd4 conjEq, clause@(Fu fus) <- map snd4 (take 1 clEq)
-                              , clause' <- [ subst (m, actSem Ins m (delta (sign m))) clause]
-                              , viols   <- [ conjNF (Cp clause') ]
-                              , causes  <- [ [r|(_,_,_,rs)<-clEq, r<-rs] ]
+                                 [(conj,causes)]  -- the motivation for these actions
+                              | clause@(Fu fus) <- shifts
+                              , clause' <- [ conjNF (subst (m, actSem Ins m (delta (sign m))) clause)]
+                              , viols <- [ conjNF (notCp clause')]
                               , frExpr  <- [ if ev==Ins
                                              then Fu [f| f<-fus, isNeg f]
                                              else Fu [f| f<-fus, isPos f] ]
@@ -166,31 +187,19 @@ module Calc ( deriveProofs
                                              then Fu [      f| f<-fus, isPos f]
                                              else Fi [notCp f| f<-fus, isNeg f] ]
                               ]
-                              (rd [(j,rs)| (_,_,j,rs)<-conjEq])  -- to supply motivations on runtime
-                        | conjEq <- eqCl thd4 quads
-                        , conj <- map thd4 (take 1 conjEq)
-           --           , (not.null.lambda Ins (Tm m)) conj  -- causes infinite loop
-           --           , not (checkMono conj Ins m)         -- causes infinite loop
-                        , conj'<- [subst (m, actSem Ins m (delta (sign m))) conj]
-                        , (not.isTrue.conjNF) (Fu[Cp conj,conj']) -- the system must act to restore invariance     
+                              [(conj,causes)]  -- to supply motivations on runtime
+                        | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
+                        , causes  <- [ (map thd3 conjEq) ]
+                        , conj <- map snd3 (take 1 conjEq), shifts <- map fst3 (take 1 conjEq)
                         ]
-                        (rd [(j,rs)| (_,_,j,rs)<-quads])  -- to supply motivations on runtime
+                        [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, (_,_,conj,_)<-take 1 cl]  -- to supply motivations on runtime
                       ]
           ]
-       mccrs
-        = [ (m,clause,conj,rd' nr [r|(_,_,_,r)<-cl])
-          | cl<- eqCl f [ (m,clause,conj,rule)
-                        | rule<-ruls
-                        , conj <- conjuncts rule
-                        , clause<-allShifts conj
-                        , m<-rd (map makeInline (mors clause))
-                        , visible m]
-          , (m,clause,conj,_) <- take 1 cl
-          ]
-        where f (m,clause,conj,_) = (m,clause,conj)
        fst4 (w,_,_,_) = w
-       snd4 (_,x,_,_) = x
-       thd4 (_,_,y,_) = y
+       fst3 (x,_,_) = x
+       snd3 (_,y,_) = y
+       thd3 (_,_,z) = z
+       thd4 (_,_,z,_) = z
 
 -- testService :: Fspc -> ObjectDef -> String
 -- Deze functie is bedoeld om te bedenken hoe services moeten worden afgeleid uit een vers vertaalde ObjectDef.
@@ -204,7 +213,7 @@ module Calc ( deriveProofs
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invariants]++"\n"++
       " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (normECA eca (error ("TODO: hier moet een declaratie Delta staan")))
-                                 ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+-- dit toevoegen om de afleiding te tonen...         ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
                                | eca<-ecaRs]++"\n\n"++
       " - Visible relations:\n   "++chain "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
     where
@@ -213,7 +222,8 @@ module Calc ( deriveProofs
         vis        = rd (map makeInline rels++map (mIs.target) rels)
         visible m  = makeInline m `elem` vis
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
-        ecaRs      = assembleECAs visible invariants
+        qs         = quads visible invariants
+        ecaRs      = assembleECAs visible qs
         editable (Tm Mph{})  = True
         editable _           = False
         editMph (Tm m@Mph{}) = m
@@ -254,7 +264,7 @@ module Calc ( deriveProofs
                      , ("\n"++showClause fSpec (allClauses rule)
                        , "")
                      , ("\nAvailable code fragments on rule "++show (nr rule)++":\n     "++
-                          chain "\n     " [showADL (makeRule rule r)++ " yields\n"++chain "\n\n"
+                          chain "\n     " [showADL (reprAsRule rule r)++ " yields\n"++chain "\n\n"
                                           [ "event = "++show ev++" "++showADL m++"\n"++
                                             showADL r++"["++showADL m++":="++showADL (actSem ev m (delta (sign m)))++"] = r'\n"++
                                             "r'    = "++cfProof r'++"\n"++
@@ -284,10 +294,7 @@ module Calc ( deriveProofs
                                           , r'<-[subst (m, actSem ev m (delta (sign m))) r]
                                       --  , viols<-[conjNF (Cp r')]
                                           , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
-                                         | Clauses cs _<-[allClauses rule]
-                                      -- , conjs<-[conjuncts rule]
-                                      -- , (cls,conj)<-zip cs conjs
-                                         , r<-[ Fu fus | fus<-cs]
+                                         | r<-[hc| cs<-[allClauses rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
                                          ]
                        , "")
                      ] where prf = nfProof (normExpr rule)
@@ -301,17 +308,21 @@ module Calc ( deriveProofs
                                            |conjunct<-conjuncts (srsig rule)])
                        , "")
                      , ("\nClauses:\n     "++
-                        chain "\n     " (rd[showADL (makeRule (srsig rule) r)
-                                           |Clauses conjs _<-[allClauses (srsig rule)], r<-[ Fu fus | fus<-conjs]])
+                        chain "\n     " (rd[showADL (reprAsRule (srsig rule) hc)
+                                           |cs<-[allClauses (srsig rule)], (_,hcs)<-cl_conjNF cs, hc<-hcs])
                        , "")
                      ] where prf = nfProof (normExpr (srsig rule))
-          Gc{} -> undefined
           Fr{} -> undefined 
         cleanup :: [(String,String)] -> [(String,String)]
         cleanup [x] = [x]
         cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)
         cleanup [] = []
 
+-- Stel we voeren een actie a uit, die één van de volgende twee is:
+--        {r} INS m INTO expr {r'}       ofwel
+--        {r} DEL m FROM expr {r'}
+-- Dan toetst checkMono of r|-r' waar is op grond van de afleiding uit derivMono.
+-- Als dat waar is, betekent dat dat invariant r waar blijft wanneer actie a wordt uitgevoerd.
    checkMono :: Expression
              -> InsDel
              -> Morphism
@@ -372,18 +383,26 @@ module Calc ( deriveProofs
           (Del, Cp x)    -> doCod deltaX Ins x motiv
           (Ins, Fu fs)   -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Ins, Fi fs)   -> All [ doCod deltaX Ins f []    | f<-fs ] motiv
-          (Ins, F ts)    -> Chc [ Chc [ New c (\x->All [fLft x, fRht x] motiv) motiv
-                                      , Sel c (F ls) fLft motiv
-                                      , Sel c (flp(F rs)) fRht motiv
-                                      ] motiv
+          (Ins, F ts)    -> Chc [ if F ls==flp (F rs)
+                                  then Chc [ New c fLft motiv
+                                           , Sel c (F ls) fLft motiv
+                                           ] motiv
+                                  else Chc [ New c (\x->All [fLft x, fRht x] motiv) motiv
+                                           , Sel c (F ls) fLft motiv
+                                           , Sel c (flp(F rs)) fRht motiv
+                                           ] motiv
                                 | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
                                 , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])]
                                 , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)],Cp (F ls)])) Ins (F ls) [])]
                                 ] motiv
-          (Del, F ts)    -> Chc [ Chc [ Sel c (Fi [F ls,flp(F rs)]) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
-                                      , Sel c (Fi [F ls,flp(F rs)]) fLft motiv
-                                      , Sel c (Fi [F ls,flp(F rs)]) fRht motiv
-                                      ] motiv
+          (Del, F ts)    -> Chc [ if F ls==flp (F rs)
+                                  then Chc [ Sel c (F ls) (\_->Rmv c fLft motiv) motiv
+                                           , Sel c (F ls) fLft motiv
+                                           ] motiv
+                                  else Chc [ Sel c (Fi [F ls,flp(F rs)]) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
+                                           , Sel c (Fi [F ls,flp(F rs)]) fLft motiv
+                                           , Sel c (Fi [F ls,flp(F rs)]) fRht motiv
+                                           ] motiv
                                 | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
                                 , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])]
                                 , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)],Cp (F ls)])) Del (F ls) [])]
@@ -411,37 +430,27 @@ module Calc ( deriveProofs
    deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta -: x+)
    deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
 
-{-
-   niClauses :: Expression -> [Expression]
-   niClauses cl'  = [ hc | hc@(Fu fus)<-allClauses cl'
-                        , not (and [idsOnly e'| (Cp e')<-fus] || and [idsOnly t| t@(F _)<-fus])
-                   ]
-   lClause :: Expression -> Expression
-   lClause cl'    = head (niClauses cl'++[cl'])
-   rClause :: Expression -> Expression
-   rClause cl'    = last ([cl']++niClauses cl')
--}
-
-   makeRule :: Rule -> Expression -> Rule
-   makeRule r expr =
-     case expr of
-           (Fu []) -> error ("!Fatal (module Calc): erroneous call to function makeRule r ("++showADL expr++").")
+-- The function reprAsRule is used in show-functions, whenever an expression that represents a rule has to be shown to look like a rule.
+   reprAsRule :: Rule -> Expression -> Rule
+   reprAsRule r expr = r'{r_usr=False}
+    where
+     r' = case expr of
+           (Fu []) -> error ("!Fatal (module Calc): erroneous call to function reprAsRule r ("++showADL expr++").")
            (Fu ts) -> if or [isNeg t|t<-ts] 
                       then r { rrsrt = Implication
                              , rrant = Fi [notCp t|t<-ts,isNeg t]
                              , rrcon = Fu [t|t<-ts,isPos t]
-                             , r_cpu = []}
+                             }
                       else r { rrsrt = Truth
                              , rrant = error ("!Fatal (module Calc): erroneous call to antecedent of r "++showADL expr)
                              , rrcon = Fu ts -- obsolete: error ("Module Calc: Loop found!! (hier stond eerst \"r\").")    -- WAAROM?  Stef, hier zat volgens mij de bug. Kan jij dit herstellen?
-                             , r_cpu = []
                              }  
            _ -> case disjNF expr of
-                      Fu{} -> makeRule r (disjNF expr)
+                      Fu{} -> reprAsRule r (disjNF expr)
                       _    -> r { rrsrt = Truth
                                 , rrant = (error ("!Fatal (module Calc): erroneous call to antecedent of r "++showADL expr))
                                 , rrcon = expr
-                                , r_cpu = []}
+                                }
                         
 
    type Proof expr = [(expr,[String],String)]
@@ -464,11 +473,16 @@ module Calc ( deriveProofs
                                       --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
    showProof _  []                  = ""
 
-
+-- De volgende functie levert een afleiding, die bedoeld is om aan te tonen dat een preconditie r deelverzameling is van postconditie r'.
+-- Hiermee hoop je aan te tonen dat een actie {expr} a {expr'} de invariant behoudt, ofwel dat expr|-expr', op basis van monotonie eigenschappen.
+-- Derivmono geeft alleen de afleiding.
    derivMono :: Expression -> InsDel -> Morphism -> [(Rule, [String], String)]
-   derivMono expr tOp m' = f (head (lambda tOp (Tm m') expr++[[]])) (start tOp)
+   derivMono expr -- preconditie van actie a
+             tOp  -- de actie (Ins of Del)
+             m'   -- het morfisme, zodat de actie bestaat uit INSERT m' INTO expr of DELETE m' FROM expr
+    = f (head (lambda tOp (Tm m') expr++[[]])) (start tOp)
     where
-     f:: [(Expression, [String], whatever)] -> (Expression, Expression) -> [(Rule, [String], String)]   -- WAAROM?? Stef, graag enige uitleg van wat hier gebeurt...
+     f:: [(Expression, [String], whatever)] -> (Expression, Expression) -> [(Rule, [String], String)]
      f [] (_,_) = []
      f [(e',_,_)] (neg',pos')
       = [(rule (subst (m',neg') e') (subst (m',pos') e'),[],"")]
@@ -483,25 +497,25 @@ module Calc ( deriveProofs
      start Del  = (Fi [Tm m',Cp (delta (sign m'))],Tm m')
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
-                                       , rrant = error ("!Fatal (module Calc): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
+                                       , rrant = error ("!Fatal (module Calc 490): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
                                        , rrfps = Nowhere
                                        , rrcon = pos'
-                                       , r_cpu = []
                                        , rrxpl = ""
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , runum = 0
-                                       , r_pat = ""}
+                                       , r_pat = ""
+                                       , r_usr = False}
                     | otherwise   = Ru { rrsrt = Implication
                                        , rrant = neg'
                                        , rrfps = Nowhere
                                        , rrcon = pos'
-                                       , r_cpu = []
                                        , rrxpl = ""
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrdcl = Nothing
                                        , runum = 0
-                                       , r_pat = ""}
+                                       , r_pat = ""
+                                       , r_usr = False}
      showOp expr' = case expr' of
                      F{}      -> ";"
                      Fd{}     -> "!"
@@ -513,7 +527,20 @@ module Calc ( deriveProofs
                      Tm mph   -> if inline mph then "" else "~"
                      Tc{}     -> error("!Fatal (module Calc): call to showOp (Tc x) in module Calc.hs")
 
-
+   positiveIn expr m | and result           = Just True   -- all are True, so an insert in m means an insert in expr
+                     | and (map not result) = Just False  -- all are False, so a delete from m means an insert in expr
+                     | otherwise            = Nothing     -- inconclusive
+    where
+     result = f expr
+     f (F fus)  = concat (map f fus)
+     f (Fd fus) = concat (map f fus)
+     f (Fi fus) = concat (map f fus)
+     f (Fu fus) = concat (map f fus)
+     f (Tm mph) = [ True | makeInline mph==makeInline m ]
+     f (Cp e)   = [ not b| b<- f e]
+     f (K0 e)   = f e
+     f (K1 e)   = f e
+     f (Tc e)   = f e
 
    lambda :: InsDel -> Expression -> Expression -> [Proof Expression]
    lambda tOp' e' expr' = [reversePrf[(e'',text,op)

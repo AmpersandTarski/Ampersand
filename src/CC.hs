@@ -6,9 +6,7 @@
    import Auxiliaries (sort)
    import Adl         
    import ShowADL     (showADL)
-   import CC_aux      (pKey_pos
-                      ,pVarid_val_pos, pConid_val_pos, pString_val_pos
-                      )
+   import CC_aux      (pKey_pos ,pVarid_val_pos, pConid_val_pos, pString_val_pos )
 
    keywordstxt :: [String]
    keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
@@ -17,7 +15,7 @@
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP"
                        , "ALWAYS", "RELATION", "CONCEPT", "KEY"
-                       , "IMPORT", "GEN", "ISA", "I", "V"
+                       , "IMPORT", "GEN", "ISA", "I", "V", "S"
                        , "PRAGMA", "EXPLANATION", "SIGNAL", "ON", "COMPUTING", "INSERTING", "DELETING"
                        , "ONE"
                        ]
@@ -102,22 +100,20 @@
    pRule beep        = hc <$> pSignal <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
                        kc <$> pSignal <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
                        dc <$> pSignal <*> pExpr <*> pKey_pos "="  <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       ac <$> pSignal <*> pKey_pos "RULE"         <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       gc <$> pSignal <*> pKey_pos "GLUE" <*> pMorphism <* pKey "=" <*> pExpr <*> pComputing 
+                       ac <$> pSignal <*> pKey_pos "RULE"         <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
                         hc m' antc pos' cons cpu' expl
-                         | not beep && name m'=="" = Ru Implication antc pos' cons (if beep then [] else cpu') expl (cptAnything,cptAnything) Nothing 0 ""
-                         | otherwise  = Sg pos' (Ru Implication antc pos' cons (if beep then [] else cpu') expl (cptAnything,cptAnything) Nothing 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True)
+                         | not beep && name m'=="" = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True
+                         | otherwise  = Sg pos' (Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True)
                         kc m' cons pos' antc cpu' expl = hc m' antc pos' cons cpu' expl
                         dc m' defd pos' expr cpu' expl
-   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("Diag: "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 ""))  -}
-                         | not beep && name m'=="" = Ru Equivalence defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) Nothing 0 ""
-                         | otherwise  = Sg pos' (Ru Equivalence defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) Nothing 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
+   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("Diag: "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 "" True))  -}
+                         | not beep && name m'=="" = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
+                         | otherwise  = Sg pos' (Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
                         ac m'      pos' expr cpu' expl
-                         | not beep && name m'=="" = Ru Truth defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) Nothing 0 ""
-                         | otherwise  = Sg pos' (Ru Truth defd pos' expr (if beep then [] else cpu') expl (cptAnything,cptAnything) Nothing 0 "") expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
+                         | not beep && name m'=="" = Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
+                         | otherwise  = Sg pos' (Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
                          where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
-                        gc _       pos' pm pf cpu'     = Gc pos' pm pf (if beep then [] else cpu') (cptAnything,cptAnything) 0 ""
 
 --   data PCompu       = Uc [Morphism]
 --                     | Ui [Morphism]
