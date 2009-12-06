@@ -13,7 +13,7 @@ module Adl ( Architecture(..)
            , ConceptDef(..),ConceptDefs
            , Concept(..), GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
-           , Prop(..), isSur, isInj, isUni, isTot, isRfx, isSym, isAsy, isTrn
+           , Prop(..)
            , rulefromProp
            , FilePos(..), Numbered(..)
            , makeDeclaration,mIs,ruleType,isProperty

@@ -23,6 +23,7 @@ import ShowECA        (showECA)
 import NormalForms    (conjNF,normECA) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
+import System.FilePath
 
 --import Statistics
 
@@ -371,7 +372,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
    ) ++ [ Plain $ xrefFigure captionText cdFilename figlabel ]  -- TODO: explain all multiplicities]
       where
        (cd@(OOclassdiagram classes assocs aggrs geners (nm, cs)),cdFilename) = classdiagram fSpec
-       figlabel = "fig:" ++ cdFilename
+       figlabel = "fig:" ++ (takeFileName cdFilename)
        captionText
         = case (language flags) of
           Dutch   -> "Class diagram of "++name fSpec
@@ -666,7 +667,7 @@ xrefCitation myLabel = TeX ("\\cite{"++myLabel++"}")
 xrefFigure :: String -> String -> String -> [Inline]
 xrefFigure caption filenm figlabel = 
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [Str $ "Here, "++filenm ++ ".png should have been visible"] (filenm ++ ".png", figlabel)
+   , Image [Str $ "Here, "++filenm ++ ".png should have been visible"] ((takeFileName filenm) ++ ".png", figlabel)
    , TeX "}\n"
    , TeX ("\\caption{"++caption++"}\n") 
    , xrefLabel (figlabel)
