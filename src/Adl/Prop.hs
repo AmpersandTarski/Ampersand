@@ -16,10 +16,10 @@ where
                     deriving (Eq,Ord)
 
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking isTot: Prop                          ***
+-- \*** Eigenschappen met betrekking tot: Prop                          ***
 -- \***********************************************************************
    instance Show Prop where
-    showsPrec _ Uni = showString "UNI"     -- WAAROM? Stef, waarom is dit nodig? wat doet dit? 
+    showsPrec _ Uni = showString "UNI"
     showsPrec _ Inj = showString "INJ"
     showsPrec _ Sur = showString "SUR"
     showsPrec _ Tot = showString "TOT"
@@ -38,4 +38,3 @@ where
    flipProp Sur = Tot
    flipProp Inj = Uni
    flipProp x = x
-                

@@ -24,7 +24,7 @@ import Fspec2Pandoc           (render2Pandoc,fSpec2Pandoc)
 import Strings                (remSpaces)
 import Atlas.Atlas
 import Rendering.ClassDiagram (classdiagram2dot)
-import Switchboard            (toDotFspc)
+--import Switchboard            (toDotFspc)
 import Data.GraphViz.Types
 import Text.Pandoc.Writers.LaTeX
 import Text.Pandoc.Shared

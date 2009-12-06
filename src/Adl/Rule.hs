@@ -8,7 +8,7 @@ where
                                         , Association(..)
                                         , MorphicId(..),Morphic(..))
    import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration)
-   import Adl.Expression                ( Expression(..),Expressions,v)
+   import Adl.Expression                ( Expression(..),v)
    import Adl.Prop
    import CommonClasses                 ( Identified(name,typ)
                                         , Explained(explain))
@@ -48,15 +48,16 @@ where
            } deriving (Eq)
    data RuleType = Implication | Equivalence | Truth | Generalization | Automatic deriving (Eq,Show)
 
-   -- | WAAROM? Dit mag hier wel even expliciet worden uitgelegd. Hier zit vast een heel verhaal achter... Stef?
---   data AutType = Clos0 | Clos1 deriving (Eq,Show)
    instance Show Rule where
-    showsPrec _ x@(Ru{})  | rrsrt x==Implication = showString$ show(rrant x) ++ " |- " ++ (show$rrcon x)
-                          | rrsrt x==Equivalence = showString$ show(rrant x) ++ " = " ++ (show$rrcon x)
-                          | rrsrt x==Truth = showString$ show(rrcon x)
-                          | otherwise = showString ""
-    showsPrec _ x@(Sg{})  = showString$ "SIGNAL: " ++ (show$srsig x)
-    showsPrec _ x@(Fr{})  = showString "Fr"
+    showsPrec _ x =
+       case x of
+          Ru{rrsrt = Implication   } -> showString$ show(rrant x) ++ " |- " ++ (show$rrcon x)
+          Ru{rrsrt = Equivalence   } -> showString$ show(rrant x) ++ " = "  ++ (show$rrcon x)
+          Ru{rrsrt = Truth         } -> showString$ show(rrcon x)
+          Ru{rrsrt = Automatic     } -> showString ""
+          Ru{rrsrt = Generalization} -> showString ""
+          Sg{}                       -> showString$ "SIGNAL: " ++ (show$srsig x)
+          Fr{}                       -> showString "Fr"
         
    instance Numbered Rule where
     pos r = case r of
@@ -72,13 +73,15 @@ where
     name r = "Rule"++show (runum r)
     typ _ = "Rule_"
     
-   -- | Han, wat hieronder gebeurt vind ik raar: twee varianten waar hetzelfde uitkomt (in source en target). WAAROM? Welke bedoeling heb je daarmee? Geen? TODO: vereenvoudigen.
    instance Association Rule where
-    source r  = fst (sign r)
-    target r  = snd (sign r)
-    sign r@Ru{} = rrtyp r
-    sign r@Sg{} = srtyp r
-    sign _      = error("!Fatal (module Rule 81): undefined sign")
+    source r  = case r of
+                  Ru{} -> fst (rrtyp r)
+                  Sg{} -> fst (srtyp r)
+                  Fr{} -> error("!Fatal (module Rule 81): undefined source")
+    target r  = case r of
+                  Ru{} -> snd (rrtyp r)
+                  Sg{} -> snd (srtyp r)
+                  Fr{} -> error("!Fatal (module Rule 85): undefined target")
 
    instance Explained Rule where
     explain _ r = case r of         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
@@ -130,8 +133,6 @@ where
                               , Fu [Cp (antecedent rule), consequent rule]]
     | otherwise          = error("!Fatal (module Rule 131): Cannot make an expression of "++show rule)
 
-
-
    ruleType :: Rule -> RuleType
    ruleType r = case r of 
                    Ru{} -> rrsrt r
@@ -156,47 +157,58 @@ where
      = [rulefromProp p d | p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
                          , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
                            error ("!Fatal (module Rule 166): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
-       where
-            sgn   = (source d,source d)
-            r     = Mph (name d)                (pos d) [] (source d,target d) True d
-            r'    = flp (r ) 
- --           r'' t = Mph (t++"["++(name d)++"]") (pos d) [] (source d,target d) True d
-            id'    = F [Tm (I [source d] (source d) (source d) True)]
-            id''    = F [Tm (I [target d] (target d) (target d) True)]
  
    rulefromProp :: Prop -> Declaration -> Rule
-   rulefromProp p d
-    = case p of
-      Uni-> makerule Implication (F [flp r,r]) i
-      Tot-> makerule Implication i (F [r,flp r])
-      Inj-> makerule Implication (F [r,flp r]) i
-      Sur-> makerule Implication i (F [flp r,r])
-      Sym-> makerule Equivalence r (flp r)
-      Asy-> makerule Implication (Fi [flp r,r]) i
-      Trn-> makerule Implication (F [r,r]) r
-      Rfx-> makerule Implication i r
-      _ ->  error $ "!Fatal (module TypeChecker 354): There is no rule for this prop."
-      where
-       h Sym = (name d++"["++name (source d)++"*"++name (source d)++"] is symmetric.")    
-       h Asy = (name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric.")
-       h Trn = (name d++"["++name (source d)++"*"++name (source d)++"] is transitive.")   
-       h Rfx = (name d++"["++name (source d)++"*"++name (source d)++"] is reflexive.")    
-       h Uni = (name d++"["++name (source d)++"*"++name (target d)++"] is univalent")     
-       h Sur = (name d++"["++name (source d)++"*"++name (target d)++"] is surjective")    
-       h Inj = (name d++"["++name (source d)++"*"++name (target d)++"] is injective")     
-       h Tot = (name d++"["++name (source d)++"*"++name (target d)++"] is total")         
-       h p = error("!Fatal (module TypeChecker 365): rulefromProp cannot explain "++show p)
-       i = Tm $ I [] Anything Anything True
-       r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
-       makerule tp ant con = 
-         Ru tp                   -- Implication of Equivalence
-            ant                  -- left hand side (antecedent)
-            Nowhere              -- position in source file; unknown at this position but it may be changed by the environment.
-            con                  -- right hand side (consequent)
-            (h p)                -- explanation
-            (Anything,Anything)  -- The type checker will assign the type
-            (Just (p,d))         -- For traceability: The original property and declaration.
-            0                    -- Rules will be renumbered after enriching the context
-            ""                   -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-            False                -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
-
+   rulefromProp prp d
+      = Ru { rrsrt = case prp of
+                        Uni-> Implication
+                        Tot-> Implication
+                        Inj-> Implication
+                        Sur-> Implication
+                        Sym-> Equivalence
+                        Asy-> Implication
+                        Trn-> Implication
+                        Rfx-> Implication
+                        Aut->  error $ "!Fatal (module Rule 354): There is no rule for this prop."
+           , rrant = case prp of
+                        Uni-> F [flp r,r] 
+                        Tot-> i
+                        Inj-> F [r,flp r]
+                        Sur-> i
+                        Sym-> r
+                        Asy-> Fi [flp r,r]
+                        Trn-> F [r,r]
+                        Rfx-> i 
+                        Aut->  error $ "!Fatal (module TypeChecker 354): There is no rule for this prop."
+           , rrfps = Nowhere
+           , rrcon = case prp of
+                        Uni-> i
+                        Tot-> F [r,flp r]
+                        Inj-> i
+                        Sur-> F [flp r,r]
+                        Sym-> flp r
+                        Asy-> i
+                        Trn-> r
+                        Rfx-> r
+                        Aut->  error $ "!Fatal (module TypeChecker 354): There is no rule for this prop."
+           
+           , rrxpl = case prp of
+                        Sym-> name d++"["++name (source d)++"*"++name (source d)++"] is symmetric."    
+                        Asy-> name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric."
+                        Trn-> name d++"["++name (source d)++"*"++name (source d)++"] is transitive."
+                        Rfx-> name d++"["++name (source d)++"*"++name (source d)++"] is reflexive."
+                        Uni-> name d++"["++name (source d)++"*"++name (target d)++"] is univalent"
+                        Sur-> name d++"["++name (source d)++"*"++name (target d)++"] is surjective"
+                        Inj-> name d++"["++name (source d)++"*"++name (target d)++"] is injective"
+                        Tot-> name d++"["++name (source d)++"*"++name (target d)++"] is total"
+                        Aut-> error("!Fatal (module TypeChecker 365): rulefromProp cannot explain "++show prp)
+           , rrtyp = (Anything,Anything)  -- The type checker will assign the type
+           , rrdcl = (Just (prp,d))       -- For traceability: The original property and declaration.
+           , runum = 0                    -- Rules will be renumbered after enriching the context
+           , r_pat = ""                   -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+           , r_usr = False                
+           }
+          where
+           i = Tm $ I [] Anything Anything True
+           r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
+    
