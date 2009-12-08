@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..))
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),allFspecFormats)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -55,8 +55,9 @@ data Options = Options { contextName   :: Maybe String
                        , verbosephp    :: Bool
                        } deriving Show
     
-data FspecFormat = FPandoc | FWord | FLatex | FHtml | FUnknown deriving (Show, Eq)
-
+data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml |FUnknown deriving (Show, Eq)
+allFspecFormats :: String
+allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 getOptions :: IO Options
 getOptions = 
    do args     <- getArgs
@@ -113,9 +114,10 @@ checkOptions flags =
                                 ; return flags2 --{dirAtlas = combine (dirAtlas flags0) (baseName flags0)}
                                 }
                         else return flags2  {- No need to check if no atlas will be generated. -}
-           flags4 <- if genFspec flags3 && fspecFormat flags3==FUnknown
-                        then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
-                        else return flags3  {- No need to check if no fspec will be generated. -}
+           flags4 <- return flags3
+--                        if genFspec flags3 && fspecFormat flags3==FUnknown
+--                        then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
+--                        else return flags3  {- No need to check if no fspec will be generated. -}
            mbexec <- findExecutable (progrName flags) 
            flags5 <- case mbexec of
               Nothing -> return flags4{dirExec=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")
@@ -170,7 +172,8 @@ options = map pp
           , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("use database with name (name overrides environment variable "++ envdbName ++ ").")), Public)
 
           , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
-          , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  "generate a functional specification document in specified format (Word, Html, Latex, Pandoc)."), Public)
+          , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
+                                                                           ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
           , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
           , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
           , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
@@ -290,16 +293,15 @@ atlasOpt nm opts
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
-fspecRenderOpt w opts = opts{genFspec=True, fspecFormat= case map toUpper w of
-     "WORD"   -> FWord
-     "W"      -> FWord
-     "LATEX"  -> FLatex
-     "L"      -> FLatex
-     "HTML"   -> FHtml
-     "H"      -> FHtml
-     "PANDOC" -> FPandoc
-     "P"      -> FPandoc
-     _        -> FUnknown}
+fspecRenderOpt w opts = opts{ genFspec=True
+                            , fspecFormat= case (map toUpper w) of
+                                              ('R': _ ) -> FRtf
+                                              ('L': _ ) -> FLatex
+                                              ('H': _ ) -> FHtml
+                                              ('P': _ ) -> FPandoc
+                                              ('O': _ ) -> FOpenDocument
+                                              _         -> FUnknown
+                            }
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

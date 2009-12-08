@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 --TODO -> Block: Header Int [Inline] - Int indicates level of header. If I look at pandoc code TexInfo.hs blockToTexinfo ln.208 I would expect chapter,section,sub,subsub respectively. But I get section,sub,subsub,plain text respectively. So now I've written chapters as 0 setting a [Inline] -> [Tex "\\chapter{...}"]. I do not know yet how this relates to other formats like rtf.
-module Fspec2Pandoc (fSpec2Pandoc,render2Pandoc,writeRTF,writeLaTeX)
+module Fspec2Pandoc (fSpec2Pandoc,writeRTF,writeLaTeX)
 where
 import Collection     (Collection (..))
 import Adl
@@ -41,15 +41,15 @@ import System.FilePath
 --The following chapters each present a SERVICE
 --The specification end with a glossary.
 
-render2Pandoc :: Options -> String -> Pandoc -> String
-render2Pandoc flags customheader pandoc = case fspecFormat flags of
-   FPandoc -> prettyPandoc pandoc
-   FWord -> let wropts = defaultWriterOptions{writerStandalone=True}
-            in writeRTF wropts pandoc
-   FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True,writerNumberSections=True}
-             in writeLaTeX wropts pandoc
-   FHtml -> writeHtmlString defaultWriterOptions pandoc
-   FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
+--render2Pandoc :: Options -> String -> Pandoc -> String
+--render2Pandoc flags customheader pandoc = case fspecFormat flags of
+--   FPandoc -> prettyPandoc pandoc
+--   FWord -> let wropts = defaultWriterOptions{writerStandalone=True}
+--            in writeRTF wropts pandoc
+--   FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True,writerNumberSections=True}
+--             in writeLaTeX wropts pandoc
+--   FHtml -> writeHtmlString defaultWriterOptions pandoc
+--   FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
 
 chpintrolabel :: String
 chpintrolabel="chpIntro"
