@@ -20,9 +20,9 @@ ENDPATTERN
 PATTERN Rules
 
 {--SPECIFIC RULE DECLARATIONS--}
---GEN UserRule ISA Rule
---GEN MultiplicityRule ISA Rule
---GEN HomogeneousRule ISA Rule
+GEN UserRule ISA Rule
+GEN MultiplicityRule ISA Rule
+GEN HomogeneousRule ISA Rule
 property::MultiplicityRule->Prop.
 on::MultiplicityRule->Relation.
 property::HomogeneousRule->Prop.
@@ -33,18 +33,18 @@ on::HomogeneousRule->Relation.
 --GEN Morphism ISA Expression
 --type::Expression->Type.
 type::Rule->Type.
-type::UserRule->Type.
-type::MultiplicityRule->Type.
-type::HomogeneousRule->Type.
+--type::UserRule->Type.
+--type::MultiplicityRule->Type.
+--type::HomogeneousRule->Type.
 --type::Morphism->Type.
 violates::Violation*Rule.
-violates::Violation*UserRule.
-violates::Violation*MultiplicityRule.
-violates::Violation*HomogeneousRule.
+--violates::Violation*UserRule.
+--violates::Violation*MultiplicityRule.
+--violates::Violation*HomogeneousRule.
 explanation::Rule->Explanation.
-explanation::UserRule->Explanation.
-explanation::MultiplicityRule->Explanation.
-explanation::HomogeneousRule->Explanation.
+--explanation::UserRule->Explanation.
+--explanation::MultiplicityRule->Explanation.
+--explanation::HomogeneousRule->Explanation.
 
 
 

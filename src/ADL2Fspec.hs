@@ -12,7 +12,7 @@
    import Options        (Options(language,dirOutput))
    import NormalForms(conjNF,disjNF,normECA)
    import Data.Plug
-   import Char(toLower)
+   import Char
    import Rendering.ClassDiagram
    import System.FilePath
    
@@ -37,7 +37,7 @@
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
                  , vConceptDefs = conceptDefs context
-                 , classdiagram = (cdAnalysis fSpec flags, combine (dirOutput flags)("CD_"++[c|c<-name context, c/=' ']))
+                 , classdiagram = (cdAnalysis fSpec flags, {- combine (dirOutput flags) -} ("CD_"++[c|c<-name context, isAlpha c]))
                  , themes       = themes'
                  , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
                  }
@@ -58,15 +58,14 @@
 -- Univalent and injective relations cannot be associations, as they are used as attributes in wide tables.
         mor2plug :: Morphism -> Plug
         mor2plug  m'
-         = if isInj || isUni then error ("!Fatal (module ADL2Fspec 56): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
-           -- Omdat not(isInj||isUni) kan de onderstaande code heel wat korter... (TODO)
+         = if isInj || isUni then error ("!Fatal (module ADL2Fspec 61): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
            if isTot
            then PlugSql { plname = name m'
                         , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing (not isSur) isUni
                                    ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
            else if isSur then mor2plug (flp m')
            else PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]
+                        , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]   -- WAAROM (SJ) is dit de expressie in dit veld?
                                                            )      Nothing (not isSur) isUni
                                    ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
            where
@@ -82,11 +81,8 @@
                   , f<-fus, isPos f
                   , m<-tots f
                   ]
-           where tots (F []) = error("!Fatal (module ClassDiagram 126): cannot compute totals for "++show (F []))
-                 tots (F fs) = morlist (init fs)  -- TODO: this is wrong when it is an Fd
-                 tots (K0 e) = tots e             -- TODO: is this correct?
-                 tots (K1 e) = tots e             -- TODO: is this correct?
-                 tots f = error("!Fatal (module ClassDiagram 130): cannot compute totals for "++show f++" yet.")
+           where tots (F fs) = [m| Tm m<-take 1 fs]++[flp m| Tm m<-take 1 (reverse fs)]
+                 tots _ = []
                  visible _ = True -- for computing totality, we take all quads into account.
 
         allplugs = uniqueNames []
@@ -96,8 +92,8 @@
                 --     [conc2plug S]                  -- the universal singleton
                     )
           where
-           gPlugs         = makePlugs context definedplugs
-           relPlugs       = map mor2plug (map makeMph (declarations context) >- (mors definedplugs++mors gPlugs))
+           gPlugs   = makePlugs context definedplugs
+           relPlugs = map mor2plug ( map makeMph (declarations context)>-(mors definedplugs++mors gPlugs) )
 
         uniqueNames :: [String]->[Plug]->[Plug]
         -- MySQL is case insensitive! (hence the lowerCase)
@@ -458,7 +454,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)
-                                else error("!Fatal (module ADL2Fspec): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
+                                else error("!Fatal (module ADL2Fspec 461): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
                , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
                , fld_list     = not (isUni (objctx obj))   -- can there be multiple values in this field?
                , fld_must     = isTot (objctx obj)         -- is this field obligatory?
@@ -466,14 +462,14 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                , fld_fields   = map fld (objats obj)
                , fld_insAble  = not (null insTrgs)                             -- can the user insert in this field?
                , fld_onIns    = case insTrgs of
-                                 []  ->  error("!Fatal (module ADL2Fspec): no insert functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 []  ->  error("!Fatal (module ADL2Fspec 469): no insert functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                                  [t] ->  t
-                                 _   ->  error("!Fatal (module ADL2Fspec): multiple insert triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 _   ->  error("!Fatal (module ADL2Fspec 471): multiple insert triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                , fld_delAble  = not (null delTrgs)                             -- can the user delete this field?
                , fld_onDel    = case delTrgs of
-                                 []  ->  error("!Fatal (module ADL2Fspec): no delete functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 []  ->  error("!Fatal (module ADL2Fspec 474): no delete functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                                  [t] ->  t
-                                 _   ->  error("!Fatal (module multiple delete triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 _   ->  error("!Fatal (module ADL2Fspec 476): multiple delete triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                }
            where triggers = trigs obj
                  insTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Ins (makeInline (editMph (objctx obj))) ]

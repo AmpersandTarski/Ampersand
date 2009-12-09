@@ -20,7 +20,7 @@ import XML.ShowXMLtiny        (showXML)
 import Calc                   (deriveProofs)
 import Prototype.ObjBinGen    (phpObjServices)
 import Adl
-import Fspec2Pandoc           (fSpec2Pandoc)
+import Fspec2Pandoc           (fSpec2Pandoc,laTeXheader)
 import Strings                (remSpaces)
 import Atlas.Atlas
 import Rendering.ClassDiagram (classdiagram2dot)
@@ -131,9 +131,10 @@ doGenFspec fSpec flags
              FRtf   ->  do verboseLn flags "Generating Rich Text Format file."
                            writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
              FLatex  -> do verboseLn flags "Generating TeX file."
-                           customheader <- readFile (texHdrFile flags)
-                           writeFile outputFile 
-                             (writeLaTeX ourDefaultWriterOptions{writerHeader=customheader} thePandoc)
+                           case texHdrFile flags of
+                            Nothing -> writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=laTeXheader flags} thePandoc)
+                            Just chFilename -> do customheader <- readFile chFilename
+                                                  writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=customheader} thePandoc)
              FHtml   -> do verboseLn flags "Generating Html file."
                            writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
              FOpenDocument 
@@ -158,21 +159,19 @@ doGenFspec fSpec flags
         outputExt FOpenDocument = ".odt"
 
 generatepngs :: Fspc -> Options -> IO() 
-generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") (dots)-- ++ cds)
-   where 
-   outputFile fnm = combine (dirOutput flags) fnm
-   dots = [run (remSpaces (name p)) $ toDot fSpec flags p 
-          | p<-vpatterns fSpec]
-   run fnm dot = makeGraphic (outputFile fnm) dot
- --REMARK -> the Data.GraphViz.Command function does not work properly (tested on Windows only)
- --    success <- runGraphviz testdot Png (outputFile fnm)
- --    return ()
-   makeGraphic fullFile dot
-     = do 
-       success <- runGraphvizCommand Neato dot Png dotfile
-       verboseLn flags ("runGraphvizCommand("++dotfile++") " ++ (if success then "" else "un") ++ "successfully executed.")
-     where
-       dotfile = replaceExtension fullFile "dot"
-     --  pngfile = replaceExtension fullFile "png"
-       
-            
+generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") [makeGraphic p| p<-vpatterns fSpec]
+  where 
+   outputFile p = {- combine directory -} filename  -- creates the filename without extension in the right directory TODO: take care of directory...
+    where directory = dirOutput flags
+          filename  = remSpaces (name p)
+   makeGraphic p
+    = do 
+      writeFile (fullFile++".dot") (printDotGraph (toDot fSpec flags p))
+      verboseLn flags (fullFile++".dot written.")
+      verboseLn flags ("neato -Tpng "++fullFile++".dot -o "++fullFile++".png")
+      result <- system $ "neato -Tpng "++fullFile++".dot -o "++fullFile++".png"
+      case result of 
+         ExitSuccess   -> verboseLn flags (fullFile++".png written.")
+         ExitFailure x -> putStrLn ("Failure: " ++ show x)
+      where
+        fullFile = outputFile p

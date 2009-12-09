@@ -39,7 +39,7 @@ data Options = Options { contextName   :: Maybe String
 					   , crowfoot      :: Bool
 					   , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
-                       , texHdrFile    :: String --FilePath to customheader.tex
+                       , texHdrFile    :: Maybe String -- the string represents a FilePath to customheader.tex
                        , progrName     :: String --The name of the adl executable
                        , adlFileName   :: String
                        , baseName      :: String
@@ -122,14 +122,7 @@ checkOptions flags =
            flags5 <- case mbexec of
               Nothing -> return flags4{dirExec=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")
                                       ,texHdrFile=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")}
-              Just s -> do 
-                        texfileexists <- doesFileExist uncheckedtexfile 
-                        if texfileexists 
-                          then return flags4{dirExec=takeDirectory s
-                                           , texHdrFile=uncheckedtexfile}
-                          else return flags4{dirExec=takeDirectory s
-                                           , texHdrFile=error $ "File does not exist: "++uncheckedtexfile} 
-                        where uncheckedtexfile = combine (takeDirectory s) (texHdrFile flags)
+              Just s -> return flags4{dirExec=takeDirectory s} 
            flags6 <- if genPrototype flags5
                         then return flags5 {dbName = (case dbName flags5 of
                                                         ""  -> baseName flags5
@@ -174,6 +167,7 @@ options = map pp
           , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
           , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                            ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
+          , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
           , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
           , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
           , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
@@ -222,7 +216,7 @@ defaultOptions clocktime env fNames pName
 	            	     , haskell       = False
 	            	     , uncheckedDirOutput     = lookup envdirOutput env
                          , dirExec       = unchecked
-                         , texHdrFile    = "customheader.tex"
+                         , texHdrFile    = Nothing
                          , dirOutput     = unchecked
                          , beeper        = False
                          , crowfoot      = False
@@ -302,6 +296,8 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                               ('O': _ ) -> FOpenDocument
                                               _         -> FUnknown
                             }
+hdrFileOpt :: String -> Options -> Options
+hdrFileOpt fnm  opts = opts{texHdrFile   = Just fnm}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options
@@ -318,6 +314,8 @@ languageOpt :: String -> Options -> Options
 languageOpt l   opts = opts{language     = case map toUpper l of
                                              "NL"  -> Dutch
                                              "UK"  -> English
+                                             "US"  -> English
+                                             "EN"  -> English
                                              _     -> Dutch}
 logOpt :: String -> Options -> Options
 logOpt nm       opts = opts{uncheckedLogName = Just nm}

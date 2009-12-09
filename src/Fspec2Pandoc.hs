@@ -1,10 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 --TODO -> Block: Header Int [Inline] - Int indicates level of header. If I look at pandoc code TexInfo.hs blockToTexinfo ln.208 I would expect chapter,section,sub,subsub respectively. But I get section,sub,subsub,plain text respectively. So now I've written chapters as 0 setting a [Inline] -> [Tex "\\chapter{...}"]. I do not know yet how this relates to other formats like rtf.
-module Fspec2Pandoc (fSpec2Pandoc,writeRTF,writeLaTeX)
+module Fspec2Pandoc (fSpec2Pandoc,laTeXheader)
 where
+import Char
 import Collection     (Collection (..))
 import Adl
+import Data.Plug
 import ShowADL
 import CommonClasses  (showSign)
 import FspecDef
@@ -41,28 +43,76 @@ import System.FilePath
 --The following chapters each present a SERVICE
 --The specification end with a glossary.
 
---render2Pandoc :: Options -> String -> Pandoc -> String
---render2Pandoc flags customheader pandoc = case fspecFormat flags of
---   FPandoc -> prettyPandoc pandoc
---   FWord -> let wropts = defaultWriterOptions{writerStandalone=True}
---            in writeRTF wropts pandoc
---   FLatex -> let wropts = defaultWriterOptions{writerStandalone=True, writerHeader=customheader, writerTableOfContents=True,writerNumberSections=True}
---             in writeLaTeX wropts pandoc
---   FHtml -> writeHtmlString defaultWriterOptions pandoc
---   FUnknown -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
+renderFromPandoc :: Options -> Pandoc -> String
+renderFromPandoc flags pandoc = case fspecFormat flags of
+   FPandoc -> prettyPandoc pandoc                                      -- erg nuttig om Pandoc te snappen
+   FRtf    -> let wropts = defaultWriterOptions { writerStandalone      = True}
+              in writeRTF wropts pandoc
+   FLatex  -> let wropts = defaultWriterOptions { writerStandalone      = True
+                                                , writerHeader          = case texHdrFile flags of
+                                                                           Just customheader -> customheader
+                                                                           Nothing           -> laTeXheader flags
+                                                , writerTableOfContents = True
+                                                , writerNumberSections  = True}
+              in writeLaTeX wropts pandoc
+   FHtml   -> writeHtmlString defaultWriterOptions pandoc
+   _       -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
+
+laTeXheader :: Options->String
+laTeXheader flags
+   = chain "\n" (
+     [ "\\documentclass[10pt,a4paper]{report}"
+     , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
+     , "\\parindent 0em                      % Width of paragraph indentation."
+     , "\\usepackage{theorem}"
+     ] ++
+     ( case language flags of
+        Dutch   -> [ "\\usepackage[dutch]{babel}"
+                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]"
+                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}" ]
+        _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
+                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
+     )++
+     [ "\\usepackage{amssymb}"
+     , "\\usepackage{amsmath}"
+     , "\\usepackage{longtable}"
+     , "\\def\\id#1{\\mbox{\\em #1\\/}}"
+     , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
+     , "\\newcommand{\\iden}{\\mathbb{I}}"
+     , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+     , "\\newcommand{\\full}{\\mathbb{V}}"
+     , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
+     , "\\newcommand{\\relAdd}{\\dagger}"
+     , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
+     , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+     , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+     , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
+     , "\\newcommand{\\rel}{\\times}"
+     , "\\newcommand{\\compose}{;}"
+     , "\\newcommand{\\subs}{\\vdash}"
+     , "\\newcommand{\\fun}{\\rightarrow}"
+     , "\\newcommand{\\isa}{\\sqsubseteq}"
+     , "\\newcommand{\\N}{\\mbox{\\msb N}}"
+     , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
+     , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{$\\rightarrow$}\\id{#3}}"
+     , "\\newcommand{\\signat}[3]{\\mbox{${#1}_{[{#2},{#3}]}$}}"
+     , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
+     , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"
+     ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
+     [ "%  -- end of header. Use 'ADL --headerfile customheader.tex' to use your own header file instead of all of the previous." ] )
 
 chpintrolabel :: String
 chpintrolabel="chpIntro"
-chpdplabel :: String
-chpdplabel="chpDesignPrinciples"
-chpcalabel :: String
-chpcalabel="chpConceptualAnalysis"
-chpdalabel :: String
-chpdalabel="chpDataAnalysis"
-chpfpalabel :: String
-chpfpalabel="chpFPAnalysis"
-chpgloslabel :: String
-chpgloslabel="chpGlossary"
+chpFRlabel :: String
+chpFRlabel="chpFunctionalRequirements"
+chpCAlabel :: String
+chpCAlabel="chpConceptualAnalysis"
+chpDAlabel :: String
+chpDAlabel="chpDataAnalysis"
+chpFPAlabel :: String
+chpFPAlabel="chpFPAnalysis"
+chpGlosLabel :: String
+chpGlosLabel="chpGlossary"
 
 --TODO: Invent a syntax for meta information that is included in the source file...
 
@@ -130,26 +180,26 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 , Quoted  SingleQuote [Str (name fSpec)] 
                 , Str ". Het definieert business-services in een systeem waarin mensen en applicaties samenwerken om afspraken na te leven. "
                 , Str "Een aantal van deze afspraken is gebruikt om deze functionele specificatie samen te stellen. "
-                , Str "De betreffende afspraken staan opgesomd in hoofdstuk ", xrefReference chpdplabel, Str ", geordend op thema. "
+                , Str "De betreffende afspraken staan opgesomd in hoofdstuk ", xrefReference chpFRlabel, Str ", geordend op thema. "
                 , Str "Elk informatiesysteem wat voldoet aan deze functionele specificatie ondersteunt het naleven van deze afspraken. "
                 , Str "Om dit doel te bereiken, bestaat ", Str (name fSpec), Str " uit een verzameling business services. "
                 , Str "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt ", Str (name fSpec)
-                , Str " dat gebruikers de afspraken uit hoofdstuk ", xrefReference chpdplabel, Str " naleven. "
+                , Str " dat gebruikers de afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str " naleven. "
                 ]
           , Para 
-                [ Str "De conceptuele analyse in hoofdstuk ", xrefReference chpcalabel
+                [ Str "De conceptuele analyse in hoofdstuk ", xrefReference chpCAlabel
                 , Str " is bedoeld voor informatici om ", Str (name fSpec), Str " te bouwen. "
-                , Str "Tevens is het bedoeld voor testers om te valideren of alle afspraken uit hoofdstuk ", xrefReference chpdplabel, Str " worden nageleefd. "
-                , Str "Hoofdstuk ", xrefReference chpcalabel, Str " bevat dan ook een formele representatie van elke afspraak. "
+                , Str "Tevens is het bedoeld voor testers om te valideren of alle afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str " worden nageleefd. "
+                , Str "Hoofdstuk ", xrefReference chpCAlabel, Str " bevat dan ook een formele representatie van elke afspraak. "
                 , Str "Daarmee ligt de consistentie van alle afspraken vast en is de interpretatie van de afspraken eenduidig."
                 ]
           , Para 
                 [ Str "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van ", Str (name fSpec), Str ". "
                 , Str "De gegevensanalyse in hoofdstuk "
-                , xrefReference chpdalabel
+                , xrefReference chpDAlabel
                 , Str " beschrijft de gegevensverzamelingen waarop het systeem wordt gebouwd. "
                 , Str "Elk volgend hoofdstuk definieert een business service definities van services. "
-                , Str "Deze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk ", xrefReference chpdplabel
+                , Str "Deze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk ", xrefReference chpFRlabel
                 , Str ". Deze ondersteuning bestaat uit het voorkomen dat een afspraak wordt overtreden, "
                 , Str "of het signaleren van overtredingen (opdat mensen kunnen ingrijpen), "
                 , Str "of het herstellen van een regel (door automatische acties op de database uit te voeren)."
@@ -158,80 +208,88 @@ introduction lev fSpec flags = header ++ introContents (language flags)
 
         introContents English = 
          [Para
-                [Str "This document defines the service layer of a system called "
+                [Str "This document defines the functionality of an information system called "
                 , Quoted  SingleQuote [Str (name fSpec)] 
-                , Str "It defines infrastructural services in a system in which people and applications collaborate"
-                , Str "to maintain agreements and commitments that apply to the context of "
-                , Quoted  SingleQuote [Str (name fSpec)] 
-                , Str "These agreements and commitments are represented by rules."
-                , Str "They are presented in chapter "
-                , xrefReference chpdplabel
-                , Str ", arranged by theme."
-                , Str "A data analysis is presented in chapter "
-                , xrefReference chpdalabel
-                , Str ". Subsequent chapters elaborate each theme by defining all applicable services."
-                , Str "Together, these services support all rules from chapter "
-                , xrefReference chpdplabel
-                , Str ". This support consists of either preventing that a rule is violated,"
-                , Str "signalling violations (for human intervention),"
-                , Str "or fixing the content of databases (by automatic actions) to restore a rule."]]  
+                , Str ". It defines business services in a system where people and applications work together in order to fullfill their commitments. "
+                , Str "Many of these commitments follow from rules that are maintained by the business, the so called business rules. "
+                , Str "A number of these rules have been used to assemble this functional specification. "
+                , Str "Those rules are listed in chapter ", xrefReference chpFRlabel, Str ", ordered by theme. "
+                , Str "Every information system that satisfies this functional specification supports the fulfillment of the commitments. "
+                , Str "In order to achieve this goal ", Str (name fSpec), Str " consists of business services. "
+                , Str "By disclosing all functionality through these services, ", Str (name fSpec)
+                , Str " ensures that users will abide by the rules put forward in chapter ", xrefReference chpFRlabel, Str ". "
+                ]
+          , Para 
+                [ Str "The conceptual analysis in chapter ", xrefReference chpCAlabel
+                , Str " is meant for software engineers to build ", Str (name fSpec), Str ". "
+                , Str "It is also intended to help testers to validate whether all requirements from chapter ", xrefReference chpFRlabel, Str " are met. "
+                , Str "Chapter ", xrefReference chpCAlabel, Str " contains a formal representation of each commitment precisely for that reason. "
+                , Str "It defines the consistency of all commitments, yielding an unambiguous interpretation."
+                ]
+          , Para 
+                [ Str "Chapters that follow have the builders of ", Str (name fSpec), Str " as their intended audience. "
+                , Str "The data analysis in chapter "
+                , xrefReference chpDAlabel
+                , Str " describes the data sets upon which . ", Str (name fSpec), Str " is built. "
+                , Str "One service is described in a self contained way in a chapter of its own, ensuring that builders can focus on building a single service at a time. "
+                , Str "Together, these service fulfill all commitments from chapter ", xrefReference chpFRlabel
+                , Str ". This means to prevent that rules are violated, "
+                , Str "to signal violations to people in order to let them intervene, "
+                , Str "or to restore a rule by means of automatic actions in the database."]]  
 ------------------------------------------------------------
 designPrinciples :: Int -> Fspc -> Options ->  [Block]
 designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pat (rules fSpec++signals fSpec))) [] []
   where
   header :: [Block]
-  header = labeledHeader lev chpdplabel (case (language flags) of
+  header = labeledHeader lev chpFRlabel (case (language flags) of
                                  Dutch   ->  "Functionele Eisen"   
                                  English ->  "Functional Requirements"
                              )
   dpIntro :: [Block]
   dpIntro = 
-    (case (language flags) of
-        Dutch -> [Para
-                  [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str ". "
-                  , Str "Elke afspraak die gebruikers gezamenlijk naleven "
-                  , Str "en door ", Str (name fSpec), Str " moet worden ondersteund, "
-                  , Str "is opgenomen als functionele eis in dit hoofdstuk. "
-                  , Str "Formuleringen in dit hoofdstuk dienen dan ook zorgvuldig te worden getoetst met en door "
-                  , Str "al degenen die op welke wijze dan ook gezag hebben over deze afspraken. "
-                  , Str "Zij zijn immers verantwoordelijk voor de geldende regels. "
-                  , Str "De hoofdarchitect is verantwoordelijk voor de onderlinge consistentie van deze afspraken "
-                  , Str "en het bouwbaar zijn van het daaruit afgeleide systeem. "
-                  , Str "Om deze reden schrijft de architect de afspraken zelf op, "
-                  , Str "om ze te laten toetsen door de betrokkenen uit de organisatie. "
-                  , Str "Van het voorliggende document is dit hoofdstuk het enige dat het fiat van gebruikers nodig heeft. "
-                  , Str "Alle hierop volgende hoofdstukken zijn technisch van aard en bedoeld voor bouwers, testers en auditors. "
-                  ]]
+    case language flags of
+        Dutch   -> [Para
+                     [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str ". "
+                     , Str "Elke afspraak die gebruikers gezamenlijk naleven "
+                     , Str "en door ", Str (name fSpec), Str " moet worden ondersteund, "
+                     , Str "is opgenomen als functionele eis in dit hoofdstuk. "
+                     , Str "Formuleringen in dit hoofdstuk dienen dan ook zorgvuldig te worden getoetst met en door "
+                     , Str "al degenen die op welke wijze dan ook de noodzakelijke kennis en voldoende autoriteit bezitten. "
+                     , Str "Zij zijn immers verantwoordelijk voor de geldende regels. "
+                     , Str "De hoofdarchitect is verantwoordelijk voor de onderlinge consistentie van deze afspraken "
+                     , Str "en het bouwbaar zijn van het daaruit afgeleide systeem. "
+                     , Str "Om deze reden schrijft de architect de afspraken zelf op, "
+                     , Str "om ze te laten toetsen door de betrokkenen uit de organisatie. "
+                     , Str "Van het voorliggende document is dit hoofdstuk het enige dat het fiat van gebruikers nodig heeft. "
+                     , Str "Alle hierop volgende hoofdstukken zijn technisch van aard en bedoeld voor bouwers, testers en auditors. "
+                     ]]
         English -> [Para
-                     [ Str "This chapter defines de design rules of "
-                     , Quoted SingleQuote [Str (name fSpec)] 
-                     , Str ". The implementation must assert these rules. "]
-                 ]
-     )
+                     [ Str "This chapter defines the functional requirements of ", Str (name fSpec), Str ". "
+                     , Str "Each requirement users must fulfill "
+                     , Str "by support of ", Str (name fSpec), Str ", "
+                     , Str "serves as a function requirement in this chapter. "
+                     , Str "The precise phrasing of each requirement must therefore be scrutinized "
+                     , Str "with and by those who have the knowledge and who are responsible for the actual rules. "
+                     , Str "The chief architect is responsible for the consistency of all rules "
+                     , Str "and for a buildable design. "
+                     , Str "For this reason, the rules are written by the architect "
+                     , Str "and validated by the apporopriate stakeholders. "
+                     , Str "The current chapter requires user approval on behalf of the patron. "
+                     , Str "All following chapters are technical and are meant for builders, testers and auditors. "
+                     ]]
 
   --TODO -> It may be nice to print the class of the dataset from the class diagram
   dpSections [] _ _ = []
   dpSections (thm:thms)     -- The name of the patterns that are used in this specification.
              seenConcepts   -- All concepts that have been defined in earlier sections
              seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
-   = [Header (lev+1) [Str thm]] --new section to explain this theme
-     ++ ( if null newConcepts then [] else
-          [ Para $ [Str $ "Deze sectie introduceert de concepten "]++
-                   [Str $ commaNL "en" [name c|c<-newConcepts]]++
-                   [Str $ "."]
-          ])
-     ++ if null patRules
-        then [ Para [Str$ "Dit thema voegt geen regels toe."]]
-        else [ Para [Str$ "Dit thema voegt de volgende regels toe."] ]++
-             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
-             |r<-patRules]
-     ++ if null patSignals
-        then [ Para [Str$ "Dit thema voegt geen signalen toe."]]
-        else [ Para [Str$ "Dit thema voegt de volgende signalen toe."] ]++
-             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
-             |r<-patSignals]
+   = [Header (lev+1) [Str thm]]  --new section to explain this theme
+     ++ sctConcepts  -- tells which new concepts are introduced in this section.
+     ++ sctRules     -- tells which rules are introduced in this section
+     ++ sctSignals   -- tells which signals are being introduced
      ++ dpSections thms (seenConcepts++newConcepts) (seenRelations++newRelations)
     where
+     conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]
      patRules     = [r| r<-rules fSpec,   r_pat r==thm]
      patSignals   = [s| s<-signals fSpec, r_pat s==thm]
      newConcepts  = concs        (patRules++patSignals) >- seenConcepts
@@ -239,9 +297,62 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pa
      dpRule (r:rs) seenConcepts
       = ([Para [Str$ "Een "++name c++" is "++cddef cd]|(c,cd)<-cds]++[ Para [Str$explainRule flags r] ]++pNext, seen')
         where
-         cds = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]
+         cds = [(c,cd)| (c,cd)<-conceptdefs, c `elem` ncs]
          ncs = concs r >- seenConcepts
          (pNext,seen') = dpRule rs (concs r `uni` seenConcepts)
+     sctConcepts
+      = if null newConcepts then [] else
+          case language flags of
+           Dutch   ->  [ Para $ (case [name c|(c,cd)<-conceptdefs, c `elem` newConcepts] of
+                                  []  -> []
+                                  [c] -> [ Str $ "Deze sectie introduceert het concept "
+                                         , Str $ c
+                                         , Str $ ". "]
+                                  cs  -> [ Str $ "Deze sectie introduceert de concepten "
+                                         , Str $ commaNL "en" cs
+                                         , Str $ ". "]
+                                )++
+                                (case [name c| c<-newConcepts, (c',cd)<-conceptdefs, c==c'] of
+                                  []  -> []
+                                  [c] -> [ Str $ "Concept "
+                                         , Str $ c
+                                         , Str $ " wordt in deze sectie voor het eerst gebruikt en heeft geen definitie in deze functionele specificatie. "]
+                                  cs  -> [ Str $ "De concepten "
+                                         , Str $ commaNL "en" cs
+                                         , Str $ " worden in deze sectie voor het eerst gebruikt en hebben geen definitie in deze functionele specificatie. "]
+                                )
+                       ]
+           English ->  [ Para $ (case [name c|(c,cd)<-conceptdefs, c `elem` newConcepts] of
+                                  []  -> []
+                                  [c] -> [ Str $ "This section introduces concept "
+                                         , Str $ c
+                                         , Str $ ". "]
+                                  cs  -> [ Str $ "This section introduces concepts "
+                                         , Str $ commaEng "and" cs
+                                         , Str $ ". "]
+                                )++
+                                (case [name c| c<-newConcepts, (c',cd)<-conceptdefs, c==c'] of
+                                  []  -> []
+                                  [c] -> [ Str $ "Concept "
+                                         , Str $ c
+                                         , Str $ " is introduced in this section without a definition."]
+                                  cs  -> [ Str $ "Concepts "
+                                         , Str $ commaEng "and" cs
+                                         , Str $ " are introduced in this section without definition. "]
+                                )
+                       ]
+     sctRules
+      = if null patRules
+        then [ Para [Str$ "Dit thema voegt geen regels toe."]]
+        else [ Para [Str$ "Dit thema voegt de volgende regels toe."] ]++
+             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
+             |r<-patRules]
+     sctSignals
+      = if null patSignals
+        then [ Para [Str$ "Dit thema voegt geen signalen toe."]]
+        else [ Para [Str$ "Dit thema voegt de volgende signalen toe."] ]++
+             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
+             |r<-patSignals]
 
   dpSection :: FTheme -> [Block]
   dpSection t = []
@@ -293,7 +404,7 @@ conceptualAnalysis :: Int -> Fspc -> Options ->  [Block]
 conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (vpatterns fSpec)
   where 
   header :: [Block]
-  header = labeledHeader lev chpcalabel (case (language flags) of
+  header = labeledHeader lev chpCAlabel (case (language flags) of
                                 Dutch   ->  "Conceptuele Analyse"   
                                 English ->  "Conceptual Analysis"
                                )
@@ -302,13 +413,13 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (vpatterns 
    (case (language flags) of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van de regels uit hoofdstuk "
-                  , xrefReference chpdplabel
+                  , xrefReference chpFRlabel
                   , Str ". Ieder thema in dat hoofdstuk wordt geanalyseerd in termen van relaties "
                   , Str "en elke afspraak krijgt een formele representatie. "
                   ]]
       English -> [Para
                   [ Str "This chapter provides an analysis of the principles described in chapter "
-                  , xrefReference chpdplabel
+                  , xrefReference chpFRlabel
                   , Str ". Each section in that chapter is analysed in terms of relations "
                   , Str "and each principle is then translated in a rule. "
                   ]]
@@ -337,10 +448,10 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (vpatterns 
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
 dataAnalysis :: Int -> Fspc -> Options ->  [Block]
-dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInvariants ++ daSignals
+dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daPlugs
  where 
   header :: [Block]
-  header = labeledHeader lev chpdalabel (case (language flags) of
+  header = labeledHeader lev chpDAlabel (case (language flags) of
                                      Dutch   ->  "Gegevensstructuur"   
                                      English ->  "Data structure"
                                  )
@@ -349,7 +460,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
    (case (language flags) of
      Dutch   -> [Para
                   [ Str $ "De eisen, die in hoofdstuk "
-                  , xrefReference chpdplabel
+                  , xrefReference chpFRlabel
                   , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
                   , xrefReference figlabel
                   , Str $ ". Er zijn "++count flags (length classes) "gegevensverzameling"++","
@@ -360,7 +471,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
                   ]]
      English -> [Para
                   [ Str $ "The requirements, which are listed in chapter "
-                  , xrefReference chpdplabel
+                  , xrefReference chpFRlabel
                   , Str $ ", have been translated into the class diagram in figure "
                   , xrefReference figlabel
                   , Str $ ". There are "++count flags (length classes) "data set"++","
@@ -390,7 +501,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
                  then TeX $ "relatie&totaal&univalent&surjectief&injectief\\\\ \\hline\\hline\n"
                  else TeX $ "relation&total&univalent&surjective&injective\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ "\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}"              -- veld
+               [ TeX $ chain "&" [ "\\(\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
                                  , if isTot d || d `elem` tots then "\\(\\surd\\)" else ""
                                  , if isUni d || d `elem` unis then "\\(\\surd\\)" else ""
                                  , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
@@ -412,7 +523,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
      [ Para  $ [ TeX $ "\\begin{tabular}{|l|ccccc|}\\hline\n"
                , if language flags==Dutch
                  then TeX $ "relatie&Reflexief&Transitief&Symmetrisch&Antisymmetrisch&Eigenschap\\\\ \\hline\\hline\n"
-                 else TeX $ "relation&Reflexive&Transitive&Symmetric&Antisymmetric$Property\\\\ \\hline\\hline\n"
+                 else TeX $ "relation&Reflexive&Transitive&Symmetric&Antisymmetric&Property\\\\ \\hline\\hline\n"
                ]++
                [ TeX $ chain "&" [ "\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}"              -- veld
                                  , if isRfx d            then "\\(\\surd\\)" else ""
@@ -442,7 +553,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
                 , isIdent (Fi [notCp f| f<-fus, isNeg f])
                 , f<-filter isPos fus
                 , s<-strands f
-                , e<-init s++map flp (tail s)
+                , e<-[head s, flp (last s)]
                 , m<-mors e
                 ]
       tots = [d| t<-ts, inline t, d<-declarations t]
@@ -450,11 +561,35 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daInv
       surs = [d| t<-ts, not (inline t), d<-declarations t]
       injs = [d| t<-is, not (inline t), d<-declarations t]
 
-  daInvariants :: [Block]
-  daInvariants = [Para [ Math InlineMath $ showADLcode fSpec r ] | r<-rules fSpec, r_usr r]  -- show only user defined rules (multiplicity rules, for example, are not printed)
+  -- daPlugs shows only user defined rules that shall be maintained within a data set.
+  -- multiplicity rules, for example, are not among them.
+  -- Plugs that are associations between data sets are ignored.
+  daPlugs :: [Block]
+  daPlugs = [b | p<-plugs fSpec, fld<-take 1 (fields p), flduniq fld, b<-daPlug p]
 
-  daSignals :: [Block]
-  daSignals = [Para [ Math InlineMath $ showADLcode fSpec (srsig s) ] |s<-signals fSpec]
+  daPlug p
+   = if null content then [] else plugHeader ++ content
+     where
+       plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
+       content = plugRules ++ plugSignals
+       plugRules
+        = case [r| r<-rules   fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
+                   []  -> [ Para [ Str "This data set has no integrity rules other than the multiplicities specified earlier. " ]]
+                   [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
+                          , Para [ Math DisplayMath $ showMathcode fSpec r]
+                          ]
+                   rs  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
+                          , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
+                          ]
+       plugSignals
+        = case [r| r<-signals fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
+                   []  -> []
+                   [s] -> [ Para [ Str "This data set generates one signal. " ]
+                          , Para [ Math DisplayMath $ showMathcode fSpec s]
+                          ]
+                   ss  -> [ Para [ Str "This data set generates the following signals. " ]
+                          , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
+                          ]
 
 ------------------------------------------------------------
 servicechap :: Int -> Fspc -> Options -> Fservice ->  [Block]
@@ -570,11 +705,11 @@ fpAnalysis :: Int -> Fspc -> Options ->  [Block]
 fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
  where 
   header :: [Block]
-  header = labeledHeader lev chpfpalabel (case (language flags) of
+  header = labeledHeader lev chpFPAlabel (case (language flags) of
                                 Dutch   ->  "Functiepunt Analyse"   
                                 English ->  "Function Point Analysis"
                                )
-  fpalabel = "tableFPA"
+  tableFPAlabel = "tableFPA"
   caIntro :: [Block]
   caIntro = 
    (case (language flags) of
@@ -592,13 +727,13 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                   , xrefCitation "IFPUG"
                   , Str "."
                   ]]
-   ) ++ fpa2Blocks
+   )
   --TODO -> is an fpa on themes correct or should it be on the total fspec, or should it not matter, i.e. is the sum of services in the fspec equivalent to the sum of services of all themes? 
   --Table [Inline] [Alignment] [Double]      [[Block]] [[[Block]]]
   --      Caption  Clm algnmt  rel.clm.width clm hdrs  rows
   fpa2Blocks :: [Block]
   fpa2Blocks  = 
-       [Table [Str "Function Point Analysis", xrefLabel fpalabel] 
+       [Table [Str "Function Point Analysis", xrefLabel tableFPAlabel] 
               [AlignLeft, AlignRight] --TODO -> how do I specify drawing of lines?
               [0.25,0.1] --TODO -> can't this be automatic or something
               [[Plain [Space]],[Plain [Str "points"]]] 
