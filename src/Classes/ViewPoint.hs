@@ -66,8 +66,8 @@ where
     rules pat     = [r|r<-ptrls pat, not (isSignal r)]
     signals pat   = [r|r<-ptrls pat,      isSignal r ]
     patterns pat  = [pat]
-    isa pat       = Isa ts (concs pat>-[e'| G _ g s<-ptgns pat,e'<-[g,s]])
-                    where ts = clear [(g,s)| G _ g s<-ptgns pat]
+    isa pat       = Isa ts (concs pat>-[e'| G _ g s _<-ptgns pat,e'<-[g,s]])
+                    where ts = clear [(g,s)| G _ g s _<-ptgns pat]
 
 
    instance ViewPoint Rule where

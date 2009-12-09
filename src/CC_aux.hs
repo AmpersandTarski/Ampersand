@@ -90,7 +90,7 @@
    makeConceptSpace :: ditwordtnietgebruikt -> [Morphism] -> Concepts    --WAAROM is deze definitie goed?
    makeConceptSpace _ morphisms
     = [ upd (fst (head raw)) (sord (concat (map snd raw)))
-      | raw <- eqCl fst [(c,os)| (Mph _ _ _ (_,_) _ sgn@(Sgn _ s t _ _ _ _ _ _ _ _ _)) <- morphisms
+      | raw <- eqCl fst [(c,os)| (Mph _ _ _ (_,_) _ sgn@(Sgn _ s t _ _ _ _ _ _ _ _ _ _)) <- morphisms
                                , (c,os) <- [(s,dom sgn),(t,cod sgn)]
                         ]
       ] where

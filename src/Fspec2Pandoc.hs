@@ -738,7 +738,7 @@ instance ShowMath Morphism where
 
 
 instance ShowMath Declaration where
- showMath decl@(Sgn nm a b props prL prM prR cs expla _ _ sig)
+ showMath decl@(Sgn nm a b props prL prM prR cs expla _ _ sig _)
   = if sig then "\\verb#SIGNAL# "++"\\id{"++latexEsc nm++")" else
     "\\declare{"++latexEsc nm++"}{"++latexEsc (name a)++"}{"++latexEsc (name b)++"}"
 --       (if null props then "" else showL(map showMath props))++

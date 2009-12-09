@@ -7,7 +7,7 @@ where
    import Adl.Concept                   ( Concept(..)
                                         , Association(..)
                                         , MorphicId(..),Morphic(..))
-   import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration)
+   import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..))
    import Adl.Expression                ( Expression(..),v)
    import Adl.Prop
    import CommonClasses                 ( Identified(name,typ)
@@ -159,7 +159,7 @@ where
                            error ("!Fatal (module Rule 166): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
  
    rulefromProp :: Prop -> Declaration -> Rule
-   rulefromProp prp d
+   rulefromProp prp d@(Sgn{})
       = Ru { rrsrt = case prp of
                         Uni-> Implication
                         Tot-> Implication
@@ -205,10 +205,11 @@ where
            , rrtyp = (Anything,Anything)  -- The type checker will assign the type
            , rrdcl = (Just (prp,d))       -- For traceability: The original property and declaration.
            , runum = 0                    -- Rules will be renumbered after enriching the context
-           , r_pat = ""                   -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+           , r_pat = decpat d                   -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
            , r_usr = False                
            }
           where
            i = Tm $ I [] Anything Anything True
            r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
+   rulefromProp _ _ = error ("!Fatal (module Rule 214): Properties can only be set on user-defined Declarations.")
     

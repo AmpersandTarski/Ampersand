@@ -74,7 +74,7 @@
                                <* pKey "ENDPATTERN"
                        where
                          rebuild :: String -> [PatElem] -> Pattern
-                         rebuild nm pes = Pat nm [r|Pr r<-pes] [gen |Pg gen<-pes] [mph| Pm mph<-pes] [c| Pc c<-pes] [k| Pk k<-pes]
+                         rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes]
 
    data PatElem      = Pr Rule
                      | Pg Gen
@@ -90,7 +90,7 @@
                        Pk <$> pKeyDef
 
    pSignal          :: Parser Token Morphism
-   pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False))
+   pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False []))
 
 
 
@@ -104,15 +104,15 @@
                        where
                         hc m' antc pos' cons cpu' expl
                          | not beep && name m'=="" = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True
-                         | otherwise  = Sg pos' (Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True)
+                         | otherwise  = Sg pos' (Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True [])
                         kc m' cons pos' antc cpu' expl = hc m' antc pos' cons cpu' expl
                         dc m' defd pos' expr cpu' expl
    {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("Diag: "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 "" True))  -}
                          | not beep && name m'=="" = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
-                         | otherwise  = Sg pos' (Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
+                         | otherwise  = Sg pos' (Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True [])
                         ac m'      pos' expr cpu' expl
                          | not beep && name m'=="" = Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
-                         | otherwise  = Sg pos' (Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True)
+                         | otherwise  = Sg pos' (Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True [])
                          where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
 
 --   data PCompu       = Uc [Morphism]
@@ -128,7 +128,7 @@
 
    pGen             :: Parser Token Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
-                       where rebuild spec pos' genus = G pos' (cptnew genus ) (cptnew spec )
+                       where rebuild spec pos' genus = G pos' (cptnew genus ) (cptnew spec ) []
 
    postStr          :: Parser Token String
    postStr           = f <$> pList1 (pKey "~" <|> pKey "+" <|> pKey "-" <|> pKey "*")
@@ -196,7 +196,7 @@
                        v'   <$ pKey "V" <*> pTwo                                                                 <|>
                        rebuild <$> pVarid_val_pos <*> pTwo
                        where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
-                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/=""))
+                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/="") [])
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
                              v' []                  = V [] (cptAnything, cptAnything)
@@ -278,7 +278,7 @@
                                      -> Pairs
                                      -> Declaration
                              rebuild nm pos' s fun' t props pragma expla content
-                               = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False
+                               = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False []
                                  where pr = pragma++["","",""]
 
    pContent         :: Parser Token Pairs

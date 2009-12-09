@@ -382,8 +382,8 @@
      | c==Equivalence = showADLcode fSpec antc ++" = " ++showADLcode fSpec cons
 
    instance ShowADL Gen where
-    showADL (G pos g s) = "GEN "++showADL s++" ISA "++show g
-    showADLcode fSpec (G pos g s) = "GEN "++showADLcode fSpec s++" ISA "++show g
+    showADL (G pos g s _) = "GEN "++showADL s++" ISA "++show g
+    showADLcode fSpec (G pos g s _) = "GEN "++showADLcode fSpec s++" ISA "++show g
 
 
    instance ShowADL KeyDef where
@@ -514,7 +514,7 @@
      = "'"++mph1val m++"'"++(showSign [mph1typ m])
 
    instance ShowADL Declaration where
-    showADL decl@(Sgn nm a b props prL prM prR cs expla _ _ sig)
+    showADL decl@(Sgn nm a b props prL prM prR cs expla _ _ sig _)
      = if sig then "SIGNAL "++nm++" ON ("++name a++" * "++name b++")" else
        nm++" :: "++name a++" * "++name b++
        (if null props then "" else showL(map showADL props))++

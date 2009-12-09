@@ -247,7 +247,7 @@ where
             
      mkXmlTree d = Elem (mkTag d)
         (case d of  
-          Sgn _ _ _ _ _ _ _ _ _ _ _ _ 
+          Sgn{} 
                 ->  [Node (Tag "Source" [mkAttr "concept" (name(source d))])]
                   ++[Node (Tag "Target" [mkAttr "concept" (name(target d))])]
                   ++[Elem (simpleTag "MultFrom") [PlainText (multiplicity d)]]

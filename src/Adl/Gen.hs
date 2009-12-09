@@ -8,6 +8,7 @@ where
    data Gen       = G { genfp  :: FilePos          -- ^ the position of the GEN-rule
                       , gengen :: Concept          -- ^ generic concept
                       , genspc :: Concept          -- ^ specific concept
+                      , genpat :: String          -- ^ pattern of declaration
                       }deriving (Eq)
 
 -- \***********************************************************************
@@ -19,6 +20,6 @@ where
                  
    instance Show Gen where
     -- This show is used in error messages. It should therefore not display the term's type
-    showsPrec _ (G _ g s) = showString ("GEN "++show s++" ISA "++show g)
+    showsPrec _ (G _ g s _) = showString ("GEN "++show s++" ISA "++show g)
    
                       

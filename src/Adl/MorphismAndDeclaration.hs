@@ -195,6 +195,7 @@ where
                , decfpos :: FilePos -- ^ the position in the ADL source file where this declaration is declared.
                , decid   :: Int     -- ^ a unique number that can be used to identify the relation
                , deciss  :: Bool    -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
+               , decpat :: String  -- ^ the pattern where this declaration has been declared.
                }
           | Isn 
                { degen :: Concept  -- ^ The generic concept
@@ -215,14 +216,14 @@ where
    instance Eq Declaration where
       d == d' = name d==name d' && source d==source d' && target d==target d'
    instance Show Declaration where
-    showsPrec _ (Sgn nm a b props prL prM prR _ expla _ _ False)
+    showsPrec _ (Sgn nm a b props prL prM prR _ expla _ _ False _)
      = showString (chain " " ([nm,"::",name a,"*",name b,show props,"PRAGMA",show prL,show prM,show prR]++if null expla then [] else ["EXPLANATION",show expla]))
-    showsPrec _ (Sgn nm a b _ _ _ _ _ _ _ _ True)
+    showsPrec _ (Sgn nm a b _ _ _ _ _ _ _ _ True _)
      = showString (chain " " ["SIGNAL",nm,"ON (",name a,"*",name b,")"])
     showsPrec _ _
      = showString ""
    instance Identified Declaration where
-    name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
+    name (Sgn nm _ _ _ _ _ _ _ _ _ _ _ _) = nm
     name (Isn _ _)                      = "I"
     name (Iscompl _ _)                  = "-I"
     name (Vs _ _)                       = "V"
