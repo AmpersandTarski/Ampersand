@@ -25,8 +25,8 @@ makePicture :: Options
 makePicture flags name pTyp dotsource  
     = Pict { reference  = cdName
            , dotSource  = dotsource
-           , fullPng    = replaceExtension fullName "dot"
-           , fullDot    = replaceExtension fullName "png"
+           , fullDot    = replaceExtension fullName "dot"
+           , fullPng    = replaceExtension fullName "png"
            , figlabel   = "fig:" ++ cdName
            , title      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ name

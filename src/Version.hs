@@ -6,5 +6,5 @@ versionbanner :: String
 versionbanner = "ADL vs. 0.8.10-479" -- the number behind the last digit is the SVN revision number.
 
 {- SVN Version text:
-Got rid of errors about naming and refering to generated pictures. Cleaned up. Still something wrong with the generated pictures. Will fix that soon!
+Foutje uit Picture.hs gehaald. De plaatjes zien er wel raar uit, maar dat fix ik binnenkort wel even. Ik weet wat er aan de hand is.
 -}
