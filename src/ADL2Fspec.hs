@@ -36,8 +36,12 @@
                  , vrels        = declarations context
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
+                 , pictPatts    = Nothing
                  , vConceptDefs = conceptDefs context
-                 , classdiagram = (cdAnalysis fSpec flags, {- combine (dirOutput flags) -} ("CD_"++[c|c<-name context, isAlpha c]))
+                 , pictConcepts = Nothing
+                 , classdiagram = cdAnalysis fSpec flags
+                 , pictCD       = Nothing
+                 , pictSB       = Nothing
                  , themes       = themes'
                  , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
                  }

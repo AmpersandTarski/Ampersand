@@ -8,8 +8,9 @@ module Generators (doGenAtlas
                   ,prove)
 where
 
+--import Char (isAlpha)
 import Classes.Graphics
-import System (system, ExitCode(ExitSuccess,ExitFailure))
+--import System (system, ExitCode(ExitSuccess,ExitFailure))
 
 import System.FilePath        (combine,replaceExtension)
 import Options
@@ -21,10 +22,10 @@ import Calc                   (deriveProofs)
 import Prototype.ObjBinGen    (phpObjServices)
 import Adl
 import Fspec2Pandoc           (fSpec2Pandoc,laTeXheader)
-import Strings                (remSpaces)
+--import Strings                (remSpaces)
 import Atlas.Atlas
 import Rendering.ClassDiagram (classdiagram2dot)
---import Switchboard            (toDotFspc)
+import Switchboard            (toDotFspc)
 import Data.GraphViz.Types
 import Text.Pandoc            ( defaultWriterOptions
                               , prettyPandoc
@@ -37,7 +38,7 @@ import Text.Pandoc            ( defaultWriterOptions
                               , writeOpenDocument
                               , writeHtmlString
                               )
-
+import Picture
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
@@ -84,48 +85,58 @@ doGenProto fSpec flags
      where 
      explainviols = foldr (++) [] [show p++": "++printadl (Just fSpec) 0 r++"\n"|(r,p)<-violations fSpec]
 
+
+-- This function will generate all Pictures for a given Fspc. 
+-- the returned Fspc contains the details about the Pictures, so they
+-- can be refferenced while rendering the Fspc.
+generateAllGraphics :: Options -> Fspc -> IO(Fspc)
+generateAllGraphics flags fs
+   = do f'  <- generateClassDiagram fs 
+        f'' <- generatePatternPictures f'
+        f''' <- generateSwitchBoard f''
+        return f'''
+   
+   where 
+     generateClassDiagram :: Fspc -> IO(Fspc)
+     generateClassDiagram fSpec
+        = do writePicture flags pict
+             return fSpec{pictCD = Just pict}
+        where pict = makePicture flags (name fSpec) PTClassDiagram (classdiagram2dot(classdiagram fSpec))
+
+     generatePatternPictures :: Fspc -> IO(Fspc)     
+     generatePatternPictures fSpec
+        = do mapM (writePicture flags) pictures
+             return fSpec{pictPatts = Just pictures}
+          where pictures = map makeGraphic (vpatterns fSpec)
+                makeGraphic :: Pattern -> Picture
+                makeGraphic pat = makePicture flags (name pat) PTPattern (printDotGraph (toDot fSpec flags pat))
+    
+     generateSwitchBoard :: Fspc -> IO(Fspc)
+     generateSwitchBoard fSpec
+        = do writePicture flags pict
+             return fSpec{pictSB = Just pict}
+        where pict = makePicture flags (name fSpec) PTSwitchBoard (printDotGraph (toDotFspc fSpec flags fSpec))
+        
+        
 doGenFspec :: Fspc -> Options -> IO()
 doGenFspec fSpec flags
-   =  do
-      generateAllGraphics 
-      generatePandocDocument
-   where  
-   generateAllGraphics :: IO()  -- | Deze functie zorgt dat alle bestanden met plaatjes op de juiste plek zijn gegenereerd.
-   generateAllGraphics 
-        = do 
-{-
-     -- Switchboard
-          verboseLn flags ("Processing "++switchboardname++".dot ... :")
-          writeFile (switchboardname++".dot") (printDotGraph (toDotFspc fSpec flags fSpec))
-          verboseLn flags ("dot -Tpng "++switchboardname++".dot -o "++switchboardname++".png")
-          resultSwitchboard <- system $ "dot -Tpng "++switchboardname++".dot -o "++switchboardname++".png"
-          case resultSwitchboard of 
-             ExitSuccess   -> verboseLn flags (switchboardname++".png"++" written.")
-             ExitFailure x -> putStrLn ("Failure: " ++ show x)
-          verboseLn flags (switchboardname++".png"++" written.")
--}
-     -- Class Diagram
-          verboseLn flags ("Processing "++cdFilename++".dot ... :")
-          writeFile (cdFilename++".dot") (classdiagram2dot cd)
-          verboseLn flags ("dot -Tpng "++cdFilename++".dot -o "++cdFilename++".png")
-          resultCD <- system $ "dot -Tpng "++cdFilename++".dot -o "++cdFilename++".png"
-          case resultCD of 
-             ExitSuccess   -> verboseLn flags (cdFilename++".png"++" written.")
-             ExitFailure x -> putStrLn ("Failure: " ++ show x)
- 
-          verboseLn flags ("Generating .png files in "++name fSpec)
-          generatepngs fSpec flags
- 
-         where
-           (cd,cdFilename)    = classdiagram fSpec
-           switchboardname = "SB_"++baseName flags
-
-   generatePandocDocument :: IO()
-   generatePandocDocument
-        = do 
-          verboseLn flags "Generating functional specification document..."
-          verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)
-          case fspecFormat flags of
+   =  do fSpec2 <- generateAllGraphics flags fSpec
+         verboseLn flags "Generating functional specification document..."
+         verboseLn flags ("Processing "++name fSpec2++" towards "++outputFile)
+         makeOutput fSpec2
+         verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".")
+       where  
+         outputFile = replaceExtension (combine (dirOutput flags) (baseName flags)) 
+                                       (case fspecFormat flags of        
+                                                 FPandoc       -> ".pandoc"
+                                                 FRtf          -> ".rtf"
+                                                 FLatex        -> ".tex"
+                                                 FHtml         -> ".html"
+                                                 FOpenDocument -> ".odt"
+                                                 FUnknown      -> undefined
+                                       )
+         makeOutput f
+              =  case fspecFormat flags of
              FPandoc -> do verboseLn flags "Generating Pandoc file."
                            writeFile outputFile (prettyPandoc thePandoc)
              FRtf   ->  do verboseLn flags "Generating Rich Text Format file."
@@ -141,37 +152,14 @@ doGenFspec fSpec flags
                      -> do verboseLn flags "Generating OpenDocument file."
                            writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
              FUnknown -> do putStrLn ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
-          
-          verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".")
-       where   
-        ourDefaultWriterOptions = defaultWriterOptions
-                                      { writerStandalone=True
-                                      , writerTableOfContents=True
-                                      , writerNumberSections=True
-                                      }
-        thePandoc = fSpec2Pandoc fSpec flags
-        outputFile         = combine (dirOutput flags) (replaceExtension (baseName flags) (outputExt $ fspecFormat flags))        
-        outputExt FPandoc  = ".pandoc"
-        outputExt FRtf     = ".rtf"
-        outputExt FLatex   = ".tex"
-        outputExt FHtml    = ".html"
-        outputExt FUnknown = undefined
-        outputExt FOpenDocument = ".odt"
+           where 
+              thePandoc = fSpec2Pandoc f flags
+         
+         
+              ourDefaultWriterOptions = defaultWriterOptions
+                                          { writerStandalone=True
+                                          , writerTableOfContents=True
+                                          , writerNumberSections=True
+                                          }
+           
 
-generatepngs :: Fspc -> Options -> IO() 
-generatepngs fSpec flags = foldr (>>) (verboseLn flags "All pictures written..") [makeGraphic p| p<-vpatterns fSpec]
-  where 
-   outputFile p = {- combine directory -} filename  -- creates the filename without extension in the right directory TODO: take care of directory...
-    where directory = dirOutput flags
-          filename  = remSpaces (name p)
-   makeGraphic p
-    = do 
-      writeFile (fullFile++".dot") (printDotGraph (toDot fSpec flags p))
-      verboseLn flags (fullFile++".dot written.")
-      verboseLn flags ("neato -Tpng "++fullFile++".dot -o "++fullFile++".png")
-      result <- system $ "neato -Tpng "++fullFile++".dot -o "++fullFile++".png"
-      case result of 
-         ExitSuccess   -> verboseLn flags (fullFile++".png written.")
-         ExitFailure x -> putStrLn ("Failure: " ++ show x)
-      where
-        fullFile = outputFile p

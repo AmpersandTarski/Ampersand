@@ -26,6 +26,7 @@ import NormalForms    (conjNF,normECA) -- ,proofPA)  Dit inschakelen voor het be
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
 import System.FilePath
+import Picture
 
 --import Statistics
 
@@ -401,7 +402,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pa
      
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options ->  [Block]
-conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (vpatterns fSpec)
+conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (paternsPics fSpec)
   where 
   header :: [Block]
   header = labeledHeader lev chpCAlabel (case (language flags) of
@@ -424,26 +425,25 @@ conceptualAnalysis lev fSpec flags = header ++ caIntro ++ caSections (vpatterns 
                   , Str "and each principle is then translated in a rule. "
                   ]]
    )
-  caSections :: [Pattern] -> [Block]
-  caSections pats = iterat 1 pats
+  caSections :: [(Pattern,Picture)] -> [Block]
+  caSections patternPictures = iterat 1 patternPictures
    where
-    iterat n (pat:pats)
+    iterat n ((pat,pict):pats)
      = [Header (lev+1) [Str $ name pat]] --new section to explain this theme
-     ++ printfigure pat
+     ++ printfigure1 pict
      ++ (if null (themerules pat) then [] else [OrderedList (n, Decimal, DefaultDelim) (themerules pat)])
      ++ iterat (n+length (themerules pat)) pats
     iterat n [] = []
     --query copied from FSpec.hs revision 174
     themerules  :: Pattern -> [[Block]]
     themerules pat = [[Plain [Str $ "R"++show (nr r),Str $ latexEsc (explainRule flags r)]]|r<-rules pat]
-    printfigure :: Pattern -> [Block]
-    printfigure pat = case language flags of
-      Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference figlabel, Str " geeft een conceptuele analyse van dit thema."]] ]
-                 ++ [Plain [x | x<-xrefFigure ("Conceptuele analyse van "++name pat) filenm figlabel ]]
-      English -> [Para [x | x<-[Str "Figure ", xrefReference figlabel, Str " shows a conceptual analysis of this theme."]] ]
-                 ++ [Plain [x | x<-xrefFigure ("Conceptual analysis of "++name pat) filenm figlabel ]]
-      where filenm = remSpaces (name pat)
-            figlabel = "fig:" ++ name pat
+    printfigure1 :: Picture -> [Block]
+    printfigure1 pict 
+      = (case language flags of
+           Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptuele analyse van dit thema."]] ]
+           English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual analysis of this theme."]] ]
+        )++ [Plain [x | x<-xrefFigure1 pict]]
+      
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
@@ -462,7 +462,7 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daPlu
                   [ Str $ "De eisen, die in hoofdstuk "
                   , xrefReference chpFRlabel
                   , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
-                  , xrefReference figlabel
+                  , xrefReference (figlabel classDiagramPicture)
                   , Str $ ". Er zijn "++count flags (length classes) "gegevensverzameling"++","
                   , Str $ " "++count flags (length assocs) "associatie"++","
                   , Str $ " "++count flags (length geners) "generalisatie"++" en"
@@ -473,21 +473,20 @@ dataAnalysis lev fSpec flags = header ++ daContents ++ daMultiplicities ++ daPlu
                   [ Str $ "The requirements, which are listed in chapter "
                   , xrefReference chpFRlabel
                   , Str $ ", have been translated into the class diagram in figure "
-                  , xrefReference figlabel
+                  , xrefReference (figlabel classDiagramPicture)
                   , Str $ ". There are "++count flags (length classes) "data set"++","
                   , Str $ " "++count flags (length assocs) "association"++","
                   , Str $ " "++count flags (length geners) "generalisation"++", and"
                   , Str $ " "++count flags (length aggrs) "aggregation"++"."
                   , Str $ " "++nm++" has a total of "++count flags (length cs) "concept"++"."
                   ]] --TODO
-   ) ++ [ Plain $ xrefFigure captionText cdFilename figlabel ]  -- TODO: explain all multiplicities]
+   ) ++ [ Plain $ xrefFigure1 classDiagramPicture ]  -- TODO: explain all multiplicities]
       where
-       (cd@(OOclassdiagram classes assocs aggrs geners (nm, cs)),cdFilename) = classdiagram fSpec
-       figlabel = "fig:" ++ (takeFileName cdFilename)
-       captionText
-        = case (language flags) of
-          Dutch   -> "Class diagram of "++name fSpec
-          English -> "Klassediagram van "++name fSpec
+       OOclassdiagram classes assocs aggrs geners (nm, cs) = classdiagram fSpec
+       classDiagramPicture
+        = case pictCD fSpec of
+           Just pict -> pict
+           Nothing   -> undefined  -- This should not occur. If it does, that means that the picutere wasn't generated yet. TODO
 
   daMultiplicities :: [Block]
   daMultiplicities
@@ -799,13 +798,13 @@ xrefCitation myLabel = TeX ("\\cite{"++myLabel++"}")
 
 --Image [Inline] Target
 --      alt.text (URL,title)
-xrefFigure :: String -> String -> String -> [Inline]
-xrefFigure caption filenm figlabel = 
+xrefFigure1 :: Picture -> [Inline]
+xrefFigure1 pict = 
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [Str $ "Here, "++filenm ++ ".png should have been visible"] ((takeFileName filenm) ++ ".png", figlabel)
+   , Image [Str $ "Here, "++fullPng pict++ " should have been visible"] ((reference pict), (title pict))
    , TeX "}\n"
-   , TeX ("\\caption{"++caption++"}\n") 
-   , xrefLabel (figlabel)
+   , TeX ("\\caption{"++title pict++"}\n") 
+   , xrefLabel (reference pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
 addinfix :: Inline -> [[Inline]] -> [Inline] 

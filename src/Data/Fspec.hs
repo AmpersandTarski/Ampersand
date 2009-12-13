@@ -7,7 +7,7 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module Data.Fspec ( Fspc(..)
+module Data.Fspec ( Fspc(..),paternsPics
                   , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
@@ -27,11 +27,12 @@ module Data.Fspec ( Fspc(..)
    import Adl.MorphismAndDeclaration    (Morphism,Declaration,mIs)
    import Classes.Morphical
    import Classes.ViewPoint
-   import CommonClasses
+  -- import CommonClasses
    import Collection                    (uni)
    import Strings                       (chain)
    import Typology                      (Inheritance)
    import Data.Plug
+   import Picture
    
    data Fspc = Fspc { fsfsid       :: FSid                  -- ^ The name of the specification, taken from the ADL-script
                     , vplugs       :: [Plug]                -- ^ all plugs defined in the ADL-script
@@ -45,12 +46,21 @@ module Data.Fspec ( Fspc(..)
                     , vrels        :: [Declaration]         -- ^ All declarations in this specification
                     , fsisa        :: (Inheritance Concept) -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
+                    , pictPatts    :: Maybe [Picture]       -- ^ List of pictures containing pattern pictures (in same order as patterns)
                     , vConceptDefs :: [ConceptDef]          -- ^ all conceptDefs defined in the ADL-script
-                    , classdiagram :: (ClassDiag,String)    -- ^ generated: class diagram that defines the data sets of this specification, together with its filename
+                    , pictConcepts :: Maybe [Picture]       -- ^ List of pictures containing concept pictures.
+                    , classdiagram :: ClassDiag             -- ^ generated: class diagram that defines the data sets of this specification
+                    , pictCD       :: Maybe Picture         -- ^ Picture containing the ClassDiagram. Only if allready generated.
+                    , pictSB       :: Maybe Picture         -- ^ Picture containing the SwitchBoard.
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , violations   :: [(Rule,Paire)]        -- ^ generated: the violations of rules, as computed from the populations specified in the ADL-script
                     }
-
+   paternsPics :: Fspc -> [(Pattern,Picture)]
+   paternsPics fspec 
+      = case pictPatts fspec of
+           Nothing    -> undefined 
+           Just patts -> zip (vpatterns fspec) patts  
+   
    instance Morphical Fspc where
     concs        fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
     conceptDefs  fSpec = vConceptDefs fSpec                                  -- The set of all concept definitions in this Fspc
