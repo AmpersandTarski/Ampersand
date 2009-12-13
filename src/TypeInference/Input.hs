@@ -13,23 +13,23 @@ removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (cas
 
 --DESCR -> all the Gens of Contexts
 allCtxGens :: Contexts -> Gens
-allCtxGens ctxs = foldr (++) [] [case cx of Ctx{} -> allPatGens (ctxpats cx) | cx<-ctxs]
+allCtxGens ctxs = concat [case cx of Ctx{} -> allPatGens (ctxpats cx) | cx<-ctxs]
 
 --DESCR -> all the Gens of patterns
 allPatGens :: Patterns -> Gens
-allPatGens ps = foldr (++) [] [case p of Pat{} -> ptgns p | p<-ps]
+allPatGens ps = concat [case p of Pat{} -> ptgns p | p<-ps]
 
 --DESCR -> all the patterns of contexts
 allCtxPats :: Contexts -> Patterns
-allCtxPats ctxs = foldr (++) [] [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
+allCtxPats ctxs = concat [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
 
 --DESCR -> all the Rules of Contexts
 allCtxRules :: Contexts -> Rules
-allCtxRules ctxs = foldr (++) [] [case cx of Ctx{} -> ctxrs cx ++ allPatRules (ctxpats cx) | cx<-ctxs]
+allCtxRules ctxs = concat [case cx of Ctx{} -> ctxrs cx {- ++ allPatRules (ctxpats cx) -} | cx<-ctxs]
 
 --DESCR -> all the Rules of patterns
 allPatRules :: Patterns -> Rules
-allPatRules ps = foldr (++) [] [case p of Pat{} -> ptrls p | p<-ps]
+allPatRules ps = concat [case p of Pat{} -> ptrls p | p<-ps]
 
 allCtxCpts :: Contexts -> Concepts
 allCtxCpts ctxs
@@ -52,14 +52,14 @@ allCtxDecls ctxs = allPatDecls (allCtxPats ctxs)
 allCtxKeyDefs :: Contexts -> KeyDefs
 allCtxKeyDefs ctxs = (allPatKeyDefs (allCtxPats ctxs))
 --TODO -> all context keydefs are already parsed into a pattern for some unknown reason
---          not needed: ++ (foldr (++) [] [case cx of Ctx{} -> ctxks cx | cx <-ctxs])
+--          not needed: ++ (concat [case cx of Ctx{} -> ctxks cx | cx <-ctxs])
  
 allPatKeyDefs :: Patterns -> KeyDefs
-allPatKeyDefs ps = foldr (++) [] [case p of Pat{} -> ptkds p | p<-ps]
+allPatKeyDefs ps = concat [case p of Pat{} -> ptkds p | p<-ps]
 
 --DESCR -> concatenate the declarations of relations from the patterns
 allPatDecls :: Patterns -> Declarations
-allPatDecls ps = foldr (++) [] [ptdcs p | p@(Pat{})<-ps]
+allPatDecls ps = concat [ptdcs p | p@(Pat{})<-ps]
 
 
 ---------------------------------------------------------------------------------------------

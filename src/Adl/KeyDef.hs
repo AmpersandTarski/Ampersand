@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.KeyDef (KeyDef(..),KeyDefs)
 where
-   import Adl.FilePos       (FilePos)
+   import Adl.FilePos       (FilePos,Numbered(..))
    import Adl.Expression    (Expression)
    import Adl.ObjectDef     (ObjectDefs)
    import CommonClasses     (Identified(..))
@@ -25,6 +25,8 @@ where
    instance Identified KeyDef where
     name kd = kdlbl kd
     typ _ = "KeyDef_"
+   instance Numbered KeyDef where
+    pos kd = kdpos kd
 
 
                     

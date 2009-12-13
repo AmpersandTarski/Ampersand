@@ -3,7 +3,6 @@
   module CC_aux ( pKey_pos
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
-                , renumberRules
                 , Pop(..)
                 , makeConceptSpace , pMeaning
                 , anything, shSigns , gEtabG
@@ -62,22 +61,6 @@
    pMeaning Rfx   = "reflexive"
    pMeaning Aut   = "automatic if possible"
 
-
-   renumberRule :: Int -> Rule -> Rule
-   renumberRule n rule 
-      = case rule of
-          Ru{rrsrt = Automatic} -> rule{rrant = error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL rule++")")
-                                       ,runum = n
-                                       }
-          Ru{}                  -> rule{runum = n}
-          Sg{}                  -> rule{srsig = renumberRule n (srsig rule)
-                                       ,runum = n
-                                       }
-          Fr{}                  -> rule
-
-   renumberRules :: Int -> [Rule] -> [Rule]
-   renumberRules n (r:rs) = (renumberRule n r):renumberRules (n+1) rs
-   renumberRules _ [] = []
 
 
    showFullRelName :: Declaration -> String

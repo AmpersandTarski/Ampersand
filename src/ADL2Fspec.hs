@@ -135,7 +135,7 @@
          = concat
            [ [ Obj { objnm   = name c
                    , objpos  = Nowhere
-                   , objctx  = Tm $ I [c] c c True -- was: Tm $ V [cptS,c] (cptS,c)
+                   , objctx  = Tm $ mIs c -- was: Tm $ V [cptS,c] (cptS,c)
                    , objats  = [ recur [] mph | mph<-relsFrom c]++
                                 [ Obj { objnm =  name (srrel s)
                                       , objpos = Nowhere
@@ -148,7 +148,7 @@
                    }]++
              [ Obj { objnm   = (if language flags==Dutch then "nieuwe" else "new")++name c
                    , objpos  = Nowhere
-                   , objctx  = Tm $ I [c] c c True -- was: Tm $ V [cptS,c] (cptS,c)
+                   , objctx  = Tm $ mIs c -- was: Tm $ V [cptS,c] (cptS,c)
                    , objats  = [ Obj { objnm =  name mph
                                      , objpos = Nowhere
                                      , objctx = Tm mph
@@ -167,13 +167,13 @@
                          | mph<-fats c]
                in [ Obj { objnm  = plural (language flags) (name c)
                         , objpos = Nowhere
-                        , objctx = Tm $ I [S] S S True
+                        , objctx = Tm $ mIs S
                         , objats = [ Obj { objnm  = plural (language flags) (name c)
                                          , objpos = Nowhere
                                          , objctx = Tm $ V [S,c] (S,c)
                                          , objats = ( Obj { objnm = "nr"
                                                           , objpos = Nowhere
-                                                          , objctx = Tm $ I [c] c c True
+                                                          , objctx = Tm $ mIs c
                                                           , objats = []
                                                           , objstrs= []
                                                           }): ats

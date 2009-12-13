@@ -6,10 +6,6 @@
               , PredLogic(Forall, Exists, Implies, Equiv, Conj, Disj, Not, Pred, Rel, Funs)
               , predLshow
               , mathVars
-              , lang
-              , objOrShow
---            , explainArtObsolete  -- obsolete
-              , explainArt
               , applyM  
               )
    where
@@ -27,10 +23,6 @@
    import Data.Fspec
    import Char (toLower)
  
-
-
-
-
    data PredLogic       
     = Forall [(String,Concept)] PredLogic   |
       Exists [(String,Concept)] PredLogic   |
@@ -91,75 +83,15 @@
       where
        vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
 
-   explainArt :: Options -> Fspc -> Rule ->  String
-   explainArt flags fspc rul  -- TODO Geef een mooie uitleg van deze regel. 
-    = if null (explain flags rul)
-      then case language flags of
-              English   -> "Artificial explanation: "
-              Dutch     -> "Kunstmatige uitleg: " 
-           ++(lang flags.assemble.normRule) rul
-      else explain flags rul
-
-{-
-   explainArtObsolete ::  Context -> Lang -> Rule -> String
-   explainArtObsolete thisCtx l r
-    = if null (explain r)
-      then case l of
-              English   -> "Artificial explanation: "
-              Dutch     -> "Kunstmatige uitleg: " 
-    --       ++(lang flags.assemble.normRule) r
-      else explain r
--}
-
-   lang :: Options -> PredLogic -> String
-   lang flags x =
-     case language flags of
-       English -> predLshow flags ("For each", "There exists", implies, "is equivalent to", "equals", "is unequal to", "or", "and", "not", rel, fun, langVars English, "\n  ", " ") x
-       Dutch   -> predLshow flags ("Voor elke", "Er is een", implies, "is equivalent met", "gelijk aan", "is ongelijk aan", "of", "en", "niet", rel, fun, langVars Dutch, "\n  ", " ") x
-     where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
-           fun m x = name m++"("++x++")"
-           implies antc cons = case language flags of 
-                                   English  -> "If "++antc++", then "++cons
-                                   Dutch    -> "Als "++antc++", dan "++cons
-
- --  langVars l q vs
- --    = case (l,q,vs) of
- --        (English,_,null) -> ""
- --        
-
-   langVars English q vs
-    = if null vs then "" else
-      if q=="Exists"
-      then chain " and " ["there exist"++(if length vs==1 then "s a "++dType else " "++plural English dType)++" called "++chain ", " vs | (vs,dType)<-vss]
-      else "If "++langVars English "Exists" vs++", "
-      where
-       vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
-   langVars Dutch q vs
-    = if null vs then "" else
-      if q=="Er is"
-      then chain " en " ["er "++(if length vs==1 then "is een "++dType else "zijn "++plural Dutch dType)++" genaamd "++chain ", " vs | (vs,dType)<-vss]
-      else "Als "++langVars Dutch "Er is" vs++", "
-      where
-       vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
-
-
-
-   objOrShow :: Options -> PredLogic -> String
-   objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars English, "\n", " ")
-               where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
-                     fun m x = x++"."++name m
-                     implies antc cons = "IF "++antc++" THEN "++cons
-
-
    normRL r = normRule r -- try this (not quite OK, though...): head [ (makeRule r) c| c <- (simplify . shiftL . normExpr) r]
 
    ruleToPL :: Rule -> PredLogic
    ruleToPL = assemble . normRule
 
    normRule :: Rule -> Rule
-   normRule r@(Ru{rrsrt=Truth,rrfps=pos,rrcon=cons,rrxpl=expla,rrtyp=sgn,runum=nr,r_pat=pn,r_usr=usr})
+   normRule r@(Ru{rrsrt=Truth})
     = r{rrant=error ("!Fatal (module PredLogic 161): illegal reference to antecedent in normRule ("++showADL r++")")}
-   normRule r@(Ru{rrsrt=Implication,rrant=a@(F ants),rrcon=c@(F cons),rrxpl=expla,rrtyp=sgn})
+   normRule r@(Ru{rrsrt=Implication,rrant=a@(F ants),rrcon=c@(F cons)})
     | idsOnly ants = r{rrant=F [Tm (mIs idA)],rrtyp=(idC,idC)}
     | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
     where
@@ -206,9 +138,6 @@
      where
       [s,t] = mkVar [] [source e, target e]
       (rc,cvars) = assembleF [s,t] e s t
-
-   instance Explained Expression where
-    explain options e = lang options (expr2predLogic e)
 
    assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t

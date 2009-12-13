@@ -38,15 +38,15 @@ printexpr :: AdlExpr -> String
 printexpr ex@(Relation mp _ _)= show mp ++ "[" ++ (show $ evalstmt (BoundTo ex)) ++"]"
 printexpr (Implicate expr1 expr2 _)= printexpr expr1 ++ "|-" ++ printexpr expr2
 printexpr (Equality expr1 expr2 _)= printexpr expr1 ++ "=" ++ printexpr expr2
-printexpr (Union exprs _)= "UNION: " ++ (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
-printexpr (Intersect exprs _)= "DISJ: " ++  (foldr (++) [] [", " ++ printexpr ex | ex<-exprs])
+printexpr (Union exprs _)= "UNION: " ++ (concat [", " ++ printexpr ex | ex<-exprs])
+printexpr (Intersect exprs _)= "DISJ: " ++  (concat [", " ++ printexpr ex | ex<-exprs])
 printexpr (Semicolon expr1 expr2 _)= printexpr expr1 ++ ";" ++ printexpr expr2
 printexpr (Dagger expr1 expr2 _)= printexpr expr1 ++ "!" ++ printexpr expr2
 printexpr (Complement expr _)= "-" ++ printexpr expr
 printexpr (Flip expr _)= printexpr expr ++ "~" 
 
 prlst :: [String] -> String
-prlst xs = foldr (++) [] $ [x ++ "\n"|x<-xs]
+prlst xs = concat $ [x ++ "\n"|x<-xs]
 
 instance Eq InfErrType where
    (UndeclRel expr)==(UndeclRel expr') = expr==expr'
@@ -320,8 +320,8 @@ data DMType = FAddcomp | FRelcomp | FUnion | FDisj deriving (Show)
 --DESCR -> returns all the Stmt statements in a tree
 stmts :: ITree -> [Statement]
 stmts (Stmt stmt) = [stmt]
-stmts (DisjRule trs1 trs2) = foldr (++) [] $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
-stmts (UnionRule trs1 trs2) = foldr (++) [] $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
+stmts (DisjRule trs1 trs2) = concat $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
+stmts (UnionRule trs1 trs2) = concat $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
 stmts (ImplyRule tr) = stmts tr
 stmts (EqualRule tr) = stmts tr
 stmts (RelcompRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)

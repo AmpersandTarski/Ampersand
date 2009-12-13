@@ -7,7 +7,7 @@ where
    import Adl.Concept                   ( Concept(..)
                                         , Association(..)
                                         , MorphicId(..),Morphic(..))
-   import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..))
+   import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..),mIs)
    import Adl.Expression                ( Expression(..),v)
    import Adl.Prop
    import CommonClasses                 ( Identified(name,typ)
@@ -180,7 +180,7 @@ where
                         Trn-> F [r,r]
                         Rfx-> i 
                         Aut->  error $ "!Fatal (module TypeChecker 354): There is no rule for this prop."
-           , rrfps = Nowhere
+           , rrfps = pos d
            , rrcon = case prp of
                         Uni-> i
                         Tot-> F [r,flp r]
@@ -205,11 +205,11 @@ where
            , rrtyp = (Anything,Anything)  -- The type checker will assign the type
            , rrdcl = (Just (prp,d))       -- For traceability: The original property and declaration.
            , runum = 0                    -- Rules will be renumbered after enriching the context
-           , r_pat = decpat d                   -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+           , r_pat = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
            , r_usr = False                
            }
           where
-           i = Tm $ I [] Anything Anything True
+           i = Tm $ mIs Anything
            r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
    rulefromProp _ _ = error ("!Fatal (module Rule 214): Properties can only be set on user-defined Declarations.")
     

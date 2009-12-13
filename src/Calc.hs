@@ -271,7 +271,7 @@ module Calc ( deriveProofs
                                             "viols = r'-"++cfProof (Cp r')++"\n"++
                                             "violations, considering that the valuation of "++showADL m++" has just been changed to "++showADL (actSem ev m (delta (sign m)))++
                                             "            "++cfProof (Cp r) -- ++"\n"++
-                                      --      "reaction? evaluate r -: r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
+                                      --      "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
                                       --         cfProof (Fu[Cp r,r'])++"\n"++
                                       --      "delta: r-/\\r' = "++cfProof (Fi[notCp r,r'])++
                                       --      "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
@@ -282,9 +282,9 @@ module Calc ( deriveProofs
                                       --               "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
                                       --               "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++ -}
                                       --            if (isTrue.conjNF) (Fu[Cp r,r'])
-                                      --            then "A reaction is not required, because  r -: r'. Proof:"++cfProof (Fu[Cp r,r'])++"\n"
+                                      --            then "A reaction is not required, because  r |- r'. Proof:"++cfProof (Fu[Cp r,r'])++"\n"
                                       --            else if checkMono r ev m
-                                      --            then "A reaction is not required, because  r -: r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
+                                      --            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                       --            else let Tm delt = delta (sign m) in
                                       --                 "An appropriate reaction on this event is\n"++
                                       --                 showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)
@@ -424,10 +424,10 @@ module Calc ( deriveProofs
    chop (x:xs) = ([x],xs): [(x:l, r)| (l,r)<-chop xs]
 
    deltaK0 :: t -> InsDel -> t1 -> t
-   deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta -: x*)
+   deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)
    deltaK0 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x* leeg is)
    deltaK1 :: t -> InsDel -> t1 -> t
-   deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta -: x+)
+   deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x+)
    deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
 
 -- The function reprAsRule is used in show-functions, whenever an expression that represents a rule has to be shown to look like a rule.
@@ -487,7 +487,7 @@ module Calc ( deriveProofs
      f [(e',_,_)] (neg',pos')
       = [(rule (subst (m',neg') e') (subst (m',pos') e'),[],"")]
      f ((e',["omkeren"],_): prf@((_,_,_):_)) (neg',pos')
-      = (rule (subst (m',neg') e') (subst (m',pos') e'),["r -: s  <=>  s- -: r-"],"<=>"):
+      = (rule (subst (m',neg') e') (subst (m',pos') e'),["r |- s  <=>  s- |- r-"],"<=>"):
          f prf (pos',neg')
      f ((e1,_,_): prf@((e2,_,_):_)) (neg',pos')
       = (rule (subst (m',neg') e1) (subst (m',pos') e1),["Monotony of "++showOp e2],"==>"):

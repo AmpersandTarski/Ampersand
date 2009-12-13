@@ -55,8 +55,8 @@ infertype fSpec eor = (inftype,proof)
   mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Union exprs _) = foldr (++) [] $ map mphStmts exprs
-  mphStmts (Intersect exprs _) = foldr (++) [] $ map mphStmts exprs
+  mphStmts (Union exprs _) = concat $ map mphStmts exprs
+  mphStmts (Intersect exprs _) = concat $ map mphStmts exprs
   mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Complement expr _) = mphStmts expr
@@ -120,7 +120,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                                           ++[err|(EmptyStmt, [(EmptyStmt, Just (Stmt err))])<-bstmts]
                       ]
                     , attachtrees ([],vars) basetree
-                    ) | alt@(bstmts,vars)<-alts ] --foldr (++) []
+                    ) | alt@(bstmts,vars)<-alts ] --concat
                       -- [ --All alternatives resulting in an tree consisting of just an errorrule
                         --ax1: expression |- basetree
                         --ax2: unambiguous gamma |- basetree -> error
@@ -315,7 +315,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
   inferstmts (stms,vars) = if null toinfer || errsfnd --DONE!
                             then [(stms,vars)] 
                             --else: infer the next statement, and infer the other statements toinfer too
-                            else foldr (++) [] [inferstmts alt |alt<-(inferalts $ head toinfer)]
+                            else concat [inferstmts alt |alt<-(inferalts $ head toinfer)]
      where
      --DESCR -> if a stmt has only one alternative which is an error, then inference has failed
      errsfnd =  not $ null [err | (_,alts)<-stms, (_,err@(Just (Stmt (InfErr _))))<-alts, length alts==1]

@@ -20,7 +20,8 @@
    -- import Debug.Trace
    import Version (versionbanner)
    import Options
-   import PredLogic
+--   import PredLogic
+   import Rendering.AdlExplanation
 
    objectServices :: Options 
                   -> Fspc

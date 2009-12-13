@@ -9,7 +9,7 @@
    import Options
    import Languages
    import ShowADL(showADLcode)
-   import PredLogic(explainArt)
+   import Rendering.AdlExplanation(explainArt)
    import NormalForms (conjNF)
    import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,phpShow,pDebug,noCollide)
    import Version (versionbanner)

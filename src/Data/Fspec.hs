@@ -63,12 +63,12 @@ module Data.Fspec ( Fspc(..),paternsPics
    
    instance Morphical Fspc where
     concs        fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
-    conceptDefs  fSpec = vConceptDefs fSpec                                  -- The set of all concept definitions in this Fspc
+    conceptDefs  fSpec = vConceptDefs fSpec                           -- The set of all concept definitions in this Fspc
     mors         fSpec = mors (vplugs fSpec) `uni` mors (serviceS fSpec) `uni` mors (vrules fSpec)
     morlist      fSpec = morlist (vplugs fSpec) ++ morlist (serviceS fSpec) ++ morlist (vrules fSpec)
     declarations fSpec = vrels fSpec
-    genE         fSpec = genE (vrels fSpec++declarations [r| r<-(vrules fSpec),isSignal r ])  
-    closExprs    fSpec = closExprs (vrules fSpec)
+    genE         fSpec = genE (vrels fSpec++declarations [r| r<-signals fSpec])  
+    closExprs    fSpec = closExprs (rules fSpec++signals fSpec)
 
    instance ViewPoint Fspc where
     --Interpretation of fSpec as a language means to describe the classification tree,
@@ -84,7 +84,6 @@ module Data.Fspec ( Fspc(..),paternsPics
                               , objstrs = []
                               }
     isa           fSpec = fsisa  fSpec
-
 
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.

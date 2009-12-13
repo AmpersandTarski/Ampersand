@@ -19,7 +19,6 @@
 --REMARK -> In any expression, in case of multiple type errors, choose the innermost errors and yield the first one.
 --REMARK -> The ADL.Rule contains all kinds of structures typechecker only supports the one with constructor Ru and Sg.
 --          Fr rules will generate a type error message, but the parser (see CC.hs) does not output Fr rules at the moment of writing this comment.
---          Gc rules are or will be deprecated. Gc rules will generate a type error message too.
 --DESCR ->
 --         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
@@ -35,7 +34,6 @@ import qualified Data.Set as Set --
 
 import Classification --USE -> cast from data.Tree to Classification for enrichment
 import Typology --USE -> Isa structure for enrichment
-import CC_aux (renumberRules)
 
 import TypeInference.ITree
 import TypeInference.AdlExpr
@@ -96,33 +94,62 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
 ------------------
 enrichArch :: Architecture -> (Contexts,[(Proof,FilePos,OrigExpr)])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
-                            , foldr (++) [] [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
+                            , concat [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
 
 --DESCR -> contains enrichment functionality which should be temporary
 postenrich :: Context -> Context
 postenrich cx@(Ctx{}) = addsgndecls $ renumber cx
 renumber :: Context -> Context
-renumber cx@(Ctx{}) = cx {ctxpats=renumberPats 1 (ctxpats cx),
-                          ctxrs=renumberRules 1 (ctxrs cx)}
+renumber cx@(Ctx{}) = cx {ctxpats=renumberedPats,
+                          ctxrs=renumberRules i (ctxrs cx)}
   where
-  renumberPats :: Int -> Patterns -> Patterns
-  renumberPats _ [] = []
-  renumberPats i (p:[]) = (renumberPat i p):[]
-  renumberPats i (p@(Pat{}):ps) = (renumberPat i p):renumberPats (i+(length $ ptrls p)) ps
-  renumberPat :: Int -> Pattern -> Pattern
-  renumberPat i p@(Pat{}) = p {ptrls=renumberRules i (ptrls p)}
+   (i,renumberedPats) = renumberPats 1 (ctxpats cx)
+   renumberPats :: Int -> Patterns -> (Int,Patterns)
+   renumberPats i (pat:ps) = (n,pat{ptrls=rs}:renumberedPs)
+     where rs = renumberRules i (ptrls pat)
+           (n,renumberedPs) = renumberPats (i+length rs) ps
+   renumberPats i [] = (i,[])
+
+   renumberRules :: Int -> [Rule] -> [Rule]
+   renumberRules i (r:rs) = renumberRule i r: renumberRules (i+1) rs
+   renumberRules i    []  = []
+
+   renumberRule :: Int -> Rule -> Rule
+   renumberRule n rule 
+      = case rule of
+          Ru{rrsrt = Automatic} -> rule{rrant = error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL rule++")")
+                                       ,runum = n
+                                       }
+          Ru{}                  -> rule{runum = n}
+          Sg{}                  -> rule{srsig = renumberRule n (srsig rule)
+                                       ,runum = n
+                                       }
+          Fr{}                  -> rule
+
+
 addsgndecls ::Context -> Context
 addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
   where allsgndecls = [srrel sg | sg@(Sg{})<-allPatRules $ allCtxPats [cx]]
 
 data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
 
+-- enrichCtx supplies all information to the parse tree of a single context
+-- that can only be computed after the type checking process.
+-- This consists of:
+--   - Rule binding:      This binds type information to expressions and morphisms in Rules and Signals.
+--   - ObjectDef binding: Supply type information to expressions and morphisms in ObjectDefs
+--   - Key binding:       Supply type information to expressions and morphisms in Keys
+--   - Plug binding:      Supply type information to expressions and morphisms in SQL plugs and PHP plugs
+--   - population:        All instances supplied by the ADL-script are bound to the right declarations and concepts.
+--   - rule generation:   Rules that are derived from multiplicities specified in the ADL-script (UNI,TOT,INJ,SUR,RFX,TRN,SYM,ASY)
+--   - rule generation:   Rules that are derived from Keys specified in the ADL-script
+
 enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos,OrigExpr)])
 enrichCtx cx@(Ctx{}) ctxs = 
   (postenrich $ 
       cx {ctxisa=hierarchy, -- 
           ctxwrld=world, --
-          ctxpats=ctxpatterns, -- 
+          ctxpats=map bindPat (ctxpats cx), -- 
           ctxrs=[rule | (rule,_,_)<-ctxrules], 
           ctxds=ctxdecls, -- 
           ctxos=[od | (od,_)<-ctxobjdefs], 
@@ -190,8 +217,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Union exprs _) = foldr (++) [] $ map mphStmts exprs
-  mphStmts (Intersect exprs _) = foldr (++) [] $ map mphStmts exprs
+  mphStmts (Union exprs _) = concat $ map mphStmts exprs
+  mphStmts (Intersect exprs _) = concat $ map mphStmts exprs
   mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Complement expr _) = mphStmts expr
@@ -205,14 +232,13 @@ enrichCtx cx@(Ctx{}) ctxs =
     isac = map populate$rd (map fst isar++map snd isar)
 
   --DESCR -> enriching ctxpats
-  ctxpatterns = map bindPat (ctxpats cx)
   bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds, ptdcs=addpopu}
     where
     bindrules = [br | (br,_,_)<-map bindRule $ 
                                 (ptrls p)
                   --REMARK -> no rules generated in pattern because of generation of func spec, showadl etc. 
-                   --           ++[r |d<-ptdcs p, r<-rulesfromdecl d]
-                    --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
+                  --           ++[r |d<-ptdcs p, r<-multRules d]
+                  --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
     addpopu = let matches = [d' |d@(Sgn{})<-ptdcs p, d'@(Sgn{})<-ctxdecls, decfpos d==decfpos d']
@@ -226,8 +252,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   --DESCR -> Determines domain and range population per declaration (i.e. relation)
   --REMARK -> concepts have no population, use ctxdecls instead if needed.
   popuRels = [d{decpopu=decpopu d++
-                        [pairx | pop<-ctxpops cx, comparepopanddecl (allCtxDecls [cx]) (popm pop) d, pairx<-popps pop]}
-             |d<-allCtxDecls [cx]]
+                        [pairx | pop<-ctxpops cx, comparepopanddecl (declarations cx) (popm pop) d, pairx<-popps pop]}
+             |d<-declarations cx]
   --DESCR -> Determines source and target population based on domains and ranges of all decls
   --         Source and target need to be provided, because it can differ from the sign of the declaration
   --         The morphism (in an expression) refering to this declaration determines the type.
@@ -250,14 +276,21 @@ enrichCtx cx@(Ctx{}) ctxs =
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
 
-
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
-  ctxrules = ctxrulesgens ++ (map bindRule $ allCtxRules [cx] ++ [r |d<-allCtxDecls [cx], r<-rulesfromdecl d] )
+  ctxrules
+     = [ bindRule r| r<-ctxrs cx ] ++               -- all rules that are declared in the ADL-script within
+                                                    --     this context, but not in the patterns of this context
+       [ rulefromKey k (name pat)
+       | pat<-patterns cx, k<-ptkds pat] ++         -- all rules that are derived from all KEY statements in this context
+       [rulefromKey k (name cx) | k<-ctxks cx] ++   -- all rules that are derived from all KEY statements in this context
+       [rulefromgen g | g<-allCtxGens [cx]] ++      -- all rules that are derived from all GEN statements in this context
+       [bindRule r |d<-declarations cx, r<-multRules d]  -- all multiplicity rules that are derived from all declarations in this context
 
+  --DESCR -> The function bindRule attaches a type to a rule by producing a proof in the type system.
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
   --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
-  --          have different numbers.
+  --          may have different numbers.
   bindRule :: Rule -> (Rule,Proof,FilePos)
   bindRule r@(Ru{})
     | rrsrt r==Truth = 
@@ -289,29 +322,29 @@ enrichCtx cx@(Ctx{}) ctxs =
           if rrsrt r==Implication 
           then case et of 
              (BoundTo (Implicate antex _ _)) -> BoundTo antex
-             _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etant: " ++
-                          "Expected a BoundTo implication rule statement."++show et++"."
+             _ -> error $ "!Fatal (module TypeChecker 291): " ++
+                          "Expected a BoundTo implication rule statement etant("++show et++")."
           else case et of 
              (BoundTo (Equality antex _ _)) -> BoundTo antex
-             _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etant: " ++
-                          "Expected a BoundTo equivalence rule statement."++show et++"."
+             _ -> error $ "!Fatal (module TypeChecker 295): " ++
+                          "Expected a BoundTo equivalence rule statement etant("++show et++")."
         etcon et = 
           if rrsrt r==Implication 
           then case et of 
              (BoundTo (Implicate _ conex _)) -> BoundTo conex
-             _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etcon: " ++
-                          "Expected a BoundTo implication rule statement."++show et++"."
+             _ -> error $ "!Fatal (module TypeChecker 301): " ++
+                          "Expected a BoundTo implication rule statement etcon("++show et++")."
           else case et of 
              (BoundTo (Equality _ conex _)) -> BoundTo conex
-             _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule.etcon: " ++
-                          "Expected a BoundTo equivalence rule statement."++show et++"."
+             _ -> error $ "!Fatal (module TypeChecker 305): " ++
+                          "Expected a BoundTo equivalence rule statement etcon("++show et++")."
         in 
         (r {rrant=bindant, rrcon=bindcon, rrtyp=bindrtype},proof,rrfps r)
   bindRule r@(Sg{}) = (r {srsig=bindsig, srtyp=sign bindsig, srrel= binddecl},proof,srfps r)
     where
     (bindsig,proof,_) = bindRule (srsig r)
     binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
-  bindRule _ = error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindRule: " ++
+  bindRule _ = error $ "!Fatal (module TypeChecker) function enrichCtx.bindRule: " ++
                        "Unsupported rule type while enriching the context. The type checker should have given an error."
   ctxrulesgens :: [(Rule,Proof,FilePos)]
   ctxrulesgens = [rulefromgen g | g<-allCtxGens [cx]]
@@ -320,26 +353,38 @@ enrichCtx cx@(Ctx{}) ctxs =
   rulefromgen :: Gen -> (Rule,Proof,FilePos)
   rulefromgen (G {genfp = posi, gengen = gen', genspc = spc', genpat=pat} )
     = (Ru
-         Implication   -- Implication of Equivalence
-         iSpc          -- left hand side (antecedent)
-         posi          -- position in source file; unknown at this position but it may be changed by the environment.
-         iGen          -- right hand side (consequent)
-         []            -- explanation
-         (gen,gen)     -- The type
-         Nothing       -- This rule was not generated from a property of some declaration.
-         0             -- Rule number. Will be assigned after enriching the context
+         Implication    -- Implication of Equivalence
+         (Tm $ mIs spc) -- left hand side (antecedent)
+         posi           -- position in source file
+         (Tm $ mIs gen) -- right hand side (consequent)
+         []             -- explanation
+         (gen,gen)      -- The type
+         Nothing        -- This rule was not generated from a property of some declaration.
+         0              -- Rule number. Will be assigned after enriching the context
          pat            -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-         False         -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
+         False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
        , Proven gammaisa [Stmt $ fromIsa (spc,gen)],posi)
     where
     spc = populate spc'
     gen = populate gen'
-    iSpc = Tm $ I [spc] spc spc True
-    iGen = Tm $ I [gen] gen gen True
 
-  rulesfromdecl :: Declaration -> [Rule]
-  rulesfromdecl d@(Sgn{decfpos=posi}) = [r{rrfps=posi}| p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx], r<-[rulefromProp p d]]
-  rulesfromdecl _ = []
+  rulefromKey :: KeyDef -> String -> (Rule,Proof,FilePos)
+  rulefromKey key pat
+    = (Ru
+         Implication    -- Implication of Equivalence
+         antc           -- the antecedent
+         (pos key)      -- position in source file
+         (Tm $ mIs c)   -- right hand side (consequent)
+         []             -- explanation
+         (c,c)          -- The type
+         Nothing        -- This rule was not generated from a property of some declaration.
+         0              -- Rule number. Will be assigned after enriching the context
+         pat            -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+         False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
+       , Proven gammaisa [],pos key)
+    where
+     c    = target (kdctx key)
+     antc = Fi [F [attexpr,flp attexpr]| attexpr<-[ctx att|att<-kdats key]]
 
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
@@ -367,12 +412,12 @@ enrichCtx cx@(Ctx{}) ctxs =
       Just topexpr -> F [topexpr,bindexpr]
     inferats = [bindObjDef oa (Just newtopexpr) | oa<-objats od]
     bindats = [oa|(oa,_)<-inferats]
-    proofats = foldr (++) [] [proofs|(_,proofs)<-inferats]
+    proofats = concat [proofs|(_,proofs)<-inferats]
     removeF et = case mbtopexpr of
       Nothing -> et
       Just _ -> case et of 
           (BoundTo (Semicolon _ ex2 _)) -> BoundTo ex2
-          _ -> error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindObjDef.removeF: " ++
+          _ -> error $ "!Fatal (module TypeChecker) function enrichCtx.bindObjDef.removeF: " ++
                        "Expected a BoundTo relative composition expression statement."++show et++"."
   
   ctxkeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
@@ -433,17 +478,17 @@ enrichCtx cx@(Ctx{}) ctxs =
       I{} -> popuMphDecl$mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> popuMphDecl$mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
-    else error  $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindSubexpr: " ++
+    else error  $ "!Fatal (module TypeChecker) function enrichCtx.bindSubexpr: " ++
                   "Morphisms are different: \nOriginal: " ++ show mp ++ "\nType checked: " ++ show (rel adlex)       
-  bindSubexpr x y = error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.bindSubexpr: " ++
+  bindSubexpr x y = error $ "!Fatal (module TypeChecker) function enrichCtx.bindSubexpr: " ++
                            "Expressions are different: \nOrginal: " ++ show x ++ "\nType checked: " ++ show y
 
   bindSubexprs :: Expressions ->  [AdlExpr] -> Expressions
   bindSubexprs subexs [] = if null subexs then [] 
-                           else error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.Subexprs: " ++
+                           else error $ "!Fatal (module TypeChecker) function enrichCtx.Subexprs: " ++
                                         "Not all subexprs are matched. Too many originals."
   bindSubexprs [] adlexs = if null adlexs then [] 
-                           else error $ "Error in TypeChecker.hs module TypeChecker function enrichCtx.Subexprs: " ++
+                           else error $ "!Fatal (module TypeChecker) function enrichCtx.Subexprs: " ++
                                         "Not all subexprs are matched. Too many type checked."
   bindSubexprs (subex:subexs) (adlex:adlexs) = (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
 
@@ -470,7 +515,7 @@ checkCtxNameUniqueness (cx:ctxs)
 
 --USE -> Contexts names must be unique
 checkCtxExtLoops :: Contexts -> Errors
-checkCtxExtLoops ctxs = composeError (foldr (++) [] [findLoops cx | cx<- ctxs])
+checkCtxExtLoops ctxs = composeError (concat [findLoops cx | cx<- ctxs])
     where
     composeError :: [ContextName] -> Errors
     composeError [] = []
@@ -489,11 +534,11 @@ checkSvcNameUniqueness ctxs =
     let svcs = [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx]
         printerrs [] = []
         printerrs (svcnms:lblnms) = 
-          ["Service or plug name " ++ svcnm ++ " is not unique:"++ (foldr (++) [] ["\n"++show svcpos |svcpos<-svcposs])
+          ["Service or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs])
           |(svcnm,svcposs)<-svcnms] 
           ++
           ["Label " ++ lblnm ++ " in service or plug must be unique on sibling level:"
-                    ++ (foldr (++) [] ["\n"++show lblpos |lblpos<-lblposs])
+                    ++ (concat ["\n"++show lblpos |lblpos<-lblposs])
           |lbl<-lblnms, (lblnm,lblposs)<-lbl]
     in  printerrs$checkLabels svcs
 
@@ -515,7 +560,7 @@ checkPopulations ctxs = if null unrelated then []
             ++ show (mphpos$popm$head unrelated)]
          else ["Population "++show (popm$head unrelated)++" at "++show (mphpos$popm$head unrelated)++"\n"
               ++ "can be related to multiple relation declarations:\n" 
-              ++ (foldr (++) [] (related$head$unrelated))]
+              ++ (concat (related$head$unrelated))]
     where
     unrelated = [pop| cx<-ctxs, pop<-ctxpops cx
                     , length (related pop) /= 1]
@@ -541,7 +586,7 @@ comparepopanddecl _ (Mph{mphnm=popnm, mphats=[c1,c2]}) d = popnm==name d && c1==
 comparepopanddecl ds (Mph{mphnm=popnm, mphats=[], mphpos=mpos}) _ = 
    case onedecl popnm ds of
         Just True -> True
-        _         -> error $ "Error in TypeChecker.hs module TypeChecker function comparepopanddecl: " ++
+        _         -> error $ "!Fatal (module TypeChecker) function comparepopanddecl: " ++
                      "Ambiguous population "++show popnm++" at "++show mpos++"\nDefine a type on the population name."
 comparepopanddecl _ _ _ = False
 
@@ -567,7 +612,7 @@ type CtxTree = Tree ContextFound
 
 toClassification :: CtxTree -> Classification Context
 toClassification (Node (NotFound cxnm) _) = 
-      error $ "Error in TypeChecker.hs module TypeChecker function toClassification: " ++
+      error $ "!Fatal (module TypeChecker) function toClassification: " ++
               "NotFound " ++ cxnm
 toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
 
@@ -598,7 +643,7 @@ ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
 ctxName (NotFound cxnm) = cxnm
 
 fromFoundCtx :: ContextFound -> Context
-fromFoundCtx (NotFound cxnm) = error $ "Error in TypeChecker.hs module TypeChecker function fromFoundCtx: NotFound " ++ cxnm
+fromFoundCtx (NotFound cxnm) = error $ "!Fatal (module TypeChecker) function fromFoundCtx: NotFound " ++ cxnm
 fromFoundCtx(Found cx)    = cx
 
 

@@ -19,7 +19,7 @@ where
    import Auxiliaries                 (enumerate) 
 
    class Morphical a => ViewPoint a where
-     objectdef      :: a -> ObjectDef        -- The objectdef that characterizes this viewpoint
+     objectdef      :: a -> ObjectDef   -- The objectdef that characterizes this viewpoint
      rules          :: a -> [Rule]      -- all rules in the language that hold within this viewpoint
      changeable     :: a -> Morphism -> Bool
      signals        :: a -> [Rule]      -- all SIGNAL rules in the language.
@@ -51,7 +51,8 @@ where
                             , objats  = map objectdef (ctxpats context)
                             , objstrs = []
                             }
-    rules     context = rd ([r| r<-ctxrs context, not (isSignal r)] ++ (concat.map ptrls.ctxpats) context )
+    rules     context = (   rules (ctxpats context)
+                         ++ [r| r<-ctxrs context, not (isSignal r)] )
     signals   context = rd ([r| r<-ctxrs context,      isSignal r ] ++ signals (ctxpats context))
     patterns  context = ctxpats context
     isa       context = ctxisa  context

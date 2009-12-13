@@ -19,7 +19,7 @@ import Text.Pandoc
                           --    als dat het geval is, kan deze module worden overruled in Generators.hs                                 
 import Version        (versionbanner)
 import Languages      (Lang(..),plural)
-import PredLogic      (lang,expr2predLogic)
+import PredLogic      (expr2predLogic)
 import Options        (Options(..),FspecFormat(..))
 import ShowECA        (showECA)
 import NormalForms    (conjNF,normECA) -- ,proofPA)  Dit inschakelen voor het bewijs...
@@ -43,21 +43,6 @@ import Picture
 --The fourth chapter presents a datamodel together with all the multiplicity rules.
 --The following chapters each present a SERVICE
 --The specification end with a glossary.
-
-renderFromPandoc :: Options -> Pandoc -> String
-renderFromPandoc flags pandoc = case fspecFormat flags of
-   FPandoc -> prettyPandoc pandoc                                      -- erg nuttig om Pandoc te snappen
-   FRtf    -> let wropts = defaultWriterOptions { writerStandalone      = True}
-              in writeRTF wropts pandoc
-   FLatex  -> let wropts = defaultWriterOptions { writerStandalone      = True
-                                                , writerHeader          = case texHdrFile flags of
-                                                                           Just customheader -> customheader
-                                                                           Nothing           -> laTeXheader flags
-                                                , writerTableOfContents = True
-                                                , writerNumberSections  = True}
-              in writeLaTeX wropts pandoc
-   FHtml   -> writeHtmlString defaultWriterOptions pandoc
-   _       -> prettyPandoc pandoc --REMARK -> will not occur at time of implementation because of user IO error.
 
 laTeXheader :: Options->String
 laTeXheader flags
@@ -100,7 +85,7 @@ laTeXheader flags
      , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
      , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"
      ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
-     [ "%  -- end of header. Use 'ADL --headerfile customheader.tex' to use your own header file instead of all of the previous." ] )
+     [ "%  -- end of header. Use 'ADL --headerfile myHeader.tex' to replace the previous by your own header file." ] )
 
 chpintrolabel :: String
 chpintrolabel="chpIntro"
@@ -239,7 +224,7 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 , Str "or to restore a rule by means of automatic actions in the database."]]  
 ------------------------------------------------------------
 designPrinciples :: Int -> Fspc -> Options ->  [Block]
-designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pat (rules fSpec++signals fSpec))) [] []
+designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   where
   header :: [Block]
   header = labeledHeader lev chpFRlabel (case (language flags) of
@@ -279,28 +264,42 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pa
                      , Str "All following chapters are technical and are meant for builders, testers and auditors. "
                      ]]
 
+  dpRequirements :: [Block]
+  dpRequirements = dpSections (rd (map r_pat (rules fSpec++signals fSpec))) [] [] [] 1
   --TODO -> It may be nice to print the class of the dataset from the class diagram
-  dpSections [] _ _ = []
+  dpSections [] _ _ _ _ = []
   dpSections (thm:thms)     -- The name of the patterns that are used in this specification.
              seenConcepts   -- All concepts that have been defined in earlier sections
              seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
+             seenRules      -- All rules that have been defined in earlier sections.
+             i              -- unique definition numbers (start at 1)
    = [Header (lev+1) [Str thm]]  --new section to explain this theme
      ++ sctConcepts  -- tells which new concepts are introduced in this section.
-     ++ sctRules     -- tells which rules are introduced in this section
-     ++ sctSignals   -- tells which signals are being introduced
-     ++ dpSections thms (seenConcepts++newConcepts) (seenRelations++newRelations)
+     ++ [ DefinitionList (sctRules ++ sctSignals) ]   -- tells which rules and signals are being introduced
+     ++ dpSections thms seenCss seenDss seenRss i''
     where
+     (sctRules,   i',  seenCrs, seenDrs, seenRrs) = dpRule patRules i seenConcepts seenRelations []
+     (sctSignals, i'', seenCss, seenDss, seenRss) = dpRule patSignals i' seenCrs seenDrs seenRrs
      conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]
-     patRules     = [r| r<-rules fSpec,   r_pat r==thm]
-     patSignals   = [s| s<-signals fSpec, r_pat s==thm]
+     patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
+     patSignals   = [s| s<-signals fSpec, r_pat s==thm, r_usr s]
      newConcepts  = concs        (patRules++patSignals) >- seenConcepts
-     newRelations = declarations (patRules++patSignals) >- seenRelations
-     dpRule (r:rs) seenConcepts
-      = ([Para [Str$ "Een "++name c++" is "++cddef cd]|(c,cd)<-cds]++[ Para [Str$explainRule flags r] ]++pNext, seen')
+     newRelations = filter (not.isIdent) (declarations (patRules++patSignals) >- seenRelations)
+     dpRule [] i seenConcepts seenDeclarations seenRules = ([], i, seenConcepts, seenDeclarations, seenRules)
+     dpRule (r:rs) i seenConcepts seenDeclarations seenRules
+      = ( [ ([Str$ name c], [Para [Str$ cddef cd]]) |(n,(c,cd))<-zip [i..] cds]++
+          [ ([Str$ name d], [Para [Str$ explainMult flags d]]) |(n,d)<-zip [i+length cds..] nds] ++
+          [ ([Str$ name r], [Para [Str$ explainRule flags r]]) ] ++ dpNext
+        , i'
+        , seenCs
+        , seenDs
+        , seenRs
+        )
         where
          cds = [(c,cd)| (c,cd)<-conceptdefs, c `elem` ncs]
          ncs = concs r >- seenConcepts
-         (pNext,seen') = dpRule rs (concs r `uni` seenConcepts)
+         nds = declarations r >- seenDeclarations
+         ( dpNext, i', seenCs,  seenDs, seenRs ) = dpRule rs (i+length cds+length nds+1) (concs r `uni` seenConcepts) (declarations r `uni` seenDeclarations) (r:seenRules)
      sctConcepts
       = if null newConcepts then [] else
           case language flags of
@@ -342,18 +341,6 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpSections (rd (map r_pa
                                          , Str $ " are introduced in this section without definition. "]
                                 )
                        ]
-     sctRules
-      = if null patRules
-        then [ Para [Str$ "Dit thema voegt geen regels toe."]]
-        else [ Para [Str$ "Dit thema voegt de volgende regels toe."] ]++
-             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
-             |r<-patRules]
-     sctSignals
-      = if null patSignals
-        then [ Para [Str$ "Dit thema voegt geen signalen toe."]]
-        else [ Para [Str$ "Dit thema voegt de volgende signalen toe."] ]++
-             [ Para [Str$explainRule flags r] --explanation of all rules in the theme
-             |r<-patSignals]
 
   dpSection :: FTheme -> [Block]
   dpSection t = []

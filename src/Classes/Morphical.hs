@@ -15,7 +15,7 @@ where
    import Adl.ConceptDef                 (ConceptDefs)
    import Adl.Context                    (Context(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..),Morphisms,Declarations
-                                         ,makeDeclaration,makeInline)
+                                         ,makeDeclaration,makeInline,mIs)
    import Adl.Gen                        (Gen(..))
    import Adl.Expression                 (Expression(..))
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
@@ -151,8 +151,8 @@ where
 
    instance Morphical Concept where
     concs        c          = [c]
-    mors         c          = [I [] c c True]
-    morlist      c          = [I [] c c True]
+    mors         c          = [mIs c]
+    morlist      c          = [mIs c]
     declarations _          = []
     genE c = case c of
                 C{}        -> cptgE c

@@ -202,7 +202,7 @@
                              v' []                  = V [] (cptAnything, cptAnything)
                              v' [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
                              v' [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
-                             v' _  = undefined  -- WAAROM? Stef, waarom ontbrak dit? Is dat vergeten? TODO Deze match is toegevoegd om de warning kwijt te raken. Maar is dit ook op deze manier bedoeld?
+                             v' _  = error ("!Fatal (module CC 205): relation cannot have more than two concepts as type")
                              emp c | c == cptnew ""     = cptAnything
                                    | otherwise          = c
                              pTwo = (one' <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>
@@ -215,12 +215,13 @@
    pConcept          = (cptS <$ (pKey "ONE")) <|> (cptnew <$> (pConid <|> pString))
                       -- where c str = C str (==) []
 
+-- WAAROM (SJ) heeft een label (optioneel) strings?
    pLabel           :: Parser Token Label
    pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos)
-                           <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
+-- obsolete                <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
-                       where lbl :: (String, FilePos) -> [[String]] -> Label
-                             lbl (nm,pos') strs = Lbl nm pos' strs
+                       where lbl :: (String, FilePos) -> {- obsolete: [[String]] -> -} Label
+                             lbl (nm,pos') = Lbl nm pos' []
 
    phpId            :: Parser Token String
    phpId             = pVarid <|> pConid <|> pString
@@ -228,10 +229,23 @@
    pConceptDef      :: Parser Token ConceptDef
    pConceptDef       = Cd <$> pKey_pos "CONCEPT" <*> (pConid <|> pString) <*> pString <*> (pString `opt` "")
 
+
+-- A key definition normally looks like:   KEY onaddress: Person(name, address),
+-- which means that name<>name~ /\ address<>addres~ |- I[Person].
+-- You may also use an expression on each attribute place, for example: KEY onpassport: Person(nationality, passport;documentnr),
+-- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].
+-- For the sake of a proper user interface, you can assign labels to the attributes in a key, for example:
+-- KEY onSSN: Person("social security number":ssn)
    pKeyDef          :: Parser Token KeyDef
-   pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pExpr <* pSpec '[' <*> pList1Sep (pSpec ',') pAtt <* pSpec ']'
-                        where kd :: Label -> Expression -> ObjectDefs -> KeyDef 
-                              kd (Lbl nm pos' _) expr ats = Kd pos' nm expr ats
+   pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeyAtt <* pSpec ')'
+                        where kd :: Label -> Concept -> ObjectDefs -> KeyDef 
+                              kd (Lbl nm p _) c ats = Kd p nm (Tm $ mIs c) ats
+
+   pKeyAtt          :: Parser Token ObjectDef
+   pKeyAtt           = attL <$> pLabel <*> pExpr <|>
+                       att <$> pExpr
+                       where attL (Lbl nm p strs) attexpr = Obj nm p attexpr [] strs
+                             att attexpr = Obj "" Nowhere attexpr [] []
 
    pObjDef          :: Parser Token ObjectDef
    pObjDef           = pKey_pos "SERVICE" *> pObj
@@ -253,10 +267,6 @@
                            <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
                            <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
                        where obj (Lbl nm pos' strs) expr _ ats = Obj nm pos' expr ats strs
-
-   pAtt             :: Parser Token ObjectDef
-   pAtt              = att <$> pLabel <*>  pExpr
-                       where att (Lbl nm pos' strs) ctx' = Obj nm pos' ctx' [] strs
 
    pDeclaration     :: Parser Token Declaration
    pDeclaration      = rebuild <$> pVarid 
