@@ -12,6 +12,7 @@ data Picture = Pict { reference :: String    -- used to reference the picture in
                     , dotSource :: String    -- the string representing the .dot 
                     , fullPng   :: FilePath  --the full file path where the .png file resides
                     , fullDot   :: FilePath  --the full file path where the .dot file resides
+                    , dotProgName :: String  -- the name of the program to use  ("dot" or "neato" )
                     , figlabel  :: String    -- the label of a picture
                     , title     :: String    -- a human readable name of this picture
                     }
@@ -28,6 +29,11 @@ makePicture flags name pTyp dotsource
            , fullDot    = replaceExtension fullName "dot"
            , fullPng    = replaceExtension fullName "png"
            , figlabel   = "fig:" ++ cdName
+           , dotProgName = case pTyp of
+                     PTClassDiagram -> "dot"
+                     PTPattern      -> "neato"
+                     PTConcept      -> "neato"
+                     PTSwitchBoard  -> "neato"
            , title      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ name
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ name
@@ -51,8 +57,8 @@ writePicture :: Options -> Picture -> IO()
 writePicture flags pict
     = do verboseLn flags ("Generating picture of "++title pict++" ... :")
          writeFile (fullDot pict) (dotSource pict)
-         verboseLn flags   ("dot -Tpng "++(fullDot pict)++" -o "++(fullPng pict))
-         result <- system $ "dot -Tpng "++(fullDot pict)++" -o "++(fullPng pict)
+         verboseLn flags   (dotProgName pict++" -Tpng "++(fullDot pict)++" -o "++(fullPng pict))
+         result <- system $ (dotProgName pict)++" -Tpng "++(fullDot pict)++" -o "++(fullPng pict)
          case result of 
              ExitSuccess   -> verboseLn flags (fullPng pict++" written.")
              ExitFailure x -> putStrLn ("Failure: " ++ show x)         
