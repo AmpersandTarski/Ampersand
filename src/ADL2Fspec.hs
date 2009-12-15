@@ -7,7 +7,9 @@
    import Adl.ECArule    (isBlk,isDry)
    import Auxiliaries    (naming, eqCl, eqClass, sort')
    import FspecDef
+   import Classes.Graphics
    import Languages
+   import Picture
    import Calc
    import Options        (Options(language,dirOutput))
    import NormalForms(conjNF,disjNF,normECA)
@@ -20,7 +22,7 @@
    makeFspec flags context = fSpec where
         allQuads = quads (\_->True) (rules context)
         fSpec =
-           Fspc { fsfsid         = makeFSid1 (name context)
+            Fspc { fsfsid       = makeFSid1 (name context)
                    -- serviceS contains the services defined in the ADL-script.
                    -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
                    -- A generic user interface (the Lonneker interface) is already available.
@@ -28,7 +30,7 @@
                  , plugs        = allplugs
                  , serviceS     = attributes context -- services specified in the ADL script
                  , serviceG     = serviceG'          -- generated services
-                 , services     = [makeFservice context allQuads a | a <-attributes context]
+                 , services     = [ makeFservice context allQuads a | a <-attributes context++serviceG']
                  , vrules       = rules context++signals context
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
@@ -39,7 +41,6 @@
                  , pictPatts    = Nothing
                  , vConceptDefs = conceptDefs context
                  , pictConcepts = Nothing
-                 , classdiagram = cdAnalysis fSpec flags
                  , pictCD       = Nothing
                  , pictSB       = Nothing
                  , themes       = themes'
@@ -184,7 +185,8 @@
                         }
                         | not (null ats)
                   ]
-           | c<-concs context ]
+           | c<-concs context, null [a| a<-attributes context, target (ctx a)==c ]
+           ]
            where
            fats c = [mph| mph<-relsFrom c, not (isSignal mph), isTot mph, isUni mph]
            composedname mph | inline mph = name mph++name (target mph)

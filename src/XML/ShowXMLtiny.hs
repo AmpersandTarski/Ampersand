@@ -57,7 +57,7 @@ where
         = Elem (mkTag f) (
              [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
           ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
-          ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (vpatterns f))] 
+          ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (patterns f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
           ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 

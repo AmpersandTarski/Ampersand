@@ -7,7 +7,7 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module Data.Fspec ( Fspc(..),paternsPics
+module Data.Fspec ( Fspc(..)
                   , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
@@ -25,12 +25,13 @@ module Data.Fspec ( Fspc(..),paternsPics
    import Adl.ObjectDef                 (ObjectDef(..))
    import Adl.Expression                (Expression(..))
    import Adl.MorphismAndDeclaration    (Morphism,Declaration,mIs)
+   import CommonClasses
    import Classes.Morphical
    import Classes.ViewPoint
   -- import CommonClasses
-   import Collection                    (uni)
+   import Collection                    (uni,(>-))
    import Strings                       (chain)
-   import Typology                      (Inheritance)
+   import Typology                      (Inheritance(..))
    import Data.Plug
    import Picture
    
@@ -44,23 +45,17 @@ module Data.Fspec ( Fspc(..),paternsPics
                     , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
                     , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec) from non-signal rules
                     , vrels        :: [Declaration]         -- ^ All declarations in this specification
-                    , fsisa        :: (Inheritance Concept) -- ^ generated: The data structure containing the generalization structure of concepts
+                    , fsisa        :: Inheritance Concept   -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Maybe [Picture]       -- ^ List of pictures containing pattern pictures (in same order as patterns)
                     , vConceptDefs :: [ConceptDef]          -- ^ all conceptDefs defined in the ADL-script
                     , pictConcepts :: Maybe [Picture]       -- ^ List of pictures containing concept pictures.
-                    , classdiagram :: ClassDiag             -- ^ generated: class diagram that defines the data sets of this specification
                     , pictCD       :: Maybe Picture         -- ^ Picture containing the ClassDiagram. Only if allready generated.
                     , pictSB       :: Maybe Picture         -- ^ Picture containing the SwitchBoard.
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , violations   :: [(Rule,Paire)]        -- ^ generated: the violations of rules, as computed from the populations specified in the ADL-script
                     }
-   paternsPics :: Fspc -> [(Pattern,Picture)]
-   paternsPics fspec 
-      = case pictPatts fspec of
-           Nothing    -> undefined 
-           Just patts -> zip (vpatterns fspec) patts  
-   
+
    instance Morphical Fspc where
     concs        fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
     conceptDefs  fSpec = vConceptDefs fSpec                           -- The set of all concept definitions in this Fspc
@@ -74,16 +69,16 @@ module Data.Fspec ( Fspc(..),paternsPics
     --Interpretation of fSpec as a language means to describe the classification tree,
     --the set of declarations and the rules that apply in that fSpec. Inheritance of
     --properties is achieved as a result.
-    rules         fSpec = [r| r<-vrules fSpec, not (isSignal r)]
-    signals       fSpec = [r| r<-vrules fSpec,      isSignal r ]
-    patterns      fSpec = vpatterns fSpec
-    objectdef     fSpec = Obj { objnm   = let FS_id str = fsfsid fSpec in str
-                              , objpos  = Nowhere
-                              , objctx  = Tm (mIs S)
-                              , objats  = serviceS fSpec ++ serviceG fSpec
-                              , objstrs = []
-                              }
-    isa           fSpec = fsisa  fSpec
+    rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
+    signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
+    patterns     fSpec = vpatterns fSpec
+    objectdef    fSpec = Obj { objnm   = let FS_id str = fsfsid fSpec in str
+                             , objpos  = Nowhere
+                             , objctx  = Tm (mIs S)
+                             , objats  = serviceS fSpec ++ serviceG fSpec
+                             , objstrs = []
+                             }
+    isa          fSpec = fsisa  fSpec
 
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.
@@ -114,8 +109,27 @@ module Data.Fspec ( Fspc(..),paternsPics
                    ++show (fsv_deleting  svc)++"\n"
                   ) where delt::Declaration; delt = error "Undef declaration"
 
-   data Field    = Att
-                     { fld_name      :: String                 -- The name of this field
+   instance Morphical Fservice where
+    concs        svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
+    conceptDefs  svc = []                                     -- The set of all concept definitions in this Fservice
+    mors         svc = mors (rules svc++signals svc)          -- The set of all morphisms in this Fservice
+    morlist      svc = morlist (rules svc++signals svc)       -- The list of all morphisms in this Fservice
+    declarations svc = declarations (rules svc++signals svc)  -- The set of all declarations in this Fservice
+    genE         svc = genE (rules svc++signals svc)          -- The genE relation
+    closExprs    svc = closExprs (rules svc++signals svc)     -- The closure expressions of this Fservice
+
+   instance ViewPoint Fservice where
+    --Interpretation of svc as a language means to describe the classification tree,
+    --the set of declarations and the rules that apply in that svc. Inheritance of
+    --properties is achieved as a result.
+    rules     svc = [r| r<-fsv_rules svc]
+    signals   svc = [r| r<-fsv_signals svc]
+    patterns  svc = []
+    objectdef svc = fsv_objectdef svc
+    isa       svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
+                    where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
+
+   data Field  = Att { fld_name      :: String                 -- The name of this field
                      , fld_expr      :: Expression             -- The expression by which this field is attached to the service
                      , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
                      , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
@@ -158,7 +172,20 @@ module Data.Fspec ( Fspc(..),paternsPics
    
    data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
            --  | NoName           -- some identified objects have no name...
-   
+
+   instance Identified Fspc where
+     name fspc = name (fsfsid fspc)
+     typ   _   = "Fspc_"
+
+   instance Identified Fservice where
+     name fservice = name (fsv_objectdef fservice)
+     typ fservice = "f_Service"
+
+   instance Identified FSid where
+    name (FS_id nm) = nm
+    typ _ = "f_Id"
+
+
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {classes     :: [Class]            --
                                    ,assocs      :: [Association]      --

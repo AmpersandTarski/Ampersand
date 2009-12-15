@@ -30,7 +30,7 @@ infertype fSpec eor = (inftype,proof)
        Reor rule -> fromRule rule
   tc :: Concepts
   tc = concs (vrels fSpec) `uni` concs (vrules fSpec)
-  isatree = isaRels tc $ allPatGens (vpatterns fSpec)
+  isatree = isaRels tc $ allPatGens (patterns fSpec)
   rv :: Declarations
   rv = vrels fSpec
   gamma expr = (mphStmts expr) ++ gammaisa

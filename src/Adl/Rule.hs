@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Rule    ( Rule(..),Rules
                    , RuleType(..)
-                   , consequent, antecedent, ruleType, normExpr, multRules, rulefromProp)     
+                   , consequent, antecedent, ruleType, normExpr, multRules, rulefromProp, isaRule)     
 where
    import Adl.FilePos                   ( FilePos(..),Numbered(..))
    import Adl.Concept                   ( Concept(..)
@@ -47,6 +47,10 @@ where
            , r_pat :: String            -- ^ name of pattern in which it was defined.
            } deriving (Eq)
    data RuleType = Implication | Equivalence | Truth | Generalization | Automatic deriving (Eq,Show)
+
+   isaRule :: Rule -> Bool    -- tells whether this rule was declared as an ISA rule
+   isaRule Ru{rrfps=FilePos(_,_,str)} = str == "ISA"
+   isaRule _ = False
 
    instance Show Rule where
     showsPrec _ x =

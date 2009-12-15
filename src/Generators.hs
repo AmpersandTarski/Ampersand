@@ -24,8 +24,8 @@ import Adl
 import Fspec2Pandoc           (fSpec2Pandoc,laTeXheader)
 --import Strings                (remSpaces)
 import Atlas.Atlas
-import Rendering.ClassDiagram (classdiagram2dot)
-import Switchboard            (toDotFspc)
+import Rendering.ClassDiagram (classdiagram2dot,cdAnalysis)
+import Switchboard            (switchboard)
 import Data.GraphViz.Types
 import Text.Pandoc            ( defaultWriterOptions
                               , prettyPandoc
@@ -88,43 +88,15 @@ doGenProto fSpec flags
 
 -- This function will generate all Pictures for a given Fspc. 
 -- the returned Fspc contains the details about the Pictures, so they
--- can be refferenced while rendering the Fspc.
-generateAllGraphics :: Options -> Fspc -> IO(Fspc)
-generateAllGraphics flags fs
-   = do f'  <- generateClassDiagram fs 
-        f'' <- generatePatternPictures f'
-        f''' <- generateSwitchBoard f''
-        return f'''
-   
-   where 
-     generateClassDiagram :: Fspc -> IO(Fspc)
-     generateClassDiagram fSpec
-        = do writePicture flags pict
-             return fSpec{pictCD = Just pict}
-        where pict = makePicture flags (name fSpec) PTClassDiagram (classdiagram2dot(classdiagram fSpec))
+-- can be referenced while rendering the Fspc.
 
-     generatePatternPictures :: Fspc -> IO(Fspc)     
-     generatePatternPictures fSpec
-        = do mapM (writePicture flags) pictures
-             return fSpec{pictPatts = Just pictures}
-          where pictures = map makeGraphic (vpatterns fSpec)
-                makeGraphic :: Pattern -> Picture
-                makeGraphic pat = makePicture flags (name pat) PTPattern (printDotGraph (toDot fSpec flags pat))
-    
-     generateSwitchBoard :: Fspc -> IO(Fspc)
-     generateSwitchBoard fSpec
-        = do writePicture flags pict
-             return fSpec{pictSB = Just pict}
-        where pict = makePicture flags (name fSpec) PTSwitchBoard (printDotGraph (toDotFspc fSpec flags fSpec))
-        
-        
 doGenFspec :: Fspc -> Options -> IO()
 doGenFspec fSpec flags
-   =  do fSpec2 <- generateAllGraphics flags fSpec
-         verboseLn flags "Generating functional specification document..."
-         verboseLn flags ("Processing "++name fSpec2++" towards "++outputFile)
-         makeOutput fSpec2
-         verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".")
+   = verboseLn flags "Generating functional specification document..."                        >>
+     verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)                    >>
+     makeOutput                                                                               >>
+     verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".") >>
+     foldr1 (>>) [ writePicture flags p| p<-thePictures]
        where  
          outputFile = replaceExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
@@ -135,8 +107,9 @@ doGenFspec fSpec flags
                                                  FOpenDocument -> ".odt"
                                                  FUnknown      -> undefined
                                        )
-         makeOutput f
-              =  case fspecFormat flags of
+         (thePandoc,thePictures) = fSpec2Pandoc fSpec flags
+         makeOutput
+          =  case fspecFormat flags of
              FPandoc -> do verboseLn flags "Generating Pandoc file."
                            writeFile outputFile (prettyPandoc thePandoc)
              FRtf   ->  do verboseLn flags "Generating Rich Text Format file."
@@ -153,13 +126,8 @@ doGenFspec fSpec flags
                            writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
              FUnknown -> do putStrLn ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
            where 
-              thePandoc = fSpec2Pandoc f flags
-         
-         
               ourDefaultWriterOptions = defaultWriterOptions
                                           { writerStandalone=True
                                           , writerTableOfContents=True
                                           , writerNumberSections=True
                                           }
-           
-

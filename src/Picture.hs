@@ -23,7 +23,7 @@ makePicture :: Options
             -> PictType -- Type of the picture
             -> String   -- The dot source
             -> Picture  -- The ADT of a picture
-makePicture flags name pTyp dotsource  
+makePicture flags name pTyp dotsource
     = Pict { reference  = cdName
            , dotSource  = dotsource
            , fullDot    = replaceExtension fullName "dot"
@@ -33,16 +33,16 @@ makePicture flags name pTyp dotsource
                      PTClassDiagram -> "dot"
                      PTPattern      -> "neato"
                      PTConcept      -> "neato"
-                     PTSwitchBoard  -> "neato"
+                     PTSwitchBoard  -> "dot"
            , title      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ name
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ name
                             (PTPattern     ,English) -> "Conceptual analysis of " ++ name
                             (PTPattern     ,Dutch  ) -> "Conceptuele analyse van " ++ name
-                            (PTConcept     ,English) -> "Neighbouhood of Concept " ++ name
+                            (PTConcept     ,English) -> "Neighbourhood of Concept " ++ name
                             (PTConcept     ,Dutch  ) -> "Omgeving van Concept " ++ name
                             (PTSwitchBoard ,English) -> "Switchboard diagram of " ++ name
-                            (PTSwitchBoard ,Dutch  ) -> "Switchboard diagram van " ++ name
+                            (PTSwitchBoard ,Dutch  ) -> "Schakelpaneel van " ++ name
            }
        where
          cdName = (case pTyp of

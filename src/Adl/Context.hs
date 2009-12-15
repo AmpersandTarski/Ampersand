@@ -22,7 +22,7 @@ where
    data Context
       = Ctx { ctxnm    :: String                    -- ^ The name of this context
             , ctxon    :: [String]                  -- ^ The list of extends (= context names of contexts) whose rules are imported
-            , ctxisa   :: (Inheritance Concept)     -- ^ A data structure containing the generalization structure of concepts
+            , ctxisa   :: Inheritance Concept       -- ^ A data structure containing the generalization structure of concepts
             , ctxwrld  :: [Classification Context]  -- ^ A tree, being the transitive closure of the 'extends' (see formal definition) relation.
             , ctxpats  :: Patterns                  -- ^ A list of patterns defined in this context
             , ctxrs    :: Rules                     -- ^ A list of all rules that are valid within this context

@@ -50,10 +50,6 @@
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
-   instance Identified Fspc where
-     name fspc = name (fsid fspc)
-     typ   _   = "Fspc_"
-   
    instance Fidentified Fspc where  -- WAAROM moet er een tweede vorm van Identified zijn? Dit is in tegenspraak met het principe van code-ontdubbeling.
     fsid    spec = fsfsid spec
   --  typ     _ = "f_Ctx"
@@ -63,17 +59,10 @@
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************
      
-   instance Identified Fservice where
-     name fservice = name (fsv_objectdef fservice)
-     typ fservice = "f_Service"
    instance Fidentified Fservice where
      fsid fservice = fsid (fsv_objectdef fservice)
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
 -- \***********************************************************************
-
-   instance Identified FSid where
-    name (FS_id nm) = nm
-    typ _ = "f_Id"
 

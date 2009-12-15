@@ -212,34 +212,40 @@ where
     genE         pat = genE (ptdcs pat++declarations [r| r<-(ptrls pat),isSignal r ])  
     closExprs    pat = closExprs (ptrls pat)
 
+   -- WAAROM??? wordt bij Truth de antecedent niet meegenomen?
+   --           Er kunnen toch andere concepten en/of morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
+   -- DAAROM!!! een implicatie is antc |- cons, ofwel -antc\/cons
+   --           een truth is      expr        , ofwel -V   \/expr,   ofwel  V |- expr
+   --           Daarom laten we de antecedent helemaal weg.
+   --           Het systeem genereert zelfs een !Fatal wanneer je naar de antecedent van een Truth zou refereren.
    instance Morphical Rule where
     concs r = case r of
-                Ru{rrsrt = Truth } -> concs (rrant r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere concepten in de expressies aanwezig zijn in de lhs dan in de rhs??
+                Ru{rrsrt = Truth } -> concs (rrcon r)
                 Ru{}               -> concs (rrant r) `uni` concs (rrcon r)
                 Sg{}               -> concs (srsig r)
                 Fr{}               -> concs (frdec r) `uni` concs (frcmp r)
     mors r = case r of
-                Ru{rrsrt = Truth } -> mors (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
+                Ru{rrsrt = Truth } -> mors (rrcon r)
                 Ru{}               -> mors (rrant r) `uni` mors (rrcon r)
                 Sg{}               -> mors (srsig r)
                 Fr{}               -> mors (frdec r) `uni` mors (frcmp r)
     morlist r = case r of
-                Ru{rrsrt = Truth } -> morlist (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
+                Ru{rrsrt = Truth } -> morlist (rrcon r)
                 Ru{}               -> morlist (rrant r) ++ morlist (rrcon r)
                 Sg{}               -> morlist (srsig r)
                 Fr{}               -> morlist (frcmp r)
     genE r = case r of
-                Ru{rrsrt = Truth } -> genE (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
+                Ru{rrsrt = Truth } -> genE (rrcon r)
                 Ru{}               -> genE [(rrant r),(rrcon r)]
                 Sg{}               -> genE (srsig r)
                 Fr{}               -> genE (frcmp r)
     declarations r = case r of
-                Ru{rrsrt = Truth } -> declarations (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
+                Ru{rrsrt = Truth } -> declarations (rrcon r)
                 Ru{}               -> declarations [(rrant r),(rrcon r)]
                 Sg{}               -> [srrel r] `uni` declarations (srsig r)
                 Fr{}               -> declarations (frcmp r)
     closExprs r = case r of
-                Ru{rrsrt = Truth } -> closExprs (rrcon r)   -- WAAROM??? Stef, dit is volgens mij fout: bij Truth kunnen toch andere morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
+                Ru{rrsrt = Truth } -> closExprs (rrcon r)
                 Ru{}               -> closExprs (rrant r) `uni` closExprs (rrcon r)
                 Sg{}               -> closExprs (srsig r)
                 Fr{}               -> [frcmp r]

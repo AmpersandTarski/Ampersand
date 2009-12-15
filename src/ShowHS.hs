@@ -213,8 +213,7 @@ where
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
                   ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
                   ,", fsisa         = isa'"
-                  ,wrap ", vpatterns     = " indentA (\_->showHSname) (vpatterns fspec)
-                  ,", classdiagrams = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [ClassDiag]
+                  ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
                   ,", themes        = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
                                                 -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
                                         -- "["++chain "," (map (showHS options "") (themes fspec))++"]" 
@@ -231,7 +230,7 @@ where
        indent++" serviceS' = "++"[ "++chain (indentB++", ") (map (showHS options indentB) (serviceS fspec))++indentB++"]"++
         "\n -- ***Services G***: "++
        indent++" serviceG' = "++"[ "++chain (indentB++", ") (map (showHS options indentB) (serviceG fspec))++indentB++"]"++
-       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS options (indent++"    ") p|p<-vpatterns fspec ]++"\n")++
+       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS options (indent++"    ") p|p<-patterns fspec ]++"\n")++
 
 -- WAAROM?  staan hier verschillende lijstjes met services?
 -- DAAROM!  Een ADL-engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)

@@ -70,7 +70,6 @@ where
     isa pat       = Isa ts (concs pat>-[e'| G _ g s _<-ptgns pat,e'<-[g,s]])
                     where ts = clear [(g,s)| G _ g s _<-ptgns pat]
 
-
    instance ViewPoint Rule where
     objectdef rule = Obj { objnm   = name rule
                          , objpos  = pos rule
@@ -95,7 +94,9 @@ where
                      , ptcds = []
                      , ptkds = []}]
 
-    isa r = empty
+    isa r      = Isa ts (concs r>-[c| (g,s)<-ts,c<-[g,s]])
+                 where ts = [(g,s)| g<-concs r, s<-concs r, g<s, null [c|c<-concs r, g<c, c<s]]
+-- was    isa r = empty
 
    clear :: [(Concept,Concept)] -> [(Concept,Concept)]
    clear abs' = rd [(a,b)| (a,b)<-abs', a/=b]

@@ -87,15 +87,15 @@ fillAtlas fSpec flags =
  >> createDirectoryIfMissing True fpath
  >> foldr (>>) (verboseLn flags "All pictures written..") dots
     where
-    pictlinks = [".\\img\\"++ (name fSpec) ++ ".png"| p<-vpatterns fSpec]
-                --TODO -> patterns [".\\img\\"++ (remSpaces$name p) ++ ".png"| p<-vpatterns fSpec]
+    pictlinks = [".\\img\\"++ (name fSpec) ++ ".png"| p<-patterns fSpec]
+                --TODO -> patterns [".\\img\\"++ (remSpaces$name p) ++ ".png"| p<-patterns fSpec]
     fpath = combine (dirAtlas flags) "img/"
     outputFile fnm = combine fpath fnm
     dots = [makeGraphic (name fSpec)$ toDot fSpec flags $ 
-             if length(vpatterns fSpec)==0 then error "There is no pattern to fold"
-             else foldr (union) (head$vpatterns fSpec) (tail$vpatterns fSpec)]
+             if length(patterns fSpec)==0 then error "There is no pattern to fold"
+             else foldr (union) (head$patterns fSpec) (tail$patterns fSpec)]
            --TODO -> patterns [makeGraphic (remSpaces (name p)) $ toDot fSpec flags p 
-           --                 | p<-vpatterns fSpec, (not.null) (concs p)] 
+           --                 | p<-patterns fSpec, (not.null) (concs p)] 
     makeGraphic fnm dot
       = do 
         succes <- runGraphvizCommand Neato dot Canon dotfile
@@ -133,7 +133,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
  --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x<-homorules]
-   pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-vpatterns fSpec, x<-ptgns p]
+   pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-patterns fSpec, x<-ptgns p]
    pop' ATPicture = [[x,x]|x<-pics]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x<-multrules]
    pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]

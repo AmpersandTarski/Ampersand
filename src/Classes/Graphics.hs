@@ -12,105 +12,171 @@ import Data.GraphViz
 --              -- 3) er is geen stap 3!
 --              -- 4) build on graphviz-2999.5.0.0
 import Adl
-import FspecDef hiding (Attribute)
+import Data.Fspec (Fspc,Fservice(..))
 import Options
-import Collection (Collection(rd))
+import Collection (Collection(rd,uni,isc,(>-)))
 
+-- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
 class Dotable a where
    toDot :: Fspc -> Options -> a -> DotGraph String
 
+instance Dotable Concept where
+   toDot fSpec flags c = dotG flags (name c) cpts dcls idgs
+         where 
+          rs   = [r| r<-rules fSpec, c `elem` concs r, not (isaRule r)]
+          ss   = [s| s<-signals fSpec, c `elem` concs s]
+          idgs = [ (nodePoint cpts (source (antecedent r)),nodePoint cpts (source (consequent r)))
+                 | r<-rules fSpec, c `elem` concs r, isaRule r]
+                 `uni`
+                 [(nodePoint cpts g,nodePoint cpts s)| g<-cpts, s<-cpts, g<s, null [c| c<-cpts, g<c && c<s]]       --  all isa edges
+-- TODO: removal of redundant isa edges might be done more efficiently
+          cpts = concs rs `uni` concs ss
+          dcls = [d | d<-declarations rs `uni` declarations ss
+                    , not (null ([Asy,Sym]>-multiplicities d))     -- d is not a property
+                    , not (isSignal d)]                            -- d is not a signal
+
 instance Dotable Pattern where
-   toDot _ flags pat 
+   toDot fSpec flags pat = dotG flags (name pat) cpts dcls idgs
+        where 
+         --DESCR -> get concepts and arcs from pattern
+          idgs = [ (nodePoint cpts (source (antecedent r)),nodePoint cpts (source (consequent r)))
+                 | r<-rules pat, isaRule r]
+                 `uni`
+                 [(nodePoint cpts g,nodePoint cpts s)| g<-cpts, s<-cpts, g<s, null [c| c<-cpts, g<c && c<s]]       --  all isa edges
+-- TODO: removal of redundant isa edges might be done more efficiently
+          cpts = concs pat
+          dcls = declarations pat
+
+instance Dotable Fservice where
+   toDot fSpec flags svc = dotG flags (name svc) cpts dcls idgs
+         where 
+          rs         = [r| r<-rules fSpec, affected r]
+          ss         = [s| s<-signals fSpec, affected s]
+          affected r = not (null (declarations r `isc` declarations svc))
+          idgs = [ (nodePoint cpts (source (antecedent r)),nodePoint cpts (source (consequent r)))
+                 | r<-rs, isaRule r]
+                 `uni`
+                 [(nodePoint cpts g,nodePoint cpts s)| g<-cpts, s<-cpts, g<s, null [c| c<-cpts, g<c && c<s]]       --  all isa edges
+-- TODO: removal of redundant isa edges might be done more efficiently
+          cpts = concs rs `uni` concs ss
+          dcls = [d | d<-declarations rs `uni` declarations ss
+                    , not (null ([Asy,Sym]>-multiplicities d))     -- d is not a property
+                    , not (isSignal d)]                            -- d is not a signal
+
+-- Chapter 2: Formation of a graph.
+dotG flags graphName cpts dcls idgs
      = DotGraph { strictGraph = False
                 , directedGraph = True
-                , graphID = Nothing
+                , graphID = Just (Str graphName)
                 , graphStatements 
                       = DotStmts { attrStmts = [GraphAttrs (handleFlags TotalPicture flags)]
                                  , subGraphs = []
-                                 , nodeStmts = [conceptLabel c | c<-cpts]
-                                            ++ [conceptPoint c | c<-cpts] 
-                                            ++ [inBetweenNode d | d<-arcs]
-                                            ++ [inBetweenPoint d | d<-arcs]
-                                 , edgeStmts = [x | d<-arcs, x<-decledges d] 
-                                            ++ isaedges
-                                            ++ [conceptEdge c | c<-cpts] 
-                                            ++ [inBetweenEdge d | d<-arcs]
+                                 , nodeStmts = [conceptLabel flags n c | (c,n)<-zip cpts [1..]]
+                                            ++ [conceptPoint flags n c | (c,n)<-zip cpts [length cpts+1..]] 
+                                            ++ [inBetweenNode flags n d | (d,n)<-zip dcls [1..]]
+                                            ++ [inBetweenPoint flags n d | (d,n)<-zip dcls [length dcls+1..]]
+                                 , edgeStmts = [x | d<-dcls, x<-declEdges flags (nodePoint cpts (source d))
+                                                                                (arcHinge dcls d)
+                                                                                (nodePoint cpts (target d)) d] 
+                                            ++ isaedges flags cpts idgs
+                                            ++ [conceptEdge flags (nodePoint cpts c) (nodeLabel cpts c) | c<-cpts] 
+                                            ++ [inBetweenEdge flags (arcHinge dcls d) (arcLabel dcls d) | d<-dcls]
                                  }
                 }
-         where 
-         --DESCR -> get concepts and arcs from pattern
-         cpts = rd (concs pat)
-         arcs = rd $ [d | d<-[makeDeclaration mph|mph<-mors pat, isMph mph, not (isProperty mph)]
-                        , not (isSignal d)]
-                     ++ (ptdcs pat)
-         --DESCR -> assign ID to concept related nodes
-         conceptTable = case cpts of
-            [] -> []
-            _  -> zip cpts (map show [(1::Int)..])
-         conceptPointTable = case cpts of
-            [] -> []
-            _  -> zip cpts (map show [(length conceptTable + 1)..])
-         --DESCR -> construct concept point related picture objects                                
-         conceptLabel c = 
-            DotNode { nodeID         = lkup c conceptTable
-                    , nodeAttributes = handleFlags (CptLabel c) flags
+       where
+--DESCR -> construct arc point related picture objects
+        inBetweenNode flags n d =
+            DotNode { nodeID         = "a"++show n
+                    , nodeAttributes = handleFlags (ArcLabel d) flags
                     }
-         conceptPoint c = 
-            DotNode { nodeID = lkup c conceptPointTable
-                    , nodeAttributes = handleFlags (CptPoint c) flags
-                    }
-         conceptEdge c  = 
-            DotEdge {edgeFromNodeID  = lkup c conceptTable
-                    ,edgeToNodeID = lkup c conceptPointTable
-                    ,edgeAttributes = handleFlags CptEdge flags
-                    ,directedEdge = True
-                    }
-         --DESCR -> assign ID to arc related nodes
-         arcsTable = case arcs of
-            [] -> []
-            _  -> zip arcs (map show [(length conceptTable + length conceptPointTable + 1)..])
-         arcsPointTable = case arcs of
-            [] -> []
-            _  -> zip arcs (map show [(length conceptTable + length conceptPointTable + length arcsTable + 1)..])
-         --DESCR -> construct arc point related picture objects   
-         inBetweenNode d = DotNode { nodeID          = lkup d arcsTable
-                                   , nodeAttributes = handleFlags (ArcLabel d) flags
-                                   }   
-         inBetweenPoint d = 
-            DotNode { nodeID = lkup d arcsPointTable
+
+        inBetweenPoint flags n d = 
+            DotNode { nodeID         = "a"++show n
                     , nodeAttributes = handleFlags ArcPoint flags
                     }
-         inBetweenEdge d  = 
-            DotEdge {edgeFromNodeID  = lkup d arcsTable
-                    ,edgeToNodeID = lkup d arcsPointTable
+
+        inBetweenEdge flags h l {- h: hinge, l: label -}
+          = DotEdge {edgeFromNodeID  = l
+                    ,edgeToNodeID = h
                     ,edgeAttributes = handleFlags ArcEdge flags
                     ,directedEdge = True
                     }          
-         --DESCR -> construct arc edges
-         decledges d = [DotEdge --attach source
-                         {edgeFromNodeID  = lkup (source d) conceptPointTable
-                         ,edgeToNodeID = lkup d arcsPointTable
-                         ,edgeAttributes = handleFlags (ArcSrcEdge d) flags
-                         ,directedEdge = True}
-                       ,DotEdge --attach target
-                         {edgeFromNodeID  = lkup d arcsPointTable
-                         ,edgeToNodeID = lkup (target d) conceptPointTable
-                         ,edgeAttributes = handleFlags (ArcTgtEdge d) flags
-                         ,directedEdge = True}]          
-         --DESCR -> construct isa edges 
-         isaedges = [ DotEdge
-                       {edgeFromNodeID  = lkup (genspc g) conceptPointTable
-                       ,edgeToNodeID  = lkup (gengen g) conceptPointTable
-                       ,edgeAttributes = handleFlags (IsaEdge ) flags
-                       ,directedEdge = True}
-                    | g<-ptgns pat ]
-         --DESCR -> Take care of the crowfoot flag 
-         --construct the set of attributes on a certain type of picture object based on flag settings (currently only crowfoot)
+
+--DESCR -> construct arc edges
+        declEdges flags from hinge to d
+             = [ DotEdge {edgeFromNodeID  = from--attach source
+                         ,edgeToNodeID    = hinge
+                         ,edgeAttributes  = handleFlags (ArcSrcEdge d) flags
+                         ,directedEdge    = True}
+               , DotEdge {edgeFromNodeID  = hinge --attach target
+                         ,edgeToNodeID    = to
+                         ,edgeAttributes  = handleFlags (ArcTgtEdge d) flags
+                         ,directedEdge    = True}
+               ]          
+
+--DESCR -> construct concept point related picture objects                                
+        conceptLabel flags n c =
+            DotNode { nodeID         = show n
+                    , nodeAttributes = handleFlags (CptLabel c) flags
+                    }
+
+        conceptPoint flags n c
+          = DotNode { nodeID         = show n
+                    , nodeAttributes = handleFlags (CptPoint c) flags
+                    }
+
+        conceptEdge flags n l
+          = DotEdge { edgeFromNodeID = l
+                    , edgeToNodeID   = n
+                    , edgeAttributes = handleFlags CptEdge flags
+                    , directedEdge   = True
+                    }
+
+--DESCR -> construct isa edges 
+        isaedges flags cpts gss
+          = [ DotEdge { edgeFromNodeID  = g
+                      , edgeToNodeID    = s
+                      , edgeAttributes  = handleFlags IsaEdge flags
+                      , directedEdge    = True}
+            | (g,s)<-gss ]
+           --DESCR -> Take care of the crowfoot flag 
+           --construct the set of attributes on a certain type of picture object based on flag settings (currently only crowfoot)
+
+-- Chapter 3: Translation of individual concepts and declarations.
+-- Every concept and every declaration must have unique node identifiers and arc identifiers
+
+-- Translation of concepts to node-id's.
+-- Each concept gets a point shaped node in the graph (a filled black circle)
+-- and a node that represents the concept name (i.e. the label).
+nodeLabel cpts c
+ = case lookup c (zip cpts [(1::Int)..]) of
+   Just i -> show i
+   _      -> error "!Fatal (module Graphics): element "++name c++" not found by nodeLabel."
+nodePoint cpts c
+ = case lookup c (zip cpts [length cpts+1 ..]) of
+   Just i -> show i
+   _      -> error "!Fatal (module Graphics): element "++name c++" not found by nodePoint."
+
+-- Translation of declarations to arc-id's.
+-- Each arc is drawn by an intermediate point, halfway the arc, which we call the "hinge".
+-- The label of the arc is drawn as a separate node in the drawing, strongly linked to the hinge of the arc.
+arcLabel arcs d
+ = case lookup d (zip arcs [(1::Int)..]) of
+   Just i -> "a"++show i
+   _      -> error "!Fatal (module Graphics): element "++name d++" not found by arcLabel."
+arcHinge arcs d
+ = case lookup d (zip arcs [length arcs..]) of
+   Just i -> "a"++show i
+   _      -> error "!Fatal (module Graphics): element "++name d++" not found by arcHinge."
 
 
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept
 --         arcs and concepts are points attached to a label
+-- for Haddock support on GraphViz, click on:
+--       http://hackage.haskell.org/packages/archive/graphviz/2999.6.0.0/doc/html/doc-index.html     or
+--       http://hackage.haskell.org/packages/archive/graphviz/latest/doc/html/doc-index.html
+
 data PictureObject = ArcSrcEdge Declaration 
                    | ArcTgtEdge Declaration
                    | ArcPoint 
@@ -167,9 +233,10 @@ handleFlags po flags =
                                  ]
               CptEdge    -> [Len 0.4, invisible]--Style$Stl Invisible Nothing] --Style$Stl Dotted Nothing]
               IsaEdge    -> defaultEdgeAtts 
-              TotalPicture -> [Splines SplineEdges] -- [BgColor transparent]
-                              --   ++ [Overlap (Right False) | crowfoot flags]
-                              --   ++ [Splines (Left True)  | crowfoot flags]
+              TotalPicture -> -- [BgColor Transparent]++
+                              if crowfoot flags
+                              then [Overlap RemoveOverlaps]
+                              else [Splines SplineEdges]
 --DESCR -> default Node attributes
 defaultNodeAtts :: [Attribute]
 defaultNodeAtts   = [FontSize 12,FontName "helvetica"]
@@ -200,11 +267,13 @@ my_odot= ( open, DotArrow )
 my_crow :: ( ArrowModifier , ArrowShape )
 my_crow= ( open, Crow )
 
---DESCR -> lookup the integer id of an object
+{-DESCR -> lookup the integer id of an object
+
 lkup :: (Eq a) => a -> [(a,b)] -> b
 lkup x tbl = case lookup x tbl of
    Just i -> i
    _ -> error "!Fatal (module Graphics): element not found." --TODO
+-}
 
  --  doosje flags c = [Shape BoxShape]
    --              ++ [Label$StrLabel (show (name c))]

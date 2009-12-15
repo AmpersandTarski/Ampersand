@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Switchboard where
+module Switchboard(switchboard) where
  
    import Data.GraphViz
    --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
@@ -16,8 +16,8 @@ module Switchboard where
    import Calc
    import ShowADL
 
-   toDotFspc :: ViewPoint a =>Fspc -> Options -> a -> DotGraph String
-   toDotFspc fSpec flags spc 
+   switchboard :: ViewPoint a =>Fspc -> a -> DotGraph String
+   switchboard fSpec spc 
      = DotGraph { strictGraph = False
                 , directedGraph = True
                 , graphID = Just (Str "Switchboard")
@@ -29,7 +29,7 @@ module Switchboard where
                                  }
                 }
        where 
-         rels         = rd (map makeInline (mors spc))
+         rels         = rd (map makeInline (mors spc))++map mIs (concs spc)
          visible m    = makeInline m `elem` rels
          qs           = quads visible (rules spc)
          conjuncts    = rd [conj   | Quad _ ccrs<-qs, (conj,_)<-cl_conjNF ccrs]

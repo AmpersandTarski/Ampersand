@@ -14,7 +14,7 @@ module Adl ( Architecture(..)
            , Concept(..), GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
            , Prop(..)
-           , multRules
+           , multRules, isaRule
            , FilePos(..), Numbered(..)
            , makeDeclaration,mIs,ruleType,isProperty
            , antecedent,notCp,cptAnything
@@ -66,7 +66,7 @@ where
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
-                                         ,RuleType(..),multRules
+                                         ,RuleType(..),multRules, isaRule
                                          ,consequent,antecedent,ruleType
                                          ,normExpr)
    import Classes.Morphical              (Morphical(..))

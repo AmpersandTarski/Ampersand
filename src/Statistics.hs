@@ -24,7 +24,7 @@ module Statistics where
 -- \***********************************************************************
    instance Statistics Fspc where
     nServices fSpec = length (services fSpec) --TODO -> check correctness
-    nPatterns fSpec = nPatterns (vpatterns fSpec)
+    nPatterns fSpec = nPatterns (patterns fSpec)
     nFpoints  fSpec = nFpoints (services fSpec) --TODO -> check correctness
  -- TODO Deze module moet nog geheel worden ingekleurd...
 
