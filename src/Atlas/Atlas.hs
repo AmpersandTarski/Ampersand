@@ -42,29 +42,30 @@ data ATableId =
   |ATViolation deriving (Eq,Show)
 tables::[ATable]
 tables = 
-   [ATable ATAtom "atom" ["i"] 
-   ,ATable ATConcept "concept" ["i"] 
+   [ATable ATAtom "atom" ["i","user","script","display"] 
+   ,ATable ATConcept "concept" ["i","user","script","display"] 
    ,ATable ATContains "contains" ["relation","pair"] 
    ,ATable ATContainsConcept "containsconcept" ["concept","atom"] 
-   ,ATable ATExplanation "explanation" ["i"] 
+   ,ATable ATExplanation "explanation" ["i","user","script","display"] 
   -- ,ATable ATExpression "expression" ["i","source","target"] 
-   ,ATable ATHomoRule "homogeneousrule" ["i","property","on","type","explanation"] 
-   ,ATable ATIsa "isarelation" ["i","specific","general"] 
-   ,ATable ATPicture "picture" ["i","thepicture"] 
-   ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation"] 
-   ,ATable ATPair "pair" ["i"] 
-   ,ATable ATProp "prop" ["i"] 
-   ,ATable ATRelation "relation" ["i"]
+   ,ATable ATHomoRule "homogeneousrule" ["i","property","on","type","explanation","user","script","display"] 
+   ,ATable ATIsa "isarelation" ["i","specific","general","user","script","display"] 
+   ,ATable ATPicture "picture" ["i","thepicture","user","script","display"] 
+   ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation","user","script","display"] 
+   ,ATable ATPair "pair" ["i","user","script","display"] 
+   ,ATable ATProp "prop" ["i","user","script","display"] 
+   ,ATable ATRelation "relation" ["i","user","script","display"]
    ,ATable ATRelVar "relvar" ["relation","type"]
-   ,ATable ATRule "rule" ["i","type","explanation"] 
-   ,ATable ATType "type" ["i","source","target"] 
-   ,ATable ATUserRule "userrule" ["i","type","explanation"] 
+   ,ATable ATRule "rule" ["i","type","explanation","user","script","display"] 
+   ,ATable ATType "type" ["i","source","target","user","script","display"] 
+   ,ATable ATUserRule "userrule" ["i","type","explanation","user","script","display"] 
    ,ATable ATViolRule "violates" ["violation","rule"]
    ,ATable ATViolHomoRule "violateshomogeneousrule" ["violation","homogeneousrule"]
    ,ATable ATViolMultRule "violatesmultiplicityrule" ["violation","multiplicityrule"]
    ,ATable ATViolUserRule "violatesviolation" ["violation","userrule"]
-   ,ATable ATViolation "violation" ["i"]
+   ,ATable ATViolation "violation" ["i","user","script","display"]
    ]
+iscpttable tbl = elem tbl [ATAtom,ATConcept,ATExplanation,ATHomoRule,ATIsa,ATPicture,ATMultRule,ATPair,ATProp,ATRelation,ATRule,ATType,ATUserRule,ATViolation]
 
 --Atlas requires an ODBC data source named "atlas" representing the db of an Atlas.adl prototype
 --hdbc and hdbc-odbc must be installed (from hackage)
@@ -119,12 +120,18 @@ runMany conn (x:xs)  =
 type PictureLinks = [String]
 insertpops :: (IConnection conn) => conn -> Fspc -> Options -> [ATable] -> PictureLinks -> IO Integer
 insertpops _ _ _ [] _ = return 1
-insertpops conn fSpec flags (tbl:tbls) pics =  
+insertpops conn fSpec flags (tbl:tbls) pics = 
    do stmt<- prepare conn$"INSERT INTO "++tablename tbl++" VALUES ("++placeholders(columns tbl)++")"
       executeMany stmt (pop$tableid tbl)
       insertpops conn fSpec flags tbls pics
    where
-   pop x = [map toSql ys|ys<-rd (pop' x)]
+   script = adlFileName flags
+   user = userAtlas flags
+   qualify = (++)$"("++user ++ "." ++ script ++ ")"
+   toUserctx :: [String]->ATableId->[String]
+   toUserctx [] _ = []
+   toUserctx xs t = map qualify xs ++ (if iscpttable t then [user,script,head xs] else [])
+   pop x = [map toSql$toUserctx ys x|ys<-rd (pop' x)]
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x]|x<-cpts]

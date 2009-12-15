@@ -17,7 +17,7 @@
                        , "ALWAYS", "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V", "S"
                        , "PRAGMA", "EXPLANATION", "SIGNAL", "ON", "COMPUTING", "INSERTING", "DELETING"
-                       , "ONE"
+                       , "ONE", "BIND", "TOPHP", "BINDING"
                        ]
    keywordsops :: [String]
    keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\" ]
@@ -33,11 +33,22 @@
    pArchitecture    :: Bool -> Parser Token Architecture
    pArchitecture beep = Arch <$> pList1 (pContext beep)
 
+   pBind             :: Parser Token (Declaration,String)
+   pBind              = rebuild <$ pKey "BIND" <*> pDeclaration <* pKey "TOPHP" <*> (pConid <|> pString)
+                       where rebuild d s = (d,s)
+
    pContext         :: Bool -> Parser Token Context
    pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
+                                  ((rebexpr <$ pKey ":" <*> pExpr <*> 
+                                  --     (pSpec '{' *> pList1Sep (pSpec ';') pBind <* pSpec '}')
+                                       ((pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` [])
+                                    ) `opt` universe) <*>
                                   ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
                                   pList (pContextElement beep) <* pKey "ENDCONTEXT"
-                       where rebuild nm on ces = Ctx nm on empty [] pats [] ds cs ks os pops sqlplugs phpplugs
+                       where  
+                       rebexpr x y = (x,y)
+                       universe = (Tm$V [] (cptAnything,cptAnything),[]) --default: the universe
+                       rebuild nm env on ces = Ctx nm on empty [] pats [] ds cs ks os pops sqlplugs phpplugs env
                               where
                                ps   = [p| CPat p<-ces]
                                ds   = [d| CDcl d<-ces]
@@ -216,12 +227,13 @@
                       -- where c str = C str (==) []
 
 -- WAAROM (SJ) heeft een label (optioneel) strings?
+-- ANTWOORD (GM) omdat we nog geen fatsoenlijk binding mechanisme hebben voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
    pLabel           :: Parser Token Label
    pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos)
--- obsolete                <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
+                           <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
                            <*  pKey_pos ":"
-                       where lbl :: (String, FilePos) -> {- obsolete: [[String]] -> -} Label
-                             lbl (nm,pos') = Lbl nm pos' []
+                       where lbl :: (String, FilePos) -> [[String]] -> Label
+                             lbl (nm,pos') strs = Lbl nm pos' strs
 
    phpId            :: Parser Token String
    phpId             = pVarid <|> pConid <|> pString

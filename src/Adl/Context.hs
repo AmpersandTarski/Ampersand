@@ -5,11 +5,12 @@ where
    import Adl.Concept                 (Concept)
    import Adl.Pattern                 (Patterns)
    import Adl.Rule                    (Rules)
-   import Adl.MorphismAndDeclaration  (Declarations)
+   import Adl.MorphismAndDeclaration  (Declarations,Declaration)
    import Adl.KeyDef                  (KeyDefs)
    import Adl.ObjectDef               (ObjectDefs)
    import Adl.Population              (Populations)
    import Adl.ConceptDef              (ConceptDefs)
+   import Adl.Expression              (Expression)
    import Typology                    (Inheritance)
    import Classification              (Classification)
    import CommonClasses               (Identified(..))
@@ -33,6 +34,7 @@ where
             , ctxpops  :: Populations               -- ^ A list of populations defined in this context
             , ctxsql   :: ObjectDefs  --a list of sqlplugs
             , ctxphp   :: ObjectDefs  --a list of phpplugs
+            , ctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
             }               --deriving (Show) -- voor debugging
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Context                       ***

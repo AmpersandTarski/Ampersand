@@ -28,6 +28,7 @@ data Options = Options { contextName   :: Maybe String
 					   , genAtlas      :: Bool
 					   , uncheckedDirAtlas      :: Maybe String
 					   , dirAtlas      :: String
+					   , userAtlas      :: String
 					   , genXML        :: Bool
                        , genFspec      :: Bool
                        , fspecFormat   :: FspecFormat
@@ -165,6 +166,7 @@ options = map pp
           , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("use database with name (name overrides environment variable "++ envdbName ++ ").")), Public)
 
           , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
+          , ((Option []        ["user"]       (ReqArg userOpt "user")     ("generate atlas content for this user.")), Public)
           , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                            ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
           , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
@@ -209,6 +211,7 @@ defaultOptions clocktime env fNames pName
 		                 , genAtlas      = False   
             		     , uncheckedDirAtlas      = lookup envdirAtlas env
             		     , dirAtlas      = unchecked
+            		     , userAtlas      = []
             		     , genXML        = False
                              , genFspec      = False 
 	            	     , fspecFormat   = FUnknown
@@ -274,7 +277,9 @@ prototypeOpt nm opts
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: String -> Options -> Options
-dbNameOpt nm    opts = opts{dbName       = nm}
+dbNameOpt nm    opts = opts{dbName       = nm}                          
+userOpt :: String -> Options -> Options
+userOpt x opts = opts{userAtlas = x}
 atlasOpt :: Maybe String -> Options -> Options
 atlasOpt nm opts 
   = opts { dirAtlas = 

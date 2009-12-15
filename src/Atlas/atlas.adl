@@ -1,6 +1,23 @@
-CONTEXT Atlasx
+CONTEXT Atlas: user;s[User*User];user~ /\ script;s[Script*Script];script~ 
+BINDING
+BIND s::User*User. TOPHP "User", -- ($_REQUEST['User'])
+BIND s::Script*Script. TOPHP "Script"
+
+-- : \s1,s2 -> user;s1;user~ /\ script;s2;script~  
+--the CONTEXT expression is an expression with unbound morphism(s)
+
+--s1,s2 need to be bound in the parent context. For example, bound to a db query or file query or php variable.
+--the prototype generator for example will require variables s1 and s2 on all atlas pages of SERVICES 
+--TODO -> manual user/script vars binding in url p.e. .../Rules.php?User=PWO_gmi&Script=atlas.adl
+--SYNTAX TODO? S[User] to express user;s1;user~
+--CONTEXT Ctx : S[X] /\ S [Y] implies x::AnythingCtx->X, y::AnythingCtx->Y, \s1 -> s::X*X=[(s1,s1)], \s2 -> s::Y*Y=[(s2,s2)]
+-- , and I=I';(S[X] /\ S [Y])!!!
+-- \sn -> N*N=[(sn,sn)] is implemented in PHP as a URL bounded variable. Binding needs to be preserved while navigating between SERVICES in this CONTEXT.
+
 --WHILE GEN does not work well in prototype it is best to first define relations on 
 --specific concept -> general properties are translated into columns at the end, so they can be removed more easily
+
+
 PATTERN Atlas
 thepicture::Picture->Picture.
 
@@ -20,9 +37,9 @@ ENDPATTERN
 PATTERN Rules
 
 {--SPECIFIC RULE DECLARATIONS--}
-GEN UserRule ISA Rule
-GEN MultiplicityRule ISA Rule
-GEN HomogeneousRule ISA Rule
+--GEN UserRule ISA Rule
+--GEN MultiplicityRule ISA Rule
+--GEN HomogeneousRule ISA Rule
 property::MultiplicityRule->Prop.
 on::MultiplicityRule->Relation.
 property::HomogeneousRule->Prop.
@@ -33,44 +50,102 @@ on::HomogeneousRule->Relation.
 --GEN Morphism ISA Expression
 --type::Expression->Type.
 type::Rule->Type.
---type::UserRule->Type.
---type::MultiplicityRule->Type.
---type::HomogeneousRule->Type.
+type::UserRule->Type.
+type::MultiplicityRule->Type.
+type::HomogeneousRule->Type.
 --type::Morphism->Type.
 violates::Violation*Rule.
---violates::Violation*UserRule.
---violates::Violation*MultiplicityRule.
---violates::Violation*HomogeneousRule.
+violates::Violation*UserRule.
+violates::Violation*MultiplicityRule.
+violates::Violation*HomogeneousRule.
 explanation::Rule->Explanation.
---explanation::UserRule->Explanation.
---explanation::MultiplicityRule->Explanation.
---explanation::HomogeneousRule->Explanation.
-
+explanation::UserRule->Explanation.
+explanation::MultiplicityRule->Explanation.
+explanation::HomogeneousRule->Explanation.
 
 
 ENDPATTERN
 
+PATTERN ExplicitUserContext
+s::User*User =[ ("PWO_gmi","PWO_gmi") ].
+s::Script*Script =[ ("test.adl","test.adl") ].
 
+--KEY ctx : I[Picture] [user : user , script : s[Script*Script] ]
+--display;display~ /\ user;s;user~ /\ script;s;script~ |- I[Picture]
+user::Picture->User.
+user::Relation->User.
+user::Type->User.
+user::Pair->User.
+user::Concept->User.
+user::Atom->User.
+user::IsaRelation->User.
+user::MultiplicityRule->User.
+user::HomogeneousRule->User.
+user::Prop->User.
+user::UserRule->User.
+user::Rule->User.
+user::Violation->User.
+user::Explanation->User.
+script::Picture->Script.
+script::Relation->Script.
+script::Type->Script.
+script::Pair->Script.
+script::Concept->Script.
+script::Atom->Script.
+script::IsaRelation->Script.
+script::MultiplicityRule->Script.
+script::HomogeneousRule->Script.
+script::Prop->Script.
+script::UserRule->Script.
+script::Rule->Script.
+script::Violation->Script.
+script::Explanation->Script.
+
+--All Atlas concepts need to be qualified identity strings to prevent mixture of adl scripts
+display::Picture->String.
+display::Relation->String.
+display::Type->String.
+display::Pair->String.
+display::Concept->String.
+display::Atom->String.
+display::IsaRelation->String.
+display::MultiplicityRule->String.
+display::HomogeneousRule->String.
+display::Prop->String.
+display::UserRule->String.
+display::Rule->String.
+display::Violation->String.
+display::Explanation->String.
+ENDPATTERN
+{- TODO -> Manual replace: user;s;user[MultiplicityRule*User]~ /\ script;s;script~
+REASON=it looks like a non-performing query, at least on my laptop
+SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
+FROM `#TABLE#` AS TODO
+WHERE TODO.`script`='".$_REQUEST['Script']."'
+  AND TODO.`user`='".$_REQUEST['User']."'
+-}
+--TODO -> Do not use parent expression as Header, but give one of the service attributes this property
+--        When using user-unfriendly id's I do not want the id as a header -> I want to choose.
 SERVICE Rules : I[ONE]
-   = [ "Conceptual diagram"{"PICTURE"}: V[ONE*Picture]
-     , "User-defined rules" : V[ONE*UserRule]
-         = [ rule : I[UserRule]
-           , source : type;source
-           , target : type;target
-           , violations : violates~
+   = [ "Conceptual diagram"{"PICTURE"}: V[ONE*Picture];(user;s;user[Picture*User]~ /\ script;s;script~);display
+     , "User-defined rules" : V[ONE*UserRule];(user;s;user[UserRule*User]~ /\ script;s;script~)
+         = [ rule : I[UserRule];display
+           , source : type;source;display
+           , target : type;target;display
+           , violations : violates~;display
            ]
-     , Multiplicities : V[ONE*MultiplicityRule]
-         = [ property : property
-           , source : type;source
-           , on : on
-           , rule : I[MultiplicityRule]
-           , violations : violates~
+     , Multiplicities : V[ONE*MultiplicityRule];(user;s;user[MultiplicityRule*User]~ /\ script;s;script~)
+         = [ property : property;display
+           , source : type;source;display
+           , on : on;display
+           , rule : I[MultiplicityRule];display
+           , violations : violates~;display
            ]
-     , "Homogeneous properties" : V[ONE*HomogeneousRule]
-         = [ property : property
-           , on : on
-           , rule : I[HomogeneousRule]
-           , violations : violates~
+     , "Homogeneous properties" : V[ONE*HomogeneousRule];(user;s;user[HomogeneousRule*User]~ /\ script;s;script~)
+         = [ property : property;display
+           , on : on;display
+           , rule : I[HomogeneousRule];display
+           , violations : violates~;display
            ]
       ] 
 
@@ -78,53 +153,67 @@ SERVICE Rules : I[ONE]
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
 --        nu wordt default de specieke tabel gebruikt voor alle relaties!
 SERVICE Rule : I[Rule]
-   = [ source : type;source
-     , target : type;target
-     , violations : violates~
-     , explanation : explanation]
+   = [ object : display
+     , source : type;source;display
+     , target : type;target;display
+     , violations : violates~;display
+     , explanation : explanation;display]
 SERVICE Rule1 : I[UserRule]
-   = [ source : type;source
-     , target : type;target
-     , violations : violates~
-     , explanation : explanation]
+   = [ object : display
+     , source : type;source;display
+     , target : type;target;display
+     , violations : violates~;display
+     , explanation : explanation;display]
 SERVICE Rule2 : I[MultiplicityRule]
-   = [ source : type;source
-     , target : type;target
-     , violations : violates~
-     , explanation : explanation]
+   = [ object : display
+     , source : type;source;display
+     , target : type;target;display
+     , violations : violates~;display
+     , explanation : explanation;display]
 SERVICE Rule3 : I[HomogeneousRule]
-   = [ source : type;source
-     , target : type;target
-     , violations : violates~
-     , explanation : explanation]
+   = [ object : display
+     , source : type;source;display
+     , target : type;target;display
+     , violations : violates~;display
+     , explanation : explanation;display]
 
 SERVICE "ISArelations" : I[ONE]
-   = [ "IS-a relations" : V[ONE*IsaRelation]
-      = [ "IS-a relation" : I[IsaRelation]
-        , specific : specific
-        , isa : general
+   = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
+      = [ "IS-a relation" : I[IsaRelation];display
+        , specific : specific;display
+        , isa : general;display
         ]
      ]
 
+--I must use a nested name to display, because there is no SERVICE on String only on Relation
 SERVICE Relations : I[ONE]
-   = [ Relation_s : V[ONE*Relation]]
+   = [ Relation_s : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)
+      = [name:display]
+     ]
 
+--I do not want to display the qualified name, but the unqualified one 
 SERVICE Relation   : I[Relation]
-   = [ type        : relvar
-     , "source(s)" : relvar;source
-     , "target(s)" : relvar;target
-     , "multiplicity properties"  : (on[MultiplicityRule*Relation])~;property
-     , "homogeneous properties"  : (on[HomogeneousRule*Relation])~;property
-     , population  : contains]
+   = [ name        : display
+     , type        : relvar;display
+     , "source(s)" : relvar;source;display
+     , "target(s)" : relvar;target;display
+     , "multiplicity properties"  : (on[MultiplicityRule*Relation])~;property;display
+     , "homogeneous properties"  : (on[HomogeneousRule*Relation])~;property;display
+     , population  : contains;display]
 
 SERVICE Concepts : I[ONE]
-   = [ Concept_s : V[ONE*Concept]]
+   = [ Concept_s : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~);display]
 
 SERVICE Concept : I[Concept]
-   = [ population : contains]
+   = [ population : contains;display]
 
 ENDCONTEXT
 
+{-
+"1";"Test";"adl --help 2> \"%1$s/log.txt\" | echo \"<A HREF=\"log.txt\">log <?php echo USER;?> </A>\" > \"%1$s/index.htm\""
+"2";"Test -p error";"adl -d adl_%3$s -p\"%1$s\" --verbose \"%2$s\" 2> \"%1$s/log.txt\" | echo \"<A HREF=\"log.txt\">adl -d adl_%3$s -p\"%1$s\" --verbose \"%2$s\"</A>\" > \"%1$s/index.htm\""
+"3";"Test -p";"adl -d adl_%3$s -p\"%1$s\" --verbose \"%2$s\""
+-}
 
 {- Gezocht wordt naar de kolom UserRule, omdat dit zo bepaald is door het
 type in de expressie. Maar deze kolom heeft de naam van het generale type Rule, omdat dit zo gedeclareerd is.
