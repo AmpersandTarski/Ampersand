@@ -88,9 +88,9 @@ fillAtlas fSpec flags =
  >> createDirectoryIfMissing True fpath
  >> foldr (>>) (verboseLn flags "All pictures written..") dots
     where
-    pictlinks = [".\\img\\"++ (name fSpec) ++ ".png"| p<-patterns fSpec]
+    pictlinks = [".\\img\\"++userAtlas flags++"\\"++adlFileName flags++"\\"++ (name fSpec) ++ ".png"| p<-patterns fSpec]
                 --TODO -> patterns [".\\img\\"++ (remSpaces$name p) ++ ".png"| p<-patterns fSpec]
-    fpath = combine (dirAtlas flags) "img/"
+    fpath = combine (dirAtlas flags) ("img/"++userAtlas flags++"/"++adlFileName flags++"/")
     outputFile fnm = combine fpath fnm
     dots = [makeGraphic (name fSpec)$ toDot fSpec flags $ 
              if length(patterns fSpec)==0 then error "There is no pattern to fold"
