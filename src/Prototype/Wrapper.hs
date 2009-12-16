@@ -27,8 +27,8 @@
                     ) ++
       [ "    $"++objectId++"=new "++objectId++"(" ++ (if isOne o then [] else "$ID,") ++
         chain ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
-      , "    if($"++objectId++"->save()!==false) die('ok:'.$_SERVER['PHP_SELF']"++
-               (if isOne o then [] else ".'?" ++ objectId ++"='.urlencode($"++objectId++"->getId())")
+      , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++
+               (if isOne o then [] else ".'&" ++ objectId ++"='.urlencode($"++objectId++"->getId())")
                ++"); else die('Please fix errors!');"
       , "    exit(); // do not show the interface"
       , "  }"
@@ -38,11 +38,11 @@
         then [ "if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;"
              , "$"++objectId++"=new "++objectId++"();"]
              ++ indentBlock 2 showObjectCode
-             ++ [ "if(!$edit) $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1\",\"Edit\");"
+             ++ [ "if(!$edit) $buttons.=ifaceButton("++selfref++".\"&edit=1\",\"Edit\");"
                 , "else"
-                , "  $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1');"
+                , "  $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1');"
                                                                                   ++ "\",\"Save\")"
-                , "           .ifaceButton($_SERVER['PHP_SELF'],\"Cancel\");"
+                , "           .ifaceButton("++selfref++",\"Cancel\");"
                 ]
         else [ "if(isset($_REQUEST['new'])) $new=true; else $new=false;"
              , "if(isset($_REQUEST['edit'])||$new) $edit=true; else $edit=false;"
@@ -58,18 +58,15 @@
              [ " if($del) echo \"<P><I>Delete failed</I></P>\";"
              , " if($edit){"
              , "   if($new) "
-             , "     $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
+             , "     $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1',"++
                               "document.forms[0].ID.value);\",\"Save\");"
              , "   else { "
-             , "     $buttons.=ifaceButton(\"JavaScript:save('\".$_SERVER['PHP_SELF'].\"?save=1',"++
+             , "     $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1',"++
                               "'\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\");"
-             , "     $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?" ++ objectId ++
-                              "=\".urlencode($"++objectId++"->getId()),\"Cancel\");"
+             , "     $buttons.=ifaceButton(" ++ selfref1 objectId ++ ",\"Cancel\");"
              , "   } "
-             , "} else $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?edit=1&" ++ objectId ++
-                              "=\".urlencode($"++objectId++"->getId()),\"Edit\")"
-             , "               .ifaceButton($_SERVER['PHP_SELF'].\"?del=1&" ++ objectId ++
-                              "=\".urlencode($"++objectId++"->getId()),\"Delete\");"
+             , "} else $buttons.=ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\")"
+             , "               .ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
              , "}else{"
              , "  if($del){"
              , "    writeHead(\"<TITLE>Delete geslaagd</TITLE>\");"
@@ -87,6 +84,9 @@
       , "?>"
       ]
       where
+        selfref2 objid act = "serviceref($_REQUEST['content'], array('"++objid++"'=>urlencode($"++objid++"->getId()),'"++act++"'=>1))"
+        selfref1 objid = "serviceref($_REQUEST['content'], array('"++objid++"'=>urlencode($"++objid++"->getId()) ))"
+        selfref = "serviceref($_REQUEST['content'])"
         phpList2Array :: Int->String->String->ObjectDef->[String]
         phpList2Array depth var rqvar a
          = if not (isUni (objctx a))
@@ -266,7 +266,7 @@
             tot = (isTot(objctx att))
         gotoPages :: ObjectDef->String->[(String,String)]
         gotoPages att var
-          = [ (name serv++".php?"++(phpIdentifier$name serv)++"='.urlencode("++var++").'"
+          = [ ("'.serviceref('"++name serv++"', array('"++(phpIdentifier$name serv)++"'=>urlencode("++var++"))).'"
               ,name serv)
             | serv<-(serviceS fSpec)
             , target (objctx serv) == target (objctx att)

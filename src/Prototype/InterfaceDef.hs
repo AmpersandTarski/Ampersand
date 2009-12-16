@@ -6,7 +6,7 @@
   import Version (versionbanner)
    
   interfaceDef :: Fspc -> [ObjectDef] -> String -> String
-  interfaceDef _ serviceObjects _ = "<?php\n  " ++ chain "\n  "
+  interfaceDef fspc serviceObjects _ = "<?php\n  " ++ chain "\n  "
      (
         [ "// interfaceDef.inc.php"
         , "// Generated with "++ versionbanner
@@ -44,6 +44,16 @@
         , "  <div class=\"cNotice\"><center><a title=\"&copy; Sebastiaan JC Joosten 2005-2009, generated with "++versionbanner++"\">Layout V1.4 alpha</A></center></div>"
         , "  </BODY></HTML><?php"
         , "}"
+        , "function serviceref($svc,$env=array() ) {"
+        , "  $ref = '"++name fspc++".php?content='.$svc;"
+        , "  foreach($GLOBALS['ctxenv'] as $key => $value){ //CONTEXT wide variables"
+        , "     $ref = $ref.'&'.$key.'='.$value;"
+        , "  }"
+        , "  foreach($env as $key => $value){"
+        , "     $ref = $ref.'&'.$key.'='.$value;"
+        , "  }"
+        , "  return $ref;"
+        , "}"
         , "function ifaceButton($url,$tag,$descr=\"\"){"
         , "  return '"
         , "    <LI><A HREF=\"'.$url.'\" class=\"button\" title=\"'.htmlspecialchars($descr).'\">"
@@ -53,7 +63,7 @@
         ]
      ) ++ "\n?>\n"
      where
-       menuItems = concat [ [ "<LI><A HREF=\""++objname++".php\" TITLE=\"Show all "++objname++" objects\" class=\"menuItem\" >"
+       menuItems = concat [ [ "<LI><A HREF=\"<?php echo serviceref('"++objname++"');?>\" TITLE=\"Show all "++objname++" objects\" class=\"menuItem\" >"
                             , "  "++objname++""
                             , "</A></LI>"
                             ]

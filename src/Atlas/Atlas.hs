@@ -1,3 +1,5 @@
+--running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
+--in IIS you can enable windows authentication
 module Atlas.Atlas where
 import Adl
 import ShowADL
@@ -117,6 +119,7 @@ runMany conn (x:xs)  =
    do run conn x []
       runMany conn xs
 
+--TODO -> SIGNALs, Only Ru{} rules are considered
 type PictureLinks = [String]
 insertpops :: (IConnection conn) => conn -> Fspc -> Options -> [ATable] -> PictureLinks -> IO Integer
 insertpops _ _ _ [] _ = return 1
@@ -139,10 +142,10 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets]
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
  --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
-   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x<-homorules]
+   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-patterns fSpec, x<-ptgns p]
    pop' ATPicture = [[x,x]|x<-pics]
-   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x<-multrules]
+   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-multrules]
    pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
    pop' ATRelation = [[name x]|x<-vrels fSpec]
@@ -176,16 +179,16 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    --         homorules by a homogeneous property
    --         the rule from an ISA declaration (I[spec] |- I[gen]) is not presented as a rule in the atlas
    atlasrules = userrules ++ multrules ++ homorules
-   userrules = [x|x<-vrules fSpec, rrdcl x==Nothing, not (isIsaRule x)]
+   userrules = [x|x@Ru{}<-vrules fSpec, rrdcl x==Nothing, not (isIsaRule x)]
       where 
       isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
       isI (Tm (I{})) = True
       isI _ = False
-   multrules = [x|x<-vrules fSpec, isMultRule (rrdcl x) ]
+   multrules = [x|x@Ru{}<-vrules fSpec, isMultRule (rrdcl x) ]
       where 
       isMultRule (Just (p,_)) = elem p [Uni,Tot,Inj,Sur]
       isMultRule Nothing = False      
-   homorules = [x|x<-vrules fSpec, isHomoRule (rrdcl x) ]
+   homorules = [x|x@Ru{}<-vrules fSpec, isHomoRule (rrdcl x) ]
       where 
       isHomoRule (Just (p,_)) = elem p [Rfx,Sym,Asy,Trn] 
       isHomoRule Nothing = False

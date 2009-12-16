@@ -11,6 +11,7 @@
    import Prototype.InterfaceDef        (interfaceDef)
    import Prototype.Index               (htmlindex)
    import Prototype.RelBinGenBasics     (addSlashes)
+   import Prototype.ContextGen          (contextGen)
    import System.FilePath               (combine,addExtension)
    import Options
 
@@ -25,6 +26,9 @@
       >> verboseLn flags ("  Generating Installer.php")
       >> writeFile (combine targetDir "Installer.php")
                    (installer fSpec flags)
+      >> verboseLn flags ("  Generating "++name fSpec++".php")
+      >> writeFile (combine targetDir (name fSpec++".php"))
+                   (contextGen fSpec)
       >> verboseLn flags ("  Generating interfaceDef.inc.php")
       >> writeFile (combine targetDir "interfaceDef.inc.php")
                    (interfaceDef fSpec serviceObjects (dbName flags))
