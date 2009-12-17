@@ -16,7 +16,7 @@ FROM `#TABLE#` AS TODO
 WHERE TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
   AND TODO.`user`='".$GLOBALS['ctxenv']['User']."'
 -}
---USAGE -> The context expression should be used in composition on all V[Anything*Anything], like expr;V;expr. When the source or target is ONE, this is not needed, which saves a declaration r::ONE->R.
+--USAGE -> The context expression can be used in composition on all V[Anything*Anything] and I[Anything], like expr;V;expr. When the source or target is ONE, this is not needed, which saves a declaration r::ONE->R.
 --Compiletime checks are on context expressions minimal while still only used for Atlas.
 --GEN/SPEC is not considered yet, while it does not work properly in PHP at this moment.
 
@@ -114,7 +114,9 @@ script::UserRule->Script.
 script::Rule->Script.
 script::Violation->Script.
 script::Explanation->Script.
+ENDPATTERN
 
+PATTERN ExplicitDisplay
 --All Atlas concepts need to be qualified identity strings to prevent mixture of adl scripts
 display::Picture->String.
 display::Relation->String.
@@ -131,33 +133,26 @@ display::Rule->String.
 display::Violation->String.
 display::Explanation->String.
 ENDPATTERN
-{- TODO -> Manual replace: user;s;user[MultiplicityRule*User]~ /\ script;s;script~
-REASON=it looks like a non-performing query, at least on my laptop
-SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
-FROM `#TABLE#` AS TODO
-WHERE TODO.`script`='".$_REQUEST['Script']."'
-  AND TODO.`user`='".$_REQUEST['User']."'
--}
---TODO -> Do not use parent expression as Header, but give one of the service attributes this property
---        When using user-unfriendly id's I do not want the id as a header -> I want to choose.
+
+-- {"DISPLAY=<Concept>.<(function)Relation>"} if you need the link and a user-friendly representation.
 SERVICE Rules : I[ONE]
    = [ "Conceptual diagram"{"PICTURE"}: V[ONE*Picture];(user;s;user[Picture*User]~ /\ script;s;script~);display
      , "User-defined rules" : V[ONE*UserRule];(user;s;user[UserRule*User]~ /\ script;s;script~)
          = [ rule : I[UserRule];display
-           , source : type;source;display
-           , target : type;target;display
+           , source{"DISPLAY=Concept.display"} : type;source
+           , target{"DISPLAY=Concept.display"} : type;target
            , violations : violates~;display
            ]
      , Multiplicities : V[ONE*MultiplicityRule];(user;s;user[MultiplicityRule*User]~ /\ script;s;script~)
          = [ property : property;display
-           , source : type;source;display
-           , on : on;display
+           , source{"DISPLAY=Concept.display"} : type;source
+           , on{"DISPLAY=Relation.display"} : on
            , rule : I[MultiplicityRule];display
            , violations : violates~;display
            ]
      , "Homogeneous properties" : V[ONE*HomogeneousRule];(user;s;user[HomogeneousRule*User]~ /\ script;s;script~)
          = [ property : property;display
-           , on : on;display
+           , on{"DISPLAY=Relation.display"} : on
            , rule : I[HomogeneousRule];display
            , violations : violates~;display
            ]
@@ -166,28 +161,24 @@ SERVICE Rules : I[ONE]
 --TODO -> specific types moeten doorlinken naar generiekere service, als geen specifieke service bestaat
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
 --        nu wordt default de specieke tabel gebruikt voor alle relaties!
-SERVICE Rule : I[Rule]
-   = [ object : display
-     , source : type;source;display
-     , target : type;target;display
+SERVICE Rule{"DISPLAY=Rule.display"} : I[Rule]
+   = [ source{"DISPLAY=Concept.display"} : type;source
+     , target{"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
      , explanation : explanation;display]
-SERVICE Rule1 : I[UserRule]
-   = [ object : display
-     , source : type;source;display
-     , target : type;target;display
+SERVICE Rule1{"DISPLAY=UserRule.display"} : I[UserRule]
+   = [ source{"DISPLAY=Concept.display"} : type;source
+     , target{"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
      , explanation : explanation;display]
-SERVICE Rule2 : I[MultiplicityRule]
-   = [ object : display
-     , source : type;source;display
-     , target : type;target;display
+SERVICE Rule2{"DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
+   = [ source{"DISPLAY=Concept.display"} : type;source
+     , target{"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
      , explanation : explanation;display]
-SERVICE Rule3 : I[HomogeneousRule]
-   = [ object : display
-     , source : type;source;display
-     , target : type;target;display
+SERVICE Rule3{"DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
+   = [ source{"DISPLAY=Concept.display"} : type;source
+     , target{"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
      , explanation : explanation;display]
 
@@ -201,27 +192,48 @@ SERVICE "ISArelations" : I[ONE]
 
 --I must use a nested name to display, because there is no SERVICE on String only on Relation
 SERVICE Relations : I[ONE]
-   = [ Relation_s : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)
-      = [name:display]
-     ]
+   = [ Relation_s{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)]
 
 --I do not want to display the qualified name, but the unqualified one 
-SERVICE Relation   : I[Relation]
-   = [ name        : display
-     , type        : relvar;display
-     , "source(s)" : relvar;source;display
-     , "target(s)" : relvar;target;display
+SERVICE Relation{"DISPLAY=Relation.display"}   : I[Relation]
+   = [ type        : relvar;display
+     , "source(s)"{"DISPLAY=Concept.display"} : relvar;source
+     , "target(s)"{"DISPLAY=Concept.display"} : relvar;target
      , "multiplicity properties"  : (on[MultiplicityRule*Relation])~;property;display
      , "homogeneous properties"  : (on[HomogeneousRule*Relation])~;property;display
      , population  : contains;display]
 
 SERVICE Concepts : I[ONE]
-   = [ Concept_s : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~);display]
+   = [ Concept_s{"DISPLAY=Concept.display"} : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~)]
 
-SERVICE Concept : I[Concept]
+SERVICE Concept{"DISPLAY=Concept.display"} : I[Concept]
    = [ population : contains;display]
 
 ENDCONTEXT
+
+{-
+
+  function display($tbl,$col,$id){
+     return firstRow(firstCol(DB_doquer("SELECT DISTINCT `".$col."` FROM `".$tbl."` WHERE `i`='".addslashes($id)."'")));
+  }
+
+      <DIV class="FloaterContent"><?php
+          $type = $Relation->get_type();
+          echo '
+          <UL>';
+	  foreach($type as $i0=>$idv0){
+	    $v0 = display('type','display',$idv0);
+            echo '
+            <LI CLASS="item UI_type" ID="1.'.$i0.'">';
+              if(!$edit) echo '
+              <A HREF="'.serviceref('Type', array('Type'=>urlencode($idv0))).'">'.htmlspecialchars($v0).'</A>';
+              else echo htmlspecialchars($v0);
+            echo '</LI>';
+          }
+
+
+else echo '<H1>'.display('relation','display',$Relation->getId()).'</H1>';
+-}
 
 {- Gezocht wordt naar de kolom UserRule, omdat dit zo bepaald is door het
 type in de expressie. Maar deze kolom heeft de naam van het generale type Rule, omdat dit zo gedeclareerd is.

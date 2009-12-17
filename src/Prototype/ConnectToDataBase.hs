@@ -21,6 +21,10 @@
       ([ "<?php // generated with "++versionbanner
        , "require \"dbsettings.php\";"
        , ""
+       , "function display($tbl,$col,$id){"
+       , "   return firstRow(firstCol(DB_doquer(\"SELECT DISTINCT `\".$col.\"` FROM `\".$tbl.\"` WHERE `i`='\".addslashes($id).\"'\")));"
+       , "}"
+       , ""
        , "function stripslashes_deep(&$value) "
        , "{ $value = is_array($value) ? "
        , "           array_map('stripslashes_deep', $value) : "

@@ -129,6 +129,10 @@
         FS_id appname   = fsfsid fSpec
         objectId        = phpIdentifier objectName
         isString object = not (isOne object) -- todo
+        displaydirective obj = [(takeWhile (/='.') x,tail$dropWhile (/='.') x) 
+                               | strs<-objstrs obj,('D':'I':'S':'P':'L':'A':'Y':'=':x)<-strs, elem '.' x]
+        displaytbl obj = fst(head$displaydirective obj)
+        displaycol obj = snd(head$displaydirective obj)
         showObjectCode
          = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - ADL Prototype</TITLE>\""
            , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"edit.js\"></SCRIPT>':'<SCRIPT type=\"text/javascript\" src=\"navigate.js\"></SCRIPT>').\"\\n\" );"
@@ -138,7 +142,10 @@
            ( if isString o
              then ["if($edit && $"++objectId++"->isNew())"
                   ,"     echo '<P><INPUT TYPE=\"TEXT\" NAME=\"ID\" VALUE=\"'.addslashes($"++objectId++"->getId()).'\" /></P>';"
-                  ,"else echo '<H1>'.$"++objectId++"->getId().'</H1>';"
+                  ,"else echo '<H1>'."++
+                       (if null (displaydirective o) then ("$"++objectId++"->getId()") 
+                        else "display('"++displaytbl o++"','"++displaycol o++"',$"++objectId++"->getId())")
+                       ++".'</H1>';"
                   ,"?>"
                   ]
              else ["?><H1>"++objectName++"</H1>"]
@@ -217,7 +224,9 @@
         attContent var depth path cls att | not (isUni (objctx att))
          = ([ "echo '"
            , "<UL>';"
-           , "foreach("++var++" as $i"++show depth++"=>"++atnm ++"){"
+           , "foreach("++var++" as $i"++show depth++"=>"++idvar ++"){"
+           , "  "++atnm ++"="++(if null (displaydirective att) then idvar 
+                          else "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")") ++ ";"
            , "  echo '"
            , "  <LI CLASS=\"item UI"++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"]
            ++ indentBlock 4 content ++
@@ -231,26 +240,33 @@
            ], (if null (objats att) then [] else [(cls,att)])++ newBlocks)
            where
             (content,newBlocks)
-             = uniAtt atnm (depth+1)
+             = uniAtt atnm idvar (depth+1)
                       (path ++".'.$i"++show depth++".'") cls att
             atnm = if "$"++phpIdentifier (name att)==var then "$v"++show depth else "$"++phpIdentifier (name att)
+            idvar = if "$"++phpIdentifier (name att)==var then "$idv"++show depth else "$id"++phpIdentifier (name att)
         attContent  var depth path cls att | objats att==[]
          = if isTot (objctx att)
-           then ([ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" ]
+           then ([ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" 
+                 , "  "++dvar var ++"="++(if null (displaydirective att) then var 
+                          else "display('"++displaytbl att++"','"++displaycol att++"',"++var++")") ++ ";"]
                 ++ content ++ [ "echo '</SPAN>';" ],newBlocks)
            else ([ "if (isset("++var++")){"
+                 , "  "++dvar var ++"="++(if null (displaydirective att) then var 
+                          else "display('"++displaytbl att++"','"++displaycol att++"',"++var++")") ++ ";"
                  , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"
                  , "  echo '</DIV>';"] ++ indentBlock 2 content ++
                  [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
                  ],newBlocks)
-           where (content,newBlocks) = uniAtt (var) depth path cls att
+           where (content,newBlocks) = uniAtt (dvar var) var depth path cls att
                  spanordiv = if isTot (objctx att) then "SPAN" else "DIV"
+                 dvar var'@('$':x) = if null (displaydirective att) then var' else ('$':("display"++x))
+                 dvar x = x
         attContent  var depth path cls att | (isTot(objctx att))
          = ([ "echo '<DIV CLASS=\"UI"++cls++"\" ID=\""++path++"\">';" ]
            ++ indentBlock 2 content ++
            [ "echo '</DIV>';" ],newBlocks)
            where
-            (content,newBlocks) = uniAtt (var) depth path cls att
+            (content,newBlocks) = uniAtt (var) var depth path cls att
         attContent  var depth path cls att | otherwise
          = ([ "if(isset("++var++")){"
             , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"]
@@ -262,11 +278,11 @@
            ,(if tot then [] else [(cls,att)]) ++ newBlocks
            )
            where
-            (content,newBlocks) = uniAtt (var) depth path cls att
+            (content,newBlocks) = uniAtt (var) var depth path cls att
             tot = (isTot(objctx att))
         gotoPages :: ObjectDef->String->[(String,String)]
-        gotoPages att var
-          = [ ("'.serviceref('"++name serv++"', array('"++(phpIdentifier$name serv)++"'=>urlencode("++var++"))).'"
+        gotoPages att idvar
+          = [ ("'.serviceref('"++name serv++"', array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
               ,name serv)
             | serv<-(serviceS fSpec)
             , target (objctx serv) == target (objctx att)
@@ -276,7 +292,7 @@
            [ "echo '<LI><A HREF=\""++link++"\">"++txt++"</A></LI>';"
            | (link,txt) <- gotoP] ++
            [ "echo '</UL></DIV>';" ]
-        uniAtt var _ path _ att | null (objats att)
+        uniAtt var idvar _ path _ att | null (objats att)
          = (if not (isTot (objctx att)) && isUni (objctx att)
            then [ "if(isset("++var++")){" ] ++ indentBlock 2 content ++ ["}"]
            else content,[])
@@ -293,8 +309,8 @@
                               ++ indentBlock 2 (gotoDiv gotoP path) ++
                               [ "} else echo "++echobit++";" ]
             echobit= "htmlspecialchars("++var++")"
-            gotoP = gotoPages att var
-        uniAtt var depth path cls att
+            gotoP = gotoPages att idvar
+        uniAtt var idvar depth path cls att
          = ((if null gotoP then []
              else if length gotoP == 1
                   then [ "if(!$edit){"
@@ -319,7 +335,7 @@
                ]
                ,newBlocks)
            where
-            gotoP = gotoPages att (var ++ "['id']")
+            gotoP = gotoPages att (idvar ++ "['id']")
             newBlocks = concat $ map snd stuff
             content = map fst stuff
             stuff
