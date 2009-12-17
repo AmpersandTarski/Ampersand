@@ -1,18 +1,24 @@
 CONTEXT Atlas: user;s[User*User];user~ /\ script;s[Script*Script];script~ 
-BINDING
-BIND s::User*User. TOPHP "User", -- ($_REQUEST['User'])
+BINDING 
+BIND s::User*User. TOPHP "User", 
 BIND s::Script*Script. TOPHP "Script"
 
--- : \s1,s2 -> user;s1;user~ /\ script;s2;script~  
---the CONTEXT expression is an expression with unbound morphism(s)
-
---s1,s2 need to be bound in the parent context. For example, bound to a db query or file query or php variable.
---the prototype generator for example will require variables s1 and s2 on all atlas pages of SERVICES 
---TODO -> manual user/script vars binding in url p.e. .../Rules.php?User=PWO_gmi&Script=atlas.adl
---SYNTAX TODO? S[User] to express user;s1;user~
---CONTEXT Ctx : S[X] /\ S [Y] implies x::AnythingCtx->X, y::AnythingCtx->Y, \s1 -> s::X*X=[(s1,s1)], \s2 -> s::Y*Y=[(s2,s2)]
--- , and I=I';(S[X] /\ S [Y])!!!
--- \sn -> N*N=[(sn,sn)] is implemented in PHP as a URL bounded variable. Binding needs to be preserved while navigating between SERVICES in this CONTEXT.
+--QUICK IMPLEMENTATION FOR ATLAS:
+--ONLY PHP/SQL select queries are implemented and tested for context expressions
+--The context expression MUST be an intersection with all conjuncts of the format (r;s[R*R];r~) where r::Aything->R and s a singleton relation of type R
+--r must be explicitly declared for all Concepts in this Context. s must be explicitly declared. 
+-- (a DB table will be created for s, but it does not need to be populated while it is not used in any SELECT query)
+--PHP binds the concept name of the singleton in the global variable ctxenv
+-- ($GLOBALS['ctxenv']=array('User'=>$_REQUEST['User'],'Script'=>$_REQUEST['Script'])) 
+{- The generated SELECT query for Atlas
+SELECT DISTINCT TODO.`i`, TODO.`i` AS i1
+FROM `#TABLE#` AS TODO
+WHERE TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
+  AND TODO.`user`='".$GLOBALS['ctxenv']['User']."'
+-}
+--USAGE -> The context expression should be used in composition on all V[Anything*Anything], like expr;V;expr. When the source or target is ONE, this is not needed, which saves a declaration r::ONE->R.
+--Compiletime checks are on context expressions minimal while still only used for Atlas.
+--GEN/SPEC is not considered yet, while it does not work properly in PHP at this moment.
 
 --WHILE GEN does not work well in prototype it is best to first define relations on 
 --specific concept -> general properties are translated into columns at the end, so they can be removed more easily
@@ -67,8 +73,8 @@ explanation::HomogeneousRule->Explanation.
 ENDPATTERN
 
 PATTERN ExplicitUserContext
-s::User*User =[ ("PWO_gmi","PWO_gmi") ].
-s::Script*Script =[ ("test.adl","test.adl") ].
+s::User*User. -- =[ ("PWO_gmi","PWO_gmi") ].
+s::Script*Script. -- =[ ("test.adl","test.adl") ].
 
 --KEY ctx : I[Picture] [user : user , script : s[Script*Script] ]
 --display;display~ /\ user;s;user~ /\ script;s;script~ |- I[Picture]
@@ -86,6 +92,14 @@ user::UserRule->User.
 user::Rule->User.
 user::Violation->User.
 user::Explanation->User.
+--ctxenv::Picture*Picture.
+--ctxenv::Relation*Relation.
+--ctxenv::Concept*Concept.
+--ctxenv::IsaRelation*IsaRelation.
+--ctxenv::MultiplicityRule*MultiplicityRule.
+--ctxenv::HomogeneousRule*HomogeneousRule.
+--ctxenv::UserRule*UserRule.
+--ctxenv::Rule*Rule.
 script::Picture->Script.
 script::Relation->Script.
 script::Type->Script.
@@ -208,12 +222,6 @@ SERVICE Concept : I[Concept]
    = [ population : contains;display]
 
 ENDCONTEXT
-
-{-
-"1";"Test";"adl --help 2> \"%1$s/log.txt\" | echo \"<A HREF=\"log.txt\">log <?php echo USER;?> </A>\" > \"%1$s/index.htm\""
-"2";"Test -p error";"adl -d adl_%3$s -p\"%1$s\" --verbose \"%2$s\" 2> \"%1$s/log.txt\" | echo \"<A HREF=\"log.txt\">adl -d adl_%3$s -p\"%1$s\" --verbose \"%2$s\"</A>\" > \"%1$s/index.htm\""
-"3";"Test -p";"adl -d adl_%3$s -p\"%1$s\" --verbose \"%2$s\""
--}
 
 {- Gezocht wordt naar de kolom UserRule, omdat dit zo bepaald is door het
 type in de expressie. Maar deze kolom heeft de naam van het generale type Rule, omdat dit zo gedeclareerd is.

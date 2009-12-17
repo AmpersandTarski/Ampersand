@@ -54,6 +54,7 @@ module Data.Fspec ( Fspc(..)
                     , pictSB       :: Maybe Picture         -- ^ Picture containing the SwitchBoard.
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , violations   :: [(Rule,Paire)]        -- ^ generated: the violations of rules, as computed from the populations specified in the ADL-script
+                    , vctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
 
    instance Morphical Fspc where

@@ -60,17 +60,24 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                  -> String     -- SQL name of the target of this expression, as assigned by the environment
                  -> Expression -- expression to be translated
                  -> String     -- resulting SQL expression
-   
    -- quote the attributes (such that column-names such as `Right` or `in` won't yield errors)
    selectExpr fSpec i src@(_:_) trg       e' | head src /= '`'
     = selectExpr fSpec i ('`':src++"`") trg            e'
    selectExpr fSpec i src       trg@(_:_) e' | head trg /= '`'
     = selectExpr fSpec i src            ('`':trg++"`") e'
    
-   selectExpr fSpec i src trg (Fi lst'@(_:_:_))
-    = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
+   --TODO
+   selectExpr fSpec i src trg iex@(Fi lst'@(_:_:_))
+    | length lst'==length simplectxbinding && source iex==target iex && length(snd$vctxenv fSpec)==length simplectxbinding
+        = let phpvar1 = (snd.head)(snd$vctxenv fSpec) 
+          in concat$ 
+               ["SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `"++name(source iex)++"` AS TODO "
+               , "WHERE TODO.`"++phpvar1++"`='\".$GLOBALS['ctxenv']['"++phpvar1++"'].\"'"]
+               ++["AND TODO.`"++x++"`='\".$GLOBALS['ctxenv']['"++x++"'].\"'"|(_,x)<-tail (snd$vctxenv fSpec)]
+    | otherwise = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                            (chain ", " exprbracs) (chain " AND " wherecl)
-      where src'    = quote$sqlExprSrc fSpec fstm
+      where simplectxbinding = [name$source s|(F [Tm m1,Tm s@(Mph{mphnm="s"}),Tm m2])<-lst',source s==target s,m1==flp m2]
+            src'    = quote$sqlExprSrc fSpec fstm
             trgC    = quote$sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
             trg'    = noCollideUnlessTm fstm [src'] trgC
             fstm    = head posTms  -- always defined, because length posTms>0 (ensured in definition of posTms)

@@ -45,6 +45,7 @@
                  , pictSB       = Nothing
                  , themes       = themes'
                  , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
+                 , vctxenv      = ctxenv context
                  }
         ruleviols (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
             | rtyp==Truth = contents$Cp con --everything not in con
