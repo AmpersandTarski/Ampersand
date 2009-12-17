@@ -1,5 +1,8 @@
 -- This module is for the definition of Picture and PictureList.
-module Picture where
+module Picture ( Picture(reference,figlabel,fullPng,title) -- Other fields are hidden, for there is no need for them outside this module...
+               , PictType(..)
+               , makePicture,writePicture) 
+where
 import Options
 import System             (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath    (combine,replaceExtension)

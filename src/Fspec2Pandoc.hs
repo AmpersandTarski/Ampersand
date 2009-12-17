@@ -29,7 +29,7 @@ import System.FilePath
 import Switchboard      (switchboard)
 import Data.GraphViz    (printDotGraph)
 import Classes.Graphics (toDot)
-import Picture
+import Picture          (Picture(reference,figlabel,fullPng,title),PictType(..),makePicture)
 
 --import Statistics
 
@@ -437,7 +437,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
        where pict = makePicture flags (name pat) PTPattern pStr   -- the Picture that represents this service's knowledge graph
              pGph = toDot fSpec flags pat                         -- the DotGraph String that represents this service's knowledge graph
              pStr = printDotGraph pGph                            -- the String that represents this service's knowledge graph
-    iterat n [] = []
+    iterat _ [] = []
     --query copied from FSpec.hs revision 174
     themerules  :: Pattern -> [[Block]]
     themerules pat = [[Plain [Str $ "R"++show (nr r),Str $ latexEsc (explainRule flags r)]]|r<-rules pat]
