@@ -507,7 +507,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                                  , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
                                  , if isInj d || d `elem` injs then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d<-declarations fSpec, not (isSignal d), not (isProperty d)
+               | d<-declarations fSpec, not (isSignal d) -- , not (isProperty d) --TODO Stef, ik heb dit maar even uitgecommentariseerd, want het compileert anders niet...
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
