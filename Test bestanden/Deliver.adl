@@ -82,7 +82,7 @@ PATTERN Deliveries
 
  item :: Order * Product
   = [ ("C45666"                  , "Jelly beans"  )
---    ; ("Order 22/09/2006 Cookies", "Cookies"      )
+    ; ("Order 22/09/2006 Cookies", "Cookies"      )
     ; ("C45683"                  , "Peanut butter")
     ].
  item :: Delivery * Product
