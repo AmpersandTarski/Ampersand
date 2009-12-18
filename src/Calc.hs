@@ -351,6 +351,7 @@ module Calc ( deriveProofs
                                    , decprR  = ""
                                    , decpopu = []
                                    , decexpl = ""
+                                   , decpat  = ""
                                    , decfpos = Nowhere
                                    , decid   = 0
                                    , deciss  = True
@@ -446,7 +447,7 @@ module Calc ( deriveProofs
                              , rrcon = Fu ts -- obsolete: error ("Module Calc: Loop found!! (hier stond eerst \"r\").")    -- WAAROM?  Stef, hier zat volgens mij de bug. Kan jij dit herstellen?
                              }  
            _ -> case disjNF expr of
-                      Fu{} -> reprAsRule r (disjNF expr)
+                      e@(Fu{}) -> reprAsRule r e
                       _    -> r { rrsrt = Truth
                                 , rrant = (error ("!Fatal (module Calc): erroneous call to antecedent of r "++showADL expr))
                                 , rrcon = expr
@@ -527,6 +528,7 @@ module Calc ( deriveProofs
                      Tm mph   -> if inline mph then "" else "~"
                      Tc{}     -> error("!Fatal (module Calc): call to showOp (Tc x) in module Calc.hs")
 
+   positiveIn :: Expression -> Morphism -> Maybe Bool
    positiveIn expr m | and result           = Just True   -- all are True, so an insert in m means an insert in expr
                      | and (map not result) = Just False  -- all are False, so a delete from m means an insert in expr
                      | otherwise            = Nothing     -- inconclusive

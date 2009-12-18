@@ -1,22 +1,17 @@
   {-# OPTIONS_GHC -Wall #-}
   module ADL2Fspec (makeFspec)
   where
-   import Collection     (Collection(rd,isc,(>-)))
+   import Collection     (Collection(rd,uni,isc,(>-)))
    import Strings        (firstCaps)
    import Adl
-   import Adl.ECArule    (isBlk,isDry)
    import Auxiliaries    (naming, eqCl, eqClass, sort')
    import FspecDef
-   import Classes.Graphics
    import Languages
-   import Picture
    import Calc
-   import Options        (Options(language,dirOutput))
+   import Options        (Options(language))
    import NormalForms(conjNF,disjNF,normECA)
    import Data.Plug
    import Char
-   import Rendering.ClassDiagram
-   import System.FilePath
    
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec where
@@ -35,7 +30,9 @@
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
 --                 , ecaRules     = []
-                 , vrels        = declarations context
+                 , vrels        = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
+                                                          `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
+                                  | d<-declarations context]
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
                  , pictPatts    = Nothing
@@ -64,25 +61,24 @@
 -- Univalent and injective relations cannot be associations, as they are used as attributes in wide tables.
         mor2plug :: Morphism -> Plug
         mor2plug  m'
-         = if isInj || isUni then error ("!Fatal (module ADL2Fspec 61): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
-           if isTot
+         = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 61): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
+           if is_Tot
            then PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing (not isSur) isUni
-                                   ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
-           else if isSur then mor2plug (flp m')
+                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing (not is_Sur) False {- isUni -}
+                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]}
+           else if is_Sur then mor2plug (flp m')
            else PlugSql { plname = name m'
                         , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]   -- WAAROM (SJ) is dit de expressie in dit veld?
-                                                           )      Nothing (not isSur) isUni
-                                   ,field (name (target m')) (Tm m') Nothing (not isTot) isInj]}
+                                                           )      Nothing (not is_Sur) False {- isUni -}
+                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]}
            where
              mults = multiplicities m'
-             isTot = Tot `elem` mults || m' `elem` totals
-             isUni = Uni `elem` mults
-             isSur = Sur `elem` mults || flp m' `elem` totals
-             isInj = Inj `elem` mults
+             is_Tot = Tot `elem` mults || m' `elem` totals
+             is_Sur = Sur `elem` mults || flp m' `elem` totals
+        totals :: [Morphism]
         totals
          = rd [ m | q<-quads visible (rules fSpec), isIdent (qMorph q)
-                  , (conj,hcs)<-cl_conjNF (qClauses q), Fu fus<-hcs
+                  , (_,hcs)<-cl_conjNF (qClauses q), Fu fus<-hcs
                   , antc<-[(conjNF.Fi) [notCp f| f<-fus, isNeg f]], isIdent antc
                   , f<-fus, isPos f
                   , m<-tots f
@@ -446,10 +442,8 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         visible m  = makeInline m `elem` vis
         invariants = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
         qs         = [q| q@(Quad m ccrs)<-allQuads, m `elem` vis
-                       , (conj,shifts)<-cl_conjNF ccrs
+                       , (_,shifts)<-cl_conjNF ccrs
                        , Fu fus<-shifts, f<-fus, isPos f, m'<-mors f, m' `elem` vis]
-        conjuncts  = rd [conj   | Quad _ ccrs<-qs, (conj,_)<-cl_conjNF ccrs]
-        clauses    = rd [clause | Quad _ ccrs<-qs, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
         ecaRs      = assembleECAs visible qs
         nECArules  = map normECA ecaRs
         trigs :: ObjectDef -> [Declaration->ECArule]

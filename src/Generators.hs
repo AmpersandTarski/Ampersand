@@ -8,10 +8,6 @@ module Generators (doGenAtlas
                   ,prove)
 where
 
---import Char (isAlpha)
-import Classes.Graphics
---import System (system, ExitCode(ExitSuccess,ExitFailure))
-
 import System.FilePath        (combine,replaceExtension)
 import Options
 import FspecDef
@@ -24,9 +20,6 @@ import Adl
 import Fspec2Pandoc           (fSpec2Pandoc,laTeXheader)
 --import Strings                (remSpaces)
 import Atlas.Atlas
-import Rendering.ClassDiagram (classdiagram2dot,cdAnalysis)
-import Switchboard            (switchboard)
-import Data.GraphViz.Types
 import Text.Pandoc            ( defaultWriterOptions
                               , prettyPandoc
                               , writerStandalone

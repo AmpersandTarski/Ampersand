@@ -281,14 +281,14 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
              i              -- unique definition numbers (start at 1)
    = [Header (lev+1) [Str thm]]  --new section to explain this theme
      ++ sctConcepts  -- tells which new concepts are introduced in this section.
-     ++ [ DefinitionList (sctRules ++ sctSignals) ]   -- tells which rules and signals are being introduced
+     ++ [ DefinitionList (sctRules ++ sctSignals)| not (null (sctRules ++ sctSignals)) ]   -- tells which rules and signals are being introduced
      ++ dpSections thms seenCss seenDss seenRss i''
     where
      (sctRules,   i',  seenCrs, seenDrs, seenRrs) = dpRule patRules i seenConcepts seenRelations []
      (sctSignals, i'', seenCss, seenDss, seenRss) = dpRule patSignals i' seenCrs seenDrs seenRrs
      conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]
      patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
-     patSignals   = [s| s<-signals fSpec, r_pat s==thm, r_usr s]
+     patSignals   = [s| s<-signals fSpec, r_pat s==thm]
      newConcepts  = concs        (patRules++patSignals) >- seenConcepts
      newRelations = filter (not.isIdent) (declarations (patRules++patSignals) >- seenRelations)
      dpRule [] i seenConcepts seenDeclarations seenRules = ([], i, seenConcepts, seenDeclarations, seenRules)
@@ -507,7 +507,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                                  , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
                                  , if isInj d || d `elem` injs then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d<-declarations fSpec
+               | d<-declarations fSpec, not (isSignal d), not (isProperty d)
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
@@ -573,7 +573,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
        plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
        content = plugRules ++ plugSignals
        plugRules
-        = case [r| r<-rules   fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
+        = case [r| r@(Ru{})<-rules fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
                    []  -> [ Para [ Str "This data set has no integrity rules other than the multiplicities specified earlier. " ]]
                    [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
                           , Para [ Math DisplayMath $ showMathcode fSpec r]
@@ -582,7 +582,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                           , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
                           ]
        plugSignals
-        = case [r| r<-signals fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
+        = case [r| r<-signals fSpec, null (declarations (mors r) >- declarations p)] of
                    []  -> []
                    [s] -> [ Para [ Str "This data set generates one signal. " ]
                           , Para [ Math DisplayMath $ showMathcode fSpec s]

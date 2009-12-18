@@ -164,7 +164,7 @@ nodeLabel cpts c
  = case lookup c (numberListFrom cpts 1) of
    Just i -> show i
    _      -> error "!Fatal (module Graphics): element "++name c++" not found by nodeLabel."
-nodePoint :: [Concept] -> Concept -> String
+nodePoint :: (Eq a, Identified a) => [a] -> a -> String
 nodePoint cpts c
  = case lookup c (numberListFrom cpts (length cpts+1)) of
    Just i -> show i
@@ -173,7 +173,7 @@ nodePoint cpts c
 -- Translation of declarations to arc-id's.
 -- Each arc is drawn by an intermediate point, halfway the arc, which we call the "hinge".
 -- The label of the arc is drawn as a separate node in the drawing, strongly linked to the hinge of the arc.
-arcLabel :: [Declaration] -> Declaration -> String
+arcLabel :: (Eq a, Identified a) => [a] -> a -> String
 arcLabel arcs d
  = case lookup d (numberListFrom arcs 1) of
    Just i -> "a"++show i

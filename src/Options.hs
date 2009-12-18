@@ -301,8 +301,6 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                               ('O': _ ) -> FOpenDocument
                                               _         -> FUnknown
                             }
-hdrFileOpt :: String -> Options -> Options
-hdrFileOpt fnm  opts = opts{texHdrFile   = Just fnm}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

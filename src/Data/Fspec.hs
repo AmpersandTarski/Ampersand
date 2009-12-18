@@ -70,8 +70,8 @@ module Data.Fspec ( Fspc(..)
     --Interpretation of fSpec as a language means to describe the classification tree,
     --the set of declarations and the rules that apply in that fSpec. Inheritance of
     --properties is achieved as a result.
-    rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
-    signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
+    rules        fSpec = [r| r@(Ru{})<-vrules fSpec]
+    signals      fSpec = [r| r@(Sg{})<-vrules fSpec]
     patterns     fSpec = vpatterns fSpec
     objectdef    fSpec = Obj { objnm   = let FS_id str = fsfsid fSpec in str
                              , objpos  = Nowhere

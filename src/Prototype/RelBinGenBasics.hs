@@ -174,22 +174,33 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                       ]++
                       [ (length lst',target (last lst'))  | isNeg (last lst') ]
             -- de SQL-expressies voor de concepten van lst', maar nu in SQL
-            concExprs = [ selectExprBrac fSpec i sm sm tm ++ " AS c"++show n
+            concExprs = [e| (_,e,_)<-concExpr]
+            concExpr  = [ (n,selectExprBrac fSpec i sm sm tm ++ " AS "++concNm n, sm)
                         | (n,c)<-ncs, tm<-[Tm $ mIs c], sm<-[quote$sqlExprSrc fSpec tm] ]
+            concTp n = head ([t| (i,_,t)<-concExpr, n==i]++error("!Fatal (module RelBinGenBasics 183) concTp"))
+            concNm n = head (["c"++show n| (i,_,_)<-concExpr, n==i]++error("!Fatal (module RelBinGenBasics 183) concNm"))
             -- de SQL-expressies voor de elementen uit lst', die elk een ADL-expressie representeren
-            exprbracs = [ selectExprBrac fSpec i src' trg' (if isNeg l then notCp l else l) ++ " AS F"++show n 
+            exprbracs = [e| (_,e,_,_)<-exprbrac]
+            exprbrac  = [ (n,selectExprBrac fSpec i src' trg' l ++ " AS "++exprNm n , src' , trg' )
                         | (n,l)<-zip [0..] lst'
                         , not (isNeg l)
                         , src'<-[quote$sqlExprSrc fSpec l]
                         , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
                         ]
-            -- de where expressies bevatten alle "magie". Dit is zgn. "terse code", die omzichtig behandeld moet worden.
+            exprE n  = head ([e| (i,e,_,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 180) exprE"))  -- the expression itself
+            exprS n  = head ([s| (i,_,s,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 181) exprS"))  -- source type
+            exprT n  = head ([t| (i,_,_,t)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 182) exprT"))  -- target type
+            exprNm n = head (["F"++show n| (i,_,_,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 183) exprNm"))
+            -- de where expressies bevatten alle "magie".
             wherecl   = (filter (not.null))
                         [ if isNeg l
                           then "NOT EXISTS ("++selectExists' (i+12)
                                                              (selectExprBrac fSpec i src' trg' (if isNeg l then notCp l else l) ++ " AS F"++show n)
-                                                             (chain " AND " ([(if inCs n then "c" else "F")++show n++"."++src' ++ "=F"++show  n   ++"."++src']++
-                                                                             ["F"++show n++"."++trg' ++ (if inCs (n+1) then "=c" else "=F")++show (n+1)++"."++trg']))
+                                                             (chain " AND " ([ concNm  n   ++"."++concTp n   ++ "=F"++show n      ++"."++src'        | inCs n ]++
+                                                                             [ exprNm (n-1)++"."++exprT (n-1)++ "=F"++show n      ++"."++src'        | n>0, not (inCs n) ]++
+                                                                             [ "F"++show n ++"."++trg'       ++ "=" ++concNm (n+1)++"."++concTp (n+1)| inCs (n+1) ]++
+                                                                             [ "F"++show n ++"."++trg'       ++ "=" ++exprNm (n+1)++"."++exprS (n+1) | n>0, not (inCs (n+1)) ]++
+                                                                             []))
                                                ++")"
                           else chain " AND " (["c"++show n++"."++src' ++ "=F"++show  n   ++"."++src'| inCs n]++
                                               ["F"++show n++"."++trg' ++ "=c"++show (n+1)++"."++trg'| inCs (n+1)])
@@ -203,6 +214,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         , src'<-[quote$sqlExprSrc fSpec l]
                         , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
                         , src''<-[quote$sqlExprSrc fSpec l']
+                        , trg''<-[noCollideUnlessTm l' [src''] (quote$sqlExprTrg fSpec l')]
                         ]++
                         [ "c"++show n ++"."++(quote$sqlExprSrc fSpec (Tm $ mIs c))++" IS NOT NULL"
                         | (n,c)<-ncs
