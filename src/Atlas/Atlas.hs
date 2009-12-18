@@ -11,6 +11,7 @@ import Typology
 import Collection     ( Collection (rd) ) 
 import Database.HDBC.ODBC 
 import Database.HDBC
+import Classes.Morphical
 ------
 import Classes.Graphics
 import System (system, ExitCode(ExitSuccess,ExitFailure))
@@ -29,6 +30,7 @@ data ATableId =
   |ATHomoRule
   |ATIsa
   |ATPicture
+  |ATMorphisms
   |ATMultRule
   |ATPair
   |ATProp
@@ -53,6 +55,7 @@ tables =
    ,ATable ATHomoRule "homogeneousrule" ["i","property","on","type","explanation","user","script","display"] 
    ,ATable ATIsa "isarelation" ["i","specific","general","user","script","display"] 
    ,ATable ATPicture "picture" ["i","thepicture","user","script","display"] 
+   ,ATable ATMorphisms "morphisms" ["userrule","relation"] 
    ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation","user","script","display"] 
    ,ATable ATPair "pair" ["i","user","script","display"] 
    ,ATable ATProp "prop" ["i","user","script","display"] 
@@ -81,7 +84,9 @@ fillAtlas fSpec flags =
     --TODO check if actual MySql tables of atlas correspond to function tables
     --delete all existing content of this ADL script of this user
     --create the pictures in a folder for this user
-    runMany conn ["DELETE FROM "++tablename x|x<-tables]
+    --TODO -> DELETE only deletes concept tables, but there are no foreign keys, so relation table content will not be removed. Duplicates are allowed in those, so this gives no errors. Meterkast.adl does not clean up at all, because new compiles get new script names.
+    (if islocalcompile then runMany conn ["DELETE FROM "++tablename x| x<-tables]
+        else runMany conn ["DELETE FROM "++tablename x++" WHERE user='"++user++"' AND script='"++script++"'" |x<-tables, iscpttable$tableid x] )
     --insert population of this ADL script of this user
     insertpops conn fSpec flags tables pictlinks
     --end connection
@@ -90,9 +95,12 @@ fillAtlas fSpec flags =
  >> createDirectoryIfMissing True fpath
  >> foldr (>>) (verboseLn flags "All pictures written..") dots
     where
-    pictlinks = [".\\img\\"++userAtlas flags++"\\"++adlFileName flags++"\\"++ (name fSpec) ++ ".png"| p<-patterns fSpec]
+    script = adlFileName flags
+    user = takeWhile (/='.') (userAtlas flags)
+    islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
+    pictlinks = [".\\img\\"++user++"\\"++script++"\\"++ (name fSpec) ++ ".png"| p<-patterns fSpec]
                 --TODO -> patterns [".\\img\\"++ (remSpaces$name p) ++ ".png"| p<-patterns fSpec]
-    fpath = combine (dirAtlas flags) ("img/"++userAtlas flags++"/"++adlFileName flags++"/")
+    fpath = combine (dirAtlas flags) ("img/"++user++"/"++script++"/")
     outputFile fnm = combine fpath fnm
     dots = [makeGraphic (name fSpec)$ toDot fSpec flags $ 
              if length(patterns fSpec)==0 then error "There is no pattern to fold"
@@ -129,7 +137,8 @@ insertpops conn fSpec flags (tbl:tbls) pics =
       insertpops conn fSpec flags tbls pics
    where
    script = adlFileName flags
-   user = userAtlas flags
+   user = takeWhile (/='.') (userAtlas flags)
+   islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
    qualify = (++)$"("++user ++ "." ++ script ++ ")"
    toUserctx :: [String]->ATableId->[String]
    toUserctx [] _ = []
@@ -145,6 +154,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-patterns fSpec, x<-ptgns p]
    pop' ATPicture = [[x,x]|x<-pics]
+   pop' ATMorphisms = [[cptrule x, name y]|x<-userrules, y<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-multrules]
    pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]

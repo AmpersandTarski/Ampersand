@@ -20,9 +20,8 @@ WHERE TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
 --Compiletime checks are on context expressions minimal while still only used for Atlas.
 --GEN/SPEC is not considered yet, while it does not work properly in PHP at this moment.
 
---WHILE GEN does not work well in prototype it is best to first define relations on 
+--TODO -> WHILE GEN does not work well in prototype it is best to first define relations on 
 --specific concept -> general properties are translated into columns at the end, so they can be removed more easily
-
 
 PATTERN Atlas
 thepicture::Picture->Picture.
@@ -46,6 +45,7 @@ PATTERN Rules
 --GEN UserRule ISA Rule
 --GEN MultiplicityRule ISA Rule
 --GEN HomogeneousRule ISA Rule
+morphisms::UserRule*Relation.
 property::MultiplicityRule->Prop.
 on::MultiplicityRule->Relation.
 property::HomogeneousRule->Prop.
@@ -68,16 +68,12 @@ explanation::Rule->Explanation.
 explanation::UserRule->Explanation.
 explanation::MultiplicityRule->Explanation.
 explanation::HomogeneousRule->Explanation.
-
-
 ENDPATTERN
 
 PATTERN ExplicitUserContext
-s::User*User. -- =[ ("PWO_gmi","PWO_gmi") ].
-s::Script*Script. -- =[ ("test.adl","test.adl") ].
+s::User*User. 
+s::Script*Script. 
 
---KEY ctx : I[Picture] [user : user , script : s[Script*Script] ]
---display;display~ /\ user;s;user~ /\ script;s;script~ |- I[Picture]
 user::Picture->User.
 user::Relation->User.
 user::Type->User.
@@ -134,7 +130,10 @@ display::Violation->String.
 display::Explanation->String.
 ENDPATTERN
 
--- {"DISPLAY=<Concept>.<(function)Relation>"} if you need the link and a user-friendly representation.
+-- {"DISPLAY=<Concept>.<(function)Relation>"} if you need the link by id and a user-friendly representation.
+--example DISPLAY=Relation.display to print the user-friendly string of a Relation
+--TODO -> There are no compile checks to check on the correct type or to check that the relation is represented as a DB column of the table of that type. In case of mistakes the PHP will return a missing offset 0, because it will try to get $rows[0].
+--TODO -> DISPLAY has not been tested on all types of ObjectDefs (see Wrapper.hs -> attContent for different patterns)
 SERVICE Rules : I[ONE]
    = [ "Conceptual diagram"{"PICTURE"}: V[ONE*Picture];(user;s;user[Picture*User]~ /\ script;s;script~);display
      , "User-defined rules" : V[ONE*UserRule];(user;s;user[UserRule*User]~ /\ script;s;script~)
@@ -169,24 +168,23 @@ SERVICE Rule{"DISPLAY=Rule.display"} : I[Rule]
 SERVICE Rule1{"DISPLAY=UserRule.display"} : I[UserRule]
    = [ source{"DISPLAY=Concept.display"} : type;source
      , target{"DISPLAY=Concept.display"} : type;target
+     , relations{"DISPLAY=Relation.display"} : morphisms
      , violations : violates~;display
      , explanation : explanation;display]
 SERVICE Rule2{"DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
-   = [ source{"DISPLAY=Concept.display"} : type;source
-     , target{"DISPLAY=Concept.display"} : type;target
+   = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display]
 SERVICE Rule3{"DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
-   = [ source{"DISPLAY=Concept.display"} : type;source
-     , target{"DISPLAY=Concept.display"} : type;target
+   = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display]
 
 SERVICE "ISArelations" : I[ONE]
    = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
-      = [ "IS-a relation" : I[IsaRelation];display
-        , specific : specific;display
-        , isa : general;display
+      = [ "IS-a relation" : display
+        , specific {"DISPLAY=Concept.display"}: specific
+        , isa {"DISPLAY=Concept.display"}: general
         ]
      ]
 
@@ -194,14 +192,18 @@ SERVICE "ISArelations" : I[ONE]
 SERVICE Relations : I[ONE]
    = [ Relation_s{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)]
 
---I do not want to display the qualified name, but the unqualified one 
+--I do not want to display the qualified name, but the unqualified one
+--TODO -> in case of overloaded relation variables, the populations are merged 
 SERVICE Relation{"DISPLAY=Relation.display"}   : I[Relation]
    = [ type        : relvar;display
      , "source(s)"{"DISPLAY=Concept.display"} : relvar;source
      , "target(s)"{"DISPLAY=Concept.display"} : relvar;target
-     , "multiplicity properties"  : (on[MultiplicityRule*Relation])~;property;display
-     , "homogeneous properties"  : (on[HomogeneousRule*Relation])~;property;display
-     , population  : contains;display]
+     , "multiplicity properties" : (on[MultiplicityRule*Relation])~
+       = [property : property;display, "derived rule" : display, violations : violates~;display]
+     , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
+       = [property : property;display, "derived rule" : display, violations : violates~;display]
+     , population  : contains;display
+     , "used in rules"{"DISPLAY=UserRule.display"} : morphisms~]
 
 SERVICE Concepts : I[ONE]
    = [ Concept_s{"DISPLAY=Concept.display"} : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~)]
