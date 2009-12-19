@@ -38,6 +38,7 @@ data Options = Options { contextName   :: Maybe String
 					   , dirOutput     :: String     
 					   , beeper        :: Bool
 					   , crowfoot      :: Bool
+					   , dotStyle      :: Int
 					   , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
                        , texHdrFile    :: Maybe String -- the string represents a FilePath to customheader.tex
@@ -223,6 +224,7 @@ defaultOptions clocktime env fNames pName
                          , dirOutput     = unchecked
                          , beeper        = False
                          , crowfoot      = False
+                         , dotStyle      = 1
                          , language      = Dutch
                          , progrName     = pName
                          , adlFileName   = case fNames of
