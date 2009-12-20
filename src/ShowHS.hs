@@ -296,17 +296,13 @@ where
        ++ indent++"    , fld_list     = "++                     show (fld_list     fld)
        ++ indent++"    , fld_must     = "++                     show (fld_must     fld)
        ++ indent++"    , fld_new      = "++                     show (fld_new      fld)
-       ++ (if null (fld_fields fld) then indent++"    , fld_fields   = []" else
-           indent++"    , fld_fields   = [ "
-           ++ chain (indent++"                     , ")
-                    (map (showHS options (indent++"                       ")) (fld_fields fld))
-           ++ indent++"                     ]")
-       ++ indent++"    , fld_insAble  = "++                     show (fld_insAble fld)
+       ++ indent++"    , fld_sLevel   = "++                     show (fld_sLevel   fld)
+       ++ indent++"    , fld_insAble  = "++                     show (fld_insAble  fld)
        ++ indent++"    , fld_onIns    = "++
           ( if fld_insAble fld
             then "(\\d->"++showHSname (fld_onIns fld arg)++" d)"
             else "error(\"!Fatal: reference to undefined insert action in field "++fld_name fld++"\")" )
-       ++ indent++"    , fld_delAble  = "++                     show (fld_delAble fld)
+       ++ indent++"    , fld_delAble  = "++                     show (fld_delAble  fld)
        ++ indent++"    , fld_onDel    = "++
           ( if fld_delAble fld
             then "(\\d->"++showHSname (fld_onDel fld arg)++" d)"

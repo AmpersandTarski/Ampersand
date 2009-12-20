@@ -18,28 +18,29 @@ data Options = Options { contextName   :: Maybe String
                        , showVersion   :: Bool
                        , showHelp      :: Bool
         --             , verbose       :: String -> IO ()  -- vervangt putStr -- Voor de fijnproevers: Een functie kan hier ook! ;-)) 
-		--			   , verboseLn     :: String -> IO ()  -- vervangt putStrLn
-					   , verboseP      :: Bool
-					   , genPrototype  :: Bool 
-					   , uncheckedDirPrototype  :: Maybe String
-					   , dirPrototype  :: String
-					   , allServices   :: Bool
-					   , dbName        :: String
-					   , genAtlas      :: Bool
-					   , uncheckedDirAtlas      :: Maybe String
-					   , dirAtlas      :: String
-					   , userAtlas      :: String
-					   , genXML        :: Bool
+                --       , verboseLn     :: String -> IO ()  -- vervangt putStrLn
+                       , verboseP      :: Bool
+                       , genPrototype  :: Bool 
+                       , uncheckedDirPrototype  :: Maybe String
+                       , dirPrototype  :: String
+                       , allServices   :: Bool
+                       , dbName        :: String
+                       , genAtlas      :: Bool
+                       , uncheckedDirAtlas      :: Maybe String
+                       , dirAtlas      :: String
+                       , userAtlas     :: String
+                       , genXML        :: Bool
                        , genFspec      :: Bool
                        , fspecFormat   :: FspecFormat
-					   , proofs        :: Bool
-					   , haskell       :: Bool
-					   , uncheckedDirOutput     :: Maybe String
-					   , dirOutput     :: String     
-					   , beeper        :: Bool
-					   , crowfoot      :: Bool
-					   , dotStyle      :: Int
-					   , language      :: Lang
+                       , graphics      :: Bool   -- if True, graphics will be generated in the functional spec.
+                       , proofs        :: Bool
+                       , haskell       :: Bool
+                       , uncheckedDirOutput     :: Maybe String
+                       , dirOutput     :: String     
+                       , beeper        :: Bool
+                       , crowfoot      :: Bool
+                       , dotStyle      :: Int
+                       , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
                        , texHdrFile    :: Maybe String -- the string represents a FilePath to customheader.tex
                        , progrName     :: String --The name of the adl executable
@@ -171,6 +172,7 @@ options = map pp
           , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                            ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
           , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
+          , ((Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics."), Public)
           , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
           , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
           , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
@@ -200,25 +202,26 @@ defaultOptions clocktime env fNames pName
                = Options { contextName   = Nothing
                          , showVersion   = False
                          , showHelp      = False
-			             , verboseP      = False
-			             , verbosephp    = False
-			             , genPrototype  = False
-					     , uncheckedDirPrototype  = lookup envdirPrototype env
-            		     , dirPrototype  = unchecked
-            		     , allServices   = False
-		                 , dbName        = case lookup envdbName env of
-		                                           Just str -> str
-		                                           Nothing  -> ""
-		                 , genAtlas      = False   
-            		     , uncheckedDirAtlas      = lookup envdirAtlas env
-            		     , dirAtlas      = unchecked
-            		     , userAtlas      = []
-            		     , genXML        = False
+                                     , verboseP      = False
+                                     , verbosephp    = False
+                                     , genPrototype  = False
+                                             , uncheckedDirPrototype  = lookup envdirPrototype env
+                                 , dirPrototype  = unchecked
+                                 , allServices   = False
+                                 , dbName        = case lookup envdbName env of
+                                                           Just str -> str
+                                                           Nothing  -> ""
+                                 , genAtlas      = False   
+                                 , uncheckedDirAtlas      = lookup envdirAtlas env
+                                 , dirAtlas      = unchecked
+                                 , userAtlas      = []
+                                 , genXML        = False
                              , genFspec      = False 
-	            	     , fspecFormat   = FUnknown
-	            	     , proofs        = False
-	            	     , haskell       = False
-	            	     , uncheckedDirOutput     = lookup envdirOutput env
+                                 , fspecFormat   = FUnknown
+                                 , graphics      = True
+                                 , proofs        = False
+                                 , haskell       = False
+                                 , uncheckedDirOutput     = lookup envdirOutput env
                          , dirExec       = unchecked
                          , texHdrFile    = Nothing
                          , dirOutput     = unchecked
@@ -303,6 +306,8 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                               ('O': _ ) -> FOpenDocument
                                               _         -> FUnknown
                             }
+noGraphicsOpt :: Options -> Options
+noGraphicsOpt   opts = opts{graphics     = False}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

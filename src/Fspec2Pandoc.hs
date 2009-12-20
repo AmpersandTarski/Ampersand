@@ -85,6 +85,7 @@ laTeXheader flags
      , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
      , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{$\\rightarrow$}\\id{#3}}"
      , "\\newcommand{\\signat}[3]{\\mbox{${#1}_{[{#2},{#3}]}$}}"
+     , "\\newcommand{\\signt}[2]{\\mbox{${#1}_{[{#2}]}$}}"
      , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
      , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"
      ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
@@ -427,11 +428,12 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     iterat :: Int -> [Pattern] -> [([Block],Picture)]
     iterat n (pat:ps)
      = ( [Header (lev+1) [Str $ name pat]]    -- new section to explain this theme
-       ++ (case language flags of             -- announce the conceptual diagram
+       ++ (if not (graphics flags) then [] else 
+            (case language flags of             -- announce the conceptual diagram
              Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (reference pict), Str " geeft een conceptuele analyse van dit thema."]] ]
              English -> [Para [x | x<-[Str "Figure ", xrefReference (reference pict), Str " shows a conceptual analysis of this theme."]] ]
+            ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
           )
-       ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
        ++ (if null (themerules pat) then [] else [OrderedList (n, Decimal, DefaultDelim) (themerules pat)])
        , pict):  iterat (n+length (themerules pat)) ps
        where pict = makePicture flags (name pat) PTPattern pStr   -- the Picture that represents this service's knowledge graph
@@ -456,18 +458,20 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
   daContents :: [Block]
   daContents = 
    (case (language flags) of
-     Dutch   -> [Para
-                  [ Str $ "De eisen, die in hoofdstuk "
-                  , xrefReference chpFRlabel
-                  , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
-                  , xrefReference (figlabel classDiagramPicture)
-                  , Str $ ". Er zijn "++count flags (length classes) "gegevensverzameling"++","
+     Dutch   -> [Para $
+                  ( if not (graphics flags) then [] else
+                     [ Str $ "De eisen, die in hoofdstuk "
+                     , xrefReference chpFRlabel
+                     , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
+                     , xrefReference (figlabel classDiagramPicture) ]
+                  )++
+                  [ Str $ ". Er zijn "++count flags (length classes) "gegevensverzameling"++","
                   , Str $ " "++count flags (length assocs) "associatie"++","
                   , Str $ " "++count flags (length geners) "generalisatie"++" en"
                   , Str $ " "++count flags (length aggrs) "aggregatie"++"."
                   , Str $ " "++nm++" kent in totaal "++count flags (length cs) "concept"++"."
                   ]]
-     English -> [Para
+     English -> [Para $
                   [ Str $ "The requirements, which are listed in chapter "
                   , xrefReference chpFRlabel
                   , Str $ ", have been translated into the class diagram in figure "
@@ -489,6 +493,10 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
       where
        cdDot = classdiagram2dot classDiagram
 
+-- The properties of various declations are documented in different tables.
+-- First, we document the heterogeneous properties of all declarations
+-- Then, the homogeneous poperties are given, and finally
+-- the signals are documented.
   daMultiplicities :: [Block]
   daMultiplicities
    = [ if language flags==Dutch
@@ -507,11 +515,12 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                                  , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
                                  , if isInj d || d `elem` injs then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d<-declarations fSpec, not (isSignal d) -- , not (isProperty d) --TODO Stef, ik heb dit maar even uitgecommentariseerd, want het compileert anders niet...
+               | d<-declarations fSpec, not (isSignal d), not (isProp d)
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
      ]++
+-- the homogeneous properties:
      [ Para [ if language flags==Dutch
                 then TeX $ latexEsc "Een relatie, \\id{"++name d++"}, is homogeen en heeft de volgende eigenschappen: "
                 else TeX $ latexEsc "One relation, \\id{"++name d++"}, is homogeneous and has the following properties: "]
@@ -522,10 +531,10 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
      | length hMults>1 ]++
      [ Para  $ [ TeX $ "\\begin{tabular}{|l|ccccc|}\\hline\n"
                , if language flags==Dutch
-                 then TeX $ "relatie&Reflexief&Transitief&Symmetrisch&Antisymmetrisch&Eigenschap\\\\ \\hline\\hline\n"
-                 else TeX $ "relation&Reflexive&Transitive&Symmetric&Antisymmetric&Property\\\\ \\hline\\hline\n"
+                 then TeX $ "relatie&Rfx&Trn&Sym&Asy&Prop\\\\ \\hline\\hline\n"
+                 else TeX $ "relation&Rfx&Trn&Sym&Asy&Prop\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ "\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}"              -- veld
+               [ TeX $ chain "&" [ "\\signt{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}"              -- veld
                                  , if isRfx d            then "\\(\\surd\\)" else ""
                                  , if isTrn d            then "\\(\\surd\\)" else ""
                                  , if isSym d            then "\\(\\surd\\)" else ""
@@ -536,9 +545,19 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
-     | length hMults>0 ]
+     | length hMults>0 ]++
+-- the signals
+     [ Para [ if language flags==Dutch
+                then TeX $ "Er is een enkel signaal: \\id{"++latexEsc (name d)++"}."
+                else TeX $ "There is but one signal: \\id{"++latexEsc (name d)++"}." ]
+     | length sgnls==1, d<-sgnls ]++
+     [ Para [ if language flags==Dutch
+                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]
+                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]]
+     | length sgnls>1 ]
      where
-      hMults = [d| d<-declarations fSpec, homogeneous d]
+      hMults  = [d| d<-declarations fSpec, homogeneous d, not (isSignal d)]
+      sgnls   = [d| d<-declarations fSpec, isSignal d]
       clauses = rd [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
       strands (F fs) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
@@ -594,7 +613,9 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
 ------------------------------------------------------------
 serviceChap :: Int -> Fspc -> Options -> Fservice ->  ([Block],[Picture])
 serviceChap lev fSpec flags svc
- = ( header ++ svcIntro ++ txtKnowledgeGraph ++ svcFieldTables ++ txtSwitchboard
+ = ( header ++ svcIntro
+      ++ (if graphics flags then txtKnowledgeGraph else [])++ svcFieldTables
+      ++ (if graphics flags then txtSwitchboard else [])
    , [picKnowledgeGraph, picSwitchboard]
    )
  where
@@ -644,6 +665,7 @@ serviceChap lev fSpec flags svc
           "This service can create new instances of concept"++f ics++". It can delete instances of concept"++f dcs++", and instances of concept"++f ucs++" can be either created and removed."
           where f [x] = " "++name x
                 f xs  = "s "++commaEng "and" (map name xs)
+
   svcFieldTables
    = [ Para  $ [ if language flags==Dutch
                  then Str $ "In deze service zijn de volgende velden zichtbaar. "
@@ -666,16 +688,17 @@ serviceChap lev fSpec flags svc
                  then Str $ "Deze velden hebben de volgende eigenschappen. "
                  else Str $ "These fields have the following properties. "
                ]
-     , Para  $ [ TeX $ "\\begin{tabular}{|l|cccc|}\\hline\n"
+     , Para  $ [ TeX $ "\\begin{tabular}{|l|ccccc|}\\hline\n"
                , if language flags==Dutch
-                 then TeX $ "veld&lijst&verplicht&nieuw&verwijderbaar\\\\ \\hline\\hline\n"
-                 else TeX $ "field&list&obligatory&new&remove\\\\ \\hline\\hline\n"
+                 then TeX $ "veld&lijst&verplicht&nieuw&verwijderbaar&diepte\\\\ \\hline\\hline\n"
+                 else TeX $ "field&list&obligatory&new&remove&depth\\\\ \\hline\\hline\n"
                ]++
                [ TeX $ chain "&" [ latexEsc (fld_name f)              -- veld
                                  , s fld_list f                       -- lijst
                                  , s fld_must f                       -- verplicht veld
                                  , s fld_insAble f                    -- nieuwe waardes mogen (anders alleen selecteren)
-                                 , s fld_delAble f]++"\\\\\n"         -- waardes mogen verwijderd worden
+                                 , s fld_delAble f                    -- nieuwe waardes mogen (anders alleen selecteren)
+                                 , show (fld_sLevel f)] ++ "\\\\\n"   -- servlet recursiediepte
                | f<-fsv_fields svc
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"

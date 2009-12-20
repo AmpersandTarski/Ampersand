@@ -315,6 +315,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                                              (chain ("\n"++[' '|j<-[0..i+19]]++"  AND ") (wherecl++cclauses ncs'))
                                                ++")"
             -- de where expressies bevatten alle "magie". Dit is zgn. "terse code", die omzichtig behandeld moet worden.
+            -- TODO: de volgende code is incorrect. Ook loopt ze uit de pas met de code voor F.
             wherecl   = (filter (not.null))
                         [ (if isNeg l then "   " else "NOT")++
                           " EXISTS ("++selectExists' (i+38)

@@ -429,13 +429,15 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 -- All signals that are visible in this service
                       , fsv_signals   = []
 -- All fields/parameters of this service
-                      , fsv_fields    = map fld (objats object)
+                      , fsv_fields    = fields
 -- All concepts of which this service can create new instances
-                      , fsv_creating  = [c| c<-rd (map target rels), t<-[] {- fsv_ecaRules s -} , ecaTriggr (t arg)==On Ins (mIs c)]
+                      , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s {-  -} , ecaTriggr (t arg)==On Ins (mIs c)]
 -- All concepts of which this service can delete instances
-                      , fsv_deleting  = [c| c<-rd (map target rels), t<-[] {- fsv_ecaRules s -} , ecaTriggr (t arg)==On Del (mIs c)]
+                      , fsv_deleting  = [c| c<-rd (map target rels), t<-fsv_ecaRules s {-  -} , ecaTriggr (t arg)==On Del (mIs c)]
                       } in s
     where
+        fields = recur 0 object
+         where recur i obj = [fld i o| o<-objats obj]++[f| o<-objats obj, f<-recur (i+1) o]
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis        = rd (map makeInline rels++map (mIs.target) rels)
@@ -449,24 +451,24 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         trigs :: ObjectDef -> [Declaration->ECArule]
         trigs obj  = [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
         arg = error("!Todo (module ADL2Fspec 424): declaratie Delta invullen")
-        fld :: ObjectDef -> Field
-        fld obj
+        fld :: Int -> ObjectDef -> Field
+        fld sLevel obj
          = Att { fld_name     = objnm obj
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)
                                 else error("!Fatal (module ADL2Fspec 461): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
-               , fld_editable = editable (objctx obj)                          -- can this field be changed by the user of this service?
+               , fld_editable = editable (objctx obj)      -- can this field be changed by the user of this service?
                , fld_list     = not (isUni (objctx obj))   -- can there be multiple values in this field?
                , fld_must     = isTot (objctx obj)         -- is this field obligatory?
-               , fld_new      = True                                           -- can new elements be filled in? (if no, only existing elements can be selected)
-               , fld_fields   = map fld (objats obj)
-               , fld_insAble  = not (null insTrgs)                             -- can the user insert in this field?
+               , fld_new      = True                       -- can new elements be filled in? (if no, only existing elements can be selected)
+               , fld_sLevel   = sLevel                     -- The (recursive) depth of the current servlet wrt the entire service. This is used for documentation.
+               , fld_insAble  = not (null insTrgs)         -- can the user insert in this field?
                , fld_onIns    = case insTrgs of
                                  []  ->  error("!Fatal (module ADL2Fspec 469): no insert functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                                  [t] ->  t
                                  _   ->  error("!Fatal (module ADL2Fspec 471): multiple insert triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
-               , fld_delAble  = not (null delTrgs)                             -- can the user delete this field?
+               , fld_delAble  = not (null delTrgs)         -- can the user delete this field?
                , fld_onDel    = case delTrgs of
                                  []  ->  error("!Fatal (module ADL2Fspec 474): no delete functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                                  [t] ->  t

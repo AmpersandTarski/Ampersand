@@ -89,7 +89,7 @@ doGenFspec fSpec flags
      verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)                    >>
      makeOutput                                                                               >>
      verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".") >>
-     foldr1 (>>) [ writePicture flags p| p<-thePictures]
+     if graphics flags then foldr1 (>>) [ writePicture flags p| p<-thePictures] else putStr "\nNo graphics generated."
        where  
          outputFile = replaceExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        

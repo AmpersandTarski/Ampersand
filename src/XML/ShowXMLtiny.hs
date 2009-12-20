@@ -94,10 +94,10 @@ where
                     , mkAttr "list"     (show (fld_list     f))
                     , mkAttr "Must"     (show (fld_must     f))
                     , mkAttr "New"      (show (fld_new      f))
+                    , mkAttr "sLevel"   (show (fld_sLevel   f))
                     ])
                ( [ Elem (simpleTag "Expression") [mkXmlTree (fld_expr f)]] ++
-                 [ Elem (simpleTag "Morphism")   [mkXmlTree (fld_mph f)]] ++
-                 [ Elem (simpleTag "Fields")    (map mkXmlTree (fld_fields   f))|not (null (fld_fields f)) ]
+                 [ Elem (simpleTag "Morphism")   [mkXmlTree (fld_mph f)]]
                ) 
 
    instance XML Pattern where

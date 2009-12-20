@@ -137,7 +137,7 @@ module Data.Fspec ( Fspc(..)
                      , fld_list      :: Bool                   -- can there be multiple values in this field?
                      , fld_must      :: Bool                   -- is this field obligatory?
                      , fld_new       :: Bool                   -- can new elements be filled in? (if no, only existing elements can be selected)
-                     , fld_fields    :: [Field]                -- All fields/parameters of this service
+                     , fld_sLevel    :: Int                    -- The (recursive) depth of the current servlet wrt the entire service. This is used for documentation.
                      , fld_insAble   :: Bool                   -- can the user insert in this field?
                      , fld_onIns     :: Declaration->ECArule   -- the PAclause to be executed after an insert on this field
                      , fld_delAble   :: Bool                   -- can the user delete this field?
