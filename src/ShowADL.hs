@@ -89,12 +89,11 @@
    instance PrintADL Fspc where
     printadl _ _ fSpec = 
       let 
-      FS_id conid = fsfsid fSpec
       i = 0
       popmph d = Mph{mphnm=decnm d, mphpos=Nowhere,mphats=popats,mphtyp=(desrc d,detgt d),mphyin=True,mphdcl=d} 
          where popats = if (desrc d)/=Anything && (detgt d)/=Anything then [desrc d,detgt d] else []
       in
-      "CONTEXT " ++ conid ++ lb
+      "CONTEXT " ++ name fSpec ++ lb
          --REMARK -> Pattern "CONTEXT" will be printed as a pattern --> no ds cs ks outside the pattern only pops and objs
       ++ printadl (Just fSpec) i (patterns fSpec)
       ++ printadl (Just fSpec) i (serviceS fSpec)
@@ -247,8 +246,7 @@
     printadl fSpec i g = "GEN " ++ cnm (genspc g) ++ " ISA " ++ cnm (gengen g) 
       where cnm c = case c of 
                       C{} -> cptnm c
-                      _ -> error $ "Error in ShowADL.hs module ShowADL function instance PrintADL Gen: " 
-                                ++ "Anything, NOthing and ONE are not allowed on GEN .. ISA .."
+                      _ -> error $ "!Fatal (module ShowADL 250): Anything, NOthing and ONE are not allowed on GEN .. ISA .."
 
    instance PrintADL [Gen] where
     printadl fSpec i gs = adlprintlistlb fSpec i gs
@@ -439,7 +437,7 @@
         strandsn iss = pn (takeWhile select iss): strands1 (dropWhile select iss)
                        where select (s,m,t) = length m>1
         p1 iss = [s| (s,m,t)<-iss]
-        pn [] = error("Fatal (module ShowADL): calling pn with empty list")
+        pn [] = error("!Fatal (module ShowADL 441): calling pn with empty list")
         pn [(s,m,t)] = [s,Tm (mIs (target s `lub` source t))]
         pn iss = [s|(s,m,t)<-lss]++[mphatson s|(s,m,t)<-[head rss]]++[s|(s,m,t)<-tail rss]
                  where lss = take halfway iss

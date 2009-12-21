@@ -126,7 +126,7 @@
                                  , isIdent (objctx a')
                                  ] ++ [rqvar] )
         objectName      = name o
-        FS_id appname   = fsfsid fSpec
+        appname         = name fSpec
         objectId        = phpIdentifier objectName
         isString object = not (isOne object) -- todo
         displaydirective obj = [(takeWhile (/='.') x,tail$dropWhile (/='.') x) 

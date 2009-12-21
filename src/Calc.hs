@@ -79,7 +79,7 @@ module Calc ( deriveProofs
      antss = [ts | Cp (F ts)<-fus]
      conss = [ts | F ts<-fus]
      srcA = -- if null antss  then error ("!Fatal (module Calc 81): empty antecedent in shiftL ("++showHS options "" r++")") else
-            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
+            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc 82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
             foldr1 lub [ source (head ants) | ants<-antss]
      id' ass = [Tm (mIs c)]
       where a = (source.head.head) ass
@@ -212,7 +212,7 @@ module Calc ( deriveProofs
       " - Invariants:\n   "++chain "\n   " [showADLcode fSpec rule    | rule<-invariants]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invariants]++"\n"++
-      " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (normECA eca (error ("TODO: hier moet een declaratie Delta staan")))
+      " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (normECA eca (error ("!TODO (module Calc 215): hier moet een declaratie Delta staan")))
 -- dit toevoegen om de afleiding te tonen...         ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
                                | eca<-ecaRs]++"\n\n"++
       " - Visible relations:\n   "++chain "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
@@ -227,7 +227,7 @@ module Calc ( deriveProofs
         editable (Tm Mph{})  = True
         editable _           = False
         editMph (Tm m@Mph{}) = m
-        editMph e            = error("!Fatal (module Calc): cannot determine an editable declaration in a composite expression: "++show e)
+        editMph e            = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
 
 
    deriveProofs :: Fspc -> String
@@ -368,13 +368,13 @@ module Calc ( deriveProofs
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
-          (_ ,  Fu [])   -> error ("!Fatal (module Calc 361): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fu [])++",\n"++
+          (_ ,  Fu [])   -> error ("!Fatal (module Calc 371): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fu [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fi [])   -> error ("!Fatal (module Calc 363): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fi [])++",\n"++
+          (_ ,  Fi [])   -> error ("!Fatal (module Calc 373): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fi [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  F [])    -> error ("!Fatal (module Calc 365): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
+          (_ ,  F [])    -> error ("!Fatal (module Calc 375): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fd [])   -> error ("!Fatal (module Calc 367): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
+          (_ ,  Fd [])   -> error ("!Fatal (module Calc 377): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
           (_ ,  Fu [t])  -> doCod deltaX tOp t motiv
           (_ ,  Fi [t])  -> doCod deltaX tOp t motiv
@@ -415,7 +415,7 @@ module Calc ( deriveProofs
           (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
           (_  , Tm m)    -> (if editable m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m,rd' nr [r|(_,rs)<-motiv, r<-rs])])
-          (_ , _)        -> error ("!Fatal (module Calc 400): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
+          (_ , _)        -> error ("!Fatal (module Calc 418): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
                                    "within function doCode "++show tOp'++" ("++showADL exprX++") ("++showADL delta1++").")
 
 
@@ -436,20 +436,20 @@ module Calc ( deriveProofs
    reprAsRule r expr = r'{r_usr=False}
     where
      r' = case expr of
-           (Fu []) -> error ("!Fatal (module Calc): erroneous call to function reprAsRule r ("++showADL expr++").")
+           (Fu []) -> error ("!Fatal (module Calc 439): erroneous call to function reprAsRule r ("++showADL expr++").")
            (Fu ts) -> if or [isNeg t|t<-ts] 
                       then r { rrsrt = Implication
                              , rrant = Fi [notCp t|t<-ts,isNeg t]
                              , rrcon = Fu [t|t<-ts,isPos t]
                              }
                       else r { rrsrt = Truth
-                             , rrant = error ("!Fatal (module Calc): erroneous call to antecedent of r "++showADL expr)
-                             , rrcon = Fu ts -- obsolete: error ("Module Calc: Loop found!! (hier stond eerst \"r\").")    -- WAAROM?  Stef, hier zat volgens mij de bug. Kan jij dit herstellen?
+                             , rrant = error ("!Fatal (module Calc 446): erroneous call to antecedent of r "++showADL expr)
+                             , rrcon = Fu ts
                              }  
            _ -> case disjNF expr of
                       e@(Fu{}) -> reprAsRule r e
                       _    -> r { rrsrt = Truth
-                                , rrant = (error ("!Fatal (module Calc): erroneous call to antecedent of r "++showADL expr))
+                                , rrant = (error ("!Fatal (module Calc 452): erroneous call to antecedent of r "++showADL expr))
                                 , rrcon = expr
                                 }
                         
@@ -498,7 +498,7 @@ module Calc ( deriveProofs
      start Del  = (Fi [Tm m',Cp (delta (sign m'))],Tm m')
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
-                                       , rrant = error ("!Fatal (module Calc 490): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
+                                       , rrant = error ("!Fatal (module Calc 501): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
                                        , rrfps = Nowhere
                                        , rrcon = pos'
                                        , rrxpl = ""
@@ -526,7 +526,7 @@ module Calc ( deriveProofs
                      K0{}     -> "*"
                      K1{}     -> "+"
                      Tm mph   -> if inline mph then "" else "~"
-                     Tc{}     -> error("!Fatal (module Calc): call to showOp (Tc x) in module Calc.hs")
+                     Tc{}     -> error("!Fatal (module Calc 529): call to showOp (Tc x) in module Calc.hs")
 
    positiveIn :: Expression -> Morphism -> Maybe Bool
    positiveIn expr m | and result           = Just True   -- all are True, so an insert in m means an insert in expr
@@ -643,4 +643,4 @@ module Calc ( deriveProofs
        inv Ins = Del
        inv Del = Ins
        first ((e'',_,_,_):_) = e''
-       first _ = error "!Fatal (module Calc): wrong pattern in first"
+       first _ = error "!Fatal (module Calc 646): wrong pattern in first"

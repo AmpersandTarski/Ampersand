@@ -385,8 +385,8 @@
     symBefore  :: s -> s
     symAfter   :: s -> s
     deleteCost b = 5{-I-}
-    symBefore  = error "You should have made your token type an instance of the Class Symbol. eg by defining symBefore = pred"
-    symAfter   = error "You should have made your token type an instance of the Class Symbol. eg by defining symAfter  = succ"
+    symBefore  = error "!Fatal (module UU_parsing 388): You should have made your token type an instance of the Class Symbol. eg by defining symBefore = pred"
+    symAfter   = error "!Fatal (module UU_parsing 389): You should have made your token type an instance of the Class Symbol. eg by defining symAfter  = succ"
 
 
 
@@ -506,7 +506,7 @@
    evalStepsIO (Ok       rest    ) = evalStepsIO rest
 
    evalStepsIO (Cost  _  rest    ) = evalStepsIO rest
-   evalStepsIO (StRepair _ msg rest    ) = do putStr (error (show msg)) -- was: do putStr (show msg) -- b.joosten
+   evalStepsIO (StRepair _ msg rest    ) = do putStr (error ("!Fatal (module UU_parsing 509): "++show msg)) -- was: do putStr (show msg) -- b.joosten
                                               evalStepsIO rest
    evalStepsIO (Best _   rest _ _) =  evalStepsIO rest
    evalStepsIO (NoMoreSteps v    ) =  return v
@@ -904,9 +904,9 @@
 
 
 
-   usererror   m = error ("Your grammar contains a problem:\n" ++ m)
+   usererror   m = error ("!Fatal (module UU_parsing 907): Your grammar contains a problem:\n" ++ m)
    systemerror modname m
-     = error ("I apologise: I made a mistake in my design. This should not have happened.\n"
+     = error ("!Fatal (module UU_parsing 909): I apologise: I made a mistake in my design. This should not have happened.\n"
                           ++
               " Please report: " ++ modname ++": " ++ m ++ " to doaitse@cs.uu.nl\n")
 

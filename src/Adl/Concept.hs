@@ -63,17 +63,17 @@ where
    instance ABoolAlg Concept where
     glb a b | b <= a = b
             | a <= b = a
-            | otherwise = error ("(module Concept) Fatal: (C) glb undefined: a="++show a++", b="++show b)
+            | otherwise = error ("!Fatal (module Concept 66): glb undefined: a="++show a++", b="++show b)
     lub a b | a <= b = b
             | b <= a = a
-            | otherwise = error ("(module Concept) Fatal: (C) lub undefined: a="++show a++", b="++show b)
+            | otherwise = error ("!Fatal (module Concept 69): lub undefined: a="++show a++", b="++show b)
 
    cptS :: Concept
    cptS = S                    -- constructor
    cptAnything :: Concept
    cptAnything = Anything      -- constructor
    cptnew :: String -> Concept
-   cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = []} --error ("(module Adl.Concept) Concept has never been populated: " ++ nm)}
+   cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = []} --error ("!Fatal (module Concept 76): Concept has never been populated: " ++ nm)}
 
    class Association a where
      source, target :: a -> Concept
@@ -154,9 +154,9 @@ where
    
    instance Conceptual Concept where
     conts (C {cptos = os}) = os
-    conts (S)        = error ("(module CC_aux) Fatal: ONE has exactly one atom, but that atom may not be referred to")
-    conts Anything   = error ("(module CC_aux) Fatal: Anything is Everything...")
-    conts NOthing    = error ("(module CC_aux) Fatal: NOthing is not very much...")
+    conts (S)        = error ("!Fatal (module Concept 157): ONE has exactly one atom, but that atom may not be referred to")
+    conts Anything   = error ("!Fatal (module Concept 158): Anything is Everything...")
+    conts NOthing    = error ("!Fatal (module Concept 159): NOthing is not very much...")
 
    instance Morphics Concept where
     anything c = c == Anything

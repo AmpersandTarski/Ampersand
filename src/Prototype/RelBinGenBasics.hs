@@ -118,7 +118,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++["isect0."++src'++" IS NOT NULL", "isect0."++trg'++" IS NOT NULL"]
    selectExpr fSpec i src trg (Fi [e']) = selectExpr fSpec i src trg e'
-   selectExpr _     _ _   _   (Fi [] ) = error ("RelBinGenBasics: Cannot create query for Fi [] because type is unknown")
+   selectExpr _     _ _   _   (Fi [] ) = error ("!Fatal (module RelBinGenBasics 121): Cannot create query for Fi [] because type is unknown")
 
    selectExpr fSpec i src trg (F (Tm (V _ (s,_)):fs@(_:_))) | s==cptS
      = selectGeneric i ("1",src) ("fst."++trg',trg)
@@ -141,7 +141,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
    selectExpr fSpec i src trg (F (e':((Tm (V _ _)):(f:fx)))) = -- prevent calculating V in this case
        if src==trg && not (isProp e')
-       then error ("(Module RelBinGenBasics: selectExpr 2) src and trg are equal ("++src++") in "++showADL e')
+       then error ("!Fatal (module RelBinGenBasics 144): selectExpr 2 src and trg are equal ("++src++") in "++showADL e')
        else
        selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         ((selectExprBrac fSpec i src' mid' e')++" AS fst, "++(selectExprBrac fSpec i mid2' trg' f)++" AS snd")
@@ -177,7 +177,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
             concExprs = [e| (_,e,_)<-concExpr]
             concExpr  = [ (n,selectExprBrac fSpec i sm sm tm ++ " AS "++concNm n, sm)
                         | (n,c)<-ncs, tm<-[Tm $ mIs c], sm<-[quote$sqlExprSrc fSpec tm] ]
-            concTp n = head ([t| (i,_,t)<-concExpr, n==i]++error("!Fatal (module RelBinGenBasics 183) concTp"))
+            concTp n = head ([t| (i,_,t)<-concExpr, n==i]++error("!Fatal (module RelBinGenBasics 180) concTp"))
             concNm n = head (["c"++show n| (i,_,_)<-concExpr, n==i]++error("!Fatal (module RelBinGenBasics 183) concNm"))
             -- de SQL-expressies voor de elementen uit lst', die elk een ADL-expressie representeren
             exprbracs = [e| (_,e,_,_)<-exprbrac]
@@ -187,10 +187,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         , src'<-[quote$sqlExprSrc fSpec l]
                         , trg'<-[noCollideUnlessTm l [src'] (quote$sqlExprTrg fSpec l)]
                         ]
-            exprE n  = head ([e| (i,e,_,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 180) exprE"))  -- the expression itself
-            exprS n  = head ([s| (i,_,s,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 181) exprS"))  -- source type
-            exprT n  = head ([t| (i,_,_,t)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 182) exprT"))  -- target type
-            exprNm n = head (["F"++show n| (i,_,_,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 183) exprNm"))
+            exprE n  = head ([e| (i,e,_,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 190) exprE"))  -- the expression itself
+            exprS n  = head ([s| (i,_,s,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 191) exprS"))  -- source type
+            exprT n  = head ([t| (i,_,_,t)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 192) exprT"))  -- target type
+            exprNm n = head (["F"++show n| (i,_,_,_)<-exprbrac, n==i]++error("!Fatal (module RelBinGenBasics 193) exprNm"))
             -- de where expressies bevatten alle "magie".
             wherecl   = (filter (not.null))
                         [ if isNeg l
@@ -220,7 +220,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         | (n,c)<-ncs
                         ]
                         where inCs n = n `elem` map fst ncs
-   selectExpr _     _ _   _   (F  [] ) = error ("RelBinGenBasics: Cannot create query for F [] because type is unknown")
+   selectExpr _     _ _   _   (F  [] ) = error ("!Fatal (module RelBinGenBasics 223): Cannot create query for F [] because type is unknown")
 
    selectExpr fSpec i src trg (Tm (V _ (s,t))   ) 
          | s==cptS && t==cptS = selectGeneric i ("1",src) ("1",trg)
@@ -240,10 +240,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                                 ("1"
                                                 )
                         where src'  = if s==Anything
-                                      then error ("!Fatal in module RelBinGenBasics: selectExpr fSpec i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
+                                      then error ("!Fatal (module RelBinGenBasics 243): selectExpr fSpec i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
                                       else sqlAttConcept fSpec s
                               trg'  = if t==Anything
-                                      then error ("!Fatal in module RelBinGenBasics: selectExpr fSpec i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
+                                      then error ("!Fatal (module RelBinGenBasics 246): selectExpr fSpec i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
                                       else sqlAttConcept fSpec t
                               trg'' = noCollide [src'] trg'
 
@@ -270,11 +270,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               src2 = quote$sqlExprSrc fSpec e'
                               trg2 = noCollideUnlessTm e' [src2] (quote$sqlExprTrg fSpec e')
    selectExpr fSpec i src trg (K0 _)
-      = error ("error in selectExpr - RelBinGenBasics: SQL cannot create closures K0")
+      = error ("!Fatal (module RelBinGenBasics 273): SQL cannot create closures K0")
    selectExpr fSpec i src trg (K1 _)
-      = error ("error in selectExpr - RelBinGenBasics: SQL cannot create closures K1")
+      = error ("!Fatal (module RelBinGenBasics 275): SQL cannot create closures K1")
 {- obsolete:
-   selectExpr _     _ _   _   (Fd []  ) = error ("RelBinGenBasics: Cannot create query for Fd [] because type is unknown")
+   selectExpr _     _ _   _   (Fd []  ) = error ("!Fatal (module RelBinGenBasics 277): Cannot create query for Fd [] because type is unknown")
    selectExpr fSpec i src trg (Fd [e']) = selectExpr fSpec i src trg e'
    selectExpr fSpec i src trg (Fd fxs ) = selectExpr fSpec i src trg $ Cp {e=F (map addcompl fxs)}
          where
@@ -338,7 +338,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                            | (n,c)<-ncs
                            ]
                         
-   selectExpr _     _ _   _   (Fd  [] ) = error ("RelBinGenBasics: Cannot create query for Fd [] because type is unknown")
+   selectExpr _     _ _   _   (Fd  [] ) = error ("!Fatal (module RelBinGenBasics 341): Cannot create query for Fd [] because type is unknown")
 
    -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
    selectExprInUnion :: Fspc
@@ -427,7 +427,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     where src'="vfst."++sqlAttConcept fSpec (source mph)
           trg'="vsnd."++sqlAttConcept fSpec (target mph)
    selectExprMorph _ _ src trg mph@(Mp1{})
-    | src == ""&&trg=="" = error ("Fatal in selectExprMorph (RelBinGenBasics): Source and target are \"\", use selectExists' for this purpose")
+    | src == ""&&trg=="" = error ("!Fatal (module RelBinGenBasics 430): Source and target are \"\", use selectExists' for this purpose")
     | src == ""  = "SELECT "++mph1val mph++" AS "++trg
     | trg == ""  = "SELECT "++mph1val mph++" AS "++src
     | src == trg = "SELECT "++mph1val mph++" AS "++src
@@ -446,7 +446,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     = selectcl ++
       phpIndent i ++ "  FROM "++tbl++
       (if whr=="1" then "" else phpIndent i ++ " WHERE "++whr)
-      where selectcl | snd src=="" && snd trg=="" = error ("Fatal in selectGeneric (RelBinGenBasics): Source and target are \"\", use selectExists' for this purpose")
+      where selectcl | snd src=="" && snd trg=="" = error ("!Fatal (module RelBinGenBasics 449): Source and target are \"\", use selectExists' for this purpose")
                      | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
                      | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
                      | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
@@ -483,8 +483,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlRelName fSpec m'
     = if isIdent m' then sqlConcept fSpec (source m') else
       if isTrue m' then "V" else
-      if null as then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): No declarations in "++show m') else
-      if length as>1 then error ("(module RelBinGenBasics) Fatal error in RelBinGen.lhs (sqlRelName): Multiple declarations in "++show m') else
+      if null as then error ("!Fatal (module RelBinGenBasics 486): No declarations in "++show m') else
+      if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple declarations in "++show m') else
       name plug
       where (plug,_,_) = sqlRelPlug fSpec (Tm (makeMph a))
             as = declarations m'
@@ -498,7 +498,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                            )
                            else head cs
                            where cs = sqlRelPlugs fSpec expr
-                                 mError tp = error ("\n(module RelBinGenBasics) Expression \""++show expr++"\" does not occur in plugs of fSpec, cannot give "++tp++" (sqlRelPlug in module RelBinGenBasics)")
+                                 mError tp = error ("!Fatal (module RelBinGenBasics 501): Expression \""++show expr++"\" does not occur in plugs of fSpec, cannot give "++tp++" (sqlRelPlug in module RelBinGenBasics)")
    
    sqlRelPlugs :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e' = rd [ (plug,sf,tf)
@@ -552,20 +552,20 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
         where res = replF (k2:ks)
               fs  = [m' | F m' <- [res]]
       replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
-       = error ("Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
+       = error ("!Fatal (module RelBinGenBasics 555): Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
                -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
       replF ks = F (ks)
    sqlExprSrc :: Fspc->Expression -> String
-   sqlExprSrc _     (F [])         = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (F [])")
+   sqlExprSrc _     (F [])         = error ("!Fatal (module RelBinGenBasics 559): calling sqlExprSrc (F [])")
    sqlExprSrc fSpec (F [f])        = sqlExprSrc fSpec f
    sqlExprSrc fSpec (F fs)         = sqlExprSrc fSpec (head fs)
-   sqlExprSrc _     (Fu [])        = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fu [])")
+   sqlExprSrc _     (Fu [])        = error ("!Fatal (module RelBinGenBasics 562): calling sqlExprSrc (Fu [])")
    sqlExprSrc fSpec (Fu [f])       = sqlExprSrc fSpec f
    sqlExprSrc fSpec (Fu fs)        = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-   sqlExprSrc _     (Fi [])        = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fi [])")
+   sqlExprSrc _     (Fi [])        = error ("!Fatal (module RelBinGenBasics 565): calling sqlExprSrc (Fi [])")
    sqlExprSrc fSpec (Fi [f])       = sqlExprSrc fSpec f
    sqlExprSrc fSpec (Fi fs)        = sqlExprSrc fSpec (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-   sqlExprSrc _     (Fd [])        = error ("(Module RelBinGenBasics: ) calling sqlExprSrc (Fd [])")
+   sqlExprSrc _     (Fd [])        = error ("!Fatal (module RelBinGenBasics 568): calling sqlExprSrc (Fd [])")
    sqlExprSrc fSpec (Fd [f])       = sqlExprSrc fSpec f
    sqlExprSrc fSpec (Fd fs)        = sqlExprSrc fSpec (head fs)
    sqlExprSrc fSpec (Cp e')        = sqlExprSrc fSpec e'
@@ -581,7 +581,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlMorName :: Fspc -> Morphism -> String
    sqlMorName fSpec (Mph _ _ _ _ _ s) = sqlRelName fSpec s
    sqlMorName fSpec (I _ _ s _)            = sqlConcept fSpec s
-   sqlMorName _ m' = error ("(module RelBinGenBasics) sqlMorName: illegal argument: "++show m')
+   sqlMorName _ m' = error ("!Fatal (module RelBinGenBasics 584): illegal argument: "++show m')
    
    -- these functions are exact compies of sqlRelSrc and sqlRelTrg!
    sqlMorSrc :: Fspc -> Morphism -> String
@@ -604,22 +604,22 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlConcept :: Fspc -> Concept -> String
    sqlConcept fSpec c | c==cptS = "ONE"
                       | otherwise
-                = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
+                = if null cs then error ("!Fatal (module RelBinGenBasics 607): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
                   head cs
                   where cs = [name plug|let plug=sqlConceptPlug fSpec c, c'<-concs plug, c'==c]
    
    sqlConceptPlug :: Fspc -> Concept -> Plug
-   sqlConceptPlug fSpec c = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in fSpec (sqlConceptPlug in module RelBinGenBasics)") else
+   sqlConceptPlug fSpec c = if null cs then error ("!Fatal (module RelBinGenBasics 612): Concept \""++show c++"\" does not occur in fSpec (sqlConceptPlug in module RelBinGenBasics)") else
                             head cs
                             where cs = [plug | plug@PlugSql{}<-plugs fSpec, c'<-concs plug, c'==c]
 
    sqlAttConcept :: Fspc -> Concept -> String
    sqlAttConcept fSpec c | c==cptS = "ONE"
                          | otherwise
-                = if null cs then error ("(module RelBinGenBasics) Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
+                = if null cs then error ("!Fatal (module RelBinGenBasics 619): Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
                   head cs
                   where cs = [fldname f|f<-fields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
-                        FS_id appname =  fsfsid fSpec
+                        appname =  name fSpec
 
    lowerCase :: String->String
    lowerCase = map toLower -- from Char
@@ -629,5 +629,5 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 --- uniqueNames p:ps | ((name p++(name source p)) `elem` (names ps)) = p:(uniqueNames ps)
    
    addToLast :: [a] -> [[a]] -> [[a]]
-   addToLast _ [] = error "(RelBinGenBasics) addToLast: empty list"
+   addToLast _ [] = error "!Fatal (module RelBinGenBasics 632): addToLast: empty list"
    addToLast s as = (init as)++[last as++s]

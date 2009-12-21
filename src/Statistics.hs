@@ -2,10 +2,10 @@
 module Statistics where
 
    import Adl
+   import Data.Plug
    import FspecDef
    import FPA
- -- TODO Deze module moet nog geheel worden ingekleurd...
- -- TODO Is there a need for the number of Views or is FViewDef obsolete or is it a special kind of ServiceSpec?
+ -- TODO Deze module moet nog verder worden ingekleurd...
  
    class Statistics a where
     nServices :: a -> Int      -- ^ The number of services in a
@@ -25,13 +25,9 @@ module Statistics where
    instance Statistics Fspc where
     nServices fSpec = length (services fSpec) --TODO -> check correctness
     nPatterns fSpec = nPatterns (patterns fSpec)
-    nFpoints  fSpec = nFpoints (services fSpec) --TODO -> check correctness
- -- TODO Deze module moet nog geheel worden ingekleurd...
-
---   instance Statistics Fspc where
---    nServices fspc = nServices (serviceS fspc `uni` serviceG fspc)  -- TODO: Stef, is het reeel om deze services op deze manier te tellen?
---    nPatterns (Fctx context themes datasets objects vrules) = nPatterns themes+nPatterns objects
---    nFpoints  (Fctx context themes datasets objects vrules) = nFpoints datasets + nFpoints objects
+    nFpoints  fSpec = sum [fPoints (fsv_fpa svc)| svc<-services fSpec] +
+                      sum [fPoints (plfpa pl)   | pl <-plugs fSpec]
+-- TODO Deze module moet nog verder worden ingekleurd...
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Funit                         ***
@@ -40,7 +36,7 @@ module Statistics where
    instance Statistics Pattern where
     nServices u = 0 --TODO -> check correctness
     nPatterns _ = 1
-    nFpoints u =  0
+    nFpoints u  = error "!Fatal (module Statistics 37): function points are not defined for patterns at all."
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
@@ -48,7 +44,7 @@ module Statistics where
    instance Statistics Fservice where
     nServices fSvc = nServices (objectdef fSvc)
     nPatterns _ = 0
-    nFpoints  fSvc = nFpoints (objectdef fSvc) --TODO -> implement correct FPA qualification
+    nFpoints fSvc = fPoints (fsv_fpa fSvc) --TODO -> implement correct FPA qualification
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Dataset                       ***
@@ -57,27 +53,5 @@ module Statistics where
     nServices (Obj{objats=[]}) = 2 -- dit is een associatie, en dus een binaire relatie --TODO -> check correctness
     nServices _ = 4 -- dit is een entiteit met ��n of meer attributen. --TODO -> check correctness
     nPatterns _ = 0
-    nFpoints  _ = fPoints (ILGV Eenvoudig) --TODO -> implement correct FPA qualification
-
--- \*** TODO: de functiepuntentelling voor Services zou er als volgt uit moeten zien....
---   instance Statistics ObjectDef where
---    nServices o = 4+sum [nServices a| a<-attributes o]
---    nPatterns o = 0
---    nFpoints  o = error ("(Module Fspec) Function points TBD")
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: ParamSpec                     ***
--- \***********************************************************************
-
--- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: FSid                          ***
--- \***********************************************************************
-
-
-
-
---   instance Statistics Fobj where
---    nServices (Fobj dset o svcs rs) = length svcs
---    nPatterns (Fobj dset o svcs rs) = 1
---    nFpoints  (Fobj dset o svcs rs) = nFpoints o
+    nFpoints  _ = error "!Fatal (module Statistics 54): function points are not defined for ObjectDefs at all."
 

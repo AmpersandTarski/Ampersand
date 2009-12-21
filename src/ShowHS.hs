@@ -4,17 +4,13 @@ where
 
    import Typology              (Inheritance(..))
    import Data.Plug
-   import FspecDef              ( Fspc(..)
-                                , Fservice(..) , Field(..)
-                                , FSid(..)
-                                , Fidentified(..)
-                                )
+   import Data.Fspec
    import Strings               (chain)
    import Adl
    import UU_Scanner            (Pos(..))
    import ShowADL               (showADL) -- wenselijk voor foutmeldingen.
    import Auxiliaries           (haskellIdentifier,showL)
-   import Options
+   import Options hiding (services)
    import Version               (versionbanner)
    
    fSpec2Haskell :: Fspc -> Options -> String
@@ -79,7 +75,8 @@ where
                           ["PlugSql{ fields = " ++ "[ "++
                                               chain (indent++"                  , ") (map (showHS options (indent++"                    ")) (fields plug))++
                                               indent++"                  ]"
-                          ,"       , plname = " ++ show (plname plug)
+                          ,"       , plname = " ++ (show.haskellIdentifier.plname) plug
+                          ,"       , plfpa  = " ++ showHS options "" (plfpa plug)
                           ,"       }"
                           ])
            PlugPhp{} -> (chain indent 
@@ -90,6 +87,7 @@ where
                           ,"       , function = " ++ showHS options "" (function plug)
                           ,"       , phpfile  = " ++ show (phpfile plug)
                           ,"       , plname   = " ++ show (plname  plug)
+                          ,"       , plfpa    = " ++ showHS options "" (plfpa plug)
                           ,"       }"
                           ])
 
@@ -201,15 +199,15 @@ where
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance ShowHS Fspc where
-    showHSname fspec = typ fspec ++ "_" ++ showHSname (fsid fspec) --showHS options "" (pfixFSid "f_Ctx_" (fsid fspec)) 
+    showHSname fspec = typ fspec ++ "_" ++ haskellIdentifier (name fspec)
     showHS options indent fspec
      = chain (indent ++"    ") 
-            ["Fspc{ fsfsid = " ++ showHS options " " (fsid fspec)
+            ["Fspc{ fsName = " ++ haskellIdentifier (name fspec)
                   ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
                   ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
                   ,", serviceS      = serviceS'"
                   ,", serviceG      = serviceG'"
-                  ,wrap ", services      = " indentA (\_->showHSname) (FspecDef.services fspec)
+                  ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
                   ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
                   ,", fsisa         = isa'"
@@ -247,9 +245,9 @@ where
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS options (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
         
-       (if null (FspecDef.services fspec ) then "" else
+       (if null (services fspec ) then "" else
         "\n -- ***Declarations of Services ***: "++
-        concat [indent++" "++showHSname s++indent++"  = "++showHS options (indent++"    ") s|s<-FspecDef.services fspec ]++"\n")++
+        concat [indent++" "++showHSname s++indent++"  = "++showHS options (indent++"    ") s|s<-services fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- ***Declarations of RULES ***: "++
         concat [indent++" "++showHSname r++indent++"  = "++showHS options (indent++"    ") r|r<-vrules   fspec ]++"\n")++        
@@ -267,7 +265,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Fservice where
-    showHSname fservice = typ fservice ++ "_" ++ showHSname (fsid fservice) --showHS options "" (pfixFSid "f_Obj_" (fsid fservice))
+    showHSname fservice = typ fservice ++ "_" ++ haskellIdentifier (name fservice)
     showHS options indent fservice
      = "Fservice "
        ++ indent++"     ("++showHS options (indent++"      ") (fsv_objectdef fservice)++")"
@@ -277,6 +275,7 @@ where
           ++indent++"     ]"
        ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_signals  fservice))++indent++"     ]"
        ++ indent++"     [ "++chain (indent++"     , ") (map (showHS options (indent++"       ")) (fsv_fields  fservice))++indent++"     ]"
+       ++ indent++"     ("++showHS options (indent++"      ") (fsv_fpa fservice)++")"
        ++ indent++" -- Einde Fservice "++showHSname (fsv_objectdef fservice)
 
 -- \***********************************************************************
@@ -291,7 +290,7 @@ where
        ++ indent++"    , fld_mph      = "++
           ( if fld_editable fld
             then showHS options (indent++"      ") (fld_mph     fld)
-            else "error(\"!Fatal: reference to undefined editrelation in field "++fld_name fld++"\")" )
+            else "error(\"!Fatal (module ShowHS 249): reference to undefined editrelation in field "++fld_name fld++"\")" )
        ++ indent++"    , fld_editable = "++                     show (fld_editable fld)
        ++ indent++"    , fld_list     = "++                     show (fld_list     fld)
        ++ indent++"    , fld_must     = "++                     show (fld_must     fld)
@@ -301,14 +300,14 @@ where
        ++ indent++"    , fld_onIns    = "++
           ( if fld_insAble fld
             then "(\\d->"++showHSname (fld_onIns fld arg)++" d)"
-            else "error(\"!Fatal: reference to undefined insert action in field "++fld_name fld++"\")" )
+            else "error(\"!Fatal (module ShowHS 304): reference to undefined insert action in field "++fld_name fld++"\")" )
        ++ indent++"    , fld_delAble  = "++                     show (fld_delAble  fld)
        ++ indent++"    , fld_onDel    = "++
           ( if fld_delAble fld
             then "(\\d->"++showHSname (fld_onDel fld arg)++" d)"
-            else "error(\"!Fatal: reference to undefined delete action in field "++fld_name fld++"\")" )
+            else "error(\"!Fatal (module ShowHS 309): reference to undefined delete action in field "++fld_name fld++"\")" )
        ++ indent++"    }"
-       where arg = error ("!Fatal: reference to undefined argument of ECA rule")
+       where arg = error ("!Fatal (module ShowHS 311): reference to undefined argument of ECA rule")
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
@@ -324,7 +323,7 @@ where
 -- \***********************************************************************
 
 --   instance ShowHS Architecture where
---    showHSname _ = error ("!Fatal (module ShowHS): an architecture is anonymous with respect to showHS options.")
+--    showHSname _ = error ("!Fatal (module ShowHS 327): an architecture is anonymous with respect to showHS options.")
 --    showHS options indent arch = concat (map (showHS options indent) (archContexts arch))
 
 -- \***********************************************************************
@@ -428,7 +427,7 @@ where
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
    instance ShowHS RuleType where
-     showHSname _ = error "!Fatal (module ShowHS): showHSname undefined for Type 'RuleType'"
+     showHSname _ = error "!Fatal (module ShowHS 431): showHSname undefined for Type 'RuleType'"
      showHS _ _ Truth          = "Truth"
      showHS _ _ Equivalence    = "Equivalence"
      showHS _ _ Implication    = "Implication"
@@ -478,7 +477,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Expression where
-    showHSname expr = error ("!Fatal (module ShowHS): an expression is anonymous with respect to showHS options. Detected at: "++ showADL expr)
+    showHSname expr = error ("!Fatal (module ShowHS 481): an expression is anonymous with respect to showHS options. Detected at: "++ showADL expr)
     showHS options _ (Tm m')   = "Tm ("++showHS options "" m'++") "
     showHS options indent (Tc f)   = showHS options indent f
     showHS _ _ (F [])   = "F [] <Id>"
@@ -502,7 +501,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Gen where
-    showHSname g = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
+    showHSname g = error ("!Fatal (module ShowHS 505): Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
     showHS options _ gen = "G ("++showHS options "" (genfp gen)++") ("++showHS options "" (gengen gen)++") ("++showHS options "" (genspc gen)++")"
    
 -- \***********************************************************************
@@ -510,7 +509,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Morphism where
-    showHSname mph = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
+    showHSname mph = error ("!Fatal (module ShowHS 513): Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
     showHS options _ mph 
        = case mph of
             Mph{} -> "Mph "++show (mphnm mph)++" "++showPos++" "++showAtts
@@ -574,7 +573,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Concept where
-    showHSname c = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
+    showHSname c = error ("!Fatal (module ShowHS 577): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
     showHS _ _ c = case c of
                        C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
                        S        -> "S "
@@ -582,15 +581,28 @@ where
                        NOthing  -> "NOthing "
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: AutType                       ***
+-- \*** Eigenschappen met betrekking tot: FPA                           ***
 -- \***********************************************************************
    
+   instance ShowHS FPcompl where
+    showHSname c = error ("!Fatal (module ShowHS 586): Illegal call to showHSname ("++show c++"). A FPcompl gets no definition in Haskell code.")
+    showHS _ _ c   = show c
+
+   instance ShowHS FPA where
+    showHSname c = error ("!Fatal (module ShowHS 595): Illegal call to showHSname ("++show c++"). A FPA gets no definition in Haskell code.")
+    showHS _ _ (ILGV c) = "ILGV "++show c
+    showHS _ _ (KGV  c) = "KGV "++show c
+    showHS _ _ (IF   c) = "IF "++show c
+    showHS _ _ (UF   c) = "UF "++show c
+    showHS _ _ (OF   c) = "OF "++show c
+    showHS _ _ NO       = "NO"
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Prop                          ***
 -- \***********************************************************************
    
    instance ShowHS Prop where
-    showHSname p = error ("!Fatal (module ShowHS): should not showHS options the name of multiplicities (Prop): "++show p)
+    showHSname p = error ("!Fatal (module ShowHS 605): should not showHS options the name of multiplicities (Prop): "++show p)
     showHS _ _ Uni = "Uni"
     showHS _ _ Inj = "Inj"
     showHS _ _ Sur = "Sur"
@@ -606,7 +618,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS FilePos where
-    showHSname p = error ("!Fatal (module ShowHS): Illegal call to showHSname ("++show p++"). A position is an anonymous entity in Haskell code.")
+    showHSname p = error ("!Fatal (module ShowHS 621): Illegal call to showHSname ("++show p++"). A position is an anonymous entity in Haskell code.")
     showHS _ _ (FilePos (fn,Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
     showHS _ _ Nowhere

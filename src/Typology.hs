@@ -81,7 +81,7 @@ where
         f n paths new []   = f (2*n) pn cands [p|p<-cands, head p `elem` tail p]
                              where pn = paths++new
                                    cands = [p|p<-pn `combine` pn,n<length p-1]
-        f n paths new errs = error("!Fatal (module Typology): cyclic specialization\n " ++ (chain "\n ".map show) [head e:takeWhile (/=head e) (tail e)| e<-errs])
+        f n paths new errs = error("!Fatal (module Typology 84): cyclic specialization\n " ++ (chain "\n ".map show) [head e:takeWhile (/=head e) (tail e)| e<-errs])
         combine rs rs'     = [r `mul` r'| r<-rs, r'<-rs', last r `match` head r']
   -}
 
@@ -109,17 +109,17 @@ where
     Isa rx cx `isc` Isa ry cy = Isa (rx `isc` ry) (cx `isc` cy)
     Isa rx cx >- Isa ry cy = Isa (rx>-ry) (cx>-cy)
     rd (Isa ts es)            = Isa (rd ts) (rd es)
-    rd' _ (Isa _ _)         = error "!Fatal (module Typology): rd' not yet implemented for Isa"
+    rd' _ (Isa _ _)         = error "!Fatal (module Typology 112): rd' not yet implemented for Isa"
 
    instance Collection Typology where
     eleM e (Typ pths) = or [e `elem` p| p<-pths]
     empty = Typ []
     elems (Typ paths) = rd (concat paths)
     Typ px `uni` Typ py = Typ (compress akin (px++py++[init r++r'| r<-px, r'<-py, last r==head r']))
-    Typ _ `isc` Typ _ = error "!Fatal (module Typology): intersection not yet implemented"     --TODO
-    Typ _ >-    Typ _ = error "!Fatal (module Typology): set difference not yet implemented"  --TODO
+    Typ _ `isc` Typ _ = error "!Fatal (module Typology 119): intersection not yet implemented"     --TODO
+    Typ _ >-    Typ _ = error "!Fatal (module Typology 120): set difference not yet implemented"  --TODO
     rd (Typ pths) = Typ (rd pths)
-    rd' _ (Typ _) = error "!Fatal (module Typology): rd' not yet implemented for Typologies"
+    rd' _ (Typ _) = error "!Fatal (module Typology 122): rd' not yet implemented for Typologies"
 
 
 

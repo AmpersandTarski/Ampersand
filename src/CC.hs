@@ -118,13 +118,13 @@
                          | otherwise  = Sg pos' (Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True [])
                         kc m' cons pos' antc cpu' expl = hc m' antc pos' cons cpu' expl
                         dc m' defd pos' expr cpu' expl
-   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("Diag: "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 "" True))  -}
+   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("!Diagnosis (module CC 121): "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 "" True))  -}
                          | not beep && name m'=="" = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
                          | otherwise  = Sg pos' (Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True [])
                         ac m'      pos' expr cpu' expl
                          | not beep && name m'=="" = Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
                          | otherwise  = Sg pos' (Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True [])
-                         where defd=error ("defd undefined in CC.lhs in pRule "++showADL expr)
+                         where defd=error ("!Fatal (module CC 127): defd undefined in pRule "++showADL expr)
 
 --   data PCompu       = Uc [Morphism]
 --                     | Ui [Morphism]
@@ -213,7 +213,7 @@
                              v' []                  = V [] (cptAnything, cptAnything)
                              v' [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
                              v' [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
-                             v' _  = error ("!Fatal (module CC 205): relation cannot have more than two concepts as type")
+                             v' _  = error ("!Fatal (module CC 216): relation cannot have more than two concepts as type")
                              emp c | c == cptnew ""     = cptAnything
                                    | otherwise          = c
                              pTwo = (one' <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>

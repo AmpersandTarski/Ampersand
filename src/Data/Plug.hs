@@ -15,12 +15,14 @@ where
   
   data Plug = PlugSql { fields   :: [SqlField]
                       , plname   :: String
+                      , plfpa    :: FPA
                       }
             | PlugPhp { args     :: PhpArgs
                       , returns  :: PhpReturn
                       , function :: PhpAction
                       , phpfile  :: String
                       , plname   :: String 
+                      , plfpa    :: FPA
                       } deriving (Show)
 
   data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)

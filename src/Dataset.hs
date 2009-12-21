@@ -45,7 +45,7 @@
       where
        c  = minimum [g|g<-concs context,g<=head cl]
        cl = head ([cl'| cl'<-eqClass bi (concs context), c' `elem` cl']
-              ++error ("!Fatal (module Fspec>dataset): cannot determine dataset for concept "++name c'))
+              ++error ("!Fatal (module Fspec>dataset 48): cannot determine dataset for concept "++name c'))
        c1 `bi` c2 = not (null [mph| mph<-declarations context, isFunction mph, isFunction (flp mph)
                                , source mph<=c1 && target mph<=c2  ||  source mph<=c2 && target mph<=c1])
        dss = [     makeMph d | d<-declarations context, isFunction      d , source d `elem` cl]++

@@ -94,7 +94,7 @@
                     ]
        assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name plug)
                     | plug <- assocPlugs
-                    , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 95): irregular association, because it has "++show ()++" fields.")
+                    , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 97): irregular association, because it has "++show ()++" fields.")
                     , [s,t]<-[fields plug]
                     ]
                     where

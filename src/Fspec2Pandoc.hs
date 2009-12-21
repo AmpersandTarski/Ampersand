@@ -20,7 +20,7 @@ import Text.Pandoc
 import Version          (versionbanner)
 import Languages        (Lang(..),plural)
 import PredLogic        (expr2predLogic)
-import Options          (Options(..),FspecFormat(..))
+import Options hiding (services) --importing (Options(..),FspecFormat(..))
 import ShowECA          (showECA)
 import NormalForms      (conjNF,normECA) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation
@@ -30,8 +30,8 @@ import Switchboard      (switchboard)
 import Data.GraphViz    (printDotGraph)
 import Classes.Graphics (toDot)
 import Picture          (Picture(reference,figlabel,fullPng,title),PictType(..),makePicture)
-
---import Statistics
+import FPA
+import Statistics
 
 --DESCR ->
 --The functional specification starts with an introduction
@@ -751,12 +751,15 @@ serviceChap lev fSpec flags svc
 --  voor het bewijs         ++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction (eca arg)))
 --                          ++"\n<------End Derivation --"
                     ]
-                 | eca<-fsv_ecaRules svc, arg<-[error ("TODO: hier moet een declaratie \"Delta\" staan")]
+                 | eca<-fsv_ecaRules svc, arg<-[error ("!TODO (module Fspec2Pandoc 754): hier moet een declaratie \"Delta\" staan")]
                  ]
 -}
       English -> [] --TODO
 
-------------------------------------------------------------
+------------------ Function Point Analysis --------------------
+-- TODO: Engels en Nederlands netjes scheiden.
+-- TODO: Andere formaten dan LaTeX ondersteunen.
+
 fpAnalysis :: Int -> Fspc -> Options ->  [Block]
 fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
  where 
@@ -774,30 +777,37 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                   , Str (name fSpec)
                   , Str " is geanalyseerd door middel van een functiepuntentelling"
                   , xrefCitation "IFPUG"
-                  , Str "."
+                  , Str ". "
+                  , Str $ "Dit heeft geresulteerd in een geschat totaal van "++(show.nFpoints) fSpec++" functiepunten."
                   ]]
       English -> [Para
                   [ Str "The specification of "
                   , Str (name fSpec)
                   , Str " has been analysed by counting function points"
                   , xrefCitation "IFPUG"
-                  , Str "."
+                  , Str ". "
+                  , Str $ "This has resulted in an estimated total of "++(show.nFpoints) fSpec++" function points."
                   ]]
    )
-  --TODO -> is an fpa on themes correct or should it be on the total fspec, or should it not matter, i.e. is the sum of services in the fspec equivalent to the sum of services of all themes? 
-  --Table [Inline] [Alignment] [Double]      [[Block]] [[[Block]]]
-  --      Caption  Clm algnmt  rel.clm.width clm hdrs  rows
+
   fpa2Blocks :: [Block]
-  fpa2Blocks  = 
-       [Table [Str "Function Point Analysis", xrefLabel tableFPAlabel] 
-              [AlignLeft, AlignRight] --TODO -> how do I specify drawing of lines?
-              [0.25,0.1] --TODO -> can't this be automatic or something
-              [[Plain [Space]],[Plain [Str "points"]]] 
-              [ [ [Plain [Str (name p)]]
-        --        , [Plain [Str (show $ nFpoints t)]] ] 
-                  , [Plain [Str "?"]] ] --TODO -> there is a loop in fspc->ftheme->funit->fviewdef&servicespec, coming from adl2fspec (remainingDS & pats)
-              | p<-patterns fSpec]
-       ]  
+  fpa2Blocks
+   = case fspecFormat flags of
+      FLatex -> [Para $ 
+                  [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
+                          chain "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
+                          chain "\\\\\n" [ chain "&" [name plug, show (plfpa plug), (show.fPoints.plfpa) plug] | plug<-plugs fSpec, fPoints (plfpa plug)>0] ++
+                          "\\\\\\hline\\end{tabular}" ]
+                ,Para $ 
+                  [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
+                          chain "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
+                          chain "\\\\\n" [ chain "&" [name svc, show (fsv_fpa svc), (show.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
+                          "\\\\\\hline\\end{tabular}" ]
+                ]            
+      _      -> [Plain $ 
+                  [ Str "???" ]
+                ]   
+         
 ------------------------------------------------------------
 glossary :: Int -> Fspc -> Options ->  [Block]
 glossary _ _ _ = []  --TODO
@@ -886,7 +896,7 @@ class ShowMath a where
  showMathcode fSpec x = showMath x
 
 instance ShowMath Rule where
- showMath r = error ("!Fatal (module Fspec2Pandoc 585): Please supply specification of the context in showMath "++showADL r)
+ showMath r = error ("!Fatal (module Fspec2Pandoc 889): Please supply specification of the context in showMath "++showADL r)
  showMathcode fSpec r@(Sg p rule expla sgn nr pn signal) = "\\verb#SIGNAL # \\id{"++name signal++"}\\ \\verb# ON #"++ showMathcode fSpec rule
  showMathcode fSpec r@(Fr d expr _) = showMath d ++ "\n" ++ show (name d)++" = "++showMathcode fSpec expr
  showMathcode fSpec r

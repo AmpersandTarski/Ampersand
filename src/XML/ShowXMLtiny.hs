@@ -180,7 +180,7 @@ where
 
 
    instance XML Expression where
-     mkTag _  = error ("(module ShowXML) Fatal: mkTag should not be used for expressions.")
+     mkTag _  = error ("!Fatal (module ShowXMLtiny 183): mkTag should not be used for expressions.")
      mkXmlTree expr 
          = case expr of
                (Tm mph) | inline mph -> Node (Tag rel ( [mkAttr "Name" (name mph)]

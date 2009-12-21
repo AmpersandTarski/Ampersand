@@ -44,4 +44,4 @@
         , "</BODY></HTML>"]
       )
     where
-     FS_id appname   = fsfsid fSpec
+     appname   = name fSpec

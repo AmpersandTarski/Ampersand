@@ -17,7 +17,7 @@
    makeFspec flags context = fSpec where
         allQuads = quads (\_->True) (rules context)
         fSpec =
-            Fspc { fsfsid       = makeFSid1 (name context)
+            Fspc { fsName       = firstCaps (name context)
                    -- serviceS contains the services defined in the ADL-script.
                    -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
                    -- A generic user interface (the Lonneker interface) is already available.
@@ -54,23 +54,27 @@
         definedplugs = vsqlplugs ++ vphpplugs
 -- maybe useful later...
 --        conc2plug :: Concept -> Plug
---        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True]}
+--        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True], plfpa = ILGV Eenvoudig}
 
 -- mor2plug creates associations between plugs that represent wide tables.
 -- this concerns relations that are not univalent nor injective,
 -- Univalent and injective relations cannot be associations, as they are used as attributes in wide tables.
         mor2plug :: Morphism -> Plug
         mor2plug  m'
-         = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 61): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
+         = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 64): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
            if is_Tot
            then PlugSql { plname = name m'
                         , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing (not is_Sur) False {- isUni -}
-                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]}
+                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]
+                        , plfpa  = NO
+                        }
            else if is_Sur then mor2plug (flp m')
            else PlugSql { plname = name m'
                         , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]   -- WAAROM (SJ) is dit de expressie in dit veld?
                                                            )      Nothing (not is_Sur) False {- isUni -}
-                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]}
+                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]
+                        , plfpa  = NO
+                        }
            where
              mults = multiplicities m'
              is_Tot = Tot `elem` mults || m' `elem` totals
@@ -232,7 +236,7 @@
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-rules p++signals p]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
-        maketheme _ = error("!Fatal (module ADL2Fspec) function makeFspec.maketheme: The theme must involve a concept.")
+        maketheme _ = error("!Fatal (module ADL2Fspec 235): function makeFspec.maketheme: The theme must involve a concept.")
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
         orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
 
@@ -252,6 +256,7 @@
     = (absorb . sort' ((0-).length.fields))
        [ PlugSql { fields = [mph2fld m | m<- mIs c: dss cl ]
                  , plname = name c
+                 , plfpa  = ILGV Eenvoudig
                  }
        | cl<-eqClass bi (concs'), c<-[minimum [g|g<-concs',g<=head cl]] ]
       where
@@ -290,11 +295,11 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 
        kernel :: Plug -> Concept -- determines the core concept of p. The plug serves as concept table for (kernel p).
        kernel p@(PlugSql{}) = source (fldexpr (head (fields p)))
-       kernel _ = error("!Fatal (module ADL2Fspec): function \"kernel\"")
+       kernel _ = error("!Fatal (module ADL2Fspec 293): function \"kernel\"")
 
 
    makeSqlPlug :: ObjectDef -> Plug
-   makeSqlPlug plug = PlugSql{fields=makeFields plug,plname=name plug}
+   makeSqlPlug obj = PlugSql{fields=makeFields obj,plname=name obj,plfpa=ILGV Eenvoudig}
       where
       makeFields :: ObjectDef -> [SqlField]
       makeFields obj =
@@ -332,17 +337,17 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 
    makePhpPlug :: ObjectDef -> Plug
    makePhpPlug plug = PlugPhp{args=makeArgs,returns=makeReturns,function=PhpAction{action=makeActiontype,on=[]}
-                             ,phpfile="phpPlugs.inc.php",plname=name plug}
+                             ,phpfile="phpPlugs.inc.php",plname=name plug,plfpa=KGV Eenvoudig}
       where
       makeActiontype = head $ [case str of {"SELECT"->Read;
                                             "CREATE"->Create;
                                             "UPDATE"->Update;
                                             "DELETE"->Delete;
-                                            _ -> error $ "!Fatal (module ADL2Fspec): Choose from ACTION=[SELECT|CREATE|UPDATE|DELETE].\n"  
+                                            _ -> error $ "!Fatal (module ADL2Fspec 341): Choose from ACTION=[SELECT|CREATE|UPDATE|DELETE].\n"  
                                                          ++ show (objpos plug)
                                            }
                      | strs<-objstrs plug,'A':'C':'T':'I':'O':'N':'=':str<-strs]
-                     ++ [error $ "!Fatal (module ADL2Fspec): Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
+                     ++ [error $ "!Fatal (module ADL2Fspec 345): Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
       makeReturns = head $ [PhpReturn {retval=PhpObject{objectdf=oa,phptype=makePhptype oa}}
                            | oa<-objats plug, strs<-objstrs oa,"PHPRETURN"<-strs]
                            ++ [PhpReturn {retval=PhpNull}]
@@ -353,17 +358,16 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                             "Int"->PhpInt;
                                             "Float"->PhpFloat;
                                             "Array"->PhpArray;
-                                            _ -> error $ "!Fatal (module ADL2Fspec): Choose from PHPTYPE=[String|Int|Float|Array].\n"  
+                                            _ -> error $ "!Fatal (module ADL2Fspec 356): Choose from PHPTYPE=[String|Int|Float|Array].\n"  
                                                         ++ show (objpos objat)
                                            }
                      | strs<-objstrs objat,'P':'H':'P':'T':'Y':'P':'E':'=':str<-strs]
-                     ++ [error $ "!Fatal (module ADL2Fspec): Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
+                     ++ [error $ "!Fatal (module ADL2Fspec 360): Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
                                  ++ show (objpos objat)]
 
    --DESCR -> Use for plugs that describe a single operation like PHP plugs
    makeDSOperation :: Plug -> WSOperation
-   makeDSOperation PlugSql{} = error $ "!Fatal (module ADL2Fspec): function makeDSOperation: "
-                                    ++ "ECA plugs do not describe a single operation."
+   makeDSOperation PlugSql{} = error $ "!Fatal (module ADL2Fspec 365): function makeDSOperation: ECA plugs do not describe a single operation."
    makeDSOperation p@PlugPhp{} = 
        let nullval val = case val of
                          PhpNull    -> True
@@ -414,7 +418,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    editMph :: Expression -> Morphism
    editMph (Tm m@Mph{}) = m
    editMph (Tm m@I{})   = m
-   editMph e            = error("!Fatal (module ADL2Fspec): cannot determine an editable declaration in a composite expression: "++show e)
+   editMph e            = error("!Fatal (module ADL2Fspec 417): cannot determine an editable declaration in a composite expression: "++show e)
 
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
    makeFservice context allQuads object
@@ -431,15 +435,24 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 -- All fields/parameters of this service
                       , fsv_fields    = fields
 -- All concepts of which this service can create new instances
-                      , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s {-  -} , ecaTriggr (t arg)==On Ins (mIs c)]
+                      , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Ins (mIs c)]
 -- All concepts of which this service can delete instances
-                      , fsv_deleting  = [c| c<-rd (map target rels), t<-fsv_ecaRules s {-  -} , ecaTriggr (t arg)==On Del (mIs c)]
+                      , fsv_deleting  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Del (mIs c)]
+                      , fsv_fpa       = case depth object of -- Valideren in de FPA-wereld
+                                          0 -> NO
+                                          1 -> IF Eenvoudig
+                                          2 -> IF Eenvoudig
+                                          3 -> IF Gemiddeld
+                                          _ -> IF Moeilijk 
                       } in s
     where
         fields = recur 0 object
-         where recur i obj = [fld i o| o<-objats obj]++[f| o<-objats obj, f<-recur (i+1) o]
+         where recur i obj | null (objats obj) = [fld i obj]
+                           | otherwise         = [f| o<-objats obj, f<-recur (i+1) o]
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
+        depth :: ObjectDef -> Int
+        depth obj  = foldr max 0 [depth o| o<-objats obj]+1
         vis        = rd (map makeInline rels++map (mIs.target) rels)
         visible m  = makeInline m `elem` vis
         invariants = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
@@ -450,7 +463,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         nECArules  = map normECA ecaRs
         trigs :: ObjectDef -> [Declaration->ECArule]
         trigs obj  = [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
-        arg = error("!Todo (module ADL2Fspec 424): declaratie Delta invullen")
+        arg = error("!Todo (module ADL2Fspec 454): declaratie Delta invullen")
         fld :: Int -> ObjectDef -> Field
         fld sLevel obj
          = Att { fld_name     = objnm obj

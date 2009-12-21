@@ -123,8 +123,8 @@ checkOptions flags =
 --                        else return flags3  {- No need to check if no fspec will be generated. -}
            mbexec <- findExecutable (progrName flags) 
            flags5 <- case mbexec of
-              Nothing -> return flags4{dirExec=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")
-                                      ,texHdrFile=error ("Specify the path location of "++(progrName flags)++" in your system PATH variable.")}
+              Nothing -> return flags4{dirExec=error ("!Fatal (module Options 126): Specify the path location of "++(progrName flags)++" in your system PATH variable.")
+                                      ,texHdrFile=error ("!Fatal (module Options 127): Specify the path location of "++(progrName flags)++" in your system PATH variable.")}
               Just s -> return flags4{dirExec=takeDirectory s} 
            flags6 <- if genPrototype flags5
                         then return flags5 {dbName = (case dbName flags5 of

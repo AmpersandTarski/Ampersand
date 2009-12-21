@@ -12,6 +12,7 @@ module Data.Fspec ( Fspc(..)
                   , FSid(..)
                   , FTheme(..)
                   , WSOperation(..), WSAction(..)
+                  , FPA(..), FPcompl(..)
                   , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
                   )
  where
@@ -25,6 +26,7 @@ module Data.Fspec ( Fspc(..)
    import Adl.ObjectDef                 (ObjectDef(..))
    import Adl.Expression                (Expression(..))
    import Adl.MorphismAndDeclaration    (Morphism,Declaration,mIs)
+   import Adl                           (FPA(..), FPcompl(..))
    import CommonClasses
    import Classes.Morphical
    import Classes.ViewPoint
@@ -35,7 +37,7 @@ module Data.Fspec ( Fspc(..)
    import Data.Plug
    import Picture
    
-   data Fspc = Fspc { fsfsid       :: FSid                  -- ^ The name of the specification, taken from the ADL-script
+   data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
                     , vplugs       :: [Plug]                -- ^ all plugs defined in the ADL-script
                     , plugs        :: [Plug]                -- ^ all plugs (defined and derived)
                     , serviceS     :: [ObjectDef]           -- ^ all services defined in the ADL-script
@@ -73,7 +75,7 @@ module Data.Fspec ( Fspc(..)
     rules        fSpec = [r| r@(Ru{})<-vrules fSpec]
     signals      fSpec = [r| r@(Sg{})<-vrules fSpec]
     patterns     fSpec = vpatterns fSpec
-    objectdef    fSpec = Obj { objnm   = let FS_id str = fsfsid fSpec in str
+    objectdef    fSpec = Obj { objnm   = name fSpec
                              , objpos  = Nowhere
                              , objctx  = Tm (mIs S)
                              , objats  = serviceS fSpec ++ serviceG fSpec
@@ -95,11 +97,12 @@ module Data.Fspec ( Fspc(..)
                      , fsv_fields    :: [Field]                -- All fields/parameters of this service
                      , fsv_creating  :: [Concept]              -- All concepts of which this service can create new instances
                      , fsv_deleting  :: [Concept]              -- All concepts of which this service can delete instances
+                     , fsv_fpa       :: FPA                    -- function point assessment of this service
                      }
 
    instance Show Fservice where
     showsPrec _ svc@(Fservice{})
-     = showString ("\n!Diagnosis error (module Fspec 95): empty show(Fservice)"
+     = showString ("\n!Diagnosis error (module Fspec 102): empty show(Fservice)"
                    ++show (fsv_objectdef svc)++"\n"
                    ++show (fsv_rels      svc)++"\n"
                    ++show (fsv_rules     svc)++"\n"
@@ -108,7 +111,7 @@ module Data.Fspec ( Fspc(..)
 --                   ++show (fsv_fields    svc)++"\n"
                    ++show (fsv_creating  svc)++"\n"
                    ++show (fsv_deleting  svc)++"\n"
-                  ) where delt::Declaration; delt = error "Undef declaration"
+                  ) where delt::Declaration; delt = error "!Fatal (module Fspec 111): Undef declaration"
 
    instance Morphical Fservice where
     concs        svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
@@ -175,7 +178,7 @@ module Data.Fspec ( Fspc(..)
            --  | NoName           -- some identified objects have no name...
 
    instance Identified Fspc where
-     name fspc = name (fsfsid fspc)
+     name fspc = fsName fspc
      typ   _   = "Fspc_"
 
    instance Identified Fservice where
@@ -185,7 +188,6 @@ module Data.Fspec ( Fspc(..)
    instance Identified FSid where
     name (FS_id nm) = nm
     typ _ = "f_Id"
-
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {classes     :: [Class]            --

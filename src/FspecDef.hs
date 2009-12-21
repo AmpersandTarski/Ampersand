@@ -29,9 +29,9 @@
      fsid m = FS_id (name m++name (source m)++name(target m))  --Hier moet nog goed naar worden gekeken....
  --        where 
  --          source (Mph nm pos atts (a,b) _ s) = a
- --          source m = error ("FspecDef.lhs : Cannot evaluate the source expression of the current morphism (yet)")
+ --          source m = error ("!Fatal (module FspecDef 32): Cannot evaluate the source expression of the current morphism (yet)")
  --          target (Mph nm pos atts (a,b) _ s) = b    
- --          target m = error ("FspecDef.lhs : Cannot evaluate the target expression of the current morphism (yet)")
+ --          target m = error ("!Fatal (module FspecDef 34): Cannot evaluate the target expression of the current morphism (yet)")
   --   typ m  = "f_morph"
    instance Fidentified Concept where
      fsid c = FS_id (name c)
@@ -51,7 +51,7 @@
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance Fidentified Fspc where  -- WAAROM moet er een tweede vorm van Identified zijn? Dit is in tegenspraak met het principe van code-ontdubbeling.
-    fsid    spec = fsfsid spec
+    fsid    fSpec = FS_id (fsName fSpec)
   --  typ     _ = "f_Ctx"
 
 

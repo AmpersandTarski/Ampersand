@@ -117,7 +117,7 @@ renumber cx@(Ctx{}) = cx {ctxpats=renumberedPats,
    renumberRule :: Int -> Rule -> Rule
    renumberRule n rule 
       = case rule of
-          Ru{rrsrt = Automatic} -> rule{rrant = error ("(Module CC_aux:) illegal call to antecedent in renumberRule ("++showADL rule++")")
+          Ru{rrsrt = Automatic} -> rule{rrant = error ("!Fatal (module TypeChecker 120): illegal call to antecedent in renumberRule ("++showADL rule++")")
                                        ,runum = n
                                        }
           Ru{}                  -> rule{runum = n}
@@ -322,21 +322,21 @@ enrichCtx cx@(Ctx{}) ctxs =
           if rrsrt r==Implication 
           then case et of 
              (BoundTo (Implicate antex _ _)) -> BoundTo antex
-             _ -> error $ "!Fatal (module TypeChecker 291): " ++
+             _ -> error $ "!Fatal (module TypeChecker 325): " ++
                           "Expected a BoundTo implication rule statement etant("++show et++")."
           else case et of 
              (BoundTo (Equality antex _ _)) -> BoundTo antex
-             _ -> error $ "!Fatal (module TypeChecker 295): " ++
+             _ -> error $ "!Fatal (module TypeChecker 329): " ++
                           "Expected a BoundTo equivalence rule statement etant("++show et++")."
         etcon et = 
           if rrsrt r==Implication 
           then case et of 
              (BoundTo (Implicate _ conex _)) -> BoundTo conex
-             _ -> error $ "!Fatal (module TypeChecker 301): " ++
+             _ -> error $ "!Fatal (module TypeChecker 335): " ++
                           "Expected a BoundTo implication rule statement etcon("++show et++")."
           else case et of 
              (BoundTo (Equality _ conex _)) -> BoundTo conex
-             _ -> error $ "!Fatal (module TypeChecker 305): " ++
+             _ -> error $ "!Fatal (module TypeChecker 339): " ++
                           "Expected a BoundTo equivalence rule statement etcon("++show et++")."
         in 
         (r {rrant=bindant, rrcon=bindcon, rrtyp=bindrtype},proof,rrfps r)
@@ -344,7 +344,7 @@ enrichCtx cx@(Ctx{}) ctxs =
     where
     (bindsig,proof,_) = bindRule (srsig r)
     binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
-  bindRule _ = error $ "!Fatal (module TypeChecker) function enrichCtx.bindRule: " ++
+  bindRule _ = error $ "!Fatal (module TypeChecker 347): function enrichCtx.bindRule: " ++
                        "Unsupported rule type while enriching the context. The type checker should have given an error."
   ctxrulesgens :: [(Rule,Proof,FilePos)]
   ctxrulesgens = [rulefromgen g | g<-allCtxGens [cx]]
@@ -417,7 +417,7 @@ enrichCtx cx@(Ctx{}) ctxs =
       Nothing -> et
       Just _ -> case et of 
           (BoundTo (Semicolon _ ex2 _)) -> BoundTo ex2
-          _ -> error $ "!Fatal (module TypeChecker) function enrichCtx.bindObjDef.removeF: " ++
+          _ -> error $ "!Fatal (module TypeChecker 420): function enrichCtx.bindObjDef.removeF: " ++
                        "Expected a BoundTo relative composition expression statement."++show et++"."
   
   ctxkeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
@@ -478,17 +478,17 @@ enrichCtx cx@(Ctx{}) ctxs =
       I{} -> popuMphDecl$mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> popuMphDecl$mp {mphtyp=(ec1,ec2)}
       _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
-    else error  $ "!Fatal (module TypeChecker) function enrichCtx.bindSubexpr: " ++
+    else error  $ "!Fatal (module TypeChecker 481): function enrichCtx.bindSubexpr: " ++
                   "Morphisms are different: \nOriginal: " ++ show mp ++ "\nType checked: " ++ show (rel adlex)       
-  bindSubexpr x y = error $ "!Fatal (module TypeChecker) function enrichCtx.bindSubexpr: " ++
+  bindSubexpr x y = error $ "!Fatal (module TypeChecker 483): function enrichCtx.bindSubexpr: " ++
                            "Expressions are different: \nOrginal: " ++ show x ++ "\nType checked: " ++ show y
 
   bindSubexprs :: Expressions ->  [AdlExpr] -> Expressions
   bindSubexprs subexs [] = if null subexs then [] 
-                           else error $ "!Fatal (module TypeChecker) function enrichCtx.Subexprs: " ++
+                           else error $ "!Fatal (module TypeChecker 488): function enrichCtx.Subexprs: " ++
                                         "Not all subexprs are matched. Too many originals."
   bindSubexprs [] adlexs = if null adlexs then [] 
-                           else error $ "!Fatal (module TypeChecker) function enrichCtx.Subexprs: " ++
+                           else error $ "!Fatal (module TypeChecker 491): function enrichCtx.Subexprs: " ++
                                         "Not all subexprs are matched. Too many type checked."
   bindSubexprs (subex:subexs) (adlex:adlexs) = (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
 
@@ -586,7 +586,7 @@ comparepopanddecl _ (Mph{mphnm=popnm, mphats=[c1,c2]}) d = popnm==name d && c1==
 comparepopanddecl ds (Mph{mphnm=popnm, mphats=[], mphpos=mpos}) _ = 
    case onedecl popnm ds of
         Just True -> True
-        _         -> error $ "!Fatal (module TypeChecker) function comparepopanddecl: " ++
+        _         -> error $ "!Fatal (module TypeChecker 589): function comparepopanddecl: " ++
                      "Ambiguous population "++show popnm++" at "++show mpos++"\nDefine a type on the population name."
 comparepopanddecl _ _ _ = False
 
@@ -612,7 +612,7 @@ type CtxTree = Tree ContextFound
 
 toClassification :: CtxTree -> Classification Context
 toClassification (Node (NotFound cxnm) _) = 
-      error $ "!Fatal (module TypeChecker) function toClassification: " ++
+      error $ "!Fatal (module TypeChecker 615): function toClassification: " ++
               "NotFound " ++ cxnm
 toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
 
@@ -643,7 +643,7 @@ ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
 ctxName (NotFound cxnm) = cxnm
 
 fromFoundCtx :: ContextFound -> Context
-fromFoundCtx (NotFound cxnm) = error $ "!Fatal (module TypeChecker) function fromFoundCtx: NotFound " ++ cxnm
+fromFoundCtx (NotFound cxnm) = error $ "!Fatal (module TypeChecker 646): function fromFoundCtx: NotFound " ++ cxnm
 fromFoundCtx(Found cx)    = cx
 
 

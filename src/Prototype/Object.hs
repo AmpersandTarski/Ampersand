@@ -225,7 +225,7 @@
      allAtts :: ObjectDef->[ObjectDef]
      allAtts o = objats o ++ concat (map allAtts (objats o))
      nestTo :: ObjectDef -> (String->[String]) -> [String]
-     nestTo attr fnc = if null nt then error ("saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)")
+     nestTo attr fnc = if null nt then error ("!Fatal (module Prototype>Object 228): saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)")
                        else head nt
        where nt = nestToRecur attr fnc object "$me" 0
      nestToRecur :: ObjectDef -> (String->[String]) -> ObjectDef -> String -> Integer -> [[String]]
@@ -259,7 +259,7 @@
        = nestTo a
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                         ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
-     delcode _ [] = error "Fatal (module Object.hs): should not occur" -- , but generating no code for no request seems OK
+     delcode _ [] = error "!Fatal (module Prototype>Object 262): should not occur" -- , but generating no code for no request seems OK
      delCodeElem :: Plug->([String],[ObjectDef])
      delCodeElem plug
        = (   concat (map (delcode plug) (fullOccurences plug))
@@ -348,7 +348,7 @@
                                    -- niet meer voorkomen, netjes weggefilterd worden
                            else filter (iskey.snd) $ reverse attrs -- eerst de voor de hand liggende
                  key    = if null keys
-                           then error ("\nObjBinGenObject-saveCodeElem-inscode: Cannot get a key for the plug "++name plug)
+                           then error ("!Fatal (module Prototype>Object 351): ObjBinGenObject-saveCodeElem-inscode: Cannot get a key for the plug "++name plug)
                            else head keys
                    -- nunios: Not UNI ObjectS: objects that are not Uni
                  nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ isUni (objctx o)]
@@ -435,7 +435,7 @@
        arrsNeeded = [aout|aout<-allNeeded,not$isObjUni aout]
        depthNeeded= [aout|aout<-objats objOut,null[a|a<-objats objIn,a `msubset` aout]]
        allNeeded  = [aout|aout<-objats objOut,null[a|a<-objats objIn,objctx a==objctx aout]]
-       doQuer fl [] = error ("ObjBinGenObject.doPhpGet: doQuer has no query for "++fl);
+       doQuer fl [] = error ("!Fatal (module Prototype>Object 438): doPhpGet: doQuer has no query for "++fl);
        doQuer firstLine
               quer = addToLast "\"));"
                                ([ firstLine++"(DB_doquer(\""++head quer]
@@ -508,7 +508,7 @@
                                    -- Voor debuggen onderstaande trace regel uitcommentaren
                                    -- en Debug.trace aan de imports toevoegen
                                    -- ++ trace ("Geen keyGroup voor "++name objOut) []
-                                   ++ if isOne' then [] else error ("doSqlGet in ObjBinGenObject: Cannot create keyGroups")
+                                   ++ if isOne' then [] else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups")
                                  )
             reduce :: [[((Plug,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
                       -> [((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]

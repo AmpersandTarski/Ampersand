@@ -41,7 +41,7 @@ module Auxiliaries(
                   -> [b]       -- list of elements b that need a name
                   -> [c]       -- result: named alements (matches [b])
    naming _ _ _ [] = []
-   naming _ [] _ _ = error "(RelBinGenBasics) no naming functions given"
+   naming _ [] _ _ = error "!Fatal (module Auxiliaries 44): no naming functions given"
    naming assignFunc as taken (l:ls)
                    = head [assignFunc l (a l):naming assignFunc as (a l:taken) ls
                           | a<-as, a l `notElem` taken]

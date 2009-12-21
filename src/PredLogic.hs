@@ -90,7 +90,7 @@
 
    normRule :: Rule -> Rule
    normRule r@(Ru{rrsrt=Truth})
-    = r{rrant=error ("!Fatal (module PredLogic 161): illegal reference to antecedent in normRule ("++showADL r++")")}
+    = r{rrant=error ("!Fatal (module PredLogic 93): illegal reference to antecedent in normRule ("++showADL r++")")}
    normRule r@(Ru{rrsrt=Implication,rrant=a@(F ants),rrcon=c@(F cons)})
     | idsOnly ants = r{rrant=F [Tm (mIs idA)],rrtyp=(idC,idC)}
     | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
@@ -142,7 +142,7 @@
    assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t
     = {- debug 
-      if error("Debug: assembleF exclVars (F ts) s t\nwith "++
+      if error("!Debug (module PredLogic 145): assembleF exclVars (F ts) s t\nwith "++
                "exclVars = "++show exclVars++"\n          "++
                "ics = "++show ics++"\n          "++
                "ivs = "++show ivs++"\n         "++
@@ -153,13 +153,13 @@
       where
        res       = pars3 exclVars (split ts)  -- levert drietallen (r,s,t)
        frels s t = [r v w|((r,_,_),v,w)<-zip3 res ([s]++ivs) (ivs++[t]) ]
-       ics       = [if v `order` w then v `lub` w else error("!Fatal (module PredLogic 221): assembleF")
+       ics       = [if v `order` w then v `lub` w else error("!Fatal (module PredLogic 156): assembleF")
                    |(v,w)<-zip [s|(_,s,_)<-tail res] [t|(_,_,t)<-init res]]
        ivs       = mkVar exclVars ics
 
    assembleF exclVars (Fd ts) s t
     = {- debug 
-      if error("Debug: assembleFd exclVars (Fd ts)\nwith "++
+      if error("!Debug (module PredLogic 162): assembleFd exclVars (Fd ts)\nwith "++
                "exclVars = "++show exclVars++"\n          "++
                (if null antc then "" else "ics antc = "++show icsantc++"\n          ")++
                "ics cons = "++show icscons++"\n          "++
@@ -191,7 +191,7 @@
        icsantc   = ics antc
        ivsantc   = mkVar exclVars (ci:icsantc)
        ivscons   = mkVar exclVars icscons
-       unite v w = if v `order` w then v `lub` w else error("!Fatal (module PredLogic 259): assembleFd")
+       unite v w = if v `order` w then v `lub` w else error("!Fatal (module PredLogic 194): assembleFd")
        ci        = ca `unite` cc
        ivs       = ivsantc++ivscons
    assembleF exclVars (Fu fs) s t
@@ -202,7 +202,7 @@
     = (Not  (fst (assembleF exclVars e s t)), exclVars)
    assembleF exclVars e s t
     = if length (morlist e)==1 then (res, exclVars) else
-      error ("!Fatal (module PredLogic 270): Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showADL e++")")
+      error ("!Fatal (module PredLogic 205): Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showADL e++")")
       where
        res | denote e==Flr = Rel (Funs s (mors e)) (mIs (target e)) (Funs t [])
            | denote e==Frl = Rel (Funs s []) (mIs (source e)) (Funs t (map flp (mors e)))

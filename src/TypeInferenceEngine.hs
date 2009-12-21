@@ -94,15 +94,15 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
            relvar = case expr of 
              Relation{} -> expr 
              Complement{sub=Relation{}} -> sub expr
-             _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.step3inferstmts.bind2declAlts.declAlts: Other expressions than Complement on or just Relation are not expected: "++show expr++"."
+             _ -> error $ "!Fatal (module TypeInferenceEngine 97): Function declAlts does not expect other expressions than Complement on or just Relation: "++show expr++"."
            undeclerr = [(EmptyStmt, Just $ Stmt stmt') | stmt'@(InfErr (UndeclRel relvar'))<-gamma, relvar==relvar']
            in
            if null undeclerr
            then [(stmt',Nothing) | stmt'@(DeclExpr relvar' _)<-gamma, relvar==relvar']
            else undeclerr
         declAlts stmt = error
-          $ "Error in TypeInferenceTree.hs module InferenceRules function infer.step3inferstmts.declAlts: " ++
-            "This function only expects BoundTo statements. "++show stmt++"."
+          $ "!Fatal (module TypeInferenceEngine 104): " ++
+            "function declAlts only expects BoundTo statements. "++show stmt++"."
   --DESCR -> Given the main inference tree and all alternative combinations, proof the type of an expression or proof a type error
   step4combinetrees :: [( [(BndStmt, Alternatives)] , [BndCptVar])] -> ITree -> Proof
   step4combinetrees alts basetree =
@@ -151,16 +151,16 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
   --DESCR -> construct a base inference tree of BoundTo statements by decomposing the expr to infer, and put concept variables at all concept locations. Return all unused concept variable names too.
   --USE -> All concept variables need to be bound to a concept. And all leaves (Stmt BoundTo expr@(Relation{})) need to be inferred.
   unboundtree :: Concepts -> (ITree, Concepts)
-  unboundtree [] = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
-                           "Provide an infinite list of free concept variables."
-  unboundtree (_:[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
-                           "Provide an infinite list of free concept variables."
+  unboundtree [] = error $ "!Fatal (module TypeInferenceEngine 154): unboundtree expects " ++
+                           "an infinite list of free concept variables."
+  unboundtree (_:[]) = error $ "!Fatal (module TypeInferenceEngine 156): unboundtree expects " ++
+                           "an infinite list of free concept variables."
   --DESCR -> decomposing step1: every expression to infer is bound to two fresh cpt vars. 
   unboundtree (c1:c2:fcpts) = bindsubexprs (bindto exr (CT c1) (CT c2) (expo exr 1)) fcpts
     where 
     expo:: AdlExpr -> Int -> Int
     expo x i = if isCompl x then expo (sub x) (-i) else i
-    notexp1err subex = error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree: " ++
+    notexp1err subex = error $ "!Fatal (module TypeInferenceEngine 163): " ++
                          "Rule pattern match failed while decomposing expression: " ++show exr++".\n" ++show subex++ "."   
     bindto expr = \src tgt expt -> BoundTo expr{tt=TT src tgt expt}
     bindsubexprlist [] vars = ([],vars)
@@ -250,13 +250,13 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                                then (Stmt $ bindto (expr{sub=(sub expr){tt=TT src tgt (-expt)}}) src tgt (expt)
                                     , (cb1:cb2:cbs:fcs))
                                else notexp1err expr                                                   
-                _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree.bindsubexprs: complement not expected on rule expression: " ++show expr ++"."                  
+                _ -> error $ "!Fatal (module TypeInferenceEngine 253): bindsubexprs: complement not expected on rule expression: " ++show expr ++"."                  
                  
           Flip{tt=TT src tgt expt} -> (FlipRule NoInv (tree tree1), free tree1)
               where
               tree1 = bindsubexprs (bindto (sub expr) tgt src expt ) (cb1:cb2:cbs:fcs)
           Relation{tt=TT src tgt expt}     -> (Stmt $ bindto expr src tgt expt, (cb1:cb2:cbs:fcs))
-    bindsubexprs stmt = \_ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function infer.unboundtree.bindsubexprs: Only BoundTo expression are expected: "++show (stmt)++"." 
+    bindsubexprs stmt = \_ -> error $ "!Fatal (module TypeInferenceEngine 259): bindsubexprs: Only BoundTo expression are expected: "++show (stmt)++"." 
   ------------------------------------------------------------------------------------
   --DESCR -> Given a Statement from an unboundtree, this tree, and the variable environment: bind the mphats of a Relation expression to certain concept variables in this expression.
   bindMphats :: Statement -> (ITree, [BndCptVar], Maybe ITree) -> (ITree, [BndCptVar], Maybe ITree)
@@ -267,7 +267,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
          Mph{mphats=[x,y], mphyin=False} -> (y,x,True)
          I{mphats=[x]} -> (x,x,True)
          V{mphats=[x,y]} -> (x,y,True)
-         _ -> let nomphatserr = error $ show $ "Error in TypeInferenceTree.hs module InferenceRules function infer.bindMphats: Do not bind mphats because there aren't any."
+         _ -> let nomphatserr = error $ show $ "!Fatal (module TypeInferenceEngine 270): bindMphats: Do not bind mphats because there aren't any."
               in (nomphatserr,nomphatserr,False)
      --get the concept variable from the BoundTo statement to bind the first mphat to 
      var1 = val ct1
@@ -295,7 +295,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                         if cpt'' `isa'` c2 --already bound to the same or more specific concept by other mphats
                         then Just vars' --variable is already bound to this mphat
                         else Nothing
-     notvarerr v' = error $ "Error in TypeInferenceTree.hs module InferenceRules function bindMphats: " ++
+     notvarerr v' = error $ "!Fatal (module TypeInferenceEngine 298): bindMphats: " ++
                               "Concept variable "++show v'++" is not a concept variable."
      in
      if hasmphats
@@ -354,7 +354,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
        let
        ct1 = cts $ tt expr
        ct2 = ctt $ tt expr
-       notvarerr v' = error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
+       notvarerr v' = error $ "!Fatal (module TypeInferenceEngine 357): inferalt: " ++
                               "Concept variable "++show v'++" is not a concept variable."
        in
        case alt of
@@ -420,10 +420,10 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
                if c1 `isa'` c2 then rebindboth c1
                else if c2 `isa'` c1 then rebindboth c2
                  else returnerror DisjHomo c1 c2 varsrange
-        _ -> error $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
+        _ -> error $ "!Fatal (module TypeInferenceEngine 423): inferalt: " ++
                      "The alternative statement "++show alt++" is not a TypeTo statement."
      inferalt _ _  = error
-        $ "Error in TypeInferenceTree.hs module InferenceRules function inferstmts.inferalt: " ++
+        $ "!Fatal (module TypeInferenceEngine 426): inferalt: " ++
           "This function only binds concept variables of BoundTo statements."
      ------------------------------------------
      -- endfunction -> inferalt stmt alt      --
@@ -439,7 +439,7 @@ lookupvar ::  [BndCptVar] -> CptVar -> Concept
 lookupvar vars lvar = if not (null bndvar) then head bndvar else varnotfnderr
        where
        bndvar = [cpt |(var,cpt)<-vars, var==lvar]
-       varnotfnderr = error $ "Error in TypeInferenceTree.hs module InferenceRules function lookupvar: " ++
+       varnotfnderr = error $ "!Fatal (module TypeInferenceEngine 442): lookupvar: " ++
                               "Concept variable could not be found in the variable environment: "++show lvar++"."
 
 --DESCR -> Returns True if the Concept is a variable
@@ -475,7 +475,7 @@ rebindtree (Stmt stmt) vars = Stmt (rebindstmt stmt)
   rebindexpr :: AdlExpr -> AdlExpr
   rebindexpr expr@(Relation{}) = expr{tt=rebindtt (tt expr)}
   rebindexpr expr@(Complement{}) = expr{sub=rebindexpr (sub expr) }
-  rebindexpr expr = error $ "Error in TypeInferenceTree.hs module InferenceRules function rebindtree.rebindexpr: " ++
+  rebindexpr expr = error $ "!Fatal (module TypeInferenceEngine 478): rebindexpr: " ++
                             "Other expressions than Complement on or just Relation are not expected: "++show expr++"."
   rebindtt :: TypeTerm -> TypeTerm
   rebindtt tt1 = tt1{cts=rebindct $ cts tt1,ctt=rebindct $ ctt tt1}
@@ -492,7 +492,7 @@ eqbindings (_:[]) = True
 eqbindings (vars:vars':varss) =
    if length vars == length vars'
    then foldr (&&) (eqbindings (vars':varss)) [elem var vars' | var<-vars]
-   else error $ "Error in TypeInferenceTree.hs module InferenceRules function eqbindings: " ++
+   else error $ "!Fatal (module TypeInferenceEngine 495): eqbindings: " ++
                 "Lengths of concept variable lists differ:" ++ show (length vars) ++ " and " ++ show (length vars) ++ "."
 
 --DESCR -> Attach all inference trees (which are proofs for the BoundTo statements in the main inference tree) using a Bind Rule
@@ -522,15 +522,15 @@ matchbindtype :: BndStmt -> BindType
 matchbindtype (BoundTo expr) = case expr of 
    Relation{} -> if expon (tt expr)==1 
          then Bind 
-         else error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+         else error $ "!Fatal (module TypeInferenceEngine 525): matchbindtype: " ++
                      "The exponent of a morphism expression must be 1: "++show expr++"."
    Complement{sub=Relation{}} -> if expon (tt expr)==(-1) 
          then BindCompl 
-         else error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+         else error $ "!Fatal (module TypeInferenceEngine 529): matchbindtype: " ++
                       "The exponent of a complement morphism expression must be -1: "++show expr++"."
-   _ ->  error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+   _ ->  error $ "!Fatal (module TypeInferenceEngine 531): matchbindtype: " ++
                  "The expression is complex: "++show expr++"."
-matchbindtype stmt = error $ "Error in TypeInferenceTree.hs module InferenceRules function matchbindtype: " ++
+matchbindtype stmt = error $ "!Fatal (module TypeInferenceEngine 533): matchbindtype: " ++
                      "The statement "++show stmt++" is not a BoundTo."
 
 --DESCR -> Returns the inference tree which is the proof of a BoundTo statement based on statements derived from ADL declarations
@@ -538,12 +538,12 @@ matchbindtype stmt = error $ "Error in TypeInferenceTree.hs module InferenceRule
 --       In some other cases it is assumed that an error has been found, and inference has been aborted.
 treestmt :: (BndStmt, Alternatives) -> ITree
 --DESCR -> error because there should always be alternatives, or a list of declared relations or an UndeclErr.
-treestmt (stmt@(BoundTo{}),[]) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
+treestmt (stmt@(BoundTo{}),[]) = error $ "!Fatal (module TypeInferenceEngine 541): treestmt: " ++
                                               "The statement "++show stmt++" is not bound to any alternative."
 treestmt ((BoundTo{}),[(_, Just inftree )]) = inftree
 --DESCR -> an alternative can be without inference tree if inference is aborted because of a type error
 treestmt ((BoundTo{}),[( _ , Nothing)]) = Stmt EmptyStmt
 --DESCR -> there can be more than one alternative if inference is aborted because of a type error
 treestmt ((BoundTo{}),_) = Stmt EmptyStmt
-treestmt (stmt,_) = error $ "Error in TypeInferenceTree.hs module InferenceRules function treestmt: " ++
+treestmt (stmt,_) = error $ "!Fatal (module TypeInferenceEngine 548): treestmt: " ++
                             "The statement "++show stmt++" is not a BoundTo."

@@ -93,7 +93,7 @@
             where h x = case x of
                          C{} ->  x{cptgE = gE}
                          _   ->  x
-    specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("!Fatal (module CC_aux 115): specialize 1 ("++show a++","++show b++") "++show c) else
+    specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("!Fatal (module CC_aux 96): specialize 1 ("++show a++","++show b++") "++show c) else
                          (a `glb` b) `lub` c
 
    instance Pop KeyDef where
@@ -184,7 +184,7 @@
     put_gE gE cs rule 
        = case rule of
           Ru{} -> rule{ rrant = if rrsrt rule == Automatic 
-                                 then error ("(Module CC_aux:) illegal call to antecedent in put_gE cs ("++showADL rule++")")
+                                 then error ("!Fatal (module CC_aux 187): illegal call to antecedent in put_gE cs ("++showADL rule++")")
                                  else put_gE gE cs (rrant rule)
                       , rrcon = put_gE gE cs (rrcon rule)
                       , rrtyp = put_gE gE cs (rrtyp rule)
@@ -198,7 +198,7 @@
     update ss rule
        = case rule of 
           Ru{} -> rule{ rrant = if rrsrt rule == Automatic 
-                                 then error ("(Module CC_aux:) illegal call to antecedent in update ss ("++showADL rule++")")
+                                 then error ("!Fatal (module CC_aux 201): illegal call to antecedent in update ss ("++showADL rule++")")
                                  else update ss (rrant rule)
                       , rrcon = update ss (rrcon rule)
                       , rrtyp = update ss (rrtyp rule)
@@ -212,7 +212,7 @@
     specialize t rule
        = case rule of 
           Ru{} -> rule{ rrant = if rrsrt rule == Automatic 
-                                 then error ("(Module CC_aux:) illegal call to antecedent in specialize t ("++showADL rule++")")
+                                 then error ("!Fatal (module CC_aux 215): illegal call to antecedent in specialize t ("++showADL rule++")")
                                  else specialize t (rrant rule)
                       , rrcon = specialize t (rrcon rule)
                       , rrtyp = specialize t (rrtyp rule)
@@ -248,11 +248,11 @@
 
     specialize t (Tm mph)       = Tm (specialize t mph)
     specialize t (Tc f)         = Tc (specialize t f)
-    specialize (a,b) (F [])     = error ("(module CC_aux) specialize ("++show a++","++show b++") (F [])")
+    specialize (a,b) (F [])     = error ("!Fatal (module CC_aux 251): specialize ("++show a++","++show b++") (F [])")
     specialize (a,b) (F [t])    = F [specialize (a,b) t]
     specialize (a,b) (F ts)     = F ([specialize (a,target h) h]++init (tail ts)++[specialize (source l,b) l])
                                   where h=head ts; l=last ts
-    specialize (a,b) (Fd [])    = error ("(module CC_aux) specialize t@("++show a++","++show b++") (Fd [])")
+    specialize (a,b) (Fd [])    = error ("!Fatal (module CC_aux 255): specialize t@("++show a++","++show b++") (Fd [])")
     specialize (a,b) (Fd [t])   = Fd [specialize (a,b) t]
     specialize (a,b) (Fd ts)    = Fd ([specialize (a,target h) h]++init (tail ts)++[specialize (source l,b) l])
                                    where h=head ts; l=last ts
@@ -349,12 +349,12 @@
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("!Fatal (module CC_aux): specialize 7 "++show (x,y)++show (despc decl))
+                       else error ("!Fatal (module CC_aux 352): specialize 7 "++show (x,y)++show (despc decl))
           Iscompl{}-> if x <= y 
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("!Fatal (module CC_aux): specialize 7 "++show (x,y)++show (despc decl))
+                       else error ("!Fatal (module CC_aux 357): specialize 7 "++show (x,y)++show (despc decl))
           Vs{}     -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
                     
 

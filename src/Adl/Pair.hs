@@ -22,8 +22,8 @@ where
    srcPaire = fst
    trgPaire = snd
 --   type Paire     = [String]
---   srcPaire xs    = if null xs then error ("(module Adl.Pair) Fatal: src []") else head xs
---   trgPaire xs    = if null xs then error ("(module Adl.Pair) Fatal: trg []") else last xs
+--   srcPaire xs    = if null xs then error ("!Fatal (module Adl.Pair 25): src []") else head xs
+--   trgPaire xs    = if null xs then error ("!Fatal (module Adl.Pair 26): trg []") else last xs
 --   mkPaire a b = a:[b]
 
    join::Pairs->Pairs->Pairs
