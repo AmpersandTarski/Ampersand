@@ -173,6 +173,7 @@ options = map pp
                                                                            ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
           , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
           , ((Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics."), Public)
+          , ((Option []        ["altGraphics"] (NoArg (altGraphicsOpt 2))  "generate alternative style pictures."), Public)
           , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
           , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
           , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
@@ -308,6 +309,8 @@ fspecRenderOpt w opts = opts{ genFspec=True
                             }
 noGraphicsOpt :: Options -> Options
 noGraphicsOpt   opts = opts{graphics     = False}
+altGraphicsOpt :: Int -> Options -> Options
+altGraphicsOpt  n opts = opts{dotStyle     = n}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

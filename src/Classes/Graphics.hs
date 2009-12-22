@@ -88,132 +88,97 @@ dotG flags graphName cpts dcls idgs
                 }
        where
         (conceptNodes    ,conceptEdges    ) = (concat a, concat b)
-              where (a,b) = unzip (map (conceptNodesAndEdges     (length cpts)) numberedConcepts)
+              where (a,b) = unzip (map (conceptNodesAndEdges     ) cpts)
         (declarationNodes,declarationEdges) = (concat a, concat b) 
-              where (a,b) = unzip (map (declarationNodesAndEdges (length dcls)) numberedDeclarations)
+              where (a,b) = unzip (map (declarationNodesAndEdges ) numberedDeclarations)
         (isaNodes        ,isaEdges        ) = (concat a, concat b) 
-              where (a,b) = unzip (map (isaNodesAndEdges         (length idgs)) numberedIsas)
+              where (a,b) = unzip (map (isaNodesAndEdges         ) numberedIsas)
 
+        numberedConcepts     :: [(Concept    , Int)]
         numberedConcepts     = numberListFrom cpts 1
+        numberedDeclarations :: [(Declaration, Int)]
         numberedDeclarations = numberListFrom dcls 1
+        numberedIsas         :: [((Concept, Concept), Int)]
         numberedIsas         = numberListFrom idgs 1
 
-        lableOfCptDotNode0 :: Concept -> String
-        lableOfCptDotNode0 c 
+        baseNodeId :: Concept -> String  -- returns the NodeId of the node where edges to this node should connect to. 
+        baseNodeId c 
             = case lookup c numberedConcepts of
-                Just i -> show i
+                Just i -> "cpt_"++show i
                 _      -> error "!Fatal (module Graphics): element "++name c++" not found by nodeLabel."
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept. 
-        conceptNodesAndEdges :: Int      -- ^ Each ID of a NodeStatement should be the rank of that concept, Modulo this integer.
-                     -> (Concept,Int)    -- ^ tuple contains the concept and its rank
+        conceptNodesAndEdges :: 
+                        Concept   -- ^ The concept for which the nodes and edges are constructed
                      -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
-        conceptNodesAndEdges increment (c,n)
+        conceptNodesAndEdges c
              = case  dotStyle flags of
-                 1 -> (   [cptOnlyOneNode] -- just only one node for a concept.
+                 1 -> (   [cptOnlyOneNode    ] -- just only one node for a concept.
                       ,   []
                       )
-                 2 -> (    [cptConnectorNode ]  -- node onto which the relations will connect
-                         ++[cptNameNode ]  -- node that shows the name of the concept
-                      ,    [cptEdge ]  -- edge connects the above nodes
+                 2 -> (   [cptOnlyOneNode    ] -- just only one node for a concept.
+                      ,   []
+                      )
+                 3 -> (   [cptConnectorNode  ] -- node onto which the relations will connect
+                        ++[cptNameNode       ] -- node that shows the name of the concept
+                      ,   [cptEdge           ] -- edge connects the above nodes
                       )
                  _ -> undefined
           where
-            cptOnlyOneNode
-              = DotNode { nodeID         = show (n+increment*0)
-                        , nodeAttributes = handleFlags ( CptOnlyOneNode c) flags
-                        }
-            cptConnectorNode
-              = DotNode { nodeID         = nodeID cptOnlyOneNode
-                        , nodeAttributes = handleFlags ( CptConnectorNode c) flags
-                        }
-            cptNameNode
-              = DotNode { nodeID         = show (n+increment*1)
-                        , nodeAttributes = handleFlags ( CptNameNode c) flags
-                        }
-            cptEdge
-              = DotEdge { edgeFromNodeID = nodeID cptConnectorNode
-                        , edgeToNodeID   = nodeID cptNameNode
-                        , edgeAttributes = handleFlags CptEdge flags
-                        , directedEdge   = True
-                        }
-
+            cptOnlyOneNode   = constrNode (baseNodeId c) (CptOnlyOneNode   c) flags
+            cptConnectorNode = constrNode (baseNodeId c) (CptConnectorNode c) flags
+            cptNameNode      = constrNode (baseNodeId c ++ "_Name")  (CptNameNode c)      flags 
+            cptEdge = constrEdge (nodeID cptConnectorNode) (nodeID cptNameNode) CptEdge True flags
         
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
-        declarationNodesAndEdges :: Int        -- ^ Each ID of a NodeStatement should be the rank of that declaration, Modulo this integer.
-                         -> (Declaration,Int)  -- ^ tuple contains the declaration and its rank
+        declarationNodesAndEdges ::
+                            (Declaration,Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
-        declarationNodesAndEdges increment (d,n)
+        declarationNodesAndEdges (d,n)
              = case  dotStyle flags of
-                 1 -> (    []               -- No node at all
-                      ,    [dclOnlyOneEdge] -- Just a single edge
+                 1 -> (    [dclHingeNode]   -- The node of the hinge 
+                         ++[dclNameNode]    -- node to place the name of the declaration
+                      ,    [constrEdge (baseNodeId (source d)) (nodeID dclHingeNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
+                         ++[constrEdge (nodeID dclHingeNode)   (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
+                         ++[constrEdge (nodeID dclHingeNode)   (nodeID dclNameNode )    DclMiddleEdge True flags]  -- edge to connect the hinge node to the nameNode
                       )
-                 2 -> (    [dclHingeNode]   -- The node of the hinge 
-                         ++[dclNameNode]   -- node to place the name of the declaration
-                      ,    [dclSrcEdge]   -- edge to connect the source with the hinge
-                         ++[dclTgtEdge]   -- edge to connect the hinge to the target
-                         ++[dclMiddleEdge]   -- edge to connect the hinge node to the nameNode
+                 2 -> (    [dclNameNode]    -- node to place the name of the declaration
+                      ,    [constrEdge (baseNodeId (source d)) (nodeID dclNameNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
+                         ++[constrEdge (nodeID dclNameNode)    (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
+                   --      ++[constrEdge (nodeID dclHingeNode)   (nodeID dclNameNode )    DclMiddleEdge True flags]  -- edge to connect the hinge node to the nameNode
                       )
-                 _ -> undefined 
+                 3 -> (    []               -- No node at all
+                      ,    [constrEdge (baseNodeId (source d)) (baseNodeId (target d)) (DclOnlyOneEdge d) True  flags] -- Just a single edge
+                      )
+                 _ -> undefined  -- more styles could be placed here...
           where
-            dclOnlyOneEdge
-              = DotEdge { edgeFromNodeID = lableOfCptDotNode0 (source d)
-                        , edgeToNodeID   = lableOfCptDotNode0 (target d)
-                        , edgeAttributes = handleFlags (DclOnlyOneEdge d) flags
-                        , directedEdge   = True
-                        }
-            dclHingeNode 
-              = DotNode { nodeID         = "dcl"++show (n+increment*0)
-                        , nodeAttributes = handleFlags DclHingeNode flags
-                        }
-            dclNameNode
-              = DotNode { nodeID         = "dcl"++show (n+increment*1)
-                        , nodeAttributes = handleFlags (DclNameNode d) flags
-                        }
-            dclSrcEdge 
-              = DotEdge { edgeFromNodeID = lableOfCptDotNode0 (source d)
-                        , edgeToNodeID   = nodeID dclHingeNode
-                        , edgeAttributes = handleFlags (DclSrcEdge d) flags
-                        , directedEdge   = True
-                        }
-            dclTgtEdge 
-              = DotEdge { edgeFromNodeID = nodeID dclHingeNode
-                        , edgeToNodeID   = lableOfCptDotNode0 (target d)
-                        , edgeAttributes = handleFlags (DclTgtEdge d) flags
-                        , directedEdge   = True
-                        }
-            dclMiddleEdge 
-              = DotEdge { edgeFromNodeID = nodeID dclHingeNode
-                        , edgeToNodeID   = nodeID dclNameNode
-                        , edgeAttributes = handleFlags DclMiddleEdge flags
-                        , directedEdge   = False
-                        }
+            dclHingeNode   = constrNode ("dclHinge_"++show n) DclHingeNode   flags
+            dclNameNode    = constrNode ("dclName_"++show n) (DclNameNode d) flags
+            
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
-        isaNodesAndEdges :: Int        -- ^ Each ID of a NodeStatement should be the rank of that declaration, Modulo this integer.
-                         -> ((Concept, Concept),Int)  -- ^ tuple contains the declaration and its rank
+        isaNodesAndEdges :: ((Concept, Concept),Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
-        isaNodesAndEdges increment ((s,t),n)
-           = (   [isaDotNode0]
-             ,   [isaDotEdgeA]
-               ++[isaDotEdgeB]
+        isaNodesAndEdges ((s,t),n)
+           = (   [isaDotHingeNode]
+             ,   [constrEdge (baseNodeId s) (nodeID isaDotHingeNode) IsaEdge True flags]
+               ++[constrEdge (nodeID isaDotHingeNode) (baseNodeId t) IsaEdge True flags]
              ) 
           where
-            isaDotNode0 
-              = DotNode { nodeID         = "isa"++show (n+increment*0)
-                        , nodeAttributes = handleFlags DclHingeNode flags
-                        }
-            isaDotEdgeA 
-              = DotEdge { edgeFromNodeID = lableOfCptDotNode0 s
-                        , edgeToNodeID   = nodeID isaDotNode0
-                        , edgeAttributes = handleFlags IsaEdge flags
-                        , directedEdge   = True
-                        }
-            isaDotEdgeB 
-              = DotEdge { edgeFromNodeID = nodeID isaDotNode0
-                        , edgeToNodeID   = lableOfCptDotNode0 t
-                        , edgeAttributes = handleFlags IsaEdge flags
-                        , directedEdge   = True
-                        }
+            isaDotHingeNode  = constrNode ("isaHinge_"++show n) IsaHingeNode flags
+
+                        
+constrNode :: a -> PictureObject -> Options -> DotNode a
+constrNode nodeId pObj flags
+  = DotNode { nodeID = nodeId
+            , nodeAttributes = handleFlags pObj flags
+            }
+constrEdge :: a -> a -> PictureObject -> Bool -> Options -> DotEdge a
+constrEdge nodeFrom nodeTo pObj isDirected flags 
+  = DotEdge { edgeFromNodeID = nodeFrom
+            , edgeToNodeID   = nodeTo
+            , edgeAttributes = handleFlags pObj flags
+            , directedEdge   = isDirected
+            }
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept
 --         arcs and concepts are points attached to a label
@@ -231,6 +196,7 @@ data PictureObject = CptOnlyOneNode Concept     -- ^ Node of a concept that serv
                    | DclHingeNode               -- ^ Node of a relation that serves as a hinge
                    | DclNameNode Declaration    -- ^ Node of a relation that shows the name
                    | DclMiddleEdge              -- ^ Edge of a relation to connect hinges and/or namenode
+                   | IsaHingeNode               -- ^ Node of an ISA relation
                    | IsaEdge                    -- ^ Edge of a Gen to connec the source to the target of it
                    | TotalPicture               -- ^ Graph attributes
          
@@ -243,7 +209,7 @@ handleFlags po flags =
                  [ Label$StrLabel (name c)
                  , Shape Plaintext
                  , filled --Style$Stl Filled Nothing
-                 , LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}
+                 , LabelURL$UStr{urlString="Cpt_" ++ (name c) ++ ".html"}
                  ]
             else [Shape PointShape, filled]--Style$Stl Filled Nothing,Width 0.1] --used to be something like: if crowfoot flags then doosje flags c else bolletje
       CptNameNode c  -> if crowfoot flags
@@ -252,19 +218,16 @@ handleFlags po flags =
                              [ Label$StrLabel (name c)
                              , Shape Plaintext
                              , filled --Style$Stl Filled Nothing
-                             , LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}
+                             , LabelURL$UStr{urlString="Cpt_" ++ (name c) ++ ".html"}
                              ]
       CptEdge    -> [Len 0.4, invisible]
       CptOnlyOneNode c -> defaultNodeAtts ++
                           [Label (StrLabel (name c))
                           , Shape Plaintext
                           , filled 
-                          , LabelURL$UStr{urlString="CPT_" ++ (name c) ++ ".html"}
+                          , LabelURL$UStr{urlString="Cpt_" ++ (name c) ++ ".html"}
                           ]
-      DclOnlyOneEdge d -> defaultEdgeAtts ++ 
-                          [ Decorate True
-                          , Label (StrLabel (name d))
-                          , Len 3
+      DclOnlyOneEdge d -> [ Label (StrLabel (name d))
                           , ArrowHead (if crowfoot flags
                                        then crowfootArrowType True d
                                        else plainArrowType True d
@@ -274,40 +237,48 @@ handleFlags po flags =
                                        else plainArrowType False d
                                       )
                           ]
-      DclSrcEdge d -> defaultEdgeAtts ++ 
-                      [ArrowHead noArrow
+      DclSrcEdge d -> [Len 1.2
+                      , ArrowHead noArrow
                       ,ArrowTail ( if crowfoot flags
                                    then crowfootArrowType False d
                                    else plainArrowType False d
                                  )
                       ]
-      DclTgtEdge d -> defaultEdgeAtts ++
-                      [ArrowHead ( if crowfoot flags
+      DclTgtEdge d -> [Len 1.2
+                      , ArrowHead ( if crowfoot flags
                                    then crowfootArrowType True d
                                    else plainArrowType True d
                                  )
                       ,ArrowTail noArrow
                       ] 
       DclHingeNode  -> [Shape PointShape, invisible ]
-      DclNameNode d -> defaultNodeAtts ++ [Label$StrLabel (name d), Shape Plaintext]
-      DclMiddleEdge -> [Len 0.1]
-      IsaEdge    -> defaultEdgeAtts 
-      TotalPicture -> --[BgColor Transparent]++
-                      if crowfoot flags
-                      then [Overlap RemoveOverlaps]
-                      else [Splines SplineEdges]
+      DclNameNode d -> defaultNodeAtts ++ 
+                       [ Label (StrLabel (name d))
+                       , Shape Plaintext
+                       , BgColor (ColorName "white") 
+                       ]
+      DclMiddleEdge -> [ Len 0.1
+                       , ArrowHead noArrow
+                       , ArrowTail noArrow
+                       ]
+      IsaEdge       -> [ Color [ColorName "red"]
+                       , Len 0.6
+                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])	
+                       , ArrowTail noArrow
+                       ] 
+      IsaHingeNode  -> handleFlags DclHingeNode flags
+      TotalPicture -> [  Overlap CompressOverlap ]
+
 --DESCR -> default Node attributes
 defaultNodeAtts :: [Attribute]
 defaultNodeAtts   = [FontSize 12,FontName "helvetica"]
---DESCR -> default Edge attributes
-defaultEdgeAtts :: [Attribute]
-defaultEdgeAtts   = [Len 1.2
-                    ,ArrowSize 0.8
-                    ]
+
 invisible :: Attribute
 invisible = Style [SItem Invisible []]
+
 filled :: Attribute
 filled = Style [SItem Filled []]
+
 crowfootArrowType :: Bool -> Declaration -> ArrowType
 crowfootArrowType isHead d 
    = AType (case isHead of
@@ -319,8 +290,8 @@ crowfootArrowType isHead d
          getCrowfootShape a b =
           (case (a,b) of
             (True ,True ) -> [my_tee          ]
-            (True ,False) -> [my_tee , my_crow]
-            (False,True ) -> [my_tee,  my_odot]
+            (True ,False) -> [my_crow, my_tee]
+            (False,True ) -> [my_odot, my_tee]
             (False,False) -> [my_crow, my_odot]
           )   
          my_tee :: ( ArrowModifier , ArrowShape )
@@ -330,11 +301,11 @@ crowfootArrowType isHead d
          my_crow :: ( ArrowModifier , ArrowShape )
          my_crow= ( open, Crow )
 plainArrowType :: Bool -> Declaration -> ArrowType
-plainArrowType isHead _
+plainArrowType isHead d
    = case isHead of 
-       True -> AType[ (open, NoArrow)
-                    , (open, NoArrow)
-                    , (ArrMod { arrowFill = OpenArrow
+       True -> AType[ (ArrMod { arrowFill = if isFunction d
+                                            then FilledArrow
+                                            else OpenArrow
                               , arrowSide = BothSides
                               } , Normal)
                     ]
@@ -347,6 +318,9 @@ noMod = ArrMod { arrowFill = FilledArrow
 open  :: ArrowModifier
 open  = noMod {arrowFill = OpenArrow}
 
+--makeLabelTable :: String -> String
+--makeLabelTable n
+--  = n
 
 -- hulpfuncties, voor tijdelijk. TODO, opschonen
 --transparant :: Attribute

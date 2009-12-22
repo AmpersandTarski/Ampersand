@@ -7,5 +7,5 @@ versionbanner = "ADL vs. 0.8.10-505" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-Eerste (niet gevalideerde) benadering van functiepuntentelling ingevoerd. (work in progress)
+Plaatjes verder verbeterd. Wat vinden jullie hier van?
 -}
