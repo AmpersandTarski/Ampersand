@@ -16,9 +16,9 @@ where
     contents c 
        = case c of
            C {}     -> [mkPaire s s|s<-cptos c]
-           S        -> error ("(Module Populated) Cannot refer to the contents of the universal singleton")
-           Anything -> error ("(Module Populated) Cannot refer to the contents of Anything")
-           NOthing  -> error ("(Module Populated) Cannot refer to the contents of Nothing")
+           S        -> error ("!Fatal (module Populated 19): Cannot refer to the contents of the universal singleton")
+           Anything -> error ("!Fatal (module Populated 20): Cannot refer to the contents of Anything")
+           NOthing  -> error ("!Fatal (module Populated 21): Cannot refer to the contents of Nothing")
 
    instance Populated Declaration where
     contents d 
@@ -38,10 +38,10 @@ where
             (Tm x)  -> contents x
             (Tc x)  -> contents x
             (F  x)  -> if null x 
-                         then error ("(module Populated) Fatal: no terms in contents ("++show expr++")") 
+                         then error ("!Fatal (module Populated 41): no terms in contents ("++show expr++")") 
                          else foldr1 join [contents t| t<-x ]
             (Fd x)  -> if null x 
-                         then error ("(module Populated) Fatal: no terms in contents ("++show expr++")") 
+                         then error ("!Fatal (module Populated 44): no terms in contents ("++show expr++")") 
                          else let (dx,_,_,_)
                                    = foldr1 dagg [(ct,compl ct st tt,st,tt)
                                                  | t<-x, ct<-[contents t]
@@ -49,7 +49,7 @@ where
                               in dx
             (Fu x)  -> foldr uni [] [contents f| f<-x ]
             (Fi x)  -> if null x 
-                         then error ("(module Populated) Fatal: no factors in contents ("++show expr++")") 
+                         then error ("!Fatal (module Populated 52): no factors in contents ("++show expr++")") 
                          else foldr1 isc [contents f| f<-x ]
             (K0 x)  -> closPair (contents x) `join` [mkPaire a a |a <-conts (source x `lub` target x)]
             (K1 x)  -> closPair (contents x)

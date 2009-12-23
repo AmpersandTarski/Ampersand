@@ -24,7 +24,7 @@ where
    instance Object Context where
     concept _      = cptAnything
     attributes c   = ctxos c
-    ctx        _   = error ("Cannot evaluate the context expression of the current context (yet)")
+    ctx        _   = error ("!Fatal (module Classes.Object 27): Cannot evaluate the context expression of the current context (yet)")
     populations  c = ctxpops c
     extends c      = ctxon c
 

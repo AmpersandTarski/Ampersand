@@ -105,7 +105,7 @@ dotG flags graphName cpts dcls idgs
         baseNodeId c 
             = case lookup c numberedConcepts of
                 Just i -> "cpt_"++show i
-                _      -> error "!Fatal (module Graphics): element "++name c++" not found by nodeLabel."
+                _      -> error "!Fatal (module Graphics 105): element "++name c++" not found by nodeLabel."
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept. 
         conceptNodesAndEdges :: 

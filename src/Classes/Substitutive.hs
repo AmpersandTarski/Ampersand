@@ -10,7 +10,7 @@ where
    class Substitutive a where
  -- precondition: sign f `order` sign m
     subst :: (Morphism,Expression) -> a -> a
- --   subst (_,_) _ = error "!Fatal (module Classes.Substitutive): Unable to substitute"
+ --   subst (_,_) _ = error "!Fatal (module Classes.Substitutive 13): Unable to substitute"
 
    instance (Morphic a,Substitutive a) => Substitutive [a] where
     subst (mph,f) xs = map (subst (mph,f)) xs
@@ -34,7 +34,7 @@ where
    instance Substitutive Rule where
     subst (m',f) r
      = case r of
-         Ru{rrsrt = Truth} -> r{rrant = error ("!Fatal (module Classes.Substitutive): illegal call to antecedent in subst ("++show m'++","++show f++") ("++show r++")")
+         Ru{rrsrt = Truth} -> r{rrant = error ("!Fatal (module Classes.Substitutive 37): illegal call to antecedent in subst ("++show m'++","++show f++") ("++show r++")")
                                ,rrcon = cons
                                ,rrtyp = sign cons
                                }

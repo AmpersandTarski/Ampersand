@@ -64,8 +64,10 @@ laTeXheader flags
      )++
      [ "\\usepackage{amssymb}"
      , "\\usepackage{amsmath}"
-     , "\\usepackage{longtable}"
-     , "\\def\\id#1{\\mbox{\\em #1\\/}}"
+     ] ++
+     ["\\usepackage{graphicx}"                   | graphics flags] ++
+     ["\\graphicspath{{"++dirOutput flags++"/}}" | graphics flags, dirOutput flags/="."] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
+     [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
      , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
      , "\\newcommand{\\iden}{\\mathbb{I}}"
      , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
@@ -241,12 +243,15 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpIntro :: [Block]
   dpIntro = 
     case language flags of
-        Dutch   -> [Para
+        Dutch   -> [ Para
                      [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str ". "
                      , Str "Elke afspraak die gebruikers gezamenlijk naleven "
                      , Str "en door ", Str (name fSpec), Str " moet worden ondersteund, "
                      , Str "is opgenomen als functionele eis in dit hoofdstuk. "
-                     , Str "Formuleringen in dit hoofdstuk dienen dan ook zorgvuldig te worden getoetst met en door "
+                     , Str "Elke eis is voorzien van een nummer, die in volgende hoofdstukken gebruikt wordt om naar deze eis te verwijzen."
+                     ]
+                   , Para
+                     [ Str "Formuleringen in dit hoofdstuk dienen zorgvuldig te worden getoetst met en door "
                      , Str "al degenen die op welke wijze dan ook de noodzakelijke kennis en voldoende autoriteit bezitten. "
                      , Str "Zij zijn immers verantwoordelijk voor de geldende regels. "
                      , Str "De hoofdarchitect is verantwoordelijk voor de onderlinge consistentie van deze afspraken "
@@ -256,12 +261,15 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                      , Str "Van het voorliggende document is dit hoofdstuk het enige dat het fiat van gebruikers nodig heeft. "
                      , Str "Alle hierop volgende hoofdstukken zijn technisch van aard en bedoeld voor bouwers, testers en auditors. "
                      ]]
-        English -> [Para
+        English -> [ Para
                      [ Str "This chapter defines the functional requirements of ", Str (name fSpec), Str ". "
                      , Str "Each requirement users must fulfill "
                      , Str "by support of ", Str (name fSpec), Str ", "
                      , Str "serves as a function requirement in this chapter. "
-                     , Str "The precise phrasing of each requirement must therefore be scrutinized "
+                     , Str "Each requirement has a unique number, which is used in subsequent chapters for reference."
+                     ]
+                   , Para
+                     [ Str "The precise phrasing of each requirement must therefore be scrutinized "
                      , Str "with and by those who have the knowledge and who are responsible for the actual rules. "
                      , Str "The chief architect is responsible for the consistency of all rules "
                      , Str "and for a buildable design. "
@@ -280,11 +288,12 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
              seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
              seenRules      -- All rules that have been defined in earlier sections.
              i              -- unique definition numbers (start at 1)
-   = [Header (lev+1) [Str thm]]  --new section to explain this theme
+   = if emptySection then [] else [Header (lev+1) [Str thm]]  --new section to explain this theme
      ++ sctConcepts  -- tells which new concepts are introduced in this section.
-     ++ [ DefinitionList (sctRules ++ sctSignals)| not (null (sctRules ++ sctSignals)) ]   -- tells which rules and signals are being introduced
+     ++ [ OrderedList (i, Decimal, DefaultDelim) (sctRules ++ sctSignals)| not (null (sctRules ++ sctSignals)) ]   -- tells which rules and signals are being introduced
      ++ dpSections thms seenCss seenDss seenRss i''
     where
+     emptySection = null sctConcepts && null (sctRules ++ sctSignals)
      (sctRules,   i',  seenCrs, seenDrs, seenRrs) = dpRule patRules i seenConcepts seenRelations []
      (sctSignals, i'', seenCss, seenDss, seenRss) = dpRule patSignals i' seenCrs seenDrs seenRrs
      conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]
@@ -294,9 +303,9 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
      newRelations = filter (not.isIdent) (declarations (patRules++patSignals) >- seenRelations)
      dpRule [] i seenConcepts seenDeclarations seenRules = ([], i, seenConcepts, seenDeclarations, seenRules)
      dpRule (r:rs) i seenConcepts seenDeclarations seenRules
-      = ( [ ([Str$ name c], [Para [Str$ cddef cd]]) |(n,(c,cd))<-zip [i..] cds]++
-          [ ([Str$ name d], [Para [Str$ explainMult flags d]]) |(n,d)<-zip [i+length cds..] nds] ++
-          [ ([Str$ name r], [Para [Str$ explainRule flags r]]) ] ++ dpNext
+      = ( [ [Para [symDefLabel c, Str$ cddef cd]] |(n,(c,cd))<-zip [i..] cds]++
+          [ [Para [symReqLabel d, Str$ explainMult flags d]] |(n,d)<-zip [i+length cds..] nds] ++
+          [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
         , i'
         , seenCs
         , seenDs
@@ -348,51 +357,6 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                          , Str $ " are introduced in this section without definition. "]
                                 )
                        ]
-
-  dpSection :: FTheme -> [Block]
-  dpSection t = []
-    where
-    listDataset obj = 
-                  [BulletList 
-                     [[Plain [Str$objnm objat]]|objat<-objats obj]
-                  ]
-    listKeys keys' = Emph [il|objat<-keys', il<-[Str " ",Str$objnm objat]]
-    explainFunctionNL f = case wsaction f of {
-         WSCreate -> [Para [Emph [Str$"Nieuw ",Str$name$tconcept t]]]
-                   ++ [Para [Str "Voor het aanmaken van een ",Str$name$tconcept t
-                            ,Str " moeten de volgende datavelden aangeleverd worden:"]]
-                   ++ describemsgs;
-         WSRead -> [Para [Emph [Str$"Bekijk "++(name$tconcept t)]]]
-                   ++ describereadmsgs;
-         WSUpdate -> [Para [Emph [Str$"Bewerk "++(name$tconcept t)]]]
-                   ++ [Para [Str "Van een ",Str$name$tconcept t
-                            ,Str " kunnen de volgende datavelden gewijzigd worden:"]]
-                   ++ describemsgs;
-         WSDelete -> [Para [Emph [Str$"Verwijder "++(name$tconcept t)]]]
-                   ++ [Para [Str "Als een ",Str$name$tconcept t
-                            ,Str " verwijderd wordt, dan worden de volgende datavelden verwijderd:"]]
-                   ++ describemsgs}
-         where
-         describemsgs = [b|obj<-wsmsgin f++wsmsgout f, b<-listDataset obj]
-         describereadmsgs = [Para [Str "Een ",Str$name$tconcept t
-                                  ,Str " kan geselecteerd worden op basis van "
-                                  ,listKeys$wsmsgin f
-                                  ,Str "."]|(not.null) (wsmsgin f)]
-                         ++ [b|obj<-wsmsgout f
-                               , b<-[Para [Str "De volgende datavelden van een ",Str$name$tconcept t
-                                          ,Str " kunnen bekeken worden:"]]
-                                 ++ listDataset obj
-                            ]
-
-  remainingrulesSection :: [Rule] -> [Block]
-  remainingrulesSection rs = 
-     [Header (lev+1) [Str (case language flags of
-                             Dutch   -> "Algemene ontwerpregels"
-                             English -> "General designrules"
-                          )
-                     ]
-     ] --new section to explain this theme
-     ++ [Para [Str$explainRule flags r]|r<-rs] --explanation of all rules in the theme
      
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
@@ -430,20 +394,25 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
      = ( [Header (lev+1) [Str $ name pat]]    -- new section to explain this theme
        ++ (if not (graphics flags) then [] else 
             (case language flags of             -- announce the conceptual diagram
-             Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (reference pict), Str " geeft een conceptuele analyse van dit thema."]] ]
-             English -> [Para [x | x<-[Str "Figure ", xrefReference (reference pict), Str " shows a conceptual analysis of this theme."]] ]
+             Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptuele analyse van dit thema."]] ]
+             English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual analysis of this theme."]] ]
             ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
           )
-       ++ (if null (themerules pat) then [] else [OrderedList (n, Decimal, DefaultDelim) (themerules pat)])
+       ++ (if null (themerules pat) then [] else [DefinitionList (themerules pat)])
        , pict):  iterat (n+length (themerules pat)) ps
        where pict = makePicture flags (name pat) PTPattern pStr   -- the Picture that represents this service's knowledge graph
              pGph = toDot fSpec flags pat                         -- the DotGraph String that represents this service's knowledge graph
              pStr = printDotGraph pGph                            -- the String that represents this service's knowledge graph
     iterat _ [] = []
     --query copied from FSpec.hs revision 174
-    themerules  :: Pattern -> [[Block]]
-    themerules pat = [[Plain [Str $ "R"++show (nr r),Str $ latexEsc (explainRule flags r)]]|r<-rules pat]
-      
+    themerules  :: Pattern -> [([Inline], [Block])]
+    themerules pat = [ ( [Str (name r)]
+                       , [ Plain [Str $ latexEsc (explainRule flags r)]
+                         , Plain [Math DisplayMath $ showMathcode fSpec r, symDefLabel r] -- TODO: equation van maken met nummer, om naar te refereren.
+                         ]
+                       )
+                     |r<-rules pat]
+    
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
@@ -475,7 +444,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                   [ Str $ "The requirements, which are listed in chapter "
                   , xrefReference chpFRlabel
                   , Str $ ", have been translated into the class diagram in figure "
-                  , xrefReference (reference classDiagramPicture)
+                  , xrefReference (figlabel classDiagramPicture)
                   , Str $ ". There are "++count flags (length classes) "data set"++","
                   , Str $ " "++count flags (length assocs) "association"++","
                   , Str $ " "++count flags (length geners) "generalisation"++", and"
@@ -509,7 +478,9 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                  then TeX $ "relatie&totaal&univalent&surjectief&injectief\\\\ \\hline\\hline\n"
                  else TeX $ "relation&total&univalent&surjective&injective\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ "\\(\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
+               [ TeX $ chain "&" [ if source d==target d
+                                   then "\\(\\signt{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}\\)"              -- veld
+                                   else "\\(\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
                                  , if isTot d || d `elem` tots then "\\(\\surd\\)" else ""
                                  , if isUni d || d `elem` unis then "\\(\\surd\\)" else ""
                                  , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
@@ -592,29 +563,48 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
        plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
        content = plugRules ++ plugSignals
        plugRules
-        = case [r| r@(Ru{})<-rules fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
-                   []  -> [ Para [ Str "This data set has no integrity rules other than the multiplicities specified earlier. " ]]
-                   [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
-                          , Para [ Math DisplayMath $ showMathcode fSpec r]
-                          ]
-                   rs  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
-                          , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
-                          ]
+        = case language flags of
+           English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
+                       []  -> [ Para [ Str "This data set has no integrity rules other than the multiplicities specified earlier. " ]]
+                       [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
+                              , Para [ Math DisplayMath $ showMathcode fSpec r]
+                              ]
+                       rs  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
+                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
+                              ]
+           Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (declarations (mors r) >- declarations p)] of
+                       []  -> [ Para [ Str "Deze gegevensverzameling heeft geen integriteitsregels buiten de hiervoor gedefinieerde multipliciteiten. " ]]
+                       [r] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
+                              , Para [ Math DisplayMath $ showMathcode fSpec r]
+                              ]
+                       rs  -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregels. " ]
+                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
+                              ]
        plugSignals
-        = case [r| r<-signals fSpec, null (declarations (mors r) >- declarations p)] of
-                   []  -> []
-                   [s] -> [ Para [ Str "This data set generates one signal. " ]
-                          , Para [ Math DisplayMath $ showMathcode fSpec s]
-                          ]
-                   ss  -> [ Para [ Str "This data set generates the following signals. " ]
-                          , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
-                          ]
+        = case language flags of
+           English -> case [r| r<-signals fSpec, null (declarations (mors r) >- declarations p)] of
+                       []  -> []
+                       [s] -> [ Para [ Str "This data set generates one signal. " ]
+                              , Para [ Math DisplayMath $ showMathcode fSpec s]
+                              ]
+                       ss  -> [ Para [ Str "This data set generates the following signals. " ]
+                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
+                              ]
+           Dutch   -> case [r| r<-signals fSpec, null (declarations (mors r) >- declarations p)] of
+                       []  -> []
+                       [s] -> [ Para [ Str "Deze gegevensverzameling genereert \\'e\\'en signaal. " ]  -- Zou "één" moeten zijn ipv "\\'e\\'en", maar dit geeft een lexical error in string/character literal (UTF-8 decoding error) in de Haskell compiler
+                              , Para [ Math DisplayMath $ showMathcode fSpec s]
+                              ]
+                       ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende signalen. " ]
+                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
+                              ]
 
 ------------------------------------------------------------
 serviceChap :: Int -> Fspc -> Options -> Fservice ->  ([Block],[Picture])
 serviceChap lev fSpec flags svc
  = ( header ++ svcIntro
-      ++ (if graphics flags then txtKnowledgeGraph else [])++ svcFieldTables
+      ++ (if graphics flags then txtKnowledgeGraph else [])
+      ++ svcFieldTables
       ++ (if graphics flags then txtSwitchboard else [])
    , [picKnowledgeGraph, picSwitchboard]
    )
@@ -628,12 +618,14 @@ serviceChap lev fSpec flags svc
       Dutch ->   [ Para
                     ([ Str $ "Service "++svcname++" werkt vanuit een instantie van "++name (target (objctx (fsv_objectdef svc)))++"." ]++
                      f (objctx (fsv_objectdef svc))++
-                     [ Str $ svcInsDelConcepts ] )
+                     [ Str $ svcInsDelConcepts ]++
+                     [ Str $ svcAutoRules ] )
                  ]
       English -> [ Para
                     ([ Str $ "Service "++svcname++" operates from one instance of "++name (target (objctx (fsv_objectdef svc)))++"." ]++
                      f (objctx (fsv_objectdef svc))++
-                     [ Str $ svcInsDelConcepts ] )
+                     [ Str $ svcInsDelConcepts ]++
+                     [ Str $ svcAutoRules ] )
                  ]
      where
       f (Tm _) = []
@@ -644,27 +636,53 @@ serviceChap lev fSpec flags svc
          ucs = fsv_deleting svc `isc` fsv_creating svc
      in case (language flags) of
       Dutch -> " "++
-          if null ics && null dcs && null ucs then "Deze service kan niets maken of verwijderen." else
-          if null ics && null dcs             then "Instanties van "++commaNL "en" (map name ucs)++" kunnen door deze service worden aangemaakt en verwijderd." else
-          if null ics       &&       null ucs then "Deze service kan instanties van "++commaNL "en" (map name ucs)++" verwijderen." else
-          if             null dcs && null ucs then "Instanties van "++commaNL "en" (map name ucs)++" kunnen worden aangemaakt door deze service." else
-          if                         null ucs then "Instanties van "++commaNL "en" (map name ucs)++" kunnen worden toegevoegd en instanties van "++f dcs++" kunnen worden verwijderd door deze service." else
-          if             null dcs             then "Deze service kan instanties van "++commaNL "en" (map name ics)++" creeren, en "++commaNL "en" (map name ucs)++" kunnen ook worden verwijderd." else
-          if null ics                         then "Deze service kan instanties van "++commaNL "en" (map name ucs)++" wijzigen, maar "++commaNL "en" (map name dcs)++" kunnen alleen worden verwijderd." else
-          "Deze service maakt nieuwe instanties van concept"++f ics++". Hij kan instanties van concept"++f dcs++" verwijderen, terwijl instanties van "++commaNL "en" (map name ucs)++" zowel gemaakt als vernietigd kunnen worden."
+          if null ics && null dcs && null ucs then "Deze service maakt of verwijdert geen objecten langs geautomatiseerde weg." else
+          if null ics && null dcs             then "Om regels te handhaven, mogen instanties van "++commaNL "en" (map name ucs)++" door deze service geautomatiseerd worden aangemaakt en verwijderd." else
+          if null ics       &&       null ucs then "Om regels te handhaven, mag deze service instanties van "++commaNL "en" (map name ucs)++" geautomatiseerd verwijderen." else
+          if             null dcs && null ucs then "Om regels te handhaven, mogen instanties van "++commaNL "en" (map name ucs)++" geautomatiseerd worden aangemaakt door deze service." else
+          if                         null ucs then "Instanties van "++commaNL "en" (map name ucs)++" mogen worden toegevoegd en instanties van "++f dcs++" mogen worden verwijderd door deze service. Dat gebeurt geautomatiseerd en uitsluitend waar nodig om regels te handhaven." else
+          if             null dcs             then "Deze service mag instanties van "++commaNL "en" (map name ics)++" creeren, terwijl instanties van "++commaNL "en" (map name ucs)++" ook verwijderd mogen worden. Alleen waar nodig mag dit plaatsvinden om regels te handhaven." else
+          if null ics                         then "Deze service mag instanties van "++commaNL "en" (map name ucs)++" wijzigen, maar instanties van "++commaNL "en" (map name dcs)++" mogen alleen worden verwijderd. Dat mag slechts dan gebeuren wanneer dat nodig is voor het handhaven van regels." else
+          "Deze service maakt nieuwe instanties van concept"++f ics++". Hij mag instanties van concept"++f dcs++" verwijderen, terwijl instanties van "++commaNL "en" (map name ucs)++" zowel gemaakt als vernietigd mogen worden."
           where f [x] = " "++name x++" "
                 f xs  = "en "++commaNL "en" (map name xs)
       English -> " "++
-          if null ics && null dcs && null ucs then "No concepts can be changed by this service." else
-          if null ics && null dcs             then "Concept"++f ucs++" can be both inserted and deleted by this service." else
-          if null ics       &&       null ucs then "Concept"++f dcs++" can be deleted by this service." else
-          if             null dcs && null ucs then "Concept"++f ics++" can be inserted by this service." else
-          if                         null ucs then "Concept"++f ics++" can be inserted, and concept"++f dcs++" can be deleted by this service." else
-          if             null dcs             then "By this service, concept"++f ucs++" can be changed, but"++f ics++" can be created but not deleted." else
-          if null ics                         then "By this service, concept"++f ucs++" can be changed, but"++f dcs++" can only be deleted." else
-          "This service can create new instances of concept"++f ics++". It can delete instances of concept"++f dcs++", and instances of concept"++f ucs++" can be either created and removed."
+          if null ics && null dcs && null ucs then "In this service, no objects are made or removed automatically." else
+          if null ics && null dcs             then "In order to maintain rules, instances of "++f ucs++" may be created or deleted by this service automatically." else
+          if null ics       &&       null ucs then "In order to maintain rules, instances of "++f dcs++" may be deleted automatically by this service." else
+          if             null dcs && null ucs then "In order to maintain rules, instances of "++f ics++" may be automatically inserted by this service." else
+          if                         null ucs then "Concept"++f ics++" may be inserted, and concept"++f dcs++" may be deleted by this service. This happens only if necessary for maintaining rules." else
+          if             null dcs             then "By this service, concept"++f ucs++" may be changed, but"++f ics++" may be created but not deleted. This happens only if necessary for maintaining rules." else
+          if null ics                         then "By this service, concept"++f ucs++" may be changed, but"++f dcs++" may only be deleted. This happens only if necessary for maintaining rules." else
+          "This service can create new instances of concept"++f ics++". It may delete instances of concept"++f dcs++", and instances of concept"++f ucs++" may be either created and removed. Such actions will take place only in order to maintain rules."
           where f [x] = " "++name x
                 f xs  = "s "++commaEng "and" (map name xs)
+  svcAutoRules
+   = let ars = rd [r|q<-fsv_quads svc, r<-[cl_rule (qClauses q)], r_usr r] -- rules that are maintained by automated functionality
+         mrs = [r|r<-fsv_rules svc, r_usr r, r `notElem` ars]-- rules that may be affected, but are maintained manually
+         mss = ""-- signals that can be emptied by this service
+     in case (language flags) of
+      Dutch ->   chain " " 
+                 [ case length ars of
+                    0 -> ""
+                    1 -> " Regel "++name (head ars)++" wordt door deze service gehandhaafd zonder interventie van de gebruiker."
+                    _ -> " Regels "++commaNL "en" (map name ars)++" worden door deze service gehandhaafd zonder interventie van de gebruiker. "
+                 , case length mrs of
+                    0 -> ""
+                    1 -> " Regel "++name (head mrs)++" wordt door de gebruiker van deze service gehandhaafd."
+                    _ -> "Regels "++commaNL "en" (map name mrs)++" worden door de gebruiker van deze service gehandhaafd. "
+                 ]
+      English -> chain " " 
+                 [ case length ars of
+                    0 -> ""
+                    1 -> " Rule "++name (head ars)++" is being maintained by this service, without intervention of the user."
+                    _ -> " Rules "++commaEng "and" (map name ars)++" are being maintained by this service, without intervention of the user."
+                 , case length mrs of
+                    0 -> ""
+                    1 -> " Rule "++name (head mrs)++" is being maintained by the user."
+                    _ -> " Rules "++commaEng "and" (map name mrs)++" are being maintained by the user."
+                 ]
+                 
 
   svcFieldTables
    = [ Para  $ [ if language flags==Dutch
@@ -712,9 +730,9 @@ serviceChap lev fSpec flags svc
   txtKnowledgeGraph :: [Block]
   txtKnowledgeGraph
    = (case language flags of                                     -- announce the knowledge graph
-           Dutch   -> [Para [x | x<-[ Str "Figuur ", xrefReference (reference picKnowledgeGraph)
+           Dutch   -> [Para [x | x<-[ Str "Figuur ", xrefReference (figlabel picKnowledgeGraph)
                                     , Str " geeft de kennisgraaf weer voor deze service."]] ]
-           English -> [Para [x | x<-[ Str "Figure ", xrefReference (reference picKnowledgeGraph)
+           English -> [Para [x | x<-[ Str "Figure ", xrefReference (figlabel picKnowledgeGraph)
                                     , Str " shows the knowledge graph of this service."]] ]
      )
      ++ [Plain (xrefFigure1 picKnowledgeGraph)]                  -- draw the knowledge graph
@@ -728,9 +746,9 @@ serviceChap lev fSpec flags svc
   txtSwitchboard :: [Block]
   txtSwitchboard
    = (case language flags of                                     -- announce the switchboard diagram
-           Dutch   -> [Para [x | x<-[ Str "Figuur ", xrefReference (reference picSwitchboard)
+           Dutch   -> [Para [x | x<-[ Str "Figuur ", xrefReference (figlabel picSwitchboard)
                                     , Str " geeft een schakelpaneel (switchboard diagram) weer voor deze service."]] ]
-           English -> [Para [x | x<-[ Str "Figure ", xrefReference (reference picSwitchboard)
+           English -> [Para [x | x<-[ Str "Figure ", xrefReference (figlabel picSwitchboard)
                                     , Str " shows a switchboard diagram of this service."]] ]
      )
      ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
@@ -826,7 +844,7 @@ count :: Options -> Int -> String -> String
 count flags n x
  = case (language flags, n) of
       (Dutch  , 0) -> "geen "++plural Dutch x
-      (Dutch  , 1) -> "een "++x
+      (Dutch  , 1) -> "een "++x                -- zou "één" moeten zijn, maar dit geeft een UTF-8 decoding error in de Haskell compiler (TODO).
       (Dutch  , 2) -> "twee "++plural Dutch x
       (Dutch  , 3) -> "drie "++plural Dutch x
       (Dutch  , 4) -> "vier "++plural Dutch x
@@ -842,7 +860,39 @@ count flags n x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
 
-------------------------------------------------------------
+------ Symbolic referencing ---------------------------------
+
+class SymRef a where
+  symReqLabel :: a -> Inline  -- labels the requirement of a
+  symDefLabel :: a -> Inline  -- labels the definition of a
+  symReqRef   :: a -> Inline  -- references the requirement of a
+  symDefRef   :: a -> Inline  -- references the definition of a 
+  symReqPageRef   :: a -> Inline  -- references the requirement of a
+  symDefPageRef   :: a -> Inline  -- references the definition of a 
+
+instance SymRef Concept where
+  symReqLabel   c = TeX $ "\\label{ReqConcept:"++latexEsc (name c)++"}"
+  symDefLabel   c = TeX $ "\\label{DefConcept:"++latexEsc (name c)++"}"
+  symReqRef     c = TeX $ "\\ref{ReqConcept:"++latexEsc (name c)++"}"
+  symDefRef     c = TeX $ "\\ref{DefConcept:"++latexEsc (name c)++"}"
+  symReqPageRef c = TeX $ "\\pageref{ReqConcept:"++latexEsc (name c)++"}"
+  symDefPageRef c = TeX $ "\\pageref{DefConcept:"++latexEsc (name c)++"}"
+
+instance SymRef Declaration where
+  symReqLabel   d = TeX $ "\\label{ReqDecl:"++latexEsc (name d)++"}"
+  symDefLabel   d = TeX $ "\\label{DefDecl:"++latexEsc (name d)++"}"
+  symReqRef     d = TeX $ "\\ref{ReqDecl:"++latexEsc (name d)++"}"
+  symDefRef     d = TeX $ "\\ref{DefDecl:"++latexEsc (name d)++"}"
+  symReqPageRef d = TeX $ "\\pageref{ReqDecl:"++latexEsc (name d)++"}"
+  symDefPageRef d = TeX $ "\\pageref{DefDecl:"++latexEsc (name d)++"}"
+
+instance SymRef Rule where
+  symReqLabel   r = TeX $ "\\label{ReqRule:"++latexEsc (name r)++"}"
+  symDefLabel   r = TeX $ "\\label{DefRule:"++latexEsc (name r)++"}"
+  symReqRef     r = TeX $ "\\ref{ReqRule:"++latexEsc (name r)++"}"
+  symDefRef     r = TeX $ "\\ref{DefRule:"++latexEsc (name r)++"}"
+  symReqPageRef r = TeX $ "\\pageref{ReqRule:"++latexEsc (name r)++"}"
+  symDefPageRef r = TeX $ "\\pageref{DefRule:"++latexEsc (name r)++"}"
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [TeX ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
@@ -868,10 +918,10 @@ xrefCitation myLabel = TeX ("\\cite{"++myLabel++"}")
 xrefFigure1 :: Picture -> [Inline]
 xrefFigure1 pict = 
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [Str $ "Here, "++fullPng pict++ " should have been visible"] ((reference pict), (title pict))
+   , Image [Str $ "Here, "++reference pict++".png should have been visible"] ((reference pict++".png"), (title pict))
    , TeX "}\n"
    , TeX ("\\caption{"++title pict++"}\n") 
-   , xrefLabel (reference pict)
+   , xrefLabel (figlabel pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
 addinfix :: Inline -> [[Inline]] -> [Inline] 

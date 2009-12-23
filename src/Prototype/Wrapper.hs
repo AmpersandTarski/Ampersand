@@ -9,7 +9,7 @@
    objectWrapper fSpec o
     = chain "\n" $
       [ "<?php // generated with "++versionbanner ]
-      ++ commentBlock ["","  Interface V1.3.1","  (c) Bas Joosten Jun 2005-Aug 2009  ","","  Using interfaceDef",""] ++
+      ++ commentBlock ["","  Interface V1.3.1","","","  Using interfaceDef",""] ++
       [ "  error_reporting(E_ALL); "
       , "  ini_set(\"display_errors\", 1);"
       , "  require \"interfaceDef.inc.php\";"
