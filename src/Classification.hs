@@ -12,7 +12,7 @@ where
    import CommonClasses ( Identified(name,typ)
                         , Conceptual(conts)
                         ) 
-   import Collection  (Collection(eleM,elems,isc,(>-),uni,empty,rd))
+   import Collection  (Collection(..))
    import Auxiliaries (eqCl) 
    import Strings     (chain)
 
@@ -74,7 +74,7 @@ where
     elems Bottom = []
     elems (Cl r cls) = r: [c| cl<-cls, c<-elems cl]
     rd  _ = error ("!Fatal (module Classification 76): rd needs a fix....")
-
+    rd' _ _ = error ("!Fatal (module Classification 77): rd' needs a fix....")
     lcl `isc` rcl | length trees==1 = head trees
                   | otherwise       = Bottom
      where trees = makeClassifications (tuples lcl `isc` tuples rcl)

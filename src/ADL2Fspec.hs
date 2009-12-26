@@ -299,10 +299,12 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 
 
    makeSqlPlug :: ObjectDef -> Plug
-   makeSqlPlug obj = PlugSql{fields=makeFields obj,plname=name obj,plfpa=ILGV Eenvoudig}
+   makeSqlPlug obj = PlugSql{fields=makeFields
+                             ,plname=name obj
+                             ,plfpa=ILGV Eenvoudig}
       where
-      makeFields :: ObjectDef -> [SqlField]
-      makeFields obj =
+      makeFields ::  [SqlField]
+      makeFields =
         [Fld{fldname = name att
             ,fldexpr = objctx att
             ,fldtype = sqltp att
@@ -319,7 +321,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                      , sqltp a'==SQLId, isTot (objctx a')
                                      , uniq a', isIdent $ objctx a' ]
       sqltp :: ObjectDef -> SqlType
-      sqltp obj = head $ [makeSqltype sqltp' | strs<-objstrs obj,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
+      sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                          ++[SQLVarchar 255]
       makeSqltype :: String -> SqlType
       makeSqltype str = case str of
@@ -433,7 +435,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 -- All signals that are visible in this service
                       , fsv_signals   = []
 -- All fields/parameters of this service
-                      , fsv_fields    = fields
+                      , fsv_fields    = srvfields
 -- All concepts of which this service can create new instances
                       , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Ins (mIs c)]
 -- All concepts of which this service can delete instances
@@ -461,7 +463,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         trigs :: ObjectDef -> [Declaration->ECArule]
         trigs obj  = [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
         arg = error("!Todo (module ADL2Fspec 463): declaratie Delta invullen")
-        fields = [fld 0 o| o<-objats object]
+        srvfields = [fld 0 o| o<-objats object]
         fld :: Int -> ObjectDef -> Field
         fld sLevel obj
          = Att { fld_name     = objnm obj
@@ -500,8 +502,8 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 --    and a right hand side that is out of scope of this service,
 --    you may not insert a new element in obj.
 
-   makeFSid1 :: String -> FSid
-   makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
+--   makeFSid1 :: String -> FSid
+--   makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
 
 
 --   fst3 :: (a,b,c) -> a

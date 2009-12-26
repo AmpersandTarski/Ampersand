@@ -2,26 +2,22 @@
 module Classes.ViewPoint (ViewPoint(..)) 
 where
    import Adl.Context                 (Context(..))
-   import Adl.Pattern                 (Pattern(..),union)
-   import Adl.Rule                    (Rule(..),RuleType(..))
+   import Adl.Pattern                 (Pattern(..))
+   import Adl.Rule                    (Rule(..))
    import Adl.ObjectDef               (ObjectDef(..))
-   import Adl.MorphismAndDeclaration  (Morphism(..),mIs)
-   import Adl.Concept                 (Concept(..),Association(..),Morphic(..))
---   import Adl.Prop                    (Prop(..))
+   import Adl.MorphismAndDeclaration  (mIs)
+   import Adl.Concept                 (Concept(..),Morphic(..))
    import Adl.Expression              (Expression(..))
    import Adl.FilePos                 (Numbered(..),FilePos(..))
    import Adl.Gen                     (Gen(G))
    import Classes.Morphical           (Morphical(..))
---   import Classification              (Classification,preCl)
    import Collection                  (Collection(..))
    import CommonClasses               (Identified(..))
    import Typology                    (Inheritance(..))
-   import Auxiliaries                 (enumerate) 
 
    class Morphical a => ViewPoint a where
      objectdef      :: a -> ObjectDef   -- The objectdef that characterizes this viewpoint
      rules          :: a -> [Rule]      -- all rules in the language that hold within this viewpoint
-     changeable     :: a -> Morphism -> Bool
      signals        :: a -> [Rule]      -- all SIGNAL rules in the language.
      patterns       :: a -> [Pattern]   -- all patterns that are used in this viewpoint
      patterns _      = []
@@ -29,14 +25,13 @@ where
      isa _           = empty
 
    instance ViewPoint a => ViewPoint [a] where
-    objectdef xs     = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    objectdef _      = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                            , objpos  = Nowhere    -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
                            , objctx  = Tm (mIs S) -- ^ this expression describes the instances of this object, related to their context. 
                            , objats  = []         -- ^ the attributes, which are object definitions themselves.
                            , objstrs = []         -- ^ directives that specify the interface.
                            }
     rules xs         = (concat. map rules) xs
-    changeable xs m  = or [changeable x m | x<-xs]
     signals xs       = (concat. map signals) xs
     patterns         = rd' name.concat.map patterns
     isa              = foldr uni empty.map isa

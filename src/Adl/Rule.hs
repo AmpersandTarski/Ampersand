@@ -79,7 +79,6 @@ where
     explain _ r = case r of         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
                    Ru{}  ->  rrxpl r
                    Sg{}  ->  srxpl r
-                   _     ->  ""
 
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)

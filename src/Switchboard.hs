@@ -10,10 +10,10 @@ module Switchboard(switchboard) where
    import Adl
    import Char
    import FspecDef hiding (Attribute)
-   import Options
+ --  import Options
    import Collection (Collection(rd))
 --   import Classes.Graphics
-   import Calc
+   import Calc (quads,positiveIn)
    import ShowADL
 
    switchboard :: ViewPoint a =>Fspc -> a -> DotGraph String
@@ -36,14 +36,14 @@ module Switchboard(switchboard) where
          clauses      = rd [clause | Quad _ ccrs<-qs, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
          posTerms     = rd [term | Fu terms<-clauses, term<-terms, isPos term]
          negTerms     = rd [notCp term | Fu terms<-clauses, term<-terms, isNeg term]
-         colConj c    = head [ColorName color| (color,conj)<-zip allcolors conjs, c==conj]
-                        where conjs = rd [conj | Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
-                              allcolors = ["Linen", "red", "Green", "Yellow", "Blue", "Green", "Violet", "Blueviolet", "Mistyrose"
-                                          , "Orange", "Skyblue", "Plum", "Orange", "Thistle", "Tan", "SpringGreen"]++allcolors
-         colorCl c    = head [colConj conj | Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs, clause<-shifts, c==clause]
-         nameConj c   = head [nmConjunct conj | Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs, clause<-shifts, c==clause]
+--         colConj c    = head [ColorName color| (color,conj)<-zip allcolors conjs, c==conj]
+--                        where conjs = rd [conj | Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+--                              allcolors = ["Linen", "red", "Green", "Yellow", "Blue", "Green", "Violet", "Blueviolet", "Mistyrose"
+--                                          , "Orange", "Skyblue", "Plum", "Orange", "Thistle", "Tan", "SpringGreen"]++allcolors
+--         colorCl c    = head [colConj conj | Quad _ ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs, clause<-shifts, c==clause]
+         nameConj c   = head [nmConjunct conj | Quad _ ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs, clause<-shifts, c==clause]
          nmConjunct c = head (["conj"  ++show (i::Int)| (i,conj)  <-zip [1..] conjuncts, conj==c]++error("!Fatal (module Switchboard 46): illegal lookup in nmConjunct: "++showADLcode fSpec c))
-         nameClaus c  = head (["clause"++show (i::Int)| (i,clause)<-zip [1..] clauses, clause==c]++error("!Fatal (module Switchboard 47): illegal lookup in nameClaus: " ++showADLcode fSpec c))
+--         nameClaus c  = head (["clause"++show (i::Int)| (i,clause)<-zip [1..] clauses, clause==c]++error("!Fatal (module Switchboard 47): illegal lookup in nameClaus: " ++showADLcode fSpec c))
          namePTerm t  = head (["pos"   ++show (i::Int)| (i,term)  <-zip [1..] posTerms,  term==t]++error("!Fatal (module Switchboard 48): illegal lookup in namePTerm: " ++showADLcode fSpec t))
          nameNTerm t  = head (["neg"   ++show (i::Int)| (i,term)  <-zip [1..] negTerms,  term==t]++error("!Fatal (module Switchboard 49): illegal lookup in nameNTerm: " ++showADLcode fSpec t))
          nameINode m  = head (["in_"   ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 49): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
@@ -79,10 +79,10 @@ module Switchboard(switchboard) where
                          | c<-conjuncts]
 
          --DESCR -> All clauses
-         clauseNodes   = [ DotNode { nodeID         = nameClaus c
-                                   , nodeAttributes = [Style [SItem Filled []], FillColor (colorCl c), Label (StrLabel (showADLcode fSpec c))]
-                                   }
-                         | c<-clauses]
+ --        clauseNodes   = [ DotNode { nodeID         = nameClaus c
+ --                                  , nodeAttributes = [Style [SItem Filled []], FillColor (colorCl c), Label (StrLabel (showADLcode fSpec c))]
+ --                                  }
+ --                        | c<-clauses]
 
          --DESCR -> Each edge represents an insert relation between a morphism on the left and a term on the right to which the relation contributes to an insert.
          insEdgesIn    = [ DotEdge { edgeFromNodeID = nameINode m

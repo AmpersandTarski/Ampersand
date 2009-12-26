@@ -339,8 +339,8 @@ enrichCtx cx@(Ctx{}) ctxs =
     where
     (bindsig,proof,_) = bindRule (srsig r)
     binddecl = (srrel r) {desrc=source bindsig, detgt=target bindsig}
-  bindRule _ = error $ "!Fatal (module TypeChecker 347): function enrichCtx.bindRule: " ++
-                       "Unsupported rule type while enriching the context. The type checker should have given an error."
+--  bindRule _ = error $ "!Fatal (module TypeChecker 347): function enrichCtx.bindRule: " ++
+--                       "Unsupported rule type while enriching the context. The type checker should have given an error."
   ctxrulesgens :: [(Rule,Proof,FilePos)]
   ctxrulesgens = [rulefromgen g | g<-allCtxGens [cx]]
   --TODO -> move rulefromgen to function toRule in module Gen

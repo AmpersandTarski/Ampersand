@@ -17,7 +17,7 @@ module Data.Fspec ( Fspc(..)
                   )
  where
    import Adl.ConceptDef                (ConceptDef)
-   import Adl.Concept                   (Concept(..),isSignal)
+   import Adl.Concept                   (Concept(..))
    import Adl.Pair
    import Adl.FilePos
    import Adl.Pattern                   (Pattern)
@@ -111,11 +111,11 @@ module Data.Fspec ( Fspc(..)
 --                   ++show (fsv_fields    svc)++"\n"
                    ++show (fsv_creating  svc)++"\n"
                    ++show (fsv_deleting  svc)++"\n"
-                  ) where delt::Declaration; delt = error "!Fatal (module Fspec 111): Undef declaration"
+                  ) -- where delt::Declaration; delt = error "!Fatal (module Fspec 111): Undef declaration"
 
    instance Morphical Fservice where
     concs        svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
-    conceptDefs  svc = []                                     -- The set of all concept definitions in this Fservice
+    conceptDefs  _   = []                                     -- The set of all concept definitions in this Fservice
     mors         svc = mors (rules svc++signals svc)          -- The set of all morphisms in this Fservice
     morlist      svc = morlist (rules svc++signals svc)       -- The list of all morphisms in this Fservice
     declarations svc = declarations (rules svc++signals svc)  -- The set of all declarations in this Fservice
@@ -128,7 +128,7 @@ module Data.Fspec ( Fspc(..)
     --properties is achieved as a result.
     rules     svc = [r| r<-fsv_rules svc]
     signals   svc = [r| r<-fsv_signals svc]
-    patterns  svc = []
+    patterns  _   = []
     objectdef svc = fsv_objectdef svc
     isa       svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
                     where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
@@ -184,7 +184,7 @@ module Data.Fspec ( Fspc(..)
 
    instance Identified Fservice where
      name fservice = name (fsv_objectdef fservice)
-     typ fservice = "f_Service"
+     typ _ = "f_Service"
 
    instance Identified FSid where
     name (FS_id nm) = nm

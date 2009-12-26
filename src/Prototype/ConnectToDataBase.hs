@@ -15,8 +15,8 @@
    import Version (versionbanner)
    import Data.Fspec
 
-   connectToDataBase :: Fspc -> Options -> String -> String
-   connectToDataBase fSpec options dbName
+   connectToDataBase :: Fspc -> Options -> String
+   connectToDataBase fSpec flags 
     = (chain "\n  " 
       ([ "<?php // generated with "++versionbanner
        , "require \"dbsettings.php\";"
@@ -38,7 +38,7 @@
        , "    stripslashes_deep($_REQUEST); "
        , "    stripslashes_deep($_COOKIE); "
        , "} "
-       , "$DB_slct = mysql_select_db('"++dbName++"',$DB_link);"
+       , "$DB_slct = mysql_select_db('"++dbName flags++"',$DB_link);"
        , "function firstRow($rows){ return $rows[0]; }"
        , "function firstCol($rows){ foreach ($rows as $i=>&$v) $v=$v[0]; return $rows; }"
        , "function DB_debug($txt,$lvl=0){"
@@ -89,7 +89,7 @@
        , "  }"
        , "}"
        , ""
-       ] ++ (ruleFunctions options fSpec)
+       ] ++ (ruleFunctions flags fSpec)
        ++
        [ ""
        , "if($DB_debug>=3){"
@@ -101,13 +101,13 @@
       )) ++ "\n?>"
 
    ruleFunctions :: Options -> Fspc -> [String]
-   ruleFunctions options fSpec
+   ruleFunctions flags fSpec
     = [ "\n  function checkRule"++show (nr rule)++"(){\n    "++
            (if isFalse rule'
-            then case language options of
+            then case language flags of
                   Dutch   ->"// Tautologie: "++showADLcode fSpec rule++"\n     "
                   English ->"// Tautology:  "++showADLcode fSpec rule++"\n     "
-            else (case language options of
+            else (case language flags of
                   Dutch   ->"// Overtredingen behoren niet voor te komen in ("
                   English ->"// No violations should occur in ("
                  )++showADLcode fSpec rule++")\n    "++
@@ -122,8 +122,8 @@
       where
        dbError :: Rule -> String
        dbError rule
-        = case language options of
+        = case language flags of
            Dutch   -> phpShow("Overtreding ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-                      phpShow(")\nreden: \""++explainArt options fSpec rule++"\"<BR>")++""
+                      phpShow(")\nreden: \""++explainArt flags fSpec rule++"\"<BR>")++""
            English -> phpShow("Violation ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-                      phpShow(")\nreason: \""++explainArt options fSpec rule++"\"<BR>")++""
+                      phpShow(")\nreason: \""++explainArt flags fSpec rule++"\"<BR>")++""
