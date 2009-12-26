@@ -238,10 +238,10 @@ handleFlags po flags =
                                       )
                           ]
       DclSrcEdge d -> [Len 1.2
-                      , ArrowHead noArrow
+                      ,ArrowHead (AType [(open,Normal)])    -- Geeft de richting van de relatie aan.
                       ,ArrowTail ( if crowfoot flags
                                    then crowfootArrowType False d
-                                   else plainArrowType False d
+                                   else noArrow
                                  )
                       ]
       DclTgtEdge d -> [Len 1.2
@@ -300,15 +300,13 @@ crowfootArrowType isHead d
          my_odot= ( open, DotArrow )
          my_crow :: ( ArrowModifier , ArrowShape )
          my_crow= ( open, Crow )
+
 plainArrowType :: Bool -> Declaration -> ArrowType
 plainArrowType isHead d
    = case isHead of 
-       True -> AType[ (ArrMod { arrowFill = if isFunction d
-                                            then FilledArrow
-                                            else OpenArrow
-                              , arrowSide = BothSides
-                              } , Normal)
-                    ]
+       True -> if isFunction d
+               then normal
+               else noArrow 
        False -> noArrow
 
 noMod :: ArrowModifier
