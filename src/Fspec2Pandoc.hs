@@ -689,43 +689,40 @@ serviceChap lev fSpec flags svc
                  then Str $ "In deze service zijn de volgende velden zichtbaar. "
                  else Str $ "This service has the following fields. "
                ]
-     , Para  $ [ TeX $ "\\begin{tabular}{|lll|}\\hline\n"
-               , if language flags==Dutch
-                 then TeX $ "veld&concept&relatie\\\\ \\hline\\hline\n"
-                 else TeX $ "field&concept&relation\\\\ \\hline\\hline\n"
-               ]++
-               [ TeX $ chain "&" [ latexEsc (fld_name f)              -- veld
-                                 , latexEscShw (target (fld_expr f))  -- concept
-                                 , "\\("++rel f++"\\)"                -- relatie
-                                 ]++"\\\\\n"
-               | f<-fsv_fields svc
-               ]++
-               [ TeX $ "\\hline\n\\end{tabular}"
-               ]
-     , Para  $ [ if language flags==Dutch
-                 then Str $ "Deze velden hebben de volgende eigenschappen. "
-                 else Str $ "These fields have the following properties. "
-               ]
-     , Para  $ [ TeX $ "\\begin{tabular}{|l|ccccc|}\\hline\n"
-               , if language flags==Dutch
-                 then TeX $ "veld&lijst&verplicht&nieuw&verwijderbaar&diepte\\\\ \\hline\\hline\n"
-                 else TeX $ "field&list&obligatory&new&remove&depth\\\\ \\hline\\hline\n"
-               ]++
-               [ TeX $ chain "&" [ latexEsc (fld_name f)              -- veld
-                                 , s fld_list f                       -- lijst
-                                 , s fld_must f                       -- verplicht veld
-                                 , s fld_insAble f                    -- nieuwe waardes mogen (anders alleen selecteren)
-                                 , s fld_delAble f                    -- nieuwe waardes mogen (anders alleen selecteren)
-                                 , show (fld_sLevel f)] ++ "\\\\\n"   -- servlet recursiediepte
-               | f<-fsv_fields svc
-               ]++
-               [ TeX $ "\\hline\n\\end{tabular}"
-               ]
+     , fields
      ]
      where s f fld = if f fld then "\\(\\surd\\)" else ""
            rel f = if fld_editable f
                    then showMathcode fSpec (makeInline (fld_mph f))
                    else ""
+           fields :: Block
+           fields = BulletList [recur (objctx (fsv_objectdef svc)) f| f<-fsv_fields svc]
+            where recur :: Expression -> Field -> [Block]
+                  recur e f | null (fld_sub f) = fld e f
+                            | otherwise        = fld e f ++
+                                                 [ BulletList [recur (F [e,fld_expr f']) f'| f'<-fld_sub f] ]
+           fld e f = [ Para [ Str $ fld_name f++if null args then "" else "("++chain ", " args++")" ]
+                     , Para [ Str "display on start: ", Math InlineMath $ showMathcode fSpec (conjNF e) ]
+                     ] {- ++
+                     [ Para [ Str $ "exec on insert: "++ showECA fSpec "\n>     "  (fld_onIns f arg)]
+                     | fld_insAble f, arg<-[error ("!TODO (module Fspec2Pandoc 707): hier moet een declaratie \"Delta\" staan")] ]
+-}
+            where args = ["lijst"        | fld_list    f]++
+                         ["verplicht"    | fld_must    f]++
+                         ["nieuw"        | fld_insAble f]++
+                         ["verwijderbaar"| fld_delAble f]
+                     
+
+  editable :: Expression -> Bool
+  editable (Tm Mph{})  = True
+  editable (Tm I{})    = True
+  editable _           = False
+
+  editMph :: Expression -> Morphism
+  editMph (Tm m@Mph{}) = m
+  editMph (Tm m@I{})   = m
+  editMph e            = error("!Fatal (module ADL2Fspec 417): cannot determine an editable declaration in a composite expression: "++show e)
+
 
   txtKnowledgeGraph :: [Block]
   txtKnowledgeGraph
@@ -948,7 +945,6 @@ class ShowMath a where
 instance ShowMath Rule where
  showMath r = error ("!Fatal (module Fspec2Pandoc 889): Please supply specification of the context in showMath "++showADL r)
  showMathcode fSpec r@(Sg p rule expla sgn nr pn signal) = "\\verb#SIGNAL # \\id{"++name signal++"}\\ \\verb# ON #"++ showMathcode fSpec rule
- showMathcode fSpec r@(Fr d expr _) = showMath d ++ "\n" ++ show (name d)++" = "++showMathcode fSpec expr
  showMathcode fSpec r
   | rrsrt r==Truth = "\\verb#ALWAYS # "++showMathcode fSpec (rrcon r)
   | rrsrt r==Implication = showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)

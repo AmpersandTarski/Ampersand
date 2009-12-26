@@ -286,7 +286,8 @@ where
     showHSname fld = "fld_" ++ (fld_name fld)
     showHS options indent fld
      = "Att "++       "{ fld_name     = "++                     show (fld_name     fld)
-       ++ indent++"    , fld_expr     = "++showHS options (indent++"      ") (fld_expr     fld)
+       ++ indent++"    , fld_sub      = "++showHS options (indent++"      ") (fld_sub  fld)
+       ++ indent++"    , fld_expr     = "++showHS options (indent++"      ") (fld_expr fld)
        ++ indent++"    , fld_mph      = "++
           ( if fld_editable fld
             then showHS options (indent++"      ") (fld_mph     fld)
@@ -416,11 +417,6 @@ where
                       ,", runum = " ++ show (runum r)
                       ,", r_pat = " ++ show (r_pat r)
                       ,", srrel = " ++ show(srrel r)
-                    ])++"}"
-           Fr{} -> (chain newIndent
-                    ["Fr{ frdec = " ++ showHS options "" (frdec r)
-                        ,", frcmp = " ++ "("++showHS options "" (frcmp r)++")"
-                        ,", r_pat = " ++ show (r_pat r)
                     ])++"}"
          where newIndent = indent ++ "  " 
 -- \***********************************************************************

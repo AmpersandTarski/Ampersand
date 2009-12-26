@@ -177,7 +177,6 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (fsisa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
    cptrule x@(Sg{})  = "SIGNAL: " ++ (cptrule$srsig x)
-   cptrule x@(Fr{})  = "Fr "
    cptrule x@(Ru{}) 
        | rrsrt x==Implication = printadl (Just fSpec) 0 (rrant x) ++ " |- " ++ (printadl (Just fSpec) 0$rrcon x)
        | rrsrt x==Equivalence = printadl (Just fSpec) 0 (rrant x) ++ " = " ++ (printadl (Just fSpec) 0$rrcon x)

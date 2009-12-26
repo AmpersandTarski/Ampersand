@@ -121,9 +121,7 @@ where
                                case r of
                                   Sg{} -> [nameToAttr (srrel r)]
                                   _    -> [mkAttr "type" (show rtype2)]
-                       runumAtt = case r of
-                                    Fr{} -> []
-                                    _    -> [mkAttr "ruleId" (show(runum r))]
+                       runumAtt = [mkAttr "ruleId" (show(runum r))]
                        rtype2 = case r of
                                  Ru{} -> rrsrt r
                                  _    -> Equivalence           
@@ -149,8 +147,6 @@ where
           Sg{}
                 ->  explainTree (srxpl r)
                  ++ [mkXmlTree (srsig r)]
-          Fr{}  -- represents an automatic computation, such as * or +.
-                ->  [still2bdone "Rule_Fr"]
         )
       where invariantString ::  String
             invariantString = case ruleType r of

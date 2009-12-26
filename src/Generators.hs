@@ -12,7 +12,7 @@ import System.FilePath        (combine,replaceExtension)
 import Options
 import FspecDef
 import ShowHS                 (fSpec2Haskell)
-import ShowADL                (printadl)
+import ShowADL
 import XML.ShowXMLtiny        (showXML)
 import Calc                   (deriveProofs)
 import Prototype.ObjBinGen    (phpObjServices)
@@ -76,7 +76,7 @@ doGenProto fSpec flags
      >> verboseLn flags ("Prototype files have been written to " ++  (dirPrototype flags) ++ "." )
      >> if (test flags) then verboseLn flags (show $ vplugs fSpec) else verboseLn flags ""
      where 
-     explainviols = concat [show p++": "++printadl (Just fSpec) 0 r++"\n"|(r,p)<-violations fSpec]
+     explainviols = concat [show p++": "++showADLcode fSpec r++"\n"|(r,p)<-violations fSpec]
 
 
 -- This function will generate all Pictures for a given Fspc. 
@@ -107,7 +107,7 @@ doGenFspec fSpec flags
                            writeFile outputFile (prettyPandoc thePandoc)
              FRtf   ->  do verboseLn flags "Generating Rich Text Format file."
                            writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
-             FLatex  -> do verboseLn flags "Generating TeX file."
+             FLatex  -> do verboseLn flags "Generating LaTeX file."
                            case texHdrFile flags of
                             Nothing -> writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=laTeXheader flags} thePandoc)
                             Just chFilename -> do customheader <- readFile chFilename

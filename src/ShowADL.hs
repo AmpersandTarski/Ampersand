@@ -367,13 +367,11 @@
 
    instance ShowADL Rule where
     showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
-    showADL r@(Fr d expr _) = showADL d ++ "\n" ++ show (name d)++" = "++showADL expr
     showADL r@(Ru{rrsrt=c,rrant=antc,rrcon=cons})
      | c==Truth = "ALWAYS "++showADL cons
      | c==Implication = showADL antc ++" |- "++showADL cons
      | c==Equivalence = showADL antc ++" = " ++showADL cons
     showADLcode fSpec r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADLcode fSpec rule
-    showADLcode fSpec r@(Fr d expr _) = showADLcode fSpec d ++ "\n" ++ show (name d)++" = "++showADLcode fSpec expr
     showADLcode fSpec r@(Ru{rrsrt=c,rrant=antc,rrcon=cons})
      | c==Truth = "ALWAYS "++showADLcode fSpec cons
      | c==Implication = showADLcode fSpec antc ++" |- "++showADLcode fSpec cons

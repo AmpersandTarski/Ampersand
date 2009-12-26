@@ -134,6 +134,7 @@ module Data.Fspec ( Fspc(..)
                     where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
 
    data Field  = Att { fld_name      :: String                 -- The name of this field
+                     , fld_sub       :: [Field]                -- all sub-fields
                      , fld_expr      :: Expression             -- The expression by which this field is attached to the service
                      , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
                      , fld_editable  :: Bool                   -- can this field be changed by the user of this service?

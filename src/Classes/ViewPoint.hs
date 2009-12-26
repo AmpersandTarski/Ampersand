@@ -80,12 +80,10 @@ where
     rules r    = case r of 
                  Ru{} -> [r| not (isSignal r)]
                  Sg{} -> []
-                 Fr{} -> []
                        
     signals r = case r of
                   Ru{} -> []
                   Sg{} -> [r| isSignal r]
-                  Fr{} -> [] 
 
     patterns r = [Pat{ ptnm  = ""
                      , ptrls = [r]

@@ -312,7 +312,6 @@ module Calc ( deriveProofs
                                            |cs<-[allClauses (srsig rule)], (_,hcs)<-cl_conjNF cs, hc<-hcs])
                        , "")
                      ] where prf = nfProof (normExpr (srsig rule))
-          Fr{} -> undefined 
         cleanup :: [(String,String)] -> [(String,String)]
         cleanup [x] = [x]
         cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)

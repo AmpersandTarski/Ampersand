@@ -446,9 +446,6 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                           _ -> IF Moeilijk 
                       } in s
     where
-        fields = recur 0 object
-         where recur i obj | null (objats obj) = [fld i obj]
-                           | otherwise         = [f| o<-objats obj, f<-recur (i+1) o]
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         depth :: ObjectDef -> Int
@@ -463,10 +460,12 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         nECArules  = map normECA ecaRs
         trigs :: ObjectDef -> [Declaration->ECArule]
         trigs obj  = [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
-        arg = error("!Todo (module ADL2Fspec 454): declaratie Delta invullen")
+        arg = error("!Todo (module ADL2Fspec 463): declaratie Delta invullen")
+        fields = [fld 0 o| o<-objats object]
         fld :: Int -> ObjectDef -> Field
         fld sLevel obj
          = Att { fld_name     = objnm obj
+               , fld_sub      = [fld (sLevel +1) o| o<-objats obj]
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)

@@ -183,7 +183,7 @@
    instance Pop Rule where
     put_gE gE cs rule 
        = case rule of
-          Ru{} -> rule{ rrant = if rrsrt rule == Automatic 
+          Ru{} -> rule{ rrant = if rrsrt rule == Truth 
                                  then error ("!Fatal (module CC_aux 187): illegal call to antecedent in put_gE cs ("++showADL rule++")")
                                  else put_gE gE cs (rrant rule)
                       , rrcon = put_gE gE cs (rrcon rule)
@@ -192,12 +192,9 @@
           Sg{} -> rule{ srsig = put_gE gE cs (srsig rule)
                       , srtyp = put_gE gE cs (srtyp rule)
                       }
-          Fr{} -> rule{ frdec = put_gE gE cs (frdec rule)
-                      , frcmp = put_gE gE cs (frcmp rule)
-                      }
     update ss rule
        = case rule of 
-          Ru{} -> rule{ rrant = if rrsrt rule == Automatic 
+          Ru{} -> rule{ rrant = if rrsrt rule == Truth 
                                  then error ("!Fatal (module CC_aux 201): illegal call to antecedent in update ss ("++showADL rule++")")
                                  else update ss (rrant rule)
                       , rrcon = update ss (rrcon rule)
@@ -206,12 +203,9 @@
           Sg{} -> rule{ srsig = update ss (srsig rule)
                       , srtyp = update ss (rrtyp rule)
                       }
-          Fr{} -> rule{ frdec = update ss (frdec rule)
-                      , frcmp = update ss (frcmp rule)
-                      }
     specialize t rule
        = case rule of 
-          Ru{} -> rule{ rrant = if rrsrt rule == Automatic 
+          Ru{} -> rule{ rrant = if rrsrt rule == Truth 
                                  then error ("!Fatal (module CC_aux 215): illegal call to antecedent in specialize t ("++showADL rule++")")
                                  else specialize t (rrant rule)
                       , rrcon = specialize t (rrcon rule)
@@ -220,10 +214,6 @@
           Sg{} -> rule{ srsig = specialize t (srsig rule)
                       , srtyp = specialize t (rrtyp rule)
                       }
-          Fr{} -> rule{ frdec = specialize t (frdec rule)
-                      , frcmp = specialize t (frcmp rule)
-                      }
-          
 
    instance Pop Expression where
     put_gE gE cs (Tm mph)     = Tm (put_gE gE cs mph)

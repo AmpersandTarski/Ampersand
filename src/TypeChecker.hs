@@ -18,7 +18,6 @@
 
 --REMARK -> In any expression, in case of multiple type errors, choose the innermost errors and yield the first one.
 --REMARK -> The ADL.Rule contains all kinds of structures typechecker only supports the one with constructor Ru and Sg.
---          Fr rules will generate a type error message, but the parser (see CC.hs) does not output Fr rules at the moment of writing this comment.
 --DESCR ->
 --         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
@@ -65,13 +64,13 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    (enriched, allproofs) = enrichArch arch  
    check3 = [(errproof,fp,rule) | (errproof@(NoProof{}),fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
    printcheck3 = [show errproof 
-                  ++ "\n   in " ++ printadl Nothing 0 rule   
+                  ++ "\n   in " ++ showADL rule   
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigRule rule)<-check3] 
               ++ [show errproof 
-                  ++ "\n   in service definition expression " ++ printadl Nothing 0 expr  
+                  ++ "\n   in service definition expression " ++ showADL expr  
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigObjDef expr)<-check3]
               ++ [show errproof 
-                  ++ "\n   in key definition expression " ++ printadl Nothing 0 expr  
+                  ++ "\n   in key definition expression " ++ showADL expr  
                   ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
    check4 = checkSvcNameUniqueness ctxs
    check5 = checkPopulations ctxs
@@ -117,14 +116,10 @@ renumber cx@(Ctx{}) = cx {ctxpats=renumberedPats,
    renumberRule :: Int -> Rule -> Rule
    renumberRule n rule 
       = case rule of
-          Ru{rrsrt = Automatic} -> rule{rrant = error ("!Fatal (module TypeChecker 120): illegal call to antecedent in renumberRule ("++showADL rule++")")
-                                       ,runum = n
-                                       }
           Ru{}                  -> rule{runum = n}
           Sg{}                  -> rule{srsig = renumberRule n (srsig rule)
                                        ,runum = n
                                        }
-          Fr{}                  -> rule
 
 
 addsgndecls ::Context -> Context

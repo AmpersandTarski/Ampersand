@@ -51,4 +51,3 @@ where
                               ,srtyp = sign rule
                               }
              where rule = subst (m',f) (srsig r)
-         Fr{}             -> undefined

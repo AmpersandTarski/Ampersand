@@ -39,12 +39,6 @@ where
            , runum :: Int               -- ^ rule number
            , r_pat :: String            -- ^ name of pattern in which it was defined.
            , srrel :: Declaration       -- ^ the signal relation
-           }
-  -- Fr t d expr pn  -- represents an automatic computation, such as * or +.
-      | Fr { --fraut :: AutType           -- ^ the type of automatic computation
-             frdec :: Declaration       -- ^ where the result is to be stored
-           , frcmp :: Expression        -- ^ expression to be computed
-           , r_pat :: String            -- ^ name of pattern in which it was defined.
            } deriving (Eq)
    data RuleType = Implication | Equivalence | Truth | Generalization | Automatic deriving (Eq,Show)
 
@@ -61,16 +55,12 @@ where
           Ru{rrsrt = Automatic     } -> showString ""
           Ru{rrsrt = Generalization} -> showString ""
           Sg{}                       -> showString$ "SIGNAL: " ++ (show$srsig x)
-          Fr{}                       -> showString "Fr"
         
    instance Numbered Rule where
     pos r = case r of
               Ru{}  ->  rrfps r
               Sg{}  ->  srfps r
-              Fr{}  ->  Nowhere
-    nr r = case r of
-              Fr{}  ->  0
-              _     ->  runum r
+    nr r = runum r
 
       
    instance Identified Rule where
@@ -81,11 +71,9 @@ where
     source r  = case r of
                   Ru{} -> fst (rrtyp r)
                   Sg{} -> fst (srtyp r)
-                  Fr{} -> error("!Fatal (module Rule 84): undefined source")
     target r  = case r of
                   Ru{} -> snd (rrtyp r)
                   Sg{} -> snd (srtyp r)
-                  Fr{} -> error("!Fatal (module Rule 88): undefined target")
 
    instance Explained Rule where
     explain _ r = case r of         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
@@ -141,20 +129,17 @@ where
    ruleType r = case r of 
                    Ru{} -> rrsrt r
                    Sg{} -> ruleType (srsig r)
-                   Fr{} -> Automatic
 
    antecedent :: Rule -> Expression
    antecedent r = case r of
                    Ru{rrsrt = Truth} -> error ("!Fatal (module Rule 148): illegal call to antecedent of rule "++show r)
                    Ru{} -> rrant r
                    Sg{} -> antecedent (srsig r)
-                   Fr{} -> frcmp r
                    
    consequent :: Rule -> Expression
    consequent r = case r of
                    Ru{} -> rrcon r
                    Sg{} -> consequent (srsig r)
-                   Fr{} -> error ("!Fatal (module Rule 157):  Tm (makeMph (frdec r)) might generate a loop.")
 
    multRules :: Declaration -> [Rule]
    multRules d
