@@ -140,9 +140,6 @@ where
            I{}                 -> True
            Mp1{}               -> True
     isNot mph  = isNot (makeDeclaration mph)   -- > tells whether the argument is equivalent to I-
-    isMph mph = case mph of 
-           Mph{}               -> True
-           _                   -> False
     isTrue mph = case mph of
            Mph{}               -> False
            V{}                 -> True
@@ -288,9 +285,6 @@ where
     isFalse _ = False
     isSignal d = case d of
            Sgn {}       -> deciss d
-           _            -> False
-    isMph d = case d of
-           Sgn {}       -> True
            _            -> False
     typeUniq d = case d of
            Sgn {}       -> typeUniq (desrc d) && typeUniq (detgt d)

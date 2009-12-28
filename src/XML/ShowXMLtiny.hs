@@ -113,26 +113,17 @@ where
            
    instance XML Rule where
      mkTag r = Tag rtype extraAtts
-                 where rtype = case r of
-                                  Sg{} -> "Signal"
-                                  _    -> "Rule"
+                 where rtype = if isSignal r then "Signal" else "Rule"
                        extraAtts
-                             = runumAtt ++
-                               case r of
-                                  Sg{} -> [nameToAttr (srrel r)]
-                                  _    -> [mkAttr "type" (show rtype2)]
+                             = runumAtt ++ [ if isSignal r then nameToAttr (srrel r) else mkAttr "type" (show (rrsrt r)) ]
                        runumAtt = [mkAttr "ruleId" (show(runum r))]
-                       rtype2 = case r of
-                                 Ru{} -> rrsrt r
-                                 _    -> Equivalence           
-     mkXmlTree r = Elem (mkTag r)
-        (case r of  
-          Ru{}
-                -> [Elem (simpleTag "Invariant") 
+     mkXmlTree r
+      = Elem (mkTag r)
+             ([Elem (simpleTag "Invariant") 
                             [PlainText invariantString ]
                    ]
                 ++ case (rrsrt r) of 
-                     Truth ->  [Elem (simpleTag "Allways")
+                     Truth ->  [Elem (simpleTag "Always")
                                       [mkXmlTree (consequent r)]]
                      Implication -> [Elem (simpleTag "If")
                                       [mkXmlTree (antecedent r)]]
@@ -143,18 +134,13 @@ where
                                  ++ [Elem (simpleTag "RHS")
                                       [mkXmlTree (consequent r)]] 
                      Generalization -> undefined
-                     Automatic      -> undefined    
-          Sg{}
-                ->  explainTree (srxpl r)
-                 ++ [mkXmlTree (srsig r)]
-        )
+             )
       where invariantString ::  String
             invariantString = case ruleType r of
                                  Truth -> showADL (consequent r)
                                  Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
                                  Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
                                  Generalization -> undefined
-                                 Automatic -> undefined
    
    instance XML KeyDef where
      mkTag k = Tag "KeyDef" [nameToAttr k]

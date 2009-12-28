@@ -8,7 +8,7 @@ import Collection (Collection (isc,(>-),empty, rd))
 import Char (toLower)
 import Strings (unCap,chain)
 import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
-import PredLogic (PredLogic(..),assemble, normRule,applyM,expr2predLogic)
+import PredLogic (PredLogic(..),ruleToPL,applyM,expr2predLogic)
 import Options
 
 instance Explained Expression where
@@ -96,7 +96,7 @@ explainArt flags fspc rul  -- TODO Geef een mooie uitleg van deze regel.
       then case language flags of
               English   -> "Artificial explanation: "
               Dutch     -> "Kunstmatige uitleg: " 
-           ++(lang flags.assemble.normRule) rul
+           ++(lang flags.ruleToPL) rul
       else explain flags rul
 
 explainRule :: Options -> Rule -> String
@@ -105,7 +105,7 @@ explainRule options r
     then case language options of
             English -> "Artificial explanation: "
             Dutch   -> "Kunstmatige uitleg: "
-         ++(lang options.assemble.normRule) r
+         ++(lang options.ruleToPL) r
     else (if explain options r=="NONE" then "" else explain options r)
 
 lang :: Options -> PredLogic -> String

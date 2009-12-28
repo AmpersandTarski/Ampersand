@@ -408,15 +408,8 @@ where
                       ,", runum = " ++ show (runum r)
                       ,", r_pat = " ++ show (r_pat r)
                       ,", r_usr = " ++ show (r_usr r)
-                    ])++"}"
-           Sg{} -> (chain newIndent
-                    ["Sg{ srfps = " ++ "("++showHS flags "" (srfps r)++")"
-                      ,", srsig = " ++ "("++showHS flags "" (srsig r)++")"
-                      ,", srxpl = " ++ show (srxpl r)
-                      ,", srtyp = " ++ "("++showHS flags "" (srtyp r)++")"
-                      ,", runum = " ++ show (runum r)
-                      ,", r_pat = " ++ show (r_pat r)
-                      ,", srrel = " ++ show(srrel r)
+                      ,", r_sgl = " ++ show (r_sgl r)
+                      ,", srrel = " ++ "("++showHS flags "" (srrel r)++")"
                     ])++"}"
          where newIndent = indent ++ "  " 
 -- \***********************************************************************
@@ -428,7 +421,6 @@ where
      showHS _ _ Equivalence    = "Equivalence"
      showHS _ _ Implication    = "Implication"
      showHS _ _ Generalization = "Generalization"
-     showHS _ _ Automatic      = "Automatic"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: KeyDef                        ***

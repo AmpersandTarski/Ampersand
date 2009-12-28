@@ -78,7 +78,7 @@
    --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid, (etc?)? Answer: check if errors can be produced without reserved words. If so add reserved words, otherwise don't
    --TODO -> sort on file position
    --TODO -> where do all the Other Topics patterns come from, it's not just one pattern? Answer: they will disappear when revising FTheme
-   --TODO -> RULE cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
+   --TODO -> ALWAYS cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
    --TODO -> ALWAYS pProps (ObjectDef) is ignored. It may be enabled some day to communicate interface policies
    --TODO -> move the flips from Morphism to Expression data type
    --TODO -> remove application of double complement rule from the parser
@@ -210,34 +210,17 @@
                  _     -> mp
 
    instance PrintADL Rule where
-    printadl fSpec i r' = 
-      let r=nonambigRule fSpec r'
-      in
-      case r of
-       -- pSignal -> ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` 
-       --            (Mph "" Nowhere [] (cptAnything,cptAnything) True 
-       --                    (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False))
-       -- pMorphism -> Mph nm ... (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/=""))
-       --Declaration srrel only has a name of the parsed morphism. 
-       --So name on Morphism must be the inverse of pMorphism => the inverse of name on Declaration.
-       --reason:  name m = name (makeDeclaration m) 
-       --  and  
-       --         name (Sgn nm _ _ _ _ _ _ _ _ _ _ _) = nm
-       --         name (Isn _ _)                      = "I"
-       --         name (Iscompl _ _)                  = "-I"
-       --         name (Vs _ _)                       = "V"
-       --This is not the inverse, but it is a bit what you want because it throws away flips and mphats and complements etc which we do not want in signal names, only I -I and V will return which we actually do not want, but probably nobody ever makes an attempt, thus...
-       --WHY -> is a signal name parsed as a Morphism?
-      --REMARK -> the rule in Sg is equivalent to the rule without SIGNAL .. ON prefix
-      Sg{} -> "SIGNAL" ++ name (srrel r) ++ "ON" ++ printadl fSpec i (srsig r)
-      Ru{rrsrt=rt} -> let
-                      str1 = if rt==Truth then "RULE " 
-                             else printadl fSpec i (rrant r) 
-                                  ++ if rt==Implication then " |- " else " = "
-                      str2 = printadl fSpec i (rrcon r)
-                      str3 = if null (rrxpl r) then "" 
-                             else lb ++ "EXPLANATION \"" ++ (rrxpl r) ++ "\""
-                      in str1 ++ str2 ++ str3
+    printadl fSpec i r'
+     = "RULE " ++ name (srrel r) ++
+       ( if isSignal r then " SIGNALS " else " MAINTAINS " ) ++ str1 ++ str2 ++ str3
+       where
+         r=nonambigRule fSpec r'
+         str1 = if rrsrt r==Truth then "ALWAYS " 
+                else printadl fSpec i (rrant r) 
+                     ++ if rrsrt r==Implication then " |- " else " = "
+         str2 = printadl fSpec i (rrcon r)
+         str3 = if null (rrxpl r) then "" 
+                else lb ++ "EXPLANATION \"" ++ (rrxpl r) ++ "\""
 
    instance PrintADL [Rule] where
     printadl fSpec i rs = adlprintlistlb fSpec i rs
@@ -366,16 +349,22 @@
 
 
    instance ShowADL Rule where
-    showADL r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADL rule
-    showADL r@(Ru{rrsrt=c,rrant=antc,rrcon=cons})
-     | c==Truth = "ALWAYS "++showADL cons
-     | c==Implication = showADL antc ++" |- "++showADL cons
-     | c==Equivalence = showADL antc ++" = " ++showADL cons
-    showADLcode fSpec r@(Sg p rule expla sgn nr pn signal) = "SIGNAL "++name signal++" ON "++ showADLcode fSpec rule
-    showADLcode fSpec r@(Ru{rrsrt=c,rrant=antc,rrcon=cons})
-     | c==Truth = "ALWAYS "++showADLcode fSpec cons
-     | c==Implication = showADLcode fSpec antc ++" |- "++showADLcode fSpec cons
-     | c==Equivalence = showADLcode fSpec antc ++" = " ++showADLcode fSpec cons
+    showADL r
+     = (if isSignal r
+       then "RULE "++name r++" SIGNALS "
+       else "RULE "++name r++" MAINTAINS ")++
+       case rrsrt r of
+            Truth       -> showADL (rrcon r)
+            Implication -> showADL (rrant r) ++" |- "++showADL (rrcon r)
+            Equivalence -> showADL (rrant r) ++" = " ++showADL (rrcon r)
+    showADLcode fSpec r
+     = (if isSignal r
+       then "RULE "++name r++" SIGNALS "
+       else "RULE "++name r++" MAINTAINS ")++
+       case rrsrt r of
+            Truth       -> showADLcode fSpec (rrcon r)
+            Implication -> showADLcode fSpec (rrant r) ++" |- "++showADLcode fSpec (rrcon r)
+            Equivalence -> showADLcode fSpec (rrant r) ++" = " ++showADLcode fSpec (rrcon r)
 
    instance ShowADL Gen where
     showADL (G pos g s _) = "GEN "++showADL s++" ISA "++show g

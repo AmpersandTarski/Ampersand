@@ -46,9 +46,8 @@ where
                             , objats  = map objectdef (ctxpats context)
                             , objstrs = []
                             }
-    rules     context = (   rules (ctxpats context)
-                         ++ [r| r<-ctxrs context, not (isSignal r)] )
-    signals   context = rd ([r| r<-ctxrs context,      isSignal r ] ++ signals (ctxpats context))
+    rules     context = rules   (ctxpats context) ++ [r| r<-ctxrs context, not (isSignal r)]
+    signals   context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r ]
     patterns  context = ctxpats context
     isa       context = ctxisa  context
 
@@ -72,13 +71,8 @@ where
                          , objats  = []
                          , objstrs = []
                          }
-    rules r    = case r of 
-                 Ru{} -> [r| not (isSignal r)]
-                 Sg{} -> []
-                       
-    signals r = case r of
-                  Ru{} -> []
-                  Sg{} -> [r| isSignal r]
+    rules r    = [r| not (isSignal r)]
+    signals r  = [r| isSignal r]
 
     patterns r = [Pat{ ptnm  = ""
                      , ptrls = [r]

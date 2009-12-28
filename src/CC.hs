@@ -9,14 +9,15 @@
    import CC_aux      (pKey_pos ,pVarid_val_pos, pConid_val_pos, pString_val_pos )
 
    keywordstxt :: [String]
-   keywordstxt       = [ "RULE", "CONTEXT", "ENDCONTEXT", "EXTENDS"
+   keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"
                        , "SERVICE", "INITIAL", "SQLPLUG", "PHPPLUG"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP"
-                       , "ALWAYS", "RELATION", "CONCEPT", "KEY"
+                       , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON"
+                       , "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V", "S"
-                       , "PRAGMA", "EXPLANATION", "SIGNAL", "ON", "COMPUTING", "INSERTING", "DELETING"
+                       , "PRAGMA", "EXPLANATION"
                        , "ONE", "BIND", "TOPHP", "BINDING"
                        ]
    keywordsops :: [String]
@@ -30,21 +31,21 @@
 
 
 
-   pArchitecture    :: Bool -> Parser Token Architecture
-   pArchitecture beep = Arch <$> pList1 (pContext beep)
+   pArchitecture        :: Parser Token Architecture
+   pArchitecture = Arch <$> pList1 pContext
 
    pBind             :: Parser Token (Declaration,String)
    pBind              = rebuild <$ pKey "BIND" <*> pDeclaration <* pKey "TOPHP" <*> (pConid <|> pString)
                        where rebuild d s = (d,s)
 
-   pContext         :: Bool -> Parser Token Context
-   pContext beep     = rebuild <$ pKey "CONTEXT" <*> pConid <*>
+   pContext         :: Parser Token Context
+   pContext  = rebuild <$ pKey "CONTEXT" <*> pConid <*>
                                   ((rebexpr <$ pKey ":" <*> pExpr <*> 
                                   --     (pSpec '{' *> pList1Sep (pSpec ';') pBind <* pSpec '}')
                                        ((pKey "BINDING" *> pList1Sep (pSpec ',') pBind) `opt` [])
                                     ) `opt` universe) <*>
                                   ((pKey "EXTENDS" *> pList1Sep (pSpec ',') pConid) `opt` []) <*>
-                                  pList (pContextElement beep) <* pKey "ENDCONTEXT"
+                                  pList pContextElement <* pKey "ENDCONTEXT"
                        where  
                        rebexpr x y = (x,y)
                        universe = (Tm$V [] (cptAnything,cptAnything),[]) --default: the universe
@@ -69,20 +70,20 @@
                        | CSqlPlug ObjectDef
                        | CPhpPlug ObjectDef
 
-   pContextElement  :: Bool -> Parser Token ContextElement
-   pContextElement beep = CPat <$> pPattern beep <|>
-                          CDcl <$> pDeclaration  <|>
-                          CCon <$> pConceptDef   <|>
-                          CKey <$> pKeyDef       <|>
-                          CObj <$> pObjDef       <|>
-                          CSqlPlug<$> pSqlplug      <|>
-                          CPhpPlug<$> pPhpplug      <|>
-                          CPop <$ pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
+   pContextElement        :: Parser Token ContextElement
+   pContextElement = CPat <$> pPattern         <|>
+                     CDcl <$> pDeclaration     <|>
+                     CCon <$> pConceptDef      <|>
+                     CKey <$> pKeyDef          <|>
+                     CObj <$> pObjDef          <|>
+                     CSqlPlug<$> pSqlplug      <|>
+                     CPhpPlug<$> pPhpplug      <|>
+                     CPop <$ pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
 
-   pPattern         :: Bool -> Parser Token Pattern
-   pPattern beep     = rebuild <$ pKey "PATTERN" <*> (pConid <|> pString)
-                               <*> pList (pPatElem beep)
-                               <* pKey "ENDPATTERN"
+   pPattern         :: Parser Token Pattern
+   pPattern  = rebuild <$  pKey "PATTERN" <*> (pConid <|> pString)
+                       <*> pList pPatElem
+                       <*  pKey "ENDPATTERN"
                        where
                          rebuild :: String -> [PatElem] -> Pattern
                          rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes]
@@ -93,49 +94,37 @@
                      | Pc ConceptDef
                      | Pk KeyDef
 
-   pPatElem         :: Bool -> Parser Token PatElem
-   pPatElem beep     = Pr <$> pRule beep   <|>
-                       Pg <$> pGen         <|>
-                       Pm <$> pDeclaration <|>
-                       Pc <$> pConceptDef  <|>
+   pPatElem         :: Parser Token PatElem
+   pPatElem  = Pr <$> pRule <|>
+                       Pg <$> pGen          <|>
+                       Pm <$> pDeclaration  <|>
+                       Pc <$> pConceptDef   <|>
                        Pk <$> pKeyDef
 
    pSignal          :: Parser Token Morphism
-   pSignal           = ( pKey "SIGNAL" *> pMorphism <* pKey "ON" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False []))
+   pSignal           = pKey "SIGNAL" *> pMorphism <* pKey "ON"       <|>
+                         pKey "RULE" *> pMorphism <* pKey "SIGNALS"
+   pAlways          :: Parser Token Morphism
+   pAlways           = ( pKey "RULE" *> pMorphism <* pKey "MAINTAINS" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False ""))
 
-
-
-
-
-   pRule            :: Bool -> Parser Token Rule
-   pRule beep        = hc <$> pSignal <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       kc <$> pSignal <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       dc <$> pSignal <*> pExpr <*> pKey_pos "="  <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
-                       ac <$> pSignal <*> pKey_pos "RULE"         <*> pExpr <*> pComputing <*> ((pKey "EXPLANATION" *> pString) `opt` [])
+   pRule            :: Parser Token Rule
+   pRule     = hc True  <$> pSignal <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       kc True  <$> pSignal <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       dc True  <$> pSignal <*> pExpr <*> pKey_pos "="  <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       ac True  <$> pSignal <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       hc False <$> pAlways <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       kc False <$> pAlways <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       dc False <$> pAlways <*> pExpr <*> pKey_pos "="  <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+                       ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
-                        hc m' antc pos' cons _ expl
-                         | not beep && name m'=="" = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True
-                         | otherwise  = Sg pos' (Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] expl pos' 0 True [])
-                        kc m' cons pos' antc cpu' expl = hc m' antc pos' cons cpu' expl
-                        dc m' defd pos' expr _ expl
-   {- diagnosis          | (\(FilePos (_,Pos l c,_))->l==diagl && c>diagc) pos' = error ("!Diagnosis (module CC 121): "++showADL (Ru 'E' defd pos' expr cpu' expl (cptAnything,cptAnything) 0 "" True))  -}
-                         | not beep && name m'=="" = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
-                         | otherwise  = Sg pos' (Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True [])
-                        ac m'      pos' expr _ expl
-                         | not beep && name m'=="" = Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True
-                         | otherwise  = Sg pos' (Ru Truth defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True) expl (cptAnything,cptAnything) 0 "" (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True [])
+                        hc isSg m' antc pos' cons expl
+                          = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True "")
+                        kc isSg m' cons pos' antc expl = hc isSg m' antc pos' cons expl
+                        dc isSg m' defd pos' expr expl
+                          = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True "")
+                        ac isSg m' expr expl
+                          = Ru Truth defd (Adl.pos m') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" (Adl.pos m') 0 True "")
                          where defd=error ("!Fatal (module CC 127): defd undefined in pRule "++showADL expr)
-
---   data PCompu       = Uc [Morphism]
---                     | Ui [Morphism]
---                     | Ud [Morphism]
---                     | Un
-
-   pComputing       :: Parser Token Expressions
-   pComputing        = (f <$ pKey "COMPUTING" <*> pList1Sep (pSpec ',') (pExpr) {- <|>
-                        f <$ pKey "INSERTING" <*> pList1Sep (pSpec ',') (pExpr) <|>
-                        f <$ pKey "DELETING" <*> pList1Sep (pSpec ',') (pExpr) -} ) `opt` []
-                       where f ms = ms
 
    pGen             :: Parser Token Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
@@ -159,8 +148,6 @@
    preStr           = g <$> pList1 (pKey "-")
                        where
                         g xs = if odd (length cs) then take 1 cs else [] where cs = concat xs
-
-
 
    pExpr            :: Parser Token Expression
    pExpr             = f <$> pList1Sep (pKey "\\/") pFactorI
@@ -227,7 +214,7 @@
                       -- where c str = C str (==) []
 
 -- WAAROM (SJ) heeft een label (optioneel) strings?
--- ANTWOORD (GM) omdat we nog geen fatsoenlijk binding mechanisme hebben voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
+-- DAAROM (GM) omdat we nog geen fatsoenlijk binding mechanisme hebben voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
    pLabel           :: Parser Token Label
    pLabel            = lbl <$> (pVarid_val_pos <|> pConid_val_pos <|> pString_val_pos)
                            <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 phpId) <* pSpec '}') `opt` [])
@@ -239,10 +226,13 @@
    phpId             = pVarid <|> pConid <|> pString
 
    pConceptDef      :: Parser Token ConceptDef
-   pConceptDef       = Cd <$> pKey_pos "CONCEPT" <*> (pConid <|> pString) <*> pString <*> (pString `opt` "")
+   pConceptDef       = Cd <$> pKey_pos "CONCEPT"
+                          <*> (pConid <|> pString)   -- the concept name
+                          <*> pString                -- the definition text
+                          <*> (pString `opt` "")     -- a reference to the source of this definition.
 
 
--- A key definition normally looks like:   KEY onaddress: Person(name, address),
+-- A key definition looks like:   KEY Person(name, address),
 -- which means that name<>name~ /\ address<>addres~ |- I[Person].
 -- You may also use an expression on each attribute place, for example: KEY onpassport: Person(nationality, passport;documentnr),
 -- which means that nationality<>nationality~ /\ passport;documentnr<>(passport;documentnr)~ |- I[Person].

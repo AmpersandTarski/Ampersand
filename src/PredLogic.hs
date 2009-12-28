@@ -1,7 +1,5 @@
   module PredLogic 
-              ( normRule
-              , normRL
-              , assemble
+              ( ruleToPL
               , expr2predLogic
               , PredLogic(Forall, Exists, Implies, Equiv, Conj, Disj, Not, Pred, Rel, Funs)
               , predLshow
@@ -83,11 +81,11 @@
       where
        vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
 
-   normRL r = normRule r -- try this (not quite OK, though...): head [ (makeRule r) c| c <- (simplify . shiftL . normExpr) r]
 
    ruleToPL :: Rule -> PredLogic
    ruleToPL = assemble . normRule
 
+-- normRule is bedoeld om een regel in de juiste vorm te brengen voor assemblage....
    normRule :: Rule -> Rule
    normRule r@(Ru{rrsrt=Truth})
     = r{rrant=error ("!Fatal (module PredLogic 93): illegal reference to antecedent in normRule ("++showADL r++")")}
@@ -105,8 +103,6 @@
       | isUni l && isTot l = move (init as) (cs++[flp l])
       | otherwise      = (as,cs)
       where h=head as; l=last as
-   normRule s@Sg{}
-     = s{srsig=r,srtyp=sign r} where r=normRule (srsig s)
    normRule r = r
 
    assemble :: Rule -> PredLogic

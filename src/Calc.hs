@@ -248,70 +248,57 @@ module Calc ( deriveProofs
       chain "\n     " [testService fSpec o| o<-serviceS fSpec]++
       "\n--------------\n"
       where 
-        derivation rule = 
-         case rule of
-          Ru{} -> [ (showADL rule, if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
-                  , (showPr prf  , "")
-                  ]++
-                  if (rrsrt rule)==Truth then [] else
-                     [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
-                        (cfProof. Cp . normExpr) rule++"\n"
-                       , "")
-                     , ("\nConjuncts:\n     "++
-                        chain "\n     " (rd[ showADL conjunct
-                                           | conjunct<-conjuncts rule])
-                       , "")
-                     , ("\n"++showClause fSpec (allClauses rule)
-                       , "")
-                     , ("\nAvailable code fragments on rule "++show (nr rule)++":\n     "++
-                          chain "\n     " [showADL (reprAsRule rule r)++ " yields\n"++chain "\n\n"
-                                          [ "event = "++show ev++" "++showADL m++"\n"++
-                                            showADL r++"["++showADL m++":="++showADL (actSem ev m (delta (sign m)))++"] = r'\n"++
-                                            "r'    = "++cfProof r'++"\n"++
-                                            "viols = r'-"++cfProof (Cp r')++"\n"++
-                                            "violations, considering that the valuation of "++showADL m++" has just been changed to "++showADL (actSem ev m (delta (sign m)))++
-                                            "            "++cfProof (Cp r) -- ++"\n"++
-                                      --      "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
-                                      --         cfProof (Fu[Cp r,r'])++"\n"++
-                                      --      "delta: r-/\\r' = "++cfProof (Fi[notCp r,r'])++
-                                      --      "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
-                                      --      (if null (lambda ev (Tm m) r)
-                                      --       then "lambda "++showADL m++" ("++showADL r++") = empty\n"
-                                      --       else {- for debug purposes:
-                                      --               "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
-                                      --               "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
-                                      --               "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++ -}
-                                      --            if (isTrue.conjNF) (Fu[Cp r,r'])
-                                      --            then "A reaction is not required, because  r |- r'. Proof:"++cfProof (Fu[Cp r,r'])++"\n"
-                                      --            else if checkMono r ev m
-                                      --            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
-                                      --            else let Tm delt = delta (sign m) in
-                                      --                 "An appropriate reaction on this event is\n"++
-                                      --                 showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)
-                                      --      )
-                                          | m<-rd [m'|x<-mors r, m'<-[x,flp x], inline m', not (isIdent m')] -- TODO: include proofs that allow: isIdent m'
-                                          , ev<-[Ins,Del]
-                                          , r'<-[subst (m, actSem ev m (delta (sign m))) r]
-                                      --  , viols<-[conjNF (Cp r')]
-                                          , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
-                                         | r<-[hc| cs<-[allClauses rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
-                                         ]
-                       , "")
-                     ] where prf = nfProof (normExpr rule)
-                             cfProof = showPr . nfPr True False . simplify
-                             showPr = showProof (showADLcode fSpec)
-          Sg{} ->    [ (showADL rule          , if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
-                     , (showProof (showADLcode fSpec) prf      , "")
-                     ]++
-                     [ ("\nConjuncts:\n     "++
-                        chain "\n     " (rd[showADL conjunct
-                                           |conjunct<-conjuncts (srsig rule)])
-                       , "")
-                     , ("\nClauses:\n     "++
-                        chain "\n     " (rd[showADL (reprAsRule (srsig rule) hc)
-                                           |cs<-[allClauses (srsig rule)], (_,hcs)<-cl_conjNF cs, hc<-hcs])
-                       , "")
-                     ] where prf = nfProof (normExpr (srsig rule))
+        derivation rule 
+         = [ (showADL rule, if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
+           , (showPr prf  , "")
+           ]++
+           if (rrsrt rule)==Truth then [] else
+              [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
+                 (cfProof. Cp . normExpr) rule++"\n"
+                , "")
+              , ("\nConjuncts:\n     "++
+                 chain "\n     " (rd[ showADL conjunct
+                                    | conjunct<-conjuncts rule])
+                , "")
+              , ("\n"++showClause fSpec (allClauses rule)
+                , "")
+              , ("\nAvailable code fragments on rule "++show (nr rule)++":\n     "++
+                   chain "\n     " [showADL (reprAsRule rule r)++ " yields\n"++chain "\n\n"
+                                   [ "event = "++show ev++" "++showADL m++"\n"++
+                                     showADL r++"["++showADL m++":="++showADL (actSem ev m (delta (sign m)))++"] = r'\n"++
+                                     "r'    = "++cfProof r'++"\n"++
+                                     "viols = r'-"++cfProof (Cp r')++"\n"++
+                                     "violations, considering that the valuation of "++showADL m++" has just been changed to "++showADL (actSem ev m (delta (sign m)))++
+                                     "            "++cfProof (Cp r) -- ++"\n"++
+                               --      "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
+                               --         cfProof (Fu[Cp r,r'])++"\n"++
+                               --      "delta: r-/\\r' = "++cfProof (Fi[notCp r,r'])++
+                               --      "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
+                               --      (if null (lambda ev (Tm m) r)
+                               --       then "lambda "++showADL m++" ("++showADL r++") = empty\n"
+                               --       else {- for debug purposes:
+                               --               "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
+                               --               "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
+                               --               "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++ -}
+                               --            if (isTrue.conjNF) (Fu[Cp r,r'])
+                               --            then "A reaction is not required, because  r |- r'. Proof:"++cfProof (Fu[Cp r,r'])++"\n"
+                               --            else if checkMono r ev m
+                               --            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
+                               --            else let Tm delt = delta (sign m) in
+                               --                 "An appropriate reaction on this event is\n"++
+                               --                 showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)
+                               --      )
+                                   | m<-rd [m'|x<-mors r, m'<-[x,flp x], inline m', not (isIdent m')] -- TODO: include proofs that allow: isIdent m'
+                                   , ev<-[Ins,Del]
+                                   , r'<-[subst (m, actSem ev m (delta (sign m))) r]
+                               --  , viols<-[conjNF (Cp r')]
+                                   , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
+                                  | r<-[hc| cs<-[allClauses rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
+                                  ]
+                , "")
+              ] where prf = nfProof (normExpr rule)
+                      cfProof = showPr . nfPr True False . simplify
+                      showPr = showProof (showADLcode fSpec)
         cleanup :: [(String,String)] -> [(String,String)]
         cleanup [x] = [x]
         cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)
@@ -497,7 +484,7 @@ module Calc ( deriveProofs
      start Del  = (Fi [Tm m',Cp (delta (sign m'))],Tm m')
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
-                                       , rrant = error ("!Fatal (module Calc 501): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
+                                       , rrant = error ("!Fatal (module Calc 500): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
                                        , rrfps = Nowhere
                                        , rrcon = pos'
                                        , rrxpl = ""

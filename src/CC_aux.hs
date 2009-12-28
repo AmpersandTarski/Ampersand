@@ -189,9 +189,6 @@
                       , rrcon = put_gE gE cs (rrcon rule)
                       , rrtyp = put_gE gE cs (rrtyp rule)
                       }
-          Sg{} -> rule{ srsig = put_gE gE cs (srsig rule)
-                      , srtyp = put_gE gE cs (srtyp rule)
-                      }
     update ss rule
        = case rule of 
           Ru{} -> rule{ rrant = if rrsrt rule == Truth 
@@ -200,9 +197,6 @@
                       , rrcon = update ss (rrcon rule)
                       , rrtyp = update ss (rrtyp rule)
                       }
-          Sg{} -> rule{ srsig = update ss (srsig rule)
-                      , srtyp = update ss (rrtyp rule)
-                      }
     specialize t rule
        = case rule of 
           Ru{} -> rule{ rrant = if rrsrt rule == Truth 
@@ -210,9 +204,6 @@
                                  else specialize t (rrant rule)
                       , rrcon = specialize t (rrcon rule)
                       , rrtyp = specialize t (rrtyp rule)
-                      }
-          Sg{} -> rule{ srsig = specialize t (srsig rule)
-                      , srtyp = specialize t (rrtyp rule)
                       }
 
    instance Pop Expression where

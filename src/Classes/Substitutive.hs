@@ -47,7 +47,3 @@ where
                               else r
              where antc = subst (m',f) (rrant r)
                    cons = subst (m',f) (rrcon r)
-         Sg{}             -> r{srsig = rule
-                              ,srtyp = sign rule
-                              }
-             where rule = subst (m',f) (srsig r)

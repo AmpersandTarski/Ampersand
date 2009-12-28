@@ -176,12 +176,11 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    --picturelink =  "./img/" ++ name fSpec++".png"
    cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (fsisa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
-   cptrule x@(Sg{})  = "SIGNAL: " ++ (cptrule$srsig x)
-   cptrule x@(Ru{}) 
-       | rrsrt x==Implication = printadl (Just fSpec) 0 (rrant x) ++ " |- " ++ (printadl (Just fSpec) 0$rrcon x)
-       | rrsrt x==Equivalence = printadl (Just fSpec) 0 (rrant x) ++ " = " ++ (printadl (Just fSpec) 0$rrcon x)
-       | rrsrt x==Truth = printadl (Just fSpec) 0 (rrcon x)
-       | otherwise = []
+   cptrule x | isSignal x =  "SIGNAL: " ++ (cptrule$ x{r_sgl=False})
+             | rrsrt x==Implication = printadl (Just fSpec) 0 (rrant x) ++ " |- " ++ (printadl (Just fSpec) 0$rrcon x)
+             | rrsrt x==Equivalence = printadl (Just fSpec) 0 (rrant x) ++ " = " ++ (printadl (Just fSpec) 0$rrcon x)
+             | rrsrt x==Truth = printadl (Just fSpec) 0 (rrcon x)
+             | otherwise = []
    cpttype x = name(source x)++"*"++(name$target x)
    --DESCR -> userrules are user-defined rules, 
    --         multrules are rules defined by a multiplicity, 

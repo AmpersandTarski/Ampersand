@@ -253,25 +253,6 @@ where
         (K1 e')  -> typeUniq e'
         (Cp e')  -> typeUniq e'
 
-    isMph expr = case expr of
-        (Tm mph)  -> isMph mph
-        (Tc f)    -> isMph f
-        (F  [])   -> False
-        (F  [f])  -> isMph f
-        (F  (_:_))-> False       -- WAAROM?? Stef, is dit goed? Het ziet er zo raar uit... (Vergelijk ook deze versie met de vorige.)
-        (Fd [])   -> False
-        (Fd [f])  -> isMph f
-        (Fd (_:_))-> False
-        (Fu [])   -> False
-        (Fu [f])  -> isMph f
-        (Fu (_:_))-> False
-        (Fi [])   -> False
-        (Fi [f])  -> isMph f
-        (Fi (_:_))-> False
-        (K0 e')   -> isMph e'
-        (K1 e')   -> isMph e'
-        (Cp _)    -> False
-        
     isTrue expr = case expr of
         (F [])    -> False -- > fout voor singletons (TODO)
         (F ts) | isFunction    (head ts) -> (isTrue. F .tail) ts

@@ -117,16 +117,14 @@ uniqueMphsE i (K0 ex) = uniqueMphsE i ex
 uniqueMphsE i (K1 ex) = uniqueMphsE i ex
 
 fromRule :: Rule -> AdlExpr
-fromRule (Ru{rrsrt=Implication,rrant=ex,rrcon=rex}) = Implicate (fst lft) (fst rght) unknowntype
+fromRule r@(Ru{})
+ = case rrsrt r of
+    Implication -> Implicate (fst lft) (fst rght) unknowntype
+    Equivalence -> Equality  (fst lft) (fst rght) unknowntype
+    Truth       -> fst (uniqueMphsE 0 (rrcon r))
    where
-   lft = uniqueMphsE 0 ex
-   rght = uniqueMphsE (snd lft) rex
-fromRule (Ru{rrsrt=Equivalence,rrant=ex,rrcon=rex}) = Equality (fst lft) (fst rght) unknowntype
-   where
-   lft = uniqueMphsE 0 ex
-   rght = uniqueMphsE (snd lft) rex
-fromRule (Ru{rrsrt=Truth,rrcon=sb}) = fst (uniqueMphsE 0 sb)
-fromRule (Sg{srsig=rule}) = fromRule rule
+   lft = uniqueMphsE 0 (rrant r)
+   rght = uniqueMphsE (snd lft) (rrcon r)
 fromRule rule = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function fromRule: " ++
                         "Rule type has not been implemented."++show rule++"." 
 

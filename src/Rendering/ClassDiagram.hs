@@ -9,7 +9,7 @@
    import Typology (Inheritance(Isa))
    import Adl ( Contexts,Morphical,ViewPoint,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
               , Morphic(..)
-              , isa,isFlpFunction,isFunction,isSignal,mors,sign
+              , isa,isFlpFunction,isFunction,mors,sign
               , Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
    import Auxiliaries (eqCl)
    import Data.Plug
@@ -17,36 +17,6 @@
    import FspecDef
    import Adl.ECArule
 
- --  import ShowADL
- --  import CC_aux  
-         --     ( Context, Concept, Object(concept, attributes, ctx)
-         --     , showADL, Morphical
-         --     , ViewPoint( rules)
-         --     , isProperty, target, concs, source
-         --     , declaration, declarations, keys
-         --     , flp, multiplicities, isa, isFunction, isFlpFunction
-         --     , Morphism(Mph)
-         --     , Prop(Sur,Inj)
-         --     , posNone, isSignal, mors, sign
-         --     )
-   --import HtmlFilenames (fnContext)
-           -- ( genGraphics)
-{-
-   -- |   'cdModel' generates a 'Graphic' for a named 'Context'. 
-   cdModel :: Context -> IO()
- 
-   cdModel context
-    = putStr ("\nObject oriented analysis for "++name context++"\n")           >>
-      (writeFile (fnm++".dot"). cdDataModel context False layout) context >>   -- generate abbreviated class diagram  (pick True for full class diagram)
-      putStr (fnm++".dot written\n")>>
-      genGraphics fnm layout
-      where
-       layout  = "neato" -- nongravitational layout
-            -- = "dot"   -- vertical layout (default)
-       rs      = rules context
-       shR r   = showADL r
-       fnm     = fnContext context++"_CD"
--}
    --TODO -> copied from Auxiliaries because disabled (why disabled?)
    enc :: Bool -> String -> String
    enc upper (c:cs) | not (isAlphaNum c) = '_': htmlEnc c ++ enc upper cs

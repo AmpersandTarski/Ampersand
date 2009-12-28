@@ -99,13 +99,12 @@ where
           detail = catMaybes  compoutput
           compoutput :: [Maybe String]
           compoutput = [compareRule rl1 rl2 | rl1@(Ru{})<-rls1, rl2@(Ru{})<-rls2, rrfps rl1==rrfps rl2]
-                       ++ [compareRule rl1 rl2 | rl1@(Sg{})<-rls1, rl2@(Sg{})<-rls2, srfps rl1==srfps rl2]
           nrerr = if length rls1 /= length rls2 then "Number of produced rules differ:\nRules from left:\n" ++ show rls1 ++ "Rules from right:\n" ++ show rls2 ++ "\n"
                   else if length compoutput /= length rls1 then "Not all rules of left can be correlated by file position to rules of right:\nRules from left:\n" ++ show rls1 ++ "Rules from right:\n" ++ show rls2 ++ "\n"
                   else []
 
    compareRule :: Rule -> Rule -> Maybe String
-   compareRule rl1@(Ru {}) rl2@(Ru {})
+   compareRule rl1 rl2
           | detail == [] = Nothing
           | otherwise    = Just $ "Differences in rule at file position "++ show (rrfps rl1) ++":\n" ++
                                   (foldr (++) [] detail)      
@@ -119,16 +118,10 @@ where
                                      compareExpression (rrcon rl1) (rrcon rl2),
                                      compareSign (rrtyp rl1) (rrtyp rl2){- ,
                                      if runum rl1 == runum rl2 then Nothing else Just $ "Rule number " ++ show (runum rl1) ++ " does not equal " ++ show (runum rl2) ++ "\n"-}]
-   compareRule rl1@(Sg {}) rl2@(Sg {})
-          | detail == [] = Nothing
-          | otherwise    = Just $ "Differences in rule at file position "++ show (srfps rl1) ++":\n" ++
-                                  (foldr (++) [] detail)
           where
           detail :: [String]
-          detail = catMaybes [compareRule (srsig rl1) (srsig rl2),
-                              compareSign (srtyp rl1) (srtyp rl2),
+          detail = catMaybes [compareSign (srtyp rl1) (srtyp rl2),
                               compareDecl (srrel rl1) (srrel rl2)]
-   compareRule _ _ = Just $ "Only comparing rules with constructor Ru and Sg.\n"
 
    compareDecls :: Declarations -> Declarations -> Maybe String
    compareDecls dcls1 dcls2

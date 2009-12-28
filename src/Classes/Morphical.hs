@@ -209,7 +209,7 @@ where
     mors         pat = mors (ptrls pat) `uni` mors (ptkds pat)
     morlist      pat = morlist (ptrls pat)++morlist (ptkds pat)
     declarations pat = ptdcs pat
-    genE         pat = genE (ptdcs pat++declarations [r| r<-(ptrls pat),isSignal r ])  
+    genE         pat = genE (ptdcs pat++declarations [r| r<-ptrls pat])  
     closExprs    pat = closExprs (ptrls pat)
 
    -- WAAROM??? wordt bij Truth de antecedent niet meegenomen?
@@ -222,27 +222,21 @@ where
     concs r = case r of
                 Ru{rrsrt = Truth } -> concs (rrcon r)
                 Ru{}               -> concs (rrant r) `uni` concs (rrcon r)
-                Sg{}               -> concs (srsig r)
     mors r = case r of
                 Ru{rrsrt = Truth } -> mors (rrcon r)
                 Ru{}               -> mors (rrant r) `uni` mors (rrcon r)
-                Sg{}               -> mors (srsig r)
     morlist r = case r of
                 Ru{rrsrt = Truth } -> morlist (rrcon r)
                 Ru{}               -> morlist (rrant r) ++ morlist (rrcon r)
-                Sg{}               -> morlist (srsig r)
     genE r = case r of
                 Ru{rrsrt = Truth } -> genE (rrcon r)
                 Ru{}               -> genE [(rrant r),(rrcon r)]
-                Sg{}               -> genE (srsig r)
     declarations r = case r of
                 Ru{rrsrt = Truth } -> declarations (rrcon r)
                 Ru{}               -> declarations [(rrant r),(rrcon r)]
-                Sg{}               -> [srrel r] `uni` declarations (srsig r)
     closExprs r = case r of
                 Ru{rrsrt = Truth } -> closExprs (rrcon r)
                 Ru{}               -> closExprs (rrant r) `uni` closExprs (rrcon r)
-                Sg{}               -> closExprs (srsig r)
 
    instance Morphical Gen where
     concs g        = rd [gengen g,genspc g]  

@@ -141,9 +141,9 @@
                    , objats  = [ recur [] mph | mph<-relsFrom c]++
                                 [ Obj { objnm =  name (srrel s)
                                       , objpos = Nowhere
-                                      , objctx = disjNF (notCp (if source s==c then normExpr (srsig s) else flp (normExpr (srsig s))))
+                                      , objctx = disjNF (notCp (if source s==c then normExpr s else flp (normExpr s)))
                                       , objats = []
-                                      , objstrs = [] -- [["DISPLAYTEXT", if null (srxpl s) then (lang lng .assemble.normRule) (srsig s) else srxpl s]]
+                                      , objstrs = [] -- [["DISPLAYTEXT", if null (rrxpl s) then (lang lng .ruleToPL) s else rrxpl s]]
                                       }
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
@@ -155,7 +155,7 @@
                                      , objpos = Nowhere
                                      , objctx = Tm mph
                                      , objats = []
-                                     , objstrs = [] -- [["DISPLAYTEXT", if null (srxpl s) then (lang lng .assemble.normRule) (srsig s) else srxpl s]]
+                                     , objstrs = [] -- [["DISPLAYTEXT", if null (rrxpl s) then (lang lng .ruleToPL) s else rrxpl s]]
                                      }
                                | mph<-fats c ]
                    , objstrs = []

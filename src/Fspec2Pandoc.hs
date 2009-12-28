@@ -944,11 +944,14 @@ class ShowMath a where
 
 instance ShowMath Rule where
  showMath r = error ("!Fatal (module Fspec2Pandoc 889): Please supply specification of the context in showMath "++showADL r)
- showMathcode fSpec r@(Sg p rule expla sgn nr pn signal) = "\\verb#SIGNAL # \\id{"++name signal++"}\\ \\verb# ON #"++ showMathcode fSpec rule
  showMathcode fSpec r
-  | rrsrt r==Truth = "\\verb#ALWAYS # "++showMathcode fSpec (rrcon r)
-  | rrsrt r==Implication = showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)
-  | rrsrt r==Equivalence = showMathcode fSpec (rrant r) ++"\\ =\\ " ++showMathcode fSpec (rrcon r)
+  = ( if isSignal r
+      then "\\verb#RULE # \\id{"++name r++"}\\ \\verb# SIGNALS #"
+      else "\\verb#RULE # \\id{"++name r++"}\\ \\verb# MAINTAINS #" )++
+    case rrsrt r of
+      Truth       -> showMathcode fSpec (rrcon r)
+      Implication -> showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)
+      Equivalence -> showMathcode fSpec (rrant r) ++"\\ =\\ " ++showMathcode fSpec (rrcon r)
 
 instance ShowMath Expression where
  showMath e           = (showchar.insParentheses) e

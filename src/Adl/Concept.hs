@@ -103,7 +103,6 @@ where
 --    isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
     isProp         :: a -> Bool  -- > tells whether the argument is a property
     isNot          :: a -> Bool  -- > tells whether the argument is equivalent to I-
-    isMph          :: a -> Bool
     isTrue         :: a -> Bool  -- > tells whether the argument is equivalent to V
     isFalse        :: a -> Bool  -- > tells whether the argument is equivalent to V-
     isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
@@ -139,7 +138,6 @@ where
 --    isIdent c = True    -- > tells whether the argument is equivalent to I
     isProp _ = True    -- > tells whether the argument is equivalent to I
     isNot _   = False   -- > tells whether the argument is equivalent to I-
-    isMph _ = False
     isTrue c = singleton c
     isFalse _ = False
     isSignal _ = False
