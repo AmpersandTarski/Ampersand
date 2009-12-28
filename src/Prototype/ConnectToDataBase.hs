@@ -1,10 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
   module Prototype.ConnectToDataBase (connectToDataBase) 
   where
-   --import Auxiliaries(eqClass,eqCl)
    import Strings (chain) 
-   --import Collection(rd)
-   --import Calc(informalRule, disjNF, computeOrder, ComputeRule, triggers)
    import Adl
    import Options
    import Languages
