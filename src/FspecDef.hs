@@ -4,14 +4,12 @@
          , module Auxiliaries
          , module Strings 
          , Fidentified(..)
-     --    , fspc_patterns
-     --    , themesOfPatterns
          )
 
   where
 
    import Adl
-   import CommonClasses(Identified(name,typ))
+   import CommonClasses(Identified(..))
    import Auxiliaries(showL)
    import Strings(chain)
    import Data.Fspec
@@ -32,27 +30,21 @@
  --          source m = error ("!Fatal (module FspecDef 32): Cannot evaluate the source expression of the current morphism (yet)")
  --          target (Mph nm pos atts (a,b) _ s) = b    
  --          target m = error ("!Fatal (module FspecDef 34): Cannot evaluate the target expression of the current morphism (yet)")
-  --   typ m  = "f_morph"
+
    instance Fidentified Concept where
      fsid c = FS_id (name c)
-  --   typ m  = "f_cpt"
+ 
    instance Fidentified ObjectDef where
      fsid o = FS_id (name o)
-  --   typ m  = "f_objdef"
-
 
    class Fidentified a where
      fsid :: a -> FSid
-   --  typ  :: a -> String
-
-
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance Fidentified Fspc where  -- WAAROM moet er een tweede vorm van Identified zijn? Dit is in tegenspraak met het principe van code-ontdubbeling.
     fsid    fSpec = FS_id (fsName fSpec)
-  --  typ     _ = "f_Ctx"
 
 
 -- \***********************************************************************

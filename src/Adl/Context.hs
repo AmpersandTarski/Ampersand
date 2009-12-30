@@ -63,6 +63,5 @@ where
 
    instance Identified Context where
     name ctx = ctxnm ctx
-    typ _ = "Context_"
 
 

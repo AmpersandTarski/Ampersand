@@ -40,8 +40,7 @@ where
                                          ,fldauto = (tp==SQLId) && not nul && uniq && isIdent expr}
   
   instance Identified PhpValue where
-    typ _ = "PhpValue"
-    name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> name x}
+     name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> name x}
 
   --DESCR -> plugs are sorted to optimize some algoritms. 
   instance Eq Plug where
@@ -99,10 +98,6 @@ where
 
   instance Identified Plug where
     name p = plname p
-    typ  p = case p of
-              { PlugSql{} -> "SQL";
-                PlugPhp{} -> "PHP"
-              }
 
   instance Morphical SqlField where
     concs        f = [target e'|let e'=fldexpr f,isSur e']

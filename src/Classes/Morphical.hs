@@ -11,7 +11,7 @@ module Classes.Morphical                 (Morphical(concs
                                                    ,idsOnly
                                          )         )
 where
-   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),Morphic(..),MorphicId(..))
+   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),MorphicId(..))
    import Adl.ConceptDef                 (ConceptDefs)
    import Adl.Context                    (Context(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..),Morphisms,Declarations

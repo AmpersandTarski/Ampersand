@@ -9,7 +9,7 @@ module Classification (
              , mapCl
    ) 
 where
-   import CommonClasses ( Identified(name,typ)
+   import CommonClasses ( Identified(..)
                         , Conceptual(conts)
                         ) 
    import Collection  (Collection(..))
@@ -48,8 +48,6 @@ where
    instance Identified a => Identified (Classification a) where
     name (Cl r _) = name r
     name Bottom = "Bottom"
-    typ (Cl r _) = "Classification_of_" ++ typ r
-    typ Bottom = undefined
 
 
    instance Show a => Show (Classification a) where

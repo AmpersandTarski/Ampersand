@@ -48,7 +48,7 @@ where
     name S = "ONE"
     name Anything   = "Anything"
     name NOthing    = "NOthing"
-    typ _ = "Concept_"
+
    instance Association Concept where
     source c = c
     target c = c

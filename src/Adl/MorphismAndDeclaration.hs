@@ -13,7 +13,7 @@ where
    import Adl.Prop         (Prop(..),Props,flipProps)
    import Adl.Pair         (Pairs,flipPair) 
    import Strings          (chain)
-   import CommonClasses    (Identified(name,typ),showSign
+   import CommonClasses    (Identified(..),showSign
                            , Explained(..)
                            , ABoolAlg)    
    import Collection       (Collection ((>-)))
@@ -79,7 +79,6 @@ where
 
    instance Identified Morphism where
     name m = name (makeDeclaration m)
-    typ _ = "Morphism_"
 
    instance Association Morphism where
 --    source (Mph nm pos atts (a,b) _ s) = a
@@ -224,7 +223,6 @@ where
     name (Isn _ _)                      = "I"
     name (Iscompl _ _)                  = "-I"
     name (Vs _ _)                       = "V"
-    typ _ = "Declaration_"
 
    instance Association Declaration where
       source d = case d of

@@ -180,15 +180,12 @@ module Data.Fspec ( Fspc(..)
 
    instance Identified Fspc where
      name fspc = fsName fspc
-     typ   _   = "Fspc_"
 
    instance Identified Fservice where
      name fservice = name (fsv_objectdef fservice)
-     typ _ = "f_Service"
 
    instance Identified FSid where
     name (FS_id nm) = nm
-    typ _ = "f_Id"
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {classes     :: [Class]            --

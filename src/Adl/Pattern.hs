@@ -36,7 +36,6 @@ where
 --   instance Show Pattern
    instance Identified Pattern where
     name pat = ptnm pat
-    typ _ = "Pattern_"
 
    union :: Pattern -> Pattern -> Pattern
    union pat pat'

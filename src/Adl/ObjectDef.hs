@@ -21,7 +21,6 @@ where
   -- instance Show ObjectDef
    instance Identified ObjectDef where
     name obj = objnm obj
-    typ _ = "ObjectDef_"
    instance Numbered ObjectDef where
     pos obj = objpos obj
 

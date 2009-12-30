@@ -10,7 +10,7 @@ where
    import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..),mIs)
    import Adl.Expression                ( Expression(..),v,notCp)
    import Adl.Prop
-   import CommonClasses                 ( Identified(name,typ)
+   import CommonClasses                 ( Identified(..)
                                         , Explained(explain))
                                            
    type Rules = [Rule]
@@ -53,7 +53,6 @@ where
 
    instance Identified Rule where
     name r = "Rule"++show (runum r)
-    typ _ = "Rule_"
     
    instance Association Rule where
     source r  = fst (rrtyp r)
@@ -74,14 +73,13 @@ where
                          ,rrcon = flp (rrcon r)
                          ,rrtyp = (target (rrtyp r),source (rrtyp r))
                          }
-                _    -> error ("!Fatal (module Rule 115): flp undefined for rule:\n "++show r)
-  --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
+   --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
     typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
                | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 --    isIdent r = isIdent (normExpr r)
     isProp r  = isProp (normExpr r)
 
--- TODO: check: worden de volgende drie definities wel eens aangeroepen?
+--  check: worden de volgende drie definities wel eens aangeroepen? Jawel, in Relbingen en Calc... 
     isTrue r  = case ruleType r of
                  Truth       -> isTrue (consequent r)
                  Implication -> isFalse (antecedent r) || isTrue (consequent r)

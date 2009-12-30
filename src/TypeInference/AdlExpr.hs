@@ -125,8 +125,8 @@ fromRule r@(Ru{})
    where
    lft = uniqueMphsE 0 (rrant r)
    rght = uniqueMphsE (snd lft) (rrcon r)
-fromRule rule = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function fromRule: " ++
-                        "Rule type has not been implemented."++show rule++"." 
+--fromRule rule = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function fromRule: " ++
+--                        "Rule type has not been implemented."++show rule++"." 
 
  
 exprsrc :: AdlExpr -> ConceptTerm

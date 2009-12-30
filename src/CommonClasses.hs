@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
   module CommonClasses
-  (  Identified(name,typ) , showSign
+  (  Identified(name) , showSign
    , ABoolAlg(glb,lub,order)
    , Explained(explain)
    , Conceptual(conts)
@@ -15,16 +15,13 @@
    ----------------------------------------------
    class Identified a where
     name   :: a->String
-    typ    :: a->String
- 
+
    showSign :: Identified a => [a] -> String
    showSign cs = "["++(chain "*".rd.map name) cs++"]"
 
    instance Identified a => Identified [a] where
     name [] = ""
     name (i:_) = name i
-    typ  [] = ""
-    typ  (i:_) = typ i
 
    class (Show a,Ord a) => ABoolAlg a where
     glb,lub :: a -> a -> a

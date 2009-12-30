@@ -199,7 +199,7 @@ where
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
    instance ShowHS Fspc where
-    showHSname fspec = typ fspec ++ "_" ++ haskellIdentifier (name fspec)
+    showHSname fspec = "Fspc_" ++ haskellIdentifier (name fspec)
     showHS flags indent fspec
      = chain (indent ++"    ") 
             ["Fspc{ fsName = " ++ haskellIdentifier (name fspec)
@@ -265,7 +265,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS Fservice where
-    showHSname fservice = typ fservice ++ "_" ++ haskellIdentifier (name fservice)
+    showHSname fservice = "Fservice_" ++ haskellIdentifier (name fservice)
     showHS flags indent fservice
      = "Fservice "
        ++ indent++"     ("++showHS flags (indent++"      ") (fsv_objectdef fservice)++")"

@@ -24,7 +24,7 @@ where
 --   instance Show KeyDef
    instance Identified KeyDef where
     name kd = kdlbl kd
-    typ _ = "KeyDef_"
+
    instance Numbered KeyDef where
     pos kd = kdpos kd
 

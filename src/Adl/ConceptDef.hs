@@ -20,5 +20,4 @@ where
  --  instance Show ConceptDef
    instance Identified ConceptDef where
     name cd = cdnm cd
-    typ _ = "ConceptDef_"
    
