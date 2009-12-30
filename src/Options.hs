@@ -58,7 +58,7 @@ data Options = Options { contextName   :: Maybe String
                        , verbosephp    :: Bool
                        } deriving Show
     
-data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml |FUnknown deriving (Show, Eq)
+data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
 allFspecFormats :: String
 allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 getOptions :: IO Options
@@ -117,10 +117,7 @@ checkOptions flags =
                                 ; return flags2 --{dirAtlas = combine (dirAtlas flags0) (baseName flags0)}
                                 }
                         else return flags2  {- No need to check if no atlas will be generated. -}
-           flags4 <- return flags3
---                        if genFspec flags3 && fspecFormat flags3==FUnknown
---                        then ioError $ userError "Unknown fspec format, specify [word | latex | html | pandoc]."
---                        else return flags3  {- No need to check if no fspec will be generated. -}
+           flags4 <- return flags3 
            mbexec <- findExecutable (progrName flags) 
            flags5 <- case mbexec of
               Nothing -> return flags4{dirExec=error ("!Fatal (module Options 126): Specify the path location of "++(progrName flags)++" in your system PATH variable.")
@@ -218,7 +215,7 @@ defaultOptions clocktime env fNames pName
                                  , userAtlas      = []
                                  , genXML        = False
                              , genFspec      = False 
-                                 , fspecFormat   = FUnknown
+                                 , fspecFormat   = error ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
                                  , graphics      = True
                                  , proofs        = False
                                  , haskell       = False
@@ -300,12 +297,13 @@ xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
 fspecRenderOpt w opts = opts{ genFspec=True
                             , fspecFormat= case (map toUpper w) of
-                                              ('R': _ ) -> FRtf
-                                              ('L': _ ) -> FLatex
-                                              ('H': _ ) -> FHtml
-                                              ('P': _ ) -> FPandoc
-                                              ('O': _ ) -> FOpenDocument
-                                              _         -> FUnknown
+                                                 ('R': _ ) -> FRtf
+                                                 ('L': _ ) -> FLatex
+                                                 ('H': _ ) -> FHtml
+                                                 ('P': _ ) -> FPandoc
+                                                 ('O': _ ) -> FOpenDocument
+                                                 _         -> fspecFormat opts
+                                                
                             }
 noGraphicsOpt :: Options -> Options
 noGraphicsOpt   opts = opts{graphics     = False}
