@@ -101,7 +101,7 @@ where
     mors (Tm mph)           = mors (makeInline mph)
     mors (Tc f)             = mors f
     mors (F ts)             = mors ts -- voor a;-b;c hoeft geen extra mors rond b nodig te zijn
-    mors (Fd [])            = undefined                    
+    mors (Fd [])            = error ("!Fatal (module Morphical 104): not defined: 'mors (Fd [])'")
     mors (Fd ts@(_:t))      = rd (mors ts ++ (concat) [mors (source c)|c<-t])
     mors (Fu fs)            = mors fs
     mors (Fi fs)            = mors fs -- voor a /\ -b hoeft geen extra mors rond b nodig te zijn
@@ -181,7 +181,7 @@ where
            Mph{} -> genE (source mph)
            I{}   -> genE (mphspc mph)
            V{}   -> genE (source mph)
-           Mp1{} -> undefined
+           Mp1{} -> error ("!Fatal (module Morphical 184): not defined: 'genE Mp1{}'")
     declarations mph = [makeDeclaration mph]
 
    instance Morphical Declaration where

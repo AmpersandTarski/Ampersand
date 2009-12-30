@@ -98,7 +98,7 @@ doGenFspec fSpec flags
                                                  FLatex        -> ".tex"
                                                  FHtml         -> ".html"
                                                  FOpenDocument -> ".odt"
-                                                 FUnknown      -> undefined
+                                                 FUnknown      -> error ("!Fatal (module Generators 101): No outputfile extention defined. Contact your dealer.")
                                        )
          (thePandoc,thePictures) = fSpec2Pandoc fSpec flags
          makeOutput

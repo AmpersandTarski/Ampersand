@@ -123,7 +123,7 @@ dotG flags graphName cpts dcls idgs
                         ++[cptNameNode       ] -- node that shows the name of the concept
                       ,   [cptEdge           ] -- edge connects the above nodes
                       )
-                 _ -> undefined
+                 _ -> error ("!Fatal (module Graphics 126): Nothing defined for dotStyle == "++ show (dotStyle flags))
           where
             cptOnlyOneNode   = constrNode (baseNodeId c) (CptOnlyOneNode   c) flags
             cptConnectorNode = constrNode (baseNodeId c) (CptConnectorNode c) flags
@@ -150,7 +150,7 @@ dotG flags graphName cpts dcls idgs
                  3 -> (    []               -- No node at all
                       ,    [constrEdge (baseNodeId (source d)) (baseNodeId (target d)) (DclOnlyOneEdge d) True  flags] -- Just a single edge
                       )
-                 _ -> undefined  -- more styles could be placed here...
+                 _ -> error ("!Fatal (module Graphics 153): Nothing defined for dotStyle == "++ show (dotStyle flags))  -- more styles could be placed here...
           where
             dclHingeNode   = constrNode ("dclHinge_"++show n) DclHingeNode   flags
             dclNameNode    = constrNode ("dclName_"++show n) (DclNameNode d) flags

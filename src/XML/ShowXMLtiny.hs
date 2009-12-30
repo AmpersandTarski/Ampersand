@@ -133,14 +133,14 @@ where
                                       [mkXmlTree (antecedent r)]]
                                  ++ [Elem (simpleTag "RHS")
                                       [mkXmlTree (consequent r)]] 
-                     Generalization -> undefined
+                     Generalization -> error ("!Fatal (module ShowXMLtiny 136). Consult your dealer!")
              )
       where invariantString ::  String
             invariantString = case ruleType r of
                                  Truth -> showADL (consequent r)
                                  Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
                                  Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
-                                 Generalization -> undefined
+                                 Generalization -> error ("!Fatal (module ShowXMLtiny 143). Consult your dealer!")
    
    instance XML KeyDef where
      mkTag k = Tag "KeyDef" [nameToAttr k]

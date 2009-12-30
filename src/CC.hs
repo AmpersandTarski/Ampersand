@@ -186,7 +186,7 @@
                         f t ('*':xs) = K0 (f t xs)
                         f t ('+':xs) = K1 (f t xs)
                         f t ('-':xs) = Cp (f t xs)
-                        f _ (_:_)   = undefined     -- WAAROM? Stef, waarom ontbrak dit? Is dat vergeten? TODO Deze match is toegevoegd om de warning kwijt te raken. Maar is dit ook op deze manier bedoeld?
+                        f _ (_:_)   = error ("!Fatal (module CC 189). Consult your dealer!")
                         f t []       = t
 
    pMorphism        :: Parser Token Morphism
@@ -313,7 +313,7 @@
                              f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
                              k "TOT" = Tot
                              k "UNI" = Uni
-                             k _ = undefined  --TODO : Moet nog een foutmelding, dat er een onbekende tag is gebruikt.
+                             k s = error ("!Fatal (module CC 316): Unknown property tag has been used: " ++ show s)
 
    pProp'           :: Parser Token String
    pProp'            = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"

@@ -31,7 +31,7 @@ parseADL adlstring flags fnFull =
                                                                Nothing   -> contexts
                                         specificName = case contextName flags of
                                                                Just cname -> cname
-                                                               Nothing   -> undefined   --Nothing is niet aan de orde hier
+                                                               Nothing   -> error ("!Fatal (module Parser 34): Contact your dealer!")   --Nothing is niet aan de orde hier
             }
             where
             procParseRes arch = typecheck arch

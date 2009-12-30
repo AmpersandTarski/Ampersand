@@ -156,7 +156,7 @@ where
            V{mphats = []}      ->  typeUniq (mphgen mph) && 
                                    typeUniq (mphspc mph)
            V{mphats = _:_}     ->  True
-           Mp1{}               ->   undefined   --WAAROM? Stef, dit was niet gedefinieerd TODO
+           Mp1{}               ->  error ("!Fatal (module Adl.MorphismAndDeclaration 159): typeUniq Mp1{} undefined.")
     
 
 

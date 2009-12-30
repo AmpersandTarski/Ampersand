@@ -19,25 +19,16 @@ where
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a
    root (Cl c _) = c
-   root Bottom = undefined
+   root Bottom = error ("!Fatal (module Classification 22): root Bottom is not defined.")
    subs :: Classification a -> [Classification a]
    subs (Cl _ cls) = cls
-   subs Bottom = undefined
---   isBot :: Classification a -> Bool
---   isBot Bottom =True
---   isBot _      = False
---   recur :: (t -> [t1] -> t1) -> t1 -> Classification t -> t1
---   recur _ e Bottom     = e
---   recur f e (Cl c cls) = f c [recur f e cl| cl<-cls]
+   subs Bottom = error ("!Fatal (module Classification 25): subs Bottom is not defined.")
    mapCl :: (t -> a) -> Classification t -> Classification a
    mapCl _ Bottom       = Bottom
    mapCl f (Cl c cls)   = Cl (f c) (map (mapCl f) cls)
    preCl :: Classification a -> [a]
    preCl Bottom         = []
    preCl (Cl c cls)     = [c] ++ concat (map preCl cls)
---   postCl :: Classification a -> [a]
---   postCl Bottom        = []
---   postCl (Cl c cls)    = concat (map postCl cls) ++ [c]
 
    instance Eq a => Eq (Classification a) where
     Bottom == Bottom = True

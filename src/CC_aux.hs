@@ -262,7 +262,7 @@
           V{}   -> mph{ mphats = map (put_gE gE cs) (mphats mph)
                       , mphtyp = (put_gE gE cs) (mphtyp mph)
                       }
-          Mp1{} -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
+          Mp1{} -> error ("!Fatal (module CC_aux 265). Consult your dealer!")
     update ss mph
        = case mph of
           Mph{} -> mph{ mphats = map (update ss) (mphats mph)   -- FOUT WAAROM? Stef, ik heb hier een aanpassing gedaan ten opzichte van hoe het was (zie onder) (`atts` werd niet geprocessed..) Graag check, dubbel check. Ik denk dat ik hiermee een bug heb verholpen...
@@ -276,7 +276,7 @@
           V{}   -> mph{ mphats = map (update ss) (mphats mph)
                       , mphtyp = (update ss) (mphtyp mph)
                       }
-          Mp1{} -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
+          Mp1{} -> error ("!Fatal (module CC_aux 279). Consult your dealer!")
 -- was:
 --    update ss (Mph nm p atts sgn yin s)          = Mph nm p atts (update ss sgn) yin (update ss s)
 --    update ss (I atts g s yin)                   = I (map (update ss) atts) (update ss g) (update ss s) yin
@@ -293,7 +293,7 @@
                       }
           V{}   -> mph{ mphtyp = t
                       }
-          Mp1{} -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
+          Mp1{} -> error ("!Fatal (module CC_aux 296). Consult your dealer!")
 -- was:
 --    specialize t@(a,b) (Mph nm p atts sgn yin s) = Mph nm p (if null atts then [] else if yin then [a,b] else [b,a]) t yin (specialize t s)
 --    specialize t@(a,b) (I atts g s yin)          = if yin then I atts b a yin else I atts a b yin
@@ -330,13 +330,13 @@
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("!Fatal (module CC_aux 352): specialize 7 "++show (x,y)++show (despc decl))
+                       else error ("!Fatal (module CC_aux 333): specialize 7 "++show (x,y)++show (despc decl))
           Iscompl{}-> if x <= y 
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("!Fatal (module CC_aux 357): specialize 7 "++show (x,y)++show (despc decl))
-          Vs{}     -> undefined -- TODO WAAROM?  Stef, deze was niet gedefinieerd bij het verwijderen van warnings. Kijk jij hier nog even naar? 
+                       else error ("!Fatal (module CC_aux 338): specialize 7 "++show (x,y)++show (despc decl))
+          Vs{}     -> error ("!Fatal (module CC_aux 339). Consult your dealer!") 
                     
 
 
