@@ -100,9 +100,9 @@ SIGNAL deliver ON I |- of~;of EXPLANATION "De volgende order zit in de pijplijn"
     ; ("Jelly beans #4921"  , "C45666"                  )
     ; ("Peanut butter #1993", "C45683"                  )
     ].
- item[Delivery*Product] |- of;item COMPUTING item[Delivery*Product]
+ item[Delivery*Product] |- of;item
   EXPLANATION "There must be an order for every item delivered."
- of;item |- item[Delivery*Product] COMPUTING item[Delivery*Product]
+ of;item |- item[Delivery*Product]
   EXPLANATION "All items ordered must be delivered."
  provided :: Provider * Delivery [SUR,INJ] PRAGMA "Provider " " has delivered delivery "
   = [ ("Candy’s candy", "Cookies #0382")
@@ -129,7 +129,7 @@ SIGNAL order ON addressedTo~ |- accepted  -- \ref{rule 1} % uit het artikel
 
 -- \ref{rule 2}
 --	Deliveries are made by the provider who has accepted an order.
- accepted;of~ |- provided COMPUTING provided
+ accepted;of~ |- provided
   EXPLANATION "If a provider has accepted an order, then that provider is the one to make the delivery"
 
 {- Something funny:
@@ -171,7 +171,7 @@ So COMPUTING does not keep a rule satisfied at all times.
     ].
 
 -- \ref{rule 4}	Deliveries are made to the client who ordered the delivery
- of;from |- deliveredTo COMPUTING deliveredTo
+ of;from |- deliveredTo
   EXPLANATION "Deliveries are made to the client who ordered the delivery."
 
  sentTo :: Invoice -> Client PRAGMA "Invoice " " was sent to "
@@ -199,7 +199,7 @@ SIGNAL factureren ON I |- delivery~;delivery EXPLANATION "De volgende leverantie
     ; ("9443a", "Carter"       )
     ].
 
- from = delivery;provided~ COMPUTING from
+ from = delivery;provided~
   EXPLANATION "There must be a delivery for every invoice sent."
 
 SIGNAL pending ON provided = from~;delivery
@@ -217,6 +217,6 @@ SIGNAL teBetalen ON I |- paid~;paid EXPLANATION "De volgende leverantie(s) is/zi
  paid |- sentTo~ EXPLANATION "Accept payments only for invoices sent"
  SIGNAL payable ON sentTo~ |- paid
  EXPLANATION "Invoices to be paid"
- sentTo = delivery;of;from COMPUTING sentTo
+ sentTo = delivery;of;from
 ENDPATTERN
 ENDCONTEXT
