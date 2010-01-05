@@ -58,19 +58,22 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    where
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
-   check1 = checkCtxNameUniqueness ctxs
-   check2 = checkCtxExtLoops ctxs 
+   check1 = checkCtxNameUniqueness ctxs -- checks whether all contexts have unique names.
+   check2 = checkCtxExtLoops ctxs -- check whether there are loops in the extends-relation (which existst between contexts)
    (enriched, allproofs) = enrichArch arch  
    check3 = [(errproof,fp,rule) | (errproof@(NoProof{}),fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
-   printcheck3 = [show errproof 
-                  ++ "\n   in " ++ showADL rule   
-                  ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigRule rule)<-check3] 
-              ++ [show errproof 
-                  ++ "\n   in service definition expression " ++ showADL expr  
-                  ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigObjDef expr)<-check3]
-              ++ [show errproof 
-                  ++ "\n   in key definition expression " ++ showADL expr  
-                  ++ "\n   at " ++ show fp ++ "\n" |(errproof,fp,OrigKeyDef expr)<-check3]
+   printcheck3 = [ show errproof 
+                   ++ "\n   in " ++ showADL rule   
+                   ++ "\n   at " ++ show fp ++ "\n"
+                 | (errproof,fp,OrigRule rule)<-check3] ++
+                 [ show errproof 
+                   ++ "\n   in service definition expression " ++ showADL expr  
+                   ++ "\n   at " ++ show fp ++ "\n"
+                 | (errproof,fp,OrigObjDef expr)<-check3] ++
+                 [ show errproof 
+                   ++ "\n   in key definition expression " ++ showADL expr  
+                   ++ "\n   at " ++ show fp ++ "\n"
+                 | (errproof,fp,OrigKeyDef expr)<-check3]
    check4 = checkSvcNameUniqueness ctxs
    check5 = checkPopulations ctxs
   -- check6 = checkSvcLabels ctxs
@@ -90,6 +93,8 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
 ------------------
 --Enrich functions
 ------------------
+-- Each error is exposed by a NoProof in the Proof-field, which carries the type errors.
+-- Each valid type derivation is given by a Proven in the Proof-fiels, which carries the derivation.
 enrichArch :: Architecture -> (Contexts,[(Proof,FilePos,OrigExpr)])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
                             , concat [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
@@ -98,25 +103,13 @@ enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx
 postenrich :: Context -> Context
 postenrich cx@(Ctx{}) = addsgndecls $ renumber cx
 renumber :: Context -> Context
-renumber cx@(Ctx{}) = cx {ctxpats=renumberedPats,
-                          ctxrs=renumberRules i (ctxrs cx)}
+renumber cx@(Ctx{}) = cx {ctxpats=renumberPats (length (ctxrs cx)) (ctxpats cx),
+                          ctxrs=[r{r_pat="", runum=i} | (i,r)<-zip [1..] (ctxrs cx)]}
   where
-   (i,renumberedPats) = renumberPats 1 (ctxpats cx)
-   renumberPats :: Int -> Patterns -> (Int,Patterns)
-   renumberPats i (pat:ps) = (n,pat{ptrls=rs}:renumberedPs)
-     where rs = renumberRules i (ptrls pat)
-           (n,renumberedPs) = renumberPats (i+length rs) ps
-   renumberPats i [] = (i,[])
-
-   renumberRules :: Int -> [Rule] -> [Rule]
-   renumberRules i (r:rs) = renumberRule i r: renumberRules (i+1) rs
-   renumberRules i    []  = []
-
-   renumberRule :: Int -> Rule -> Rule
-   renumberRule n rule 
-      = case rule of
-          Ru{}                  -> rule{runum = n}
-
+   renumberPats :: Int -> Patterns -> Patterns
+   renumberPats n (pat:ps) = pat{ptrls=[r{r_pat=name pat, runum=i} | (i,r)<-zip [n..] (ptrls pat)]}
+                             : renumberPats (n+length (ptrls pat)) ps
+   renumberPats i [] = []
 
 addsgndecls ::Context -> Context
 addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
@@ -174,27 +167,28 @@ enrichCtx cx@(Ctx{}) ctxs =
   allCtx = map fromFoundCtx $ flatten ctxtree
 
   tc :: Concepts
-  tc = allCtxCpts(allCtx)
+  tc = allCtxCpts allCtx
   --REMARK -> tc0 is defined in specification but not needed in implementation to lookup these constants. They are just used when needed
   --tc0 :: Concepts
   --tc0 = [Anything,NOthing]
-  isatree = isaRels tc (allCtxGens(allCtx))
+  isatree = isaRels tc (gens allCtx)
   isaStmts = map fromIsa isatree
-  --DESCR -> All Relation decls in ctx
+  --DESCR -> All Relation declarations in ctx
   rv :: Declarations
-  rv = allCtxDecls (allCtx)
+  rv = declarations allCtx
   --REMARK -> rc is defined in specification but not needed in implementation to lookup the constant relations (see mphStmts)
   --rc :: Declarations
   --rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
-  gamma expr = (mphStmts expr) ++ gammaisa
+  gamma expr = mphStmts expr ++ gammaisa
   gammaisa = isaStmts
+-- The function mphStmts finds bindings (Statements) for the morphisms that occur in AdlExpr mp.
   mphStmts :: AdlExpr -> [Statement]
   mphStmts (Relation mp@(Mph{mphnm=r1}) i t) =
      let
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
      alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
-                    | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-rv, decl==r1]
+                    | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-declarations allCtx, decl==r1]
      ishomo :: [Prop] -> Bool
      ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
      in
@@ -216,10 +210,10 @@ enrichCtx cx@(Ctx{}) ctxs =
   mphStmts (Flip expr _) = mphStmts expr
 
   --DESCR -> enriching ctxisa
-  --in AGtry -> isa = Isa [(g,s)|G pos g s<- _mGen] (concs _mD>-rd [c|G pos g s<- _mGen, c<-[g,s]])
+  --in AGtry -> isa = Isa [(g,s)|G pos g s _<- _mGen] (concs _mD>-rd [c|G pos g s _<- _mGen, c<-[g,s]])
   hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
-    isar = [case g of G{} -> (populate$gengen g,populate$genspc g) | g<-allCtxGens ctxs]
+    isar = [case g of G{} -> (populate$gengen g,populate$genspc g) | g<-gens ctxs]
     isac = map populate$rd (map fst isar++map snd isar)
 
   --DESCR -> enriching ctxpats
@@ -267,6 +261,7 @@ enrichCtx cx@(Ctx{}) ctxs =
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
 
+--WAAROM (SJ) worden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
   ctxrules
@@ -275,8 +270,8 @@ enrichCtx cx@(Ctx{}) ctxs =
        [ rulefromKey k (name pat)
        | pat<-patterns cx, k<-ptkds pat] ++         -- all rules that are derived from all KEY statements in this context
        [rulefromKey k (name cx) | k<-ctxks cx] ++   -- all rules that are derived from all KEY statements in this context
-       [rulefromgen g | g<-allCtxGens [cx]] ++      -- all rules that are derived from all GEN statements in this context
-       [bindRule r |d<-declarations cx, r<-multRules d]  -- all multiplicity rules that are derived from all declarations in this context
+       [rulefromgen g | g<-gens cx] ++      -- all rules that are derived from all GEN statements in this context
+       [bindRule r |d@(Sgn{})<-declarations cx, r<-multRules d]  -- all multiplicity rules that are derived from all declarations in this context
 
   --DESCR -> The function bindRule attaches a type to a rule by producing a proof in the type system.
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
@@ -337,28 +332,28 @@ enrichCtx cx@(Ctx{}) ctxs =
         (r {rrant=bindant, rrcon=bindcon, rrtyp=bindrtype, srrel=binddecl},proof,rrfps r)
 
   ctxrulesgens :: [(Rule,Proof,FilePos)]
-  ctxrulesgens = [rulefromgen g | g<-allCtxGens [cx]]
+  ctxrulesgens = [rulefromgen g | g<-gens cx]
   --TODO -> move rulefromgen to function toRule in module Gen
   --DESCR -> rules deducted from a gen are proven by the existence of a gen
   rulefromgen :: Gen -> (Rule,Proof,FilePos)
-  rulefromgen (G {genfp = posi, gengen = gen', genspc = spc', genpat=pat} )
+  rulefromgen g
     = (Ru
          Implication    -- Implication of Equivalence
          (Tm $ mIs spc) -- left hand side (antecedent)
-         posi           -- position in source file
+         (genfp g)      -- position in source file
          (Tm $ mIs gen) -- right hand side (consequent)
          []             -- explanation
          (gen,gen)      -- The type
          Nothing        -- This rule was not generated from a property of some declaration.
          0              -- Rule number. Will be assigned after enriching the context
-         pat            -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
+         (genpat g)     -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
          False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
          False          -- This is not a signal rule
-         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" posi 0 False "")          -- 
-       , Proven gammaisa [Stmt $ fromIsa (spc,gen)],posi)
+         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" (genfp g) 0 False "")          -- 
+       , Proven gammaisa [Stmt $ fromIsa (spc,gen)], genfp g)
     where
-    spc = populate spc'
-    gen = populate gen'
+    spc = populate (genspc g)
+    gen = populate (gengen g)
 
   rulefromKey :: KeyDef -> String -> (Rule,Proof,FilePos)
   rulefromKey key pat
@@ -383,7 +378,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
   ctxobjdefs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
-  ctxobjdefs = [bindObjDef od Nothing | od<-ctxos cx]
+  ctxobjdefs = [bindObjDef od Nothing | od<-objDefs cx]
   ctxsqlplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
   ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
   ctxphpplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
@@ -394,8 +389,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},(proof,objpos od,expr):proofats)
     where
     expr = case mbtopexpr of
-      Nothing -> (objctx od)
-      Just topexpr -> F [topexpr,(objctx od)]
+      Nothing -> objctx od
+      Just topexpr -> F [topexpr, objctx od]
     proof = infer (gamma adlexpr) adlexpr
     adlexpr = fromExpression expr
     bindexpr = case proof of
@@ -415,7 +410,7 @@ enrichCtx cx@(Ctx{}) ctxs =
                        "Expected a BoundTo relative composition expression statement."++show et++"."
   
   ctxkeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
-  ctxkeys = [bindKeyDef kd | kd<-allCtxKeyDefs [cx]]   
+  ctxkeys = [bindKeyDef kd | kd<-keyDefs cx]   
   bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos,Expression)])
   bindKeyDef kd = (kd {kdctx=bindexpr, kdats=bindats},(proof,kdpos kd,kdctx kd):proofats)
     where
@@ -490,22 +485,12 @@ enrichCtx cx@(Ctx{}) ctxs =
 --Check functions
 -----------------
 --DESCR -> check rule: Every context must have a unique name
+--DESCR -> Eq Context  is defined such that contexts with equal names are considered equal.
 checkCtxNameUniqueness :: Contexts -> Errors
 checkCtxNameUniqueness [] = []
 checkCtxNameUniqueness (cx:ctxs) 
-     | elemBy eqCtx cx ctxs = (notUniqError cx):checkCtxNameUniqueness ctxs
-     | otherwise    = checkCtxNameUniqueness ctxs
-     where
-     --DESCR -> return True if the names of the Contexts are equal
-     eqCtx :: Context -> Context -> Bool
-     eqCtx cx1 cx2 =
-                 case cx1 of Ctx{} -> (ctxnm cx1)
-                 ==
-                 case cx2 of Ctx{} -> (ctxnm cx2)
-     --REMARK -> Context objects do not carry FilePos information
-     notUniqError :: Context -> Error
-     notUniqError cx' = case cx' of
-                 Ctx{} ->  "Context name " ++ (ctxnm cx')++ " is not unique"
+     | elemBy (==) cx ctxs = ["Context name " ++ ctxnm cx ++ " is not unique"] ++ checkCtxNameUniqueness ctxs
+     | otherwise           = checkCtxNameUniqueness ctxs
 
 --USE -> Contexts names must be unique
 checkCtxExtLoops :: Contexts -> Errors
@@ -559,7 +544,7 @@ checkPopulations ctxs = if null unrelated then []
     unrelated = [pop| cx<-ctxs, pop<-ctxpops cx
                     , length (related pop) /= 1]
     related pop = [name d++"["++show (source d)++"*"++show (target d)++"]"++" "++show (decfpos d)++"\n"
-                  | d<-allCtxDecls ctxs, comparepopanddecl (allCtxDecls ctxs) (popm pop) d]
+                  | d<-declarations ctxs, comparepopanddecl (declarations ctxs) (popm pop) d]
 
 
 ------------------

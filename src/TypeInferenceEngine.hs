@@ -29,8 +29,8 @@ infertype fSpec eor = (inftype,proof)
        Eeor expr -> fromExpression expr 
        Reor rule -> fromRule rule
   tc :: Concepts
-  tc = concs (vrels fSpec) `uni` concs (vrules fSpec)
-  isatree = isaRels tc $ allPatGens (patterns fSpec)
+  tc = concs fSpec
+  isatree = isaRels tc $ gens fSpec
   rv :: Declarations
   rv = vrels fSpec
   gamma expr = (mphStmts expr) ++ gammaisa
@@ -143,17 +143,16 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
          else NoProof (AmbiguousType gamma allnoerrinftrees)  --return inference trees of all alts resulting in a type
 ------------------------------------------------------------------------------------
   freecptvars :: [Concept]
-  freecptvars = [cptnew $ "$C" ++ show i | i<-allPositiveIntegers]
-     where allPositiveIntegers :: [Integer]
-           allPositiveIntegers = [1..]
+  freecptvars = [cptnew $ "$C" ++ show i | i<-[(1::Int)..]]
+
   tree (t, _) = t
   free (_, f) = f
   --DESCR -> construct a base inference tree of BoundTo statements by decomposing the expr to infer, and put concept variables at all concept locations. Return all unused concept variable names too.
   --USE -> All concept variables need to be bound to a concept. And all leaves (Stmt BoundTo expr@(Relation{})) need to be inferred.
   unboundtree :: Concepts -> (ITree, Concepts)
-  unboundtree [] = error $ "!Fatal (module TypeInferenceEngine 154): unboundtree expects " ++
+  unboundtree [] = error $ "!Fatal (module TypeInferenceEngine 153): unboundtree expects " ++
                            "an infinite list of free concept variables."
-  unboundtree (_:[]) = error $ "!Fatal (module TypeInferenceEngine 156): unboundtree expects " ++
+  unboundtree (_:[]) = error $ "!Fatal (module TypeInferenceEngine 155): unboundtree expects " ++
                            "an infinite list of free concept variables."
   --DESCR -> decomposing step1: every expression to infer is bound to two fresh cpt vars. 
   unboundtree (c1:c2:fcpts) = bindsubexprs (bindto exr (CT c1) (CT c2) (expo exr 1)) fcpts

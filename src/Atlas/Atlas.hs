@@ -177,9 +177,9 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (fsisa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
    cptrule x | isSignal x =  "SIGNAL: " ++ (cptrule$ x{r_sgl=False})
-             | rrsrt x==Implication = printadl (Just fSpec) 0 (rrant x) ++ " |- " ++ (printadl (Just fSpec) 0$rrcon x)
-             | rrsrt x==Equivalence = printadl (Just fSpec) 0 (rrant x) ++ " = " ++ (printadl (Just fSpec) 0$rrcon x)
-             | rrsrt x==Truth = printadl (Just fSpec) 0 (rrcon x)
+             | rrsrt x==Implication = showADLcode fSpec (rrant x) ++ " |- " ++ showADLcode fSpec (rrcon x)
+             | rrsrt x==Equivalence = showADLcode fSpec (rrant x) ++ " = " ++ showADLcode fSpec (rrcon x)
+             | rrsrt x==Truth = showADLcode fSpec (rrcon x)
              | otherwise = []
    cpttype x = name(source x)++"*"++(name$target x)
    --DESCR -> userrules are user-defined rules, 

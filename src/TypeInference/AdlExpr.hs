@@ -6,28 +6,28 @@ import Adl.Expression
 import Adl.Rule
 import CommonClasses
 
-data AdlExpr =   Relation    {rel::Morphism, mphid::Int, tt::TypeTerm}
-               | Implicate   {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
-               | Equality    {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
-               | Complement  {sub::AdlExpr, tt::TypeTerm}
-               | Flip        {sub::AdlExpr, tt::TypeTerm}
-               | Union       {lst::[AdlExpr], tt::TypeTerm}
-               | Intersect   {lst::[AdlExpr], tt::TypeTerm}
-               | Semicolon   {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
-               | Dagger      {left::AdlExpr, right::AdlExpr, tt::TypeTerm}
+data AdlExpr =   Relation    {rel::Morphism,  mphid::Int,     tt::TypeTerm}
+               | Implicate   {left::AdlExpr,  right::AdlExpr, tt::TypeTerm}
+               | Equality    {left::AdlExpr,  right::AdlExpr, tt::TypeTerm}
+               | Complement  {sub::AdlExpr,                   tt::TypeTerm}
+               | Flip        {sub::AdlExpr,                   tt::TypeTerm}
+               | Union       {lst::[AdlExpr],                 tt::TypeTerm}
+               | Intersect   {lst::[AdlExpr],                 tt::TypeTerm}
+               | Semicolon   {left::AdlExpr,  right::AdlExpr, tt::TypeTerm}
+               | Dagger      {left::AdlExpr,  right::AdlExpr, tt::TypeTerm}
                deriving (Show)
 
 --REMARK -> Equality is NOT on the type to be able to correlate a typed expression to its untyped declaration
 instance Eq AdlExpr where
-  (Relation mp i _)==(Relation mp' i' _) = (name mp)==(name mp') && i==i'
-  (Implicate expr1 expr2 _)==(Implicate expr1' expr2' _) = expr1==expr1' && expr2==expr2'
-  (Equality expr1 expr2 _)==(Equality expr1' expr2' _) = expr1==expr1' && expr2==expr2'
-  (Union exprs _)==(Union exprs' _) = foldr (&&) True $ [elem ex exprs'|ex<-exprs]++[elem ex exprs|ex<-exprs']
-  (Intersect exprs _)==(Intersect exprs' _) = foldr (&&) True $ [elem ex exprs'|ex<-exprs]++[elem ex exprs|ex<-exprs']
-  (Semicolon expr1 expr2 _)==(Semicolon expr1' expr2' _) = expr1==expr1' && expr2==expr2'
-  (Dagger expr1 expr2 _)==(Dagger expr1' expr2' _) = expr1==expr1' && expr2==expr2'
-  (Complement expr _)==(Complement expr' _) = expr==expr'
-  (Flip expr _)==(Flip expr' _) = expr==expr'
+  Relation mp i _        ==Relation mp' i' _         = name mp==name mp' && i==i'
+  Implicate expr1 expr2 _==Implicate expr1' expr2' _ = expr1==expr1' && expr2==expr2'
+  Equality expr1 expr2 _ ==Equality expr1' expr2' _  = expr1==expr1' && expr2==expr2'
+  Complement expr _      ==Complement expr' _        = expr==expr'
+  Flip expr _            ==Flip expr' _              = expr==expr'
+  Union exprs _          ==Union exprs' _            = and $ [elem ex exprs'|ex<-exprs]++[elem ex exprs|ex<-exprs']
+  Intersect exprs _      ==Intersect exprs' _        = and $ [elem ex exprs'|ex<-exprs]++[elem ex exprs|ex<-exprs']
+  Semicolon expr1 expr2 _==Semicolon expr1' expr2' _ = expr1==expr1' && expr2==expr2'
+  Dagger expr1 expr2 _   ==Dagger expr1' expr2' _    = expr1==expr1' && expr2==expr2'
   _==_ = False
 
 instance Ord AdlExpr where

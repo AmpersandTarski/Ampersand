@@ -7,7 +7,7 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Strings (chain) -- , eqCl, enc)
    import Typology (Inheritance(Isa))
-   import Adl ( Contexts,Morphical,ViewPoint,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
+   import Adl ( Contexts,Morphical(..),ViewPoint,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
               , Morphic(..)
               , isa,isFlpFunction,isFunction,mors,sign
               , Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
@@ -79,7 +79,7 @@
        scalarPlgs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)<=1]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-fields plug, fldname fld/="i"]
-       attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-declarations (fldexpr fld)]
+       attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
        isProp d   = null([Sym,Asy]>-multiplicities d)
        sps = [d|d<-declarations fSpec] -- was: for a single pattern
        scs = [d|d<-declarations fSpec] -- was: for the entire context

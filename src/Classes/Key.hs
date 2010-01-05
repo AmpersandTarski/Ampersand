@@ -6,7 +6,7 @@ where
    import Adl.KeyDef          (KeyDef(..))
    import Adl.Pattern         (Pattern)
    import Adl.Context         (Context(..))
-   import Classes.Morphical   (keyDefs)
+   import Classes.ViewPoint   (keyDefs)
    
    class Key a where
     keys :: a->[(Concept,String,[ObjectDef])]

@@ -252,7 +252,7 @@ module Calc ( deriveProofs
          = [ (showADL rule, if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
            , (showPr prf  , "")
            ]++
-           if (rrsrt rule)==Truth then [] else
+           if rrsrt rule==Truth then [] else
               [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
                  (cfProof. Cp . normExpr) rule++"\n"
                 , "")
@@ -484,7 +484,7 @@ module Calc ( deriveProofs
      start Del  = (Fi [Tm m',Cp (delta (sign m'))],Tm m')
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
-                                       , rrant = error ("!Fatal (module Calc 500): illegal reference to antecedent in rule ("++showADL neg'++") ("++showADL pos'++")")
+                                       , rrant = error ("!Fatal (module Calc 487): illegal reference to antecedent in rule ("++showADL neg'++") |- ("++showADL pos'++")")
                                        , rrfps = Nowhere
                                        , rrcon = pos'
                                        , rrxpl = ""
@@ -492,7 +492,10 @@ module Calc ( deriveProofs
                                        , rrdcl = Nothing
                                        , runum = 0
                                        , r_pat = ""
-                                       , r_usr = False}
+                                       , r_usr = False
+                                       , r_sgl = error ("!Fatal (module Calc 496): illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , srrel = error ("!Fatal (module Calc 497): illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       }
                     | otherwise   = Ru { rrsrt = Implication
                                        , rrant = neg'
                                        , rrfps = Nowhere
@@ -502,7 +505,10 @@ module Calc ( deriveProofs
                                        , rrdcl = Nothing
                                        , runum = 0
                                        , r_pat = ""
-                                       , r_usr = False}
+                                       , r_usr = False
+                                       , r_sgl = error ("!Fatal (module Calc 509): illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , srrel = error ("!Fatal (module Calc 510): illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       }
      showOp expr' = case expr' of
                      F{}      -> ";"
                      Fd{}     -> "!"
@@ -619,7 +625,7 @@ module Calc ( deriveProofs
        remainders _ xss | or [null xs| xs<-xss]      = xss
                         | length (eqCl first xss)==1 = remainders xss [tail prf| prf<-xss]
                         | otherwise                  = xss
-       isConst e'' f = null (declarations e'' `isc` declarations f)
+       isConst e'' f = null (decls e'' `isc` decls f)
        isVar e'' f   = not (isConst e'' f)
        derivtext tOp "omkeren" e'' expr = sh tOp++showADL e''++" means "++sh (inv tOp)++showADL expr++"."
        derivtext tOp "mono"    e'' expr = "("++showADL e''++"->"++showADL expr++") is monotonous, so "++sh tOp++showADL e''++" means "++sh tOp++showADL expr++"."

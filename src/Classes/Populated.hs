@@ -16,7 +16,7 @@ where
     contents c 
        = case c of
            C {}     -> [mkPaire s s|s<-cptos c]
-           S        -> error ("!Fatal (module Populated 19): Cannot refer to the contents of the universal singleton")
+           S        -> error ("!Fatal (module Populated 19): Cannot refer to the contents of S")
            Anything -> error ("!Fatal (module Populated 20): Cannot refer to the contents of Anything")
            NOthing  -> error ("!Fatal (module Populated 21): Cannot refer to the contents of Nothing")
 

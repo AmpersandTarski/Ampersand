@@ -59,9 +59,6 @@
    pMeaning Asy   = "antisymmetric"
    pMeaning Trn   = "transitive"
    pMeaning Rfx   = "reflexive"
-   pMeaning Aut   = "automatic if possible"
-
-
 
    showFullRelName :: Declaration -> String
    showFullRelName decl = rEncode (name decl++name (source decl)++name (target decl))
@@ -356,16 +353,8 @@
 --   oneMorphism (K1 e)    = oneMorphism e
 --   oneMorphism (Cp e)    = oneMorphism e
 
-
-
-
-
    clearG :: [Gen] -> [Gen]
-   clearG gens = rd [g| g<-gens, (gengen g)/=(genspc g)]
-
-
-
-
+   clearG gs = rd [g| g<-gs, gengen g/=genspc g, null [genspc g1|g1<-gs>-[g], gengen g==gengen g1, g2<-gs>-[g], genspc g==genspc g2, genspc g1==gengen g2]]
 
 
 

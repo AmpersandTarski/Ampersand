@@ -15,7 +15,7 @@ parseADL :: String      -- ^ The string to be parsed
          -> IO(Context) -- ^ The IO monad with the context. 
 parseADL adlstring flags fnFull =
     do { slRes <- parseIO pArchitecture (scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
-           ; case procParseRes slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
+       ; case typecheck slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
                 ( _ , err:errs)-> ioError (userError ("\nThe type analysis of "++fnFull++" yields errors.\n" ++
                                                   (concat ["!Error of type "++err'| err'<-err:errs])++
                                                   "Nothing generated, please correct mistake(s) first.\n"
@@ -25,16 +25,14 @@ parseADL adlstring flags fnFull =
                                     []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))
                                     cs   -> do{ verboseLn flags (fnFull++ " has been parsed.")
                                               ; return (head cs) -- Just take the first context encounterd. If there are more contexts no warning is generated.
-                                          }
+                                              }
                                   where filteredContexts   = case contextName flags of
                                                                Just cname -> [c | c <- contexts , cname == ctxnm c]
                                                                Nothing   -> contexts
                                         specificName = case contextName flags of
                                                                Just cname -> cname
                                                                Nothing   -> error ("!Fatal (module Parser 34): Contact your dealer!")   --Nothing is niet aan de orde hier
-            }
-            where
-            procParseRes arch = typecheck arch
+       }
 
 
 

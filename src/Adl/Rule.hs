@@ -66,20 +66,18 @@ where
 
    instance Morphic Rule where
     multiplicities _  = []
-    flp r = case r of
-                Ru{} -> r{rrant = if rrsrt r == Truth
-                                  then error ("!Fatal (module Rule 110): illegal call to antecedent in flp ("++show r++")")
-                                  else flp (rrant r)
-                         ,rrcon = flp (rrcon r)
-                         ,rrtyp = (target (rrtyp r),source (rrtyp r))
-                         }
-   --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
+    flp r = r{rrant = if rrsrt r == Truth
+                      then error ("!Fatal (module Rule 110): illegal call to antecedent in flp ("++show r++")")
+                      else flp (rrant r)
+             ,rrcon = flp (rrcon r)
+             ,rrtyp = (target (rrtyp r),source (rrtyp r))
+             }
+  --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
     typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
                | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 --    isIdent r = isIdent (normExpr r)
     isProp r  = isProp (normExpr r)
 
---  check: worden de volgende drie definities wel eens aangeroepen? Jawel, in Relbingen en Calc... 
     isTrue r  = case ruleType r of
                  Truth       -> isTrue (consequent r)
                  Implication -> isFalse (antecedent r) || isTrue (consequent r)
@@ -113,10 +111,11 @@ where
    consequent r = rrcon r
 
    multRules :: Declaration -> [Rule]
-   multRules d
+   multRules d@(Sgn{})
      = [rulefromProp p d | p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
                          , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
-                           error ("!Fatal (module Rule 163): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
+                           error ("!Fatal (module Rule 120): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
+   multRules d = error ("!Fatal (module Rule 121): illegal call to multRules ("++show d++").")
  
    rulefromProp :: Prop -> Declaration -> Rule
    rulefromProp prp d@(Sgn{})
@@ -129,7 +128,6 @@ where
                         Asy-> Implication
                         Trn-> Implication
                         Rfx-> Implication
-                        Aut->  error $ "!Fatal (module Rule 176): There is no rule for this prop."
            , rrant = case prp of
                         Uni-> F [flp r,r] 
                         Tot-> i
@@ -139,7 +137,6 @@ where
                         Asy-> Fi [flp r,r]
                         Trn-> F [r,r]
                         Rfx-> i 
-                        Aut->  error $ "!Fatal (module Rule 186): There is no rule for this prop."
            , rrfps = pos d
            , rrcon = case prp of
                         Uni-> i
@@ -150,8 +147,6 @@ where
                         Asy-> i
                         Trn-> r
                         Rfx-> r
-                        Aut->  error $ "!Fatal (module Rule 197): There is no rule for this prop."
-           
            , rrxpl = case prp of
                         Sym-> name d++"["++name (source d)++"*"++name (source d)++"] is symmetric."    
                         Asy-> name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric."
@@ -161,8 +156,15 @@ where
                         Sur-> name d++"["++name (source d)++"*"++name (target d)++"] is surjective"
                         Inj-> name d++"["++name (source d)++"*"++name (target d)++"] is injective"
                         Tot-> name d++"["++name (source d)++"*"++name (target d)++"] is total"
-                        Aut-> error ("!Fatal (module Rule 208): rulefromProp cannot explain "++show prp)
-           , rrtyp = (Anything,Anything)  -- The type checker will assign the type
+           , rrtyp = case prp of
+                        Sym-> (source d,source d)
+                        Asy-> (source d,source d)
+                        Trn-> (source d,source d)
+                        Rfx-> (source d,source d)
+                        Uni-> (source d,target d)
+                        Sur-> (source d,target d)
+                        Inj-> (source d,target d)
+                        Tot-> (source d,target d)
            , rrdcl = (Just (prp,d))       -- For traceability: The original property and declaration.
            , runum = 0                    -- Rules will be renumbered after enriching the context
            , r_pat = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
@@ -173,5 +175,5 @@ where
           where
            i = Tm $ mIs Anything
            r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
-   rulefromProp _ _ = error ("!Fatal (module Rule 218): Properties can only be set on user-defined Declarations.")
+   rulefromProp _ _ = error ("!Fatal (module Rule 177): Properties can only be set on user-defined Declarations.")
     

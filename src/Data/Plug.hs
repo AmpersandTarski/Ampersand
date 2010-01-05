@@ -100,22 +100,15 @@ where
     name p = plname p
 
   instance Morphical SqlField where
-    concs        f = [target e'|let e'=fldexpr f,isSur e']
-    conceptDefs  f = conceptDefs   (fldexpr f)
-    mors         f = map makeInline (mors (fldexpr f))
-    morlist      f = morlist       (fldexpr f)
-    declarations f = declarations  (fldexpr f)
-    closExprs    f = closExprs     (fldexpr f)
-    objDefs      f = objDefs       (fldexpr f)
-    keyDefs      f = keyDefs       (fldexpr f)
+    concs     f = [target e'|let e'=fldexpr f,isSur e']
+    mors      f = map makeInline (mors (fldexpr f))
+    morlist   f = morlist   (fldexpr f)
+    decls     f = decls     (fldexpr f)
+    closExprs f = closExprs (fldexpr f)
     
   instance Morphical Plug where
-    concs        p@PlugSql{} = concs        (fields p)
-    conceptDefs  p@PlugSql{} = conceptDefs  (fields p)
-    mors         p@PlugSql{} = mors         (fields p)
-    morlist      p@PlugSql{} = morlist      (fields p)
-    declarations p@PlugSql{} = declarations (fields p)
-    closExprs    p@PlugSql{} = closExprs    (fields p)
-    objDefs      p@PlugSql{} = objDefs      (fields p)
-    keyDefs      p@PlugSql{} = keyDefs      (fields p)
-    
+    concs     p@PlugSql{} = concs     (fields p)
+    mors      p@PlugSql{} = mors      (fields p)
+    morlist   p@PlugSql{} = morlist   (fields p)
+    decls     p@PlugSql{} = decls     (fields p)
+    closExprs p@PlugSql{} = closExprs (fields p)

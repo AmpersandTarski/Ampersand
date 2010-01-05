@@ -7,7 +7,7 @@
   --                expliciet te maken.
   --                Daarmee produceert showADLcode volledig correcte ADL-code, dus typecorrect en zonder service-warnings.
 {-# OPTIONS_GHC -XFlexibleInstances #-}
-  module ShowADL ( ShowADL(..), PrintADL(..), disambiguate, mphatsoff)
+  module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
   where
    import Char                            (isAlphaNum,isUpper)
    import CommonClasses
@@ -27,29 +27,10 @@
     showADLcode fSpec x = showADL x
 
 {--------------------------------------------  
---TODO -> merge showADL and printADL 
-   class (PrintADL a) =>  ShowADL a where
+   class ShowADL a where
     showADL :: a -> String
-    showADL x = printadl Nothing 0 x
     showADLcode ::  Fspc -> a -> String
-    showADLcode fSpec x = printadl (Just fSpec) 0 x
-   instance ShowADL ObjectDef 
-   instance ShowADL Pattern
-   instance ShowADL Rule
-   instance ShowADL Gen
-   instance ShowADL KeyDef
-   instance ShowADL Expression
-   instance ShowADL Morphism
-   instance ShowADL Declaration
-   instance ShowADL Prop
-   instance ShowADL Population
-   instance ShowADL Concept
-   instance ShowADL ConceptDef
 --------------------------------------------}
-   class PrintADL a where
-    --DESCR -> FSpec, Object to print, Indentation level
-    --Fspc=Nothing is allowed to be nothing before makeFspec
-    printadl :: Maybe Fspc -> Int -> a -> String
 
    lb :: String
    lb = "\n"
@@ -61,16 +42,12 @@
           where
           postfix :: String
           postfix = [c|x<-xs, c<-(delim++x)]  
-   adlprintlist :: (PrintADL a) => Maybe Fspc -> Int -> (String,String,String) -> [a]  -> String
-   adlprintlist fSpec i opts xs = printlist opts [printadl fSpec i x|x<-xs, (not.null) $ printadl fSpec i x]
-   adlprintlistlb :: (PrintADL a) => Maybe Fspc -> Int -> [a]  -> String
-   adlprintlistlb fSpec i xs = adlprintlist fSpec i ("", lb, lb) xs
    --DESCR -> put string in quotes if it contains strange characters (like spaces)
    printquotes ss | and [isAlphaNum c| c<-ss] = ss
                   | otherwise = "\""++ss++"\""
 
 --------------------------------------------------------------
-   --EXTEND -> printadl must be the inverse of parse. Concrete: Haskell code generated from the original file must be literally equivalent to Haskell code generated from the printadl string.
+   --EXTEND -> showADLcode must be the inverse of parse. Concrete: Haskell code generated from the original file must be literally equivalent to Haskell code generated from the showADLcode string.
    --TODO -> check equivalence of generated Haskell code 
    --REMARK -> comments in original script will not be printed
    --TODO -> what about extends? Answer: ignore untill revised
@@ -86,105 +63,6 @@
 
    -- pops = [Popu mph prs| CPop mph prs<-ces]
    -- CPop ->  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
-   instance PrintADL Fspc where
-    printadl _ _ fSpec = 
-      let 
-      i = 0
-      popmph d = Mph{mphnm=decnm d, mphpos=Nowhere,mphats=popats,mphtyp=(desrc d,detgt d),mphyin=True,mphdcl=d} 
-         where popats = if (desrc d)/=Anything && (detgt d)/=Anything then [desrc d,detgt d] else []
-      in
-      "CONTEXT " ++ name fSpec ++ lb
-         --REMARK -> Pattern "CONTEXT" will be printed as a pattern --> no ds cs ks outside the pattern only pops and objs
-      ++ printadl (Just fSpec) i (patterns fSpec)
-      ++ printadl (Just fSpec) i (serviceS fSpec)
-      ++ printlist ("",lb,lb) [printadl (Just fSpec) i (Popu{popm=popmph d,popps=decpopu d})
-                              | d<-vrels fSpec, (not.null)(decpopu d)]
-      ++ "ENDCONTEXT"
-
-   instance PrintADL Population where
-    printadl fSpec i pop = "POPULATION " ++ printadl fSpec 0 (popm pop) ++ " CONTAINS"
-                                ++ printlist (lb++indent (i+1)++"[ "
-                                             ,";"++lb++indent (i+1)++"  "
-                                             ,lb++indent (i+1)++"]"++lb) 
-                                             [printlist ("",", ","") [show rec]| rec<-popps pop]
-
-   instance PrintADL ObjectDef where
-    printadl fSpec i obj = 
-      (if i==0 then "SERVICE " else "")
-       ++ objnm obj 
-       ++ printlist (" {",", ","}") [printlist (""," ","") (map printquotes strs) | strs<-objstrs obj]
-       ++ " : " 
-       ++ printadl fSpec i (objctx obj)
-       ++ printadl fSpec (i+1) (objats obj)
-       ++ (if i==0 then lb else "")
-
-   instance PrintADL [ObjectDef] where
-    printadl fSpec i objs = 
-       if i==0 then [c|obj<-objs, c<-((printadl fSpec i obj)++lb)] 
-       else adlprintlist fSpec (i+1) (lb++indent i ++ "= [ "
-                                     ,lb++indent i++"  ,"++" "
-                                     ,"]") objs 
-   
-   --REMARK -> show Morphism does not print mphats, so I need my own show Expression and show Morphism
-   --REMARK -> postfix complements are printed prefix
-   instance PrintADL Expression where
-    printadl fSpec i expr' = printexpr ((nonambigExpr fSpec.insParentheses) expr') --REMARK -> insert minimal brackets
-      where      
-      --REMARK -> cannot recursively use printadl, because insParentheses also removes redundant brackets 
-      printexpr expr =  
-        case expr of
-          Tm m  -> printadl fSpec i m
-          Fu fs -> printlist ("","\\/","") [printexpr x|x<-fs]
-          Fi fs -> printlist ("","/\\","") [printexpr x|x<-fs]
-          F  ts -> printlist ("",";","") [printexpr x|x<-ts]
-          Fd ts -> printlist ("","!","") [printexpr x|x<-ts]
-          Cp e  -> "-" ++ printexpr e
-          Tc e  -> "(" ++ printexpr e ++ ")"
-          K0 e  -> printexpr e ++ "*"
-          K1 e  -> printexpr e ++ "+"
-
-   --REMARK -> if you want mphats to be printed then fill the mphats
-   --EXTEND -> print what has been written
-   --REMARK -> show Morphism does not print mphats
-   instance PrintADL Morphism where
-    printadl fSpec i mph = case mph of
-       Mph{mphats=[c]} -> name mph ++ showSign[c,c] ++ if inline mph then "" else "~"
-       Mph{mphats=[c1,c2]} -> name mph ++ showSign[c1,c2] ++ if inline mph then "" else "~"
-       Mph{} -> name mph ++ if inline mph then "" else "~"
-       I{mphats=[c]} -> "I" ++ showSign[c] 
-       I{} -> "I" 
-       V{mphats=[c1,c2]} -> "V" ++ showSign[c1,c2] 
-       V{} -> "V"
-       Mp1{} -> name mph
-
-   instance PrintADL Pattern where
-    printadl fSpec i p = if null patelems then "" else
-      "PATTERN " ++ (if (ptnm p)=="CONTEXT" then "AdlContext" else ptnm p) ++ lb
-      ++ patelems
-      ++ "ENDPATTERN" ++ lb
-      where patelems = printadl fSpec i (ptrls p)
-                    ++ printadl fSpec i (ptgns p)
-                    ++ printadl fSpec i (ptdcs p)
-                    ++ printadl fSpec i (ptcds p)
-                    ++ printadl fSpec i (ptkds p)
-
-   instance PrintADL [Pattern] where
-    printadl fSpec i ps = adlprintlistlb fSpec i ps
-
-   nonambigRule :: Maybe Fspc -> Rule -> Rule
-   nonambigRule fSpec' rule = case fSpec' of
-      Nothing -> rule
-      Just fSpec -> case infertype fSpec (Reor rule) of
-           (_,NoProof (AmbiguousType _ _)) -> if (rrsrt rule)==Truth 
-                                              then rule{rrcon=mphatson (rrcon rule)}
-                                              else rule{rrant=mphatson (rrant rule), rrcon=mphatson (rrcon rule)}
-           _ -> rule
-   nonambigExpr :: Maybe Fspc -> Expression -> Expression
-   nonambigExpr fSpec' expr =  case fSpec' of
-      Nothing -> expr
-      Just fSpec ->  case infertype fSpec (Eeor expr) of
-           (_,NoProof (AmbiguousType _ _)) -> mphatson expr
-           _ -> expr
    mapExpr :: (Morphism->Morphism) -> Expression -> Expression
    mapExpr f expr = case expr of
       F xs  -> F  [mapExpr f x| x<-xs]
@@ -209,84 +87,6 @@
                  Mph{} -> mp{mphats=[]}
                  _     -> mp
 
-   instance PrintADL Rule where
-    printadl fSpec i r'
-     = "RULE " ++ name (srrel r) ++
-       ( if isSignal r then " SIGNALS " else " MAINTAINS " ) ++ str1 ++ str2 ++ str3
-       where
-         r=nonambigRule fSpec r'
-         str1 = if rrsrt r==Truth then "ALWAYS " 
-                else printadl fSpec i (rrant r) 
-                     ++ if rrsrt r==Implication then " |- " else " = "
-         str2 = printadl fSpec i (rrcon r)
-         str3 = if null (rrxpl r) then "" 
-                else lb ++ "EXPLANATION \"" ++ (rrxpl r) ++ "\""
-
-   instance PrintADL [Rule] where
-    printadl fSpec i rs = adlprintlistlb fSpec i rs
-
-   instance PrintADL Gen where
-    printadl fSpec i g = "GEN " ++ cnm (genspc g) ++ " ISA " ++ cnm (gengen g) 
-      where cnm c = case c of 
-                      C{} -> cptnm c
-                      _ -> error $ "!Fatal (module ShowADL 250): Anything, NOthing and ONE are not allowed on GEN .. ISA .."
-
-   instance PrintADL [Gen] where
-    printadl fSpec i gs = adlprintlistlb fSpec i gs
-
-   instance PrintADL Declaration where
-    printadl fSpec i d = 
-       decnm d ++ " :: "
-       ++ printadl fSpec i (desrc d)
-       ++ (if isfunc then " -> " else " * ")
-       ++ printadl fSpec i  (detgt d)
-       ++ printadl fSpec i printprops
-       ++ " PRAGMA " ++ printlist ("\"","\" \"","\"") [decprL d,decprM d, decprR d]
-       ++ lb ++ "EXPLANATION  \"" ++ (decexpl d) ++ "\""
-       --REMARK -> population printed to POPULATION
-       ++ "."
-       where isfunc = elem Uni (decprps d) && elem Tot (decprps d)
-             printprops = let rmfprps x = x==Uni||x==Tot
-                          in if isfunc then filter rmfprps (decprps d) else (decprps d)
-             
-
-   instance PrintADL [Declaration] where
-    printadl fSpec i ds = adlprintlistlb fSpec i ds
-
-   --REMARK -> instance Show Prop implements inverse
-   instance PrintADL Prop where
-    printadl _ _ p = show p
-
-   instance PrintADL [Prop] where
-    printadl fSpec i ps = adlprintlist fSpec i (" [",", ","]") ps
-
-   --REMARK -> name implements inverse (except for Anything and NOthing)
-   instance PrintADL Concept where
-    printadl _ _ c = name c 
- 
-   --REMARK -> empty cdrefs are printed even when not written in original script
-   instance PrintADL ConceptDef where
-    printadl _ _ cd = "CONCEPT " ++ printlist ("\"","\" \"", "\"") [cdnm cd, cddef cd, cdref cd]
-
-   instance PrintADL [ConceptDef] where
-    printadl fSpec i cds = adlprintlistlb fSpec i cds 
-
-   --REMARK -> only the name of the main label is used
-   instance PrintADL KeyDef where
-    printadl fSpec i kd = 
-       "KEY " ++ kdlbl kd ++ ": " 
-       ++ printadl fSpec i (kdctx kd)
-       ++ printlist (lb++indent (i+2)++"[", ","++lb++indent (i+2)++" ","]") [printkdat kdat|kdat<-kdats kd]
-       where 
-       printkdat obj =
-          objnm obj 
-          ++ printlist (" {",", ","}") [printlist (""," ","") (map printquotes strs) | strs<-objstrs obj]
-          ++ " : " 
-          ++ printadl fSpec i (objctx obj)
-
-   instance PrintADL [KeyDef] where
-    printadl i kds = adlprintlistlb i kds
---------------------------------------------
 
    instance ShowADL ObjectDef where
    -- WAAROM (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
@@ -354,22 +154,23 @@
        then "RULE "++name r++" SIGNALS "
        else "RULE "++name r++" MAINTAINS ")++
        case rrsrt r of
-            Truth       -> showADL (rrcon r)
-            Implication -> showADL (rrant r) ++" |- "++showADL (rrcon r)
-            Equivalence -> showADL (rrant r) ++" = " ++showADL (rrcon r)
+            Truth          -> showADL (rrcon r)
+            Implication    -> showADL (rrant r) ++" |- "++showADL (rrcon r)
+            Equivalence    -> showADL (rrant r) ++" = " ++showADL (rrcon r)
+            Generalization -> showADL (G (pos r) (source (rrcon r)) (source (rrant r)) (r_pat r))
     showADLcode fSpec r
      = (if isSignal r
        then "RULE "++name r++" SIGNALS "
        else "RULE "++name r++" MAINTAINS ")++
        case rrsrt r of
-            Truth       -> showADLcode fSpec (rrcon r)
-            Implication -> showADLcode fSpec (rrant r) ++" |- "++showADLcode fSpec (rrcon r)
-            Equivalence -> showADLcode fSpec (rrant r) ++" = " ++showADLcode fSpec (rrcon r)
+            Truth          -> showADLcode fSpec (rrcon r)
+            Implication    -> showADLcode fSpec (rrant r) ++" |- "++showADLcode fSpec (rrcon r)
+            Equivalence    -> showADLcode fSpec (rrant r) ++" = " ++showADLcode fSpec (rrcon r)
+            Generalization -> showADLcode fSpec (G (pos r) (source (rrcon r)) (source (rrant r)) (r_pat r))
 
    instance ShowADL Gen where
     showADL (G pos g s _) = "GEN "++showADL s++" ISA "++show g
-    showADLcode fSpec (G pos g s _) = "GEN "++showADLcode fSpec s++" ISA "++show g
-
+    showADLcode fSpec (G pos g s _) = "GEN "++showADLcode fSpec s++" ISA "++showADLcode fSpec  g
 
    instance ShowADL KeyDef where
     showADL kd 

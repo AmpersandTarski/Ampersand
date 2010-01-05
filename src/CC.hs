@@ -13,7 +13,7 @@
                        , "PATTERN", "ENDPATTERN"
                        , "SERVICE", "INITIAL", "SQLPLUG", "PHPPLUG"
                        , "POPULATION", "CONTAINS"
-                       , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP"
+                       , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP", "ALWAYS"
                        , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON"
                        , "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V", "S"
@@ -128,7 +128,7 @@
 
    pGen             :: Parser Token Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
-                       where rebuild spec pos' genus = G pos' (cptnew genus ) (cptnew spec ) []
+                       where rebuild spc p gen = G p (cptnew gen ) (cptnew spc ) ""
 
    postStr          :: Parser Token String
    postStr           = f <$> pList1 (pKey "~" <|> pKey "+" <|> pKey "-" <|> pKey "*")

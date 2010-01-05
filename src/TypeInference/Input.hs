@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.Input (isaRels,allPatGens,allPatRules,allCtxGens,allCtxPats,allCtxCpts,allCtxDecls,allCtxRules,allCtxKeyDefs,removeCtx) where
+module TypeInference.Input (isaRels,allPatRules,allCtxPats,allCtxCpts,allCtxRules,removeCtx) where
 import Auxiliaries (eqCl)
 import Collection (rd,uni)
 import Adl  
@@ -10,14 +10,6 @@ import qualified Data.Set as Set
    --          context names should be unique
 removeCtx :: Contexts -> Context -> Contexts
 removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
-
---DESCR -> all the Gens of Contexts
-allCtxGens :: Contexts -> Gens
-allCtxGens ctxs = concat [case cx of Ctx{} -> allPatGens (ctxpats cx) | cx<-ctxs]
-
---DESCR -> all the Gens of patterns
-allPatGens :: Patterns -> Gens
-allPatGens ps = concat [case p of Pat{} -> ptgns p | p<-ps]
 
 --DESCR -> all the patterns of contexts
 allCtxPats :: Contexts -> Patterns
@@ -39,29 +31,13 @@ allCtxCpts ctxs
    , (c@C{},_)<-take 1 cl
    ] `uni` [S]
   where
-   inject cs = cs ++ [x{cptos=[]}|x@(C{})<-rd$concat[[gengen g,genspc g]|g<-allCtxGens ctxs], not$elem x cs] 
+   inject cs = cs ++ [x{cptos=[]}|x@(C{})<-rd$concat[[gengen g,genspc g]|g<-gens ctxs], not$elem x cs] 
    pps = [ pop | cx<-ctxs, pop<-ctxpops cx]
-   dls = allPatDecls (allCtxPats ctxs)
+   dls = declarations ctxs
    dom r ps = if isInj r then [ srcPaire p | p<-ps ] else rd [ srcPaire p | p<-ps ]
    cod r ps = if isUni r then [ trgPaire p | p<-ps ] else rd [ trgPaire p | p<-ps ]
 
---DESCR -> all the Declarations of Contexts
-allCtxDecls :: Contexts -> Declarations
-allCtxDecls ctxs = allPatDecls (allCtxPats ctxs)
-
-allCtxKeyDefs :: Contexts -> KeyDefs
-allCtxKeyDefs ctxs = (allPatKeyDefs (allCtxPats ctxs))
---TODO -> all context keydefs are already parsed into a pattern for some unknown reason
---          not needed: ++ (concat [case cx of Ctx{} -> ctxks cx | cx <-ctxs])
  
-allPatKeyDefs :: Patterns -> KeyDefs
-allPatKeyDefs ps = concat [case p of Pat{} -> ptkds p | p<-ps]
-
---DESCR -> concatenate the declarations of relations from the patterns
-allPatDecls :: Patterns -> Declarations
-allPatDecls ps = concat [ptdcs p | p@(Pat{})<-ps]
-
-
 ---------------------------------------------------------------------------------------------
 
 --REMARK -> Can not use data Cpt as a in RelSet a, because the  implementation of
@@ -111,12 +87,12 @@ toConcept StonCpt = S
 type RelSet a = Set.Set (a,a)
 
 isaRels :: Concepts -> Gens -> [(Concept,Concept)]
-isaRels cs gens = if null checkrels
-                  then [(toConcept spc, toConcept gen)|(spc,gen)<-rs]
-                  else error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
-                         ++ " if the order of "++show c2++" and "++show c3 ++ 
-                         " is not specified. Specify the order with a GEN .. ISA .."
-                         |(c1,c2,c3)<-checkrels]
+isaRels cs gs = if null checkrels
+                then [(toConcept spc, toConcept gen)|(spc,gen)<-rs]
+                else error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
+                       ++ " if the order of "++show c2++" and "++show c3 ++ 
+                       " is not specified. Specify the order with a GEN .. ISA .."
+                       |(c1,c2,c3)<-checkrels]
   where
   rs = Set.toList $ isaRelSet (Set.fromList $ (map fromConcept cs))
   checkrels :: [(Cpt,Cpt,Cpt)]
@@ -135,9 +111,9 @@ isaRels cs gens = if null checkrels
          Set.fromList [(a,a) | a<-(NoCpt:AllCpt:Set.toList cpts)],
          transitiveclosure_w (Set.toList cpts) gens2rels]
          where
-         gens2rels = Set.fromList [(fromConcept a, fromConcept b) | (a,b)<-(map gen2rel gens)]
+         gens2rels = Set.fromList [(fromConcept a, fromConcept b) | (a,b)<-(map gen2rel gs)]
          gen2rel gen =  case gen of
-                         G{} -> (genspc gen, gengen gen) --TODO -> check if gengen actually contains gen and not spc
+                         G{} -> (genspc gen, gengen gen)
 
 --DESCR -> duplicated from clos1.Auxiliaries.hs only [a] is provided instead of
 --         computed from range(RelSet a) /\ domain(RelSet a)

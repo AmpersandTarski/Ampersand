@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInference.ITree where
+import Strings (chain)
 import Adl.Concept
 import Adl.MorphismAndDeclaration
 --import Adl.Prop
@@ -9,6 +10,7 @@ import Data.List
 
 type Gamma = [Statement]
 type Statements = [Statement]
+-- WAAROM? (SJ) is Statement nodig? Welk doel is hiermee gediend? 
 data Statement = IsaStat  Concept Concept | --DESCR -> stating that the left concept IS-a right concepte
                  InfErr InfErrType   | --DESCR -> stating that the type of an expression cannot be inferred, because the inference attempt ended because of this error
                  EmptyStmt | --DESCR -> stating that there is no statement
@@ -69,9 +71,9 @@ instance Eq Statement where
   (BoundTo expr)==(BoundTo expr') = expr==expr'
   _==_ = False
 ------------------------------------------------------------
---DESCR -> Or I have a type, proofed by the fact that all alternatives resulting in a type, result in the same type.
---         Or I could not infer a type, proofed by the fact that all alternatives result in error(s).
---         Or I have an ambiguous type, proofed by the fact that some alternatives result in different types.
+--DESCR -> Or I have a type, proven by the fact that all alternatives resulting in a type, result in the same type.
+--         Or I could not infer a type, proven by the fact that all alternatives result in error(s).
+--         Or I have an ambiguous type, proven by the fact that some alternatives result in different types.
 data Proof = Proven Gamma [ITree] | NoProof TypeErrorsType   
 data TypeErrorsType = NoType Gamma [(Statements,ITree)] | AmbiguousType Gamma [ITree] deriving (Show)
 
@@ -265,27 +267,23 @@ analysedisjunction g (_,basetree) dtp' c1 c2 expr = check7
 analyseamb :: Gamma -> [ITree] -> TypeError
 analyseamb g ts = 
    if not (sametype inftypes)
-   then TypeError (ErrCode 2) $ "The type can be " ++ prinftypes ++ "."
+   then TypeError (ErrCode 2) $ "The type can be " ++ chain " or " [show itp| itp<-inftypes] ++ "."
    else if null (diffcomps exprrels)
         then TypeError (ErrCode 0) 
              "There appears to be an ambiguity, but details cannot be found. Contact the system administrator."
-        else TypeError (ErrCode 6) $ printdiffcomps
+        else TypeError (ErrCode 6) $ chain ". " (diffcomps exprrels)
    where
-   prinftypes = (savetail.savetail.savetail.savetail) [c|itp<-inftypes,c<-" or "++show itp]
    infstmts = [evaltree g t|t<-ts]
    inftypes = map evalstmt infstmts
    sametype [] = True
    sametype (_:[]) = True
    sametype (x:y:xs) = x==y && sametype (y:xs)
-   exprrels = [relations expr | (BoundTo expr)<-infstmts]
-   printdiffcomps = (savetail.savetail) [c|str<-diffcomps exprrels, c<-". "++str]
-   savetail [] = []
-   savetail (_:xs) = xs
+   exprrels = [relations expr | BoundTo expr<-infstmts]
    diffcomps [] = []
    diffcomps (_:[]) = []
    diffcomps (x:y:xs) = ["The type of "++ printrel (rel r1) (mphid r1) x
                          ++ " can be " ++ signstr r1 ++ " or " ++ signstr r2
-                         |(r1,r2)<-zip x y, (tt r1)/=(tt r2),r1==r2 ] ++ diffcomps (y:xs)
+                        |(r1,r2)<-zip x y, tt r1/=tt r2, r1==r2 ] ++ diffcomps (y:xs)
       where       
       signstr r = show $ evalstmt (BoundTo r)
 
@@ -324,12 +322,12 @@ stmts (DisjRule trs1 trs2) = concat $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-t
 stmts (UnionRule trs1 trs2) = concat $ [stmts tr1|tr1<-trs1] ++ [stmts tr2|tr2<-trs2]
 stmts (ImplyRule tr) = stmts tr
 stmts (EqualRule tr) = stmts tr
-stmts (RelcompRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
-stmts (AddcompRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (RelcompRule _ tr1 tr2) = stmts tr1 ++ stmts tr2
+stmts (AddcompRule _ tr1 tr2) = stmts tr1 ++ stmts tr2
 stmts (BindRule _ tr) = stmts tr
 stmts (DComplRule tr) = stmts tr
 stmts (FlipRule _ tr) = stmts tr
-stmts (SpecRule _ tr1 tr2) = (stmts tr1) ++ (stmts tr2)
+stmts (SpecRule _ tr1 tr2) = stmts tr1 ++ stmts tr2
 stmts (DeMorganRule _ tr) = stmts tr
 
 --DESCR -> folds the tree to a single statement by evaluating all rules

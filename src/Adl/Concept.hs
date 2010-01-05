@@ -45,7 +45,7 @@ where
     showsPrec _ c = showString (name c)
    instance Identified Concept where
     name (C {cptnm = nm}) = nm
-    name S = "ONE"
+    name S = "S"
     name Anything   = "Anything"
     name NOthing    = "NOthing"
 
@@ -152,7 +152,7 @@ where
    
    instance Conceptual Concept where
     conts (C {cptos = os}) = os
-    conts (S)        = error ("!Fatal (module Concept 157): ONE has exactly one atom, but that atom may not be referred to")
+    conts (S)        = error ("!Fatal (module Concept 157): S has exactly one atom, but that atom may not be referred to")
     conts Anything   = error ("!Fatal (module Concept 158): Anything is Everything...")
     conts NOthing    = error ("!Fatal (module Concept 159): NOthing is not very much...")
 

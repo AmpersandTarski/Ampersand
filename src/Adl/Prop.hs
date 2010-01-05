@@ -12,7 +12,6 @@ where
                   | Asy          -- ^ antisymmetric
                   | Trn          -- ^ transitive
                   | Rfx          -- ^ reflexive
-                  | Aut          -- ^ calculate contents automatically if possible
                     deriving (Eq,Ord)
 
 -- \***********************************************************************
@@ -27,7 +26,6 @@ where
     showsPrec _ Asy = showString "ASY"
     showsPrec _ Trn = showString "TRN"
     showsPrec _ Rfx = showString "RFX"
-    showsPrec _ Aut = showString "AUT"
    
    flipProps :: Props -> Props
    flipProps ps = map flipProp ps 

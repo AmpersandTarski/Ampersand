@@ -8,8 +8,9 @@ module Generators (doGenAtlas
                   ,prove)
 where
 
+import System (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath        (combine,replaceExtension)
-import Options
+import Options hiding (services)
 import FspecDef
 import ShowHS                 (fSpec2Haskell)
 import ShowADL
@@ -35,9 +36,24 @@ import Picture
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
-  = (writeFile outputFile $ printadl (Just fSpec) 0 fSpec)
+  = (writeFile outputFile $ showADLcode fSpec fSpec)
     >> verboseLn flags ("ADL written to " ++ outputFile ++ ".")
     where  outputFile = combine (dirOutput flags) "Generated.adl"
+
+instance ShowADL Fspc where
+    showADL fSpec = showADLcode fSpec fSpec
+    showADLcode fSpec' fSpec
+     = "CONTEXT " ++name fSpec
+       ++ (if null (objDefs fSpec)      then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (objDefs fSpec))      ++ "\n")
+       ++ (if null (patterns fSpec)     then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (patterns fSpec))     ++ "\n")
+       ++ (if null (vConceptDefs fSpec) then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vConceptDefs fSpec)) ++ "\n")
+       ++ (if null (vgens fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vgens fSpec))        ++ "\n")
+       ++ (if null (vkeys fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vkeys fSpec))        ++ "\n")
+       ++ (if null (vrels fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vrels fSpec))        ++ "\n")
+       ++ (if null showADLpops          then "" else "\n"++chain "\n\n" showADLpops                                     ++ "\n")
+       ++ "\n\nENDCONTEXT"
+       where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
+                           | d<-declarations fSpec, not (null (decpopu d))]
 
 prove :: Fspc -> Options -> IO()
 prove fSpec _
@@ -89,8 +105,14 @@ doGenFspec fSpec flags
      verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)                     >>
      makeOutput                                                                               >>
      verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".") >>
-     if graphics flags then foldr1 (>>) [ writePicture flags p| p<-thePictures] else putStr "\nNo graphics generated."
-       where
+     (if graphics flags then foldr1 (>>) [ writePicture flags p| p<-thePictures] else putStr "\nNo graphics generated.")>>
+     case fspecFormat flags of
+      FLatex  -> do result <- system ("pdflatex "++outputFile)
+                    case result of 
+                      ExitSuccess   -> putStrLn ("PDF file created.")
+                      ExitFailure x -> putStrLn ("Failure: " ++ show x)
+      _ -> putStr "\nDone."
+     where  
          outputFile = replaceExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
                                                  FPandoc       -> ".pandoc"

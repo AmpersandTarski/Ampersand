@@ -20,10 +20,12 @@ module Data.Fspec ( Fspc(..)
    import Adl.Concept                   (Concept(..),Morphic(..))
    import Adl.Pair
    import Adl.FilePos
-   import Adl.Pattern                   (Pattern)
+   import Adl.Pattern                   (Pattern(..))
    import Adl.Rule                      (Rule(..))
    import Adl.ECArule                   (ECArule(..))
    import Adl.ObjectDef                 (ObjectDef(..))
+   import Adl.KeyDef                    (KeyDef(..))
+   import Adl.Gen                       (Gen(..))
    import Adl.Expression                (Expression(..))
    import Adl.MorphismAndDeclaration    (Morphism,Declaration,mIs)
    import Adl                           (FPA(..), FPcompl(..))
@@ -44,6 +46,8 @@ module Data.Fspec ( Fspc(..)
                     , serviceG     :: [ObjectDef]           -- ^ all services derived from the basic ontology
                     , services     :: [Fservice]            -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , vrules       :: [Rule]                -- ^ All rules that apply in the entire Fspc, including all signals
+                    , vkeys        :: [KeyDef]              -- ^ All keys that apply in the entire Fspc
+                    , vgens        :: [Gen]                 -- ^ All keys that apply in the entire Fspc
                     , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
                     , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec) from non-signal rules
                     , vrels        :: [Declaration]         -- ^ All declarations in this specification
@@ -60,27 +64,28 @@ module Data.Fspec ( Fspc(..)
                     }
 
    instance Morphical Fspc where
-    concs        fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
-    conceptDefs  fSpec = vConceptDefs fSpec                           -- The set of all concept definitions in this Fspc
-    mors         fSpec = mors (vplugs fSpec) `uni` mors (serviceS fSpec) `uni` mors (vrules fSpec)
-    morlist      fSpec = morlist (vplugs fSpec) ++ morlist (serviceS fSpec) ++ morlist (vrules fSpec)
-    declarations fSpec = vrels fSpec
-    genE         fSpec = genE (vrels fSpec++declarations [r| r<-signals fSpec])  
-    closExprs    fSpec = closExprs (rules fSpec++signals fSpec)
+    concs     fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
+    mors      fSpec = mors (vplugs fSpec) `uni` mors (serviceS fSpec) `uni` mors (vrules fSpec)
+    morlist   fSpec = morlist (vplugs fSpec) ++ morlist (serviceS fSpec) ++ morlist (vrules fSpec)
+    decls     fSpec = vrels fSpec
+    genE      fSpec = genE (vrels fSpec++declarations [r| r<-signals fSpec])  
+    closExprs fSpec = closExprs (rules fSpec++signals fSpec)
 
    instance ViewPoint Fspc where
-    --Interpretation of fSpec as a language means to describe the classification tree,
-    --the set of declarations and the rules that apply in that fSpec. Inheritance of
-    --properties is achieved as a result.
-    rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
-    signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
-    patterns     fSpec = vpatterns fSpec
     objectdef    fSpec = Obj { objnm   = name fSpec
                              , objpos  = Nowhere
                              , objctx  = Tm (mIs S)
                              , objats  = serviceS fSpec ++ serviceG fSpec
                              , objstrs = []
                              }
+    conceptDefs  fSpec = vConceptDefs fSpec ++ [cd| pat<-patterns fSpec, cd<-ptcds pat]
+    declarations fSpec = vrels fSpec
+    rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
+    signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
+    objDefs      fSpec = serviceS fSpec ++ serviceG fSpec
+    keyDefs      fSpec = vkeys fSpec
+    gens         fSpec = vgens fSpec
+    patterns     fSpec = vpatterns fSpec
     isa          fSpec = fsisa  fSpec
 
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
@@ -89,7 +94,7 @@ module Data.Fspec ( Fspc(..)
    data Fservice = Fservice 
                      { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
                                                                -- and which has been type checked by the compiler.
-                     , fsv_rels      :: [Morphism]             -- The declarations that may be changed by the user of this service
+                     , fsv_rels      :: [Morphism]             -- The relations that may be changed by the user of this service
                      , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service (provided by the parser)
                      , fsv_quads     :: [Quad]                 -- The Quads that are used to make a switchboard. (generated by ADL2Fspec)
                      , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants. (generated by ADL2Fspec)
@@ -113,25 +118,27 @@ module Data.Fspec ( Fspc(..)
                    ++show (fsv_deleting  svc)++"\n"
                   ) -- where delt::Declaration; delt = error "!Fatal (module Fspec 111): Undef declaration"
 
+
    instance Morphical Fservice where
-    concs        svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
-    conceptDefs  _   = []                                     -- The set of all concept definitions in this Fservice
-    mors         svc = mors (rules svc++signals svc)          -- The set of all morphisms in this Fservice
-    morlist      svc = morlist (rules svc++signals svc)       -- The list of all morphisms in this Fservice
-    declarations svc = declarations (rules svc++signals svc)  -- The set of all declarations in this Fservice
-    genE         svc = genE (rules svc++signals svc)          -- The genE relation
-    closExprs    svc = closExprs (rules svc++signals svc)     -- The closure expressions of this Fservice
+    concs     svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
+    mors      svc = mors (rules svc++signals svc)          -- The set of all morphisms in this Fservice
+    morlist   svc = morlist (rules svc++signals svc)       -- The list of all morphisms in this Fservice
+    decls     svc = declarations (rules svc++signals svc)  -- The set of all declarations in this Fservice
+    genE      svc = genE (rules svc++signals svc)          -- The genE relation
+    closExprs svc = closExprs (rules svc++signals svc)     -- The closure expressions of this Fservice
 
    instance ViewPoint Fservice where
-    --Interpretation of svc as a language means to describe the classification tree,
-    --the set of declarations and the rules that apply in that svc. Inheritance of
-    --properties is achieved as a result.
-    rules     svc = [r| r<-fsv_rules svc]
-    signals   svc = [r| r<-fsv_signals svc]
-    patterns  _   = []
-    objectdef svc = fsv_objectdef svc
-    isa       svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
-                    where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
+    objectdef    svc = fsv_objectdef svc
+    conceptDefs   _  = []                                     -- The set of all concept definitions in this Fservice
+    declarations svc = decls svc
+    rules        svc = [r| r<-fsv_rules svc]
+    signals      svc = [r| r<-fsv_signals svc]
+    objDefs      svc = [fsv_objectdef svc]
+    keyDefs       _  = []
+    gens          _  = []
+    patterns      _  = []
+    isa          svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
+                       where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
 
    data Field  = Att { fld_name      :: String                 -- The name of this field
                      , fld_sub       :: [Field]                -- all sub-fields

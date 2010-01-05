@@ -91,7 +91,7 @@
              , "}" ]
           mdata :: Plug -> [String]
           mdata plug
-           = if name plug==name S then [ "1" ] else
+           = if name plug==name S then [ "S" ] else
              if length (fields plug)==2 -- treat binary tables differently
              then
              --DESCR -> the first field contains an expression::[A*A] which can be the expression I[A]

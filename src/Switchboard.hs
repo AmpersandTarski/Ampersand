@@ -16,7 +16,7 @@ module Switchboard(switchboard) where
    import Calc (quads,positiveIn)
    import ShowADL
 
-   switchboard :: ViewPoint a =>Fspc -> a -> DotGraph String
+   switchboard :: ViewPoint a => Fspc -> a -> DotGraph String
    switchboard fSpec spc 
      = DotGraph { strictGraph = False
                 , directedGraph = True

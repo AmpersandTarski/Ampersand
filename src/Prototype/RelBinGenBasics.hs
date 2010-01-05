@@ -487,7 +487,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
       if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple declarations in "++show m') else
       name plug
       where (plug,_,_) = sqlRelPlug fSpec (Tm (makeMph a))
-            as = declarations m'
+            as = decls m'
             a = head as
    
     
