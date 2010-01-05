@@ -18,8 +18,8 @@
    import Strings                         (chain)
    import Auxiliaries                     (eqCl,showL)
   
-   import TypeInferenceEngine
-   import TypeInference.ITree
+ --  import TypeInferenceEngine
+ --  import TypeInference.ITree
  
    class ShowADL a where
     showADL :: a -> String
@@ -348,6 +348,21 @@
    --    where decls = declarations context>-declarations (ctxpats context)
    --          cdefs = conceptDefs context>-conceptDefs (ctxpats context)
 
+-- WAAROM?  Stef, wat is de toegevoegde waarde van ShowADL Context nu we ShowADL Fspc hebben?
+   instance ShowADL Fspc where
+    showADL fSpec = showADLcode fSpec fSpec
+    showADLcode fSpec' fSpec
+     = "CONTEXT " ++name fSpec
+       ++ (if null (objDefs fSpec)      then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (objDefs fSpec))      ++ "\n")
+       ++ (if null (patterns fSpec)     then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (patterns fSpec))     ++ "\n")
+       ++ (if null (vConceptDefs fSpec) then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vConceptDefs fSpec)) ++ "\n")
+       ++ (if null (vgens fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vgens fSpec))        ++ "\n")
+       ++ (if null (vkeys fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vkeys fSpec))        ++ "\n")
+       ++ (if null (vrels fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vrels fSpec))        ++ "\n")
+       ++ (if null showADLpops          then "" else "\n"++chain "\n\n" showADLpops                                     ++ "\n")
+       ++ "\n\nENDCONTEXT"
+       where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
+                           | d<-declarations fSpec, not (null (decpopu d))]
 
 ---------------------------------------
 --FUNCTIONS

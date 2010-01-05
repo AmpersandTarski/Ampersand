@@ -9,7 +9,7 @@ import TypeInference.AdlExpr
 
 --------------------------------------
 import TypeInference.Input
-import Collection (Collection(uni))
+--import Collection (Collection(uni))
 import Adl
 import Data.Fspec
 --DESCR -> Infer the type of an expression within the boundaries of an fspec

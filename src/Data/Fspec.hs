@@ -16,29 +16,13 @@ module Data.Fspec ( Fspc(..)
                   , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
                   )
  where
-   import Adl.ConceptDef                (ConceptDef)
-   import Adl.Concept                   (Concept(..),Morphic(..))
-   import Adl.Pair
-   import Adl.FilePos
-   import Adl.Pattern                   (Pattern(..))
-   import Adl.Rule                      (Rule(..))
-   import Adl.ECArule                   (ECArule(..))
-   import Adl.ObjectDef                 (ObjectDef(..))
-   import Adl.KeyDef                    (KeyDef(..))
-   import Adl.Gen                       (Gen(..))
-   import Adl.Expression                (Expression(..))
-   import Adl.MorphismAndDeclaration    (Morphism,Declaration,mIs)
-   import Adl                           (FPA(..), FPcompl(..))
-   import CommonClasses
-   import Classes.Morphical
-   import Classes.ViewPoint
-  -- import CommonClasses
+   import Adl            hiding (Association)
    import Collection                    (uni,(>-))
    import Strings                       (chain)
    import Typology                      (Inheritance(..))
-   import Data.Plug
-   import Picture
-   
+   import Data.Plug                     (Plug)
+   import Picture                       (Picture)
+
    data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
                     , vplugs       :: [Plug]                -- ^ all plugs defined in the ADL-script
                     , plugs        :: [Plug]                -- ^ all plugs (defined and derived)
