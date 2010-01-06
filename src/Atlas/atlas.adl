@@ -195,10 +195,7 @@ SERVICE Relations : I[ONE]
 --I do not want to display the qualified name, but the unqualified one
 --TODO -> in case of overloaded relation variables, the populations are merged 
 SERVICE "RelationDetails"{"DISPLAY=Relation.display"}   : I[Relation]
-   = [ type        : relvar;display
-     , "source(s)"{"DISPLAY=Concept.display"} : relvar;source
-     , "target(s)"{"DISPLAY=Concept.display"} : relvar;target
-     , "multiplicity properties" : (on[MultiplicityRule*Relation])~
+   = [ "multiplicity properties" : (on[MultiplicityRule*Relation])~
        = [property : property;display, "derived rule" : display, violations : violates~;display]
      , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
        = [property : property;display, "derived rule" : display, violations : violates~;display]

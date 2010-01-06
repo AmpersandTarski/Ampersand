@@ -147,19 +147,19 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x]|x<-cpts]
-   pop' ATContains = [[name x,show y]| x<-vrels fSpec, y<-contents x]
+   pop' ATContains = [[relpred x,show y]| x<-vrels fSpec, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets]
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
  --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-patterns fSpec, x<-ptgns p]
    pop' ATPicture = [[x,x]|x<-pics]
-   pop' ATMorphisms = [[cptrule x, name y]|x<-userrules, y<-mors x]
+   pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-multrules]
    pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
-   pop' ATRelation = ["I"]:["V"]:[[name x]|x<-vrels fSpec]
-   pop' ATRelVar = [[name x,cpttype x]|x<-vrels fSpec]
+   pop' ATRelation = ["I"]:["V"]:[[relpred x]|x<-vrels fSpec]
+   pop' ATRelVar = [[relpred x,cpttype x]|x<-vrels fSpec]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x]|x<-atlasrules]
    pop' ATType = [t x|x<-vrels fSpec] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
@@ -174,6 +174,10 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATViolation = [[show y] | (_,y)<-violations fSpec]
    --------------------------------------------------------
    --picturelink =  "./img/" ++ name fSpec++".png"
+   relpred x@(Sgn{}) = name x ++ "::" ++ cpttype x 
+   relpred x = name x
+   mphpred x@(Mph{}) = relpred (mphdcl x) 
+   mphpred x = name x
    cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (fsisa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
    cptrule x | isSignal x =  "SIGNAL: " ++ (cptrule$ x{r_sgl=False})

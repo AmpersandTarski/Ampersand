@@ -265,7 +265,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
   ctxrules
-     = [ bindRule r| r<-ctxrs cx ] ++               -- all rules that are declared in the ADL-script within
+     = [ bindRule r| r<-rules cx ++ signals cx ] ++               -- all rules that are declared in the ADL-script within
                                                     --     this context, but not in the patterns of this context
        [ rulefromKey k (name pat)
        | pat<-patterns cx, k<-ptkds pat] ++         -- all rules that are derived from all KEY statements in this context
