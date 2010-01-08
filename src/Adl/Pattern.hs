@@ -15,7 +15,7 @@ where
       = Pat { ptnm  :: String       -- ^ Name of this pattern
             , ptrls :: Rules        -- ^ List of rules declared in this pattern
             , ptgns :: Gens         -- ^ List of generalizations defined in this pattern
-            , ptdcs :: Declarations -- ^ List of declarations defined in this pattern
+            , ptdcs :: Declarations -- ^ List of declarations declared in this pattern
             , ptcds :: ConceptDefs  -- ^ list of concept definitions defined in this pattern
             , ptkds :: KeyDefs      -- ^ list of key definitions defined in this pattern
             }   --deriving (Show) -- voor debugging

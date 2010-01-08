@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.Input (isaRels,allPatRules,allCtxPats,allCtxCpts,allCtxRules,removeCtx) where
+module TypeInference.Input (isaRels,allPatRules,allCtxPats,allCtxCpts,removeCtx) where
 import Auxiliaries (eqCl)
 import Collection (rd,uni)
 import Adl  
@@ -15,10 +15,7 @@ removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (cas
 allCtxPats :: Contexts -> Patterns
 allCtxPats ctxs = concat [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
 
---DESCR -> all the Rules of Contexts
-allCtxRules :: Contexts -> Rules
-allCtxRules ctxs = concat [case cx of Ctx{} -> ctxrs cx {- ++ allPatRules (ctxpats cx) -} | cx<-ctxs]
-
+ 
 --DESCR -> all the Rules of patterns
 allPatRules :: Patterns -> Rules
 allPatRules ps = concat [case p of Pat{} -> ptrls p | p<-ps]
@@ -111,9 +108,7 @@ isaRels cs gs = if null checkrels
          Set.fromList [(a,a) | a<-(NoCpt:AllCpt:Set.toList cpts)],
          transitiveclosure_w (Set.toList cpts) gens2rels]
          where
-         gens2rels = Set.fromList [(fromConcept a, fromConcept b) | (a,b)<-(map gen2rel gs)]
-         gen2rel gen =  case gen of
-                         G{} -> (genspc gen, gengen gen)
+         gens2rels = Set.fromList [(fromConcept (genspc g), fromConcept (gengen g)) | g<-gs]
 
 --DESCR -> duplicated from clos1.Auxiliaries.hs only [a] is provided instead of
 --         computed from range(RelSet a) /\ domain(RelSet a)

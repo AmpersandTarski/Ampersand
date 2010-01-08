@@ -31,8 +31,7 @@ infertype fSpec eor = (inftype,proof)
   tc :: Concepts
   tc = concs fSpec
   isatree = isaRels tc $ gens fSpec
-  rv :: Declarations
-  rv = vrels fSpec
+
   gamma expr = (mphStmts expr) ++ gammaisa
   gammaisa = map fromIsa isatree
   mphStmts :: AdlExpr -> [Statement]
@@ -41,7 +40,7 @@ infertype fSpec eor = (inftype,proof)
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
      alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
-                    | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-rv, decl==r1]
+                    | dc@(Sgn{decnm=decl,desrc=c1,detrg=c2, decprps=dclprops})<-vrels fSpec, decl==r1]
      ishomo :: [Prop] -> Bool
      ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
      in

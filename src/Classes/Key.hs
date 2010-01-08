@@ -12,7 +12,7 @@ where
     keys :: a->[(Concept,String,[ObjectDef])]
    instance Key KeyDef where
     keys kd = [theKey]
-      where theKey = (target (kdctx kd),(kdlbl kd),(kdats kd))
+      where theKey = (kdcpt kd, kdlbl kd, kdats kd)
  
    instance Key Context where
     keys context

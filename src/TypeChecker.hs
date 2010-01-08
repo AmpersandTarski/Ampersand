@@ -38,7 +38,7 @@ import TypeInference.AdlExpr
 import TypeInference.Input
 import TypeInferenceEngine
 import ShowADL
-import Collection     ( Collection (rd,uni) )
+import Collection     ( Collection(..) )
 
 ---------------
 --MAIN function
@@ -131,16 +131,17 @@ data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
 enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos,OrigExpr)])
 enrichCtx cx@(Ctx{}) ctxs = 
   (postenrich $ 
-      cx {ctxisa=hierarchy, -- 
-          ctxwrld=world, --
-          ctxpats=map bindPat (ctxpats cx), -- 
-          ctxrs=[rule | (rule,_,_)<-ctxrules], 
-          ctxds=ctxdecls, -- 
-          ctxos=[od | (od,_)<-ctxobjdefs], 
-          ctxks=[kd | (kd,_)<-ctxkeys],
-          ctxsql=[plug | (plug,_)<-ctxsqlplugs],
-          ctxphp=[plug | (plug,_)<-ctxphpplugs]} 
+      cx {ctxisa  = hierarchy, -- 
+          ctxwrld = world, --
+          ctxpats = map bindPat (ctxpats cx), -- 
+          ctxrs   = [rule | (rule,_,_)<-ctxrules++ctxpts], -- all rules outside the scope of patterns and all rules from within patterns
+          ctxds   = ctxdecls, -- 
+          ctxos   = [od | (od,_)<-ctxobjdefs], 
+          ctxks   = [kd | (kd,_)<-ctxkeys],
+          ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
+          ctxphp  = [plug | (plug,_)<-ctxphpplugs]} 
   ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxrules]
+   ++[(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxpts]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxsqlplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
@@ -152,7 +153,7 @@ enrichCtx cx@(Ctx{}) ctxs =
                            (world)      --construct the world with this cx on top of the world
                            (ctxpats cx) --bind rules and keydefs in patterns
                            (ctxrules)   --rules from gens and patterns of this context only
-                           (ctxdecls)   --declarations of this context only
+                           (ctxdecls)   --relations declared in this context only, outside the scope of patterns
                            (ctxcptdefs) --concept defs of this context only
                            (ctxks cx)   --bind keydefs
                            (ctxos cx)   --change mphdcl and mphtyp on morphisms in expressions
@@ -173,12 +174,6 @@ enrichCtx cx@(Ctx{}) ctxs =
   --tc0 = [Anything,NOthing]
   isatree = isaRels tc (gens allCtx)
   isaStmts = map fromIsa isatree
-  --DESCR -> All Relation declarations in ctx
-  rv :: Declarations
-  rv = declarations allCtx
-  --REMARK -> rc is defined in specification but not needed in implementation to lookup the constant relations (see mphStmts)
-  --rc :: Declarations
-  --rc = [Isn c c | c<-tc] ++ [Vs c1 c2 | c1<-tc, c2<-tc]
   gamma expr = mphStmts expr ++ gammaisa
   gammaisa = isaStmts
 -- The function mphStmts finds bindings (Statements) for the morphisms that occur in AdlExpr mp.
@@ -188,7 +183,7 @@ enrichCtx cx@(Ctx{}) ctxs =
      --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
      --          T-RelDecl won't be in the inference tree for this reason.
      alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
-                    | dc@(Sgn{decnm=decl,desrc=c1,detgt=c2, decprps=dclprops})<-declarations allCtx, decl==r1]
+                    | dc@(Sgn{decnm=decl,desrc=c1,detrg=c2, decprps=dclprops})<-declarations allCtx, decl==r1]
      ishomo :: [Prop] -> Bool
      ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
      in
@@ -210,11 +205,22 @@ enrichCtx cx@(Ctx{}) ctxs =
   mphStmts (Flip expr _) = mphStmts expr
 
   --DESCR -> enriching ctxisa
-  --in AGtry -> isa = Isa [(g,s)|G pos g s _<- _mGen] (concs _mD>-rd [c|G pos g s _<- _mGen, c<-[g,s]])
+  {- WAAROM worden de concepten in de Isa structuur gepopuleerd? Gebeurt er ooit iets met deze populatie?
+  -- WAAROM worden de concepten in isac nogmaals gepopuleerd, terwijl de concepten uit isar al gepopuleerd zijn?
+  -- WAAROM loopt dit via Set.?
   hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
-    isar = [case g of G{} -> (populate$gengen g,populate$genspc g) | g<-gens ctxs]
+    isar = [(populate$gengen g,populate$genspc g) | g<-gens ctxs]
     isac = map populate$rd (map fst isar++map snd isar)
+  -}
+  -- WAAROM wordt Anything weggefilterd?
+  -- DAAROM (SJ) Gedurende het type checken zijn types nog niet toegekend, waardoor concs soms Anything bevat.
+  -- Na het typechecking proces mag dat niet meer voorkomen, en dient concs altijd concepten van de vorm C{} op te leveren.
+  hierarchy = Isa isar isac
+    where
+    isar = [(gengen g,genspc g) | g<-gens ctxs] -- gens levert uitsluitend concepten op van de vorm C{}, ofschoon dat hier niet gecheckt wordt.
+    isac = [c | c@C{}<-concs ctxs] >- [c | g<-gens ctxs, c@C{}<-[gengen g,genspc g]] 
+
 
   --DESCR -> enriching ctxpats
   bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds, ptdcs=addpopu}
@@ -226,22 +232,22 @@ enrichCtx cx@(Ctx{}) ctxs =
                   --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
     bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
-    addpopu = let matches = [d' |d@(Sgn{})<-ptdcs p, d'@(Sgn{})<-ctxdecls, decfpos d==decfpos d']
-              in matches ++ [d|d@(Sgn{})<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
+    addpopu = let matches = [d' |d@Sgn{}<-ptdcs p, d'@Sgn{}<-ctxdecls, decfpos d==decfpos d']
+              in matches ++ [d|d@Sgn{}<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
 
   --DESCR -> enriching ctxds
-  --         take all the declarations from all patterns included (not extended) in this context
+  --         take all declarations from patterns included (not extended) in this context
   --         Use the sign of the declaration to populate the source and target
   --REMARK -> Only Sgn{} in list of all declarations context
-  ctxdecls =  [d{desrc=populate$desrc d, detgt=populate$detgt d} | d@(Sgn{})<-popuRels]
+  ctxdecls =  [d{desrc=populate$desrc d, detrg=populate$detrg d} | d@Sgn{}<-popuRels]
   --DESCR -> Determines domain and range population per declaration (i.e. relation)
   --REMARK -> concepts have no population, use ctxdecls instead if needed.
   popuRels = [d{decpopu=decpopu d++
                         [pairx | pop<-ctxpops cx, comparepopanddecl (declarations cx) (popm pop) d, pairx<-popps pop]}
              |d<-declarations cx]
-  --DESCR -> Determines source and target population based on domains and ranges of all decls
-  --         Source and target need to be provided, because it can differ from the sign of the declaration
-  --         The morphism (in an expression) refering to this declaration determines the type.
+  --DESCR -> Determines source and target population based on domains and ranges of all relations
+  --         Source and target need to be provided, because it can differ from the sign of the relation
+  --         The morphism (in an expression) refering to this relation determines the type.
   popuMphDecl :: Morphism -> Morphism
   popuMphDecl mp = case mp of
       Mph{} -> mp { mphtyp=popusign$mphtyp mp
@@ -261,17 +267,19 @@ enrichCtx cx@(Ctx{}) ctxs =
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
 
---WAAROM (SJ) worden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
+  ctxpts :: [(Rule,Proof,FilePos)]
+  ctxpts
+     = [ bindRule r| pat<-patterns cx, r<-ptrls pat ] ++   -- all rules that are declared in the patterns within this context
+       [ rulefromKey k (name cx) | pat<-patterns cx, k<-ptkds pat]  -- all rules that are derived from KEY statements in patterns
+
+--WAAROM (SJ) werden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
   --DESCR -> enriching ctxrs
   ctxrules :: [(Rule,Proof,FilePos)]
   ctxrules
-     = [ bindRule r| r<-rules cx ++ signals cx ] ++               -- all rules that are declared in the ADL-script within
-                                                    --     this context, but not in the patterns of this context
-       [ rulefromKey k (name pat)
-       | pat<-patterns cx, k<-ptkds pat] ++         -- all rules that are derived from all KEY statements in this context
-       [rulefromKey k (name cx) | k<-ctxks cx] ++   -- all rules that are derived from all KEY statements in this context
-       [rulefromgen g | g<-gens cx] ++      -- all rules that are derived from all GEN statements in this context
-       [bindRule r |d@(Sgn{})<-declarations cx, r<-multRules d]  -- all multiplicity rules that are derived from all declarations in this context
+     = [ bindRule r| r<-ctxrs cx ] ++            -- all rules that are declared in the ADL-script within
+                                                 --     this context, but not in the patterns of this context
+       [ rulefromKey k (name cx) | k<-ctxks cx]  -- all rules that are derived from all KEY statements in this context
+--     [bindRule r |d@Sgn{}<-declarations cx, r<-multRules d]  -- rules that are derived from multiplicity properties in relations in this context
 
   --DESCR -> The function bindRule attaches a type to a rule by producing a proof in the type system.
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
@@ -290,7 +298,7 @@ enrichCtx cx@(Ctx{}) ctxs =
         bindrtype =  case proof of
           Proven _ _ -> sign proof
           NoProof{} -> rrtyp r
-        binddecl = (srrel r) {desrc=s, detgt=t}
+        binddecl = (srrel r) {desrc=s, detrg=t}
         in
         (r {rrcon=bindcon, rrtyp=bindrtype, srrel=binddecl},proof,rrfps r) 
     | otherwise = 
@@ -307,7 +315,7 @@ enrichCtx cx@(Ctx{}) ctxs =
         bindrtype =  case proof of
           Proven _ _ -> sign proof
           NoProof{} -> rrtyp r
-        binddecl = (srrel r) {desrc=s, detgt=t}
+        binddecl = (srrel r) {desrc=s, detrg=t}
         etant et = 
           if rrsrt r==Implication 
           then case et of 
@@ -349,7 +357,7 @@ enrichCtx cx@(Ctx{}) ctxs =
          (genpat g)     -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
          False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
          False          -- This is not a signal rule
-         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" (genfp g) 0 False "")          -- 
+         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" (genfp g) 0 False False "")          -- 
        , Proven gammaisa [Stmt $ fromIsa (spc,gen)], genfp g)
     where
     spc = populate (genspc g)
@@ -361,7 +369,7 @@ enrichCtx cx@(Ctx{}) ctxs =
          Implication    -- Implication of Equivalence
          antc           -- the antecedent
          (pos key)      -- position in source file
-         (Tm $ mIs c)   -- right hand side (consequent)
+         cons           -- right hand side (consequent)
          []             -- explanation
          (c,c)          -- The type
          Nothing        -- This rule was not generated from a property of some declaration.
@@ -369,11 +377,12 @@ enrichCtx cx@(Ctx{}) ctxs =
          pat            -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
          False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
          False          -- This is not a signal rule
-         (Sgn (name key) c c [] "" "" "" [] "" (pos key) 0 False "")          -- 
+         (Sgn (name key) c c [] "" "" "" [] "" (pos key) 0 False False "")          -- 
        , Proven gammaisa [],pos key)
     where
-     c    = target (kdctx key)
+     c    = kdcpt key
      antc = Fi [F [attexpr,flp attexpr]| attexpr<-[ctx att|att<-kdats key]]
+     cons = Tm (mIs c)
 
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
@@ -412,18 +421,13 @@ enrichCtx cx@(Ctx{}) ctxs =
   ctxkeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
   ctxkeys = [bindKeyDef kd | kd<-keyDefs cx]   
   bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos,Expression)])
-  bindKeyDef kd = (kd {kdctx=bindexpr, kdats=bindats},(proof,kdpos kd,kdctx kd):proofats)
+  bindKeyDef kd = (kd {kdats=bindats},proofats)
     where
-    proof = infer (gamma adlexpr) adlexpr
-    adlexpr = fromExpression $ kdctx kd
-    bindexpr = case proof of
-      Proven gm (inftree:_) -> bindSubexpr (kdctx kd) $ evaltree gm inftree
-      _ -> (kdctx kd)
     (Obj {objats=bindats},proofats) = bindObjDef 
                    (Obj {objats=kdats kd,
                          objnm=kdlbl kd,
                          objpos=kdpos kd,
-                         objctx=bindexpr,
+                         objctx=Tm (mIs (kdcpt kd)),
                          objstrs=[[]]}) Nothing
 
                                     

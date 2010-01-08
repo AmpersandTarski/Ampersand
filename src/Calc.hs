@@ -330,17 +330,18 @@ module Calc ( deriveProofs
    delta :: (Concept, Concept) -> Expression
    delta (a,b)  = Tm (makeMph (Sgn { decnm   = "Delta"
                                    , desrc   = a
-                                   , detgt   = b
+                                   , detrg   = b
                                    , decprps = []
                                    , decprL  = ""
                                    , decprM  = ""
                                    , decprR  = ""
                                    , decpopu = []
                                    , decexpl = ""
-                                   , decpat  = ""
                                    , decfpos = Nowhere
                                    , decid   = 0
                                    , deciss  = True
+                                   , decusr  = False
+                                   , decpat  = ""
                                    }))
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
@@ -586,21 +587,21 @@ module Calc ( deriveProofs
                               (Fu fs) -> notCp (Fi [notCp f| f<-fs])
                               (Fd fs) -> notCp (F  [notCp f| f<-fs])
                               (Fi fs) -> notCp (Fu [notCp f| f<-fs])
-                              Tm{} -> error ("!Fatal (module Calc 583). deMrg Tm{} is not defined.Consult your dealer!")
-                              Tc{} -> error ("!Fatal (module Calc 584). deMrg Tc{} is not defined.Consult your dealer!")
-                              K0{} -> error ("!Fatal (module Calc 585). deMrg K0{} is not defined.Consult your dealer!")
-                              K1{} -> error ("!Fatal (module Calc 586). deMrg K1{} is not defined.Consult your dealer!")
-                              Cp{} -> error ("!Fatal (module Calc 587). deMrg Cp{} is not defined.Consult your dealer!")
+                              Tm{} -> undefined
+                              Tc{} -> undefined
+                              K0{} -> undefined
+                              K1{} -> undefined
+                              Cp{} -> undefined
              fPrfs expr'' = case expr'' of
                               (F fs)  -> xs fs
                               (Fu fs) -> xs fs
                               (Fd fs) -> xs fs
                               (Fi fs) -> xs fs
-                              Tm{} -> error ("!Fatal (module Calc 593). fPrfs Tm{} is not defined.Consult your dealer!")
-                              Tc{} -> error ("!Fatal (module Calc 594). fPrfs Tc{} is not defined.Consult your dealer!")
-                              K0{} -> error ("!Fatal (module Calc 595). fPrfs K0{} is not defined.Consult your dealer!")
-                              K1{} -> error ("!Fatal (module Calc 596). fPrfs K1{} is not defined.Consult your dealer!")
-                              Cp{} -> error ("!Fatal (module Calc 597). fPrfs Cp{} is not defined.Consult your dealer!")
+                              Tm{} -> undefined
+                              Tc{} -> undefined
+                              K0{} -> undefined
+                              K1{} -> undefined
+                              Cp{} -> undefined
                      where
                         xs fs = [lam tOp e3 f|f<-fs, isVar f e3]                       
              lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sort' length (rc expr'')))
@@ -608,10 +609,10 @@ module Calc ( deriveProofs
              vars expr'' = map head (fPrfs expr'')
              const' (Fu fs) = [f|f<-fs, isConst f e3]
              const' (Fi fs) = [f|f<-fs, isConst f e3]
-             const' expr'' = error ("!Fatal (module Calc 605). 'const'("++ show expr''++")' is not defined.Consult your dealer!")
+             const' _ = undefined
              inter' (Fu fs) = Fu [f|f<-fs, isVar f e3]
              inter' (Fi fs) = Fi [f|f<-fs, isVar f e3]
-             inter' expr'' = error ("!Fatal (module Calc 608). 'inter'("++ show expr''++")' is not defined.Consult your dealer!")
+             inter' _ = undefined
 
              
 
@@ -625,8 +626,8 @@ module Calc ( deriveProofs
        remainders _ xss | or [null xs| xs<-xss]      = xss
                         | length (eqCl first xss)==1 = remainders xss [tail prf| prf<-xss]
                         | otherwise                  = xss
-       isConst e'' f = null (decls e'' `isc` decls f)
-       isVar e'' f   = not (isConst e'' f)
+       isConst e f = null (decls e `isc` decls f)
+       isVar e f   = not (isConst e f)
        derivtext tOp "omkeren" e'' expr = sh tOp++showADL e''++" means "++sh (inv tOp)++showADL expr++"."
        derivtext tOp "mono"    e'' expr = "("++showADL e''++"->"++showADL expr++") is monotonous, so "++sh tOp++showADL e''++" means "++sh tOp++showADL expr++"."
        derivtext _ str _ _ = str

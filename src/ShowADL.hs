@@ -129,23 +129,29 @@
            str ss | and [isAlphaNum c| c<-ss] = ss
                   | otherwise                 = "\""++ss++"\""
 
+   -- The declarations of the pattern are supplemented by all declarations needed to define the rules.
+   -- Thus, the resulting pattern is self-contained with respect to declarations.
    instance ShowADL Pattern where
     showADL pat
      = "PATTERN " ++ name pat 
        ++ (if null (ptrls pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptrls pat)) ++ "\n")
        ++ (if null (ptgns pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptgns pat)) ++ "\n")
-       ++ (if null (ptdcs pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptdcs pat)) ++ "\n")
+       ++ (if null (ptdcs pat)  then "" else "\n  " ++chain "\n  " (map showADL ds         ) ++ "\n")
        ++ (if null (ptcds pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptcds pat)) ++ "\n")
        ++ (if null (ptkds pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptkds pat)) ++ "\n")
        ++ "ENDPATTERN"
+       where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` decls (ptrls pat) `uni` decls (ptkds pat)
+                               , decusr d, not (d `elem` ptdcs pat)]
     showADLcode fSpec pat
      = "PATTERN " ++ name pat 
        ++ (if null (ptrls pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptrls pat)) ++ "\n")
        ++ (if null (ptgns pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptgns pat)) ++ "\n")
-       ++ (if null (ptdcs pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptdcs pat)) ++ "\n")
+       ++ (if null (ptdcs pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) ds         ) ++ "\n")
        ++ (if null (ptcds pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptcds pat)) ++ "\n")
        ++ (if null (ptkds pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptkds pat)) ++ "\n")
        ++ "ENDPATTERN"
+       where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` decls (ptrls pat) `uni` decls (ptkds pat)
+                               , decusr d, not (d `elem` ptdcs pat)]
 
 
    instance ShowADL Rule where
@@ -171,16 +177,37 @@
    instance ShowADL Gen where
     showADL (G pos g s _) = "GEN "++showADL s++" ISA "++show g
     showADLcode fSpec (G pos g s _) = "GEN "++showADLcode fSpec s++" ISA "++showADLcode fSpec  g
+{-
+ KEY pairs: Pair(  SERVICE l : I[Atom]
+   = [ 
+     ],  SERVICE r : I[Atom]
+   = [ 
+     ])
 
+ KEY pairs: Pair(l:left,r:right)
+  Kd {kdlbl = "pairs", kdctx = I, kdats = [Obj {objnm = "l", objctx = left, objats = [], objstrs = []},Obj {objnm = "r", objctx = right, objats = [], objstrs = []}]}
+
+   pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeyAtt <* pSpec ')'
+                        where kd :: Label -> Concept -> ObjectDefs -> KeyDef 
+                              kd (Lbl nm p _) c ats = Kd p nm c ats
+
+   data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
+                    , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                    , kdcpt :: Concept      -- ^ this expression describes the instances of this object, related to their context
+                    , kdats :: ObjectDefs   -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
+-}
    instance ShowADL KeyDef where
     showADL kd 
      = "KEY "++kdlbl kd
-             ++":"++"name (target("++showADL (kdctx kd)++")"
-             ++"("++chain "," (map showADL (kdats kd))++")"
+             ++": "++name (kdcpt kd)
+             ++"("++chain ", " [(if null (name o) then "" else name o++":") ++ showADL (objctx o)
+                               | o<-kdats kd]++")"
     showADLcode fSpec kd 
      = "KEY "++kdlbl kd
-             ++":"++"name (target("++showADLcode fSpec (kdctx kd)++")"
-             ++"("++chain "," (map (showADLcode fSpec) (kdats kd))++")"
+             ++": "++name (kdcpt kd)
+             ++"("++chain ", " [(if null (name o) then "" else name o++":") ++ showADLcode fSpec (objctx o)
+                               | o<-kdats kd]++")"
+
 
 -- disambiguate :: Fspc -> Expression -> Expression
 -- This function must ensure that an expression, when printed, can be parsed with no ambiguity.
@@ -300,12 +327,13 @@
      = "'"++mph1val m++"'"++(showSign [mph1typ m])
 
    instance ShowADL Declaration where
-    showADL decl@(Sgn nm a b props prL prM prR cs expla _ _ sig _)
-     = if sig then "SIGNAL "++nm++" ON ("++name a++" * "++name b++")" else
-       nm++" :: "++name a++" * "++name b++
-       (if null props then "" else showL(map showADL props))++
-       (if null(prL++prM++prR) then "" else " PRAGMA "++chain " " (map show [prL,prM,prR]))++
-       (if null expla then "" else " EXPLANATION \""++expla++"\"")
+    showADL decl@Sgn{}
+     = if not (decusr decl) then error("!Fatal (module ShowADL 304): call to ShowADL for declarations can be done on user defined relations only.") else
+       name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
+       (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
+        if null mults then "" else showL(map showADL mults))++
+       (if null(decprL decl++decprM decl++decprR decl) then "" else " PRAGMA "++chain " " (map show [decprL decl,decprM decl,decprR decl]))++
+       (if null (decexpl decl) then "" else " EXPLANATION \""++decexpl decl++"\"")
        ++"."
     showADL (Isn g s)
      = "I["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"
@@ -334,21 +362,24 @@
    instance ShowADL Architecture where
     showADL arch = chain "\n\n" (map showADL (archContexts arch))
 
+   -- In de body van de context worden de regels afgedrukt die in de context zijn gedefinieerd, maar buiten de patterns.
+   -- Daarbij worden de relaties afgedrukt die bij deze regels horen, zodat het geheel zelfstandig leesbaar is.
    instance ShowADL Context where
-    showADL context
+    showADLcode fSpec context
      = "CONTEXT " ++name context
        ++ (if null (ctxon context)   then "" else "EXTENDS "++chain ", "   (ctxon context)                 ++ "\n")
-       ++ (if null (ctxos context)   then "" else "\n"      ++chain "\n\n" (map showADL (ctxos context))   ++ "\n")
-       ++ (if null (ctxcs context)   then "" else "\n"      ++chain "\n"   (map showADL (ctxcs context))   ++ "\n")
-       ++ (if null (ctxds context)   then "" else "\n"      ++chain "\n"   (map showADL (ctxds context))   ++ "\n")
-       ++ (if null (ctxks context)   then "" else "\n"      ++chain "\n"   (map showADL (ctxks context))   ++ "\n")
-       ++ (if null (ctxpats context) then "" else "\n"      ++chain "\n\n" (map showADL (ctxpats context)) ++ "\n")
-       ++ (if null (ctxpops context) then "" else "\n"      ++chain "\n\n" (map showADL (ctxpops context)) ++ "\n")
+       ++ (if null (ctxos context)   then "" else "\n"      ++chain "\n\n" (map (showADLcode fSpec) (ctxos context))   ++ "\n")
+       ++ (if null (ctxcs context)   then "" else "\n"      ++chain "\n"   (map (showADLcode fSpec) (ctxcs context))   ++ "\n")
+       ++ (if null ds                then "" else "\n"      ++chain "\n"   (map (showADLcode fSpec) ds             )   ++ "\n")
+       ++ (if null (ctxks context)   then "" else "\n"      ++chain "\n"   (map (showADLcode fSpec) (ctxks context))   ++ "\n")
+       ++ (if null (ctxpats context) then "" else "\n"      ++chain "\n\n" (map (showADLcode fSpec) (ctxpats context)) ++ "\n")
+       ++ (if null (ctxpops context) then "" else "\n"      ++chain "\n\n" (map (showADLcode fSpec) (ctxpops context)) ++ "\n")
        ++ "\n\nENDCONTEXT"
-   --    where decls = declarations context>-declarations (ctxpats context)
-   --          cdefs = conceptDefs context>-conceptDefs (ctxpats context)
+       where ds = [d| d@Sgn{}<-ctxds context `uni` decls (ctxrs context) `uni` decls (mors (ctxks context)), decusr d]
+
 
 -- WAAROM?  Stef, wat is de toegevoegde waarde van ShowADL Context nu we ShowADL Fspc hebben?
+-- DAAROM (SJ) voor debugging is het wel eens handig om een Context in ADL te kunnen afdrukken...
    instance ShowADL Fspc where
     showADL fSpec = showADLcode fSpec fSpec
     showADLcode fSpec' fSpec
@@ -358,18 +389,19 @@
        ++ (if null (vConceptDefs fSpec) then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vConceptDefs fSpec)) ++ "\n")
        ++ (if null (vgens fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vgens fSpec))        ++ "\n")
        ++ (if null (vkeys fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vkeys fSpec))        ++ "\n")
-       ++ (if null (vrels fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vrels fSpec))        ++ "\n")
+       ++ (if null ds                   then "" else "\n"++chain "\n"   (map (showADLcode fSpec') ds)                   ++ "\n")
        ++ (if null showADLpops          then "" else "\n"++chain "\n\n" showADLpops                                     ++ "\n")
        ++ "\n\nENDCONTEXT"
        where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
                            | d<-declarations fSpec, not (null (decpopu d))]
+             ds = [d| d@Sgn{}<-vrels fSpec, decusr d]
 
 ---------------------------------------
 --FUNCTIONS
 ---------------------------------------
 
    types fSpec (Tm m)
-    = rd [ if mphyin m then (desrc d, detgt d) else (detgt d, desrc d)
+    = rd [ if mphyin m then (desrc d, detrg d) else (detrg d, desrc d)
          | d<-vrels fSpec, name d==name m ]
    types fSpec (F []) = []
    types fSpec (F fs)

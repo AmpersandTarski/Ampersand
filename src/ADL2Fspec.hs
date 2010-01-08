@@ -30,9 +30,7 @@
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
 --                 , ecaRules     = []
-                 , vrels        = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
-                                                          `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
-                                  | d<-declarations context]
+                 , vrels        = allDecs
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -46,6 +44,9 @@
                  , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
                  , vctxenv      = ctxenv context
                  }
+        allDecs = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
+                                          `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
+                  | d<-declarations context]
         ruleviols (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
             | rtyp==Truth = contents$Cp con --everything not in con
             | rtyp==Implication = ant `contentsnotin` con 
@@ -99,9 +100,9 @@
                      relPlugs                         -- all plugs for relations not touched by definedplugs and gplugs
                     )
           where
-           gPlugs   = makePlugs context definedplugs
+           gPlugs   = makePlugs context allDecs definedplugs
            relPlugs = [ mor2plug (makeMph d)
-                      | d<-declarations context
+                      | d<-allDecs
                       , not (Inj `elem` multiplicities d)
                       , not (Uni `elem` multiplicities d)]
 
@@ -197,14 +198,14 @@
            composedname mph | inline mph = name mph++name (target mph)
                             | otherwise  = name (target mph) ++ "_of_" ++ name mph
            preventAmbig mp@(Mph{mphats=[]}) =  
-              if (length [d|d@(Sgn {})<-declarations context, name mp==name d]) > 1
+              if (length [d|d@(Sgn {})<-allDecs, name mp==name d]) > 1
               then if mphyin mp 
                    then mp{mphats=[source mp,target mp]} 
                    else  mp{mphats=[target mp,source mp]}
               else mp 
            preventAmbig mp = mp
-           relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-declarations context, source d == c]++
-                        [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-declarations context, target d == c]
+           relsFrom c = [Mph (name d) Nowhere [] (source d,target d) True d| d@(Sgn {})<-allDecs, source d == c]++
+                        [flp (Mph (name d) Nowhere [] (source d,target d) True d)| d@(Sgn {})<-allDecs, target d == c]
            --TODO -> Explain all expressions (recursive) in the generated services
            --explained :: ObjectDef -> ObjectDef
            --explained obj@(Obj{objstrs=xs,objctx=e}) = obj{objstrs=["EXPLANATION: ", explain e]:xs} 
@@ -254,9 +255,10 @@
    then plug p can serve as kernel for plug p'. Hence p' is redundant and can be removed. It is absorbed by p.
    So, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
    Finally, we filter out all shorter plugs that can be represented by longer ones. Code: absorb
+   The parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities. It was added to avoid recomputation of the extra multiplicities.
 -}
-   makePlugs :: Context -> [Plug] -> [Plug]
-   makePlugs context currentPlugs
+   makePlugs :: Context -> Declarations -> [Plug] -> [Plug]
+   makePlugs context allDecs currentPlugs
     = (absorb . sort' ((0-).length.fields))
        [ PlugSql { fields = [mph2fld m | m<- mIs c: dss cl ]
                  , plname = name c
@@ -264,7 +266,7 @@
                  }
        | cl<-eqClass bi nonCurrConcs, c<-[minimum [g|g<-nonCurrConcs,g<=head cl]] ]
       where
-       nonCurrDecls = declarations context >- concat (map decls currentPlugs)
+       nonCurrDecls = allDecs >- concat (map decls currentPlugs)
        nonCurrConcs = concs context >- concat (map concs currentPlugs)
        mph2fld m = Fld { fldname = name m
                        , fldexpr = Tm m
@@ -275,7 +277,7 @@
                        } 
                    where isSQLId = isIdent m && isAuto
                          isAuto  = isIdent m
-                                    && not (null [key| key<-keyDefs context, target (kdctx key)==target m]) -- if there are any keys around, make this plug autoincrement.
+                                    && not (null [key| key<-keyDefs context, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
                                     && null (contents m) -- and the the field may not contain any strings
        c `bi` c' = not (null [mph| mph<-nonCurrDecls, isFunction mph, isFunction (flp mph)
                                  , source mph<=c && target mph<=c'
@@ -411,7 +413,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 
    --DESCR -> returns the concept on which the keydef is defined 
    keytheme :: KeyDef -> Concept
-   keytheme kd = source$kdctx kd
+   keytheme kd = kdcpt kd
 
    editable :: Expression -> Bool
    editable (Tm Mph{})  = True
@@ -426,7 +428,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
    makeFservice context allQuads object
     = let s = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
--- The declarations that may be changed by the user of this service are represented by fsv_rels
+-- The relations that may be edited by the user of this service are represented by fsv_rels. Editing means that tuples can be added to or removed from the population of the relation.
                       , fsv_rels      = rels
 -- The rules that may be affected by this service
                       , fsv_rules     = invariants

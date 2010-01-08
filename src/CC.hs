@@ -95,7 +95,7 @@
                      | Pk KeyDef
 
    pPatElem         :: Parser Token PatElem
-   pPatElem  = Pr <$> pRule <|>
+   pPatElem          = Pr <$> pRule <|>
                        Pg <$> pGen          <|>
                        Pm <$> pDeclaration  <|>
                        Pc <$> pConceptDef   <|>
@@ -105,10 +105,10 @@
    pSignal           = pKey "SIGNAL" *> pMorphism <* pKey "ON"       <|>
                          pKey "RULE" *> pMorphism <* pKey "SIGNALS"
    pAlways          :: Parser Token Morphism
-   pAlways           = ( pKey "RULE" *> pMorphism <* pKey "MAINTAINS" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False ""))
+   pAlways           = ( pKey "RULE" *> pMorphism <* pKey "MAINTAINS" ) `opt` (Mph "" Nowhere [] (cptAnything,cptAnything) True (Sgn "" cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 False False ""))
 
    pRule            :: Parser Token Rule
-   pRule     = hc True  <$> pSignal <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
+   pRule             = hc True  <$> pSignal <*> pExpr <*> pKey_pos "|-" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
                        kc True  <$> pSignal <*> pExpr <*> pKey_pos "-|" <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
                        dc True  <$> pSignal <*> pExpr <*> pKey_pos "="  <*> pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
                        ac True  <$> pSignal <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` []) <|>
@@ -118,12 +118,12 @@
                        ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
                         hc isSg m' antc pos' cons expl
-                          = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True "")
+                          = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True False "")
                         kc isSg m' cons pos' antc expl = hc isSg m' antc pos' cons expl
                         dc isSg m' defd pos' expr expl
-                          = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True "")
+                          = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True False "")
                         ac isSg m' expr expl
-                          = Ru Truth defd (Adl.pos m') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" (Adl.pos m') 0 True "")
+                          = Ru Truth defd (Adl.pos m') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" (Adl.pos m') 0 True False "")
                          where defd=error ("!Fatal (module CC 127): defd undefined in pRule "++showADL expr)
 
    pGen             :: Parser Token Gen
@@ -194,7 +194,7 @@
                        v'   <$ pKey "V" <*> pTwo                                                                 <|>
                        rebuild <$> pVarid_val_pos <*> pTwo
                        where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
-                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/="") [])
+                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/="") False [])
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
                              v' []                  = V [] (cptAnything, cptAnything)
@@ -241,7 +241,7 @@
    pKeyDef          :: Parser Token KeyDef
    pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeyAtt <* pSpec ')'
                         where kd :: Label -> Concept -> ObjectDefs -> KeyDef 
-                              kd (Lbl nm p _) c ats = Kd p nm (Tm $ mIs c) ats
+                              kd (Lbl nm p _) c ats = Kd p nm c ats
 
    pKeyAtt          :: Parser Token ObjectDef
    pKeyAtt           = attL <$> pLabel <*> pExpr <|>
@@ -290,7 +290,7 @@
                                      -> Pairs
                                      -> Declaration
                              rebuild nm pos' s fun' t props pragma expla content
-                               = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False []
+                               = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False True []
                                  where pr = pragma++["","",""]
 
    pContent         :: Parser Token Pairs
@@ -322,6 +322,6 @@
    pPragma           = pKey "PRAGMA" *> pList1 pString
 
    pRecord          :: Parser Token Paire
-   pRecord           = mkPaire<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
+   pRecord           = mkPair<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
                                 
                                 

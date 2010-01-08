@@ -52,7 +52,7 @@ where
     nr r  = runum r
 
    instance Identified Rule where
-    name r = "Rule"++show (runum r)
+    name r = if null (name (srrel r)) then "Rule"++show (runum r) else name (srrel r)
     
    instance Association Rule where
     source r  = fst (rrtyp r)

@@ -50,7 +50,7 @@
      = error "!Fatal (module CommonClasses 54): explain undefined"
 
    class Conceptual a where
-    conts      :: a -> [String]                   -- the set of all instances in a concept
+    conts :: a -> [String]                   -- the set of all instances in a concept
 
    instance Conceptual a => Conceptual [a] where
     conts = rd . concat . map conts

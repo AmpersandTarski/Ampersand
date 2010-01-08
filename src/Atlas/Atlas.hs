@@ -12,8 +12,9 @@ import Collection     ( Collection (rd) )
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Classes.Morphical
-------
 import Classes.Graphics
+import Classes.ViewPoint 
+------
 import System (system, ExitCode(ExitSuccess,ExitFailure))
 import Strings      (remSpaces)
 import System.FilePath(combine,replaceExtension)
@@ -178,7 +179,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    relpred x = name x
    mphpred x@(Mph{}) = relpred (mphdcl x) 
    mphpred x = name x
-   cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (fsisa fSpec)
+   cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (isa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
    cptrule x | isSignal x =  "SIGNAL: " ++ (cptrule$ x{r_sgl=False})
              | rrsrt x==Implication = showADLcode fSpec (rrant x) ++ " |- " ++ showADLcode fSpec (rrcon x)

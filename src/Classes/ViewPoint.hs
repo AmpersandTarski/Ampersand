@@ -20,10 +20,11 @@ where
    class Morphical a => ViewPoint a where
      objectdef    :: a -> ObjectDef     -- The objectdef that characterizes this viewpoint
      conceptDefs  :: a -> [ConceptDef]  -- all concept definitions that are valid within this viewpoint
-     declarations :: a -> [Declaration] -- all declarations that are valid within this viewpoint
+     declarations :: a -> [Declaration] -- all relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
      rules        :: a -> [Rule]        -- all rules that are maintained within this viewpoint,
                                         --   which are not signal-, not multiplicity-, and not key rules.
      signals      :: a -> [Rule]        -- all signals that are visible within this viewpoint
+                                        -- all relations used in signals and rules must have a valid declaration in the same viewpoint.
      objDefs      :: a -> [ObjectDef]
      keyDefs      :: a -> [KeyDef]
      gens         :: a -> [Gen]         -- all generalizations that are valid within this viewpoint
@@ -55,7 +56,7 @@ where
                                , objstrs = []
                                }
     conceptDefs  context = ctxcs context++conceptDefs (ctxpats context)
-    declarations context = rd (declarations (ctxpats context) ++ ctxds context)
+    declarations context = declarations (ctxpats context) `uni` ctxds context
     rules        context = rules   (ctxpats context) ++ [r| r<-ctxrs context, not (isSignal r)]
     signals      context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r ]
     objDefs      context = ctxos   context

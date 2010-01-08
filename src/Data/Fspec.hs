@@ -34,7 +34,7 @@ module Data.Fspec ( Fspc(..)
                     , vgens        :: [Gen]                 -- ^ All keys that apply in the entire Fspc
                     , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
                     , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec) from non-signal rules
-                    , vrels        :: [Declaration]         -- ^ All declarations in this specification
+                    , vrels        :: [Declaration]         -- ^ All declarations declared in this specification
                     , fsisa        :: Inheritance Concept   -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Maybe [Picture]       -- ^ List of pictures containing pattern pictures (in same order as patterns)
@@ -51,8 +51,7 @@ module Data.Fspec ( Fspc(..)
     concs     fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
     mors      fSpec = mors (vplugs fSpec) `uni` mors (serviceS fSpec) `uni` mors (vrules fSpec)
     morlist   fSpec = morlist (vplugs fSpec) ++ morlist (serviceS fSpec) ++ morlist (vrules fSpec)
-    decls     fSpec = vrels fSpec
-    genE      fSpec = genE (vrels fSpec++declarations [r| r<-signals fSpec])  
+    genE      fSpec = genE (vrels fSpec)  
     closExprs fSpec = closExprs (rules fSpec++signals fSpec)
 
    instance ViewPoint Fspc where
@@ -107,14 +106,14 @@ module Data.Fspec ( Fspc(..)
     concs     svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
     mors      svc = mors (rules svc++signals svc)          -- The set of all morphisms in this Fservice
     morlist   svc = morlist (rules svc++signals svc)       -- The list of all morphisms in this Fservice
-    decls     svc = declarations (rules svc++signals svc)  -- The set of all declarations in this Fservice
+    decls     svc = decls (rules svc++signals svc)         -- The set of all declarations used in this Fservice
     genE      svc = genE (rules svc++signals svc)          -- The genE relation
     closExprs svc = closExprs (rules svc++signals svc)     -- The closure expressions of this Fservice
 
    instance ViewPoint Fservice where
     objectdef    svc = fsv_objectdef svc
-    conceptDefs   _  = []                                     -- The set of all concept definitions in this Fservice
-    declarations svc = decls svc
+    conceptDefs   _  = []                                  -- The set of all concept definitions in this Fservice
+    declarations svc = []                                  -- Currently, no declarations are made within a service.
     rules        svc = [r| r<-fsv_rules svc]
     signals      svc = [r| r<-fsv_signals svc]
     objDefs      svc = [fsv_objectdef svc]

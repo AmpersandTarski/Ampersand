@@ -145,9 +145,9 @@ where
    instance XML KeyDef where
      mkTag k = Tag "KeyDef" [nameToAttr k]
      mkXmlTree k = Elem (mkTag k)
-                        ( descriptionTree (kdctx k)
-                       ++ attributesTree (kdats k)
-                       )
+                        ( [Elem (simpleTag "Key on") [mkXmlTree (kdcpt k)]]
+                          ++ attributesTree (kdats k)
+                        )
 
    
    instance XML ObjectDef where

@@ -477,14 +477,13 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    addSlashes (c:cs) = c:addSlashes cs
    addSlashes "" = ""
    
-   -- WAAROM?? Onderstaande declaratie mag wel wat verduidelijking.
-   -- Het lijkt me ook niet onderhoudbaar.
+   -- sqlRelName computes the unique name for the SQL table that contains the population for m, within the context of fSpec.
    sqlRelName :: (Show m,Morphic m,MorphicId m,Morphical m) => Fspc -> m -> String
    sqlRelName fSpec m'
     = if isIdent m' then sqlConcept fSpec (source m') else
       if isTrue m' then "V" else
-      if null as then error ("!Fatal (module RelBinGenBasics 486): No declarations in "++show m') else
-      if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple declarations in "++show m') else
+      if null as then error ("!Fatal (module RelBinGenBasics 486): No decls in "++show m') else
+      if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple decls in "++show m') else
       name plug
       where (plug,_,_) = sqlRelPlug fSpec (Tm (makeMph a))
             as = decls m'

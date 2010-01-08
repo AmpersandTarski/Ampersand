@@ -70,8 +70,8 @@
    makeConceptSpace :: ditwordtnietgebruikt -> [Morphism] -> Concepts    --WAAROM is deze definitie goed?
    makeConceptSpace _ morphisms
     = [ upd (fst (head raw)) (sord (concat (map snd raw)))
-      | raw <- eqCl fst [(c,os)| (Mph _ _ _ (_,_) _ sgn@(Sgn _ s t _ _ _ _ _ _ _ _ _ _)) <- morphisms
-                               , (c,os) <- [(s,dom sgn),(t,cod sgn)]
+      | raw <- eqCl fst [(c,os)| (Mph _ _ _ (_,_) _ sgn@Sgn{}) <- morphisms
+                               , (c,os) <- [(source sgn,dom sgn),(target sgn,cod sgn)]
                         ]
       ] where
          upd c os = case c of
@@ -80,7 +80,7 @@
 
 
    class Pop a where
-    put_gE     :: GenR -> Concepts  -> a -> a
+    put_gE     :: GenR -> Concepts  -> a -> a  -- attaches the gE function to all concepts, to allow Ord Concept. Effect: c<=d is defined for concepts c and d. It means that concept c is a generalization of concept d.
     specialize :: (Concept,Concept) -> a -> a
     update     :: [Declaration] -> a -> a
     update _ c = c
@@ -94,13 +94,13 @@
                          (a `glb` b) `lub` c
 
    instance Pop KeyDef where
-    put_gE gE cs kdef = kdef{ kdctx = put_gE gE cs (kdctx kdef)
+    put_gE gE cs kdef = kdef{ kdcpt = put_gE gE cs (kdcpt kdef)
                             , kdats = [put_gE gE cs a| a<-kdats kdef]
                             }
-    update ss kdef    = kdef{ kdctx = update ss (kdctx kdef)
+    update ss kdef    = kdef{ kdcpt = update ss (kdcpt kdef)
                             , kdats = [update ss    a| a<-kdats kdef]
                             }
-    specialize t kdef = kdef{ kdctx = specialize t (kdctx kdef)
+    specialize t kdef = kdef{ kdcpt = specialize t (kdcpt kdef)
                             , kdats = [specialize t a| a<-kdats kdef]
                             }
 
@@ -297,44 +297,51 @@
 --    specialize t@(a,b) (V atts (a',b'))          = V atts (a,b)
 
    instance Pop Declaration where
-    put_gE gE cs decl 
-       = case decl of
-          Sgn{}    -> decl{ desrc = put_gE gE cs (desrc decl)
-                          , detgt = put_gE gE cs (detgt decl)
-                          }
-          Isn{}    -> decl{ degen = put_gE gE cs (degen decl)
-                          , despc = put_gE gE cs (despc decl)
-                          }
-          Iscompl{}-> decl{ degen = put_gE gE cs (degen decl)
-                          , despc = put_gE gE cs (despc decl)
-                          }
-          Vs{}     -> decl{ degen = put_gE gE cs (degen decl)
-                          , despc = put_gE gE cs (despc decl)
-                          }
-    update ss decl
-       = case decl of
-          Sgn{}    -> head ([c|c<-ss, decl==c]++[decl])
-          Isn{}    -> decl
-          Iscompl{}-> decl
-          Vs{}     -> decl
-    specialize (x,y) decl
+    put_gE gE cs decl =
+     case (source decl,target decl) of
+      (C{},C{}) -> case decl of
+                    Sgn{}    -> decl{ desrc = put_gE gE cs (desrc decl)
+                                    , detrg = put_gE gE cs (detrg decl)
+                                    }
+                    Isn{}    -> decl{ degen = put_gE gE cs (degen decl)
+                                    , despc = put_gE gE cs (despc decl)
+                                    }
+                    Iscompl{}-> decl{ degen = put_gE gE cs (degen decl)
+                                    , despc = put_gE gE cs (despc decl)
+                                    }
+                    Vs{}     -> decl{ degen = put_gE gE cs (degen decl)
+                                    , despc = put_gE gE cs (despc decl)
+                                    }
+      ( _ , _ ) -> error ("!Fatal (module CC_aux 315): calling put_gE gE cs ("++show decl++") with an argument that is not C{}, with cs="++show cs++".")
+
+    update ss decl =
+     case (source decl,target decl) of
+      (C{},C{}) -> case decl of
+                    Sgn{}    -> head ([c|c<-ss, decl==c]++[decl])
+                    Isn{}    -> decl
+                    Iscompl{}-> decl
+                    Vs{}     -> decl
+      ( _ , _ ) -> error ("!Fatal (module CC_aux 324): calling update ss ("++show decl++") with an argument that is not C{}, with ss="++show ss++".")
+
+    specialize (x@C{},y@C{}) decl
        = case decl of
           Sgn{}    -> decl{ desrc = x
-                          , detgt = y
-                          , decpopu = [p|p<-(decpopu decl),(srcPaire p) `elem` conts (desrc decl), trgPaire p `elem` conts (detgt decl)]
+                          , detrg = y
+                          , decpopu = [p|p<-(decpopu decl),(srcPaire p) `elem` conts (desrc decl), trgPaire p `elem` conts (detrg decl)]
                           }
           Isn{}    -> if x <= y 
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("!Fatal (module CC_aux 333): specialize 7 "++show (x,y)++show (despc decl))
+                       else error ("!Fatal (module CC_aux 336): specialize "++show (x,y)++show (despc decl))
           Iscompl{}-> if x <= y 
                        then decl{degen = x
                                 ,despc = y
                                 }
-                       else error ("!Fatal (module CC_aux 338): specialize 7 "++show (x,y)++show (despc decl))
-          Vs{}     -> error ("!Fatal (module CC_aux 339). Consult your dealer!") 
-                    
+                       else error ("!Fatal (module CC_aux 341): specialize "++show (x,y)++show (despc decl))
+          Vs{}     -> error ("!Fatal (module CC_aux 342). Consult your dealer!") 
+    specialize (x,y) decl
+      = error ("!Fatal (module CC_aux 344): calling specialize ("++show x++","++show y++") with an argument that is not C{}, in declaration "++show decl++".")
 
 
 

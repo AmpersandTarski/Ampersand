@@ -168,6 +168,6 @@ Dat is incorrect, omdat het eerste element van het tupel niet "edge" moet zijn m
 
 
    instance Conceptual a => Conceptual (Classification a) where
-    conts                                         = rd . concat . map conts . preCl
+    conts = rd . concat . map conts . preCl
 
 

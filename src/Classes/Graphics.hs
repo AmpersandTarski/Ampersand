@@ -32,9 +32,9 @@ instance Dotable Concept where
                  [( g, s)| g<-cpts, s<-cpts, g<s, null [cpt| cpt<-cpts, g<cpt && cpt<s]]       --  all isa edges
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = concs rs `uni` concs ss
-          dcls = [d | d<-declarations rs `uni` declarations ss
-                    , not (isProp   d)     -- d is not a property
-                    , not (isSignal d)]    -- d is not a signal
+          dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
+                    , not (isProp d)     -- d is not a property
+                    , decusr d]          -- d is user defined, and consequently not a signal either
 
 instance Dotable Pattern where
    toDot _ flags pat = dotG flags (name pat) cpts dcls idgs
@@ -46,23 +46,23 @@ instance Dotable Pattern where
                  [( g, s)| g<-cpts, s<-cpts, g<s, null [c| c<-cpts, g<c && c<s]]       --  all isa edges
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = concs pat
-          dcls = declarations pat
+          dcls = [d| d@Sgn{}<-declarations pat, decusr d] `uni` decls pat
 
 instance Dotable Fservice where
    toDot fSpec flags svc = dotG flags (name svc) cpts dcls idgs
          where 
           rs         = [r| r<-rules fSpec, affected r]
           ss         = [s| s<-signals fSpec, affected s]
-          affected r = not (null (declarations r `isc` declarations svc))
+          affected r = not (null (decls r `isc` decls svc))
           idgs = [ ( (source (antecedent r)), (source (consequent r)))
                  | r<-rs, isaRule r]
                  `uni`
                  [( g, s)| g<-cpts, s<-cpts, g<s, null [cpt| cpt<-cpts, g<cpt && cpt<s]]       --  all isa edges
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = concs rs `uni` concs ss
-          dcls = [d | d<-declarations rs `uni` declarations ss
+          dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
                     , not (isProp   d)    -- d is not a property
-                    , not (isSignal d)]   -- d is not a signal
+                    , decusr d]           -- d is user defined, and consequently not a signal either
 
 numberListFrom :: [x] -> Int -> [(x,Int)]    --TODO Deze functie is te generiek om hier in deze module thuis te horen. Verplaatsen naar andere module? 
 numberListFrom xs i = zip xs [i..]

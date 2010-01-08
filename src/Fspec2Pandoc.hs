@@ -297,7 +297,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
      patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
      patSignals   = [s| s<-signals fSpec, r_pat s==thm]
      newConcepts  = concs (patRules++patSignals) >- seenConcepts
-     newRelations = filter (not.isIdent) (declarations (patRules++patSignals) >- seenRelations)
+     newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
      dpRule [] j' seenConcs seenDeclarations = ([], j', seenConcs, seenDeclarations)
      dpRule (r:rs) j' seenConcs seenDeclarations
       = ( [ [Para [symDefLabel c, Str$ cddef cd]] |(c,cd)<-cds]++
@@ -310,8 +310,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
         where
          cds = [(c,cd)| (c,cd)<-conceptdefs, c `elem` ncs]
          ncs = concs r >- seenConcs
-         nds = declarations r >- seenDeclarations
-         ( dpNext, j, seenCs,  seenDs ) = dpRule rs (j'+length cds+length nds+1) (concs r `uni` seenConcs) (declarations r `uni` seenDeclarations)
+         nds = decls r >- seenDeclarations
+         ( dpNext, j, seenCs,  seenDs ) = dpRule rs (j'+length cds+length nds+1) (concs r `uni` seenConcs) (decls r `uni` seenDeclarations)
      sctConcepts
       = if null newConcepts then [] else
           case language flags of
@@ -458,7 +458,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
        cdDot = classdiagram2dot classDiagram
 
 -- The properties of various declations are documented in different tables.
--- First, we document the heterogeneous properties of all declarations
+-- First, we document the heterogeneous properties of all relations
 -- Then, the homogeneous poperties are given, and finally
 -- the signals are documented.
   daMultiplicities :: [Block]
@@ -481,7 +481,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                                  , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
                                  , if isInj d || d `elem` injs then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d<-declarations fSpec, not (isSignal d), not (isProp d)
+               | d@Sgn{}<-declarations fSpec, decusr d, not (isProp d)
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
@@ -522,8 +522,8 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                 else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]]
      | length sgnls>1 ]
      where
-      hMults  = [d| d<-declarations fSpec, homogeneous d, not (isSignal d)]
-      sgnls   = [d| d<-declarations fSpec, isSignal d]
+      hMults  = [d| d@Sgn{}<-declarations fSpec, homogeneous d, decusr d]
+      sgnls   = [d| d@Sgn{}<-declarations fSpec, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
       clauses = rd [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
       strands (F fs) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
@@ -559,7 +559,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
        content = plugRules ++ plugSignals
        plugRules
         = case language flags of
-           English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls (mors r) >- decls p)] of
+           English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
                        []  -> [ Para [ Str "This data set has no integrity rules other than the multiplicities specified earlier. " ]]
                        [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
                               , Para [ Math DisplayMath $ showMathcode fSpec r]
@@ -567,7 +567,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                        rs  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
                               , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
                               ]
-           Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls (mors r) >- decls p)] of
+           Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
                        []  -> [ Para [ Str "Deze gegevensverzameling heeft geen integriteitsregels buiten de hiervoor gedefinieerde multipliciteiten. " ]]
                        [r] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
                               , Para [ Math DisplayMath $ showMathcode fSpec r]
@@ -577,7 +577,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                               ]
        plugSignals
         = case language flags of
-           English -> case [r| r<-signals fSpec, null (decls (mors r) >- decls p)] of
+           English -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set generates one signal. " ]
                               , Para [ Math DisplayMath $ showMathcode fSpec s]
@@ -585,7 +585,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                        ss  -> [ Para [ Str "This data set generates the following signals. " ]
                               , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
-           Dutch   -> case [r| r<-signals fSpec, null (decls (mors r) >- decls p)] of
+           Dutch   -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
                        []  -> []
                        [s] -> [ Para [ Str "Deze gegevensverzameling genereert \\'e\\'en signaal. " ]  -- Zou "één" moeten zijn ipv "\\'e\\'en", maar dit geeft een lexical error in string/character literal (UTF-8 decoding error) in de Haskell compiler
                               , Para [ Math DisplayMath $ showMathcode fSpec s]
@@ -680,12 +680,20 @@ serviceChap lev fSpec flags svc
                  
 
   svcFieldTables
-   = [ Para  $ [ if language flags==Dutch
-                 then Str $ "In deze service zijn de volgende velden zichtbaar. "
-                 else Str $ "This service has the following fields. "
-               ]
-     , flds
-     ]
+   = if null (fsv_fields svc) then [] else
+     if length (fsv_fields svc)==1
+     then [ Para  $ [ if language flags==Dutch
+                      then Str $ "In deze service is het volgende veld zichtbaar: "
+                      else Str $ "This service has one field: "
+                    ]
+          , head [b| BulletList [bs]<-[flds], b<-bs]
+          ]
+     else [ Para  $ [ if language flags==Dutch
+                      then Str $ "In deze service zijn de volgende velden zichtbaar. "
+                      else Str $ "This service has the following fields. "
+                    ]
+          , flds
+          ]
      where flds :: Block
            flds = BulletList [recur (objctx (fsv_objectdef svc)) f| f<-fsv_fields svc]
             where recur :: Expression -> Field -> [Block]

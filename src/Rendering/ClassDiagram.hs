@@ -7,14 +7,11 @@
    import Collection ( Collection(empty, (>-),rd) )
    import Strings (chain) -- , eqCl, enc)
    import Typology (Inheritance(Isa))
-   import Adl ( Contexts,Morphical(..),ViewPoint,Context,target,concs,source,makeDeclaration,ctx,keys,flp,declarations
-              , Morphic(..)
-              , isa,isFlpFunction,isFunction,mors,sign
-              , Prop(..),Morphism(..),Concept,FilePos(..),Pattern(..))
+   import Adl
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options
-   import FspecDef
+   import Data.Fspec
    import Adl.ECArule
 
    --TODO -> copied from Auxiliaries because disabled (why disabled?)
@@ -45,7 +42,7 @@
    instance CdNode Method where
     nodes m = []
 
-   instance CdNode Association where
+   instance CdNode Data.Fspec.Association where
     nodes (OOAssoc s ml rl t mr rr) = [s,t]
 
    instance CdNode Aggregation where
@@ -81,7 +78,6 @@
                     | fld<-fields plug, fldname fld/="i"]
        attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
        isProp d   = null([Sym,Asy]>-multiplicities d)
-       sps = [d|d<-declarations fSpec] -- was: for a single pattern
        scs = [d|d<-declarations fSpec] -- was: for the entire context
 
    shDataModel (OOclassdiagram cs as rs gs _)
@@ -161,9 +157,9 @@
                 map toUpper nm=="EDGE"
              then (enc True . head) [ nm++show i | i<-[1..], not ((nm++show i) `elem` map name (concspat) )]
              else enc True nm
-          associations2dot :: [Association] -> [Char]
+          associations2dot :: [Data.Fspec.Association] -> [Char]
           associations2dot as = chain "\n" (map association2dot as) ++ "\n"
-          association2dot :: Association -> [Char]
+          association2dot :: Data.Fspec.Association -> [Char]
           association2dot (OOAssoc from m1 n1 to m2 n2) =
               "      edge [ \n" ++
               "              arrowhead = \"none\" \n" ++

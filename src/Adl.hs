@@ -29,7 +29,7 @@ module Adl ( Architecture(..)
            , Identified(..)
            , Explained(..)
            , Label(..)
-           , Paire,Pairs,srcPaire,trgPaire,mkPaire
+           , Paire,Pairs,srcPaire,trgPaire,mkPair
            , InsDel(..)
            , ECArule(..)
            , Event(..)
@@ -60,7 +60,7 @@ where
                                          ,mIs,isProperty)
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
    import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
-   import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPaire)
+   import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)

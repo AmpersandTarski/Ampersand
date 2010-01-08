@@ -29,10 +29,10 @@ where
     concs        :: a -> Concepts                  -- the set of all concepts used in data structure a
     mors         :: a -> Morphisms                 -- the set of all morphisms used within data structure a
     morlist      :: a -> Morphisms                 -- the list of all morphisms used within data structure a
-    decls        :: a -> Declarations
+    decls        :: a -> Declarations              -- all relations used in a. (Don't confuse decls with declarations, which produces the declarations declared in a. The function declarations is bound in ViewPoint)
     decls x       = rd [makeDeclaration m|m<-mors x]
     genE         :: a -> GenR
-    genE x        = if null cx then (==) else head cx where cx = [gE|C {cptgE = gE } <-concs x]
+    genE x        = if null cx then (==) else head cx where cx = [cptgE c|c<-concs x]
     closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
     idsOnly      :: a -> Bool
     idsOnly e'    = and [isIdent m'| m'<-mors e'] -- > tells whether all the arguments are equivalent to I
@@ -53,21 +53,24 @@ where
 
 
    instance Morphical Context where
-    concs     c  = concs (ctxds c) `uni` concs (ctxpats c)
+    concs     c = concs (ctxds c) `uni` concs (ctxpats c)
     mors      c = mors (ctxpats c) `uni` mors (ctxos c)
     morlist   c = morlist (ctxpats c)++morlist (ctxos c)
-    decls     c = rd (ctxds c ++[d| pat<-ctxpats c, d<-decls pat])
-  -- TOELICHTING: de populatie staat nog verspreid over declarations en populatie statements. In Fspc komen die bij elkaar.
+    decls     c = decls (ctxrs c) `uni`                 -- the relations used in the rules (outside the scope of patterns)
+                  decls (ctxks c) `uni`                 -- the relations used in KeyDefs
+                  decls (ctxos c) `uni`                 -- the relations used in ObjDefs
+                  rd [d| pat<-ctxpats c, d<-decls pat]  -- the relations used in Patterns
+  -- TOELICHTING: de populatie staat nog verspreid over declarations en population statements. In Fspc komen die bij elkaar.
     genE      c = genEq (typology (ctxisa c))
     closExprs c = closExprs (ctxpats c) `uni` closExprs (ctxos c)
 
    instance Morphical KeyDef where
-    concs     kd = concs (kdctx kd)`uni` concs (kdats kd)
-    mors      kd = mors (kdctx kd) `uni` mors (kdats kd)
-    morlist   kd = morlist (kdctx kd) ++ morlist (kdats kd)
+    concs     kd = [kdcpt kd] `uni` concs (kdats kd)
+    mors      kd = mors (kdats kd)
+    morlist   kd = morlist (kdats kd)
     genE      kd = genE (kdats kd)
-    decls     kd = decls (kdctx kd) `uni` decls (kdats kd)
-    closExprs kd = closExprs (kdctx kd) `uni` closExprs (kdats kd)
+    decls     kd = decls (kdats kd)
+    closExprs kd = closExprs (kdats kd)
 
    instance Morphical Expression where
     concs (Tm mph)     = rd (concs mph)
@@ -132,7 +135,7 @@ where
     closExprs _        = []
 
    instance Morphical Concept where
-    concs     c = [c]
+    concs c     = [c]
     mors      c = [mIs c]
     morlist   c = [mIs c]
     decls     _ = []
@@ -147,7 +150,6 @@ where
     concs     obj = [source (objctx obj)] `uni` concs (objats obj)
     mors      obj = mors (objctx obj) `uni` mors (objats obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
     morlist   obj = morlist (objctx obj)++morlist (objats obj)
-    decls _       = []
     closExprs obj = closExprs (objctx obj) `uni` closExprs (objats obj)
 
    instance Morphical Morphism where
@@ -164,7 +166,7 @@ where
 
    instance Morphical Declaration where
     concs d = case d of
-               Sgn{}     -> rd [desrc d,detgt d]
+               Sgn{}     -> rd [desrc d,detrg d]
                Isn{}     -> rd [degen d,despc d]
                Iscompl{} -> [despc d]
                Vs{}      -> [despc d]        
@@ -178,7 +180,6 @@ where
     concs     pat = concs (ptrls pat) `uni` concs (ptgns pat) `uni` concs (ptdcs pat)
     mors      pat = mors (ptrls pat) `uni` mors (ptkds pat)
     morlist   pat = morlist (ptrls pat)++morlist (ptkds pat)
-    decls     pat = ptdcs pat
     genE      pat = genE (ptdcs pat++decls [r| r<-ptrls pat])  
     closExprs pat = closExprs (ptrls pat)
 
@@ -203,7 +204,7 @@ where
                 Ru{}               -> genE [(rrant r),(rrcon r)]
     decls r = case r of
                 Ru{rrsrt = Truth } -> decls (rrcon r)
-                Ru{}               -> decls [(rrant r),(rrcon r)]
+                Ru{}               -> decls (rrant r) `uni` decls (rrcon r)
     closExprs r = case r of
                 Ru{rrsrt = Truth } -> closExprs (rrcon r)
                 Ru{}               -> closExprs (rrant r) `uni` closExprs (rrcon r)

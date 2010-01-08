@@ -209,7 +209,7 @@ where
                   ,", serviceG      = serviceG'"
                   ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
-                  ,wrap ", vgens         = " indentA (\_->showHSname) (vgens fspec)
+                  ,wrap ", vgens         = " indentA (showHS flags) (vgens fspec)
                   ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
                   ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
                   ,", fsisa         = isa'"
@@ -431,7 +431,7 @@ where
    instance ShowHS KeyDef where
     showHSname kd = "kDef_"++haskellIdentifier (name kd)
     showHS flags indent kd
-     = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdctx kd)++")"
+     = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdcpt kd)++")"
        ++indent++"[ "++chain (indent++", ") [showHS flags (indent++"  ") a|a<-(kdats kd)]++indent++"]"
    
 -- \***********************************************************************
@@ -525,7 +525,7 @@ where
           Sgn{}     -> (chain newIndent
                         ["Sgn{ decnm   = " ++ show (decnm d)
                            ,", desrc   = " ++ showHS flags "" (desrc d)
-                           ,", detgt   = " ++ showHS flags "" (detgt d)
+                           ,", detrg   = " ++ showHS flags "" (detrg d)
                            ,", decprps = " ++ showL(map (showHS flags "") (decprps d))
                            ,", decprL  = " ++ show (decprL d)
                            ,", decprM  = " ++ show (decprM d)
@@ -535,6 +535,8 @@ where
                            ,", decfpos = " ++ showHS flags "" (decfpos d)
                            ,", decid   = " ++ show (decid d)
                            ,", deciss  = " ++ show (deciss d)
+                           ,", decusr  = " ++ show (decusr d)
+                           ,", decpat  = " ++ show (decpat d)
                         ])++"}"
           Isn{}     -> (chain newIndent
                         ["Isn{ degen   = " ++ showHS flags "" (degen d)
