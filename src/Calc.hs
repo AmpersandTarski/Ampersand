@@ -587,21 +587,21 @@ module Calc ( deriveProofs
                               (Fu fs) -> notCp (Fi [notCp f| f<-fs])
                               (Fd fs) -> notCp (F  [notCp f| f<-fs])
                               (Fi fs) -> notCp (Fu [notCp f| f<-fs])
-                              Tm{} -> undefined
-                              Tc{} -> undefined
-                              K0{} -> undefined
-                              K1{} -> undefined
-                              Cp{} -> undefined
+                              Tm{} -> error ("!Fatal (module Calc 590). deMrg Tm{} is not defined.Consult your dealer!")
+                              Tc{} -> error ("!Fatal (module Calc 591). deMrg Tc{} is not defined.Consult your dealer!")
+                              K0{} -> error ("!Fatal (module Calc 592). deMrg K0{} is not defined.Consult your dealer!")
+                              K1{} -> error ("!Fatal (module Calc 593). deMrg K1{} is not defined.Consult your dealer!")
+                              Cp{} -> error ("!Fatal (module Calc 594). deMrg Cp{} is not defined.Consult your dealer!")
              fPrfs expr'' = case expr'' of
                               (F fs)  -> xs fs
                               (Fu fs) -> xs fs
                               (Fd fs) -> xs fs
                               (Fi fs) -> xs fs
-                              Tm{} -> undefined
-                              Tc{} -> undefined
-                              K0{} -> undefined
-                              K1{} -> undefined
-                              Cp{} -> undefined
+                              Tm{} -> error ("!Fatal (module Calc 600). fPrfs Tm{} is not defined.Consult your dealer!")
+                              Tc{} -> error ("!Fatal (module Calc 601). fPrfs Tc{} is not defined.Consult your dealer!")
+                              K0{} -> error ("!Fatal (module Calc 602). fPrfs K0{} is not defined.Consult your dealer!")
+                              K1{} -> error ("!Fatal (module Calc 603). fPrfs K1{} is not defined.Consult your dealer!")
+                              Cp{} -> error ("!Fatal (module Calc 604). fPrfs Cp{} is not defined.Consult your dealer!")
                      where
                         xs fs = [lam tOp e3 f|f<-fs, isVar f e3]                       
              lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sort' length (rc expr'')))
@@ -609,10 +609,10 @@ module Calc ( deriveProofs
              vars expr'' = map head (fPrfs expr'')
              const' (Fu fs) = [f|f<-fs, isConst f e3]
              const' (Fi fs) = [f|f<-fs, isConst f e3]
-             const' _ = undefined
+             const' expr'' = error ("!Fatal (module Calc 612). 'const'("++ show expr''++")' is not defined.Consult your dealer!")
              inter' (Fu fs) = Fu [f|f<-fs, isVar f e3]
              inter' (Fi fs) = Fi [f|f<-fs, isVar f e3]
-             inter' _ = undefined
+             inter' expr'' = error ("!Fatal (module Calc 615). 'inter'("++ show expr''++")' is not defined.Consult your dealer!")
 
              
 
