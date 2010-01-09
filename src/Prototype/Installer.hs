@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
  module Prototype.Installer where
   import Adl
   import Strings    (chain)
@@ -7,7 +8,7 @@
   import Options
 --  import NormalForms(conjNF)
   import Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
-  import Debug.Trace
+--  import Debug.Trace
 
   installer :: Fspc -> Options -> String
   installer fSpec flags = "<?php\n  " ++ chain "\n  "

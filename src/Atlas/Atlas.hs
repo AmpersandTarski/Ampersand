@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}  
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
 --in IIS you can enable windows authentication
 module Atlas.Atlas where
@@ -16,7 +17,6 @@ import Classes.Graphics
 import Classes.ViewPoint 
 ------
 import System (system, ExitCode(ExitSuccess,ExitFailure))
-import Strings      (remSpaces)
 import System.FilePath(combine,replaceExtension)
 import System.Directory(createDirectoryIfMissing)
 
@@ -71,6 +71,7 @@ tables =
    ,ATable ATViolUserRule "violatesviolation" ["violation","userrule"]
    ,ATable ATViolation "violation" ["i","user","script","display"]
    ]
+iscpttable :: ATableId -> Bool
 iscpttable tbl = elem tbl [ATAtom,ATConcept,ATExplanation,ATHomoRule,ATIsa,ATPicture,ATMultRule,ATPair,ATProp,ATRelation,ATRule,ATType,ATUserRule,ATViolation]
 
 --Atlas requires an ODBC data source named "atlas" representing the db of an Atlas.adl prototype
@@ -139,7 +140,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    where
    script = adlFileName flags
    user = takeWhile (/='.') (userAtlas flags)
-   islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
+--   islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
    qualify = (++)$"("++user ++ "." ++ script ++ ")"
    toUserctx :: [String]->ATableId->[String]
    toUserctx [] _ = []

@@ -39,34 +39,70 @@
 --     case language flags of
 --        English  -> 
 
-   predLshow flags (forall, exists, implies, equiv, equal, nequal, or, and, not, rel, fun, showVars, break, space) e = charshow 0 e
-     where
-      wrap i j str = if i<=j then str else "("++str++")"
-      charshow i (Forall vars restr)
-       = wrap i 1 (showVars forall vars ++ charshow 1 restr)
-      charshow i (Exists vars restr)
-       = wrap i 1 (showVars exists vars  ++ charshow 1 restr)
-      charshow i (Implies antc conseq)
-       = wrap i 2 (break++implies (charshow 2 antc) (charshow 2 conseq))
-      charshow i (Equiv lhs rhs)
-       = wrap i 2 (break++charshow 2 lhs++space++equiv++space++ charshow 2 rhs)
-      charshow i (Disj rs)
-       = if null rs then "" else
-         wrap i 3 (chain (space++or++space) (map (charshow 3) rs))
-      charshow i (Conj rs)
-       = if null rs then "" else
-         wrap i 4 (chain (space++and++space) (map (charshow 4) rs))
-      charshow i (Rel lhs m rhs)
-       = wrap i 5 (if inline m
-                   then rel m (charshow 5 lhs) (charshow 5 rhs)
-                   else rel m (charshow 5 rhs) (charshow 5 lhs))
-      charshow i (Funs x [])     = x
-      charshow i (Funs x (m:ms)) = if isIdent m then charshow i (Funs x ms) else charshow i (Funs (fun m x) ms)
-      charshow i (Not rs)        = wrap i 6 (space++not++charshow 6 rs)
-      charshow i (Pred nm v)     = nm++"{"++v++"}"
-      ishow e | idsOnly e = equal
-              | isNot e   = nequal
-              | otherwise = showADL e
+   predLshow :: Lang -> PredLogic -> String
+   predLshow lang e
+    = charshow 0 e
+        where
+         (forallP, existsP, impliesP, equivP, orP, andP, notP, relP, funP, showVarsP, breakP, spaceP)
+            = case lang of
+                English -> ("For each", "There exists", implies, "is equivalent to", "or", "and", "not", rel, fun, langVars , "\n  ", " ")
+                Dutch   -> ("Voor elke", "Er is een", implies, "is equivalent met", "of", "en", "niet", rel, fun, langVars , "\n  ", " ")
+               where
+                  rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
+                  fun m x' = name m++"("++x'++")"
+                  implies antc cons = case lang of 
+                                        English  -> "If "++antc++", then "++cons
+                                        Dutch    -> "Als "++antc++", dan "++cons
+                  langVars :: (Show b, Eq b) =>  String -> [(String, b)] -> String
+                  langVars q vs
+                      = case lang of
+                         English -> if null vs then "" else
+                                    if q=="Exists"
+                                    then chain " and " ["there exist"++(if length vs'==1 then "s a "++dType else " "++plural English dType)++" called "++chain ", " vs' | (vs',dType)<-vss]
+                                    else "If "++langVars "Exists" vs++", "
+                                    where
+                                     vss = [(map fst vs',show(snd (head vs'))) |vs'<-eqCl snd vs]
+                         Dutch   -> if null vs then "" else
+                                    if q=="Er is"
+                                    then chain " en " ["er "++(if length vs'==1 then "is een "++dType else "zijn "++plural Dutch dType)++" genaamd "++chain ", " vs' | (vs',dType)<-vss]
+                                    else "Als "++langVars "Er is" vs++", "
+                                    where
+                                     vss = [(map fst vs',show(snd (head vs'))) |vs'<-eqCl snd vs]
+                  
+                  
+                  
+                  
+         wrap i j str = if i<=j then str else "("++str++")"
+         charshow :: Integer -> PredLogic -> String
+         charshow i predexpr
+          = case predexpr of
+                  Forall vars restr   -> wrap i 1 (showVarsP forallP vars ++ charshow 1 restr)
+                  Exists vars restr   -> wrap i 1 (showVarsP existsP vars  ++ charshow 1 restr)
+                  Implies antc conseq -> wrap i 2 (breakP++impliesP (charshow 2 antc) (charshow 2 conseq))
+                  Equiv lhs rhs       -> wrap i 2 (breakP++charshow 2 lhs++spaceP++equivP++spaceP++ charshow 2 rhs)
+                  Disj rs             -> if null rs 
+                                         then "" 
+                                         else wrap i 3 (chain (spaceP++orP ++spaceP) (map (charshow 3) rs))
+                  Conj rs             -> if null rs 
+                                         then "" 
+                                         else wrap i 4 (chain (spaceP++andP++spaceP) (map (charshow 4) rs))
+                  Funs x ls           -> case ls of
+                                            []    -> x
+                                            m:ms  -> if isIdent m then charshow i (Funs x ms) else charshow i (Funs (funP m x) ms)
+                  Rel pexpr m pexpr'  -> case (pexpr,pexpr') of
+                                            (Funs l [] , Funs r [])  -> wrap i 5 (applyM (makeDeclaration m) l r)
+                                            (Funs x [l], Funs r [])  -> wrap i 5 (if isIdent m
+                                                                                  then applyM (makeDeclaration l) x r
+                                                                                  else applyM (makeDeclaration m) x r)
+                                            (Funs l [] , Funs y [r]) -> wrap i 5 (if isIdent m
+                                                                                  then applyM (makeDeclaration r) l y
+                                                                                  else applyM (makeDeclaration m) l y)
+                                            (lhs,rhs)                -> wrap i 5 (if inline m
+                                                                                  then relP m (charshow 5 lhs) (charshow 5 rhs)
+                                                                                  else relP m (charshow 5 rhs) (charshow 5 lhs))
+                  Not rs              -> wrap i 6 (spaceP++notP++charshow 6 rs)
+                  Pred nm v'          -> nm++"{"++v'++"}"
+
 
 --   instance Show PredLogic where
 --    showsPrec p x = showString (predLshow flags ("For all", "Exists", implies, "<=>", "=", "\\=", "||", "&", "not", rel, fun, mathVars, "", " ") x)

@@ -1,4 +1,4 @@
-  {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
   module Prototype.ObjBinGen  (phpObjServices)
   where
  

@@ -1,4 +1,5 @@
-  module Prototype.Wrapper (objectWrapper) where
+{-# OPTIONS_GHC -Wall #-}
+ module Prototype.Wrapper (objectWrapper) where
    import Strings(chain)
    import Adl
    import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,isOne,commentBlock,addToLast)
@@ -258,7 +259,7 @@
                  [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
                  ],newBlocks)
            where (content,newBlocks) = uniAtt (dvar var) var depth path cls att
-                 spanordiv = if isTot (objctx att) then "SPAN" else "DIV"
+         --       spanordiv = if isTot (objctx att) then "SPAN" else "DIV"
                  dvar var'@('$':x) = if null (displaydirective att) then var' else ('$':("display"++x))
                  dvar x = x
         attContent  var depth path cls att | (isTot(objctx att))

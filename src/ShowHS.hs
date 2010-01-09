@@ -192,7 +192,6 @@ where
     showHS _ indent (SQLsInt i)    = indent++"SQLsInt   "++show i
     showHS _ indent SQLId          = indent++"SQLId     "
     showHS _ indent (SQLVarchar i) = indent++"SQLVarchar "++show i
-    showHS _ indent (SQLEval strs) = indent++"SQLEval ["++chain ", " (map show strs)++"]"
     showHS _ indent SQLBool        = indent++"SQLBool   "
 
 -- \***********************************************************************

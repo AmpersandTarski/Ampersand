@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
  module Prototype.ContextGen where
   import Adl
   import Strings    (chain)

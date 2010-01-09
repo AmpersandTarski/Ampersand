@@ -1,14 +1,14 @@
+{-# OPTIONS_GHC -Wall #-}
 --DESCR -> functions translating adl to natural language.
 --TODO -> Maybe this module is useful at more places than just func spec rendering. In that case it's not a Rendering module and it needs to be replaced
 module Rendering.AdlExplanation(lang,explainArt,explainDecl,explainMult,explainRule) where
-import Auxiliaries (eqCl)
 import Adl
 import Data.Fspec
-import Collection (Collection (isc,(>-),empty, rd))
+import Collection (Collection ((>-)))
 import Char (toLower)
-import Strings (unCap,chain)
-import Languages(Lang(Dutch,English),ShowLang(showLang),plural)
-import PredLogic (PredLogic(..),ruleToPL,applyM,expr2predLogic)
+import Strings (unCap)
+import Languages(Lang(Dutch,English),plural)
+import PredLogic (PredLogic(..),ruleToPL,applyM,expr2predLogic,predLshow)
 import Options
 
 instance Explained Expression where
@@ -88,10 +88,10 @@ explainMult options d
 
 var :: Identified a => [a] -> a -> String
 var seen c = low c ++ ['\''| c'<-seen, low c == low c']
-             where low c = if null (name c) then "x" else [(toLower.head.name) c]
+             where low idt= if null (name idt) then "x" else [(toLower.head.name) idt]
 
 explainArt :: Options -> Fspc -> Rule ->  String
-explainArt flags fspc rul  -- TODO Geef een mooie uitleg van deze regel. 
+explainArt flags _ rul  -- TODO Geef een mooie uitleg van deze regel. 
     = if null (explain flags rul)
       then case language flags of
               English   -> "Artificial explanation: "
@@ -109,76 +109,15 @@ explainRule options r
     else (if explain options r=="NONE" then "" else explain options r)
 
 lang :: Options -> PredLogic -> String
-lang flags x =
-     case language flags of
-       English -> predLshow flags ("For each", "There exists", implies, "is equivalent to", "equals", "is unequal to", "or", "and", "not", rel, fun, langVars flags, "\n  ", " ") x
-       Dutch   -> predLshow flags ("Voor elke", "Er is een", implies, "is equivalent met", "gelijk aan", "is ongelijk aan", "of", "en", "niet", rel, fun, langVars flags, "\n  ", " ") x
-     where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
-           fun m x = name m++"("++x++")"
-           implies antc cons = case language flags of 
-                                   English  -> "If "++antc++", then "++cons
-                                   Dutch    -> "Als "++antc++", dan "++cons
-
-predLshow flags (forall, exists, implies, equiv, equal, nequal, or, and, not, rel, fun, showVars, break, space) e
- = charshow 0 e
-     where
-      wrap i j str = if i<=j then str else "("++str++")"
-      charshow i (Forall vars restr)
-       = wrap i 1 (showVars forall vars ++ charshow 1 restr)
-      charshow i (Exists vars restr)
-       = wrap i 1 (showVars exists vars  ++ charshow 1 restr)
-      charshow i (Implies antc conseq)
-       = wrap i 2 (break++implies (charshow 2 antc) (charshow 2 conseq))
-      charshow i (Equiv lhs rhs)
-       = wrap i 2 (break++charshow 2 lhs++space++equiv++space++ charshow 2 rhs)
-      charshow i (Disj rs)
-       = if null rs then "" else
-         wrap i 3 (chain (space++or++space) (map (charshow 3) rs))
-      charshow i (Conj rs)
-       = if null rs then "" else
-         wrap i 4 (chain (space++and++space) (map (charshow 4) rs))
-      charshow i (Rel (Funs l []) m (Funs r []))
-       = wrap i 5 (applyM (makeDeclaration m) l r)
-      charshow i (Rel (Funs x [l]) m (Funs r []))
-       = wrap i 5 (if isIdent m
-                   then applyM (makeDeclaration l) x r
-                   else applyM (makeDeclaration m) x r)
-      charshow i (Rel (Funs l []) m (Funs y [r]))
-       = wrap i 5 (if isIdent m
-                   then applyM (makeDeclaration r) l y
-                   else applyM (makeDeclaration m) l y)
-      charshow i (Rel lhs m rhs)
-       = wrap i 5 (if inline m
-                   then rel m (charshow 5 lhs) (charshow 5 rhs)
-                   else rel m (charshow 5 rhs) (charshow 5 lhs))
-      charshow i (Funs x [])     = x
-      charshow i (Funs x (m:ms)) = if isIdent m then charshow i (Funs x ms) else charshow i (Funs (fun m x) ms)
-      charshow i (Not rs)        = wrap i 6 (space++not++charshow 6 rs)
-      charshow i (Pred nm v)     = nm++"{"++v++"}"
-      ishow e | idsOnly e = equal
-              | isNot e   = nequal
-              | otherwise = show e
-
-langVars flags q vs
-    = case language flags of
-       English -> if null vs then "" else
-                  if q=="Exists"
-                  then chain " and " ["there exist"++(if length vs==1 then "s a "++dType else " "++plural English dType)++" called "++chain ", " vs | (vs,dType)<-vss]
-                  else "If "++langVars flags "Exists" vs++", "
-                  where
-                   vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
-       Dutch   -> if null vs then "" else
-                  if q=="Er is"
-                  then chain " en " ["er "++(if length vs==1 then "is een "++dType else "zijn "++plural Dutch dType)++" genaamd "++chain ", " vs | (vs,dType)<-vss]
-                  else "Als "++langVars flags "Er is" vs++", "
-                  where
-                   vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
+lang flags x = predLshow (language flags) x
 
 
 
-objOrShow :: Options -> PredLogic -> String
-objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars flags, "\n", " ")
-               where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
-                     fun m x = x++"."++name m
-                     implies antc cons = "IF "++antc++" THEN "++cons
+
+
+--objOrShow :: Options -> PredLogic -> String
+--objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars flags, "\n", " ")
+--               where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
+--                     fun m x = x++"."++name m
+--                     implies antc cons = "IF "++antc++" THEN "++cons
 

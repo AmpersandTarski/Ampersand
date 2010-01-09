@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
   module Prototype.Object(objectServices) where
    --import Char(toUpper)
@@ -7,9 +8,9 @@
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
               ,ObjectDef(..),Numbered(..),Morphic(..)
-              ,Identified(..),mors,Morphism(..),ViewPoint(..),Prop(..)
+              ,Identified(..),mors,Morphism(..),ViewPoint(..)
               ,Object(..),isIdent,Expression(..),mIs
-              ,flp)
+              )
    import ShowADL (showADL)
    import Collection (Collection (rd,rd',(>-)))
    import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,selectExprBrac,indentBlock

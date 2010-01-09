@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}  
 module Data.Plug (Plug(..)
                  ,SqlField(..)
                  ,SqlType(..)
@@ -12,6 +13,7 @@ module Data.Plug (Plug(..)
                  ,ActionType(..))
 where
   import Adl
+  import Strings               (chain)
   
   data Plug = PlugSql { fields   :: [SqlField]
                       , plname   :: String
@@ -69,7 +71,6 @@ where
                | SQLsInt    Int
                | SQLId                -- autoincrement integer
                | SQLVarchar Int
-               | SQLEval    [String]
                | SQLBool              -- exists y/n
                deriving (Eq, Ord,Show)
   
@@ -85,7 +86,7 @@ where
   showSQL (SQLId       ) = "INT"
   showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
   showSQL (SQLBool     ) = "BOOLEAN"
-          
+            
   iskey :: SqlField->Bool
   iskey f = flduniq f && not (fldnull f)
   fldtyp :: Concept->SqlType

@@ -11,7 +11,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    import Data.Fspec
    import Data.Plug
    import List(isPrefixOf)
-   import Collection (Collection(rd,uni))
+   import Collection (Collection(rd))
    import Auxiliaries (naming)
 --   import Debug.Trace
 

@@ -1,14 +1,16 @@
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
   module Prototype.Index(htmlindex) where
    import Strings(chain)
    import Prototype.RelBinGenBasics(indentBlock,isOne)
    import Version (versionbanner)
-   import System.FilePath (addExtension)
-   import Adl (name)
+--   import System.FilePath (addExtension)
+   import Adl (name,ObjectDef)
    import Data.Fspec
    import Options
    
    
+   htmlindex :: Fspc -> [ObjectDef] -> Options -> [Char]
    htmlindex fSpec serviceObjects flags
     = chain "\n  "
       ( [ "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
