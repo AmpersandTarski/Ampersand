@@ -158,13 +158,16 @@ dotG flags graphName cpts dcls idgs
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         isaNodesAndEdges :: ((Concept, Concept),Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
-        isaNodesAndEdges ((s,t),n)
-           = (   [isaDotHingeNode]
-             ,   [constrEdge (baseNodeId s) (nodeID isaDotHingeNode) IsaEdge True flags]
-               ++[constrEdge (nodeID isaDotHingeNode) (baseNodeId t) IsaEdge True flags]
-             ) 
-          where
-            isaDotHingeNode  = constrNode ("isaHinge_"++show n) IsaHingeNode flags
+        isaNodesAndEdges ((s,t),_)
+             = ( [] -- No node at all
+               , [constrEdge (baseNodeId s) (baseNodeId t) IsaOnlyOneEdge True  flags] -- Just a single edge
+               )
+--           = (   [isaDotHingeNode]
+--             ,   [constrEdge (baseNodeId s) (nodeID isaDotHingeNode) IsaEdge True flags]
+--               ++[constrEdge (nodeID isaDotHingeNode) (baseNodeId t) IsaEdge True flags]
+--             ) 
+--          where
+--            isaDotHingeNode  = constrNode ("isaHinge_"++show n) IsaHingeNode flags
 
                         
 constrNode :: a -> PictureObject -> Options -> DotNode a
@@ -196,6 +199,7 @@ data PictureObject = CptOnlyOneNode Concept     -- ^ Node of a concept that serv
                    | DclHingeNode               -- ^ Node of a relation that serves as a hinge
                    | DclNameNode Declaration    -- ^ Node of a relation that shows the name
                    | DclMiddleEdge              -- ^ Edge of a relation to connect hinges and/or namenode
+                   | IsaOnlyOneEdge             -- ^ Edge of an ISA relation without a hinge node
                    | IsaHingeNode               -- ^ Node of an ISA relation
                    | IsaEdge                    -- ^ Edge of a Gen to connec the source to the target of it
                    | TotalPicture               -- ^ Graph attributes
@@ -238,7 +242,11 @@ handleFlags po flags =
                                       )
                           ]
       DclSrcEdge d -> [Len 1.2
-                      ,ArrowHead (AType [(open,Normal)])    -- Geeft de richting van de relatie aan.
+ --                     ,ArrowHead (AType [(open,Normal)])    -- Geeft de richting van de relatie aan.
+                      ,ArrowHead ( if or [crowfoot flags, not (isFunction d)] 
+                                   then AType [(open,Normal)]
+                                   else noArrow
+                                 )
                       ,ArrowTail ( if crowfoot flags
                                    then crowfootArrowType False d
                                    else noArrow
@@ -261,6 +269,12 @@ handleFlags po flags =
                        , ArrowHead noArrow
                        , ArrowTail noArrow
                        ]
+      IsaOnlyOneEdge-> [ Color [ColorName "red"]
+                       , Len 1.5
+                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])
+                       , ArrowTail noArrow
+                       , dotted
+                       ]
       IsaEdge       -> [ Color [ColorName "red"]
                        , Len 0.6
                        , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])	
@@ -275,6 +289,9 @@ defaultNodeAtts   = [FontSize 12,FontName "helvetica"]
 
 invisible :: Attribute
 invisible = Style [SItem Invisible []]
+
+dotted :: Attribute
+dotted = Style [SItem Dotted []]
 
 filled :: Attribute
 filled = Style [SItem Filled []]

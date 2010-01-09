@@ -2,7 +2,6 @@
 module Adl.KeyDef (KeyDef(..),KeyDefs)
 where
    import Adl.FilePos       (FilePos,Numbered(..))
-   import Adl.Expression    (Expression)
    import Adl.ObjectDef     (ObjectDefs)
    import Adl.Concept       (Concept)
    import CommonClasses     (Identified(..))

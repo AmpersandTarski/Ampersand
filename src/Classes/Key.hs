@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Classes.Key            (Key(keys)) 
 where
-   import Adl.Concept         (Concept,Association(..))
+   import Adl.Concept         (Concept)
    import Adl.ObjectDef       (ObjectDef)
    import Adl.KeyDef          (KeyDef(..))
    import Adl.Pattern         (Pattern)

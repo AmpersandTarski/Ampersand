@@ -113,7 +113,7 @@ module Data.Fspec ( Fspc(..)
    instance ViewPoint Fservice where
     objectdef    svc = fsv_objectdef svc
     conceptDefs   _  = []                                  -- The set of all concept definitions in this Fservice
-    declarations svc = []                                  -- Currently, no declarations are made within a service.
+    declarations  _  = []                                  -- Currently, no declarations are made within a service.
     rules        svc = [r| r<-fsv_rules svc]
     signals      svc = [r| r<-fsv_signals svc]
     objDefs      svc = [fsv_objectdef svc]
