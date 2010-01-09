@@ -16,9 +16,8 @@ where
  
    instance Key Context where
     keys context
-     = ( concat [keys p| p<-ctxpats context] ++
-         concat (map keys (keyDefs context))
-       )
+     = concat (map keys (keyDefs context))
+
    instance Key Pattern where
     keys pat = concat (map keys (keyDefs pat))
  

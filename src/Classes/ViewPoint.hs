@@ -26,7 +26,7 @@ where
      signals      :: a -> [Rule]        -- all signals that are visible within this viewpoint
                                         -- all relations used in signals and rules must have a valid declaration in the same viewpoint.
      objDefs      :: a -> [ObjectDef]
-     keyDefs      :: a -> [KeyDef]
+     keyDefs      :: a -> [KeyDef]      -- all keys that are defined in a
      gens         :: a -> [Gen]         -- all generalizations that are valid within this viewpoint
      patterns     :: a -> [Pattern]     -- all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept

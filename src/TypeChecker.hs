@@ -134,25 +134,27 @@ enrichCtx cx@(Ctx{}) ctxs =
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
           ctxpats = map bindPat (ctxpats cx), -- 
-          ctxrs   = [rule | (rule,_,_)<-ctxrules++ctxpts], -- all rules outside the scope of patterns and all rules from within patterns
+          ctxrs   = [rule | (rule,_,_)<-ctxCtxRules], -- all rules outside the scope of patterns and all rules from within patterns
           ctxds   = ctxdecls, -- 
           ctxos   = [od | (od,_)<-ctxobjdefs], 
-          ctxks   = [kd | (kd,_)<-ctxkeys],
+          ctxks   = [kd | (kd,_)<-ctxCtxKeys],
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
           ctxphp  = [plug | (plug,_)<-ctxphpplugs]} 
-  ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxrules]
-   ++[(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxpts]
+  ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxCtxRules]
+   ++[(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxPatRules]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxsqlplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
-   ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxkeys, (proof,fp,expr)<-proofs])
+   ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxCtxKeys, (proof,fp,expr)<-proofs]
+   ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxPatKeys, (proof,fp,expr)<-proofs]
+  )
                            {-
                            (ctxnm cx)   --copy name
                            (ctxon cx)   --copy extended ctxs
                            (hierarchy)  --construct Isa with all Concepts in scope
                            (world)      --construct the world with this cx on top of the world
                            (ctxpats cx) --bind rules and keydefs in patterns
-                           (ctxrules)   --rules from gens and patterns of this context only
+                           (ctxCtxRules)   --rules from gens and patterns of this context only
                            (ctxdecls)   --relations declared in this context only, outside the scope of patterns
                            (ctxcptdefs) --concept defs of this context only
                            (ctxks cx)   --bind keydefs
@@ -267,15 +269,18 @@ enrichCtx cx@(Ctx{}) ctxs =
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
 
-  ctxpts :: [(Rule,Proof,FilePos)]
-  ctxpts
+  ctxPatRules :: [(Rule,Proof,FilePos)]
+  ctxPatRules
      = [ bindRule r| pat<-patterns cx, r<-ptrls pat ] ++   -- all rules that are declared in the patterns within this context
        [ rulefromKey k (name cx) | pat<-patterns cx, k<-ptkds pat]  -- all rules that are derived from KEY statements in patterns
 
+  ctxPatKeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
+  ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   
+
 --WAAROM (SJ) werden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
   --DESCR -> enriching ctxrs
-  ctxrules :: [(Rule,Proof,FilePos)]
-  ctxrules
+  ctxCtxRules :: [(Rule,Proof,FilePos)]
+  ctxCtxRules
      = [ bindRule r| r<-ctxrs cx ] ++            -- all rules that are declared in the ADL-script within
                                                  --     this context, but not in the patterns of this context
        [ rulefromKey k (name cx) | k<-ctxks cx]  -- all rules that are derived from all KEY statements in this context
@@ -418,8 +423,8 @@ enrichCtx cx@(Ctx{}) ctxs =
           _ -> error $ "!Fatal (module TypeChecker 420): function enrichCtx.bindObjDef.removeF: " ++
                        "Expected a BoundTo relative composition expression statement."++show et++"."
   
-  ctxkeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
-  ctxkeys = [bindKeyDef kd | kd<-keyDefs cx]   
+  ctxCtxKeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
+  ctxCtxKeys = [bindKeyDef kd | kd<-ctxks cx]   
   bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos,Expression)])
   bindKeyDef kd = (kd {kdats=bindats},proofats)
     where

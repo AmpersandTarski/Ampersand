@@ -237,7 +237,7 @@
         --TODO -> by default CRUD operations of datasets, possibly overruled by ECA or PHP plugs
         themeoperations = phpoperations++sqloperations
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
-        sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (keyDefs context) obj]
+        sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (vkeys fSpec) obj]
         --query copied from FSpec.hs revision 174
         themerules = [r|p<-patterns context, r<-rules p++signals p]
         maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}

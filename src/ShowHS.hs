@@ -432,7 +432,7 @@ where
     showHSname kd = "kDef_"++haskellIdentifier (name kd)
     showHS flags indent kd
      = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdcpt kd)++")"
-       ++indent++"[ "++chain (indent++", ") [showHS flags (indent++"  ") a|a<-(kdats kd)]++indent++"]"
+       ++indent++"  [ "++chain (indent++"  , ") [showHS flags (indent++"    ") a|a<-(kdats kd)]++indent++"  ]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Population                    ***
@@ -519,7 +519,9 @@ where
 -- \***********************************************************************
 
    instance ShowHS Declaration where
-    showHSname d = "rel_"++haskellIdentifier (name d++name (source d)++name (target d))
+    showHSname d | decusr d  = "rel_"++haskellIdentifier (name d++name (source d)++name (target d)) -- user defined relations
+                 | deciss d  = "sgn_"++haskellIdentifier (name d++name (source d)++name (target d)) -- relations generated for signalling
+                 | otherwise = "vio_"++haskellIdentifier (name d++name (source d)++name (target d)) -- relations generated per rule
     showHS flags indent d 
        = case d of 
           Sgn{}     -> (chain newIndent

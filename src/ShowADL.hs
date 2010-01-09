@@ -49,20 +49,18 @@
 --------------------------------------------------------------
    --EXTEND -> showADLcode must be the inverse of parse. Concrete: Haskell code generated from the original file must be literally equivalent to Haskell code generated from the showADLcode string.
    --TODO -> check equivalence of generated Haskell code 
-   --REMARK -> comments in original script will not be printed
+   --TODO -> comments in original script must also be printed
    --TODO -> what about extends? Answer: ignore untill revised
    --TODO -> Pat "CONTEXT" should become obsolete (declare ds cs ks in a pattern)
    --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid, (etc?)? Answer: check if errors can be produced without reserved words. If so add reserved words, otherwise don't
    --TODO -> sort on file position
-   --TODO -> where do all the Other Topics patterns come from, it's not just one pattern? Answer: they will disappear when revising FTheme
    --TODO -> ALWAYS cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
    --TODO -> ALWAYS pProps (ObjectDef) is ignored. It may be enabled some day to communicate interface policies
    --TODO -> move the flips from Morphism to Expression data type
    --TODO -> remove application of double complement rule from the parser
    --TODO -> remove removal of brackets on ; expression from the parser
 
-   -- pops = [Popu mph prs| CPop mph prs<-ces]
-   -- CPop ->  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
+
    mapExpr :: (Morphism->Morphism) -> Expression -> Expression
    mapExpr f expr = case expr of
       F xs  -> F  [mapExpr f x| x<-xs]
@@ -110,16 +108,14 @@
               ind++"   ]"
            str ss | and [isAlphaNum c| c<-ss] = ss
                   | otherwise                 = "\""++ss++"\""
-    showADLcode fSpec obj = "  SERVICE "++name obj++" : I["++(name (target (objctx obj)))++"]"++
-                  recur "\n  " (objats obj)
+    showADLcode fSpec obj = "  SERVICE "++name obj++" : "++showADLcode fSpec (objctx obj)++
+                            recur "\n  " (objats obj)
      where recur :: String -> [ObjectDef] -> String
            recur ind objs
             = ind++" = [ "++
               chain (ind++"   , ") [ name o++(if name o `elem` cls then show i else "")++
                                      (if null (objstrs o) then "" else " {"++chain ", " [chain " " (map str ss)| ss<-objstrs o]++"}")++
-                                     " : "++(if isIdent (objctx o) then "["++str (name (target (objctx o)))++"]" else
-                                             if isTrue  (objctx o) then "[ONE*"++str (name (target (objctx o)))++"]" else
-                                             showADLcode fSpec (objctx o))++
+                                     " : "++showADLcode fSpec (objctx o)++
                                      if null (objats o) then "" else recur (ind++"     ") (objats o)
                                   | (o,i)<-zip objs [1..]
                                   , cls<-[[name c|cl<-eqCl name (vrels fSpec), length cl>1, c<-take 1 cl]]
@@ -347,8 +343,15 @@
 
    instance ShowADL Population where
     showADL (Popu m ps)
-     = nlIndent++"pop_"++name m++name (source m)++name (target m)++nlIndent++" = [ "++chain (nlIndent'++"; ") (map show ps)++nlIndent'++"]"
-       where nlIndent = "\n      "; nlIndent' = nlIndent++"    "
+     = "POPULATION "++showADL m++" CONTAINS\n"++
+       indent++"[ "++chain ("\n"++indent++"; ") (map show ps)++indent++"]"
+       where indent = "   "
+             source (Mph nm pos atts (a,b) yin d) = a
+             target (Mph nm pos atts (a,b) yin d) = b
+    showADLcode fSpec (Popu m ps)
+     = "POPULATION "++showADLcode fSpec m++" CONTAINS\n"++
+       indent++"[ "++chain ("\n"++indent++"; ") (map show ps)++indent++"]"
+       where indent = "   "
              source (Mph nm pos atts (a,b) yin d) = a
              target (Mph nm pos atts (a,b) yin d) = b
 
@@ -365,6 +368,7 @@
    -- In de body van de context worden de regels afgedrukt die in de context zijn gedefinieerd, maar buiten de patterns.
    -- Daarbij worden de relaties afgedrukt die bij deze regels horen, zodat het geheel zelfstandig leesbaar is.
    instance ShowADL Context where
+    showADL context = error("!Fatal (module showADL 369): showADL on Contexts is deliberately undefined. Please use showADLcode fSpec instead.")
     showADLcode fSpec context
      = "CONTEXT " ++name context
        ++ (if null (ctxon context)   then "" else "EXTENDS "++chain ", "   (ctxon context)                 ++ "\n")
