@@ -55,12 +55,12 @@ where
                                , objats  = map objectdef (ctxpats context)
                                , objstrs = []
                                }
-    conceptDefs  context = ctxcs context++conceptDefs (ctxpats context)
+    conceptDefs  context = rd$ctxcs context++conceptDefs (ctxpats context)
     declarations context = declarations (ctxpats context) `uni` ctxds context
     rules        context = rules   (ctxpats context) ++ [r| r<-ctxrs context, not (isSignal r)]
-    signals      context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r ]
+    signals      context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r] 
     objDefs      context = ctxos   context
-    keyDefs      context = keyDefs (ctxpats context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
+    keyDefs      context = rd$keyDefs (ctxpats context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
     gens         context = gens (ctxpats context)
     patterns     context = ctxpats context
     isa          context = ctxisa  context

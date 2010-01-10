@@ -227,7 +227,12 @@
            , "<UL>';"
            , "foreach("++var++" as $i"++show depth++"=>"++idvar ++"){"
            , "  "++atnm ++"="++(if null (displaydirective att) then idvar 
-                          else "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")") ++ ";"
+                          else (if null(objats att)
+                                then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
+                                else idvar)) ++ ";"
+           , if null(objats att) || null(displaydirective att) 
+             then [] 
+             else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);" 
            , "  echo '"
            , "  <LI CLASS=\"item UI"++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"]
            ++ indentBlock 4 content ++

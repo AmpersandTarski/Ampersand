@@ -70,6 +70,21 @@ explanation::MultiplicityRule->Explanation.
 explanation::HomogeneousRule->Explanation.
 ENDPATTERN
 
+PATTERN Pattern
+pattern :: Rule -> Pattern.
+pattern :: UserRule -> Pattern.
+pattern :: MultiplicityRule -> Pattern. --REMARK -> has not been set (use on;pattern)
+pattern :: HomogeneousRule -> Pattern. --REMARK -> has not been set (use on;pattern)
+pattern :: Relation -> Pattern.
+pattern :: IsaRelation -> Pattern.
+ENDPATTERN
+
+PATTERN Ordering
+--GEN Rule ISA Ordening
+next :: UserRule->UserRule.
+previous :: UserRule->UserRule.
+ENDPATTERN
+
 PATTERN ExplicitUserContext
 s::User*User. 
 s::Script*Script. 
@@ -88,6 +103,7 @@ user::UserRule->User.
 user::Rule->User.
 user::Violation->User.
 user::Explanation->User.
+user::Pattern->User.
 --ctxenv::Picture*Picture.
 --ctxenv::Relation*Relation.
 --ctxenv::Concept*Concept.
@@ -110,6 +126,7 @@ script::UserRule->Script.
 script::Rule->Script.
 script::Violation->Script.
 script::Explanation->Script.
+script::Pattern->Script.
 ENDPATTERN
 
 PATTERN ExplicitDisplay
@@ -128,34 +145,28 @@ display::UserRule->String.
 display::Rule->String.
 display::Violation->String.
 display::Explanation->String.
+display::Pattern->String.
 ENDPATTERN
+
+SERVICE Overzicht : I[ONE]
+   = [ Patterns{"DISPLAY=Pattern.display"} : V[ONE*Pattern];(user;s;user[Pattern*User]~ /\ script;s;script~) 
+        = [ violated_rules : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
+         , property_violations_on : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
+          ]
+     , "Conceptual diagram"{"PICTURE"}: V[ONE*Picture];(user;s;user[Picture*User]~ /\ script;s;script~);display
+     ]
+
+SERVICE Pattern{"DISPLAY=Pattern.display"} : I[Pattern]
+   = [ rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
+     , relations{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
+     , isa_relations : pattern[IsaRelation*Pattern]~;display
+     ]
 
 -- {"DISPLAY=<Concept>.<(function)Relation>"} if you need the link by id and a user-friendly representation.
 --example DISPLAY=Relation.display to print the user-friendly string of a Relation
 --TODO -> There are no compile checks to check on the correct type or to check that the relation is represented as a DB column of the table of that type. In case of mistakes the PHP will return a missing offset 0, because it will try to get $rows[0].
 --TODO -> DISPLAY has not been tested on all types of ObjectDefs (see Wrapper.hs -> attContent for different patterns)
-SERVICE Rules : I[ONE]
-   = [ "Conceptual diagram"{"PICTURE"}: V[ONE*Picture];(user;s;user[Picture*User]~ /\ script;s;script~);display
-     , "User-defined rules" : V[ONE*UserRule];(user;s;user[UserRule*User]~ /\ script;s;script~)
-         = [ rule : I[UserRule];display
-           , source{"DISPLAY=Concept.display"} : type;source
-           , target{"DISPLAY=Concept.display"} : type;target
-           , violations : violates~;display
-           ]
-     , Multiplicities : V[ONE*MultiplicityRule];(user;s;user[MultiplicityRule*User]~ /\ script;s;script~)
-         = [ property : property;display
-           , source{"DISPLAY=Concept.display"} : type;source
-           , on{"DISPLAY=Relation.display"} : on
-           , rule : I[MultiplicityRule];display
-           , violations : violates~;display
-           ]
-     , "Homogeneous properties" : V[ONE*HomogeneousRule];(user;s;user[HomogeneousRule*User]~ /\ script;s;script~)
-         = [ property : property;display
-           , on{"DISPLAY=Relation.display"} : on
-           , rule : I[HomogeneousRule];display
-           , violations : violates~;display
-           ]
-      ] 
+
 
 --TODO -> specific types moeten doorlinken naar generiekere service, als geen specifieke service bestaat
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
@@ -170,7 +181,9 @@ SERVICE Rule1{"DISPLAY=UserRule.display"} : I[UserRule]
      , target{"DISPLAY=Concept.display"} : type;target
      , relations{"DISPLAY=Relation.display"} : morphisms
      , violations : violates~;display
-     , explanation : explanation;display]
+     , explanation : explanation;display
+     , previous{"DISPLAY=UserRule.display"} : previous
+     , next{"DISPLAY=UserRule.display"} : next]
 SERVICE Rule2{"DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
@@ -179,14 +192,6 @@ SERVICE Rule3{"DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display]
-
-SERVICE "ISArelations" : I[ONE]
-   = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
-      = [ "IS-a relation" : display
-        , specific {"DISPLAY=Concept.display"}: specific
-        , isa {"DISPLAY=Concept.display"}: general
-        ]
-     ]
 
 --I must use a nested name to display, because there is no SERVICE on String only on Relation
 SERVICE Relations : I[ONE]
@@ -200,7 +205,9 @@ SERVICE "RelationDetails"{"DISPLAY=Relation.display"}   : I[Relation]
      , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
        = [property : property;display, "derived rule" : display, violations : violates~;display]
      , population  : contains;display
-     , "used in rules"{"DISPLAY=UserRule.display"} : morphisms~]
+     , "used in rules"{"DISPLAY=UserRule.display"} : morphisms~
+     , pattern : pattern;display
+     ]
 
 SERVICE Population{"DISPLAY=Relation.display"}   : I[Relation]
    = [ population  : contains;display]
@@ -210,6 +217,15 @@ SERVICE Concepts : I[ONE]
 
 SERVICE Concept{"DISPLAY=Concept.display"} : I[Concept]
    = [ population : contains;display]
+
+SERVICE "ISArelations" : I[ONE]
+   = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
+      = [ "IS-a relation" : display
+        , specific {"DISPLAY=Concept.display"}: specific
+        , isa {"DISPLAY=Concept.display"}: general
+        , pattern : pattern;display
+        ]
+     ]
 
 ENDCONTEXT
 
@@ -350,3 +366,9 @@ LEFT JOIN
 ON `f3`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I' 
 WHERE `multiplicityrule`.`i`='sentTo[Client*Invoice]~;sentTo[Invoice*Client] |- I'
 -}
+
+
+
+
+
+

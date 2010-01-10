@@ -133,7 +133,7 @@ enrichCtx cx@(Ctx{}) ctxs =
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
-          ctxpats = map bindPat (ctxpats cx), -- 
+          ctxpats = [p | (p,_)<-ctxpatterns], -- all rules inside the scope of patterns
           ctxrs   = [rule | (rule,_,_)<-ctxCtxRules], -- all rules outside the scope of patterns and all rules from within patterns
           ctxds   = ctxdecls, -- 
           ctxos   = [od | (od,_)<-ctxobjdefs], 
@@ -141,7 +141,7 @@ enrichCtx cx@(Ctx{}) ctxs =
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
           ctxphp  = [plug | (plug,_)<-ctxphpplugs]} 
   ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxCtxRules]
-   ++[(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxPatRules]
+   ++[(proof,fp,OrigRule rule)|(_,rs)<-ctxpatterns, (rule,proof,fp)<-rs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxsqlplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
@@ -225,15 +225,22 @@ enrichCtx cx@(Ctx{}) ctxs =
 
 
   --DESCR -> enriching ctxpats
-  bindPat p@(Pat{}) = p {ptrls= bindrules ,ptkds= bindkds, ptdcs=addpopu}
+  ctxpatterns :: [(Pattern,[(Rule,Proof,FilePos)])]
+  ctxpatterns
+     = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
+                                                    --     the patterns of this context
+  bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu},bindrules)
     where
-    bindrules = [br | (br,_,_)<-map bindRule $ 
-                                (ptrls p)
+    bindrules = map bindRule $ ptrls p
+    boundrules = [br | (br,_,_)<-bindrules
                   --REMARK -> no rules generated in pattern because of generation of func spec, showadl etc. 
                   --           ++[r |d<-ptdcs p, r<-multRules d]
                   --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
-    bindkds = [bk | (bk,_)<-map bindKeyDef (ptkds p)]
+    --REMARK -> keydefs are copied into ctxkd, and need only be bound in the pattern, not checked like rules!
+    --TODO -> Make this consistent! (i.e. consistent semantics of context before and after enrich)
+    bindkds = map bindKeyDef (ptkds p)
+    boundkds = [bk | (bk,_)<-bindkds]
     addpopu = let matches = [d' |d@Sgn{}<-ptdcs p, d'@Sgn{}<-ctxdecls, decfpos d==decfpos d']
               in matches ++ [d|d@Sgn{}<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
 
@@ -269,10 +276,6 @@ enrichCtx cx@(Ctx{}) ctxs =
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
 
-  ctxPatRules :: [(Rule,Proof,FilePos)]
-  ctxPatRules
-     = [ bindRule r| pat<-patterns cx, r<-ptrls pat ] ++   -- all rules that are declared in the patterns within this context
-       [ rulefromKey k (name cx) | pat<-patterns cx, k<-ptkds pat]  -- all rules that are derived from KEY statements in patterns
 
   ctxPatKeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
   ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   

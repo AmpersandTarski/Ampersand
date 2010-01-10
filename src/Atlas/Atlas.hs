@@ -13,9 +13,10 @@ import Collection     ( Collection (rd) )
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Classes.Morphical
-import Classes.Graphics
+import List(sort)
 import Classes.ViewPoint 
 ------
+import Classes.Graphics
 import System (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath(combine,replaceExtension)
 import System.Directory(createDirectoryIfMissing)
@@ -34,6 +35,7 @@ data ATableId =
   |ATMorphisms
   |ATMultRule
   |ATPair
+  |ATPattern
   |ATProp
   |ATRelation
   |ATRelVar
@@ -53,18 +55,19 @@ tables =
    ,ATable ATContainsConcept "containsconcept" ["concept","atom"] 
    ,ATable ATExplanation "explanation" ["i","user","script","display"] 
   -- ,ATable ATExpression "expression" ["i","source","target"] 
-   ,ATable ATHomoRule "homogeneousrule" ["i","property","on","type","explanation","user","script","display"] 
-   ,ATable ATIsa "isarelation" ["i","specific","general","user","script","display"] 
+   ,ATable ATHomoRule "homogeneousrule" ["i","property","on","type","explanation","pattern","user","script","display"] 
+   ,ATable ATIsa "isarelation" ["i","specific","general","pattern","user","script","display"] 
    ,ATable ATPicture "picture" ["i","thepicture","user","script","display"] 
    ,ATable ATMorphisms "morphisms" ["userrule","relation"] 
-   ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation","user","script","display"] 
+   ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation","pattern","user","script","display"] 
    ,ATable ATPair "pair" ["i","user","script","display"] 
+   ,ATable ATPattern "pattern" ["i","user","script","display"] 
    ,ATable ATProp "prop" ["i","user","script","display"] 
-   ,ATable ATRelation "relation" ["i","user","script","display"]
+   ,ATable ATRelation "relation" ["i","pattern","user","script","display"]
    ,ATable ATRelVar "relvar" ["relation","type"]
-   ,ATable ATRule "rule" ["i","type","explanation","user","script","display"] 
+   ,ATable ATRule "rule" ["i","type","explanation","pattern","user","script","display"] 
    ,ATable ATType "type" ["i","source","target","user","script","display"] 
-   ,ATable ATUserRule "userrule" ["i","type","explanation","user","script","display"] 
+   ,ATable ATUserRule "userrule" ["i","type","explanation","pattern","next","previous","user","script","display"] 
    ,ATable ATViolRule "violates" ["violation","rule"]
    ,ATable ATViolHomoRule "violateshomogeneousrule" ["violation","homogeneousrule"]
    ,ATable ATViolMultRule "violatesmultiplicityrule" ["violation","multiplicityrule"]
@@ -72,7 +75,7 @@ tables =
    ,ATable ATViolation "violation" ["i","user","script","display"]
    ]
 iscpttable :: ATableId -> Bool
-iscpttable tbl = elem tbl [ATAtom,ATConcept,ATExplanation,ATHomoRule,ATIsa,ATPicture,ATMultRule,ATPair,ATProp,ATRelation,ATRule,ATType,ATUserRule,ATViolation]
+iscpttable tbl = elem tbl [ATAtom,ATConcept,ATExplanation,ATHomoRule,ATIsa,ATPicture,ATMultRule,ATPair,ATPattern,ATProp,ATRelation,ATRule,ATType,ATUserRule,ATViolation]
 
 --Atlas requires an ODBC data source named "atlas" representing the db of an Atlas.adl prototype
 --hdbc and hdbc-odbc must be installed (from hackage)
@@ -149,38 +152,46 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x]|x<-cpts]
-   pop' ATContains = [[relpred x,show y]| x<-vrels fSpec, y<-contents x]
+   pop' ATContains = [[relpred x,show y]| x<-declarations fSpec,not$isSignal x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets]
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
  --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
-   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-homorules]
-   pop' ATIsa = [[show x,show(genspc x), show(gengen x)]|p<-patterns fSpec, x<-ptgns p]
+   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
+   pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
    pop' ATPicture = [[x,x]|x<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
-   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,name d,cpttype x,explainRule flags x])$rrdcl x |x@Ru{}<-multrules]
-   pop' ATPair = [[show y]| x<-vrels fSpec, y<-contents x]
+   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrules]
+   pop' ATPair = [[show y]| x<-declarations fSpec,not$isSignal x, y<-contents x]
+   pop' ATPattern = [[name x]| x<-patterns fSpec]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
-   pop' ATRelation = ["I"]:["V"]:[[relpred x]|x<-vrels fSpec]
-   pop' ATRelVar = [[relpred x,cpttype x]|x<-vrels fSpec]
-   pop' ATRule = [[cptrule x,cpttype x,explainRule flags x]|x<-atlasrules]
-   pop' ATType = [t x|x<-vrels fSpec] ++ [t x|x<-atlasrules]
+   pop' ATRelation = ["I",""]:["V",""]:[[relpred x,name p]|p<-patterns fSpec, x<-declarations p,not$isSignal x] --REMARK -> decls from pat instead of fSpec!
+   pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,not$isSignal x]
+   pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
+   pop' ATType = [t x|x<-declarations fSpec,not$isSignal x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
-   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x]|x<-userrules]
+   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$prevrule x userrules,cptrule$nextrule x userrules]|x<- userrules]
    --convert pair to violation message
    --There is overhead in the violates* tables, but that does not matter for the result. Fix SQL and generalisation instead.
    --then there will be only one table "violates" for all rules.
-   pop' ATViolRule = [[show y,cptrule x] | (x,y)<-violations fSpec]
-   pop' ATViolHomoRule = [[show y,cptrule x] | (x,y)<-violations fSpec]
-   pop' ATViolMultRule = [[show y,cptrule x] | (x,y)<-violations fSpec]
-   pop' ATViolUserRule = [[show y,cptrule x] | (x,y)<-violations fSpec]
-   pop' ATViolation = [[show y] | (_,y)<-violations fSpec]
+   pop' ATViolRule = [[ y, x] | (x,y)<-identifiedviols]
+   pop' ATViolHomoRule = [[ y, x] | (x,y)<-identifiedviols]
+   pop' ATViolMultRule = [[ y, x] | (x,y)<-identifiedviols]
+   pop' ATViolUserRule = [[ y, x] | (x,y)<-identifiedviols]
+   pop' ATViolation = [[ y] | (_,y)<-identifiedviols]
    --------------------------------------------------------
    --picturelink =  "./img/" ++ name fSpec++".png"
+   identifiedviols = [(cptrule x,show i++show y) |(i,(x,y))<-zip [1..] (violations fSpec)]
+   nextrule r [] = r
+   nextrule r rs = if null nxt then head rs else head nxt 
+      where nxt = [r'|r'<-rs, runum r'==(runum r)+1]
+   prevrule r [] = r
+   prevrule r rs = if null prev then last rs else head prev 
+      where prev = [r'|r'<-rs, runum r'==(runum r)-1]
    relpred x@(Sgn{}) = name x ++ "::" ++ cpttype x 
    relpred x = name x
    mphpred x@(Mph{}) = relpred (mphdcl x) 
    mphpred x = name x
-   cpts = (\(Isa _ cs) -> [c|c@(C{})<-cs]) (isa fSpec)
+   cpts = (\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (isa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
    cptrule x | isSignal x =  "SIGNAL: " ++ (cptrule$ x{r_sgl=False})
              | rrsrt x==Implication = showADLcode fSpec (rrant x) ++ " |- " ++ showADLcode fSpec (rrcon x)
@@ -192,20 +203,16 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    --         multrules are rules defined by a multiplicity, 
    --         homorules by a homogeneous property
    --         the rule from an ISA declaration (I[spec] |- I[gen]) is not presented as a rule in the atlas
+   --TODO -> key rules (they have been put in pattern "")
+   --TODO -> rulefromProp has not been type inferred, p.e. generates I[Anything]. Will there be violations on them in fSpec????? 
    atlasrules = userrules ++ multrules ++ homorules
-   userrules = [x|x@Ru{}<-vrules fSpec, rrdcl x==Nothing, not (isIsaRule x)]
+   userrules = sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]
       where 
       isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
       isI (Tm (I{})) = True
       isI _ = False
-   multrules = [x|x@Ru{}<-vrules fSpec, isMultRule (rrdcl x) ]
-      where 
-      isMultRule (Just (p,_)) = elem p [Uni,Tot,Inj,Sur]
-      isMultRule Nothing = False      
-   homorules = [x|x@Ru{}<-vrules fSpec, isHomoRule (rrdcl x) ]
-      where 
-      isHomoRule (Just (p,_)) = elem p [Rfx,Sym,Asy,Trn] 
-      isHomoRule Nothing = False
+   multrules = [rulefromProp p d|d<-declarations fSpec, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
+   homorules =  [rulefromProp p d|d<-declarations fSpec, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
 
 placeholders :: [a] -> String
 placeholders [] = []

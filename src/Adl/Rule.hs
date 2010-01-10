@@ -39,6 +39,9 @@ where
    isaRule Ru{rrfps=FilePos(_,_,str)} = str == "ISA"
    isaRule _ = False
 
+   instance Ord Rule where
+    compare r r' = compare (runum r) (runum r')
+
    instance Show Rule where
     showsPrec _ x =
        case x of
