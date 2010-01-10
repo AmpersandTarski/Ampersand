@@ -1,11 +1,8 @@
-  module PredLogic 
-              ( ruleToPL
-              , expr2predLogic
-              , PredLogic(Forall, Exists, Implies, Equiv, Conj, Disj, Not, Pred, Rel, Funs)
-              , predLshow
-              , mathVars
-              , applyM  
-              )
+{- OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
+module PredLogic
+           ( PredLogicShow(..)
+           , applyM
+           ) 
    where
 
    import CommonClasses (ABoolAlg(..))
@@ -13,14 +10,12 @@
    import Strings(chain,unCap)
    import Auxiliaries (eqCl)
    import Adl
-   import ShowHS
    import ShowADL
    import Languages (Lang(English,Dutch), plural)
    import Options
-   import NormalForms
-   import Data.Fspec
    import Char (toLower)
  
+   type PredVar = String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook AdlExplanation. HJO. 
    data PredLogic       
     = Forall [(String,Concept)] PredLogic   |
       Exists [(String,Concept)] PredLogic   |
@@ -110,36 +105,45 @@
 --                          fun m x = name m++"("++x++")"
 --                          implies antc cons = antc++" ==> "++cons
 
-   mathVars :: String -> [(String,Concept)] -> String
-   mathVars q vs
-    = if null vs then "" else
-      q++" "++chain "; " [chain ", " vs++"::"++dType | (vs,dType)<-vss]++": "
-      where
-       vss = [(map fst vs,show(snd (head vs))) |vs<-eqCl snd vs]
+--objOrShow :: Options -> PredLogic -> String
+--objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars flags, "\n", " ")
+--               where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
+--                     fun m x = x++"."++name m
+--                     implies antc cons = "IF "++antc++" THEN "++cons
 
+   class PredLogicShow a where
+     showPredLogic :: Options -> a -> String
+     
+   instance PredLogicShow Rule where
+     showPredLogic flags r =  
+       predLshow (language flags) (ruleToPL r)
 
+   instance PredLogicShow Expression where
+     showPredLogic flags expr = 
+       predLshow (language flags) (expr2predLogic expr)
+       
    ruleToPL :: Rule -> PredLogic
-   ruleToPL = assemble . normRule
-
--- normRule is bedoeld om een regel in de juiste vorm te brengen voor assemblage....
-   normRule :: Rule -> Rule
-   normRule r@(Ru{rrsrt=Truth})
-    = r{rrant=error ("!Fatal (module PredLogic 93): illegal reference to antecedent in normRule ("++showADL r++")")}
-   normRule r@(Ru{rrsrt=Implication,rrant=a@(F ants),rrcon=c@(F cons)})
-    | idsOnly ants = r{rrant=F [Tm (mIs idA)],rrtyp=(idC,idC)}
-    | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
-    where
-     idC = source c `lub` target c `lub` idA
-     idA = foldr lub (target (last ants)) (map source ants)
-     (as,cs) = move ants cons
-     (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
-     move [] cs = ([(Tm . mIs . source . head) cs],cs)
-     move as cs
-      | isSur h && isInj h = move (tail as) ([flp h]++cs)
-      | isUni l && isTot l = move (init as) (cs++[flp l])
-      | otherwise      = (as,cs)
-      where h=head as; l=last as
-   normRule r = r
+   ruleToPL r = assemble (normRule r)
+     where 
+   -- normRule is bedoeld om een regel in de juiste vorm te brengen voor assemblage....
+      normRule :: Rule -> Rule
+      normRule r@(Ru{rrsrt=Truth})
+       = r{rrant=error ("!Fatal (module PredLogic 93): illegal reference to antecedent in normRule ("++showADL r++")")}
+      normRule r@(Ru{rrsrt=Implication,rrant=a@(F ants),rrcon=c@(F cons)})
+       | idsOnly ants = r{rrant=F [Tm (mIs idA)],rrtyp=(idC,idC)}
+       | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
+       where
+        idC = source c `lub` target c `lub` idA
+        idA = foldr lub (target (last ants)) (map source ants)
+        (as,cs) = move ants cons
+        (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
+        move [] cs = ([(Tm . mIs . source . head) cs],cs)
+        move as cs
+         | isSur h && isInj h = move (tail as) ([flp h]++cs)
+         | isUni l && isTot l = move (init as) (cs++[flp l])
+         | otherwise      = (as,cs)
+         where h=head as; l=last as
+      normRule r = r
 
    assemble :: Rule -> PredLogic
    assemble r
@@ -312,14 +316,14 @@
 -- Dat gebeurt door het toevoegen van apostofes.
 -- Deze functie is bedoeld voor gebruik in PredLogic.
 -- WAAROM (SJ): waarom staat mkVar in CC_aux? Kan hij niet naar PredLogic?
-   mkVar :: (Identified a) => [String] -> [a] -> [String]
+   mkVar :: (Identified a) => [String] -> [a] -> [String]  
    mkVar ex cs = mknew ex [[(toLower.head.(++"x").name) c]|c<-cs]
     where
      mknew _ [] = []
      mknew ex' (x:xs) | x `elem` ex' = mknew ex' ((x++"'"):xs)
                       | otherwise = x: mknew (ex'++[x]) xs
 
-   applyM :: Declaration -> String -> String -> String
+   applyM :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. --wellicht ook verhuizen naar andere plek?
    applyM decl d c =
       case decl of
         Sgn{}     -> if null (prL++prM++prR) 

@@ -19,7 +19,7 @@ import Text.Pandoc
                           --    als dat het geval is, kan deze module worden overruled in Generators.hs                                 
 import Version          (versionbanner)
 import Languages        (Lang(..),plural)
-import PredLogic        (expr2predLogic)
+import PredLogic        (showPredLogic)
 import Options hiding (services) --importing (Options(..),FspecFormat(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation
@@ -624,7 +624,7 @@ serviceChap lev fSpec flags svc
                  ]
      where
       f (Tm _) = []
-      f expr   = [Str $ lang flags (expr2predLogic (conjNF(F[v (S,source expr),expr])))]
+      f expr   = [Str $ showPredLogic flags (conjNF(F[v (S,source expr),expr]))]
   svcInsDelConcepts
    = let ics = fsv_creating svc>-fsv_deleting svc
          dcs = fsv_deleting svc>-fsv_creating svc

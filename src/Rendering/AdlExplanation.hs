@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
 --DESCR -> functions translating adl to natural language.
 --TODO -> Maybe this module is useful at more places than just func spec rendering. In that case it's not a Rendering module and it needs to be replaced
-module Rendering.AdlExplanation(lang,explainArt,explainDecl,explainMult,explainRule) where
+module Rendering.AdlExplanation(explainArt,explainDecl,explainMult,explainRule) where
 import Adl
 import Data.Fspec
 import Collection (Collection ((>-)))
 import Char (toLower)
 import Strings (unCap)
 import Languages(Lang(Dutch,English),plural)
-import PredLogic (PredLogic(..),ruleToPL,applyM,expr2predLogic,predLshow)
+import PredLogic (showPredLogic, applyM)
 import Options
 
-instance Explained Expression where
-    explain options e = lang options (expr2predLogic e)
+--instance Explained Expression where
+--    explain flags e = showPredLogic flags e
 
 explainDecl :: Options -> Declaration -> String
 explainDecl options d
@@ -86,7 +86,7 @@ explainMult options d
          | null ([Uni            ] >- multiplicities d) = applyM d ("Every "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
          | otherwise                                    = "The sentence: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' is meaningful (i.e. it is either true or false) for any "++(unCap.name.source) d++" "++(var [].source) d++" and "++(unCap.name.target) d++" "++(var [source d].target) d++"."
 
-var :: Identified a => [a] -> a -> String
+var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs
 var seen c = low c ++ ['\''| c'<-seen, low c == low c']
              where low idt= if null (name idt) then "x" else [(toLower.head.name) idt]
 
@@ -96,28 +96,16 @@ explainArt flags _ rul  -- TODO Geef een mooie uitleg van deze regel.
       then case language flags of
               English   -> "Artificial explanation: "
               Dutch     -> "Kunstmatige uitleg: " 
-           ++(lang flags.ruleToPL) rul
+           ++ showPredLogic flags rul
       else explain flags rul
 
 explainRule :: Options -> Rule -> String
-explainRule options r
-  = if null (explain options r)
-    then case language options of
+explainRule flags r
+  = if null (explain flags r)
+    then case language flags of
             English -> "Artificial explanation: "
             Dutch   -> "Kunstmatige uitleg: "
-         ++(lang options.ruleToPL) r
-    else (if explain options r=="NONE" then "" else explain options r)
+         ++ showPredLogic flags r
+    else (if explain flags r=="NONE" then "" else explain flags r)
 
-lang :: Options -> PredLogic -> String
-lang flags x = predLshow (language flags) x
-
-
-
-
-
---objOrShow :: Options -> PredLogic -> String
---objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars flags, "\n", " ")
---               where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
---                     fun m x = x++"."++name m
---                     implies antc cons = "IF "++antc++" THEN "++cons
 
