@@ -342,7 +342,7 @@
                            [ (a, s) | s `notElem` (map snd ownAts)]
                  keys :: [(ObjectDef,SqlField)]
                  keys   = if length attrs==1
-                           then [] -- het kan gebeuren dat er maar één attr is
+                           then [] -- het kan gebeuren dat er precies een attr is
                                    -- aangezien dit keys voor UPDATE zijn, stelt deze key dan niet
                                    -- echt veel meer voor. Gevolg van deze keuze is dat de UPDATE
                                    -- expressies met UPDATE .. SET (lege lijst) WHERE key=val

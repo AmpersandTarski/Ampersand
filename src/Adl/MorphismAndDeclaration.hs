@@ -288,7 +288,7 @@ where
            Vs{}         -> typeUniq (degen d) && typeUniq (despc d)
            
 
-   -- | Deze declaratie is de reden dat Declaration en Morphism in één module moeten zitten.
+   -- | Deze declaratie is de reden dat Declaration en Morphism in precies een module moeten zitten.
    makeMph :: Declaration -> Morphism
    makeMph d = Mph{ mphnm  = name d
                   , mphpos = pos d

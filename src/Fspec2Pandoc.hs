@@ -62,6 +62,7 @@ laTeXheader flags
      )++
      [ "\\usepackage{amssymb}"
      , "\\usepackage{amsmath}"
+  --   , "\\usepackage{hyperref}"
      ] ++
      ["\\usepackage{graphicx}"                   | graphics flags] ++
      ["\\graphicspath{{"++dirOutput flags++"/}}" | graphics flags, dirOutput flags/="."] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}

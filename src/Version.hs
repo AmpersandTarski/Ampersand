@@ -7,5 +7,5 @@ versionbanner = "ADL vs. 0.8.10-528" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-opschoonactie. predlogic beetje opgeruimd. onderhanden werk. 
+kleine verbeteringen aangebracht in LaTeX.  
 -}
