@@ -64,6 +64,14 @@ instance Dotable Fservice where
                     , not (isProp   d)    -- d is not a property
                     , decusr d]           -- d is user defined, and consequently not a signal either
 
+instance Dotable Rule where
+   toDot fSpec flags r = dotG flags (name r) cpts dcls idgs
+         where 
+          idgs = [( g, s)| g<-cpts, s<-cpts, g<s, null [cpt| cpt<-cpts, g<cpt && cpt<s]]       --  all isa edges
+-- TODO: removal of redundant isa edges might be done more efficiently
+          cpts = concs r
+          dcls = [d | d@Sgn{}<-decls r]
+
 numberListFrom :: [x] -> Int -> [(x,Int)]    --TODO Deze functie is te generiek om hier in deze module thuis te horen. Verplaatsen naar andere module? 
 numberListFrom xs i = zip xs [i..]
 

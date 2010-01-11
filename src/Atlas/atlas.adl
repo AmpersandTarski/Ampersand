@@ -24,7 +24,7 @@ WHERE TODO.`script`='".$GLOBALS['ctxenv']['Script']."'
 --specific concept -> general properties are translated into columns at the end, so they can be removed more easily
 
 PATTERN Atlas
-thepicture::Picture->Picture.
+picture::Service->Picture.
 
 -- a relation variable can be overloaded -> no function
 -- TODO -> namespaces?
@@ -68,6 +68,7 @@ explanation::Rule->Explanation.
 explanation::UserRule->Explanation.
 explanation::MultiplicityRule->Explanation.
 explanation::HomogeneousRule->Explanation.
+picture :: UserRule -> Picture.
 ENDPATTERN
 
 PATTERN Pattern
@@ -77,6 +78,7 @@ pattern :: MultiplicityRule -> Pattern. --REMARK -> has not been set (use on;pat
 pattern :: HomogeneousRule -> Pattern. --REMARK -> has not been set (use on;pattern)
 pattern :: Relation -> Pattern.
 pattern :: IsaRelation -> Pattern.
+picture :: Pattern -> Picture.
 ENDPATTERN
 
 PATTERN Ordering
@@ -104,6 +106,7 @@ user::Rule->User.
 user::Violation->User.
 user::Explanation->User.
 user::Pattern->User.
+user::Service->User.
 --ctxenv::Picture*Picture.
 --ctxenv::Relation*Relation.
 --ctxenv::Concept*Concept.
@@ -127,6 +130,7 @@ script::Rule->Script.
 script::Violation->Script.
 script::Explanation->Script.
 script::Pattern->Script.
+script::Service->Script.
 ENDPATTERN
 
 PATTERN ExplicitDisplay
@@ -146,6 +150,7 @@ display::Rule->String.
 display::Violation->String.
 display::Explanation->String.
 display::Pattern->String.
+display::Service->String.
 ENDPATTERN
 
 SERVICE Overzicht : I[ONE]
@@ -153,13 +158,14 @@ SERVICE Overzicht : I[ONE]
         = [ violated_rules : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
          , property_violations_on : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
           ]
-     , "Conceptual diagram"{"PICTURE"}: V[ONE*Picture];(user;s;user[Picture*User]~ /\ script;s;script~);display
+     , "Conceptual diagram"{"PICTURE"}: V[ONE*Service];(user;s;user[Service*User]~ /\ script;s;script~);picture;display
      ]
 
 SERVICE Pattern{"DISPLAY=Pattern.display"} : I[Pattern]
    = [ rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
      , relations{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
      , isa_relations : pattern[IsaRelation*Pattern]~;display
+     , "Conceptual diagram"{"PICTURE"}: picture;display
      ]
 
 -- {"DISPLAY=<Concept>.<(function)Relation>"} if you need the link by id and a user-friendly representation.
@@ -183,7 +189,8 @@ SERVICE Rule1{"DISPLAY=UserRule.display"} : I[UserRule]
      , violations : violates~;display
      , explanation : explanation;display
      , previous{"DISPLAY=UserRule.display"} : previous
-     , next{"DISPLAY=UserRule.display"} : next]
+     , next{"DISPLAY=UserRule.display"} : next
+     , "Conceptual diagram"{"PICTURE"}: picture;display]
 SERVICE Rule2{"DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display

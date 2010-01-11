@@ -40,6 +40,7 @@ data ATableId =
   |ATRelation
   |ATRelVar
   |ATRule
+  |ATService
   |ATType
   |ATUserRule
   |ATViolRule
@@ -57,17 +58,18 @@ tables =
   -- ,ATable ATExpression "expression" ["i","source","target"] 
    ,ATable ATHomoRule "homogeneousrule" ["i","property","on","type","explanation","pattern","user","script","display"] 
    ,ATable ATIsa "isarelation" ["i","specific","general","pattern","user","script","display"] 
-   ,ATable ATPicture "picture" ["i","thepicture","user","script","display"] 
+   ,ATable ATPicture "picture" ["i","user","script","display"] 
    ,ATable ATMorphisms "morphisms" ["userrule","relation"] 
    ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation","pattern","user","script","display"] 
    ,ATable ATPair "pair" ["i","user","script","display"] 
-   ,ATable ATPattern "pattern" ["i","user","script","display"] 
+   ,ATable ATPattern "pattern" ["i","picture","user","script","display"] 
    ,ATable ATProp "prop" ["i","user","script","display"] 
    ,ATable ATRelation "relation" ["i","pattern","user","script","display"]
    ,ATable ATRelVar "relvar" ["relation","type"]
    ,ATable ATRule "rule" ["i","type","explanation","pattern","user","script","display"] 
+   ,ATable ATService "service" ["i","picture","user","script","display"] 
    ,ATable ATType "type" ["i","source","target","user","script","display"] 
-   ,ATable ATUserRule "userrule" ["i","type","explanation","pattern","next","previous","user","script","display"] 
+   ,ATable ATUserRule "userrule" ["i","type","explanation","picture","pattern","next","previous","user","script","display"] 
    ,ATable ATViolRule "violates" ["violation","rule"]
    ,ATable ATViolHomoRule "violateshomogeneousrule" ["violation","homogeneousrule"]
    ,ATable ATViolMultRule "violatesmultiplicityrule" ["violation","multiplicityrule"]
@@ -75,14 +77,16 @@ tables =
    ,ATable ATViolation "violation" ["i","user","script","display"]
    ]
 iscpttable :: ATableId -> Bool
-iscpttable tbl = elem tbl [ATAtom,ATConcept,ATExplanation,ATHomoRule,ATIsa,ATPicture,ATMultRule,ATPair,ATPattern,ATProp,ATRelation,ATRule,ATType,ATUserRule,ATViolation]
+iscpttable tbl = elem tbl [tableid t|t<-tables, head(columns t)=="i"]
+
+data PicLinkType = PicFS | PicPat String | PicRule String deriving (Eq)
 
 --Atlas requires an ODBC data source named "atlas" representing the db of an Atlas.adl prototype
 --hdbc and hdbc-odbc must be installed (from hackage)
 fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
+ if not(graphics flags) then do 
     verboseLn flags "Populating atlas for ..."
- >> do 
     --connect through ODBC data source "atlas"
     conn<-connectODBC "DSN=atlas"
     --TODO handle connection errors
@@ -97,21 +101,31 @@ fillAtlas fSpec flags =
     --end connection
     commit conn
     disconnect conn
+ else do
+    verboseLn flags "Generating pictures for atlas..."
  >> createDirectoryIfMissing True fpath
- >> foldr (>>) (verboseLn flags "All pictures written..") dots
+ >> foldr (>>) (verboseLn flags "All pictures written..") ([fspecdot]++patsdot++userrulesdot)
     where
     script = adlFileName flags
     user = takeWhile (/='.') (userAtlas flags)
     islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
-    pictlinks = [".\\img\\"++user++"\\"++script++"\\"++ (name fSpec) ++ ".png"| p<-patterns fSpec]
-                --TODO -> patterns [".\\img\\"++ (remSpaces$name p) ++ ".png"| p<-patterns fSpec]
+    pictlinks = [(PicFS,".\\img\\"++user++"\\"++script++"\\"++ (name fSpec) ++ ".png")]
+              ++[(PicPat$name p, ".\\img\\"++user++"\\"++script++"\\"++ (name p) ++ ".png")| p<-patterns fSpec]
+              ++[(PicRule$name r, ".\\img\\"++user++"\\"++script++"\\"++ (name r) ++ ".png")| r<-userrules]
     fpath = combine (dirAtlas flags) ("img/"++user++"/"++script++"/")
-    outputFile fnm = combine fpath fnm
-    dots = [makeGraphic (name fSpec)$ toDot fSpec flags $ 
-             if length(patterns fSpec)==0 then error "There is no pattern to fold"
-             else foldr (union) (head$patterns fSpec) (tail$patterns fSpec)]
+  --  dots =  fspecdot]
            --TODO -> patterns [makeGraphic (remSpaces (name p)) $ toDot fSpec flags p 
-           --                 | p<-patterns fSpec, (not.null) (concs p)] 
+           --                 | p<-patterns fSpec, (not.null) (concs p)]
+    fspecdot = makeGraphic (name fSpec)$ toDot fSpec flags $ 
+             if length(patterns fSpec)==0 then error "There is no pattern to fold"
+             else foldr (union) (head$patterns fSpec) (tail$patterns fSpec)
+    patsdot = [makeGraphic (name p)$ toDot fSpec flags p|p<-patterns fSpec]
+    userrulesdot = [makeGraphic (name r)$ toDot fSpec flags r|r<-userrules]
+    userrules = sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]
+      where 
+      isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
+      isI (Tm (I{})) = True
+      isI _ = False
     makeGraphic fnm dot
       = do 
         succes <- runGraphvizCommand Neato dot Canon dotfile
@@ -123,6 +137,7 @@ fillAtlas fSpec flags =
                 ExitFailure x -> putStrLn ("Failure: " ++ show x)
            else putStrLn ("Failure: could not create " ++ dotfile) 
         where
+        outputFile fnm = combine fpath fnm
         dotfile = replaceExtension (outputFile fnm) "dot"
         pngfile = replaceExtension (outputFile fnm) "png"
 ----------------------------------------------------
@@ -133,7 +148,7 @@ runMany conn (x:xs)  =
       runMany conn xs
 
 --TODO -> SIGNALs, Only Ru{} rules are considered
-type PictureLinks = [String]
+type PictureLinks = [(PicLinkType,String)]
 insertpops :: (IConnection conn) => conn -> Fspc -> Options -> [ATable] -> PictureLinks -> IO Integer
 insertpops _ _ _ [] _ = return 1
 insertpops conn fSpec flags (tbl:tbls) pics = 
@@ -158,18 +173,19 @@ insertpops conn fSpec flags (tbl:tbls) pics =
  --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
-   pop' ATPicture = [[x,x]|x<-pics]
+   pop' ATPicture = [[x]|(_,x)<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrules]
    pop' ATPair = [[show y]| x<-declarations fSpec,not$isSignal x, y<-contents x]
-   pop' ATPattern = [[name x]| x<-patterns fSpec]
+   pop' ATPattern = [[name x,pic]| x<-patterns fSpec,(PicPat pn,pic)<-pics, pn==name x]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
    pop' ATRelation = ["I",""]:["V",""]:[[relpred x,name p]|p<-patterns fSpec, x<-declarations p,not$isSignal x] --REMARK -> decls from pat instead of fSpec!
    pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,not$isSignal x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
+   pop' ATService = [[name fSpec,x]|(PicFS,x)<-pics]
    pop' ATType = [t x|x<-declarations fSpec,not$isSignal x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
-   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$prevrule x userrules,cptrule$nextrule x userrules]|x<- userrules]
+   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,pic,r_pat x,cptrule$prevrule x userrules,cptrule$nextrule x userrules]|x<-userrules,(PicRule rn,pic)<-pics, rn==name x]
    --convert pair to violation message
    --There is overhead in the violates* tables, but that does not matter for the result. Fix SQL and generalisation instead.
    --then there will be only one table "violates" for all rules.

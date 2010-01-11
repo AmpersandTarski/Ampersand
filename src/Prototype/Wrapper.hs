@@ -198,9 +198,11 @@
            , "<?php } ?>"]
            where 
             embedimage
-              = ["foreach("++var++" as $i"++show depth++"=>"++atnm ++"){"
-                , "  echo '<IMG src=\"'."++atnm++".'\"/>';"
-                , "}"]
+              = if isUni(objctx att)
+                then ["echo '<IMG src=\"'.$"++ phpIdentifier (name att) ++".'\"/>';"]
+                else ["foreach("++var++" as $i"++show depth++"=>"++atnm ++"){"
+                     , "  echo '<IMG src=\"'."++atnm++".'\"/>';"
+                     , "}"]
                 where
                 var =  ("$"++phpIdentifier (name att))
                 atnm = "$v"++show depth
