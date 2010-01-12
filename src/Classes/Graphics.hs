@@ -15,7 +15,8 @@ import Data.GraphViz
 import Adl
 import Data.Fspec (Fspc,Fservice(..))
 import Options
-import Collection (Collection(uni,isc))
+import Collection (Collection(uni,isc,rd))
+import Typology (Inheritance(..))
 
 -- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
 class Dotable a where
@@ -26,26 +27,24 @@ instance Dotable Concept where
          where 
           rs   = [r| r<-rules fSpec, c `elem` concs r, not (isaRule r)]
           ss   = [s| s<-signals fSpec, c `elem` concs s]
-          idgs = [ ((source (antecedent r)),(source (consequent r)))
-                 | r<-rules fSpec, c `elem` concs r, isaRule r]
-                 `uni`
-                 [( g, s)| g<-cpts, s<-cpts, g<s, null [cpt| cpt<-cpts, g<cpt && cpt<s]]       --  all isa edges
+          idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = concs rs `uni` concs ss
+          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts'  = concs rs `uni` concs ss
           dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
                     , not (isProp d)     -- d is not a property
                     , decusr d]          -- d is user defined, and consequently not a signal either
 
 instance Dotable Pattern where
-   toDot _ flags pat = dotG flags (name pat) cpts dcls idgs
+   toDot fSpec flags pat = dotG flags (name pat) cpts dcls idgs
         where 
          --DESCR -> get concepts and arcs from pattern
-          idgs = [ ((source (antecedent r)),(source (consequent r)))
-                 | r<-rules pat, isaRule r]
-                 `uni`
-                 [( g, s)| g<-cpts, s<-cpts, g<s, null [c| c<-cpts, g<c && c<s]]       --  all isa edges
+          idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          Isa gs _ = isa fSpec 
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = concs pat
+          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts'  = concs pat
           dcls = [d| d@Sgn{}<-declarations pat, decusr d] `uni` decls pat
 
 instance Dotable Fservice where
@@ -54,12 +53,11 @@ instance Dotable Fservice where
           rs         = [r| r<-rules fSpec, affected r]
           ss         = [s| s<-signals fSpec, affected s]
           affected r = not (null (decls r `isc` decls svc))
-          idgs = [ ( (source (antecedent r)), (source (consequent r)))
-                 | r<-rs, isaRule r]
-                 `uni`
-                 [( g, s)| g<-cpts, s<-cpts, g<s, null [cpt| cpt<-cpts, g<cpt && cpt<s]]       --  all isa edges
+          idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = concs rs `uni` concs ss
+          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts'  = concs rs `uni` concs ss
           dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
                     , not (isProp   d)    -- d is not a property
                     , decusr d]           -- d is user defined, and consequently not a signal either
@@ -67,9 +65,11 @@ instance Dotable Fservice where
 instance Dotable Rule where
    toDot fSpec flags r = dotG flags (name r) cpts dcls idgs
          where 
-          idgs = [( g, s)| g<-cpts, s<-cpts, g<s, null [cpt| cpt<-cpts, g<cpt && cpt<s]]       --  all isa edges
+          idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = concs r
+          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts' = concs r
           dcls = [d | d@Sgn{}<-decls r]
 
 numberListFrom :: [x] -> Int -> [(x,Int)]    --TODO Deze functie is te generiek om hier in deze module thuis te horen. Verplaatsen naar andere module? 
@@ -277,7 +277,7 @@ handleFlags po flags =
                        , ArrowHead noArrow
                        , ArrowTail noArrow
                        ]
-      IsaOnlyOneEdge-> [ Color [ColorName "red"]
+      IsaOnlyOneEdge-> [ Color [ColorName "black"]
                        , Len 1.5
                        , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])
                        , ArrowTail noArrow
@@ -300,6 +300,9 @@ invisible = Style [SItem Invisible []]
 
 dotted :: Attribute
 dotted = Style [SItem Dotted []]
+
+dashed :: Attribute
+dashed = Style [SItem Dashed []]
 
 filled :: Attribute
 filled = Style [SItem Filled []]
