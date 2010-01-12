@@ -13,7 +13,6 @@ module Data.Plug (Plug(..)
                  ,ActionType(..))
 where
   import Adl
-  import Strings               (chain)
   
   data Plug = PlugSql { fields   :: [SqlField]
                       , plname   :: String

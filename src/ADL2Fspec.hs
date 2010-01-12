@@ -199,7 +199,7 @@
                             | otherwise  = name (target mph) ++ "_of_" ++ name mph
            preventAmbig mp@(Mph{mphats=[]}) =  
               if (length [d|d@(Sgn {})<-allDecs, name mp==name d]) > 1
-              then if mphyin mp 
+              then if inline mp 
                    then mp{mphats=[source mp,target mp]} 
                    else  mp{mphats=[target mp,source mp]}
               else mp 

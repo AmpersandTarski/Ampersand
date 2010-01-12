@@ -281,12 +281,12 @@
 
     specialize t@(a,b) mph
        = case mph of
-          Mph{} -> mph{ mphats = if null (mphats mph) then [] else if (mphyin mph) then [a,b] else [b,a]  --TODO WAAROM?? Stef, ik heb de semantiek intact gelaten, maar ik geloof dat dit fout is. Zit er een volgorde in de atts, die relevant is? 
+          Mph{} -> mph{ mphats = if null (mphats mph) then [] else if (inline mph) then [a,b] else [b,a]  --TODO WAAROM?? Stef, ik heb de semantiek intact gelaten, maar ik geloof dat dit fout is. Zit er een volgorde in de atts, die relevant is? 
                       , mphtyp = t                                                                        --TODO WAAROM?? Stef, ook hier semantiek intact gelaten. Maar is het type niet afhankelijk van de yin??
                       , mphdcl = (specialize t) (mphdcl mph)
                       }
-          I{}   -> mph{ mphgen = if (mphyin mph) then b else a
-                      , mphspc = if (mphyin mph) then a else b
+          I{}   -> mph{ mphgen = if (inline mph) then b else a    -- TODO FOUT? Stef, WAAROM? Ik heb her en der mphyin vervangen door inline. Dat is beter, want generieker. Maar hier blijkt dat voor I ook de yin van belang is. Dat is niet overal consequent doorgevoerd. Needs rethinking. Als nodig bij I, dan code aan passen. anders ook, dan moet yin verdwijnen bij I.
+                      , mphspc = if (inline mph) then a else b
                       }
           V{}   -> mph{ mphtyp = t
                       }

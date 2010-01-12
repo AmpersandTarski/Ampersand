@@ -274,7 +274,7 @@ where
           detail :: [String]
           detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
                               compareSign (mphtyp m1) (mphtyp m2),
-                              compareYin (mphyin m1) (mphyin m2) -- ,
+                              compareYin (inline m1) (inline m2) -- ,
                               --compareDecl (mphdcl m1) (mphdcl m2)
                               ]
    compareMph m1@(I{}) m2@(I{})
@@ -286,7 +286,7 @@ where
           detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
                               compareConcept (mphgen m1) (mphgen m2),
                               compareConcept (mphspc m1) (mphspc m2),
-                              compareYin (mphyin m1) (mphyin m2)]
+                              compareYin (inline m1) (inline m2)]
    compareMph m1@(V{}) m2@(V{})
           | detail == [] = Nothing
           | otherwise    = Just $ "Morphism " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++

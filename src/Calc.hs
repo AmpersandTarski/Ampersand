@@ -56,7 +56,7 @@ module Calc ( deriveProofs
    allShifts conjunct = rd [simplify (normFlp e')| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
     where
        normFlp (Fu []) = Fu []
-       normFlp (Fu fs) = if length [m| f<-fs, m<-morlist f, mphyin m] <= length [m| f<-fs, m<-morlist f, not (mphyin m)]
+       normFlp (Fu fs) = if length [m| f<-fs, m<-morlist f, inline m] <= length [m| f<-fs, m<-morlist f, not (inline m)]
                          then Fu (map flp fs) else (Fu fs)
        normFlp _ = error ("!Fatal (module Calc 61): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
 

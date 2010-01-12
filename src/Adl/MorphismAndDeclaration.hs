@@ -67,9 +67,10 @@ where
 
    instance Show Morphism where
     showsPrec _ m = case m of
-      Mph{} -> showString (mphnm m++
-               (if mphyin m then showSign [source m,target m] else showSign [target m,source m])++
-               if mphyin m then "" else "~")
+      Mph{} -> showString (name m++
+               (if inline m 
+                then showSign [source m,target m] 
+                else showSign [target m,source m]++"~"))
       I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
       V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
       Mp1{} -> showString ("Mp1 "++show (mph1val m)++" "++ if null (mphats m) then "" else show (mphats m))
@@ -131,7 +132,7 @@ where
            V{mphtyp = (s,t)}   -> V  { mphats = reverse(mphats mph)
                                      , mphtyp = (t,s)
                                      }
-           I{}                 -> mph
+           I{}                 -> mph{ mphyin = not (mphyin mph)}
            Mp1{}               -> mph
     isProp mph = case mph of
            Mph{}               -> null ([Asy,Sym]>-multiplicities mph)
@@ -173,7 +174,7 @@ where
    inline :: Morphism -> Bool
    inline m =  case m of
                 Mph{} -> mphyin m
-                I{}   -> True
+                I{}   -> True    --WAAROM? Stef, wat is de reden van de mphyin bij I{} ?? Verwijderen of in werking stellen. Nu is het half, en dus fout!
                 V{}   -> True
                 Mp1{} -> True
 

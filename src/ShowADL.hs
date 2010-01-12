@@ -76,7 +76,7 @@
    mphatson :: Expression -> Expression
    mphatson = mapExpr f
     where f mp = case mp of
-                 Mph{mphats=[], mphtyp=(c1,c2)}->if mphyin mp then mp{mphats=[c1,c2]} else  mp{mphats=[c2,c1]}
+                 Mph{mphats=[], mphtyp=(c1,c2)}->if inline mp then mp{mphats=[c1,c2]} else  mp{mphats=[c2,c1]}
                  _ -> mp
 
    mphatsoff :: Expression -> Expression
@@ -255,7 +255,7 @@
                        rss = drop halfway iss
                        halfway = length iss `div` 2
 -- The following function is used to force the type of a relation to be printed.
-        types (Tm mph) = if null (mphats mph) then rd [if mphyin mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
+        types (Tm mph) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
         types (Fu fs)  = foldr isc [] [types f| f<-fs]
         types (Fi fs)  = foldr isc [] [types f| f<-fs]
         types (Fd ts)  = types (F ts) -- a nifty trick to save code. After all, the type computation is identical to F...
@@ -313,7 +313,7 @@
     showADLcode fSpec mph@Mph{}
      = decnm (mphdcl mph)++
        (if null (mphats mph) then "" else showSign (mphats mph))++
-       if mphyin mph then "" else "~"
+       if inline mph then "" else "~"
        -- where dss = [(name.head) cl| cl<-eqCl name (vrels fSpec), length cl>1]
     showADLcode fSpec (I atts g s yin)
      = "I"++if null atts then showSign [g,s] else showSign atts++if g==s then "" else if yin then "" else "~"
@@ -405,7 +405,7 @@
 ---------------------------------------
 
    types fSpec (Tm m)
-    = rd [ if mphyin m then (desrc d, detrg d) else (detrg d, desrc d)
+    = rd [ if inline m then (desrc d, detrg d) else (detrg d, desrc d)
          | d<-vrels fSpec, name d==name m ]
    types fSpec (F []) = []
    types fSpec (F fs)

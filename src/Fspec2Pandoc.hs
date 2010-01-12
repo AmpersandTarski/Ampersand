@@ -969,11 +969,11 @@ showchar (Tc f)   = "("++showchar f++")"
 
 instance ShowMath Morphism where
  showMath mph@(Mph{})
-  = if mphyin mph then mstr else "\\flip{"++mstr++"}"
+  = if inline mph then mstr else "\\flip{"++mstr++"}"
     where
       mstr  = "\\id{"++latexEsc (name mph)++"}"++
               if null (mphats mph)
-              then (if mphyin mph && mphtyp mph==(source s, target s) || not (mphyin mph) && mphtyp mph==(target s,source s) then "" else showSign [a,b])
+              then (if inline mph && mphtyp mph==(source s, target s) || not (inline mph) && mphtyp mph==(target s,source s) then "" else showSign [a,b])
               else showSign (mphats mph)
       s     = mphdcl mph
       (a,b) = mphtyp mph
