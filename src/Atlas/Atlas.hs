@@ -137,9 +137,9 @@ fillAtlas fSpec flags =
                 ExitFailure x -> putStrLn ("Failure: " ++ show x)
            else putStrLn ("Failure: could not create " ++ dotfile) 
         where
-        outputFile fnm = combine fpath fnm
-        dotfile = replaceExtension (outputFile fnm) "dot"
-        pngfile = replaceExtension (outputFile fnm) "png"
+        outputFile = combine fpath fnm
+        dotfile = replaceExtension outputFile "dot"
+        pngfile = replaceExtension outputFile "png"
 ----------------------------------------------------
 runMany :: (IConnection conn) => conn -> [String] -> IO Integer
 runMany _ [] = return 1
@@ -196,7 +196,9 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATViolation = [[ y] | (_,y)<-identifiedviols]
    --------------------------------------------------------
    --picturelink =  "./img/" ++ name fSpec++".png"
-   identifiedviols = [(cptrule x,show i++show y) |(i,(x,y))<-zip [1..] (violations fSpec)]
+   identifiedviols = [(cptrule x,show i++show y) |(i,(x,y))<-zip naturals (violations fSpec)]
+     where naturals :: [Integer]
+           naturals = [1..]
    nextrule r [] = r
    nextrule r rs = if null nxt then head rs else head nxt 
       where nxt = [r'|r'<-rs, runum r'==(runum r)+1]

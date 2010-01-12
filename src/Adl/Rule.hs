@@ -85,10 +85,12 @@ where
                  Truth       -> isTrue (consequent r)
                  Implication -> isFalse (antecedent r) || isTrue (consequent r)
                  Equivalence -> antecedent r == consequent r
+                 Generalization -> error ("!Fatal (module Rule 88): isTrue not defined for a Generalisation.")
     isFalse r = case ruleType r of
                  Truth       -> isFalse (consequent r)
                  Implication -> isTrue (antecedent r) && isFalse (consequent r)
                  Equivalence -> notCp (antecedent r) == consequent r
+                 Generalization -> error ("!Fatal (module Rule 93): isFalse not defined for a Generalisation.")
     isNot r   | ruleType r==Truth = isNot (consequent r)
               | otherwise         = False  -- TODO: check correctness!
     isSignal r = r_sgl r
