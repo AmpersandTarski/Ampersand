@@ -89,7 +89,7 @@ where
 --    target (I atts g s yin)            = if yin then g else s
 --    target (V atts (a,b))              = b
 --    target (Mp1 _ t) = t
-    sign   (Mph _ _ _ (a,b) _ _) = (a,b)
+    sign   (Mph _ _ _ (a,b) _ _) = (a,b)    -- Stef, WAAROM is dit niet afhankelijk van yin? is dit goed zo?
     sign   (I _ g s yin)         = if yin then (s,g) else (g,s)
     sign   (V _ (a,b))           = (a,b)
     sign   m@Mp1{}               = if null (mphats m) then (mph1typ m,mph1typ m) else (head (mphats m),last (mphats m))

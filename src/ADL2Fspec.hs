@@ -148,7 +148,7 @@
                                       , objpos = Nowhere
                                       , objctx = disjNF (notCp (if source s==c then normExpr s else flp (normExpr s)))
                                       , objats = []
-                                      , objstrs = [] -- [["DISPLAYTEXT", if null (rrxpl s) then (lang lng .ruleToPL) s else rrxpl s]]
+                                      , objstrs = [] -- [["DISPLAYTEXT", if null (rrxpl s) then (lang lng .rule2predLogic) s else rrxpl s]]
                                       }
                                 | s<-signals context, source s==c || target s==c ]
                    , objstrs = []
@@ -160,7 +160,7 @@
                                      , objpos = Nowhere
                                      , objctx = Tm mph
                                      , objats = []
-                                     , objstrs = [] -- [["DISPLAYTEXT", if null (rrxpl s) then (lang lng .ruleToPL) s else rrxpl s]]
+                                     , objstrs = [] -- [["DISPLAYTEXT", if null (rrxpl s) then (lang lng .rule2predLogic) s else rrxpl s]]
                                      }
                                | mph<-fats c ]
                    , objstrs = []
@@ -415,12 +415,12 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    keytheme :: KeyDef -> Concept
    keytheme kd = kdcpt kd
 
-   editable :: Expression -> Bool
+   editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
    editable (Tm Mph{})  = True
    editable (Tm I{})    = True
    editable _           = False
 
-   editMph :: Expression -> Morphism
+   editMph :: Expression -> Morphism  --TODO deze functie staat ook in Calc.hs...
    editMph (Tm m@Mph{}) = m
    editMph (Tm m@I{})   = m
    editMph e            = error("!Fatal (module ADL2Fspec 417): cannot determine an editable declaration in a composite expression: "++show e)

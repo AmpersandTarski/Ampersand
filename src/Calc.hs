@@ -224,9 +224,9 @@ module Calc ( deriveProofs
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
         qs         = quads visible invariants
         ecaRs      = assembleECAs visible qs
-        editable (Tm Mph{})  = True
+        editable (Tm Mph{})  = True    --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editable _           = False
-        editMph (Tm m@Mph{}) = m
+        editMph (Tm m@Mph{}) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editMph e            = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
 
 
