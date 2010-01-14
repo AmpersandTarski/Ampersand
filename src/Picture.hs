@@ -1,33 +1,32 @@
+{-# OPTIONS_GHC -Wall #-}
 -- This module is for the definition of Picture and PictureList.
-module Picture ( Picture(reference,figlabel,fullPng,title) -- Other fields are hidden, for there is no need for them outside this module...
+module Picture ( Picture(pictName,figlabel,fullPng,caption) -- Other fields are hidden, for there is no need for them outside this module...
                , PictType(..)
                , makePicture,writePicture) 
 where
 import Options
 import System             (system, ExitCode(ExitSuccess,ExitFailure))
-import System.FilePath    (combine,replaceExtension)
+import System.FilePath    (combine,replaceExtension,takeBaseName )
 import Char (isAlpha)
 import Languages
 
-type PictureList = [Picture]
-
-data Picture = Pict { reference :: String    -- used to reference the picture in pandoc or tex
-                    , dotSource :: String    -- the string representing the .dot 
-                    , fullPng   :: FilePath  -- the full file path where the .png file resides
-                    , fullDot   :: FilePath  -- the full file path where the .dot file resides
-                    , dotProgName :: String  -- the name of the program to use  ("dot" or "neato" )
-                    , figlabel  :: String    -- the label of a picture
-                    , title     :: String    -- a human readable name of this picture
+data Picture = Pict { pictName     :: String    -- used to reference the picture in pandoc or tex
+                    , dotSource    :: String    -- the string representing the .dot 
+                    , fullPng      :: FilePath  -- the full file path where the .png file resides
+                    , fullDot      :: FilePath  -- the full file path where the .dot file resides
+                    , dotProgName  :: String    -- the name of the program to use  ("dot" or "neato" )
+                    , figlabel     :: String    -- the label of a picture (usefull for reffering to it e.g. in LaTeX)
+                    , caption      :: String    -- a human readable name of this picture
                     }
 data PictType = PTClassDiagram | PTPattern | PTConcept | PTSwitchBoard
 
 makePicture :: Options  
             -> String   -- Name of the picture
             -> PictType -- Type of the picture
-            -> String   -- The dot source
+            -> String   -- The dot source. Should be canonnical.
             -> Picture  -- The ADT of a picture
 makePicture flags name pTyp dotsource
-    = Pict { reference  = cdName
+    = Pict { pictName   = (replaceExtension (takeBaseName  fullName) "png")
            , dotSource  = dotsource
            , fullDot    = replaceExtension fullName "dot"
            , fullPng    = replaceExtension fullName "png"
@@ -37,7 +36,7 @@ makePicture flags name pTyp dotsource
                      PTPattern      -> "neato"
                      PTConcept      -> "neato"
                      PTSwitchBoard  -> "dot"
-           , title      = case (pTyp,language flags) of
+           , caption      = case (pTyp,language flags) of
                             (PTClassDiagram,English) -> "Class Diagram of " ++ name
                             (PTClassDiagram,Dutch  ) -> "Klassediagram van " ++ name
                             (PTPattern     ,English) -> "Conceptual analysis of " ++ name
@@ -58,7 +57,7 @@ makePicture flags name pTyp dotsource
 
 writePicture :: Options -> Picture -> IO()
 writePicture flags pict
-    = do verboseLn flags ("Generating picture of "++title pict++" ... :")
+    = do verboseLn flags ("Generating figure: "++caption pict++" ... :")
          writeFile (fullDot pict) (dotSource pict)
          verboseLn flags   (dotProgName pict++" -Tpng "++fullDot pict++" -o "++fullPng pict)
          result <- system $ dotProgName pict++" -Tpng "++fullDot pict++" -o "++fullPng pict

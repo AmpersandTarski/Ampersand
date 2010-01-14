@@ -7,5 +7,5 @@ versionbanner = "ADL vs. 0.8.10-538" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-Nog wat warnings verwijderd. Graag allemaal een beetje opletten om warnings z.s.m. op te lossen, als het even kan. 
+Figuren worden nu ook op een andere directory herkend in Latex. Is wel een beetje gehackte oplossing, maar het gaat om het resultaat, zullen we maar zeggen... 
 -}

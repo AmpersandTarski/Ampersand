@@ -29,6 +29,8 @@ import Data.GraphViz    (printDotGraph)
 import Classes.Graphics (toDot)
 import Picture          (Picture(..),PictType(..),makePicture)
 import FPA
+import System.FilePath        (splitDirectories)
+import System.FilePath.Posix  (joinPath,addTrailingPathSeparator )   -- Let op: ook voor Windows is hier de posix variant noodzakelijk!
 import Statistics
 
 --DESCR ->
@@ -65,7 +67,7 @@ laTeXheader flags
   --   , "\\usepackage{hyperref}"
      ] ++
      ["\\usepackage{graphicx}"                   | graphics flags] ++
-     ["\\graphicspath{{"++dirOutput flags++"/}}" | graphics flags, dirOutput flags/="."] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
+     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
      [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
      , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
      , "\\newcommand{\\iden}{\\mathbb{I}}"
@@ -904,9 +906,9 @@ xrefCitation myLabel = TeX ("\\cite{"++myLabel++"}")
 xrefFigure1 :: Picture -> [Inline]
 xrefFigure1 pict = 
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [Str $ "Here, "++reference pict++".png should have been visible"] ((reference pict++".png"), (title pict))
+   , Image [Str $ "Here, "++pictName pict++" should have been visible"] ((pictName pict), (figlabel pict))
    , TeX "}\n"
-   , TeX ("\\caption{"++title pict++"}\n") 
+   , TeX ("\\caption{"++caption pict++"}\n") 
    , xrefLabel (figlabel pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
@@ -1004,3 +1006,9 @@ latexEsc x
    where f "" = ""
          f ('_':str) = "\\underline{\\ }"++f str
          f (c:str)   = c: f str
+
+posixFilePath :: FilePath -> String
+-- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
+-- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
+posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
+        

@@ -80,11 +80,13 @@ checkOptions flags =
                           Just s  -> return flags { logName = s } 
            verboseLn flags0 ("Checking output directories...")
 --           currDir <- getCurrentDirectory
+           currDir <- canonicalizePath "."
            flags1  <- case uncheckedDirOutput flags0 of
-                          Nothing -> return flags0 { dirOutput = "." }
-                          Just s  -> do exists <- doesDirectoryExist s
+                          Nothing -> return flags0 { dirOutput = currDir }
+                          Just s  -> do fullPath <- canonicalizePath s
+                                        exists <- doesDirectoryExist fullPath
                                         if exists
-                                          then return flags0 { dirOutput =  s}
+                                          then return flags0 { dirOutput =  fullPath}
                                           else ioError (userError ("Directory does not exist: "++s))  
            flags2 <- if genPrototype flags1
                         then do { d <- doesDirectoryExist (dirPrototype flags0)
