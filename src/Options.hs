@@ -9,7 +9,8 @@ import Char (toUpper)
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory
-import Time          
+import Time
+import Control.Monad
 import Strings               (chain)
 
 -- | This data constructor is able to hold all kind of information that is useful to 
@@ -70,68 +71,59 @@ getOptions =
       flags    <- case getOpt Permute (each options) args of
                       (o,n,[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
                       (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
-      flags''  <- checkOptions flags
-      return flags''
+      checkMonadicOptions flags
 
-checkOptions :: Options -> IO Options
-checkOptions flags = 
-        do flags0  <- case uncheckedLogName flags of
-                          Nothing -> return flags { logName = "ADL.log"}
-                          Just s  -> return flags { logName = s } 
-           verboseLn flags0 ("Checking output directories...")
---           currDir <- getCurrentDirectory
-           currDir <- canonicalizePath "."
-           flags1  <- case uncheckedDirOutput flags0 of
-                          Nothing -> return flags0 { dirOutput = currDir }
-                          Just s  -> do fullPath <- canonicalizePath s
-                                        exists <- doesDirectoryExist fullPath
-                                        if exists
-                                          then return flags0 { dirOutput =  fullPath}
-                                          else ioError (userError ("Directory does not exist: "++s))  
-           flags2 <- if genPrototype flags1
-                        then do { d <- doesDirectoryExist (dirPrototype flags0)
-                                ; if d
-                                  then doNothing
-                                  else createDirectory (dirPrototype flags0)
-                              {- Genereren van een niet-instelbare-directory is erg irritant
-                              -- en bovendien geeft het een probleem voor de inrichting op de
-                              -- OU server: het bestand index.htm wordt niet meer automatisch
-                              -- getoond (in plaats daarvan zien we 'directory listing denied')
-                                ; e <- doesDirectoryExist (combine (dirPrototype flags0) (baseName flags0))
-                                  ; if e
-                                    then doNothing
-                                    else createDirectory (combine (dirPrototype flags0) (baseName flags0))
-                              -}
-                                ; return flags1 --{dirPrototype = combine (dirPrototype flags0) (baseName flags0)}
-                                }
-                        else return flags1  {- No need to check if no prototype will be generated. -}
-           flags3 <- if genAtlas flags2
-                        then do { d <- doesDirectoryExist (dirAtlas flags0)
-                                ; if d
-                                  then doNothing
-                                  else createDirectory (dirAtlas flags0)
-                              {-
-                                ; e <- doesDirectoryExist (combine (dirAtlas flags0) (baseName flags0))
-                                ; if e
-                                  then doNothing
-                                  else createDirectory (combine (dirAtlas flags0) (baseName flags0))
-                              -}
-                                ; return flags2 --{dirAtlas = combine (dirAtlas flags0) (baseName flags0)}
-                                }
-                        else return flags2  {- No need to check if no atlas will be generated. -}
-           flags4 <- return flags3 
-           mbexec <- findExecutable (progrName flags) 
-           flags5 <- case mbexec of
-              Nothing -> return flags4{dirExec=error ("!Fatal (module Options 126): Specify the path location of "++(progrName flags)++" in your system PATH variable.")
-                                      ,texHdrFile=error ("!Fatal (module Options 127): Specify the path location of "++(progrName flags)++" in your system PATH variable.")}
-              Just s -> return flags4{dirExec=takeDirectory s} 
-           flags6 <- if genPrototype flags5
-                        then return flags5 {dbName = (case dbName flags5 of
-                                                        ""  -> baseName flags5
-                                                        str -> str
-                                                     )}
-                        else return flags5 {- No need for a databasename if no prototype will be generated. -}
-           return flags6                  
+checkMonadicOptions :: Options -> IO(Options)
+checkMonadicOptions  = checkLogName 
+                   >=> checkDirOutput
+                   >=> checkExecOpts
+                   >=> checkProtoOpts
+                   >=> checkAtlasOpts 
+
+checkLogName :: Options -> IO Options
+checkLogName f   = return f{ logName   = case uncheckedLogName   f of 
+                                          Nothing -> "ADL.log"
+                                          Just s  -> s } 
+                                                 
+checkDirOutput :: Options -> IO Options
+checkDirOutput f = do candidateDir 
+                         <- canonicalizePath (case uncheckedDirOutput f of
+                                                Nothing -> "."
+                                                Just s  -> s )
+                      verboseLn f ("Checking output directories...")
+                      createDirectoryIfMissing True candidateDir 
+                      return f{ dirOutput = candidateDir}
+
+checkExecOpts :: Options -> IO Options
+checkExecOpts f = do exePath <- findExecutable (progrName f)
+                     return (case exePath of
+                               Nothing -> f{dirExec=error ("!Fatal (module Options 126): Specify the path location of "++(progrName f)++" in your system PATH variable.")
+                                           ,texHdrFile=error ("!Fatal (module Options 127): Specify the path location of "++(progrName f)++" in your system PATH variable.")
+                                           }
+                               Just s ->  f{dirExec=takeDirectory s}
+                            ) 
+
+checkProtoOpts :: Options -> IO Options
+checkProtoOpts f = if genPrototype f
+                    then do candidateDir
+                              <- canonicalizePath (case uncheckedDirPrototype f of
+                                                     Nothing -> "."
+                                                     Just s  -> s )
+                            createDirectoryIfMissing True candidateDir 
+                            return f{ dirPrototype = candidateDir}
+                    else return f {- No need for prototype options if no prototype will be generated. -}
+                   
+                   
+checkAtlasOpts :: Options -> IO Options
+checkAtlasOpts f = if genAtlas f
+                    then do candidateDir
+                              <- canonicalizePath (case uncheckedDirAtlas f of
+                                                     Nothing -> "."
+                                                     Just s  -> s )
+                            createDirectoryIfMissing True candidateDir 
+                            return f{ dirAtlas = candidateDir}
+                    else return f {- No need for Atlas options if no prototype will be generated. -}
+
 
             
 data DisplayMode = Public | Hidden 
@@ -282,7 +274,10 @@ prototypeOpt nm opts
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: String -> Options -> Options
-dbNameOpt nm    opts = opts{dbName       = nm}                          
+dbNameOpt nm    opts = opts{dbName = if nm == "" 
+                                       then baseName opts
+                                       else nm
+                           }                          
 userOpt :: String -> Options -> Options
 userOpt x opts = opts{userAtlas = x}
 atlasOpt :: Maybe String -> Options -> Options

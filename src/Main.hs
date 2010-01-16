@@ -26,8 +26,7 @@ phase1 flags
       = let fnFull = adlFileName flags in
         do verbose flags "Parsing... "
            adlText <- readFile fnFull
-           context <- parseADL adlText flags fnFull 
-           return context
+           parseADL adlText flags fnFull 
 
 phase2 :: Options -> Context -> IO(Fspc)
 phase2 flags context = do verboseLn flags "Calculating..."

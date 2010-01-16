@@ -67,7 +67,7 @@ laTeXheader flags
   --   , "\\usepackage{hyperref}"
      ] ++
      ["\\usepackage{graphicx}"                   | graphics flags] ++
-     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
+--     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
      [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
      , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
      , "\\newcommand{\\iden}{\\mathbb{I}}"
@@ -1007,8 +1007,8 @@ latexEsc x
          f ('_':str) = "\\underline{\\ }"++f str
          f (c:str)   = c: f str
 
-posixFilePath :: FilePath -> String
+--posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
-posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
+--posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
         

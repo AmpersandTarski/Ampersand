@@ -9,7 +9,10 @@ module Generators (doGenAtlas
 where
 
 import System                 (system, ExitCode(ExitSuccess,ExitFailure))
+--import System.Process
 import System.FilePath        (combine,replaceExtension)
+import System.Directory
+import Control.Monad
 import Options
 import FspecDef
 import ShowHS                 (fSpec2Haskell)
@@ -20,6 +23,7 @@ import Prototype.ObjBinGen    (phpObjServices)
 import Adl
 import Fspec2Pandoc           (fSpec2Pandoc,laTeXheader)
 import Atlas.Atlas
+import Data.List              (isInfixOf)
 import Text.Pandoc            ( defaultWriterOptions
                               , prettyPandoc
                               , writerStandalone
@@ -93,10 +97,7 @@ doGenFspec fSpec flags
           then foldr1 (>>) [ writePicture flags p| p<-thePictures] 
           else verboseLn flags "No graphics generated." )                                      >>
      (case fspecFormat flags of
-       FLatex  -> do result <- system ("pdflatex "++outputFile)     -- TODO Dit werkt nu niet onder windows, als het outputFile niet in de current directory staat. Fixen. 
-                     case result of 
-                       ExitSuccess   -> verboseLn flags ("PDF file created.")
-                       ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
+       FLatex  ->  makePdfFile
        _ -> verboseLn flags "Done."
      ) 
 
@@ -132,3 +133,47 @@ doGenFspec fSpec flags
                                           , writerTableOfContents=True
                                           , writerNumberSections=True
                                           }
+         makePdfFile :: IO()
+         makePdfFile = do curDir <- getCurrentDirectory
+                          setCurrentDirectory (dirOutput flags)
+                          verboseLn flags ("original directory: "++show curDir)
+                          verboseLn flags ("now running in    : "++show (dirOutput flags))
+                          removeOldFiles
+                          (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
+                          verboseLn flags ("PdfLatex was called "++show nrOfRounds++" times"++
+                               case ready of
+                                  True  -> "."
+                                  False -> ", but did not solve all refferences!")
+                          when ready (setCurrentDirectory curDir)                                
+            where 
+              removeOldFiles :: IO()
+              removeOldFiles
+                = mapM_ dump ["aux","log","pdf","toc"] 
+
+              dump :: String -> IO()
+              dump extention =
+                do let file = replaceExtension outputFile extention
+                   exists <- doesFileExist file
+                   when exists (removeFile file)  
+                
+              doRestOfPdfLatex :: (Bool,Int) -> IO (Bool,Int)
+              doRestOfPdfLatex (ready, roundsSoFar)
+                = if or [ready, roundsSoFar > 4]    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
+                  then return (ready, roundsSoFar)
+                  else do callPdfLatexOnce
+                          let needle = "LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right." -- This is the text of the warning that pdfLatex generates when a rerun is required.
+                          renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
+                          haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))
+                          let notReady = isInfixOf needle haystack
+                          when notReady (verboseLn flags "Another round of pdfLatex is required. Hang on...")
+                        --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
+                          doRestOfPdfLatex (not notReady, roundsSoFar +1)
+
+                      
+              callPdfLatexOnce :: IO ()
+              callPdfLatexOnce = 
+                 do result <- system ("pdflatex "++outputFile)  
+                    case result of 
+                       ExitSuccess   -> verboseLn flags ("PDF file created.")
+                       ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
+              
