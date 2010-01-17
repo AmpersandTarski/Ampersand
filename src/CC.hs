@@ -118,12 +118,12 @@
                        ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
                         hc isSg m' antc pos' cons expl
-                          = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True False "")
+                          = Ru Implication antc pos' cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 isSg False "")
                         kc isSg m' cons pos' antc expl = hc isSg m' antc pos' cons expl
                         dc isSg m' defd pos' expr expl
-                          = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 True False "")
+                          = Ru Equivalence defd pos' expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" pos' 0 isSg False "")
                         ac isSg m' expr expl
-                          = Ru Truth defd (Adl.pos m') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" (Adl.pos m') 0 True False "")
+                          = Ru Truth defd (Adl.pos m') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn (name m') cptAnything cptAnything [] "" "" "" [] "" (Adl.pos m') 0 isSg False "")
                          where defd=error ("!Fatal (module CC 127): defd undefined in pRule "++showADL expr)
 
    pGen             :: Parser Token Gen

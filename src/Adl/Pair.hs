@@ -46,22 +46,20 @@ where
      where
        toPairs :: [[String]] -> Pairs
        toPairs [] = []
-       toPairs (p:pps) = (mkPair (head p) (last p)) : (toPairs pps)
+       toPairs (p:pps) = (mkPair (head p) (last p)) : toPairs pps
        toList :: Pairs -> [[String]]
        toList [] = []
-       toList (p:pps) = [(srcPaire p) : [trgPaire p]] ++ (toList pps)
+       toList (p:pps) = [[srcPaire p, trgPaire p]] ++ (toList pps)
 
- --TODO :: Dit moet nog even een stuk vereenvoudigd worden! (En daardoor efficienter, ongetwijfeld!!)       
 
-       clos1 :: (Eq b) => [[b]] -> [[b]] 
-    --   closPair :: Pairs -> Pairs
+----------------------------------------------------
+--  Warshall's transitive closure algorithm in Haskell:
+----------------------------------------------------
+       clos1 :: (Eq b) => [[b]] -> [[b]]     -- e.g. a list of pairs
        clos1 xs
-         --DESCR -> rd - remove duplicates; isc - intersection
-         --         the snd arg is a set of every c which is domain [[b]] /\ range [[b]] (b is a tuple)
          = f xs (rd (map head xs) `isc` rd (map last xs))
            where
             f q (x:xs') = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs'
             f q []      = q
 
-
-                     
+                    

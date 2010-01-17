@@ -578,24 +578,16 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 
    sqlMorName :: Fspc -> Morphism -> String
-   sqlMorName fSpec (Mph _ _ _ _ _ s) = sqlRelName fSpec s
-   sqlMorName fSpec (I _ _ s _)            = sqlConcept fSpec s
+   sqlMorName fSpec m@Mph{} = sqlRelName fSpec (mphdcl m)
+   sqlMorName fSpec i@I{}   = sqlConcept fSpec (mphspc i)
    sqlMorName _ m' = error ("!Fatal (module RelBinGenBasics 584): illegal argument: "++show m')
    
    -- these functions are exact compies of sqlRelSrc and sqlRelTrg!
    sqlMorSrc :: Fspc -> Morphism -> String
-   {- sqlMorSrc _ i@V{}   = name (source i)
-   sqlMorSrc _ i@I{}   = name (source i)
-   sqlMorSrc _ i@Mph{} = name (source i)
-   sqlMorSrc _ i@Mp1{} = name (source i) -}
    sqlMorSrc fSpec s = fldname src
     where (_,src,_) = sqlRelPlug fSpec (Tm s)
 
    sqlMorTrg :: Fspc -> Morphism -> String
-   {- sqlMorTrg _ i@V{}   = name (target i)
-   sqlMorTrg _ i@I{}   = name (target i)
-   sqlMorTrg _ i@Mph{} = name (target i)
-   sqlMorTrg _ i@Mp1{} = name (target i) -}
    sqlMorTrg fSpec s = fldname trg
     where (_,_,trg) = sqlRelPlug fSpec (Tm s)
 

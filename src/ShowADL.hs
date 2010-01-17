@@ -298,12 +298,13 @@
           showchar (Tc f)   = lpar++showchar f++rpar
 
    instance ShowADL Morphism where
-    showADL m@(Mph nm pos atts sgn@(a,b) yin s)
+    showADL m@Mph{}
      = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} decnm s)++
-       (if null atts
+       (if null (mphats m)
             then (if yin && sgn==(source s, target s) || not yin && sgn==(target s,source s) then "" else showSign [a,b])
-            else showSign atts)++
+            else showSign (mphats m))++
        if yin then "" else "~"
+       where s = mphdcl m; yin = mphyin m; sgn@(a,b) = mphtyp m
     showADL (I atts g s yin)
      = "I"++if null atts then "" else showSign atts++if g==s then "" else if yin then "" else "~"
     showADL (V atts (a,b))
@@ -346,14 +347,10 @@
      = "POPULATION "++showADL m++" CONTAINS\n"++
        indent++"[ "++chain ("\n"++indent++"; ") (map show ps)++indent++"]"
        where indent = "   "
-             source (Mph nm pos atts (a,b) yin d) = a
-             target (Mph nm pos atts (a,b) yin d) = b
     showADLcode fSpec (Popu m ps)
      = "POPULATION "++showADLcode fSpec m++" CONTAINS\n"++
        indent++"[ "++chain ("\n"++indent++"; ") (map show ps)++indent++"]"
        where indent = "   "
-             source (Mph nm pos atts (a,b) yin d) = a
-             target (Mph nm pos atts (a,b) yin d) = b
 
    instance ShowADL Concept where
     showADL c = show (name c)

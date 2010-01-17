@@ -23,7 +23,7 @@ module Calc ( deriveProofs
    import ShowADL            (showADL,showADLcode)
    import ShowECA            (showECA)
    import CommonClasses      (ABoolAlg(..))
-   import NormalForms        (conjNF,disjNF,normECA,nfProof,nfPr,simplify) -- ,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import NormalForms        (conjNF,disjNF,normPA,nfProof,nfPr,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
 
    conjuncts :: Rule -> [Expression]
    conjuncts = fiRule.conjNF.normExpr
@@ -212,11 +212,17 @@ module Calc ( deriveProofs
       " - Invariants:\n   "++chain "\n   " [showADLcode fSpec rule    | rule<-invariants]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invariants]++"\n"++
-      " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (normECA eca (error ("!TODO (module Calc 215): hier moet een declaratie Delta staan")))
--- dit toevoegen om de afleiding te tonen...         ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+-- Switch this on if you want to see quads.
+--      " + "++show (length qs)++" quads:"   ++
+--      concat [showQ i (m,shifts,conj,cl_rule ccrs)| (i,Quad m ccrs)<-zip [(1::Int)..] (reverse qs), (conj,shifts)<-cl_conjNF ccrs]++"\n"++
+
+      " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
+-- Dit toevoegen als je de afleiding wilt zien... -}            ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
                                | eca<-ecaRs]++"\n\n"++
       " - Visible relations:\n   "++chain "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
     where
+        showQ i (m, shs,conj,r)
+         = "\nQuad "++show i++":\nmorphism: "++showADLcode fSpec m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis        = rd (map makeInline rels++map (mIs.target) rels)
@@ -245,7 +251,7 @@ module Calc ( deriveProofs
                      | o<-serviceS fSpec]++
       "\n--------------\n"++
       "Analyzing services: \n     "++
-      chain "\n     " [testService fSpec o| o<-serviceS fSpec]++
+      chain "\n     " [testService fSpec o| o<-take 1 (serviceG fSpec)]++
       "\n--------------\n"
       where 
         derivation rule 
@@ -345,7 +351,7 @@ module Calc ( deriveProofs
                                    }))
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
-   doCode :: (Morphism->Bool)        -- the morphisms that may be changed
+   doCode :: (Morphism->Bool)        --  the morphisms that may be changed
           -> InsDel
           -> Expression              --  the expression in which a delete or insert takes place
           -> Expression              --  the delta to be inserted or deleted
@@ -355,13 +361,11 @@ module Calc ( deriveProofs
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
-          (_ ,  Fu [])   -> error ("!Fatal (module Calc 371): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fu [])++",\n"++
+          (_ ,  Fu [])   -> Blk motiv
+          (_ ,  Fi [])   -> Nop motiv
+          (_ ,  F [])    -> error ("!Fatal (module Calc 366): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fi [])   -> error ("!Fatal (module Calc 373): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fi [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  F [])    -> error ("!Fatal (module Calc 375): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fd [])   -> error ("!Fatal (module Calc 377): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
+          (_ ,  Fd [])   -> error ("!Fatal (module Calc 368): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
           (_ ,  Fu [t])  -> doCod deltaX tOp t motiv
           (_ ,  Fi [t])  -> doCod deltaX tOp t motiv

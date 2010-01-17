@@ -147,7 +147,7 @@ where
                 NOthing    -> (<=)  ::Concept->Concept->Bool
 
    instance Morphical ObjectDef where
-    concs     obj = [source (objctx obj)] `uni` concs (objats obj)
+    concs     obj = [target (objctx obj)] `uni` concs (objats obj)
     mors      obj = mors (objctx obj) `uni` mors (objats obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
     morlist   obj = morlist (objctx obj)++morlist (objats obj)
     closExprs obj = closExprs (objctx obj) `uni` closExprs (objats obj)
@@ -169,7 +169,7 @@ where
                Sgn{}     -> rd [desrc d,detrg d]
                Isn{}     -> rd [degen d,despc d]
                Iscompl{} -> [despc d]
-               Vs{}      -> [despc d]        
+               Vs{}      -> [c| c@C{}<-[degen d,despc d]]
     mors _    = []
     morlist _ = []
     genE d    = genE(desrc d)

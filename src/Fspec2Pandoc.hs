@@ -603,8 +603,8 @@ serviceChap lev fSpec flags svc
  = ( header ++ svcIntro
       ++ (if graphics flags then txtKnowledgeGraph else [])
       ++ svcFieldTables
-      ++ (if graphics flags then txtSwitchboard else [])
-   , [picKnowledgeGraph, picSwitchboard]
+      ++ (if graphics flags && flgSwitchboard flags then txtSwitchboard else [])
+   , [picKnowledgeGraph]++[picSwitchboard| flgSwitchboard flags]
    )
  where
   svcname    = name svc
@@ -859,28 +859,28 @@ class SymRef a where
   symDefPageRef   :: a -> Inline  -- references the definition of a 
 
 instance SymRef Concept where
-  symReqLabel   c = TeX $ "\\label{ReqConcept:"++latexEsc (name c)++"}"
-  symDefLabel   c = TeX $ "\\label{DefConcept:"++latexEsc (name c)++"}"
-  symReqRef     c = TeX $ "\\ref{ReqConcept:"++latexEsc (name c)++"}"
-  symDefRef     c = TeX $ "\\ref{DefConcept:"++latexEsc (name c)++"}"
-  symReqPageRef c = TeX $ "\\pageref{ReqConcept:"++latexEsc (name c)++"}"
-  symDefPageRef c = TeX $ "\\pageref{DefConcept:"++latexEsc (name c)++"}"
+  symReqLabel   c = TeX $ "\\label{ReqConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
+  symDefLabel   c = TeX $ "\\label{DefConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
+  symReqRef     c = TeX $ "\\ref{ReqConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
+  symDefRef     c = TeX $ "\\ref{DefConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
+  symReqPageRef c = TeX $ "\\pageref{ReqConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
+  symDefPageRef c = TeX $ "\\pageref{DefConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
 
 instance SymRef Declaration where
-  symReqLabel   d = TeX $ "\\label{ReqDecl:"++latexEsc (name d)++"}"
-  symDefLabel   d = TeX $ "\\label{DefDecl:"++latexEsc (name d)++"}"
-  symReqRef     d = TeX $ "\\ref{ReqDecl:"++latexEsc (name d)++"}"
-  symDefRef     d = TeX $ "\\ref{DefDecl:"++latexEsc (name d)++"}"
-  symReqPageRef d = TeX $ "\\pageref{ReqDecl:"++latexEsc (name d)++"}"
-  symDefPageRef d = TeX $ "\\pageref{DefDecl:"++latexEsc (name d)++"}"
+  symReqLabel   d = TeX $ "\\label{ReqConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
+  symDefLabel   d = TeX $ "\\label{DefConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
+  symReqRef     d = TeX $ "\\ref{ReqConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
+  symDefRef     d = TeX $ "\\ref{DefConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
+  symReqPageRef d = TeX $ "\\pageref{ReqConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
+  symDefPageRef d = TeX $ "\\pageref{DefConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
 
 instance SymRef Rule where
-  symReqLabel   r = TeX $ "\\label{ReqRule:"++latexEsc (name r)++"}"
-  symDefLabel   r = TeX $ "\\label{DefRule:"++latexEsc (name r)++"}"
-  symReqRef     r = TeX $ "\\ref{ReqRule:"++latexEsc (name r)++"}"
-  symDefRef     r = TeX $ "\\ref{DefRule:"++latexEsc (name r)++"}"
-  symReqPageRef r = TeX $ "\\pageref{ReqRule:"++latexEsc (name r)++"}"
-  symDefPageRef r = TeX $ "\\pageref{DefRule:"++latexEsc (name r)++"}"
+  symReqLabel   r = TeX $ "\\label{ReqConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
+  symDefLabel   r = TeX $ "\\label{DefConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
+  symReqRef     r = TeX $ "\\ref{ReqConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
+  symDefRef     r = TeX $ "\\ref{DefConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
+  symReqPageRef r = TeX $ "\\pageref{ReqConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
+  symDefPageRef r = TeX $ "\\pageref{DefConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [TeX ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct

@@ -139,7 +139,7 @@ module Data.Fspec ( Fspc(..)
                      } 
    
    -- The data structure Clauses is meant for calculation purposes.
-   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| conj<-cl_conjNF cl, disj<-[conj!!i]]
+   -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| (conj, hcs)<-cl_conjNF cl, disj<-[conj!!i]]
    -- Every rule is transformed to this form, as a step to derive eca-rules
    data Clauses  = Clauses
                      { cl_conjNF     :: [(Expression,[Expression])]  -- The list of pairs (conj, hcs) in which conj is a conjunct of the rule

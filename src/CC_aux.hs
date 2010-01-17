@@ -4,7 +4,7 @@
                 , pString_val_pos
                 , pVarid_val_pos, pConid_val_pos
                 , Pop(..)
-                , makeConceptSpace , pMeaning
+                , pMeaning
                 , anything, shSigns , gEtabG
                 , conts , cod, clearG, dom
                 , showFullRelName
@@ -12,14 +12,12 @@
    import UU_Scanner
    import UU_Parsing
    import CommonClasses ( Identified(..)
-                        , ABoolAlg(..)
                         , Conceptual(..)
                         , Morphics(..)
                         )
    import Collection   (Collection (..))
    import Strings      (chain,commaEng)
-   import Auxiliaries  (rEncode
-                       ,sord,eqCl,eqClass)
+   import Auxiliaries  (rEncode)
    import Adl
    import ShowADL
 --   import Adl.Pair
@@ -67,21 +65,24 @@
    shSigns [(a,b)] = "["++show a++"*"++show b++"]"
    shSigns ss = commaEng "or" ["["++show a++"*"++show b++"]"|(a,b)<-ss]
 
+{- obsolete?
    makeConceptSpace :: ditwordtnietgebruikt -> [Morphism] -> Concepts    --WAAROM is deze definitie goed?
    makeConceptSpace _ morphisms
     = [ upd (fst (head raw)) (sord (concat (map snd raw)))
-      | raw <- eqCl fst [(c,os)| (Mph _ _ _ (_,_) _ sgn@Sgn{}) <- morphisms
-                               , (c,os) <- [(source sgn,dom sgn),(target sgn,cod sgn)]
+      | raw <- eqCl fst [(c,os)| (Mph{mphdcl=d@Sgn{}}) <- morphisms
+                               , (c,os) <- [(source d,dom d),(target d,cod d)]
                         ]
       ] where
          upd c os = case c of
                        C{} -> c{cptos=os}
                        _   -> c
-
+-}
 
    class Pop a where
     put_gE     :: GenR -> Concepts  -> a -> a  -- attaches the gE function to all concepts, to allow Ord Concept. Effect: c<=d is defined for concepts c and d. It means that concept c is a generalization of concept d.
+{- obsolete?
     specialize :: (Concept,Concept) -> a -> a
+-}
     update     :: [Declaration] -> a -> a
     update _ c = c
 
@@ -90,8 +91,10 @@
             where h x = case x of
                          C{} ->  x{cptgE = gE}
                          _   ->  x
+{- obsolete?
     specialize (a,b) c = if length (eqClass order [a,b,c])>1 then error ("!Fatal (module CC_aux 96): specialize 1 ("++show a++","++show b++") "++show c) else
                          (a `glb` b) `lub` c
+-}
 
    instance Pop KeyDef where
     put_gE gE cs kdef = kdef{ kdcpt = put_gE gE cs (kdcpt kdef)
@@ -100,9 +103,11 @@
     update ss kdef    = kdef{ kdcpt = update ss (kdcpt kdef)
                             , kdats = [update ss    a| a<-kdats kdef]
                             }
+{- obsolete?
     specialize t kdef = kdef{ kdcpt = specialize t (kdcpt kdef)
                             , kdats = [specialize t a| a<-kdats kdef]
                             }
+-}
 
 
    instance Pop ObjectDef where
@@ -112,15 +117,19 @@
     update ss    obj = obj { objctx = update ss    (objctx obj)
                            , objats = [update ss    a| a<-objats obj]
                            }
+{- obsolete?
     specialize t obj = obj { objctx = specialize t (objctx obj)
                            , objats = [specialize t a| a<-objats obj]
                            }
+-}
 
 
    instance (Pop a,Pop b) => Pop (a,b) where
     put_gE gE cs (x,y) = (put_gE gE cs x, put_gE gE cs y)
     update ss    (x,y) = (update ss    x, update ss    y)
+{- obsolete?
     specialize t (x,y) = (specialize t x, specialize t y)
+-}
 
 
    instance Pop Gen where
@@ -130,10 +139,12 @@
     update ss    gen = gen { gengen = update ss    (gengen gen)
                            , genspc = update ss    (genspc gen)
                            }
+{- obsolete?
     specialize t gen = gen { gengen = specialize t (gengen gen)
                            , genspc = specialize t (genspc gen)
                            }
-   
+-}
+
 
    instance Pop Context where
       put_gE gE cs context
@@ -151,6 +162,7 @@
                             , ctxos   = map (update ss) (ctxos context)
                             }
 
+{- obsolete?
       specialize t context
                   = context { ctxpats = map (specialize t) (ctxpats context)
                             , ctxrs   = map (specialize t) (ctxrs context)
@@ -158,6 +170,7 @@
                             , ctxks   = map (specialize t) (ctxks context)
                             , ctxos   = map (specialize t) (ctxos context)
                             }
+-}
 
    instance Pop Pattern where
     put_gE gE cs pat = pat { ptrls = map (put_gE gE cs) (ptrls pat)
@@ -170,12 +183,14 @@
                            , ptdcs = map (update ss) (ptdcs pat)
                            , ptkds = map (update ss) (ptkds pat)
                            }
+{- obsolete?
     specialize t pat = pat { ptrls = map (specialize t) (ptrls pat)
                            , ptgns = map (specialize t) (ptgns pat)
                            , ptdcs = map (specialize t) (ptdcs pat)
                            , ptkds = map (specialize t) (ptkds pat)
                            }
-    
+-}
+
    
    instance Pop Rule where
     put_gE gE cs rule 
@@ -194,6 +209,7 @@
                       , rrcon = update ss (rrcon rule)
                       , rrtyp = update ss (rrtyp rule)
                       }
+{- obsolete?
     specialize t rule
        = case rule of 
           Ru{} -> rule{ rrant = if rrsrt rule == Truth 
@@ -202,6 +218,7 @@
                       , rrcon = specialize t (rrcon rule)
                       , rrtyp = specialize t (rrtyp rule)
                       }
+-}
 
    instance Pop Expression where
     put_gE gE cs (Tm mph)     = Tm (put_gE gE cs mph)
@@ -224,6 +241,7 @@
     update ss (K1 e')           = K1 (update ss e')
     update ss (Cp e')           = Cp (update ss e')
 
+{- obsolete?
     specialize t (Tm mph)       = Tm (specialize t mph)
     specialize t (Tc f)         = Tc (specialize t f)
     specialize (a,b) (F [])     = error ("!Fatal (module CC_aux 251): specialize ("++show a++","++show b++") (F [])")
@@ -239,6 +257,7 @@
     specialize t (K0 e')        = K0 (specialize t e')
     specialize t (K1 e')        = K1 (specialize t e')
     specialize t (Cp e')        = Cp (specialize t e')
+-}
 
 
 
@@ -274,16 +293,15 @@
                       , mphtyp = (update ss) (mphtyp mph)
                       }
           Mp1{} -> error ("!Fatal (module CC_aux 279). Consult your dealer!")
--- was:
---    update ss (Mph nm p atts sgn yin s)          = Mph nm p atts (update ss sgn) yin (update ss s)
---    update ss (I atts g s yin)                   = I (map (update ss) atts) (update ss g) (update ss s) yin
---    update ss (V atts (a,b))                     = V (map (update ss) atts) (update ss a, update ss b)
 
+{- obsolete?
+-- De volgende functie specialiseert het type van mph naar t.
+-- dit veronderstelt dat t<=mphtyp mph, ofschoon er geen noodzaak is om deze preconditie vooraf te checken.
     specialize t@(a,b) mph
        = case mph of
-          Mph{} -> mph{ mphats = if null (mphats mph) then [] else if (inline mph) then [a,b] else [b,a]  --TODO WAAROM?? Stef, ik heb de semantiek intact gelaten, maar ik geloof dat dit fout is. Zit er een volgorde in de atts, die relevant is? 
-                      , mphtyp = t                                                                        --TODO WAAROM?? Stef, ook hier semantiek intact gelaten. Maar is het type niet afhankelijk van de yin??
-                      , mphdcl = (specialize t) (mphdcl mph)
+          Mph{} -> mph{ mphats = if null (mphats mph) then [] else if mphyin mph then [a,b] else [b,a]  --TODO DAAROM?? Dit is correct. atts zet het type van de onderliggende declaratie vast, waar de typechecker (bijv. door specialisatie) niet van af mag wijken. Zie ook de uitleg in de data definitie van Morphism.
+                      , mphtyp = t
+--                       , mphdcl = (specialize t) (mphdcl mph)    -- Dit was fout, neem ik aan. De gedeclareerde relatie verandert natuurlijk niet wanneer een morphisme wordt gespecialiseerd.... (SJ)
                       }
           I{}   -> mph{ mphgen = if (inline mph) then b else a    -- TODO FOUT? Stef, WAAROM? Ik heb her en der mphyin vervangen door inline. Dat is beter, want generieker. Maar hier blijkt dat voor I ook de yin van belang is. Dat is niet overal consequent doorgevoerd. Needs rethinking. Als nodig bij I, dan code aan passen. anders ook, dan moet yin verdwijnen bij I.
                       , mphspc = if (inline mph) then a else b
@@ -295,6 +313,7 @@
 --    specialize t@(a,b) (Mph nm p atts sgn yin s) = Mph nm p (if null atts then [] else if yin then [a,b] else [b,a]) t yin (specialize t s)
 --    specialize t@(a,b) (I atts g s yin)          = if yin then I atts b a yin else I atts a b yin
 --    specialize t@(a,b) (V atts (a',b'))          = V atts (a,b)
+-}
 
    instance Pop Declaration where
     put_gE gE cs decl =
@@ -323,6 +342,7 @@
                     Vs{}     -> decl
       ( _ , _ ) -> error ("!Fatal (module CC_aux 324): calling update ss ("++show decl++") with an argument that is not C{}, with ss="++show ss++".")
 
+{- obsolete?
     specialize (x@C{},y@C{}) decl
        = case decl of
           Sgn{}    -> decl{ desrc = x
@@ -342,6 +362,7 @@
           Vs{}     -> error ("!Fatal (module CC_aux 342). Consult your dealer!") 
     specialize (x,y) decl
       = error ("!Fatal (module CC_aux 344): calling specialize ("++show x++","++show y++") with an argument that is not C{}, in declaration "++show decl++".")
+-}
 
 
 

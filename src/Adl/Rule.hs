@@ -179,6 +179,6 @@ where
            }
           where
            i = Tm $ mIs Anything
-           r = Tm $ Mph (name d)  (pos d) [source d,target d] (source d,target d) True d 
+           r = Tm $ Mph (name d) (pos d) [] (source d,target d) True d 
    rulefromProp _ _ = error ("!Fatal (module Rule 177): Properties can only be set on user-defined Declarations.")
     

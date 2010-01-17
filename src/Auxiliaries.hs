@@ -16,12 +16,10 @@ module Auxiliaries(
    , sord'
    , elem'
 --   , fixSpaces
-   , haskellIdentifier
---
 
   )
   where
-   import Char  (isAlpha,isAlphaNum,ord,isUpper,toLower,toUpper)
+   import Char  (isAlpha,isAlphaNum,ord,isUpper,toUpper)
    import Collection (Collection((>-),rd))
    import Strings (chain)
 
@@ -174,14 +172,4 @@ module Auxiliaries(
 --   fixSpaces :: Int -> String -> String
 --   fixSpaces n a = [' '| _<-[1..n-length str]]++str
 --    where str = show a
-
-
-
-   haskellIdentifier :: String -> String
-   haskellIdentifier "" = ""
-   haskellIdentifier (c:cs) | isAlphaNum c || c=='\''  = c: haskellIdentifier cs
-                            | otherwise                = haskellIdentifier (conceptForm cs)
-    where
-      conceptForm (c':cs') = toUpper c': map toLower cs'
-      conceptForm "" = ""
 

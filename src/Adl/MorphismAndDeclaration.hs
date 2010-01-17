@@ -29,6 +29,8 @@ where
                         , mphtyp :: Sign             -- ^ the allocated type. Together with the name, this forms the declaration.
                         , mphyin :: Bool             -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
                         , mphdcl :: Declaration      -- ^ the declaration bound to this morphism.
+                                                     --   If not mphyin, then target m<=source (mphdcl m) and source m<=target (mphdcl m). In this case, we write m~ (pronounce: m-flip or m-wok)
+                                                     --   If mphyin, then source m<=source (mphdcl m) and target m<=target (mphdcl m). In this case, we write m
                         }
                   | I   { mphats :: [Concept]        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
                         , mphgen ::  Concept         -- ^ the generic concept  
@@ -48,14 +50,9 @@ where
 -- \***********************************************************************
    makeInline :: Morphism -> Morphism
    makeInline m = case m of
-                    Mph{mphyin=False} -> m{mphtyp = reverse' (mphtyp m), mphyin=True}
+                    Mph{mphyin=False} -> m{mphtyp = rev (mphtyp m), mphyin=True}
                     _                 -> m
-                    where reverse' (a,b) = (b,a)
---   makeInline m | inline m = m
---   makeInline (Mph nm pos atts (a,b) yin s) = Mph nm pos (reverse atts) (b,a) (not yin) s
---   makeInline (V atts (a,b))                = V (reverse atts) (b,a)
---   makeInline i                             = i
-
+                    where rev (a,b) = (b,a)
 
    instance Eq Morphism where
  --   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
@@ -82,15 +79,7 @@ where
     name m = name (makeDeclaration m)
 
    instance Association Morphism where
---    source (Mph nm pos atts (a,b) _ s) = a
---    source (I atts g s yin)            = if yin then s else g
---    source (V atts (a,b))              = a
---    source (Mp1 _ s) = s
---    target (Mph nm pos atts (a,b) _ s) = b
---    target (I atts g s yin)            = if yin then g else s
---    target (V atts (a,b))              = b
---    target (Mp1 _ t) = t
-    sign   (Mph _ _ _ (a,b) _ _) = (a,b)    -- Stef, WAAROM is dit niet afhankelijk van yin? is dit goed zo?
+    sign   m@Mph{}               = mphtyp m    -- DAAROM: dit is niet afhankelijk van mphyin. mphtyp geeft het actuele type weer van dit morphisme. Yin regelt de verhouding tussen morfisme m en de bijbehorende declaratie, mphdcl m. Yin heeft dan ook geen invloed op het type van m (zijnde mphtyp m).
     sign   (I _ g s yin)         = if yin then (s,g) else (g,s)
     sign   (V _ (a,b))           = (a,b)
     sign   m@Mp1{}               = if null (mphats m) then (mph1typ m,mph1typ m) else (head (mphats m),last (mphats m))
@@ -291,13 +280,12 @@ where
 
    -- | Deze declaratie is de reden dat Declaration en Morphism in precies een module moeten zitten.
    makeMph :: Declaration -> Morphism
-   makeMph d = Mph{ mphnm  = name d
-                  , mphpos = pos d
-                  , mphats = []
-                  , mphtyp = sign d
-                  , mphyin = True
-                  , mphdcl = d
-                  }
+   makeMph d = Mph (name d)     -- mphnm 
+                   (pos d)      -- mphpos
+                   []           -- mphats
+                   (sign d)     -- mphtyp
+                   True         -- mphyin
+                   d            -- mphdcl
 
    mIs :: Concept -> Morphism
    mIs c = I [] c c True
