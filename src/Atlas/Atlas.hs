@@ -131,15 +131,27 @@ fillAtlas fSpec flags =
         succes <- runGraphvizCommand Neato dot Canon dotfile
         if succes
            then do
-             result <- system ("neato -Tpng "++dotfile++ " -o "++pngfile)
-             case result of 
+             result1 <- system ("neato -Tpng "++dotfile++ " -o "++pngfile)
+             case result1 of 
                 ExitSuccess   -> putStrLn (" "++pngfile++" created.")
+                ExitFailure x -> putStrLn ("Failure: " ++ show x)
+             result2 <- system ("neato -Tcmapx "++dotfile++ " -o "++mapfile)
+-- Van Han aan Gerard: 
+-- Hieronder vind je de code om het plaatje als imagemap te genereren. Dat is nu dus geregeld.
+-- Vervolgens moet je er nog voor zorgen dat de imagemap op de juiste manier wordt gebruikt. Daarvoor
+-- moet je de gegenereerde php oppoetsen. Ik heb daar geen verstand van. Bas overigens wel, maar jij wellicht ook. 
+-- enige informatie hierover staat op http://www.wellho.net/resources/ex.php4?item=h112/imap.php
+-- Het enige dat vervolgens geregeld moet worden is dat in DOT de nodes /edges moeten worden voorzien van de juiste URL attribuut. 
+-- Dat kan voor jou niet moeilijk zijn. Als je dat regelt, dan vallen alle stukjes op z'n plaats. Succ6! 
+             case result2 of 
+                ExitSuccess   -> putStrLn (" "++mapfile++" created.")
                 ExitFailure x -> putStrLn ("Failure: " ++ show x)
            else putStrLn ("Failure: could not create " ++ dotfile) 
         where
         outputFile = combine fpath fnm
         dotfile = replaceExtension outputFile "dot"
         pngfile = replaceExtension outputFile "png"
+        mapfile = replaceExtension outputFile "map"
 ----------------------------------------------------
 runMany :: (IConnection conn) => conn -> [String] -> IO Integer
 runMany _ [] = return 1

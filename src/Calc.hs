@@ -221,8 +221,8 @@ module Calc ( deriveProofs
                                | eca<-ecaRs]++"\n\n"++
       " - Visible relations:\n   "++chain "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
     where
-        showQ i (m, shs,conj,r)
-         = "\nQuad "++show i++":\nmorphism: "++showADLcode fSpec m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
+--        showQ i (m, shs,conj,r)
+--         = "\nQuad "++show i++":\nmorphism: "++showADLcode fSpec m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis        = rd (map makeInline rels++map (mIs.target) rels)

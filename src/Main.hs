@@ -35,14 +35,14 @@ phase2 flags context = do verboseLn flags "Calculating..."
 phase3 :: Options -> Fspc -> IO()
 phase3 flags fSpec = 
     sequence_ 
-       ([ verboseLn flags "Generating..."]++
-        [ doGenAtlas fSpec flags | genAtlas flags] ++
-        [ doGenXML   fSpec flags | genXML flags] ++
-        [ doGenHaskell fSpec flags | haskell flags] ++ 
-        [ doGenProto fSpec flags | genPrototype flags]++
-        [ serviceGen  fSpec flags | services flags] ++
-        [ doGenFspec fSpec flags | genFspec flags] ++ 
-        [ prove fSpec flags| proofs flags]++
+       ([ verboseLn    flags "Generating..."]++
+        [ doGenAtlas   fSpec flags | genAtlas     flags] ++
+        [ doGenXML     fSpec flags | genXML       flags] ++
+        [ doGenHaskell fSpec flags | haskell      flags] ++ 
+        [ doGenProto   fSpec flags | genPrototype flags]++
+        [ serviceGen   fSpec flags | services     flags] ++
+        [ doGenFspec   fSpec flags | genFspec     flags] ++ 
+        [ prove        fSpec flags | proofs       flags]++
         [ verbose flags "Done."]
        ) 
                                

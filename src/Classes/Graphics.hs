@@ -301,8 +301,8 @@ invisible = Style [SItem Invisible []]
 dotted :: Attribute
 dotted = Style [SItem Dotted []]
 
-dashed :: Attribute
-dashed = Style [SItem Dashed []]
+--dashed :: Attribute
+--dashed = Style [SItem Dashed []]
 
 filled :: Attribute
 filled = Style [SItem Filled []]

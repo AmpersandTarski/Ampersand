@@ -24,7 +24,7 @@
 
 
    instance Fidentified Morphism where
-     fsid m = FS_id (name m++name (source m)++name(target m))  --Hier moet nog goed naar worden gekeken.... Waarom dan?
+     fsid m = FS_id (name m++name (source m)++name(target m))
 
    instance Fidentified Concept where
      fsid c = FS_id (name c)

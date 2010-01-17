@@ -85,7 +85,6 @@ explainMult options d
          | null ([    Tot        ] >- multiplicities d) = applyM d ("Every "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)++"."
          | null ([Uni            ] >- multiplicities d) = applyM d ("Every "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
          | otherwise                                    = "The sentence: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' is meaningful (i.e. it is either true or false) for any "++(unCap.name.source) d++" "++(var [].source) d++" and "++(unCap.name.target) d++" "++(var [source d].target) d++"."
-      -- preciesEen :: aap
        preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
 
 var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs

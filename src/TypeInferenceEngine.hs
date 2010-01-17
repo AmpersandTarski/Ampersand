@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInferenceEngine where
-import Adl.Concept
+--import Adl.Concept
 --import Adl.MorphismAndDeclaration
 import Data.Maybe
 import TypeInference.ITree

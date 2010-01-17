@@ -1,10 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module TypeInference.AdlExpr where
-import Adl.MorphismAndDeclaration
-import Adl.Concept
-import Adl.Expression
-import Adl.Rule
-import CommonClasses
+import Adl
+import ShowADL
 
 data AdlExpr =   Relation    {rel::Morphism,  mphid::Int,     tt::TypeTerm}
                | Implicate   {left::AdlExpr,  right::AdlExpr, tt::TypeTerm}
@@ -122,6 +119,7 @@ fromRule r@(Ru{})
     Implication -> Implicate (fst lft) (fst rght) unknowntype
     Equivalence -> Equality  (fst lft) (fst rght) unknowntype
     Truth       -> fst (uniqueMphsE 0 (rrcon r))
+    Generalization -> error ("!Fatal (module ADLExpr 125): fromRule not defined for Generalization. ("++showADL r++")")
    where
    lft = uniqueMphsE 0 (rrant r)
    rght = uniqueMphsE (snd lft) (rrcon r)

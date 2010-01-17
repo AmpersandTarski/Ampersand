@@ -29,8 +29,6 @@ import Data.GraphViz    (printDotGraph)
 import Classes.Graphics (toDot)
 import Picture          (Picture(..),PictType(..),makePicture)
 import FPA
-import System.FilePath        (splitDirectories)
-import System.FilePath.Posix  (joinPath,addTrailingPathSeparator )   -- Let op: ook voor Windows is hier de posix variant noodzakelijk!
 import Statistics
 
 --DESCR ->
@@ -104,8 +102,6 @@ chpDAlabel :: String
 chpDAlabel="chpDataAnalysis"
 chpFPAlabel :: String
 chpFPAlabel="chpFPAnalysis"
-chpGlosLabel :: String
-chpGlosLabel="chpGlossary"
 
 --TODO: Invent a syntax for meta information that is included in the source file...
 
@@ -658,7 +654,7 @@ serviceChap lev fSpec flags svc
   svcAutoRules
    = let ars = rd [r|q<-fsv_quads svc, r<-[cl_rule (qClauses q)], r_usr r] -- rules that are maintained by automated functionality
          mrs = [r|r<-fsv_rules svc, r_usr r, r `notElem` ars]-- rules that may be affected, but are maintained manually
-         mss = ""-- signals that can be emptied by this service
+      --   mss = ""-- signals that can be emptied by this service
      in case (language flags) of
       Dutch ->   chain " " 
                  [ case length ars of
@@ -817,14 +813,14 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
 glossary :: Int -> Fspc -> Options ->  [Block]
 glossary _ _ _ = []  --TODO
 ------------------------------------------------------------
-type Proof expr = [(expr,[String],String)]
-showProof :: (expr->String) -> Proof expr -> String
-showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
-showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
-                                   "\n"++(if null ss then "\n   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain "; " ss++" }")++
-                                   showProof sh prf
-                                   --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
-showProof _  []                  = ""
+--type Proof expr = [(expr,[String],String)]
+--showProof :: (expr->String) -> Proof expr -> String
+--showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
+--showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
+--                                   "\n"++(if null ss then "\n   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain "; " ss++" }")++
+--                                   showProof sh prf
+--                                   --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
+--showProof _  []                  = ""
 
 -----Linguistic goodies--------------------------------------
 
@@ -832,7 +828,7 @@ count :: Options -> Int -> String -> String
 count flags n x
  = case (language flags, n) of
       (Dutch  , 0) -> "geen "++plural Dutch x
-      (Dutch  , 1) -> "een "++x                -- zou "één" moeten zijn, maar dit geeft een UTF-8 decoding error in de Haskell compiler (TODO).
+      (Dutch  , 1) -> preciesEen++" "++x                -- zou "één" moeten zijn, maar dit geeft een UTF-8 decoding error in de Haskell compiler (TODO).
       (Dutch  , 2) -> "twee "++plural Dutch x
       (Dutch  , 3) -> "drie "++plural Dutch x
       (Dutch  , 4) -> "vier "++plural Dutch x
@@ -847,7 +843,9 @@ count flags n x
       (English, 5) -> "five "++plural English x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
-
+    where
+      preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
+    
 ------ Symbolic referencing ---------------------------------
 
 class SymRef a where
@@ -912,12 +910,19 @@ xrefFigure1 pict =
    , xrefLabel (figlabel pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
-addinfix :: Inline -> [[Inline]] -> [Inline] 
-addinfix _ [] = [] --tail will not be on empty list
-addinfix delim xs = tail [inline' | inlines<-postfix, inline'<-inlines]
-   where
-   postfix :: [[Inline]] 
-   postfix = [delim:x|x<-xs] 
+
+-- WAAROM?  Stef, dit ziet er uit als een algemene functie. Om dit soort functies
+-- zelf te schrijven is eigenlijk niet slim. Ben je bekend met Hoogle? Dat is een 
+-- soort google, maar dan voor Haskell functies! Erg handig als je generiek spul 
+-- zoekt. http://www.haskell.org/hoogle/
+-- Daarnaast helpt het om even aan te geven wat je met een functie beoogt. Aangezien
+-- onderstaande functie nergens voor wordt gebruikt (nog?) maar even weggepoetst....
+--addinfix :: Inline -> [[Inline]] -> [Inline] 
+--addinfix _ [] = [] --tail will not be on empty list
+--addinfix delim xs = tail [inline' | inlines<-postfix, inline'<-inlines]
+--   where
+--   postfix :: [[Inline]] 
+--   postfix = [delim:x|x<-xs] 
 
 
 --DESCR -> pandoc print functions for Adl data structures

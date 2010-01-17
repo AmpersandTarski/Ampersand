@@ -6,16 +6,16 @@
    import Adl
    import Auxiliaries    (naming, eqCl, eqClass, sort')
    import FspecDef
-   import Languages
+--   import Languages
    import Calc
-   import Options        (Options(language))
+   import Options        (Options)
    import NormalForms(conjNF,disjNF,normPA)
    import Data.Plug
    import Char
    import ShowADL
    
    makeFspec :: Options -> Context -> Fspc
-   makeFspec flags context = fSpec where
+   makeFspec _ context = fSpec where
         allQuads = quads (\_->True) (rules context)
         fSpec =
             Fspc { fsName       = firstCaps (name context)
@@ -421,7 +421,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         normECA e _ = e{ecaAction=normPA (ecaAction e)}
         nECArules  = [normECA e| e<-ecaRs]
         trigs :: ObjectDef -> [Declaration->ECArule]
-        trigs obj  = [] -- [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
+        trigs _  = [] -- [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
         arg = error("!Todo (module ADL2Fspec 463): declaratie Delta invullen")
         srvfields = [fld 0 o| o<-objats object]
         fld :: Int -> ObjectDef -> Field

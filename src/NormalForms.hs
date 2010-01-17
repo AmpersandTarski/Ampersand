@@ -6,7 +6,7 @@ where
    import Collection     (Collection (..))
    import Auxiliaries    (eqCl)
    import ShowADL        (showADL)
-   import Adl.ECArule    (ECArule(..),PAclause(..),isAll,isChc,isBlk,isDry,isNop,isDo)
+   import Adl.ECArule    (PAclause(..),isAll,isChc,isBlk,isDry,isNop,isDo)
    import Adl.Expression (isF,isFd,isFi,isFu)
 
 {- Normalization of process algebra clauses -}
@@ -17,10 +17,9 @@ where
 
    proofPA :: PAclause -> [(PAclause, [String], String)]
    proofPA expr = ({-reverse.take 3.reverse.-}pPA) expr
-    where pPA expr = if null steps
-                     then [(expr,steps,equ)]                   -- is dus (expr,[],"<=>")
-                     else (expr,steps,equ):pPA res
-                     where (res,steps,equ) = normstepPA expr
+    where pPA expr' = case normstepPA expr' of
+                       ( _ , []  ,equ) -> [(expr',[]   ,equ)]    -- is dus (expr,[],"<=>")
+                       (res,steps,equ) -> [(expr',steps,equ)]++pPA res
 
    normstepPA :: PAclause -> (PAclause,[String],String)
    normstepPA expr = (res,ss,"<=>")
@@ -28,10 +27,13 @@ where
      (res,ss) = norm expr
      norm :: PAclause -> (PAclause,[String])
      norm (Chc [] ms)  = (Blk ms, ["Run out of options"])
-     norm (Chc [d] ms) = (d{paMotiv = case d of Blk{} -> paMotiv d
-                                                Dry{} -> paMotiv d
-                                                _     -> ms
-                           }, ["Flatten Singleton"])
+     norm (Chc [d] ms) = (d', ["Flatten Singleton"])
+                       where d' = case d of
+                                    Blk{} -> d
+                                    Dry{} -> d
+                                    _     -> d{paMotiv = ms} 
+-- WAAROM? Stef, deze code is volgens mij complexer dan nodig. De warnings met betrekking tot shadowing bevestigen dat, vind ik. 
+--         kan je uitleggen wat hier gebeurt? 
      norm (Chc ds ms)  | (not.null) msgs = (Chc ops ms, msgs)
                        | (not.null) [d| d<-ds, isChc d] = (Chc (rd [ d' | d<-ds, d'<-if isChc d then let Chc ops ms = d in ops else [d] ]) ms, ["flatten Chc"])  -- flatten
                        | (not.null) [Nop| Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
@@ -41,10 +43,11 @@ where
                              msgs = (concat.map snd) nds
                              ops  = map fst nds
      norm (All [] ms)  = (Nop ms, ["All [] = No Operation"])
-     norm (All [d] ms) = (d{paMotiv = case d of Blk{} -> paMotiv d
-                                                Dry{} -> paMotiv d
-                                                _     -> ms
-                           }, ["Flatten Singleton"])
+     norm (All [d] ms) = (d', ["Flatten Singleton"])
+                       where d' = case d of
+                                    Blk{} -> d
+                                    Dry{} -> d
+                                    _     -> d{paMotiv = ms} 
      norm (All ds ms)  | (not.null) msgs = (All ops ms, msgs)
                        | (not.null) [d| d<-ds, isAll d] = (All (rd [ d' | d<-ds, d'<-if isAll d then let All ops ms = d in ops else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk| Blk{}<-ops] = (Blk{paMotiv = [m| op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])

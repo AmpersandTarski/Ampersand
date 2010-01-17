@@ -19,7 +19,7 @@ module Auxiliaries(
 
   )
   where
-   import Char  (isAlpha,isAlphaNum,ord,isUpper,toUpper)
+   import Char  (isAlpha,isAlphaNum,ord,isUpper)
    import Collection (Collection((>-),rd))
    import Strings (chain)
 
