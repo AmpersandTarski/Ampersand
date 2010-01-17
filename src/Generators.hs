@@ -148,7 +148,8 @@ doGenFspec fSpec flags
             where 
               removeOldFiles :: IO()
               removeOldFiles
-                = mapM_ dump ["aux","log","pdf","toc"] 
+                = mapM_ dump ["aux","pdf","toc","bbl","blg","brf","idx","ilg","ind","out",  -- possible output of pdfLatex
+                              "log0","log1","log2","log3","log4"]  --logfiles created on the fly. 
 
               dump :: String -> IO()
               dump extention =
@@ -162,8 +163,12 @@ doGenFspec fSpec flags
                   then return (ready, roundsSoFar)
                   else do callPdfLatexOnce
                           let needle = "LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right." -- This is the text of the warning that pdfLatex generates when a rerun is required.
+                          {- The log file should be renamed before reading, because readFile opens the file
+                             for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
+                             was read using readFile, it will fail because the file is still open. 8-((  
+                          -} 
                           renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
-                          haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))
+                          haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))  
                           let notReady = isInfixOf needle haystack
                           when notReady (verboseLn flags "Another round of pdfLatex is required. Hang on...")
                         --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
