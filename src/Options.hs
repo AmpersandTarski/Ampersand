@@ -87,14 +87,13 @@ checkLogName f   = return f{ logName   = case uncheckedLogName   f of
                                           Just s  -> s } 
                                                  
 checkDirOutput :: Options -> IO Options
-checkDirOutput f = do candidateDir 
-                         <- canonicalizePath (case uncheckedDirOutput f of
-                                                Nothing -> "."
-                                                Just s  -> s )
-                      verboseLn f ("Checking output directories...")
+checkDirOutput f = do verboseLn f ("Checking output directories...")
                       createDirectoryIfMissing True candidateDir 
                       return f{ dirOutput = candidateDir}
-
+                     where
+                         candidateDir =  (case uncheckedDirOutput f of
+                                                 Nothing -> "."
+                                                 Just s  -> s )
 checkExecOpts :: Options -> IO Options
 checkExecOpts f = do exePath <- findExecutable (progrName f)
                      return (case exePath of
@@ -106,24 +105,26 @@ checkExecOpts f = do exePath <- findExecutable (progrName f)
 
 checkProtoOpts :: Options -> IO Options
 checkProtoOpts f = if genPrototype f
-                    then do candidateDir
-                              <- canonicalizePath (case uncheckedDirPrototype f of
-                                                     Nothing -> "."
-                                                     Just s  -> s )
-                            createDirectoryIfMissing True candidateDir 
+                    then do createDirectoryIfMissing True candidateDir 
+                            verboseLn f (show candidateDir)
                             return f{ dirPrototype = candidateDir}
                     else return f {- No need for prototype options if no prototype will be generated. -}
+                     where
+                         candidateDir =  (case uncheckedDirPrototype f of
+                                                 Nothing -> "."
+                                                 Just s  -> s )
                    
                    
 checkAtlasOpts :: Options -> IO Options
 checkAtlasOpts f = if genAtlas f
-                    then do candidateDir
-                              <- canonicalizePath (case uncheckedDirAtlas f of
-                                                     Nothing -> "."
-                                                     Just s  -> s )
-                            createDirectoryIfMissing True candidateDir 
+                    then do createDirectoryIfMissing True candidateDir 
+                            verboseLn f (show candidateDir)
                             return f{ dirAtlas = candidateDir}
                     else return f {- No need for Atlas options if no prototype will be generated. -}
+                     where
+                         candidateDir =  (case uncheckedDirAtlas f of
+                                                 Nothing -> "."
+                                                 Just s  -> s )
 
 
             

@@ -138,7 +138,7 @@ doGenFspec fSpec flags
                           setCurrentDirectory (dirOutput flags)
                           verboseLn flags ("original directory: "++show curDir)
                           verboseLn flags ("now running in    : "++show (dirOutput flags))
-                          removeOldFiles
+                  --        removeOldFiles
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
                           verboseLn flags ("PdfLatex was called "++show nrOfRounds++" times"++
                                case ready of
@@ -146,10 +146,10 @@ doGenFspec fSpec flags
                                   False -> ", but did not solve all refferences!")
                           when ready (setCurrentDirectory curDir)                                
             where 
-              removeOldFiles :: IO()
-              removeOldFiles
-                = mapM_ dump ["aux","pdf","toc","bbl","blg","brf","idx","ilg","ind","out",  -- possible output of pdfLatex
-                              "log0","log1","log2","log3","log4"]  --logfiles created on the fly. 
+--              removeOldFiles :: IO()
+--              removeOldFiles
+--                = mapM_ dump ["aux","pdf","toc","bbl","blg","brf","idx","ilg","ind","out",  -- possible output of pdfLatex
+--                              "log0","log1","log2","log3","log4"]  --logfiles created on the fly. 
 
               dump :: String -> IO()
               dump extention =
