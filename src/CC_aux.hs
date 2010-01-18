@@ -424,10 +424,11 @@
 --   pTextln_pos        =   gsym_pos TkTextln    ""        ""
 --   pInteger_pos       =   pInteger10_pos
 
-   pString_val_pos, pVarid_val_pos, pConid_val_pos
+   pString_val_pos, pAtom_val_pos, pVarid_val_pos, pConid_val_pos
                       ::  IsParser p Token => p (String,FilePos)
 --   pInteger10_val_pos =   gsym_val_pos TkInteger10 ""        "1"
    pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
+   pAtom_val_pos      =   gsym_val_pos TkAtom      ""        "?ATOM?"
 --   pChar_val_pos      =   gsym_val_pos TkChar      ""        "'chr'"
    pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
    pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"

@@ -186,15 +186,20 @@
                         f t ('*':xs) = K0 (f t xs)
                         f t ('+':xs) = K1 (f t xs)
                         f t ('-':xs) = Cp (f t xs)
-                        f _ (_:_)   = error ("!Fatal (module CC 189). Consult your dealer!")
+                        f _ (_:_)    = error ("!Fatal (module CC 189). Consult your dealer!")
                         f t []       = t
 
    pMorphism        :: Parser Token Morphism
-   pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)                <|>
+   pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)             <|>
                        v'   <$ pKey "V" <*> pTwo                                                                 <|>
-                       rebuild <$> pVarid_val_pos <*> pTwo
+                       rebuild <$> pVarid_val_pos <*> pTwo                                                       <|>
+                       single  <$> pAtom 
+                               <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)
                        where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
                                                       (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/="") False [])
+                             single nm c = Mp1 nm                   -- mph1val
+                                               [c|c/=Anything]      -- mphats 
+                                               c                    -- mph1typ
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
                              v' []                  = V [] (cptAnything, cptAnything)

@@ -50,6 +50,7 @@
      | TkKeyword
      | TkOp
      | TkString
+     | TkAtom
      | TkChar
      | TkInteger8
      | TkInteger10
@@ -122,6 +123,7 @@
            (Tok TkOp        _  s2 i fn)  -> "operator "              ++ s2         ++ maybeshow i fn
            (Tok TkKeyword   _  s2 i fn)  ->                        show s2         ++ maybeshow i fn
            (Tok TkString    _  s2 i fn)  -> "string \""              ++ s2 ++ "\"" ++ maybeshow i fn
+           (Tok TkAtom      _  s2 i fn)  -> "atom '"                 ++ s2 ++ "'"  ++ maybeshow i fn
            (Tok TkChar      _  s2 i fn)  -> "character '"            ++ s2 ++ "'"  ++ maybeshow i fn
            (Tok TkInteger8  _  s2 i fn)  -> "octal integer "         ++ s2         ++ maybeshow i fn
            (Tok TkInteger10 _  s2 i fn)  -> "decimal Integer "       ++ s2         ++ maybeshow i fn
@@ -163,7 +165,7 @@
       isIdStart c = isLower c || c == '_'
 
       isIdChar c =  isAlphaNum c
-                 || c == '\''
+--               || c == '\''   -- character literals are not used in ADL. Since this scanner was used for Haskell-type languages, this alternative is commented out...
                  || c == '_'
 
       scanIdent p s = let (name,rest) = span isIdChar s
@@ -179,7 +181,15 @@
           in if null rest || head rest /= '"'
                 then errToken "Unterminated string literal" p fn : doScan (advc swidth p) rest
                 else token TkString s p fn : doScan (advc (swidth+2) p) (tail rest)
+{- In ADL, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
+   single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
+      doScan p ('\'':ss)
+        = let (s,swidth,rest) = scanAtom ss
+          in if null rest || head rest /= '\''
+                then errToken "Unterminated atom literal" p fn : doScan (advc swidth p) rest
+                else token TkAtom s p fn : doScan (advc (swidth+2) p) (tail rest)
 
+{- character literals are not used in ADL.  doScan p ('\'':ss) is commented out to make room for singleton atoms.
       doScan p ('\'':ss)
         = let (mc,cwidth,rest) = scanChar ss
           in case mc of
@@ -187,6 +197,7 @@
                Just c  -> if null rest || head rest /= '\''
                              then errToken "Unterminated character literal" p fn : doScan (advc (cwidth+1) p) rest
                              else token TkChar [c] p fn : doScan (advc (cwidth+2) p) (tail rest)
+-}
 
       -- In Haskell infix identifiers consist of three separate tokens(two backquotes + identifier)
       doScan p ('`':ss)
@@ -274,6 +285,16 @@
                        str' = maybe "" (:str) ch
                    in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
+   scanAtom []              = ("",0,[])
+   scanAtom ('\\':'&':xs)   = let (str,w,r) = scanAtom xs
+                              in (str,w+2,r)
+   scanAtom ('"':xs)        = let (str,w,r) = scanAtom xs
+                              in ('"': str,w+1,r)
+   scanAtom xs   = let (ch,cw,cr) = getchar xs
+                       (str,w,r)  = scanAtom cr
+                       str' = maybe "" (:str) ch
+                   in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
+
    scanChar ('"' :xs) = (Just '"',1,xs)
    scanChar xs        = getchar xs
 
@@ -299,7 +320,8 @@
                                     Nothing -> (Nothing,0,s)
                                     Just c  -> (Just c,1,xs)
      where cntrChars = [('a','\a'),('b','\b'),('f','\f'),('n','\n'),('r','\r'),('t','\t')
-                       ,('v','\v'),('\\','\\'),('"','\"'),('\'','\'')]
+                       ,('v','\v'),('\\','\\'),('"','\"')]
+-- character literals are not used in ADL. Since this scanner was used for Haskell-type languages, ('\'','\'') has been removed from cntrChars...
 
    readn base n = foldl (\r x  -> value x + base * r) 0 n
 
@@ -335,13 +357,14 @@
 
    gsym :: IsParser p Token => TokenType -> String -> String -> p String
    gsym kind val val2 = get_tok_val <$> pSym (Tok kind val val2 noPos "")
-   pString, pChar, pInteger8, pInteger10, pInteger16, pVarid, pConid,
+   pString, pAtom, pChar, pInteger8, pInteger10, pInteger16, pVarid, pConid,
      pTextnm, pTextln, pInteger  :: IsParser p Token => p String
    pOper name     =   gsym TkOp        name      name
    pKey  keyword  =   gsym TkKeyword   keyword   keyword
    pSpec s        =   gsym TkSymbol    [s]       [s]
 
    pString        =   gsym TkString    ""        ""
+   pAtom          =   gsym TkAtom      ""        ""
    pChar          =   gsym TkChar      ""        "\NUL"
    pInteger8      =   gsym TkInteger8  ""        "1"
    pInteger10     =   gsym TkInteger10 ""        "1"
