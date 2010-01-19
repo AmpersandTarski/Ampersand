@@ -196,7 +196,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   mphStmts (Relation mp@(I{}) i _) = [DeclExpr (Relation mp i unknowntype) True]
   mphStmts (Relation mp@(V{mphats=[c1,c2]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c2)) False]
   mphStmts (Relation mp@(V{}) i _) = [DeclExpr (Relation mp i unknowntype) False]
-  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
+  mphStmts (Relation mp@(Mp1{mphats=[c1]}) i _ ) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
+  mphStmts (Relation mp@(Mp1{}) i _ ) = [DeclExpr (Relation mp i unknowntype) True]
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Union exprs _) = concat $ map mphStmts exprs
@@ -267,7 +268,8 @@ enrichCtx cx@(Ctx{}) ctxs =
                   , mphats=map populate (mphats mp)}
       V{}   -> mp { mphtyp=popusign$mphtyp mp
                   , mphats=map populate (mphats mp)}
-      _     -> mp
+      Mp1{} -> mp { mph1typ=populate$mph1typ mp
+                  , mphats=map populate (mphats mp)}
       where popusign (s,t) = (populate s, populate t)
             popudecl d = head [ (head cl){decpopu = foldr1 uni (map decpopu cl)} |cl<-eqClass (==) ctxdecls, head cl==d]
   --DESCR -> Add population to concept
@@ -478,7 +480,7 @@ enrichCtx cx@(Ctx{}) ctxs =
                            --REMARK -> bind to the morphism from the gamma (with mphdcl set) = rel adlex
       I{} -> popuMphDecl$mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
       V{} -> popuMphDecl$mp {mphtyp=(ec1,ec2)}
-      _ -> mp --TODO -> other morphisms are returned as parsed, is this correct?
+      Mp1{} -> popuMphDecl$mp {mph1typ=ec1}
     else error  $ "!Fatal (module TypeChecker 481): function enrichCtx.bindSubexpr: " ++
                   "Morphisms are different: \nOriginal: " ++ show mp ++ "\nType checked: " ++ show (rel adlex)       
   bindSubexpr x y = error $ "!Fatal (module TypeChecker 483): function enrichCtx.bindSubexpr: " ++

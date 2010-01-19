@@ -135,21 +135,21 @@ where
                         Rfx-> Implication
            , rrant = case prp of
                         Uni-> F [flp r,r] 
-                        Tot-> i
+                        Tot-> i$sign$F [r,flp r]
                         Inj-> F [r,flp r]
-                        Sur-> i
+                        Sur-> i$sign$F [flp r,r]
                         Sym-> r
                         Asy-> Fi [flp r,r]
                         Trn-> F [r,r]
-                        Rfx-> i 
+                        Rfx-> i$sign r 
            , rrfps = pos d
            , rrcon = case prp of
-                        Uni-> i
+                        Uni-> i$sign$F [flp r,r]
                         Tot-> F [r,flp r]
-                        Inj-> i
+                        Inj-> i$sign$F [r,flp r]
                         Sur-> F [flp r,r]
                         Sym-> flp r
-                        Asy-> i
+                        Asy-> i$sign$Fi [flp r,r]
                         Trn-> r
                         Rfx-> r
            , rrxpl = case prp of
@@ -162,14 +162,14 @@ where
                         Inj-> name d++"["++name (source d)++"*"++name (target d)++"] is injective"
                         Tot-> name d++"["++name (source d)++"*"++name (target d)++"] is total"
            , rrtyp = case prp of
-                        Sym-> (source d,source d)
-                        Asy-> (source d,source d)
-                        Trn-> (source d,source d)
-                        Rfx-> (source d,source d)
-                        Uni-> (source d,target d)
-                        Sur-> (source d,target d)
-                        Inj-> (source d,target d)
-                        Tot-> (source d,target d)
+                        Uni-> sign$F [flp r,r]
+                        Tot-> sign$F [r,flp r]
+                        Inj-> sign$F [r,flp r]
+                        Sur-> sign$F [flp r,r]
+                        Sym-> h$sign r
+                        Asy-> h$sign r
+                        Trn-> h$sign r
+                        Rfx-> h$sign r
            , rrdcl = (Just (prp,d))       -- For traceability: The original property and declaration.
            , runum = 0                    -- Rules will be renumbered after enriching the context
            , r_pat = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
@@ -178,7 +178,10 @@ where
            , srrel = d{decnm=show prp++name d}
            }
           where
-           i = Tm $ mIs Anything
+           i (x,y) | x==y = Tm $ mIs x
+                   | otherwise = error ("!Fatal (module Rule 182): Bad multiplicity rule, the identity must be homogeneous.")
+           h (x,y) | x==y = (x,y)
+                   | otherwise = error ("!Fatal (module Rule 184): Bad homogeneous rule, the relation must be homogeneous.")
            r = Tm $ Mph (name d) (pos d) [] (source d,target d) True d 
-   rulefromProp _ _ = error ("!Fatal (module Rule 177): Properties can only be set on user-defined Declarations.")
+   rulefromProp _ _ = error ("!Fatal (module Rule 186): Properties can only be set on user-defined Declarations.")
     

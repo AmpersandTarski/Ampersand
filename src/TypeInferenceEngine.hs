@@ -51,7 +51,8 @@ infertype fSpec eor = (inftype,proof)
   mphStmts (Relation mp@(I{}) i _) = [DeclExpr (Relation mp i unknowntype) True]
   mphStmts (Relation mp@(V{mphats=[c1,c2]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c2)) False]
   mphStmts (Relation mp@(V{}) i _) = [DeclExpr (Relation mp i unknowntype) False]
-  mphStmts (Relation (Mp1{}) _ _ ) = [] --TODO -> ???
+  mphStmts (Relation mp@(Mp1{mphats=[c1]}) i _ ) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
+  mphStmts (Relation mp@(Mp1{}) i _ ) = [DeclExpr (Relation mp i unknowntype) True]
   mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
   mphStmts (Union exprs _) = concat $ map mphStmts exprs
@@ -265,6 +266,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
          Mph{mphats=[x,y], mphyin=False} -> (y,x,True)
          I{mphats=[x]} -> (x,x,True)
          V{mphats=[x,y]} -> (x,y,True)
+         Mp1{mphats=[x]} -> (x,x,True)
          _ -> let nomphatserr = error $ show $ "!Fatal (module TypeInferenceEngine 270): bindMphats: Do not bind mphats because there aren't any."
               in (nomphatserr,nomphatserr,False)
      --get the concept variable from the BoundTo statement to bind the first mphat to 

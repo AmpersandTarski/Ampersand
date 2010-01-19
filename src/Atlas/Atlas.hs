@@ -85,7 +85,7 @@ data PicLinkType = PicFS | PicPat String | PicRule String deriving (Eq)
 --hdbc and hdbc-odbc must be installed (from hackage)
 fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
- if not(graphics flags) then do 
+ if not(graphics flags) then do
     verboseLn flags "Populating atlas for ..."
     --connect through ODBC data source "atlas"
     conn<-connectODBC "DSN=atlas"
@@ -143,6 +143,10 @@ fillAtlas fSpec flags =
 -- enige informatie hierover staat op http://www.wellho.net/resources/ex.php4?item=h112/imap.php
 -- Het enige dat vervolgens geregeld moet worden is dat in DOT de nodes /edges moeten worden voorzien van de juiste URL attribuut. 
 -- Dat kan voor jou niet moeilijk zijn. Als je dat regelt, dan vallen alle stukjes op z'n plaats. Succ6! 
+--GMI:
+--Dank Han!
+--TODO -> "include (str_replace('png','map', $v0));" op een nette manier laten genereren op juiste plekken in .php zonder gebruik van str_replace natuurlijk.
+--TODO -> .map files zijn nog vrij leeg (geen areas, slechts header/footer)
              case result2 of 
                 ExitSuccess   -> putStrLn (" "++mapfile++" created.")
                 ExitFailure x -> putStrLn ("Failure: " ++ show x)
@@ -179,7 +183,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x]|x<-cpts]
-   pop' ATContains = [[relpred x,show y]| x<-declarations fSpec,not$isSignal x, y<-contents x]
+   pop' ATContains = [[relpred x,show y]| x<-declarations fSpec,decusr x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets]
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
  --  pop' ATExpression = [] --TODO - generalisation must be fixed first in -p of atlas
@@ -188,14 +192,14 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATPicture = [[x]|(_,x)<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrules]
-   pop' ATPair = [[show y]| x<-declarations fSpec,not$isSignal x, y<-contents x]
+   pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
    pop' ATPattern = [[name x,pic]| x<-patterns fSpec,(PicPat pn,pic)<-pics, pn==name x]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
-   pop' ATRelation = ["I",""]:["V",""]:[[relpred x,name p]|p<-patterns fSpec, x<-declarations p,not$isSignal x] --REMARK -> decls from pat instead of fSpec!
-   pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,not$isSignal x]
+   pop' ATRelation = ["I",""]:["V",""]:[[relpred x,name p]|p<-patterns fSpec, x<-declarations p,decusr x] --REMARK -> decls from pat instead of fSpec!
+   pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
    pop' ATService = [[name fSpec,x]|(PicFS,x)<-pics]
-   pop' ATType = [t x|x<-declarations fSpec,not$isSignal x] ++ [t x|x<-atlasrules]
+   pop' ATType = [t x|x<-declarations fSpec,decusr x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
    pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,pic,r_pat x,cptrule$prevrule x userrules,cptrule$nextrule x userrules]|x<-userrules,(PicRule rn,pic)<-pics, rn==name x]
    --convert pair to violation message
@@ -241,7 +245,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
       isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
       isI (Tm (I{})) = True
       isI _ = False
-   multrules = [rulefromProp p d|d<-declarations fSpec, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
+   multrules = [rulefromProp p d |d<-declarations fSpec, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
    homorules =  [rulefromProp p d|d<-declarations fSpec, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
 
 placeholders :: [a] -> String

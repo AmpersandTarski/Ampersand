@@ -268,12 +268,10 @@ verbosephpOpt  :: Options -> Options
 verbosephpOpt opts = opts{verbosephp  = True}          
 prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts 
-  = opts { dirPrototype = 
+  = opts { uncheckedDirPrototype = 
             case nm of
-              Just s  -> s
-              Nothing -> case uncheckedDirPrototype opts of
-                           Just s -> s
-                           Nothing -> "."
+              Just s  -> nm
+              Nothing -> uncheckedDirPrototype opts
          ,genPrototype = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
@@ -286,12 +284,10 @@ userOpt :: String -> Options -> Options
 userOpt x opts = opts{userAtlas = x}
 atlasOpt :: Maybe String -> Options -> Options
 atlasOpt nm opts 
-  = opts { dirAtlas = 
+  = opts { uncheckedDirAtlas=
             case nm of
-              Just s  -> s
-              Nothing -> case uncheckedDirAtlas opts of
-                           Just s -> s
-                           Nothing -> "."
+              Just s  -> nm
+              Nothing -> uncheckedDirAtlas opts
          ,genAtlas = True}
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}

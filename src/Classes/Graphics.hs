@@ -30,7 +30,7 @@ instance Dotable Concept where
           idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts'  = concs rs `uni` concs ss
           dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
                     , not (isProp d)     -- d is not a property
@@ -43,7 +43,7 @@ instance Dotable Pattern where
           idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           Isa gs _ = isa fSpec 
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts'  = concs pat
           dcls = [d| d@Sgn{}<-declarations pat, decusr d] `uni` decls pat
 
@@ -56,7 +56,7 @@ instance Dotable Fservice where
           idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts'  = concs rs `uni` concs ss
           dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
                     , not (isProp   d)    -- d is not a property
@@ -68,7 +68,7 @@ instance Dotable Rule where
           idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,_)<-gs] ++ [s|(_,s)<-gs]
+          cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts' = concs r
           dcls = [d | d@Sgn{}<-decls r]
 

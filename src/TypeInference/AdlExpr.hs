@@ -65,9 +65,11 @@ fromExpression expr = fst (uniqueMphsE 0 expr)
 --REMARK -> there will never be a Flip, because it is parsed flippedwise. The Flip is still implemented for other parse trees than the current ADL parse tree.
 uniqueMphsE :: Int -> Expression -> (AdlExpr,Int)
 uniqueMphsE i (Tm mp@(Mph{mphyin=False})) = (Flip (Relation mp (i+1) (fromSign $ sign mp)) unknowntype,i+1)
+uniqueMphsE i (Tm mp@(Mph{mphyin=True})) = (Relation mp (i+1) (fromSign $ sign mp),i+1)
 --REMARK -> implementation of sign of I{} is not the implementation needed.
 uniqueMphsE i (Tm mp@(I{})) = (Relation mp (i+1) (fromSign $ (mphspc mp, mphspc mp)),i+1)
-uniqueMphsE i (Tm mp) = (Relation mp (i+1) (fromSign $ sign mp),i+1)
+uniqueMphsE i (Tm mp@(V{})) = (Relation mp (i+1) (fromSign $ sign mp),i+1)
+uniqueMphsE i (Tm mp@(Mp1{})) = (Relation mp (i+1) (fromSign $ (mph1typ mp,mph1typ mp)),i+1)
 uniqueMphsE _ (F []) = error $ "Error in AdlExpr.hs module TypeInference.AdlExpr function uniqueMphsE: " ++
                                "Expression has no sub expressions"++show (F [])++"." 
 uniqueMphsE i (F (ex:rexs)) = (Semicolon (fst lft) (fst rght) unknowntype, snd rght)

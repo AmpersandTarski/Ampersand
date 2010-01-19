@@ -155,8 +155,8 @@ ENDPATTERN
 
 SERVICE Overzicht : I[ONE]
    = [ Patterns{"DISPLAY=Pattern.display"} : V[ONE*Pattern];(user;s;user[Pattern*User]~ /\ script;s;script~) 
-        = [ violated_rules : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
-         , property_violations_on : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
+        = [ violated_rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
+         , property_violations_on{"DISPLAY=Relation.display"} : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
           ]
      , "Conceptual diagram"{"PICTURE"}: V[ONE*Service];(user;s;user[Service*User]~ /\ script;s;script~);picture;display
      ]
