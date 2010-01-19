@@ -4,13 +4,14 @@ where
    import Adl.Context                 (Context(..))
    import Adl.Pattern                 (Pattern(..))
    import Adl.Gen                     (Gen(..))
-   import Adl.Rule                    (Rule(..))
+   import Adl.Rule                    (Rule(..), rulefromProp, ruleviolations)
    import Adl.ObjectDef               (ObjectDef(..))
    import Adl.KeyDef                  (KeyDef(..))
    import Adl.MorphismAndDeclaration  (Declaration,mIs)
    import Adl.Concept                 (Concept(..),Morphic(..))
    import Adl.ConceptDef              (ConceptDef)
    import Adl.Expression              (Expression(..))
+   import Adl.Pair                    (Paire)
    import Adl.FilePos                 (Numbered(..),FilePos(..))
    import Classes.Morphical           (Morphical(..))
    import Collection                  (Collection(..))
@@ -25,11 +26,16 @@ where
                                         --   which are not signal-, not multiplicity-, and not key rules.
      signals      :: a -> [Rule]        -- all signals that are visible within this viewpoint
                                         -- all relations used in signals and rules must have a valid declaration in the same viewpoint.
+     multrules    :: a -> [Rule]        -- all multiplicityrules that are maintained within this viewpoint.
+     multrules x = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
      objDefs      :: a -> [ObjectDef]
      keyDefs      :: a -> [KeyDef]      -- all keys that are defined in a
      gens         :: a -> [Gen]         -- all generalizations that are valid within this viewpoint
      patterns     :: a -> [Pattern]     -- all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept
+     --TODO -> there are more rules than rules+multrules that can be violated
+     violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
+     violations x = [(r,viol) |r<-(rules x) ++ (multrules x), viol<-ruleviolations r] 
 
    instance ViewPoint a => ViewPoint [a] where
     objectdef _      = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -42,11 +48,13 @@ where
     declarations xs  = (rd . concat. map declarations) xs
     rules xs         = (concat. map rules) xs
     signals xs       = (concat. map signals) xs
+    multrules xs     = (concat. map multrules) xs
     objDefs xs       = (concat . map objDefs) xs
     keyDefs xs       = (concat . map keyDefs) xs
     gens xs          = (rd . concat. map gens) xs
     patterns         = rd' name.concat.map patterns -- TODO: nagaan waar wordt afgedwongen dat elk pattern door zijn naam identificeerbaar is.
     isa              = foldr uni empty.map isa
+    violations xs    = (concat. map violations) xs
 
    instance ViewPoint Context where
     objectdef    context = Obj { objnm   = name context

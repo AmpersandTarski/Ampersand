@@ -2,7 +2,7 @@
 module Adl ( Architecture(..)
            , Context(..),Contexts
            , Pattern(..),Patterns,union
-           , Rule(..),Rules,consequent, rulefromProp
+           , Rule(..),Rules,consequent, rulefromProp, ruleviolations
            , KeyDef(..),KeyDefs,Key(..)
            , Population(..),Populations
            , ObjectDef(..),ObjectDefs
@@ -67,7 +67,7 @@ where
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
-                                         ,RuleType(..),multRules,rulefromProp, isaRule
+                                         ,RuleType(..),multRules,rulefromProp, isaRule, ruleviolations
                                          ,consequent,antecedent,ruleType
                                          ,normExpr)
    import Classes.Morphical              (Morphical(..))

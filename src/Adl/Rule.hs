@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Rule    ( Rule(..),Rules
                    , RuleType(..)
-                   , consequent, antecedent, ruleType, normExpr, multRules, rulefromProp, isaRule)     
+                   , consequent, antecedent, ruleType, normExpr, multRules, rulefromProp, isaRule, ruleviolations)     
 where
    import Adl.FilePos                   ( FilePos(..),Numbered(..))
    import Adl.Concept                   ( Concept(..)
@@ -10,6 +10,7 @@ where
    import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..),mIs)
    import Adl.Expression                ( Expression(..),v,notCp)
    import Adl.Prop
+   import Classes.Populated
    import CommonClasses                 ( Identified(..)
                                         , Explained(explain))
                                            
@@ -114,6 +115,14 @@ where
                    
    consequent :: Rule -> Expression
    consequent r = rrcon r
+
+   ruleviolations (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
+       | rtyp==Truth = contents$Cp con --everything not in con
+       | rtyp==Implication = ant `contentsnotin` con 
+       | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
+       where
+       contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
+   ruleviolations _ = []
 
    multRules :: Declaration -> [Rule]
    multRules d@(Sgn{})

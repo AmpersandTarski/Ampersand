@@ -42,20 +42,12 @@
                  , pictCD       = Nothing
                  , pictSB       = Nothing
                  , themes       = themes'
-                 , violations   = [(r,viol) |r<-rules context, viol<-ruleviols r]
                  , vctxenv      = ctxenv context
                  }
         allDecs = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
                                           `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
                   | d<-declarations context, deciss d || decusr d
                   ]
-        ruleviols (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
-            | rtyp==Truth = contents$Cp con --everything not in con
-            | rtyp==Implication = ant `contentsnotin` con 
-            | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
-            where
-            contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
-        ruleviols _ = [] 
         definedplugs = vsqlplugs ++ vphpplugs
 -- maybe useful later...
 --        conc2plug :: Concept -> Plug

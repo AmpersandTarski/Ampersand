@@ -191,7 +191,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
    pop' ATPicture = [[x]|(_,x)<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
-   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrules]
+   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
    pop' ATPattern = [[name x,pic]| x<-patterns fSpec,(PicPat pn,pic)<-pics, pn==name x]
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
@@ -234,18 +234,18 @@ insertpops conn fSpec flags (tbl:tbls) pics =
              | otherwise = []
    cpttype x = name(source x)++"*"++(name$target x)
    --DESCR -> userrules are user-defined rules, 
-   --         multrules are rules defined by a multiplicity, 
+   --         multrls are rules defined by a multiplicity, 
    --         homorules by a homogeneous property
    --         the rule from an ISA declaration (I[spec] |- I[gen]) is not presented as a rule in the atlas
    --TODO -> key rules (they have been put in pattern "")
    --TODO -> rulefromProp has not been type inferred, p.e. generates I[Anything]. Will there be violations on them in fSpec????? 
-   atlasrules = userrules ++ multrules ++ homorules
+   atlasrules = userrules ++ multrls ++ homorules
    userrules = sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]
       where 
       isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
       isI (Tm (I{})) = True
       isI _ = False
-   multrules = [rulefromProp p d |d<-declarations fSpec, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
+   multrls = [rulefromProp p d |d<-declarations fSpec, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
    homorules =  [rulefromProp p d|d<-declarations fSpec, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
 
 placeholders :: [a] -> String
