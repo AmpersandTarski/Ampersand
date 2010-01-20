@@ -1,7 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Population (Population(..),Populations) 
 where
-   import Adl.MorphismAndDeclaration   (Morphism)
+   import Adl.MorphismAndDeclaration   (Morphism())
+   import CommonClasses                (Identified(..))
    import Adl.Pair                     (Pairs)
    import Adl.Concept                  (Association(..))
    
@@ -14,4 +15,5 @@ where
    instance Association Population where
      source pop = source (popm pop)
      target pop = target (popm pop)
+
  

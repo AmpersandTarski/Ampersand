@@ -79,7 +79,7 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
   -- check6 = checkSvcLabels ctxs
    checkresult = if null check1 then 
                     if null check2 then 
-                       if null check4 then
+                       if null check4 then 
                           if null check5 then 
                         --     if null check6 then 
                                 if null check3 then [] 
@@ -147,7 +147,7 @@ enrichCtx cx@(Ctx{}) ctxs =
    ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxCtxKeys, (proof,fp,expr)<-proofs]
    ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxPatKeys, (proof,fp,expr)<-proofs]
-  )
+  ) 
                            {-
                            (ctxnm cx)   --copy name
                            (ctxon cx)   --copy extended ctxs
@@ -252,9 +252,22 @@ enrichCtx cx@(Ctx{}) ctxs =
   ctxdecls =  [d{desrc=populate$desrc d, detrg=populate$detrg d} | d@Sgn{}<-popuRels]
   --DESCR -> Determines domain and range population per declaration (i.e. relation)
   --REMARK -> concepts have no population, use ctxdecls instead if needed.
-  popuRels = [d{decpopu=decpopu d++
-                        [pairx | pop<-ctxpops cx, comparepopanddecl (declarations cx) (popm pop) d, pairx<-popps pop]}
-             |d<-declarations cx]
+  popuRels :: Declarations
+  popuRels = mygroupby matches (declarations ctxs)
+      where
+      matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations ctxs) pop) | cx<-ctxs, pop<-ctxpops cx]] 
+      mygroupby :: [(Population, Declaration)] -> Declarations -> Declarations
+      mygroupby [] res = res
+      mygroupby ((p,d):pds) res = mygroupby pds addxtores
+        where 
+        signpos d d' = d==d' && decfpos d==decfpos d'
+        inres = length [()|d'<-res, signpos d d']==1
+        addxtores = 
+          if inres --ONLY d' is used for merge, while decfpos d==decfpos d'
+          then [mrg d' p|d'<-res, signpos d d']++[d'|d'<-res, not(signpos d d')] 
+          else (mrg d p):res        
+        mrg d p = d{decpopu=decpopu d++[pairx | pairx<-popps p]}
+ 
   --DESCR -> Determines source and target population based on domains and ranges of all relations
   --         Source and target need to be provided, because it can differ from the sign of the relation
   --         The morphism (in an expression) refering to this relation determines the type.
@@ -271,13 +284,20 @@ enrichCtx cx@(Ctx{}) ctxs =
       Mp1{} -> mp { mph1typ=populate$mph1typ mp
                   , mphats=map populate (mphats mp)}
       where popusign (s,t) = (populate s, populate t)
-            popudecl d = head [ (head cl){decpopu = foldr1 uni (map decpopu cl)} |cl<-eqClass (==) ctxdecls, head cl==d]
+            --lookup the populated declaration in popuRels
+            popudecl d = 
+              if null allpopd then d 
+              else if length allpopd==1 then head allpopd
+                   else error$ "!Fatal (module Typechecker 275): function popuMphDecl: " ++
+                               "More than one declaration matching morphism "++show (mphnm mp)
+                             ++" at "++show (mphpos mp)
+                             ++".(remark for developer) Remove duplicate signatures from popuRels if you want to allow this."
+               where allpopd = [popd|popd<-popuRels, d==popd] 
   --DESCR -> Add population to concept
   populate :: Concept -> Concept
   populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,elem (source d,c) isatree]
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
-
 
   ctxPatKeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
   ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   
@@ -547,49 +567,36 @@ checkLabels svcs =
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
 checkPopulations :: Contexts -> Errors
-checkPopulations ctxs = if null unrelated then []
-    else if null (related$head$unrelated)
-         then ["Population of " ++ show (popm$head unrelated) ++ " cannot be related to any relation declaration " 
-            ++ show (mphpos$popm$head unrelated)]
-         else ["Population "++show (popm$head unrelated)++" at "++show (mphpos$popm$head unrelated)++"\n"
-              ++ "can be related to multiple relation declarations:\n" 
-              ++ (concat (related$head$unrelated))]
-    where
-    unrelated = [pop| cx<-ctxs, pop<-ctxpops cx
-                    , length (related pop) /= 1]
-    related pop = [name d++"["++show (source d)++"*"++show (target d)++"]"++" "++show (decfpos d)++"\n"
-                  | d<-declarations ctxs, comparepopanddecl (declarations ctxs) (popm pop) d]
+checkPopulations ctxs = [err|Right err<-[popdeclaration (declarations ctxs) pop | cx<-ctxs, pop<-ctxpops cx]]
 
 
 ------------------
 --Common functions
 ------------------
 
+--DESCR -> If no declaration can be found than an error message is returned
+popdeclaration :: [Declaration] -> Population ->  Either Declaration String
+popdeclaration ds p = 
+   if length allmatches==1 then Left(head allmatches)
+   else if null allmatches
+        then Right$"Population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
+                ++ " cannot be related to any relation declaration."
+        else Right$"Population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
+                ++ "can be related to multiple relation declarations:\n" 
+                ++ concat [show x ++ "\n"|x<-allmatches]
+    where
+    allmatches = [d|d@(Sgn{})<-ds, matches d (popm p)]
+    matches d (Mph{mphnm=popnm, mphats=[c1,c2]}) = popnm==name d && c1==source d && c2==target d
+    matches d (Mph{mphnm=popnm, mphats=[]})      = popnm==name d
+    matches _ m = error $ "!Fatal (module Population 24): function popdeclaration: " ++
+                   "Unrecognized population morphism "++show (mphnm m)++" at "++show (mphpos m)++"."
+
+
 --DESCR -> function elem provided with own equality function
 --USE   -> use when not instance Eq a or if another predicate is needed then implemented by instance Eq a
 elemBy :: (a->a->Bool)->a->[a]->Bool
 elemBy _ _ [] = False --not in list
 elemBy eq el (el':els) = (eq el el') || (elemBy eq el els)
-
---DESCR -> compare function to compare the morphism identity of a population and a declaration
---         the population morphism is parsed with a declaration with source and target Anything 
---         so I need to use the mphats to compare and thus I can't use makeDeclaration
-comparepopanddecl :: Declarations -> Morphism -> Declaration -> Bool
-comparepopanddecl _ (Mph{mphnm=popnm, mphats=[c1,c2]}) d = popnm==name d && c1==source d && c2==target d
-comparepopanddecl ds (Mph{mphnm=popnm, mphats=[], mphpos=mpos}) _ = 
-   case onedecl popnm ds of
-        Just True -> True
-        _         -> error $ "!Fatal (module TypeChecker 589): function comparepopanddecl: " ++
-                     "Ambiguous population "++show popnm++" at "++show mpos++"\nDefine a type on the population name."
-comparepopanddecl _ _ _ = False
-
-onedecl :: String -> Declarations -> Maybe Bool
-onedecl _ [] = Nothing
-onedecl nm (d:ds) = if nm==name d then
-                      case (onedecl nm ds) of 
-                           Nothing -> Just True
-                           _       -> Just False
-                    else (onedecl nm ds)
 
 ------------------------------------------------------------------------------------------------
 --Context part: later in separate module

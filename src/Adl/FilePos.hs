@@ -14,6 +14,10 @@ where
                  (FilePos(a,b,c),FilePos(a',b',c'))
                                    -> a==a' && b==b' && c==c'
                  (_,_)             -> False
+
+   instance Ord FilePos where
+       compare f f' = compare (nr f) (nr f')
+
 --   posNone :: FilePos
 --   posNone = FilePos ("",noPos,"")
 --   instance Ord Pos where
