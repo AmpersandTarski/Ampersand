@@ -18,17 +18,13 @@ import Strings               (chain)
 data Options = Options { contextName   :: Maybe String
                        , showVersion   :: Bool
                        , showHelp      :: Bool
-        --             , verbose       :: String -> IO ()  -- vervangt putStr -- Voor de fijnproevers: Een functie kan hier ook! ;-)) 
-                --       , verboseLn     :: String -> IO ()  -- vervangt putStrLn
                        , verboseP      :: Bool
                        , genPrototype  :: Bool 
-                       , uncheckedDirPrototype  :: Maybe String
-                       , dirPrototype  :: String
+                       , dirPrototype  :: String  -- the directory to generate the prototype in.
                        , allServices   :: Bool
                        , dbName        :: String
                        , genAtlas      :: Bool
-                       , uncheckedDirAtlas      :: Maybe String
-                       , dirAtlas      :: String
+                       , dirAtlas      :: String  -- the directory to generate the atlas in.
                        , userAtlas     :: String
                        , genXML        :: Bool
                        , genFspec      :: Bool
@@ -37,20 +33,18 @@ data Options = Options { contextName   :: Maybe String
                        , flgSwitchboard:: Bool   -- if True, switchboard graphics will be generated in the functional spec.
                        , proofs        :: Bool
                        , haskell       :: Bool
-                       , uncheckedDirOutput     :: Maybe String
-                       , dirOutput     :: String     
+                       , dirOutput     :: String -- the directory to generate the output in.
                        , beeper        :: Bool
                        , crowfoot      :: Bool
                        , dotStyle      :: Int
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
-                       , texHdrFile    :: Maybe String -- the string represents a FilePath to customheader.tex
+                       , texHdrFile    :: String --the string represents a FilePath to customheader.tex
                        , progrName     :: String --The name of the adl executable
                        , adlFileName   :: String
                        , baseName      :: String
                        , logName       :: String
                        , genTime       :: ClockTime
-                       , uncheckedLogName :: Maybe String
                        , services      :: Bool
                        , test          :: Bool
                        , sqlLogPwdDefd :: Bool
@@ -60,75 +54,111 @@ data Options = Options { contextName   :: Maybe String
                        , verbosephp    :: Bool
                        } deriving Show
     
-data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
-allFspecFormats :: String
-allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 getOptions :: IO Options
-getOptions = 
+getOptions =
    do args     <- getArgs
       progName <- getProgName
-      env      <- getEnvironment
-      genTime' <- getClockTime
-      flags    <- case getOpt Permute (each options) args of
-                      (o,n,[])    -> return (foldl (flip id) (defaultOptions genTime' env n progName) o )
-                      (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
-      checkMonadicOptions flags
+      defaultOpts <- defaultOptionsM
+      (flags,fNames)  <- case getOpt Permute (each options) args of
+                         (o,n,[])    -> return ((foldl (flip id) (defaultOpts) o ),n)
+                         (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
+      checkOptionsAndFileNameM (flags,fNames)
+  where 
+     defaultOptionsM :: IO(Options)
+     defaultOptionsM  =
+           do clocktime <- getClockTime
+              progName <- getProgName
+              exePath <- findExecutable progName
+              env <- getEnvironment
+              return
+               Options{ genTime                = clocktime
+                      , dirAtlas      = case lookup envdirAtlas     env of
+                                          Just str -> str
+                                          Nothing  -> "."
+                      , dirOutput     = case lookup envdirOutput    env of
+                                          Just str -> str
+                                          Nothing  -> "."
+                      , dirPrototype  = case lookup envdirPrototype env of
+                                          Just str -> str
+                                          Nothing  -> "."
+                      , dbName        = case lookup envdbName       env of
+                                          Just str -> str
+                                          Nothing  -> ""
+                      , logName       = case lookup envlogName      env of
+                                          Just str -> str
+                                          Nothing  -> "ADL.log"
+                      , dirExec       = case exePath of
+                                          Nothing -> error ("!Fatal (module Options 126): Specify the path location of "++progName++" in your system PATH variable.")
+                                          Just s  -> takeDirectory s
+                      , contextName   = Nothing
+                      , showVersion   = False
+                      , showHelp      = False
+                      , verboseP      = False
+                      , verbosephp    = False
+                      , genPrototype  = False
+                      , allServices   = False
+                      , genAtlas      = False   
+                      , userAtlas     = []
+                      , genXML        = False
+                      , genFspec      = False 
+                      , fspecFormat   = error ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
+                      , graphics      = True
+                      , flgSwitchboard= False
+                      , proofs        = False
+                      , haskell       = False
+                  --    , texHdrFile    = Nothing
+                      , texHdrFile    = error ("!Fatal (module Options 120): Specify the path location of "++progName)++" in your system PATH variable."
+                      , beeper        = False
+                      , crowfoot      = False
+                      , dotStyle      = 1
+                      , language      = Dutch
+                      , progrName     = progName
+                      , adlFileName   = error ("!Fatal (module Options 123): no default value for adlFileName.")
+                      , baseName      = error ("!Fatal (module Options 124): no default value for baseName.")
+                      , services      = False
+                      , test          = False
+                      , sqlLogPwdDefd = False
+                      , sqlHost       = "localhost"
+                      , sqlLogin      = "root"
+                      , sqlPwd        = ""
+                      }
 
-checkMonadicOptions :: Options -> IO(Options)
-checkMonadicOptions  = checkLogName 
-                   >=> checkDirOutput
-                   >=> checkExecOpts
-                   >=> checkProtoOpts
-                   >=> checkAtlasOpts 
 
-checkLogName :: Options -> IO Options
-checkLogName f   = return f{ logName   = case uncheckedLogName   f of 
-                                          Nothing -> "ADL.log"
-                                          Just s  -> s } 
-                                                 
-checkDirOutput :: Options -> IO Options
-checkDirOutput f = do verboseLn f ("Checking output directories...")
-                      createDirectoryIfMissing True candidateDir 
-                      return f{ dirOutput = candidateDir}
-                     where
-                         candidateDir =  (case uncheckedDirOutput f of
-                                                 Nothing -> "."
-                                                 Just s  -> s )
-checkExecOpts :: Options -> IO Options
-checkExecOpts f = do exePath <- findExecutable (progrName f)
-                     return (case exePath of
-                               Nothing -> f{dirExec=error ("!Fatal (module Options 126): Specify the path location of "++(progrName f)++" in your system PATH variable.")
-                                           ,texHdrFile=error ("!Fatal (module Options 127): Specify the path location of "++(progrName f)++" in your system PATH variable.")
-                                           }
-                               Just s ->  f{dirExec=takeDirectory s}
-                            ) 
 
-checkProtoOpts :: Options -> IO Options
-checkProtoOpts f = if genPrototype f
-                    then do createDirectoryIfMissing True candidateDir 
-                            verboseLn f (show candidateDir)
-                            return f{ dirPrototype = candidateDir}
-                    else return f {- No need for prototype options if no prototype will be generated. -}
-                     where
-                         candidateDir =  (case uncheckedDirPrototype f of
-                                                 Nothing -> "."
-                                                 Just s  -> s )
-                   
-                   
-checkAtlasOpts :: Options -> IO Options
-checkAtlasOpts f = if genAtlas f
-                    then do createDirectoryIfMissing True candidateDir 
-                            verboseLn f (show candidateDir)
-                            return f{ dirAtlas = candidateDir}
-                    else return f {- No need for Atlas options if no prototype will be generated. -}
-                     where
-                         candidateDir =  (case uncheckedDirAtlas f of
-                                                 Nothing -> "."
-                                                 Just s  -> s )
 
+     checkOptionsAndFileNameM :: (Options,[String]) -> IO(Options)
+     checkOptionsAndFileNameM (flags,fNames) = 
+           case fNames of
+              []      -> error ("no file to parse" ++usageInfo'' (progrName flags))
+              [fName] -> verboseLn flags ("Checking output directories...")
+                      >> checkLogName flags
+                      >> checkDirOutput flags
+                      >> checkExecOpts flags
+                      >> checkProtoOpts flags
+                      >> checkAtlasOpts flags
+                      >> return flags { adlFileName = replaceExtension fName ".adl"
+                                      , baseName    = takeBaseName fName
+                                      }
+              x:xs    -> error ("too many files: "++ show (x:xs) ++usageInfo'' (progrName flags))
+       
+       where
+          checkLogName :: Options -> IO ()
+          checkLogName   f = createDirectoryIfMissing True (takeDirectory (logName f))
+          checkDirOutput :: Options -> IO ()
+          checkDirOutput f = createDirectoryIfMissing True (dirOutput f)
+
+          checkExecOpts :: Options -> IO ()
+          checkExecOpts f = do execPath <- findExecutable (progrName f) 
+                               when (execPath == Nothing) 
+                                    (error ("!Fatal (module Options 162): Specify the path location of "++(progrName f)++" in your system PATH variable."))
+          checkProtoOpts :: Options -> IO ()
+          checkProtoOpts f = when (genPrototype f) (createDirectoryIfMissing True (dirPrototype f))
+          checkAtlasOpts :: Options -> IO ()
+          checkAtlasOpts f = when (genAtlas f)     (createDirectoryIfMissing True (dirAtlas     f))
 
             
 data DisplayMode = Public | Hidden 
+data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
     
 usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.  
@@ -192,58 +222,6 @@ options = map pp
                           | length (unwords totnu) < b - length w = afkappen regels (totnu++[w]) ws b
                           | otherwise                             = afkappen (regels++[totnu]) [w] ws b     
            
-defaultOptions :: ClockTime -> [(String, String)] -> [String] -> String -> Options
-defaultOptions clocktime env fNames pName 
-               = Options { contextName   = Nothing
-                         , showVersion   = False
-                         , showHelp      = False
-                                     , verboseP      = False
-                                     , verbosephp    = False
-                                     , genPrototype  = False
-                                             , uncheckedDirPrototype  = lookup envdirPrototype env
-                                 , dirPrototype  = unchecked
-                                 , allServices   = False
-                                 , dbName        = case lookup envdbName env of
-                                                           Just str -> str
-                                                           Nothing  -> ""
-                                 , genAtlas      = False   
-                                 , uncheckedDirAtlas      = lookup envdirAtlas env
-                                 , dirAtlas      = unchecked
-                                 , userAtlas      = []
-                                 , genXML        = False
-                                 , genFspec      = False 
-                                 , fspecFormat   = error ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
-                                 , graphics      = True
-                                 , flgSwitchboard= False
-                                 , proofs        = False
-                                 , haskell       = False
-                                 , uncheckedDirOutput     = lookup envdirOutput env
-                         , dirExec       = unchecked
-                         , texHdrFile    = Nothing
-                         , dirOutput     = unchecked
-                         , beeper        = False
-                         , crowfoot      = False
-                         , dotStyle      = 1
-                         , language      = Dutch
-                         , progrName     = pName
-                         , adlFileName   = case fNames of
-                                              []      -> error ("no file to parse" ++usageInfo'' pName)
-                                              [fName] -> replaceExtension fName ".adl"
-                                              x:xs    -> error ("too many files: "++ show (x:xs) ++usageInfo'' pName)
-                         , baseName      = case fNames of
-                                              []      -> error ("no file to parse" ++usageInfo'' pName)
-                                              [fName] -> takeBaseName fName -- was: dropExtension fName, changed because the file_path/filename is no valid databasename
-                                              x:xs    -> error ("too many files: "++ show (x:xs) ++usageInfo'' pName)
-                         , uncheckedLogName = lookup envlogName env
-                         , logName       = "ADL.log"
-                         , services      = False
-                         , genTime       = clocktime
-                         , test          = False
-                         , sqlLogPwdDefd = False
-                         , sqlHost       = "localhost"
-                         , sqlLogin      = "root"
-                         , sqlPwd        = ""
-                         }
                     
 envdirPrototype :: String
 envdirPrototype = "CCdirPrototype"
@@ -268,11 +246,16 @@ verbosephpOpt  :: Options -> Options
 verbosephpOpt opts = opts{verbosephp  = True}          
 prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts 
-  = opts { uncheckedDirPrototype = 
-            case nm of
-              Just s  -> nm
-              Nothing -> uncheckedDirPrototype opts
-         ,genPrototype = True}
+  = opts { dirPrototype = case nm of
+                            Just s  -> s
+                            Nothing -> dirPrototype opts
+         , genPrototype = True}
+atlasOpt     :: Maybe String -> Options -> Options
+atlasOpt nm opts 
+  = opts { dirAtlas =  case nm of
+                            Just s  -> s
+                            Nothing -> dirAtlas opts
+         , genAtlas = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: String -> Options -> Options
@@ -282,13 +265,6 @@ dbNameOpt nm    opts = opts{dbName = if nm == ""
                            }                          
 userOpt :: String -> Options -> Options
 userOpt x opts = opts{userAtlas = x}
-atlasOpt :: Maybe String -> Options -> Options
-atlasOpt nm opts 
-  = opts { uncheckedDirAtlas=
-            case nm of
-              Just s  -> nm
-              Nothing -> uncheckedDirAtlas opts
-         ,genAtlas = True}
 xmlOpt :: Options -> Options
 xmlOpt          opts = opts{genXML       = True}
 fspecRenderOpt :: String -> Options -> Options
@@ -302,6 +278,8 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                                  _         -> fspecFormat opts
                                                 
                             }
+allFspecFormats :: String
+allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 switchboardOpt :: Options -> Options
 switchboardOpt opts = opts{flgSwitchboard = True}
 noGraphicsOpt :: Options -> Options
@@ -315,7 +293,7 @@ servicesOpt     opts = opts{services     = True}
 haskellOpt :: Options -> Options
 haskellOpt      opts = opts{haskell      = True}
 outputDirOpt :: String -> Options -> Options
-outputDirOpt nm opts = opts{uncheckedDirOutput    = Just nm}
+outputDirOpt nm opts = opts{dirOutput    = nm}
 beeperOpt :: Options -> Options
 beeperOpt       opts = opts{beeper       = True}
 crowfootOpt :: Options -> Options
@@ -328,7 +306,7 @@ languageOpt l   opts = opts{language     = case map toUpper l of
                                              "EN"  -> English
                                              _     -> Dutch}
 logOpt :: String -> Options -> Options
-logOpt nm       opts = opts{uncheckedLogName = Just nm}
+logOpt nm       opts = opts{logName = nm}
 sqlHostOpt  :: Maybe String -> Options -> Options
 sqlHostOpt  (Just nm) opts = opts{sqlHost  = nm}
 sqlHostOpt   Nothing  opts = opts
@@ -343,15 +321,11 @@ testOpt opts = opts{test = True}
 verbose :: Options -> String -> IO ()
 verbose flags x
     | verboseP flags = putStr x
-    | otherwise      = doNothing
+    | otherwise      = return ()
    
 verboseLn :: Options -> String -> IO ()
 verboseLn flags x
     | verboseP flags = putStrLn x
-    | otherwise      = doNothing
+    | otherwise      = return ()
     
-doNothing :: IO()
-doNothing = putStr ""   -- Ik weet zo gauw niet hoe dit anders moet....
-unchecked :: String
-unchecked = "."
                              

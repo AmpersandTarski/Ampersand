@@ -118,10 +118,11 @@ doGenFspec fSpec flags
               FRtf    -> do verboseLn flags "Generating Rich Text Format file."
                             writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
               FLatex  -> do verboseLn flags "Generating LaTeX file."
-                            case texHdrFile flags of
-                             Nothing -> writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=laTeXheader flags} thePandoc)
-                             Just chFilename -> do customheader <- readFile chFilename
-                                                   writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=customheader} thePandoc)
+                            exists <- doesFileExist (texHdrFile flags)
+                            header <- if exists 
+                                      then readFile (texHdrFile flags)
+                                      else return (laTeXheader flags)
+                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=header} thePandoc)
               FHtml   -> do verboseLn flags "Generating Html file."
                             writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
               FOpenDocument 
@@ -150,12 +151,11 @@ doGenFspec fSpec flags
 --              removeOldFiles
 --                = mapM_ dump ["aux","pdf","toc","bbl","blg","brf","idx","ilg","ind","out",  -- possible output of pdfLatex
 --                              "log0","log1","log2","log3","log4"]  --logfiles created on the fly. 
-
-              dump :: String -> IO()
-              dump extention =
-                do let file = replaceExtension outputFile extention
-                   exists <- doesFileExist file
-                   when exists (removeFile file)  
+--              dump :: String -> IO()
+--              dump extention =
+--                do let file = replaceExtension outputFile extention
+--                   exists <- doesFileExist file
+--                   when exists (removeFile file)  
                 
               doRestOfPdfLatex :: (Bool,Int) -> IO (Bool,Int)
               doRestOfPdfLatex (ready, roundsSoFar)

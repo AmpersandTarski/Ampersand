@@ -2,7 +2,6 @@
 module Adl.Population (Population(..),Populations) 
 where
    import Adl.MorphismAndDeclaration   (Morphism())
-   import CommonClasses                (Identified(..))
    import Adl.Pair                     (Pairs)
    import Adl.Concept                  (Association(..))
    

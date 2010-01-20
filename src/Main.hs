@@ -39,10 +39,10 @@ phase3 flags fSpec =
         [ doGenAtlas   fSpec flags | genAtlas     flags] ++
         [ doGenXML     fSpec flags | genXML       flags] ++
         [ doGenHaskell fSpec flags | haskell      flags] ++ 
-        [ doGenProto   fSpec flags | genPrototype flags]++
+        [ doGenProto   fSpec flags | genPrototype flags] ++
         [ serviceGen   fSpec flags | services     flags] ++
         [ doGenFspec   fSpec flags | genFspec     flags] ++ 
-        [ prove        fSpec flags | proofs       flags]++
+        [ prove        fSpec flags | proofs       flags] ++
         [ verbose flags "Done."]
        ) 
                                

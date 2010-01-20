@@ -9,6 +9,7 @@ where
                                         , MorphicId(..),Morphic(..))
    import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..),mIs)
    import Adl.Expression                ( Expression(..),v,notCp)
+   import Adl.Pair                      ( Pairs)
    import Adl.Prop
    import Classes.Populated
    import CommonClasses                 ( Identified(..)
@@ -116,6 +117,7 @@ where
    consequent :: Rule -> Expression
    consequent r = rrcon r
 
+   ruleviolations :: Rule -> Pairs
    ruleviolations (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
        | rtyp==Truth = contents$Cp con --everything not in con
        | rtyp==Implication = ant `contentsnotin` con 
