@@ -14,7 +14,7 @@
    import Collection                      (Collection(..))
    import Adl
    
-   import FspecDef 
+   import Data.Fspec 
    import Strings                         (chain)
    import Auxiliaries                     (eqCl,showL)
   

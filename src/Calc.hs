@@ -15,10 +15,9 @@ module Calc ( deriveProofs
 
    import Collection         (Collection (isc,rd,rd'))
    import Auxiliaries        (sort',eqCl,eqClass)
-   import Strings            (spread)
+   import Strings            (spread,chain)
    import Adl
    import Data.Fspec
-   import FspecDef           (Fspc,chain,serviceS)
    import Adl.ECArule        (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import ShowADL            (showADL,showADLcode)
    import ShowECA            (showECA)

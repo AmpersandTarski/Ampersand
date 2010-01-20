@@ -14,6 +14,7 @@ module Data.Plug (Plug(..)
 where
   import Adl
   import Collection            (rd)
+  import FPA
   
   data Plug = PlugSql { fields   :: [SqlField]
                       , plname   :: String

@@ -9,7 +9,7 @@ module Switchboard(switchboard) where
    --              -- 4) build on graphviz-2999.5.0.0
    import Adl
    import Char
-   import FspecDef hiding (Attribute)
+   import Data.Fspec
  --  import Options
    import Collection (Collection(rd))
 --   import Classes.Graphics

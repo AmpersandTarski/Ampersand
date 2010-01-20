@@ -9,8 +9,8 @@ import Adl
 import Data.Plug
 import ShowADL
 import CommonClasses    (showSign)
-import FspecDef
-import Strings          (commaNL, commaEng)
+import Data.Fspec
+import Strings          (commaNL, commaEng,chain)
 import Text.Pandoc  
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
@@ -152,7 +152,7 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                fpAnalysis         level fSpec flags  ++
                glossary level fSpec flags
              , [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] )
-             where svcs = [serviceChap level fSpec flags svc | svc  <-FspecDef.services fSpec]
+             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec]
                    (daTxt,daPic)  = dataAnalysis       level fSpec flags
                    (caTxt,caPics) = conceptualAnalysis level fSpec flags
           level = 0 --0=chapter, 1=section, 2=subsection, 3=subsubsection, _=plain text

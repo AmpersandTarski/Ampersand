@@ -7,5 +7,5 @@ versionbanner = "ADL vs. 0.8.10-554" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-Cleaned up Options.hs and some small stuff.
+Changed place of FPA.hs. & got rid of FspecDef.hs
 -}

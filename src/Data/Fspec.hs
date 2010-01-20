@@ -12,7 +12,6 @@ module Data.Fspec ( Fspc(..)
                   , FSid(..)
                   , FTheme(..)
                   , WSOperation(..), WSAction(..)
-                  , FPA(..), FPcompl(..)
                   , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
                   )
  where
@@ -22,7 +21,7 @@ module Data.Fspec ( Fspc(..)
    import Typology                      (Inheritance(..))
    import Data.Plug                     (Plug)
    import Picture                       (Picture)
-
+   import FPA
    data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
                     , vplugs       :: [Plug]                -- ^ all plugs defined in the ADL-script
                     , plugs        :: [Plug]                -- ^ all plugs (defined and derived)

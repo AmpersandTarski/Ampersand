@@ -1,9 +1,9 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module Statistics where
 
    import Adl
    import Data.Plug
-   import FspecDef
+   import Data.Fspec
    import FPA
  -- TODO Deze module moet nog verder worden ingekleurd...
  
@@ -30,13 +30,13 @@ module Statistics where
 -- TODO Deze module moet nog verder worden ingekleurd...
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Funit                         ***
+-- \*** Eigenschappen met betrekking tot: Pattern                       ***
 -- \***********************************************************************
 
    instance Statistics Pattern where
-    nServices u = 0 --TODO -> check correctness
+    nServices _ = 0 --TODO -> check correctness
     nPatterns _ = 1
-    nFpoints u  = error "!Fatal (module Statistics 37): function points are not defined for patterns at all."
+    nFpoints _  = error "!Fatal (module Statistics 37): function points are not defined for patterns at all."
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***

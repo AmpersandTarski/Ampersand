@@ -1,3 +1,4 @@
+{-  TODO: Warningvrij maken # OPTIONS_GHC -Wall #-}
 module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,strReplace
  ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlAttConcept
  ,sqlPlugFields,indentBlock,phpShow,isOne,addToLast

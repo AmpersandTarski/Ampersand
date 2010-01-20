@@ -13,6 +13,7 @@ where
    import Auxiliaries           (showL)
    import Options hiding (services)
    import Version               (versionbanner)
+   import FPA                   (FPA(..),FPcompl)
    
    fSpec2Haskell :: Fspc -> Options -> String
    fSpec2Haskell fSpec flags

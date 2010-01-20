@@ -1,9 +1,19 @@
-
+{-# OPTIONS_GHC -Wall #-}
 module FPA 
 
 where
    import Languages (Lang(..),ShowLang(..))
-   import Data.Fspec(FPA(..),FPcompl(..))
+
+-------------- Function Points ------------------
+   data FPA = ILGV FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
+            | KGV  FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. Deze gegevens worden door het systeem gebruikt, maar worden door een ander systeem onderhouden (voor dat andere systeem is het dus een ILGV).
+            | IF   FPcompl -- verwerkt gegevens in een ILGV van het systeem. (dus create, update en delete functies)
+            | UF   FPcompl -- presenteert gegevens uit het systeem. Voorbeelden: het afdrukken van alle debiteuren; het aanmaken van facturen; het aanmaken van een diskette met betalingsopdrachten; het medium is hierbij niet van belang: papier, scherm, magneetband, datacom, enzovoorts.
+            | OF   FPcompl -- is een speciaal (eenvoudig) soort uitvoerfunctie. Een opvraagfunctie presenteert gegevens uit het systeem op basis van een uniek identificerend zoekgegeven, waarbij geen aanvullende bewerkingen (zoals berekeningen of het bijwerken van een gegevensverzameling) plaats hebben. Voorbeeld: Het tonen van de gegevens van de klant met klantnummer 123456789.
+            | NO           -- een onderdeel waaraan geen functiepunten worden toegekend.
+              deriving (Eq, Show)
+
+   data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
 
    instance ShowLang FPcompl where
     showLang Dutch Eenvoudig   = "Eenvoudig"
@@ -19,7 +29,7 @@ where
     showLang lang (IF   c) = "IF "++showLang lang c
     showLang lang (UF   c) = "UF "++showLang lang c
     showLang lang (OF   c) = "OF "++showLang lang c
-    showLang lang NO       = ""
+    showLang _    NO       = ""
 
    fPoints :: FPA -> Int
    fPoints (ILGV Eenvoudig) = 7

@@ -5,14 +5,14 @@
    import Strings        (firstCaps)
    import Adl
    import Auxiliaries    (naming, eqCl, eqClass, sort')
-   import FspecDef
---   import Languages
+   import Data.Fspec
    import Calc
    import Options        (Options)
    import NormalForms(conjNF,disjNF,normPA)
    import Data.Plug
    import Char
    import ShowADL
+   import FPA
    
    makeFspec :: Options -> Context -> Fspc
    makeFspec _ context = fSpec where
@@ -454,9 +454,6 @@ Hence, we do not need a separate plug for c' and it will be skipped.
 -- More generally, if there is an ECA rule with I[type obj] in its left hand side,
 --    and a right hand side that is out of scope of this service,
 --    you may not insert a new element in obj.
-
---   makeFSid1 :: String -> FSid
---   makeFSid1 s = FS_id (firstCaps s)  -- We willen geen spaties in de naamgeveing.
 
 
 --   fst3 :: (a,b,c) -> a

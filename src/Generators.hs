@@ -14,7 +14,7 @@ import System.FilePath        (combine,replaceExtension)
 import System.Directory
 import Control.Monad
 import Options
-import FspecDef
+import Data.Fspec
 import ShowHS                 (fSpec2Haskell)
 import ShowADL
 import XML.ShowXMLtiny        (showXML)

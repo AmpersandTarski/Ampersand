@@ -20,7 +20,10 @@ where
 
 -- TODO: Als het ADL bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
-   import FspecDef
+   import CommonClasses(Identified(..))
+   import Auxiliaries(showL)
+   import Strings(chain)
+   import Data.Fspec
    import Adl
    import ShowADL
    import Time(ClockTime)
