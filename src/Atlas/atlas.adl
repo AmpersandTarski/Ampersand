@@ -46,10 +46,12 @@ PATTERN Rules
 --GEN MultiplicityRule ISA Rule
 --GEN HomogeneousRule ISA Rule
 morphisms::UserRule*Relation.
+morphisms::Signal*Relation.
 property::MultiplicityRule->Prop.
 on::MultiplicityRule->Relation.
 property::HomogeneousRule->Prop.
 on::HomogeneousRule->Relation.
+contains::Signal*Pair.
 
 {--GENERAL RULE DECLARATIONS--}
 --GEN Rule ISA Expression
@@ -59,6 +61,7 @@ type::Rule->Type.
 type::UserRule->Type.
 type::MultiplicityRule->Type.
 type::HomogeneousRule->Type.
+type::Signal->Type.
 --type::Morphism->Type.
 violates::Violation*Rule.
 violates::Violation*UserRule.
@@ -68,12 +71,14 @@ explanation::Rule->Explanation.
 explanation::UserRule->Explanation.
 explanation::MultiplicityRule->Explanation.
 explanation::HomogeneousRule->Explanation.
+explanation::Signal->Explanation.
 picture :: UserRule -> Picture.
 ENDPATTERN
 
 PATTERN Pattern
 pattern :: Rule -> Pattern.
 pattern :: UserRule -> Pattern.
+pattern :: Signal -> Pattern.
 pattern :: MultiplicityRule -> Pattern. --REMARK -> has not been set (use on;pattern)
 pattern :: HomogeneousRule -> Pattern. --REMARK -> has not been set (use on;pattern)
 pattern :: Relation -> Pattern.
@@ -81,10 +86,20 @@ pattern :: IsaRelation -> Pattern.
 picture :: Pattern -> Picture.
 ENDPATTERN
 
+PATTERN ViolationAnalysis
+--subexpressionOf::SubExpression->Expression.
+--GEN Rule ISA Expression
+--GEN SubExpression ISA Expression
+subexpressionOf::SubExpression -> UserRule.
+contains::SubExpression*Pair.
+ENDPATTERN
+
 PATTERN Ordering
 --GEN Rule ISA Ordening
 next :: UserRule->UserRule.
 previous :: UserRule->UserRule.
+next :: Signal->Signal.
+previous :: Signal->Signal.
 ENDPATTERN
 
 PATTERN ExplicitUserContext
@@ -107,6 +122,8 @@ user::Violation->User.
 user::Explanation->User.
 user::Pattern->User.
 user::Service->User.
+user::SubExpression->User.
+user::Signal->User.
 --ctxenv::Picture*Picture.
 --ctxenv::Relation*Relation.
 --ctxenv::Concept*Concept.
@@ -131,6 +148,8 @@ script::Violation->Script.
 script::Explanation->Script.
 script::Pattern->Script.
 script::Service->Script.
+script::SubExpression->Script.
+script::Signal->Script.
 ENDPATTERN
 
 PATTERN ExplicitDisplay
@@ -151,6 +170,8 @@ display::Violation->String.
 display::Explanation->String.
 display::Pattern->String.
 display::Service->String.
+display::SubExpression->String.
+display::Signal->String.
 ENDPATTERN
 
 SERVICE Overzicht : I[ONE]
@@ -161,8 +182,16 @@ SERVICE Overzicht : I[ONE]
      , "Conceptual diagram"{"PICTURE"}: V[ONE*Service];(user;s;user[Service*User]~ /\ script;s;script~);picture;display
      ]
 
+SERVICE Violations: I[ONE]
+   = [ violated_rules{"DISPLAY=UserRule.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates[Violation*UserRule]
+        = [ "is violated by" : violates~;display]
+     , property_violations_on{"DISPLAY=Relation.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates;on[MultiplicityRule*Relation] \/ V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates;on[HomogeneousRule*Relation] 
+          = [ "is violated by" : on[MultiplicityRule*Relation]~;violates~;display]
+     ]
+
 SERVICE Pattern{"DISPLAY=Pattern.display"} : I[Pattern]
-   = [ rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
+   = [ signals{"DISPLAY=Signal.display"} : pattern[Signal*Pattern]~
+     , rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
      , relations{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
      , isa_relations : pattern[IsaRelation*Pattern]~;display
      , "Conceptual diagram"{"PICTURE"}: picture;display
@@ -173,6 +202,15 @@ SERVICE Pattern{"DISPLAY=Pattern.display"} : I[Pattern]
 --TODO -> There are no compile checks to check on the correct type or to check that the relation is represented as a DB column of the table of that type. In case of mistakes the PHP will return a missing offset 0, because it will try to get $rows[0].
 --TODO -> DISPLAY has not been tested on all types of ObjectDefs (see Wrapper.hs -> attContent for different patterns)
 
+SERVICE Signal{"DISPLAY=Signal.display"} : I[Signal]
+   = [ source{"DISPLAY=Concept.display"} : type;source
+     , target{"DISPLAY=Concept.display"} : type;target
+     , relations{"DISPLAY=Relation.display"} : morphisms
+     , explanation : explanation;display
+     , previous{"DISPLAY=Signal.display"} : previous
+     , next{"DISPLAY=Signal.display"} : next
+     , pattern{"DISPLAY=Pattern.display"} : pattern
+     , contains : contains;display]
 
 --TODO -> specific types moeten doorlinken naar generiekere service, als geen specifieke service bestaat
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
@@ -181,24 +219,32 @@ SERVICE Rule{"DISPLAY=Rule.display"} : I[Rule]
    = [ source{"DISPLAY=Concept.display"} : type;source
      , target{"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
-     , explanation : explanation;display]
-SERVICE Rule1{"DISPLAY=UserRule.display"} : I[UserRule]
+     , explanation : explanation;display
+     , pattern{"DISPLAY=Pattern.display"} : pattern]
+SERVICE UserRule{"DISPLAY=UserRule.display"} : I[UserRule]
    = [ source{"DISPLAY=Concept.display"} : type;source
      , target{"DISPLAY=Concept.display"} : type;target
      , relations{"DISPLAY=Relation.display"} : morphisms
+     , subexpressions{"DISPLAY=SubExpression.display"}: subexpressionOf~
      , violations : violates~;display
      , explanation : explanation;display
      , previous{"DISPLAY=UserRule.display"} : previous
      , next{"DISPLAY=UserRule.display"} : next
+     , pattern{"DISPLAY=Pattern.display"} : pattern
      , "Conceptual diagram"{"PICTURE"}: picture;display]
 SERVICE Rule2{"DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
-     , explanation : explanation;display]
+     , explanation : explanation;display
+     , pattern{"DISPLAY=Pattern.display"} : on;pattern]
 SERVICE Rule3{"DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
-     , explanation : explanation;display]
+     , explanation : explanation;display
+     , pattern{"DISPLAY=Pattern.display"} : on;pattern]
+
+SERVICE Population2{"DISPLAY=SubExpression.display"}   : I[SubExpression]
+   = [ population  : contains;display]
 
 --I must use a nested name to display, because there is no SERVICE on String only on Relation
 SERVICE Relations : I[ONE]
@@ -208,12 +254,13 @@ SERVICE Relations : I[ONE]
 --TODO -> in case of overloaded relation variables, the populations are merged 
 SERVICE "RelationDetails"{"DISPLAY=Relation.display"}   : I[Relation]
    = [ "multiplicity properties" : (on[MultiplicityRule*Relation])~
-       = [property : property;display, "derived rule" : display, violations : violates~;display]
+       = [ property : property;display, "derived rule" : display, violations : violates~;display]
      , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
        = [property : property;display, "derived rule" : display, violations : violates~;display]
+     , concepts{"DISPLAY=Concept.display"} : relvar;(source \/ target)
+     , "used in rules"{"DISPLAY=UserRule.display"} : morphisms[UserRule*Relation]~
+     , pattern{"DISPLAY=Pattern.display"} : pattern
      , population  : contains;display
-     , "used in rules"{"DISPLAY=UserRule.display"} : morphisms~
-     , pattern : pattern;display
      ]
 
 SERVICE Population{"DISPLAY=Relation.display"}   : I[Relation]
