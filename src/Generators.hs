@@ -13,6 +13,7 @@ import System                 (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath        (combine,replaceExtension)
 import System.Directory
 import Control.Monad
+import Maybe                  (fromJust)
 import Options
 import Data.Fspec
 import ShowHS                 (fSpec2Haskell)
@@ -118,9 +119,12 @@ doGenFspec fSpec flags
               FRtf    -> do verboseLn flags "Generating Rich Text Format file."
                             writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
               FLatex  -> do verboseLn flags "Generating LaTeX file."
-                            exists <- doesFileExist (texHdrFile flags)
+                            --REMARK -> notice usage of fromJust
+                            exists <- case texHdrFile flags of
+                                         Just x -> doesFileExist x
+                                         Nothing -> return False
                             header <- if exists 
-                                      then readFile (texHdrFile flags)
+                                      then readFile (fromJust$texHdrFile flags)
                                       else return (laTeXheader flags)
                             writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=header} thePandoc)
               FHtml   -> do verboseLn flags "Generating Html file."
@@ -135,17 +139,13 @@ doGenFspec fSpec flags
                                           , writerNumberSections=True
                                           }
          makePdfFile :: IO()
-         makePdfFile = do curDir <- getCurrentDirectory
-                          setCurrentDirectory (dirOutput flags)
-                          verboseLn flags ("original directory: "++show curDir)
-                          verboseLn flags ("now running in    : "++show (dirOutput flags))
+         makePdfFile = do 
                   --        removeOldFiles
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
                           verboseLn flags ("PdfLatex was called "++show nrOfRounds++" times"++
                                case ready of
                                   True  -> "."
-                                  False -> ", but did not solve all refferences!")
-                          when ready (setCurrentDirectory curDir)                                
+                                  False -> ", but did not solve all refferences!")                          
             where 
 --              removeOldFiles :: IO()
 --              removeOldFiles
@@ -173,12 +173,13 @@ doGenFspec fSpec flags
                           when notReady (verboseLn flags "Another round of pdfLatex is required. Hang on...")
                         --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
                           doRestOfPdfLatex (not notReady, roundsSoFar +1)
-
-                      
+                  
               callPdfLatexOnce :: IO ()
               callPdfLatexOnce = 
-                 do result <- system ("pdflatex "++outputFile)  
+                 do result <- system ("pdflatex "++pdfflags++outputFile)  
                     case result of 
                        ExitSuccess   -> verboseLn flags ("PDF file created.")
                        ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
+                    where
+                    pdfflags = " -include-directory="++(dirOutput flags)++ " -output-directory="++(dirOutput flags)++" "
               

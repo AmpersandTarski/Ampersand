@@ -39,7 +39,7 @@ data Options = Options { contextName   :: Maybe String
                        , dotStyle      :: Int
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
-                       , texHdrFile    :: String --the string represents a FilePath to customheader.tex
+                       , texHdrFile    :: Maybe String --the string represents a FilePath to some .tex containing just tex header instructions
                        , progrName     :: String --The name of the adl executable
                        , adlFileName   :: String
                        , baseName      :: String
@@ -106,8 +106,9 @@ getOptions =
                       , flgSwitchboard= False
                       , proofs        = False
                       , haskell       = False
-                  --    , texHdrFile    = Nothing
-                      , texHdrFile    = error ("!Fatal (module Options 120): Specify the path location of "++progName)++" in your system PATH variable."
+                      , texHdrFile    = Nothing
+                  --GMI -> ik zeg Maybe String, omdat ik de mogelijkheid wil hebben om geen PATH variabele te hoeven gebruiken, en omdat er geen fatsoenlijke standaardwaarde ingevuld kan worden, zoals met een directory.
+                  --    , texHdrFile    = error ("!Fatal (module Options 120): Specify the path location of "++progName)++" in your system PATH variable."
                       , beeper        = False
                       , crowfoot      = False
                       , dotStyle      = 1
