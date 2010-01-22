@@ -39,7 +39,10 @@
         then [ "if(isset($_REQUEST['edit'])) $edit=true; else $edit=false;"
              , "$"++objectId++"=new "++objectId++"();"]
              ++ indentBlock 2 showObjectCode
-             ++ [ "if(!$edit) $buttons.=ifaceButton("++selfref++".\"&edit=1\",\"Edit\");"
+             ++ [ "if(!$edit) "++
+                      if elem "Edit" (actions o)
+                      then "$buttons.=ifaceButton("++selfref++".\"&edit=1\",\"Edit\");"
+                      else "$buttons=$buttons;"
                 , "else"
                 , "  $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1');"
                                                                                   ++ "\",\"Save\")"
@@ -66,8 +69,14 @@
                               "'\".urlencode($"++ objectId ++ "->getId()).\"');\",\"Save\");"
              , "     $buttons.=ifaceButton(" ++ selfref1 objectId ++ ",\"Cancel\");"
              , "   } "
-             , "} else $buttons.=ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\")"
-             , "               .ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
+             , "} else {"
+             , if elem "Edit" (actions o)
+               then "        ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\");"
+               else "        $buttons=$buttons;"
+             , if elem "Delete" (actions o)
+               then "        .ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");;"
+               else "        $buttons=$buttons;"
+             , "       }"
              , "}else{"
              , "  if($del){"
              , "    writeHead(\"<TITLE>Delete geslaagd</TITLE>\");"
@@ -231,12 +240,12 @@
            , "  "++atnm ++"="++(if null (displaydirective att) then idvar 
                           else (if null(objats att)
                                 then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
-                                else idvar)) ++ ";"
+                                else idvar)) ++ ";" 
+           , "  echo '"
+           , "  <LI CLASS=\"item UI"++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"
            , if null(objats att) || null(displaydirective att) 
              then [] 
-             else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);" 
-           , "  echo '"
-           , "  <LI CLASS=\"item UI"++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"]
+             else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);"]
            ++ indentBlock 4 content ++
            [ "  echo '</LI>';"
            , "}"

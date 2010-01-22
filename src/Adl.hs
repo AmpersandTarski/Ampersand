@@ -5,7 +5,7 @@ module Adl ( Architecture(..)
            , Rule(..),Rules,consequent, rulefromProp, ruleviolations
            , KeyDef(..),KeyDefs,Key(..)
            , Population(..),Populations
-           , ObjectDef(..),ObjectDefs
+           , ObjectDef(..),ObjectDefs,actions
            , Expression(..), Expressions,isPos,isNeg,insParentheses
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
@@ -57,7 +57,7 @@ where
                                          ,makeMph,makeDeclaration
                                          ,inline,makeInline
                                          ,mIs,isProperty)
-   import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs)
+   import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs,actions)
    import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          

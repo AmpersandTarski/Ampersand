@@ -174,7 +174,7 @@ display::SubExpression->String.
 display::Signal->String.
 ENDPATTERN
 
-SERVICE Overzicht : I[ONE]
+SERVICE Overzicht{"Action=Select"} : I[ONE]
    = [ Patterns{"DISPLAY=Pattern.display"} : V[ONE*Pattern];(user;s;user[Pattern*User]~ /\ script;s;script~) 
         = [ violated_rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
          , property_violations_on{"DISPLAY=Relation.display"} : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
@@ -182,14 +182,14 @@ SERVICE Overzicht : I[ONE]
      , "Conceptual diagram"{"PICTURE"}: V[ONE*Service];(user;s;user[Service*User]~ /\ script;s;script~);picture;display
      ]
 
-SERVICE Violations: I[ONE]
+SERVICE Violations{"Action=Select"}: I[ONE]
    = [ violated_rules{"DISPLAY=UserRule.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates[Violation*UserRule]
         = [ "is violated by" : violates~;display]
      , property_violations_on{"DISPLAY=Relation.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates;on[MultiplicityRule*Relation] \/ V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates;on[HomogeneousRule*Relation] 
           = [ "is violated by" : on[MultiplicityRule*Relation]~;violates~;display]
      ]
 
-SERVICE Pattern{"DISPLAY=Pattern.display"} : I[Pattern]
+SERVICE Pattern{"Action=Select","DISPLAY=Pattern.display"} : I[Pattern]
    = [ signals{"DISPLAY=Signal.display"} : pattern[Signal*Pattern]~
      , rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
      , relations{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
@@ -202,7 +202,7 @@ SERVICE Pattern{"DISPLAY=Pattern.display"} : I[Pattern]
 --TODO -> There are no compile checks to check on the correct type or to check that the relation is represented as a DB column of the table of that type. In case of mistakes the PHP will return a missing offset 0, because it will try to get $rows[0].
 --TODO -> DISPLAY has not been tested on all types of ObjectDefs (see Wrapper.hs -> attContent for different patterns)
 
-SERVICE Signal{"DISPLAY=Signal.display"} : I[Signal]
+SERVICE Signal{"Action=Select","DISPLAY=Signal.display"} : I[Signal]
    = [ source{"DISPLAY=Concept.display"} : type;source
      , target{"DISPLAY=Concept.display"} : type;target
      , relations{"DISPLAY=Relation.display"} : morphisms
@@ -215,13 +215,13 @@ SERVICE Signal{"DISPLAY=Signal.display"} : I[Signal]
 --TODO -> specific types moeten doorlinken naar generiekere service, als geen specifieke service bestaat
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
 --        nu wordt default de specieke tabel gebruikt voor alle relaties!
-SERVICE Rule{"DISPLAY=Rule.display"} : I[Rule]
+SERVICE Rule{"Action=Select","DISPLAY=Rule.display"} : I[Rule]
    = [ source{"DISPLAY=Concept.display"} : type;source
      , target{"DISPLAY=Concept.display"} : type;target
      , violations : violates~;display
      , explanation : explanation;display
      , pattern{"DISPLAY=Pattern.display"} : pattern]
-SERVICE UserRule{"DISPLAY=UserRule.display"} : I[UserRule]
+SERVICE UserRule{"Action=Select","DISPLAY=UserRule.display"} : I[UserRule]
    = [ source{"DISPLAY=Concept.display"} : type;source
      , target{"DISPLAY=Concept.display"} : type;target
      , relations{"DISPLAY=Relation.display"} : morphisms
@@ -232,27 +232,27 @@ SERVICE UserRule{"DISPLAY=UserRule.display"} : I[UserRule]
      , next{"DISPLAY=UserRule.display"} : next
      , pattern{"DISPLAY=Pattern.display"} : pattern
      , "Conceptual diagram"{"PICTURE"}: picture;display]
-SERVICE Rule2{"DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
+SERVICE Rule2{"Action=Select","DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display
      , pattern{"DISPLAY=Pattern.display"} : on;pattern]
-SERVICE Rule3{"DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
+SERVICE Rule3{"Action=Select","DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
    = [ "property of relation"{"DISPLAY=Relation.display"} : on
      , violations : violates~;display
      , explanation : explanation;display
      , pattern{"DISPLAY=Pattern.display"} : on;pattern]
 
-SERVICE Population2{"DISPLAY=SubExpression.display"}   : I[SubExpression]
+SERVICE Population2{"Action=Select","DISPLAY=SubExpression.display"}   : I[SubExpression]
    = [ population  : contains;display]
 
 --I must use a nested name to display, because there is no SERVICE on String only on Relation
-SERVICE Relations : I[ONE]
+SERVICE Relations{"Action=Select"} : I[ONE]
    = [ Relation_s{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)]
 
 --I do not want to display the qualified name, but the unqualified one
 --TODO -> in case of overloaded relation variables, the populations are merged 
-SERVICE "RelationDetails"{"DISPLAY=Relation.display"}   : I[Relation]
+SERVICE "RelationDetails"{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
    = [ "multiplicity properties" : (on[MultiplicityRule*Relation])~
        = [ property : property;display, "derived rule" : display, violations : violates~;display]
      , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
@@ -263,16 +263,16 @@ SERVICE "RelationDetails"{"DISPLAY=Relation.display"}   : I[Relation]
      , population  : contains;display
      ]
 
-SERVICE Population{"DISPLAY=Relation.display"}   : I[Relation]
+SERVICE Population{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
    = [ population  : contains;display]
 
-SERVICE Concepts : I[ONE]
+SERVICE Concepts{"Action=Select"} : I[ONE]
    = [ Concept_s{"DISPLAY=Concept.display"} : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~)]
 
-SERVICE Concept{"DISPLAY=Concept.display"} : I[Concept]
+SERVICE Concept{"Action=Select","DISPLAY=Concept.display"} : I[Concept]
    = [ population : contains;display]
 
-SERVICE "ISArelations" : I[ONE]
+SERVICE "ISArelations"{"Action=Select"} : I[ONE]
    = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
       = [ "IS-a relation" : display
         , specific {"DISPLAY=Concept.display"}: specific

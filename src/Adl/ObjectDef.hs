@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.ObjectDef (ObjectDef(..),ObjectDefs)
+module Adl.ObjectDef (ObjectDef(..),ObjectDefs,actions)
 where
    import Adl.FilePos       (FilePos,Numbered(..))
    import Adl.Expression    (Expression)
@@ -25,4 +25,9 @@ where
     pos obj = objpos obj
 
 
+   --Actions can be defined in objstrs by "Action=<action>" p.e. Action=Select
+   --If no actions are specified then actions defaults to ["Select","Edit","Delete","New"]
+   actions :: ObjectDef -> [String]
+   actions obj = if null xs then ["Select","Edit","Delete","New"] else xs
+      where xs = [x | strs<-objstrs obj,('A':'c':'t':'i':'o':'n':'=':x)<-strs]
    
