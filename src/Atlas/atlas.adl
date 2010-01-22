@@ -126,7 +126,7 @@ user::Explanation->User.
 user::Pattern->User.
 user::Service->User.
 user::SubExpression->User.
-user::SubExpression->User.
+user::Signal->User.
 user::PragmaExample->User.
 script::Picture->Script.
 script::Relation->Script.
