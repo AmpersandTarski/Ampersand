@@ -31,9 +31,12 @@ picture::Service->Picture.
 relvar::Relation*Type.
 contains::Relation*Pair.
 contains::Concept*Atom.
+description::Relation*Explanation [UNI].
+example::Relation->PragmaExample.
 
 source::Type->Concept.
 target::Type->Concept.
+description::Concept*Explanation [UNI].
 
 --IsaRelation contains only user-defined isa relations, not derived ones
 specific::IsaRelation->Concept. 
@@ -123,15 +126,8 @@ user::Explanation->User.
 user::Pattern->User.
 user::Service->User.
 user::SubExpression->User.
-user::Signal->User.
---ctxenv::Picture*Picture.
---ctxenv::Relation*Relation.
---ctxenv::Concept*Concept.
---ctxenv::IsaRelation*IsaRelation.
---ctxenv::MultiplicityRule*MultiplicityRule.
---ctxenv::HomogeneousRule*HomogeneousRule.
---ctxenv::UserRule*UserRule.
---ctxenv::Rule*Rule.
+user::SubExpression->User.
+user::PragmaExample->User.
 script::Picture->Script.
 script::Relation->Script.
 script::Type->Script.
@@ -150,6 +146,7 @@ script::Pattern->Script.
 script::Service->Script.
 script::SubExpression->Script.
 script::Signal->Script.
+script::PragmaExample->Script.
 ENDPATTERN
 
 PATTERN ExplicitDisplay
@@ -172,6 +169,7 @@ display::Pattern->String.
 display::Service->String.
 display::SubExpression->String.
 display::Signal->String.
+display::PragmaExample->String.
 ENDPATTERN
 
 SERVICE Overzicht{"Action=Select"} : I[ONE]
@@ -248,12 +246,15 @@ SERVICE Population2{"Action=Select","DISPLAY=SubExpression.display"}   : I[SubEx
 
 --I must use a nested name to display, because there is no SERVICE on String only on Relation
 SERVICE Relations{"Action=Select"} : I[ONE]
-   = [ Relation_s{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)]
+   = [ Relation_s{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)
+        = [ example : example;display]
+     ]
 
 --I do not want to display the qualified name, but the unqualified one
 --TODO -> in case of overloaded relation variables, the populations are merged 
 SERVICE "RelationDetails"{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
-   = [ "multiplicity properties" : (on[MultiplicityRule*Relation])~
+   = [ explanation : description;display
+     , "multiplicity properties" : (on[MultiplicityRule*Relation])~
        = [ property : property;display, "derived rule" : display, violations : violates~;display]
      , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
        = [property : property;display, "derived rule" : display, violations : violates~;display]
@@ -264,13 +265,14 @@ SERVICE "RelationDetails"{"Action=Select","DISPLAY=Relation.display"}   : I[Rela
      ]
 
 SERVICE Population{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
-   = [ population  : contains;display]
+   = [ example : example;display, explanation : description;display, population  : contains;display]
 
 SERVICE Concepts{"Action=Select"} : I[ONE]
    = [ Concept_s{"DISPLAY=Concept.display"} : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~)]
 
 SERVICE Concept{"Action=Select","DISPLAY=Concept.display"} : I[Concept]
-   = [ population : contains;display]
+   = [ description : description;display
+     , population : contains;display]
 
 SERVICE "ISArelations"{"Action=Select"} : I[ONE]
    = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)

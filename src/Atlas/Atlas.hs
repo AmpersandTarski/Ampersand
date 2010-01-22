@@ -15,6 +15,7 @@ import Database.HDBC
 import Classes.Morphical
 import List(sort)
 import Classes.ViewPoint 
+import PredLogic (applyM)
 ------
 import Classes.Graphics
 import System (system, ExitCode(ExitSuccess,ExitFailure))
@@ -39,6 +40,7 @@ data ATableId =
   |ATMultRule
   |ATPair
   |ATPattern
+  |ATPragmaExample
   |ATProp
   |ATRelation
   |ATRelVar
@@ -55,7 +57,7 @@ data ATableId =
 tables::[ATable]
 tables = 
    [ATable ATAtom "atom" ["i","user","script","display"] 
-   ,ATable ATConcept "concept" ["i","user","script","display"] 
+   ,ATable ATConcept "concept" ["i","description","user","script","display"] 
    ,ATable ATContains "contains" ["relation","pair"] 
    ,ATable ATContainsConcept "containsconcept" ["concept","atom"] 
    ,ATable ATContainsExpr "containssubexpression" ["subexpression","pair"] 
@@ -70,8 +72,9 @@ tables =
    ,ATable ATMultRule "multiplicityrule" ["i","property","on","type","explanation","pattern","user","script","display"] 
    ,ATable ATPair "pair" ["i","user","script","display"] 
    ,ATable ATPattern "pattern" ["i","picture","user","script","display"] 
+   ,ATable ATPragmaExample "pragmaexample" ["i","user","script","display"] 
    ,ATable ATProp "prop" ["i","user","script","display"] 
-   ,ATable ATRelation "relation" ["i","pattern","user","script","display"]
+   ,ATable ATRelation "relation" ["i","description","example","pattern","user","script","display"]
    ,ATable ATRelVar "relvar" ["relation","type"]
    ,ATable ATRule "rule" ["i","type","explanation","pattern","user","script","display"] 
    ,ATable ATService "service" ["i","picture","user","script","display"] 
@@ -190,12 +193,12 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop x = [map toSql$toUserctx ys x|ys<-rd (pop' x)]
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
-   pop' ATConcept = [[name x]|x<-cpts]
+   pop' ATConcept = [[name x,description x]|x<-cpts]
    pop' ATContains = [[relpred x,show y]| x<-declarations fSpec,decusr x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
    pop' ATContainsExpr = [[cptexpr x,show y]| vr<-violateduserrules, x<-subexprs vr, y<-contents x]
    pop' ATContainsSignal = [[cptrule x,show y]| x<-signalrules, y<-contents (Cp$ruleexpr x)]
-   pop' ATExplanation = [[explainRule flags x]|x<-atlasrules]
+   pop' ATExplanation = [[explainRule flags x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|p<-patterns fSpec, x<-declarations p]
    pop' ATSubExpression = [[cptexpr y,cptrule x]|x<-violateduserrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
@@ -205,8 +208,10 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
    pop' ATPattern = [[name x,pic]| x<-patterns fSpec,(PicPat pn,pic)<-pics, pn==name x]
+   pop' ATPragmaExample = [[example x]|p<-patterns fSpec, x<-declarations p,decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
-   pop' ATRelation = ["I",""]:["V",""]:[[relpred x,name p]|p<-patterns fSpec, x<-declarations p,decusr x] --REMARK -> decls from pat instead of fSpec!
+   pop' ATRelation = [[relpred x,expl x,example x,name p]|p<-patterns fSpec, x<-declarations p,decusr x] --REMARK -> decls from pat instead of fSpec!
+                   ++ [["I","The identity relation.","x is related to x",""],["V","The universal relation.","x is related to y",""]]
    pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
    pop' ATService = [[name fSpec,x]|(PicFS,x)<-pics]
@@ -246,6 +251,12 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    relpred x = name x
    mphpred x@(Mph{}) = relpred (mphdcl x) 
    mphpred x = name x
+   example d = if null (contents d) then  applyM d "x" "y" 
+               else applyM d (fst$head$contents d) (snd$head$contents d)
+   expl d = if null(explain flags d) then "There is no description for this relation." else explain flags d
+   description::Concept->String
+   description c = if null ds then "There is no description for this concept." else head ds
+       where ds = [cddef cd|cd<-conceptDefs fSpec, name cd==name c]
    cptexpr = showADLcode fSpec 
    cpts = (\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (isa fSpec)
    cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
