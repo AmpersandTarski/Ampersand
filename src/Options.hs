@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),allFspecFormats)
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),allFspecFormats,relImgPath)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -328,5 +328,6 @@ verboseLn :: Options -> String -> IO ()
 verboseLn flags x
     | verboseP flags = putStrLn x
     | otherwise      = return ()
-    
+relImgPath :: Options -> FilePath
+relImgPath flags= "img" </> (takeWhile (/='.') (userAtlas flags)) </> (baseName flags)    
                              

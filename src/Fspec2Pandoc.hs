@@ -7,6 +7,7 @@ import Char
 import Collection       (Collection (..))
 import Adl
 import Data.Plug
+import Picture
 import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
@@ -24,10 +25,8 @@ import Options hiding (services) --importing (Options(..),FspecFormat(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
-import Switchboard      (switchboard)
-import Data.GraphViz    (printDotGraph)
-import Classes.Graphics (toDot)
-import Picture          (Picture(..),PictType(..),makePicture)
+import Switchboard      (switchboard1)
+import Classes.Graphics (makePicture)
 import FPA
 import Statistics
 
@@ -395,9 +394,9 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
           )
        ++ (if null (themerules pat) then [] else [DefinitionList (themerules pat)])
        , pict):  iterat (n+length (themerules pat)) ps
-       where pict = makePicture flags (name pat) PTPattern pStr   -- the Picture that represents this service's knowledge graph
-             pGph = toDot fSpec flags pat                         -- the DotGraph String that represents this service's knowledge graph
-             pStr = printDotGraph pGph                            -- the String that represents this service's knowledge graph
+       where pict = makePicture flags fSpec pat   -- the Picture that represents this service's knowledge graph
+--             pGph = toDot fSpec flags pat                         -- the DotGraph String that represents this service's knowledge graph
+--             pStr = printDotGraph pGph                            -- the String that represents this service's knowledge graph
     iterat _ [] = []
     --query copied from FSpec.hs revision 174
     themerules  :: Pattern -> [([Inline], [Block])]
@@ -452,9 +451,9 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
   classDiagram = cdAnalysis fSpec flags
 
   classDiagramPicture :: Picture
-  classDiagramPicture = makePicture flags (name fSpec) PTClassDiagram cdDot
-      where
-       cdDot = classdiagram2dot classDiagram
+  classDiagramPicture = makePicture flags fSpec classDiagram
+--      where
+--       cdDot = classdiagram2dot classDiagram
 
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
@@ -722,10 +721,10 @@ serviceChap lev fSpec flags svc
      ++ [Plain (xrefFigure1 picKnowledgeGraph)]                  -- draw the knowledge graph
 
   picKnowledgeGraph :: Picture
-  picKnowledgeGraph = makePicture flags (name svc) PTConcept kn  -- the Picture that represents this service's knowledge graph
-     where
-      knGph = toDot fSpec flags svc                              -- the DotGraph String that represents this service's knowledge graph
-      kn    = printDotGraph knGph                                -- the String that represents this service's knowledge graph
+  picKnowledgeGraph = makePicture flags fSpec svc  -- the Picture that represents this service's knowledge graph
+--     where
+--      knGph = toDot fSpec flags svc                              -- the DotGraph String that represents this service's knowledge graph
+--      kn    = printDotGraph knGph                                -- the String that represents this service's knowledge graph
 
   txtSwitchboard :: [Block]
   txtSwitchboard
@@ -738,10 +737,10 @@ serviceChap lev fSpec flags svc
      ++ [Plain (xrefFigure1 picSwitchboard)]                     -- draw the switchboard
 
   picSwitchboard :: Picture
-  picSwitchboard = makePicture flags (name svc) PTSwitchBoard sb -- the Picture that represents this service's knowledge graph
-     where
-      sbGph = switchboard fSpec svc                              -- the DotGraph String that represents this service's knowledge graph
-      sb    = printDotGraph sbGph                                -- the String that represents this service's knowledge graph
+  picSwitchboard = makePicture flags fSpec (switchboard1 fSpec svc) -- the Picture that represents this service's knowledge graph
+--     where
+--      sbGph = switchboard fSpec svc                              -- the DotGraph String that represents this service's knowledge graph
+--      sb    = printDotGraph sbGph                                -- the String that represents this service's knowledge graph
 
 {-  svcECA :: [Block]
   svcECA
@@ -904,7 +903,7 @@ xrefCitation myLabel = TeX ("\\cite{"++myLabel++"}")
 xrefFigure1 :: Picture -> [Inline]
 xrefFigure1 pict = 
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
-   , Image [Str $ "Here, "++pictName pict++" should have been visible"] ((pictName pict), (figlabel pict))
+   , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] ((uniqueName pict), (figlabel pict))
    , TeX "}\n"
    , TeX ("\\caption{"++caption pict++"}\n") 
    , xrefLabel (figlabel pict)

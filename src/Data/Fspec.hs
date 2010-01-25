@@ -182,7 +182,10 @@ module Data.Fspec ( Fspc(..)
                                    ,geners      :: [Generalization]   --
                                    ,nameandcpts :: (String,[Concept])}
                             deriving Show
-
+   instance Identified ClassDiag where
+      name cd = n
+        where (n,_) = nameandcpts cd
+        
    data Class          = OOClass        String             --
                                         [Attribute]        --
                                         [Method]           --

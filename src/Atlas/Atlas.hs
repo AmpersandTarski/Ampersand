@@ -15,12 +15,13 @@ import Database.HDBC
 import Classes.Morphical
 import List(sort)
 import Classes.ViewPoint 
+import Picture
 import PredLogic (applyM)
 ------
 import Classes.Graphics
-import System (system, ExitCode(ExitSuccess,ExitFailure))
-import System.FilePath(combine,replaceExtension)
-import System.Directory(createDirectoryIfMissing)
+--import System (system, ExitCode(ExitSuccess,ExitFailure))
+--import System.FilePath(replaceExtension,(</>))
+--import System.Directory(createDirectoryIfMissing)
 
 data ATable = ATable {tableid::ATableId, tablename::String, columns::[String]} deriving (Show)
 data ATableId = 
@@ -90,63 +91,55 @@ tables =
 iscpttable :: ATableId -> Bool
 iscpttable tbl = elem tbl [tableid t|t<-tables, head(columns t)=="i"]
 
-data PicLinkType = PicFS | PicPat String | PicRule String deriving (Eq)
+--data PicLinkType = PicFS | PicPat String | PicRule String deriving (Eq)
 
 --Atlas requires an ODBC data source named "atlas" representing the db of an Atlas.adl prototype
 --hdbc and hdbc-odbc must be installed (from hackage)
 fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
- if not(graphics flags) then do
-    verboseLn flags "Populating atlas for ..."
-    --connect through ODBC data source "atlas"
-    conn<-connectODBC "DSN=atlas"
-    --TODO handle connection errors
-    --TODO check if actual MySql tables of atlas correspond to function tables
-    --delete all existing content of this ADL script of this user
-    --create the pictures in a folder for this user
-    --TODO -> DELETE only deletes concept tables, but there are no foreign keys, so relation table content will not be removed. Duplicates are allowed in those, so this gives no errors. Meterkast.adl does not clean up at all, because new compiles get new script names.
-    (if islocalcompile then runMany conn ["DELETE FROM "++tablename x| x<-tables]
-        else runMany conn ["DELETE FROM "++tablename x++" WHERE user='"++user++"' AND script='"++script++"'" |x<-tables, iscpttable$tableid x] )
-    --insert population of this ADL script of this user
-    insertpops conn fSpec flags tables pictlinks
-    --end connection
-    commit conn
-    disconnect conn
- else do
-    verboseLn flags "Generating pictures for atlas..."
- >> createDirectoryIfMissing True fpath
- >> foldr (>>) (verboseLn flags "All pictures written..") ([fspecdot]++patsdot++userrulesdot)
+ if not(graphics flags) then do initDatabase flags fSpec
+ else do verboseLn flags "Generating pictures for atlas..."
+         sequence_ [writePicture flags pict | pict <- genPicturesForAtlas flags fSpec]
+ --createDirectoryIfMissing True fpath
+ -- >> foldr (>>) (verboseLn flags "All pictures written..") ([fspecdot]++patsdot++userrulesdot)
     where
-    script = adlFileName flags
-    user = takeWhile (/='.') (userAtlas flags)
-    islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
-    pictlinks = [(PicFS,".\\img\\"++user++"\\"++script++"\\"++ (name fSpec) ++ ".png")]
-              ++[(PicPat$name p, ".\\img\\"++user++"\\"++script++"\\"++ (name p) ++ ".png")| p<-patterns fSpec]
-              ++[(PicRule$name r, ".\\img\\"++user++"\\"++script++"\\"++ (name r) ++ ".png")| r<-userrules]
-    fpath = combine (dirAtlas flags) ("img/"++user++"/"++script++"/")
+--    script = adlFileName flags
+--    user = takeWhile (/='.') (userAtlas flags)
+--    islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
+ --   pictlinks = [(PicFS, relImgPath </> (spacesToUnderscores (name fSpec)) ++ ".png")]
+ --             ++[(PicPat$name p, relImgPath </> (spacesToUnderscores(name p)) ++ ".png")| p<-patterns fSpec]
+ --             ++[(PicRule$name r, relImgPath </> (spacesToUnderscores(name r) ++ ".png"))| r<-userrules]
+ --   fpath = (dirAtlas flags) </> relImgPath
+ --   relImgPath = "img" </> user </> (baseName flags)
+    
   --  dots =  fspecdot]
            --TODO -> patterns [makeGraphic (remSpaces (name p)) $ toDot fSpec flags p 
            --                 | p<-patterns fSpec, (not.null) (concs p)]
-    fspecdot = makeGraphic (name fSpec)$ toDot fSpec flags $ 
-             if length(patterns fSpec)==0 then error "There is no pattern to fold"
-             else foldr (union) (head$patterns fSpec) (tail$patterns fSpec)
-    patsdot = [makeGraphic (name p)$ toDot fSpec flags p|p<-patterns fSpec]
-    userrulesdot = [makeGraphic (name r)$ toDot fSpec flags r|r<-userrules]
-    userrules = sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]
-      where 
-      isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
-      isI (Tm (I{})) = True
-      isI _ = False
-    makeGraphic fnm dot
-      = do 
-        succes <- runGraphvizCommand Neato dot Canon dotfile
-        if succes
-           then do
-             result1 <- system ("neato -Tpng "++dotfile++ " -o "++pngfile)
-             case result1 of 
-                ExitSuccess   -> putStrLn (" "++pngfile++" created.")
-                ExitFailure x -> putStrLn ("Failure: " ++ show x)
-             result2 <- system ("neato -Tcmapx "++dotfile++ " -o "++mapfile)
+    
+
+
+--    fspecdot = makeGraphic (name fSpec)$ toDot fSpec flags $ 
+--             if length(patterns fSpec)==0 then error "There is no pattern to fold"
+--             else foldr (union) (head$patterns fSpec) (tail$patterns fSpec)
+--    patsdot = [makeGraphic (spacesToUnderscores(name p))$ toDot fSpec flags p|p<-patterns fSpec]
+--    userrulesdot = [makeGraphic (spacesToUnderscores(name r))$ toDot fSpec flags r|r<-userrules]
+--    userrules = sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]
+--      where 
+--      isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
+--      isI (Tm (I{})) = True
+--      isI _ = False
+--    makeGraphic fnm dot
+--      = do 
+--        succes <- runGraphvizCommand Neato dot Canon dotfile
+--        if succes
+--           then do
+--             result1 <- system ("neato -Tpng "++dotfile++ " -o "++pngfile)
+--             case result1 of 
+--                ExitSuccess   -> putStrLn (" "++pngfile++" created.")
+--                ExitFailure x -> putStrLn ("Failure: " ++ show x)
+--             result2 <- system ("neato -Tcmapx "++dotfile++ " -o "++mapfile)
+
+
 -- Van Han aan Gerard: 
 -- Hieronder vind je de code om het plaatje als imagemap te genereren. Dat is nu dus geregeld.
 -- Vervolgens moet je er nog voor zorgen dat de imagemap op de juiste manier wordt gebruikt. Daarvoor
@@ -158,15 +151,54 @@ fillAtlas fSpec flags =
 --Dank Han!
 --TODO -> "include (str_replace('png','map', $v0));" op een nette manier laten genereren op juiste plekken in .php zonder gebruik van str_replace natuurlijk.
 --TODO -> .map files zijn nog vrij leeg (geen areas, slechts header/footer)
-             case result2 of 
-                ExitSuccess   -> putStrLn (" "++mapfile++" created.")
-                ExitFailure x -> putStrLn ("Failure: " ++ show x)
-           else putStrLn ("Failure: could not create " ++ dotfile) 
-        where
-        outputFile = combine fpath fnm
-        dotfile = replaceExtension outputFile "dot"
-        pngfile = replaceExtension outputFile "png"
-        mapfile = replaceExtension outputFile "map"
+--             case result2 of 
+--                ExitSuccess   -> putStrLn (" "++mapfile++" created.")
+--                ExitFailure x -> putStrLn ("Failure: " ++ show x)
+--           else putStrLn ("Failure: could not create " ++ dotfile) 
+--        where
+--        outputFile = fpath </> fnm
+--        dotfile = replaceExtension outputFile "dot"
+--        pngfile = replaceExtension outputFile "png"
+--        mapfile = replaceExtension outputFile "map"
+initDatabase :: Options -> Fspc -> IO() 
+initDatabase flags fSpec = 
+                 do verboseLn flags "Populating atlas for ..."
+                   --connect through ODBC data source "atlas"
+                    conn<-connectODBC "DSN=atlas"
+                    --TODO handle connection errors
+                    --TODO check if actual MySql tables of atlas correspond to function tables
+                    --delete all existing content of this ADL script of this user
+                    --create the pictures in a folder for this user
+                    --TODO -> DELETE only deletes concept tables, but there are no foreign keys, so relation table content will not be removed. Duplicates are allowed in those, so this gives no errors. Meterkast.adl does not clean up at all, because new compiles get new script names.
+                    (if islocalcompile 
+                        then runMany conn ["DELETE FROM "++tablename x| x<-tables]
+                        else runMany conn ["DELETE FROM "++tablename x++
+                                           " WHERE user='"++user++"' AND script='"++script++"'" 
+                                                                      |x<-tables, iscpttable$tableid x] )
+                    --insert population of this ADL script of this user
+                    insertpops conn fSpec flags tables pictures
+                    --end connection
+                    commit conn
+                    disconnect conn
+   where
+    script = adlFileName flags
+    user = takeWhile (/='.') (userAtlas flags)
+    islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
+    pictures = genPicturesForAtlas flags fSpec
+
+genPicturesForAtlas :: Options -> Fspc -> [Picture]
+genPicturesForAtlas flags fSpec
+   = [makePicture flags fSpec p | p <- patterns fSpec] ++
+     [makePicture flags fSpec userRule | userRule <- sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]]
+-- HJO @ Gerard: Hier kan je nu als het goed is héél gemakkelijk plaatjes aan toevoegen...
+   where 
+     isIsaRule = isaRule
+     -- HJO @ Gerard: WAAROM? had je zelf een functie gemaakt om te bepalen of een regel isarule is? Die bestaat gewoon in adl.rule ....
+--      isIsaRule x = rrsrt x==Implication && (isI$rrant x) && (isI$rrcon x)
+--      isI (Tm (I{})) = True
+--      isI _ = False
+
+
 ----------------------------------------------------
 runMany :: (IConnection conn) => conn -> [String] -> IO Integer
 runMany _ [] = return 1
@@ -175,8 +207,8 @@ runMany conn (x:xs)  =
       runMany conn xs
 
 --TODO -> SIGNALs, Only Ru{} rules are considered
-type PictureLinks = [(PicLinkType,String)]
-insertpops :: (IConnection conn) => conn -> Fspc -> Options -> [ATable] -> PictureLinks -> IO Integer
+--type PictureLinks = [(PicLinkType,String)]
+insertpops :: (IConnection conn) => conn -> Fspc -> Options -> [ATable] -> [Picture] -> IO Integer
 insertpops _ _ _ [] _ = return 1
 insertpops conn fSpec flags (tbl:tbls) pics = 
    do stmt<- prepare conn$"INSERT INTO "++tablename tbl++" VALUES ("++placeholders(columns tbl)++")"
@@ -202,23 +234,23 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATSubExpression = [[cptexpr y,cptrule x]|x<-violateduserrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
-   pop' ATPicture = [[x]|(_,x)<-pics]
+   pop' ATPicture = [[atlasURL pic]|pic<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
-   pop' ATPattern = [[name x,pic]| x<-patterns fSpec,(PicPat pn,pic)<-pics, pn==name x]
+   pop' ATPattern = [[name x,atlasURL pic]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
    pop' ATPragmaExample = [[example x]|p<-patterns fSpec, x<-declarations p,decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
    pop' ATRelation = [[relpred x,expl x,example x,name p]|p<-patterns fSpec, x<-declarations p,decusr x] --REMARK -> decls from pat instead of fSpec!
                    ++ [["I","The identity relation.","x is related to x",""],["V","The universal relation.","x is related to y",""]]
    pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
-   pop' ATService = [[name fSpec,x]|(PicFS,x)<-pics]
+   pop' ATService = [[name fSpec,atlasURL pic]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
    pop' ATSignal = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$nextrule x signalrules,cptrule$prevrule x signalrules]|x<-signalrules]
    pop' ATType = [t x|x<-declarations fSpec,decusr x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
-   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,pic,r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,(PicRule rn,pic)<-pics, rn==name x]
+   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,atlasURL pic,r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
    pop' ATViolRule = [[ y, x] | (x,y)<-identifiedviols]
    pop' ATViolHomoRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule homorules)]
    pop' ATViolMultRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule multrls)]

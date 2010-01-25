@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Graphics (Dotable(toDot)
+module Classes.Graphics (Dotable(makePicture)
                         ,GraphvizCommand(..)
                         ,GraphvizOutput(..)
                         ,runGraphvizCommand) where
@@ -17,12 +17,27 @@ import Data.Fspec (Fspc,Fservice(..))
 import Options
 import Collection (Collection(uni,isc,rd))
 import Typology (Inheritance(..))
+import Picture
+import Switchboard
+import Rendering.ClassDiagram
+import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
 
 -- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
-class Dotable a where
+class Identified a => Dotable a where
+   picType :: a -> PictType
    toDot :: Fspc -> Options -> a -> DotGraph String
-
+   makePicture :: Options -> Fspc -> a -> Picture
+   makePicture flags fSpec dottable =
+          makePictureObj flags (name dottable) (picType dottable) (printDotGraph(toDot fSpec flags dottable)) (theURL flags dottable)
+   theURL  :: Options -> a -> FilePath 
+   theURL flags dottable = relImgPath flags </> addExtension (uniquePicName (picType dottable)(name dottable)) "png"      
+instance Dotable ClassDiag where
+   picType _ = PTClassDiagram
+   toDot _ _ _ = error ("!TODO (module Graphics 31): ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd.") 
+   makePicture flags _ cd =
+          makePictureObj flags (name cd) (picType cd) (classdiagram2dot cd) (theURL flags cd)
 instance Dotable Concept where
+   picType _ = PTConcept
    toDot fSpec flags c = dotG flags (name c) cpts dcls idgs
          where 
           rs   = [r| r<-rules fSpec, c `elem` concs r, not (isaRule r)]
@@ -35,8 +50,9 @@ instance Dotable Concept where
           dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
                     , not (isProp d)     -- d is not a property
                     , decusr d]          -- d is user defined, and consequently not a signal either
-
+   
 instance Dotable Pattern where
+   picType _ = PTPattern
    toDot fSpec flags pat = dotG flags (name pat) cpts dcls idgs
         where 
          --DESCR -> get concepts and arcs from pattern
@@ -48,6 +64,7 @@ instance Dotable Pattern where
           dcls = [d| d@Sgn{}<-declarations pat, decusr d] `uni` decls pat
 
 instance Dotable Fservice where
+   picType _ = PTFservice
    toDot fSpec flags svc = dotG flags (name svc) cpts dcls idgs
          where 
           rs         = [r| r<-rules fSpec, affected r]
@@ -62,7 +79,12 @@ instance Dotable Fservice where
                     , not (isProp   d)    -- d is not a property
                     , decusr d]           -- d is user defined, and consequently not a signal either
 
+instance Dotable SwitchBoard where
+   picType _ = PTSwitchBoard
+   toDot _ _ s = sbdotGraph s
+   
 instance Dotable Rule where
+   picType _ = PTRule
    toDot fSpec flags r = dotG flags (name r) cpts dcls idgs
          where 
           idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges

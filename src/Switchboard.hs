@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Switchboard(switchboard) where
+module Switchboard(switchboard1,SwitchBoard(..)) where
  
    import Data.GraphViz
    --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
@@ -16,8 +16,17 @@ module Switchboard(switchboard) where
    import Calc (quads,positiveIn)
    import ShowADL
 
-   switchboard :: ViewPoint a => Fspc -> a -> DotGraph String
-   switchboard fSpec spc 
+   data SwitchBoard = SwitchBoard { sbName :: String
+                                  , sbdotGraph :: DotGraph String
+                                  }
+   instance Identified SwitchBoard where
+      name sb = sbName sb
+   switchboard1 :: (Identified a,ViewPoint a) => Fspc -> a -> SwitchBoard
+   switchboard1 fSpec spc = SwitchBoard (name spc) 
+                                        (switchboardzzz fSpec spc)
+
+   switchboardzzz :: ViewPoint a => Fspc -> a -> DotGraph String
+   switchboardzzz fSpec spc 
      = DotGraph { strictGraph = False
                 , directedGraph = True
                 , graphID = Just (Str "Switchboard")
