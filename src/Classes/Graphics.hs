@@ -29,8 +29,8 @@ class Identified a => Dotable a where
    makePicture :: Options -> Fspc -> a -> Picture
    makePicture flags fSpec dottable =
           makePictureObj flags (name dottable) (picType dottable) (printDotGraph(toDot fSpec flags dottable)) (theURL flags dottable)
-   theURL  :: Options -> a -> FilePath 
-   theURL flags dottable = relImgPath flags </> addExtension (uniquePicName (picType dottable)(name dottable)) "png"      
+   theURL  :: Options -> a -> URL
+   theURL flags dottable = UStr { urlString = relImgPath flags </> addExtension (uniquePicName (picType dottable)(name dottable)) "png"}      
 instance Dotable ClassDiag where
    picType _ = PTClassDiagram
    toDot _ _ _ = error ("!TODO (module Graphics 31): ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd.") 
@@ -243,7 +243,7 @@ handleFlags po flags =
                  [ Label$StrLabel (name c)
                  , Shape Plaintext
                  , filled --Style$Stl Filled Nothing
-                 , LabelURL$UStr{urlString="Cpt_" ++ (name c) ++ ".html"}
+                 , URL (theURL flags c)
                  ]
             else [Shape PointShape, filled]--Style$Stl Filled Nothing,Width 0.1] --used to be something like: if crowfoot flags then doosje flags c else bolletje
       CptNameNode c  -> if crowfoot flags
@@ -252,14 +252,14 @@ handleFlags po flags =
                              [ Label$StrLabel (name c)
                              , Shape Plaintext
                              , filled --Style$Stl Filled Nothing
-                             , LabelURL$UStr{urlString="Cpt_" ++ (name c) ++ ".html"}
+                             , URL (theURL flags c)
                              ]
       CptEdge    -> [Len 0.4, invisible]
       CptOnlyOneNode c -> defaultNodeAtts ++
                           [Label (StrLabel (name c))
                           , Shape Plaintext
                           , filled 
-                          , LabelURL$UStr{urlString="Cpt_" ++ (name c) ++ ".html"}
+                          , URL (theURL flags c)
                           ]
       DclOnlyOneEdge d -> [ Label (StrLabel (name d))
                           , ArrowHead (if crowfoot flags

@@ -13,7 +13,7 @@ import Collection     ( Collection (rd) )
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Classes.Morphical
-import List(sort)
+import Auxiliaries(sort)
 import Classes.ViewPoint 
 import Picture
 import PredLogic (applyM)
@@ -99,10 +99,10 @@ fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
  if not(graphics flags) then do initDatabase flags fSpec
  else do verboseLn flags "Generating pictures for atlas..."
-         sequence_ [writePicture flags pict | pict <- genPicturesForAtlas flags fSpec]
+         sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fSpec]
  --createDirectoryIfMissing True fpath
  -- >> foldr (>>) (verboseLn flags "All pictures written..") ([fspecdot]++patsdot++userrulesdot)
-    where
+--    where
 --    script = adlFileName flags
 --    user = takeWhile (/='.') (userAtlas flags)
 --    islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
@@ -184,13 +184,20 @@ initDatabase flags fSpec =
     script = adlFileName flags
     user = takeWhile (/='.') (userAtlas flags)
     islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
-    pictures = genPicturesForAtlas flags fSpec
+    pictures = picturesForAtlas flags fSpec
 
-genPicturesForAtlas :: Options -> Fspc -> [Picture]
-genPicturesForAtlas flags fSpec
+picturesForAtlas :: Options -> Fspc -> [Picture]
+picturesForAtlas flags fSpec
    = [makePicture flags fSpec p | p <- patterns fSpec] ++
-     [makePicture flags fSpec userRule | userRule <- sort [x|x@Ru{}<-rules fSpec++signals fSpec, rrdcl x==Nothing, not (isIsaRule x), not(r_pat x=="")]]
--- HJO @ Gerard: Hier kan je nu als het goed is héél gemakkelijk plaatjes aan toevoegen...
+     [makePicture flags fSpec userRule | 
+          userRule <- sort [x|x@Ru{}<-rules fSpec++signals fSpec
+                                     , rrdcl x==Nothing
+                                     , not (isIsaRule x)
+                                     , not (r_pat x=="")
+                           ]
+     ]++
+     [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
+-- HJO @ Gerard: Hier kan je nu als het goed is héél gemakkelijk plaatjes aan toevoegen... (zolang ze maar Dottable zijn)
    where 
      isIsaRule = isaRule
      -- HJO @ Gerard: WAAROM? had je zelf een functie gemaakt om te bepalen of een regel isarule is? Die bestaat gewoon in adl.rule ....
@@ -234,23 +241,23 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATSubExpression = [[cptexpr y,cptrule x]|x<-violateduserrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
-   pop' ATPicture = [[atlasURL pic]|pic<-pics]
+   pop' ATPicture = [[show(atlasURL pic)]|pic<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
-   pop' ATPattern = [[name x,atlasURL pic]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
+   pop' ATPattern = [[name x,show(atlasURL pic)]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
    pop' ATPragmaExample = [[example x]|p<-patterns fSpec, x<-declarations p,decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
    pop' ATRelation = [[relpred x,expl x,example x,name p]|p<-patterns fSpec, x<-declarations p,decusr x] --REMARK -> decls from pat instead of fSpec!
                    ++ [["I","The identity relation.","x is related to x",""],["V","The universal relation.","x is related to y",""]]
    pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
-   pop' ATService = [[name fSpec,atlasURL pic]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
+   pop' ATService = [[name fSpec,show(atlasURL pic)]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
    pop' ATSignal = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$nextrule x signalrules,cptrule$prevrule x signalrules]|x<-signalrules]
    pop' ATType = [t x|x<-declarations fSpec,decusr x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
-   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,atlasURL pic,r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
+   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,show(atlasURL pic),r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
    pop' ATViolRule = [[ y, x] | (x,y)<-identifiedviols]
    pop' ATViolHomoRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule homorules)]
    pop' ATViolMultRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule multrls)]
