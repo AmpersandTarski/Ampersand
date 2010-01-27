@@ -38,9 +38,6 @@
                  , vkeys        = keyDefs context
                  , pictPatts    = Nothing
                  , vConceptDefs = conceptDefs context
-                 , pictConcepts = Nothing
-                 , pictCD       = Nothing
-                 , pictSB       = Nothing
                  , themes       = themes'
                  , vctxenv      = ctxenv context
                  }

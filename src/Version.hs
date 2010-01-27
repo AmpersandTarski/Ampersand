@@ -7,5 +7,5 @@ versionbanner = "ADL vs. 0.8.10-562" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-Kleine aanpassingen. URL in .map bestanden geplaatst voor concepten. Is waarschijnlijk niet de juiste URL, maar het idee staat. @Gerard: Kan jij hiermee uit de voeten?
+Duidelijker onderscheid gemaakt tussen de URL naar het .png bestand en het bestand waar een navigeerbaar object staat. @Gerard: Kan jij de juiste URLs plaatsen in de class Navigatable? Die moeten wijzen naar een pagina in de atlas waar het desbetreffende object centraal staat.
 -}

@@ -21,6 +21,16 @@ import Picture
 import Switchboard
 import Rendering.ClassDiagram
 import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
+import Strings
+
+class Identified a => Navigatable a where
+   theURL :: Options -> a -> URL    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
+   theURL flags a = UStr {urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name a)) "php"} 
+
+instance Navigatable Concept where
+   theURL flags cpt = UStr { urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name cpt)) "php"} 
+instance Navigatable Declaration where 
+   theURL flags d = UStr {urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name d ++ name (source d) ++ name (target d))) "php"} 
 
 -- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
 class Identified a => Dotable a where
@@ -28,14 +38,12 @@ class Identified a => Dotable a where
    toDot :: Fspc -> Options -> a -> DotGraph String
    makePicture :: Options -> Fspc -> a -> Picture
    makePicture flags fSpec dottable =
-          makePictureObj flags (name dottable) (picType dottable) (printDotGraph(toDot fSpec flags dottable)) (theURL flags dottable)
-   theURL  :: Options -> a -> URL
-   theURL flags dottable = UStr { urlString = relImgPath flags </> addExtension (uniquePicName (picType dottable)(name dottable)) "png"}      
+          makePictureObj flags (name dottable) (picType dottable) (printDotGraph(toDot fSpec flags dottable)) 
 instance Dotable ClassDiag where
    picType _ = PTClassDiagram
    toDot _ _ _ = error ("!TODO (module Graphics 31): ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd.") 
    makePicture flags _ cd =
-          makePictureObj flags (name cd) (picType cd) (classdiagram2dot cd) (theURL flags cd)
+          makePictureObj flags (name cd) (picType cd) (classdiagram2dot cd) 
 instance Dotable Concept where
    picType _ = PTConcept
    toDot fSpec flags c = dotG flags (name c) cpts dcls idgs

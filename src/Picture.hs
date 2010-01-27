@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 -- This module is for the definition of Picture and PictureList.
-module Picture ( Picture(origName,uniqueName,figlabel,caption,atlasURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
+module Picture ( Picture(origName,uniqueName,figlabel,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
                , PictType(..),uniquePicName
                , makePictureObj,writePicture) 
 where
@@ -22,7 +22,7 @@ data Picture = Pict { origName     :: String    -- The original name of the obje
                     , fullDot      :: FilePath  -- the full file path where the .dot file resides
                     , fspecPath    :: FilePath  -- the full file path where the .png file resides for functional specification
                     , atlasPath    :: FilePath  -- the full file path where the .png and .map file resides for Atlas
-                    , atlasURL     :: URL       -- the URL that points to this picture in the atlas
+                    , imgURL       :: URL       -- the URL that points to the generated .png imagefile, for use in the atlas
                     , dotProgName  :: String    -- the name of the program to use  ("dot" or "neato" )
                     , figlabel     :: String    -- the label of a picture (usefull for reffering to it e.g. in LaTeX)
                     , caption      :: String    -- a human readable name of this picture
@@ -40,16 +40,16 @@ makePictureObj :: Options
             -> String   -- Name of the picture
             -> PictType -- Type of the picture
             -> String   -- The dot source. Should be canonnical.
-            -> URL      -- The URL to the picture
+            
             -> Picture  -- The ADT of a picture
-makePictureObj flags name pTyp dotsource url
+makePictureObj flags name pTyp dotsource
     = Pict { origName   = name 
            , uniqueName   = cdName
            , dotSource  = dotsource
            , fullDot    = dirOutput flags  </> replaceExtension cdName "dot"
            , fspecPath  = dirOutput flags  </> addExtension cdName "png" 
            , atlasPath  = dirAtlas  flags  </> relImgPath flags </> addExtension cdName "png"
-           , atlasURL   = url
+           , imgURL     = UStr (dirAtlas  flags  </> relImgPath flags </> addExtension cdName "png")
            , pType      = pTyp
            , figlabel   = "fig:" ++ cdName
            , dotProgName = case pTyp of

@@ -38,9 +38,6 @@ module Data.Fspec ( Fspc(..)
                     , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Maybe [Picture]       -- ^ List of pictures containing pattern pictures (in same order as patterns)
                     , vConceptDefs :: [ConceptDef]          -- ^ all conceptDefs defined in the ADL-script
-                    , pictConcepts :: Maybe [Picture]       -- ^ List of pictures containing concept pictures.
-                    , pictCD       :: Maybe Picture         -- ^ Picture containing the ClassDiagram. Only if allready generated.
-                    , pictSB       :: Maybe Picture         -- ^ Picture containing the SwitchBoard.
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , vctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
