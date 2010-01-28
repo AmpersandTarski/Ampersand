@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),allFspecFormats,relImgPath)
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),allFspecFormats)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -256,6 +256,9 @@ atlasOpt nm opts
   = opts { dirAtlas =  case nm of
                             Just s  -> s
                             Nothing -> dirAtlas opts
+         , dirOutput =  case nm of
+                            Just s  -> s
+                            Nothing -> dirAtlas opts
          , genAtlas = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
@@ -328,6 +331,4 @@ verboseLn :: Options -> String -> IO ()
 verboseLn flags x
     | verboseP flags = putStrLn x
     | otherwise      = return ()
-relImgPath :: Options -> FilePath
-relImgPath flags= "img" </> (takeWhile (/='.') (userAtlas flags)) </> (baseName flags)    
                              

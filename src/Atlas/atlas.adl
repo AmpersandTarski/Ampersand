@@ -93,6 +93,12 @@ PATTERN ViolationAnalysis
 --subexpressionOf::SubExpression->Expression.
 --GEN Rule ISA Expression
 --GEN SubExpression ISA Expression
+
+--KEY subexpr: SubExpression(of:subexpressionOf) 
+--TODO -> "KEY" makes of SubExpression an Int in prototype. Where is my subexpression?
+--I could replace all SubExpression by SubExpressionId and add idOf::SubExpressionId->SubExpression
+--but I do not want this ID, it's an implementation choice
+--the implementation could have chosen to actually put a key on both column 'i' and 'subexpressionof' and extend all queries.
 subexpressionOf::SubExpression -> UserRule.
 contains::SubExpression*Pair.
 ENDPATTERN

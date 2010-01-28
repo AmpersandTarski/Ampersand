@@ -36,6 +36,7 @@ import Typology --USE -> Isa structure for enrichment
 import TypeInference.ITree
 import TypeInference.AdlExpr
 import TypeInference.Input
+--import TypeInference.InfLib
 import TypeInferenceEngine
 import ShowADL
 import Collection     ( Collection(..) )
@@ -129,7 +130,7 @@ data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
 --   - rule generation:   Rules that are derived from Keys specified in the ADL-script
 
 enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos,OrigExpr)])
-enrichCtx cx@(Ctx{}) ctxs = 
+enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
@@ -162,6 +163,7 @@ enrichCtx cx@(Ctx{}) ctxs =
                            (ctxpops cx) --copy populations
                               -}
   where
+--  (zzz,xxx) = (True,adlinfertest (declarations allCtx) tc (gens allCtx) (head[rrant r|p<-ctxpats cx,r<-ptrls p]))
   --ctxinf = ctx
   --TODO -> generate rules from props UNI etc
   --DESCR -> enriching ctxwrld
@@ -221,8 +223,8 @@ enrichCtx cx@(Ctx{}) ctxs =
   -- Na het typechecking proces mag dat niet meer voorkomen, en dient concs altijd concepten van de vorm C{} op te leveren.
   hierarchy = Isa isar isac
     where
-    isar = [(gengen g,genspc g) | g<-gens ctxs] -- gens levert uitsluitend concepten op van de vorm C{}, ofschoon dat hier niet gecheckt wordt.
-    isac = [c | c@C{}<-concs ctxs] >- [c | g<-gens ctxs, c@C{}<-[gengen g,genspc g]] 
+    isar = [(populate$gengen g,populate$genspc g) | g<-gens ctxs] -- gens levert uitsluitend concepten op van de vorm C{}, ofschoon dat hier niet gecheckt wordt.
+    isac = map populate$[c | c@C{}<-concs ctxs] >- [c | g<-gens ctxs, c@C{}<-[gengen g,genspc g]] 
 
 
   --DESCR -> enriching ctxpats

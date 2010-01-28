@@ -8,7 +8,6 @@ import Options
 import System             (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
 import System.Directory
-import Char (isAlpha)
 import Languages
 import Strings (spacesToUnderscores)
 import Control.Monad
@@ -46,10 +45,10 @@ makePictureObj flags name pTyp dotsource
     = Pict { origName   = name 
            , uniqueName   = cdName
            , dotSource  = dotsource
-           , fullDot    = dirOutput flags  </> replaceExtension cdName "dot"
-           , fspecPath  = dirOutput flags  </> addExtension cdName "png" 
-           , atlasPath  = dirAtlas  flags  </> relImgPath flags </> addExtension cdName "png"
-           , imgURL     = UStr (dirAtlas  flags  </> relImgPath flags </> addExtension cdName "png")
+           , fullDot    = dirOutput flags  </> relImgPath </> replaceExtension cdName "dot"
+           , fspecPath  = dirOutput flags  </> relImgPath </> addExtension cdName "png" 
+           , atlasPath  = dirAtlas  flags  </> relImgPath </> addExtension cdName "png"
+           , imgURL     = UStr (dirAtlas  flags  </> relImgPath </> addExtension cdName "png")
            , pType      = pTyp
            , figlabel   = "fig:" ++ cdName
            , dotProgName = case pTyp of
@@ -74,15 +73,22 @@ makePictureObj flags name pTyp dotsource
                             (PTFservice    ,Dutch  ) -> "Service graaf "++ name  --TODO betere tekst
            }
        where
+         relImgPath | genAtlas flags = "img" </> (takeWhile (/='.') (userAtlas flags)) </> (baseName flags)    
+                    | otherwise = []
          cdName = uniquePicName pTyp name
+--GMI voor Han -> (isAlpha c) verwijdert uit lijst comprehensie, dit gooit nummers (bv. rule nummers) uit de naam weg
+--       zodat alle ongelabelde rules de naam RUL_Rule hebben, dat is niet uniek.
+--       Deze functie garandeert sowieso geen uniekheid, is die garantie nodig?
+--       unieke namen voor (Dotable) datatypes zouden moeten worden gegarandeerd op het datatype als dat nodig is
 uniquePicName :: PictType -> String -> String
-uniquePicName pt n = picType2prefix pt++[c|c<- spacesToUnderscores n, isAlpha c]
+uniquePicName pt n = picType2prefix pt++[c|c<- spacesToUnderscores n]
 
 --         relImgPath = "img" </> user </> (baseName flags)
 --         user = takeWhile (/='.') (userAtlas flags)
 writePicture :: Options -> Picture -> IO()
 writePicture flags pict
     = sequence_ (
+      [when (genAtlas flags ) (do createDirectoryIfMissing True  (takeDirectory (atlasPath pict)))]++
       [when (or [genFspec flags ,genAtlas flags])
                              (do verboseLn flags ("Generating .dot file...")
                                  writeFile (fullDot pict) (dotSource pict)
@@ -96,8 +102,7 @@ writePicture flags pict
                                    ExitFailure x -> putStrLn ("Failure: " ++ show x)
                              )
       ]++
-      [when (genAtlas flags ) (do createDirectoryIfMissing True  (takeDirectory (atlasPath pict)) 
-                                  verboseLn flags ("Generating image: "++caption pict++" ... :")
+      [when (genAtlas flags ) (do verboseLn flags ("Generating image: "++caption pict++" ... :")
                                   verboseLn flags   (dotProgName pict++" -Tpng "++fullDot pict++" -o "++atlasPath pict)
                                   result1 <- system $ dotProgName pict++" -Tpng "++fullDot pict++" -o "++atlasPath pict
                                   case result1 of 
