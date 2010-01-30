@@ -341,8 +341,6 @@ module PredLogic
 -- mkVar is bedoeld om nieuwe variabelen te genereren, gegeven een set (ex) van reeds vergeven variabelen.
 -- mkVar garandeert dat het resultaat niet in ex voorkomt, dus postconditie:   not (mkVar ex cs `elem` ex)
 -- Dat gebeurt door het toevoegen van apostofes.
--- Deze functie is bedoeld voor gebruik in PredLogic.
--- WAAROM (SJ): waarom staat mkVar in CC_aux? Kan hij niet naar PredLogic?
    mkVar :: (Identified a) => [String] -> [a] -> [String]  
    mkVar ex cs = mknew ex [[(toLower.head.(++"x").name) c]|c<-cs]
     where

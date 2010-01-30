@@ -1,12 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS -XFlexibleContexts #-}
  module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
-   import UU_Scanner
-   import UU_Parsing
+   import UU_Scanner  ( Token(..),TokenType(..),noPos
+                      , pKey,pConid,pString,pSpec,pAtom,pVarid,pComma)
+   import UU_Parsing  (Parser
+                      , (<$>) , (<$), (<*>), (<*) , (*>), (<|>)
+                      ,pList,pListSep,pList1,pList1Sep,pSym
+                      ,pSucceed
+                      ,opt, Sequence,Alternative, IsParser
+                      )
    import Collection  (Collection(..))
    import Auxiliaries (sort)
    import Adl         
    import ShowADL     (showADL)
-   import CC_aux      (pKey_pos ,pVarid_val_pos, pConid_val_pos, pString_val_pos )
 
    keywordstxt :: [String]
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
@@ -329,4 +335,25 @@
    pRecord          :: Parser Token Paire
    pRecord           = mkPair<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
                                 
+   get_tok_pos :: Token -> FilePos
+   get_tok_pos     (Tok _ _ s l f) = FilePos (f,l,s)
+   get_tok_val_pos :: Token -> (String, FilePos)
+   get_tok_val_pos (Tok _ _ s l f) = (s,FilePos (f,l,s))
+
+
+
+   gsym_pos :: IsParser p Token => TokenType -> String -> String -> p FilePos
+   gsym_pos kind val' val2' = get_tok_pos <$> pSym (Tok kind val' val2' noPos "")
+
+   gsym_val_pos :: IsParser p Token => TokenType -> String -> String -> p (String,FilePos)
+   gsym_val_pos kind val' val2' = get_tok_val_pos <$> pSym (Tok kind val' val2' noPos "")
+
+   pKey_pos :: String -> Parser Token FilePos
+   pKey_pos  keyword  =   gsym_pos TkKeyword   keyword   keyword
+
+   pString_val_pos, {- pAtom_val_pos, -}pVarid_val_pos, pConid_val_pos
+                      ::  IsParser p Token => p (String,FilePos)
+   pString_val_pos    =   gsym_val_pos TkString    ""        "?STR?"
+   pVarid_val_pos     =   gsym_val_pos TkVarid     ""        "?LC?"
+   pConid_val_pos     =   gsym_val_pos TkConid     ""        "?UC?"
                                 

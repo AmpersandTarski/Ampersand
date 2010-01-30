@@ -16,14 +16,12 @@ where
    import Adl.Expression                 (Expression(..))
    import Adl.ObjectDef                  (ObjectDef(..))
    import Adl.KeyDef                     (KeyDef(..))
---   import Adl.Population                 (Population(..))
    import Adl.Pattern                    (Pattern(..))
    import Adl.Rule                       (Rule(..),RuleType(..))
    
    import Classification                 (Classification,preCl)
    import Collection                     (Collection(..))
    import Typology                       (genEq,typology)
---   import Classes.Object                 (populations)
 
    class Morphical a where
     concs        :: a -> Concepts                  -- the set of all concepts used in data structure a

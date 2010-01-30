@@ -6,7 +6,7 @@
    import Char (isAlphaNum,ord,isUpper,toUpper)
    import CommonClasses (  Identified(name))
    import Collection ( Collection(empty, (>-),rd) )
-   import Strings (chain) -- , eqCl, enc)
+   import Strings (chain) 
    import Typology (Inheritance(Isa))
    import Adl
    import Auxiliaries (eqCl)

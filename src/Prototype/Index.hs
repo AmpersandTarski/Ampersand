@@ -26,7 +26,7 @@
         ] ++ indentBlock 8 (concat
                            [ ["<LI><a href=\""++name fSpec++".php?content="++name o++(if isOne o then "" else "&new=1")++"\">"
                              ,(if isOne o then "  " else "  New ")++name o
-                             ,"</LI>"]
+                             ,"</a></LI>"]
                            | o <- serviceObjects
                            ]
                            ) ++

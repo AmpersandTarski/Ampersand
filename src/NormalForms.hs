@@ -1,14 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
 module NormalForms (conjNF,disjNF,normPA,nfProof,proofPA,nfPr,simplify,distribute)
 where
-   import Adl
+--   import Adl
    import Strings        (commaEng)
    import Collection     (Collection (..))
    import Auxiliaries    (eqCl)
    import ShowADL        (showADL)
    import Adl.ECArule    (PAclause(..),isAll,isChc,isBlk,isDry,isNop,isDo)
-   import Adl.Expression (isF,isFd,isFi,isFu)
-
+   import Adl.Expression 
+   import Adl.Concept
+   import CommonClasses
+   import Classes.Morphical
 {- Normalization of process algebra clauses -}
 
    normPA :: PAclause -> PAclause

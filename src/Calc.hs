@@ -18,7 +18,6 @@ module Calc ( deriveProofs
    import Strings            (spread,chain)
    import Adl
    import Data.Fspec
-   import Adl.ECArule        (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import ShowADL            (showADL,showADLcode)
    import ShowECA            (showECA)
    import CommonClasses      (ABoolAlg(..))

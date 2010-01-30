@@ -7,7 +7,7 @@ module Typology
           , genEq
           )
 where
-   import Auxiliaries    ( clos )
+--   import Auxiliaries    ( isPrefix )
    import Collection     ( Collection(..))
 
    data Inheritance a = Isa [(a,a)] [a] deriving (Eq,Show)
@@ -36,19 +36,13 @@ where
 
 
    genEq :: Eq a => Typology a -> a->a->Bool
-   genEq (Typ world) l r = if l==r then True  else or[f l r ps|ps<-world]
---   spcEq :: Eq a => Typology a -> a->a->Bool
---   spcEq (Typ world) l r = if l==r then True  else or[f r l ps|ps<-world]
---   gen   :: Eq a => Typology a -> a->a->Bool
---   gen   (Typ world) l r = if l==r then False else or[f l r ps|ps<-world]
---   spc   :: Eq a => Typology a -> a->a->Bool
---   spc   (Typ world) l r = if l==r then False else or[f r l ps|ps<-world]
-
-   f :: Eq a => a -> a -> [a] -> Bool
-   f l r ps = not (null p2)
-    where
-     p1 = dropWhile (/=l) ps
-     p2 = dropWhile (/=r) p1
+   genEq (Typ world) left right = if left==right then True  else or[f left right ps|ps<-world]
+     where
+       f :: Eq a => a -> a -> [a] -> Bool
+       f l r ps = not (null p2)
+        where
+         p1 = dropWhile (/=l) ps
+         p2 = dropWhile (/=r) p1
 
 --   makeIsa :: Eq a => Typology a -> Inheritance a
 --   makeIsa (Typ paths)
@@ -69,21 +63,36 @@ where
     typology :: Inheritance a -> Typology a
     typology (Isa rs cs)
      = Typ ([fst (head pth): map snd pth| pth<-clos fst snd rs, not (null pth)] ++ [[c]| c<-cs])
+         where
+            clos :: (Eq a, Eq b) => (b->a) -> (b->a) -> [b] -> [[b]] 
+            clos left right tuples
+              = [[e]| e<-tuples, right e==left e]++(unsublist.f 1) [[e]| e<-tuples, right e/=left e]
+                where
+                 m = length (rd [c|ts<-tuples, c<-[left ts,right ts]]) `min` length tuples  -- maximum path length possible
+                 f n pths
+                  = if n>length tuples then pths else
+                    f (2*n) (long++pths)
+                    where long = [xs++(ys>-xs)| xs<-pths, ys<-pths                         -- cartesian product
+                                              , n-length xs < length ys                    -- so: n < length (xs++ys)
+                                              , length ys <= (2*n `min` m)-length xs       -- so:     length (xs++ys) <=  (2*n `min` m)
+                                              , right (last xs)==left (head ys)            -- join
+                                              , not (or [t `isPrefix` xs| t<-tails ys])    -- no cycles
+                                              ]
+                 tails ts@(_:_) = ts: tails (tail ts)
+                 tails [] = []
+                 unsublist [] = []
+                 unsublist (xs:xss) = xs: unsublist[ys| ys<-xss, not (ys `isSublist` xs)]
 
-  {- was:
-    typology :: Show a => Inheritance a -> Typology a
-    typology (Isa rs cs)
-     = Typ (compress akin [p|p<-f 1 [] (singles rs) []]
-            ++ [[c]| c<-elems (Isa rs cs)])
-       where
-        singles rs         = [[a,b] | (a,b)<-rs, a/=b]
-        f n paths [] []    = paths
-        f n paths new []   = f (2*n) pn cands [p|p<-cands, head p `elem` tail p]
-                             where pn = paths++new
-                                   cands = [p|p<-pn `combine` pn,n<length p-1]
-        f n paths new errs = error("!Fatal (module Typology 84): cyclic specialization\n " ++ (chain "\n ".map show) [head e:takeWhile (/=head e) (tail e)| e<-errs])
-        combine rs rs'     = [r `mul` r'| r<-rs, r'<-rs', last r `match` head r']
-  -}
+   isPrefix :: Eq a => [a] -> [a] -> Bool
+   []     `isPrefix` _      = True
+   (x:xs) `isPrefix` (y:ys) = x==y && xs `isPrefix` ys
+   _      `isPrefix`  _     = False
+
+   isSublist :: Eq a => [a] -> [a] -> Bool
+   [] `isSublist` _  = True
+   xs `isSublist` ys = xs `isPrefix` ys  ||  length xs<=length ys && xs `isSublist` tail ys
+
+         
 
    compress :: Eq a => (IsaPath a->IsaPath a->Bool) -> [IsaPath a] -> [IsaPath a]
    compress f' paths
