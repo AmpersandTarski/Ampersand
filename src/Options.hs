@@ -62,7 +62,7 @@ getOptions =
       (flags,fNames)  <- case getOpt Permute (each options) args of
                          (o,n,[])    -> return ((foldl (flip id) (defaultOpts) o ),n)
                          (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
-      checkOptionsAndFileNameM (flags,fNames)
+      checkNSetOptionsAndFileNameM (flags,fNames)
   where 
      defaultOptionsM :: IO(Options)
      defaultOptionsM  =
@@ -127,8 +127,8 @@ getOptions =
 
 
 
-     checkOptionsAndFileNameM :: (Options,[String]) -> IO(Options)
-     checkOptionsAndFileNameM (flags,fNames) = 
+     checkNSetOptionsAndFileNameM :: (Options,[String]) -> IO(Options)
+     checkNSetOptionsAndFileNameM (flags,fNames) = 
           if or [showVersion flags, showHelp flags] 
           then return flags {helpNVersionTexts = ["Version: " ++ versionbanner | showVersion flags]
                                                ++[usageInfo' flags             | showHelp    flags]
@@ -142,11 +142,16 @@ getOptions =
                         >> checkProtoOpts flags
                         >> checkAtlasOpts flags
                         >> return flags { adlFileName = replaceExtension fName ".adl"
-                                        , baseName    = takeBaseName fName
+                                        , baseName    = basename fName
+                                        , dbName      = case dbName flags of
+                                                            ""  -> basename fName
+                                                            str -> str
                                         }
                 x:xs    -> error ("too many files: "++ (chain ", " (x:xs)) ++useHelp)
        
        where
+          basename :: FilePath -> String
+          basename n= takeBaseName n
           useHelp :: String
           useHelp = " (use --help for help) "
           checkLogName :: Options -> IO ()
@@ -190,12 +195,12 @@ options = map pp
           , ((Option ['C']     ["context"]     (OptArg contextOpt "name")  "use context with name."), Public)
 
           , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
+          , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("the prototype will use database with name (name overrides environment variable "++ envdbName ++ "). when both are't set, defaults to filename (without '.adl')")), Public)
           , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively."), Public)
           , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
 
           , ((Option ['o']     ["outputDir"]   (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides environment variable "++ envdirOutput ++ ").")), Public)
           , ((Option []        ["log"]         (ReqArg logOpt "name")      ("log to file with name (name overrides environment variable "++ envlogName  ++ ").")), Hidden)
-          , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("use database with name (name overrides environment variable "++ envdbName ++ ").")), Public)
 
           , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
           , ((Option []        ["user"]        (ReqArg userOpt "user")     ("generate atlas content for this user.")), Public)
