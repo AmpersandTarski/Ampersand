@@ -56,7 +56,7 @@ module Data.Fspec ( Fspc(..)
                              , objats  = serviceS fSpec ++ serviceG fSpec
                              , objstrs = []
                              }
-    conceptDefs  fSpec = vConceptDefs fSpec ++ [cd| pat<-patterns fSpec, cd<-ptcds pat]
+    conceptDefs  fSpec = vConceptDefs fSpec
     declarations fSpec = vrels fSpec
     rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
     signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]

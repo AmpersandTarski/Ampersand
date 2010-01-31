@@ -12,7 +12,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    import Data.Fspec
    import Data.Plug
    import List(isPrefixOf)
-   import Collection (Collection(rd))
+   import Collection (Collection(rd,uni))
    import Auxiliaries (naming)
 --   import Debug.Trace
 
@@ -490,7 +490,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
             as = decls m'
             a = head as
    
-    
+-- Given an expression, expr, which is meant for insertion or deletion in a plug. The question "which plug?" is answered
+-- by sqlRelPlug. It returns a plug p with two of its fields, sf and tf, such that disjNF (F[flp (fldexpr sf),fldexpr tf]) = disjNF expr
    sqlRelPlug :: Fspc -> Expression -> (Plug,SqlField,SqlField) --(plug,source,target)
    sqlRelPlug fSpec expr = if null cs then (mError "Plug"
                                            ,field (name (source expr)) (mError "Source Expression") Nothing (mError "Null") (mError "isUniq")
@@ -501,19 +502,43 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                  mError tp = error ("!Fatal (module RelBinGenBasics 501): Expression \""++show expr++"\" does not occur in plugs of fSpec, cannot give "++tp++" (sqlRelPlug in module RelBinGenBasics)")
    
    sqlRelPlugs :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
-   sqlRelPlugs fSpec e' = rd [ (plug,sf,tf)
-                             | plug@PlugSql{}<-plugs fSpec
-                             , (sf,tf)<-sqlPlugFields plug e'
-                             ]
+   sqlRelPlugs fSpec e = rd [ (plug,sf,tf)
+                            | plug@PlugSql{}<-plugs fSpec
+                            , (sf,tf)<-sqlPlugFields plug e
+                            ]
    sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
    sqlPlugFields plug e'
                 = [ (sf,tf)
-                  | sf<-[f|f<-fields plug,target (fldexpr f)==source e']
+                  | let fs  = [f|f<-fields plug,target (fldexpr f)==source e']
+                        flds=fs++
+-- DAAROM: Waarom (SJ) moeten de volgende I's worden toegevoegd aan flds?
+-- Reden: voor het geval dat er meerdere concepten op dezelfde plug zijn afgebeeld, die niet in de ISA-relatie tot elkaar staan.
+                             [Fld { fldname = "i"
+                                  , fldexpr = Tm (mIs c)
+                                  , fldtype = SQLChar 255
+                                  , fldnull = False  -- can there be empty field-values?
+                                  , flduniq = True   -- are all field-values unique?
+                                  , fldauto = False  -- is the field auto increment?
+                                  }
+                             | c<-rd[source (fldexpr f)| f<-fs]
+                             , Tm (mIs c) `notElem` [fldexpr f|f<-fs] ]
+                        ft  = [f|f<-fields plug,target (fldexpr f)==target e']
+                        fldt=ft++
+                             [Fld { fldname = "i"
+                                  , fldexpr = Tm (mIs c)
+                                  , fldtype = SQLChar 255
+                                  , fldnull = False  -- can there be empty field-values?
+                                  , flduniq = True   -- are all field-values unique?
+                                  , fldauto = False  -- is the field auto increment?
+                                  }
+                             | c<-rd[source (fldexpr f)| f<-ft]
+                             , Tm (mIs c) `notElem` [fldexpr f|f<-ft] ]
+                  , sf<-flds
+                  , tf<-fldt
                   , let se = fldexpr sf
-                  , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
-                  , let te = fldexpr tf
-                  , (  (isTrue $disjNF$Fu [Cp e',simplF [flp se,te]])
-                    && (isFalse$disjNF$Fi [Cp e',simplF [flp se,te]])
+                        te = fldexpr tf
+                  , (  (isTrue.disjNF) (Fu [Cp e', F [flp se,te] ])  --       e' |- se~;te
+                    && (isTrue.disjNF) (Fu [Cp (F [flp se,te]),e'])  --       se~;te |- e'
                     )
                   {- the above should be enough.. but the relation algebra calculations
                      are not good enough yet. In particular:

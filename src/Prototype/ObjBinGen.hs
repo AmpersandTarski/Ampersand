@@ -71,7 +71,7 @@
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
-       serviceObjects = if allServices flags then serviceG fSpec else serviceS fSpec --serviceG->generated|serviceS->from ADL script
+       serviceObjects = serviceG fSpec++serviceS fSpec -- serviceS come from the ADL-script. serviceG generates additional services.
        -- to place a file, first open it
        -- replace \ by \\, turn on grep and replace \n, \n and " by \\n, \\n and \\" respectively
        -- replace the line below with .. = "", and paste (you cannot edit long lines in most editors)

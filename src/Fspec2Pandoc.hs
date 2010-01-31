@@ -11,7 +11,7 @@ import Picture
 import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
-import Strings          (commaNL, commaEng,chain)
+import Strings          (unCap, commaNL, commaEng, chain)
 import Text.Pandoc  
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
@@ -291,14 +291,14 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
      emptySection = null newConcepts && null (sctRules ++ sctSignals)
      (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenRelations
      (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
-     conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]
+     conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]  -- show only those definitions that are actually used in this specification.
      patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
      patSignals   = [s| s<-signals fSpec, r_pat s==thm]
      newConcepts  = concs (patRules++patSignals) >- seenConcepts
      newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
      dpRule [] j' seenConcs seenDeclarations = ([], j', seenConcs, seenDeclarations)
      dpRule (r:rs) j' seenConcs seenDeclarations
-      = ( [ [Para [symDefLabel c, Str$ cddef cd]] |(c,cd)<-cds]++
+      = ( [ [Para [symDefLabel c, Str$ makeDefinition flags (name c) (cddef cd)]] |(c,cd)<-cds]++
           [ [Para [symReqLabel d, Str$ explainMult flags d]] |d<-nds] ++
           [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
         , j
@@ -322,7 +322,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                          , Str $ commaNL "en" cs
                                          , Str $ ". "]
                                 )++
-                                (case [name c| c<-newConcepts, (c',_)<-conceptdefs, c==c'] of
+                                (case [name c| c<-newConcepts, (c',_)<-rd conceptdefs, c==c'] of
                                   []  -> []
                                   [c] -> [ Str $ "Concept "
                                          , Str $ c
@@ -341,7 +341,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                          , Str $ commaEng "and" cs
                                          , Str $ ". "]
                                 )++
-                                (case [name c| c<-newConcepts, (c',_)<-conceptdefs, c==c'] of
+                                (case [name c| c<-newConcepts, c `notElem` [c'| (c',_)<-conceptdefs]] of
                                   []  -> []
                                   [c] -> [ Str $ "Concept "
                                          , Str $ c
@@ -843,7 +843,7 @@ count flags n x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
     where
-      preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
+      preciesEen = "een (1)" --"één"  TODO moet nog utf8 resistent worden gemaakt.
     
 ------ Symbolic referencing ---------------------------------
 
@@ -1015,4 +1015,9 @@ latexEsc x
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
-        
+
+makeDefinition :: Options -> String -> String -> String
+makeDefinition flags c cdef
+  = case language flags of
+     English -> "A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" "++unCap c++" is "++cdef
+     Dutch   -> "Een "++unCap c++" is "++cdef

@@ -151,10 +151,11 @@ doGenFspec fSpec flags
          makePdfFile = do 
                   --        removeOldFiles
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
-                          verboseLn flags ("PdfLatex was called "++show nrOfRounds++" times"++
-                               case ready of
-                                  True  -> "."
-                                  False -> ", but did not solve all refferences!")                          
+                          verboseLn flags ("PdfLatex was called "++
+                                           (if nrOfRounds>1 then show nrOfRounds++" times" else "once")++
+                                           case ready of
+                                              True  -> "."
+                                              False -> ", but did not solve all refferences!")                          
             where 
 --              removeOldFiles :: IO()
 --              removeOldFiles
@@ -171,7 +172,7 @@ doGenFspec fSpec flags
                 = if or [ready, roundsSoFar > 4]    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
                   then return (ready, roundsSoFar)
                   else do callPdfLatexOnce
-                          let needle = "LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right." -- This is the text of the warning that pdfLatex generates when a rerun is required.
+                          let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed. 
                           {- The log file should be renamed before reading, because readFile opens the file
                              for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
                              was read using readFile, it will fail because the file is still open. 8-((  

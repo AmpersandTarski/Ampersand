@@ -35,7 +35,7 @@
         , "  $DB_slct = @mysql_select_db('"++dbName flags++"');"
         , "}"
         , "if(!$DB_slct){"
-        , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database\");" --todo: full error report
+        , "  echo die(\"Install failed: cannot connect to MySQL or error selecting database '"++dbName flags++"'\");" --todo: full error report
         , "}else{"
         ] ++ indentBlock 2
         (

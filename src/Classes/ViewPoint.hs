@@ -63,7 +63,7 @@ where
                                , objats  = map objectdef (ctxpats context)
                                , objstrs = []
                                }
-    conceptDefs  context = rd$ctxcs context++conceptDefs (ctxpats context)
+    conceptDefs  context = ctxcs context++conceptDefs (ctxpats context)
     declarations context = declarations (ctxpats context) `uni` ctxds context
     rules        context = rules   (ctxpats context) ++ [r| r<-ctxrs context, not (isSignal r)]
     signals      context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r] 
@@ -110,7 +110,8 @@ where
                      , ptgns = [G Nowhere g s ""|g<-concs r, s<-concs r, g<s, null [x| x<-concs r>-[g,s], g<x, x<s]]
                      , ptdcs = []
                      , ptcds = []
-                     , ptkds = []}]
+                     , ptkds = []
+                     , ptxps = []}]
     isa r      = Isa ts (concs r>-[c| (g,s)<-ts,c<-[g,s]])
                  where ts = [(g,s)| g<-concs r, s<-concs r, g<s, null [c|c<-concs r, g<c, c<s]]
 -- was    isa r = empty

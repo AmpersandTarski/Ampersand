@@ -51,7 +51,6 @@
    --TODO -> check equivalence of generated Haskell code 
    --TODO -> comments in original script must also be printed
    --TODO -> what about extends? Answer: ignore untill revised
-   --TODO -> Pat "CONTEXT" should become obsolete (declare ds cs ks in a pattern)
    --WHY -> aren't ONE Anything NOthing etc reserved words on pString, pConid, (etc?)? Answer: check if errors can be produced without reserved words. If so add reserved words, otherwise don't
    --TODO -> sort on file position
    --TODO -> ALWAYS cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
@@ -124,6 +123,20 @@
            atts = [ m | a<-objats obj, Tm m<-[objctx a] ]
            str ss | and [isAlphaNum c| c<-ss] = ss
                   | otherwise                 = "\""++ss++"\""
+
+   instance ShowADL Explanation where
+    showADL (ExplConcept     cname lang ref expla) = "EXPLAIN CONCEPT "   ++cname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplDeclaration mph   lang ref expla) = "EXPLAIN RELATION "  ++showADL mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplRule        rname lang ref expla) = "EXPLAIN RULE "      ++rname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplKeyDef      kname lang ref expla) = "EXPLAIN KEY "       ++kname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplObjectDef   oname lang ref expla) = "EXPLAIN SERVICE "   ++oname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplPopulation  mph   lang ref expla) = "EXPLAIN POPULATION "++showADL mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplSQLPlug     sqlnm lang ref expla) = "EXPLAIN SQLPLUG "   ++sqlnm++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplPHPPlug     phpnm lang ref expla) = "EXPLAIN PHPPLUG "   ++phpnm++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplDeclaration mph   lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplPopulation  mph   lang ref expla) = "EXPLAIN POPULATION "++showADLcode fSpec mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec xpl = showADL xpl
 
    -- The declarations of the pattern are supplemented by all declarations needed to define the rules.
    -- Thus, the resulting pattern is self-contained with respect to declarations.
@@ -385,13 +398,13 @@
     showADL fSpec = showADLcode fSpec fSpec
     showADLcode fSpec' fSpec
      = "CONTEXT " ++name fSpec
-       ++ (if null (objDefs fSpec)      then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (objDefs fSpec))      ++ "\n")
-       ++ (if null (patterns fSpec)     then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (patterns fSpec))     ++ "\n")
-       ++ (if null (vConceptDefs fSpec) then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vConceptDefs fSpec)) ++ "\n")
-       ++ (if null (vgens fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vgens fSpec))        ++ "\n")
-       ++ (if null (vkeys fSpec)        then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vkeys fSpec))        ++ "\n")
-       ++ (if null ds                   then "" else "\n"++chain "\n"   (map (showADLcode fSpec') ds)                   ++ "\n")
-       ++ (if null showADLpops          then "" else "\n"++chain "\n\n" showADLpops                                     ++ "\n")
+       ++ (if null (objDefs fSpec)     then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (objDefs fSpec))     ++ "\n")
+       ++ (if null (patterns fSpec)    then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (patterns fSpec))    ++ "\n")
+       ++ (if null (conceptDefs fSpec) then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (conceptDefs fSpec)) ++ "\n")
+       ++ (if null (vgens fSpec)       then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vgens fSpec))       ++ "\n")
+       ++ (if null (vkeys fSpec)       then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vkeys fSpec))       ++ "\n")
+       ++ (if null ds                  then "" else "\n"++chain "\n"   (map (showADLcode fSpec') ds)                  ++ "\n")
+       ++ (if null showADLpops         then "" else "\n"++chain "\n\n" showADLpops                                    ++ "\n")
        ++ "\n\nENDCONTEXT"
        where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
                            | d<-declarations fSpec, not (null (decpopu d))]

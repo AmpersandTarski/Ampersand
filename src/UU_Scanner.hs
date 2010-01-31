@@ -9,40 +9,6 @@
    import UU_BinaryTrees(tab2tree,btLocateIn)
    import UU_Parsing(Symbol(..),IsParser,pSym,(<$>),pListSep,pPacked)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    data TokenType
      = TkSymbol
      | TkVarid
@@ -50,6 +16,7 @@
      | TkKeyword
      | TkOp
      | TkString
+     | TkExpl
      | TkAtom
      | TkChar
      | TkInteger8
@@ -123,6 +90,7 @@
            (Tok TkOp        _  s2 i fn)  -> "operator "              ++ s2         ++ maybeshow i fn
            (Tok TkKeyword   _  s2 i fn)  ->                        show s2         ++ maybeshow i fn
            (Tok TkString    _  s2 i fn)  -> "string \""              ++ s2 ++ "\"" ++ maybeshow i fn
+           (Tok TkExpl      _  s2 i fn)  -> "explanation {+"         ++ s2 ++ "-}" ++ maybeshow i fn
            (Tok TkAtom      _  s2 i fn)  -> "atom '"                 ++ s2 ++ "'"  ++ maybeshow i fn
            (Tok TkChar      _  s2 i fn)  -> "character '"            ++ s2 ++ "'"  ++ maybeshow i fn
            (Tok TkInteger8  _  s2 i fn)  -> "octal integer "         ++ s2         ++ maybeshow i fn
@@ -150,7 +118,7 @@
    skipline s = let (_,rest) = span (/='\n') s
                 in  rest
 
-   scan :: [String] -> [String] -> String -> String -> String -> Pos -> String -> [Token]
+   scan :: [String] -> [String] -> [Char] -> [Char] -> String -> Pos -> String -> [Token]
    scan keywordstxt keywordsops specchars opchars fn pos input
      = doScan pos input
 
@@ -175,7 +143,10 @@
                                           in  doScan (foldl adv p (c:sp)) next
 
       doScan p ('-':'-':s)  = doScan p (dropWhile (/= '\n') s)
+      doScan p ('-':'+':s)  = token TkExpl (dropWhile isSpace (takeWhile (/= '\n') s)) p fn
+                              : doScan p (dropWhile (/= '\n') s)
       doScan p ('{':'-':s)  = lexNest fn doScan (advc 2 p) s
+      doScan p ('{':'+':s)  = lexExpl fn doScan (advc 2 p) s
       doScan p ('"':ss)
         = let (s,swidth,rest) = scanString ss
           in if null rest || head rest /= '"'
@@ -248,32 +219,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    lexNest fn cont pos inp = lexNest' cont pos inp
     where lexNest' c p ('-':'}':s) = c (advc 2 p) s
           lexNest' c p ('{':'-':s) = lexNest' (lexNest' c) (advc 2 p) s
           lexNest' c p (x:s)       = lexNest' c (adv p x) s
           lexNest' _ _ []          = [ errToken "Unterminated nested comment" pos fn ]
+
+   lexExpl fn cont pos inp = lexExpl' "" cont pos inp
+    where lexExpl' str c p ('-':'}':s) = token TkExpl str p fn: c (advc 2 p) s
+          lexExpl' str c p ('{':'-':s) = lexNest fn (lexExpl' str c) (advc 2 p) s
+          lexExpl' str c p ('-':'-':s) = lexExpl' str c  p (dropWhile (/= '\n') s)
+          lexExpl' str c p (x:s)       = lexExpl' (x:str) c (adv p x) s
+          lexExpl' _ _ _ []            = [ errToken "Unterminated EXPLAIN section" pos fn ]
 
    scanString []            = ("",0,[])
    scanString ('\\':'&':xs) = let (str,w,r) = scanString xs
@@ -282,7 +239,7 @@
                               in ('\'': str,w+1,r)
    scanString xs = let (ch,cw,cr) = getchar xs
                        (str,w,r)  = scanString cr
-                       str' = maybe "" (:str) ch
+--                       str' = maybe "" (:str) ch
                    in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
    scanAtom []              = ("",0,[])
@@ -292,7 +249,7 @@
                               in ('"': str,w+1,r)
    scanAtom xs   = let (ch,cw,cr) = getchar xs
                        (str,w,r)  = scanAtom cr
-                       str' = maybe "" (:str) ch
+--                       str' = maybe "" (:str) ch
                    in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
    scanChar ('"' :xs) = (Just '"',1,xs)
@@ -357,13 +314,14 @@
 
    gsym :: IsParser p Token => TokenType -> String -> String -> p String
    gsym kind val val2 = get_tok_val <$> pSym (Tok kind val val2 noPos "")
-   pString, pAtom, pChar, pInteger8, pInteger10, pInteger16, pVarid, pConid,
+   pString, pExpl, pAtom, pChar, pInteger8, pInteger10, pInteger16, pVarid, pConid,
      pTextnm, pTextln, pInteger  :: IsParser p Token => p String
    pOper name     =   gsym TkOp        name      name
    pKey  keyword  =   gsym TkKeyword   keyword   keyword
    pSpec s        =   gsym TkSymbol    [s]       [s]
 
    pString        =   gsym TkString    ""        ""
+   pExpl          =   gsym TkExpl      ""        ""
    pAtom          =   gsym TkAtom      ""        ""
    pChar          =   gsym TkChar      ""        "\NUL"
    pInteger8      =   gsym TkInteger8  ""        "1"

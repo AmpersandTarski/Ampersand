@@ -268,10 +268,10 @@ atlasOpt nm opts
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: String -> Options -> Options
-dbNameOpt nm    opts = opts{dbName = if nm == "" 
-                                       then baseName opts
-                                       else nm
-                           }                          
+dbNameOpt nm opts = opts{dbName = if nm == "" 
+                                    then baseName opts
+                                    else nm
+                        }                          
 userOpt :: String -> Options -> Options
 userOpt x opts = opts{userAtlas = x}
 xmlOpt :: Options -> Options

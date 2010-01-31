@@ -1,42 +1,20 @@
  {-# OPTIONS_GHC -Wall #-}
 module Calc ( deriveProofs
-            , conjuncts
-            , simplify
-            , allClauses
             , reprAsRule
-            , quads
             , lambda
             , checkMono
-            , actSem
-            , assembleECAs
-            , positiveIn
-            , delta ) 
+            , positiveIn) 
   where
 
-   import Collection         (Collection (isc,rd,rd'))
-   import Auxiliaries        (sort',eqCl,eqClass)
+   import Collection         (Collection (isc,rd))
+   import Auxiliaries        (sort',eqCl)
    import Strings            (spread,chain)
    import Adl
    import Data.Fspec
+   import ADL2Fspec          (actSem, delta, allClauses, conjuncts)
+   import Adl.ECArule        (InsDel(..))
    import ShowADL            (showADL,showADLcode)
-   import ShowECA            (showECA)
-   import CommonClasses      (ABoolAlg(..))
-   import NormalForms        (conjNF,disjNF,normPA,nfProof,nfPr,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
-
-   conjuncts :: Rule -> [Expression]
-   conjuncts = fiRule.conjNF.normExpr
-    where fiRule (Fi fis) = {- map disjuncts -} fis
-          fiRule r        = [ {- disjuncts -} r]
-
--- The function disjuncts yields an expression which has constructor Fu in every case.
-   disjuncts :: Expression -> Expression
-   disjuncts = fuRule
-    where fuRule (Fu cps) = (Fu . rd . map cpRule) cps
-          fuRule r        = Fu [cpRule r]
-          cpRule (Cp r)   = Cp (fRule r)
-          cpRule r        = fRule r
-          fRule (F ts)    = F ts
-          fRule  r        = F [r]
+   import NormalForms        (disjNF,nfProof,nfPr,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
 
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
@@ -45,159 +23,6 @@ module Calc ( deriveProofs
         "\nConjunct: "++showADLcode fSpec conj++
         concat ["\n   Clause: "++showADLcode fSpec clause| clause<-shifts]
        | (conj, shifts)<-cl_conjNF cl]
-
--- The function allClauses yields an expression which has constructor Fu in every case.
-   allClauses :: Rule -> Clauses
-   allClauses rule = Clauses [(conj,allShifts conj)| conj<-conjuncts rule] rule
-
-   allShifts :: Expression -> [Expression]
-   allShifts conjunct = rd [simplify (normFlp e')| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
-    where
-       normFlp (Fu []) = Fu []
-       normFlp (Fu fs) = if length [m| f<-fs, m<-morlist f, inline m] <= length [m| f<-fs, m<-morlist f, not (inline m)]
-                         then Fu (map flp fs) else (Fu fs)
-       normFlp _ = error ("!Fatal (module Calc 61): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
-
-   shiftL :: Expression -> [Expression]
-   shiftL r
-    | length antss+length conss /= length fus = error ("!Fatal (module Calc 65): shiftL will not handle argument of the form "++showADL r)
-    | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
-    | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F conss)]
-    | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
-                                                     | ts<-ass++if null ass then [id' css] else []]++
-                                                     [ F (if null ts then id' ass else ts)
-                                                     | ts<-css++if null css then [id' ass] else []])
-                                                | (ass,css)<-rd(move antss conss)
-                                                , if null css then error "!Fatal (module Calc 73): null css in shiftL" else True
-                                                , if null ass then error "!Fatal (module Calc 74): null ass in shiftL" else True
-                                                ]
-    where
-     Fu fs = disjuncts r
-     fus = filter (not.isIdent) fs
-     antss = [ts | Cp (F ts)<-fus]
-     conss = [ts | F ts<-fus]
-     srcA = -- if null antss  then error ("!Fatal (module Calc 81): empty antecedent in shiftL ("++showHS options "" r++")") else
-            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc 82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
-            foldr1 lub [ source (head ants) | ants<-antss]
-     id' ass = [Tm (mIs c)]
-      where a = (source.head.head) ass
-            c = if not (a `order` b) then error ("!Fatal (module Calc 86): shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
-                a `lub` b
-            b = (target.last.last) ass
-   -- It is imperative that both ass and css are not empty.
-     move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
-     move ass [] = [(ass,[])]
-     move ass css
-      = (ass,css):
-        if and ([not (idsOnly (F cs))| cs<-css]) -- idsOnly (F [])=True, so:  and [not (null cs)| cs<-css]
-        then [ts| length (eqClass (==) (map head css)) == 1
-                , isUni h
-                , ts<-move [[flp h]++as|as<-ass] (map tail css)]++
-             [ts| length (eqClass (==) (map last css)) == 1
-                , isInj l
-                , ts<-move [as++[flp l]|as<-ass] (map init css)]
-        else []
-        where h=head (map head css); l=head (map last css)
-
-   shiftR :: Expression -> [Expression]
-   shiftR r
-    | length antss+length conss /= length fus = error ("!Fatal (module Calc 106): shiftR will not handle argument of the form "++showADL r)
-    | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
-    | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F antss)]
-    | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
-                                                     | ts<-ass++if null ass then [id' css] else []]++
-                                                     [ F (if null ts then id' ass else ts)
-                                                     | ts<-css++if null css then [id' ass] else []])
-                                                | (ass,css)<-rd(move antss conss)]
-    where
-     Fu fs = disjuncts r
-     fus = filter (not.isIdent) fs
-     antss = [ts | Cp (F ts)<-fus]
-     conss = [ts | F ts<-fus]
-     srcA = if null conss then error ("!Fatal (module Calc 119): empty consequent in shiftR ("++showADL r++")") else
-            if length (eqClass order [ source (head cons) | cons<-conss])>1
-            then error ("Fatal (module Calc120): shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss]))
-            else foldr1 lub [ source (head cons) | cons<-conss]
-     id' css = [Tm (mIs c)]
-      where a = (source.head.head) css
-            c = if not (a `order` b)
-                then error ("!Fatal (module Calc 126): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b)
-                else a `lub` b
-            b = (target.last.last) css
-     move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
-     move [] css = [([],css)]
-     move ass css
-      = (ass,css):
-        if and [not (null as)| as<-ass]
-        then [ts| length (eqClass (==) (map head ass)) == 1
-                , isSur h
-                , ts<-move (map tail ass) [[flp h]++cs|cs<-css]]++
-             [ts| length (eqClass (==) (map last ass)) == 1
-                , isTot l
-                , ts<-move (map init ass) [cs++[flp l]|cs<-css]]
-        else []
-        where h=head (map head ass); l=head (map last ass)
-
-   -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
-   -- whenever Morphism m is affected (i.e. tuples in m are inserted or deleted),
-   -- the rule may have to be restored using functionality from one of the clauses.
-   -- The rule is taken along for traceability.
-   quads :: (Morphism->Bool) -> [Rule] -> [Quad]
-   quads visible rs
-    = [ Quad m (Clauses [ (conj,allShifts conj)
-                        | conj <- conjuncts rule
-      --                , (not.null.lambda Ins (Tm m)) conj  -- causes infinite loop
-      --                , not (checkMono conj Ins m)         -- causes infinite loop
-                        , conj'<- [subst (m, actSem Ins m (delta (sign m))) conj]
-                        , (not.isTrue.conjNF) (Fu[Cp conj,conj']) -- the system must act to restore invariance     
-                        ]
-                        rule)
-      | rule<-rs
-      , m<-rd (map makeInline (mors rule))
-      , visible m
-      ]
-
--- assembleECAs :: [Quad] -> [ECArule]
--- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
--- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
-   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
-   assembleECAs visible qs = [ecarule i| (ecarule,i) <- zip ecas [1..]]
-      where
-       ecas
-        = [ ECA (On ev m) delt action
-          | mphEq <- eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
-          , m <- map fst4 (take 1 mphEq), Tm delt<-[delta (sign m)]
-          , ev<-[Ins,Del]
-          , action <- [ All
-                        [ Chc [ (if isTrue  clause'   then Nop else
-                                 if isFalse clause'   then Blk else
---                               if not (visible m) then Blk else
-                                 doCode visible ev toExpr viols)
-                                 [(conj,causes)]  -- the motivation for these actions
-                              | clause@(Fu fus) <- shifts
-                              , clause' <- [ conjNF (subst (m, actSem Ins m (delta (sign m))) clause)]
-                              , viols <- [ conjNF (notCp clause')]
-                              , frExpr  <- [ if ev==Ins
-                                             then Fu [f| f<-fus, isNeg f]
-                                             else Fu [f| f<-fus, isPos f] ]
-                              , m `elem` map makeInline (mors frExpr)
-                              , toExpr  <- [ if ev==Ins
-                                             then Fu [      f| f<-fus, isPos f]
-                                             else Fi [notCp f| f<-fus, isNeg f] ]
-                              ]
-                              [(conj,causes)]  -- to supply motivations on runtime
-                        | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
-                        , causes  <- [ (map thd3 conjEq) ]
-                        , conj <- map snd3 (take 1 conjEq), shifts <- map fst3 (take 1 conjEq)
-                        ]
-                        [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, (_,_,conj,_)<-take 1 cl]  -- to supply motivations on runtime
-                      ]
-          ]
-       fst4 (w,_,_,_) = w
-       fst3 (x,_,_) = x
-       snd3 (_,y,_) = y
-       thd3 (_,_,z) = z
-       thd4 (_,_,z,_) = z
 
 -- testService :: Fspc -> ObjectDef -> String
 -- Deze functie is bedoeld om te bedenken hoe services moeten worden afgeleid uit een vers vertaalde ObjectDef.
@@ -210,13 +35,11 @@ module Calc ( deriveProofs
       " - Invariants:\n   "++chain "\n   " [showADLcode fSpec rule    | rule<-invariants]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invariants]++"\n"++
--- Switch this on if you want to see quads.
---      " + "++show (length qs)++" quads:"   ++
---      concat [showQ i (m,shifts,conj,cl_rule ccrs)| (i,Quad m ccrs)<-zip [(1::Int)..] (reverse qs), (conj,shifts)<-cl_conjNF ccrs]++"\n"++
-
+{-
       " - ECA rules:"++concat  [ "\n\n   "++showECA fSpec "\n>     "  (eca{ecaAction=normPA (ecaAction eca)})
--- Dit toevoegen als je de afleiding wilt zien... -}            ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
+                                 ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
                                | eca<-ecaRs]++"\n\n"++
+-}
       " - Visible relations:\n   "++chain "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
     where
 --        showQ i (m, shs,conj,r)
@@ -224,10 +47,10 @@ module Calc ( deriveProofs
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis        = rd (map makeInline rels++map (mIs.target) rels)
-        visible m  = makeInline m `elem` vis
+--        visible m  = makeInline m `elem` vis
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
-        qs         = quads visible invariants
-        ecaRs      = assembleECAs visible qs
+--        qs         = vquads fSpec
+--        ecaRs      = assembleECAs visible qs
         editable (Tm Mph{})  = True    --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editable _           = False
         editMph (Tm m@Mph{}) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
@@ -322,103 +145,6 @@ module Calc ( deriveProofs
                          simplify (consequent conclusion)
      where (conclusion,_,_) = last (derivMono expr ev m)
 
-   actSem :: InsDel -> Morphism -> Expression -> Expression
-   actSem Ins m (Tm d) | makeInline m==makeInline d = Tm m
-                       | otherwise                  = Fu[Tm m,Tm d]
-   actSem Ins m delt   = disjNF (Fu[Tm m,delt])
-   actSem Del m (Tm d) | makeInline m==makeInline d = Fi[]
-                       | otherwise                  = Fi[Tm m, Cp (Tm d)]
-   actSem Del m delt   = conjNF (Fi[Tm m,Cp delt])
- --  actSem Del m delt = Fi[m,Cp delt]
-
-   delta :: (Concept, Concept) -> Expression
-   delta (a,b)  = Tm (makeMph (Sgn { decnm   = "Delta"
-                                   , desrc   = a
-                                   , detrg   = b
-                                   , decprps = []
-                                   , decprL  = ""
-                                   , decprM  = ""
-                                   , decprR  = ""
-                                   , decpopu = []
-                                   , decexpl = ""
-                                   , decfpos = Nowhere
-                                   , decid   = 0
-                                   , deciss  = True
-                                   , decusr  = False
-                                   , decpat  = ""
-                                   }))
-
-   -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
-   doCode :: (Morphism->Bool)        --  the morphisms that may be changed
-          -> InsDel
-          -> Expression              --  the expression in which a delete or insert takes place
-          -> Expression              --  the delta to be inserted or deleted
-          -> [(Expression,[Rule])]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
-          -> PAclause
-   doCode editable tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
-    where
-      doCod deltaX tOp exprX motiv =
-        case (tOp, exprX) of
-          (_ ,  Fu [])   -> Blk motiv
-          (_ ,  Fi [])   -> Nop motiv
-          (_ ,  F [])    -> error ("!Fatal (module Calc 366): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fd [])   -> error ("!Fatal (module Calc 368): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
-                                     "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fu [t])  -> doCod deltaX tOp t motiv
-          (_ ,  Fi [t])  -> doCod deltaX tOp t motiv
-          (_ ,  F [t])   -> doCod deltaX tOp t motiv
-          (_ ,  Fd [t])  -> doCod deltaX tOp t motiv
-          (Ins, Cp x)    -> doCod deltaX Del x motiv
-          (Del, Cp x)    -> doCod deltaX Ins x motiv
-          (Ins, Fu fs)   -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Ins, Fi fs)   -> All [ doCod deltaX Ins f []    | f<-fs ] motiv
-          (Ins, F ts)    -> Chc [ if F ls==flp (F rs)
-                                  then Chc [ New c fLft motiv
-                                           , Sel c (F ls) fLft motiv
-                                           ] motiv
-                                  else Chc [ New c (\x->All [fLft x, fRht x] motiv) motiv
-                                           , Sel c (F ls) fLft motiv
-                                           , Sel c (flp(F rs)) fRht motiv
-                                           ] motiv
-                                | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
-                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])]
-                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)],Cp (F ls)])) Ins (F ls) [])]
-                                ] motiv
-          (Del, F ts)    -> Chc [ if F ls==flp (F rs)
-                                  then Chc [ Sel c (F ls) (\_->Rmv c fLft motiv) motiv
-                                           , Sel c (F ls) fLft motiv
-                                           ] motiv
-                                  else Chc [ Sel c (Fi [F ls,flp(F rs)]) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
-                                           , Sel c (Fi [F ls,flp(F rs)]) fLft motiv
-                                           , Sel c (Fi [F ls,flp(F rs)]) fRht motiv
-                                           ] motiv
-                                | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
-                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])]
-                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)],Cp (F ls)])) Del (F ls) [])]
-                                ] motiv
-          (Del, Fu fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Del, Fi fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
--- Op basis van de Morgan is de procesalgebra in het geval van (Ins, Fd ts)  afleidbaar uit uit het geval van (Del, F ts) ...
-          (_  , Fd ts)   -> doCod deltaX tOp (Cp (F (map Cp ts))) motiv
-          (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
-          (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , Tm m)    -> (if editable m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m,rd' nr [r|(_,rs)<-motiv, r<-rs])])
-          (_ , _)        -> error ("!Fatal (module Calc 418): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
-                                   "within function doCode "++show tOp'++" ("++showADL exprX++") ("++showADL delta1++").")
-
-
-   chop :: [t] -> [([t], [t])]
-   chop []     = []
-   chop [_]    = []
-   chop (x:xs) = ([x],xs): [(x:l, r)| (l,r)<-chop xs]
-
-   deltaK0 :: t -> InsDel -> t1 -> t
-   deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)
-   deltaK0 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x* leeg is)
-   deltaK1 :: t -> InsDel -> t1 -> t
-   deltaK1 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x+)
-   deltaK1 delta' Del _ = delta'  -- error! (tijdelijk... moet berekenen welke paren uit x verwijderd moeten worden zodat delta/\x+ leeg is)
 
 -- The function reprAsRule is used in show-functions, whenever an expression that represents a rule has to be shown to look like a rule.
    reprAsRule :: Rule -> Expression -> Rule

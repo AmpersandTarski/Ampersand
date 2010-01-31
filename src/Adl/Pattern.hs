@@ -6,18 +6,20 @@ where
    import Adl.Rule                     (Rules)
    import Adl.Gen                      (Gens)
    import Adl.MorphismAndDeclaration   (Declarations)
-   import Adl.ConceptDef               (ConceptDefs)
+   import Adl.ConceptDef               (ConceptDef)
+   import Adl.Explanation              (Explanation)
    import CommonClasses                (Identified(..))
    import Collection                   (Collection(..))
    
    type Patterns  = [Pattern]
    data Pattern
-      = Pat { ptnm  :: String       -- ^ Name of this pattern
-            , ptrls :: Rules        -- ^ List of rules declared in this pattern
-            , ptgns :: Gens         -- ^ List of generalizations defined in this pattern
-            , ptdcs :: Declarations -- ^ List of declarations declared in this pattern
-            , ptcds :: ConceptDefs  -- ^ list of concept definitions defined in this pattern
-            , ptkds :: KeyDefs      -- ^ list of key definitions defined in this pattern
+      = Pat { ptnm  :: String        -- ^ Name of this pattern
+            , ptrls :: Rules         -- ^ List of rules declared in this pattern
+            , ptgns :: Gens          -- ^ List of generalizations defined in this pattern
+            , ptdcs :: Declarations  -- ^ List of declarations declared in this pattern
+            , ptcds :: [ConceptDef]  -- ^ list of concept definitions defined in this pattern
+            , ptkds :: KeyDefs       -- ^ list of key definitions defined in this pattern
+            , ptxps :: [Explanation] -- ^ list of explanations of elements defined in this pattern
             }   --deriving (Show) -- voor debugging
 
 -- \***********************************************************************
@@ -45,6 +47,7 @@ where
            (ptdcs pat `uni` ptdcs pat')
            (ptcds pat `uni` ptcds pat')
            (ptkds pat `uni` ptkds pat')
+           (ptxps pat  ++   ptxps pat')
 
 
             

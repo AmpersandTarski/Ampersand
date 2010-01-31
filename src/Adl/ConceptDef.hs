@@ -1,10 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.ConceptDef    (ConceptDef(..),ConceptDefs)
+module Adl.ConceptDef    (ConceptDef(..))
 where
    import Adl.FilePos    (FilePos)
    import CommonClasses  (Identified(..)) 
 
-   type ConceptDefs = [ConceptDef]
    data ConceptDef 
       = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
             , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.

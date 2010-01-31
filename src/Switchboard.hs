@@ -13,7 +13,7 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
  --  import Options
    import Collection (Collection(rd))
 --   import Classes.Graphics
-   import Calc (quads,positiveIn)
+   import Calc (positiveIn)
    import ShowADL
 
    data SwitchBoard = SwitchBoard { sbName :: String
@@ -39,8 +39,7 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
                 }
        where 
          rels         = rd (map makeInline (mors spc))++map mIs (concs spc)
-         visible m    = makeInline m `elem` rels
-         qs           = quads visible (rules spc)
+         qs           = vquads fSpec
          conjuncts    = rd [conj   | Quad _ ccrs<-qs, (conj,_)<-cl_conjNF ccrs]
          clauses      = rd [clause | Quad _ ccrs<-qs, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
          posTerms     = rd [term | Fu terms<-clauses, term<-terms, isPos term]

@@ -21,6 +21,7 @@ where
 -- TODO: Als het ADL bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
    import Adl
+   import Languages
    import ShowADL
    import Data.Fspec
    import Time(ClockTime)
@@ -52,7 +53,7 @@ where
 
 
    instance XML Fspc where
-     mkTag f = Tag "Fspec" [ nameToAttr f] 
+     mkTag f = Tag "Fspec" [nameToAttr f] 
      mkXmlTree f@(Fspc{})
         = Elem (mkTag f) (
              [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
@@ -101,16 +102,17 @@ where
                ) 
 
    instance XML Pattern where
-     mkTag p = Tag "Pattern" [ nameToAttr p]
-     mkXmlTree p@(Pat _ aaa bbb ccc ddd eee)
-        = Elem (mkTag p) (  
-             [ Elem (simpleTag "Rules")       (map mkXmlTree aaa)|not (null aaa)] 
-          ++ [ Elem (simpleTag "Gens")        (map mkXmlTree bbb)|not (null bbb)] 
-          ++ [ Elem (simpleTag "Declarations")(map mkXmlTree ccc)|not (null ccc)] 
-          ++ [ Elem (simpleTag "Concepts")    (map mkXmlTree ddd)|not (null ddd)] 
-          ++ [ Elem (simpleTag "Keys")        (map mkXmlTree eee)|not (null eee)] 
+     mkTag pat = Tag "Pattern" [ nameToAttr pat]
+     mkXmlTree pat
+        = Elem (mkTag pat) (  
+             [ Elem (simpleTag "Rules")        (map mkXmlTree (ptrls pat))|not (null (ptrls pat))] 
+          ++ [ Elem (simpleTag "Gens")         (map mkXmlTree (ptgns pat))|not (null (ptgns pat))] 
+          ++ [ Elem (simpleTag "Declarations") (map mkXmlTree (ptdcs pat))|not (null (ptdcs pat))] 
+          ++ [ Elem (simpleTag "Concepts")     (map mkXmlTree (ptcds pat))|not (null (ptcds pat))] 
+          ++ [ Elem (simpleTag "Keys")         (map mkXmlTree (ptkds pat))|not (null (ptkds pat))] 
+          ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (ptxps pat))|not (null (ptxps pat))] 
            )
-           
+
    instance XML Rule where
      mkTag r = Tag rtype extraAtts
                  where rtype = if isSignal r then "Signal" else "Rule"
@@ -191,6 +193,25 @@ where
       where
       (union',inter,rAdd,rMul,clos0,clos1,compl,flip',rel)
        = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
+
+
+   instance XML Explanation where
+     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for explanations.")
+     mkXmlTree expr 
+         = case expr of
+               (ExplConcept     cname lang ref expla) -> xpl "ECPT"  (simpleTag cname) lang ref expla
+               (ExplDeclaration mph   lang ref expla) -> xpl "EDECL" (simpleTag (name mph++name(source mph)++name(target mph))) lang ref expla
+               (ExplRule        rname lang ref expla) -> xpl "ERULE" (simpleTag rname) lang ref expla
+               (ExplKeyDef      kname lang ref expla) -> xpl "EKEYD" (simpleTag kname) lang ref expla
+               (ExplObjectDef   oname lang ref expla) -> xpl "EODEF" (simpleTag oname) lang ref expla
+               (ExplPattern     pname lang ref expla) -> xpl "EPAT"  (simpleTag pname) lang ref expla
+               (ExplPopulation  mph   lang ref expla) -> xpl "EPOP"  (simpleTag (name mph++name(source mph)++name(target mph))) lang ref expla
+               (ExplSQLPlug     sqlnm lang ref expla) -> xpl "ESQLP" (simpleTag sqlnm) lang ref expla
+               (ExplPHPPlug     phpnm lang ref expla) -> xpl "EPHPP" (simpleTag phpnm) lang ref expla
+      where
+       xpl :: String -> XTag -> Lang -> String -> String -> XTree
+       xpl lbl t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
+                                       [PlainText expla]
 
 
    instance XML Gen where

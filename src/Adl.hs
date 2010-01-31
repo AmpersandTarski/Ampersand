@@ -10,7 +10,7 @@ module Adl ( Architecture(..)
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
            , Declaration(..),Declarations,isSgn
-           , ConceptDef(..),ConceptDefs
+           , ConceptDef(..)
            , Concept(..), Sign, GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
            , Prop(..)
@@ -34,6 +34,7 @@ module Adl ( Architecture(..)
            , ECArule(..)
            , Event(..)
            , PAclause(..)
+           , Explanation(..)
            )
 where
 
@@ -41,7 +42,7 @@ where
                                          ,Sign,GenR()
                                          ,Association(..)
                                          ,MorphicId(..),Morphic(..))
-   import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
+   import Adl.ConceptDef                 (ConceptDef(..))
    import Adl.Context                    (Context(..),Contexts
                                          ,Architecture(..))
    import Adl.Expression                 (Expression(..),Expressions
@@ -63,6 +64,7 @@ where
                                          
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)
+   import Adl.Explanation                (Explanation(..))
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
@@ -76,4 +78,3 @@ where
    import Classes.ViewPoint              (ViewPoint(..))
    import CommonClasses                  (Identified(..)
                                          ,Explained(..))
-
