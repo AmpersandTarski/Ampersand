@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 -- This module is for the definition of Picture and PictureList.
 module Picture ( Picture(origName,uniqueName,figlabel,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
-               , PictType(..),uniquePicName
+               , Pictures,PictType(..),uniquePicName
                , makePictureObj,writePicture) 
 where
 import Options
@@ -14,6 +14,7 @@ import Control.Monad
 import Data.GraphViz
 
 
+type Pictures = [Picture]
 data Picture = Pict { origName     :: String    -- The original name of the object this picture was made for. (could include spaces!)
                     , pType        :: PictType  -- the type of the picture
                     , uniqueName   :: String    -- used to reference the picture in pandoc or tex

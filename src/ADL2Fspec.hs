@@ -73,7 +73,7 @@
              mults = multiplicities m'
              is_Tot = Tot `elem` mults || m' `elem` totals
              is_Sur = Sur `elem` mults || flp m' `elem` totals
-        totals :: [Morphism]
+        totals :: Morphisms
         totals
          = rd [ m | q<-quads visible (rules fSpec), isIdent (qMorph q)
                   , (_,hcs)<-cl_conjNF (qClauses q), Fu fus<-hcs
@@ -154,7 +154,7 @@
 --  Auxiliaries for generating services:
         morph d = Mph (name d) (pos d) [] (source d,target d) True d
 --    Warshall's transitive closure algorithm, adapted for this purpose:
-        clos :: [Morphism] -> [Expression]
+        clos :: Morphisms -> Expressions
         clos xs
          = f [F [Tm x]| x<-xs] (rd (map source xs) `isc` rd (map target xs))
            where
@@ -462,7 +462,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    -- whenever Morphism m is affected (i.e. tuples in m are inserted or deleted),
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is taken along for traceability.
-   quads :: (Morphism->Bool) -> [Rule] -> [Quad]
+   quads :: (Morphism->Bool) -> Rules  -> [Quad]
    quads visible rs
     = [ Quad m (Clauses [ (conj,allShifts conj)
                         | conj <- conjuncts rule
@@ -481,7 +481,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    allClauses :: Rule -> Clauses
    allClauses rule = Clauses [(conj,allShifts conj)| conj<-conjuncts rule] rule
 
-   allShifts :: Expression -> [Expression]
+   allShifts :: Expression -> Expressions
    allShifts conjunct = rd [simplify (normFlp e')| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
     where
        normFlp (Fu []) = Fu []
@@ -489,7 +489,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                          then Fu (map flp fs) else (Fu fs)
        normFlp _ = error ("!Fatal (module Calc 61): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
 
-   shiftL :: Expression -> [Expression]
+   shiftL :: Expression -> Expressions
    shiftL r
     | length antss+length conss /= length fus = error ("!Fatal (module Calc 65): shiftL will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
@@ -530,7 +530,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
         else []
         where h=head (map head css); l=head (map last css)
 
-   shiftR :: Expression -> [Expression]
+   shiftR :: Expression -> Expressions
    shiftR r
     | length antss+length conss /= length fus = error ("!Fatal (module Calc 106): shiftR will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
@@ -613,7 +613,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
        thd3 (_,_,z) = z
        thd4 (_,_,z,_) = z
 
-   conjuncts :: Rule -> [Expression]
+   conjuncts :: Rule -> Expressions
    conjuncts = fiRule.conjNF.normExpr
     where fiRule (Fi fis) = {- map disjuncts -} fis
           fiRule r        = [ {- disjuncts -} r]
@@ -659,7 +659,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
           -> InsDel
           -> Expression              --  the expression in which a delete or insert takes place
           -> Expression              --  the delta to be inserted or deleted
-          -> [(Expression,[Rule])]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+          -> [(Expression,Rules )]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
           -> PAclause
    doCode editable tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
     where

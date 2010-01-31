@@ -238,7 +238,7 @@
 
 -- Disamb disambiguates a list of terms (expressions) that come from an Fd or F expression.
 -- This is done by looking at the concept sets between two adjacent terms.
-   disamb :: Fspc -> [Expression] -> [Expression]
+   disamb :: Fspc -> Expressions -> Expressions
    disamb fSpec ts
      = let ims=strands1 triples in
        if length ims==1 then head ims++[t|(s,m,t)<-[last triples]] else disamb fSpec (concat ims++[t|(s,m,t)<-[last triples]])
@@ -253,7 +253,7 @@
 --  triples without a problem (i.e. the concept set is not longer than 1); these are dealt with by p1
 --  and triples with an ambiguity; these are partially disambiguated by pn.
 --  Since pn does its job partially, we have put a fixpoint over the entire function 'disamb', making sure the whole job is done.
-        strands1 :: [(Expression,[Concept],Expression)] -> [[Expression]]
+        strands1 :: [(Expression,Concepts,Expression)] -> [Expressions]
         strands1 []  = []
         strands1 iss = p1 (takeWhile select iss): strandsn (dropWhile select iss)
                        where select (s,m,t) = length m<=1

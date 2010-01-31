@@ -1,11 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Explanation (Explanation(..))
+module Adl.Explanation (Explanation(..),Explanations)
 where
    import Languages                    (Lang)
    import Adl.MorphismAndDeclaration   (Morphism)
    
 
 --                       Constructor     ObjRef        RefID  Explanation
+   type Explanations = [Explanation]
    data Explanation    = ExplConcept     String   Lang String String
                        | ExplDeclaration Morphism Lang String String
                        | ExplRule        String   Lang String String

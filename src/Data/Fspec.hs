@@ -19,25 +19,25 @@ module Data.Fspec ( Fspc(..)
    import Collection                    (uni,(>-))
    import Strings                       (chain)
    import Typology                      (Inheritance(..))
-   import Data.Plug                     (Plug)
-   import Picture                       (Picture)
+   import Data.Plug                     (Plugs)
+   import Picture                       (Pictures)
    import FPA
    data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
-                    , vplugs       :: [Plug]                -- ^ all plugs defined in the ADL-script
-                    , plugs        :: [Plug]                -- ^ all plugs (defined and derived)
-                    , serviceS     :: [ObjectDef]           -- ^ all services defined in the ADL-script
-                    , serviceG     :: [ObjectDef]           -- ^ all services derived from the basic ontology
-                    , services     :: [Fservice]            -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
-                    , vrules       :: [Rule]                -- ^ All rules that apply in the entire Fspc, including all signals
-                    , vkeys        :: [KeyDef]              -- ^ All keys that apply in the entire Fspc
-                    , vgens        :: [Gen]                 -- ^ All keys that apply in the entire Fspc
-                    , vconjs       :: [Expression]          -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
-                    , vquads       :: [Quad]                -- ^ All quads generated (by ADL2Fspec) from non-signal rules
-                    , vrels        :: [Declaration]         -- ^ All declarations declared in this specification
-                    , fsisa        :: Inheritance Concept   -- ^ generated: The data structure containing the generalization structure of concepts
-                    , vpatterns    :: [Pattern]             -- ^ all patterns taken from the ADL-script
-                    , pictPatts    :: Maybe [Picture]       -- ^ List of pictures containing pattern pictures (in same order as patterns)
-                    , vConceptDefs :: [ConceptDef]          -- ^ all conceptDefs defined in the ADL-script
+                    , vplugs       :: Plugs                -- ^ all plugs defined in the ADL-script
+                    , plugs        :: Plugs                -- ^ all plugs (defined and derived)
+                    , serviceS     :: ObjectDefs           -- ^ all services defined in the ADL-script
+                    , serviceG     :: ObjectDefs           -- ^ all services derived from the basic ontology
+                    , services     :: Fservices            -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , vrules       :: Rules                -- ^ All rules that apply in the entire Fspc, including all signals
+                    , vkeys        :: KeyDefs              -- ^ All keys that apply in the entire Fspc
+                    , vgens        :: Gens                 -- ^ All keys that apply in the entire Fspc
+                    , vconjs       :: Expressions          -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
+                    , vquads       :: Quads                -- ^ All quads generated (by ADL2Fspec) from non-signal rules
+                    , vrels        :: Declarations         -- ^ All declarations declared in this specification
+                    , fsisa        :: Inheritance Concept  -- ^ generated: The data structure containing the generalization structure of concepts
+                    , vpatterns    :: Patterns             -- ^ all patterns taken from the ADL-script
+                    , pictPatts    :: Maybe Pictures       -- ^ List of pictures containing pattern pictures (in same order as patterns)
+                    , vConceptDefs :: ConceptDefs           -- ^ all conceptDefs defined in the ADL-script
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , vctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
@@ -69,17 +69,18 @@ module Data.Fspec ( Fspc(..)
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.
    --         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
+   type Fservices = [Fservice]
    data Fservice = Fservice 
                      { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
                                                                -- and which has been type checked by the compiler.
-                     , fsv_rels      :: [Morphism]             -- The relations that may be changed by the user of this service
-                     , fsv_rules     :: [Rule]                 -- The rules that may be affected by this service (provided by the parser)
-                     , fsv_quads     :: [Quad]                 -- The Quads that are used to make a switchboard. (generated by ADL2Fspec)
+                     , fsv_rels      :: Morphisms              -- The relations that may be changed by the user of this service
+                     , fsv_rules     :: Rules                  -- The rules that may be affected by this service (provided by the parser)
+                     , fsv_quads     :: Quads                  -- The Quads that are used to make a switchboard. (generated by ADL2Fspec)
                      , fsv_ecaRules  :: [Declaration->ECArule] -- The ECA-rules that may be used by this service to restore invariants. (generated by ADL2Fspec)
-                     , fsv_signals   :: [Rule]                 -- All signals that are visible in this service
-                     , fsv_fields    :: [Field]                -- All fields/parameters of this service
-                     , fsv_creating  :: [Concept]              -- All concepts of which this service can create new instances
-                     , fsv_deleting  :: [Concept]              -- All concepts of which this service can delete instances
+                     , fsv_signals   :: Rules                  -- All signals that are visible in this service
+                     , fsv_fields    :: Fields                 -- All fields/parameters of this service
+                     , fsv_creating  :: Concepts               -- All concepts of which this service can create new instances
+                     , fsv_deleting  :: Concepts               -- All concepts of which this service can delete instances
                      , fsv_fpa       :: FPA                    -- function point assessment of this service
                      }
 
@@ -118,8 +119,9 @@ module Data.Fspec ( Fspc(..)
     isa          svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
                        where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
 
+   type Fields = [Field]
    data Field  = Att { fld_name      :: String                 -- The name of this field
-                     , fld_sub       :: [Field]                -- all sub-fields
+                     , fld_sub       :: Fields                 -- all sub-fields
                      , fld_expr      :: Expression             -- The expression by which this field is attached to the service
                      , fld_mph       :: Morphism               -- The morphism to which the database table is attached.
                      , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
@@ -137,7 +139,7 @@ module Data.Fspec ( Fspc(..)
    -- It must always satisfy for every i<length (cl_rule cl): cl_rule cl is equivalent to Fi [Fu disj| (conj, hcs)<-cl_conjNF cl, disj<-[conj!!i]]
    -- Every rule is transformed to this form, as a step to derive eca-rules
    data Clauses  = Clauses
-                     { cl_conjNF     :: [(Expression,[Expression])]  -- The list of pairs (conj, hcs) in which conj is a conjunct of the rule
+                     { cl_conjNF     :: [(Expression,Expressions)]   -- The list of pairs (conj, hcs) in which conj is a conjunct of the rule
                                                                      -- and hcs contains all derived expressions to be used for eca-rule construction.
                                                                      -- hcs contains only disjunctive normal forms.
                      , cl_rule       :: Rule            -- The rule that is restored by this clause (for traceability purposes)
@@ -145,12 +147,13 @@ module Data.Fspec ( Fspc(..)
    -- A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
    -- whenever qMorph is affected (i.e. tuples in qMorph are inserted or deleted), qRule may have to be restored using functionality from qClauses.
    -- The rule is taken along for traceability.
+   type Quads = [Quad]
    data Quad     = Quad
                      { qMorph        :: Morphism        -- The morphism that, when affected, triggers a restore action.
                      , qClauses      :: Clauses         -- The clauses
                      }
 
-   data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: [Rule]}
+   data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: Rules }
    {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
     - "The properties of the Interface Operation component are as follows:
     - ...
@@ -177,7 +180,7 @@ module Data.Fspec ( Fspc(..)
                                    ,assocs      :: [Association]      --
                                    ,aggrs       :: [Aggregation]      --
                                    ,geners      :: [Generalization]   --
-                                   ,nameandcpts :: (String,[Concept])}
+                                   ,nameandcpts :: (String,Concepts)}
                             deriving Show
    instance Identified ClassDiag where
       name cd = n

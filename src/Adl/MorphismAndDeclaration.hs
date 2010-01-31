@@ -8,7 +8,7 @@ module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
                                   ,isProperty)
 where
    import Adl.FilePos      (FilePos(..),Numbered(..))
-   import Adl.Concept      (Concept,Association(..),Sign,MorphicId(..),Morphic(..)
+   import Adl.Concept      (Concept,Concepts,Association(..),Sign,MorphicId(..),Morphic(..)
                            ,isSingleton)
    import Adl.Prop         (Prop(..),Props,flipProps)
    import Adl.Pair         (Pairs,flipPair) 
@@ -25,23 +25,23 @@ where
                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het Morphism is gekoppeld, moet de naam van het Morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
                         , mphpos :: FilePos          -- ^ the position of the rule in which the morphism occurs
-                        , mphats :: [Concept]        -- ^ the attributes specified inline
+                        , mphats :: Concepts         -- ^ the attributes specified inline
                         , mphtyp :: Sign             -- ^ the allocated type. Together with the name, this forms the declaration.
                         , mphyin :: Bool             -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
                         , mphdcl :: Declaration      -- ^ the declaration bound to this morphism.
                                                      --   If not mphyin, then target m<=source (mphdcl m) and source m<=target (mphdcl m). In this case, we write m~ (pronounce: m-flip or m-wok)
                                                      --   If mphyin, then source m<=source (mphdcl m) and target m<=target (mphdcl m). In this case, we write m
                         }
-                  | I   { mphats :: [Concept]        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
+                  | I   { mphats :: Concepts         -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
                         , mphgen ::  Concept         -- ^ the generic concept  
                         , mphspc ::  Concept         -- ^ the specific concept
                         , mphyin ::  Bool            -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
                         } 
-                  | V   { mphats :: [Concept]        -- ^ the (optional) attributes specified inline.
+                  | V   { mphats :: Concepts         -- ^ the (optional) attributes specified inline.
                         , mphtyp :: Sign             -- ^ the allocated type.
                         }
                   | Mp1 { mph1val :: String          -- ^ the value of the one morphism
-                        , mphats :: [Concept]        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
+                        , mphats  :: Concepts        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
                         , mph1typ :: Concept         -- ^ the allocated type.
                         }  
 

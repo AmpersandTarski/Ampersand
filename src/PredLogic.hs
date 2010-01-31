@@ -28,7 +28,7 @@ module PredLogic
       Rel PredLogic
           Morphism
           PredLogic                         |
-      Funs String [Morphism]
+      Funs String Morphisms
 
 --   predKeyWords flags = 
 --     case language flags of
@@ -265,7 +265,7 @@ module PredLogic
 
    data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
 
-   relFun :: [String] -> [Expression] -> Expression -> [Expression] -> (String->String->PredLogic)
+   relFun :: [String] -> Expressions -> Expression -> Expressions -> (String->String->PredLogic)
    relFun exclVars lhs e rhs
      = case e of
          (Tm mph) -> (\s->(\t->if inline mph
@@ -273,14 +273,14 @@ module PredLogic
                                else Rel (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp mph) (Funs s [m'| t'<-lhs, m'<-mors t'])))
          _        -> (\s->(\t->let (pl,_) = assembleF (exclVars++[s,t]) e s t in pl))       
 
-   pars3 :: [String] -> [[Expression]] -> [(String -> String -> PredLogic, Concept, Concept)] 
+   pars3 :: [String] -> [Expressions] -> [(String -> String -> PredLogic, Concept, Concept)] 
    pars3 exclVars (lhs: [e]: rhs: ts)
     | denotes lhs==Flr && denote e==Rn && denotes rhs==Frl
        = ( relFun exclVars lhs e rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
     | otherwise = pars2 exclVars (lhs:[e]:rhs:ts)
    pars3 exclVars ts = pars2 exclVars ts -- for lists shorter than 3
 
-   pars2 :: [String] -> [[Expression]]-> [(String -> String -> PredLogic, Concept, Concept)]
+   pars2 :: [String] -> [Expressions]-> [(String -> String -> PredLogic, Concept, Concept)]
    pars2 exclVars (lhs: [e]: ts)
     | denotes lhs==Flr && denote e==Rn
                 = (relFun exclVars lhs e [], source (head lhs), target e): pars3 exclVars ts
@@ -299,13 +299,13 @@ module PredLogic
     | otherwise = pars1 exclVars (lhs:rhs:ts)
    pars2 exclVars ts = pars1 exclVars ts -- for lists shorter than 2
    
-   pars1 :: [String] -> [[Expression]] -> [(String -> String -> PredLogic, Concept, Concept)]
+   pars1 :: [String] -> [Expressions] -> [(String -> String -> PredLogic, Concept, Concept)]
    pars1 exclVars expressions
      = case expressions of
          []        -> []
          (lhs: ts) -> (pars0 exclVars lhs, source (head lhs), target (last lhs)): pars3 exclVars ts
 
-   pars0 :: [String] -> [Expression] -> String -> String -> PredLogic
+   pars0 :: [String] -> Expressions -> String -> String -> PredLogic
    pars0 exclVars lhs
     | denotes lhs==Flr = (relFun exclVars lhs (Tm (mIs (target (last lhs)))) [])
     | denotes lhs==Frl = (relFun exclVars [] (Tm (mIs (target (last lhs)))) lhs)
@@ -319,12 +319,12 @@ module PredLogic
         | (isInj m) && (isSur m)                       -> Frl
         | otherwise                                    -> Rn 
       _                                                -> Rn
-   denotes :: [Expression] -> Notation
+   denotes :: Expressions -> Notation
    denotes = denote . head
 
 
 
-   split :: [Expression] -> [[Expression]]
+   split :: Expressions -> [Expressions]
    split []  = []
    split [t] = [[t]]
    split (t:t':ts)

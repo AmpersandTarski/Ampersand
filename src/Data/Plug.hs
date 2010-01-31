@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}  
-module Data.Plug (Plug(..)
+module Data.Plug (Plug(..),Plugs
                  ,SqlField(..)
                  ,SqlType(..)
                  ,showSQL
@@ -16,6 +16,7 @@ where
   import Collection            (rd)
   import FPA
   
+  type Plugs = [Plug]
   data Plug = PlugSql { fields   :: [SqlField]
                       , plname   :: String
                       , plfpa    :: FPA

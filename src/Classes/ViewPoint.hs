@@ -2,14 +2,14 @@
 module Classes.ViewPoint (ViewPoint(..)) 
 where
    import Adl.Context                 (Context(..))
-   import Adl.Pattern                 (Pattern(..))
-   import Adl.Gen                     (Gen(..))
-   import Adl.Rule                    (Rule(..), rulefromProp, ruleviolations)
-   import Adl.ObjectDef               (ObjectDef(..))
-   import Adl.KeyDef                  (KeyDef(..))
-   import Adl.MorphismAndDeclaration  (Declaration,mIs)
+   import Adl.Pattern                 (Pattern(..),Patterns)
+   import Adl.Gen                     (Gen(..),Gens)
+   import Adl.Rule                    (Rule(..), rulefromProp, ruleviolations,Rules)
+   import Adl.ObjectDef               (ObjectDef(..),ObjectDefs)
+   import Adl.KeyDef                  (KeyDefs)
+   import Adl.MorphismAndDeclaration  (Declarations,mIs)
    import Adl.Concept                 (Concept(..),Morphic(..))
-   import Adl.ConceptDef              (ConceptDef)
+   import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression(..))
    import Adl.Pair                    (Paire)
    import Adl.FilePos                 (Numbered(..),FilePos(..))
@@ -20,18 +20,18 @@ where
 
    class Morphical a => ViewPoint a where
      objectdef    :: a -> ObjectDef     -- The objectdef that characterizes this viewpoint
-     conceptDefs  :: a -> [ConceptDef]  -- all concept definitions that are valid within this viewpoint
-     declarations :: a -> [Declaration] -- all relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
-     rules        :: a -> [Rule]        -- all rules that are maintained within this viewpoint,
+     conceptDefs  :: a -> ConceptDefs   -- all concept definitions that are valid within this viewpoint
+     declarations :: a -> Declarations  -- all relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
+     rules        :: a -> Rules         -- all rules that are maintained within this viewpoint,
                                         --   which are not signal-, not multiplicity-, and not key rules.
-     signals      :: a -> [Rule]        -- all signals that are visible within this viewpoint
+     signals      :: a -> Rules         -- all signals that are visible within this viewpoint
                                         -- all relations used in signals and rules must have a valid declaration in the same viewpoint.
-     multrules    :: a -> [Rule]        -- all multiplicityrules that are maintained within this viewpoint.
+     multrules    :: a -> Rules         -- all multiplicityrules that are maintained within this viewpoint.
      multrules x = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
-     objDefs      :: a -> [ObjectDef]
-     keyDefs      :: a -> [KeyDef]      -- all keys that are defined in a
-     gens         :: a -> [Gen]         -- all generalizations that are valid within this viewpoint
-     patterns     :: a -> [Pattern]     -- all patterns that are used in this viewpoint
+     objDefs      :: a -> ObjectDefs
+     keyDefs      :: a -> KeyDefs       -- all keys that are defined in a
+     gens         :: a -> Gens          -- all generalizations that are valid within this viewpoint
+     patterns     :: a -> Patterns      -- all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept
      --TODO -> there are more rules than rules+multrules that can be violated
      violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint

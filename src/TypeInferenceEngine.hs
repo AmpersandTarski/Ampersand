@@ -142,7 +142,7 @@ infer gamma exr  = step4combinetrees step3inferstmts step2tree
          then Proven gamma allnoerrinftrees  --return inference trees of all alts resulting in a type
          else NoProof (AmbiguousType gamma allnoerrinftrees)  --return inference trees of all alts resulting in a type
 ------------------------------------------------------------------------------------
-  freecptvars :: [Concept]
+  freecptvars :: Concepts
   freecptvars = [cptnew $ "$C" ++ show i | i<-[(1::Int)..]]
 
   tree (t, _) = t

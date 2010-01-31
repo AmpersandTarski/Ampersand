@@ -109,8 +109,8 @@ numberListFrom xs i = zip xs [i..]
 -- Chapter 2: Formation of a graph.
 dotG :: Options            -- ^ the flags 
      -> String             -- ^ the name of the Graph
-     -> [Concept]          -- ^ list of the concepts to draw in the graph
-     -> [Declaration]      -- ^ list of declarations, (the edges in the graph)
+     -> Concepts           -- ^ The concepts to draw in the graph
+     -> Declarations       -- ^ The declarations, (the edges in the graph)
      -> [(Concept, Concept)] -- ^ list of Gen relations 
      -> DotGraph String    -- ^ The resulting DotGraph
 dotG flags graphName cpts dcls idgs

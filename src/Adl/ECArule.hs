@@ -11,7 +11,7 @@ module Adl.ECArule (InsDel(..)
                    ,isDo
                    )
 where
-import Adl.Rule                      (Rule)
+import Adl.Rule                      (Rules)
 import Adl.FilePos                   (nr)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism)
@@ -33,34 +33,34 @@ data Event    = On { eSrt :: InsDel
                    , eMhp :: Morphism
                    } deriving (Show,Eq)
 data PAclause = Chc { paCls   :: [PAclause]
-                    , paMotiv :: [(Expression,[Rule])] -- tells which conjunct from which rule is being maintained
+                    , paMotiv :: [(Expression,Rules )] -- tells which conjunct from which rule is being maintained
                     }
               | All { paCls   :: [PAclause]
-                    , paMotiv :: [(Expression,[Rule])]
+                    , paMotiv :: [(Expression,Rules )]
                     }
               | Do  { paSrt   :: InsDel                -- do Insert or Delete
                     , paTo    :: Expression            -- into toExpr    or from toExpr
                     , paDelta :: Expression            -- delta
-                    , paMotiv :: [(Expression,[Rule])]
+                    , paMotiv :: [(Expression,Rules )]
                     }
               | Sel { paCpt   :: Concept               -- pick an existing instance of type c
                     , paExp   :: Expression            -- the expression to pick from
                     , paCl    :: String->PAclause      -- the completion of the clause
-                    , paMotiv :: [(Expression,[Rule])]
+                    , paMotiv :: [(Expression,Rules )]
                     }
               | New { paCpt   :: Concept               -- make a new instance of type c
                     , paCl    :: String->PAclause      -- to be done after creating the concept
-                    , paMotiv :: [(Expression,[Rule])]
+                    , paMotiv :: [(Expression,Rules )]
                     }
               | Rmv { paCpt   :: Concept               -- remove an instance of type c
                     , paCl    :: String->PAclause      -- to be done after removing the concept
-                    , paMotiv :: [(Expression,[Rule])]
+                    , paMotiv :: [(Expression,Rules )]
                     }
-              | Nop { paMotiv :: [(Expression,[Rule])]  -- tells which conjunct from which rule is being maintained
+              | Nop { paMotiv :: [(Expression,Rules )]  -- tells which conjunct from which rule is being maintained
                     }
-              | Blk { paMotiv :: [(Expression,[Rule])]  -- tells which expression from which rule has caused the blockage
+              | Blk { paMotiv :: [(Expression,Rules )]  -- tells which expression from which rule has caused the blockage
                     }
-              | Dry { paMotiv :: [(Expression,[Rule])]  -- same as block, but for a lack of viable options to choose from.
+              | Dry { paMotiv :: [(Expression,Rules )]  -- same as block, but for a lack of viable options to choose from.
                     }
 
 isAll :: PAclause -> Bool

@@ -126,7 +126,7 @@ where
        contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
    ruleviolations _ = []
 
-   multRules :: Declaration -> [Rule]
+   multRules :: Declaration -> Rules 
    multRules d@(Sgn{})
      = [rulefromProp p d | p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
                          , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else

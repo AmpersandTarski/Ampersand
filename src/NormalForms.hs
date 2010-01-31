@@ -107,7 +107,7 @@ where
             expr = (res,ss,equ)
     where
      (res,ss,equ) = norm expr []
-     norm :: Expression -> [Expression] -> (Expression,[String],String)
+     norm :: Expression -> Expressions -> (Expression,[String],String)
      norm (K0 e')      _    = (K0 res', steps, equ')
                                where (res',steps,equ') = norm e' []
      norm (K1 e')      _    = (K1 res', steps, equ')
@@ -203,8 +203,8 @@ where
    unF x        = [x]
 
 
-   distribute :: ([Expression] -> Expression)
-              -> ([Expression] -> Expression)
+   distribute :: (Expressions -> Expression)
+              -> (Expressions -> Expression)
               -> (Expression -> Bool)
               -> (Expression -> Bool)
               -> Expression

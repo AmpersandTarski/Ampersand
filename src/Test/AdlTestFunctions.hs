@@ -297,7 +297,7 @@ where
                               compareSign (mphtyp m1) (mphtyp m2)]
    compareMph m1 m2 = Just $ "Morphism " ++ show m1 ++ " does not equal " ++ show m2 ++ "\n"
 
-   compareMphAts :: [Concept] -> [Concept] -> Maybe String
+   compareMphAts :: Concepts -> Concepts -> Maybe String
    compareMphAts a1 a2 | a1 == a2  = Nothing
                        | otherwise = Just $ "MphAts " ++ show a1 ++ " do not equal " ++ show a2 ++ "\n"
 

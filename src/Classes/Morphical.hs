@@ -13,7 +13,7 @@ where
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..),Morphisms,Declarations
                                          ,makeDeclaration,makeInline,mIs)
    import Adl.Gen                        (Gen(..))
-   import Adl.Expression                 (Expression(..))
+   import Adl.Expression                 (Expression(..),Expressions)
    import Adl.ObjectDef                  (ObjectDef(..))
    import Adl.KeyDef                     (KeyDef(..))
    import Adl.Pattern                    (Pattern(..))
@@ -31,7 +31,7 @@ where
     decls x       = rd [makeDeclaration m|m<-mors x]
     genE         :: a -> GenR
     genE x        = if null cx then (==) else head cx where cx = [cptgE c|c<-concs x]
-    closExprs    :: a -> [Expression]               -- no double occurrences in the resulting list of expressions
+    closExprs    :: a -> Expressions               -- no double occurrences in the resulting list of expressions
     idsOnly      :: a -> Bool
     idsOnly e'    = and [isIdent m'| m'<-mors e'] -- > tells whether all the arguments are equivalent to I
 

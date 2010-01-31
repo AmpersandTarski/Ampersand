@@ -10,10 +10,7 @@ where
    import Auxiliaries(sort',eqCl)
    import Collection (Collection(isc,uni,rd))
  
-   type Pairs     = [Paire]  -- WAAROM? Stef, zouden dit niet tweetallen moeten zijn? In dit geval mogen Paire ook uit meer dan twee bestaan...
-                             --         Op die manier zouden we ook van standaard Tuples gebruik kunnen maken....
-                             -- DAAROM! Han, je hebt gelijk. Het is er ooit ingeslopen op grond van een denkfout. Graag tuples van maken...
-                             -- Opgelost! Paire zijn Tuples geworden
+   type Pairs     = [Paire]
    srcPaire :: Paire -> String
    trgPaire :: Paire -> String
    mkPair   :: String -> String -> Paire

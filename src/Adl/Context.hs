@@ -8,9 +8,9 @@ where
    import Adl.MorphismAndDeclaration  (Declarations,Declaration)
    import Adl.KeyDef                  (KeyDefs)
    import Adl.ObjectDef               (ObjectDefs)
-   import Adl.Explanation             (Explanation)
+   import Adl.Explanation             (Explanations)
    import Adl.Population              (Populations)
-   import Adl.ConceptDef              (ConceptDef)
+   import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression)
    import Typology                    (Inheritance)
    import Classification              (Classification)
@@ -26,14 +26,14 @@ where
             , ctxon    :: [String]                  -- ^ The list of extends (= context names of contexts) whose rules are imported
             , ctxisa   :: Inheritance Concept       -- ^ A data structure containing the generalization structure of concepts
             , ctxwrld  :: [Classification Context]  -- ^ A tree, being the transitive closure of the 'extends' (see formal definition) relation.
-            , ctxpats  :: Patterns                  -- ^ A list of patterns defined in this context
-            , ctxrs    :: Rules                     -- ^ A list of all rules that are valid within this context
-            , ctxds    :: Declarations              -- ^ A list of declarations defined in this context, outside the scope of patterns
-            , ctxcs    :: [ConceptDef]              -- ^ A list of concept definitions defined in this context, outside the scope of patterns
-            , ctxks    :: KeyDefs                   -- ^ A list of key definitions defined in this context, outside the scope of patterns
-            , ctxos    :: ObjectDefs                -- ^ A list of attributes defined in this context, outside the scope of patterns
-            , ctxes    :: [Explanation]             -- ^ A list of explanations defined in this context, outside the scope of patterns
-            , ctxpops  :: Populations               -- ^ A list of populations defined in this context
+            , ctxpats  :: Patterns                  -- ^ The patterns defined in this context
+            , ctxrs    :: Rules                     -- ^ All rules that are valid within this context
+            , ctxds    :: Declarations              -- ^ The declarations defined in this context, outside the scope of patterns
+            , ctxcs    :: ConceptDefs               -- ^ The concept definitions defined in this context, outside the scope of patterns
+            , ctxks    :: KeyDefs                   -- ^ The key definitions defined in this context, outside the scope of patterns
+            , ctxos    :: ObjectDefs                -- ^ The attributes defined in this context, outside the scope of patterns
+            , ctxes    :: Explanations              -- ^ The explanations defined in this context, outside the scope of patterns
+            , ctxpops  :: Populations               -- ^ The populations defined in this context
             , ctxsql   :: ObjectDefs  --a list of sqlplugs
             , ctxphp   :: ObjectDefs  --a list of phpplugs
             , ctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment

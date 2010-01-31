@@ -10,7 +10,7 @@ module Adl ( Architecture(..)
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
            , Declaration(..),Declarations,isSgn
-           , ConceptDef(..)
+           , ConceptDef(..),ConceptDefs
            , Concept(..), Sign, GenR, Concepts, v,cptnew,cptS
            , RuleType(..)
            , Prop(..)
@@ -42,7 +42,7 @@ where
                                          ,Sign,GenR()
                                          ,Association(..)
                                          ,MorphicId(..),Morphic(..))
-   import Adl.ConceptDef                 (ConceptDef(..))
+   import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
    import Adl.Context                    (Context(..),Contexts
                                          ,Architecture(..))
    import Adl.Expression                 (Expression(..),Expressions
