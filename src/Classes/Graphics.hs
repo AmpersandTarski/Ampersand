@@ -150,45 +150,23 @@ dotG flags graphName cpts dcls idgs
                         Concept   -- ^ The concept for which the nodes and edges are constructed
                      -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         conceptNodesAndEdges c
-             = case  dotStyle flags of
-                 1 -> (   [cptOnlyOneNode    ] -- just only one node for a concept.
-                      ,   []
-                      )
-                 2 -> (   [cptOnlyOneNode    ] -- just only one node for a concept.
-                      ,   []
-                      )
-                 3 -> (   [cptConnectorNode  ] -- node onto which the relations will connect
-                        ++[cptNameNode       ] -- node that shows the name of the concept
-                      ,   [cptEdge           ] -- edge connects the above nodes
-                      )
-                 _ -> error ("!Fatal (module Graphics 126): Nothing defined for dotStyle == "++ show (dotStyle flags))
+             = (   [cptOnlyOneNode    ] -- just only one node for a concept.
+               ,   []
+               )
           where
             cptOnlyOneNode   = constrNode (baseNodeId c) (CptOnlyOneNode   c) flags
-            cptConnectorNode = constrNode (baseNodeId c) (CptConnectorNode c) flags
-            cptNameNode      = constrNode (baseNodeId c ++ "_Name")  (CptNameNode c)      flags 
-            cptEdge = constrEdge (nodeID cptConnectorNode) (nodeID cptNameNode) CptEdge True flags
         
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         declarationNodesAndEdges ::
                             (Declaration,Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         declarationNodesAndEdges (d,n)
-             = case  dotStyle flags of
-                 1 -> (    [dclHingeNode]   -- The node of the hinge 
-                         ++[dclNameNode]    -- node to place the name of the declaration
-                      ,    [constrEdge (baseNodeId (source d)) (nodeID dclHingeNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
-                         ++[constrEdge (nodeID dclHingeNode)   (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
-                         ++[constrEdge (nodeID dclHingeNode)   (nodeID dclNameNode )    DclMiddleEdge True flags]  -- edge to connect the hinge node to the nameNode
-                      )
-                 2 -> (    [dclNameNode]    -- node to place the name of the declaration
-                      ,    [constrEdge (baseNodeId (source d)) (nodeID dclNameNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
-                         ++[constrEdge (nodeID dclNameNode)    (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
-                   --      ++[constrEdge (nodeID dclHingeNode)   (nodeID dclNameNode )    DclMiddleEdge True flags]  -- edge to connect the hinge node to the nameNode
-                      )
-                 3 -> (    []               -- No node at all
-                      ,    [constrEdge (baseNodeId (source d)) (baseNodeId (target d)) (DclOnlyOneEdge d) True  flags] -- Just a single edge
-                      )
-                 _ -> error ("!Fatal (module Graphics 153): Nothing defined for dotStyle == "++ show (dotStyle flags))  -- more styles could be placed here...
+             = (    [dclHingeNode]   -- The node of the hinge 
+                  ++[dclNameNode]    -- node to place the name of the declaration
+               ,    [constrEdge (baseNodeId (source d)) (nodeID dclHingeNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
+                  ++[constrEdge (nodeID dclHingeNode)   (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
+                  ++[constrEdge (nodeID dclHingeNode)   (nodeID dclNameNode )    DclMiddleEdge True flags]  -- edge to connect the hinge node to the nameNode
+               )
           where
             dclHingeNode   = constrNode ("dclHinge_"++show n) DclHingeNode   flags
             dclNameNode    = constrNode ("dclName_"++show n) (DclNameNode d) flags

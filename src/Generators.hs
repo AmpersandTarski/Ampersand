@@ -1,11 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Generators (doGenAtlas
-                  ,doGenXML
-                  ,doGenHaskell
-                  ,doGenProto
-                  ,doGenFspec
-                  ,serviceGen
-                  ,prove)
+module Generators (generate)
 where
 
 import System                 (system, ExitCode(ExitSuccess,ExitFailure))
@@ -15,7 +9,7 @@ import System.Directory
 import Control.Monad
 import Maybe                  (fromJust)
 import Options
-import Data.Fspec
+import Data.Fspec   hiding (services)
 import ShowHS                 (fSpec2Haskell)
 import ShowADL
 import XML.ShowXMLtiny        (showXML)
@@ -37,6 +31,21 @@ import Text.Pandoc            ( defaultWriterOptions
                               , writeHtmlString
                               )
 import Picture
+
+generate :: Options -> Fspc -> IO ()
+generate flags fSpec = 
+    sequence_ 
+       ([ verboseLn    flags "Generating..."]++
+        [ doGenAtlas   fSpec flags | genAtlas     flags] ++
+        [ doGenXML     fSpec flags | genXML       flags] ++
+        [ doGenHaskell fSpec flags | haskell      flags] ++ 
+        [ doGenProto   fSpec flags | genPrototype flags] ++
+        [ serviceGen   fSpec flags | services     flags] ++
+        [ doGenFspec   fSpec flags | genFspec     flags] ++ 
+        [ prove        fSpec flags | proofs       flags] ++
+        [ verbose flags "Done."]
+       ) 
+
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags

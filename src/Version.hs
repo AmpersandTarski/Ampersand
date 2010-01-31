@@ -7,5 +7,5 @@ versionbanner = "ADL vs. 0.8.10-568" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-Opruiming van auxiliaries en zo. 
+Kleine opruimacties en herstel van gedrag bij gebruik van --help en --version flags.
 -}

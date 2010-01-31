@@ -12,7 +12,7 @@ import System.Directory
 import Time
 import Control.Monad
 import Strings               (chain)
-
+import Version
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
@@ -36,7 +36,6 @@ data Options = Options { contextName   :: Maybe String
                        , dirOutput     :: String -- the directory to generate the output in.
                        , beeper        :: Bool
                        , crowfoot      :: Bool
-                       , dotStyle      :: Int
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
                        , texHdrFile    :: Maybe String --the string represents a FilePath to some .tex containing just tex header instructions
@@ -52,6 +51,7 @@ data Options = Options { contextName   :: Maybe String
                        , sqlLogin      :: String
                        , sqlPwd        :: String
                        , verbosephp    :: Bool
+                       , helpNVersionTexts :: [String] 
                        } deriving Show
     
 getOptions :: IO Options
@@ -111,7 +111,6 @@ getOptions =
                   --    , texHdrFile    = error ("!Fatal (module Options 120): Specify the path location of "++progName)++" in your system PATH variable."
                       , beeper        = False
                       , crowfoot      = False
-                      , dotStyle      = 1
                       , language      = Dutch
                       , progrName     = progName
                       , adlFileName   = error ("!Fatal (module Options 123): no default value for adlFileName.")
@@ -122,6 +121,7 @@ getOptions =
                       , sqlHost       = "localhost"
                       , sqlLogin      = "root"
                       , sqlPwd        = ""
+                      , helpNVersionTexts = []
                       }
 
 
@@ -129,20 +129,26 @@ getOptions =
 
      checkOptionsAndFileNameM :: (Options,[String]) -> IO(Options)
      checkOptionsAndFileNameM (flags,fNames) = 
-           case fNames of
-              []      -> error ("no file to parse" ++usageInfo'' (progrName flags))
-              [fName] -> verboseLn flags ("Checking output directories...")
-                      >> checkLogName flags
-                      >> checkDirOutput flags
-                      >> checkExecOpts flags
-                      >> checkProtoOpts flags
-                      >> checkAtlasOpts flags
-                      >> return flags { adlFileName = replaceExtension fName ".adl"
-                                      , baseName    = takeBaseName fName
-                                      }
-              x:xs    -> error ("too many files: "++ show (x:xs) ++usageInfo'' (progrName flags))
+          if or [showVersion flags, showHelp flags] 
+          then return flags {helpNVersionTexts = ["Version: " ++ versionbanner | showVersion flags]
+                                               ++[usageInfo' flags             | showHelp    flags]
+                            }
+          else case fNames of
+                []      -> error ("no file to parse" ++useHelp)
+                [fName] -> verboseLn flags ("Checking output directories...")
+                        >> checkLogName flags
+                        >> checkDirOutput flags
+                        >> checkExecOpts flags
+                        >> checkProtoOpts flags
+                        >> checkAtlasOpts flags
+                        >> return flags { adlFileName = replaceExtension fName ".adl"
+                                        , baseName    = takeBaseName fName
+                                        }
+                x:xs    -> error ("too many files: "++ (chain ", " (x:xs)) ++useHelp)
        
        where
+          useHelp :: String
+          useHelp = " (use --help for help) "
           checkLogName :: Options -> IO ()
           checkLogName   f = createDirectoryIfMissing True (takeDirectory (logName f))
           checkDirOutput :: Options -> IO ()
@@ -192,13 +198,12 @@ options = map pp
           , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("use database with name (name overrides environment variable "++ envdbName ++ ").")), Public)
 
           , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
-          , ((Option []        ["user"]       (ReqArg userOpt "user")     ("generate atlas content for this user.")), Public)
+          , ((Option []        ["user"]        (ReqArg userOpt "user")     ("generate atlas content for this user.")), Public)
           , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
                                                                            ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
           , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
           , ((Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics."), Public)
           , ((Option []        ["Switchboard"] (NoArg switchboardOpt)      "generate switchboard graphics in services documentation for diagnostic purposes."), Hidden)
-          , ((Option []        ["altGraphics"] (NoArg (altGraphicsOpt 2))  "generate alternative style pictures."), Public)
           , ((Option []        ["proofs"]      (NoArg proofsOpt)           "generate correctness proofs."), Public)
           , ((Option []        ["XML"]         (NoArg xmlOpt)              "generate internal data structure, written in XML (for debugging)."), Public)
           , ((Option []        ["haskell"]     (NoArg haskellOpt)          "generate internal data structure, written in Haskell source code (for debugging)."), Public)
@@ -288,8 +293,6 @@ switchboardOpt :: Options -> Options
 switchboardOpt opts = opts{flgSwitchboard = True}
 noGraphicsOpt :: Options -> Options
 noGraphicsOpt  opts = opts{graphics      = False}
-altGraphicsOpt :: Int -> Options -> Options
-altGraphicsOpt  n opts = opts{dotStyle   = n}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

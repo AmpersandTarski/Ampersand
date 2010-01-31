@@ -34,14 +34,13 @@ where
                                     Blk{} -> d
                                     Dry{} -> d
                                     _     -> d{paMotiv = ms} 
--- WAAROM? Stef, deze code is volgens mij complexer dan nodig. De warnings met betrekking tot shadowing bevestigen dat, vind ik. 
---         kan je uitleggen wat hier gebeurt? 
+-- WAAROM? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
      norm (Chc ds ms)  | (not.null) msgs = (Chc ops ms, msgs)
-                       | (not.null) [d| d<-ds, isChc d] = (Chc (rd [ d' | d<-ds, d'<-if isChc d then let Chc ops ms = d in ops else [d] ]) ms, ["flatten Chc"])  -- flatten
+                       | (not.null) [d| d<-ds, isChc d] = (Chc (rd [ d' | d<-ds, d'<-if isChc d then let Chc ops' _ = d in ops' else [d] ]) ms, ["flatten Chc"])  -- flatten
                        | (not.null) [Nop| Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
                        | (not.null) ([Blk| Blk{}<-ops]++[Dry| Dry{}<-ops]) = (Chc [op| op<-ops, not (isBlk op), not (isDry op)] ms, ["Choose anything but block"])
                        | otherwise = (Chc ds ms, [])
-                       where nds = map norm ds
+                       where nds  = map norm ds
                              msgs = (concat.map snd) nds
                              ops  = map fst nds
      norm (All [] ms)  = (Nop ms, ["All [] = No Operation"])
@@ -51,7 +50,7 @@ where
                                     Dry{} -> d
                                     _     -> d{paMotiv = ms} 
      norm (All ds ms)  | (not.null) msgs = (All ops ms, msgs)
-                       | (not.null) [d| d<-ds, isAll d] = (All (rd [ d' | d<-ds, d'<-if isAll d then let All ops ms = d in ops else [d] ]) ms, ["flatten All"])  -- flatten
+                       | (not.null) [d| d<-ds, isAll d] = (All (rd [ d' | d<-ds, d'<-if isAll d then let All ops' _ = d in ops' else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk| Blk{}<-ops] = (Blk{paMotiv = [m| op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Dry| Dry{}<-ops] = (Dry{paMotiv = [m| op@Dry{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop| Nop{}<-ops] = (All [op| op<-ops, not (isNop op)] ms, ["Ignore Nop"])
@@ -67,7 +66,7 @@ where
                              dCls = eqCl to [d| d<-ds, isDo d]
                              long = [cl| cl<-dCls, length cl>1]
                              to d@(Do{}) = (paSrt d,paTo d)
-                             to _        = error("!Fatal (module NormalForms 68): illegal call of to(d)")
+                             to _        = error("!Fatal (module NormalForms 70): illegal call of to(d)")
      norm (New c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
                                    Dry{} -> p'{paMotiv = ms}
