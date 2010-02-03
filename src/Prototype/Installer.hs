@@ -99,7 +99,7 @@
              --         the second field contains an expression Mph[A*B]
              --         we need the contents of the relation morphism only
              [ phpShow (srcPaire p) ++", "++ phpShow (trgPaire p)
-             | Tm (m'@Mph{}) <- map fldexpr (fields plug), p<-contents m']
+             | Tm (m'@Mph{}) _ <- map fldexpr (fields plug), p<-contents m']
              else
              [ chain ", " [ head ([phpShow (trgPaire p)
                                   | p<-contents$fldexpr f,a==srcPaire p

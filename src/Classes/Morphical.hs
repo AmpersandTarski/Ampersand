@@ -71,7 +71,7 @@ where
     closExprs kd = closExprs (kdats kd)
 
    instance Morphical Expression where
-    concs (Tm mph)     = rd (concs mph)
+    concs (Tm mph _)     = rd (concs mph)
     concs (Tc f)       = rd (concs f)
     concs (F ts)       = rd (concs ts)
     concs (Fd ts)      = rd (concs ts)
@@ -81,7 +81,7 @@ where
     concs (K1 e')      = rd (concs e')
     concs (Cp e')      = rd (concs e')
 
-    mors (Tm mph)      = mors (makeInline mph)
+    mors (Tm mph _)      = mors (makeInline mph)
     mors (Tc f)        = mors f
     mors (F ts)        = mors ts -- voor a;-b;c hoeft geen extra mors rond b nodig te zijn
     mors (Fd [])       = error ("!Fatal (module Morphical 89): not defined: 'mors (Fd [])'")                    
@@ -92,7 +92,7 @@ where
     mors (K1 e')       = mors e'
     mors (Cp e')       = rd (mors e' ++ mors (source e')++mors (target e'))
 
-    morlist (Tm mph)   = morlist mph
+    morlist (Tm mph _)   = morlist mph
     morlist (Tc f)     = morlist f
     morlist (F ts)     = morlist ts
     morlist (Fd ts)    = morlist ts
@@ -102,7 +102,7 @@ where
     morlist (K1 e')    = morlist e'
     morlist (Cp e')    = morlist e'
 
-    genE (Tm mph)      = genE mph
+    genE (Tm mph _)      = genE mph
     genE (Tc f)        = genE f
     genE (F ts)        = genE ts
     genE (Fd ts)       = genE ts
@@ -112,7 +112,7 @@ where
     genE (K1 e')       = genE e'
     genE (Cp e')       = genE e'
 
-    decls (Tm mph)     = decls mph
+    decls (Tm mph _)     = decls mph
     decls (Tc f)       = decls f
     decls (F ts)       = decls ts
     decls (Fd ts)      = decls ts

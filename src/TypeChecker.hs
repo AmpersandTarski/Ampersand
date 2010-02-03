@@ -33,11 +33,9 @@ import qualified Data.Set as Set --
 import Classification --USE -> cast from data.Tree to Classification for enrichment
 import Typology --USE -> Isa structure for enrichment
 
-import TypeInference.ITree
-import TypeInference.AdlExpr
 import TypeInference.Input
---import TypeInference.InfLib
-import TypeInferenceEngine
+import TypeInference.Isa
+import TypeInference.InfAdlExpr
 import ShowADL
 import Collection     ( Collection(..) )
 
@@ -61,20 +59,20 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts
    check1 = checkCtxNameUniqueness ctxs -- checks whether all contexts have unique names.
    check2 = checkCtxExtLoops ctxs -- check whether there are loops in the extends-relation (which existst between contexts)
-   (enriched, allproofs) = enrichArch arch  
-   check3 = [(errproof,fp,rule) | (errproof@(NoProof{}),fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
-   printcheck3 = [ show errproof 
+   (enriched, check3) = enrichArch arch  
+  -- check3 = [(errproof,fp,rule) | (err,fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
+   printcheck3 = [ err 
                    ++ "\n   in " ++ showADL rule   
                    ++ "\n   at " ++ show fp ++ "\n"
-                 | (errproof,fp,OrigRule rule)<-check3] ++
-                 [ show errproof 
+                 | (err,fp,OrigRule rule)<-check3] ++
+                 [ err 
                    ++ "\n   in service definition expression " ++ showADL expr  
                    ++ "\n   at " ++ show fp ++ "\n"
-                 | (errproof,fp,OrigObjDef expr)<-check3] ++
-                 [ show errproof 
+                 | (err,fp,OrigObjDef expr)<-check3] ++
+                 [ err 
                    ++ "\n   in key definition expression " ++ showADL expr  
                    ++ "\n   at " ++ show fp ++ "\n"
-                 | (errproof,fp,OrigKeyDef expr)<-check3]
+                 | (err,fp,OrigKeyDef expr)<-check3]
    check4 = checkSvcNameUniqueness ctxs
    check5 = checkPopulations ctxs
   -- check6 = checkSvcLabels ctxs
@@ -96,7 +94,7 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
 ------------------
 -- Each error is exposed by a NoProof in the Proof-field, which carries the type errors.
 -- Each valid type derivation is given by a Proven in the Proof-fiels, which carries the derivation.
-enrichArch :: Architecture -> (Contexts,[(Proof,FilePos,OrigExpr)])
+enrichArch :: Architecture -> (Contexts,[(String,FilePos,OrigExpr)])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
                             , concat [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
 
@@ -129,25 +127,25 @@ data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
 --   - rule generation:   Rules that are derived from multiplicities specified in the ADL-script (UNI,TOT,INJ,SUR,RFX,TRN,SYM,ASY)
 --   - rule generation:   Rules that are derived from Keys specified in the ADL-script
 
-enrichCtx :: Context -> Contexts -> (Context,[(Proof,FilePos,OrigExpr)])
+enrichCtx :: Context -> Contexts -> (Context,[(String,FilePos,OrigExpr)])
 enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
           ctxpats = [p | (p,_)<-ctxpatterns], -- all rules inside the scope of patterns
-          ctxrs   = [rule | (rule,_,_)<-ctxCtxRules], -- all rules outside the scope of patterns and all rules from within patterns
+          ctxrs   = [rule | Left rule<-ctxCtxRules], -- all rules outside the scope of patterns and all rules from within patterns
           ctxds   = ctxdecls, -- 
           ctxos   = [od | (od,_)<-ctxobjdefs], 
           ctxks   = [kd | (kd,_)<-ctxCtxKeys],
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
           ctxphp  = [plug | (plug,_)<-ctxphpplugs]} 
-  ,  [(proof,fp,OrigRule rule)|(rule,proof,fp)<-ctxCtxRules]
-   ++[(proof,fp,OrigRule rule)|(_,rs)<-ctxpatterns, (rule,proof,fp)<-rs]
-   ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxobjdefs, (proof,fp,expr)<-proofs]
-   ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxsqlplugs, (proof,fp,expr)<-proofs]
-   ++[(proof,fp,OrigObjDef expr)|(_,proofs)<-ctxphpplugs, (proof,fp,expr)<-proofs]
-   ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxCtxKeys, (proof,fp,expr)<-proofs]
-   ++[(proof,fp,OrigKeyDef expr)|(_,proofs)<-ctxPatKeys, (proof,fp,expr)<-proofs]
+  ,  [err|Right err<-ctxCtxRules]
+   ++[err|(_,rs)<-ctxpatterns, Right err<-rs]
+   ++[err|(_,checkedexprs)<-ctxobjdefs,  Right err<-checkedexprs]
+   ++[err|(_,checkedexprs)<-ctxsqlplugs,  Right err<-checkedexprs]
+   ++[err|(_,checkedexprs)<-ctxphpplugs,  Right err<-checkedexprs]
+   ++[err|(_,checkedexprs)<-ctxCtxKeys, Right err<-checkedexprs]
+   ++[err|(_,checkedexprs)<-ctxPatKeys, Right err<-checkedexprs]
   ) 
                            {-
                            (ctxnm cx)   --copy name
@@ -163,51 +161,17 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                            (ctxpops cx) --copy populations
                               -}
   where
---  (zzz,xxx) = (True,adlinfertest (declarations allCtx) tc (gens allCtx) (head[rrant r|p<-ctxpats cx,r<-ptrls p]))
-  --ctxinf = ctx
-  --TODO -> generate rules from props UNI etc
+  --DESCR -> use this function on all expressions
+  enrich_expr :: Expression -> Either ((Concept,Concept), Expression) String
+  enrich_expr = infertype_and_populate popuMphDecl (allCtxCpts ctxs) (gens ctxs) (declarations ctxs)
+
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs
   Cl _ world = toClassification $ ctxtree
-  allCtx = map fromFoundCtx $ flatten ctxtree
+--TODO -> declared objects from all ctxs are in scope
+--  allCtx = map fromFoundCtx $ flatten ctxtree
 
-  tc :: Concepts
-  tc = allCtxCpts allCtx
-  --REMARK -> tc0 is defined in specification but not needed in implementation to lookup these constants. They are just used when needed
-  --tc0 :: Concepts
-  --tc0 = [Anything,NOthing]
-  isatree = isaRels tc (gens allCtx)
-  isaStmts = map fromIsa isatree
-  gamma expr = mphStmts expr ++ gammaisa
-  gammaisa = isaStmts
--- The function mphStmts finds bindings (Statements) for the morphisms that occur in AdlExpr mp.
-  mphStmts :: AdlExpr -> [Statement]
-  mphStmts (Relation mp@(Mph{mphnm=r1}) i t) =
-     let
-     --REMARK -> inference rule T-RelDecl is evaluated to a TypeOf statement and not implemented explicitly
-     --          T-RelDecl won't be in the inference tree for this reason.
-     alternatives = [DeclExpr (Relation (mp{mphdcl=dc}) i $ fromSign (c1,c2)) (ishomo dclprops) 
-                    | dc@(Sgn{decnm=decl,desrc=c1,detrg=c2, decprps=dclprops})<-declarations allCtx, decl==r1]
-     ishomo :: [Prop] -> Bool
-     ishomo dclprops = foldr (||) False [elem p dclprops| p<-[Sym,Asy,Trn,Rfx]]
-     in
-     if null alternatives
-     then [InfErr (UndeclRel (Relation mp i t))]
-     else alternatives
-  mphStmts (Relation mp@(I{mphats=[c1]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
-  mphStmts (Relation mp@(I{}) i _) = [DeclExpr (Relation mp i unknowntype) True]
-  mphStmts (Relation mp@(V{mphats=[c1,c2]}) i _) = [DeclExpr (Relation mp i $ fromSign (c1,c2)) False]
-  mphStmts (Relation mp@(V{}) i _) = [DeclExpr (Relation mp i unknowntype) False]
-  mphStmts (Relation mp@(Mp1{mphats=[c1]}) i _ ) = [DeclExpr (Relation mp i $ fromSign (c1,c1)) True]
-  mphStmts (Relation mp@(Mp1{}) i _ ) = [DeclExpr (Relation mp i unknowntype) True]
-  mphStmts (Implicate expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Equality expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Union exprs _) = concat $ map mphStmts exprs
-  mphStmts (Intersect exprs _) = concat $ map mphStmts exprs
-  mphStmts (Semicolon expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Dagger expr1 expr2 _) = mphStmts expr1 ++ mphStmts expr2
-  mphStmts (Complement expr _) = mphStmts expr
-  mphStmts (Flip expr _) = mphStmts expr
+  isatree = isaRels (allCtxCpts ctxs) (gens ctxs)
 
   --DESCR -> enriching ctxisa
   {- WAAROM worden de concepten in de Isa structuur gepopuleerd? Gebeurt er ooit iets met deze populatie?
@@ -228,14 +192,14 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 
 
   --DESCR -> enriching ctxpats
-  ctxpatterns :: [(Pattern,[(Rule,Proof,FilePos)])]
+  ctxpatterns :: [(Pattern,[Either Rule (String,FilePos,OrigExpr)])]
   ctxpatterns
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
                                                     --     the patterns of this context
   bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu},bindrules)
     where
     bindrules = map bindRule $ ptrls p
-    boundrules = [br | (br,_,_)<-bindrules
+    boundrules = [br | Left br<-bindrules
                   --REMARK -> no rules generated in pattern because of generation of func spec, showadl etc. 
                   --           ++[r |d<-ptdcs p, r<-multRules d]
                   --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
@@ -255,9 +219,12 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   --DESCR -> Determines domain and range population per declaration (i.e. relation)
   --REMARK -> concepts have no population, use ctxdecls instead if needed.
   popuRels :: Declarations
-  popuRels = mygroupby matches (declarations ctxs)
+  popuRels = mygroupby matches (declarations_ctxs)
       where
-      matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations ctxs) pop) | cx<-ctxs, pop<-ctxpops cx]] 
+      --REMARK -> Do NOT use declarations ctxs, because they contain decls from signal rules that are not typechecked yet!
+      -- signal rules cannot be populated at this point, they need to be populated AFTER type checking based on the populations of real relation declarations.
+      declarations_ctxs =  [d|cx'<-ctxs,p<-ctxpats cx',d<-ptdcs p++ctxds cx']
+      matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations_ctxs) pop) | cx<-ctxs, pop<-ctxpops cx]] 
       mygroupby :: [(Population, Declaration)] -> Declarations -> Declarations
       mygroupby [] res = res
       mygroupby ((p,d):pds) res = mygroupby pds addxtores
@@ -301,12 +268,12 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                               ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
   populate c       = c
 
-  ctxPatKeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
+  ctxPatKeys :: [(KeyDef,[Either Expression (String,FilePos,OrigExpr)])]
   ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   
 
 --WAAROM (SJ) werden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
   --DESCR -> enriching ctxrs
-  ctxCtxRules :: [(Rule,Proof,FilePos)]
+  ctxCtxRules :: [Either Rule (String,FilePos,OrigExpr)]
   ctxCtxRules
      = [ bindRule r| r<-ctxrs cx ] ++            -- all rules that are declared in the ADL-script within
                                                  --     this context, but not in the patterns of this context
@@ -317,71 +284,62 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
   --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
   --          may have different numbers.
-  bindRule :: Rule -> (Rule,Proof,FilePos)
-  bindRule r@(Ru{})
-    | rrsrt r==Truth = 
-        let 
-        proof = infer (gamma adlexpr) adlexpr
-        adlexpr = fromRule r
-        bindcon = case proof of
-          Proven gm (inftree:_) -> bindSubexpr (rrcon r) $ evaltree gm inftree --bind subexpressions according to trees
-          _ -> rrcon r --copy rule as parsed
-        (s,t) = bindrtype
-        bindrtype =  case proof of
-          Proven _ _ -> sign proof
-          NoProof{} -> rrtyp r
-        binddecl = (srrel r) {desrc=s, detrg=t}
-        in
-        (r {rrcon=bindcon, rrtyp=bindrtype, srrel=binddecl},proof,rrfps r) 
-    | otherwise = 
-        let
-        proof = infer (gamma adlexpr) adlexpr
-        adlexpr = fromRule r
-        bindant = case proof of
-          Proven gm (inftree:_) -> bindSubexpr (rrant r) $ etant $ evaltree gm inftree
-          _ -> rrant r --copy rule as parsed 
-        bindcon = case proof of
-          Proven gm (inftree:_) -> bindSubexpr (rrcon r) $ etcon $ evaltree gm inftree
-          _ -> rrcon r --copy rule as parsed
-        (s,t) = bindrtype
-        bindrtype =  case proof of
-          Proven _ _ -> sign proof
-          NoProof{} -> rrtyp r
-        binddecl = (srrel r) {desrc=s, detrg=t}
-        etant et = 
-          if rrsrt r==Implication 
-          then case et of 
-             (BoundTo (Implicate antex _ _)) -> BoundTo antex
-             _ -> error $ "!Fatal (module TypeChecker 325): " ++
-                          "Expected a BoundTo implication rule statement etant("++show et++")."
-          else case et of 
-             (BoundTo (Equality antex _ _)) -> BoundTo antex
-             _ -> error $ "!Fatal (module TypeChecker 329): " ++
-                          "Expected a BoundTo equivalence rule statement etant("++show et++")."
-        etcon et = 
-          if rrsrt r==Implication 
-          then case et of 
-             (BoundTo (Implicate _ conex _)) -> BoundTo conex
-             _ -> error $ "!Fatal (module TypeChecker 335): " ++
-                          "Expected a BoundTo implication rule statement etcon("++show et++")."
-          else case et of 
-             (BoundTo (Equality _ conex _)) -> BoundTo conex
-             _ -> error $ "!Fatal (module TypeChecker 339): " ++
-                          "Expected a BoundTo equivalence rule statement etcon("++show et++")."
-        in 
-        (r {rrant=bindant, rrcon=bindcon, rrtyp=bindrtype, srrel=binddecl},proof,rrfps r)
+  --          infertype_and_populate :: (Morphism -> Morphism) -> Concepts -> Gens -> Declarations -> Expression -> Either (InfType, Expression) String    popuMphDecl
 
-  ctxrulesgens :: [(Rule,Proof,FilePos)]
+   --normExpr in Rule.hs heeft een speciale behandeling voor signals, WAAROM?
+  ruleexpr :: Rule -> Expression
+  ruleexpr rule
+  --  | isSignal rule      = v (sign rule)
+    | ruleType rule==Truth = consequent rule
+    | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
+    | ruleType rule==Equivalence = Fi [ Fu [    antecedent rule , Cp (consequent rule)]
+                                      , Fu [Cp (antecedent rule),     consequent rule ]]
+    | otherwise          = error("!Fatal (module TypeChecker 335): Cannot make an expression of "++show rule)
+
+   --DESCR -> the expression must have the same structure as (ruleexpr rule)
+  ruleexpr_inv :: Rule -> Expression -> Rule
+  ruleexpr_inv rule x
+   -- | ruleexpr rule == x 
+      = case x of 
+        Fu [Cp a, c] -> if rrsrt rule==Implication then rule{rrant=a,rrcon=c} else err
+        Fi [Fu [a, Cp c], Fu [Cp a',c']] -> if --a==a' && c==c' && 
+                                               rrsrt rule==Equivalence 
+                                            then rule{rrant=a,rrcon=c} else err
+        _ -> if rrsrt rule==Truth then rule{rrcon=x} else err
+   -- | otherwise = err
+    where 
+    err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not ruleexpr of rule "++show rule)
+
+  bindRule :: Rule -> Either Rule (String,FilePos,OrigExpr)
+  --bindRule :: Rule -> (Rule,Proof,FilePos)
+  bindRule r@(Ru{}) = 
+     if null err 
+     then Left$ (bindexpr r){rrtyp=(c1,c2), srrel=signaldecl}
+     else Right (err,rrfps r,OrigRule r) 
+     where
+     inf_r = enrich_expr (ruleexpr r)
+     bindexpr r = case inf_r of
+       Left (_,inf_expr) -> ruleexpr_inv r inf_expr
+       _ -> r
+     (c1,c2) = case inf_r of
+       Left (inf_t,_) -> inf_t
+       _ ->  (NOthing,NOthing)
+     err = case inf_r of
+       Right x -> x
+       _ -> ""
+     signaldecl = (srrel r){desrc=c1, detrg=c2}
+
+  ctxrulesgens :: [Either Rule (String,FilePos,OrigExpr)]
   ctxrulesgens = [rulefromgen g | g<-gens cx]
   --TODO -> move rulefromgen to function toRule in module Gen
   --DESCR -> rules deducted from a gen are proven by the existence of a gen
-  rulefromgen :: Gen -> (Rule,Proof,FilePos)
+  rulefromgen :: Gen -> Either Rule (String,FilePos,OrigExpr)
   rulefromgen g
-    = (Ru
+    = Left$Ru
          Implication    -- Implication of Equivalence
-         (Tm $ mIs spc) -- left hand side (antecedent)
+         (Tm (mIs spc)(-1)) -- left hand side (antecedent)
          (genfp g)      -- position in source file
-         (Tm $ mIs gen) -- right hand side (consequent)
+         (Tm (mIs gen)(-1)) -- right hand side (consequent)
          []             -- explanation
          (gen,gen)      -- The type
          Nothing        -- This rule was not generated from a property of some declaration.
@@ -389,15 +347,14 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
          (genpat g)     -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
          False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
          False          -- This is not a signal rule
-         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" (genfp g) 0 False False "")          -- 
-       , Proven gammaisa [Stmt $ fromIsa (spc,gen)], genfp g)
+         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" (genfp g) 0 False False "")        
     where
     spc = populate (genspc g)
     gen = populate (gengen g)
 
-  rulefromKey :: KeyDef -> String -> (Rule,Proof,FilePos)
+  rulefromKey :: KeyDef -> String -> Either Rule (String,FilePos,OrigExpr)
   rulefromKey key pat
-    = (Ru
+    = Left$Ru
          Implication    -- Implication of Equivalence
          antc           -- the antecedent
          (pos key)      -- position in source file
@@ -409,113 +366,70 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
          pat            -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
          False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
          False          -- This is not a signal rule
-         (Sgn (name key) c c [] "" "" "" [] "" (pos key) 0 False False "")          -- 
-       , Proven gammaisa [],pos key)
+         (Sgn (name key) c c [] "" "" "" [] "" (pos key) 0 False False "")         
     where
      c    = kdcpt key
      antc = Fi [F [attexpr,flp attexpr]| attexpr<-[ctx att|att<-kdats key]]
-     cons = Tm (mIs c)
+     cons = Tm (mIs c)(-1)
 
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
-  ctxobjdefs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
+  ctxobjdefs :: [(ObjectDef,[Either Expression (String,FilePos,OrigExpr)])]
   ctxobjdefs = [bindObjDef od Nothing | od<-objDefs cx]
-  ctxsqlplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
+  ctxsqlplugs :: [(ObjectDef,[Either Expression (String,FilePos,OrigExpr)])]
   ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
-  ctxphpplugs :: [(ObjectDef,[(Proof,FilePos,Expression)])]
+  ctxphpplugs :: [(ObjectDef,[Either Expression (String,FilePos,OrigExpr)])]
   ctxphpplugs = [bindObjDef plug Nothing | plug<-ctxphp cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
-  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[(Proof,FilePos,Expression)])
-  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},(proof,objpos od,expr):proofats)
-    where
+  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[Either Expression (String,FilePos,OrigExpr)])
+  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},checkedexpr:checkedexprs)
+    where 
     expr = case mbtopexpr of
       Nothing -> objctx od
       Just topexpr -> F [topexpr, objctx od]
-    proof = infer (gamma adlexpr) adlexpr
-    adlexpr = fromExpression expr
-    bindexpr = case proof of
-      Proven gm (inftree:_) -> bindSubexpr (objctx od) $ removeF $ evaltree gm inftree
-      _ -> (objctx od)
+    checkedexpr = if null err 
+                  then Left bindexpr
+                  else Right (err,objpos od,OrigObjDef expr)      
+    inf_e = enrich_expr expr
+  --  (c1,c2) = case inf_e of
+    --  Left (inf_t,_) -> inf_t
+    --  _ -> (NOthing,NOthing)
+    err = case inf_e of
+      Right x -> x
+      _ -> ""
+    bindexpr =  case mbtopexpr of
+      Nothing -> case inf_e of
+           Left (_,x) -> x
+           _ -> objctx od 
+      Just _ -> case inf_e of
+           Left (_,F [_,x]) -> x
+           Left _ -> error $ "!Fatal (module TypeChecker 441): function enrichCtx.bindObjDef: " ++
+                             "Expected a composition expression."++show inf_e++"."
+           _ -> objctx od 
+    ---------------objats------------
     newtopexpr =  case mbtopexpr of
       Nothing -> bindexpr
       Just topexpr -> F [topexpr,bindexpr]
     inferats = [bindObjDef oa (Just newtopexpr) | oa<-objats od]
     bindats = [oa|(oa,_)<-inferats]
-    proofats = concat [proofs|(_,proofs)<-inferats]
-    removeF et = case mbtopexpr of
-      Nothing -> et
-      Just _ -> case et of 
-          (BoundTo (Semicolon _ ex2 _)) -> BoundTo ex2
-          _ -> error $ "!Fatal (module TypeChecker 420): function enrichCtx.bindObjDef.removeF: " ++
-                       "Expected a BoundTo relative composition expression statement."++show et++"."
+    checkedexprs = concat [x|(_,x)<-inferats]
+  -------end bindObjDef---------------------------------------------------------------
   
-  ctxCtxKeys :: [(KeyDef,[(Proof,FilePos,Expression)])]
+  ctxCtxKeys :: [(KeyDef,[Either Expression (String,FilePos,OrigExpr)])]
   ctxCtxKeys = [bindKeyDef kd | kd<-ctxks cx]   
-  bindKeyDef :: KeyDef -> (KeyDef,[(Proof,FilePos,Expression)])
-  bindKeyDef kd = (kd {kdats=bindats},proofats)
+  bindKeyDef :: KeyDef -> (KeyDef,[Either Expression (String,FilePos,OrigExpr)])
+  bindKeyDef kd = (kd {kdats=bindats},checkedkeydefexprs)
     where
-    (Obj {objats=bindats},proofats) = bindObjDef 
+    checkedkeydefexprs = [Left x|Left x<-checkedexprs] ++ [Right (x,fp,OrigKeyDef y)|Right (x,fp,OrigObjDef y)<-checkedexprs]
+    (Obj {objats=bindats},checkedexprs) = bindObjDef 
                    (Obj {objats=kdats kd,
                          objnm=kdlbl kd,
                          objpos=kdpos kd,
-                         objctx=Tm (mIs (kdcpt kd)),
+                         objctx=Tm (mIs (kdcpt kd))(-1),
                          objstrs=[[]]}) Nothing
 
                                     
-  --DESCR -> decomposing Statement is opposite of TypeInference.fromExpression
-  bindSubexpr :: Expression -> Statement -> Expression
-  bindSubexpr (Tc ex) x = Tc $ bindSubexpr ex x 
-  bindSubexpr (K0 ex) x = K0 $ bindSubexpr ex x 
-  bindSubexpr (K1 ex) x = K1 $ bindSubexpr ex x 
-  bindSubexpr (Cp ex) (BoundTo (Complement adlex _)) = Cp $ bindSubexpr ex (BoundTo adlex) 
-  bindSubexpr (F []) _ = F []
-  bindSubexpr (F (ex:rexs)) x@(BoundTo (Semicolon adlex1 adlex2 _)) = 
-    case rexs of
-      rex:[] -> F [bindSubexpr ex (BoundTo adlex1), bindSubexpr rex (BoundTo adlex2)]
-      _:_    -> let 
-                F bexs = bindSubexpr (F rexs) (BoundTo adlex2) 
-                in
-                F (bindSubexpr ex (BoundTo adlex1):bexs)
-      []     -> F [bindSubexpr ex x]
-  bindSubexpr (Fd []) _ = Fd []
-  bindSubexpr (Fd (ex:rexs)) x@(BoundTo (Dagger adlex1 adlex2 _)) = 
-    case rexs of
-      rex:[] -> Fd [bindSubexpr ex (BoundTo adlex1), bindSubexpr rex (BoundTo adlex2)]
-      _:_    -> let 
-                Fd bexs = bindSubexpr (Fd rexs) (BoundTo adlex2) 
-                in
-                Fd (bindSubexpr ex (BoundTo adlex1):bexs)
-      []     -> Fd [bindSubexpr ex x]
-  bindSubexpr (Fu subexs) (BoundTo (Union adlexs _)) = Fu $ bindSubexprs subexs adlexs 
-  bindSubexpr (Fi subexs) (BoundTo (Intersect adlexs _)) = Fi $ bindSubexprs subexs adlexs
-  bindSubexpr ex@(Tm (Mph{mphyin=False})) (BoundTo (Flip adlex@(Relation{tt=TT{cts=c1,ctt=c2}}) _)) = 
-              bindSubexpr ex (BoundTo (adlex{tt=TT c2 c1 1}))
-  bindSubexpr (Tm mp) stmt@(BoundTo adlex@(Relation{})) = 
-    let    
-    (ec1,ec2)= evalstmt stmt
-    gen = toGen $ exprsrc adlex
-    in
-    if (rel adlex)==mp 
-    then Tm $ case mp of
-      Mph{} -> popuMphDecl$ (rel adlex) {mphtyp=(ec1,ec2)}
-                           --REMARK -> bind to the morphism from the gamma (with mphdcl set) = rel adlex
-      I{} -> popuMphDecl$mp {mphgen=if gen==Anything then ec1 else gen, mphspc=ec1}
-      V{} -> popuMphDecl$mp {mphtyp=(ec1,ec2)}
-      Mp1{} -> popuMphDecl$mp {mph1typ=ec1}
-    else error  $ "!Fatal (module TypeChecker 481): function enrichCtx.bindSubexpr: " ++
-                  "Morphisms are different: \nOriginal: " ++ show mp ++ "\nType checked: " ++ show (rel adlex)       
-  bindSubexpr x y = error $ "!Fatal (module TypeChecker 483): function enrichCtx.bindSubexpr: " ++
-                           "Expressions are different: \nOrginal: " ++ show x ++ "\nType checked: " ++ show y
-
-  bindSubexprs :: Expressions ->  [AdlExpr] -> Expressions
-  bindSubexprs subexs [] = if null subexs then [] 
-                           else error $ "!Fatal (module TypeChecker 488): function enrichCtx.Subexprs: " ++
-                                        "Not all subexprs are matched. Too many originals."
-  bindSubexprs [] adlexs = if null adlexs then [] 
-                           else error $ "!Fatal (module TypeChecker 491): function enrichCtx.Subexprs: " ++
-                                        "Not all subexprs are matched. Too many type checked."
-  bindSubexprs (subex:subexs) (adlex:adlexs) = (bindSubexpr subex (BoundTo adlex)):(bindSubexprs subexs adlexs)
 
 -----------------
 --Check functions

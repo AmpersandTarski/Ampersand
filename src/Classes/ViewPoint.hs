@@ -7,7 +7,7 @@ where
    import Adl.Rule                    (Rule(..), rulefromProp, ruleviolations,Rules)
    import Adl.ObjectDef               (ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                  (KeyDefs)
-   import Adl.MorphismAndDeclaration  (Declarations,mIs)
+   import Adl.MorphismAndDeclaration  (Declarations,Declaration(..),mIs)
    import Adl.Concept                 (Concept(..),Morphic(..))
    import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression(..))
@@ -34,13 +34,13 @@ where
      patterns     :: a -> Patterns      -- all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept
      --TODO -> there are more rules than rules+multrules that can be violated
-     violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
+     violations   :: a -> [(Rule,Paire)] --the violans of rules and multrules of this viewpoint
      violations x = [(r,viol) |r<-(rules x) ++ (multrules x), viol<-ruleviolations r] 
 
    instance ViewPoint a => ViewPoint [a] where
     objectdef _      = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                            , objpos  = Nowhere    -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
-                           , objctx  = Tm (mIs S) -- ^ this expression describes the instances of this object, related to their context. 
+                           , objctx  = Tm (mIs S) (-1) -- ^ this expression describes the instances of this object, related to their context. 
                            , objats  = []         -- ^ the attributes, which are object definitions themselves.
                            , objstrs = []         -- ^ directives that specify the interface.
                            }
@@ -59,7 +59,7 @@ where
    instance ViewPoint Context where
     objectdef    context = Obj { objnm   = name context
                                , objpos  = Nowhere
-                               , objctx  = Tm (mIs S)
+                               , objctx  = Tm (mIs S) (-1)
                                , objats  = map objectdef (ctxpats context)
                                , objstrs = []
                                }
@@ -76,12 +76,12 @@ where
    instance ViewPoint Pattern where
     objectdef    pat = Obj { objnm   = name pat
                            , objpos  = Nowhere
-                           , objctx  = Tm (mIs S)
+                           , objctx  = Tm (mIs S) (-1)
                            , objats  = []
                            , objstrs = []
                            }
     conceptDefs  pat = ptcds pat
-    declarations pat = ptdcs pat `uni` declarations (ptrls pat)
+    declarations pat = ptdcs pat `uni` declarations (ptrls pat) -- (error(show[declarations r|r<- (ptrls pat),(source$srrel r)/=Anything]))
     rules        pat = [r|r<-ptrls pat, not (isSignal r)]
     signals      pat = [r|r<-ptrls pat,      isSignal r ]
     objDefs       _  = []
@@ -94,12 +94,13 @@ where
    instance ViewPoint Rule where
     objectdef rule = Obj { objnm   = name rule
                          , objpos  = pos rule
-                         , objctx  = Tm (mIs S)
+                         , objctx  = Tm (mIs S) (-1)
                          , objats  = []
                          , objstrs = []
                          }
     conceptDefs  _ = []
-    declarations r = [srrel r]
+    declarations r = --if (desrc$srrel r)==Anything then error(show(rrdcl r,decexpl(srrel r),rrfps r,srrel r,rrtyp r)) else 
+                     [srrel r]
     rules        r = [r| not (isSignal r)]
     signals      r = [r| isSignal r]
     objDefs      _ = []

@@ -118,8 +118,8 @@ where
    consequent r = rrcon r
 
    ruleviolations :: Rule -> Pairs
-   ruleviolations (Ru{rrsrt=rtyp,rrant=ant,rrcon=con}) 
-       | rtyp==Truth = contents$Cp con --everything not in con
+   ruleviolations (Ru{rrsrt=rtyp,rrant=ant,rrcon=con,rrtyp=t}) 
+       | rtyp==Truth = con `contentsnotin` (Tm (V [] t) (-1))  --everything not in con
        | rtyp==Implication = ant `contentsnotin` con 
        | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
        where
@@ -189,10 +189,10 @@ where
            , srrel = d{decnm=show prp++name d}
            }
           where
-           i (x,y) | x==y = Tm $ mIs x
+           i (x,y) | x==y = Tm ( mIs x) (-1)
                    | otherwise = error ("!Fatal (module Rule 182): Bad multiplicity rule, the identity must be homogeneous.")
            h (x,y) | x==y = (x,y)
                    | otherwise = error ("!Fatal (module Rule 184): Bad homogeneous rule, the relation must be homogeneous.")
-           r = Tm $ Mph (name d) (pos d) [] (source d,target d) True d 
+           r = Tm (Mph (name d) (pos d) [] (source d,target d) True d) (-1)
    rulefromProp _ _ = error ("!Fatal (module Rule 186): Properties can only be set on user-defined Declarations.")
     

@@ -51,9 +51,9 @@ module Calc ( deriveProofs
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
 --        qs         = vquads fSpec
 --        ecaRs      = assembleECAs visible qs
-        editable (Tm Mph{})  = True    --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+        editable (Tm Mph{} _)  = True    --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editable _           = False
-        editMph (Tm m@Mph{}) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+        editMph (Tm m@Mph{} _) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editMph e            = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
 
 
@@ -196,7 +196,7 @@ module Calc ( deriveProofs
    derivMono expr -- preconditie van actie a
              tOp  -- de actie (Ins of Del)
              m'   -- het morfisme, zodat de actie bestaat uit INSERT m' INTO expr of DELETE m' FROM expr
-    = f (head (lambda tOp (Tm m') expr++[[]])) (start tOp)
+    = f (head (lambda tOp (Tm m'(-1)) expr++[[]])) (start tOp)
     where
      f:: [(Expression, [String], whatever)] -> (Expression, Expression) -> [(Rule, [String], String)]
      f [] (_,_) = []
@@ -209,8 +209,8 @@ module Calc ( deriveProofs
       = (rule (subst (m',neg') e1) (subst (m',pos') e1),["Monotony of "++showOp e2],"==>"):
          f prf (neg',pos')
          
-     start Ins  = (Tm m',Fu [Tm m',delta (sign m')])
-     start Del  = (Fi [Tm m',Cp (delta (sign m'))],Tm m')
+     start Ins  = (Tm m'(-1),Fu [Tm m'(-1),delta (sign m')])
+     start Del  = (Fi [Tm m'(-1),Cp (delta (sign m'))],Tm m'(-1))
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
                                        , rrant = error ("!Fatal (module Calc 487): illegal reference to antecedent in rule ("++showADL neg'++") |- ("++showADL pos'++")")
@@ -246,7 +246,7 @@ module Calc ( deriveProofs
                      Cp{}     -> "-"
                      K0{}     -> "*"
                      K1{}     -> "+"
-                     Tm mph   -> if inline mph then "" else "~"
+                     Tm mph _   -> if inline mph then "" else "~"
                      Tc{}     -> error("!Fatal (module Calc 529): call to showOp (Tc x) in module Calc.hs")
 
    positiveIn :: Expression -> Morphism -> Maybe Bool
@@ -259,7 +259,7 @@ module Calc ( deriveProofs
      f (Fd fus) = concat (map f fus)
      f (Fi fus) = concat (map f fus)
      f (Fu fus) = concat (map f fus)
-     f (Tm mph) = [ True | makeInline mph==makeInline m ]
+     f (Tm mph _) = [ True | makeInline mph==makeInline m ]
      f (Cp e)   = [ not b| b<- f e]
      f (K0 e)   = f e
      f (K1 e)   = f e
@@ -307,7 +307,7 @@ module Calc ( deriveProofs
               (K1 x)   -> [(expr,(\x'->K1 x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
               (Cp x)   -> [(expr,(\x'->Cp x'),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e3 x]
               (Tc x)   -> lam tOp e3 x
-              (Tm _)  ->  [[(e3,(\x->x),[],"")]]
+              (Tm _ _)  ->  [[(e3,(\x->x),[],"")]]
 
            where
              deMrg expr'' = case expr'' of

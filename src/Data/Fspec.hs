@@ -52,7 +52,7 @@ module Data.Fspec ( Fspc(..)
    instance ViewPoint Fspc where
     objectdef    fSpec = Obj { objnm   = name fSpec
                              , objpos  = Nowhere
-                             , objctx  = Tm (mIs S)
+                             , objctx  = Tm (mIs S) (-1)
                              , objats  = serviceS fSpec ++ serviceG fSpec
                              , objstrs = []
                              }

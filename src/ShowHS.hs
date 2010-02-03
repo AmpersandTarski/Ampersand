@@ -462,7 +462,7 @@ where
 
    instance ShowHS Expression where
     showHSname expr = error ("!Fatal (module ShowHS 481): an expression is anonymous with respect to showHS flags. Detected at: "++ showADL expr)
-    showHS flags _ (Tm m')   = "Tm ("++showHS flags "" m'++")"
+    showHS flags _ (Tm m' _)   = "Tm ("++showHS flags "" m'++")"
     showHS flags indent (Tc f)   = showHS flags indent f
     showHS _ _ (F [])   = "F [] <Id>"
     showHS _ _ (Fd [])  = "Fd [] <nId>"

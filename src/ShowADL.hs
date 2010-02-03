@@ -66,7 +66,7 @@
       Fd xs -> Fd [mapExpr f x| x<-xs]
       Fu xs -> Fu [mapExpr f x| x<-xs]
       Fi xs -> Fi [mapExpr f x| x<-xs]
-      Tm mp -> Tm (f mp)
+      Tm mp i -> Tm (f mp) i
       Tc x  -> Tc $ mapExpr f x
       Cp x  -> Cp $ mapExpr f x
       K0 x  -> K0 $ mapExpr f x
@@ -120,7 +120,7 @@
                                   , cls<-[[name c|cl<-eqCl name (vrels fSpec), length cl>1, c<-take 1 cl]]
                                   ]++
               ind++"   ]"
-           atts = [ m | a<-objats obj, Tm m<-[objctx a] ]
+           atts = [ m | a<-objats obj, Tm m _<-[objctx a] ]
            str ss | and [isAlphaNum c| c<-ss] = ss
                   | otherwise                 = "\""++ss++"\""
 
@@ -222,7 +222,7 @@
 -- This function must ensure that an expression, when printed, can be parsed with no ambiguity.
 -- Besides, it must be readable as well.
    disambiguate :: Fspc -> Expression -> Expression
-   disambiguate fSpec (Tm mph) = Tm mph
+   disambiguate fSpec (Tm mph i) = Tm mph i
    disambiguate fSpec (Fu fs)  = Fu [disambiguate fSpec f| f<-fs]
    disambiguate fSpec (Fi fs)  = Fi [disambiguate fSpec f| f<-fs]
    disambiguate fSpec (Fd [])  = Fd []
@@ -262,13 +262,13 @@
                        where select (s,m,t) = length m>1
         p1 iss = [s| (s,m,t)<-iss]
         pn [] = error("!Fatal (module ShowADL 441): calling pn with empty list")
-        pn [(s,m,t)] = [s,Tm (mIs (target s `lub` source t))]
+        pn [(s,m,t)] = [s,Tm (mIs (target s `lub` source t)) (-1)]
         pn iss = [s|(s,m,t)<-lss]++[mphatson s|(s,m,t)<-[head rss]]++[s|(s,m,t)<-tail rss]
                  where lss = take halfway iss
                        rss = drop halfway iss
                        halfway = length iss `div` 2
 -- The following function is used to force the type of a relation to be printed.
-        types (Tm mph) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
+        types (Tm mph _) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
         types (Fu fs)  = foldr isc [] [types f| f<-fs]
         types (Fi fs)  = foldr isc [] [types f| f<-fs]
         types (Fd ts)  = types (F ts) -- a nifty trick to save code. After all, the type computation is identical to F...
@@ -296,7 +296,7 @@
        showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr'
         = (showchar.insParentheses.disambiguate fSpec.mphatsoff) expr'
          where
-          showchar (Tm mph) = showADLcode fSpec mph
+          showchar (Tm mph _) = showADLcode fSpec mph
           showchar (Fu [])  = "-V"
           showchar (Fu fs)  = chain union [showchar f| f<-fs]
           showchar (Fi [])  = "V"
@@ -414,7 +414,7 @@
 --FUNCTIONS
 ---------------------------------------
 
-   types fSpec (Tm m)
+   types fSpec (Tm m _)
     = rd [ if inline m then (desrc d, detrg d) else (detrg d, desrc d)
          | d<-vrels fSpec, name d==name m ]
    types fSpec (F []) = []

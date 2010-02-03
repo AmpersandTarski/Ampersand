@@ -167,11 +167,11 @@ where
      mkTag _  = error ("!Fatal (module ShowXMLtiny 183): mkTag should not be used for expressions.")
      mkXmlTree expr 
          = case expr of
-               (Tm mph) | inline mph -> Node (Tag rel ( [mkAttr "Name" (name mph)]
+               (Tm mph i) | inline mph -> Node (Tag rel ( [mkAttr "Name" (name mph)]
                                                       ++[mkAttr "Source" (name(source mph))]
                                                       ++[mkAttr "Target" (name(target mph))]
                                               )        ) 
-                        | otherwise -> Elem (simpleTag flip') [mkXmlTree (Tm (flp mph))]
+                        | otherwise -> Elem (simpleTag flip') [mkXmlTree (Tm (flp mph) i)]
                (Fu [])  -> Elem (simpleTag compl) 
                                 [ Node (Tag rel [mkAttr "Name" "V"])]
                (Fu [f]) -> mkXmlTree f

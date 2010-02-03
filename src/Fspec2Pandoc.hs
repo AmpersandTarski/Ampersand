@@ -621,7 +621,7 @@ serviceChap lev fSpec flags svc
                      [ Str $ svcAutoRules ] )
                  ]
      where
-      f (Tm _) = []
+      f (Tm _ _) = []
       f expr   = [Str $ showPredLogic flags (conjNF(F[v (S,source expr),expr]))]
   svcInsDelConcepts
    = let ics = fsv_creating svc>-fsv_deleting svc
@@ -959,7 +959,7 @@ instance ShowMath Expression where
  showMathcode fSpec e = (showchar.insParentheses.disambiguate fSpec.mphatsoff) e
 
 showchar :: Expression -> String
-showchar (Tm mph) = showMath mph
+showchar (Tm mph _) = showMath mph
 showchar (Fu [])  = "\\cmpl{\\full}"
 showchar (Fu fs)  = chain "\\cup" [showchar f| f<-fs]     -- union
 showchar (Fi [])  = "\\full"

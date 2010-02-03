@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Expression (Expression(..),Expressions,isF,isFd,isFi,isFu
                       ,v
-                      ,isPos,isNeg,notCp,insParentheses)
+                      ,isPos,isNeg,notCp,insParentheses, uniquemphs)
 where
    import Adl.MorphismAndDeclaration  (Morphism(..),inline)
    import Adl.FilePos                 (Numbered(..))
@@ -15,7 +15,7 @@ where
    import Auxiliaries                 (eqClass, sord')
 
    type Expressions = [Expression]
-   data Expression  = Tm Morphism     -- m  ^ simple morphism, possibly conversed     ~
+   data Expression  = Tm Morphism Int     -- m  ^ simple morphism, possibly conversed     ~
                     | Tc Expression   -- e  ^ bracketed expression                 ( ... )
                     | F  Expressions  -- ts ^ composition                             ;
                     | Fd Expressions  -- ts ^ relative addition                       !
@@ -41,7 +41,39 @@ where
    isFd :: Expression -> Bool
    isFd Fd{}  = True
    isFd _     = False
-   
+  
+   --DESCR -> if you need an identifier for morphisms within the scope of an expression 
+   uniquemphs :: Int -> Expression -> (Expression,Int)
+   uniquemphs i (Tm mp _) = (Tm mp (i+1),i+1)
+   uniquemphs i (F []) = (F [],i)
+   uniquemphs i (F (ex:rexs)) = (F (lft:rghts),ri)
+      where
+      (lft,li) = uniquemphs i ex
+      (F rghts,ri) = (uniquemphs li (F rexs))
+   uniquemphs i (Fd []) = (Fd [],i)
+   uniquemphs i (Fd (ex:rexs)) = (Fd (lft:rghts),ri)
+      where
+      (lft,li) = uniquemphs i ex
+      (Fd rghts,ri) = (uniquemphs li (Fd rexs))
+   uniquemphs i (Fi []) = (Fi [],i)
+   uniquemphs i (Fi (ex:rexs)) = (Fi (lft:rghts),ri)
+      where
+      (lft,li) = uniquemphs i ex
+      (Fi rghts,ri) = (uniquemphs li (Fi rexs))
+   uniquemphs i (Fu []) = (Fu [],i)
+   uniquemphs i (Fu (ex:rexs)) = (Fu (lft:rghts),ri)
+      where
+      (lft,li) = uniquemphs i ex
+      (Fu rghts,ri) = (uniquemphs li (Fu rexs))
+   uniquemphs i (Cp ex) = (Cp sb, si)
+      where (sb,si) = uniquemphs i ex
+   uniquemphs i (Tc ex) = (Tc sb, si)
+      where (sb,si) = uniquemphs i ex
+   uniquemphs i (K0 ex) = (K0 sb, si)
+      where (sb,si) = uniquemphs i ex
+   uniquemphs i (K1 ex) = (K1 sb, si)
+      where (sb,si) = uniquemphs i ex
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
 -- \***********************************************************************
@@ -53,7 +85,7 @@ where
     Cp e  == Cp e'  = e==e'
     K0 e  == K0 e'  = e==e'
     K1 e  == K1 e'  = e==e'
-    Tm m  == Tm m'  = m==m'
+    Tm m _  == Tm m' _  = m==m'
     Tc e  == Tc e'  = e==e'
     Tc e  == e'     = e==e'
     e     == Tc e'  = e==e'
@@ -66,7 +98,7 @@ where
        showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr' = showchar (insParentheses expr')
          where
       --    wrap i j str = if i<=j then str else lpar++str++rpar
-          showchar (Tm mph)  = name mph++if inline mph then "" else "~"
+          showchar (Tm mph _)  = name mph++if inline mph then "" else "~"
           showchar (Fu []) = "-V"
           showchar (Fu fs) = chain union [showchar f| f<-fs]
           showchar (Fi []) = "V"
@@ -86,7 +118,7 @@ where
           wrap :: Integer -> Integer -> Expression -> Expression
           wrap i j e' = if i<=j then e' else Tc e'
           insPar :: Integer -> Expression -> Expression
-          insPar _ (Tm mph) = Tm mph
+          insPar _ (Tm mph i) = Tm mph i
           insPar i (Fu fs)  = wrap i 4 (Fu [insPar 4 f| f<-fs])
           insPar i (Fi fs)  = wrap i 5 (Fi [insPar 5 f| f<-fs])
           insPar i (Fd ts)  = wrap i 6 (Fd [insPar 6 t| t<-ts])
@@ -98,7 +130,7 @@ where
 
    instance Association Expression where
 
-    source (Tm mph)        = source mph
+    source (Tm mph _)        = source mph
     source (Tc f)          = source f
     source (F  [])         = Anything -- error ("!Fatal (module Expression 103): source (F [])")
     source (F  ts)         = source (head ts)
@@ -112,7 +144,7 @@ where
     source (K1 e')         = source e'
     source (Cp e')         = source e'
 
-    target (Tm mph)        = target mph
+    target (Tm mph _)        = target mph
     target (Tc f)          = target f
     target (F  [])         = Anything -- error ("!Fatal (module Expression 117): target (F [])")
     target (F  ts)         = target (last ts)
@@ -126,7 +158,7 @@ where
     target (K1 e')         = target e'
     target (Cp e')         = target e'
 
-    sign (Tm mph)          = sign mph
+    sign (Tm mph _)          = sign mph
     sign (Tc f)            = sign f
     sign (F ts)            = if null ts 
                               then error ("!Fatal (module Expression 132): no terms in sign (F "++show ts++")")
@@ -147,7 +179,7 @@ where
     sign (Cp e')           = sign e'
 
    instance Numbered Expression where
-    pos (Tm mph)  = pos mph
+    pos (Tm mph _)  = pos mph
     pos (Tc f)  = pos f
     pos (F ts)  = if not (null ts) then pos (head ts) else error "!Fatal (module Expression 152): Please submit a complete bug report to your dealer"
     pos (Fd ts) = if not (null ts) then pos (head ts) else error "!Fatal (module Expression 153): Please submit a complete bug report to your dealer"
@@ -167,7 +199,7 @@ where
         (K0 e')   -> isIdent e' || isFalse e'
         (K1 e')   -> isIdent e'
         (Cp e')   -> isImin e'
-        (Tm mph)  -> isIdent mph
+        (Tm mph _)  -> isIdent mph
         (Tc f)    -> isIdent f
       where
        isImin :: Expression -> Bool
@@ -178,7 +210,7 @@ where
           (F  [e']) -> isImin e'
           (Cp v')   -> isIdent v'
        --   _        = False -- (TODO)
-          (Tm _)  -> False
+          (Tm _ _)  -> False
           (Tc _)  -> False
           (K0 _)  -> False
           (K1 _)  -> False
@@ -188,7 +220,7 @@ where
     
 
    v :: Sign -> Expression
-   v (a,b) = Tm (V [] (a,b))
+   v (a,b) = Tm (V [] (a,b)) (-1)
 
    notCp :: Expression -> Expression
    notCp (Cp e') = e'
@@ -202,7 +234,7 @@ where
 
    instance Morphic Expression where
     multiplicities expr = case expr of
-        (Tm mph)-> multiplicities mph
+        (Tm mph _)-> multiplicities mph
         (Tc f)  -> multiplicities f
         (F ts)  -> foldr isc [Uni,Tot,Sur,Inj] (map multiplicities ts) -- homogene multiplicities can be used and deduced by and from rules: many rules are multiplicities (TODO)
         (Fd _)  -> [] -- many rules with Fd in it are multiplicities (TODO). Solve perhaps by defining relation a = (Fd ts)
@@ -213,7 +245,7 @@ where
         (Cp e') -> [p|p<-multiplicities e', p==Sym]
 
     flp expr = case expr of
-        (Tm mph)-> Tm (flp mph)
+        (Tm mph i)-> Tm (flp mph) i
         (Tc f)  -> Tc (flp f)
         (F ts)  -> F (map flp (reverse ts))
         (Fd ts) -> Fd (map flp (reverse ts))
@@ -224,7 +256,7 @@ where
         (Cp e') -> Cp (flp e')
 
     isNot expr = case expr of        -- > tells whether the argument is equivalent to I-
-        (Tm mph)   -> isNot mph    
+        (Tm mph _)   -> isNot mph    
         (Tc f)     -> isNot f
         (F [])     -> False
         (F [t])    -> isNot t        
@@ -243,7 +275,7 @@ where
         (Cp _)     -> False
         
     typeUniq expr = case expr of
-        (Tm mph) -> typeUniq mph -- I don't understand what typeUniq does - Bas. (TODO) WAAROM? (uitleggen bij de class definition, niet hier)
+        (Tm mph _) -> typeUniq mph -- I don't understand what typeUniq does - Bas. (TODO) WAAROM? (uitleggen bij de class definition, niet hier)
         (Tc f)   -> typeUniq f
         (F  ts)  -> and (map typeUniq ts)
         (Fd ts)  -> and (map typeUniq ts)
@@ -265,7 +297,7 @@ where
         (K0 e')   -> isTrue (K1 e')
         (K1 e')   -> isTrue e' -- als elk elem van (source e) in een cykel (in e) zit, dan ook is K0 ook True (TODO)
         (Cp e')   -> isFalse e'
-        (Tm mph)  -> isTrue mph
+        (Tm mph _)  -> isTrue mph
         (Tc f)    -> isTrue f
 
     isFalse expr = case expr of
@@ -277,7 +309,7 @@ where
         (K0 _)    -> False
         (K1 e')   -> isFalse e'
         (Cp e')   -> isTrue e'
-        (Tm mph)  -> isFalse mph
+        (Tm mph _)  -> isFalse mph
         (Tc f)    -> isFalse f
 
     isSignal _ = False
@@ -291,8 +323,9 @@ where
         (K0 e')   -> isProp e'
         (K1 e')   -> isProp e'
         (Cp e')   -> isTrue e'
-        (Tm mph)  -> isProp mph
+        (Tm mph _)  -> isProp mph
         (Tc f)    -> isProp f
+
 
 
                       

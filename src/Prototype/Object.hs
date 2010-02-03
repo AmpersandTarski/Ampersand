@@ -111,7 +111,7 @@
                                                   "$me"
                                                   0
                                                   (o  {objnm =if isOne o then "1" else "$id"
-                                                      ,objctx=Tm(mIs(concept o))
+                                                      ,objctx=Tm(mIs(concept o))(-1)
                                                       ,objats=[]}
                                                   )
                                                   o
@@ -170,7 +170,7 @@
                    ""
                    expr
       where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
-            tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))
+            tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))(-1)
             ctx' = simplify $ flp (ctx o)
             fs   = [es' | F es' <- [ctx']]
    saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
@@ -394,7 +394,7 @@
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
                  (ObjectDef,SqlField))]   -- target
    plugAts plug p o = ( [ ((o,sf),(o,tf))
-                        | (sf,tf)<-sqlPlugFields plug (Tm$mIs$target$objctx o)
+                        | (sf,tf)<-sqlPlugFields plug (Tm(mIs$target$objctx o)(-1))
                         ] ++
                         [ ((p,sf),(o,tf))
                         | (sf,tf)<-sqlPlugFields plug $ objctx o
@@ -444,7 +444,7 @@
                                           (tail quer)
                                )
        idAt = objOut{objctx=targetCpt,objnm="id",objats=[]}
-       targetCpt = Tm$mIs$target$objctx objOut
+       targetCpt = Tm(mIs$target$objctx objOut)(-1)
        sqlUnis = doSqlGet fSpec False objIn (objOut{objats= idAt : map trunc unisNeeded,objctx=targetCpt})
        trunc        att = att{objats=[]}
        truncKeepUni = trunc -- de SQL functie gaat (nog) niet goed om met recursie!
@@ -496,7 +496,7 @@
             comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
             keyGroups   = take 1 ( [gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s] ++ 
                                    [((p,(objIn,s)),[(objIn,t)])
-                                   | (p,s,t)<-sqlRelPlugs fSpec (Tm$mIs$target (objctx objIn))]
+                                   | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]
                                    -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
                                    -- dan hebben we dus geen keyGroup, maar dat geeft niet voor ONE
                                    -- in andere gevallen geeft dat wel.

@@ -130,14 +130,14 @@ module PredLogic
       normRule r@(Ru{rrsrt=Truth})
        = r{rrant=error ("!Fatal (module PredLogic 93): illegal reference to antecedent in normRule ("++showADL r++")")}
       normRule r@(Ru{rrsrt=Implication,rrant=(F ants),rrcon=c@(F cons)})
-       | idsOnly ants = r{rrant=F [Tm (mIs idA)],rrtyp=(idC,idC)}
+       | idsOnly ants = r{rrant=F [Tm (mIs idA) (-1)],rrtyp=(idC,idC)}
        | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
        where
         idC = source c `lub` target c `lub` idA
         idA = foldr lub (target (last ants)) (map source ants)
         (as,cs) = move ants cons
         (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
-        move [] cs' = ([(Tm . mIs . source . head) cs'],cs')
+        move [] cs' = ([(Tm . mIs . source . head) cs' (-1)],cs')
         move as' cs'
          | isSur h && isInj h = move (tail as') ([flp h]++cs')
          | isUni l && isTot l = move (init as') (cs'++[flp l])
@@ -268,7 +268,7 @@ module PredLogic
    relFun :: [String] -> Expressions -> Expression -> Expressions -> (String->String->PredLogic)
    relFun exclVars lhs e rhs
      = case e of
-         (Tm mph) -> (\s->(\t->if inline mph
+         (Tm mph _) -> (\s->(\t->if inline mph
                                then Rel (Funs s [m'| t'<-lhs, m'<-mors t']) mph (Funs t [m'| t'<-reverse rhs, m'<-mors t'])
                                else Rel (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp mph) (Funs s [m'| t'<-lhs, m'<-mors t'])))
          _        -> (\s->(\t->let (pl,_) = assembleF (exclVars++[s,t]) e s t in pl))       
@@ -285,17 +285,17 @@ module PredLogic
     | denotes lhs==Flr && denote e==Rn
                 = (relFun exclVars lhs e [], source (head lhs), target e): pars3 exclVars ts
     | denotes lhs==Flr && denote e==Frl
-                = (relFun exclVars lhs (Tm (mIs (source e))) [e], source (head lhs), target e): pars3 exclVars ts
+                = (relFun exclVars lhs (Tm (mIs (source e))(-1)) [e], source (head lhs), target e): pars3 exclVars ts
     | otherwise = pars1 exclVars (lhs:[e]:ts)
    pars2 exclVars ([e]: rhs: ts)
     | denotes rhs==Frl && denote e==Rn
                 = (relFun exclVars [] e rhs, source e, target (last rhs)): pars3 exclVars ts
     | denote e==Flr && denotes rhs==Frl
-                = (relFun exclVars [e] (Tm (mIs (source e))) rhs, source e, target (last rhs)): pars3 exclVars ts
+                = (relFun exclVars [e] (Tm (mIs (source e))(-1)) rhs, source e, target (last rhs)): pars3 exclVars ts
     | otherwise = pars1 exclVars ([e]:rhs:ts)
    pars2 exclVars (lhs: rhs: ts)
     | denotes lhs==Flr && denotes rhs==Frl
-                = (relFun exclVars lhs (Tm (mIs (source (head rhs)))) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
+                = (relFun exclVars lhs (Tm (mIs (source (head rhs)))(-1)) rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
     | otherwise = pars1 exclVars (lhs:rhs:ts)
    pars2 exclVars ts = pars1 exclVars ts -- for lists shorter than 2
    
@@ -307,13 +307,13 @@ module PredLogic
 
    pars0 :: [String] -> Expressions -> String -> String -> PredLogic
    pars0 exclVars lhs
-    | denotes lhs==Flr = (relFun exclVars lhs (Tm (mIs (target (last lhs)))) [])
-    | denotes lhs==Frl = (relFun exclVars [] (Tm (mIs (target (last lhs)))) lhs)
+    | denotes lhs==Flr = (relFun exclVars lhs (Tm (mIs (target (last lhs)))(-1)) [])
+    | denotes lhs==Frl = (relFun exclVars [] (Tm (mIs (target (last lhs)))(-1)) lhs)
     | otherwise        = (relFun exclVars [] (let [r]=lhs in r) [])
 
    denote :: Expression -> Notation
    denote e = case e of
-      (Tm m)
+      (Tm m _)
         | null([Uni,Inj,Tot,Sur] >- multiplicities m)  -> Rn
         | (isUni m) && (isTot m)                       -> Flr
         | (isInj m) && (isSur m)                       -> Frl

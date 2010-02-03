@@ -35,7 +35,7 @@ where
    instance Populated Expression where
     contents expr  
        = case expr of
-            (Tm x)  -> contents x
+            (Tm x _)  -> contents x
             (Tc x)  -> contents x
             (F  x)  -> if null x 
                          then error ("!Fatal (module Populated 41): no terms in contents ("++show expr++")") 

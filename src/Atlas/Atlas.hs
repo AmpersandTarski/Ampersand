@@ -174,7 +174,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATContains = [[relpred x,show y]| x<-declarations fSpec,decusr x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
    pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents x]
-   pop' ATContainsSignal = [[cptrule x,show y]| x<-signalrules, y<-contents (Cp$ruleexpr x)]
+   pop' ATContainsSignal = [[cptrule x,show y]| x<-signalrules, y<-ruleviolations x]
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|p<-patterns fSpec, x<-declarations p]
    pop' ATSubExpression = [[cptsubexpr x y ,cptrule x]|x<-userrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
@@ -210,10 +210,6 @@ insertpops conn fSpec flags (tbl:tbls) pics =
               | rrsrt x==Equivalence = [rrant x,rrcon x]
               | rrsrt x==Truth = [rrcon x]
               | otherwise = []
-   ruleexpr x | rrsrt x==Implication = Fu [Cp(rrant x), rrcon x]
-              | rrsrt x==Equivalence = Fi [Fu [Cp(rrant x), rrcon x], Fu [Cp(rrcon x), rrant x]]
-              | rrsrt x==Truth = rrcon x
-              | otherwise = v (NOthing,NOthing) 
    nextrule r [] = r
    nextrule r (_:[]) = r
    nextrule r (r':r'':rs) | runum r'==runum r = r'' 

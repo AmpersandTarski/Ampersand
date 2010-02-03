@@ -16,7 +16,7 @@ where
     subst (mph,f) xs = map (subst (mph,f)) xs
 
    instance Substitutive Expression where
-    subst (mph,f) t@(Tm mph') |     mph==mph' = f
+    subst (mph,f) t@(Tm mph' _) |     mph==mph' = f
                               | flp mph==mph' = flp f 
                               | otherwise = t
     subst (mph,f) f'          = subs f'

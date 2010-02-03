@@ -41,6 +41,10 @@
                  , themes       = themes'
                  , vctxenv      = ctxenv context
                  }
+        testgmi = error$show$ concs context -- ([(name r,concs r)|r<-rules context++signals context]
+                 -- ,[(decexpl(d),d)|d<-(declarations (ctxpats context)`uni` ctxds context)])
+                 -- ,[(decexpl(d),d,concs d)|d<-declarations context])
+   
         allDecs = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
                                           `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
                   | d<-declarations context, deciss d || decusr d
@@ -58,15 +62,15 @@
          = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 64): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
            if is_Tot
            then PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Tm (mIs (source m'))) Nothing (not is_Sur) False {- isUni -}
-                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]
+                        , fields = [field (name (source m')) (Tm (mIs (source m'))(-1)) Nothing (not is_Sur) False {- isUni -}
+                                   ,field (name (target m')) (Tm m' (-1)) Nothing (not is_Tot) False {- isInj -}]
                         , plfpa  = NO
                         }
            else if is_Sur then mor2plug (flp m')
            else PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Fi [Tm (mIs (source m')),F [Tm m',flp (Tm m')]]   -- WAAROM (SJ) is dit de expressie in dit veld?
+                        , fields = [field (name (source m')) (Fi [Tm (mIs (source m'))(-1),F [Tm m'(-1),flp (Tm m'(-1))]]   -- WAAROM (SJ) is dit de expressie in dit veld?
                                                            )      Nothing (not is_Sur) False {- isUni -}
-                                   ,field (name (target m')) (Tm m') Nothing (not is_Tot) False {- isInj -}]
+                                   ,field (name (target m')) (Tm m'(-1)) Nothing (not is_Tot) False {- isInj -}]
                         , plfpa  = NO
                         }
            where
@@ -81,7 +85,7 @@
                   , f<-fus, isPos f
                   , m<-tots f
                   ]
-           where tots (F fs) = [m| Tm m<-take 1 fs]++[flp m| Tm m<-take 1 (reverse fs)]
+           where tots (F fs) = [m| Tm m _<-take 1 fs]++[flp m| Tm m _<-take 1 (reverse fs)]
                  tots _ = []
                  visible _ = True -- for computing totality, we take all quads into account.
 
@@ -147,7 +151,7 @@
         serviceGen
          = [ Obj (name c)        -- objnm
                  Nowhere         -- objpos
-                 (Tm $ mIs c)    -- objctx
+                 (Tm (mIs c)(-1))    -- objctx
                  (recur [] cl)   -- objats
                  []              -- objstrs
            | cl <- eqCl source (maxTotExprs `uni` maxInjExprs), e0<-take 1 cl, c<-[source e0]]
@@ -156,7 +160,7 @@
 --    Warshall's transitive closure algorithm, adapted for this purpose:
         clos :: Morphisms -> Expressions
         clos xs
-         = f [F [Tm x]| x<-xs] (rd (map source xs) `isc` rd (map target xs))
+         = f [F [Tm x (-1)]| x<-xs] (rd (map source xs) `isc` rd (map target xs))
            where
             f q (x:xs') = f (q ++ [F (ls++rs)| l@(F ls)<-q, x<=target l
                                              , r@(F rs)<-q, x<=source r
@@ -215,7 +219,7 @@
        nonCurrDecls = allDecs >- concat (map decls currentPlugs)
        nonCurrConcs = [c| c@C{}<-concs context] >- concat (map concs currentPlugs)
        mph2fld m = Fld (name m)                                     -- fldname : 
-                       (Tm m)                                       -- fldexpr :
+                       (Tm m (-1))                                       -- fldexpr :
                        (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
                        (not (isTot m))                              -- fldnull : can there be empty field-values? 
                        (isInj m)                                    -- flduniq : are all field-values unique?
@@ -239,7 +243,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
        absorb []     = []
        absorb (p:ps) = p: absorb [p'| p'<-ps
                                     , kernel p' `notElem` [target m| f<-fields p
-                                                                   , Tm m<-[fldexpr f]
+                                                                   , Tm m _<-[fldexpr f]
                                                                    , isSur m]]
 
        kernel :: Plug -> Concept -- determines the core concept of p. The plug serves as concept table for (kernel p).
@@ -362,13 +366,13 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    keytheme kd = kdcpt kd
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
-   editable (Tm Mph{})  = True
-   editable (Tm I{})    = True
+   editable (Tm Mph{} _)  = True
+   editable (Tm I{} _)    = True
    editable _           = False
 
    editMph :: Expression -> Morphism  --TODO deze functie staat ook in Calc.hs...
-   editMph (Tm m@Mph{}) = m
-   editMph (Tm m@I{})   = m
+   editMph (Tm m@Mph{} _) = m
+   editMph (Tm m@I{} _)   = m
    editMph e            = error("!Fatal (module ADL2Fspec 417): cannot determine an editable declaration in a composite expression: "++show e)
 
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
@@ -493,7 +497,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    shiftL r
     | length antss+length conss /= length fus = error ("!Fatal (module Calc 65): shiftL will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
-    | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F conss)]
+    | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)(-1)])]++map F conss)]
     | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
                                                      | ts<-ass++if null ass then [id' css] else []]++
                                                      [ F (if null ts then id' ass else ts)
@@ -510,7 +514,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
      srcA = -- if null antss  then error ("!Fatal (module Calc 81): empty antecedent in shiftL ("++showHS options "" r++")") else
             if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc 82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
             foldr1 lub [ source (head ants) | ants<-antss]
-     id' ass = [Tm (mIs c)]
+     id' ass = [Tm (mIs c) (-1)]
       where a = (source.head.head) ass
             c = if not (a `order` b) then error ("!Fatal (module Calc 86): shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
                 a `lub` b
@@ -534,7 +538,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
    shiftR r
     | length antss+length conss /= length fus = error ("!Fatal (module Calc 106): shiftR will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
-    | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)])]++map F antss)]
+    | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)(-1)])]++map F antss)]
     | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
                                                      | ts<-ass++if null ass then [id' css] else []]++
                                                      [ F (if null ts then id' ass else ts)
@@ -549,7 +553,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
             if length (eqClass order [ source (head cons) | cons<-conss])>1
             then error ("Fatal (module Calc120): shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss]))
             else foldr1 lub [ source (head cons) | cons<-conss]
-     id' css = [Tm (mIs c)]
+     id' css = [Tm (mIs c) (-1)]
       where a = (source.head.head) css
             c = if not (a `order` b)
                 then error ("!Fatal (module Calc 126): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b)
@@ -580,7 +584,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
        ecas
         = [ ECA (On ev m) delt action
           | mphEq <- eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
-          , m <- map fst4 (take 1 mphEq), Tm delt<-[delta (sign m)]
+          , m <- map fst4 (take 1 mphEq), Tm delt _<-[delta (sign m)]
           , ev<-[Ins,Del]
           , action <- [ All
                         [ Chc [ (if isTrue  clause'   then Nop else
@@ -629,12 +633,12 @@ Hence, we do not need a separate plug for c' and it will be skipped.
           fRule  r        = F [r]
 
    actSem :: InsDel -> Morphism -> Expression -> Expression
-   actSem Ins m (Tm d) | makeInline m==makeInline d = Tm m
-                       | otherwise                  = Fu[Tm m,Tm d]
-   actSem Ins m delt   = disjNF (Fu[Tm m,delt])
-   actSem Del m (Tm d) | makeInline m==makeInline d = Fi[]
-                       | otherwise                  = Fi[Tm m, Cp (Tm d)]
-   actSem Del m delt   = conjNF (Fi[Tm m,Cp delt])
+   actSem Ins m (Tm d _) | makeInline m==makeInline d = Tm m (-1)
+                       | otherwise                  = Fu[Tm m (-1),Tm d (-1)]
+   actSem Ins m delt   = disjNF (Fu[Tm m (-1),delt])
+   actSem Del m (Tm d _) | makeInline m==makeInline d = Fi[]
+                       | otherwise                  = Fi[Tm m (-1), Cp (Tm d (-1))]
+   actSem Del m delt   = conjNF (Fi[Tm m (-1),Cp delt])
  --  actSem Del m delt = Fi[m,Cp delt]
 
    delta :: (Concept, Concept) -> Expression
@@ -652,7 +656,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                    , deciss  = True
                                    , decusr  = False
                                    , decpat  = ""
-                                   }))
+                                   })) (-1)
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
    doCode :: (Morphism->Bool)        --  the morphisms that may be changed
@@ -688,8 +692,8 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                            , Sel c (flp(F rs)) fRht motiv
                                            ] motiv
                                 | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
-                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])]
-                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)],Cp (F ls)])) Ins (F ls) [])]
+                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])]
+                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Ins (F ls) [])]
                                 ] motiv
           (Del, F ts)    -> Chc [ if F ls==flp (F rs)
                                   then Chc [ Sel c (F ls) (\_->Rmv c fLft motiv) motiv
@@ -700,8 +704,8 @@ Hence, we do not need a separate plug for c' and it will be skipped.
                                            , Sel c (Fi [F ls,flp(F rs)]) fRht motiv
                                            ] motiv
                                 | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
-                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])]
-                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)],Cp (F ls)])) Del (F ls) [])]
+                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])]
+                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Del (F ls) [])]
                                 ] motiv
           (Del, Fu fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, Fi fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
@@ -709,7 +713,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
           (_  , Fd ts)   -> doCod deltaX tOp (Cp (F (map Cp ts))) motiv
           (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , Tm m)    -> (if editable m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m,rd' nr [r|(_,rs)<-motiv, r<-rs])])
+          (_  , Tm m _)  -> (if editable m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])
           (_ , _)        -> error ("!Fatal (module Calc 418): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
                                    "within function doCode "++show tOp'++" ("++showADL exprX++") ("++showADL delta1++").")
 

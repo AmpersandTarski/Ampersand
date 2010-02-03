@@ -55,7 +55,7 @@
                                   pList pContextElement <* pKey "ENDCONTEXT"
                        where  
                        rebexpr x y = (x,y)
-                       universe = (Tm$V [] (cptAnything,cptAnything),[]) --default: the universe
+                       universe = (Tm(V [] (cptAnything,cptAnything)) (-1),[]) --default: the universe
                        rebuild nm env on ces = Ctx nm on empty [] pats [] ds cs ks os es pops sqlplugs phpplugs env
                               where
                                ps   = [p| CPat p<-ces]
@@ -221,7 +221,7 @@
    pTerm             = tm <$> (preStr `opt` []) <*> pMorphism <*> (postStr `opt` [])                            <|>
                        tc <$> (preStr `opt` []) <*> (pSpec '(' *> pExpr <* pSpec ')') <*> (postStr `opt` [])
                        where
-                        tm xs pm ys   = f (Tm pm) (xs++ys)
+                        tm xs pm ys   = f (Tm pm (-1)) (xs++ys)
                         tc xs pc ys   = f pc (xs++ys)
                         f t ('~':xs) = flp (f t xs)
                         f t ('*':xs) = K0 (f t xs)

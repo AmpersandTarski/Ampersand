@@ -5,10 +5,10 @@ module TypeInferenceEngine where
 import Data.Maybe
 import TypeInference.ITree
 import TypeInference.AdlExpr
+import TypeInference.Isa
 --import CommonClasses 
 
 --------------------------------------
-import TypeInference.Input
 --import Collection (Collection(uni))
 import Adl
 import Data.Fspec
