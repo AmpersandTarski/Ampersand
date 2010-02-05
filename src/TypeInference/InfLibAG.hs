@@ -3,7 +3,16 @@
 -- UUAGC 0.9.10 (src/TypeInference/InfLibAG.ag)
 
 
-module TypeInference.InfLibAG where
+module TypeInference.InfLibAG 
+  (infer
+  ,RelAlgExpr(..)
+  ,RelAlgMorph(..)
+  ,RelDecl(..) 
+  ,RelAlgObj(..)
+  ,RelAlgType
+  ,Isa
+  ,TError(..)
+  ) where
 {- a module to infer types of expressions of a heterogeneous relation algebra with ISA hierarchy 
  - expressions must be normalised with the function normalise
  - the relation variables in the expression are bound to a declaration with a type
@@ -51,9 +60,75 @@ type RelAlgType = (RelAlgObj, RelAlgObj)
 type Isa = [(RelAlgObj, RelAlgObj)]
 data RelDecl = RelDecl {dname::String, dtype::RelAlgType, ishomo::Bool} | IDecl | VDecl deriving (Show)
 
-type InfType = Either RelAlgType String
-type AltList = Either [RelAlgType] String
-data ListOf = ListOfUnion | ListOfISect | NoListOf 
+type InfType = Either RelAlgType TError
+type AltList = Either [RelAlgType] TError
+data ListOf = ListOfUnion | ListOfISect | NoListOf deriving(Eq)
+{-
+ -
+ - InfAdlExpr errors: 
+   showsPrec _ (ErrCode 1) = showString $ "[1] Type mismatch in rule"
+   showsPrec _ (ErrCode 2) = showString $ "[2] Ambiguous type"
+
+   InfLibAG errors:
+   showsPrec _ (ErrCode 3) = showString $ "[3] Relation undefined"
+   showsPrec _ (ErrCode 4) = showString $ "[4] Incompatible comparison" --union and disjunction
+   showsPrec _ (ErrCode 5) = showString $ "[5] Incompatible composition"
+   showsPrec _ (ErrCode 6) = showString $ "[6] Ambiguous composition"
+   showsPrec _ (ErrCode 7) = showString $ "[7] Homogeneous property on heterogeneous relation"
+   showsPrec _ (ErrCode 8) = showString $ "[8] Type is not homogeneous" 
+   --showsPrec _ (ErrCode 9) = showString $ "[9] Type is not homogeneous" --merged with 8
+   
+   Isa errors:
+   error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
+                       ++ " if the order of "++show c2++" and "++show c3 ++ 
+                       " is not specified. Specify the order with a GEN .. ISA .."
+                       |(c1,c2,c3)<-checkrels]
+ -}
+data TError =
+   TErrorAmb ETitle [RelAlgType] -- the type of the root expression is ambiguous
+  |TErrorU ETitle RelAlgType -- the source or target of the type of the root expression is the universe
+  |TError1 ETitle RelAlgExpr [RelDecl] --the relation expression is not defined in the env_decls
+  |TError2 ETitle (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType]) --(ababab) there is no type in the first list matching a type in the second
+  |TError3 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) --(abbcac) there is no b in the first list matching a b in the second
+  |TError4 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj] --(abbcac) there is more than one b in the first list 
+                                                         --matching a b in the second
+  |TError5 ETitle RelDecl --The declaration has an heteogeneous type and an homogeneous property
+  |TError6 ETitle RelAlgType RelAlgExpr RelDecl --The declaration bound to the relation expression 
+                                                --has an homogeneous property, but the type inferred is heterogeneous
+  --below are constructors to be able to make TError2, TError3 resp. TError4 more specific for binary operators defined on 
+  --the composition or intersection
+  |TError_ababab ETitle UserDefOp (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType])
+  |TError_abbcac ETitle UserDefOp (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType])
+  |TErrorAmb_b ETitle UserDefOp (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj]
+ -- |NoError 
+  deriving (Show)
+ 
+type ETitle = String
+type UserDefOp = String --the string representation of the user defined binary expression operator
+
+infer:: [RelDecl] -> Isa -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)]) TError
+infer reldecls isas root_expr =
+  case rtype of
+    Left (x,y) -> if x==Universe || y==Universe 
+                  then Right$TErrorU "Source or target is the universal set" (x,y) 
+                  else Left ((x,y), env_mph )
+    Right err -> Right err
+  where
+  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (inftree (head alltypes))]
+  env_in = env_in_Syn_RelAlgExpr (inftree (Universe,Universe))
+  rtype = if length alltypes==1 
+          then rtype_Syn_RelAlgExpr (inftree (head alltypes)) --finalize by pushing the type down again
+          else if null alltypes
+               then Right env_in_err
+               else Right$TErrorAmb "Ambiguous type" alltypes
+  alltypes = case env_in of
+     Left xs -> if null xs 
+                then fatal 214 "the AltList cannot be Left []."
+                else xs 
+     _ -> []
+  Right env_in_err = env_in
+  inftree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
+
 
 ----------------------------------------------------------------------------
 --type inference rules
@@ -106,7 +181,7 @@ inferencerule_ababab (ListOfISect) headx [tailx]
   | iscomplement headx && iscomplement tailx = ISect_cs
   | not(iscomplement headx && iscomplement tailx) = ISect_ncs
   | otherwise = ISect_mix
-inferencerule_ababab (ListOfISect) headx tailx
+inferencerule_ababab (ListOfISect) headx _ 
   | iscomplement headx = ISect_mix
   | otherwise = ISect_ncs
 inferencerule_ababab _ _ _ = fatal 202 "inferencerule_ababab is a function for union or intersection only"
@@ -167,24 +242,25 @@ rdisa isas ((x,y):xs)
  | otherwise = ((x,y):(rdisa isas xs))
   where xy_genof_t_in_xs = (not.null) [()|(x',y')<-xs,isgeneral x x' isas, isgeneral y y' isas]
 
-alts_ababab :: Isa -> AltList -> AltList -> AltList
-alts_ababab _ ts (Left []) = ts --function pattern needed for recursion while we defined union/intersection lists
-alts_ababab isas (Left ts) (Left ts') = 
+alts_ababab :: (RelAlgExpr,[RelAlgExpr]) -> Isa -> AltList -> AltList -> AltList
+alts_ababab _ _ ts (Left []) = ts --function pattern needed for recursion while we defined union/intersection lists
+alts_ababab (hd,tl) isas (Left ts) (Left ts') = 
    if null alts 
-   then Right "[4] Incompatible comparison" 
+   then Right$TError2 "Incompatible comparison" (hd,ts) (tl,ts')  
    else Left alts
    where alts = rdisa isas [(specific a a' isas,specific b b' isas)
                              |(a,b)<-ts,(a',b')<-ts',isarelated a a' isas, isarelated b b' isas]
-alts_ababab _ (Left ts) err  = err
-alts_ababab _ err (Left ts')  = err
-alts_ababab _ (Right lerr) (Right rerr)  = Right (lerr++"\n"++rerr)
+alts_ababab _ _ _ (Right err)  = Right err
+alts_ababab _ _ (Right err) _  = Right err
 
-alts_abbcac :: Isa -> AltList -> AltList -> AltList
-alts_abbcac isas (Left lts) (Left rts) = if null alts then Right "[5] Incompatible composition" else Left alts
+alts_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> AltList -> AltList -> AltList
+alts_abbcac (l,r) isas (Left lts) (Left rts) = 
+   if null alts 
+   then Right$TError3 "Incompatible composition" (l,lts) (r,rts)
+   else Left alts
    where alts = rdisa isas [(a,c)|(a,b)<-lts,(b',c)<-rts, isarelated b b' isas]
-alts_abbcac _ (Left lts) err  = err
-alts_abbcac _ err (Left rts)  = err
-alts_abbcac _ (Right lerr) (Right rerr)  = Right (lerr++"\n"++rerr)
+alts_abbcac _ _ _ (Right err)  = Right err
+alts_abbcac _ _ (Right err) _  = Right err
 
 alts_abba :: AltList -> AltList
 alts_abba (Left ts) = Left [(b,a)|(a,b)<-ts]
@@ -198,18 +274,19 @@ alts_compl me xs = case me of
 alts_mph :: [RelDecl] -> Isa -> RelAlgExpr -> AltList
 alts_mph reldecls isas me = 
    if null alts
-   then Right "[3] Relation undefined" 
+   then Right$TError1 "Relation undefined" me reldecls
    else if null declerrs
         then Left (rdisa isas [x|Left x<-alts])
         else Right (head declerrs)
    where 
-   homo_alt d (a,b) 
+   homo_alt d 
       |ishomo d = if isarelated a b isas
                   then Left (specific a b isas, specific a b isas)
-                  else Right "[7] Homogeneous property on heterogeneous relation"
+                  else Right$TError5 "Homogeneous property on heterogeneous relation" d
       |otherwise = Left (a,b)
+      where (a,b) = dtype d
    declerrs = [x|Right x<-alts]
-   alts' nm = [homo_alt d (dtype d)|d@(RelDecl{})<-reldecls, dname d==nm]
+   alts' nm = [homo_alt d|d@(RelDecl{})<-reldecls, dname d==nm]
    alts = case me of
      Morph (DRel nm) ut@(ua,ub) _ -> [Right x|Right x<-alts' nm] ++
                                      if ut==(Universe,Universe)
@@ -235,35 +312,38 @@ push_type_ababab t = t
 push_type_abba (x,y) = (y,x)
 push_type_abab t = t
 
-push_type_abbcac :: Isa -> InfRuleType -> RelAlgType -> AltList -> AltList -> Either (RelAlgType,RelAlgType) String
-push_type_abbcac _ _ _ _ (Left []) = fatal 329 "the AltList cannot be Left []."
-push_type_abbcac _ _ _ (Left []) _ = fatal 330 "the AltList cannot be Left []."
-push_type_abbcac _ _ _ _ (Right err) = Right err --error in rsub
-push_type_abbcac _ _ _ (Right err) _ = Right err --error in lsub
-push_type_abbcac isas irule (inh_a,inh_c) (Left lalts) (Left ralts) = 
+push_type_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> InfRuleType -> RelAlgType -> AltList -> AltList -> Either (RelAlgType,RelAlgType) TError
+push_type_abbcac _ _ _ _ _ (Left []) = fatal 329 "the AltList cannot be Left []."
+push_type_abbcac _ _ _ _ (Left []) _ = fatal 330 "the AltList cannot be Left []."
+push_type_abbcac _ _ _ _ _ (Right err) = Right err --error in rsub
+push_type_abbcac _ _ _ _ (Right err) _ = Right err --error in lsub
+push_type_abbcac (l,r) isas irule (inh_a,inh_c) (Left lalts) (Left ralts) = 
   if length final_t==1 
   then Left (head final_t)
   else if null final_t
             --this should not be possible while there are no user-defined type on expressions, only on relations
        then fatal 338 "the expression has a type error, there cannot be a type for this composition expression."
-       else Right $ "[6] Ambiguous composition"++show (lalts,ralts)
+       else Right$TError4 "Ambiguous composition" (l,lalts) (r,ralts) [b|((_,b),_)<-final_t]
   where  --final_t is like alts_abbcac only with an inferred b, given the inherited type
   final_t = [infer_t (not_universe inh_a a, b) (b',not_universe inh_c c)
              |(a,b)<-lalts,(b',c)<-ralts, isarelated a inh_a isas, isarelated c inh_c isas, isarelated b b' isas]
   infer_t (a,b) (b',c)  = ( (a,final_b) , (final_b ,c) )
     where final_b = infer_abbcac_b isas irule b b' 
 
-lefttype :: Either (RelAlgType,RelAlgType) String -> RelAlgType
+lefttype :: Either (RelAlgType,RelAlgType) TError -> RelAlgType
 lefttype (Left (x,_)) = x
-lefttype (Right _) = fatal 348 "no Left, check infer_b_error first before using function lefttype."
+lefttype (Right _) = fatal 348 "no Left, check is_b_error first before using function lefttype."
 
-righttype :: Either (RelAlgType,RelAlgType) String -> RelAlgType
+righttype :: Either (RelAlgType,RelAlgType) TError -> RelAlgType
 righttype (Left (_,x)) = x
-righttype (Right _) = fatal 352 "no Left, check infer_b_error first before using function righttype."
+righttype (Right _) = fatal 352 "no Left, check is_b_error first before using function righttype."
 
-infer_b_error :: Either (RelAlgType,RelAlgType) String -> String 
-infer_b_error (Right err) = err
-infer_b_error _ = ""
+b_error :: Either (RelAlgType,RelAlgType) TError -> TError 
+b_error (Right err) = err
+b_error _ = fatal 433 "no Right, check is_b_error first before using function b_error."
+is_b_error :: Either (RelAlgType,RelAlgType) TError -> Bool 
+is_b_error (Right _) = True
+is_b_error _ = False
 
 
 ----------------------------------------------------------------------------
@@ -295,16 +375,18 @@ final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
              else if length alts'==1 
                   then check_infer_homo (not_universe inh_a (fst$head alts')
                                         ,not_universe inh_b (snd$head alts')) 
-                  else fatal 388 "the expression has a type error, there cannot be a type for this relation."
+                  else fatal 388 $ "the expression has a type error, there cannot be a type for this relation."
+                                 --  ++ show (alts',alts,me,(inh_a,inh_b))
    check_infer_homo (a,b) 
        | case me of
-          (Morph (DRel{}) _ _)->ishomo (thedecl reldecls isas me (Left(a,b)))
+          (Morph (DRel{}) _ _)->ishomo d
           (Morph IdRel _ _)->True
           _ -> False
                    = if isarelated a b isas
                      then Left (specific a b isas,specific a b isas)
-                     else Right "[8] Type is not homogeneous"
+                     else Right$TError6 "Type is not homogeneous" (a,b) me d 
        | otherwise = Left (a,b)
+       where d = thedecl reldecls isas me (Left(a,b))
    
 
 --DESCR -> remark that the expression must have a type (no type error) to be able to get the declaration of a relation
@@ -525,7 +607,7 @@ sem_ISectList_Cons hd_ tl_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_ababab _lhsIenv_isa _hdIenv_in _tlIenv_in
+                  alts_ababab (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
               _lhsOrtype =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
@@ -658,17 +740,17 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_abbcac _lhsIenv_isa _lsubIenv_in _rsubIenv_in
+                  alts_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
               _t =
-                  push_type_abbcac _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
+                  push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
               _lsubOtype_down =
-                  if null(infer_b_error _t) then lefttype _t else (fst _lhsItype_down,Universe)
+                  if not(is_b_error _t) then lefttype _t else fatal 65 "There should be an ambiguous b error"
               _rsubOtype_down =
-                  if null(infer_b_error _t) then righttype _t else (Universe,snd _lhsItype_down)
+                  if not(is_b_error _t) then righttype _t else fatal 66 "There should be an ambiguous b error"
               _lhsOrtype =
-                  if null(infer_b_error _t)
+                  if not(is_b_error _t)
                   then final_infer_abbcac _lhsIenv_isa _lsubIrtype _rsubIrtype
-                  else Right(infer_b_error _t)
+                  else Right(b_error _t)
               _lhsOenv_mph =
                   _lsubIenv_mph ++ _rsubIenv_mph
               _me =
@@ -993,17 +1075,17 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_abbcac _lhsIenv_isa _lsubIenv_in _rsubIenv_in
+                  alts_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
               _t =
-                  push_type_abbcac _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
+                  push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
               _lsubOtype_down =
-                  if null(infer_b_error _t) then lefttype _t else (fst _lhsItype_down,Universe)
+                  if not(is_b_error _t) then lefttype _t else fatal 65 "There should be an ambiguous b error"
               _rsubOtype_down =
-                  if null(infer_b_error _t) then righttype _t else (Universe,snd _lhsItype_down)
+                  if not(is_b_error _t) then righttype _t else fatal 66 "There should be an ambiguous b error"
               _lhsOrtype =
-                  if null(infer_b_error _t)
+                  if not(is_b_error _t)
                   then final_infer_abbcac _lhsIenv_isa _lsubIrtype _rsubIrtype
-                  else Right(infer_b_error _t)
+                  else Right(b_error _t)
               _lhsOenv_mph =
                   _lsubIenv_mph ++ _rsubIenv_mph
               _me =
@@ -1122,7 +1204,7 @@ sem_UnionList_Cons hd_ tl_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_ababab _lhsIenv_isa _hdIenv_in _tlIenv_in
+                  alts_ababab (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
               _lhsOrtype =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])

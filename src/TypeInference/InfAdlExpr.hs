@@ -21,34 +21,21 @@
  -}
 module TypeInference.InfAdlExpr where
 import TypeInference.InfLibAG
-import TypeInference.Isa
 import Adl
 
 ----------------------------------------------------------------------------
 --ADL conversie
 ----------------------------------------------------------------------------
 --TODO -> if I want "[1] Type mismatch in rule" to be recognized, then I'll have to analyse "[4] Incompatible comparison" errors. If the antecedent and consequent do have a type, then it is a type 1 error.
-infertype_and_populate :: (Morphism -> Morphism) -> Concepts -> Gens -> Declarations -> Expression -> Either ((Concept,Concept), Expression) String
-infertype_and_populate populate cs gs ds ex_in = --error$show$ (map fromDcl ds, fromCptCpts$isaRels cs gs) 
-  case rtype of
-    Left (x,y) -> if x==Universe || y==Universe then error ("y") else Left ((toCpt x,toCpt y), enrich_expr uniqex)
-    Right err -> Right err
+infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> Expression -> Either ((Concept,Concept), Expression) String
+infertype_and_populate populate isas ds ex_in =
+  case inf_expr of
+    Left _ -> Left ((toCpt expr_src,toCpt expr_trg), enrich_expr uniqex)
+    Right err -> Right (show err)
   where
-  (uniqex,_) = uniquemphs 0 ex_in
-  env_in = env_in_Syn_RelAlgExpr (inftree (Universe,Universe))
-  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (inftree (head alltypes))] --finalize by pushing the type down again
-  rtype = if length alltypes==1 
-          then rtype_Syn_RelAlgExpr (inftree (head alltypes)) --finalize by pushing the type down again
-          else if null alltypes
-               then Right env_in_err
-               else Right ("[2] Ambiguous type: " ++ show alltypes)
-  alltypes = case env_in of
-     Left xs -> [t| t<-xs]
-     _ -> []
-  env_in_err = case env_in of
-     Right x -> x
-     _ -> ""
-  inftree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$fromExpr uniqex)$Inh_RelAlgExpr (map fromDcl ds) (fromCptCpts$isaRels cs gs) NoListOf push
+  Left ((expr_src,expr_trg),env_mph) = inf_expr
+  (uniqex,_) = uniquemphs 0 ex_in --give each morphism an identifier within the scope of this expression
+  inf_expr = infer (map fromDcl ds) (fromCptCpts isas) (fromExpr uniqex)
   enrich_expr (F exs) = F$map enrich_expr exs
   enrich_expr (Fd exs) = Fd$map enrich_expr exs
   enrich_expr (Fi exs) = Fi$map enrich_expr exs
@@ -57,12 +44,17 @@ infertype_and_populate populate cs gs ds ex_in = --error$show$ (map fromDcl ds, 
   enrich_expr (Tc ex) = Tc$enrich_expr ex
   enrich_expr (K0 ex) = K0$enrich_expr ex
   enrich_expr (K1 ex) = K1$enrich_expr ex
-  enrich_expr (Tm mp i) = Tm (populate typedmp) i
+  enrich_expr (Tm mp i) = Tm (populate typedmp) i --populate all the (Populated a) in the typed and bound morphism
    where
+   --use the identifier to get the type of the morphism and the declaration from the morphism binding
+   --lookup the original declaration from the script by name, source and target
+   --set the type of the morphism with the inferred type and bind the corresponding declaration to it
    ts = [(toCpt x,toCpt y,d') | (Morph _ _ i', (x,y),d')<-env_mph, i==i']
    (ec1,ec2,d) = if null ts then (NOthing,NOthing,d) else head ts
    typedmp = case mp of
-      Mph{} -> mp {mphtyp=(ec1,ec2),mphdcl=toDcl}
+      Mph{} -> if inline mp 
+               then mp {mphtyp=(ec1,ec2),mphdcl=toDcl}
+               else mp {mphtyp=(ec2,ec1),mphdcl=toDcl}
       I{} -> mp {mphgen=ec1, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       Mp1{} -> mp {mph1typ=ec1}

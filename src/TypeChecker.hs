@@ -163,8 +163,8 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   where
   --DESCR -> use this function on all expressions
   enrich_expr :: Expression -> Either ((Concept,Concept), Expression) String
-  enrich_expr = infertype_and_populate popuMphDecl (allCtxCpts ctxs) (gens ctxs) (declarations ctxs)
-
+  enrich_expr = infertype_and_populate popuMphDecl isas (declarations ctxs)
+  isas = isaRels (allCtxCpts ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs
   Cl _ world = toClassification $ ctxtree
@@ -265,7 +265,8 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   --DESCR -> Add population to concept
   populate :: Concept -> Concept
   populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,elem (source d,c) isatree]
-                              ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]}
+                              ++[trgPaire p|d<-popuRels,p<-contents d,elem (target d,c) isatree]
+                      ,cptgE=(\c1 c2 -> elem (c1,c2) isas)}
   populate c       = c
 
   ctxPatKeys :: [(KeyDef,[Either Expression (String,FilePos,OrigExpr)])]

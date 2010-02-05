@@ -41,10 +41,6 @@
                  , themes       = themes'
                  , vctxenv      = ctxenv context
                  }
-        testgmi = error$show$ concs context -- ([(name r,concs r)|r<-rules context++signals context]
-                 -- ,[(decexpl(d),d)|d<-(declarations (ctxpats context)`uni` ctxds context)])
-                 -- ,[(decexpl(d),d,concs d)|d<-declarations context])
-   
         allDecs = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
                                           `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
                   | d<-declarations context, deciss d || decusr d
@@ -556,7 +552,7 @@ Hence, we do not need a separate plug for c' and it will be skipped.
      id' css = [Tm (mIs c) (-1)]
       where a = (source.head.head) css
             c = if not (a `order` b)
-                then error ("!Fatal (module Calc 126): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b)
+                then error ("!Fatal (module Calc 126): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b ++ ". " )
                 else a `lub` b
             b = (target.last.last) css
      move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
