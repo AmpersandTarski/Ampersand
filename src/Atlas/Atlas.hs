@@ -130,7 +130,7 @@ initDatabase flags fSpec =
                     commit conn
                     disconnect conn
    where
-    script = adlFileName flags
+    script = fileName flags
     user = takeWhile (/='.') (userAtlas flags)
     islocalcompile =  dropWhile (/='.') (userAtlas flags)==".local"
     pictures = picturesForAtlas flags fSpec
@@ -161,7 +161,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
       executeMany stmt (pop$tableid tbl)
       insertpops conn fSpec flags tbls pics
    where
-   script = adlFileName flags
+   script = fileName flags
    user = takeWhile (/='.') (userAtlas flags)
    qualify = (++)$"("++user ++ "." ++ script ++ ")"
    toUserctx :: [String]->ATableId->[String]

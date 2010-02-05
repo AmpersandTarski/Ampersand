@@ -40,7 +40,7 @@ data Options = Options { contextName   :: Maybe String
                        , dirExec       :: String --the base for relative paths to input files
                        , texHdrFile    :: Maybe String --the string represents a FilePath to some .tex containing just tex header instructions
                        , progrName     :: String --The name of the adl executable
-                       , adlFileName   :: String
+                       , fileName      :: String
                        , baseName      :: String
                        , logName       :: String
                        , genTime       :: ClockTime
@@ -113,7 +113,7 @@ getOptions =
                       , crowfoot      = False
                       , language      = Dutch
                       , progrName     = progName
-                      , adlFileName   = error ("!Fatal (module Options 123): no default value for adlFileName.")
+                      , fileName      = error ("!Fatal (module Options 123): no default value for fileName.")
                       , baseName      = error ("!Fatal (module Options 124): no default value for baseName.")
                       , services      = False
                       , test          = False
@@ -141,7 +141,9 @@ getOptions =
                         >> checkExecOpts flags
                         >> checkProtoOpts flags
                         >> checkAtlasOpts flags
-                        >> return flags { adlFileName = replaceExtension fName ".adl"
+                        >> return flags { fileName    = if hasExtension fName
+                                                         then fName
+                                                         else addExtension fName "adl" 
                                         , baseName    = basename fName
                                         , dbName      = case dbName flags of
                                                             ""  -> basename fName
