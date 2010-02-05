@@ -1,4 +1,24 @@
+{-
+ -
+ - InfAdlExpr errors: 
+   showsPrec _ (ErrCode 1) = showString $ "[1] Type mismatch in rule"
+   showsPrec _ (ErrCode 2) = showString $ "[2] Ambiguous type"
 
+   InfLibAG errors:
+   showsPrec _ (ErrCode 3) = showString $ "[3] Relation undefined"
+   showsPrec _ (ErrCode 4) = showString $ "[4] Incompatible comparison" --union and disjunction
+   showsPrec _ (ErrCode 5) = showString $ "[5] Incompatible composition"
+   showsPrec _ (ErrCode 6) = showString $ "[6] Ambiguous composition"
+   showsPrec _ (ErrCode 7) = showString $ "[7] Homogeneous property on heterogeneous relation"
+   showsPrec _ (ErrCode 8) = showString $ "[8] Type is not homogeneous" 
+   --showsPrec _ (ErrCode 9) = showString $ "[9] Type is not homogeneous" --merged with 8
+   
+   Isa errors:
+   error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
+                       ++ " if the order of "++show c2++" and "++show c3 ++ 
+                       " is not specified. Specify the order with a GEN .. ISA .."
+                       |(c1,c2,c3)<-checkrels]
+ -}
 module TypeInference.InfAdlExpr where
 import TypeInference.InfLibAG
 import TypeInference.Isa
@@ -7,7 +27,7 @@ import Adl
 ----------------------------------------------------------------------------
 --ADL conversie
 ----------------------------------------------------------------------------
-
+--TODO -> if I want "[1] Type mismatch in rule" to be recognized, then I'll have to analyse "[4] Incompatible comparison" errors. If the antecedent and consequent do have a type, then it is a type 1 error.
 infertype_and_populate :: (Morphism -> Morphism) -> Concepts -> Gens -> Declarations -> Expression -> Either ((Concept,Concept), Expression) String
 infertype_and_populate populate cs gs ds ex_in = --error$show$ (map fromDcl ds, fromCptCpts$isaRels cs gs) 
   case rtype of
@@ -21,7 +41,7 @@ infertype_and_populate populate cs gs ds ex_in = --error$show$ (map fromDcl ds, 
           then rtype_Syn_RelAlgExpr (inftree (head alltypes)) --finalize by pushing the type down again
           else if null alltypes
                then Right env_in_err
-               else Right ("Ambiguous expression, possible types: " ++ show alltypes)
+               else Right ("[2] Ambiguous type: " ++ show alltypes)
   alltypes = case env_in of
      Left xs -> [t| t<-xs]
      _ -> []
@@ -63,6 +83,7 @@ toCpt (Object c1) = cptnew c1
 fromDcl :: Declaration -> RelDecl
 fromDcl d@(Sgn{}) = RelDecl {dname=name d
                             ,dtype=(fromCpt$source d,fromCpt$target d)
+                            ,ishomo=foldr (||) False [True|p<-decprps d, elem p [Asy,Sym,Rfx,Trn]]
                             }
 fromDcl _ = error "only relvars"
    
