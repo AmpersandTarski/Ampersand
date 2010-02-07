@@ -54,15 +54,27 @@ data RelAlgMorph =
    DRel {rname::String}
   |IdRel
   |VRel
-  deriving (Show)
-data RelAlgObj = Universe | EmptyObject | Object String deriving (Show,Eq)
+data RelAlgObj = Universe | EmptyObject | Object String deriving (Eq)
 type RelAlgType = (RelAlgObj, RelAlgObj)
 type Isa = [(RelAlgObj, RelAlgObj)]
-data RelDecl = RelDecl {dname::String, dtype::RelAlgType, ishomo::Bool} | IDecl | VDecl deriving (Show)
+data RelDecl = RelDecl {dname::String, dtype::RelAlgType, ishomo::Bool} | IDecl | VDecl
 
 type InfType = Either RelAlgType TError
 type AltList = Either [RelAlgType] TError
 data ListOf = ListOfUnion | ListOfISect | NoListOf deriving(Eq)
+
+instance Show RelAlgMorph where
+  show (DRel x) = x
+  show IdRel = "I"
+  show VRel = "V"
+instance Show RelDecl where
+  show (RelDecl x _ _) = x
+  show IDecl = "I"
+  show VDecl = "V"
+instance Show RelAlgObj where
+  show Universe = "Universal set"
+  show EmptyObject = "Empty set"
+  show (Object x) = x
 {-
  -
  - InfAdlExpr errors: 
@@ -95,12 +107,6 @@ data TError =
   |TError5 ETitle RelDecl --The declaration has an heteogeneous type and an homogeneous property
   |TError6 ETitle RelAlgType RelAlgExpr RelDecl --The declaration bound to the relation expression 
                                                 --has an homogeneous property, but the type inferred is heterogeneous
-  --below are constructors to be able to make TError2, TError3 resp. TError4 more specific for binary operators defined on 
-  --the composition or intersection
-  |TError_ababab ETitle UserDefOp (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType])
-  |TError_abbcac ETitle UserDefOp (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType])
-  |TErrorAmb_b ETitle UserDefOp (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj]
- -- |NoError 
   deriving (Show)
  
 type ETitle = String
