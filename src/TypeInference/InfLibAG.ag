@@ -165,31 +165,11 @@ instance Show RelAlgObj where
   show Universe = "Universal set"
   show EmptyObject = "Empty set"
   show (Object x) = x
-{-
- -
- - InfAdlExpr errors: 
-   showsPrec _ (ErrCode 1) = showString $ "[1] Type mismatch in rule"
-   showsPrec _ (ErrCode 2) = showString $ "[2] Ambiguous type"
 
-   InfLibAG errors:
-   showsPrec _ (ErrCode 3) = showString $ "[3] Relation undefined"
-   showsPrec _ (ErrCode 4) = showString $ "[4] Incompatible comparison" --union and disjunction
-   showsPrec _ (ErrCode 5) = showString $ "[5] Incompatible composition"
-   showsPrec _ (ErrCode 6) = showString $ "[6] Ambiguous composition"
-   showsPrec _ (ErrCode 7) = showString $ "[7] Homogeneous property on heterogeneous relation"
-   showsPrec _ (ErrCode 8) = showString $ "[8] Type is not homogeneous" 
-   --showsPrec _ (ErrCode 9) = showString $ "[9] Type is not homogeneous" --merged with 8
-   
-   Isa errors:
-   error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
-                       ++ " if the order of "++show c2++" and "++show c3 ++ 
-                       " is not specified. Specify the order with a GEN .. ISA .."
-                       |(c1,c2,c3)<-checkrels]
- -}
 data TError =
    TErrorAmb ETitle [RelAlgType] -- the type of the root expression is ambiguous
   |TErrorU ETitle RelAlgType -- the source or target of the type of the root expression is the universe
-  |TError1 ETitle RelAlgExpr [RelDecl] --the relation expression is not defined in the env_decls
+  |TError1 ETitle RelAlgExpr --the relation expression is not defined in the env_decls
   |TError2 ETitle (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType]) --(ababab) there is no type in the first list matching a type in the second
   |TError3 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) --(abbcac) there is no b in the first list matching a b in the second
   |TError4 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj] --(abbcac) there is more than one b in the first list 
@@ -200,7 +180,6 @@ data TError =
   deriving (Show)
  
 type ETitle = String
-type UserDefOp = String --the string representation of the user defined binary expression operator
 
 infer:: [RelDecl] -> Isa -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)]) TError
 infer reldecls isas root_expr =
@@ -370,7 +349,7 @@ alts_compl me xs = case me of
 alts_mph :: [RelDecl] -> Isa -> RelAlgExpr -> AltList
 alts_mph reldecls isas me = 
    if null alts
-   then Right$TError1 "Relation undefined" me reldecls
+   then Right$TError1 "Relation undefined" me
    else if null declerrs
         then Left (rdisa isas [x|Left x<-alts])
         else Right (head declerrs)

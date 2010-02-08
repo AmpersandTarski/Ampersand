@@ -22,13 +22,12 @@
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 module TypeChecker (typecheck, Error, Errors) where
 
-import Auxiliaries  -- USE -> eqClass
 import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 import Data.List    -- USE -> unionBy
 import Data.Maybe() -- USE -> fromJust, isNothing
 import Data.Tree    -- USE -> data Tree a
-import qualified Data.Set as Set --
+--import qualified Data.Set as Set --
 
 import Classification --USE -> cast from data.Tree to Classification for enrichment
 import Typology --USE -> Isa structure for enrichment
@@ -108,7 +107,7 @@ renumber cx@(Ctx{}) = cx {ctxpats=renumberPats (length (ctxrs cx)) (ctxpats cx),
    renumberPats :: Int -> Patterns -> Patterns
    renumberPats n (pat:ps) = pat{ptrls=[r{r_pat=name pat, runum=i} | (i,r)<-zip [n..] (ptrls pat)]}
                              : renumberPats (n+length (ptrls pat)) ps
-   renumberPats i [] = []
+   renumberPats _ [] = []
 
 addsgndecls ::Context -> Context
 addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
@@ -175,8 +174,11 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 
   --DESCR -> enriching ctxisa
   {- WAAROM worden de concepten in de Isa structuur gepopuleerd? Gebeurt er ooit iets met deze populatie?
-  -- WAAROM worden de concepten in isac nogmaals gepopuleerd, terwijl de concepten uit isar al gepopuleerd zijn?
-  -- WAAROM loopt dit via Set.?
+ - DAAROM  GMI: Ja
+  -- WAAROM worden de concepten in isac nogmaals gepopuleerd, terwijl de concepten uit isar al gepopuleerd zijn? 
+  -- DAAROM GMI: alleen concepten in een GEN .. ISA .. declaratie zitten in isar
+  -- WAAROM loopt dit via Set.? 
+  -- DAAROM GMI: Een Set is een lijst zonder doublures. Het had hier weinig nut omdat van de Set meteen weer een lijst wordt gemaakt in Hierarchy. De vraag zou eerder moeten zijn, waarom is Hierarchy een data structuur van twee lijsten en niet van twee Sets.
   hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
     isar = [(populate$gengen g,populate$genspc g) | g<-gens ctxs]
@@ -224,18 +226,19 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
       --REMARK -> Do NOT use declarations ctxs, because they contain decls from signal rules that are not typechecked yet!
       -- signal rules cannot be populated at this point, they need to be populated AFTER type checking based on the populations of real relation declarations.
       declarations_ctxs =  [d|cx'<-ctxs,p<-ctxpats cx',d<-ptdcs p++ctxds cx']
-      matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations_ctxs) pop) | cx<-ctxs, pop<-ctxpops cx]] 
+      matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations_ctxs) pop) | cx'<-ctxs, pop<-ctxpops cx']] 
       mygroupby :: [(Population, Declaration)] -> Declarations -> Declarations
       mygroupby [] res = res
       mygroupby ((p,d):pds) res = mygroupby pds addxtores
         where 
-        signpos d d' = d==d' && decfpos d==decfpos d'
+        
         inres = length [()|d'<-res, signpos d d']==1
         addxtores = 
           if inres --ONLY d' is used for merge, while decfpos d==decfpos d'
           then [mrg d' p|d'<-res, signpos d d']++[d'|d'<-res, not(signpos d d')] 
           else (mrg d p):res        
-        mrg d p = d{decpopu=decpopu d++[pairx | pairx<-popps p]}
+      mrg d p = d{decpopu=decpopu d++[pairx | pairx<-popps p]}
+      signpos d d' = d==d' && decfpos d==decfpos d'
  
   --DESCR -> Determines source and target population based on domains and ranges of all relations
   --         Source and target need to be provided, because it can differ from the sign of the relation
@@ -273,11 +276,13 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   
 
 --WAAROM (SJ) werden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
+--DAAROM GMI impliciet implementeer je nu de type inferentieregels ook in de regelgeneratie
   --DESCR -> enriching ctxrs
   ctxCtxRules :: [Either Rule (String,FilePos,OrigExpr)]
   ctxCtxRules
      = [ bindRule r| r<-ctxrs cx ] ++            -- all rules that are declared in the ADL-script within
                                                  --     this context, but not in the patterns of this context
+--TODO -> rulefromKey is niet consistent met andere rule generaties, hoort niet in TypeChecker
        [ rulefromKey k (name cx) | k<-ctxks cx]  -- all rules that are derived from all KEY statements in this context
 --     [bindRule r |d@Sgn{}<-declarations cx, r<-multRules d]  -- rules that are derived from multiplicity properties in relations in this context
 
@@ -287,7 +292,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   --          may have different numbers.
   --          infertype_and_populate :: (Morphism -> Morphism) -> Concepts -> Gens -> Declarations -> Expression -> Either (InfType, Expression) String    popuMphDecl
 
-   --normExpr in Rule.hs heeft een speciale behandeling voor signals, WAAROM?
+   --normExpr in Rule.hs heeft een speciale behandeling voor signals, WAAROM GMI?
   ruleexpr :: Rule -> Expression
   ruleexpr rule
   --  | isSignal rule      = v (sign rule)
@@ -303,7 +308,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
    -- | ruleexpr rule == x 
       = case x of 
         Fu [Cp a, c] -> if rrsrt rule==Implication then rule{rrant=a,rrcon=c} else err
-        Fi [Fu [a, Cp c], Fu [Cp a',c']] -> if --a==a' && c==c' && 
+        Fi [Fu [a, Cp c], Fu [Cp _,_]] -> if --a==a' && c==c' && 
                                                rrsrt rule==Equivalence 
                                             then rule{rrant=a,rrcon=c} else err
         _ -> if rrsrt rule==Truth then rule{rrcon=x} else err
@@ -312,14 +317,13 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not ruleexpr of rule "++show rule)
 
   bindRule :: Rule -> Either Rule (String,FilePos,OrigExpr)
-  --bindRule :: Rule -> (Rule,Proof,FilePos)
   bindRule r@(Ru{}) = 
      if null err 
-     then Left$ (bindexpr r){rrtyp=(c1,c2), srrel=signaldecl}
+     then Left$ (bindexpr){rrtyp=(c1,c2), srrel=signaldecl}
      else Right (err,rrfps r,OrigRule r) 
      where
      inf_r = enrich_expr (ruleexpr r)
-     bindexpr r = case inf_r of
+     bindexpr = case inf_r of
        Left (_,inf_expr) -> ruleexpr_inv r inf_expr
        _ -> r
      (c1,c2) = case inf_r of
@@ -330,29 +334,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
        _ -> ""
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
-  ctxrulesgens :: [Either Rule (String,FilePos,OrigExpr)]
-  ctxrulesgens = [rulefromgen g | g<-gens cx]
-  --TODO -> move rulefromgen to function toRule in module Gen
-  --DESCR -> rules deducted from a gen are proven by the existence of a gen
-  rulefromgen :: Gen -> Either Rule (String,FilePos,OrigExpr)
-  rulefromgen g
-    = Left$Ru
-         Implication    -- Implication of Equivalence
-         (Tm (mIs spc)(-1)) -- left hand side (antecedent)
-         (genfp g)      -- position in source file
-         (Tm (mIs gen)(-1)) -- right hand side (consequent)
-         []             -- explanation
-         (gen,gen)      -- The type
-         Nothing        -- This rule was not generated from a property of some declaration.
-         0              -- Rule number. Will be assigned after enriching the context
-         (genpat g)     -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-         False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
-         False          -- This is not a signal rule
-         (Sgn (name gen++"ISA"++name spc) gen gen [] "" "" "" [] "" (genfp g) 0 False False "")        
-    where
-    spc = populate (genspc g)
-    gen = populate (gengen g)
-
+  --TODO -> is niet consistent met andere rule generaties, hoort niet in TypeChecker
   rulefromKey :: KeyDef -> String -> Either Rule (String,FilePos,OrigExpr)
   rulefromKey key pat
     = Left$Ru
@@ -393,9 +375,6 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                   then Left bindexpr
                   else Right (err,objpos od,OrigObjDef expr)      
     inf_e = enrich_expr expr
-  --  (c1,c2) = case inf_e of
-    --  Left (inf_t,_) -> inf_t
-    --  _ -> (NOthing,NOthing)
     err = case inf_e of
       Right x -> x
       _ -> ""
@@ -467,9 +446,9 @@ checkSvcNameUniqueness ctxs =
           ["Service or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs])
           |(svcnm,svcposs)<-svcnms] 
           ++
-          ["Label " ++ lblnm ++ " in service or plug must be unique on sibling level:"
-                    ++ (concat ["\n"++show lblpos |lblpos<-lblposs])
-          |lbl<-lblnms, (lblnm,lblposs)<-lbl]
+          ["Label " ++ lbnm ++ " in service or plug must be unique on sibling level:"
+                    ++ (concat ["\n"++show lbpos |lbpos<-lblposs])
+          |lbl<-lblnms, (lbnm,lblposs)<-lbl]
     in  printerrs$checkLabels svcs
 
 --DESCR -> group the services and sibling labels with the same name but different file positions
@@ -558,9 +537,5 @@ foundCtx _         = False
 ctxName :: ContextFound -> ContextName
 ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
 ctxName (NotFound cxnm) = cxnm
-
-fromFoundCtx :: ContextFound -> Context
-fromFoundCtx (NotFound cxnm) = error $ "!Fatal (module TypeChecker 646): function fromFoundCtx: NotFound " ++ cxnm
-fromFoundCtx(Found cx)    = cx
 
 
