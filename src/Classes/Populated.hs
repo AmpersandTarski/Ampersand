@@ -29,6 +29,7 @@ where
            Vs{}      -> [mkPair o o'| o<-conts (despc d), o'<-conts (despc d)]
 
    instance Populated Morphism where
+    contents (Mp1{mph1val=x}) = [mkPair x x]
     contents mph | inline mph = contents (makeDeclaration mph)
     contents mph | otherwise = map flipPair (contents (makeDeclaration (makeInline mph)))
 
