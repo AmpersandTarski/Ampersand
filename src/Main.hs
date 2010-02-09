@@ -9,24 +9,34 @@ import ADL2Fspec             (makeFspec)
 import Generators            (generate)
 import Control.Monad         ((>>=))
 import System.FilePath
+import qualified Data.ByteString as Bin
 
 main :: IO ()
-main = mainHan
--- even tijdelijk een rommeltje van gemaakt. komt later weer goed.... (en als het goed is heeft niemand er last van...)
-main1
+main 
  = do flags <- getOptions   
       if showVersion flags || showHelp flags
-       then mapM_ putStrLn (helpNVersionTexts flags)
-       else (    parseFile flags 
-             >>= calculate flags 
-             >>= generate flags
-            ) 
-
+       then mapM_ Prelude.putStrLn (helpNVersionTexts flags)
+       else if test flags
+            then testprog flags
+            else
+              (    parseFile flags 
+               >>= calculate flags 
+               >>= generate flags
+              ) 
+   where
+     testprog flags = let fnFull = fileName flags in
+                      do{ deBinTekst <- Bin.readFile fnFull
+                        ; deTxtTekst <- readFile fnFull
+                        ; (writeFile (addExtension fnFull ".onelinerbin") (", SF \""++fnFull++"\"     True   "++show (show deBinTekst))
+                           >>
+                           writeFile (addExtension fnFull ".onelinertxt") (", SF \""++fnFull++"\"     False  "++show deTxtTekst)
+                           )}
+                
 parseFile :: Options -> IO(Context)
 parseFile flags  
       = let fnFull = fileName flags in
         do verbose flags "Parsing... "
-           adlText <- readFile fnFull
+           adlText <- Prelude.readFile fnFull
            parseADL adlText flags fnFull 
 
 calculate :: Options -> Context -> IO(Fspc)
@@ -34,10 +44,3 @@ calculate flags context = do verboseLn flags "Calculating..."
                              return (makeFspec flags context)
                           
                                
-mainHan = do flags <- getOptions
-             if test flags 
-               then
-                 let fnFull = fileName flags in
-                 do deTekst <- readFile fnFull
-                    writeFile (addExtension fnFull ".oneliner") ("writeFile "++fnFull++" "++show deTekst)
-               else main1
