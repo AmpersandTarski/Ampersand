@@ -509,7 +509,7 @@
                                    -- Voor debuggen onderstaande trace regel uitcommentaren
                                    -- en Debug.trace aan de imports toevoegen
                                    -- ++ trace ("Geen keyGroup voor "++name objOut) []
-                                   ++ if isOne' then [] else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups")
+                                   ++ if isOne' then [] else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
                                  )
             reduce :: [[((Plug,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
                       -> [((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]

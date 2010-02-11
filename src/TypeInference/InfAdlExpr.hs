@@ -75,10 +75,12 @@ fromCptCpts xs = [(fromCpt c1,fromCpt c2) |(c1,c2)<-xs]
 fromCpt :: Concept -> RelAlgObj
 fromCpt Anything = Universe
 fromCpt NOthing = EmptyObject
+fromCpt S = Object "#S#"
 fromCpt c1 = Object (name c1)
 toCpt :: RelAlgObj -> Concept
 toCpt Universe = Anything
 toCpt EmptyObject = NOthing 
+toCpt (Object "#S#") = S 
 toCpt (Object c1) = cptnew c1 
 fromDcl :: Declaration -> RelDecl
 fromDcl d@(Sgn{}) = RelDecl {dname=name d

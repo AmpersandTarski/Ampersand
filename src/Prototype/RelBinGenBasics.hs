@@ -505,7 +505,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlRelPlugs fSpec e = rd [ (plug,sf,tf)
                             | plug@PlugSql{}<-plugs fSpec
                             , (sf,tf)<-sqlPlugFields plug e
-                            ]
+                            ] 
    sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
    sqlPlugFields plug e'
                 = [ (sf,tf)
@@ -513,7 +513,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         flds=fs++
 -- DAAROM: Waarom (SJ) moeten de volgende I's worden toegevoegd aan flds?
 -- Reden: voor het geval dat er meerdere concepten op dezelfde plug zijn afgebeeld, die niet in de ISA-relatie tot elkaar staan.
-                             [Fld { fldname = "i"
+                             [Fld { fldname = "i" -- ++ (show (e',source e',target e',map (source.fldexpr) (fields plug),map (target.fldexpr) (fields plug) ))
                                   , fldexpr = Tm (mIs c)(-1)
                                   , fldtype = SQLChar 255
                                   , fldnull = False  -- can there be empty field-values?
@@ -524,7 +524,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                              , (Tm (mIs c)(-1)) `notElem` [fldexpr f|f<-fs] ]
                         ft  = [f|f<-fields plug,target (fldexpr f)==target e']
                         fldt=ft++
-                             [Fld { fldname = "i"
+                             [Fld { fldname = "iy"
                                   , fldexpr = Tm (mIs c) (-1)
                                   , fldtype = SQLChar 255
                                   , fldnull = False  -- can there be empty field-values?
@@ -564,6 +564,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   || (  (se == te) && isIdent e'
                      && (isSur se)
                      )
+                  , --IF the expression is the identity relation, then I want a plug designed for the concept of the identity i.e. the source of the plug must be equal to the type of the identity.
+                    --REMARK -> while user-defined plugs are on top of the list, they are applied before generated plugs , as wanted ("head cs"). But it's a bit coincidential if you ask GMI.
+                    case e' of (Tm (I{}) _) -> elem (source e') (map (source.fldexpr) (fields plug))
+                               _ -> True
                   ]
      where -- simplF: replace a;a~ by I if INJ&TOT
       simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
