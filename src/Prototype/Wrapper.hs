@@ -74,7 +74,7 @@
                then "        ifaceButton(" ++ selfref2 objectId "edit" ++ ",\"Edit\");"
                else "        $buttons=$buttons;"
              , if elem "Delete" (actions o)
-               then "        .ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");;"
+               then "        ifaceButton(" ++ selfref2 objectId "del" ++ ",\"Delete\");"
                else "        $buttons=$buttons;"
              , "       }"
              , "}else{"
