@@ -20,7 +20,8 @@
                           , "If extra JavaScript is needed, or to get a title,"
                           , "use the $extraheaders argument to pass extra headers"
                           ] ++
-        [ "function writeHead($extraHeaders=\"\"){"
+        [ "session_start();"
+        , "function writeHead($extraHeaders=\"\"){"
         , "  ?><!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         , "  <HTML><HEAD>"
         , "  <script type=\"text/javascript\" src=\"jquery-1.3.2.min.js\"></script>"
@@ -29,7 +30,11 @@
         , "  </HEAD><BODY STYLE=\"height:100%;width:100%;\" marginwidth=\"0\" marginheight=\"0\">"
         , "  <DIV class=\"menuDiv\"><UL class=\"menu\">"
         ] ++ indentBlock 4 menuItems ++
-        [ "  </UL></DIV>"
+        [ "    <?php if (isset($_SESSION[\"home\"])) { //$_SESSION[\"home\"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas"
+        , "      echo '<LI><A HREF=\"'.$_SESSION[\"home\"].'\" TITLE=\"Back to main page\" class=\"menuItem\" >"
+        , "      Back to main page"
+	, "      </A></LI>';} ?>"
+        , "  </UL></DIV>"
         , "  <DIV class=\"content\">"
         , "  <!-- content -->"
         , "  <?php"

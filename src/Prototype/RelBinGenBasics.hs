@@ -524,7 +524,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                              , (Tm (mIs c)(-1)) `notElem` [fldexpr f|f<-fs] ]
                         ft  = [f|f<-fields plug,target (fldexpr f)==target e']
                         fldt=ft++
-                             [Fld { fldname = "iy"
+                             [Fld { fldname = "i"
                                   , fldexpr = Tm (mIs c) (-1)
                                   , fldtype = SQLChar 255
                                   , fldnull = False  -- can there be empty field-values?
