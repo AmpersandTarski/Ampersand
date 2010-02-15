@@ -36,7 +36,7 @@ where
   --DO you need on::[Morphism]? makeFspec sets an empty list
   data PhpAction = PhpAction {action::ActionType, on::[Morphism]} deriving (Show)
   data ActionType = Create | Read | Update | Delete deriving (Show)
-  
+
   field :: String->Expression->(Maybe SqlType)->Bool->Bool->SqlField
   field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq
                                          ,fldauto = (fldtyp (target expr)==SQLId) && not nul && uniq && isIdent expr}

@@ -26,7 +26,7 @@ module Statistics where
     nServices fSpec = length (services fSpec) --TODO -> check correctness
     nPatterns fSpec = nPatterns (patterns fSpec)
     nFpoints  fSpec = sum [fPoints (fsv_fpa svc)| svc<-services fSpec] +
-                      sum [fPoints (plfpa pl)   | pl <-plugs fSpec]
+                      sum [fPoints (plfpa pl)   | pl <-datasets fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...
    
 -- \***********************************************************************

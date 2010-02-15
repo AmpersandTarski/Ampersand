@@ -96,7 +96,6 @@
                       | d<-allDecs
                       , not (Inj `elem` multiplicities d)
                       , not (Uni `elem` multiplicities d)]
-
         uniqueNames :: [String]->[Plug]->[Plug]
         -- Some target systems may be case insensitive! For example MySQL.
         -- So, unique names are made in a case insensitive manner.
@@ -148,12 +147,18 @@
         maxInjExprs = clos dRels
 --  Step 4: generate services from the maximally total expressions and maximally injective expressions.
         serviceGen
-         = [ Obj (name c)        -- objnm
-                 Nowhere         -- objpos
-                 (Tm (mIs c)(-1))    -- objctx
-                 (recur [] cl)   -- objats
-                 []              -- objstrs
-           | cl <- eqCl source (maxTotExprs `uni` maxInjExprs), e0<-take 1 cl, c<-[source e0]]
+         = [ Obj (name c)         -- objnm
+                 Nowhere          -- objpos
+                 (Tm (mIs c)(-1)) -- objctx
+                 objattributes    -- objats
+                 []               -- objstrs
+           | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
+           , let objattributes = recur [] cl
+           , not (null objattributes)
+           , e0<-take 1 cl, c<-[source e0]
+           , map toLower (name c) `notElem` map (map toLower.name) scalarPlugs       -- exclude scalars
+           ]
+        scalarPlugs = [p|p<-allplugs, fld<-take 1 (fields p), flduniq fld, length (fields p)>1]
 --  Auxiliaries for generating services:
         morph d = Mph (name d) (pos d) [] (source d,target d) True d
 --    Warshall's transitive closure algorithm, adapted for this purpose:

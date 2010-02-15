@@ -13,13 +13,14 @@ module Data.Fspec ( Fspc(..)
                   , FTheme(..)
                   , WSOperation(..), WSAction(..)
                   , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
+                  , datasets
                   )
  where
    import Adl            hiding (Association)
    import Collection                    (uni,(>-))
    import Strings                       (chain)
    import Typology                      (Inheritance(..))
-   import Data.Plug                     (Plugs)
+   import Data.Plug                     
    import Picture                       (Pictures)
    import FPA
    data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
@@ -174,6 +175,11 @@ module Data.Fspec ( Fspc(..)
 
    instance Identified FSid where
     name (FS_id nm) = nm
+
+   datasets :: Fspc -> [Plug]
+   datasets fSpec = [p| p<-plugs fSpec
+                      , fld<-take 1 (fields p), flduniq fld  -- this excludes associations, because they are not flduniq
+                      , length (fields p)>1]                 -- this excludes scalar plugs
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {classes     :: [Class]            --

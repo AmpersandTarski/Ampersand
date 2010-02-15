@@ -411,8 +411,10 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
 dataAnalysis :: Int -> Fspc -> Options -> ([Block],Picture)
-dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daPlugs , classDiagramPicture )
+dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainingDecls ++ [b | p<-datasets fSpec, b<-daPlug p] , classDiagramPicture )
  where 
+  remainingDecls = declarations fSpec >- [d | p<-datasets fSpec, d<-decls p]
+
   header :: [Block]
   header = labeledHeader lev chpDAlabel (case (language flags) of
                                      Dutch   ->  "Gegevensstructuur"   
@@ -459,27 +461,25 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
 -- First, we document the heterogeneous properties of all relations
 -- Then, the homogeneous poperties are given, and finally
 -- the signals are documented.
-  daMultiplicities :: [Block]
-  daMultiplicities
+  daAssociations :: [Declaration] -> [Block]
+  daAssociations ds
    = [ if language flags==Dutch
-       then Para [ Str $ "De relaties in "++name fSpec++" hebben de volgende multipliciteitsrestricties. "
+       then Para [ Str $ "De gegevensverzameling "++name fSpec++" heeft de volgende associaties en multipliciteitsrestricties. "
                  ]
-       else Para [ Str $ "The relations in "++name fSpec++" have the following multiplicity constraints. "
+       else Para [ Str $ "The dataset "++name fSpec++" has the following associations and multiplicity constraints. "
                  ]
-     , Para  $ [ TeX $ "\\begin{tabular}{|l|cccc|}\\hline\n"
+     , Para  $ [ TeX $ "\\begin{tabular}{|l|cc|}\\hline\n"
                , if language flags==Dutch
-                 then TeX $ "relatie&totaal&univalent&surjectief&injectief\\\\ \\hline\\hline\n"
-                 else TeX $ "relation&total&univalent&surjective&injective\\\\ \\hline\\hline\n"
+                 then TeX $ "relatie&totaal&surjectief\\\\ \\hline\\hline\n"
+                 else TeX $ "relation&total&surjective\\\\ \\hline\\hline\n"
                ]++
                [ TeX $ chain "&" [ if source d==target d
                                    then "\\(\\signt{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}\\)"              -- veld
                                    else "\\(\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
-                                 , if isTot d || d `elem` tots then "\\(\\surd\\)" else ""
-                                 , if isUni d || d `elem` unis then "\\(\\surd\\)" else ""
-                                 , if isSur d || d `elem` surs then "\\(\\surd\\)" else ""
-                                 , if isInj d || d `elem` injs then "\\(\\surd\\)" else ""
+                                 , if isTot d then "\\(\\surd\\)" else ""
+                                 , if isSur d then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d@Sgn{}<-declarations fSpec, decusr d, not (isProp d)
+               | d@Sgn{}<-tail ds, decusr d, not (isProp d)   -- skip the first one, because it is I.
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
@@ -521,10 +521,48 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
      | length sgnls>1 ]
      where
       hMults  = [d| d@Sgn{}<-declarations fSpec, homogeneous d, decusr d]
+      sgnls   = [d| d@Sgn{}<-ds, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
+-- The properties of various declations are documented in different tables.
+-- First, we document the heterogeneous properties of all relations
+-- Then, the homogeneous poperties are given, and finally
+-- the signals are documented.
+
+  daAttributes :: Plug -> [Block]
+  daAttributes p
+   = [ if language flags==Dutch
+       then Para [ Str $ "De attributen van "++name p++" hebben de volgende multipliciteitsrestricties. "
+                 ]
+       else Para [ Str $ "The attributes in "++name p++" have the following multiplicity constraints. "
+                 ]
+     , Para  $ [ TeX $ "\\begin{tabular}{|llcc|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "attribuut&type&verplicht&uniek\\\\ \\hline\\hline\n"
+                 else TeX $ "attribute&type&compulsory&unique\\\\ \\hline\\hline\n"
+               ]++
+               [ TeX $ chain "&" [ latexEsc (fldname fld)
+                                 , latexEscShw (target (fldexpr fld))
+                                 , if fldnull fld then "" else "\\(\\surd\\)"
+                                 , if flduniq fld then "\\(\\surd\\)" else ""
+                                 ]++"\\\\\n"
+               | fld<-fields p
+               ]++
+               [ TeX $ "\\hline\n\\end{tabular}"
+               ]
+     ]++
+-- the homogeneous properties have already been reported in the general section of this chapter.
+-- the signals
+     [ Para [ if language flags==Dutch
+                then TeX $ "Er is een enkel signaal: \\id{"++latexEsc (name d)++"}."
+                else TeX $ "There is but one signal: \\id{"++latexEsc (name d)++"}." ]
+     | length sgnls==1, d<-sgnls ]++
+     [ Para [ if language flags==Dutch
+                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]
+                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]]
+     | length sgnls>1 ]
+     where
       sgnls   = [d| d@Sgn{}<-declarations fSpec, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
+{- voorgestelde multipliciteitenanalyse....
       clauses = rd [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
-      strands (F fs) = [fs]
-      strands _      = []    -- <--  we could maybe do better than this...
       is = rd [m| Fu fus<-clauses
                 , isIdent (Fi [notCp f| f<-fus, isPos f])
                 , f<-filter isNeg fus
@@ -539,26 +577,33 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                 , e<-[head s, flp (last s)]
                 , m<-mors e
                 ]
+      strands (F fs) = [fs]
+      strands _      = []    -- <--  we could maybe do better than this...
       tots = [d| t<-ts, inline t, d<-decls t]
       unis = [d| t<-is, inline t, d<-decls t]
       surs = [d| t<-ts, not (inline t), d<-decls t]
       injs = [d| t<-is, not (inline t), d<-decls t]
+-}
 
-  -- daPlugs shows only user defined rules that shall be maintained within a data set.
-  -- multiplicity rules, for example, are not among them.
-  -- Plugs that are associations between data sets are ignored.
-  daPlugs :: [Block]
-  daPlugs = [b | p<-plugs fSpec, fld<-take 1 (fields p), flduniq fld, b<-daPlug p]
+  -- daPlugs describes data sets.
+  -- These can be recognized by:
+  --    1. the first field has the "unique" attribute on (otherwise it is a binary association)
+  --    2. there is more than one field (otherwise it is a scalar).
+  -- The text gives all rules that are maintained internally within the data structure,
+  -- because they might very well be implemented as database integrity rules.
+  -- Multiplicity rules are not reported separately, because they are already taken care of in the multiplicity tables.
+  -- Plugs that are associations between data sets and scalars are ignored.
 
+  daPlug :: Plug -> [Block]
   daPlug p
    = if null content then [] else plugHeader ++ content
      where
        plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
-       content = plugRules ++ plugSignals
+       content = daAttributes p ++ plugRules ++ plugSignals
        plugRules
         = case language flags of
            English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
-                       []  -> [ Para [ Str "This data set has no integrity rules other than the multiplicities specified earlier. " ]]
+                       []  -> []
                        [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
                               , Para [ Math DisplayMath $ showMathcode fSpec r]
                               ]
@@ -566,7 +611,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daMultiplicities ++ daP
                               , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
                               ]
            Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
-                       []  -> [ Para [ Str "Deze gegevensverzameling heeft geen integriteitsregels buiten de hiervoor gedefinieerde multipliciteiten. " ]]
+                       []  -> []
                        [r] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
                               , Para [ Math DisplayMath $ showMathcode fSpec r]
                               ]
@@ -765,10 +810,11 @@ fpAnalysis :: Int -> Fspc -> Options ->  [Block]
 fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
  where 
   header :: [Block]
-  header = labeledHeader lev chpFPAlabel (case (language flags) of
-                                Dutch   ->  "Functiepunt Analyse"   
-                                English ->  "Function Point Analysis"
-                               )
+  header = labeledHeader lev chpFPAlabel
+                         (case language flags of
+                               Dutch   ->  "Functiepunt Analyse"   
+                               English ->  "Function Point Analysis"
+                         )
   caIntro :: [Block]
   caIntro = 
    (case (language flags) of
@@ -796,7 +842,9 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
       FLatex -> [Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           chain "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [name plug, show (plfpa plug), (show.fPoints.plfpa) plug] | plug<-plugs fSpec, fPoints (plfpa plug)>0] ++
+                          chain "\\\\\n" [ chain "&" [name plug, show (plfpa plug), (show.fPoints.plfpa) plug]
+                                         | plug<-datasets fSpec
+                                         , fPoints (plfpa plug)>0] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
