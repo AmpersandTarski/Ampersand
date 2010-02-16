@@ -14,36 +14,37 @@
    htmlindex fSpec serviceObjects flags
     = chain "\n  "
       ( [ "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
-        , "<HTML><HEAD>"
-        , "  <TITLE>"++appname++"- ADL Prototype</TITLE>"
-        , "  <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
-        , "</HEAD><BODY STYLE=\"height:100%;width:100%;\">"
-        , "  <H1>"++appname++"</H1>"
-        , "  <OL>"
-        , "    <LI><a href=\"Installer.php\">Click here to reset the database</a></LI>"
-        , "    <LI class=\"buttons\">Use services:"
-        , "      <UL>"
+        , "<html><head>"
+        , "  <title>"++appname++"- ADL Prototype</title>"
+        , "  <link href=\"css/reset.css\"  rel=\"stylesheet\" type=\"text/css\" media=\"screen\" />"
+        , "  <link href=\"css/screen.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\" />"
+        , "</head><body style=\"height:100%;width:100%;\">"
+        , "  <h1>"++appname++"</h1>"
+        , "  <ol>"
+        , "    <li><a href=\"Installer.php\">Click here to reset the database</a></li>"
+        , "    <li class=\"buttons\">Use services:"
+        , "      <ul>"
         ] ++ indentBlock 8 (concat
-                           [ ["<LI><a href=\""++name fSpec++".php?content="++name o++(if isOne o then "" else "&new=1")++"\">"
+                           [ ["<li><a href=\""++name o++".php?"++(if isOne o then "" else "&new=1")++"\">"
                              ,(if isOne o then "  " else "  New ")++name o
-                             ,"</a></LI>"]
+                             ,"</a></li>"]
                            | o <- serviceObjects
                            ]
                            ) ++
-        [ "      </UL>"
-        , "    </LI>"
-        , "  </OL>"
+        [ "      </ul>"
+        , "    </li>"
+        , "  </ol>"
         , "  <!--"
-        , "  <H2>Some data:</H2>"
-        , "  <UL>"
-        , "    <LI>Compiled with: "++versionbanner++"</LI>"
-        , "    <LI>Application name: "++appname++"</LI>"
-        , "    <LI>Database host: "++sqlHost flags++"</LI>"
-        , "    <LI>Database Usename / password set: "++(if sqlLogPwdDefd flags then "YES" else "NO")++"</LI>"
-        , "    <LI>Database name: "++dbName flags++"</LI>"
-        , "  </UL>"
+        , "  <h2>Some data:</h2>"
+        , "  <ul>"
+        , "    <li>Compiled with: "++versionbanner++"</li>"
+        , "    <li>Application name: "++appname++"</li>"
+        , "    <li>Database host: "++sqlHost flags++"</li>"
+        , "    <li>Database Usename / password set: "++(if sqlLogPwdDefd flags then "YES" else "NO")++"</li>"
+        , "    <li>Database name: "++dbName flags++"</li>"
+        , "  </ul>"
         , "  -->"
-        , "</BODY></HTML>"]
+        , "</body></html>"]
       )
     where
      appname   = name fSpec
