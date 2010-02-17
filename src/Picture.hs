@@ -2,7 +2,7 @@
 -- This module is for the definition of Picture and PictureList.
 module Picture ( Picture(origName,uniqueName,figlabel,caption,imgURL,pType) -- Other fields are hidden, for there is no need for them outside this module...
                , Pictures,PictType(..),uniquePicName
-               , makePictureObj,writePicture) 
+               , makePictureObj,writePicture)
 where
 import Options
 import System             (system, ExitCode(ExitSuccess,ExitFailure))
@@ -18,7 +18,7 @@ type Pictures = [Picture]
 data Picture = Pict { origName     :: String    -- The original name of the object this picture was made for. (could include spaces!)
                     , pType        :: PictType  -- the type of the picture
                     , uniqueName   :: String    -- used to reference the picture in pandoc or tex
-                    , dotSource    :: String    -- the string representing the .dot 
+                    , dotSource    :: String    -- the string representing the .dot
                     , fullDot      :: FilePath  -- the full file path where the .dot file resides
                     , fspecPath    :: FilePath  -- the full file path where the .png file resides for functional specification
                     , atlasPath    :: FilePath  -- the full file path where the .png and .map file resides for Atlas
@@ -36,20 +36,20 @@ picType2prefix pt = case pt of
                       PTRule         -> "Rul_"
                       PTSwitchBoard  -> "SB_"
                       PTFservice     -> "Serv_"
-makePictureObj :: Options  
+makePictureObj :: Options
             -> String   -- Name of the picture
             -> PictType -- Type of the picture
             -> String   -- The dot source. Should be canonnical.
-            
+
             -> Picture  -- The ADT of a picture
 makePictureObj flags name pTyp dotsource
-    = Pict { origName   = name 
+    = Pict { origName   = name
            , uniqueName   = cdName
            , dotSource  = dotsource
            , fullDot    = dirOutput flags  </> relImgPath </> replaceExtension cdName "dot"
-           , fspecPath  = dirOutput flags  </> relImgPath </> addExtension cdName "png" 
-           , atlasPath  = dirAtlas  flags  </> relImgPath </> addExtension cdName "png"
-           , imgURL     = UStr (dirAtlas  flags  </> relImgPath </> addExtension cdName "png")
+           , fspecPath  = dirOutput flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
+           , atlasPath  = dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
+           , imgURL     = UStr (dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png")
            , pType      = pTyp
            , figlabel   = "fig:" ++ cdName
            , dotProgName = case pTyp of
