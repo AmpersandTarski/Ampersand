@@ -4,8 +4,8 @@ module Classes.Graphics (Dotable(makePicture)
                         ,GraphvizOutput(..)
                         ,runGraphvizCommand) where
 -- TODO url links for atlas
- 
-import Data.GraphViz
+
+import Data.GraphViz hiding(addExtension)
 --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
 --              -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
 --              -- 2) cabal-install graphviz  (onder windows: cabal install graphviz)
