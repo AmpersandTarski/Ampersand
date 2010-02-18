@@ -5,12 +5,12 @@ module Classes.Graphics (Dotable(makePicture)
                         ,runGraphvizCommand) where
 -- TODO url links for atlas
 
-import Data.GraphViz hiding(addExtension)
+import Data.GraphViz hiding (addExtension )
 --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
 --              -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
 --              -- 2) cabal-install graphviz  (onder windows: cabal install graphviz)
 --              -- 3) er is geen stap 3!
---              -- 4) build on graphviz-2999.5.0.0
+--              -- 4) build on graphviz-2999.8.0.0
 -- Documentation about graphviz package: See http://hackage.haskell.org/package/graphviz
 import Adl
 import Data.Fspec (Fspc,Fservice(..))
@@ -227,7 +227,7 @@ handleFlags po flags =
          -> if crowfoot flags
             then defaultNodeAtts ++ 
                  [ Label$StrLabel (name c)
-                 , Shape Plaintext
+                 , Shape PlainText
                  , filled --Style$Stl Filled Nothing
                  , URL (theURL flags c)
                  ]
@@ -236,14 +236,14 @@ handleFlags po flags =
                         then [Shape PointShape, invisible]--Style$Stl Invisible Nothing,Width 0.1]
                         else defaultNodeAtts ++
                              [ Label$StrLabel (name c)
-                             , Shape Plaintext
+                             , Shape PlainText
                              , filled --Style$Stl Filled Nothing
                              , URL (theURL flags c)
                              ]
       CptEdge    -> [Len 0.4, invisible]
       CptOnlyOneNode c -> defaultNodeAtts ++
                           [Label (StrLabel (name c))
-                          , Shape Plaintext
+                          , Shape PlainText
                           , filled 
                           , URL (theURL flags c)
                           ]
@@ -278,20 +278,20 @@ handleFlags po flags =
       DclHingeNode  -> [Shape PointShape, invisible ]
       DclNameNode d -> defaultNodeAtts ++ 
                        [ Label (StrLabel (name d))
-                       , Shape Plaintext
-                       , BgColor (ColorName "white") 
+                       , Shape PlainText
+                       , BgColor (X11Color White) 
                        ]
       DclMiddleEdge -> [ Len 0.1
                        , ArrowHead noArrow
                        , ArrowTail noArrow
                        ]
-      IsaOnlyOneEdge-> [ Color [ColorName "black"]
+      IsaOnlyOneEdge-> [ Color [X11Color Black]
                        , Len 1.5
                        , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])
                        , ArrowTail noArrow
                        , dotted
                        ]
-      IsaEdge       -> [ Color [ColorName "red"]
+      IsaEdge       -> [ Color [X11Color Red]
                        , Len 0.6
                        , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])	
                        , ArrowTail noArrow

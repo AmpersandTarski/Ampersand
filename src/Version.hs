@@ -7,5 +7,8 @@ versionbanner = "ADL vs. 0.8.10-600" -- the number behind the last digit is the 
 
 {-
 SVN Version text:
-Interface van Milan wordt nu gegenereerd in Prototype.
+Ge-upgrade naar nieuste packages. Helaas is dit niet backwards compatible...
+Packages die problemen gaven:
+  Graphviz (nu versie graphviz-2999.8.0.0)
+  Pandoc   (nu versie pandoc-1.4)
 -}

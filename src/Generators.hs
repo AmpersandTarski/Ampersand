@@ -22,7 +22,7 @@ import Data.List              (isInfixOf)
 import Text.Pandoc            ( defaultWriterOptions
                               , prettyPandoc
                               , writerStandalone
-                              , writerHeader
+                              , writerTemplate
                               , writerTableOfContents
                               , writerNumberSections
                               , writeLaTeX
@@ -135,7 +135,7 @@ doGenFspec fSpec flags
                             header <- if exists 
                                       then readFile (fromJust$texHdrFile flags)
                                       else return (laTeXheader flags)
-                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerHeader=header} thePandoc)
+                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate =header} thePandoc)
               FHtml   -> do verboseLn flags "Generating Html file."
                             writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
               FOpenDocument 
