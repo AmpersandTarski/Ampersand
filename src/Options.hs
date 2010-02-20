@@ -12,7 +12,7 @@ import System.Directory
 import Time
 import Control.Monad
 import Strings               (chain)
-import Version
+import Version(versionNumber)
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
@@ -130,7 +130,7 @@ getOptions =
      checkNSetOptionsAndFileNameM :: (Options,[String]) -> IO(Options)
      checkNSetOptionsAndFileNameM (flags,fNames) = 
           if or [showVersion flags, showHelp flags] 
-          then return flags {helpNVersionTexts = ["Version: " ++ versionbanner | showVersion flags]
+          then return flags {helpNVersionTexts = ["ADLvs" ++ versionNumber | showVersion flags]
                                                ++[usageInfo' flags             | showHelp    flags]
                             }
           else case fNames of

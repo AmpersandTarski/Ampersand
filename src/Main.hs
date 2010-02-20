@@ -15,7 +15,7 @@ main :: IO ()
 main 
  = do flags <- getOptions   
       if showVersion flags || showHelp flags
-       then mapM_ Prelude.putStrLn (helpNVersionTexts flags)
+       then mapM_ Prelude.putStr (helpNVersionTexts flags)
        else if test flags
             then testprog flags
             else
