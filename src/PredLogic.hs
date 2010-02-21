@@ -353,7 +353,7 @@ module PredLogic
       case decl of
         Sgn{}     -> if null (prL++prM++prR) 
                        then d++" "++decnm decl++" "++c 
-                       else prL++(if null prL then d else unCap d)++prM++c++prR
+                       else prL++d++prM++c++prR
            where prL = decprL decl
                  prM = decprM decl
                  prR = decprR decl

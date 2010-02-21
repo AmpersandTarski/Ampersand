@@ -2,7 +2,6 @@
   module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts)
   where
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
-   import Strings        (firstCaps)
    import CommonClasses  (ABoolAlg(..))
    import Adl
    import Auxiliaries    (naming, eqCl, eqClass, sort')
@@ -18,7 +17,7 @@
    makeFspec _ context = fSpec where
         allQuads = quads (\_->True) (rules context)
         fSpec =
-            Fspc { fsName       = firstCaps (name context)
+            Fspc { fsName       = name context
                    -- serviceS contains the services defined in the ADL-script.
                    -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
                    -- A generic user interface (the Lonneker interface) is already available.

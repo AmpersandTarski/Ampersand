@@ -1,6 +1,6 @@
 {-  TODO: Warningvrij maken # OPTIONS_GHC -Wall #-}
 --TODO -> clean and stuff. Among which moving classdiagram2dot to Graphviz library implementation (see Classes/Graphics.hs).
---        I only helped it on its feed and I have put in the fSpec, now it generates stuff. I like stuff :)
+--        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
   module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
@@ -215,10 +215,11 @@
               "              headlabel = \"\"\n"    ++
               "              taillabel = \"\"\n"    ++
               "              arrowtail = \"none\" \n" ++
-              "              arrowhead = " ++ "onormal" ++" \n" ++
+              "              arrowhead = onormal \n" ++
+              "              color = red" ++
               "              label =\"\"" ++
               "      ]\n" ++
-              "       " ++ alias b ++ " -> " ++ alias a ++ "\n"
+              "       " ++ alias a ++ " -> " ++ alias b ++ "\n"
 
    dothtml :: String -> String
    dothtml content = "<\n  " ++ content ++ "\n>"

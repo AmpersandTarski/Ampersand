@@ -174,9 +174,9 @@ dotG flags graphName cpts dcls idgs
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         isaNodesAndEdges :: ((Concept, Concept),Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
-        isaNodesAndEdges ((s,t),_)
+        isaNodesAndEdges ((g,s),_)
              = ( [] -- No node at all
-               , [constrEdge (baseNodeId s) (baseNodeId t) IsaOnlyOneEdge True  flags] -- Just a single edge
+               , [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge True  flags] -- Just a single edge
                )
 --           = (   [isaDotHingeNode]
 --             ,   [constrEdge (baseNodeId s) (nodeID isaDotHingeNode) IsaEdge True flags]
@@ -285,7 +285,7 @@ handleFlags po flags =
                        , ArrowHead noArrow
                        , ArrowTail noArrow
                        ]
-      IsaOnlyOneEdge-> [ Color [X11Color Black]
+      IsaOnlyOneEdge-> [ Color [X11Color Red]
                        , Len 1.5
                        , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])
                        , ArrowTail noArrow

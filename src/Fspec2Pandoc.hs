@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
---TODO -> Block: Header Int [Inline] - Int indicates level of header. If I look at pandoc code TexInfo.hs blockToTexinfo ln.208 I would expect chapter,section,sub,subsub respectively. But I get section,sub,subsub,plain text respectively. So now I've written chapters as 0 setting a [Inline] -> [Tex "\\chapter{...}"]. I do not know yet how this relates to other formats like rtf.
 module Fspec2Pandoc (fSpec2Pandoc,laTeXheader)
 where
 import Char
@@ -11,7 +10,7 @@ import Picture
 import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
-import Strings          (unCap, commaNL, commaEng, chain)
+import Strings          (unCap, upCap, commaNL, commaEng, chain)
 import Text.Pandoc  
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
@@ -84,11 +83,11 @@ laTeXheader flags
      , "\\newcommand{\\isa}{\\sqsubseteq}"
      , "\\newcommand{\\N}{\\mbox{\\msb N}}"
      , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
-     , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{$\\rightarrow$}\\id{#3}}"
-     , "\\newcommand{\\signat}[3]{\\mbox{${#1}_{[{#2},{#3}]}$}}"
-     , "\\newcommand{\\signt}[2]{\\mbox{${#1}_{[{#2}]}$}}"
-     , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\times$}\\id{#3}}"
-     , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{$\\fun$}\\id{#3}}"
+     , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\rightarrow\\)}\\id{#3}}"
+     , "\\newcommand{\\signat}[3]{\\mbox{\\({#1}_{[{#2},{#3}]}\\)}}"
+     , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
+     , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\times\\)}\\id{#3}}"
+     , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
      ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
      [ "%  -- end of header. Use 'ADL --headerfile myHeader.tex' to replace the previous by your own header file." ] )
 
@@ -157,16 +156,16 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
              where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec]
                    (daTxt,daPic)  = dataAnalysis       level fSpec flags
                    (caTxt,caPics) = conceptualAnalysis level fSpec flags
-          level = 0 --0=chapter, 1=section, 2=subsection, 3=subsubsection, _=plain text
+          level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 ------------------------------------------------------------                
 
 introduction :: Int -> Fspc -> Options ->  [Block]
 introduction lev fSpec flags = header ++ introContents (language flags)
     where 
-        header = labeledHeader lev chpintrolabel (case (language flags) of
-                                       Dutch   ->  "Inleiding"   
-                                       English ->  "Introduction"
-                                   )
+        header = labeledHeader lev chpintrolabel (case language flags of
+                                                     Dutch   ->  "Inleiding"   
+                                                     English ->  "Introduction"
+                                                 )
 
         introContents Dutch = 
          [ Para 
@@ -236,9 +235,9 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   where
   header :: [Block]
   header = labeledHeader lev chpFRlabel (case (language flags) of
-                                 Dutch   ->  "Functionele Eisen"   
-                                 English ->  "Functional Requirements"
-                             )
+                                             Dutch   ->  "Functionele Eisen"   
+                                             English ->  "Functional Requirements"
+                                         )
   dpIntro :: [Block]
   dpIntro = 
     case language flags of
@@ -301,8 +300,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
      newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
      dpRule [] j' seenConcs seenDeclarations = ([], j', seenConcs, seenDeclarations)
      dpRule (r:rs) j' seenConcs seenDeclarations
-      = ( [ [Para [symDefLabel c, Str$ makeDefinition flags (name c) (cddef cd)]] |(c,cd)<-cds]++
-          [ [Para [symReqLabel d, Str$ explainMult flags d]] |d<-nds] ++
+      = ( [ [Para [symDefLabel c], makeDefinition flags (name c) (cddef cd)] |(c,cd)<-cds]++
+          [ [Para [symReqLabel d, Str$ explainDecl flags d]] |d<-nds] ++
           [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
         , j
         , seenCs
@@ -325,14 +324,14 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                          , Str $ commaNL "en" cs
                                          , Str $ ". "]
                                 )++
-                                (case [name c| c<-newConcepts, (c',_)<-rd conceptdefs, c==c'] of
+                                (case [name c| c<-newConcepts, c `notElem` [c'| (c',_)<-conceptdefs]] of
                                   []  -> []
                                   [c] -> [ Str $ "Concept "
                                          , Str $ c
-                                         , Str $ " wordt in deze sectie voor het eerst gebruikt en heeft geen definitie in deze functionele specificatie. "]
-                                  cs  -> [ Str $ "De concepten "
+                                         , Str $ " wordt in deze sectie geintroduceerd zonder definitie. "]
+                                  cs  -> [ Str $ "Deze sectie introduceert concepten "
                                          , Str $ commaNL "en" cs
-                                         , Str $ " worden in deze sectie voor het eerst gebruikt en hebben geen definitie in deze functionele specificatie. "]
+                                         , Str $ " zonder definitie. "]
                                 )
                        ]
            English ->  [ Para $ (case [name c|(c,_)<-conceptdefs, c `elem` newConcepts] of
@@ -349,9 +348,9 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                   [c] -> [ Str $ "Concept "
                                          , Str $ c
                                          , Str $ " is introduced in this section without a definition."]
-                                  cs  -> [ Str $ "Concepts "
+                                  cs  -> [ Str $ "This section introduces concepts "
                                          , Str $ commaEng "and" cs
-                                         , Str $ " are introduced in this section without definition. "]
+                                         , Str $ " without definition. "]
                                 )
                        ]
      
@@ -362,10 +361,10 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
   (caBlocks,pictures) = ( [b| (blocks,_)<-ca, b<-blocks], [picture| (_,picture)<-ca] )
                         where ca=caSections (patterns fSpec)
   header :: [Block]
-  header = labeledHeader lev chpCAlabel (case (language flags) of
-                                Dutch   ->  "Conceptuele Analyse"   
-                                English ->  "Conceptual Analysis"
-                               )
+  header = labeledHeader lev chpCAlabel (case language flags of
+                                            Dutch   ->  "Conceptuele Analyse"   
+                                            English ->  "Conceptual Analysis"
+                                        )
   caIntro :: [Block]
   caIntro = 
    (case (language flags) of
@@ -388,7 +387,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
    where
     iterat :: Int -> [Pattern] -> [([Block],Picture)]
     iterat n (pat:ps)
-     = ( [Header (lev+1) [Str $ name pat]]    -- new section to explain this theme
+     = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
        ++ (if not (graphics flags) then [] else 
             (case language flags of             -- announce the conceptual diagram
              Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptuele analyse van dit thema."]] ]
@@ -404,7 +403,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     --query copied from FSpec.hs revision 174
     themerules  :: Pattern -> [([Inline], [[Block]])]
     themerules pat = [ ( [Str (name r)]
-                       , [ [ Plain [Str $ latexEsc (explainRule flags r)]
+                       , [ [ Plain [Str (explainRule flags r)]
                            , Plain [Math DisplayMath $ showMathcode fSpec r, symDefLabel r] -- TODO: equation van maken met nummer, om naar te refereren.
                          ] ]
                        )
@@ -419,10 +418,10 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
   remainingDecls = declarations fSpec >- [d | p<-datasets fSpec, d<-decls p]
 
   header :: [Block]
-  header = labeledHeader lev chpDAlabel (case (language flags) of
-                                     Dutch   ->  "Gegevensstructuur"   
-                                     English ->  "Data structure"
-                                 )
+  header = labeledHeader lev chpDAlabel (case language flags of
+                                              Dutch   ->  "Gegevensstructuur"   
+                                              English ->  "Data structure"
+                                        )
   daContents :: [Block]
   daContents = 
    (case language flags of
@@ -467,9 +466,9 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
   daAssociations :: [Declaration] -> [Block]
   daAssociations ds
    = [ if language flags==Dutch
-       then Para [ Str $ "De gegevensverzameling "++name fSpec++" heeft de volgende associaties en multipliciteitsrestricties. "
+       then Para [ Str $ upCap (name fSpec)++" heeft de volgende associaties en multipliciteitsrestricties. "
                  ]
-       else Para [ Str $ "The dataset "++name fSpec++" has the following associations and multiplicity constraints. "
+       else Para [ Str $ upCap (name fSpec)++" has the following associations and multiplicity constraints. "
                  ]
      , Para  $ [ TeX $ "\\begin{tabular}{|l|cc|}\\hline\n"
                , if language flags==Dutch
@@ -489,12 +488,12 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
      ]++
 -- the homogeneous properties:
      [ Para [ if language flags==Dutch
-                then TeX $ latexEsc "Een relatie, \\id{"++name d++"}, is homogeen en heeft de volgende eigenschappen: "
-                else TeX $ latexEsc "One relation, \\id{"++name d++"}, is homogeneous and has the following properties: "]
+                then TeX $ "Een relatie, \\id{"++latexEsc (name d)++"}, is homogeen en heeft de volgende eigenschappen: "
+                else TeX $ "One relation, \\id{"++latexEsc (name d)++"}, is homogeneous and has the following properties: "]
      | length hMults==1, d<-hMults ]++
      [ Para [ if language flags==Dutch
-                then TeX $ latexEsc "In aanvulling daarop hebben de homogene relaties de volgende eigenschappen: "
-                else TeX $ latexEsc "Additionally, the homogeneous relations come with the following properties: "]
+                then TeX $ "In aanvulling daarop hebben de homogene relaties de volgende eigenschappen: "
+                else TeX $ "Additionally, the homogeneous relations come with the following properties: "]
      | length hMults>1 ]++
      [ Para  $ [ TeX $ "\\begin{tabular}{|l|ccccc|}\\hline\n"
                , if language flags==Dutch
@@ -549,7 +548,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
                                  ]++"\\\\\n"
                | fld<-fields p
                ]++
-               [ TeX $ "\\hline\n\\end{tabular}"
+               [ TeX "\\hline\n\\end{tabular}"
                ]
      ]++
 -- the homogeneous properties have already been reported in the general section of this chapter.
@@ -746,7 +745,7 @@ serviceChap lev fSpec flags svc
                   recur e f | null (fld_sub f) = fld e f
                             | otherwise        = fld e f ++
                                                  [ BulletList [recur (F [e,fld_expr f']) f'| f'<-fld_sub f] ]
-           fld e f = [ Para [ Str $ fld_name f++if null cols then "" else "("++chain ", " cols++")" ]
+           fld e f = [ Para [ Str (fld_name f++if null cols then "" else "("++chain ", " cols++")") ]
                      , Para [ Str "display on start: ", Math InlineMath $ showMathcode fSpec (conjNF e) ]
                      ] {- ++
                      [ Para [ Str $ "exec on insert: "++ showECA fSpec "\n>     "  (fld_onIns f arg)]
@@ -845,14 +844,14 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
       FLatex -> [Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           chain "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [name plug, show (plfpa plug), (show.fPoints.plfpa) plug]
+                          chain "\\\\\n" [ chain "&" [latexEsc (name plug), latexEscShw (plfpa plug), (latexEscShw.fPoints.plfpa) plug]
                                          | plug<-datasets fSpec
                                          , fPoints (plfpa plug)>0] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           chain "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [name svc, show (fsv_fpa svc), (show.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
+                          chain "\\\\\n" [ chain "&" [latexEsc (name svc), latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 
@@ -899,47 +898,46 @@ count flags n x
 ------ Symbolic referencing ---------------------------------
 
 class SymRef a where
-  symReqLabel :: a -> Inline  -- labels the requirement of a
-  symDefLabel :: a -> Inline  -- labels the definition of a
-  symReqRef   :: a -> Inline  -- references the requirement of a
-  symDefRef   :: a -> Inline  -- references the definition of a 
-  symReqPageRef   :: a -> Inline  -- references the requirement of a
-  symDefPageRef   :: a -> Inline  -- references the definition of a 
+  symLabel     :: a -> String -- unique label for symbolic reference purposes
+  symReqLabel  :: a -> Inline  -- labels the requirement of a
+  symReqLabel   c = TeX $ "\\label{Req"++symLabel c++"}"
+  symDefLabel  :: a -> Inline  -- labels the definition of a
+  symDefLabel   c = TeX $ "\\label{Def"++symLabel c++"}"
+  symReqRef    :: a -> Inline  -- references the requirement of a
+  symReqRef     c = TeX $ "\\ref{Req"++symLabel c++"}"
+  symDefRef    :: a -> Inline  -- references the definition of a 
+  symDefRef     c = TeX $ "\\ref{Def"++symLabel c++"}"
+  symReqPageRef :: a -> Inline  -- references the requirement of a
+  symReqPageRef c = TeX $ "\\pageref{Req"++symLabel c++"}"
+  symDefPageRef :: a -> Inline  -- references the definition of a 
+  symDefPageRef c = TeX $ "\\pageref{Def"++symLabel c++"}"
 
 instance SymRef Concept where
-  symReqLabel   c = TeX $ "\\label{ReqConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
-  symDefLabel   c = TeX $ "\\label{DefConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
-  symReqRef     c = TeX $ "\\ref{ReqConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
-  symDefRef     c = TeX $ "\\ref{DefConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
-  symReqPageRef c = TeX $ "\\pageref{ReqConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
-  symDefPageRef c = TeX $ "\\pageref{DefConcept:"++latexEsc [x|x<-name c, x/='_']++"}"
+  symLabel c = "Concept:"++latexEsc [x|x<-name c, x/='_']
 
 instance SymRef Declaration where
-  symReqLabel   d = TeX $ "\\label{ReqConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
-  symDefLabel   d = TeX $ "\\label{DefConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
-  symReqRef     d = TeX $ "\\ref{ReqConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
-  symDefRef     d = TeX $ "\\ref{DefConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
-  symReqPageRef d = TeX $ "\\pageref{ReqConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
-  symDefPageRef d = TeX $ "\\pageref{DefConcept:"++latexEsc [x|x<-name d, x/='_']++"}"
+  symLabel d = "Decl:"++latexEsc [x|x<-name d++name (source d)++name (target d), x/='_']
 
 instance SymRef Rule where
-  symReqLabel   r = TeX $ "\\label{ReqConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
-  symDefLabel   r = TeX $ "\\label{DefConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
-  symReqRef     r = TeX $ "\\ref{ReqConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
-  symDefRef     r = TeX $ "\\ref{DefConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
-  symReqPageRef r = TeX $ "\\pageref{ReqConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
-  symDefPageRef r = TeX $ "\\pageref{DefConcept:"++latexEsc [x|x<-name r, x/='_']++"}"
+  symLabel r = "Rule:"++latexEsc [x|x<-name r, x/='_']
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [TeX ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
 ---   xrefTableReference :: String -> [Inline]
 --   xrefTableReference myLabel = [TeX ("\\ref{tab:"++myLabel++"}")]
+-- DAAROM: Why (SJ) does the code of labeledHeader look stupid?
+--         When Han looked at pandoc code TexInfo.hs blockToTexinfo ln.208,
+--         he expected chapter,section,sub,subsub respectively.
+--         However, he got section,sub,subsub,plain text respectively.
+--         Looks like an error in PanDoc, doesn't it?
+--         So now he wrote chapters as 0 setting a [Inline] -> [TeX "\\chapter{...}"].
+--         We do not know yet how this relates to other formats like rtf.
+
 labeledHeader :: Int -> String -> String -> [Block]
-labeledHeader 0 lbl str = 
-                 [Para [TeX ("\\chapter{"++str++"}")]]
-              ++ [Para [xrefLabel lbl]]
+labeledHeader 0 lbl str =
+                 [Para [TeX ("\\chapter{"++latexEsc str++"}"), xrefLabel lbl]]
 labeledHeader lev lbl str =
-                 [Header lev ([Str str])]
+                 [Header lev [Str str]]
               ++ [Para [xrefLabel lbl]]
  
 xrefReference :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
@@ -956,7 +954,7 @@ xrefFigure1 pict =
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
    , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] ((uniqueName pict), (figlabel pict))
    , TeX "}\n"
-   , TeX ("\\caption{"++caption pict++"}\n") 
+   , TeX ("\\caption{"++latexEsc (caption pict)++"}\n") 
    , xrefLabel (figlabel pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
@@ -987,7 +985,7 @@ class ShowMath a where
 
 instance ShowMath Concept where
  showMath c = "\\id{"++latexEsc (name c)++"}"
- showMathcode _ c = "\\id{"++latexEsc (name c)++"}"
+ showMathcode fSpec c = "\\id{"++latexEsc (name c)++"}"
 
 instance ShowMath Gen where
  showMath g = showMath (genspc g) ++"\\ \\le\\ "++showMath (gengen g)
@@ -998,7 +996,8 @@ instance ShowMath Rule where
  showMathcode fSpec r
   = ( if isSignal r
       then "\\verb#RULE # \\id{"++name r++"}\\ \\verb# SIGNALS #"
-      else "\\verb#RULE # \\id{"++name r++"}\\ \\verb# MAINTAINS #" )++
+      else "" -- "\\verb#RULE # \\id{"++name r++"}\\ \\verb# MAINTAINS #"
+    )++
     case rrsrt r of
       Truth          -> showMathcode fSpec (rrcon r)
       Implication    -> showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)
@@ -1059,7 +1058,7 @@ latexEsc :: [Char] -> [Char]
 latexEsc x
  = f x
    where f "" = ""
-         f ('_':str) = "\\underline{\\ }"++f str
+         f ('_':str) = "\\_"++f str
          f (c:str)   = c: f str
 
 --posixFilePath :: FilePath -> String
@@ -1067,8 +1066,11 @@ latexEsc x
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-makeDefinition :: Options -> String -> String -> String
+makeDefinition :: Options -> String -> String -> Block
 makeDefinition flags c cdef
-  = case language flags of
-     English -> "A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" "++unCap c++" is "++cdef
-     Dutch   -> "Een "++unCap c++" is "++cdef
+  = Plain $
+    case language flags of
+     English -> [Str ("A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" ")]++str++[Str (" is "++cdef)]
+     Dutch   -> [Str "Een "]++str++[Str (" is "++cdef)]
+    where
+     str = [Emph [Str (unCap c)]]++[TeX ("\\index{"++latexEsc (unCap c)++"}") | fspecFormat flags==FLatex]

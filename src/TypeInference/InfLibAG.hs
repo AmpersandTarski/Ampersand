@@ -14,7 +14,7 @@ module TypeInference.InfLibAG
   ,TError(..)
   ) where
 {- a module to infer types of expressions of a heterogeneous relation algebra with ISA hierarchy 
- - expressions must be normalised with the function normalise
+ - expressions mustodemprocedure be normalised with the function normalise
  - the relation variables in the expression are bound to a declaration with a type
  - more than one declaration can exist for a relation variable
  - I and V are relation constants with a type (Universe,Universe)
@@ -361,7 +361,7 @@ final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
                   then check_infer_homo (not_universe inh_a (fst$head alts')
                                         ,not_universe inh_b (snd$head alts')) 
                   else fatal 388 $ "the expression has a type error, there cannot be a type for this relation."
-                                 --  ++ show (alts',alts,me,(inh_a,inh_b))
+                                   ++ show (alts',alts,me,(inh_a,inh_b))
    check_infer_homo (a,b) 
        | case me of
           (Morph (DRel{}) _ _)->ishomo d
@@ -380,9 +380,10 @@ thedecl _ _ _ (Right _) = fatal 402 "the expression has a type error, there is n
 thedecl reldecls isas me (Left(a,b)) = 
    if null alts
    then fatal 405 "the expression has a type error, there is no declaration for this relation."
-   else if length alts==1
+   else if True -- length alts==1
         then head alts
-         else fatal 408 "the expression has a type error, there cannot be more than one declaration for this relation."
+        else fatal 408 $ "the expression has a type error, there cannot be more than one declaration for this relation."
+                          ++ show (alts,me,(a,b))
    where 
    alts = case me of
      Morph (DRel nm) _ _ -> [d|d@(RelDecl{dtype=(c1,c2)})<-reldecls

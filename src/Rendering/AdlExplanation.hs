@@ -17,8 +17,8 @@ import Options
 explainDecl :: Options -> Declaration -> String
 explainDecl options d
   | explain options d=="NONE" = ""
-  | null (explain options d)  = explainMult options d
-  | otherwise                 = explain options d
+--  | null (explain options d)  = 
+  | otherwise                 = explain options d++"\n"++explainMult options d
 
 explainMult :: Options -> Declaration -> String
 explainMult options d
