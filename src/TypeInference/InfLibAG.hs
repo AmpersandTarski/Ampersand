@@ -1,6 +1,6 @@
 
 
--- UUAGC 0.9.10 (src/TypeInference/InfLibAG.ag)
+-- UUAGC 0.9.10 (src/typeinference/inflibag)
 
 
 module TypeInference.InfLibAG 
@@ -14,7 +14,7 @@ module TypeInference.InfLibAG
   ,TError(..)
   ) where
 {- a module to infer types of expressions of a heterogeneous relation algebra with ISA hierarchy 
- - expressions mustodemprocedure be normalised with the function normalise
+ - expressions must be normalised with the function normalise
  - the relation variables in the expression are bound to a declaration with a type
  - more than one declaration can exist for a relation variable
  - I and V are relation constants with a type (Universe,Universe)
@@ -280,7 +280,14 @@ alts_mph reldecls isas me =
                                           --get the declarations matching the user-defined type
                                      else [Left (specific ua c1 isas,specific ub c2 isas)
                                            |Left (c1,c2)<-alts' nm, isarelated c1 ua isas, isarelated c2 ub isas]
-     Morph _ ut _ -> [Left ut] --constant relations (I and V) have no declaration, use there type as alternative
+     --constant relations (I and V) have no declaration, use there type as alternative iff concepts are in isas
+     Morph _ (ua,ub) _ -> [Left (ua,ub)|defiff]
+           where 
+           defiff = if isarelated ua ua isas 
+                    then if isarelated ub ub isas
+                         then True
+                         else fatal 379 ("Unknown object in user-defined type, add the object to isas: "++show ub)
+                    else fatal 380 ("Unknown object in user-defined type, add the object to isas: "++show ua)
      _ -> fatal 312 "function alts_mph expects relation expressions only."
 
 --------------------------------------------------------------------------------
@@ -380,7 +387,9 @@ thedecl _ _ _ (Right _) = fatal 402 "the expression has a type error, there is n
 thedecl reldecls isas me (Left(a,b)) = 
    if null alts
    then fatal 405 "the expression has a type error, there is no declaration for this relation."
-   else if True -- length alts==1
+   else if length alts==1   
+        --SJO: Gerard, ik heb deze test tijdelijk uitgezet, omdat er dubbelen voorkomen in alts! Er zit dus een fout in.
+        --GMI: Ik heb hem weer aangezet, want als de fatal voorkomt dan zit er een bug in InfLibAG. 
         then head alts
         else fatal 408 $ "the expression has a type error, there cannot be more than one declaration for this relation."
                           ++ show (alts,me,(a,b))

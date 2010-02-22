@@ -22,9 +22,9 @@
                           , "If extra JavaScript is needed, or to get a title,"
                           , "use the $extraheaders argument to pass extra headers"
                           ] ++
-        [ "function writeHead($extraHeaders=\"\"){"
-        , "  ?>"
-        , "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+        [ "session_start();"
+        , "function writeHead($extraHeaders=\"\"){"
+        , "  ?><!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
         , "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
         , "<head>"
         , "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"
@@ -39,8 +39,9 @@
         , "<div id=\"error\"></div>"
         , "<div id=\"container\">"
         , "  <div id=\"header\">"
-        , "    <div id=\"logo\"><a href=\"index.htm\"><img src=\"images/ampersand_logo.jpg\" width=\"165\" height=\"106\""
-                      ++ " alt=\"Ampersand logo\" title=\"Klik hier om terug te gaan naar de startpagina\" /></a></div>"
+    --REMARK GMI -> index.htm is eerder een beheerpagina dan een startpagina.
+    --    , "    <div id=\"logo\"><a href=\"index.htm\"><img src=\"images/ampersand_logo.jpg\" width=\"165\" height=\"106\""
+      --                ++ " alt=\"Ampersand logo\" title=\"Klik hier om terug te gaan naar de startpagina\" /></a></div>"
         , "    <!-- End #logo -->"
         , "    <div id=\"decoration\"></div>"
         , "    <!-- End #decoration -->"
@@ -48,18 +49,15 @@
         , "  <!-- End #header -->"
         , "  <div id=\"menu\">"
         , "    <div class=\"primairy\">"
-        , "      <ul>"
+        , "      <ul><li>"
         ] ++ indentBlock 6 menuItems ++
         
         
--- HJO: Onderstaande is gesneuveld bij het opleuken van de interface. Als het nog 
---      nodig is, sorry voor de brokken. Ik heb de code in commentaar nog staan. 
---      als het niet meer nodig is, dan mag het t.z.t worden geruimd.
---        [ "    <?php if (isset($_SESSION[\"home\"])) { //$_SESSION[\"home\"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas"
---        , "      echo '<LI><A HREF=\"'.$_SESSION[\"home\"].'\" TITLE=\"Back to main page\" class=\"menuItem\" >"
---        , "      Back to main page"
---	, "      </A></LI>';} ?>"
-        [ "      </ul>"
+        [ "    <?php if (isset($_SESSION[\"home\"])) { //$_SESSION[\"home\"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas"
+        , "      echo '<a HREF=\"'.$_SESSION[\"home\"].'\" TITLE=\"Back to main page\" class=\"menuItem\" >"
+        , "      Back to main page"
+	, "      </a>';} ?>"
+        , "      </li></ul>"
         , "    </div>"
         , "    <!-- End .primairy -->"
         , "  </div>"
@@ -124,9 +122,9 @@
         ]
      )
      where
-       menuItems = concat [ [ "<li><a href=\""++name o++".php\" TITLE=\"Toon alle "++name o++"\" class=\"menuItem\">"
+       menuItems = concat [ [ "<a href=\"<?php echo serviceref('"++name o++"');?>\" TITLE=\"Toon alle "++name o++"\" class=\"menuItem\">"
                             , "  "++name o++""
-                            , "</a></li>"
+                            , "</a>"
                             ]
                           | o<-serviceObjects, isOne o
                           ]

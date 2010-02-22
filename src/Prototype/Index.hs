@@ -25,7 +25,7 @@
         , "    <li class=\"buttons\">Use services:"
         , "      <ul>"
         ] ++ indentBlock 8 (concat
-                           [ ["<li><a href=\""++name o++".php?"++(if isOne o then "" else "&new=1")++"\">"
+                     [ ["<li><a href=\""++name fSpec++".php?content="++name o++(if isOne o then "" else "&new=1")++"\">"
                              ,(if isOne o then "  " else "  New ")++name o
                              ,"</a></li>"]
                            | o <- serviceObjects

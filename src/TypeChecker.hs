@@ -475,11 +475,12 @@ popdeclaration :: [Declaration] -> Population ->  Either Declaration String
 popdeclaration ds p = 
    if length allmatches==1 then Left(head allmatches)
    else if null allmatches
-        then Right$"Population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
-                ++ " cannot be related to any relation declaration."
+        then Right$"A relation is missing for population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
+                ++ "."
         else Right$"Population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
                 ++ "can be related to multiple relation declarations:\n" 
                 ++ concat [show x ++ "\n"|x<-allmatches]
+                ++ "Define the type of the population."
     where
     allmatches = [d|d@(Sgn{})<-ds, matches d (popm p)]
     matches d (Mph{mphnm=popnm, mphats=[c1,c2]}) = popnm==name d && c1==source d && c2==target d

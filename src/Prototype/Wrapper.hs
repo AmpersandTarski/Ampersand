@@ -41,10 +41,10 @@
              ++ indentBlock 2 showObjectCode
              ++ [ "if(!$edit) "++
                       if elem "Edit" (actions o)
-                      then "$buttons.=ifaceButton("++selfref++".\"?edit=1\",\"Edit\");"
+                      then "$buttons.=ifaceButton("++selfref++".\"&edit=1\",\"Edit\");"
                       else "$buttons=$buttons;"
                 , "else"
-                , "  $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"?save=1');"
+                , "  $buttons.=ifaceButton(\"JavaScript:save('\"."++selfref++".\"&save=1');"
                                                                                   ++ "\",\"Save\")"
                 , "           .ifaceButton("++selfref++",\"Cancel\");"
                 ]
@@ -94,9 +94,9 @@
       , "?>"
       ]
       where
-        selfref2 objid act = selfref++".\"?"++act++"=1&"++objid++"=\".urlencode($"++objid++"->getId())"
-        selfref1 objid =     selfref++".\"?"++objid++"=\".urlencode($"++objid++"->getId())"
-        selfref = "$_SERVER['PHP_SELF']"
+        selfref2 objid act = "serviceref($_REQUEST['content'], array('"++objid++"'=>urlencode($"++objid++"->getId()),'"++act++"'=>1))"
+        selfref1 objid = "serviceref($_REQUEST['content'], array('"++objid++"'=>urlencode($"++objid++"->getId()) ))"
+        selfref = "serviceref($_REQUEST['content'])"
         phpList2Array :: Int->String->String->ObjectDef->[String]
         phpList2Array depth var rqvar a
          = if not (isUni (objctx a))
@@ -299,7 +299,7 @@
             tot = (isTot(objctx att))
         gotoPages :: ObjectDef->String->[(String,String)]
         gotoPages att idvar
-          = [ (phpIdentifier(name serv)++".php?"++phpIdentifier(name serv)++"='.urlencode("++idvar++").'"
+          = [ ("'.serviceref('"++name serv++"', array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
               ,name serv)
             | serv<-(serviceS fSpec)
             , target (objctx serv) == target (objctx att)

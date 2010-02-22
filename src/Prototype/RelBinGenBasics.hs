@@ -11,7 +11,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    import NormalForms (conjNF,disjNF,simplify)
    import Data.Fspec
    import Data.Plug
-   import List(isPrefixOf)
+   import List(isPrefixOf,sort)
    import Collection (Collection(rd,uni))
    import Auxiliaries (naming)
 --   import Debug.Trace
@@ -504,37 +504,37 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlRelPlugs :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e = rd [ (plug,sf,tf)
                             | plug@PlugSql{}<-plugs fSpec
-                            , (sf,tf)<-sqlPlugFields plug e
+                            , (0,sf,tf)<-(sqlPlugFields plug e) --TODO
                             ] 
-   sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
+   sqlPlugFields :: Plug -> Expression -> [(Int,SqlField,SqlField)]
    sqlPlugFields plug e'
-                = [ (sf,tf)
+              = [ (si+ti,sf,tf)
                   | let fs  = [f|f<-fields plug,target (fldexpr f)==source e']
-                        flds=fs++
+                        flds=zip fs [0|_<-[1..]]++
 -- DAAROM: Waarom (SJ) moeten de volgende I's worden toegevoegd aan flds?
 -- Reden: voor het geval dat er meerdere concepten op dezelfde plug zijn afgebeeld, die niet in de ISA-relatie tot elkaar staan.
-                             [Fld { fldname = "i" -- ++ (show (e',source e',target e',map (source.fldexpr) (fields plug),map (target.fldexpr) (fields plug) ))
+                             [(Fld { fldname = "i" -- ++ (show (e',source e',target e',map (source.fldexpr) (fields plug),map (target.fldexpr) (fields plug) ))
                                   , fldexpr = Tm (mIs c)(-1)
                                   , fldtype = SQLChar 255
                                   , fldnull = False  -- can there be empty field-values?
                                   , flduniq = True   -- are all field-values unique?
                                   , fldauto = False  -- is the field auto increment?
-                                  }
+                                  },1)
                              | c<-rd[source (fldexpr f)| f<-fs]
                              , (Tm (mIs c)(-1)) `notElem` [fldexpr f|f<-fs] ]
                         ft  = [f|f<-fields plug,target (fldexpr f)==target e']
-                        fldt=ft++
-                             [Fld { fldname = "i"
+                        fldt=zip ft [0|_<-[1..]]++
+                             [(Fld { fldname = "i"
                                   , fldexpr = Tm (mIs c) (-1)
                                   , fldtype = SQLChar 255
                                   , fldnull = False  -- can there be empty field-values?
                                   , flduniq = True   -- are all field-values unique?
                                   , fldauto = False  -- is the field auto increment?
-                                  }
+                                  },1)
                              | c<-rd[source (fldexpr f)| f<-ft]
                              , (Tm (mIs c) (-1)) `notElem` [fldexpr f|f<-ft] ]
-                  , sf<-flds
-                  , tf<-fldt
+                  , (sf,si)<-flds
+                  , (tf,ti)<-fldt
                   , let se = fldexpr sf
                         te = fldexpr tf
                   , (  (isTrue.disjNF) (Fu [Cp e', F [flp se,te] ])  --       e' |- se~;te
