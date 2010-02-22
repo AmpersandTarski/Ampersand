@@ -17,6 +17,8 @@ import Version(versionNumber)
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
                        , showVersion   :: Bool
+                       , preVersion    :: String
+                       , postVersion   :: String  --built in to aid DOS scripting... 8-(( Bummer. 
                        , showHelp      :: Bool
                        , verboseP      :: Bool
                        , genPrototype  :: Bool 
@@ -90,6 +92,12 @@ getOptions =
                       , dirExec       = case exePath of
                                           Nothing -> error ("!Fatal (module Options 126): Specify the path location of "++progName++" in your system PATH variable.")
                                           Just s  -> takeDirectory s
+                      , preVersion    = case lookup "CCPreVersion"  env of
+                                          Just str -> str
+                                          Nothing  -> ""
+                      , postVersion   = case lookup "CCPostVersion" env of
+                                          Just str -> str
+                                          Nothing  -> ""
                       , contextName   = Nothing
                       , showVersion   = False
                       , showHelp      = False
@@ -130,8 +138,8 @@ getOptions =
      checkNSetOptionsAndFileNameM :: (Options,[String]) -> IO(Options)
      checkNSetOptionsAndFileNameM (flags,fNames) = 
           if or [showVersion flags, showHelp flags] 
-          then return flags {helpNVersionTexts = ["ADLvs" ++ versionNumber | showVersion flags]
-                                               ++[usageInfo' flags             | showHelp    flags]
+          then return flags {helpNVersionTexts = [preVersion flags++"ADLvs" ++ versionNumber++postVersion flags| showVersion flags]
+                                               ++[usageInfo' flags                                   | showHelp    flags]
                             }
           else case fNames of
                 []      -> error ("no file to parse" ++useHelp)

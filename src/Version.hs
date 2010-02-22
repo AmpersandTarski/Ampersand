@@ -6,14 +6,9 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "0.8.10-612" -- the number behind the last digit is the SVN revision number.
+versionNumber = "0.8.10-613" -- the number behind the last digit is the SVN revision number.
 {-
 SVN Version text:
-Hersteld: 
- + prototypes navigeren op /(name fSpec).php?content=(name o) [php functie serviceref()]
- + session_start()
-
-foutmelding in type checker als concept niet bestaat
-
-wat gespeel met sqlRelPlugs
+op verzoek van Rieks:
+environment variabelen "CCPreVersion" en "CCPostVersion" worden getoond bij --version optie, als ze tenminste bestaan....
 -}
