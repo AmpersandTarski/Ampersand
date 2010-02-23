@@ -26,7 +26,7 @@ where
            Sgn{}     -> decpopu d
            Isn{}     -> [mkPair o o | o<-conts (despc d)]
            Iscompl{} -> [mkPair o o'| o<-conts (despc d), o'<-conts (despc d), o/=o']
-           Vs{}      -> [mkPair o o'| o<-conts (despc d), o'<-conts (despc d)]
+           Vs{}      -> [mkPair o o'| o<-conts (degen d), o'<-conts (despc d)]
 
    instance Populated Morphism where
     contents (Mp1{mph1val=x}) = [mkPair x x]

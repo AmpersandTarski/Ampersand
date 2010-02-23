@@ -132,6 +132,10 @@ printterror _ _ (TErrorU str t)
 -- the type of the root expression is ambiguous
 printterror _ _ (TErrorAmb str ts) 
               = "[2] "++str++"\nPossible types: "++ showtypes "\n\t"  ts++"\n"
+--TError0 ETitle RelAlgObj
+--the object is not defined in isas and not used in env_decls 
+printterror _ _ (TError0 str c) 
+              = "[9] "++str++": "++ show c++"\n"
 --TError1 ETitle RelAlgExpr 
 --the relation expression is not defined in the env_decls
 printterror _ _ (TError1 str (Morph x (Universe,Universe) _)) 

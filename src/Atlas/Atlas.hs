@@ -184,6 +184,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
+              ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents x]
    pop' ATPattern = [[name x,urlString(imgURL pic)]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
    pop' ATPragmaExample = [[example x]|p<-patterns fSpec, x<-declarations p,decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
