@@ -394,10 +394,10 @@
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
                  (ObjectDef,SqlField))]   -- target
    plugAts plug p o = ( [ ((o,sf),(o,tf))
-                        | (_,sf,tf)<-sqlPlugFields plug (Tm(mIs$target$objctx o)(-1))
+                        | (sf,tf)<-sqlPlugFields plug (Tm(mIs$target$objctx o)(-1))
                         ] ++
                         [ ((p,sf),(o,tf))
-                        | (_,sf,tf)<-sqlPlugFields plug $ objctx o
+                        | (sf,tf)<-sqlPlugFields plug $ objctx o
                         ]
                       ) ++ concat (map (plugAts plug o) (noIdents o))
      where noIdents obj = [att | att <- objats obj]--, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
