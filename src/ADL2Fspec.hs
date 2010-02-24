@@ -139,9 +139,11 @@
         dRels = [     morph d | d<-declarations context, decusr d, isInj d]++
                 [flp (morph d)| d<-declarations context, decusr d, not (isInj d) && isUni d]
 --  Step 3: compute maximally total expressions and maximally injective expressions.
---  VRAAG GMI: Moet voor een concept dat 'los staat' (geen attribuut van, en heeft zelf geen attributen)
---             geen service genereerd worden? => SERVICE Concept: I[Concept]
---             VOORBEELD: PATTERN x r::A*B. s::B*C. t::A*C. ENDPATTERN geen multipliciteiten=>serviceGen=[]
+--  DAAROM
+--   (GMI): Moet voor een concept dat 'los staat' (geen attribuut van, en heeft zelf geen attributen)
+--          geen service genereerd worden? => SERVICE Concept: I[Concept]
+--          VOORBEELD: PATTERN x r::A*B. s::B*C. t::A*C. ENDPATTERN geen multipliciteiten=>serviceGen=[]
+
         maxTotExprs = clos cRels
         maxInjExprs = clos dRels
 --  Step 4: generate services from the maximally total expressions and maximally injective expressions.

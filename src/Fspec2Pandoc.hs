@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
-module Fspec2Pandoc (fSpec2Pandoc,laTeXheader)
+module Fspec2Pandoc (fSpec2Pandoc,laTeXtemplate)
 where
 import Char
 import Collection       (Collection (..))
@@ -43,6 +43,137 @@ import Statistics
 --The fourth chapter presents a datamodel together with all the multiplicity rules.
 --The following chapters each present a SERVICE
 --The specification end with a glossary.
+
+-- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
+-- De onderstaande code is een vrij rauwe combinatie van de oude LaTeX header en het
+-- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
+-- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
+-- Wellicht wordt e.e.a. daardoor simpeler.
+laTeXtemplate :: Options->String
+laTeXtemplate flags
+   = chain "\n" (
+     [ "$if(legacy-header)$"
+     , "$legacy-header$"
+     , "$else$"
+     , "\\documentclass[10pt,a4paper]{report}"
+     , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
+     , "\\parindent 0em                      % Width of paragraph indentation."
+     , "\\usepackage{theorem}"
+     ] ++
+     ( case language flags of
+        Dutch   -> [ "\\usepackage[dutch]{babel}"
+                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]"
+                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}" ]
+        _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
+                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
+     )++
+     [ "\\usepackage{amssymb}"
+     , "\\usepackage{amsmath}"
+  --   , "\\usepackage{hyperref}"
+     ] ++
+     ["\\usepackage{graphicx}"                   | graphics flags] ++
+--     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
+     [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
+     , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
+     , "\\newcommand{\\iden}{\\mathbb{I}}"
+     , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+     , "\\newcommand{\\full}{\\mathbb{V}}"
+     , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
+     , "\\newcommand{\\relAdd}{\\dagger}"
+     , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
+     , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+     , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+     , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
+     , "\\newcommand{\\rel}{\\times}"
+     , "\\newcommand{\\compose}{;}"
+     , "\\newcommand{\\subs}{\\vdash}"
+     , "\\newcommand{\\fun}{\\rightarrow}"
+     , "\\newcommand{\\isa}{\\sqsubseteq}"
+     , "\\newcommand{\\N}{\\mbox{\\msb N}}"
+     , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
+     , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\rightarrow\\)}\\id{#3}}"
+     , "\\newcommand{\\signat}[3]{\\mbox{\\({#1}_{[{#2},{#3}]}\\)}}"
+     , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
+     , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\times\\)}\\id{#3}}"
+     , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
+     ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
+     [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
+     , "$if(xetex)$"
+     , "\\usepackage{ifxetex}"
+     , "\\ifxetex"
+     , "  \\usepackage{fontspec,xltxtra,xunicode}"
+     , "  \\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}"
+     , "\\else"
+     , "  \\usepackage[mathletters]{ucs}"
+     , "  \\usepackage[utf8x]{inputenc}"
+     , "\\fi"
+     , "$else$"
+     , "\\usepackage[mathletters]{ucs}"
+     , "\\usepackage[utf8x]{inputenc}"
+     , "$endif$"
+     , "$if(lhs)$"
+     , "\\usepackage{listings}"
+     , "\\lstnewenvironment{code}{\\lstset{language=Haskell,basicstyle=\\small\\ttfamily}}{}"
+     , "$endif$"
+     , "\\setlength{\\parindent}{0pt}"
+     , "\\setlength{\\parskip}{6pt plus 2pt minus 1pt}"
+     , "$endif$"
+     , "$if(verbatim-in-note)$"
+     , "\\usepackage{fancyvrb}"
+     , "$endif$"
+     , "$if(fancy-enums)$"
+     , "\\usepackage{enumerate}"
+     , "$endif$"
+     , "$if(tables)$"
+     , "\\usepackage{array}"
+     , "% This is needed because raggedright in table elements redefines \\\\:"
+     , "\\newcommand{\\PreserveBackslash}[1]{\\let\\temp=\\\\#1\\let\\\\=\\temp}"
+     , "\\let\\PBS=\\PreserveBackslash"
+     , "$endif$"
+     , "$if(strikeout)$"
+     , "\\usepackage[normalem]{ulem}"
+     , "$endif$"
+     , "$if(subscript)$"
+     , "\\newcommand{\\textsubscr}[1]{\\ensuremath{_{\\scriptsize\\textrm{#1}}}}"
+     , "$endif$"
+     , "$if(links)$"
+     , "\\usepackage[breaklinks=true]{hyperref}"
+     , "$endif$"
+     , "$if(url)$"
+     , "\\usepackage{url}"
+     , "$endif$"
+     , "$if(numbersections)$"
+     , "$else$"
+     , "\\setcounter{secnumdepth}{0}"
+     , "$endif$"
+     , "$if(verbatim-in-note)$"
+     , "\\VerbatimFootnotes % allows verbatim text in footnotes"
+     , "$endif$"
+     , "$for(header-includes)$"
+     , "$header-includes$"
+     , "$endfor$"
+     , ""
+     , "$if(title)$"
+     , "\\title{$title$}"
+     , "$endif$"
+     , "\\author{$for(author)$$author$$sep$\\\\$endfor$}"
+     , "$if(date)$"
+     , "\\date{$date$}"
+     , "$endif$"
+     , ""
+     , "\\begin{document}"
+     , "$if(title)$"
+     , "\\maketitle"
+     , "$endif$"
+     , ""
+     , "$if(toc)$"
+     , "\\tableofcontents"
+     , ""
+     , "$endif$"
+     , "$body$"
+     , ""
+     , "\\end{document}"
+     ])
 
 laTeXheader :: Options->String
 laTeXheader flags

@@ -16,20 +16,10 @@ import XML.ShowXMLtiny        (showXML)
 import Calc                   (deriveProofs)
 import Prototype.ObjBinGen    (phpObjServices)
 import Adl
-import Fspec2Pandoc           (fSpec2Pandoc,laTeXheader)
+import Fspec2Pandoc           (fSpec2Pandoc,laTeXtemplate)
 import Atlas.Atlas
 import Data.List              (isInfixOf)
-import Text.Pandoc            ( defaultWriterOptions
-                              , prettyPandoc
-                              , writerStandalone
-                              , writerTemplate
-                              , writerTableOfContents
-                              , writerNumberSections
-                              , writeLaTeX
-                              , writeRTF
-                              , writeOpenDocument
-                              , writeHtmlString
-                              )
+import Text.Pandoc
 import Picture
 
 generate :: Options -> Fspc -> IO ()
@@ -45,7 +35,6 @@ generate flags fSpec =
         [ prove        fSpec flags | proofs       flags] ++
         [ verbose flags "Done."]
        ) 
-
 
 serviceGen :: Fspc -> Options -> IO()
 serviceGen    fSpec flags
@@ -127,19 +116,19 @@ doGenFspec fSpec flags
                             writeFile outputFile (prettyPandoc thePandoc)
               FRtf    -> do verboseLn flags "Generating Rich Text Format file."
                             writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
-              FLatex  -> do verboseLn flags "Generating LaTeX file."
-                            --REMARK -> notice usage of fromJust
+              FLatex  -> do --REMARK -> notice usage of fromJust
                             exists <- case texHdrFile flags of
                                          Just x -> doesFileExist x
                                          Nothing -> return False
                             header <- if exists 
                                       then readFile (fromJust$texHdrFile flags)
-                                      else return (laTeXheader flags)
-                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate =header} thePandoc)
-              FHtml   -> do verboseLn flags "Generating Html file."
+                                      else return (laTeXtemplate flags)
+                            verboseLn flags ("Generating to LaTeX: "++outputFile++"\n (header: "++take 100 header++"0")
+                            writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=header} thePandoc)
+              FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
                             writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
               FOpenDocument 
-                      -> do verboseLn flags "Generating OpenDocument file."
+                      -> do verboseLn flags ("Generating to Open Document Format: "++outputFile)
                             writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
            where 
               ourDefaultWriterOptions = defaultWriterOptions
@@ -155,7 +144,7 @@ doGenFspec fSpec flags
                                            (if nrOfRounds>1 then show nrOfRounds++" times" else "once")++
                                            case ready of
                                               True  -> "."
-                                              False -> ", but did not solve all refferences!")                          
+                                              False -> ", but did not solve all references!")                          
             where 
 --              removeOldFiles :: IO()
 --              removeOldFiles

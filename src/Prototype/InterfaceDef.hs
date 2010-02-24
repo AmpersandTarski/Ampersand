@@ -12,8 +12,6 @@
         [ "<?php"
         , "// interfaceDef.inc.php"
         , "// Generated with "++ versionbanner
-        , "// Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009"
-        , "//                   restyled by Milan van Bruggen (c) Oct 2009"
         , ""
         , "// this file contains large chunks of HTML code to improve code readability and reuse"
         , ""
@@ -74,7 +72,7 @@
         , "  </div>"
         , "  <!-- End #buttons -->"
         , "  <div id=\"notice\">"
-        , "    <span title=\"&copy; Sebastiaan JC Joosten 2005-2010, generated with "++versionbanner++"\">Layout V2.0 alpha</span>"
+        , "    <span title=\"generated with "++versionbanner++"\">Layout V3.0 (Milan Interface)</span>"
         , "  </div>"
         , "  <!-- End #notice -->"
         , "<!-- ********** Javascript ********** -->"

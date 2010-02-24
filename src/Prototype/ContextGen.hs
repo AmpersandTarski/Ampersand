@@ -10,7 +10,7 @@
      (
         [ "// "++name fspc++".php"
         , "// Generated with "++ versionbanner
-        , "// Prototype interface design by Sebastiaan JC Joosten (c) Aug 2009"
+        , "// Prototype interface design by Milan van Bruggen and Sebastiaan J.C. Joosten"
         , ""
         , ""
         , "error_reporting(E_ALL); "
