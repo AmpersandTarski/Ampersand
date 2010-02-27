@@ -92,13 +92,12 @@ doGenFspec fSpec flags
      verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)                     >>
      makeOutput                                                                               >>
      verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".") >>
-     (if graphics flags 
-          then foldr1 (>>) [ writePicture flags p| p<-thePictures] 
-          else verboseLn flags "No graphics generated." )                                      >>
-     (case fspecFormat flags of
-       FLatex  ->  makePdfFile
-       _ -> verboseLn flags "Done."
-     ) 
+     when (genGraphics flags) (foldr1 (>>) [ writePicture flags p| p<-thePictures] )          >>
+     -- preprocessing of the generated output file depends on the format:
+     case fspecFormat flags of   
+       FLatex  -> makePdfFile
+       _       -> return()
+      
 
        where
          outputFile = replaceExtension (combine (dirOutput flags) (baseName flags)) 
@@ -123,6 +122,7 @@ doGenFspec fSpec flags
                             header <- if exists 
                                       then readFile (fromJust$texHdrFile flags)
                                       else return (laTeXtemplate flags)
+                            verboseLn flags ("Generating to LaTeX: "++outputFile) -- ++"\n (header: "++take 100 header++"0")
                             verboseLn flags ("Generating to LaTeX: "++outputFile)
                             writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=header} thePandoc)
               FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)

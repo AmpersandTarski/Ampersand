@@ -52,13 +52,21 @@ import Statistics
 laTeXtemplate :: Options->String
 laTeXtemplate flags
    = chain "\n" (
-     [ "$if(legacy-header)$"
-     , "$legacy-header$"
-     , "$else$"
-     , "\\documentclass[10pt,a4paper]{report}"
-     , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
-     , "\\parindent 0em                      % Width of paragraph indentation."
+     [ "% This header is the default LaTeX template for generating documents with Ampersand."
+     , "% It was generated with "++versionbanner
+     , "% You can modify this file to make it fit your needs. However, the required knowledge of "
+     , "% LaTeX is not documented here. You can find help with that at http://en.wikibooks.org/wiki/LaTeX"
+     , "% see the ampersand user guide (TODO) for more information on how to apply your own LaTeX header"
+     , "%"
+     , "\\documentclass[10pt,a4paper]{report}              % Define the document class"
+     , "\\parskip 12pt plus 2.5pt minus 4pt                % Extra vertical space between paragraphs."
+     , "\\parindent 0em                                    % Width of paragraph indentation."
+     , ""
+     , "% -- pachages used for several purposes:"
      , "\\usepackage{theorem}"
+     , "\\usepackage{amssymb}"
+     , "\\usepackage{amsmath}       % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
+  --   , "\\usepackage{hyperref}"
      ] ++
      ( case language flags of
         Dutch   -> [ "\\usepackage[dutch]{babel}"
@@ -67,11 +75,7 @@ laTeXtemplate flags
         _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
                    , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
      )++
-     [ "\\usepackage{amssymb}"
-     , "\\usepackage{amsmath}"
-  --   , "\\usepackage{hyperref}"
-     ] ++
-     ["\\usepackage{graphicx}"                   | graphics flags] ++
+     ["\\usepackage{graphicx}"                   | useGraphics flags] ++
 --     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
      [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
      , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
@@ -119,7 +123,6 @@ laTeXtemplate flags
      , "$endif$"
      , "\\setlength{\\parindent}{0pt}"
      , "\\setlength{\\parskip}{6pt plus 2pt minus 1pt}"
-     , "$endif$"
      , "$if(verbatim-in-note)$"
      , "\\usepackage{fancyvrb}"
      , "$endif$"
@@ -480,11 +483,13 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     iterat [] _ _ _ = []
     iterat (pat:ps) i seenConcepts seenDeclarations
      = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
-       ++ (if not (graphics flags) then [] else 
-            (case language flags of             -- announce the conceptual diagram
-             Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptuele analyse van dit thema."]] ]
-             English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual analysis of this theme."]] ]
-            ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
+       ++ (if (useGraphics flags) 
+            then 
+              (case language flags of             -- announce the conceptual diagram
+                Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptuele analyse van dit thema."]] ]
+                English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual analysis of this theme."]] ]
+              ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
+            else []
           )
        ++ (if null blocks then [] else [DefinitionList blocks])
        , pict):  iterat ps i'' seenCss seenDss
@@ -567,11 +572,13 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
   daContents = 
    (case language flags of
      Dutch   -> [Para $
-                  ( if not (graphics flags) then [] else
-                     [ Str $ "De eisen, die in hoofdstuk "
-                     , xrefReference chpFRlabel
-                     , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
-                     , xrefReference (figlabel classDiagramPicture) ]
+                  ( if (useGraphics flags) 
+                     then 
+                       [ Str $ "De eisen, die in hoofdstuk "
+                       , xrefReference chpFRlabel
+                       , Str $ " beschreven zijn, zijn in een gegevensanalyse vertaald naar het klassediagram van figuur "
+                       , xrefReference (figlabel classDiagramPicture) ]
+                     else []
                   )++
                   [ Str $ ". Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
                   , Str $ " "++count flags (length (assocs classDiagram)) "associatie"++","
@@ -784,9 +791,9 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
 serviceChap :: Int -> Fspc -> Options -> Fservice ->  ([Block],[Picture])
 serviceChap lev fSpec flags svc
  = ( header ++ svcIntro
-      ++ (if graphics flags then txtKnowledgeGraph else [])
+      ++ (if useGraphics flags then txtKnowledgeGraph else [])
       ++ svcFieldTables
-      ++ (if graphics flags && flgSwitchboard flags then txtSwitchboard else [])
+      ++ (if useGraphics flags && flgSwitchboard flags then txtSwitchboard else [])
    , [picKnowledgeGraph]++[picSwitchboard| flgSwitchboard flags]
    )
  where

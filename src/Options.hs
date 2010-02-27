@@ -13,6 +13,7 @@ import Time
 import Control.Monad
 import Strings               (chain)
 import Version(versionNumber)
+import Maybe
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
@@ -31,7 +32,8 @@ data Options = Options { contextName   :: Maybe String
                        , genXML        :: Bool
                        , genFspec      :: Bool
                        , fspecFormat   :: FspecFormat
-                       , graphics      :: Bool   -- if True, graphics will be generated in the functional spec.
+                       , genGraphics   :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
+                       , useGraphics   :: Bool   -- if True, graphics will be used in the generated products. 
                        , flgSwitchboard:: Bool   -- if True, switchboard graphics will be generated in the functional spec.
                        , proofs        :: Bool
                        , haskell       :: Bool
@@ -74,30 +76,16 @@ getOptions =
               env <- getEnvironment
               return
                Options{ genTime                = clocktime
-                      , dirAtlas      = case lookup envdirAtlas     env of
-                                          Just str -> str
-                                          Nothing  -> "."
-                      , dirOutput     = case lookup envdirOutput    env of
-                                          Just str -> str
-                                          Nothing  -> "."
-                      , dirPrototype  = case lookup envdirPrototype env of
-                                          Just str -> str
-                                          Nothing  -> "."
-                      , dbName        = case lookup envdbName       env of
-                                          Just str -> str
-                                          Nothing  -> ""
-                      , logName       = case lookup envlogName      env of
-                                          Just str -> str
-                                          Nothing  -> "ADL.log"
+                      , dirAtlas      = fromMaybe "."       (lookup envdirAtlas     env)
+                      , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
+                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env)
+                      , dbName        = fromMaybe ""        (lookup envdbName       env)
+                      , logName       = fromMaybe "ADL.log" (lookup envlogName      env)
                       , dirExec       = case exePath of
                                           Nothing -> error ("!Fatal (module Options 126): Specify the path location of "++progName++" in your system PATH variable.")
                                           Just s  -> takeDirectory s
-                      , preVersion    = case lookup "CCPreVersion"  env of
-                                          Just str -> str
-                                          Nothing  -> ""
-                      , postVersion   = case lookup "CCPostVersion" env of
-                                          Just str -> str
-                                          Nothing  -> ""
+                      , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
+                      , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
                       , contextName   = Nothing
                       , showVersion   = False
                       , showHelp      = False
@@ -110,7 +98,8 @@ getOptions =
                       , genXML        = False
                       , genFspec      = False 
                       , fspecFormat   = error ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
-                      , graphics      = True
+                      , genGraphics   = True
+                      , useGraphics   = True
                       , flgSwitchboard= False
                       , proofs        = False
                       , haskell       = False
@@ -267,19 +256,13 @@ verbosephpOpt  :: Options -> Options
 verbosephpOpt opts = opts{verbosephp  = True}          
 prototypeOpt :: Maybe String -> Options -> Options
 prototypeOpt nm opts 
-  = opts { dirPrototype = case nm of
-                            Just s  -> s
-                            Nothing -> dirPrototype opts
+  = opts { dirPrototype = fromMaybe (dirPrototype opts) nm
          , genPrototype = True}
 atlasOpt     :: Maybe String -> Options -> Options
 atlasOpt nm opts 
-  = opts { dirAtlas =  case nm of
-                            Just s  -> s
-                            Nothing -> dirAtlas opts
-         , dirOutput =  case nm of
-                            Just s  -> s
-                            Nothing -> dirAtlas opts
-         , genAtlas = True}
+  = opts { dirAtlas     = fromMaybe (dirAtlas opts) nm
+         , dirOutput    = fromMaybe (dirAtlas opts) nm
+         , genAtlas     = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 dbNameOpt :: String -> Options -> Options
@@ -307,7 +290,7 @@ allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 switchboardOpt :: Options -> Options
 switchboardOpt opts = opts{flgSwitchboard = True}
 noGraphicsOpt :: Options -> Options
-noGraphicsOpt  opts = opts{graphics      = False}
+noGraphicsOpt  opts = opts{genGraphics    = False}
 proofsOpt :: Options -> Options
 proofsOpt       opts = opts{proofs       = True}
 servicesOpt :: Options -> Options

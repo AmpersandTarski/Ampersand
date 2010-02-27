@@ -95,9 +95,10 @@ iscpttable tbl = elem tbl [tableid t|t<-tables, head(columns t)=="i"]
 --hdbc and hdbc-odbc must be installed (from hackage)
 fillAtlas :: Fspc -> Options -> IO()
 fillAtlas fSpec flags = 
- if not(graphics flags) then do initDatabase flags fSpec
- else do verboseLn flags "Generating pictures for atlas..."
+ if genGraphics flags 
+ then do verboseLn flags "Generating pictures for atlas..."
          sequence_ [writePicture flags pict | pict <- picturesForAtlas flags fSpec]
+ else do initDatabase flags fSpec
 -- Van Han aan Gerard: 
 -- Hieronder vind je de code om het plaatje als imagemap te genereren. Dat is nu dus geregeld.
 -- Vervolgens moet je er nog voor zorgen dat de imagemap op de juiste manier wordt gebruikt. Daarvoor

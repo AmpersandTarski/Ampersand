@@ -15,6 +15,7 @@ where
   import Adl
   import Collection            (rd)
   import FPA
+  import Maybe
   
   type Plugs = [Plug]
   data Plug = PlugSql { fields   :: [SqlField]
@@ -38,10 +39,14 @@ where
   data ActionType = Create | Read | Update | Delete deriving (Show)
 
   field :: String->Expression->(Maybe SqlType)->Bool->Bool->SqlField
-  field nm expr Nothing   nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=fldtyp (target expr),fldnull=nul,flduniq=uniq
-                                         ,fldauto = (fldtyp (target expr)==SQLId) && not nul && uniq && isIdent expr}
-  field nm expr (Just tp) nul uniq = Fld {fldname = nm, fldexpr=expr, fldtype=tp,fldnull=nul,flduniq=uniq
-                                         ,fldauto = (tp==SQLId) && not nul && uniq && isIdent expr}
+  field nm expr maybeTp nul uniq = Fld { fldname = nm
+                                       , fldexpr = expr
+                                       , fldtype = typ
+                                       , fldnull = nul
+                                       , flduniq = uniq
+                                       , fldauto = (typ==SQLId) && not nul && uniq && isIdent expr
+                                       }
+                             where typ = fromMaybe (fldtyp (target expr)) maybeTp
   
   instance Identified PhpValue where
      name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> name x}
