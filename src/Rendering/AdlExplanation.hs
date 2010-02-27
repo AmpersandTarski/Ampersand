@@ -6,7 +6,7 @@ import Adl
 import Data.Fspec
 import Collection (Collection ((>-)))
 import Char (toLower)
-import Strings (unCap)
+import Strings (unCap, upCap, firstCaps)
 import Languages(Lang(Dutch,English),plural)
 import PredLogic (showPredLogic, applyM)
 import Options
@@ -50,7 +50,9 @@ explainMult options d
                                                           ++applyM d "b" "a"++"."
          | null ([    Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste "++preciesEen++" "++(unCap.name.target) d)++"."
          | null ([Uni            ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("nul of "++preciesEen++" "++(unCap.name.target) d)++"."
-         | otherwise                                    = "De zin: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' heeft betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" "++(var [].source) d++" en een "++(unCap.name.target) d++" "++(var [source d].target) d++"."
+         | otherwise                                    = if null (explain options d)
+                                                          then "De zin: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' heeft betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" "++(var [].source) d++" en een "++(unCap.name.target) d++" "++(var [source d].target) d++"."
+                                                          else "Dus heeft de zin: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" "++(var [].source) d++" en een "++(unCap.name.target) d++" "++(var [source d].target) d++"."
        explMult English
          | null ([Sym,Asy]         >- multiplicities d) = name d++" is a property of "++(unCap.plural English .name.source) d++"."
          | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is an equivalence relation on "++(unCap.plural English .name.source) d++"."
@@ -84,8 +86,16 @@ explainMult options d
                                                           ++applyM d "b" "a"++"."
          | null ([    Tot        ] >- multiplicities d) = applyM d ("Every "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)++"."
          | null ([Uni            ] >- multiplicities d) = applyM d ("Every "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
-         | otherwise                                    = "The sentence: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' is meaningful (i.e. it is either true or false) for any "++(unCap.name.source) d++" "++(var [].source) d++" and "++(unCap.name.target) d++" "++(var [source d].target) d++"."
+         | otherwise                                    = (if null (explain options d)
+                                                           then "The sentence: "
+                                                           else "So, the sentence: ")++
+                                                          doublequote (upCap (applyM d ((unCap.firstCaps.name.source) d++" "++(var [].source) d) ((unCap.firstCaps.name.target) d++" "++(var [source d].target) d)))++
+                                                          " is meaningful (i.e. it is either true or false) "++
+                                                          "for any "++(unCap.name.source) d++" "++(var [].source) d++" and "++
+                                                          (unCap.name.target) d++" "++(var [source d].target) d++"."
        preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
+
+doublequote str = "``"++str++[' '|last str=='\'']++"''"
 
 var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs
 var seen c = low c ++ ['\''| c'<-seen, low c == low c']

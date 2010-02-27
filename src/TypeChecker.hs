@@ -292,20 +292,10 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   --          may have different numbers.
   --          infertype_and_populate :: (Morphism -> Morphism) -> Concepts -> Gens -> Declarations -> Expression -> Either (InfType, Expression) String    popuMphDecl
 
-   --normExpr in Rule.hs heeft een speciale behandeling voor signals, WAAROM GMI?
-  ruleexpr :: Rule -> Expression
-  ruleexpr rule
-  --  | isSignal rule      = v (sign rule)
-    | ruleType rule==Truth = consequent rule
-    | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
-    | ruleType rule==Equivalence = Fi [ Fu [    antecedent rule , Cp (consequent rule)]
-                                      , Fu [Cp (antecedent rule),     consequent rule ]]
-    | otherwise          = error("!Fatal (module TypeChecker 335): Cannot make an expression of "++show rule)
-
-   --DESCR -> the expression must have the same structure as (ruleexpr rule)
+   --DESCR -> the expression must have the same structure as (normExpr rule)
   ruleexpr_inv :: Rule -> Expression -> Rule
   ruleexpr_inv rule x
-   -- | ruleexpr rule == x 
+   -- | normExpr rule == x 
       = case x of 
         Fu [Cp a, c] -> if rrsrt rule==Implication then rule{rrant=a,rrcon=c} else err
         Fi [Fu [a, Cp c], Fu [Cp _,_]] -> if --a==a' && c==c' && 
@@ -314,7 +304,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
         _ -> if rrsrt rule==Truth then rule{rrcon=x} else err
    -- | otherwise = err
     where 
-    err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not ruleexpr of rule "++show rule)
+    err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not normExpr of rule "++show rule)
 
   bindRule :: Rule -> Either Rule (String,FilePos,OrigExpr)
   bindRule r@(Ru{}) = 
@@ -322,7 +312,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
      then Left$ (bindexpr){rrtyp=(c1,c2), srrel=signaldecl}
      else Right (err,rrfps r,OrigRule r) 
      where
-     inf_r = enrich_expr (ruleexpr r)
+     inf_r = enrich_expr (normExpr r)
      bindexpr = case inf_r of
        Left (_,inf_expr) -> ruleexpr_inv r inf_expr
        _ -> r

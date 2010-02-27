@@ -99,7 +99,7 @@ where
 
    normExpr :: Rule -> Expression
    normExpr rule
-    | isSignal rule      = v (sign rule)
+--    | isSignal rule      = v (sign rule)   -- obsolete (seems silly, in retrospect. normExpr should simply produce the expression.)
     | ruleType rule==Truth = consequent rule
     | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
     | ruleType rule==Equivalence = Fi [ Fu [    antecedent rule , Cp (consequent rule)]

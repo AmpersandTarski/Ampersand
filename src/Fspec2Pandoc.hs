@@ -74,7 +74,9 @@ laTeXtemplate flags
      ["\\usepackage{graphicx}"                   | graphics flags] ++
 --     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
      [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
-     , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
+     , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
+     , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
+     , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
      , "\\newcommand{\\iden}{\\mathbb{I}}"
      , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
      , "\\newcommand{\\full}{\\mathbb{V}}"
@@ -174,53 +176,6 @@ laTeXtemplate flags
      , ""
      , "\\end{document}"
      ])
-
-laTeXheader :: Options->String
-laTeXheader flags
-   = chain "\n" (
-     [ "\\documentclass[10pt,a4paper]{report}"
-     , "\\parskip 10pt plus 2.5pt minus 4pt  % Extra vertical space between paragraphs."
-     , "\\parindent 0em                      % Width of paragraph indentation."
-     , "\\usepackage{theorem}"
-     ] ++
-     ( case language flags of
-        Dutch   -> [ "\\usepackage[dutch]{babel}"
-                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]"
-                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}" ]
-        _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
-                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
-     )++
-     [ "\\usepackage{amssymb}"
-     , "\\usepackage{amsmath}"
-  --   , "\\usepackage{hyperref}"
-     ] ++
-     ["\\usepackage{graphicx}"                   | graphics flags] ++
---     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
-     [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
-     , "\\def\\define#1{\\label{dfn:#1}{\\em #1}}"
-     , "\\newcommand{\\iden}{\\mathbb{I}}"
-     , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
-     , "\\newcommand{\\full}{\\mathbb{V}}"
-     , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
-     , "\\newcommand{\\relAdd}{\\dagger}"
-     , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
-     , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
-     , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
-     , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
-     , "\\newcommand{\\rel}{\\times}"
-     , "\\newcommand{\\compose}{;}"
-     , "\\newcommand{\\subs}{\\vdash}"
-     , "\\newcommand{\\fun}{\\rightarrow}"
-     , "\\newcommand{\\isa}{\\sqsubseteq}"
-     , "\\newcommand{\\N}{\\mbox{\\msb N}}"
-     , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
-     , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\rightarrow\\)}\\id{#3}}"
-     , "\\newcommand{\\signat}[3]{\\mbox{\\({#1}_{[{#2},{#3}]}\\)}}"
-     , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
-     , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\times\\)}\\id{#3}}"
-     , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
-     ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
-     [ "%  -- end of header. Use 'ADL --headerfile myHeader.tex' to replace the previous by your own header file." ] )
 
 chpintrolabel :: String
 chpintrolabel="chpIntro"
@@ -354,12 +309,10 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 [ Str "Chapters that follow have the builders of ", Str (name fSpec), Str " as their intended audience. "
                 , Str "The data analysis in chapter "
                 , xrefReference chpDAlabel
-                , Str " describes the data sets upon which . ", Str (name fSpec), Str " is built. "
-                , Str "One service is described in a self contained way in a chapter of its own, ensuring that builders can focus on building a single service at a time. "
-                , Str "Together, these service fulfill all commitments from chapter ", xrefReference chpFRlabel
-                , Str ". This means to prevent that rules are violated, "
-                , Str "to signal violations to people in order to let them intervene, "
-                , Str "or to restore a rule by means of automatic actions in the database."]]  
+                , Str " describes the data sets upon which ", Str (name fSpec), Str " is built. "
+                , Str "Each service is described in a self contained way in a chapter of its own, ensuring that builders can focus on building a single service at a time. "
+                , Str "Together, these services fulfill all commitments from chapter ", xrefReference chpFRlabel, Str ". "
+                ]]  
 ------------------------------------------------------------
 designPrinciples :: Int -> Fspc -> Options ->  [Block]
 designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
@@ -408,82 +361,89 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                      , Str "All following chapters are technical and are meant for builders, testers and auditors. "
                      ]]
 
+  dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
+  dpRule (r:rs) n seenConcs seenDeclarations
+   = ( [ [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))] |(c,cd)<-cds]++
+       [ [Para [symReqLabel d, Str$ explainDecl flags d]] |d<-nds] ++
+       [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
+     , n'
+     , seenCs
+     , seenDs
+     )
+     where
+      ncs    = concs r >- seenConcs                          -- all concepts that are used for the first time
+      cds    = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]   -- lookup their concept definitions, where available
+      nds    = decls r >- seenDeclarations                   -- all declarations that are used for the first time
+      seenCs = concs r `uni` seenConcs
+      seenDs = decls r `uni` seenDeclarations
+      n' = n+length cds+length nds+1
+      ( dpNext, _, _, _) = dpRule rs n' seenCs seenDs
+
   dpRequirements :: [Block]
-  dpRequirements = dpSections (rd (map r_pat (rules fSpec++signals fSpec))) [] [] 1
+  dpRequirements
+   = dpSections dpRule (rd (map r_pat (rules fSpec++signals fSpec))) [] [] 1
+     where
   --TODO -> It may be nice to print the class of the dataset from the class diagram
-  dpSections [] _ _ _ = []
-  dpSections (thm:thms)     -- The name of the patterns that are used in this specification.
-             seenConcepts   -- All concepts that have been defined in earlier sections
-             seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
-             i              -- unique definition numbers (start at 1)
-   = if emptySection then [] else [Header (lev+1) [Str thm]]  --new section to explain this theme
-     ++ sctConcepts  -- tells which new concepts are introduced in this section.
-     ++ [ OrderedList (i, Decimal, DefaultDelim) (sctRules ++ sctSignals)| not (null (sctRules ++ sctSignals)) ]   -- tells which rules and signals are being introduced
-     ++ dpSections thms (seenCss++newConcepts) (seenDss++newRelations) i''
-    where
-     emptySection = null newConcepts && null (sctRules ++ sctSignals)
-     (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenRelations
-     (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
-     conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]  -- show only those definitions that are actually used in this specification.
-     patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
-     patSignals   = [s| s<-signals fSpec, r_pat s==thm]
-     newConcepts  = concs (patRules++patSignals) >- seenConcepts
-     newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
-     dpRule [] j' seenConcs seenDeclarations = ([], j', seenConcs, seenDeclarations)
-     dpRule (r:rs) j' seenConcs seenDeclarations
-      = ( [ [Para [symDefLabel c], makeDefinition flags (name c) (cddef cd)] |(c,cd)<-cds]++
-          [ [Para [symReqLabel d, Str$ explainDecl flags d]] |d<-nds] ++
-          [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
-        , j
-        , seenCs
-        , seenDs
-        )
+      dpSections _ [] _ _ _ = []
+      dpSections dpRul          -- a function that assembles the text for one rule.
+                 (thm:thms)     -- The name of the patterns that are used in this specification.
+                 seenConcepts   -- All concepts that have been defined in earlier sections
+                 seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
+                 i              -- unique definition numbers (start at 1)
+       = if emptySection then [] else [Header (lev+1) [Str thm]]  --new section to explain this theme
+         ++ sctConcepts  -- tells which new concepts are introduced in this section.
+         ++ [ OrderedList (i, Decimal, DefaultDelim) (sctRules ++ sctSignals)| not (null (sctRules ++ sctSignals)) ]   -- tells which rules and signals are being introduced
+         ++ dpSections dpRul thms (seenCss++newConcepts) (seenDss++newRelations) i''
         where
-         cds = [(c,cd)| (c,cd)<-conceptdefs, c `elem` ncs]
-         ncs = concs r >- seenConcs
-         nds = decls r >- seenDeclarations
-         ( dpNext, j, seenCs,  seenDs ) = dpRule rs (j'+length cds+length nds+1) (concs r `uni` seenConcs) (decls r `uni` seenDeclarations)
-     sctConcepts
-      = if null newConcepts then [] else
-          case language flags of
-           Dutch   ->  [ Para $ (case [name c|(c,_)<-conceptdefs, c `elem` newConcepts] of
-                                  []  -> []
-                                  [c] -> [ Str $ "Deze sectie introduceert het concept "
-                                         , Str $ c
-                                         , Str $ ". "]
-                                  cs  -> [ Str $ "Deze sectie introduceert de concepten "
-                                         , Str $ commaNL "en" cs
-                                         , Str $ ". "]
-                                )++
-                                (case [name c| c<-newConcepts, c `notElem` [c'| (c',_)<-conceptdefs]] of
-                                  []  -> []
-                                  [c] -> [ Str $ "Concept "
-                                         , Str $ c
-                                         , Str $ " wordt in deze sectie geintroduceerd zonder definitie. "]
-                                  cs  -> [ Str $ "Deze sectie introduceert concepten "
-                                         , Str $ commaNL "en" cs
-                                         , Str $ " zonder definitie. "]
-                                )
-                       ]
-           English ->  [ Para $ (case [name c|(c,_)<-conceptdefs, c `elem` newConcepts] of
-                                  []  -> []
-                                  [c] -> [ Str $ "This section introduces concept "
-                                         , Str $ c
-                                         , Str $ ". "]
-                                  cs  -> [ Str $ "This section introduces concepts "
-                                         , Str $ commaEng "and" cs
-                                         , Str $ ". "]
-                                )++
-                                (case [name c| c<-newConcepts, c `notElem` [c'| (c',_)<-conceptdefs]] of
-                                  []  -> []
-                                  [c] -> [ Str $ "Concept "
-                                         , Str $ c
-                                         , Str $ " is introduced in this section without a definition."]
-                                  cs  -> [ Str $ "This section introduces concepts "
-                                         , Str $ commaEng "and" cs
-                                         , Str $ " without definition. "]
-                                )
-                       ]
+         emptySection = null newConcepts && null (sctRules ++ sctSignals)
+         (sctRules,   i',  seenCrs, seenDrs) = dpRul patRules i seenConcepts seenRelations
+         (sctSignals, i'', seenCss, seenDss) = dpRul patSignals i' seenCrs seenDrs
+         conceptdefs  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]  -- show only those definitions that are actually used in this specification.
+         patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
+         patSignals   = [s| s<-signals fSpec, r_pat s==thm]
+         newConcepts  = concs (patRules++patSignals) >- seenConcepts
+         newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
+         sctConcepts
+          = if null newConcepts then [] else
+              case language flags of
+               Dutch   ->  [ Para $ (case [name c|(c,_)<-conceptdefs, c `elem` newConcepts] of
+                                      []  -> []
+                                      [c] -> [ Str $ "Deze sectie introduceert het concept "
+                                             , Str $ c
+                                             , Str $ ". "]
+                                      cs  -> [ Str $ "Deze sectie introduceert de concepten "
+                                             , Str $ commaNL "en" cs
+                                             , Str $ ". "]
+                                    )++
+                                    (case [name c| c<-newConcepts, c `notElem` [c'| (c',_)<-conceptdefs]] of
+                                      []  -> []
+                                      [c] -> [ Str $ "Concept "
+                                             , Str $ c
+                                             , Str $ " wordt in deze sectie geintroduceerd zonder definitie. "]
+                                      cs  -> [ Str $ "Deze sectie introduceert concepten "
+                                             , Str $ commaNL "en" cs
+                                             , Str $ " zonder definitie. "]
+                                    )
+                           ]
+               English ->  [ Para $ (case [name c|(c,_)<-conceptdefs, c `elem` newConcepts] of
+                                      []  -> []
+                                      [c] -> [ Str $ "This section introduces concept "
+                                             , Str $ c
+                                             , Str $ ". "]
+                                      cs  -> [ Str $ "This section introduces concepts "
+                                             , Str $ commaEng "and" cs
+                                             , Str $ ". "]
+                                    )++
+                                    (case [name c| c<-newConcepts, c `notElem` [c'| (c',_)<-conceptdefs]] of
+                                      []  -> []
+                                      [c] -> [ Str $ "Concept "
+                                             , Str $ c
+                                             , Str $ " is introduced in this section without a definition."]
+                                      cs  -> [ Str $ "This section introduces concepts "
+                                             , Str $ commaEng "and" cs
+                                             , Str $ " without definition. "]
+                                    )
+                           ]
      
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
@@ -514,10 +474,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
    )
 
   caSections :: [Pattern] -> [([Block],Picture)]
-  caSections pats = iterat 1 pats
+  caSections pats = iterat pats 1 [] []
    where
-    iterat :: Int -> [Pattern] -> [([Block],Picture)]
-    iterat n (pat:ps)
+    iterat :: [Pattern] -> Int -> [Concept] -> [Declaration] -> [([Block],Picture)]
+    iterat [] _ _ _ = []
+    iterat (pat:ps) i seenConcepts seenDeclarations
      = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
        ++ (if not (graphics flags) then [] else 
             (case language flags of             -- announce the conceptual diagram
@@ -525,21 +486,70 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
              English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual analysis of this theme."]] ]
             ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
           )
-       ++ (if null (themerules pat) then [] else [DefinitionList (themerules pat)])
-       , pict):  iterat (n+length (themerules pat)) ps
-       where pict = makePicture flags fSpec pat   -- the Picture that represents this service's knowledge graph
---             pGph = toDot fSpec flags pat                         -- the DotGraph String that represents this service's knowledge graph
---             pStr = printDotGraph pGph                            -- the String that represents this service's knowledge graph
-    iterat _ [] = []
-    --query copied from FSpec.hs revision 174
-    themerules  :: Pattern -> [([Inline], [[Block]])]
-    themerules pat = [ ( [Str (name r)]
-                       , [ [ Plain [Str (explainRule flags r)]
-                           , Plain [Math DisplayMath $ showMathcode fSpec r, symDefLabel r] -- TODO: equation van maken met nummer, om naar te refereren.
-                         ] ]
-                       )
-                     |r<-rules pat]
-    
+       ++ (if null blocks then [] else [DefinitionList blocks])
+       , pict):  iterat ps i'' seenCss seenDss
+       where
+         pict = makePicture flags fSpec pat   -- the Picture that represents this service's knowledge graph
+         blocks  :: [([Inline], [[Block]])]
+         blocks = sctRules ++ sctSignals
+         (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenDeclarations
+         (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
+         patRules     = [r| r<-rules fSpec,   r_pat r==name pat, r_usr r]
+         patSignals   = [s| s<-signals fSpec, r_pat s==name pat]
+
+    dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
+    dpRule (r:rs) n seenConcs seenDeclarations
+     = ( [ ( [Str (name r)]
+           , [ [ Plain [Str (explainRule flags r)]] ++
+               [ Plain (text1)| not (null nds)] ++
+               pandocEqnArray [ ([TeX ("\\id{"++name d++"}")], [TeX ":"], [TeX ("\\id{"++name (source d)++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++name (target d)++"}"), symDefLabel d])
+                              |d<-nds] ++
+               [ Plain (text2)| not (null rds)] ++
+               [ Plain (text3)| isSignal r] ++
+               pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cp (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
+               [ Plain (text4) | length nds>1]
+             ] 
+           ) ] ++ dpNext
+       , n'
+       , seenCs
+       , seenDs
+       )
+       where
+        text1
+         = case length nds of
+             1 -> let d = head nds in
+                  [TeX ("In order to formalize this, we introduce "++(if isFunction d then "function" else "relation")++"~"),symDefRef d,TeX ":"]
+             l -> [TeX "The formalization (equation~", symDefRef r,TeX (") requires the following "++count flags l "relation"++".")]
+        text2
+         = (case (length nds,length rds,language flags) of
+             (0,1,Dutch)   -> [Str "Definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
+             (0,1,English) -> [Str "We use definition ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (0,_,Dutch)   -> [Str "We gebruiken definities ", TeX (commaNL "en" [str |d<-rds, let TeX str=symDefRef d])]
+             (0,_,English) -> [Str "We use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
+             (_,1,Dutch)   -> [Str "Daarnaast gebruiken we definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (_,1,English) -> [Str "Besides, we use definition ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (_,_,Dutch)   -> [Str "Daarnaast gebruiken we definities ", TeX (commaNL "en" [str |d<-rds, let TeX str=symDefRef d])]
+             (_,_,English) -> [Str "Besides, we use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
+           )++
+           (case (length nds,language flags) of
+             (1,Dutch)   -> [TeX " om eis~", symReqRef r, TeX " (pg.~", symReqPageRef r, Str ") te formaliseren:"]
+             (1,English) -> [TeX " to formalize requirement~", symReqRef r, TeX " (page~", symReqPageRef r, Str "):"]
+             _           -> [Str ". "]
+           )
+        text3
+         = case language flags of
+                 Dutch   -> [Str " Een signaal wordt afgegeven als:"]
+                 English -> [Str " A signal is produced when:"]
+        text4
+         = case language flags of
+             Dutch   -> [TeX "Dit komt overeen met eis~", symReqRef r, TeX " op pg.~", symReqPageRef r, Str "."]
+             English -> [TeX "This corresponds to requirement~", symReqRef r, TeX " on page~", symReqPageRef r, Str "."]
+        ncs = concs r >- seenConcs            -- newly seen concepts
+        cds = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]    -- ... and their definitions
+        nds = [d| d<-decls r >- seenDeclarations, isSgn d]     -- newly seen declarations
+        rds = [d| d<-decls r `isc` seenDeclarations, isSgn d]  -- previously seen declarations
+        ( dpNext, n', seenCs,  seenDs ) = dpRule rs (n+length cds+length nds+1) (concs r `uni` seenConcs) (decls r `uni` seenDeclarations)
+
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
@@ -1089,19 +1099,21 @@ xrefFigure1 pict =
    , xrefLabel (figlabel pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
-
--- WAAROM?  Stef, dit ziet er uit als een algemene functie. Om dit soort functies
--- zelf te schrijven is eigenlijk niet slim. Ben je bekend met Hoogle? Dat is een 
--- soort google, maar dan voor Haskell functies! Erg handig als je generiek spul 
--- zoekt. http://www.haskell.org/hoogle/
--- Daarnaast helpt het om even aan te geven wat je met een functie beoogt. Aangezien
--- onderstaande functie nergens voor wordt gebruikt (nog?) maar even weggepoetst....
---addinfix :: Inline -> [[Inline]] -> [Inline] 
---addinfix _ [] = [] --tail will not be on empty list
---addinfix delim xs = tail [inline' | inlines<-postfix, inline'<-inlines]
---   where
---   postfix :: [[Inline]] 
---   postfix = [delim:x|x<-xs] 
+pandocEqnArray :: [([Inline],[Inline],[Inline])] -> [Block]
+pandocEqnArray xs
+ = [ Para ([ TeX "\\begin{eqnarray}\n   " ]++
+           chain [LineBreak,Str "\n   "] [ a++[TeX "&"]++b++[TeX "&"]++c | (a,b,c)<-xs ]++
+           [ TeX ("\n\\end{eqnarray}") ]
+          )
+   | not (null xs)]
+   
+pandocEquation :: [Inline] -> [Block]
+pandocEquation x
+ = [ Para ([ TeX "\\begin{equation}\n   " ]++
+           x++
+           [ TeX ("\n\\end{equation}") ]
+          )
+   | not (null x)]
 
 
 --DESCR -> pandoc print functions for Adl data structures
@@ -1116,7 +1128,7 @@ class ShowMath a where
 
 instance ShowMath Concept where
  showMath c = "\\id{"++latexEsc (name c)++"}"
- showMathcode fSpec c = "\\id{"++latexEsc (name c)++"}"
+ showMathcode _ c = "\\id{"++latexEsc (name c)++"}"
 
 instance ShowMath Gen where
  showMath g = showMath (genspc g) ++"\\ \\le\\ "++showMath (gengen g)
@@ -1125,10 +1137,10 @@ instance ShowMath Gen where
 instance ShowMath Rule where
  showMath r = error ("!Fatal (module Fspec2Pandoc 889): Please supply specification of the context in showMath "++showADL r)
  showMathcode fSpec r
-  = ( if isSignal r
+  = {- ( if isSignal r
       then "\\verb#RULE # \\id{"++name r++"}\\ \\verb# SIGNALS #"
-      else "" -- "\\verb#RULE # \\id{"++name r++"}\\ \\verb# MAINTAINS #"
-    )++
+      else "\\verb#RULE # \\id{"++name r++"}\\ \\verb# MAINTAINS #"
+    )++  -}
     case rrsrt r of
       Truth          -> showMathcode fSpec (rrcon r)
       Implication    -> showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)
@@ -1197,11 +1209,10 @@ latexEsc x
 -- To set the graphicspath, we want something like: \graphicspath{{"c:/data/ADL/output/"}}
 --posixFilePath fp = "/"++System.FilePath.Posix.addTrailingPathSeparator (System.FilePath.Posix.joinPath   (tail  (splitDirectories fp)))
 
-makeDefinition :: Options -> String -> String -> Block
+makeDefinition :: Options -> String -> String -> [Inline]
 makeDefinition flags c cdef
-  = Plain $
-    case language flags of
+  = case language flags of
      English -> [Str ("A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" ")]++str++[Str (" is "++cdef)]
      Dutch   -> [Str "Een "]++str++[Str (" is "++cdef)]
     where
-     str = [Emph [Str (unCap c)]]++[TeX ("\\index{"++latexEsc (unCap c)++"}") | fspecFormat flags==FLatex]
+     str = [Emph [Str (unCap c)]]++[TeX ("\\index{"++latexEsc (unCap c)++"}\\marge{"++latexEsc (unCap c)++"}") | fspecFormat flags==FLatex]

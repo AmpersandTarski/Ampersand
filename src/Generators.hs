@@ -112,9 +112,9 @@ doGenFspec fSpec flags
          (thePandoc,thePictures) = fSpec2Pandoc fSpec flags
          makeOutput
           =  case fspecFormat flags of
-              FPandoc -> do verboseLn flags "Generating Pandoc file."
+              FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
                             writeFile outputFile (prettyPandoc thePandoc)
-              FRtf    -> do verboseLn flags "Generating Rich Text Format file."
+              FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
                             writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
               FLatex  -> do --REMARK -> notice usage of fromJust
                             exists <- case texHdrFile flags of
@@ -123,7 +123,7 @@ doGenFspec fSpec flags
                             header <- if exists 
                                       then readFile (fromJust$texHdrFile flags)
                                       else return (laTeXtemplate flags)
-                            verboseLn flags ("Generating to LaTeX: "++outputFile++"\n (header: "++take 100 header++"0")
+                            verboseLn flags ("Generating to LaTeX: "++outputFile)
                             writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=header} thePandoc)
               FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
                             writeFile outputFile (writeHtmlString  ourDefaultWriterOptions thePandoc)
