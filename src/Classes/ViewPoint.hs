@@ -21,7 +21,11 @@ where
    class Morphical a => ViewPoint a where
      objectdef    :: a -> ObjectDef     -- The objectdef that characterizes this viewpoint
      conceptDefs  :: a -> ConceptDefs   -- all concept definitions that are valid within this viewpoint
-     declarations :: a -> Declarations  -- all relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
+     declarations :: a -> Declarations  -- all rules and relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
+     --REMARK: declarations has been split up in two disjoints which used to be combined with `uni` instead of ++
+     declarations x = rel_declarations x ++ rule_declarations x
+     rel_declarations :: a -> Declarations  -- all relations that have a valid declaration in this viewpoint.
+     rule_declarations :: a -> Declarations  -- all rules that have a valid declaration in this viewpoint.
      rules        :: a -> Rules         -- all rules that are maintained within this viewpoint,
                                         --   which are not signal-, not multiplicity-, and not key rules.
      signals      :: a -> Rules         -- all signals that are visible within this viewpoint
@@ -45,7 +49,8 @@ where
                            , objstrs = []         -- ^ directives that specify the interface.
                            }
     conceptDefs xs   = (concat. map conceptDefs) xs
-    declarations xs  = (rd . concat. map declarations) xs
+    rel_declarations xs  = (rd . concat. map rel_declarations) xs
+    rule_declarations xs  = (rd . concat. map rule_declarations) xs
     rules xs         = (concat. map rules) xs
     signals xs       = (concat. map signals) xs
     multrules xs     = (concat. map multrules) xs
@@ -64,7 +69,8 @@ where
                                , objstrs = []
                                }
     conceptDefs  context = ctxcs context++conceptDefs (ctxpats context)
-    declarations context = declarations (ctxpats context) `uni` ctxds context
+    rel_declarations context = rel_declarations (ctxpats context) `uni` ctxds context
+    rule_declarations context = rule_declarations (ctxpats context) `uni` rule_declarations(ctxrs context)
     rules        context = rules   (ctxpats context) ++ [r| r<-ctxrs context, not (isSignal r)]
     signals      context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r] 
     objDefs      context = ctxos   context
@@ -81,7 +87,8 @@ where
                            , objstrs = []
                            }
     conceptDefs  pat = ptcds pat
-    declarations pat = ptdcs pat `uni` declarations (ptrls pat) -- (error(show[declarations r|r<- (ptrls pat),(source$srrel r)/=Anything]))
+    rel_declarations pat = ptdcs pat 
+    rule_declarations pat = declarations (ptrls pat) 
     rules        pat = [r|r<-ptrls pat, not (isSignal r)]
     signals      pat = [r|r<-ptrls pat,      isSignal r ]
     objDefs       _  = []
@@ -99,8 +106,8 @@ where
                          , objstrs = []
                          }
     conceptDefs  _ = []
-    declarations r = --if (desrc$srrel r)==Anything then error(show(rrdcl r,decexpl(srrel r),rrfps r,srrel r,rrtyp r)) else 
-                     [srrel r]
+    rel_declarations r = []
+    rule_declarations r = [srrel r]
     rules        r = [r| not (isSignal r)]
     signals      r = [r| isSignal r]
     objDefs      _ = []

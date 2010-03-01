@@ -162,7 +162,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   where
   --DESCR -> use this function on all expressions
   enrich_expr :: Expression -> Either ((Concept,Concept), Expression) String
-  enrich_expr = infertype_and_populate popuMphDecl isas (declarations ctxs)
+  enrich_expr = infertype_and_populate popuMphDecl isas (rel_declarations ctxs)
   isas = isaRels (allCtxCpts ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs
@@ -453,7 +453,7 @@ checkLabels svcs =
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
 checkPopulations :: Contexts -> Errors
-checkPopulations ctxs = [err|Right err<-[popdeclaration (declarations ctxs) pop | cx<-ctxs, pop<-ctxpops cx]]
+checkPopulations ctxs = [err|Right err<-[popdeclaration (rel_declarations ctxs) pop | cx<-ctxs, pop<-ctxpops cx]]
 
 
 ------------------
