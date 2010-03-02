@@ -6,6 +6,7 @@ import System                 (system, ExitCode(ExitSuccess,ExitFailure))
 --import System.Process
 import System.FilePath        (combine,replaceExtension)
 import System.Directory
+import System.Info (os)
 import Control.Monad
 import Maybe                  (fromJust)
 import Options
@@ -175,7 +176,20 @@ doGenFspec fSpec flags
                   
               callPdfLatexOnce :: IO ()
               callPdfLatexOnce = 
-                 do result <- system ("pdflatex "++pdfflags++outputFile)  
+                 do result <- if os=="mingw32" || os=="mingw64" || os=="cygwin" || os=="windows" --REMARK: not a clear enum to check for windows OS
+                              then system ("pdflatex "++pdfflags++ outputFile)  
+                              --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
+                              else system ("cd "++(dirOutput flags)
+                                         ++" && pdflatex "
+                                         ++ replaceExtension 
+                                              (baseName flags) 
+                                              (case fspecFormat flags of        
+                                                 FPandoc       -> ".pandoc"
+                                                 FRtf          -> ".rtf"
+                                                 FLatex        -> ".tex"
+                                                 FHtml         -> ".html"
+                                                 FOpenDocument -> ".odt"
+                                              ))
                     case result of 
                        ExitSuccess   -> verboseLn flags ("PDF file created.")
                        ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
