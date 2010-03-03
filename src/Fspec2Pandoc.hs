@@ -239,12 +239,13 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                caTxt                                 ++
                daTxt                                 ++
                [b| (blocks,_)<-svcs, b<-blocks]      ++
-               fpAnalysis         level fSpec flags  ++
+               if not studentversion then fpAnalysis level fSpec flags else []  ++
                glossary level fSpec flags
              , [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] )
-             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec]
+             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
                    (daTxt,daPic)  = dataAnalysis       level fSpec flags
                    (caTxt,caPics) = conceptualAnalysis level fSpec flags
+                   studentversion = theme flags == "student"
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 ------------------------------------------------------------                
 
@@ -255,7 +256,7 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                                                      Dutch   ->  "Inleiding"   
                                                      English ->  "Introduction"
                                                  )
-
+        --TODO: different intro for theme flags == "student"
         introContents Dutch = 
          [ Para 
                 [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "

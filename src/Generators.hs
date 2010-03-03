@@ -177,7 +177,7 @@ doGenFspec fSpec flags
               callPdfLatexOnce :: IO ()
               callPdfLatexOnce = 
                  do result <- if os=="mingw32" || os=="mingw64" || os=="cygwin" || os=="windows" --REMARK: not a clear enum to check for windows OS
-                              then system ("pdflatex "++pdfflags++ outputFile)  
+                              then system ("pdflatex "++pdfflags++ outputFile++[x|x<-"> "++combine (dirOutput flags) "pdflog",not(verboseP flags)])  
                               --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                               else system ("cd "++(dirOutput flags)
                                          ++" && pdflatex "
@@ -189,7 +189,7 @@ doGenFspec fSpec flags
                                                  FLatex        -> ".tex"
                                                  FHtml         -> ".html"
                                                  FOpenDocument -> ".odt"
-                                              ))
+                                              )++[x|x<-"> pdflog",not(verboseP flags)])
                     case result of 
                        ExitSuccess   -> verboseLn flags ("PDF file created.")
                        ExitFailure x -> verboseLn flags ("Failure: " ++ show x)

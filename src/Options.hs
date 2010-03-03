@@ -29,6 +29,8 @@ data Options = Options { contextName   :: Maybe String
                        , genAtlas      :: Bool
                        , dirAtlas      :: String  -- the directory to generate the atlas in.
                        , userAtlas     :: String
+                       , theme         :: String --the theme of some generated output. (style, content differentiation etc.)
+                                                 --TODO: make this a data type (enum).
                        , genXML        :: Bool
                        , genFspec      :: Bool
                        , fspecFormat   :: FspecFormat
@@ -86,6 +88,7 @@ getOptions =
                                           Just s  -> takeDirectory s
                       , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
                       , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
+                      , theme         = []
                       , contextName   = Nothing
                       , showVersion   = False
                       , showHelp      = False
@@ -195,6 +198,7 @@ options = map pp
 
           , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
           , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("the prototype will use database with name (name overrides environment variable "++ envdbName ++ "). when both are't set, defaults to filename (without '.adl')")), Public)
+           , ((Option ['t']       ["theme"]      (ReqArg themeOpt "theme")   ("p.e. student")), Public)
           , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively."), Public)
           , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
 
@@ -265,6 +269,8 @@ atlasOpt nm opts
          , genAtlas     = True}
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
+themeOpt :: String -> Options -> Options
+themeOpt t opts = opts{theme = t}
 dbNameOpt :: String -> Options -> Options
 dbNameOpt nm opts = opts{dbName = if nm == "" 
                                     then baseName opts

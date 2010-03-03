@@ -16,25 +16,27 @@ SOURCES = $(wildcard src/*.lhs) $(wildcard src/*.hs) $(wildcard src/*/*.hs)
 ifeq ($(WINDOWS), yes)
 EXE  = .exe
 GHCI = ghcii.sh
+OUT = outw
 else
 EXE  = 
 GHCI = ghci
+OUT = outl
 endif
 
-FLAGS = -Wall --make -O -isrc -odir out -hidir out
+FLAGS = -Wall --make -O -isrc -odir $(OUT) -hidir $(OUT)
 
 ghci:
-	$(GHCI) -Wall -isrc -odir out -hidir out
+	$(GHCI) -Wall -isrc -odir $(OUT) -hidir $(OUT)
 
 adl: bin/adl$(EXE)
 
-bin/adl$(EXE): $(SOURCES) out bin
+bin/adl$(EXE): $(SOURCES) $(OUT) bin
 	ghc $(FLAGS) -o $@ src/Main.hs
 	cp src/Rendering/customheader.tex bin/customheader.tex
 	strip $@
 
 out:
-	mkdir out
+	mkdir $(OUT)
 	
 bin:
 	mkdir bin
