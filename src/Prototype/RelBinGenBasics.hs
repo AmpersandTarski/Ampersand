@@ -479,16 +479,19 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    addSlashes "" = ""
    
    -- sqlRelName computes the unique name for the SQL table that contains the population for m, within the context of fSpec.
-   sqlRelName :: (Show m,Morphic m,MorphicId m,Morphical m) => Fspc -> m -> String
+   -- only usage of function: sqlMorName fSpec m@Mph{} = sqlRelName fSpec (mphdcl m)
+   -- so changed specialized type to Declaration only. Old type:
+   -- sqlRelName :: (Show m,Morphic m,MorphicId m,Morphical m) => Fspc -> m -> String
+   sqlRelName :: Fspc -> Declaration -> String
    sqlRelName fSpec m'
     = if isIdent m' then sqlConcept fSpec (source m') else
       if isTrue m' then "V" else
-      if null as then error ("!Fatal (module RelBinGenBasics 486): No decls in "++show m') else
-      if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple decls in "++show m') else
+      --if null as then error ("!Fatal (module RelBinGenBasics 486): No decls in "++show m') else
+      --if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple decls in "++show m') else
       name plug
       where (plug,_,_) = sqlRelPlug fSpec (Tm (makeMph a)(-1))
-            as = decls m'
-            a = head as
+            --as = decls m'
+            a = m' --head as
    
 -- Given an expression, expr, which is meant for insertion or deletion in a plug. The question "which plug?" is answered
 -- by sqlRelPlug. It returns a plug p with two of its fields, sf and tf, such that disjNF (F[flp (fldexpr sf),fldexpr tf]) = disjNF expr
@@ -612,14 +615,20 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlMorName fSpec i@I{}   = sqlConcept fSpec (mphspc i)
    sqlMorName _ m' = error ("!Fatal (module RelBinGenBasics 584): illegal argument: "++show m')
    
-   -- these functions are exact compies of sqlRelSrc and sqlRelTrg!
+   -- these functions (USED TO BE: GMI 4 mrt 2010) exact compies of sqlRelSrc and sqlRelTrg!
+   -- TODO: with src' and trg' I tried to solve one case where the hardcoded "i" (sqlRelPlugs) can be corrected to an actual field of some plug
+   --       the case solved is that of a flipped morphism. This TODO relates to implementing sqlRelPlugs correctly.
    sqlMorSrc :: Fspc -> Morphism -> String
-   sqlMorSrc fSpec s = fldname src
+   sqlMorSrc fSpec s = fldname src'
     where (_,src,_) = sqlRelPlug fSpec (Tm s (-1))
+          src' | fldname src=="i"&& not (mphyin s) = (\(_,_,x)-> x) (head$sqlRelPlugs fSpec (Tm (flp s) (-1)))
+               | otherwise = src
 
    sqlMorTrg :: Fspc -> Morphism -> String
-   sqlMorTrg fSpec s = fldname trg
+   sqlMorTrg fSpec s = fldname trg' 
     where (_,_,trg) = sqlRelPlug fSpec (Tm s (-1))
+          trg' | fldname trg=="i"&& not (mphyin s) = (\(_,y,_)-> y) (head$sqlRelPlugs fSpec (Tm (flp s) (-1)))
+               | otherwise = trg
 
 
    sqlConcept :: Fspc -> Concept -> String
@@ -652,3 +661,61 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    addToLast :: [a] -> [[a]] -> [[a]]
    addToLast _ [] = error "!Fatal (module RelBinGenBasics 632): addToLast: empty list"
    addToLast s as = (init as)++[last as++s]
+{-
+   --copied from revision 569, and isolated these functions for composing SELECT queries only
+   sqlRelPlugs_sel :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
+   sqlRelPlugs_sel fSpec e' = rd [ (plug,sf,tf)
+                             | plug@PlugSql{}<-plugs fSpec
+                             , (sf,tf)<-sqlPlugFields_sel plug e'
+                             ]
+   sqlPlugFields_sel :: Plug -> Expression -> [(SqlField, SqlField)]
+   sqlPlugFields_sel plug e'
+                = [ (sf,tf)
+                  | sf<-[f|f<-fields plug,target (fldexpr f)==source e']
+                  , let se = fldexpr sf
+                  , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
+                  , let te = fldexpr tf
+                  , (  (isTrue $disjNF$Fu [Cp e',simplF [flp se,te]])
+                    && (isFalse$disjNF$Fi [Cp e',simplF [flp se,te]])
+                    )
+                  {- the above should be enough.. but the relation algebra calculations
+                     are not good enough yet. In particular:
+                       isFalse ((I/\x);e /\ -e)
+                     and
+                       isTrue  ((I/\e;e~);e \/ -e)
+                     do not work (these should yield True instead of False in both cases)
+                     
+                     The code below fixes exactly these ommissions
+                  -}
+                  || (isProp (se) && (te == e')
+                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')) (-1), simplF [e',flp e'] ]
+                                          ,Cp$se]))
+                  || (isProp (te) && (se == flp e')
+                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')) (-1), simplF [flp e',e'] ]
+                                          ,Cp$te]))
+                  {- found another exception:
+                       isFalse (I;I /\ -I)
+                     and
+                       isTrue  (I;I \/ -I)
+                     yield False, but should yield True
+                  -}
+                  || (  (se == te) && isIdent e'
+                     && (isSur se)
+                     )
+                  ]
+     where -- simplF: replace a;a~ by I if INJ&TOT
+      simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
+        where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
+               -- null occurs especialy in cases of [I;e] and [e;I]
+      replF (k:k2:ks) | k == flp k2 && isInj k && isTot k
+             = if null ks then Tm(mIs$source k)(-1) else replF ks
+      replF [a] = F [a]
+      replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF
+        = if null fs then F [k,res] else replF (k:head fs) -- we might replace something again!
+        where res = replF (k2:ks)
+              fs  = [m' | F m' <- [res]]
+      replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
+       = error ("!Fatal (module RelBinGenBasics 555): Could not define a properly typed I for F[] in replF in sqlPlugFields_sel in RelBinGenBasics.hs")
+               -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
+      replF ks = F (ks)
+-}

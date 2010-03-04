@@ -538,6 +538,7 @@
             rest            = zip [ a | a<-aOuts
                                       , a `notElem` [a' | g <- comboGroups, (a',_) <- snd g] 
                                   ] [(1::Integer)..]
+            --the list of fields that are selected (SELECT DISTINCT fieldNames FROM ...)
             fieldNames      = [ "`"++tableReName gr++"`.`"++(fldname f)++"`"
                                 ++(if fldname f == name a then [] else " AS `"++name a++"`")
                               | (gr@(_,_),as)<-comboGroups',(a,f)<-as
