@@ -104,7 +104,8 @@ laTeXtemplate flags
      , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
      ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
      [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
-     , "$if(xetex)$"
+{-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
+ -    , "$if(xetex)$"
      , "\\usepackage{ifxetex}"
      , "\\ifxetex"
      , "  \\usepackage{fontspec,xltxtra,xunicode}"
@@ -116,7 +117,7 @@ laTeXtemplate flags
      , "$else$"
      , "\\usepackage[mathletters]{ucs}"
      , "\\usepackage[utf8x]{inputenc}"
-     , "$endif$"
+     , "$endif$" -}
      , "$if(lhs)$"
      , "\\usepackage{listings}"
      , "\\lstnewenvironment{code}{\\lstset{language=Haskell,basicstyle=\\small\\ttfamily}}{}"
