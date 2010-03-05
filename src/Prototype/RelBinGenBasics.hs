@@ -480,18 +480,33 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    
    -- sqlRelName computes the unique name for the SQL table that contains the population for m, within the context of fSpec.
    -- only usage of function: sqlMorName fSpec m@Mph{} = sqlRelName fSpec (mphdcl m)
-   -- so changed specialized type to Declaration only. Old type:
+   -- so changed specialized type to Morphism only. Old type:
    -- sqlRelName :: (Show m,Morphic m,MorphicId m,Morphical m) => Fspc -> m -> String
-   sqlRelName :: Fspc -> Declaration -> String
-   sqlRelName fSpec m'
-    = if isIdent m' then sqlConcept fSpec (source m') else
-      if isTrue m' then "V" else
+   sqlRelName :: Fspc -> Morphism -> (String,String,String)
+   sqlRelName fSpec m
+    = if isIdent m then (sqlConcept fSpec (source m),"i","i") else
+      if isTrue m then ("V",name (source m),name (target m)) else
       --if null as then error ("!Fatal (module RelBinGenBasics 486): No decls in "++show m') else
       --if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple decls in "++show m') else
-      name plug
-      where (plug,_,_) = sqlRelPlug fSpec (Tm (makeMph a)(-1))
-            --as = decls m'
-            a = m' --head as
+      if null plug then error "xx" else head plug
+      where           
+      --of de declaratie van een morphisme (Mph{}) is vertaald naar een plugexpressie (plug,i,d) XOR een binaire tabel (d,s,t) evt verwerkt in een user-defined PLUG, dat tuple wil ik vinden.
+      --IMPLEMENTATIE: Vind een plug met een plugtargetveld met expr m of m~ EN een plugsource veld met I[source m resp m~], anders ERROR. Naar equivalente plugexprs van m resp. m~ en I[source m/m~] wordt dus (nog?) niet gezocht (bv. I;m of m;V;m)!
+      --VOORHEEN: werd sqlRelPlugs gebruikt om alleen de naam van de plug op te leveren, maar dit gaf mismatches in SELECT queries (velden die niet in de plug zitten). De consequenties voor php function save() zijn nog niet uitgezocht TODO
+      todo_replacethisrewrite (Tm (mi@I{}) _) = [mi]
+      -- (generated binairy plug expression) I/\violates;violates~
+      todo_replacethisrewrite (Fi [(Tm (mi@I{}) _),F [r,r']])  = [mi|r==flp r']
+      todo_replacethisrewrite _ = []
+      plug = [if mphyin m==mphyin m' then (name p,fldname i,fldname d) else (name p,fldname d,fldname i)
+             |p<-plugs fSpec
+             ,d<-fields p
+             ,(Tm m'@(Mph{}) _)<-[fldexpr d]
+             ,i<-fields p
+             ,mi<-todo_replacethisrewrite (fldexpr i)
+             ,mphdcl m'==mphdcl m --dezelfde declaratie
+             ,(if mphyin m==mphyin m' then source else target) m==source mi --de I[source van m of m~]
+             ] ++ [error$"fatal (RelBinGenBasics 518): the morphism is not present in any of the plugs."++show (mphdcl m)]
+ 
    
 -- Given an expression, expr, which is meant for insertion or deletion in a plug. The question "which plug?" is answered
 -- by sqlRelPlug. It returns a plug p with two of its fields, sf and tf, such that disjNF (F[flp (fldexpr sf),fldexpr tf]) = disjNF expr
@@ -510,8 +525,21 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                             , (sf,tf)<-sqlPlugFields plug e
                             ] 
    sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
-   sqlPlugFields plug e'
-                = [ (sf,tf)
+   sqlPlugFields plug ex' 
+    --Het case statement is een dirty fix van e', ter herstelling van de andere dirty fix van de toegevoegde velden "i".
+    --Deze velden "i" bestaan soms niet, zover bekend, alleen in de context van binaire tabellen en de bijbehorende 
+    --geflipte morphism expressie. Van de head van xx wordt bekeken of één van de twee velden een "i" is die niet
+    --bestaat in de plug. Als dat zo is, dan wordt aangenomen dat xx van het geflipte morphisme wel de juiste velden oplevert.
+    --take 1 blijkt ook nodig te zijn voor correcte SELECT queries.
+    = case ex' of 
+         (Tm m _) -> if (not.null)(xx ex') 
+                        && ((fldname.fst.head)(xx ex')=="i"  || (fldname.snd.head)(xx ex')=="i") 
+                        && not(elem "i" [fldname f|f<-fields plug])
+                     then take 1 [(y,x)|(x,y)<-xx(flp ex')]
+                     else xx ex' 
+         _ -> xx ex'
+      where
+      xx e' = [ (sf,tf)
                   | let fs  = [f|f<-fields plug,target (fldexpr f)==source e']
                         flds=fs++
 -- DAAROM: Waarom (SJ) moeten de volgende I's worden toegevoegd aan flds?
@@ -572,7 +600,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                     case e' of (Tm (I{}) _) -> elem (source e') (map (source.fldexpr) (fields plug))
                                _ -> True
                   ]
-     where -- simplF: replace a;a~ by I if INJ&TOT
+     --where -- simplF: replace a;a~ by I if INJ&TOT
       simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
         where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
                -- null occurs especialy in cases of [I;e] and [e;I]
@@ -611,24 +639,16 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 
    sqlMorName :: Fspc -> Morphism -> String
-   sqlMorName fSpec m@Mph{} = sqlRelName fSpec (mphdcl m)
+   sqlMorName fSpec m@Mph{} = (\(p,_,_)->p) (sqlRelName fSpec m) 
    sqlMorName fSpec i@I{}   = sqlConcept fSpec (mphspc i)
    sqlMorName _ m' = error ("!Fatal (module RelBinGenBasics 584): illegal argument: "++show m')
    
    -- these functions (USED TO BE: GMI 4 mrt 2010) exact compies of sqlRelSrc and sqlRelTrg!
-   -- TODO: with src' and trg' I tried to solve one case where the hardcoded "i" (sqlRelPlugs) can be corrected to an actual field of some plug
-   --       the case solved is that of a flipped morphism. This TODO relates to implementing sqlRelPlugs correctly.
    sqlMorSrc :: Fspc -> Morphism -> String
-   sqlMorSrc fSpec s = fldname src'
-    where (_,src,_) = sqlRelPlug fSpec (Tm s (-1))
-          src' | fldname src=="i"&& not (mphyin s) = (\(_,_,x)-> x) (head$sqlRelPlugs fSpec (Tm (flp s) (-1)))
-               | otherwise = src
+   sqlMorSrc fSpec m =  (\(_,s,_)->s) (sqlRelName fSpec m) 
 
    sqlMorTrg :: Fspc -> Morphism -> String
-   sqlMorTrg fSpec s = fldname trg' 
-    where (_,_,trg) = sqlRelPlug fSpec (Tm s (-1))
-          trg' | fldname trg=="i"&& not (mphyin s) = (\(_,y,_)-> y) (head$sqlRelPlugs fSpec (Tm (flp s) (-1)))
-               | otherwise = trg
+   sqlMorTrg fSpec m =  (\(_,_,t)->t) (sqlRelName fSpec m) 
 
 
    sqlConcept :: Fspc -> Concept -> String

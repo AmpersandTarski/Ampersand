@@ -389,6 +389,7 @@
                                          else "$"++(phpIdentifier $ name o)
                                  ) ++ maybeId o
 
+   --REMARK: only used for php function save()
    plugAts :: Plug -> ObjectDef           -- parent (wrong values are allowed, see source)
               -> ObjectDef                -- object itself
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
@@ -402,6 +403,7 @@
                       ) ++ concat (map (plugAts plug o) (noIdents o))
      where noIdents obj = [att | att <- objats obj]--, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
 
+   --REMARK: only used for php function save()
    objPlugs :: Fspc -> ObjectDef -> [Plug]
    objPlugs fSpec object
      = [plug|plug<-plugs fSpec,((_,_),(_,_))<-take 1 $ plugAts plug object object]
@@ -492,7 +494,7 @@
                         (if isOne' then [] else [" WHERE " ++ snd (head tbls)])
                   )
       where comboGroups'::[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
-            comboGroups'= reduce (sort' (length) (eqCl fst combos))
+            comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WAAROM: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
             comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
             keyGroups   = take 1 ( [gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s] ++ 
                                    [((p,(objIn,s)),[(objIn,t)])
