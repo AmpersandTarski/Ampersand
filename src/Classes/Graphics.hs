@@ -69,7 +69,7 @@ instance Dotable Pattern where
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts'  = concs pat
-          dcls = [d| d@Sgn{}<-declarations pat, decusr d] `uni` decls pat
+          dcls = [d| d@Sgn{}<-declarations pat `uni` decls pat, decusr d]
 
 instance Dotable Fservice where
    picType _ = PTFservice

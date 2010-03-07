@@ -74,10 +74,11 @@ where
     showHS flags indent plug   
       = case plug of
            PlugSql{} -> (chain indent 
-                          ["PlugSql{ fields = " ++ "[ "++
+                          ["PlugSql{ plname = " ++ (show.haskellIdentifier.plname) plug
+                          ,"       , fields = " ++ 
                                               chain (indent++"                  , ") (map (showHS flags (indent++"                    ")) (fields plug))++
                                               indent++"                  ]"
-                          ,"       , plname = " ++ (show.haskellIdentifier.plname) plug
+                          ,"       , kernel = " ++ "[ "++chain ", " [showHS flags "" c| c<-kernel plug] ++ "]"
                           ,"       , plfpa  = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
                           ])

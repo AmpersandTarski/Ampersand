@@ -5,15 +5,18 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
  ,pDebug,noCollide -- both are used in ObjBinGenConnectToDatabase
  ) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
-   import Strings (chain) --TODO -> is this correct instead of chain from Auxiliaries?
+   import Strings (commaEng,chain)
    import Adl
-   import ShowADL(showADL)
-   import NormalForms (conjNF,disjNF,simplify)
+   import ShowADL
+   import ShowHS
+   import NormalForms (conjNF,disjNF,simplify,nfProof)
    import Data.Fspec
    import Data.Plug
    import List(isPrefixOf)
    import Collection (Collection(rd,uni))
    import Auxiliaries (naming)
+   import Calc
+
 --   import Debug.Trace
 
    pDebug :: Bool
@@ -77,6 +80,21 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                ++["AND TODO.`"++x++"`='\".$GLOBALS['ctxenv']['"++x++"'].\"'"|(_,x)<-tail (snd$vctxenv fSpec)]
     | otherwise = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                            (chain ", " exprbracs) (chain " AND " wherecl)
+{- The story:
+ This alternative of selectExpr compiles a conjunction of at least two subexpressions (code: Fi lst'@(_:_:_))
+ For now, we explain only the otherwise clause (code: selectGeneric i ("isect0."++ ...)
+ Suppose we have an expression, plaats~;locatie/\-hoofdplaats~/\-neven
+ It has two negative terms (code: negTms), which are (in this example): hoofdplaats~ and neven,
+ It has one positive term (code posTms), which is plaats~;locatie.
+ In the resulting SQL code, the first term of posTms is taken as the basis.
+ All other positive terms are added as EXISTS subexpressions in the WHERE clause and
+ all negative terms are added as NOT EXISTS subexpressions in the WHERE clause.
+ So our example will look like:
+                    SELECT DISTINCT isect0.`A`, isect0.`B`
+                     FROM ( SELECT bladibla) AS isect0       representing plaats~;locatie
+                    WHERE NOT EXISTS (SELECT foo)            representing hoofdplaats~
+                      AND NOT EXISTS (SELECT foo)            representing neven
+-}
       where simplectxbinding = [name$source s|(F [Tm m1 _,Tm s@(Mph{mphnm="s"}) _,Tm m2 _])<-lst',source s==target s,m1==flp m2]
             src'    = quote$sqlExprSrc fSpec fstm
             trgC    = quote$sqlExprTrg fSpec fstm -- can collide with src', for example in case fst==r~;r, or if fst is a property (or identity)
@@ -515,9 +533,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                                            ,field (name (source expr)) (mError "Source Expression") Nothing (mError "Null") (mError "isUniq")
                                            ,field (name (target expr)) (mError "Target Expression") Nothing (mError "Null") (mError "isUniq")
                                            )
-                           else head cs
+                           else if length cs==1 then head cs
+                           else error("!Fatal (module RelBinGenBasics 518): multiple plugs:\n "++showADLcode fSpec expr++"   yields\n"++chain "\nand\n" [show p++"\ns: "++show s++"\nt: "++show t|(p,s,t)<-cs])
                            where cs = sqlRelPlugs fSpec expr
-                                 mError tp = error ("!Fatal (module RelBinGenBasics 501): Expression \""++show expr++"\" does not occur in plugs of fSpec, cannot give "++tp++" (sqlRelPlug in module RelBinGenBasics)")
+                                 mError tp = error ("!Fatal (module RelBinGenBasics 520): Expression \""++show expr++"\" does not occur in plugs of fSpec, cannot give "++tp++" (sqlRelPlug in module RelBinGenBasics)")
    
    sqlRelPlugs :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e = rd [ (plug,sf,tf)
@@ -568,9 +587,15 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   , tf<-fldt
                   , let se = fldexpr sf
                         te = fldexpr tf
-                  , (  (isTrue.disjNF) (Fu [Cp e', F [flp se,te] ])  --       e' |- se~;te
-                    && (isTrue.disjNF) (Fu [Cp (F [flp se,te]),e'])  --       se~;te |- e'
-                    )
+                        bs = (isTrue.disjNF) (Fu [Cp e', F [flp se,te] ])  --       e' |- se~;te
+                        bt = (isTrue.disjNF) (Fu [Cp (F [flp se,te]),e'])  --       se~;te |- e'
+                  , if  fldname sf=="locatie" && fldname tf=="plaats" && e'== F[flp se,te]
+                    then error ("Diag (module RelBinGenBasics 554):\nsf: "++show sf ++"\ntf: "++show tf++
+                                "\nse: "++show se ++"\nte: "++show te++
+                                "\ne' |- se~;te\n"++showProof (showADL) (nfProof (Fu [Cp e', F [flp se,te] ]))++
+                                "\nse~;te |- e'\n"++showProof (showADL) (nfProof (Fu [Cp (F [flp se,te]),e'])))
+                    else True
+                  , bs && bt                                               --       e' = se~;te
                   {- the above should be enough.. but the relation algebra calculations
                      are not good enough yet. In particular:
                        isFalse ((I/\x);e /\ -e)

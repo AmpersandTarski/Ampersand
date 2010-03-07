@@ -69,7 +69,7 @@
    writeIfMissing flags sf 
       = do exists <- doesFileExist (absFilePath flags sf) 
            if exists 
-             then verboseLn flags ( "  Skipping "++(absFilePath flags sf)++" (allready exists)")
+             then verboseLn flags ( "  Skipping "++absFilePath flags sf++", because it already exists.")
              else 
                 ( sequence_(
                       [ verboseLn flags ("  Writing static file "++ absFilePath flags sf)]

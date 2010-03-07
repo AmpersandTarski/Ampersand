@@ -237,7 +237,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
           if inres --ONLY d' is used for merge, while decfpos d==decfpos d'
           then [mrg d' p|d'<-res, signpos d d']++[d'|d'<-res, not(signpos d d')] 
           else (mrg d p):res        
-      mrg d p = d{decpopu=decpopu d++[pairx | pairx<-popps p]}
+      mrg d p = d{decpopu=decpopu d++popps p}
       signpos d d' = d==d' && decfpos d==decfpos d'
  
   --DESCR -> Determines source and target population based on domains and ranges of all relations
@@ -257,14 +257,14 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                   , mphats=map populate (mphats mp)}
       where popusign (s,t) = (populate s, populate t)
             --lookup the populated declaration in popuRels
-            popudecl d = 
+            popudecl d =
               if null allpopd then d 
               else if length allpopd==1 then head allpopd
                    else error$ "!Fatal (module Typechecker 275): function popuMphDecl: " ++
                                "More than one declaration matching morphism "++show (mphnm mp)
                              ++" at "++show (mphpos mp)
                              ++".(remark for developer) Remove duplicate signatures from popuRels if you want to allow this."
-               where allpopd = [popd|popd<-popuRels, d==popd] 
+               where allpopd = [popd|popd<-rd popuRels, d==popd] 
   --DESCR -> Add population to concept
   populate :: Concept -> Concept
   populate c@(C{}) = c{cptos=rd$[srcPaire p|d<-popuRels,p<-contents d,elem (source d,c) isatree]

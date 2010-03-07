@@ -95,6 +95,7 @@ explainMult options d
                                                           (unCap.name.target) d++" "++(var [source d].target) d++"."
        preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
 
+doublequote :: String -> String
 doublequote str = "``"++str++[' '|last str=='\'']++"''"
 
 var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs

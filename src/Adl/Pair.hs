@@ -4,6 +4,7 @@ module Adl.Pair    (Paire,Pairs
                     , srcPaire,trgPaire
                     , flipPair,mkPair
                     , closPair
+                    , closGeneric
                    ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
@@ -59,4 +60,21 @@ where
             f q (x:xs') = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs'
             f q []      = q
 
-                    
+   closGeneric :: (Eq a,Eq b) => (a->a->b) -> (b->a) -> (b->a) -> [b] -> [b]     -- e.g. a list of pairs
+   closGeneric pair left right xs
+     = f xs (rd (map left xs) `isc` rd (map right xs))
+       where
+        f pairs (x:xs') = f (pairs `uni` [left e `pair` right e'|e<-pairs,right e==x,e'<-pairs,left e'==x]) xs'
+        f pairs []      = pairs
+
+{-
+   test = closGeneric pair left right  [ (1,2), (2,3), (3,4), (4,5), (4,1), (10,10)]
+    where
+      pair   a b  = (a,b)
+      left  (a,b) = a
+      right (a,b) = b
+
+   ADL.Pair> test
+   [(1,2),(2,3),(3,4),(4,5),(4,1),(10,10),(1,3),(2,4),(1,4),(3,5),(3,1),(2,5),(2,1),(1,5),(1,1),(4,2),(4,3),(4,4),(3,2),(3,3),(2,2)]
+   ADL.Pair>
+-}

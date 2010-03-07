@@ -8,7 +8,7 @@ where
                                         , Association(..)
                                         , MorphicId(..),Morphic(..))
    import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..),mIs)
-   import Adl.Expression                ( Expression(..),v,notCp)
+   import Adl.Expression                ( Expression(..),notCp)
    import Adl.Pair                      ( Pairs)
    import Adl.Prop
    import Classes.Populated
@@ -181,7 +181,7 @@ where
                         Asy-> h$sign r
                         Trn-> h$sign r
                         Rfx-> h$sign r
-           , rrdcl = (Just (prp,d))       -- For traceability: The original property and declaration.
+           , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
            , runum = 0                    -- Rules will be renumbered after enriching the context
            , r_pat = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
            , r_usr = False                

@@ -56,7 +56,7 @@
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
-       classes    = [ OOClass (name c) [ OOAttr a atype fNull| (a,atype,fNull)<-attrs plug] []
+       classes    = [ OOClass (name plug) [ OOAttr a atype fNull| (a,atype,fNull)<-attrs plug] []
                     | plug <- classPlugs, fld<-fields plug, fldname fld=="i", c<-[source (fldexpr fld)]
                     , not (null (attrs plug))
                     ]
@@ -68,10 +68,10 @@
                     where
                      multiplicity f | fldnull f = ""
                                     | otherwise = "1..n"
-                     nm f = name.f.fldexpr
+                     nm f = name.lookup.f.fldexpr
                      
        aggrs      = []
-       geners     = rd [ OOGener (name (fst (head gs))) (map (name.snd) gs)| Isa pcs cs<-[isa fSpec], gs<-eqCl fst pcs]
+       geners     = rd [ OOGener ((name.lookup.fst.head) gs) (map (name.lookup.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]
        classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld])]
        assocPlugs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)>1]
        scalarPlgs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)<=1]
@@ -80,7 +80,9 @@
        attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
        isProp d   = null([Sym,Asy]>-multiplicities d)
        scs = [d|d<-declarations fSpec] -- was: for the entire context
-
+       lookup c = if length ps ==1 then head ps else
+                  error ("!Fatal (module ClassDiagram 84): ambiguous lookup in plug list"++show ps)
+                  where ps = [p|p<-classPlugs, c `elem` kernel p]
    shDataModel (OOclassdiagram cs as rs gs _)
     = "OOclassdiagram\n>     "++chain "\n>     "
         [ lijstopmaak (map show cs),
@@ -219,7 +221,7 @@
               "              color = red" ++
               "              label =\"\"" ++
               "      ]\n" ++
-              "       " ++ alias a ++ " -> " ++ alias b ++ "\n"
+              "       " ++ alias b ++ " -> " ++ alias a ++ "\n"
 
    dothtml :: String -> String
    dothtml content = "<\n  " ++ content ++ "\n>"

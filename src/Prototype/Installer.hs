@@ -60,9 +60,9 @@
         [ "}" ]
      ) ++ "\n?>\n"
     where plugCode plug
-           = commentBlock (["Plug "++plname plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (fields plug)))
+           = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (fields plug)))
              ++
-             [ "mysql_query(\"CREATE TABLE `"++plname plug++"`"]
+             [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
              ++ indentBlock 17
                     ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ nul
                       | (f,comma)<-zip (fields plug) ('(':repeat ',')
@@ -77,7 +77,7 @@
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ mdata plug) then [] else
                  [ "else"
-                                 , "mysql_query(\"INSERT IGNORE INTO `"++plname plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
+                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
                                  ]++ indentBlock 12
                                                  ( [ comma++ " (" ++md++ ")"
                                                    | (md,comma)<-zip (mdata plug) ("VALUES":repeat "      ,")
@@ -87,8 +87,8 @@
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              )
           checkPlugexists plug
-           = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(plname plug)++"`\")){"
-             , "  mysql_query(\"DROP TABLE `"++(plname plug)++"`\");" --todo: incremental behaviour
+           = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(name plug)++"`\")){"
+             , "  mysql_query(\"DROP TABLE `"++(name plug)++"`\");" --todo: incremental behaviour
              , "}" ]
           mdata :: Plug -> [String]
           mdata plug

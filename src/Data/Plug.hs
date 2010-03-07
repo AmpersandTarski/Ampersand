@@ -18,8 +18,9 @@ where
   import Maybe
   
   type Plugs = [Plug]
-  data Plug = PlugSql { fields   :: [SqlField]
-                      , plname   :: String
+  data Plug = PlugSql { plname   :: String
+                      , fields   :: [SqlField]
+                      , kernel   :: [Concept]   -- for generated plugs, the name is taken from the first concept.
                       , plfpa    :: FPA
                       }
             | PlugPhp { args     :: PhpArgs
@@ -53,9 +54,9 @@ where
 
   --DESCR -> plugs are sorted to optimize some algoritms. 
   instance Eq Plug where
-    x==y = plname x==plname y
+    x==y = name x==name y
   instance Ord Plug where
-    compare x y = compare (plname x) (plname y)
+    compare x y = compare (name x) (name y)
   
   data SqlField = Fld { fldname     :: String
                       , fldexpr     :: Expression

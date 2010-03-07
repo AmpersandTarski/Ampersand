@@ -1,14 +1,13 @@
 {-# OPTIONS_GHC -Wall #-}
-module Auxiliaries(
-     showL
+module Auxiliaries
+   ( showL
    , sort
    , eqCl 
    , eqClass
    , naming
    , sort'
    , sord'
-
-  )
+   )
   where
    import Strings (chain)
 
@@ -34,13 +33,6 @@ module Auxiliaries(
                           | a<-as, a l `notElem` taken]
    
 
-
-
-
-
-
-
-
    showL   :: [String] -> String
    showL xs = "["++chain "," xs++"]"
 
@@ -52,19 +44,18 @@ module Auxiliaries(
    eqCl _ [] = []
    eqCl f (x:xs) = (x:[e|e<-xs, f x==f e]) : eqCl f [e|e<-xs, f x/=f e]
 
-
+-- This sorting function is for general purpose use. The algorithm is quicksort.
    sort :: (Ord a) => [a] -> [a]
    sort [] = []
    sort (x:xs) = sort [e|e<-xs, e<x] ++ [x] ++ sort [e|e<-xs, e>=x]
 
-
-
+-- If sorting is done wrt a specific criterion f, this function does the trick
+-- e.g. sorting people on the order of their date of birth, which might be:   sort' date_of_birth persons
    sort' :: (Ord b) => (a -> b) -> [a] -> [a]
    sort' _ [] = []
    sort' f (x:xs) = sort' f [e|e<-xs, f e<f x] ++ [x] ++ sort' f [e|e<-xs, f e>=f x]
 
-
-
+-- Sorting, and at the same time removing double occurrences.
    sord' :: Ord b => (a -> b) -> [a] -> [a]
    sord' _ [] = []
    sord' f (x:xs) = sord' f [e|e<-xs, f e<f x] ++ [x] ++ sord' f [e|e<-xs, f e>f x]

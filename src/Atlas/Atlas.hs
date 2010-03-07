@@ -2,6 +2,7 @@
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
 --in IIS you can enable windows authentication
 module Atlas.Atlas where
+import Auxiliaries (sort')
 import Adl
 import ShowADL
 import Data.Fspec
@@ -139,13 +140,16 @@ initDatabase flags fSpec =
 picturesForAtlas :: Options -> Fspc -> [Picture]
 picturesForAtlas flags fSpec
    = [makePicture flags fSpec p | p <- patterns fSpec] ++
-     [makePicture flags fSpec userRule | 
+     [makePicture flags fSpec userRule | userRule <- rules fSpec++signals fSpec, r_usr userRule]++
+{- was:
+     [makePicture flags fSpec userRule |
           userRule <- sort [x|x@Ru{}<-rules fSpec++signals fSpec
                                      , rrdcl x==Nothing
                                      , not (isaRule x)
                                      , not (r_pat x=="")
                            ]
      ]++
+-}
      [makePicture flags fSpec cpt | cpt <- (concs fSpec)]
 
 ----------------------------------------------------
@@ -172,11 +176,11 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x,description x]|x<-cpts]
-   pop' ATContains = [[relpred x,show y]| x<-declarations fSpec,decusr x, y<-contents x]
+   pop' ATContains = [[relpred x,show y]| x@Sgn{}<-declarations fSpec,decusr x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
    pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents x]
    pop' ATContainsSignal = [[cptrule x,show y]| x<-signalrules, y<-ruleviolations x]
-   pop' ATExplanation = [[explainRule flags x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|p<-patterns fSpec, x<-declarations p]
+   pop' ATExplanation = [[explainRule flags x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|p<-patterns fSpec, x@Sgn{}<-declarations p, decusr x]
    pop' ATSubExpression = [[cptsubexpr x y ,cptrule x]|x<-userrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
@@ -184,18 +188,18 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Mph{})<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
-   pop' ATPair = [[show y]| x<-declarations fSpec,decusr x, y<-contents x]
+   pop' ATPair = [[show y]| x@Sgn{}<-declarations fSpec, decusr x, y<-contents x]
               ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents x]
    pop' ATPattern = [[name x,urlString(imgURL pic)]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
-   pop' ATPragmaExample = [[example x]|p<-patterns fSpec, x<-declarations p,decusr x] 
+   pop' ATPragmaExample = [[example x]|p<-patterns fSpec, x@Sgn{}<-declarations p, decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
                      --REMARK -> decls from pat instead of fSpec!
-   pop' ATRelation = [[relpred x,expl x,example x,name p]|p<-patterns fSpec, x<-declarations p,decusr x]
-   pop' ATRelVar = [[relpred x,cpttype x]|x<-declarations fSpec,decusr x]
+   pop' ATRelation = [[relpred x,expl x,example x,name p]|p<-patterns fSpec, x@Sgn{}<-declarations p, decusr x]
+   pop' ATRelVar = [[relpred x,cpttype x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
    pop' ATService = [[name fSpec,urlString(imgURL pic)]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
    pop' ATSignal = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$nextrule x signalrules,cptrule$prevrule x signalrules]|x<-signalrules]
-   pop' ATType = [t x|x<-declarations fSpec,decusr x] ++ [t x|x<-atlasrules]
+   pop' ATType = [t x|x@Sgn{}<-declarations fSpec, decusr x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
    pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,urlString(imgURL pic),r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
    pop' ATViolRule = [[ y, x] | (x,y)<-identifiedviols]
@@ -240,18 +244,27 @@ insertpops conn fSpec flags (tbl:tbls) pics =
              | rrsrt x==Truth = cptexpr (rrcon x)
              | otherwise = []
    cpttype x = name(source x)++"*"++(name$target x)
-   --DESCR -> userrules are user-defined rules, 
-   --         multrls are rules defined by a multiplicity, 
+   --DESCR -> userrules are user-defined rules. For rule r, this is recognizable by the code:   r_usr r
+   --         multrls are rules defined by a multiplicity, which is recognizable by rrdcl r == Just _
    --         homorules by a homogeneous property
    --         the rule from an ISA declaration (I[spec] |- I[gen]) is not presented as a rule in the atlas
    --REMARK -> HaskellDB inserts rows in alphatic order => rules are sorted alphatically by pattern on behalf of prevrule/nextrule. We would prefer sorting on filepos at this moment, but scripts will disappear.
    atlasrules = userrules ++ multrls ++ homorules ++ signalrules
+{- De volgende code is vervangen door wat eronder staat.
    userrules = sortonfst [(r_pat x++cptrule x,x)|x@Ru{}<-rules fSpec, rrdcl x==Nothing, not (isaRule x), not(r_pat x=="")]
    signalrules =  sortonfst [(r_pat x++cptrule x,x)|x<-signals fSpec, not(r_pat x=="")]
-   multrls = [rulefromProp p d |d<-declarations fSpec, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
-   homorules =  [rulefromProp p d|d<-declarations fSpec, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
+   multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
+   homorules =  [rulefromProp p d|d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
    --DESCR -> sort on fst, return snd
    sortonfst xs = [y|(_,y)<-sort xs]
+-- Gerard, het bovenstaande werk hoort Adl2fSpec te doen.
+   Hieronder het alternatief. Graag checken of je de details vindt kloppen. Het resultaat zou identiek moeten zijn.
+-}
+-- WAAROM (SJ) Waarom worden userrules en signalrules gesorteerd?
+   userrules   = sort' (\x->r_pat x++cptrule x) [r| r<-rules fSpec,  r_usr r]
+   signalrules = sort' (\x->r_pat x++cptrule x) [r| r<-signals fSpec]
+   multrls     = [r| r<-rules fSpec, let Just (prp,_) = rrdcl r, prp `elem` [Uni,Tot,Inj,Sur]]
+   homorules   = [r| r<-rules fSpec, let Just (prp,_) = rrdcl r, prp `elem` [Rfx,Sym,Asy,Trn]]
 
 placeholders :: [a] -> String
 placeholders [] = []

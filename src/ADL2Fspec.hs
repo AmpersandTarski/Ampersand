@@ -47,7 +47,7 @@
         definedplugs = vsqlplugs ++ vphpplugs
 -- maybe useful later...
 --        conc2plug :: Concept -> Plug
---        conc2plug c = PlugSql {plname=name c, fields = [field (name c) (Tm (mIs c)) Nothing False True], plfpa = ILGV Eenvoudig}
+--        conc2plug c = PlugSql {plname = name c, fields = [field (name c) (Tm (mIs c)) Nothing False True], kernel=[c], plfpa = ILGV Eenvoudig}
 
 -- mor2plug creates associations between plugs that represent wide tables.
 -- this concerns relations that are not univalent nor injective,
@@ -56,18 +56,18 @@
         mor2plug  m'
          = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 64): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
            if is_Tot
-           then PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Tm (mIs (source m'))(-1)) Nothing (not is_Sur) False {- isUni -}
-                                   ,field (name (target m')) (Tm m' (-1)) Nothing (not is_Tot) False {- isInj -}]
-                        , plfpa  = NO
-                        }
+           then PlugSql (name m')                                                                                   -- plname
+                        [field (name (source m')) (Tm (mIs (source m'))(-1)) Nothing (not is_Sur) (isUni m' {- will be False -})
+                        ,field (name (target m')) (Tm m' (-1)) Nothing (not is_Tot) (isInj m' {- will be False -})] -- fields
+                        []                                                                                          -- kernel
+                        NO                                                                                          -- plfpa 
            else if is_Sur then mor2plug (flp m')
-           else PlugSql { plname = name m'
-                        , fields = [field (name (source m')) (Fi [Tm (mIs (source m'))(-1),F [Tm m'(-1),flp (Tm m'(-1))]]   -- WAAROM (SJ) is dit de expressie in dit veld?
-                                                           )      Nothing (not is_Sur) False {- isUni -}
-                                   ,field (name (target m')) (Tm m'(-1)) Nothing (not is_Tot) False {- isInj -}]
-                        , plfpa  = NO
-                        }
+           else PlugSql (name m')                                                                                   -- plname
+                        [field (name (source m')) (Fi [Tm (mIs (source m'))(-1),F [Tm m'(-1),flp (Tm m'(-1))]]   -- WAAROM (SJ) is dit de expressie in dit veld?
+                                                )      Nothing (not is_Sur) False {- isUni -}
+                        ,field (name (target m')) (Tm m'(-1)) Nothing (not is_Tot) False {- isInj -}]               -- fields
+                        []                                                                                          -- kernel
+                        NO                                                                                          -- plfpa 
            where
              mults = multiplicities m'
              is_Tot = Tot `elem` mults || m' `elem` totals
@@ -127,14 +127,14 @@
         -- This is easier than to invent a set of services from scratch.
 
         -- Rule: a service must be large enough to allow the required transactions to take place within that service.
-        -- TODO: afdwingen dat attributen van elk object unieke namen krijgen.
+        -- Attributen van elk object hebben unieke namen.
 
 --- generation of services:
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities
         cRels = [     morph d | d<-declarations context, decusr d, isTot d]++
                 [flp (morph d)| d<-declarations context, decusr d, not (isTot d) && isSur d]
---  Step 1: select and arrange all declarations to obtain a set cRels of injective relations
+--  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities
         dRels = [     morph d | d<-declarations context, decusr d, isInj d]++
                 [flp (morph d)| d<-declarations context, decusr d, not (isInj d) && isUni d]
@@ -196,35 +196,69 @@
         orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
 
 {- makePlugs computes a set of plugs to obtain wide tables with minimal redundancy.
-   First, we determine classes of concepts that are related by bijective relations.   Code:   cl<-eqClass bi (concs context)
-   Secondly, we choose one concept, c, as the kernel of that plug. If there is any choice, we choose the most generic one.
-   This implies that no concept in cl is more generic than c.  Code: null [y|y<-cl, x<y]
-   Thirdly, we need all univalent relations that depart from this class to be the attributes. Code:   dss cl
-   Then, all these morphisms are made into fields. Code: [mph2fld m | m<- mIs c: dss cs ]
-   Now we have plugs. However, some are redundant. If there is a surjective relation from the kernel of plug p
-   to the kernel of plug p' and there are no univalent relations departing from p',
-   then plug p can serve as kernel for plug p'. Hence p' is redundant and can be removed. It is absorbed by p.
-   So, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
-   Finally, we filter out all shorter plugs that can be represented by longer ones. Code: absorb
+   First, we determine the kernels of all plugs, which contain relations that are both univalent and injective.   Code: kernels
+   Secondly, we choose one concept, c, as the kernel of that plug.   Code: c = source (head kernelAtts)
+   Thirdly, we need all univalent relations that depart from this class to be the attributes. Code:  [a| a<-attMors, source a `elem` concs kernel]
+   Then, all these morphisms are made into fields. Code: plugFields = [mph2fld a| a<-plugMors]
+   Now we have plugs.
+   For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
    The parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities. It was added to avoid recomputation of the extra multiplicities.
 -}
    makePlugs :: Context -> Declarations -> [Plug] -> [Plug]
    makePlugs context allDecs currentPlugs
-    = {- diagnostic
-         error (show (eqClass bi nonCurrConcs)): 
-      -}
-      (absorb . sort' ((0-).length.fields))
-       [ PlugSql [mph2fld m | m<- mIs c: dss cl]    -- fields
-                 (name c)                           -- plname
-                 (ILGV Eenvoudig)                   -- plfpa 
-       | cl<-eqClass bi nonCurrConcs
-       , let c=head [x| x<-cl, null [y|y<-cl, x<y]] -- SJ om een of andere reden was dit voorheen:  let c=minimum [g|g<-nonCurrConcs,g<=head cl]
+    = sort' ((0-).length.fields)
+       [ PlugSql (name c)         -- plname
+                 plugFields       -- fields
+                 (concs kernel)   -- kernel
+                 (ILGV Eenvoudig) -- plfpa
+       | kernel<-kernels
+       , let c = source (head kernelAtts)          -- one concept from the kernel is designated to "lead" this plug.
+             plugFields = [mph2fld a| a<-plugMors] -- Each field comes from a relation.
+             plugMors   = kernelAtts++[a| a<-attMors, source a `elem` concs kernel]
+             kernelAtts = organize kernel
        ]
       where
-       nonCurrDecls = allDecs >- concat (map decls currentPlugs)
+{- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the ADL-script are excluded from the process. -}
+       nonCurrDecls = [d| d@Sgn{}<-allDecs >- concat (map decls currentPlugs), decusr d]
        nonCurrConcs = [c| c@C{}<-concs context] >- concat (map concs currentPlugs)
+       conceptMors  = map mIs nonCurrConcs
+       kernelMors   = [     makeMph d | d<-nonCurrDecls, isUni      d ,      isInj      d  ]
+       attMors      = [     makeMph d | d<-nonCurrDecls, isUni      d , not (isInj      d )]++
+                      [flp (makeMph d)| d<-nonCurrDecls, isUni (flp d), not (isInj (flp d))]
+{- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
+However, if two concepts are mutually connected through a univalent and injective relation, they are combined in one plug.
+So the first step is create the kernels ...   -}
+       kernels
+        = f [k|k<-kernelMors, not (isIdent k)]           -- all univalent and injective relations
+            [[mc]| mc<-conceptMors]                      -- the initial kernels, which are singletons
+          where
+            f :: [Morphism] -> [[Morphism]] -> [[Morphism]]
+            f [] kernels = kernels
+            f rs kernels = f remaining (merge [k++new k| k<-kernels])
+             where new kernel = [r|r<-rs, not (null (concs r `isc` concs kernel))]
+                   remaining = rs>-new (foldr1 uni kernels)
+            merge ks = if nks==ks then ks else merge nks
+             where common kernel kernel' = not (null (kernel `isc` kernel'))
+                   nks = [foldr1 uni cl| cl<-eqClass common ks]
+       {- Kernels are built recursively. Kernels expand by adding (uni and inj) relations until there are none left.
+          Step 1: compute which declarations to add in each kernel (code: [k++new k| k<-kernels])
+          Step 2: determine which kernels to merge (code: eqClass common)
+          Step 3: merge each set of mergeable kernels into one new kernel (code: merge)
+          Step 4: compute the remaining relations (code: ds>-new (map uni kernels) )
+          And call recursively until there are none left. -}
+
+{- Organizing a plug means to put the concepts from the kernel to the left, and the attribute columns to the right.
+   Typically, a kernel has one concept. There may be more, however, if the concept has uni+inj relations.
+   If there is a surjective relation from concept A to concept B, we prefer A to be on the left of B. -}
+       organize kernel = sort' f attributes++[c| null attributes, c<-kernel]
+        where f c = ((0-).length)
+                    [a| a<-attributes, source a `elem` concs c && isSur a, target a `elem` concs c && isTot a]
+              attributes = [if isTot d && not (isSur d) then flp d else d| d<-kernel, not (isIdent d)]
+
+
+-- Each morphism yields one field in the plug... 
        mph2fld m = Fld (name m)                                     -- fldname : 
-                       (Tm m (-1))                                       -- fldexpr :
+                       (Tm m (-1))                                  -- fldexpr :
                        (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
                        (not (isTot m))                              -- fldnull : can there be empty field-values? 
                        (isInj m)                                    -- flduniq : are all field-values unique?
@@ -233,43 +267,22 @@
                          isAuto  = isIdent m
                                     && not (null [key| key<-keyDefs context, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
                                     && null (contents m) -- and the the field may not contain any strings
- -- bi means that there is a bijective relation between two concepts. 
-       c `bi` c' = not (null [mph| mph<-nonCurrDecls, isFunction mph, isFunction (flp mph)
-                                 , source mph<=c && target mph<=c'  -- WAAROM (SJ) Bas, waarom is dit correct? Ik zou verwachten: source mph==c && target mph==c'
-                                   || source mph<=c' && target mph<=c])
-{- The attributes of a plug are determined by the univalent relations that depart from the kernel. -}
-       dss cl = [     makeMph d | d<-nonCurrDecls, isUni      d , source d `elem` cl]++
-                [flp (makeMph d)| d<-nonCurrDecls, isUni (flp d), target d `elem` cl]
-
-{- Absorb
-If a concept is represented by plug p, and there is a surjective path between concept c' and c, then c' can be represented in the same table.
-Hence, we do not need a separate plug for c' and it will be skipped.
--}
-       absorb []     = []
-       absorb (p:ps) = p: absorb [p'| p'<-ps
-                                    , kernel p' `notElem` [target m| f<-fields p
-                                                                   , Tm m _<-[fldexpr f]
-                                                                   , isSur m]]
-
-       kernel :: Plug -> Concept -- determines the core concept of p. The plug serves as concept table for (kernel p).
-       kernel p@(PlugSql{}) = source (fldexpr (head (fields p)))
-       kernel _ = error("!Fatal (module ADL2Fspec 293): function \"kernel\"")
 
 
    makeSqlPlug :: ObjectDef -> Plug
-   makeSqlPlug obj = PlugSql{fields=makeFields
-                             ,plname=name obj
-                             ,plfpa=ILGV Eenvoudig}
+   makeSqlPlug obj = PlugSql (name obj)             -- plname
+                             makeFields             -- fields
+                             [target (objctx obj)]  -- kernel
+                             (ILGV Eenvoudig)       -- plfpa
       where
       makeFields ::  [SqlField]
       makeFields =
-        [Fld{fldname = name att
-            ,fldexpr = objctx att
-            ,fldtype = sqltp att
-            ,fldnull = nul att
-            ,flduniq = uniq att
-            ,fldauto = att `elem` autoFields
-            }
+        [Fld (name att)                -- fldname : 
+             (objctx att)              -- fldexpr :
+             (sqltp att)               -- fldtype :
+             (nul att)                 -- fldnull : can there be empty field-values? 
+             (uniq att)                -- flduniq : are all field-values unique?
+             (att `elem` autoFields)   -- fldauto : is the field auto increment?
         | att<-objats obj
         ]
         where nul  att = not (isTot (objctx att))

@@ -3,6 +3,7 @@ module Calc ( deriveProofs
             , reprAsRule
             , lambda
             , checkMono
+            , showProof
             , positiveIn) 
   where
 

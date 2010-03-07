@@ -509,7 +509,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
      = ( [ ( [Str (name r)]
            , [ [ Plain [Str (explainRule flags r)]] ++
                [ Plain (text1)| not (null nds)] ++
-               pandocEqnArray [ ([TeX ("\\id{"++name d++"}")], [TeX ":"], [TeX ("\\id{"++name (source d)++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++name (target d)++"}"), symDefLabel d])
+               pandocEqnArray [ ([TeX ("\\id{"++latexEsc (name d)++"}")], [TeX ":"], [TeX ("\\id{"++latexEsc (name (source d))++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++latexEsc (name (target d))++"}"), symDefLabel d])
                               |d<-nds] ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
@@ -1211,6 +1211,36 @@ latexEsc x
  = f x
    where f "" = ""
          f ('_':str) = "\\_"++f str
+         f ('\192':str) = "\\`A" ++f str   -- À
+         f ('\193':str) = "\\'A" ++f str   -- Á
+         f ('\196':str) = "\\\"A"++f str   -- Ä
+         f ('\200':str) = "\\`E" ++f str   -- È
+         f ('\201':str) = "\\'E" ++f str   -- É
+         f ('\203':str) = "\\\"E"++f str   -- Ë
+         f ('\204':str) = "\\`I" ++f str   -- Ì
+         f ('\205':str) = "\\'I" ++f str   -- Í
+         f ('\207':str) = "\\\"I"++f str   -- Ï
+         f ('\210':str) = "\\`O" ++f str   -- Ò
+         f ('\211':str) = "\\'O" ++f str   -- Ó
+         f ('\214':str) = "\\\"O"++f str   -- Ö
+         f ('\217':str) = "\\`U" ++f str   -- Ù
+         f ('\218':str) = "\\'U" ++f str   -- Ú
+         f ('\220':str) = "\\\"U"++f str   -- Ü
+         f ('\224':str) = "\\`a" ++f str   -- à
+         f ('\225':str) = "\\'a" ++f str   -- á
+         f ('\228':str) = "\\\"a"++f str   -- ä
+         f ('\232':str) = "\\`e" ++f str   -- è
+         f ('\233':str) = "\\'e" ++f str   -- é
+         f ('\235':str) = "\\\"e"++f str   -- ë
+         f ('\236':str) = "\\`i" ++f str   -- ì
+         f ('\237':str) = "\\'i" ++f str   -- í
+         f ('\239':str) = "\\\"i"++f str   -- ï
+         f ('\242':str) = "\\`o" ++f str   -- ò
+         f ('\243':str) = "\\'o" ++f str   -- ó
+         f ('\246':str) = "\\\"o"++f str   -- ö
+         f ('\249':str) = "\\`u" ++f str   -- ù
+         f ('\250':str) = "\\'u" ++f str   -- ú
+         f ('\252':str) = "\\\"u"++f str   -- ü
          f (c:str)   = c: f str
 
 --posixFilePath :: FilePath -> String
