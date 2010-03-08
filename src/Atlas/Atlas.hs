@@ -57,7 +57,7 @@ data ATableId =
 tables::[ATable]
 tables = 
    [ATable ATAtom "atom" ["i","user","script","display"] 
-   ,ATable ATConcept "concept" ["i","description","user","script","display"] 
+   ,ATable ATConcept "concept" ["i","description","picture","user","script","display"] 
    ,ATable ATContains "contains" ["relation","pair"] 
    ,ATable ATContainsConcept "containsconcept" ["concept","atom"] 
    ,ATable ATContainsExpr "containssubexpression" ["subexpression","pair"] 
@@ -175,7 +175,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop x = [map toSql$toUserctx ys x|ys<-rd (pop' x)]  
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
-   pop' ATConcept = [[name x,description x]|x<-cpts]
+   pop' ATConcept = [[name x,description x,urlString(imgURL pic)]|x<-cpts,pic<-pics, origName pic==name x, pType pic == PTConcept]
    pop' ATContains = [[relpred x,show y]| x@Sgn{}<-declarations fSpec,decusr x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
    pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents x]
@@ -261,10 +261,14 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    Hieronder het alternatief. Graag checken of je de details vindt kloppen. Het resultaat zou identiek moeten zijn.
 -}
 -- WAAROM (SJ) Waarom worden userrules en signalrules gesorteerd?
+-- OMDAT (gmi) HDBC sorteert alfabetisch, om logische next en previous rule te bepalen wordt gesorteerd. 
    userrules   = sort' (\x->r_pat x++cptrule x) [r| r<-rules fSpec,  r_usr r]
    signalrules = sort' (\x->r_pat x++cptrule x) [r| r<-signals fSpec]
-   multrls     = [r| r<-rules fSpec, let Just (prp,_) = rrdcl r, prp `elem` [Uni,Tot,Inj,Sur]]
-   homorules   = [r| r<-rules fSpec, let Just (prp,_) = rrdcl r, prp `elem` [Rfx,Sym,Asy,Trn]]
+   multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]]
+   --TODO: Onderstaande levert lege lijsten op bij Deliver.adl. Daarnaast wil ik onderscheid tussen eigenschappen gezet door de user en afgeleide eigenschappen, dus <-declarations en niet <-rules fSpec. Afgeleide eigenschappen zijn niet zichtbaar in de huidige atlas.
+   --multrls     = [r| r<-rules fSpec, case rrdcl r of Just (prp,_) -> prp `elem` [Uni,Tot,Inj,Sur]; _-> False;]
+   --homorules   = [r| r<-rules fSpec, case rrdcl r of Just (prp,_) -> prp `elem` [Rfx,Sym,Asy,Trn]; _-> False;]
+   homorules =  [rulefromProp p d|d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
 
 placeholders :: [a] -> String
 placeholders [] = []

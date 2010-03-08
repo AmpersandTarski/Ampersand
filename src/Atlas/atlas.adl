@@ -41,6 +41,7 @@ description::Concept*Explanation [UNI].
 --IsaRelation contains only user-defined isa relations, not derived ones
 specific::IsaRelation->Concept. 
 general::IsaRelation->Concept.
+picture::Concept->Picture.
 ENDPATTERN
 PATTERN Rules
 
@@ -179,26 +180,33 @@ display::PragmaExample->String.
 ENDPATTERN
 
 SERVICE Overzicht{"Action=Select"} : I[ONE]
-   = [ Patterns{"DISPLAY=Pattern.display"} : V[ONE*Pattern];(user;s;user[Pattern*User]~ /\ script;s;script~) 
-        = [ violated_rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
-         , property_violations_on{"DISPLAY=Relation.display"} : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
+   = [ "Patternlijst"{"DISPLAY=Pattern.display"} : V[ONE*Pattern];(user;s;user[Pattern*User]~ /\ script;s;script~) 
+        = [ "Dit pattern heeft regelovertredingen op de regel(s)"{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
+         , "Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)"{"DISPLAY=Relation.display"} : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
           ]
-     , "Conceptual diagram"{"PICTURE"}: V[ONE*Service];(user;s;user[Service*User]~ /\ script;s;script~);picture;display
      ]
 
-SERVICE Violations{"Action=Select"}: I[ONE]
-   = [ violated_rules{"DISPLAY=UserRule.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates[Violation*UserRule]
-        = [ "is violated by" : violates~;display]
-     , property_violations_on{"DISPLAY=Relation.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates;on[MultiplicityRule*Relation] \/ V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates;on[HomogeneousRule*Relation] 
-          = [ "is violated by" : on[MultiplicityRule*Relation]~;violates~;display]
+SERVICE Overtredingen{"Action=Select"}: I[ONE]
+   = [ "de regel"{"DISPLAY=UserRule.display"} : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates[Violation*UserRule]
+        = [ "wordt overtreden door" : violates~;display]
+     , "de cardinaliteitseigenschap" : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates[Violation*MultiplicityRule]
+        = ["eigenschap": property;display
+          ,"van relatie"{"DISPLAY=Relation.display"}: on
+          ,"wordt overtreden door": violates~;display
+          ]
+     , "de homogene eigenschap" : V[ONE*Violation];(user;s;user[Violation*User]~ /\ script;s;script~);violates[Violation*HomogeneousRule]
+        = ["eigenschap": property;display
+          ,"van relatie"{"DISPLAY=Relation.display"}: on
+          ,"wordt overtreden door": violates~;display
+          ]
      ]
 
 SERVICE Pattern{"Action=Select","DISPLAY=Pattern.display"} : I[Pattern]
-   = [ signals{"DISPLAY=Signal.display"} : pattern[Signal*Pattern]~
-     , rules{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
-     , relations{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
-     , isa_relations : pattern[IsaRelation*Pattern]~;display
-     , "Conceptual diagram"{"PICTURE"}: picture;display
+   = [ --signals{"DISPLAY=Signal.display"} : pattern[Signal*Pattern]~
+       "regels"{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
+     , "relaties"{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
+     , "isa-relaties" : pattern[IsaRelation*Pattern]~;display
+     , "Conceptueel diagram"{"PICTURE"}: picture;display
      ]
 
 -- {"DISPLAY=<Concept>.<(function)Relation>"} if you need the link by id and a user-friendly representation.
@@ -220,72 +228,72 @@ SERVICE Signal{"Action=Select","DISPLAY=Signal.display"} : I[Signal]
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
 --        nu wordt default de specieke tabel gebruikt voor alle relaties!
 SERVICE Rule{"Action=Select","DISPLAY=Rule.display"} : I[Rule]
-   = [ source{"DISPLAY=Concept.display"} : type;source
-     , target{"DISPLAY=Concept.display"} : type;target
-     , violations : violates~;display
-     , explanation : explanation;display
-     , pattern{"DISPLAY=Pattern.display"} : pattern]
+   = [ "source"{"DISPLAY=Concept.display"} : type;source
+     , "target"{"DISPLAY=Concept.display"} : type;target
+     , "overtredingen" : violates~;display
+     , "uitleg" : explanation;display
+     , "pattern"{"DISPLAY=Pattern.display"} : pattern]
 SERVICE UserRule{"Action=Select","DISPLAY=UserRule.display"} : I[UserRule]
-   = [ source{"DISPLAY=Concept.display"} : type;source
-     , target{"DISPLAY=Concept.display"} : type;target
-     , relations{"DISPLAY=Relation.display"} : morphisms
-     , subexpressions{"DISPLAY=SubExpression.display"}: subexpressionOf~
-     , violations : violates~;display
-     , explanation : explanation;display
-     , previous{"DISPLAY=UserRule.display"} : previous
-     , next{"DISPLAY=UserRule.display"} : next
-     , pattern{"DISPLAY=Pattern.display"} : pattern
-     , "Conceptual diagram"{"PICTURE"}: picture;display]
+   = [ "uitleg" : explanation;display
+     , "overtredingen" : violates~;display
+     , "populatie van subexpressies"{"DISPLAY=SubExpression.display"}: subexpressionOf~
+     , "relaties"{"DISPLAY=Relation.display"} : morphisms
+     , "source"{"DISPLAY=Concept.display"} : type;source
+     , "target"{"DISPLAY=Concept.display"} : type;target
+     , "ga naar pattern"{"DISPLAY=Pattern.display"} : pattern
+     , "ga naar vorige regel"{"DISPLAY=UserRule.display"} : previous
+     , "ga naar volgende regel"{"DISPLAY=UserRule.display"} : next
+     , "Conceptueel diagram"{"PICTURE"}: picture;display]
 SERVICE Rule2{"Action=Select","DISPLAY=MultiplicityRule.display"} : I[MultiplicityRule]
-   = [ "property of relation"{"DISPLAY=Relation.display"} : on
-     , violations : violates~;display
-     , explanation : explanation;display
-     , pattern{"DISPLAY=Pattern.display"} : on;pattern]
+   = [ "eigenschap van relatie"{"DISPLAY=Relation.display"} : on
+     , "overtredingen" : violates~;display
+     , "uitleg" : explanation;display
+     , "pattern"{"DISPLAY=Pattern.display"} : on;pattern]
 SERVICE Rule3{"Action=Select","DISPLAY=HomogeneousRule.display"} : I[HomogeneousRule]
-   = [ "property of relation"{"DISPLAY=Relation.display"} : on
-     , violations : violates~;display
-     , explanation : explanation;display
-     , pattern{"DISPLAY=Pattern.display"} : on;pattern]
+   = [ "eigenschap van relatie"{"DISPLAY=Relation.display"} : on
+     , "overtredingen" : violates~;display
+     , "uitleg" : explanation;display
+     , "pattern"{"DISPLAY=Pattern.display"} : on;pattern]
 
 SERVICE Population2{"Action=Select","DISPLAY=SubExpression.display"}   : I[SubExpression]
-   = [ population  : contains;display]
+   = [ "populatie"  : contains;display]
 
 --I must use a nested name to display, because there is no SERVICE on String only on Relation
-SERVICE Relations{"Action=Select"} : I[ONE]
-   = [ Relation_s{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)
-        = [ example : example;display]
+SERVICE Relaties{"Action=Select"} : I[ONE]
+   = [ "Relatielijst"{"DISPLAY=Relation.display"} : V[ONE*Relation];(user;s;user[Relation*User]~ /\ script;s;script~)
+        = [ "voorbeeld" : example;display]
      ]
 
 --I do not want to display the qualified name, but the unqualified one
 --TODO -> in case of overloaded relation variables, the populations are merged 
-SERVICE "RelationDetails"{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
-   = [ explanation : description;display
-     , "multiplicity properties" : (on[MultiplicityRule*Relation])~
-       = [ property : property;display, "derived rule" : display, violations : violates~;display]
-     , "homogeneous properties"  : (on[HomogeneousRule*Relation])~
-       = [property : property;display, "derived rule" : display, violations : violates~;display]
-     , concepts{"DISPLAY=Concept.display"} : relvar;(source \/ target)
-     , "used in rules"{"DISPLAY=UserRule.display"} : morphisms[UserRule*Relation]~
-     , pattern{"DISPLAY=Pattern.display"} : pattern
-     , population  : contains;display
+SERVICE Relatiedetails{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
+   = [ "uitleg" : description;display
+     , "cardinaliteitseigenschappen" : (on[MultiplicityRule*Relation])~
+       = [ "eigenschap" : property;display, "afgeleide regel" : display, "wordt overtreden door" : violates~;display]
+     , "homogene eigenschappen"  : (on[HomogeneousRule*Relation])~
+       = ["eigenschap" : property;display, "afgeleide regel" : display, "wordt overtreden door" : violates~;display]
+     , "concepten"{"DISPLAY=Concept.display"} : relvar;(source \/ target)
+     , "toepassing in regels"{"DISPLAY=UserRule.display"} : morphisms[UserRule*Relation]~
+     , "pattern"{"DISPLAY=Pattern.display"} : pattern
+     , "populatie"  : contains;display
      ]
 
-SERVICE Population{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
-   = [ example : example;display, explanation : description;display, population  : contains;display]
+SERVICE Populatie{"Action=Select","DISPLAY=Relation.display"}   : I[Relation]
+   = [ "voorbeeld" : example;display, "uitleg" : description;display, "populatie"  : contains;display]
 
-SERVICE Concepts{"Action=Select"} : I[ONE]
-   = [ Concept_s{"DISPLAY=Concept.display"} : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~)]
+SERVICE Concepten{"Action=Select"} : I[ONE]
+   = [ "Conceptenlijst"{"DISPLAY=Concept.display"} : V[ONE*Concept];(user;s;user[Concept*User]~ /\ script;s;script~)]
 
 SERVICE Concept{"Action=Select","DISPLAY=Concept.display"} : I[Concept]
-   = [ description : description;display
-     , population : contains;display]
+   = [ "beschrijving" : description;display
+     , "populatie" : contains;display
+     , "Conceptueel diagram"{"PICTURE"}: picture;display]
 
-SERVICE "ISArelations"{"Action=Select"} : I[ONE]
-   = [ "IS-a relations" :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
-      = [ "IS-a relation" : display
-        , specific {"DISPLAY=Concept.display"}: specific
-        , isa {"DISPLAY=Concept.display"}: general
-        , pattern : pattern;display
+SERVICE ISArelaties{"Action=Select"} : I[ONE]
+   = [ "IS-a relaties"{"DISPLAY=IsaRelation.display"} :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
+      = [ "het specifieke concept" {"DISPLAY=Concept.display"}: specific
+        , "is een" {"DISPLAY=Concept.display"}: general
+        , "pattern" : pattern;display
         ]
      ]
 

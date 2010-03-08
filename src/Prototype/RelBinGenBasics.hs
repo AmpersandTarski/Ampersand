@@ -75,9 +75,9 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     | length lst'==length simplectxbinding && source iex==target iex && length(snd$vctxenv fSpec)==length simplectxbinding
         = let phpvar1 = (snd.head)(snd$vctxenv fSpec) 
           in concat$ 
-               ["SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `"++name(source iex)++"` AS TODO "
-               , "WHERE TODO.`"++phpvar1++"`='\".$GLOBALS['ctxenv']['"++phpvar1++"'].\"'"]
-               ++["AND TODO.`"++x++"`='\".$GLOBALS['ctxenv']['"++x++"'].\"'"|(_,x)<-tail (snd$vctxenv fSpec)]
+               ["SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `"++lowerCase(name(source iex))++"` AS TODO "
+               , "WHERE TODO.`"++lowerCase phpvar1++"`='\".$GLOBALS['ctxenv']['"++phpvar1++"'].\"'"]
+               ++["AND TODO.`"++lowerCase x++"`='\".$GLOBALS['ctxenv']['"++x++"'].\"'"|(_,x)<-tail (snd$vctxenv fSpec)]
     | otherwise = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                            (chain ", " exprbracs) (chain " AND " wherecl)
 {- The story:
@@ -502,12 +502,15 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    -- sqlRelName :: (Show m,Morphic m,MorphicId m,Morphical m) => Fspc -> m -> String
    sqlRelName :: Fspc -> Morphism -> (String,String,String)
    sqlRelName fSpec m
-    = if isIdent m then (sqlConcept fSpec (source m),"i","i") else
+    = if isIdent m then (sqlConcept fSpec (source m),fldname ix,fldname iy) else
       if isTrue m then ("V",name (source m),name (target m)) else
       --if null as then error ("!Fatal (module RelBinGenBasics 486): No decls in "++show m') else
       --if length as>1 then error ("!Fatal (module RelBinGenBasics 487): Multiple decls in "++show m') else
       if null plug then error "xx" else head plug
-      where           
+      where    
+      cs = sqlRelPlugs fSpec (Tm m (-1))
+      (ix,iy) = if null cs then error ("!Fatal (module RelBinGenBasics 512): The identity of any concept must have a plug")
+                else (\(_,ix,iy)->(ix,iy))(head cs)     
       --of de declaratie van een morphisme (Mph{}) is vertaald naar een plugexpressie (plug,i,d) XOR een binaire tabel (d,s,t) evt verwerkt in een user-defined PLUG, dat tuple wil ik vinden.
       --IMPLEMENTATIE: Vind een plug met een plugtargetveld met expr m of m~ EN een plugsource veld met I[source m resp m~], anders ERROR. Naar equivalente plugexprs van m resp. m~ en I[source m/m~] wordt dus (nog?) niet gezocht (bv. I;m of m;V;m)!
       --VOORHEEN: werd sqlRelPlugs gebruikt om alleen de naam van de plug op te leveren, maar dit gaf mismatches in SELECT queries (velden die niet in de plug zitten). De consequenties voor php function save() zijn nog niet uitgezocht TODO
@@ -554,10 +557,13 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
          (Tm m _) -> if (not.null)(xx ex') 
                         && ((fldname.fst.head)(xx ex')=="i"  || (fldname.snd.head)(xx ex')=="i") 
                         && not(elem "i" [fldname f|f<-fields plug])
-                     then take 1 [(y,x)|(x,y)<-xx(flp ex')]
+                     then flpxx-- if null flpxx || (fldname.fst.head)flpxx=="i"  || (fldname.snd.head)flpxx=="i" 
+                          --then xx ex'
+                          --else flpxx
                      else xx ex' 
          _ -> xx ex'
       where
+      flpxx = take 1 [(y,x)|(x,y)<-xx(flp ex')]
       xx e' = [ (sf,tf)
                   | let fs  = [f|f<-fields plug,target (fldexpr f)==source e']
                         flds=fs++

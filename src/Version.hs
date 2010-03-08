@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "0.8.10-632" -- the number behind the last digit is the SVN revision number.
+versionNumber = "1.1-632" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
 {-
 SVN Version text:
-SQL plugs zijn gerepareerd en het class diagram is nu een correcte afspiegeling van de SQL-plugs.
+Atlas aanpassingen.
 -}
