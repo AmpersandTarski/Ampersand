@@ -1,6 +1,6 @@
 
 
--- UUAGC 0.9.10 (src/typeinference/inflibag)
+-- UUAGC 0.9.14 (src/TypeInference/InfLibAG.ag)
 
 
 module TypeInference.InfLibAG 
@@ -19,9 +19,11 @@ import TypeInference.InfLibAGFuncs
 infer:: [RelDecl] -> Isa -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)]) TError
 infer reldecls isas root_expr =
   case rtype of
-    Left (x,y) -> if x==Universe || y==Universe 
-                  then Right$TErrorU "Source or target is the universal set" (x,y) 
-                  else Left ((x,y), env_mph )
+    Left (x,y) -> if x==Universe 
+                  then Right$TErrorU "The source of the expression is the universal set" 
+                  else if  y==Universe
+                       then Right$TErrorU "The target of the expression is the universal set" 
+                       else Left ((x,y), env_mph )
     Right err -> Right err
   where
   env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (inftree (head alltypes))]

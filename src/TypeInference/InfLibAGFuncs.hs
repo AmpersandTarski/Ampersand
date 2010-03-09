@@ -82,7 +82,8 @@ instance Show RelAlgObj where
 
 data TError =
    TErrorAmb ETitle [RelAlgType] -- the type of the root expression is ambiguous
-  |TErrorU ETitle RelAlgType -- the source or target of the type of the root expression is the universe
+  |TErrorU ETitle  -- the source or target of the type of the root expression is the universe
+  |TErrorUC ETitle RelAlgExpr RelAlgExpr -- the composition is over the universe
   |TError0 ETitle RelAlgObj --the concept is not defined in isas or part of the type of any env_decls
   |TError1 ETitle RelAlgExpr --the relation expression is not defined in the env_decls
   |TError2 ETitle (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType]) --(ababab) there is no type in the first list matching a type in the second
@@ -108,6 +109,8 @@ general,specific::RelAlgObj->RelAlgObj->Isa->RelAlgObj
 isspecific x y isas = elem (x,y) isas
 isgeneral x y isas = elem (y,x) isas
 isarelated x y isas = isspecific x y isas || isgeneral x y isas
+--REMARK: pattern "not_universe Universe Universe" is not added while the conclusion of an error for inferring the Universe is best taken elsewhere 
+--        if the root expression infers a type containing the Universe or a composition over the Universe then there will be an error.
 not_universe Universe x = x
 not_universe x _ = x
 
@@ -118,9 +121,9 @@ general x y isas = if elem (x,y) isas
                         else fatal 167 $ "A type can only be inferred if there is no type error. "
                                          ++show x++" is not a "++show y++" given the is-a hierarchy " ++ show isas ++"."
 specific x y isas = if elem (x,y) isas 
-                    then x 
+                    then not_universe x y 
                     else if elem (y,x) isas 
-                         then y                          
+                         then not_universe y x                          
                          else fatal 173 $ "A type can only be inferred if there is no type error. "
                                           ++show x++" is not a "++show y++" given the is-a hierarchy " ++ show isas ++"."
 
@@ -177,12 +180,12 @@ infer_ababab isas irule (a,b) (a',b') = case irule of
 infer_abbcac_b :: Isa -> InfRuleType -> RelAlgObj -> RelAlgObj -> RelAlgObj
 infer_abbcac_b isas irule lb rb = case irule of
    Comp_ncs -> specific lb rb isas
-   Comp_c1 -> rb
-   Comp_c2 -> lb
+   Comp_c1 -> not_universe rb lb
+   Comp_c2 -> not_universe lb rb
    Comp_cs -> general lb rb isas
    RAdd_ncs -> general lb rb isas
-   RAdd_c1 -> rb
-   RAdd_c2 -> lb
+   RAdd_c1 -> not_universe rb lb
+   RAdd_c2 -> not_universe lb rb
    RAdd_cs -> specific lb rb isas
    _ -> fatal 236 "infer_abbcac_b is a function for Comp_* or RAdd_* inference rules only"
 ----------------------------------------------------------------------------
@@ -293,15 +296,18 @@ push_type_abbcac _ _ _ _ (Left []) _ = fatal 330 "the AltList cannot be Left [].
 push_type_abbcac _ _ _ _ _ (Right err) = Right err --error in rsub
 push_type_abbcac _ _ _ _ (Right err) _ = Right err --error in lsub
 push_type_abbcac (l,r) isas irule (inh_a,inh_c) (Left lalts) (Left ralts) = 
-  if length final_t==1 
-  then Left (head final_t)
+  if length final_t==1
+       --REMARK: compositions are inferred from the right resulting in unnecessary composition ambiguities 
+       --        p.e. r;I;V results in ambiguity of composition I;V while I;V is inferred to push down a type and not (r;I);V
+  then if notuniverse then Left (fst(head final_t)) else Right$TErrorUC "Composition over the universal set" l r
   else if null final_t
             --this should not be possible while there are no user-defined type on expressions, only on relations
        then fatal 338 "the expression has a type error, there cannot be a type for this composition expression."
-       else Right$TError4 "Ambiguous composition" (l,lalts) (r,ralts) [b|((_,b),_)<-final_t]
+       else Right$TError4 "Ambiguous composition" (l,lalts) (r,ralts) [b|(((_,b),_),_)<-final_t]
   where  --final_t is like alts_abbcac only with an inferred b, given the inherited type
-  final_t = [infer_t (not_universe inh_a a, b) (b',not_universe inh_c c)
-             |(a,b)<-lalts,(b',c)<-ralts, isarelated a inh_a isas, isarelated c inh_c isas, isarelated b b' isas]
+  notuniverse = snd(head final_t)
+  final_t = [(infer_t (not_universe inh_a a, b) (b',not_universe inh_c c),not(b==Universe && b'==Universe))
+            |(a,b)<-lalts,(b',c)<-ralts, isarelated a inh_a isas, isarelated c inh_c isas, isarelated b b' isas]
   infer_t (a,b) (b',c)  = ( (a,final_b) , (final_b ,c) )
     where final_b = infer_abbcac_b isas irule b b' 
 

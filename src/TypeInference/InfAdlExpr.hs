@@ -124,10 +124,13 @@ fromExpr (K1 ex) = fromExpr ex
 --TODO -> if I want "[1] Type mismatch in rule" to be recognized, then I'll have to analyse "[4] Incompatible comparison" errors. If the antecedent and consequent do have a type, then it is a type 1 error. But I do not want to make a union data type RuleOrExpression -> I want the rule operators to be expression operators so I can evaluate the expression.
 --TODO -> I could print more in case of --verbose
 printterror:: Declarations -> Expression -> TError -> String
---TErrorU ETitle RelAlgType 
+--TErrorU ETitle  
 -- the source or target of the type of the root expression is the universe
-printterror _ _ (TErrorU str t) 
-              = "[0] "++str++"\nThe type is "++showtype t++"\n"
+printterror _ _ (TErrorU str) 
+              = "[0] "++str++"\n"
+--the composition is over the universe
+printterror _ root (TErrorUC str x y) 
+              = "[10] "++str++"\nLeft operand: "++operand root (therels x)++"\nRight operand: "++operand root (therels y)
 --TErrorAmb ETitle [RelAlgType] 
 -- the type of the root expression is ambiguous
 printterror _ _ (TErrorAmb str ts) 
