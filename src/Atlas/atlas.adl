@@ -205,7 +205,7 @@ SERVICE Pattern{"Action=Select","DISPLAY=Pattern.display"} : I[Pattern]
    = [ --signals{"DISPLAY=Signal.display"} : pattern[Signal*Pattern]~
        "regels"{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~
      , "relaties"{"DISPLAY=Relation.display"} : pattern[Relation*Pattern]~
-     , "isa-relaties" : pattern[IsaRelation*Pattern]~;display
+  --   , "isa-relaties" : pattern[IsaRelation*Pattern]~;display
      , "Conceptueel diagram"{"PICTURE"}: picture;display
      ]
 
@@ -223,6 +223,10 @@ SERVICE Signal{"Action=Select","DISPLAY=Signal.display"} : I[Signal]
      , next{"DISPLAY=Signal.display"} : next
      , pattern{"DISPLAY=Pattern.display"} : pattern
      , contains : contains;display]
+
+SERVICE Regels{"Action=Select"} : I[ONE]
+   = [ "Regellijst"{"DISPLAY=UserRule.display"} : V[ONE*UserRule];(user;s;user[UserRule*User]~ /\ script;s;script~)
+     ]
 
 --TODO -> specific types moeten doorlinken naar generiekere service, als geen specifieke service bestaat
 --TODO -> relations op generieke types moeten herkend worden, zodat juiste SQL gemaakt kan worden
@@ -288,7 +292,7 @@ SERVICE Concept{"Action=Select","DISPLAY=Concept.display"} : I[Concept]
    = [ "beschrijving" : description;display
      , "populatie" : contains;display
      , "Conceptueel diagram"{"PICTURE"}: picture;display]
-
+{-
 SERVICE ISArelaties{"Action=Select"} : I[ONE]
    = [ "IS-a relaties"{"DISPLAY=IsaRelation.display"} :  V[ONE*IsaRelation];(user;s;user[IsaRelation*User]~ /\ script;s;script~)
       = [ "het specifieke concept" {"DISPLAY=Concept.display"}: specific
@@ -296,7 +300,7 @@ SERVICE ISArelaties{"Action=Select"} : I[ONE]
         , "pattern" : pattern;display
         ]
      ]
-
+-}
 ENDCONTEXT
 
 {-
