@@ -181,8 +181,8 @@ ENDPATTERN
 
 SERVICE Overzicht{"Action=Select"} : I[ONE]
    = [ "Patternlijst"{"DISPLAY=Pattern.display"} : V[ONE*Pattern];(user;s;user[Pattern*User]~ /\ script;s;script~) 
-        = [ "Dit pattern heeft regelovertredingen op de regel(s)"{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
-         , "Dit pattern heeft overtredingen op eigenschap(pen) van relatie(s)"{"DISPLAY=Relation.display"} : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
+        = [ "regels die overtreden worden"{"DISPLAY=UserRule.display"} : pattern[UserRule*Pattern]~;violates~;violates[Violation*UserRule]
+         , "relaties waarvan een eigenschap overtreden wordt"{"DISPLAY=Relation.display"} : pattern~;on[MultiplicityRule*Relation]~;violates~;violates;on[MultiplicityRule*Relation] \/ pattern~;on[HomogeneousRule*Relation]~;violates~;violates;on[HomogeneousRule*Relation]
           ]
      ]
 
