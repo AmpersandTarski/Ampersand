@@ -4,7 +4,7 @@
    --import Char(toUpper)
    import Strings(chain)
    import NormalForms (disjNF,simplify)
-   import Auxiliaries (eqCl,sort')
+   import Auxiliaries (eqCl)
    import Adl (target
               --,Concept(..),Declaration(..),isTrue,makeInline
               ,ObjectDef(..),Numbered(..),Morphic(..)
@@ -406,7 +406,7 @@
    --REMARK: only used for php function save()
    objPlugs :: Fspc -> ObjectDef -> [Plug]
    objPlugs fSpec object
-     = [plug|plug<-plugs fSpec,((_,_),(_,_))<-take 1 $ plugAts plug object object]
+     = [plug|plug<-plugs fSpec, not (null (plugAts plug object object))]
    
    isObjUni :: ObjectDef -> Bool
    isObjUni obj = isUni (objctx obj)
@@ -476,7 +476,8 @@
                          ]
                         )
    
-{- objIn representeert een PHP-object dat een subset is van PHP-object objOut.
+{- doSqlGet genereert de SQL-query die nodig is om het PHP-object objOut van inhoud te voorzien.
+   objIn representeert een PHP-object dat een subset is van PHP-object objOut.
    objIn representeert het deel van objOut dat bij aanroep reeds gevuld is.
    Dit voorkomt onnodige database accessen.
    De parameter 'isArr' vertelt of het een array betreft of een enkel veld.
@@ -496,9 +497,10 @@
       where comboGroups'::[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
             comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WAAROM: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
             comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
+-- keyGroups representeert de plug-informatie die nodig is voor het atoom aan de rand van objIn, wat de bron is van waaruit objOut wordt opgebouwd.
             keyGroups   = take 1 ( [gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s] ++ 
                                    [((p,(objIn,s)),[(objIn,t)])
-                                   | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]
+                                   | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]   -- zoek een conceptentabel op....
                                    -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
                                    -- dan hebben we dus geen keyGroup, maar dat geeft niet voor ONE
                                    -- in andere gevallen geeft dat wel.
@@ -523,13 +525,13 @@
                                , let res=[((plug,(ai,sf)),(a,tf))
                                          |((plug,(ai,sf)),(a,tf))<-group,ga/=a]
                                , not (null res)]
-            combos           = [ ((plug,(ai,sf)),(a,tf))
-                               | ai<-(objats (objIn))++[objIn]
+            combos           = [ ((plug,(ai,fld0)),(a,fld1))
+                               | ai<-objats (objIn)++[objIn]
                                , a<-aOuts
                                , Just e' <-[takeOff (objctx ai) (objctx a)]
-                               , (plug,sf,tf)<-sqlRelPlugs fSpec e'
+                               , (plug,fld0,fld1)<-sqlRelPlugs fSpec e'
                                ]
-            takeOff :: Expression->Expression->(Maybe Expression)
+            takeOff :: Expression->Expression->Maybe Expression
             takeOff (F (a:as)) (F (b:bs)) | disjNF a==disjNF b = takeOff (F as) (F bs)
             takeOff a (F (b:bs)) | disjNF a== disjNF b = Just (F bs)
             takeOff a e' | isIdent a = Just e'
@@ -541,14 +543,14 @@
                                       , a `notElem` [a' | g <- comboGroups, (a',_) <- snd g] 
                                   ] [(1::Integer)..]
             --the list of fields that are selected (SELECT DISTINCT fieldNames FROM ...)
-            fieldNames      = [ "`"++tableReName gr++"`.`"++(fldname f)++"`"
+            fieldNames      = [ "`"++tableReName gr++"`.`"++fldname f++"`"
                                 ++(if fldname f == name a then [] else " AS `"++name a++"`")
                               | (gr@(_,_),as)<-comboGroups',(a,f)<-as
                               ] ++
                               [if isIdent (objctx a)
                                then "'\".addslashes("++name (objIn)++").\"'"++" AS `"++name a++"`"
-                               else "`f"++(show n)++"`.`"++(sqlExprTrg fSpec (objctx a))++"`" ++
-                                    (if name a == (sqlExprTrg fSpec (objctx a))
+                               else "`f"++(show n)++"`.`"++sqlExprTrg fSpec (objctx a)++"`" ++
+                                    (if name a == sqlExprTrg fSpec (objctx a)
                                      then []
                                      else " AS `"++name a++"`")
                                    |(a,n)<-rest]

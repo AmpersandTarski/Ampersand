@@ -371,25 +371,42 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
    = ( [ [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))] |(c,cd)<-cds]++
        [ [Para [symReqLabel d, Str$ explainDecl flags d]] |d<-nds] ++
        [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
-     , n'
-     , seenCs
-     , seenDs
+     , n''
+     , seenCs'
+     , seenDs'
      )
      where
-      ncs    = concs r >- seenConcs                          -- all concepts that are used for the first time
-      cds    = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]   -- lookup their concept definitions, where available
-      nds    = decls r >- seenDeclarations                   -- all declarations that are used for the first time
+      ncs    = concs r >- seenConcs                                             -- all concepts that are used for the first time
+      cds    = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]         -- lookup their concept definitions, where available
       seenCs = concs r `uni` seenConcs
-      seenDs = decls r `uni` seenDeclarations
+      nds    = [d|d<-decls r, explainDecl flags d/=""] >- seenDeclarations      -- all declarations that are used for the first time
+      seenDs = [d|d<-decls r, explainDecl flags d/=""] `uni` seenDeclarations   -- all declarations that are used for the first time
       n' = n+length cds+length nds+1
-      ( dpNext, _, _, _) = dpRule rs n' seenCs seenDs
+      ( dpNext, n'', seenCs', seenDs') = dpRule rs n' seenCs seenDs
 
   dpRequirements :: [Block]
   dpRequirements
    = dpSections dpRule (rd (map r_pat (rules fSpec++signals fSpec))) [] [] 1
      where
   --TODO -> It may be nice to print the class of the dataset from the class diagram
-      dpSections _ [] _ _ _ = []
+      dpSections _              -- a function that assembles the text for one rule.
+                 []             -- There are no more patterns left. There may be material left, though...
+                 seenConcepts   -- All concepts that have been defined in earlier sections
+                 seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
+                 i              -- unique definition numbers (start at 1)
+       = if emptySection then [] else 
+            [Para [Str intro]] ++ --new section to explain this theme
+            [OrderedList (i, Decimal, DefaultDelim) [[b]|b<-paraConcs ++ paraDecls]]   -- tells which rules and signals are being introduced
+        where
+         intro        = case language flags of
+                         English -> "At the end of this chapter, the following definitions have to be made for the sake of completeness."
+                         Dutch   -> "Aan het eind van dit hoofdstuk gebiedt de volledigheid nog om het volgende te definieren."
+         emptySection = null conceptdefs && null newRelations
+         conceptdefs  = [(c,cd)| c<-newConcepts, cd<-conceptDefs fSpec, cdnm cd==name c]  -- show only those definitions that are actually used in this specification.
+         newConcepts  = concs newRelations >- seenConcepts
+         newRelations = [d| d@Sgn{}<-decls ([r| r<-rules fSpec++signals fSpec]), decusr d, d `notElem` seenRelations, not (null (multiplicities d))]
+         paraConcs    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs]
+         paraDecls    = [Para [symReqLabel d, Str$ explainMult flags d] |d<-newRelations]
       dpSections dpRul          -- a function that assembles the text for one rule.
                  (thm:thms)     -- The name of the patterns that are used in this specification.
                  seenConcepts   -- All concepts that have been defined in earlier sections
@@ -398,7 +415,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
        = if emptySection then [] else [Header (lev+1) [Str thm]]  --new section to explain this theme
          ++ sctConcepts  -- tells which new concepts are introduced in this section.
          ++ [ OrderedList (i, Decimal, DefaultDelim) (sctRules ++ sctSignals)| not (null (sctRules ++ sctSignals)) ]   -- tells which rules and signals are being introduced
-         ++ dpSections dpRul thms (seenCss++newConcepts) (seenDss++newRelations) i''
+         ++ dpSections dpRul thms (seenCss) (seenDss) i''
         where
          emptySection = null newConcepts && null (sctRules ++ sctSignals)
          (sctRules,   i',  seenCrs, seenDrs) = dpRul patRules i seenConcepts seenRelations
@@ -582,7 +599,11 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
                        , xrefReference (figlabel classDiagramPicture) ]
                      else []
                   )++
-                  [ Str $ ". Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
+                  [ Str $ (case length (classes classDiagram) of
+                            0 -> ". Er zijn"
+                            1 -> ". Er is precies een gegevensverzameling,"
+                            _ -> ". Er zijn "++count flags (length (classes classDiagram)) "gegevensverzameling"++","
+                          )
                   , Str $ " "++count flags (length (assocs classDiagram)) "associatie"++","
                   , Str $ " "++count flags (length (geners classDiagram)) "generalisatie"++" en"
                   , Str $ " "++count flags (length (aggrs classDiagram)) "aggregatie"++"."
@@ -593,7 +614,11 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
                   , xrefReference chpFRlabel
                   , Str $ ", have been translated into the class diagram in figure "
                   , xrefReference (figlabel classDiagramPicture)
-                  , Str $ ". There are "++count flags (length (classes classDiagram)) "data set"++","
+                  , Str $ (case length (classes classDiagram) of
+                            0 -> ". There are"
+                            1 -> ". There is one data set,"
+                            _ -> ". There are "++count flags (length (classes classDiagram)) "data set"++","
+                          )
                   , Str $ " "++count flags (length (assocs classDiagram)) "association"++","
                   , Str $ " "++count flags (length (geners classDiagram)) "generalisation"++", and"
                   , Str $ " "++count flags (length (aggrs classDiagram)) "aggregation"++"."
@@ -631,7 +656,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
                                  , if isTot d then "\\(\\surd\\)" else ""
                                  , if isSur d then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d@Sgn{}<-tail ds, decusr d, not (isProp d)   -- skip the first one, because it is I.
+               | d@Sgn{}<-ds, decusr d, not (isProp d)
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]

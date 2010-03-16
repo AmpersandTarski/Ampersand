@@ -78,7 +78,7 @@ doGenProto fSpec flags
      >> verboseLn flags "Generating prototype..."
      >> phpObjServices fSpec flags  
      >> verboseLn flags ("Prototype files have been written to " ++  (dirPrototype flags) ++ "." )
-     >> if (test flags) then verboseLn flags (show $ vplugs fSpec) else verboseLn flags ""
+     >> if (test flags) then verboseLn flags (show (vplugs fSpec)) else verboseLn flags ""
      where 
      explainviols = concat [show p++": "++showADLcode fSpec r++"\n"|(r,p)<-violations fSpec]
 
@@ -123,7 +123,6 @@ doGenFspec fSpec flags
                             header <- if exists 
                                       then readFile (fromJust$texHdrFile flags)
                                       else return (laTeXtemplate flags)
-                            verboseLn flags ("Generating to LaTeX: "++outputFile) -- ++"\n (header: "++take 100 header++"0")
                             verboseLn flags ("Generating to LaTeX: "++outputFile)
                             writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=header} thePandoc)
               FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)

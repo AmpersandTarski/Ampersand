@@ -4,7 +4,7 @@
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
    import CommonClasses  (ABoolAlg(..))
    import Adl
-   import Auxiliaries    (naming, eqCl, eqClass, sort')
+   import Auxiliaries    (eqCl, eqClass, sort')
    import Data.Fspec
    import Options        (Options)
    import NormalForms(conjNF,disjNF,normPA,simplify)
@@ -45,33 +45,38 @@
                   | d<-declarations context, deciss d || decusr d
                   ]
         definedplugs = vsqlplugs ++ vphpplugs
--- maybe useful later...
---        conc2plug :: Concept -> Plug
---        conc2plug c = PlugSql {plname = name c, fields = [field (name c) (Tm (mIs c)) Nothing False True], kernel=[c], plfpa = ILGV Eenvoudig}
 
 -- mor2plug creates associations between plugs that represent wide tables.
 -- this concerns relations that are not univalent nor injective,
--- Univalent and injective relations cannot be associations, as they are used as attributes in wide tables.
+-- Univalent relations and injective relations cannot be associations, because they are used as attributes in wide tables.
         mor2plug :: Morphism -> Plug
-        mor2plug  m'
-         = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 64): unexpected call of mor2plug("++show m'++"), because it is injective or univalent.") else
-           if is_Tot
-           then PlugSql (name m')                                                                                   -- plname
-                        [field (name (source m')) (Tm (mIs (source m'))(-1)) Nothing (not is_Sur) (isUni m' {- will be False -})
-                        ,field (name (target m')) (Tm m' (-1)) Nothing (not is_Tot) (isInj m' {- will be False -})] -- fields
-                        []                                                                                          -- kernel
-                        NO                                                                                          -- plfpa 
-           else if is_Sur then mor2plug (flp m')
-           else PlugSql (name m')                                                                                   -- plname
-                        [field (name (source m')) (Fi [Tm (mIs (source m'))(-1),F [Tm m'(-1),flp (Tm m'(-1))]]   -- WAAROM (SJ) is dit de expressie in dit veld?
-                                                )      Nothing (not is_Sur) False {- isUni -}
-                        ,field (name (target m')) (Tm m'(-1)) Nothing (not is_Tot) False {- isInj -}]               -- fields
-                        []                                                                                          -- kernel
-                        NO                                                                                          -- plfpa 
+        mor2plug  m
+         = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 64): unexpected call of mor2plug("++show m++"), because it is injective or univalent.") else
+           if not is_Tot && is_Sur then mor2plug (flp m) else
+           PlugSql (name m)                                                    -- plname
+                   [srcFld,trgFld]                                             -- fields
+                   ([(source m,srcFld)| is_Tot]++[(target m,trgFld)| is_Sur])  -- cLkpTbl
+                   [(m,srcFld,trgFld)]                                         -- mLkpTbl 
+                   NO                                                          -- plfpa 
            where
-             mults = multiplicities m'
-             is_Tot = Tot `elem` mults || m' `elem` totals
-             is_Sur = Sur `elem` mults || flp m' `elem` totals
+             srcNm = (if name (source m)==name (target m) then "s_" else "")++name (source m)
+             trgNm = (if name (source m)==name (target m) then "t_" else "")++name (target m)
+             srcFld = field srcNm
+                            (if   is_Tot
+                             then Tm (mIs (source m)) (-1)                                    -- DAAROM (SJ) Deze relatie mag als conceptentabel voor source m worden gebruikt, omdat ze totaal is.
+                             else Fi [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]    -- DAAROM (SJ) Deze expressie, nl. I/\m;m~,  representeert het domein van deze relatie. Dat is nodig, omdat er andere elementen in I kunnen zitten, die niet in het domein van m voorkomen. m kan dus niet als conceptentabel worden gebruikt.
+                            )
+                            Nothing
+                            (not is_Sur)
+                            (isUni m {- will be False -})
+             trgFld = field trgNm
+                            (Tm m (-1))
+                            Nothing
+                            (not is_Tot)
+                            (isInj m {- will be False -})
+             mults = multiplicities m
+             is_Tot = Tot `elem` mults || m `elem` totals
+             is_Sur = Sur `elem` mults || flp m `elem` totals
         totals :: Morphisms
         totals
          = rd [ m | q<-quads visible (rules fSpec), isIdent (qMorph q)
@@ -84,9 +89,9 @@
                  tots _ = []
                  visible _ = True -- for computing totality, we take all quads into account.
 
-        allplugs = uniqueNames []
-                    (definedplugs ++      -- all plugs defined by the user
-                     gPlugs       ++      -- all plugs generated by the compiler
+        allplugs = definedplugs ++      -- all plugs defined by the user
+                   uniqueNames definedplugs  -- the names of definedplugs will not be changed, assuming they are all unique
+                    (gPlugs       ++      -- all plugs generated by the compiler
                      relPlugs             -- all plugs for relations not touched by definedplugs and gplugs
                     )
           where
@@ -95,9 +100,17 @@
                       | d<-allDecs
                       , not (Inj `elem` multiplicities d)
                       , not (Uni `elem` multiplicities d)]
-        uniqueNames :: [String]->[Plug]->[Plug]
+
+        uniqueNames :: [Plug]->[Plug]->[Plug]
         -- Some target systems may be case insensitive! For example MySQL.
         -- So, unique names are made in a case insensitive manner.
+        uniqueNames taken plgs
+         = [p | cl<-eqCl (map toLower.name) plgs  -- each equivalence class cl contains plugs p with the same map toLower (name p)
+              , p <-if name (head cl) `elem` map name taken || length cl>1
+                    then [p{plname=name p++show i}| (p,i)<-zip cl [(1::Int)..]]
+                    else cl
+           ]
+{- replaces the following code, because the new code is easier to understand
         uniqueNames given plgs = naming (\x y->x{plname=y}) -- renaming function for plugs
                                         (map ((.) lowerCase) -- functions that name a plug (lowercase!)
                                              (name:n1:n2:[(\x->lowerCase(name x ++ show n))
@@ -118,6 +131,7 @@
                                                   (fields plug)
                                         }
                 lowerCase = map toLower -- from Char
+-}
         vsqlplugs = map makeSqlPlug (ctxsql context)
         vphpplugs = map makePhpPlug (ctxphp context)
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
@@ -195,102 +209,119 @@
         orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
         orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
 
-{- makePlugs computes a set of plugs to obtain wide tables with minimal redundancy.
-   First, we determine the kernels of all plugs, which contain relations that are both univalent and injective.   Code: kernels
-   Secondly, we choose one concept, c, as the kernel of that plug.   Code: c = source (head kernelAtts)
-   Thirdly, we need all univalent relations that depart from this class to be the attributes. Code:  [a| a<-attMors, source a `elem` concs kernel]
-   Then, all these morphisms are made into fields. Code: plugFields = [mph2fld a| a<-plugMors]
-   Now we have plugs.
+{- makePlugs computes a set of plugs to obtain wide tables with little redundancy.
+   First, we determine the kernels for all plugs.
+   A kernel is a set of univalent, injective, and surjective relations, with one root concept.
+   The root of a kernel is the concept that is either the source of a relation in the kernel, or that relation is reachable from the source by a surjective path.
+   Code: kernels represents the relations of the plug (which are all univalent, injective, and surjective)
+         target (head kernel) represents the root concept of the plug
+   Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
+   These relations serve as attributes. Code:  [a| a<-attMors, source a `elem` concs kernel]
+   Then, all these morphisms are made into fields. Code: plugFields = [mph2fld plugMors a| a<-plugMors]
+   We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
    For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
-   The parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities. It was added to avoid recomputation of the extra multiplicities.
+   By the way, parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities.
+   This parameter was added to makePlugs to avoid recomputation of the extra multiplicities.
 -}
    makePlugs :: Context -> Declarations -> [Plug] -> [Plug]
    makePlugs context allDecs currentPlugs
     = sort' ((0-).length.fields)
-       [ PlugSql (name c)         -- plname
-                 plugFields       -- fields
-                 (concs kernel)   -- kernel
-                 (ILGV Eenvoudig) -- plfpa
+       [ PlugSql (name c)               -- plname
+                 plugFields             -- fields
+                 conceptLookuptable     -- cLkpTbl
+                 attributeLookuptable   -- mLkpTbl
+                 (ILGV Eenvoudig)       -- plfpa
        | kernel<-kernels
-       , let c = source (head kernelAtts)          -- one concept from the kernel is designated to "lead" this plug.
-             plugFields = [mph2fld a| a<-plugMors] -- Each field comes from a relation.
-             plugMors   = kernelAtts++[a| a<-attMors, source a `elem` concs kernel]
-             kernelAtts = organize kernel
+       , let c = target (head kernel)               -- one concept from the kernel is designated to "lead" this plug.
+             plugMors              = kernel++[a| a<-attMors, source a `elem` concs kernel]
+             plugFields            = [fld a| a<-plugMors]      -- Each field comes from a relation.
+             conceptLookuptable   :: [(Concept,SqlField)]
+             conceptLookuptable    = [(target m,fld m)|cl<-eqCl target kernel, let m=head cl]
+             attributeLookuptable :: [(Morphism,SqlField,SqlField)]
+             attributeLookuptable  = [(m,lookupC (source m),fld m)| m<-plugMors] -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
+             lookupC cpt           = head [f|(c',f)<-conceptLookuptable, cpt==c']
+             fld                   = mph2fld plugMors
        ]
       where
-{- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the ADL-script are excluded from the process. -}
+-- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the ADL-script are excluded from the process.
        nonCurrDecls = [d| d@Sgn{}<-allDecs >- concat (map decls currentPlugs), decusr d]
-       nonCurrConcs = [c| c@C{}<-concs context] >- concat (map concs currentPlugs)
-       conceptMors  = map mIs nonCurrConcs
-       kernelMors   = [     makeMph d | d<-nonCurrDecls, isUni      d ,      isInj      d  ]
-       attMors      = [     makeMph d | d<-nonCurrDecls, isUni      d , not (isInj      d )]++
-                      [flp (makeMph d)| d<-nonCurrDecls, isUni (flp d), not (isInj (flp d))]
+-- For making kernels as large as possible, the univalent and injective declarations will be flipped if that makes them surjective.
+-- kernelMors contains all relations that occur in kernels.
+-- note that kernelMors contains no I-relations, because all declarations from nonCurrDecls match @Sgn{}.
+       kernelMors   = [m|m<-ms, isSur m]++[flp m|m<-ms, not (isSur m), isTot m]
+                      where ms = [makeMph d| d<-nonCurrDecls, isUni d, isInj d]
+-- iniKernels contains the set of kernels that would arise if kernelMors were empty. From that starting point, the kernels are computed recursively in code that follows (kernels).
+       iniKernels   = [(c,[])| c<-concs context, c `notElem` map concept currentPlugs]
+       attMors      = [     makeMph d  | d<-nonCurrDecls, isUni d, not (d `elem` decls kernelMors)]++
+                      [flp (makeMph d) | d<-nonCurrDecls, not (isUni d), isInj d, not (d `elem` decls kernelMors)]
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
-However, if two concepts are mutually connected through a univalent and injective relation, they are combined in one plug.
+However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
 So the first step is create the kernels ...   -}
+       kernels :: [[Morphism]]
        kernels
-        = f [k|k<-kernelMors, not (isIdent k)]           -- all univalent and injective relations
-            [[mc]| mc<-conceptMors]                      -- the initial kernels, which are singletons
+        = --error ("Diag ADL2Fspec "++show (kernelMors)++"\n"++show (map fst iniKernels)++"\n"++show (expand iniKernels))++
+          [ mIs c: ms               -- one morphism for each concept in the kernel
+          | (c,ms)<-f iniKernels    -- the initial kernels
+          ]
           where
-            f :: [Morphism] -> [[Morphism]] -> [[Morphism]]
-            f [] kernels = kernels
-            f rs kernels = f remaining (merge [k++new k| k<-kernels])
-             where new kernel = [r|r<-rs, not (null (concs r `isc` concs kernel))]
-                   remaining = rs>-new (foldr1 uni kernels)
+            f :: [(Concept,[Morphism])] -> [(Concept,[Morphism])]
+            f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelMors are surjective, univalent and injective
+             where nks = expand ks
+            expand ks = [(c, ms++[r|r<-kernelMors, r `notElem` ms, source r `elem` c:concs ms])| (c,ms)<-ks] -- expand a kernel (c,ms) by one step
             merge ks = if nks==ks then ks else merge nks
-             where common kernel kernel' = not (null (kernel `isc` kernel'))
-                   nks = [foldr1 uni cl| cl<-eqClass common ks]
-       {- Kernels are built recursively. Kernels expand by adding (uni and inj) relations until there are none left.
-          Step 1: compute which declarations to add in each kernel (code: [k++new k| k<-kernels])
-          Step 2: determine which kernels to merge (code: eqClass common)
-          Step 3: merge each set of mergeable kernels into one new kernel (code: merge)
-          Step 4: compute the remaining relations (code: ds>-new (map uni kernels) )
+             where nks = oneRun ks
+                   oneRun [] = []
+                   oneRun ((c,ms):ks') = (c, ms++[m|(c',ms')<-ks', c' `elem` c:concs ms, m<-ms', m `notElem` ms]):
+                                         oneRun [k|k@(c',_)<-ks', c' `notElem` c:concs ms]
+       {- Kernels are built recursively. Kernels expand by adding (sur, uni and inj) relations until there are none left.
+          Step 1: compute the expansion of each kernel (code: ms++[r|r<-rs, source r `elem` concs ms])
+          Step 2: merge kernels if possible (code: recursion over oneRun)
+          Step 3: compute the remaining relations (code: [r| r<-rs, source r `notElem` concs [ms| (_,ms)<-kernels]] )
           And call recursively until there are none left. -}
 
-{- Organizing a plug means to put the concepts from the kernel to the left, and the attribute columns to the right.
-   Typically, a kernel has one concept. There may be more, however, if the concept has uni+inj relations.
-   If there is a surjective relation from concept A to concept B, we prefer A to be on the left of B. -}
-       organize kernel = sort' f attributes++[c| null attributes, c<-kernel]
-        where f c = ((0-).length)
-                    [a| a<-attributes, source a `elem` concs c && isSur a, target a `elem` concs c && isTot a]
-              attributes = [if isTot d && not (isSur d) then flp d else d| d<-kernel, not (isIdent d)]
+-- Each morphism yields one field in the plug...
+-- The parameter ms defines the name space, making sure that all fields within a plug have unique names.
+       mph2fld :: [Morphism] -> Morphism -> SqlField
+       mph2fld ms m
+        = Fld fldName                                      -- fldname : 
+              (Tm m (-1))                                  -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+              (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
+              (not (isTot m))                              -- fldnull : can there be empty field-values? 
+              (isInj m)                                    -- flduniq : are all field-values unique?
+              isAuto                                       -- fldauto : is the field auto increment?
+          where fldName = head [nm| (m',nm)<-table, m==m']
+                isSQLId = isIdent m && isAuto
+                isAuto  = isIdent m
+                           && not (null [key| key<-keyDefs context, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
+                           && null (contents m) -- and the the field may not contain any strings
+                table   = [ entry
+                          | cl<-eqCl (map toLower.name) ms
+                          , entry<-if length cl==1 then [(r,name r)|r<-cl] else tbl cl]
+                tbl rs  = [ entry
+                          | cl<-eqCl (map toLower.name.source) rs
+                          , entry<-if length cl==1 then [(r,name r++name (source r))|r<-cl] else [(r,name r++show i)|(r,i)<-zip cl [(0::Int)..]]]
 
-
--- Each morphism yields one field in the plug... 
-       mph2fld m = Fld (name m)                                     -- fldname : 
-                       (Tm m (-1))                                  -- fldexpr :
-                       (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
-                       (not (isTot m))                              -- fldnull : can there be empty field-values? 
-                       (isInj m)                                    -- flduniq : are all field-values unique?
-                       isAuto                                       -- fldauto : is the field auto increment?
-                   where isSQLId = isIdent m && isAuto
-                         isAuto  = isIdent m
-                                    && not (null [key| key<-keyDefs context, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
-                                    && null (contents m) -- and the the field may not contain any strings
-
-
+-- makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
    makeSqlPlug :: ObjectDef -> Plug
    makeSqlPlug obj = PlugSql (name obj)             -- plname
                              makeFields             -- fields
-                             [target (objctx obj)]  -- kernel
+                             []                     -- cLkpTbl -- TODO: invullen!
+                             []                     -- mLkpTbl -- TODO: invullen!
                              (ILGV Eenvoudig)       -- plfpa
       where
       makeFields ::  [SqlField]
       makeFields =
-        [Fld (name att)                -- fldname : 
-             (objctx att)              -- fldexpr :
-             (sqltp att)               -- fldtype :
-             (nul att)                 -- fldnull : can there be empty field-values? 
-             (uniq att)                -- flduniq : are all field-values unique?
-             (att `elem` autoFields)   -- fldauto : is the field auto increment?
+        [Fld (name att)                 -- fldname : 
+             (objctx att)               -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+             (sqltp att)                -- fldtype :
+             (not (isTot (objctx att))) -- fldnull : can there be empty field-values? 
+             (isInj (objctx att))       -- flduniq : are all field-values unique?
+             (att `elem` autoFields)    -- fldauto : is the field auto increment?
         | att<-objats obj
         ]
-        where nul  att = not (isTot (objctx att))
-              uniq att = null [a' | a' <- objats obj
-                                  , not (isUni (disjNF$F[flp$objctx att,objctx a']))]
-              autoFields = take 1 [a'| a'<-objats obj
+        where autoFields = take 1 [a'| a'<-objats obj
                                      , sqltp a'==SQLId, isTot (objctx a')
-                                     , uniq a', isIdent $ objctx a' ]
+                                     , isInj (objctx a'), isIdent (objctx a')]
       sqltp :: ObjectDef -> SqlType
       sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                          ++[SQLVarchar 255]
@@ -325,7 +356,7 @@ So the first step is create the kernels ...   -}
                            | oa<-objats plug, strs<-objstrs oa,"PHPRETURN"<-strs]
                            ++ [PhpReturn {retval=PhpNull}]
       makeArgs = [(i,PhpObject{objectdf=oa,phptype=makePhptype oa})
-                 | (i,oa)<-zip [1..] (objats plug), strs<-(objstrs oa), elem "PHPARG" strs]
+                 | (i,oa)<-zip [(1::Int)..] (objats plug), strs<-(objstrs oa), elem "PHPARG" strs]
    makePhptype :: ObjectDef -> PhpType
    makePhptype objat = head $ [case str of {"String"->PhpString;
                                             "Int"->PhpInt;
@@ -597,37 +628,37 @@ So the first step is create the kernels ...   -}
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
-   assembleECAs visible qs = [ecarule i| (ecarule,i) <- zip ecas [1..]]
+   assembleECAs visible qs = [ecarule i| (ecarule,i) <- zip ecas [(1::Int)..]]
       where
        ecas
-        = [ ECA (On ev m) delt action
+        = [ ECA (On ev m) delt act
           | mphEq <- eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
           , m <- map fst4 (take 1 mphEq), Tm delt _<-[delta (sign m)]
           , ev<-[Ins,Del]
-          , action <- [ All
-                        [ Chc [ (if isTrue  clause'   then Nop else
-                                 if isFalse clause'   then Blk else
---                               if not (visible m) then Blk else
-                                 doCode visible ev toExpr viols)
-                                 [(conj,causes)]  -- the motivation for these actions
-                              | clause@(Fu fus) <- shifts
-                              , clause' <- [ conjNF (subst (m, actSem Ins m (delta (sign m))) clause)]
-                              , viols <- [ conjNF (notCp clause')]
-                              , frExpr  <- [ if ev==Ins
-                                             then Fu [f| f<-fus, isNeg f]
-                                             else Fu [f| f<-fus, isPos f] ]
-                              , m `elem` map makeInline (mors frExpr)
-                              , toExpr  <- [ if ev==Ins
-                                             then Fu [      f| f<-fus, isPos f]
-                                             else Fi [notCp f| f<-fus, isNeg f] ]
-                              ]
-                              [(conj,causes)]  -- to supply motivations on runtime
-                        | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
-                        , causes  <- [ (map thd3 conjEq) ]
-                        , conj <- map snd3 (take 1 conjEq), shifts <- map fst3 (take 1 conjEq)
-                        ]
-                        [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, (_,_,conj,_)<-take 1 cl]  -- to supply motivations on runtime
-                      ]
+          , act <- [ All
+                     [ Chc [ (if isTrue  clause'   then Nop else
+                              if isFalse clause'   then Blk else
+--                            if not (visible m) then Blk else
+                              doCode visible ev toExpr viols)
+                              [(conj,causes)]  -- the motivation for these actions
+                           | clause@(Fu fus) <- shifts
+                           , clause' <- [ conjNF (subst (m, actSem Ins m (delta (sign m))) clause)]
+                           , viols <- [ conjNF (notCp clause')]
+                           , frExpr  <- [ if ev==Ins
+                                          then Fu [f| f<-fus, isNeg f]
+                                          else Fu [f| f<-fus, isPos f] ]
+                           , m `elem` map makeInline (mors frExpr)
+                           , toExpr  <- [ if ev==Ins
+                                          then Fu [      f| f<-fus, isPos f]
+                                          else Fi [notCp f| f<-fus, isNeg f] ]
+                           ]
+                           [(conj,causes)]  -- to supply motivations on runtime
+                     | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
+                     , causes  <- [ (map thd3 conjEq) ]
+                     , conj <- map snd3 (take 1 conjEq), shifts <- map fst3 (take 1 conjEq)
+                     ]
+                     [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, (_,_,conj,_)<-take 1 cl]  -- to supply motivations on runtime
+                   ]
           ]
        fst4 (w,_,_,_) = w
        fst3 (x,_,_) = x
@@ -683,7 +714,7 @@ So the first step is create the kernels ...   -}
           -> Expression              --  the delta to be inserted or deleted
           -> [(Expression,Rules )]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
           -> PAclause
-   doCode editable tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
+   doCode editAble tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
@@ -731,7 +762,7 @@ So the first step is create the kernels ...   -}
           (_  , Fd ts)   -> doCod deltaX tOp (Cp (F (map Cp ts))) motiv
           (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , Tm m _)  -> (if editable m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])
+          (_  , Tm m _)  -> (if editAble m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])
           (_ , _)        -> error ("!Fatal (module Calc 418): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
                                    "within function doCode "++show tOp'++" ("++showADL exprX++") ("++showADL delta1++").")
 

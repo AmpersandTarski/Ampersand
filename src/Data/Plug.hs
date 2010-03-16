@@ -13,14 +13,16 @@ module Data.Plug (Plug(..),Plugs
                  ,ActionType(..))
 where
   import Adl
-  import Collection            (rd)
+  import Collection  (rd)
   import FPA
   import Maybe
+  import Auxiliaries (sort')
   
   type Plugs = [Plug]
   data Plug = PlugSql { plname   :: String
                       , fields   :: [SqlField]
-                      , kernel   :: [Concept]   -- for generated plugs, the name is taken from the first concept.
+                      , cLkpTbl  :: [(Concept,SqlField)]           -- lookup table that links concepts to column names in the plug
+                      , mLkpTbl  :: [(Morphism,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug
                       , plfpa    :: FPA
                       }
             | PlugPhp { args     :: PhpArgs
@@ -30,6 +32,30 @@ where
                       , plname   :: String 
                       , plfpa    :: FPA
                       } deriving (Show)
+
+  instance Object Plug where
+   concept p@PlugSql{}
+    = if null (cLkpTbl p)
+      then error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++name p++".")
+      else head [c|(c,_)<-cLkpTbl p]
+-- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
+   attributes p@PlugSql{}
+    = [ Obj (fldname tFld)                                                   -- objnm 
+            Nowhere                                                          -- objpos
+            (if source a==concept p then Tm a (-1) else f (source a) [[a]])  -- objctx
+            [] []                                                            -- objats and objstrs
+      | (a,_,tFld)<-mLkpTbl p]
+      where
+       f c mms = if null stop                                     -- a path from c to a is not found (yet)
+                 then f c mms'                                    -- so add another step to the recursion
+                 else F [Tm m (-1)| m<-head (sort' length stop)]  -- pick the shortest path and turn it into an expression.
+                 where
+                   mms' = [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
+                   step = [ms | ms<-mms', source (head ms)/=c]
+                   stop = [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
+
+   ctx p = Tm (mIs (concept p)) (-1)
+   populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
 
   data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
   data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
@@ -55,7 +81,7 @@ where
   --DESCR -> plugs are sorted to optimize some algoritms. 
   instance Eq Plug where
     x==y = name x==name y
-  instance Ord Plug where
+  instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
     compare x y = compare (name x) (name y)
   
   data SqlField = Fld { fldname     :: String

@@ -56,8 +56,8 @@
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
-       classes    = [ OOClass (name plug) [ OOAttr a atype fNull| (a,atype,fNull)<-attrs plug] []
-                    | plug <- classPlugs, fld<-fields plug, fldname fld=="i", c<-[source (fldexpr fld)]
+       classes    = [ OOClass (name plug) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
+                    | plug <- classPlugs
                     , not (null (attrs plug))
                     ]
        assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name plug)
@@ -72,7 +72,7 @@
                      
        aggrs      = []
        geners     = rd [ OOGener ((name.lookup.fst.head) gs) (map (name.lookup.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]
-       classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld])]
+       classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld]), not (null [1|fld<-fields p, not (flduniq fld)])]
        assocPlugs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)>1]
        scalarPlgs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)<=1]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
@@ -80,9 +80,10 @@
        attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
        isProp d   = null([Sym,Asy]>-multiplicities d)
        scs = [d|d<-declarations fSpec] -- was: for the entire context
-       lookup c = if length ps ==1 then head ps else
-                  error ("!Fatal (module ClassDiagram 84): ambiguous lookup in plug list"++show ps)
-                  where ps = [p|p<-classPlugs, c `elem` kernel p]
+       lookup c = if null ps
+                  then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list"++show ps)
+                  else head ps
+                  where ps = [p|p<-plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
    shDataModel (OOclassdiagram cs as rs gs _)
     = "OOclassdiagram\n>     "++chain "\n>     "
         [ lijstopmaak (map show cs),

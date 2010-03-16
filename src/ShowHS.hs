@@ -27,18 +27,24 @@ where
              ++"\n  import ShowHS (showHS)"
              ++"\n  import Data.Fspec"
              ++"\n  import Data.Plug"
+             ++"\n  import Collection (rd)"
+             ++"\n  import FPA"
+             ++"\n  import Options (getOptions)"
              ++"\n"
              ++"\n  main :: IO ()"
-             ++"\n  main = putStr (showHS flags \"\\n  \" fSpec_"++baseName flags++")"
+             ++"\n  main = putStr (showHS getOptions \"\\n  \" fSpec_"++baseName flags++")"
              ++"\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS flags "\n     " fSpec
 
 
    wrap :: String->String->(String->a->String)->[a]->String
-   wrap initStr _      _ []  = initStr++"[]"
-   wrap initStr indent f [x] = initStr++"[ "++f (indent++"  ") x++" ]"
-   wrap initStr indent f xs  = initStr++"[ "++chain (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
+   wrap initStr indent f xs
+    = initStr++w xs
+      where
+        w []  = "[]"
+        w [x] = "[ "++f (indent++"  ") x++" ]"
+        w xs  = "[ "++chain (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
 
    class ShowHS a where
     showHSname :: a -> String
@@ -70,16 +76,17 @@ where
 -- \*** Eigenschappen met betrekking tot: Plug                          ***
 -- \***********************************************************************
    instance ShowHS Plug where
-    showHSname plug = haskellIdentifier ("plug_"++name plug)
+    showHSname plug = haskellIdentifier ("plug_"++plname plug)
     showHS flags indent plug   
       = case plug of
            PlugSql{} -> (chain indent 
-                          ["PlugSql{ plname = " ++ (show.haskellIdentifier.plname) plug
-                          ,"       , fields = " ++ 
-                                              chain (indent++"                  , ") (map (showHS flags (indent++"                    ")) (fields plug))++
-                                              indent++"                  ]"
-                          ,"       , kernel = " ++ "[ "++chain ", " [showHS flags "" c| c<-kernel plug] ++ "]"
-                          ,"       , plfpa  = " ++ showHS flags "" (plfpa plug)
+                          ["let " ++ chain (indent++"    ")
+                                           [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields plug] ++indent++"in"
+                          ,"PlugSql{ plname  = " ++ (show.haskellIdentifier.plname) plug
+                          ,"       , fields  = ["++chain ", " (map showHSname (fields plug))++"]"
+                          ,"       , cLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
+                          ,"       , mLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl plug] ++ "]"
+                          ,"       , plfpa   = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
                           ])
            PlugPhp{} -> (chain indent 
@@ -88,8 +95,8 @@ where
                                             "                ]"
                           ,"       , returns  = " ++ showHS flags "" (returns plug)
                           ,"       , function = " ++ showHS flags "" (function plug)
-                          ,"       , phpfile  = " ++ show (phpfile plug)
-                          ,"       , plname   = " ++ show (plname  plug)
+                          ,"       , phpfile  = " ++ (show.haskellIdentifier.phpfile) plug
+                          ,"       , plname   = " ++ (show.haskellIdentifier.plname) plug
                           ,"       , plfpa    = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
                           ])
@@ -171,7 +178,7 @@ where
     showHS _ indent Delete = indent++"Delete"
 
    instance ShowHS SqlField where
-    showHSname _ = error ("!Fatal (module ShowHS 173): \"SqlField\" is anonymous with respect to showHS flags.")
+    showHSname sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
     showHS flags indent sqFd
       = (chain indent
           [ "Fld { fldname = " ++ show (fldname sqFd)
@@ -226,7 +233,7 @@ where
        indent++" isa' = "++ showHS flags (indent ++ "        ") (fsisa fspec)++
        indent++" gE = genEq (typology isa')"++
         
-       (if null (plugs fspec ) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
+       (if null (plugs fspec) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
         
         "\n -- ***Services Specified in ADL script***: "++
        indent++" serviceS' = "++(if null (serviceS fspec) then "[]" else
@@ -306,7 +313,7 @@ where
                  indent++"  vis        = rd (map makeInline rels++map (mIs.target) rels)"   ++
                  indent++"  visible m  = makeInline m `elem` vis"                           ++
                  indent++"  qs         = quads visible (rules fSpec)"                       ++
-                 "\n -- *** ECA rules ***: "++concat [indent++" "++showHSname (r delt)++" delta"++indent++"  = "++showHS flags (indent++"    ") (r delt)
+                 "\n -- *** ECA rules ***: "++concat [indent++"  "++showHSname (r delt)++" delta"++indent++"   = "++showHS flags (indent++"     ") (r delt)
                                                      |r<-fsv_ecaRules fservice ]
           )
        ++ indent++" -- Einde Fservice "++showHSname fservice
@@ -375,10 +382,11 @@ where
        (if null (ptkds pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") k| k<-ptkds pat] ++indent++"    ]")++
        (if null (ptxps pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]")++
        indent++"where"++
-       (if null (ptdcs pat) then "" else concat [indent++" "++showHSname d ++" = "++ showHS flags (indent++"   ") d |d <-ptdcs pat] )++
-       (if null (rules pat) then "" else concat [indent++" "++showHSname r ++" = "++ showHS flags (indent++"   ") r |r <-rules pat] )++
-       (if null (ptcds pat) then "" else concat [indent++" "++showHSname cd++" = "++ showHS flags (indent++"   ") cd|cd<-ptcds pat] )++
-       (if null (ptkds pat) then "" else concat [indent++" "++showHSname k ++" = "++ showHS flags (indent++"   ") k |k <-ptkds pat] )
+       (if null (ptdcs   pat) then "" else concat [indent++" "++showHSname d ++indent++"  = "++ showHS flags (indent++"    ") d |d <-ptdcs   pat] )++
+       (if null (signals pat) then "" else concat [indent++" "++showHSname s ++indent++"  = "++ showHS flags (indent++"    ") s |r <-signals pat, let s=srrel r] )++
+       (if null (rules   pat) then "" else concat [indent++" "++showHSname r ++indent++"  = "++ showHS flags (indent++"    ") r |r <-rules   pat] )++
+       (if null (ptcds   pat) then "" else concat [indent++" "++showHSname cd++indent++"  = "++ showHS flags (indent++"    ") cd|cd<-ptcds   pat] )++
+       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
  
    instance ShowHS Explanation where
     showHSname expla = "TBD: "

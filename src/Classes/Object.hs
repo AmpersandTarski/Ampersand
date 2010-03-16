@@ -33,4 +33,3 @@ where
     attributes obj = objats obj
     ctx obj = objctx obj
     populations  _ = []
-

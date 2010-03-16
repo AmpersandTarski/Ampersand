@@ -7,7 +7,7 @@ module PredLogic
 
    import CommonClasses (ABoolAlg(..))
    import Collection (Collection((>-)))
-   import Strings(chain,unCap)
+   import Strings(chain)
    import Auxiliaries (eqCl)
    import Adl
    import ShowADL
