@@ -6,7 +6,7 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1-637" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
+versionNumber = "1.1-639" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
 {-
 SVN Version text:
 Fouten in SQLplugs verholpen. Er wordt nu een applicatie gegenereerd, maar deze is allerminst foutvrij!
