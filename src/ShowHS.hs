@@ -532,6 +532,7 @@ where
                            ,", desrc   = " ++ showHS flags "" (desrc d)
                            ,", detrg   = " ++ showHS flags "" (detrg d)
                            ,", decprps = " ++ showL(map (showHS flags "") (decprps d))
+                           ,", decprps_calc = " ++ showL(map (showHS flags "") (decprps_calc d))
                            ,", decprL  = " ++ show (decprL d)
                            ,", decprM  = " ++ show (decprM d)
                            ,", decprR  = " ++ show (decprR d)

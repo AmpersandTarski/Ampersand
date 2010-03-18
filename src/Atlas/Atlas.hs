@@ -253,8 +253,8 @@ insertpops conn fSpec flags (tbl:tbls) pics =
 {- De volgende code is vervangen door wat eronder staat.
    userrules = sortonfst [(r_pat x++cptrule x,x)|x@Ru{}<-rules fSpec, rrdcl x==Nothing, not (isaRule x), not(r_pat x=="")]
    signalrules =  sortonfst [(r_pat x++cptrule x,x)|x<-signals fSpec, not(r_pat x=="")]
-   multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]] 
-   homorules =  [rulefromProp p d|d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
+   multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-decprps d, elem p [Uni,Tot,Inj,Sur]] 
+   homorules =  [rulefromProp p d|d@Sgn{}<-declarations fSpec, decusr d, p<-decprps d, elem p [Rfx,Sym,Asy,Trn] ]
    --DESCR -> sort on fst, return snd
    sortonfst xs = [y|(_,y)<-sort xs]
 -- Gerard, het bovenstaande werk hoort Adl2fSpec te doen.
@@ -262,13 +262,14 @@ insertpops conn fSpec flags (tbl:tbls) pics =
 -}
 -- WAAROM (SJ) Waarom worden userrules en signalrules gesorteerd?
 -- OMDAT (gmi) HDBC sorteert alfabetisch, om logische next en previous rule te bepalen wordt gesorteerd. 
+-- WAAROM - DAAROM -> we gebruiken decprps ipv multiplicities omdat we nu nog geen afgeleide eigenschappen in de atlas willen hebben 
    userrules   = sort' (\x->r_pat x++cptrule x) [r| r<-rules fSpec,  r_usr r]
    signalrules = sort' (\x->r_pat x++cptrule x) [r| r<-signals fSpec]
-   multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Uni,Tot,Inj,Sur]]
+   multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-decprps d, elem p [Uni,Tot,Inj,Sur]]
    --TODO: Onderstaande levert lege lijsten op bij Deliver.adl. Daarnaast wil ik onderscheid tussen eigenschappen gezet door de user en afgeleide eigenschappen, dus <-declarations en niet <-rules fSpec. Afgeleide eigenschappen zijn niet zichtbaar in de huidige atlas.
    --multrls     = [r| r<-rules fSpec, case rrdcl r of Just (prp,_) -> prp `elem` [Uni,Tot,Inj,Sur]; _-> False;]
    --homorules   = [r| r<-rules fSpec, case rrdcl r of Just (prp,_) -> prp `elem` [Rfx,Sym,Asy,Trn]; _-> False;]
-   homorules =  [rulefromProp p d|d@Sgn{}<-declarations fSpec, decusr d, p<-multiplicities d, elem p [Rfx,Sym,Asy,Trn] ]
+   homorules =  [rulefromProp p d|d@Sgn{}<-declarations fSpec, decusr d, p<-decprps d, elem p [Rfx,Sym,Asy,Trn] ]
 
 placeholders :: [a] -> String
 placeholders [] = []

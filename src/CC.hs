@@ -158,12 +158,12 @@
                        ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
                         hc isSg (lbl,po) antc po' cons expl
-                          = Ru Implication antc (rulepos (lbl,po) po') cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] "" "" "" [] "" po 0 isSg False "")
+                          = Ru Implication antc (rulepos (lbl,po) po') cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
                         kc isSg (lbl,po) cons po' antc expl = hc isSg (lbl,po) antc po' cons expl
                         dc isSg (lbl,po) defd po' expr expl
-                          = Ru Equivalence defd (rulepos (lbl,po) po') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] "" "" "" [] "" po 0 isSg False "")
+                          = Ru Equivalence defd (rulepos (lbl,po) po') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
                         ac isSg (lbl,po) expr expl
-                          = Ru Truth defd po expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] "" "" "" [] "" po 0 isSg False "")
+                          = Ru Truth defd po expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
                          where defd=error ("!Fatal (module CC 145): defd undefined in pRuleDef "++showADL expr)
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
 
@@ -237,7 +237,7 @@
                        single  <$> pAtom 
                                <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)
                        where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
-                                                      (Sgn nm cptAnything cptAnything [] "" "" "" [] "" Nowhere 0 (nm/="") False [])
+                                                      (Sgn nm cptAnything cptAnything [] [] "" "" "" [] "" Nowhere 0 (nm/="") False [])
                              single nm c = Mp1 nm                   -- mph1val
                                                [c|c/=Anything]      -- mphats 
                                                c                    -- mph1typ
@@ -341,8 +341,9 @@
                                      -> Pairs
                                      -> Declaration
                              rebuild nm pos' s fun' t props pragma expla content
-                               = Sgn nm s t (rd props `uni` if fun'=="->" then [Uni,Tot] else []) (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False True []
+                               = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False True []
                                  where pr = pragma++["","",""]
+                                       props'= rd props `uni` if fun'=="->" then [Uni,Tot] else []
 
    pContent         :: Parser Token Pairs
    pContent          = pSpec '[' *> pListSep (pKey ";") pRecord <* pSpec ']'

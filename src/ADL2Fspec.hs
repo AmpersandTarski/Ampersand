@@ -40,8 +40,8 @@
                  , themes       = themes'
                  , vctxenv      = ctxenv context
                  }
-        allDecs = [ d{decprps = decprps d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
-                                          `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
+        allDecs = [ d{decprps_calc = multiplicities d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
+                                                      `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
                   | d<-declarations context, deciss d || decusr d
                   ]
         definedplugs = vsqlplugs ++ vphpplugs
@@ -695,6 +695,7 @@ So the first step is create the kernels ...   -}
                                    , desrc   = a
                                    , detrg   = b
                                    , decprps = []
+                                   , decprps_calc = []
                                    , decprL  = ""
                                    , decprM  = ""
                                    , decprR  = ""

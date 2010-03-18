@@ -16,7 +16,7 @@ where
    import CommonClasses    (Identified(..),showSign
                            , Explained(..)
                            , ABoolAlg)    
-   import Collection       (Collection ((>-)))
+   import Collection       (Collection ((>-)),uni)
    
    type Morphisms = [Morphism]
    data Morphism  = 
@@ -172,7 +172,9 @@ where
            Sgn { decnm   :: String  -- ^ the name of the declaration
                , desrc   :: Concept -- ^ the source concept of the declaration
                , detrg   :: Concept -- ^ the target concept of the declaration
-               , decprps :: Props   -- ^ the multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+                 --multiplicities returns decprps_calc so if you only need the user defined properties do not use multiplicities but decprps
+               , decprps :: Props   -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+               , decprps_calc :: Props   -- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
                , decprL  :: String  -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                , decprM  :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , decprR  :: String
@@ -204,7 +206,7 @@ where
       d == d' = name d==name d' && source d==source d' && target d==target d'
    instance Show Declaration where
     showsPrec _ d
-     = showString (chain " " ([decnm d,"::",name (desrc d),"*",name (detrg d),show (decprps d),"PRAGMA",show (decprL d),show (decprM d),show (decprR d)]++if null (decexpl d) then [] else ["EXPLANATION",show (decexpl d)]))
+     = showString (chain " " ([decnm d,"::",name (desrc d),"*",name (detrg d),show (decprps_calc d),"PRAGMA",show (decprL d),show (decprM d),show (decprR d)]++if null (decexpl d) then [] else ["EXPLANATION",show (decexpl d)]))
    instance Identified Declaration where
     name d@Sgn{}   = decnm d
     name Isn{}     = "I"
@@ -239,7 +241,7 @@ where
 
    instance Morphic Declaration where
     multiplicities d = case d of
-           Sgn {}       -> decprps d
+           Sgn {}       -> decprps_calc d
            Isn{}        -> [Uni,Tot,Inj,Sym,Asy,Trn,Rfx]
                         ++ [Sur | degen d == despc d]
            Iscompl{}    -> [Sym]
@@ -248,6 +250,7 @@ where
            Sgn {}       -> d{ desrc   = detrg d
                             , detrg   = desrc d
                             , decprps = flipProps (decprps d)
+                            , decprps_calc = flipProps (decprps_calc d)
                             , decprL  = ""
                             , decprM  = ""
                             , decprR  = ""
