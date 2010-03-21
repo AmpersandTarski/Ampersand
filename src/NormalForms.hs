@@ -6,7 +6,7 @@ where
    import Collection     (Collection (..))
    import Auxiliaries    (eqCl)
    import ShowADL        (showADL)
-   import Adl.ECArule    (PAclause(..),isAll,isChc,isBlk,isDry,isNop,isDo)
+   import Adl.ECArule    (PAclause(..),isAll,isChc,isBlk,isNop,isDo)
    import Adl.Expression 
    import Adl.Concept
    import CommonClasses
@@ -32,13 +32,18 @@ where
      norm (Chc [d] ms) = (d', ["Flatten Singleton"])
                        where d' = case d of
                                     Blk{} -> d
-                                    Dry{} -> d
                                     _     -> d{paMotiv = ms} 
--- WAAROM? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
+-- DAAROM? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
+-- Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
+-- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (PAclause(..), zie Adl.ECArule).
+-- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
+-- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
+-- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
+-- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
      norm (Chc ds ms)  | (not.null) msgs = (Chc ops ms, msgs)
                        | (not.null) [d| d<-ds, isChc d] = (Chc (rd [ d' | d<-ds, d'<-if isChc d then let Chc ops' _ = d in ops' else [d] ]) ms, ["flatten Chc"])  -- flatten
                        | (not.null) [Nop| Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
-                       | (not.null) ([Blk| Blk{}<-ops]++[Dry| Dry{}<-ops]) = (Chc [op| op<-ops, not (isBlk op), not (isDry op)] ms, ["Choose anything but block"])
+                       | (not.null) [Blk| Blk{}<-ops] = (Chc [op| op<-ops, not (isBlk op)] ms, ["Choose anything but block"])
                        | otherwise = (Chc ds ms, [])
                        where nds  = map norm ds
                              msgs = (concat.map snd) nds
@@ -47,12 +52,10 @@ where
      norm (All [d] ms) = (d', ["Flatten Singleton"])
                        where d' = case d of
                                     Blk{} -> d
-                                    Dry{} -> d
                                     _     -> d{paMotiv = ms} 
      norm (All ds ms)  | (not.null) msgs = (All ops ms, msgs)
                        | (not.null) [d| d<-ds, isAll d] = (All (rd [ d' | d<-ds, d'<-if isAll d then let All ops' _ = d in ops' else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk| Blk{}<-ops] = (Blk{paMotiv = [m| op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
-                       | (not.null) [Dry| Dry{}<-ops] = (Dry{paMotiv = [m| op@Dry{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop| Nop{}<-ops] = (All [op| op<-ops, not (isNop op)] ms, ["Ignore Nop"])
                        | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.morlist.paTo.head) cl|cl<-long]++"together"])
                        | otherwise = (All ds ms, [])
@@ -69,19 +72,16 @@ where
                              to _        = error("!Fatal (module NormalForms 70): illegal call of to(d)")
      norm (New c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
-                                   Dry{} -> p'{paMotiv = ms}
                                    _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
      norm (Rmv c p ms)        = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
-                                   Dry{} -> p'{paMotiv = ms}
                                    _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms
                                 , msgs)
                                 where (p', msgs) = norm (p "x")
      norm (Sel c e p ms)      = ( case p' of
                                    Blk{} -> p'{paMotiv = ms}
-                                   Dry{} -> p'{paMotiv = ms}
                                    _     -> Sel c e (\x->let (p'', _) = norm (p x) in p'') ms
                                 , msgs)
                                 where (p', msgs) = norm (p "x")

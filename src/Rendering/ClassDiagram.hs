@@ -56,19 +56,21 @@
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
-       classes    = [ OOClass (name plug) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
+       classes    = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
                     | plug <- classPlugs
                     , not (null (attrs plug))
                     ]
-       assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name plug)
+       assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
                     | plug <- assocPlugs
-                    , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 97): irregular association, because it has "++show ()++" fields.")
+                    , if not (null (mLkpTbl plug)) then True else error("!Fatal (module ClassDiagram 65): empty lookup table in analysis of plug "++name plug++".")
+                    , let m=head [r| (r,_,_)<-mLkpTbl plug]
+                    , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 67): irregular association, because it has "++show (length (fields plug))++" fields.")
                     , [s,t]<-[fields plug]
                     ]
                     where
                      multiplicity f | fldnull f = ""
                                     | otherwise = "1..n"
-                     nm f = name.lookup.f.fldexpr
+                     nm f = name.concept.lookup.f.fldexpr
                      
        aggrs      = []
        geners     = rd [ OOGener ((name.lookup.fst.head) gs) (map (name.lookup.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]

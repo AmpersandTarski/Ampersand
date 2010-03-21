@@ -18,7 +18,7 @@ module ShowECA (showECA) where
     showECA fSpec _ (On Del m') = "ON DELETE Delta FROM "++showADLcode fSpec m'
 
    instance ECA PAclause where
-    showECA fSpec ind p = showFragm ind p 
+    showECA fSpec ind p = show p 
      where
       showFragm indent pa@Do{}
        = ( case paSrt pa of
@@ -36,7 +36,6 @@ module ShowECA (showECA) where
       showFragm indent (All ds m)       = "ALL of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
       showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
       showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
-      showFragm indent (Dry m)          = "BLOCK"++motivate indent "NO RULES TO HANDLE" m
 
       motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
        where showConj (conj,rs) = "("++motive++" "++showADLcode fSpec conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"

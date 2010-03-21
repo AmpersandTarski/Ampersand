@@ -6,7 +6,6 @@ module Adl.ECArule (InsDel(..)
                    ,isAll
                    ,isChc
                    ,isBlk
-                   ,isDry
                    ,isNop
                    ,isDo
                    )
@@ -28,7 +27,7 @@ data ECArule  = ECA { ecaTriggr :: Event         -- The event on which this rule
                     , ecaDelta  :: Morphism      -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
                     , ecaAction :: PAclause      -- The action to be taken when triggered.
                     , ecaNum    :: Int           -- A unique number that identifies the ECArule within its scope.
-                    } deriving Show
+                    } deriving (Show,Eq)
 data Event    = On { eSrt :: InsDel
                    , eMhp :: Morphism
                    } deriving (Show,Eq)
@@ -60,8 +59,6 @@ data PAclause = Chc { paCls   :: [PAclause]
                     }
               | Blk { paMotiv :: [(Expression,Rules )]  -- tells which expression from which rule has caused the blockage
                     }
-              | Dry { paMotiv :: [(Expression,Rules )]  -- same as block, but for a lack of viable options to choose from.
-                    }
 
 isAll :: PAclause -> Bool
 isAll All{} = True
@@ -74,10 +71,6 @@ isChc _     = False
 isBlk :: PAclause -> Bool
 isBlk Blk{} = True
 isBlk _     = False
-
-isDry :: PAclause -> Bool
-isDry Dry{} = True
-isDry _     = False
 
 isNop :: PAclause -> Bool
 isNop Nop{} = True
@@ -116,7 +109,6 @@ instance Show PAclause where
       showFragm indent (All ds m)       = "ALL of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
       showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
       showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
-      showFragm indent (Dry m)          = "BLOCK"++motivate indent "NO RULES TO HANDLE" m
 
       motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
        where showConj (conj,rs) = "("++motive++" "++show conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"

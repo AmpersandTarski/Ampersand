@@ -1,5 +1,5 @@
   {-# OPTIONS_GHC -Wall #-}
-  module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts)
+  module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt)
   where
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
    import CommonClasses  (ABoolAlg(..))
@@ -427,21 +427,26 @@ So the first step is create the kernels ...   -}
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
    makeFservice context allQuads object
     = let s = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
--- The relations that may be edited by the user of this service are represented by fsv_rels. Editing means that tuples can be added to or removed from the population of the relation.
-                      , fsv_rels      = rels
+-- The relations that may be edited by the user of this service are represented by fsv_insrels and fsv_delrels.
+-- Editing means that tuples can be added to or removed from the population of the relation.
+-- The relations in which the user may insert elements:
+                      , fsv_insrels   = -- (if name object == "Behandeling" then error ("ADL2Fspec Diag 433:\n "++show rels++"\n"++show ecaRs) else [])++
+                                        (rels>-[makeInline m|er<-ecaRs, On Ins m<-[ecaTriggr er], Blk _<-[ecaAction er]])
+-- The relations from which the user may remove elements:
+                      , fsv_delrels   = rels>-[makeInline m|er<-ecaRs, On Del m<-[ecaTriggr er], Blk _<-[ecaAction er]]
 -- The rules that may be affected by this service
                       , fsv_rules     = invariants
                       , fsv_quads     = qs
--- The ECA-rules that may be used by this service to restore invariants.
-                      , fsv_ecaRules  = nECArules
+-- The ECA-rules that may be used by this service to restore invariants. TODO: de Delta-parameter is nog fout!
+                      , fsv_ecaRules  = [\delta->er{ecaAction = action}| er<-ecaRs, let action=ecaAction er]
 -- All signals that are visible in this service
-                      , fsv_signals   = []
+                      , fsv_signals   = [s|s<-signals context]
 -- All fields/parameters of this service
                       , fsv_fields    = srvfields
 -- All concepts of which this service can create new instances
-                      , fsv_creating  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Ins (mIs c)]
+                      , fsv_creating  = [c| c<-rd (map target (fsv_insrels s)), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Ins (mIs c)]
 -- All concepts of which this service can delete instances
-                      , fsv_deleting  = [c| c<-rd (map target rels), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Del (mIs c)]
+                      , fsv_deleting  = [c| c<-rd (map target (fsv_delrels s)), t<-fsv_ecaRules s, ecaTriggr (t arg)==On Del (mIs c)]
                       , fsv_fpa       = case depth object of -- Valideren in de FPA-wereld
                                           0 -> NO
                                           1 -> IF Eenvoudig
@@ -452,19 +457,16 @@ So the first step is create the kernels ...   -}
     where
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
-        vis        = rd (map makeInline rels++map (mIs.target) rels)
-        visible m  = makeInline m `elem` vis
-        qs         = quads visible invariants
-        invariants = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
-        ecaRs      = assembleECAs visible qs
+        vis         = rd (map makeInline rels++map (mIs.target) rels)
+        visible m   = makeInline m `elem` vis
+        invariants  = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
+        qs          = quads visible invariants
+        ecaRs       = preEmpt (assembleECAs visible qs)
         depth :: ObjectDef -> Int
-        depth obj  = foldr max 0 [depth o| o<-objats obj]+1
-        normECA :: ECArule -> Declaration -> ECArule    -- TODO: hier nog naar kijken: er gebeurt nog niets met het argument!
-        normECA e _ = e{ecaAction=normPA (ecaAction e)}
-        nECArules  = [normECA e| e<-ecaRs]
+        depth obj   = foldr max 0 [depth o| o<-objats obj]+1
         trigs :: ObjectDef -> [Declaration->ECArule]
-        trigs _  = [] -- [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))), not (isDry (ecaAction (c arg))) -} ]
-        arg = error("!Todo (module ADL2Fspec 463): declaratie Delta invullen")
+        trigs _  = [] -- [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))) -} ]
+        arg = error("!Todo (module ADL2Fspec 467): declaratie Delta invullen")
         srvfields = [fld 0 o| o<-objats object]
         fld :: Int -> ObjectDef -> Field
         fld sLevel obj
@@ -473,7 +475,7 @@ So the first step is create the kernels ...   -}
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)
-                                else error("!Fatal (module ADL2Fspec 461): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
+                                else error("!Fatal (module ADL2Fspec 476): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
                , fld_editable = editable (objctx obj)      -- can this field be changed by the user of this service?
                , fld_list     = not (isUni (objctx obj))   -- can there be multiple values in this field?
                , fld_must     = isTot (objctx obj)         -- is this field obligatory?
@@ -514,7 +516,7 @@ So the first step is create the kernels ...   -}
    -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
    -- whenever Morphism m is affected (i.e. tuples in m are inserted or deleted),
    -- the rule may have to be restored using functionality from one of the clauses.
-   -- The rule is taken along for traceability.
+   -- The rule is carried along for traceability.
    quads :: (Morphism->Bool) -> Rules  -> [Quad]
    quads visible rs
     = [ Quad m (Clauses [ (conj,allShifts conj)
@@ -622,9 +624,6 @@ So the first step is create the kernels ...   -}
         else []
         where h=head (map head ass); l=head (map last ass)
 
-
-
--- assembleECAs :: [Quad] -> [ECArule]
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
@@ -665,6 +664,41 @@ So the first step is create the kernels ...   -}
        snd3 (_,y,_) = y
        thd3 (_,_,z) = z
        thd4 (_,_,z,_) = z
+
+-- If one rule r blocks upon an event, e.g. e@(ON Ins m), while another ECA rule r'
+-- maintains something else with that same event e, we can save r' the trouble.
+-- After all, event e will block anyway.
+-- preEmpt tries to simplify ECArules by predicting whether a rule will block.
+   preEmpt :: [ECArule] -> [ECArule]
+   preEmpt ers = pr [length ers] ers 10
+    where
+     pr ls ers 0     = error ("!Fatal (module ADL2Fspec 674): too many cascading levels in preEmpt "++show ls)
+     pr ls ers (n+1) | (not.null) cascaded = pr (length cascaded:ls)
+                                                ([er{ecaAction=normPA (ecaAction er)}| er<-cascaded] ++uncasced) n
+                     | otherwise           = [er{ecaAction=normPA (ecaAction er)}| er<-uncasced]
+-- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
+-- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
+     new  = [er{ecaAction=normPA (ecaAction er)}| er<-ers]
+     cascaded = [er{ecaAction=action}| er<-new, let (c,action) = cascade (eMhp (ecaTriggr er)) (ecaAction er), c]
+     uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
+-- cascade inserts a block on the place where a Do component exists that matches the blocking event.
+     cascade :: Morphism -> PAclause -> (Bool, PAclause)
+     cascade mph c@(Do srt (Tm to _) _ m) | (not.null) blkErs = (True, ecaAction (head blkErs))
+      where blkErs = [er| er<-ers
+                        , Blk _<-[ecaAction er]
+                        , let t = ecaTriggr er
+                        , eSrt t==srt
+                        , makeInline (eMhp t) == makeInline to
+                        , makeInline mph      /= makeInline to
+                        ]
+     cascade  _  c@Do{}           = (False, c)
+     cascade mph (New c clause m) = ((fst.cascade mph.clause) "dummystr", New c (\str->(snd.cascade mph.clause) str) m)
+     cascade mph (Rmv c clause m) = ((fst.cascade mph.clause) "dummystr", Rmv c (\str->(snd.cascade mph.clause) str) m)
+     cascade mph (Sel c e cl m)   = ((fst.cascade mph.cl) "dummystr",     Sel c e (\str->(snd.cascade mph.cl) str)   m)
+     cascade mph (Chc ds m)       = (or (map (fst.cascade mph) ds), Chc (map (snd.cascade mph) ds) m)
+     cascade mph (All ds m)       = (or (map (fst.cascade mph) ds), All (map (snd.cascade mph) ds) m)
+     cascade  _  (Nop m)          = (False, Nop m)
+     cascade  _  (Blk m)          = (False, Blk m)
 
    conjuncts :: Rule -> Expressions
    conjuncts = fiRule.conjNF.normExpr

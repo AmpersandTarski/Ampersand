@@ -80,11 +80,12 @@ where
      mkXmlTree f
         = Elem (mkTag f) (  
              [ Elem (simpleTag "Service")   [mkXmlTree (fsv_objectdef f)]] 
-          ++ [ Elem (simpleTag "Relations") (map mkXmlTree (fsv_rels     f))|not (null (fsv_rels     f))] 
-          ++ [ Elem (simpleTag "Rules")     (map mkXmlTree (fsv_rules    f))|not (null (fsv_rules    f))] 
+          ++ [ Elem (simpleTag "INSRelations") (map mkXmlTree (fsv_insrels f))|not (null (fsv_insrels  f))] 
+          ++ [ Elem (simpleTag "DELRelations") (map mkXmlTree (fsv_delrels f))|not (null (fsv_delrels  f))] 
+          ++ [ Elem (simpleTag "Rules")     (map mkXmlTree (fsv_rules      f))|not (null (fsv_rules    f))] 
 --          ++ [ Elem (simpleTag "ECArules")  (map mkXmlTree (fsv_ecaRules f))|not (null (fsv_ecaRules f))] 
-          ++ [ Elem (simpleTag "Signals")   (map mkXmlTree (fsv_signals  f))|not (null (fsv_signals  f))] 
-          ++ [ Elem (simpleTag "Fields")    (map mkXmlTree (fsv_fields   f))|not (null (fsv_fields   f))] 
+          ++ [ Elem (simpleTag "Signals")   (map mkXmlTree (fsv_signals    f))|not (null (fsv_signals  f))] 
+          ++ [ Elem (simpleTag "Fields")    (map mkXmlTree (fsv_fields     f))|not (null (fsv_fields   f))] 
            )
 
    instance XML Field where

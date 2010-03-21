@@ -12,10 +12,11 @@ module Calc ( deriveProofs
    import Strings            (spread,chain)
    import Adl
    import Data.Fspec
-   import ADL2Fspec          (actSem, delta, allClauses, conjuncts)
-   import Adl.ECArule        (InsDel(..))
+   import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt)
+   import Adl.ECArule        (InsDel(..),isBlk)
+   import ShowECA
    import ShowADL            (showADL,showADLcode)
-   import NormalForms        (disjNF,nfProof,nfPr,simplify) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import NormalForms        (disjNF,nfProof,nfPr,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
 
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
@@ -57,12 +58,30 @@ module Calc ( deriveProofs
         editMph (Tm m@Mph{} _) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editMph e            = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
 
-
    deriveProofs :: Fspc -> String
    deriveProofs fSpec
-    = --"\nSignals for "++name fSpec++"\n--------------\n"++
+    = let qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).
+--   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
+          ecaRs = assembleECAs (\_->True) qs  -- the raw (unnormalized) ECA rules.
+      in
+      --"\nSignals for "++name fSpec++"\n--------------\n"++
       --proof (signals fSpec)++
-      "\nRules for "++name fSpec++"\n--------------\n"++
+      "\nTransformation of user specified rules into ECA rules for "++name fSpec++"\n--------------\n"++
+      "\nFirst step: determine Horn clauses --------------\n"++
+      chain "\n--------------\n"
+      [ "Horn clause "++showADLcode fSpec hc++"\nis derived from rule "++showADLcode fSpec r++
+        "\nIt can be called when relation "++showADLcode fSpec m++" is affected."
+      | Quad m ccrs<-qs, let r=cl_rule ccrs, (_,hcs)<-cl_conjNF ccrs, hc<-hcs]++
+      "\nSecond step: determine ECA rules --------------\n"++
+      chain "\n--------------\n"
+      [ "ECA Rule "++showECA fSpec "\n  " er{ecaAction=normPA (ecaAction er)}
+      | er<-ecaRs]++
+      "\nThird step: cascade blocking rules --------------\n"++
+      chain "\n--------------\n"
+      [ "ECA Rule "++showECA fSpec "\n  " er
+      | er<-preEmpt ecaRs]++
+      "\nFinal step: derivations --------------\n"++
+
       chain "\n--------------\n"
       [ chain "\n" ["   "++stmt++if null comment then "" else "\n<=> { "++comment++". }"
                    | (stmt,comment)<-cleanup (derivation rule)]
