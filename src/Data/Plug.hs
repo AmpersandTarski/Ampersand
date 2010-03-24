@@ -43,6 +43,7 @@ where
     = [ Obj (fldname tFld)                                                   -- objnm 
             Nowhere                                                          -- objpos
             (if source a==concept p then Tm a (-1) else f (source a) [[a]])  -- objctx
+            Nothing                                                          -- objctx_proof
             [] []                                                            -- objats and objstrs
       | (a,_,tFld)<-mLkpTbl p]
       where

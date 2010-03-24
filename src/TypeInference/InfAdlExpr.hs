@@ -35,13 +35,13 @@ fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg
 --ADL conversie
 ----------------------------------------------------------------------------
 --DESCR -> a function to add population to the morphisms in the expression, isa relations as a set of (Concept,Concept), declarations from the script, the expression => OR the type of the expression and the expression with typed and populated morphisms each of them bound to one declaration OR an error as String
-infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> Expression -> Either ((Concept,Concept), Expression) String
+infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> Expression -> Either ((Concept,Concept), Expression,InfTree) String
 infertype_and_populate populate isas ds ex_in =
   case inf_expr of
-    Left _ -> Left ((toCpt expr_src,toCpt expr_trg), enrich_expr uniqex)
+    Left _ -> Left ((toCpt expr_src,toCpt expr_trg), enrich_expr uniqex,inftree)
     Right err -> Right (printterror ds uniqex err)
   where
-  Left ((expr_src,expr_trg),env_mph) = inf_expr
+  Left ((expr_src,expr_trg),env_mph,inftree) = inf_expr
   (uniqex,_) = uniquemphs 0 ex_in --give each morphism an identifier within the scope of this expression
   inf_expr = infer (map fromDcl ds) (fromCptCpts isas) (fromExpr uniqex)
   enrich_expr (F exs) = F$map enrich_expr exs

@@ -35,6 +35,7 @@ import Typology --USE -> Isa structure for enrichment
 import TypeInference.Input
 import TypeInference.Isa
 import TypeInference.InfAdlExpr
+import TypeInference.InfLibAG (InfTree)
 import ShowADL
 import Collection     ( Collection(..) )
 
@@ -161,7 +162,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                               -}
   where
   --DESCR -> use this function on all expressions
-  enrich_expr :: Expression -> Either ((Concept,Concept), Expression) String
+  enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) String
   enrich_expr = infertype_and_populate popuMphDecl isas (rel_declarations ctxs)
   isas = isaRels (allCtxCpts ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
@@ -309,19 +310,22 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   bindRule :: Rule -> Either Rule (String,FilePos,OrigExpr)
   bindRule r@(Ru{}) = 
      if null err 
-     then Left$ (bindexpr){rrtyp=(c1,c2), srrel=signaldecl}
+     then Left$ (bindexpr){rrtyp=(c1,c2),rrtyp_proof=inftree, srrel=signaldecl}
      else Right (err,rrfps r,OrigRule r) 
      where
      inf_r = enrich_expr (normExpr r)
      bindexpr = case inf_r of
-       Left (_,inf_expr) -> ruleexpr_inv r inf_expr
+       Left (_,inf_expr,_) -> ruleexpr_inv r inf_expr
        _ -> r
      (c1,c2) = case inf_r of
-       Left (inf_t,_) -> inf_t
+       Left (inf_t,_,_) -> inf_t
        _ ->  (NOthing,NOthing)
      err = case inf_r of
        Right x -> x
        _ -> ""
+     inftree = case inf_r of
+       Left (_,_,x) -> Just x
+       _ -> Nothing
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
   --TODO -> is niet consistent met andere rule generaties, hoort niet in TypeChecker
@@ -334,6 +338,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
          cons           -- right hand side (consequent)
          []             -- explanation
          (c,c)          -- The type
+         Nothing        -- inference tree
          Nothing        -- This rule was not generated from a property of some declaration.
          0              -- Rule number. Will be assigned after enriching the context
          pat            -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
@@ -356,7 +361,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
   bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[Either Expression (String,FilePos,OrigExpr)])
-  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objats=bindats},checkedexpr:checkedexprs)
+  bindObjDef od mbtopexpr = (od {objctx=bindexpr, objctx_proof=inftree, objats=bindats},checkedexpr:checkedexprs)
     where 
     expr = case mbtopexpr of
       Nothing -> objctx od
@@ -370,13 +375,16 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
       _ -> ""
     bindexpr =  case mbtopexpr of
       Nothing -> case inf_e of
-           Left (_,x) -> x
+           Left (_,x,_) -> x
            _ -> objctx od 
       Just _ -> case inf_e of
-           Left (_,F [_,x]) -> x
+           Left (_,F [_,x],_) -> x
            Left _ -> error $ "!Fatal (module TypeChecker 441): function enrichCtx.bindObjDef: " ++
                              "Expected a composition expression."++show inf_e++"."
            _ -> objctx od 
+    inftree = case inf_e of
+           Left (_,_,x) -> Just x
+           _ -> Nothing
     ---------------objats------------
     newtopexpr =  case mbtopexpr of
       Nothing -> bindexpr
@@ -397,6 +405,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                          objnm=kdlbl kd,
                          objpos=kdpos kd,
                          objctx=Tm (mIs (kdcpt kd))(-1),
+                         objctx_proof=Nothing,
                          objstrs=[[]]}) Nothing
 
                                     

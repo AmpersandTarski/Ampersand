@@ -45,6 +45,7 @@ where
     objectdef _      = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                            , objpos  = Nowhere    -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
                            , objctx  = Tm (mIs S) (-1) -- ^ this expression describes the instances of this object, related to their context. 
+                           , objctx_proof = Nothing
                            , objats  = []         -- ^ the attributes, which are object definitions themselves.
                            , objstrs = []         -- ^ directives that specify the interface.
                            }
@@ -65,6 +66,7 @@ where
     objectdef    context = Obj { objnm   = name context
                                , objpos  = Nowhere
                                , objctx  = Tm (mIs S) (-1)
+                               , objctx_proof = Nothing
                                , objats  = map objectdef (ctxpats context)
                                , objstrs = []
                                }
@@ -83,6 +85,7 @@ where
     objectdef    pat = Obj { objnm   = name pat
                            , objpos  = Nowhere
                            , objctx  = Tm (mIs S) (-1)
+                           , objctx_proof = Nothing
                            , objats  = []
                            , objstrs = []
                            }
@@ -102,6 +105,7 @@ where
     objectdef rule = Obj { objnm   = name rule
                          , objpos  = pos rule
                          , objctx  = Tm (mIs S) (-1)
+                         , objctx_proof = Nothing
                          , objats  = []
                          , objstrs = []
                          }

@@ -165,6 +165,7 @@
          = [ Obj (name c)         -- objnm
                  Nowhere          -- objpos
                  (Tm (mIs c)(-1)) -- objctx
+                 Nothing          -- objctx_proof
                  objattributes    -- objats
                  []               -- objstrs
            | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
@@ -191,6 +192,7 @@
          = [ Obj (showADLcode fSpec t)     -- objnm
                  Nowhere                   -- objpos
                  t                         -- objctx
+                 Nothing                   -- objctx_proof
                  (recur (trace++[c]) cl)   -- objats
                  []                        -- objstrs
            | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]

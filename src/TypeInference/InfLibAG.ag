@@ -37,12 +37,14 @@ ATTR RelAlgExpr ISectList UnionList
      env_in:AltList
      rtype:InfType
      env_mph:{[(RelAlgExpr,InfType,RelDecl)]}
+     inftree:InfTree
    ]
 
 SEM ISectList UnionList
   |Nil  lhs.env_in = Left []
-        lhs.rtype = fatal 42 "undefined rtype on Nil of ISect-/UnionList"
+        lhs.rtype = fatal 45 "undefined rtype on Nil of ISect-/UnionList"
         lhs.env_mph = []
+        lhs.inftree = fatal 47 "undefined inftree on Nil of ISect-/UnionList"
   |Cons lhs.env_in = @env
         loc.env = alts_ababab (@hd.me,@tl.me) @lhs.env_isa @hd.env_in @tl.env_in
         lhs.rtype = if null @tl.me 
@@ -51,15 +53,22 @@ SEM ISectList UnionList
                     else final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me @tl.me)
                                             @tl.rtype @hd.rtype
         lhs.env_mph = @hd.env_mph ++ @tl.env_mph
+        loc.hdax = headofaxiomlist (inferencerule_ababab @lhs.listof @hd.me @tl.me) @hd.inftree
+        lhs.inftree = if null @tl.me
+                      then @hdax --the tree of (take 1 exprlist)
+                      else axiomlist @hdax @tl.inftree --all the axioms
 SEM RelAlgExpr
   |ISect  sublst.listof = ListOfISect 
+      --    lhs.inftree = InfExprs (inferencerule_ababab_list ListOfISect @sublst.me) @sublst.inftree
   |Union  sublst.listof = ListOfUnion
+      --    lhs.inftree = InfExprs (inferencerule_ababab_list ListOfUnion @sublst.me) @sublst.inftree
   |ISect Union
           lhs.env_in = @env 
           loc.env = @sublst.env_in
           sublst.type_down = push_type_ababab @lhs.type_down
           lhs.rtype = @sublst.rtype 
           lhs.env_mph = @sublst.env_mph
+          lhs.inftree = @sublst.inftree 
   |Comp RAdd
           lhs.env_in = @env 
           loc.env = alts_abbcac (@lsub.me,@rsub.me) @lhs.env_isa @lsub.env_in @rsub.env_in
@@ -70,27 +79,33 @@ SEM RelAlgExpr
                       then final_infer_abbcac @lhs.env_isa @lsub.rtype @rsub.rtype
                       else Right(b_error @t)
           lhs.env_mph = @lsub.env_mph ++ @rsub.env_mph
+          lhs.inftree = InfExprs (inferencerule_abbcac @me) [@lsub.inftree,@rsub.inftree]
   |Compl  lhs.env_in = alts_compl @me @sub.env_in 
           sub.type_down = push_type_abab @lhs.type_down
           lhs.rtype = {case @me of
                           Compl (Morph{}) -> @sub.rtype
                           _ -> error "complements on mphs only -> normalize"}
           lhs.env_mph = @sub.env_mph
+          lhs.inftree = complement_rule @sub.inftree
   |Conv   lhs.env_in = alts_abba @sub.env_in
           sub.type_down = push_type_abba @lhs.type_down
           lhs.rtype = final_infer_conv @sub.rtype
           lhs.env_mph = @sub.env_mph
+          lhs.inftree = InfExprs Conv_nc [@sub.inftree]
   |Implic lhs.env_in = error "no implication rule symbols -> normalize"
           lhs.rtype = error "no implication rule symbols -> normalize"
           lhs.env_mph = error "no implication rule symbols -> normalize"
+          lhs.inftree = error "no implication rule symbols -> normalize"
   |Equiv  lhs.env_in = error "no equivalence rule symbols -> normalize"
           lhs.rtype = error "no equivalence rule symbols -> normalize"
           lhs.env_mph = error "no equivalence rule symbols -> normalize"
+          lhs.inftree = error "no equivalence rule symbols -> normalize"
   |Morph  lhs.env_in = @env
           loc.env = alts_mph @lhs.env_decls @lhs.env_isa @me
-          loc.t = final_infer_mph @lhs.env_decls @me @lhs.env_isa @lhs.type_down @env
+          loc.(t,tree) = final_infer_mph @lhs.env_decls @me @lhs.env_isa @lhs.type_down @env
           lhs.rtype = @t
           lhs.env_mph = [( @me, @t, thedecl @lhs.env_decls @lhs.env_isa @me @t)]
+          lhs.inftree = @tree
 
 
 
@@ -104,24 +119,28 @@ module TypeInference.InfLibAG
   ,RelAlgType
   ,Isa
   ,TError(..)
+  ,InfTree(..)
+  ,DeclRuleType(..)
+  ,InfRuleType(..)
   ) where
 
 import TypeInference.InfLibAGFuncs
 
-infer:: [RelDecl] -> Isa -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)]) TError
+infer:: [RelDecl] -> Isa -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError
 infer reldecls isas root_expr =
   case rtype of
     Left (x,y) -> if x==Universe 
                   then Right$TErrorU "The source of the expression is the universal set" 
                   else if  y==Universe
                        then Right$TErrorU "The target of the expression is the universal set" 
-                       else Left ((x,y), env_mph )
+                       else Left ((x,y), env_mph, inftree)
     Right err -> Right err
   where
-  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (inftree (head alltypes))]
-  env_in = env_in_Syn_RelAlgExpr (inftree (Universe,Universe))
+  inftree = inftree_Syn_RelAlgExpr (agtree (head alltypes))
+  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (agtree (head alltypes))]
+  env_in = env_in_Syn_RelAlgExpr (agtree (Universe,Universe))
   rtype = if length alltypes==1 
-          then rtype_Syn_RelAlgExpr (inftree (head alltypes)) --finalize by pushing the type down again
+          then rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
           else if null alltypes
                then Right env_in_err
                else Right$TErrorAmb "Ambiguous type" alltypes
@@ -131,8 +150,7 @@ infer reldecls isas root_expr =
                 else xs 
      _ -> []
   Right env_in_err = env_in
-  inftree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
-
+  agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
 
 ----------------------------------------------------------------------------
 --TEST

@@ -155,7 +155,7 @@ where
    
    instance XML ObjectDef where
      mkTag x = Tag "ObjectDef" [ nameToAttr x]
-     mkXmlTree x@(Obj _ _ _ _ _ ) 
+     mkXmlTree x@(Obj{}) 
            = Elem (mkTag x)
                       ( descriptionTree (objctx x)
                      ++ attributesTree (objats x)

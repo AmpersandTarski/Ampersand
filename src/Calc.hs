@@ -238,6 +238,7 @@ module Calc ( deriveProofs
                                        , rrcon = pos'
                                        , rrxpl = ""
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
+                                       , rrtyp_proof = Nothing
                                        , rrdcl = Nothing
                                        , runum = 0
                                        , r_pat = ""
@@ -251,6 +252,7 @@ module Calc ( deriveProofs
                                        , rrcon = pos'
                                        , rrxpl = ""
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
+                                       , rrtyp_proof = Nothing
                                        , rrdcl = Nothing
                                        , runum = 0
                                        , r_pat = ""

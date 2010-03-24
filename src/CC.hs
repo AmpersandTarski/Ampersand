@@ -158,12 +158,12 @@
                        ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
                         hc isSg (lbl,po) antc po' cons expl
-                          = Ru Implication antc (rulepos (lbl,po) po') cons expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
+                          = Ru Implication antc (rulepos (lbl,po) po') cons expl (cptAnything,cptAnything) Nothing Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
                         kc isSg (lbl,po) cons po' antc expl = hc isSg (lbl,po) antc po' cons expl
                         dc isSg (lbl,po) defd po' expr expl
-                          = Ru Equivalence defd (rulepos (lbl,po) po') expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
+                          = Ru Equivalence defd (rulepos (lbl,po) po') expr expl (cptAnything,cptAnything) Nothing Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
                         ac isSg (lbl,po) expr expl
-                          = Ru Truth defd po expr expl (cptAnything,cptAnything) Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
+                          = Ru Truth defd po expr expl (cptAnything,cptAnything) Nothing Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "")
                          where defd=error ("!Fatal (module CC 145): defd undefined in pRuleDef "++showADL expr)
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
 
@@ -297,8 +297,8 @@
    pKeyAtt          :: Parser Token ObjectDef
    pKeyAtt           = attL <$> pLabelProps <*> pExpr <|>
                        att <$> pExpr
-                       where attL (Lbl nm p strs) attexpr = Obj nm p attexpr [] strs
-                             att attexpr = Obj "" Nowhere attexpr [] []
+                       where attL (Lbl nm p strs) attexpr = Obj nm p attexpr Nothing [] strs
+                             att attexpr = Obj "" Nowhere attexpr Nothing [] []
 
    pObjDef          :: Parser Token ObjectDef
    pObjDef           = pKey_pos "SERVICE" *> pObj
@@ -319,7 +319,7 @@
                            <*> pExpr                                             -- de contextexpressie (default: I[c])
                            <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
                            <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
-                       where obj (Lbl nm pos' strs) expr _ ats = Obj nm pos' expr ats strs
+                       where obj (Lbl nm pos' strs) expr _ ats = Obj nm pos' expr Nothing ats strs
 
    pDeclaration     :: Parser Token Declaration
    pDeclaration      = rebuild <$> pVarid 

@@ -61,7 +61,7 @@ data RelAlgMorph =
 data RelAlgObj = Universe | EmptyObject | Object String deriving (Eq)
 type RelAlgType = (RelAlgObj, RelAlgObj)
 type Isa = [(RelAlgObj, RelAlgObj)]
-data RelDecl = RelDecl {dname::String, dtype::RelAlgType, ishomo::Bool} | IDecl | VDecl
+data RelDecl = RelDecl {dname::String, dtype::RelAlgType, ishomo::Bool} | IDecl | VDecl deriving (Eq)
 
 type InfType = Either RelAlgType TError
 type AltList = Either [RelAlgType] TError
@@ -127,10 +127,37 @@ specific x y isas = if elem (x,y) isas
                          else fatal 173 $ "A type can only be inferred if there is no type error. "
                                           ++show x++" is not a "++show y++" given the is-a hierarchy " ++ show isas ++"."
 
+data InfTree = InfExprs InfRuleType [InfTree] | InfRel DeclRuleType RelDecl
+               deriving (Show,Eq)
+data DeclRuleType = D_rel|D_rel_h|D_rel_c|D_rel_c_h|D_id|D_v|D_id_c|D_v_c
+                    deriving (Show,Eq)
 data InfRuleType = ISect_cs | ISect_ncs | ISect_mix
                   |Union_mix
                   |Comp_ncs | Comp_c1 | Comp_c2 | Comp_cs
-                  |RAdd_ncs | RAdd_c1 | RAdd_c2 | RAdd_cs deriving (Show,Eq)
+                  |RAdd_ncs | RAdd_c1 | RAdd_c2 | RAdd_cs 
+                  |Conv_nc | Conv_c
+                   deriving (Show,Eq)
+
+--the imaginairy unary union/intersection
+headofaxiomlist :: InfRuleType -> InfTree -> InfTree
+headofaxiomlist rt t = InfExprs rt [t]
+--combine the trees of the head and tail
+axiomlist :: InfTree -> InfTree -> InfTree
+axiomlist (InfExprs Union_mix hdts) (InfExprs Union_mix tlts) = InfExprs Union_mix (hdts++tlts)
+axiomlist (InfExprs hdrule hdts) (InfExprs tlrule tlts) 
+  | hdrule==tlrule = InfExprs hdrule (hdts++tlts) --REMARK: assuming ISect_*
+  | otherwise = InfExprs ISect_mix (hdts++tlts)
+axiomlist _ _ = fatal 148 "These axioms cannot be merged into one list."
+
+complement_rule :: InfTree -> InfTree
+complement_rule (InfExprs Conv_nc t) =  InfExprs Conv_c t
+complement_rule (InfRel dtype r) = case dtype of
+   D_rel -> InfRel D_rel_c r
+   D_rel_h -> InfRel D_rel_c_h r
+   D_id -> InfRel D_id_c r
+   D_v -> InfRel D_v_c r
+   _ -> fatal 162 "double complements not allowed -> normalize"
+complement_rule _ = fatal 163 "complements on relations and conversions only -> normalize"
 
 --DESCR -> match pattern of the expression to an inference rule
 inferencerule_abbcac :: RelAlgExpr -> InfRuleType
@@ -143,6 +170,7 @@ inferencerule_abbcac (RAdd (Compl{}) _) = RAdd_c1
 inferencerule_abbcac (RAdd _ (Compl{})) = RAdd_c2
 inferencerule_abbcac (RAdd{}) = RAdd_ncs
 inferencerule_abbcac _ = fatal 191 "inferencerule_abbcac is a function for composition or relative addition only."
+--the inference rule of a union or intersection if the list (R:S) is considered an expression like R\/S or R/\S where R is the head of the list and S the tail
 inferencerule_ababab :: ListOf -> RelAlgExpr -> [RelAlgExpr] -> InfRuleType
 inferencerule_ababab (ListOfUnion) _ _ = Union_mix
 inferencerule_ababab (ListOfISect) _ [] = ISect_mix
@@ -344,9 +372,9 @@ is_b_error _ = False
 --discovered during checking of the possible alternatives of the expression.
 ----------------------------------------------------------------------------
 
-final_infer_mph :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> InfType
+final_infer_mph :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> (InfType,InfTree)
 final_infer_mph _ _ _ _ (Left []) = fatal 377 "the AltList cannot be Left []."
-final_infer_mph _ _ _ _ (Right err) = Right err
+final_infer_mph _ _ _ _ (Right err) = (Right err,fatal 371 "TODO: There is no inference tree in case of a type error.")
 final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
    where
    alts' = [(a,b)|(a,b)<-alts, isarelated a inh_a isas && isarelated b inh_b isas]
@@ -364,9 +392,20 @@ final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
           (Morph IdRel _ _)->True
           _ -> False
                    = if isarelated a b isas
-                     then Left (specific a b isas,specific a b isas)
-                     else Right$TError6 "Type is not homogeneous" (a,b) me d 
-       | otherwise = Left (a,b)
+                     then (Left (specific a b isas,specific a b isas)
+                          ,case d of
+                              RelDecl{} -> InfRel D_rel_h d
+                              IDecl -> InfRel D_id IDecl
+                              VDecl -> InfRel D_v VDecl
+                          )
+                     else (Right$TError6 "Type is not homogeneous" (a,b) me d 
+                          ,fatal 396 "TODO: There is no inference tree in case of a type error.")
+       | otherwise = (Left (a,b)
+                     ,case d of
+                         RelDecl{} -> InfRel D_rel d
+                         IDecl -> InfRel D_id IDecl
+                         VDecl -> InfRel D_v VDecl
+                     )
        where d = thedecl reldecls isas me (Left(a,b))
    
 
@@ -377,8 +416,6 @@ thedecl reldecls isas me (Left(a,b)) =
    if null alts
    then fatal 405 "the expression has a type error, there is no declaration for this relation."
    else if length alts==1   
-        --SJO: Gerard, ik heb deze test tijdelijk uitgezet, omdat er dubbelen voorkomen in alts! Er zit dus een fout in.
-        --GMI: Ik heb hem weer aangezet, want als de fatal voorkomt dan zit er een bug in InfLibAG. 
         then head alts
         else fatal 408 $ "the expression has a type error, there cannot be more than one declaration for this relation."
                           ++ show (alts,me,(a,b))
