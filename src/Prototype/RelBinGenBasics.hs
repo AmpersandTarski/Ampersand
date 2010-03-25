@@ -75,9 +75,9 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     | length lst'==length simplectxbinding && source iex==target iex && length(snd$vctxenv fSpec)==length simplectxbinding
         = let phpvar1 = (snd.head)(snd$vctxenv fSpec) 
           in concat$ 
-               ["SELECT DISTINCT TODO.`i`, TODO.`i` AS i1 FROM `"++lowerCase(name(source iex))++"` AS TODO "
-               , "WHERE TODO.`"++lowerCase phpvar1++"`='\".$GLOBALS['ctxenv']['"++phpvar1++"'].\"'"]
-               ++["AND TODO.`"++lowerCase x++"`='\".$GLOBALS['ctxenv']['"++x++"'].\"'"|(_,x)<-tail (snd$vctxenv fSpec)]
+               ["SELECT DISTINCT TODO.`I`, TODO.`I` AS i1 FROM `"++name(source iex)++"` AS TODO "
+               , "WHERE TODO.`"++phpvar1++"`='\".$GLOBALS['ctxenv']['"++phpvar1++"'].\"'"]
+               ++["AND TODO.`"++x++"`='\".$GLOBALS['ctxenv']['"++x++"'].\"'"|(_,x)<-tail (snd$vctxenv fSpec)]
     | otherwise = selectGeneric i ("isect0."++src',src) ("isect0."++trg',trg)
                            (chain ", " exprbracs) (chain " AND " wherecl)
 {- The story:

@@ -183,6 +183,7 @@ where
                         Asy-> h$sign r
                         Trn-> h$sign r
                         Rfx-> h$sign r
+           , rrtyp_proof = Nothing
            , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
            , runum = 0                    -- Rules will be renumbered after enriching the context
            , r_pat = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
