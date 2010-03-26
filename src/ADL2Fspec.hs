@@ -307,10 +307,18 @@ So the first step is create the kernels ...   -}
    makeSqlPlug :: ObjectDef -> Plug
    makeSqlPlug obj = PlugSql (name obj)             -- plname
                              makeFields             -- fields
-                             []                     -- cLkpTbl -- TODO: invullen!
-                             []                     -- mLkpTbl -- TODO: invullen!
+                             cptflds                -- cLkpTbl -- TODO: invullen!
+                             mphflds                -- mLkpTbl -- TODO: invullen!
                              (ILGV Eenvoudig)       -- plfpa
       where
+      --TODO: cptflds and mphflds assume that the user defined plug is a concept plug: 
+      --      -> containing just one expression equivalent to the identity relation
+      --      -> if the expression is not the identity relation then it is a simple expression (a morphism)
+      --      if there are more expressions equivalent to the identity relation then a fatal
+      --      the others would probably be ignored by updates and inserts, but fldnull=false => save errors in SQL?
+      cptflds = (\xs->if length xs==1 then xs else error "!Fatal (module ADL2Fspec 319): Implementation expects only one identity relation in plug.")
+                [(source (fldexpr f),f)|f<-makeFields, isIdent(fldexpr f)]
+      mphflds = [(m,cptfld,f)|f<-makeFields, length (mors(fldexpr f))==1,m@(Mph{})<-mors(fldexpr f), let (_,cptfld)=head cptflds]
       makeFields ::  [SqlField]
       makeFields =
         [Fld (name att)                 -- fldname : 
