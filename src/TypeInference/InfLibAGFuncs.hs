@@ -130,13 +130,37 @@ specific x y isas = if elem (x,y) isas
 data InfTree = InfExprs InfRuleType [InfTree] | InfRel DeclRuleType RelDecl
                deriving (Show,Eq)
 data DeclRuleType = D_rel|D_rel_h|D_rel_c|D_rel_c_h|D_id|D_v|D_id_c|D_v_c
-                    deriving (Show,Eq)
+                    deriving (Eq)
 data InfRuleType = ISect_cs | ISect_ncs | ISect_mix
                   |Union_mix
                   |Comp_ncs | Comp_c1 | Comp_c2 | Comp_cs
                   |RAdd_ncs | RAdd_c1 | RAdd_c2 | RAdd_cs 
                   |Conv_nc | Conv_c
-                   deriving (Show,Eq)
+                   deriving (Eq)
+instance Show DeclRuleType where
+   show D_rel = "D-Rel"
+   show D_rel_h = "D-RelH"
+   show D_rel_c = "D-Rel-c"
+   show D_rel_c_h = "D-RelH-c"
+   show D_id = "D-Id"
+   show D_v = "D-V"
+   show D_id_c =  "D-Id"
+   show D_v_c  = "D-V"
+instance Show InfRuleType where
+   show ISect_cs = "T-Intersect-cs"
+   show ISect_ncs = "T-Intersect-ncs"
+   show ISect_mix = "T-Intersect"
+   show Union_mix = "T-Union"
+   show Comp_ncs = "T-Comp"
+   show Comp_c1 = "T-Comp-c1"
+   show Comp_c2 =  "T-Comp-c2"
+   show Comp_cs  = "T-Comp-cs"
+   show RAdd_ncs = "T-RelAdd"
+   show RAdd_c1 = "T-RelAdd-c1"
+   show RAdd_c2 =  "T-RelAdd-c2"
+   show RAdd_cs  = "T-RelAdd-cs"
+   show Conv_nc =  "T-Conv"
+   show Conv_c  = "T-Conv-c"
 
 --the imaginairy unary union/intersection
 headofaxiomlist :: InfRuleType -> InfTree -> InfTree

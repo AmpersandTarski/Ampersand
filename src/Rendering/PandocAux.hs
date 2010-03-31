@@ -40,6 +40,9 @@ laTeXtemplate flags
      , "\\usepackage{amssymb}"
      , "\\usepackage{amsmath}       % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
   --   , "\\usepackage{hyperref}"
+     , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/logicmatters/l4llogiciansnew.html"
+     , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/LaTeX/guides/BussGuide2.pdf"
+     , "\\usepackage{bussproofs}"
      ] ++
      ( case language flags of
         Dutch   -> [ "\\usepackage[dutch]{babel}"

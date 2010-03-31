@@ -28,6 +28,7 @@ import Classes.Graphics (makePicture)
 import FPA
 import Statistics
 import Rendering.PandocAux
+import Rendering.InfTree2Pandoc
 
 --DESCR ->
 --The functional specification starts with an introduction
@@ -99,7 +100,9 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           date = [Str (show(genTime flags))]
           
           (docContents,pictures)
-           = ( introduction       level fSpec flags  ++
+           = if theme flags == "gerard" then ([pandoctree(rrtyp_proof r)|r<-rules fSpec],[])
+             else
+             ( introduction       level fSpec flags  ++
                designPrinciples   level fSpec flags  ++
                caTxt                                 ++
                daTxt                                 ++
