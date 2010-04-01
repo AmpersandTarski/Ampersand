@@ -47,16 +47,17 @@ SEM ISectList UnionList
         lhs.inftree = fatal 47 "undefined inftree on Nil of ISect-/UnionList"
   |Cons lhs.env_in = @env
         loc.env = alts_ababab (@hd.me,@tl.me) @lhs.env_isa @hd.env_in @tl.env_in
-        lhs.rtype = if null @tl.me 
-                    then final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me [])
-                                            (Left @lhs.type_down) @hd.rtype
-                    else final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me @tl.me)
-                                            @tl.rtype @hd.rtype
+        loc.tp = if null @tl.me 
+                 then final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me [])
+                                         (Left @lhs.type_down) @hd.rtype
+                 else final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me @tl.me)
+                                         @tl.rtype @hd.rtype
+        lhs.rtype = @tp
         lhs.env_mph = @hd.env_mph ++ @tl.env_mph
-        loc.hdax = headofaxiomlist (inferencerule_ababab @lhs.listof @hd.me @tl.me) @hd.inftree
+        loc.hdax = headofaxiomlist (inferencerule_ababab @lhs.listof @hd.me @tl.me) @tp @hd.inftree
         lhs.inftree = if null @tl.me
                       then @hdax --the tree of (take 1 exprlist)
-                      else axiomlist @hdax @tl.inftree --all the axioms
+                      else axiomlist @tp @hdax @tl.inftree --all the axioms
 SEM RelAlgExpr
   |ISect  sublst.listof = ListOfISect 
       --    lhs.inftree = InfExprs (inferencerule_ababab_list ListOfISect @sublst.me) @sublst.inftree
@@ -73,25 +74,30 @@ SEM RelAlgExpr
           lhs.env_in = @env 
           loc.env = alts_abbcac (@lsub.me,@rsub.me) @lhs.env_isa @lsub.env_in @rsub.env_in
           loc.t = push_type_abbcac (@lsub.me,@rsub.me) @lhs.env_isa (inferencerule_abbcac @me) @lhs.type_down @lsub.env_in @rsub.env_in
-          lsub.type_down = if not(is_b_error @t) then lefttype @t else fatal 65 "There should be an ambiguous b error"
+          loc.(_,cb) = @ltp
+          lsub.type_down = @ltp
+          loc.ltp = if not(is_b_error @t) then lefttype @t else fatal 65 "There should be an ambiguous b error"                
           rsub.type_down = if not(is_b_error @t) then righttype @t else fatal 66 "There should be an ambiguous b error"
-          lhs.rtype = if not(is_b_error @t)
-                      then final_infer_abbcac @lhs.env_isa @lsub.rtype @rsub.rtype
-                      else Right(b_error @t)
+          lhs.rtype = @tp
+          loc.tp = if not(is_b_error @t)
+                   then final_infer_abbcac @lhs.env_isa @lsub.rtype @rsub.rtype
+                   else Right(b_error @t)
           lhs.env_mph = @lsub.env_mph ++ @rsub.env_mph
-          lhs.inftree = InfExprs (inferencerule_abbcac @me) [@lsub.inftree,@rsub.inftree]
+          lhs.inftree = InfExprs (inferencerule_abbcac @me) (inferred @tp,@cb) [@lsub.inftree,@rsub.inftree]
   |Compl  lhs.env_in = alts_compl @me @sub.env_in 
           sub.type_down = push_type_abab @lhs.type_down
-          lhs.rtype = {case @me of
-                          Compl (Morph{}) -> @sub.rtype
-                          _ -> error "complements on mphs only -> normalize"}
+          loc.tp = {case @me of
+                       Compl (Morph{}) -> @sub.rtype
+                       _ -> error "complements on mphs only -> normalize"}
+          lhs.rtype = @tp
           lhs.env_mph = @sub.env_mph
-          lhs.inftree = complement_rule @sub.inftree
+          lhs.inftree = complement_rule @tp @sub.inftree
   |Conv   lhs.env_in = alts_abba @sub.env_in
           sub.type_down = push_type_abba @lhs.type_down
-          lhs.rtype = final_infer_conv @sub.rtype
+          lhs.rtype = @tp
+          loc.tp = final_infer_conv @sub.rtype
           lhs.env_mph = @sub.env_mph
-          lhs.inftree = InfExprs Conv_nc [@sub.inftree]
+          lhs.inftree = InfExprs Conv_nc (inferred @tp,EmptyObject) [@sub.inftree]
   |Implic lhs.env_in = error "no implication rule symbols -> normalize"
           lhs.rtype = error "no implication rule symbols -> normalize"
           lhs.env_mph = error "no implication rule symbols -> normalize"

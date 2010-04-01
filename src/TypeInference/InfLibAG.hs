@@ -1,6 +1,6 @@
 
 
--- UUAGC 0.9.14 (src/TypeInference/InfLibAG.ag)
+-- UUAGC 0.9.14 (src/TypeInference/InfLibAG)
 
 
 module TypeInference.InfLibAG 
@@ -179,20 +179,22 @@ sem_ISectList_Cons hd_ tl_  =
                   _env
               _env =
                   alts_ababab (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
-              _lhsOrtype =
+              _tp =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
                                           (Left _lhsItype_down) _hdIrtype
                   else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
                                           _tlIrtype _hdIrtype
+              _lhsOrtype =
+                  _tp
               _lhsOenv_mph =
                   _hdIenv_mph ++ _tlIenv_mph
               _hdax =
-                  headofaxiomlist (inferencerule_ababab _lhsIlistof _hdIme _tlIme) _hdIinftree
+                  headofaxiomlist (inferencerule_ababab _lhsIlistof _hdIme _tlIme) _tp _hdIinftree
               _lhsOinftree =
                   if null _tlIme
                   then _hdax
-                  else axiomlist _hdax _tlIinftree
+                  else axiomlist _tp _hdax _tlIinftree
               _me =
                   (:) _hdIme _tlIme
               _lhsOme =
@@ -316,18 +318,26 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
                   alts_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
               _t =
                   push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
+              __tup1 =
+                  _ltp
+              (_,_cb) =
+                  __tup1
               _lsubOtype_down =
+                  _ltp
+              _ltp =
                   if not(is_b_error _t) then lefttype _t else fatal 65 "There should be an ambiguous b error"
               _rsubOtype_down =
                   if not(is_b_error _t) then righttype _t else fatal 66 "There should be an ambiguous b error"
               _lhsOrtype =
+                  _tp
+              _tp =
                   if not(is_b_error _t)
                   then final_infer_abbcac _lhsIenv_isa _lsubIrtype _rsubIrtype
                   else Right(b_error _t)
               _lhsOenv_mph =
                   _lsubIenv_mph ++ _rsubIenv_mph
               _lhsOinftree =
-                  InfExprs (inferencerule_abbcac _me) [_lsubIinftree,_rsubIinftree]
+                  InfExprs (inferencerule_abbcac _me) (inferred _tp,_cb) [_lsubIinftree,_rsubIinftree]
               _me =
                   Comp _lsubIme _rsubIme
               _lhsOme =
@@ -374,14 +384,16 @@ sem_RelAlgExpr_Compl sub_  =
                   alts_compl _me _subIenv_in
               _subOtype_down =
                   push_type_abab _lhsItype_down
-              _lhsOrtype =
+              _tp =
                   case _me of
                      Compl (Morph{}) -> _subIrtype
                      _ -> error "complements on mphs only -> normalize"
+              _lhsOrtype =
+                  _tp
               _lhsOenv_mph =
                   _subIenv_mph
               _lhsOinftree =
-                  complement_rule _subIinftree
+                  complement_rule _tp _subIinftree
               _me =
                   Compl _subIme
               _lhsOme =
@@ -421,11 +433,13 @@ sem_RelAlgExpr_Conv sub_  =
               _subOtype_down =
                   push_type_abba _lhsItype_down
               _lhsOrtype =
+                  _tp
+              _tp =
                   final_infer_conv _subIrtype
               _lhsOenv_mph =
                   _subIenv_mph
               _lhsOinftree =
-                  InfExprs Conv_nc [_subIinftree]
+                  InfExprs Conv_nc (inferred _tp,EmptyObject) [_subIinftree]
               _me =
                   Conv _subIme
               _lhsOme =
@@ -631,12 +645,12 @@ sem_RelAlgExpr_Morph rel_ usertype_ locid_  =
                   _env
               _env =
                   alts_mph _lhsIenv_decls _lhsIenv_isa _me
-              __tup1 =
+              __tup2 =
                   final_infer_mph _lhsIenv_decls _me _lhsIenv_isa _lhsItype_down _env
               (_t,_) =
-                  __tup1
+                  __tup2
               (_,_tree) =
-                  __tup1
+                  __tup2
               _lhsOrtype =
                   _t
               _lhsOenv_mph =
@@ -685,18 +699,26 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
                   alts_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
               _t =
                   push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
+              __tup3 =
+                  _ltp
+              (_,_cb) =
+                  __tup3
               _lsubOtype_down =
+                  _ltp
+              _ltp =
                   if not(is_b_error _t) then lefttype _t else fatal 65 "There should be an ambiguous b error"
               _rsubOtype_down =
                   if not(is_b_error _t) then righttype _t else fatal 66 "There should be an ambiguous b error"
               _lhsOrtype =
+                  _tp
+              _tp =
                   if not(is_b_error _t)
                   then final_infer_abbcac _lhsIenv_isa _lsubIrtype _rsubIrtype
                   else Right(b_error _t)
               _lhsOenv_mph =
                   _lsubIenv_mph ++ _rsubIenv_mph
               _lhsOinftree =
-                  InfExprs (inferencerule_abbcac _me) [_lsubIinftree,_rsubIinftree]
+                  InfExprs (inferencerule_abbcac _me) (inferred _tp,_cb) [_lsubIinftree,_rsubIinftree]
               _me =
                   RAdd _lsubIme _rsubIme
               _lhsOme =
@@ -820,20 +842,22 @@ sem_UnionList_Cons hd_ tl_  =
                   _env
               _env =
                   alts_ababab (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
-              _lhsOrtype =
+              _tp =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
                                           (Left _lhsItype_down) _hdIrtype
                   else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
                                           _tlIrtype _hdIrtype
+              _lhsOrtype =
+                  _tp
               _lhsOenv_mph =
                   _hdIenv_mph ++ _tlIenv_mph
               _hdax =
-                  headofaxiomlist (inferencerule_ababab _lhsIlistof _hdIme _tlIme) _hdIinftree
+                  headofaxiomlist (inferencerule_ababab _lhsIlistof _hdIme _tlIme) _tp _hdIinftree
               _lhsOinftree =
                   if null _tlIme
                   then _hdax
-                  else axiomlist _hdax _tlIinftree
+                  else axiomlist _tp _hdax _tlIinftree
               _me =
                   (:) _hdIme _tlIme
               _lhsOme =

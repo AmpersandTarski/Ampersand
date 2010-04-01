@@ -16,80 +16,103 @@ data InfRuleType = ISect_cs | ISect_ncs | ISect_mix
                    deriving (Show,Eq)
 -}
 
---TODO -> misschien moet ik iets toevoegen als een maximale breedte, als breedte overschreden dan in aparte boom met label en verwijziging naar label
---   refax1   refax2
---   --------------- rule
---        concl
---
---(refax1)
---         tree
---        ------rule
---         ax1
---(refax2)
---         tree
---        ------rule
---         ax2
 pandoctree :: Maybe InfTree -> Block
 pandoctree Nothing = Plain [Str "No inference tree has been calculated."]
-pandoctree (Just tr) = Plain$[TeX "\\begin{prooftree}"]++fst(pandoctree' tr) ++[TeX "\\end{prooftree}"]
+pandoctree (Just tr) = Plain$[TeX ("Expression: $"++term++"$\n"), TeX "\n\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"] ++ refs
+   where (il,term,refs) = pandoctree' tr
 
 
-pandoctree' :: InfTree -> ([Inline],String)
-pandoctree' (InfRel dt r)
+pandoctree_ref :: (String,InfTree) -> [Inline]
+pandoctree_ref (lbl,tr) = [TeX ("Premise: $"++lbl++"$\n"), TeX "\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"]
+   where (il,_,_) = pandoctree' tr
+
+pandoctree' :: InfTree -> ([Inline],String,[Inline])
+pandoctree' (InfRel dt (c1,c2) r i)
  |elem dt [D_id,D_v,D_id_c,D_v_c] = 
-    let 
-    r' =  show r
-    tp = if elem dt [D_id,D_id_c] then "Anything" else "Anything*Anything"
-    dtrel = case dt of D_id -> D_rel_h;  D_id_c -> D_rel_c_h; D_v -> D_rel;  D_v_c -> D_rel_c; _->dt;
-    concl = (if elem dt [D_id_c,D_v_c] then "\\overline{"++r'++"}" else r') ++"["++tp++"]"
-    in
-    ([TeX ("\\AxiomC{$ $}")
-     ,TeX ("\\RightLabel{\\scriptsize("++show dt++")}")
-     ,TeX ("\\UnaryInfC{$"++r'++"::"++tp++" \\in \\Gamma$}")
-     ,TeX ("\\RightLabel{\\scriptsize("++show dtrel++")}")
-     ,TeX ("\\UnaryInfC{$\\Gamma \\models "++concl++"$}")
-     ],concl)
- |otherwise = 
-    let
-    r' =  show r
-    (c1,c2) = dtype r
-    tp = if elem dt [D_rel_c_h,D_rel_h] then show c1 else show c1++"*"++ show c2
-    concl = (if elem dt [D_rel_c_h,D_rel_c] then "\\overline{"++r'++"}" else r') ++"["++tp++"]"
-    in
-    ([TeX ("\\AxiomC{$"++r'++"::"++tp++" \\in \\Gamma$}")
-     ,TeX ("\\RightLabel{\\scriptsize("++show dt++")}")
-     ,TeX ("\\UnaryInfC{$\\Gamma \\models "++concl++"$}")
-     ],concl)
-pandoctree' (InfExprs rt axs) 
+    ([TeX ("\\AxiomC{$ $}\n")
+     ,TeX ("\\RightLabel{\\scriptsize("++show dt++")}\n")
+     ,TeX ("\\UnaryInfC{$"++r'++"::"++tp++" \\in \\Gamma$}\n")
+     ,TeX ("\\RightLabel{\\scriptsize("++show dtrel++")}\n")
+     ,TeX ("\\UnaryInfC{$\\Gamma \\models "++term++"["++tp++"]$}\n")
+     ],term,[])
+ |otherwise =
+    ([TeX ("\\AxiomC{$"++r'++"::"++tp++" \\in \\Gamma$}\n")
+     ,TeX ("\\RightLabel{\\scriptsize("++show dt++")}\n")
+     ,TeX ("\\UnaryInfC{$\\Gamma \\models "++term ++"["++tp++"]$}\n")
+     ],term,[])
+   where 
+   r' =  show i --TODO: dit zou een placeholder voor een format string kunnen worden. i=unieke identificatie van mph in expressie
+   tp = if elem dt [D_rel_c_h,D_rel_h,D_id,D_id_c] then show c1 else show c1++"*"++ show c2
+   term = if elem dt [D_rel_c_h,D_rel_c,D_id_c,D_v_c] then "\\overline{"++r'++"}" else r'
+   dtrel = case dt of D_id -> D_rel_h;  D_id_c -> D_rel_c_h; D_v -> D_rel;  D_v_c -> D_rel_c; _->dt;
+pandoctree' (InfExprs rt ((c1,c2),cb) axs)
    |elem rt [Conv_nc, Conv_c] && length axs==1 = 
        let
-       (il,ax) =  pandoctree' (head axs)
-       (c1,c2) = ("todo","todo")
-       tp = show c1++"*"++ show c2
-       concl = (if rt==Conv_c then "\\overline{"++ax++"^\\smile}" else ax++"^\\smile")  ++ "["++tp++"]"
+       (il,ax,axrefs) =  pandoctree' (head axs)
+       term = if rt==Conv_c then "\\overline{"++(br 0 (head axs) ax)++"^\\smile}" else (br 0 (head axs) ax)++"^\\smile"
        in
        ( il++
-        [TeX ("\\RightLabel{\\scriptsize("++show rt++")}")
-        ,TeX ("\\UnaryInfC{$\\Gamma \\models " ++ concl ++"$}")
-        ],concl)
-   |elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs, RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs] && length axs==2 = 
+        [TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
+        ,TeX ("\\UnaryInfC{$\\Gamma \\models " ++ term  ++ "["++tp++"]$}\n")
+        ],term,axrefs)
+   |elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs, RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs,ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs==2 = 
        let
-       (il1,ax1) =  pandoctree' (head axs)
-       (il2,ax2) =  pandoctree' (head (tail axs))
-       op = if elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs] then ";" else "\\dagger"
-       (c1,c2) = ("todo","todo")
-       tp = show c1++"*"++ show c2
-       concl = ax1 ++ op ++ ax2 ++ "["++tp++"]"
+       (il1,ax1,ax1refs) =  pandoctree' (head axs)
+       (il2,ax2,ax2refs) =  pandoctree' (head (tail axs))
+       term | elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs] = (br 1 (head axs) ax1) ++ ";_{"++show cb++ "}" ++ (br 1 (head (tail axs)) ax2)
+            | elem rt [RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs] = (br 2 (head axs) ax1) ++ "\\dagger_{"++show cb++ "}" ++ (br 2 (head (tail axs)) ax2)
+            | elem rt [ISect_cs, ISect_ncs, ISect_mix] = (br 3 (head axs) ax1) ++ "\\cap" ++ (br 3 (head (tail axs)) ax2)
+            | otherwise = ax1 ++ "\\cup" ++ ax2 
        in
        (il1++il2++
-        [TeX ("\\RightLabel{\\scriptsize("++show rt++")}")
-        ,TeX ("\\BinaryInfC{$\\Gamma \\models " ++ concl ++"$}")
-        ],"")
-   |elem rt [ISect_cs, ISect_ncs, ISect_mix, Union_mix]
-      = (concat (map (fst.pandoctree') axs),"") --TODO
-   |elem rt [Union_mix]
-      = (concat (map (fst.pandoctree') axs),"") --TODO
+        [TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
+        ,TeX ("\\BinaryInfC{$\\Gamma \\models " ++ term ++ "["++tp++"]$}\n")
+        ],term,ax1refs++ax2refs)
+   |elem rt [ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs==3 = 
+       let
+       (il1,ax1,ax1refs) =  pandoctree' (head axs)
+       (il2,ax2,ax2refs) =  pandoctree' (head (tail axs))
+       (il3,ax3,ax3refs) =  pandoctree' (head (tail(tail axs)))
+       term | elem rt [ISect_cs, ISect_ncs, ISect_mix] = (br 3 (head axs) ax1) ++ "\\cap" ++ (br 3 (head (tail axs)) ax2)++ "\\cap" ++ (br 3 (head (tail(tail axs))) ax3)
+            | otherwise = ax1 ++ "\\cup" ++ax2 ++ "\\cup" ++ax3
+       in
+       (il1++il2++il3++
+        [TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
+        ,TeX ("\\TrinaryInfC{$\\Gamma \\models " ++ term ++ "["++tp++"]$}\n")
+        ],term,ax1refs++ax2refs++ax3refs)
+   |elem rt [ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs>3 =
+       let
+       iln = map pandoctree_ref (zip axn' axs) --use the term as a reference label
+       axrefs = [ref |(_,_,ref)<-map pandoctree' axs]
+       axn = [ax |(_,ax,_)<-map pandoctree' axs]
+       axn' = [ax++ "["++tp++"]"|(_,ax,_)<-map pandoctree' axs]
+       op = if rt==Union_mix then "\\bigcup" else "\\bigcap"
+       term = op++" \\{" ++ head axn ++ concat [", "++ ax |ax<-tail axn] ++ "\\}"
+       axlist = " \\{" ++ head axn' ++ concat [", "++ ax|ax<-tail axn'] ++ "\\}"
+       in
+       ([TeX ("\\AxiomC{$\\Gamma \\models" ++ axlist ++"$}\n")
+        ,TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
+        ,TeX ("\\UnaryInfC{$\\Gamma \\models " ++ term  ++ "["++tp++"]$}\n")
+        ] 
+       ,term,concat (iln++axrefs))
+--   |elem rt [Union_mix]
+  --    = (concat (map (fst.pandoctree') axs),"") --TODO
    |otherwise=error "TODO 90"
+  where 
+  tp = show c1++"*"++ show c2
+
+br :: Integer -> InfTree -> String -> String
+br i ax ax' = if i<(prio ax) then "("++ax'++")" else ax' 
+prio::InfTree->Integer
+prio (InfExprs rt _ _)
+  | elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs] = 1
+  | elem rt [RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs] = 2
+  | elem rt [ISect_cs, ISect_ncs, ISect_mix] = 3
+  | elem rt [Union_mix] = 4
+  | otherwise = 0
+prio _ = 0
+
+
 
 testdoc :: [Block] -> String
 testdoc b = writeLaTeX defaultWriterOptions (Pandoc (Meta [] [] []) b)

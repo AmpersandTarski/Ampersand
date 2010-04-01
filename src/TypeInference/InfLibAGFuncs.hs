@@ -127,7 +127,7 @@ specific x y isas = if elem (x,y) isas
                          else fatal 173 $ "A type can only be inferred if there is no type error. "
                                           ++show x++" is not a "++show y++" given the is-a hierarchy " ++ show isas ++"."
 
-data InfTree = InfExprs InfRuleType [InfTree] | InfRel DeclRuleType RelDecl
+data InfTree = InfExprs InfRuleType (RelAlgType,RelAlgObj) [InfTree] | InfRel DeclRuleType RelAlgType RelDecl Int
                deriving (Show,Eq)
 data DeclRuleType = D_rel|D_rel_h|D_rel_c|D_rel_c_h|D_id|D_v|D_id_c|D_v_c
                     deriving (Eq)
@@ -161,27 +161,30 @@ instance Show InfRuleType where
    show RAdd_cs  = "T-RelAdd-cs"
    show Conv_nc =  "T-Conv"
    show Conv_c  = "T-Conv-c"
+inferred :: InfType -> RelAlgType
+inferred (Left tp) = tp
+inferred _ = (EmptyObject,EmptyObject)
 
 --the imaginairy unary union/intersection
-headofaxiomlist :: InfRuleType -> InfTree -> InfTree
-headofaxiomlist rt t = InfExprs rt [t]
+headofaxiomlist :: InfRuleType -> InfType -> InfTree -> InfTree
+headofaxiomlist rt tp t = InfExprs rt (inferred tp,EmptyObject) [t]
 --combine the trees of the head and tail
-axiomlist :: InfTree -> InfTree -> InfTree
-axiomlist (InfExprs Union_mix hdts) (InfExprs Union_mix tlts) = InfExprs Union_mix (hdts++tlts)
-axiomlist (InfExprs hdrule hdts) (InfExprs tlrule tlts) 
-  | hdrule==tlrule = InfExprs hdrule (hdts++tlts) --REMARK: assuming ISect_*
-  | otherwise = InfExprs ISect_mix (hdts++tlts)
-axiomlist _ _ = fatal 148 "These axioms cannot be merged into one list."
+axiomlist :: InfType -> InfTree -> InfTree -> InfTree
+axiomlist tp (InfExprs Union_mix _ hdts) (InfExprs Union_mix _ tlts) = InfExprs Union_mix (inferred tp,EmptyObject) (hdts++tlts)
+axiomlist tp (InfExprs hdrule _ hdts) (InfExprs tlrule _ tlts) 
+  | hdrule==tlrule = InfExprs hdrule (inferred tp,EmptyObject) (hdts++tlts) --REMARK: assuming ISect_*
+  | otherwise = InfExprs ISect_mix (inferred tp,EmptyObject) (hdts++tlts)
+axiomlist _ _ _ = fatal 148 "These axioms cannot be merged into one inf tree."
 
-complement_rule :: InfTree -> InfTree
-complement_rule (InfExprs Conv_nc t) =  InfExprs Conv_c t
-complement_rule (InfRel dtype r) = case dtype of
-   D_rel -> InfRel D_rel_c r
-   D_rel_h -> InfRel D_rel_c_h r
-   D_id -> InfRel D_id_c r
-   D_v -> InfRel D_v_c r
+complement_rule :: InfType -> InfTree -> InfTree
+complement_rule tp (InfExprs Conv_nc _ t) =  InfExprs Conv_c (inferred tp,EmptyObject) t
+complement_rule tp (InfRel dtype _ r i) = case dtype of
+   D_rel -> InfRel D_rel_c (inferred tp) r i
+   D_rel_h -> InfRel D_rel_c_h (inferred tp) r i
+   D_id -> InfRel D_id_c (inferred tp) r i
+   D_v -> InfRel D_v_c (inferred tp) r i
    _ -> fatal 162 "double complements not allowed -> normalize"
-complement_rule _ = fatal 163 "complements on relations and conversions only -> normalize"
+complement_rule _ _ = fatal 163 "complements on relations and conversions only -> normalize"
 
 --DESCR -> match pattern of the expression to an inference rule
 inferencerule_abbcac :: RelAlgExpr -> InfRuleType
@@ -418,19 +421,20 @@ final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
                    = if isarelated a b isas
                      then (Left (specific a b isas,specific a b isas)
                           ,case d of
-                              RelDecl{} -> InfRel D_rel_h d
-                              IDecl -> InfRel D_id IDecl
-                              VDecl -> InfRel D_v VDecl
+                              RelDecl{} -> InfRel D_rel_h (specific a b isas,specific a b isas) d i
+                              IDecl -> InfRel D_id (specific a b isas,specific a b isas) IDecl i
+                              VDecl -> InfRel D_v (specific a b isas,specific a b isas) VDecl i
                           )
                      else (Right$TError6 "Type is not homogeneous" (a,b) me d 
                           ,fatal 396 "TODO: There is no inference tree in case of a type error.")
        | otherwise = (Left (a,b)
                      ,case d of
-                         RelDecl{} -> InfRel D_rel d
-                         IDecl -> InfRel D_id IDecl
-                         VDecl -> InfRel D_v VDecl
+                         RelDecl{} -> InfRel D_rel (a,b) d i
+                         IDecl -> InfRel D_id (a,b) IDecl i
+                         VDecl -> InfRel D_v (a,b) VDecl i
                      )
        where d = thedecl reldecls isas me (Left(a,b))
+             i = case me of (Morph _ _ i') -> i'; _ -> fatal 434 "This is not a simple expression.";
    
 
 --DESCR -> remark that the expression must have a type (no type error) to be able to get the declaration of a relation
