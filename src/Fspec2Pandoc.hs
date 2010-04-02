@@ -19,7 +19,7 @@ import Text.Pandoc
 import Version          (versionbanner)
 import Languages        (Lang(..))
 import PredLogic        (showPredLogic)
-import Options hiding (services) --importing (Options(..),FspecFormat(..))
+import Options hiding (services) --importing (Options(..),FspecFormat(..),DocTheme(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation
 import Rendering.ClassDiagram
@@ -28,7 +28,6 @@ import Classes.Graphics (makePicture)
 import FPA
 import Statistics
 import Rendering.PandocAux
-import Rendering.InfTree2Pandoc
 
 --DESCR ->
 --The functional specification starts with an introduction
@@ -100,9 +99,7 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           date = [Str (show(genTime flags))]
           
           (docContents,pictures)
-           = if theme flags == "gerard" then ([pandoctree(rrtyp_proof r)|r<-rules fSpec],[])
-             else
-             ( introduction       level fSpec flags  ++
+           = ( introduction       level fSpec flags  ++
                designPrinciples   level fSpec flags  ++
                caTxt                                 ++
                daTxt                                 ++
@@ -113,7 +110,7 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
              where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
                    (daTxt,daPic)  = dataAnalysis       level fSpec flags
                    (caTxt,caPics) = conceptualAnalysis level fSpec flags
-                   studentversion = theme flags == "student"
+                   studentversion = theme flags == StudentTheme
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 ------------------------------------------------------------                
 

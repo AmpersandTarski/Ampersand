@@ -29,7 +29,7 @@ where
 --           , r_cpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
            , rrxpl    :: String            -- ^ Explanation
            , rrtyp    :: (Concept,Concept) -- ^ Sign of this rule
-           , rrtyp_proof :: Maybe InfTree
+           , rrtyp_proof :: Maybe (InfTree,Expression)
            , rrdcl    :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
            , runum    :: Int               -- ^ Rule number
            , r_pat    :: String            -- ^ Name of pattern in which it was defined.

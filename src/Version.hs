@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1-650" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
+versionNumber = "1.1-651" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
 {-
 SVN Version text:
-De LaTeX inferentieboom begint al ergens op te lijken.
+LaTeX document met type inferentie bomen (options: -f Latex --theme=proof).
 -}

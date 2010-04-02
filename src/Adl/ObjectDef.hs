@@ -11,7 +11,7 @@ where
    data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                         , objpos  :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
                         , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
-                        , objctx_proof :: Maybe InfTree
+                        , objctx_proof :: Maybe (InfTree,Expression)
                         , objats  :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
                         , objstrs :: [[String]]     -- ^ directives that specify the interface.
                         } deriving (Eq, Show)  -- voor debugging (zie ook instance Show ObjectDef)

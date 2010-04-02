@@ -22,6 +22,7 @@ import Atlas.Atlas
 import Data.List              (isInfixOf)
 import Text.Pandoc
 import Picture
+import Rendering.InfTree2Pandoc (proofdoc)
 
 generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
@@ -86,14 +87,19 @@ doGenProto fSpec flags
 -- This function will generate all Pictures for a given Fspc. 
 -- the returned Fspc contains the details about the Pictures, so they
 -- can be referenced while rendering the Fspc.
-
+-- This function used to generate just func specs, but it was actually suitable to generate any pandoc document with pictures from an fSpec.
+-- The option "theme" defines the content or type of document
+-- current themes are: 
+--    proofs -> a document with type inference proofs
+--    student -> an adjusted func spec for students of the business rules course
+--    <no theme> -> just the func spec
 doGenFspec :: Fspc -> Options -> IO()
 doGenFspec fSpec flags
-   = -- verboseLn flags "Generating functional specification document..."                        >>
-     verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)                     >>
-     makeOutput                                                                               >>
-     verboseLn flags ("Functional specification has been written into " ++ outputFile ++ ".") >>
-     when (genGraphics flags) (foldr1 (>>) [ writePicture flags p| p<-thePictures] )          >>
+   = verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)     >>
+     makeOutput                                                               >>
+     verboseLn flags ("Document has been written into " ++ outputFile ++ ".") >>
+     when (genGraphics flags && not(null thePictures)) 
+          (foldr1 (>>) [ writePicture flags p| p<-thePictures] )              >>
      -- preprocessing of the generated output file depends on the format:
      case fspecFormat flags of   
        FLatex  -> makePdfFile
@@ -109,7 +115,9 @@ doGenFspec fSpec flags
                                                  FHtml         -> ".html"
                                                  FOpenDocument -> ".odt"
                                        )
-         (thePandoc,thePictures) = fSpec2Pandoc fSpec flags
+         (thePandoc,thePictures) = case theme flags of
+              ProofTheme -> (proofdoc fSpec,[]) --generate a proof document
+              _ -> fSpec2Pandoc fSpec flags --generate a func spec
          makeOutput
           =  case fspecFormat flags of
               FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
@@ -131,7 +139,10 @@ doGenFspec fSpec flags
                       -> do verboseLn flags ("Generating to Open Document Format: "++outputFile)
                             writeFile outputFile (writeOpenDocument ourDefaultWriterOptions thePandoc)
            where 
-              ourDefaultWriterOptions = defaultWriterOptions
+              ourDefaultWriterOptions = case theme flags of
+                          ProofTheme -> defaultWriterOptions
+                                          { writerStandalone=True }
+                          _          -> defaultWriterOptions
                                           { writerStandalone=True
                                           , writerTableOfContents=True
                                           , writerNumberSections=True

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),allFspecFormats)
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),DocTheme(..),allFspecFormats)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -29,8 +29,7 @@ data Options = Options { contextName   :: Maybe String
                        , genAtlas      :: Bool
                        , dirAtlas      :: String  -- the directory to generate the atlas in.
                        , userAtlas     :: String
-                       , theme         :: String --the theme of some generated output. (style, content differentiation etc.)
-                                                 --TODO: make this a data type (enum).
+                       , theme         :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML        :: Bool
                        , genFspec      :: Bool
                        , fspecFormat   :: FspecFormat
@@ -88,7 +87,7 @@ getOptions =
                                           Just s  -> takeDirectory s
                       , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
                       , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
-                      , theme         = []
+                      , theme         = DefaultTheme
                       , contextName   = Nothing
                       , showVersion   = False
                       , showHelp      = False
@@ -173,6 +172,7 @@ getOptions =
             
 data DisplayMode = Public | Hidden 
 data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
+data DocTheme = DefaultTheme | ProofTheme | StudentTheme  deriving (Show, Eq)
     
 usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.  
@@ -270,7 +270,10 @@ atlasOpt nm opts
 maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 themeOpt :: String -> Options -> Options
-themeOpt t opts = opts{theme = t}
+themeOpt t opts = opts{theme = case (map toUpper t) of 
+                                     "STUDENT" -> StudentTheme
+                                     "PROOF" -> ProofTheme
+                                     _ -> DefaultTheme}
 dbNameOpt :: String -> Options -> Options
 dbNameOpt nm opts = opts{dbName = if nm == "" 
                                     then baseName opts

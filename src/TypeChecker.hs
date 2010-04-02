@@ -324,7 +324,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
        Right x -> x
        _ -> ""
      inftree = case inf_r of
-       Left (_,_,x) -> Just x
+       Left (_,infexpr,x) -> Just (x,infexpr)
        _ -> Nothing
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
@@ -383,7 +383,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                              "Expected a composition expression."++show inf_e++"."
            _ -> objctx od 
     inftree = case inf_e of
-           Left (_,_,x) -> Just x
+           Left (_,infexpr,x) -> Just (x,infexpr)
            _ -> Nothing
     ---------------objats------------
     newtopexpr =  case mbtopexpr of
