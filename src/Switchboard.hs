@@ -8,11 +8,8 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
    --              -- 3) er is geen stap 3!
    --              -- 4) build on graphviz-2999.5.0.0
    import Adl
-   import Char
    import Data.Fspec
- --  import Options
    import Collection (Collection(rd))
---   import Classes.Graphics
    import Calc (positiveIn)
    import ShowADL
 

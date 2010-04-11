@@ -14,25 +14,24 @@ where
    import Options hiding (services)
    import Version               (versionbanner)
    import FPA                   (FPA(..),FPcompl)
-   
+      
    fSpec2Haskell :: Fspc -> Options -> String
    fSpec2Haskell fSpec flags
            = "{-# OPTIONS_GHC -Wall #-}"
              ++"\n{-Generated code by "++versionbanner++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
-             ++"\n  --import Classification"
              ++"\n  import Typology"
              ++"\n  import Adl"
              ++"\n  import ShowHS (showHS)"
              ++"\n  import Data.Fspec"
              ++"\n  import Data.Plug"
-             ++"\n  import Collection (rd)"
              ++"\n  import FPA"
              ++"\n  import Options (getOptions)"
              ++"\n"
              ++"\n  main :: IO ()"
-             ++"\n  main = putStr (showHS getOptions \"\\n  \" fSpec_"++baseName flags++")"
+             ++"\n  main = do flags <- getOptions"
+             ++"\n            putStr (showHS flags \"\\n  \" fSpec_"++baseName flags++")"
              ++"\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS flags "\n     " fSpec
@@ -40,11 +39,11 @@ where
 
    wrap :: String->String->(String->a->String)->[a]->String
    wrap initStr indent f xs
-    = initStr++w xs
-      where
-        w []  = "[]"
-        w [x] = "[ "++f (indent++"  ") x++" ]"
-        w xs  = "[ "++chain (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
+    = initStr++
+      case xs of
+        []  -> "[]"
+        [x] -> "[ "++f (indent++"  ") x++" ]"
+        _   -> "[ "++chain (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
 
    class ShowHS a where
     showHSname :: a -> String
@@ -203,6 +202,53 @@ where
     showHS _ indent (SQLVarchar i) = indent++"SQLVarchar "++show i
     showHS _ indent SQLBool        = indent++"SQLBool   "
 
+   instance ShowHS Quad where
+    showHSname _ = error ("!Fatal (module ShowHS 207): Quad is anonymous with respect to showHS flags.")
+    showHS flags indent q 
+      = (chain indent
+          [ "Quad { qMorph   = " ++ showHS flags newindent (qMorph q)
+          , "     , qClauses = " ++ showHS flags newindent (qClauses q)
+          , "     }"
+          ])
+       where 
+         newindent = indent ++ "                "
+         
+   instance ShowHS Clauses where
+    showHSname _ = error ("!Fatal (module ShowHS 218): Clauses is anonymous with respect to showHS flags.")
+    showHS flags indent c
+      = (chain indent
+          [ "Clauses { cl_conjNF = " ++ showHS flags newindent (cl_conjNF c)
+          , "        , cl_rule   = " ++ showHS flags newindent (cl_rule c)
+          , "        }"
+          ])
+       where 
+         newindent = indent ++ "                "
+         
+   instance ShowHS FTheme where
+    showHSname _ = error ("!Fatal (module ShowHS 228): FTheme is anonymous with respect to showHS flags.")
+    showHS flags indent tme 
+     = chain newindent
+            ["FTheme{ tconcept   = " ++ showHS flags newindent (tconcept tme)
+            ,wrap  ", tfunctions = " indentA (\_->showHSname) (tfunctions tme)
+            ,wrap  ", trules     = " indentA (\_->showHSname) (trules tme)
+            ,      "}" 
+            ]
+            where newindent = indent ++"    "
+                  indentA = newindent
+
+   instance ShowHS WSOperation where
+    showHSname _ = error ("!Fatal (module ShowHS 240): WSOperation is anonymous with respect to showHS flags.")
+    showHS _ indent wsop 
+     = chain newindent
+            ["WSOper{ wsaction   = " ++ show (wsaction wsop)
+            ,wrap  ", wsmsgin    = " indentA (\_->showHSname) (wsmsgin wsop)
+            ,wrap  ", wsmsgout   = " indentA (\_->showHSname) (wsmsgout wsop)
+            ,      "}" 
+            ]
+            where newindent = indent ++"    "
+                  indentA = newindent
+
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fspc                          ***
 -- \***********************************************************************
@@ -213,25 +259,33 @@ where
             ["Fspc{ fsName = " ++ show (name fspec)
                   ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
                   ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
-                  ,", serviceS      = serviceS'"
-                  ,", serviceG      = serviceG'"
+                  ,     ", serviceS      = serviceS'"
+                  ,     ", serviceG      = serviceG'"
                   ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
-                  ,wrap ", vgens         = " indentA (showHS flags) (vgens fspec)
                   ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
+                  ,wrap ", vgens         = " indentA (showHS flags) (vgens fspec)
+                  ,wrap ", vconjs        = " indentA (\_->showHSname) (vconjs fspec)
+                  ,wrap ", vquads        = " indentA (showHS flags) (vquads fspec)
                   ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
-                  ,", fsisa         = isa'"
+                  ,     ", fsisa         = isa'"
                   ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
-                  ,", themes        = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
+                  ,     ", pictPatts     = [] -- Pictures are not in this generated file." -- Plaatjes zijn niet verder uitgewerkt hier. Lijkt me ook niet nuttig. WAAROM? Stef, mee eens?
+                  ,wrap ", vConceptDefs  = " indentA (showHS flags) (vConceptDefs fspec)
+                  ,     ", themes        = " ++ "[]" -- SJ: tijdelijk om themes te omzeilen zolang ze nog niet werken.
                                                 -- TODO: add an instance declaration for (ShowHS Data.Fspec.FTheme)
                                         -- "["++chain "," (map (showHS flags "") (themes fspec))++"]" 
-                  ,", violations    = " ++ "[]" -- SJ: tijdelijk om te omzeilen zolang ze nog niet werken. [(Rule,Paire)]
+                  ,     ", vctxenv       = vctxenv'"
                   ,"}" 
                   ] ++   
        indent++"where"++
-       indent++" isa' = "++ showHS flags (indent ++ "        ") (fsisa fspec)++
+       indent++" isa' = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
+       indent++" vctxenv' = ("++showHS flags (indent ++ "        ") envExpr ++ ", bindings)"++
+       indent++" bindings = "++(if null bindings then "[]" else
+                                 "[ "++chain (indentB++", ") (map showbinding bindings)++indentB++"]")++
+       
+       
        indent++" gE = genEq (typology isa')"++
-        
        (if null (plugs fspec) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
         
         "\n -- ***Services Specified in ADL script***: "++
@@ -271,7 +325,10 @@ where
         "\n"
            where indentA = indent ++"                      "
                  indentB = indent ++"              "
-  
+                 (envExpr,bindings) = vctxenv fspec
+                 showbinding :: (Declaration,String) -> String
+                 showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
+                                    ", "++show s++") "
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************
@@ -279,49 +336,52 @@ where
    instance ShowHS Fservice where
     showHSname fservice = haskellIdentifier ("svc_"++name fservice)
     showHS flags indent fservice
-     = "Fservice "
-       ++ "\n-- The declaration of a service, which was either specified by the programmer or generated by the compiler:"
-       ++ indent++"     ("++showHS flags (indent++"      ") (fsv_objectdef fservice)++")"
+     = "Fservice{ -- The declaration of a service, which was either specified by the programmer or generated by the compiler:\n"
+       ++ newindent++" fsv_objectdef = ("++showHS flags (newindent++"      ") (fsv_objectdef fservice)++")"
        ++ "\n-- The relations in which the user may insert elements:"
-       ++ indent++"     [ "++chain (indent++"     , ") (map (showHS flags (indent++"       ")) (fsv_insrels  fservice))++indent++"     ]"
+       ++ newindent++",fsv_insrels   = [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_insrels  fservice))++newindent++"     ]"
        ++ "\n-- The relations from which the user may remove elements:"
-       ++ indent++"     [ "++chain (indent++"     , ") (map (showHS flags (indent++"       ")) (fsv_delrels  fservice))++indent++"     ]"
+       ++ newindent++",fsv_delrels   = [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_delrels  fservice))++newindent++"     ]"
        ++ "\n-- All rules that may be affected by this service:"
-       ++ indent++"     [ "++chain (indent++"     , ")
+       ++ newindent++",fsv_rules     = [ "++chain (newindent++"     , ")
           [showHSname r ++ if null (explain flags r) then "" else "    -- " ++ explain flags r| r<-fsv_rules fservice]
-          ++indent++"     ]"
+          ++newindent++"     ]"
        ++ "\n-- TBD: the Quads that are used to make a switchboard. (generated by ADL2Fspec)"
+       ++ newindent++",fsv_quads     = [] -- TBD: showHS Quads" 
        -- chain "\n" [showQ (m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-fsv_quads fservice, (conj,shifts)<-cl_conjNF ccrs]++"\n"
+       ++ newindent++",fsv_ecaRules  = "
        ++ (if null (fsv_ecaRules fservice)
-                   then "\n-- This service uses no ECA-rules"
-                        ++ indent++"     []"
+                   then "[] -- This service uses no ECA-rules\n"
                    else "\n-- ECA-rules that may be used by this service to restore invariants. (generated by ADL2Fspec)"
-                        ++ indent++"     [ "++chain (indent++"     , ") (map showHSname [r delt|r<-fsv_ecaRules fservice])++indent++"     ]")
+                        ++ newindent++"     [ "++chain (newindent++"     , ") (map showHSname [r delt|r<-fsv_ecaRules fservice])++newindent++"     ]")
+       ++ newindent++",fsv_signals  = "
        ++ (if null (fsv_signals fservice)
-                   then "\n-- There are no signals visible in this service:"
-                        ++ indent++"     []"
+                   then "[] -- There are no signals visible in this service\n"
                    else "\n-- All signals that are visible in this service:"
-                        ++ indent++"     [ "++chain (indent++"     , ") (map showHSname (fsv_signals fservice))++indent++"     ]")
-       ++ "\n-- All fields/parameters of this service:"
-       ++ indent++"     [ "++chain (indent++"     , ") (map (showHS flags (indent++"       ")) (fsv_fields  fservice))++indent++"     ]"
-       ++ "\n-- TBD: All concepts of which this service can create new instances"
-       ++ "\n-- TBD: All concepts of which this service can delete instances"
-       ++ "\n-- function point assessment of this service:"
-       ++ indent++"     ("++showHS flags (indent++"      ") (fsv_fpa fservice)++")"
+                        ++ newindent++"     [ "++chain (newindent++"     , ") (map showHSname (fsv_signals fservice))++newindent++"     ]")
+       ++ newindent++",fsv_fields   =  -- All fields/parameters of this service:\n"
+       ++ newindent++"     [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_fields   fservice))++newindent++"     ]"
+       ++ newindent++",fsv_creating =  -- All concepts of which this service can create new instances\n"
+       ++ newindent++"     [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_creating fservice))++newindent++"     ]"
+       ++ newindent++",fsv_deleting =  -- All concepts of which this service can delete instances\n"
+       ++ newindent++"     [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_deleting fservice))++newindent++"     ]"
+       ++ newindent++",fsv_fpa      =  -- function point assessment of this service:\n"
+       ++ newindent++"     ("++showHS flags (newindent++"      ") (fsv_fpa fservice)++")"
        ++ ( if null (fsv_ecaRules fservice)
             then ""
-            else indent++"where"                                                            ++
-                 indent++"  vis        = rd (map makeInline rels++map (mIs.target) rels)"   ++
-                 indent++"  visible m  = makeInline m `elem` vis"                           ++
-                 indent++"  qs         = quads visible (rules fSpec)"                       ++
-                 "\n -- *** ECA rules ***: "++concat [indent++"  "++showHSname (r delt)++" delta"++indent++"   = "++showHS flags (indent++"     ") (r delt)
+            else newindent++"where"                                                            ++
+                 newindent++"  vis        = rd (map makeInline rels++map (mIs.target) rels)"   ++
+                 newindent++"  visible m  = makeInline m `elem` vis"                           ++
+                 newindent++"  qs         = quads visible (rules fSpec)"                       ++
+                 "\n -- *** ECA rules ***: "++concat [newindent++"  "++showHSname (r delt)++" delta"++newindent++"   = "++showHS flags (newindent++"     ") (r delt)
                                                      |r<-fsv_ecaRules fservice ]
           )
-       ++ indent++" -- Einde Fservice "++showHSname fservice
+       ++ newindent++"} -- Einde Fservice "++showHSname fservice
        where
+        newindent = indent ++ "        "
         delt=error("!Fatal (module ShowHS 322): illegal reference to argument of ECA rule")
-        showQ (m, shs,conj,r)
-         = "" --TODO "\nQuad:\nmorphism: "++showHSname m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
+--        showQ (m, shs,conj,r)
+--         = "" --TODO "\nQuad:\nmorphism: "++showHSname m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
 
 
 -- \***********************************************************************
@@ -384,17 +444,37 @@ where
        (if null (ptdcs pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname d                    | d<-ptdcs pat] ++            "]")++
        (if null (ptcds pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname c                    | c<-ptcds pat] ++            "]")++
        (if null (ptkds pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") k| k<-ptkds pat] ++indent++"    ]")++
-       (if null (ptxps pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]")++
-       indent++"where"++
-       (if null (ptdcs   pat) then "" else concat [indent++" "++showHSname d ++indent++"  = "++ showHS flags (indent++"    ") d |d <-ptdcs   pat] )++
-       (if null (signals pat) then "" else concat [indent++" "++showHSname s ++indent++"  = "++ showHS flags (indent++"    ") s |r <-signals pat, let s=srrel r] )++
-       (if null (rules   pat) then "" else concat [indent++" "++showHSname r ++indent++"  = "++ showHS flags (indent++"    ") r |r <-rules   pat] )++
-       (if null (ptcds   pat) then "" else concat [indent++" "++showHSname cd++indent++"  = "++ showHS flags (indent++"    ") cd|cd<-ptcds   pat] )++
-       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
+       (if null (ptxps pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]")
+--       indent++"where"++
+--       (if null (ptdcs   pat) then "" else concat [indent++" "++showHSname d ++indent++"  = "++ showHS flags (indent++"    ") d |d <-ptdcs   pat] )++
+--       (if null (signals pat) then "" else concat [indent++" "++showHSname s ++indent++"  = "++ showHS flags (indent++"    ") s |r <-signals pat, let s=srrel r] )++
+--       (if null (rules   pat) then "" else concat [indent++" "++showHSname r ++indent++"  = "++ showHS flags (indent++"    ") r |r <-rules   pat] )++
+--       (if null (ptcds   pat) then "" else concat [indent++" "++showHSname cd++indent++"  = "++ showHS flags (indent++"    ") cd|cd<-ptcds   pat] )++
+--       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
 
    instance ShowHS Explanation where
-    showHSname expla = "TBD: "
-    showHS flags indent expla = "TBD: "
+    showHSname expla = error ("!Fatal (module ShowHS 396): an explaination is anonymous with respect to showHS flags. Detected at: "++ showADL expla)
+    showHS flags indent expla = 
+      indent++"EXPLAIN "++
+       case expla of
+         ExplConcept s lng ref expl ->  "ExplConcept "++s++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplDeclaration mph lng ref expl ->  "ExplDeclaration "++showHS flags "" mph++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplRule s lng ref expl -> "ExplRule "++s++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplKeyDef s lng ref expl -> "ExplKeyDef "++s++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplObjectDef s lng ref expl -> "ExplObjectDef "++s++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplPattern s lng ref expl -> "ExplPattern "++s++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplPopulation mph lng ref expl -> "ExplPopulation "++showHS flags "" mph++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplSQLPlug s lng ref expl -> "ExplSQLPlug "++s++" "
+                                          ++show lng++" "++ref++" "++expl
+         ExplPHPPlug s lng ref expl -> "ExplPHPPlug "++s++" "
+                                          ++show lng++" "++ref++" "++expl
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
@@ -462,36 +542,39 @@ where
            ["Obj{ objnm = " ++ show(objnm r)
                 ,", objpos = " ++ showHS flags "" (objpos r)
                 ,", objctx = " ++ showHS flags "" (objctx r)
+                ,", objctx_proof = Nothing -- TBD: generation of proof in this haskell code."
                 ,", objats = " ++ "["++chain (indent ++ "              ,")
                                              (map (showHS flags (indent ++"               "))
                                                   (objats r))
                                 ++"]"
                 ,", objstrs = " ++ show(objstrs r)
            ])++"}"
-   
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
 -- \***********************************************************************
 
    instance ShowHS Expression where
     showHSname expr = error ("!Fatal (module ShowHS 481): an expression is anonymous with respect to showHS flags. Detected at: "++ showADL expr)
-    showHS flags _ (Tm m' _)   = "Tm ("++showHS flags "" m'++")"
+    showHS flags _ (Tm mph i)   = "Tm ("++showHS flags "" mph++") "
+         ++if i<0 then "(" ++ show i++")"
+                  else        show i
     showHS flags indent (Tc f)   = showHS flags indent f
     showHS _ _ (F [])   = "F [] <Id>"
     showHS _ _ (Fd [])  = "Fd [] <nId>"
     showHS _ _ (Fu [])  = "Fu [] {- False -}"
     showHS _ _ (Fi [])  = "Fi [] {- True -}"
-    showHS flags indent (F [t])  = "F ["++showHS flags (indent++"   ") t++"]"
-    showHS flags indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS flags (indent++"    ") t| t<-ts]++indent++"  ]"
+    showHS flags indent (F [t])  = "F  ["++showHS flags (indent++"   ") t++"]"
+    showHS flags indent (F ts)   = "F  [ "++chain (indent++"  , ") [showHS flags (indent++"    ") t| t<-ts]++indent++"  ]"
     showHS flags indent (Fd [t]) = "Fd ["++showHS flags (indent++"    ") t++"]"
     showHS flags indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS flags (indent++"     ") t| t<-ts]++indent++"   ]"
     showHS flags indent (Fu [f]) = "Fu ["++showHS flags (indent++"    ") f++"]"
     showHS flags indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
     showHS flags indent (Fi [f]) = "Fi ["++showHS flags (indent++"    ") f++"]"
     showHS flags indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
-    showHS flags indent (K0 e')   = "K0 ("++showHS flags (indent++"    ") e'++")"
-    showHS flags indent (K1 e')   = "K1 ("++showHS flags (indent++"    ") e'++")"
-    showHS flags indent (Cp e')   = "Cp ("++showHS flags (indent++"    ") e'++")"
+    showHS flags indent (K0 e')  = "K0 ("++showHS flags (indent++"    ") e'++")"
+    showHS flags indent (K1 e')  = "K1 ("++showHS flags (indent++"    ") e'++")"
+    showHS flags indent (Cp e')  = "Cp ("++showHS flags (indent++"    ") e'++")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***

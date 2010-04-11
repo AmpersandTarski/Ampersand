@@ -34,13 +34,14 @@ where
                       } deriving (Show)
 
   instance Object Plug where
-   concept p@PlugSql{}
-    = if null (cLkpTbl p)
-      then error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++name p++".")
-      else head [c|(c,_)<-cLkpTbl p]
+   concept p = case p of
+     PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++name p++".")
+     PlugSql{}             -> head [c|(c,_)<-cLkpTbl p]
+     PlugPhp{}             -> error ("!Fatal (module Data.Plug 40): No definition for concept of plug "++name p++".")
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
-   attributes p@PlugSql{}
-    = [ Obj (fldname tFld)                                                   -- objnm 
+   attributes p = case p of 
+     PlugSql{} -> 
+      [ Obj (fldname tFld)                                                   -- objnm 
             Nowhere                                                          -- objpos
             (if source a==concept p then Tm a (-1) else f (source a) [[a]])  -- objctx
             Nothing                                                          -- objctx_proof
@@ -52,9 +53,8 @@ where
                  else F [Tm m (-1)| m<-head (sort' length stop)]  -- pick the shortest path and turn it into an expression.
                  where
                    mms' = [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
-                   step = [ms | ms<-mms', source (head ms)/=c]
                    stop = [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
-
+     PlugPhp{} ->  error ("!Fatal (module Data.Plug 58): No definition for attributes of plug "++name p++".")
    ctx p = Tm (mIs (concept p)) (-1)
    populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
 

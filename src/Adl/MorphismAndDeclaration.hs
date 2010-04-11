@@ -16,7 +16,7 @@ where
    import CommonClasses    (Identified(..),showSign
                            , Explained(..)
                            , ABoolAlg)    
-   import Collection       (Collection ((>-)),uni)
+   import Collection       (Collection ((>-)))
    
    type Morphisms = [Morphism]
    data Morphism  = 

@@ -15,7 +15,7 @@ where
    import Auxiliaries                 (eqClass, sord')
 
    type Expressions = [Expression]
-   data Expression  = Tm Morphism Int     -- m  ^ simple morphism, possibly conversed     ~
+   data Expression  = Tm Morphism Int -- m  ^ simple morphism, possibly conversed     ~
                     | Tc Expression   -- e  ^ bracketed expression                 ( ... )
                     | F  Expressions  -- ts ^ composition                             ;
                     | Fd Expressions  -- ts ^ relative addition                       !

@@ -7,7 +7,7 @@ where
    import Adl.Rule                    (Rule(..), rulefromProp, ruleviolations,Rules)
    import Adl.ObjectDef               (ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                  (KeyDefs)
-   import Adl.MorphismAndDeclaration  (Declarations,Declaration(..),mIs)
+   import Adl.MorphismAndDeclaration  (Declarations,mIs)
    import Adl.Concept                 (Concept(..),Morphic(..))
    import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression(..))
@@ -110,7 +110,7 @@ where
                          , objstrs = []
                          }
     conceptDefs  _ = []
-    rel_declarations r = []
+    rel_declarations _ = []
     rule_declarations r = [srrel r]
     rules        r = [r| not (isSignal r)]
     signals      r = [r| isSignal r]

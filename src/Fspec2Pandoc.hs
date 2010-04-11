@@ -2,7 +2,6 @@
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 module Fspec2Pandoc (fSpec2Pandoc,laTeXtemplate)
 where
-import Char
 import Collection       (Collection (..))
 import Adl
 import Data.Plug
@@ -288,7 +287,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
          patRules     = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
          patSignals   = [s| s<-signals fSpec, r_pat s==thm]
          newConcepts  = concs (patRules++patSignals) >- seenConcepts
-         newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
+--         newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
          sctConcepts
           = if null newConcepts then [] else
               case language flags of
@@ -671,7 +670,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
                               ]
            Dutch   -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
                        []  -> []
-                       [s] -> [ Para [ Str "Deze gegevensverzameling genereert \\'e\\'en signaal. " ]  -- Zou "één" moeten zijn ipv "\\'e\\'en", maar dit geeft een lexical error in string/character literal (UTF-8 decoding error) in de Haskell compiler
+                       [s] -> [ Para [ Str "Deze gegevensverzameling genereert \\'e\\'en signaal. " ]  -- Zou "ï¿½ï¿½n" moeten zijn ipv "\\'e\\'en", maar dit geeft een lexical error in string/character literal (UTF-8 decoding error) in de Haskell compiler
                               , Para [ Math DisplayMath $ showMathcode fSpec s]
                               ]
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende signalen. " ]

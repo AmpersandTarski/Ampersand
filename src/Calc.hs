@@ -13,7 +13,6 @@ module Calc ( deriveProofs
    import Adl
    import Data.Fspec
    import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt)
-   import Adl.ECArule        (InsDel(..),isBlk)
    import ShowECA
    import ShowADL            (showADL,showADLcode)
    import NormalForms        (disjNF,nfProof,nfPr,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
@@ -151,7 +150,7 @@ module Calc ( deriveProofs
         cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)
         cleanup [] = []
 
--- Stel we voeren een actie a uit, die één van de volgende twee is:
+-- Stel we voeren een actie a uit, die ï¿½ï¿½n van de volgende twee is:
 --        {r} INS m INTO expr {r'}       ofwel
 --        {r} DEL m FROM expr {r'}
 -- Dan toetst checkMono of r|-r' waar is op grond van de afleiding uit derivMono.

@@ -15,7 +15,6 @@
    import System.FilePath               
    import System.Directory
    import Options hiding (services)
-   import Control.Monad
    import qualified Data.ByteString as Bin
     
    phpObjServices :: Fspc -> Options -> IO()

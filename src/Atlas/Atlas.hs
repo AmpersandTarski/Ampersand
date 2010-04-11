@@ -7,15 +7,12 @@ import Adl
 import ShowADL
 import Data.Fspec
 import Options
-import Classes.Populated
 import Rendering.AdlExplanation
 import Typology 
 import Collection     ( Collection (rd) ) 
 import Database.HDBC.ODBC 
 import Database.HDBC
-import Classes.Morphical
-import List(sort)
-import Classes.ViewPoint 
+--import List(sort)
 import Picture
 import PredLogic (applyM)
 ------
@@ -121,13 +118,13 @@ initDatabase flags fSpec =
                     --delete all existing content of this ADL script of this user
                     --create the pictures in a folder for this user
                     --TODO -> DELETE only deletes concept tables, but there are no foreign keys, so relation table content will not be removed. Duplicates are allowed in those, so this gives no errors. Meterkast.adl does not clean up at all, because new compiles get new script names.
-                    (if islocalcompile 
-                        then runMany conn ["DELETE FROM "++tablename x| x<-tables]
-                        else runMany conn ["DELETE FROM "++tablename x++
-                                           " WHERE user='"++user++"' AND script='"++script++"'" 
-                                                                      |x<-tables, iscpttable$tableid x] )
+                    _ <- (if islocalcompile 
+                             then runMany conn ["DELETE FROM "++tablename x| x<-tables]
+                             else runMany conn ["DELETE FROM "++tablename x++
+                                                " WHERE user='"++user++"' AND script='"++script++"'" 
+                                                                           |x<-tables, iscpttable$tableid x] )
                     --insert population of this ADL script of this user
-                    insertpops conn fSpec flags tables pictures
+                    _ <- insertpops conn fSpec flags tables pictures
                     --end connection
                     commit conn
                     disconnect conn
@@ -156,7 +153,7 @@ picturesForAtlas flags fSpec
 runMany :: (IConnection conn) => conn -> [String] -> IO Integer
 runMany _ [] = return 1
 runMany conn (x:xs)  = 
-   do run conn x []
+   do _ <- run conn x []
       runMany conn xs
 
 insertpops :: (IConnection conn) => conn -> Fspc -> Options -> [ATable] -> [Picture] -> IO Integer

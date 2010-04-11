@@ -1,5 +1,5 @@
-  {-# OPTIONS_GHC -Wall #-}
-  module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt)
+{-# OPTIONS_GHC -Wall #-}
+module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt)
   where
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
    import CommonClasses  (ABoolAlg(..))
@@ -35,7 +35,7 @@
                  , vpatterns    = patterns context
                  , vgens        = gens context
                  , vkeys        = keyDefs context
-                 , pictPatts    = Nothing
+                 , pictPatts    = [] --Nothing
                  , vConceptDefs = conceptDefs context
                  , themes       = themes'
                  , vctxenv      = ctxenv context
@@ -450,7 +450,7 @@ So the first step is create the kernels ...   -}
 -- The ECA-rules that may be used by this service to restore invariants. TODO: de Delta-parameter is nog fout!
                       , fsv_ecaRules  = [\delta->er{ecaAction = action}| er<-ecaRs, let action=ecaAction er]
 -- All signals that are visible in this service
-                      , fsv_signals   = [s|s<-signals context]
+                      , fsv_signals   = [sig|sig<-signals context]
 -- All fields/parameters of this service
                       , fsv_fields    = srvfields
 -- All concepts of which this service can create new instances
@@ -682,10 +682,13 @@ So the first step is create the kernels ...   -}
    preEmpt :: [ECArule] -> [ECArule]
    preEmpt ers = pr [length ers] ers 10
     where
-     pr ls ers 0     = error ("!Fatal (module ADL2Fspec 674): too many cascading levels in preEmpt "++show ls)
-     pr ls ers (n+1) | (not.null) cascaded = pr (length cascaded:ls)
-                                                ([er{ecaAction=normPA (ecaAction er)}| er<-cascaded] ++uncasced) n
-                     | otherwise           = [er{ecaAction=normPA (ecaAction er)}| er<-uncasced]
+     pr :: [Int] -> [ECArule] -> Integer -> [ECArule]
+     pr ls _ n
+       | n == 0     = error ("!Fatal (module ADL2Fspec 674): too many cascading levels in preEmpt "++show ls)
+       | (not.null) cascaded = pr (length cascaded:ls)
+                                  ([er{ecaAction=normPA (ecaAction er)}| er<-cascaded] ++uncasced)
+                                  (n-1)
+       | otherwise           = [er{ecaAction=normPA (ecaAction er)}| er<-uncasced]
 -- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
 -- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
      new  = [er{ecaAction=normPA (ecaAction er)}| er<-ers]
@@ -693,7 +696,7 @@ So the first step is create the kernels ...   -}
      uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
      cascade :: Morphism -> PAclause -> (Bool, PAclause)
-     cascade mph c@(Do srt (Tm to _) _ m) | (not.null) blkErs = (True, ecaAction (head blkErs))
+     cascade mph (Do srt (Tm to _) _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
       where blkErs = [er| er<-ers
                         , Blk _<-[ecaAction er]
                         , let t = ecaTriggr er

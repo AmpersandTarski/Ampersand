@@ -211,7 +211,7 @@ where
                (ExplPHPPlug     phpnm lang ref expla) -> xpl "EPHPP" (simpleTag phpnm) lang ref expla
       where
        xpl :: String -> XTag -> Lang -> String -> String -> XTree
-       xpl lbl t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
+       xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
                                        [PlainText expla]
 
 

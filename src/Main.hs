@@ -7,7 +7,6 @@ import Adl                   (Context)
 import Data.Fspec            (Fspc)
 import ADL2Fspec             (makeFspec)
 import Generators            (generate)
-import Control.Monad         ((>>=))
 import System.FilePath
 import qualified Data.ByteString as Bin
 

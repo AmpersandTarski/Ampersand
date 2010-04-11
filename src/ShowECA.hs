@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
 module ShowECA (showECA) where
-   import Strings (commaEng)
    import Data.Fspec
    import Adl
    import ShowADL            (showADLcode)
@@ -18,24 +17,24 @@ module ShowECA (showECA) where
     showECA fSpec _ (On Del m') = "ON DELETE Delta FROM "++showADLcode fSpec m'
 
    instance ECA PAclause where
-    showECA fSpec ind p = show p 
-     where
-      showFragm indent pa@Do{}
-       = ( case paSrt pa of
-            Ins -> "INSERT INTO "
-            Del -> "DELETE FROM ")++
-         showADLcode fSpec (paTo pa)++
-         " SELECTFROM "++
-         showADLcode fSpec (paDelta pa)
-         ++motivate indent "TO MAINTAIN" (paMotiv pa)
-      showFragm indent (New c clause m) = "CREATE x:"++show c++";"++indent++"    "++showECA fSpec (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Rmv c clause m) = "REMOVE x:"++show c++";"++indent++"    "++showECA fSpec (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Sel c e r m)    = "SELECT x:"++show c++" FROM codomain("++showADLcode fSpec e++");"
-                                          ++indent++"    "++showECA fSpec (indent++"    ") (r "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Chc ds m)       = "ONE of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
-      showFragm indent (All ds m)       = "ALL of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
-      showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
-      showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
-
-      motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
-       where showConj (conj,rs) = "("++motive++" "++showADLcode fSpec conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"
+    showECA _ _ p = show p 
+--     where
+--      showFragm indent pa@Do{}
+--       = ( case paSrt pa of
+--            Ins -> "INSERT INTO "
+--            Del -> "DELETE FROM ")++
+--         showADLcode fSpec (paTo pa)++
+--         " SELECTFROM "++
+--         showADLcode fSpec (paDelta pa)
+--         ++motivate indent "TO MAINTAIN" (paMotiv pa)
+--      showFragm indent (New c clause m) = "CREATE x:"++show c++";"++indent++"    "++showECA fSpec (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
+--      showFragm indent (Rmv c clause m) = "REMOVE x:"++show c++";"++indent++"    "++showECA fSpec (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
+--      showFragm indent (Sel c e r m)    = "SELECT x:"++show c++" FROM codomain("++showADLcode fSpec e++");"
+--                                          ++indent++"    "++showECA fSpec (indent++"    ") (r "x")++motivate indent "MAINTAINING" m
+--      showFragm indent (Chc ds m)       = "ONE of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+--      showFragm indent (All ds m)       = "ALL of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+--      showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
+--      showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
+--
+--      motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
+--       where showConj (conj,rs) = "("++motive++" "++showADLcode fSpec conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"

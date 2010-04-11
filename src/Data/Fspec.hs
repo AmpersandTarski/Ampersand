@@ -37,7 +37,7 @@ module Data.Fspec ( Fspc(..)
                     , vrels        :: Declarations         -- ^ All declarations declared in this specification
                     , fsisa        :: Inheritance Concept  -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: Patterns             -- ^ all patterns taken from the ADL-script
-                    , pictPatts    :: Maybe Pictures       -- ^ List of pictures containing pattern pictures (in same order as patterns)
+                    , pictPatts    :: Pictures             -- ^ List of pictures containing pattern pictures (in same order as patterns)
                     , vConceptDefs :: ConceptDefs           -- ^ all conceptDefs defined in the ADL-script
                     , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
                     , vctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
@@ -56,6 +56,7 @@ module Data.Fspec ( Fspc(..)
                              , objctx  = Tm (mIs S) (-1)
                              , objats  = serviceS fSpec ++ serviceG fSpec
                              , objstrs = []
+                             , objctx_proof = Nothing
                              }
     conceptDefs  fSpec = vConceptDefs fSpec
     --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
@@ -162,15 +163,22 @@ module Data.Fspec ( Fspc(..)
                      , qClauses      :: Clauses         -- The clauses
                      }
 
-   data FTheme = FTheme {tconcept :: Concept, tfunctions :: [WSOperation], trules :: Rules }
+   data FTheme = FTheme { tconcept   :: Concept
+                        , tfunctions :: WSOperations
+                        , trules     :: Rules 
+                        }
    {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
     - "The properties of the Interface Operation component are as follows:
     - ...
     - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
     - ..."
     -}
-   data WSOperation = WSOper {wsaction::WSAction, wsmsgin::[ObjectDef], wsmsgout::[ObjectDef]}
-   data WSAction = WSCreate | WSRead | WSUpdate |WSDelete
+   type WSOperations = [WSOperation] 
+   data WSOperation = WSOper { wsaction ::WSAction
+                             , wsmsgin  ::ObjectDefs
+                             , wsmsgout ::ObjectDefs
+                             }
+   data WSAction = WSCreate | WSRead | WSUpdate |WSDelete deriving Show
    
    data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
            --  | NoName           -- some identified objects have no name...
