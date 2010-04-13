@@ -9,5 +9,5 @@ versionNumber :: String
 versionNumber = "1.1-653" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
 {-
 SVN Version text:
-ShowHS weer redelijk rechtop gezet. Nog niet gevalideerd. Verder nog enkele kleine dingetjes.
+ShowHS zo goed mogelijk neergezet. Er ontbreken nog de berekende signaaldeclaraties in de Fspc. Klopt dat, Stef?
 -}

@@ -11,7 +11,7 @@ import System.FilePath
 import qualified Data.ByteString as Bin
 
 main :: IO ()
-main 
+main
  = do flags <- getOptions   
       if showVersion flags || showHelp flags
        then mapM_ Prelude.putStr (helpNVersionTexts flags)
