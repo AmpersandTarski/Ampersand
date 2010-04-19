@@ -153,6 +153,7 @@ sem_ISectList_Cons hd_ tl_  =
        _lhsIlistof
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
+              _hdOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
@@ -160,7 +161,6 @@ sem_ISectList_Cons hd_ tl_  =
               _hdOenv_decls :: ([RelDecl])
               _hdOenv_isa :: Isa
               _hdOlistof :: ListOf
-              _hdOtype_down :: RelAlgType
               _tlOenv_decls :: ([RelDecl])
               _tlOenv_isa :: Isa
               _tlOlistof :: ListOf
@@ -182,9 +182,11 @@ sem_ISectList_Cons hd_ tl_  =
               _tp =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
-                                          (Left _lhsItype_down) _hdIrtype
+                                          (Left _lhsItype_down) _hdIenv_in (Left (Universe,Universe))
                   else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
-                                          _tlIrtype _hdIrtype
+                                          (Left _lhsItype_down) _hdIenv_in _tlIrtype
+              _hdOtype_down =
+                  if not(is_type_error _tp) then thetype _tp else fatal 55 "There should be a ababab error"
               _lhsOrtype =
                   _tp
               _lhsOenv_mph =
@@ -205,8 +207,6 @@ sem_ISectList_Cons hd_ tl_  =
                   _lhsIenv_isa
               _hdOlistof =
                   _lhsIlistof
-              _hdOtype_down =
-                  _lhsItype_down
               _tlOenv_decls =
                   _lhsIenv_decls
               _tlOenv_isa =
@@ -816,6 +816,7 @@ sem_UnionList_Cons hd_ tl_  =
        _lhsIlistof
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
+              _hdOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
@@ -823,7 +824,6 @@ sem_UnionList_Cons hd_ tl_  =
               _hdOenv_decls :: ([RelDecl])
               _hdOenv_isa :: Isa
               _hdOlistof :: ListOf
-              _hdOtype_down :: RelAlgType
               _tlOenv_decls :: ([RelDecl])
               _tlOenv_isa :: Isa
               _tlOlistof :: ListOf
@@ -845,9 +845,11 @@ sem_UnionList_Cons hd_ tl_  =
               _tp =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
-                                          (Left _lhsItype_down) _hdIrtype
+                                          (Left _lhsItype_down) _hdIenv_in (Left (Universe,Universe))
                   else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
-                                          _tlIrtype _hdIrtype
+                                          (Left _lhsItype_down) _hdIenv_in _tlIrtype
+              _hdOtype_down =
+                  if not(is_type_error _tp) then thetype _tp else fatal 55 "There should be a ababab error"
               _lhsOrtype =
                   _tp
               _lhsOenv_mph =
@@ -868,8 +870,6 @@ sem_UnionList_Cons hd_ tl_  =
                   _lhsIenv_isa
               _hdOlistof =
                   _lhsIlistof
-              _hdOtype_down =
-                  _lhsItype_down
               _tlOenv_decls =
                   _lhsIenv_decls
               _tlOenv_isa =

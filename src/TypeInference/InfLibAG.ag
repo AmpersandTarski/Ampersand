@@ -49,9 +49,10 @@ SEM ISectList UnionList
         loc.env = alts_ababab (@hd.me,@tl.me) @lhs.env_isa @hd.env_in @tl.env_in
         loc.tp = if null @tl.me 
                  then final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me [])
-                                         (Left @lhs.type_down) @hd.rtype
+                                         (Left @lhs.type_down) @hd.env_in (Left (Universe,Universe)) --the tail is universe
                  else final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me @tl.me)
-                                         @tl.rtype @hd.rtype
+                                         (Left @lhs.type_down) @hd.env_in @tl.rtype
+        hd.type_down=if not(is_type_error @tp) then thetype @tp else fatal 55 "There should be a ababab error"
         lhs.rtype = @tp
         lhs.env_mph = @hd.env_mph ++ @tl.env_mph
         loc.hdax = headofaxiomlist (inferencerule_ababab @lhs.listof @hd.me @tl.me) @tp @hd.inftree

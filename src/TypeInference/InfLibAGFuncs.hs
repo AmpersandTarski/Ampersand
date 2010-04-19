@@ -170,10 +170,11 @@ headofaxiomlist :: InfRuleType -> InfType -> InfTree -> InfTree
 headofaxiomlist rt tp t = InfExprs rt (inferred tp,EmptyObject) [t]
 --combine the trees of the head and tail
 axiomlist :: InfType -> InfTree -> InfTree -> InfTree
-axiomlist tp (InfExprs Union_mix _ hdts) (InfExprs Union_mix _ tlts) = InfExprs Union_mix (inferred tp,EmptyObject) (hdts++tlts)
-axiomlist tp (InfExprs hdrule _ hdts) (InfExprs tlrule _ tlts) 
-  | hdrule==tlrule = InfExprs hdrule (inferred tp,EmptyObject) (hdts++tlts) --REMARK: assuming ISect_*
-  | otherwise = InfExprs ISect_mix (inferred tp,EmptyObject) (hdts++tlts)
+axiomlist tp (InfExprs hdrule _ hdts) (InfExprs _ _ tlts) = InfExprs hdrule (inferred tp,EmptyObject) (hdts++tlts)
+--axiomlist tp (InfExprs Union_mix _ hdts) (InfExprs Union_mix _ tlts) = InfExprs Union_mix (inferred tp,EmptyObject) (hdts++tlts)
+--axiomlist tp (InfExprs hdrule _ hdts) (InfExprs tlrule _ tlts) 
+--  | hdrule==tlrule = InfExprs hdrule (inferred tp,EmptyObject) (hdts++tlts) --REMARK: assuming ISect_*
+--  | otherwise = InfExprs ISect_mix (inferred tp,EmptyObject) (hdts++tlts)
 axiomlist _ _ _ = fatal 148 "These axioms cannot be merged into one inf tree."
 
 complement_rule :: InfType -> InfTree -> InfTree
@@ -200,14 +201,13 @@ inferencerule_abbcac _ = fatal 191 "inferencerule_abbcac is a function for compo
 --the inference rule of a union or intersection if the list (R:S) is considered an expression like R\/S or R/\S where R is the head of the list and S the tail
 inferencerule_ababab :: ListOf -> RelAlgExpr -> [RelAlgExpr] -> InfRuleType
 inferencerule_ababab (ListOfUnion) _ _ = Union_mix
-inferencerule_ababab (ListOfISect) _ [] = ISect_mix
-inferencerule_ababab (ListOfISect) headx [tailx]
-  | iscomplement headx && iscomplement tailx = ISect_cs
-  | not(iscomplement headx && iscomplement tailx) = ISect_ncs
-  | otherwise = ISect_mix
-inferencerule_ababab (ListOfISect) headx _ 
-  | iscomplement headx = ISect_mix
+inferencerule_ababab (ListOfISect) headx []  
+  | iscomplement headx = ISect_cs
   | otherwise = ISect_ncs
+inferencerule_ababab (ListOfISect) headx (tailx:tailxs) =
+  case (inferencerule_ababab (ListOfISect) tailx tailxs) of
+    ISect_ncs -> if iscomplement headx then ISect_mix else ISect_ncs
+    x -> if iscomplement headx then x else fatal 217 "sort intersection expressions, first complements then non-complements"
 inferencerule_ababab _ _ _ = fatal 202 "inferencerule_ababab is a function for union or intersection only"
 
 iscomplement :: RelAlgExpr -> Bool
@@ -220,7 +220,7 @@ iscomplement _ = False
 --         remark that the expression must have a type (no type error) to be able to infer that type
 infer_ababab :: Isa -> InfRuleType -> RelAlgType -> RelAlgType -> RelAlgType
 infer_ababab isas irule (a,b) (a',b') = case irule of
-   ISect_mix -> infer_ab specific 
+   ISect_mix -> (not_universe a' a,not_universe b' b) --infer right (left is complement) (the right is an intersection expression with the tail as conjuncts)
    ISect_cs -> infer_ab general
    ISect_ncs -> infer_ab specific
    Union_mix -> infer_ab general
@@ -267,7 +267,7 @@ rdisa isas ((x,y):xs)
   where xy_genof_t_in_xs = (not.null) [()|(x',y')<-xs,isgeneral x x' isas, isgeneral y y' isas]
 
 alts_ababab :: (RelAlgExpr,[RelAlgExpr]) -> Isa -> AltList -> AltList -> AltList
-alts_ababab _ _ ts (Left []) = ts --function pattern needed for recursion while we defined union/intersection lists
+alts_ababab (_,[]) _ ts _ = ts --function pattern needed for recursion while we defined union/intersection lists
 alts_ababab (hd,tl) isas (Left ts) (Left ts') = 
    if null alts 
    then Right$TError2 "Incompatible comparison" (hd,ts) (tl,ts')  
@@ -317,7 +317,8 @@ alts_mph reldecls isas me =
                                           --get all declarations by name equivalence 
                                      then [Left x|Left x<-alts' nm]
                                           --get the declarations matching the user-defined type
-                                     else [Left (specific ua c1 isas,specific ub c2 isas)
+                                     --else [Left (specific ua c1 isas,specific ub c2 isas)
+                                     else [Left (ua,ub)
                                            |Left (c1,c2)<-alts' nm, isarelated c1 ua isas, isarelated c2 ub isas]
      --constant relations (I and V) have no declaration, use there type as alternative iff concepts are in isas
      Morph _ (ua,ub) _ -> [Right$TError0 "Concept undefined" c|c<-[ua,ub],not(isdef c)]
@@ -344,6 +345,13 @@ push_type_ababab,push_type_abba,push_type_abab :: RelAlgType -> RelAlgType
 push_type_ababab t = t
 push_type_abba (x,y) = (y,x)
 push_type_abab t = t
+
+is_type_error :: InfType -> Bool
+is_type_error (Right _) = True
+is_type_error _ = False
+thetype :: InfType -> RelAlgType
+thetype (Left x) = x
+thetype (Right _) = fatal 356 "no Left, check is_type_error first before using function thetype."
 
 push_type_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> InfRuleType -> RelAlgType -> AltList -> AltList -> Either (RelAlgType,RelAlgType) TError
 push_type_abbcac _ _ _ _ _ (Left []) = fatal 329 "the AltList cannot be Left []."
@@ -421,17 +429,17 @@ final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
                    = if isarelated a b isas
                      then (Left (specific a b isas,specific a b isas)
                           ,case d of
-                              RelDecl{} -> InfRel D_rel_h (specific a b isas,specific a b isas) d i
-                              IDecl -> InfRel D_id (specific a b isas,specific a b isas) IDecl i
-                              VDecl -> InfRel D_v (specific a b isas,specific a b isas) VDecl i
+                              RelDecl{} -> InfRel D_rel_h (fst(head alts'),snd(head alts')) d i
+                              IDecl -> InfRel D_id (fst(head alts'),snd(head alts')) IDecl i
+                              VDecl -> InfRel D_v (fst(head alts'),snd(head alts')) VDecl i
                           )
                      else (Right$TError6 "Type is not homogeneous" (a,b) me d 
                           ,fatal 396 "TODO: There is no inference tree in case of a type error.")
        | otherwise = (Left (a,b)
                      ,case d of
-                         RelDecl{} -> InfRel D_rel (a,b) d i
-                         IDecl -> InfRel D_id (a,b) IDecl i
-                         VDecl -> InfRel D_v (a,b) VDecl i
+                         RelDecl{} -> InfRel D_rel (fst(head alts'),snd(head alts')) d i
+                         IDecl -> InfRel D_id (fst(head alts'),snd(head alts')) IDecl i
+                         VDecl -> InfRel D_v (fst(head alts'),snd(head alts')) VDecl i
                      )
        where d = thedecl reldecls isas me (Left(a,b))
              i = case me of (Morph _ _ i') -> i'; _ -> fatal 434 "This is not a simple expression.";
@@ -467,12 +475,23 @@ final_infer_abbcac _ _ (Right err)  = (Right err)
 final_infer_abbcac _ (Right err) _  = (Right err)
 
 --the @lhs.pushed_type is processed in the rtype of the most right conjunct/disjunct
-final_infer_ababab :: Isa -> InfRuleType -> InfType -> InfType -> InfType
-final_infer_ababab _ _ _ (Right err) = Right err --error in the head
-final_infer_ababab _ _ (Right err) _ = Right err --error in the tail
-final_infer_ababab isas irule (Left (a,b)) (Left (a',b')) 
-   | isarelated a a' isas && isarelated b b' isas = Left$infer_ababab isas irule (a,b) (a',b') 
-   | otherwise = fatal 434 "or there should be an error, or only one matching alternative"
+final_infer_ababab :: Isa -> InfRuleType -> InfType -> AltList -> InfType -> InfType
+final_infer_ababab _ _ _ (Right err) _ = Right err --error in the heads alternatives
+final_infer_ababab _ _ _ _ (Right err) = Right err --error in the tail
+final_infer_ababab _ _ (Right err) _ _= Right err --error in the pushed type
+--final_infer_ababab isas Union_mix (Left (a,b)) (Left (a',b')) = error (show (a,b,a',b'))
+final_infer_ababab isas irule (Left (inh_a,inh_b)) (Left hdalts) (Left (a',b'))
+   = if length alts'==1   
+     then head alts'
+     else fatal 483 $ "the ababab expression has a type error."
+                          ++ show (hdalts,(a',b'),irule,(inh_a,inh_b))
+   where alts' = [Left$infer_ababab isas irule (a,b) (a',b')
+                    |(a,b)<-hdalts
+                    , isarelated a a' isas, isarelated b b' isas
+                    , isarelated a inh_a isas, isarelated b inh_b isas
+                    , isarelated a' inh_a isas, isarelated b' inh_b isas]
+ --  | isarelated a a' isas && isarelated b b' isas = Left$infer_ababab isas irule (a,b) (a',b') 
+ --  | otherwise = fatal 434 "or there should be an error, or only one matching alternative"
 
 
 ----------------------------------------------------------------------------
@@ -495,7 +514,7 @@ normalise (Compl (Conv x)) = conv$normalise (compl x)
 --double complement
 normalise (Compl (Compl x)) = normalise x
 --recursion
-normalise (ISect xs) = ISect$foldISect$map normalise xs
+normalise (ISect xs) = ISect$complsfirst$foldISect$map normalise xs
 normalise (Union xs) = Union$foldUnion$map normalise xs
 normalise (Comp x y) = normalise x *.* normalise y
 normalise (RAdd x y) = normalise x *!* normalise y
@@ -503,6 +522,8 @@ normalise x@(Conv (Morph{})) = x
 normalise (Conv x) = conv$normalise x
 normalise x@(Compl (Morph{})) = x
 normalise x@(Morph{}) = x
+
+complsfirst xs = [x|x<-xs,iscomplement x]++[x|x<-xs,not(iscomplement x)]
 
 (/\),(\/),(*.*),(*!*),(|-)::RelAlgExpr->RelAlgExpr->RelAlgExpr
 compl,conv::RelAlgExpr->RelAlgExpr

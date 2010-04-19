@@ -12,7 +12,9 @@ import Typology
 import Collection     ( Collection (rd) ) 
 import Database.HDBC.ODBC 
 import Database.HDBC
+import Classes.Morphical
 --import List(sort)
+import Classes.ViewPoint 
 import Picture
 import PredLogic (applyM)
 ------
@@ -73,7 +75,7 @@ tables =
    ,ATable ATProp "Prop" ["I","user","script","display"] 
    ,ATable ATRelation "Relation" ["I","description","example","pattern","user","script","display"]
    ,ATable ATRelVar "relvar" ["relation","type"]
-   ,ATable ATRule "Rule" ["I","type","explanation","pattern","user","script","display"] 
+--TODO -> GEN..ISA..   ,ATable ATRule "Rule" ["I","type","explanation","pattern","user","script","display"] 
    ,ATable ATService "Service" ["I","picture","user","script","display"] 
    ,ATable ATSignal "Signal" ["I","type","explanation","pattern","next","previous","user","script","display"] 
    ,ATable ATType "Type" ["I","source","target","user","script","display"] 
@@ -169,7 +171,14 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    toUserctx :: [String]->ATableId->[String]
    toUserctx [] _ = []
    toUserctx xs t = map qualify xs ++ (if iscpttable t then [user,script,head xs] else [])
-   pop x = [map toSql$toUserctx ys x|ys<-rd (pop' x)]  
+   pop x = [map toSql$toUserctx ys x|ys<-rd (pop' x), not(iscpttable x) || noduplis(rd (pop' x))]  
+       where noduplis xs = (\is -> if length (rd is)==length is 
+                                   then True 
+                                   else error$[c|t<-tables,tableid t==x
+                                                ,c<-"Niet-unieke sleutels in database tabel "++tablename t++": "]
+                                            ++(if x==ATRule then "xxx" 
+                                               else " waarschuw de toolbeheerder (evt. via  de cursusbegeleider).")
+                           )     (map (take 1) xs)
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x,description x,urlString(imgURL pic)]|x<-cpts,pic<-pics, origName pic==name x, pType pic == PTConcept]

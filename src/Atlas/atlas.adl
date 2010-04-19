@@ -291,6 +291,7 @@ SERVICE Concepten{"Action=Select"} : I[ONE]
 SERVICE Concept{"Action=Select","DISPLAY=Concept.display"} : I[Concept]
    = [ "beschrijving" : description;display
      , "populatie" : contains;display
+     , "toepassing in regel(s)"{"DISPLAY=UserRule.display"} : (source~ \/ target~);relvar~;morphisms[UserRule*Relation]~
      , "Conceptueel diagram"{"PICTURE"}: picture;display]
 {-
 SERVICE ISArelaties{"Action=Select"} : I[ONE]
