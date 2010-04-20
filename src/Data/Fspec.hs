@@ -109,7 +109,7 @@ module Data.Fspec ( Fspc(..)
     concs     svc = concs (rules svc++signals svc)         -- The set of all concepts used in this Fservice
     mors      svc = mors (rules svc++signals svc)          -- The set of all morphisms in this Fservice
     morlist   svc = morlist (rules svc++signals svc)       -- The list of all morphisms in this Fservice
-    decls     svc = decls (rules svc++signals svc)         -- The set of all declarations used in this Fservice
+    decls     svc = decls (rules svc++signals svc)         -- The set of all relations used in this Fservice
     genE      svc = genE (rules svc++signals svc)          -- The genE relation
     closExprs svc = closExprs (rules svc++signals svc)     -- The closure expressions of this Fservice
 

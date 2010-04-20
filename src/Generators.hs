@@ -45,8 +45,8 @@ serviceGen    fSpec flags
     where  outputFile = combine (dirOutput flags) "Generated.adl"
 
 prove :: Fspc -> Options -> IO()
-prove fSpec _
-    = putStr (deriveProofs fSpec)
+prove fSpec flags
+    = putStr (deriveProofs flags fSpec)
 
 doGenHaskell :: Fspc -> Options -> IO()
 doGenHaskell fSpec flags

@@ -123,15 +123,13 @@ introduction lev fSpec flags = header ++ introContents (language flags)
         --TODO: different intro for theme flags == "student"
         introContents Dutch = 
          [ Para 
-                [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "
-                , Quoted  SingleQuote [Str (name fSpec)] 
-                , Str ". Het definieert business-services in een systeem waarin mensen en applicaties samenwerken om afspraken na te leven. "
-                , Str "Een aantal van deze afspraken is gebruikt om deze functionele specificatie samen te stellen. "
-                , Str "De betreffende afspraken staan opgesomd in hoofdstuk ", xrefReference chpFRlabel, Str ", geordend op thema. "
-                , Str "Elk informatiesysteem wat voldoet aan deze functionele specificatie ondersteunt het naleven van deze afspraken. "
-                , Str "Om dit doel te bereiken, bestaat ", Str (name fSpec), Str " uit een verzameling business services. "
+                [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
+                , Str "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken om afspraken na te leven. "
+                , Str "Een aantal van deze afspraken is als functionele eis gebruikt", Note [Para [Str "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "]], Str " om de onderhavige functionele specificatie samen te stellen. "
+                , Str "Deze eisen staan opgesomd in hoofdstuk ", xrefReference chpFRlabel, Str ", geordend op thema. "
+                , Str (name fSpec), Str " ondersteunt het naleven ervan (compliance) vanuit een verzameling business services. "
                 , Str "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt ", Str (name fSpec)
-                , Str " dat gebruikers de afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str " naleven. "
+                , Str " compliance ten aanzien van de eisen uit hoofdstuk ", xrefReference chpFRlabel, Str " ."
                 ]
           , Para 
                 [ Str "De conceptuele analyse in hoofdstuk ", xrefReference chpCAlabel
@@ -269,7 +267,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
          newConcepts  = concs newRelations >- seenConcepts
          newRelations = [d| d@Sgn{}<-decls ([r| r<-rules fSpec++signals fSpec]), decusr d, d `notElem` seenRelations, not (null (multiplicities d))]
          paraConcs    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs]
-         paraDecls    = [Para [symReqLabel d, Str$ explainMult flags d] |d<-newRelations]
+         paraDecls    = [Para [symReqLabel d, Str$ explainMult flags d] |d<-newRelations, not (isIdent d)]
       dpSections dpRul          -- a function that assembles the text for one rule.
                  (thm:thms)     -- The name of the patterns that are used in this specification.
                  seenConcepts   -- All concepts that have been defined in earlier sections
@@ -403,10 +401,13 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
        )
        where
         text1
-         = case length nds of
-             1 -> let d = head nds in
-                  [TeX ("In order to formalize this, we introduce "++(if isFunction d then "function" else "relation")++"~"),symDefRef d,TeX ":"]
-             l -> [TeX "The formalization (equation~", symDefRef r,TeX (") requires the following "++count flags l "relation"++".")]
+         = case (length nds,language flags) of
+             (1,Dutch)   -> let d = head nds in
+                            [TeX ("Om dit te formaliseren, introduceren we "++(if isFunction d then "functie" else "relation")++"~"),symDefRef d,TeX "."]
+             (1,English) -> let d = head nds in
+                            [TeX ("In order to formalize this, we introduce "++(if isFunction d then "function" else "relation")++"~"),symDefRef d,TeX ":"]
+             (l,Dutch)   -> [TeX "De formalisatie in vergelijking~", symDefRef r,TeX (" heeft de volgende "++count flags l "relatie"++" nodig.")]
+             (l,English) -> [TeX "The formalization (equation~", symDefRef r,TeX (") requires the following "++count flags l "relation"++".")]
         text2
          = (case (length nds,length rds,language flags) of
              (0,1,Dutch)   -> [Str "Definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]

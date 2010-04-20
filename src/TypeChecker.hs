@@ -204,7 +204,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     bindrules = map bindRule $ ptrls p
     boundrules = [br | Left br<-bindrules
                   --REMARK -> no rules generated in pattern because of generation of func spec, showadl etc. 
-                  --           ++[r |d<-ptdcs p, r<-multRules d]
+                  --           ++[r |d<-ptdcs p, r<-multrules d]
                   --          ++[r|(r,_,_)<-[rulefromgen g | g<-ptgns p]] 
                   ]
     --REMARK -> keydefs are copied into ctxkd, and need only be bound in the pattern, not checked like rules!
@@ -285,7 +285,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                                                  --     this context, but not in the patterns of this context
 --TODO -> rulefromKey is niet consistent met andere rule generaties, hoort niet in TypeChecker
        [ rulefromKey k (name cx) | k<-ctxks cx]  -- all rules that are derived from all KEY statements in this context
---     [bindRule r |d@Sgn{}<-declarations cx, r<-multRules d]  -- rules that are derived from multiplicity properties in relations in this context
+--     [bindRule r |d@Sgn{}<-declarations cx, r<-multrules d]  -- rules that are derived from multiplicity properties in relations in this context
 
   --DESCR -> The function bindRule attaches a type to a rule by producing a proof in the type system.
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context

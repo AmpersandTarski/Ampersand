@@ -57,11 +57,11 @@
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
        classes    = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
-                    | plug <- classPlugs
+                    | plug <- plugs fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
        assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
-                    | plug <- assocPlugs
+                    | plug <- plugs fSpec, isBinary plug, not (isSignal plug)
                     , if not (null (mLkpTbl plug)) then True else error("!Fatal (module ClassDiagram 65): empty lookup table in analysis of plug "++name plug++".")
                     , let m=head [r| (r,_,_)<-mLkpTbl plug]
                     , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 67): irregular association, because it has "++show (length (fields plug))++" fields.")
@@ -73,10 +73,8 @@
                      nm f = name.concept.lookup.f.fldexpr
                      
        aggrs      = []
-       geners     = rd [ OOGener ((name.lookup.fst.head) gs) (map (name.lookup.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]
-       classPlugs = [p| p<-plugs fSpec, not (null [1|fld<-fields p, flduniq fld]), not (null [1|fld<-fields p, not (flduniq fld)])]
-       assocPlugs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)>1]
-       scalarPlgs = [p| p<-plugs fSpec, null [fld|fld<-fields p, flduniq fld], length (fields p)<=1]
+       geners     = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]
+       scalarPlgs = [p| p<-plugs fSpec, isScalar p]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-fields plug, fldname fld/="i"]
        attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]

@@ -15,7 +15,7 @@
    import Adl
    
    import Data.Fspec 
-   import Strings                         (chain)
+   import Strings                         (chain, commaEng)
    import Auxiliaries                     (eqCl,showL)
   
  --  import TypeInferenceEngine
@@ -291,7 +291,7 @@
 
    instance ShowADL Expression where
     showADL e = show e
-    showADLcode fSpec expr  = showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") expr
+    showADLcode fSpec expr  = showExpr (" \\/ ", "/\\", "!", ";", "*", "+", "-", "(", ")") expr
       where
        showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr'
         = (showchar.insParentheses.disambiguate fSpec.mphatsoff) expr'
@@ -409,6 +409,23 @@
        where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
                            | d<-declarations fSpec, not (null (decpopu d))]
              ds = [d| d@Sgn{}<-vrels fSpec, decusr d]
+
+   instance Explained ECArule where
+     explain options r
+      = case p of
+         Chc {} -> "Pick from "++show (length (paCls p))++" options, in order to maintain "++shMotiv (paMotiv p)++"."
+         All {} -> "Execute "++show (length (paCls p))++" ECA-rules, in order to maintain "++shMotiv (paMotiv p)++"."
+         Do  {paSrt=Ins} -> "Insert tuple(s) in "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
+         Do  {paSrt=Del} -> "Remove tuple(s) from "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
+         Sel {} -> "Select an element from "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
+         New {} -> "Create a new element in "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
+         Rmv {} -> "Remove an element from "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
+         Nop {} -> "Do nothing to maintain "++shMotiv (paMotiv p)++", because it is still valid."
+         Blk {} -> "Abort to prevent violation of "++shMotiv (paMotiv p)
+      where
+       p = ecaAction r
+       shMotiv ms = commaEng "and" [ showADL conj++" FROM "++chain "," ["R"++show (nr r)| r<-rs]++")"| (conj,rs)<-ms]
+
 
 ---------------------------------------
 --FUNCTIONS

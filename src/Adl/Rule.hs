@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Rule    ( Rule(..),Rules
                    , RuleType(..)
-                   , consequent, antecedent, ruleType, normExpr, multRules, rulefromProp, isaRule, ruleviolations)     
+                   , consequent, antecedent, ruleType, normExpr, rulefromProp, isaRule, ruleviolations)     
 where
    import Adl.FilePos                   ( FilePos(..),Numbered(..))
    import Adl.Concept                   ( Concept(..)
@@ -127,13 +127,6 @@ where
        where
        contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
    ruleviolations _ = []
-
-   multRules :: Declaration -> Rules 
-   multRules d@(Sgn{})
-     = [rulefromProp p d | p<-multiplicities d, p `elem` [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-                         , if source d==target d || p `elem` [Uni,Tot,Inj,Sur] then True else
-                           error ("!Fatal (module Rule 120): Property "++show p++" requires equal source and target domains (you specified "++name (source d)++" and "++name (target d)++").") ]
-   multRules d = error ("!Fatal (module Rule 121): illegal call to multRules ("++show d++").")
  
    rulefromProp :: Prop -> Declaration -> Rule
    rulefromProp prp d@(Sgn{})
@@ -209,6 +202,7 @@ where
          (Tm (mIs gen)(-1)) -- right hand side (consequent)
          []             -- explanation
          (gen,gen)      -- The type
+         Nothing        -- no proof of the type
          Nothing        -- This rule was not generated from a property of some declaration.
          0              -- Rule number. Will be assigned after enriching the context
          (genpat g)     -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.

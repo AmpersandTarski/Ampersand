@@ -7,15 +7,17 @@ module Calc ( deriveProofs
             , positiveIn) 
   where
 
-   import Collection         (Collection (isc,rd))
+   import Collection         (Collection (isc,rd,rd'))
    import Auxiliaries        (sort',eqCl)
-   import Strings            (spread,chain)
+   import Strings            (spread,chain,commaEng)
    import Adl
    import Data.Fspec
-   import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt)
+   import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode)
    import ShowECA
+   import ShowHS
    import ShowADL            (showADL,showADLcode)
-   import NormalForms        (disjNF,nfProof,nfPr,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,nfPr,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import Options            (Options(..),verboseP)
 
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
@@ -54,29 +56,48 @@ module Calc ( deriveProofs
 --        qs         = vquads fSpec
 --        ecaRs      = assembleECAs visible qs
         editable (Tm Mph{} _)  = True    --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
-        editable _           = False
+        editable _             = False
         editMph (Tm m@Mph{} _) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
-        editMph e            = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
+        editMph e              = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
 
-   deriveProofs :: Fspc -> String
-   deriveProofs fSpec
-    = let qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).
---   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
-          ecaRs = assembleECAs (\_->True) qs  -- the raw (unnormalized) ECA rules.
-      in
-      --"\nSignals for "++name fSpec++"\n--------------\n"++
+   deriveProofs :: Options -> Fspc -> String
+   deriveProofs flags fSpec
+    = --"\nSignals for "++name fSpec++"\n--------------\n"++
       --proof (signals fSpec)++
       "\nTransformation of user specified rules into ECA rules for "++name fSpec++"\n--------------\n"++
-      "\nFirst step: determine Horn clauses --------------\n"++
+      "\nFirst step: determine quads\n--------------\n"++
+      chain "\n--------------\n"
+      [   "relation m:               "++showADLcode fSpec m++
+        "\nHorn clause:              "++showADLcode fSpec hc++
+        "\nis derived from conjunct: "++showADLcode fSpec conj++
+        "\nis derived from rule:     "++showADLcode fSpec r
+      | Quad m ccrs<-qs, let r=cl_rule ccrs, (conj,hcs)<-cl_conjNF ccrs, hc<-hcs ]++
+      "\n\nSecond step: collect Horn clauses\n--------------\n"++
       chain "\n--------------\n"
       [ "Horn clause "++showADLcode fSpec hc++"\nis derived from rule "++showADLcode fSpec r++
-        "\nIt can be called when relation "++showADLcode fSpec m++" is affected."
-      | Quad m ccrs<-qs, let r=cl_rule ccrs, (_,hcs)<-cl_conjNF ccrs, hc<-hcs]++
-      "\nSecond step: determine ECA rules --------------\n"++
+        case length ms of
+         0 -> "no relations affect this clause"
+         1 -> "\nIt can be called when relation " ++commaEng "and" [showADLcode fSpec m| m<-ms]++" is affected."
+         _ -> "\nIt can be called when relations "++commaEng "and" [showADLcode fSpec m| m<-ms]++" are affected."
+      | (ms,hc,r)<-
+          [ (rd[ makeInline m|(m,_,_)<-cl],hc,r)
+          | cl<-eqCl (\(_,_,hc)->hc) [(m,hc,r)|Quad m ccrs<-qs, let r=cl_rule ccrs, (_,hcs)<-cl_conjNF ccrs, hc<-hcs]
+          , let (_,hc,r) = head cl
+          ]
+      ]++
+      "\n\nThird step: determine ECA rules\n--------------\n"++
       chain "\n--------------\n"
-      [ "ECA Rule "++showECA fSpec "\n  " er{ecaAction=normPA (ecaAction er)}
-      | er<-ecaRs]++
-      "\nThird step: cascade blocking rules --------------\n"++
+      [ "ECA Rule "++showECA fSpec "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)} ++
+        if verboseP flags
+        then let ds = [paDelta e| e@Do{}<-[ecaAction ecarule]] in
+             "\nnormalized action\n "++showECA fSpec "\n  " (normPA (ecaAction ecarule))++
+             (if null ds then "" else 
+              "\ndelta expression\n "++chain "\n " [showADLcode fSpec d| d<-ds]++
+              "\nderivation:\n "++showProof (showADLcode fSpec) (nfProof (head ds))++
+              "\ndisjunctly normalized delta expression\n "++showADLcode fSpec (disjNF (head ds)))
+        else ""
+      | (er,i) <- zip ecas [(1::Int)..], let ecarule = er i]++
+      "\n\nFourth step: cascade blocking rules\n--------------\n"++
       chain "\n--------------\n"
       [ "ECA Rule "++showECA fSpec "\n  " er
       | er<-preEmpt ecaRs]++
@@ -95,13 +116,55 @@ module Calc ( deriveProofs
       chain "\n     " [testService fSpec o| o<-take 1 (serviceG fSpec)]++
       "\n--------------\n"
       where 
-        derivation rule 
-         = [ (showADL rule, if null prf then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form")
-           , (showPr prf  , "")
+       qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).
+          --   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
+       ecaRs = assembleECAs (\_->True) qs  -- the raw (unnormalized) ECA rules.
+       mphEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+       visible _ = True -- for computing totality, we take all quads into account.
+       ecas
+        = [ ECA (On ev m) delt act
+          | mphEq <- mphEqCls
+          , let (m,_,_,_) = head mphEq
+          , let Tm delt _ = delta (sign m)
+          , ev<-[Ins,Del]
+          , let act = All [ Chc [ (if isTrue  clause'   then Nop else
+                                   if isTrue  step      then Nop else
+                                   if isFalse clause'   then Blk else
+--                                 if not (visible m) then Blk else
+                                   doCode visible ev toExpr viols)
+                                   [(conj,causes)]  -- the motivation for these actions
+                                | clause@(Fu fus) <- shifts
+                                , let clause' = conjNF (subst (m, actSem Ins m (delta (sign m))) clause)
+                                , let step    = conjNF (Fu[Cp clause,clause'])
+                                , let viols   = conjNF (notCp clause')
+                                , let negs    = Fu [f| f<-fus, isNeg f]
+                                , let poss    = Fu [f| f<-fus, isPos f]
+                                , let frExpr  = if ev==Ins
+                                                then conjNF negs
+                                                else conjNF poss
+                                , m `elem` map makeInline (mors frExpr)
+                                , let toExpr = if ev==Ins
+                                               then conjNF poss
+                                               else conjNF (notCp negs)
+                                ]
+                                [(conj,causes)]  -- to supply motivations on runtime
+                          | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
+                          , let causes          = rd' nr (map thd3 conjEq)
+                          , let (shifts,conj,_) = head conjEq
+                          ]
+                          [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
+          ]
+       fst4 (w,_,_,_) = w
+       snd3 (_,y,_) = y
+       thd3 (_,_,z) = z
+       thd4 (_,_,z,_) = z
+       derivation rule 
+         = [ (showADL rule, if e'==e then "Translates directly to conjunctive normal form" else "Convert into conjunctive normal form\ne:  "++showHS flags "\n    " e++"\ne': "++showHS flags "\n    " e')
+           , (showProof (showADLcode fSpec) prf  , "")
            ]++
            if rrsrt rule==Truth then [] else
               [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
-                 (cfProof. Cp . normExpr) rule++"\n"
+                 (conjProof. Cp . normExpr) rule++"\n"
                 , "")
               , ("\nConjuncts:\n     "++
                  chain "\n     " (rd[ showADL conjunct
@@ -113,43 +176,46 @@ module Calc ( deriveProofs
                    chain "\n     " [showADL (reprAsRule rule r)++ " yields\n"++chain "\n\n"
                                    [ "event = "++show ev++" "++showADL m++"\n"++
                                      showADL r++"["++showADL m++":="++showADL (actSem ev m (delta (sign m)))++"] = r'\n"++
-                                     "r'    = "++cfProof r'++"\n"++
-                                     "viols = r'-"++cfProof (Cp r')++"\n"++
+                                     "r'    = "++conjProof r'++"\n"++
+                                     "viols = r'-"++disjProof (Cp r')++"\n"++
                                      "violations, considering that the valuation of "++showADL m++" has just been changed to "++showADL (actSem ev m (delta (sign m)))++
-                                     "            "++cfProof (Cp r) -- ++"\n"++
-                               --      "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
-                               --         cfProof (Fu[Cp r,r'])++"\n"++
-                               --      "delta: r-/\\r' = "++cfProof (Fi[notCp r,r'])++
-                               --      "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
-                               --      (if null (lambda ev (Tm m) r)
-                               --       then "lambda "++showADL m++" ("++showADL r++") = empty\n"
-                               --       else {- for debug purposes:
-                               --               "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
-                               --               "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
-                               --               "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++ -}
-                               --            if (isTrue.conjNF) (Fu[Cp r,r'])
-                               --            then "A reaction is not required, because  r |- r'. Proof:"++cfProof (Fu[Cp r,r'])++"\n"
-                               --            else if checkMono r ev m
-                               --            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
-                               --            else let Tm delt = delta (sign m) in
-                               --                 "An appropriate reaction on this event is\n"++
-                               --                 showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)
-                               --      )
+                                     "            "++conjProof (Cp r) ++"\n"++
+                                     "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
+                                        conjProof (Fu[Cp r,r'])++"\n"++
+                                     "delta: r-/\\r' = "++conjProof (Fi[notCp r,r'])++
+                                     "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
+                                     (if null (lambda ev (Tm m (-1)) r)
+                                      then "lambda "++showADL m++" ("++showADL r++") = empty\n"
+                                      else -- for debug purposes:
+                                           -- "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
+                                           -- "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
+                                           -- "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++
+                                           if (isTrue.conjNF) (Fu[Cp r,r'])
+                                           then "A reaction is not required, because  r |- r'. Proof:"++conjProof (Fu[Cp r,r'])++"\n"
+                                           else if checkMono r ev m
+                                           then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
+                                           else let Tm delt _ = delta (sign m) in
+                                                "An appropriate reaction on this event is required."
+                                           --     showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)
+                                     )
                                    | m<-rd [m'|x<-mors r, m'<-[x,flp x], inline m', not (isIdent m')] -- TODO: include proofs that allow: isIdent m'
                                    , ev<-[Ins,Del]
                                    , r'<-[subst (m, actSem ev m (delta (sign m))) r]
-                               --  , viols<-[conjNF (Cp r')]
+                                 , viols<-[conjNF (Cp r')]
                                    , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
                                   | r<-[hc| cs<-[allClauses rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
                                   ]
                 , "")
-              ] where prf = nfProof (normExpr rule)
-                      cfProof = showPr . nfPr True False . simplify
-                      showPr = showProof (showADLcode fSpec)
-        cleanup :: [(String,String)] -> [(String,String)]
-        cleanup [x] = [x]
-        cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)
-        cleanup [] = []
+              ] where e = normExpr rule
+                      prf = cfProof e
+                      (e',_,_) = last prf
+                      conjProof = showProof (showADLcode fSpec) . cfProof
+                      disjProof = showProof (showADLcode fSpec) . dfProof
+              --      showPr = showProof (showADLcode fSpec)  -- hoort bij de uitgecommentaarde code hierboven...
+       cleanup :: [(String,String)] -> [(String,String)]
+       cleanup [x] = [x]
+       cleanup ((x,c):(x',c'):xs) = if x==x' then rest else (x,c): rest where rest = cleanup ((x',c'):xs)
+       cleanup [] = []
 
 -- Stel we voeren een actie a uit, die ��n van de volgende twee is:
 --        {r} INS m INTO expr {r'}       ofwel
@@ -204,7 +270,7 @@ module Calc ( deriveProofs
    showProof :: (expr->String) -> Proof expr -> String
    showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
    showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
-                                      "\n"++(if null ss then "\n   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain "; " ss++" }")++
+                                      "\n"++(if null ss then "   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain " and " ss++" }")++
                                       showProof sh prf
                                       --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
    showProof _  []                  = ""

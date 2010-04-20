@@ -13,7 +13,7 @@ module ShowECA (showECA) where
                               indent++showECA fSpec indent (ecaAction er)
 
    instance ECA Event where
-    showECA fSpec _ (On Ins m') = "ON INSERT Delta IN   "++showADLcode fSpec m'
+    showECA fSpec _ (On Ins m') = "ON INSERT Delta IN "++showADLcode fSpec m'
     showECA fSpec _ (On Del m') = "ON DELETE Delta FROM "++showADLcode fSpec m'
 
    instance ECA PAclause where

@@ -15,7 +15,7 @@ import Adl.FilePos                   (nr)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism)
 import Adl.Concept                   (Concept)
-import Strings                       (commaEng)
+import Strings                       (chain,commaEng)
 
 
 -- | The following datatypes form a process algebra. ADL derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
@@ -91,7 +91,7 @@ instance Eq PAclause where
 
       
 instance Show PAclause where
-    showsPrec _ p = showString (showFragm "\n" p)
+    showsPrec _ p = showString (showFragm "\n> " p)
      where
       showFragm indent pa@Do{}
        = ( case paSrt pa of
@@ -101,16 +101,16 @@ instance Show PAclause where
          " SELECTFROM "++
          show (paDelta pa)
          ++motivate indent "TO MAINTAIN" (paMotiv pa)
-      showFragm indent (New c clause m) = "CREATE x:"++show c++";"++indent++"    "++show (clause "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Rmv c clause m) = "REMOVE x:"++show c++";"++indent++"    "++show (clause "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Sel c e r m)    = "SELECT x:"++show c++" FROM codomain("++show e++");"
-                                          ++indent++"    "++show (r "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Chc ds m)       = "ONE of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
-      showFragm indent (All ds m)       = "ALL of "++concat [indent++"       "++showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+      showFragm indent (New c clause m) = "CREATE x:"++indent++"       "++show c++";"++indent++"    "++showFragm (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
+      showFragm indent (Rmv c clause m) = "REMOVE x:"++indent++"       "++show c++";"++indent++"    "++showFragm (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
+      showFragm indent (Sel c e r m)    = "SELECT x:"++indent++"       "++show c++" FROM codomain("++show e++");"
+                                          ++indent++"    "++showFragm (indent++"    ") (r "x")++motivate indent "MAINTAINING" m
+      showFragm indent (Chc ds m)       = "ONE of"++indent++"       "++chain (indent++"       ") [showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+      showFragm indent (All ds m)       = "ALL of"++indent++"       "++chain (indent++"       ") [showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
       showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
       showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
 
-      motivate indent motive motives = concat [ indent++showConj m | m<-motives ]
+      motivate indent motive motives = [] -- concat [ indent++showConj m | m<-motives ]
        where showConj (conj,rs) = "("++motive++" "++show conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"
       
 {-

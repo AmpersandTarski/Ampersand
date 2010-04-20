@@ -10,7 +10,10 @@ module Data.Plug (Plug(..),Plugs
                  ,PhpReturn(..)
                  ,PhpAction(..)
                  ,iskey
-                 ,ActionType(..))
+                 ,ActionType(..)
+                 ,isClass
+                 ,isScalar
+                 ,isBinary)
 where
   import Adl
   import Collection  (rd)
@@ -57,6 +60,51 @@ where
      PlugPhp{} ->  error ("!Fatal (module Data.Plug 58): No definition for attributes of plug "++name p++".")
    ctx p = Tm (mIs (concept p)) (-1)
    populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
+
+  isClass  :: Plug -> Bool
+  isClass  p@PlugSql{} = not (null [1|fld<-fields p, flduniq fld]) && not (null [1|fld<-fields p, not (flduniq fld)])
+
+  isBinary :: Plug -> Bool
+  isBinary p@PlugSql{} = length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
+
+  isScalar :: Plug -> Bool
+  isScalar p@PlugSql{} = length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
+
+  instance Association Plug where
+     source p           = (source . fldexpr . head . fields) p
+     target p@PlugSql{} | isBinary p = target m where (m,_,_) = head (mLkpTbl p)
+     target p                        = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++name p++", because it is not binary.")
+
+  instance Morphic Plug where
+ {- TBD (nog omzetten van Rule naar (binaire) Plug
+    multiplicities _  = []
+    flp r = r{rrant = if rrsrt r == Truth
+                      then error ("!Fatal (module Rule 110): illegal call to antecedent in flp ("++show r++")")
+                      else flp (rrant r)
+             ,rrcon = flp (rrcon r)
+             ,rrtyp = (target (rrtyp r),source (rrtyp r))
+             }
+  --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
+    typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
+               | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
+--    isIdent r = isIdent (normExpr r)
+    isProp r  = isProp (normExpr r)
+
+    isTrue r  = case ruleType r of
+                 Truth       -> isTrue (consequent r)
+                 Implication -> isFalse (antecedent r) || isTrue (consequent r)
+                 Equivalence -> antecedent r == consequent r
+                 Generalization -> error ("!Fatal (module Rule 88): isTrue not defined for a Generalisation.")
+    isFalse r = case ruleType r of
+                 Truth       -> isFalse (consequent r)
+                 Implication -> isTrue (antecedent r) && isFalse (consequent r)
+                 Equivalence -> notCp (antecedent r) == consequent r
+                 Generalization -> error ("!Fatal (module Rule 93): isFalse not defined for a Generalisation.")
+    isNot r   | ruleType r==Truth = isNot (consequent r)
+              | otherwise         = False  -- TODO: check correctness!
+ -}
+    isSignal p@PlugSql{} | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
+    isSignal _                        = False
 
   data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
   data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)

@@ -93,7 +93,7 @@ where
 
 -- {-
    instance Show Expression where
-    showsPrec _ expr  = showString (showExpr ("\\/", "/\\", "!", ";", "*", "+", "-", "(", ")") expr)
+    showsPrec _ expr  = showString (showExpr (" \\/ ", "/\\", "!", ";", "*", "+", "-", "(", ")") expr)
       where
        showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr' = showchar (insParentheses expr')
          where

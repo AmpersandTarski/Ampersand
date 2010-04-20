@@ -1,9 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt)
+module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode)
   where
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
    import CommonClasses  (ABoolAlg(..))
    import Adl
+   import Strings
    import Auxiliaries    (eqCl, eqClass, sort')
    import Data.Fspec
    import Options        (Options)
@@ -11,11 +12,13 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Data.Plug
    import Char
    import ShowADL
+   import ShowHS
    import FPA
    
    makeFspec :: Options -> Context -> Fspc
-   makeFspec _ context = fSpec where
-        allQuads = quads (\_->True) (rules context)
+   makeFspec _ context = fSpec
+    where
+        allQuads = quads (\_->True) (rules context++multrules context)
         fSpec =
             Fspc { fsName       = name context
                    -- serviceS contains the services defined in the ADL-script.
@@ -171,10 +174,10 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
            | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
            , let objattributes = recur [] cl
            , not (null objattributes)
-           , e0<-take 1 cl, c<-[source e0]
+           , let e0=head cl, let c=source e0
            , map toLower (name c) `notElem` map (map toLower.name) scalarPlugs       -- exclude scalars
            ]
-        scalarPlugs = [p|p<-allplugs, fld<-take 1 (fields p), flduniq fld, length (fields p)>1]
+        scalarPlugs = [p|p<-allplugs, isScalar p]
 --  Auxiliaries for generating services:
         morph d = Mph (name d) (pos d) [] (source d,target d) True d
 --    Warshall's transitive closure algorithm, adapted for this purpose:
@@ -432,7 +435,7 @@ So the first step is create the kernels ...   -}
    editMph :: Expression -> Morphism  --TODO deze functie staat ook in Calc.hs...
    editMph (Tm m@Mph{} _) = m
    editMph (Tm m@I{} _)   = m
-   editMph e            = error("!Fatal (module ADL2Fspec 417): cannot determine an editable declaration in a composite expression: "++show e)
+   editMph e            = error("!Fatal (module ADL2Fspec 425): cannot determine an editable declaration in a composite expression: "++show e)
 
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
    makeFservice context allQuads object
@@ -440,10 +443,9 @@ So the first step is create the kernels ...   -}
 -- The relations that may be edited by the user of this service are represented by fsv_insrels and fsv_delrels.
 -- Editing means that tuples can be added to or removed from the population of the relation.
 -- The relations in which the user may insert elements:
-                      , fsv_insrels   = -- (if name object == "Behandeling" then error ("ADL2Fspec Diag 433:\n "++show rels++"\n"++show ecaRs) else [])++
-                                        (rels>-[makeInline m|er<-ecaRs, On Ins m<-[ecaTriggr er], Blk _<-[ecaAction er]])
+                      , fsv_insrels   = map makeInline rels>-[makeInline m|er<-ecaRs, On Ins m<-[ecaTriggr er], Blk _<-[ecaAction er]]
 -- The relations from which the user may remove elements:
-                      , fsv_delrels   = rels>-[makeInline m|er<-ecaRs, On Del m<-[ecaTriggr er], Blk _<-[ecaAction er]]
+                      , fsv_delrels   = map makeInline rels>-[makeInline m|er<-ecaRs, On Del m<-[ecaTriggr er], Blk _<-[ecaAction er]]
 -- The rules that may be affected by this service
                       , fsv_rules     = invariants
                       , fsv_quads     = qs
@@ -465,13 +467,24 @@ So the first step is create the kernels ...   -}
                                           _ -> IF Moeilijk 
                       } in s
     where
+-- step 1: the relations that yield potentially editable fields. These relations are called "visible".
         rels = rd (recur object)
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis         = rd (map makeInline rels++map (mIs.target) rels)
-        visible m   = makeInline m `elem` vis
-        invariants  = [rule| rule<-rules context, not (null (map makeInline (mors rule) `isc` vis))]
+        visible r   = makeInline r `elem` vis
+-- step 2: the rules that must be maintained automatically, and can possibly be affected by a transaction in this service
+--         If none of the relations in a rule are visible, exclude that rule...
+        invariants  = [rule| rule<-rules context,  not (null (map makeInline (mors rule) `isc` vis))]
+-- step 3: the quads that can be derived from these rules, considering which relations are visible.
+--         (A quad contains the conjunct(s) to be maintained.)
         qs          = quads visible invariants
+-- step 4: the ECA rules derived from the quads. Cascaded blocking rules are preempted to save some excess code.
         ecaRs       = preEmpt (assembleECAs visible qs)
+-- step 5: signalInvs contains the rules that might possibly be maintained by the user, while performing a transaction in this service.
+--         If none of the relations in a rule are visible, exclude the rule...
+        signalInvs  = [rule| rule<-signals context, not (null (map makeInline (mors rule) `isc` vis))]
+-- step 6: ECA rules derived from the signalInvs. These rules may be used to suggest ways to the user to restore signals.
+        signalRs    = preEmpt (assembleECAs visible (quads visible signalInvs))
         depth :: ObjectDef -> Int
         depth obj   = foldr max 0 [depth o| o<-objats obj]+1
         trigs :: ObjectDef -> [Declaration->ECArule]
@@ -533,7 +546,7 @@ So the first step is create the kernels ...   -}
                         | conj <- conjuncts rule
       --                , (not.null.lambda Ins (Tm m)) conj  -- causes infinite loop
       --                , not (checkMono conj Ins m)         -- causes infinite loop
-                        , conj'<- [subst (m, actSem Ins m (delta (sign m))) conj]
+                        , let conj' = subst (m, actSem Ins m (delta (sign m))) conj
                         , (not.isTrue.conjNF) (Fu[Cp conj,conj']) -- the system must act to restore invariance     
                         ]
                         rule)
@@ -637,40 +650,44 @@ So the first step is create the kernels ...   -}
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
    assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
-   assembleECAs visible qs = [ecarule i| (ecarule,i) <- zip ecas [(1::Int)..]]
+   assembleECAs visible qs
+    = [ecarule i| (ecarule,i) <- zip ecas [(1::Int)..]]
       where
+       mphEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
        ecas
         = [ ECA (On ev m) delt act
-          | mphEq <- eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
-          , m <- map fst4 (take 1 mphEq), Tm delt _<-[delta (sign m)]
+          | mphEq <- mphEqCls
+          , let (m,_,_,_) = head mphEq
+          , let Tm delt _ = delta (sign m)
           , ev<-[Ins,Del]
-          , act <- [ All
-                     [ Chc [ (if isTrue  clause'   then Nop else
-                              if isFalse clause'   then Blk else
---                            if not (visible m) then Blk else
-                              doCode visible ev toExpr viols)
-                              [(conj,causes)]  -- the motivation for these actions
-                           | clause@(Fu fus) <- shifts
-                           , clause' <- [ conjNF (subst (m, actSem Ins m (delta (sign m))) clause)]
-                           , viols <- [ conjNF (notCp clause')]
-                           , frExpr  <- [ if ev==Ins
-                                          then Fu [f| f<-fus, isNeg f]
-                                          else Fu [f| f<-fus, isPos f] ]
-                           , m `elem` map makeInline (mors frExpr)
-                           , toExpr  <- [ if ev==Ins
-                                          then Fu [      f| f<-fus, isPos f]
-                                          else Fi [notCp f| f<-fus, isNeg f] ]
-                           ]
-                           [(conj,causes)]  -- to supply motivations on runtime
-                     | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
-                     , causes  <- [ (map thd3 conjEq) ]
-                     , conj <- map snd3 (take 1 conjEq), shifts <- map fst3 (take 1 conjEq)
-                     ]
-                     [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, (_,_,conj,_)<-take 1 cl]  -- to supply motivations on runtime
-                   ]
+          , let act = All [ Chc [ (if isTrue  clause'   then Nop else
+                                   if isTrue  step      then Nop else
+                                   if isFalse clause'   then Blk else
+--                                 if not (visible m) then Blk else
+                                   doCode visible ev toExpr viols)
+                                   [(conj,causes)]  -- the motivation for these actions
+                                | clause@(Fu fus) <- shifts
+                                , let clause' = conjNF (subst (m, actSem Ins m (delta (sign m))) clause)
+                                , let step    = conjNF (Fu[Cp clause,clause'])
+                                , let viols   = conjNF (notCp clause')
+                                , let negs    = Fu [f| f<-fus, isNeg f]
+                                , let poss    = Fu [f| f<-fus, isPos f]
+                                , let frExpr  = if ev==Ins
+                                                then conjNF negs
+                                                else conjNF poss
+                                , m `elem` map makeInline (mors frExpr)
+                                , let toExpr = if ev==Ins
+                                               then conjNF poss
+                                               else conjNF (notCp negs)
+                                ]
+                                [(conj,causes)]  -- to supply motivations on runtime
+                          | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
+                          , let causes          = rd' nr (map thd3 conjEq)
+                          , let (shifts,conj,_) = head conjEq
+                          ]
+                          [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
           ]
        fst4 (w,_,_,_) = w
-       fst3 (x,_,_) = x
        snd3 (_,y,_) = y
        thd3 (_,_,z) = z
        thd4 (_,_,z,_) = z
@@ -680,20 +697,21 @@ So the first step is create the kernels ...   -}
 -- After all, event e will block anyway.
 -- preEmpt tries to simplify ECArules by predicting whether a rule will block.
    preEmpt :: [ECArule] -> [ECArule]
-   preEmpt ers = pr [length ers] ers 10
+   preEmpt ers = pr [length ers] (10::Int)
     where
-     pr :: [Int] -> [ECArule] -> Integer -> [ECArule]
-     pr ls _ n
+     pr :: [Int] -> Int -> [ECArule]
+     pr ls n
        | n == 0     = error ("!Fatal (module ADL2Fspec 674): too many cascading levels in preEmpt "++show ls)
        | (not.null) cascaded = pr (length cascaded:ls)
-                                  ([er{ecaAction=normPA (ecaAction er)}| er<-cascaded] ++uncasced)
+                               -- ([er{ecaAction=normPA (ecaAction er)}| er<-cascaded] ++uncasced)
                                   (n-1)
        | otherwise           = [er{ecaAction=normPA (ecaAction er)}| er<-uncasced]
+      where
 -- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
 -- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
-     new  = [er{ecaAction=normPA (ecaAction er)}| er<-ers]
-     cascaded = [er{ecaAction=action}| er<-new, let (c,action) = cascade (eMhp (ecaTriggr er)) (ecaAction er), c]
-     uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
+       new  = [er{ecaAction=normPA (ecaAction er)}| er<-ers]
+       cascaded = [er{ecaAction=action}| er<-new, let (c,action) = cascade (eMhp (ecaTriggr er)) (ecaAction er), c]
+       uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
      cascade :: Morphism -> PAclause -> (Bool, PAclause)
      cascade mph (Do srt (Tm to _) _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
@@ -756,6 +774,8 @@ So the first step is create the kernels ...   -}
                                    })) (-1)
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
+-- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
+-- TODO: Deze code is onvolledig en misschien zelfs fout....
    doCode :: (Morphism->Bool)        --  the morphisms that may be changed
           -> InsDel
           -> Expression              --  the expression in which a delete or insert takes place
@@ -788,21 +808,23 @@ So the first step is create the kernels ...   -}
                                            , Sel c (F ls) fLft motiv
                                            , Sel c (flp(F rs)) fRht motiv
                                            ] motiv
-                                | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
-                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])]
-                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Ins (F ls) [])]
+                                | (ls,rs)<-chop ts
+                                , let c = source (F rs) `lub` target (F ls)
+                                , let fLft = (\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])
+                                , let fRht = (\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Ins (F ls) [])
                                 ] motiv
           (Del, F ts)    -> Chc [ if F ls==flp (F rs)
-                                  then Chc [ Sel c (F ls) (\_->Rmv c fLft motiv) motiv
-                                           , Sel c (F ls) fLft motiv
+                                  then Chc [ Sel c (disjNF (F ls)) (\_->Rmv c fLft motiv) motiv
+                                           , Sel c (disjNF (F ls)) fLft motiv
                                            ] motiv
-                                  else Chc [ Sel c (Fi [F ls,flp(F rs)]) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
-                                           , Sel c (Fi [F ls,flp(F rs)]) fLft motiv
-                                           , Sel c (Fi [F ls,flp(F rs)]) fRht motiv
+                                  else Chc [ Sel c (disjNF (Fi [F ls,flp(F rs)])) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
+                                           , Sel c (disjNF (Fi [F ls,flp(F rs)])) fLft motiv
+                                           , Sel c (disjNF (Fi [F ls,flp(F rs)])) fRht motiv
                                            ] motiv
-                                | (ls,rs)<-chop ts, c<-[source (F rs) `lub` target (F ls)]
-                                , fLft<-[(\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])]
-                                , fRht<-[(\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Del (F ls) [])]
+                                | (ls,rs)<-chop ts
+                                , let c = source (F rs) `lub` target (F ls)
+                                , let fLft = (\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])
+                                , let fRht = (\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Del (F ls) [])
                                 ] motiv
           (Del, Fu fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
           (Del, Fi fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
@@ -810,14 +832,16 @@ So the first step is create the kernels ...   -}
           (_  , Fd ts)   -> doCod deltaX tOp (Cp (F (map Cp ts))) motiv
           (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , Tm m _)  -> (if editAble m then Do tOp exprX (disjNF deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])
-          (_ , _)        -> error ("!Fatal (module Calc 418): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
-                                   "within function doCode "++show tOp'++" ("++showADL exprX++") ("++showADL delta1++").")
+          (_  , Tm m _)  -> -- error ("DIAG ADL2Fspec 824:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
+                                   -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
+                            (if editAble m then Do tOp exprX (deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])
+          (_ , _)        -> error ("!Fatal (module Calc 827): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
+                                   "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
 
    chop :: [t] -> [([t], [t])]
-   chop []     = []
    chop [_]    = []
    chop (x:xs) = ([x],xs): [(x:l, r)| (l,r)<-chop xs]
+   chop []     = []
 
    deltaK0 :: t -> InsDel -> t1 -> t
    deltaK0 delta' Ins _ = delta'  -- error! (tijdelijk... moet berekenen welke paren in x gezet moeten worden zodat delta |- x*)

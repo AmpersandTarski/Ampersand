@@ -32,14 +32,16 @@ where
                                         -- all relations used in signals and rules must have a valid declaration in the same viewpoint.
      multrules    :: a -> Rules         -- all multiplicityrules that are maintained within this viewpoint.
      multrules x = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
+--     keyrules    :: a -> Rules         -- all key rules that are maintained within this viewpoint.
+--     keyrules x = [rulefromKey k |k<-keyDefs x]
      objDefs      :: a -> ObjectDefs
      keyDefs      :: a -> KeyDefs       -- all keys that are defined in a
      gens         :: a -> Gens          -- all generalizations that are valid within this viewpoint
      patterns     :: a -> Patterns      -- all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept
      --TODO -> there are more rules than rules+multrules that can be violated
-     violations   :: a -> [(Rule,Paire)] --the violans of rules and multrules of this viewpoint
-     violations x = [(r,viol) |r<-(rules x) ++ (multrules x), viol<-ruleviolations r] 
+     violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
+     violations x = [(r,viol) |r<-rules x++multrules x, viol<-ruleviolations r] 
 
    instance ViewPoint a => ViewPoint [a] where
     objectdef _      = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -52,9 +54,9 @@ where
     conceptDefs xs   = (concat. map conceptDefs) xs
     rel_declarations xs  = (rd . concat. map rel_declarations) xs
     rule_declarations xs  = (rd . concat. map rule_declarations) xs
-    rules xs         = (concat. map rules) xs
-    signals xs       = (concat. map signals) xs
-    multrules xs     = (concat. map multrules) xs
+    rules xs         = (concat . map rules) xs
+    signals xs       = (concat . map signals) xs
+    multrules xs     = (concat . map multrules) xs
     objDefs xs       = (concat . map objDefs) xs
     keyDefs xs       = (concat . map keyDefs) xs
     gens xs          = (rd . concat. map gens) xs

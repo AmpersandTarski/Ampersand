@@ -64,10 +64,10 @@ instance Dotable Pattern where
    toDot fSpec flags pat = dotG flags (name pat) cpts dcls idgs
         where 
          --DESCR -> get concepts and arcs from pattern
-          idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          idgs = [(g,s)|(g,s)<-gs, elem g cpts']  --  all isa edges
           Isa gs _ = isa fSpec 
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
+          cpts = rd$cpts' ++ [g|(g,s)<-idgs] ++ [s|(g,s)<-idgs]
           cpts'  = concs pat
           dcls = [d| d@Sgn{}<-declarations pat `uni` decls pat, decusr d]
 
