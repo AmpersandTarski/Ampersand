@@ -46,10 +46,10 @@ SEM ISectList UnionList
         lhs.env_mph = []
         lhs.inftree = fatal 47 "undefined inftree on Nil of ISect-/UnionList"
   |Cons lhs.env_in = @env
-        loc.env = alts_ababab (@hd.me,@tl.me) @lhs.env_isa @hd.env_in @tl.env_in
+        loc.env = alts_ababab @lhs.listof (@hd.me,@tl.me) @lhs.env_isa @hd.env_in @tl.env_in
         loc.tp = if null @tl.me 
                  then final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me [])
-                                         (Left @lhs.type_down) @hd.env_in (Left (Universe,Universe)) --the tail is universe
+                                         (Left @lhs.type_down) @hd.env_in (Left @lhs.type_down) --the tail is the type coming down
                  else final_infer_ababab @lhs.env_isa (inferencerule_ababab @lhs.listof @hd.me @tl.me)
                                          (Left @lhs.type_down) @hd.env_in @tl.rtype
         hd.type_down=if not(is_type_error @tp) then thetype @tp else fatal 55 "There should be a ababab error"
@@ -149,14 +149,14 @@ infer reldecls isas root_expr =
   rtype = if length alltypes==1 
           then rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
           else if null alltypes
-               then Right env_in_err
+               --there is a type error in env_in
+               then (\(Right env_in_err) -> Right env_in_err) env_in
                else Right$TErrorAmb "Ambiguous type" alltypes
   alltypes = case env_in of
      Left xs -> if null xs 
                 then fatal 214 "the AltList cannot be Left []."
-                else xs 
+                else map fst xs 
      _ -> []
-  Right env_in_err = env_in
   agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
 
 ----------------------------------------------------------------------------

@@ -7,7 +7,8 @@ import Auxiliaries (sort')
 
 --a document with proofs for the fspec
 proofdoc :: Fspc -> Pandoc
-proofdoc fSpec = Pandoc (Meta [] [] []) b
+proofdoc fSpec = -- error (show (take 1 [rrtyp_proof r|r<-rules fSpec])) 
+                 Pandoc (Meta [] [] []) b
    where
    b = concat$
        [pandoctree(rrtyp_proof r)|r<-rules fSpec]
@@ -20,7 +21,7 @@ pandoctree :: Maybe (InfTree,Expression) -> [Block]
 pandoctree Nothing = [Plain [Str "No inference tree has been calculated."]]
 pandoctree (Just (tr,x)) = orig++[Plain$[TeX ("Normalized expression: $"++term++"$\n"), TeX "\n\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"] ++ refs]
    where 
-   (il,term,refs,_) = pandoctree' tr
+   (il,term,refs,_,_) = pandoctree' tr
    env :: Expression -> [(Int,(Declaration,[Concept]))]
    env (Tm mp i) = [(i, (head(decls mp),mphats mp))]
    env (F xs) = concat(map env xs)
@@ -63,7 +64,7 @@ pandoctree (Just (tr,x)) = orig++[Plain$[TeX ("Normalized expression: $"++term++
 --writes a subtree as a separate tree i.e. the proof of a premise of the parent tree
 pandoctree_ref :: (String,InfTree) -> [Inline]
 pandoctree_ref (lbl,tr) = [TeX ("Premise: $"++lbl++"$\n"), TeX "\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"]
-   where (il,_,_,_) = pandoctree' tr
+   where (il,_,_,_,_) = pandoctree' tr
 
 --maxwidth MUST be at least 3
 maxwidth::Int 
@@ -72,7 +73,7 @@ maxwidth=3
 --        ,term in the conclusion of latextree::String
 --        ,all the referenced trees (with own \begin and \end{prooftree}), which will be printed as such
 --        ,the width of the latextree (make from the premises a reference when width will exceed maxwidth)
-pandoctree' :: InfTree -> ([Inline],String,[Inline],Int)
+pandoctree' :: InfTree -> ([Inline],String,[Inline],Int,String)
 pandoctree' (InfRel dt (c1,c2) _ i)
  |elem dt [D_id,D_v,D_id_c,D_v_c] = 
     ([TeX ("\\AxiomC{$ $}\n")
@@ -80,12 +81,12 @@ pandoctree' (InfRel dt (c1,c2) _ i)
      ,TeX ("\\UnaryInfC{$"++r'++"::"++tp++" \\in \\Gamma$}\n")
      ,TeX ("\\RightLabel{\\scriptsize("++show dtrel++")}\n")
      ,TeX ("\\UnaryInfC{$\\Gamma \\models "++term++"["++tp++"]$}\n")
-     ],term,[],1)
+     ],term,[],1,tp)
  |otherwise =
     ([TeX ("\\AxiomC{$"++r'++"::"++tp++" \\in \\Gamma$}\n")
      ,TeX ("\\RightLabel{\\scriptsize("++show dt++")}\n")
      ,TeX ("\\UnaryInfC{$\\Gamma \\models "++term ++"["++tp++"]$}\n")
-     ],term,[],1)
+     ],term,[],1,tp)
    where 
    r' =  show i --TODO: dit zou een placeholder voor een format string kunnen worden. i=unieke identificatie van mph in expressie
    tp = ltxstr(if elem dt [D_rel_c_h,D_rel_h,D_id,D_id_c] then show c1 else show c1++"*"++ show c2)
@@ -94,17 +95,17 @@ pandoctree' (InfRel dt (c1,c2) _ i)
 pandoctree' (InfExprs rt ((c1,c2),cb) axs)
    |elem rt [Conv_nc, Conv_c] && length axs==1 = 
        let
-       (il,ax,axrefs,width) =  pandoctree' (head axs)
+       (il,ax,axrefs,width,_) =  pandoctree' (head axs)
        term = if rt==Conv_c then "\\overline{"++(br 0 (head axs) ax)++"^\\smile}" else (br 0 (head axs) ax)++"^\\smile"
        in
        ( il++
         [TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
         ,TeX ("\\UnaryInfC{$\\Gamma \\models " ++ term  ++ "["++tp++"]$}\n")
-        ],term,axrefs,width)
+        ],term,axrefs,width,tp)
    |elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs, RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs,ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs==2 = 
        let
-       (il1,ax1,ax1refs,width1) =  pandoctree' (head axs)
-       (il2,ax2,ax2refs,width2) =  pandoctree' (head (tail axs))
+       (il1,ax1,ax1refs,width1,_) =  pandoctree' (head axs)
+       (il2,ax2,ax2refs,width2,_) =  pandoctree' (head (tail axs))
        term | elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs] = (br 1 (head axs) ax1) ++ ";_{"++ltxstr(show cb)++ "}" ++ (br 1 (head (tail axs)) ax2)
             | elem rt [RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs] = (br 2 (head axs) ax1) ++ "\\dagger_{"++ltxstr(show cb)++ "}" ++ (br 2 (head (tail axs)) ax2)
             | elem rt [ISect_cs, ISect_ncs, ISect_mix] = (br 3 (head axs) ax1) ++ "\\cap" ++ (br 3 (head (tail axs)) ax2)
@@ -123,12 +124,12 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs)
        (il1'++il2'++
         [TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
         ,TeX ("\\BinaryInfC{$\\Gamma \\models " ++ term ++ "["++tp++"]$}\n")
-        ],term,ref1++ref2++ax1refs++ax2refs,width')
+        ],term,ref1++ref2++ax1refs++ax2refs,width',tp)
    |elem rt [ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs==3 = 
        let
-       (il1,ax1,ax1refs,width1) =  pandoctree' (head axs)
-       (il2,ax2,ax2refs,width2) =  pandoctree' (head (tail axs))
-       (il3,ax3,ax3refs,width3) =  pandoctree' (head (tail(tail axs)))
+       (il1,ax1,ax1refs,width1,_) =  pandoctree' (head axs)
+       (il2,ax2,ax2refs,width2,_) =  pandoctree' (head (tail axs))
+       (il3,ax3,ax3refs,width3,_) =  pandoctree' (head (tail(tail axs)))
        term | elem rt [ISect_cs, ISect_ncs, ISect_mix] = (br 3 (head axs) ax1) ++ "\\cap" ++ (br 3 (head (tail axs)) ax2)++ "\\cap" ++ (br 3 (head (tail(tail axs))) ax3)
             | otherwise = ax1 ++ "\\cup" ++ax2 ++ "\\cup" ++ax3
        split = (width1+width2+width3)>maxwidth
@@ -146,13 +147,13 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs)
        (il1'++il2'++il3'++
         [TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
         ,TeX ("\\TrinaryInfC{$\\Gamma \\models " ++ term ++ "["++tp++"]$}\n")
-        ],term,ref1++ref2++ref3++ax1refs++ax2refs++ax3refs,width')
+        ],term,ref1++ref2++ref3++ax1refs++ax2refs++ax3refs,width',tp)
    |elem rt [ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs>3 = --LaTeX prooftree has max 3 axioms, so always split up this tree
        let
        iln = map pandoctree_ref (zip axn' axs) --use the term as a reference label
-       axrefs = [ref |(_,_,ref,_)<-map pandoctree' axs]
-       axn = [ax |(_,ax,_,_)<-map pandoctree' axs]
-       axn' = [ax++ "["++tp++"]"|(_,ax,_,_)<-map pandoctree' axs]
+       axrefs = [ref |(_,_,ref,_,_)<-map pandoctree' axs]
+       axn = [ax |(_,ax,_,_,_)<-map pandoctree' axs]
+       axn' = [ax++ "["++axtp++"]"|(_,ax,_,_,axtp)<-map pandoctree' axs]
        op = if rt==Union_mix then "\\bigcup" else "\\bigcap"
        term = op++" \\{" ++ head axn ++ concat [", "++ ax |ax<-tail axn] ++ "\\}"
        axlist = " \\{" ++ head axn' ++ concat [", "++ ax|ax<-tail axn'] ++ "\\}"
@@ -161,7 +162,7 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs)
         ,TeX ("\\RightLabel{\\scriptsize("++show rt++")}\n")
         ,TeX ("\\UnaryInfC{$\\Gamma \\models " ++ term  ++ "["++tp++"]$}\n")
         ] 
-       ,term,concat (iln++axrefs),1)
+       ,term,concat (iln++axrefs),1,tp)
 --   |elem rt [Union_mix]
   --    = (concat (map (fst.pandoctree') axs),"") --TODO
    |otherwise=error "TODO 90"

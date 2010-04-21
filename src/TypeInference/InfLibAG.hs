@@ -35,14 +35,14 @@ infer reldecls isas root_expr =
   rtype = if length alltypes==1 
           then rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
           else if null alltypes
-               then Right env_in_err
+               --there is a type error in env_in
+               then (\(Right env_in_err) -> Right env_in_err) env_in
                else Right$TErrorAmb "Ambiguous type" alltypes
   alltypes = case env_in of
      Left xs -> if null xs 
                 then fatal 214 "the AltList cannot be Left []."
-                else xs 
+                else map fst xs 
      _ -> []
-  Right env_in_err = env_in
   agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
 
 ----------------------------------------------------------------------------
@@ -178,11 +178,11 @@ sem_ISectList_Cons hd_ tl_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_ababab (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
+                  alts_ababab _lhsIlistof (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
               _tp =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
-                                          (Left _lhsItype_down) _hdIenv_in (Left (Universe,Universe))
+                                          (Left _lhsItype_down) _hdIenv_in (Left _lhsItype_down)
                   else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
                                           (Left _lhsItype_down) _hdIenv_in _tlIrtype
               _hdOtype_down =
@@ -841,11 +841,11 @@ sem_UnionList_Cons hd_ tl_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_ababab (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
+                  alts_ababab _lhsIlistof (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
               _tp =
                   if null _tlIme
                   then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
-                                          (Left _lhsItype_down) _hdIenv_in (Left (Universe,Universe))
+                                          (Left _lhsItype_down) _hdIenv_in (Left _lhsItype_down)
                   else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
                                           (Left _lhsItype_down) _hdIenv_in _tlIrtype
               _hdOtype_down =
