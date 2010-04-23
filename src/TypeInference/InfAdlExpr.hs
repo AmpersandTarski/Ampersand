@@ -27,6 +27,8 @@ module TypeInference.InfAdlExpr(infertype_and_populate) where
 import TypeInference.InfLibAG
 import Adl
 import ShowADL
+import Text.Pandoc (Block)
+import Rendering.InfTree2Pandoc (pandoctree)
 
 fatal :: Int -> String -> a
 fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg )
@@ -35,15 +37,16 @@ fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg
 --ADL conversie
 ----------------------------------------------------------------------------
 --DESCR -> a function to add population to the morphisms in the expression, isa relations as a set of (Concept,Concept), declarations from the script, the expression => OR the type of the expression and the expression with typed and populated morphisms each of them bound to one declaration OR an error as String
-infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> Expression -> Either ((Concept,Concept), Expression,InfTree) String
+infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
 infertype_and_populate populate isas ds ex_in =
   case inf_expr of
     Left _ -> Left ((toCpt expr_src,toCpt expr_trg), enrich_expr uniqex,inftree)
-    Right err -> Right (printterror ds uniqex err)
+    Right err -> Right (printterror ds uniqex err,errortrees inferfromscript ds uniqex err)
   where
+  inferfromscript = infer (map fromDcl ds) (fromCptCpts isas)
   Left ((expr_src,expr_trg),env_mph,inftree) = inf_expr
   (uniqex,_) = uniquemphs 0 ex_in --give each morphism an identifier within the scope of this expression
-  inf_expr = infer (map fromDcl ds) (fromCptCpts isas) (fromExpr uniqex)
+  inf_expr = inferfromscript (fromExpr uniqex)
   enrich_expr (F exs) = F$map enrich_expr exs
   enrich_expr (Fd exs) = Fd$map enrich_expr exs
   enrich_expr (Fi exs) = Fi$map enrich_expr exs
@@ -221,3 +224,10 @@ operand root rs
   operand' (K1 x) = if fst(operand' x) then (True,K1 (snd(operand' x))) else (False,niks)
   operand' (Cp x) = if fst(operand' x) then (True,Cp (snd(operand' x))) else (False,niks)
 
+--DESCR -> the inference trees of subexpressions, just before the error occurs
+--         or all the inference trees in case of ambiguity
+--         the error should contain subexpressions which can be inferred with inferfromscript
+--         the root expression, the declarations are provided
+--         operand root (therels x) is the original string of x::RelAlgExpr
+errortrees:: (RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError) -> Declarations -> Expression -> TError -> [Block]
+errortrees inferfromscript ds root err = []

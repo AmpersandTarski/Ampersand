@@ -7,8 +7,7 @@ import Auxiliaries (sort')
 
 --a document with proofs for the fspec
 proofdoc :: Fspc -> Pandoc
-proofdoc fSpec = -- error (show (take 1 [rrtyp_proof r|r<-rules fSpec])) 
-                 Pandoc (Meta [] [] []) b
+proofdoc fSpec = Pandoc (Meta [] [] []) b
    where
    b = concat$
        [pandoctree(rrtyp_proof r)|r<-rules fSpec]
@@ -46,7 +45,7 @@ pandoctree (Just (tr,x)) = orig++[Plain$[TeX ("Normalized expression: $"++term++
       where
       showExpr (union',inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr' = showchar (insParentheses expr')
          where
-         showchar (Tm mph _)  = name mph++if inline mph then "" else "~"
+         showchar (Tm mph _)  = name mph++if inline mph then "" else "^{\\smile}"
          showchar (Fu []) = "-V"
          showchar (Fu fs) = chain' union' fs
          showchar (Fi []) = "V"
@@ -57,7 +56,7 @@ pandoctree (Just (tr,x)) = orig++[Plain$[TeX ("Normalized expression: $"++term++
          showchar (F ts)  = chain' rMul ts
          showchar (K0 e') = showchar e'++clos0
          showchar (K1 e') = showchar e'++clos1
-         showchar (Cp e') = compl++showchar e'
+         showchar (Cp e') = "\\overline{"++showchar e'++"}"
          showchar (Tc f)  = lpar++showchar f++rpar
          chain' x' xs = head (map showchar xs) ++ concat [x' ++ f|f<-tail (map showchar xs)]
 
@@ -104,8 +103,8 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs)
         ],term,axrefs,width,tp)
    |elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs, RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs,ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs==2 = 
        let
-       (il1,ax1,ax1refs,width1,_) =  pandoctree' (head axs)
-       (il2,ax2,ax2refs,width2,_) =  pandoctree' (head (tail axs))
+       (il1,ax1,ax1refs,width1,axtp1) =  pandoctree' (head axs)
+       (il2,ax2,ax2refs,width2,axtp2) =  pandoctree' (head (tail axs))
        term | elem rt [Comp_ncs, Comp_c1, Comp_c2, Comp_cs] = (br 1 (head axs) ax1) ++ ";_{"++ltxstr(show cb)++ "}" ++ (br 1 (head (tail axs)) ax2)
             | elem rt [RAdd_ncs, RAdd_c1, RAdd_c2, RAdd_cs] = (br 2 (head axs) ax1) ++ "\\dagger_{"++ltxstr(show cb)++ "}" ++ (br 2 (head (tail axs)) ax2)
             | elem rt [ISect_cs, ISect_ncs, ISect_mix] = (br 3 (head axs) ax1) ++ "\\cap" ++ (br 3 (head (tail axs)) ax2)
@@ -113,8 +112,8 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs)
        split = (width1+width2)>maxwidth
        split1 = split && width1==maxwidth --if the left tree has room for one branche (the reference of the right branche), then do not reference the left
        split2 = split && (not split1 || width2==maxwidth) --if the left didn't have room, then maybe the right does.
-       ref1 = if split1 then pandoctree_ref (ax1,head axs) else []
-       ref2 = if split2 then pandoctree_ref (ax2,head (tail axs)) else []
+       ref1 = if split1 then pandoctree_ref (ax1++"["++axtp1++"]",head axs) else []
+       ref2 = if split2 then pandoctree_ref (ax2++"["++axtp2++"]",head (tail axs)) else []
        width' = (if split1 then 1 else width1) + (if split2 then 1 else width2)
        il1' = if split1 then [TeX ("\\AxiomC{$\\Gamma \\models" ++ ax1++"["++tp1++"]$}\n")] else il1
        il2' = if split2 then [TeX ("\\AxiomC{$\\Gamma \\models" ++ ax2++"["++tp2++"]$}\n")] else il2
@@ -127,18 +126,18 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs)
         ],term,ref1++ref2++ax1refs++ax2refs,width',tp)
    |elem rt [ISect_cs, ISect_ncs, ISect_mix, Union_mix] && length axs==3 = 
        let
-       (il1,ax1,ax1refs,width1,_) =  pandoctree' (head axs)
-       (il2,ax2,ax2refs,width2,_) =  pandoctree' (head (tail axs))
-       (il3,ax3,ax3refs,width3,_) =  pandoctree' (head (tail(tail axs)))
+       (il1,ax1,ax1refs,width1,axtp1) =  pandoctree' (head axs)
+       (il2,ax2,ax2refs,width2,axtp2) =  pandoctree' (head (tail axs))
+       (il3,ax3,ax3refs,width3,axtp3) =  pandoctree' (head (tail(tail axs)))
        term | elem rt [ISect_cs, ISect_ncs, ISect_mix] = (br 3 (head axs) ax1) ++ "\\cap" ++ (br 3 (head (tail axs)) ax2)++ "\\cap" ++ (br 3 (head (tail(tail axs))) ax3)
             | otherwise = ax1 ++ "\\cup" ++ax2 ++ "\\cup" ++ax3
        split = (width1+width2+width3)>maxwidth
        split1 = split && width1==maxwidth --if the left tree has room for one branche (the reference of the right branche), then do not reference the left
        split2 = split && (not split1 || width2==maxwidth) --if the left didn't have room, then maybe the middle does.
        split3 = split && ((not split1 && not split2) || width3==maxwidth) --if the left and middle didn't have room, then maybe the right does.
-       ref1 = if split1 then pandoctree_ref (ax1,head axs) else []
-       ref2 = if split2 then pandoctree_ref (ax2,head (tail axs)) else []
-       ref3 = if split3 then pandoctree_ref (ax3,head (tail (tail axs))) else []
+       ref1 = if split1 then pandoctree_ref (ax1++"["++axtp1++"]",head axs) else []
+       ref2 = if split2 then pandoctree_ref (ax2++"["++axtp2++"]",head (tail axs)) else []
+       ref3 = if split3 then pandoctree_ref (ax3++"["++axtp3++"]",head (tail (tail axs))) else []
        width' = (if split1 then 1 else width1) + (if split2 then 1 else width2) + (if split3 then 1 else width3)
        il1' = if split1 then [TeX ("\\AxiomC{$\\Gamma \\models" ++ ax1++"["++tp++"]$}\n")] else il1
        il2' = if split2 then [TeX ("\\AxiomC{$\\Gamma \\models" ++ ax2++"["++tp++"]$}\n")] else il2

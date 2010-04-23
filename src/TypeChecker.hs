@@ -38,6 +38,7 @@ import TypeInference.InfAdlExpr
 import TypeInference.InfLibAG (InfTree)
 import ShowADL
 import Collection     ( Collection(..) )
+import Text.Pandoc (Block)
 
 ---------------
 --MAIN function
@@ -46,7 +47,7 @@ import Collection     ( Collection(..) )
 --USE -> The error if is of type String and contains a complete error message
 --       This is the only type needed outside of the TypeChecker.
 type Errors = [Error]
-type Error = String
+type Error = (String,[Block])
 
 --DESCR -> The parser composes an Architecture object. This function typechecks this object.
 --REMARK -> After type checking not only the types are bound to expressions, but also other
@@ -61,18 +62,18 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
    check2 = checkCtxExtLoops ctxs -- check whether there are loops in the extends-relation (which existst between contexts)
    (enriched, check3) = enrichArch arch  
   -- check3 = [(errproof,fp,rule) | (err,fp,rule)<-allproofs] --all type errors TODO -> pretty printing add original Expression and fp here
-   printcheck3 = [ err 
+   printcheck3 = [ (err 
                    ++ "\n   in " ++ showADL rule   
-                   ++ "\n   at " ++ show fp ++ "\n"
-                 | (err,fp,OrigRule rule)<-check3] ++
-                 [ err 
+                   ++ "\n   at " ++ show fp ++ "\n",block)
+                 | (err,block,fp,OrigRule rule)<-check3] ++
+                 [ (err 
                    ++ "\n   in service definition expression " ++ showADL expr  
-                   ++ "\n   at " ++ show fp ++ "\n"
-                 | (err,fp,OrigObjDef expr)<-check3] ++
-                 [ err 
+                   ++ "\n   at " ++ show fp ++ "\n",block)
+                 | (err,block,fp,OrigObjDef expr)<-check3] ++
+                 [ (err 
                    ++ "\n   in key definition expression " ++ showADL expr  
-                   ++ "\n   at " ++ show fp ++ "\n"
-                 | (err,fp,OrigKeyDef expr)<-check3]
+                   ++ "\n   at " ++ show fp ++ "\n",block)
+                 | (err,block,fp,OrigKeyDef expr)<-check3]
    check4 = checkSvcNameUniqueness ctxs
    check5 = checkPopulations ctxs
   -- check6 = checkSvcLabels ctxs
@@ -94,7 +95,7 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
 ------------------
 -- Each error is exposed by a NoProof in the Proof-field, which carries the type errors.
 -- Each valid type derivation is given by a Proven in the Proof-fiels, which carries the derivation.
-enrichArch :: Architecture -> (Contexts,[(String,FilePos,OrigExpr)])
+enrichArch :: Architecture -> (Contexts,[(String,[Block],FilePos,OrigExpr)])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
                             , concat [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
 
@@ -127,7 +128,7 @@ data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
 --   - rule generation:   Rules that are derived from multiplicities specified in the ADL-script (UNI,TOT,INJ,SUR,RFX,TRN,SYM,ASY)
 --   - rule generation:   Rules that are derived from Keys specified in the ADL-script
 
-enrichCtx :: Context -> Contexts -> (Context,[(String,FilePos,OrigExpr)])
+enrichCtx :: Context -> Contexts -> (Context,[(String,[Block],FilePos,OrigExpr)])
 enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
@@ -162,7 +163,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                               -}
   where
   --DESCR -> use this function on all expressions
-  enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) String
+  enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
   enrich_expr = infertype_and_populate popuMphDecl isas (rel_declarations ctxs)
   isas = isaRels (allCtxCpts ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
@@ -195,7 +196,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 
 
   --DESCR -> enriching ctxpats
-  ctxpatterns :: [(Pattern,[Either Rule (String,FilePos,OrigExpr)])]
+  ctxpatterns :: [(Pattern,[Either Rule (String,[Block],FilePos,OrigExpr)])]
   ctxpatterns
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
                                                     --     the patterns of this context
@@ -273,13 +274,13 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                       ,cptgE=(\c1 c2 -> elem (c1,c2) isas)}
   populate c       = c
 
-  ctxPatKeys :: [(KeyDef,[Either Expression (String,FilePos,OrigExpr)])]
+  ctxPatKeys :: [(KeyDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
   ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   
 
 --WAAROM (SJ) werden de multipliciteitsregels gecheckt? Zij zijn immers gegenereerd, en hoeven dus niet gecheckt te worden...
 --DAAROM GMI impliciet implementeer je nu de type inferentieregels ook in de regelgeneratie
   --DESCR -> enriching ctxrs
-  ctxCtxRules :: [Either Rule (String,FilePos,OrigExpr)]
+  ctxCtxRules :: [Either Rule (String,[Block],FilePos,OrigExpr)]
   ctxCtxRules
      = [ bindRule r| r<-ctxrs cx ] ++            -- all rules that are declared in the ADL-script within
                                                  --     this context, but not in the patterns of this context
@@ -307,11 +308,11 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     where 
     err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not normExpr of rule "++show rule)
 
-  bindRule :: Rule -> Either Rule (String,FilePos,OrigExpr)
+  bindRule :: Rule -> Either Rule (String,[Block],FilePos,OrigExpr)
   bindRule r@(Ru{}) = 
      if null err 
      then Left$ (bindexpr){rrtyp=(c1,c2),rrtyp_proof=inftree, srrel=signaldecl}
-     else Right (err,rrfps r,OrigRule r) 
+     else Right (err,block,rrfps r,OrigRule r) 
      where
      inf_r = enrich_expr (normExpr r)
      bindexpr = case inf_r of
@@ -320,16 +321,16 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
      (c1,c2) = case inf_r of
        Left (inf_t,_,_) -> inf_t
        _ ->  (NOthing,NOthing)
-     err = case inf_r of
+     (err,block) = case inf_r of
        Right x -> x
-       _ -> ""
+       _ -> ("",[])
      inftree = case inf_r of
        Left (_,infexpr,x) -> Just (x,infexpr)
        _ -> Nothing
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
   --TODO -> is niet consistent met andere rule generaties, hoort niet in TypeChecker
-  rulefromKey :: KeyDef -> String -> Either Rule (String,FilePos,OrigExpr)
+  rulefromKey :: KeyDef -> String -> Either Rule (String,[Block],FilePos,OrigExpr)
   rulefromKey key pat
     = Left$Ru
          Implication    -- Implication of Equivalence
@@ -352,15 +353,15 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 
   --DESCR -> enriching ctxos
   --         bind the expression and nested object defs of all object defs in the context
-  ctxobjdefs :: [(ObjectDef,[Either Expression (String,FilePos,OrigExpr)])]
+  ctxobjdefs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
   ctxobjdefs = [bindObjDef od Nothing | od<-objDefs cx]
-  ctxsqlplugs :: [(ObjectDef,[Either Expression (String,FilePos,OrigExpr)])]
+  ctxsqlplugs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
   ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
-  ctxphpplugs :: [(ObjectDef,[Either Expression (String,FilePos,OrigExpr)])]
+  ctxphpplugs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
   ctxphpplugs = [bindObjDef plug Nothing | plug<-ctxphp cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
-  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[Either Expression (String,FilePos,OrigExpr)])
+  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])
   bindObjDef od mbtopexpr = (od {objctx=bindexpr, objctx_proof=inftree, objats=bindats},checkedexpr:checkedexprs)
     where 
     expr = case mbtopexpr of
@@ -368,11 +369,11 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
       Just topexpr -> F [topexpr, objctx od]
     checkedexpr = if null err 
                   then Left bindexpr
-                  else Right (err,objpos od,OrigObjDef expr)      
+                  else Right (err,block,objpos od,OrigObjDef expr)      
     inf_e = enrich_expr expr
-    err = case inf_e of
+    (err,block) = case inf_e of
       Right x -> x
-      _ -> ""
+      _ -> ("",[])
     bindexpr =  case mbtopexpr of
       Nothing -> case inf_e of
            Left (_,x,_) -> x
@@ -394,12 +395,12 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     checkedexprs = concat [x|(_,x)<-inferats]
   -------end bindObjDef---------------------------------------------------------------
   
-  ctxCtxKeys :: [(KeyDef,[Either Expression (String,FilePos,OrigExpr)])]
+  ctxCtxKeys :: [(KeyDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
   ctxCtxKeys = [bindKeyDef kd | kd<-ctxks cx]   
-  bindKeyDef :: KeyDef -> (KeyDef,[Either Expression (String,FilePos,OrigExpr)])
+  bindKeyDef :: KeyDef -> (KeyDef,[Either Expression (String,[Block],FilePos,OrigExpr)])
   bindKeyDef kd = (kd {kdats=bindats},checkedkeydefexprs)
     where
-    checkedkeydefexprs = [Left x|Left x<-checkedexprs] ++ [Right (x,fp,OrigKeyDef y)|Right (x,fp,OrigObjDef y)<-checkedexprs]
+    checkedkeydefexprs = [Left x|Left x<-checkedexprs] ++ [Right (x,block,fp,OrigKeyDef y)|Right (x,block,fp,OrigObjDef y)<-checkedexprs]
     (Obj {objats=bindats},checkedexprs) = bindObjDef 
                    (Obj {objats=kdats kd,
                          objnm=kdlbl kd,
@@ -418,7 +419,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 checkCtxNameUniqueness :: Contexts -> Errors
 checkCtxNameUniqueness [] = []
 checkCtxNameUniqueness (cx:ctxs) 
-     | elemBy (==) cx ctxs = ["Context name " ++ ctxnm cx ++ " is not unique"] ++ checkCtxNameUniqueness ctxs
+     | elemBy (==) cx ctxs = [("Context name " ++ ctxnm cx ++ " is not unique",[])] ++ checkCtxNameUniqueness ctxs
      | otherwise           = checkCtxNameUniqueness ctxs
 
 --USE -> Contexts names must be unique
@@ -427,8 +428,8 @@ checkCtxExtLoops ctxs = composeError (concat [findLoops cx | cx<- ctxs])
     where
     composeError :: [ContextName] -> Errors
     composeError [] = []
-    composeError cxnms = ["One or more CONTEXT loops have been detected involving contexts: "
-                           ++ foldr (++) "\n" [ cxnm++"\n" | cxnm<-cxnms]
+    composeError cxnms = [("One or more CONTEXT loops have been detected involving contexts: "
+                           ++ foldr (++) "\n" [ cxnm++"\n" | cxnm<-cxnms],[])
                            ]
     --DESCR -> there is a loop if a context is not found in the CtxTree, but it is found in the original Contexts
     findLoops :: Context -> [ContextName]
@@ -442,11 +443,11 @@ checkSvcNameUniqueness ctxs =
     let svcs = [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx]
         printerrs [] = []
         printerrs (svcnms:lblnms) = 
-          ["Service or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs])
+          [("Service or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs]),[])
           |(svcnm,svcposs)<-svcnms] 
           ++
-          ["Label " ++ lbnm ++ " in service or plug must be unique on sibling level:"
-                    ++ (concat ["\n"++show lbpos |lbpos<-lblposs])
+          [("Label " ++ lbnm ++ " in service or plug must be unique on sibling level:"
+                    ++ (concat ["\n"++show lbpos |lbpos<-lblposs]),[])
           |lbl<-lblnms, (lbnm,lblposs)<-lbl]
     in  printerrs$checkLabels svcs
 
@@ -462,7 +463,7 @@ checkLabels svcs =
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
 checkPopulations :: Contexts -> Errors
-checkPopulations ctxs = [err|Right err<-[popdeclaration (rel_declarations ctxs) pop | cx<-ctxs, pop<-ctxpops cx]]
+checkPopulations ctxs = [(err,[])|Right err<-[popdeclaration (rel_declarations ctxs) pop | cx<-ctxs, pop<-ctxpops cx]]
 
 
 ------------------

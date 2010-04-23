@@ -239,13 +239,13 @@ infer_ababab isas irule (a,b) (a',b') = case irule of
 --         remark that the expression must have a type (no type error) to be able to infer b
 infer_abbcac_b :: Isa -> InfRuleType -> RelAlgObj -> RelAlgObj -> RelAlgObj
 infer_abbcac_b isas irule lb rb = case irule of
-   Comp_ncs -> specific lb rb isas--error (show(lb,rb))--specific lb rb isas
-   Comp_c1 -> not_universe rb lb
-   Comp_c2 -> not_universe lb rb
+   Comp_ncs -> specific lb rb isas
+   Comp_c1 -> not_universe rb lb --the b of +S
+   Comp_c2 -> not_universe lb rb --the b of +R
    Comp_cs -> general lb rb isas
    RAdd_ncs -> general lb rb isas
-   RAdd_c1 -> not_universe rb lb
-   RAdd_c2 -> not_universe lb rb
+   RAdd_c1 -> not_universe lb rb --the b of -r
+   RAdd_c2 -> not_universe rb lb --the b of -s
    RAdd_cs -> specific lb rb isas
    _ -> fatal 236 "infer_abbcac_b is a function for Comp_* or RAdd_* inference rules only"
 ----------------------------------------------------------------------------
