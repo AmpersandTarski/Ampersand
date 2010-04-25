@@ -74,7 +74,7 @@ instance Dotable Pattern where
           idgs = [(g,s)|(g,s)<-gs, elem g cpts']  --  all isa edges
           Isa gs _ = isa fSpec 
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,s)<-idgs] ++ [s|(g,s)<-idgs]
+          cpts = rd(cpts' ++ [g|(g,_)<-idgs] ++ [s|(_,s)<-idgs])
           cpts'  = concs pat
           dcls = [d| d@Sgn{}<-declarations pat `uni` decls pat, decusr d]
 
@@ -263,6 +263,7 @@ handleFlags po flags =
                                        then crowfootArrowType False d
                                        else plainArrowType False d
                                       )
+                          , URL (theURL flags d)
                           ]
       DclSrcEdge d -> [Len 1.2
  --                     ,ArrowHead (AType [(open,Normal)])    -- Geeft de richting van de relatie aan.
@@ -286,7 +287,8 @@ handleFlags po flags =
       DclNameNode d -> defaultNodeAtts ++ 
                        [ Label (StrLabel (name d))
                        , Shape PlainText
-                       , BgColor (X11Color White) 
+                       , BgColor (X11Color White)
+                       , URL (theURL flags d) 
                        ]
       DclMiddleEdge -> [ Len 0.1
                        , ArrowHead noArrow
