@@ -28,10 +28,17 @@ class Identified a => Navigatable a where
    theURL flags a = UStr {urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name a)) "php"} 
 
 instance Navigatable Concept where
-   theURL flags cpt = UStr { urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name cpt)) "php"} 
+   theURL flags cpt = UStr { urlString = "atlas.php?content=Concept"
+                                     ++  "&User=" ++ userAtlas flags
+                                     ++  "&Script=" ++ fileName flags
+                                     ++  "&Concept=(" ++userAtlas flags++"."++ fileName flags++")"++name cpt
+                           }         
 instance Navigatable Declaration where 
-   theURL flags d = UStr {urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name d ++ name (source d) ++ name (target d))) "php"} 
-
+   theURL flags dcl = UStr { urlString = "atlas.php?content=Relatiedetails"
+                                     ++  "&User=" ++ userAtlas flags
+                                     ++  "&Script=" ++ fileName flags
+                                     ++  "&Relatiedetails=(" ++userAtlas flags++"."++ fileName flags++")"++name dcl
+                           }         
 -- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
 class Identified a => Dotable a where
    picType :: a -> PictType

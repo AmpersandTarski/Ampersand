@@ -491,7 +491,7 @@ where
                       ,", rrcon = " ++ "("++showHS flags "" (rrcon r)++")"
                       ,", rrxpl = " ++ show(rrxpl r)
                       ,", rrtyp = " ++ showHS flags "" (rrtyp r)
-                      ,", rrtyp_proof = " ++ "("++showHS flags "" (rrtyp_proof r)++")"
+                      ,", rrtyp_proof = " ++ "("++showHS flags (indent ++ "   ") (rrtyp_proof r)++")"
                       ,", rrdcl = " ++ case rrdcl r of
                                         Nothing   -> "Nothing"
                                         Just(p,d) -> "Just("++showHS flags "" p++","++showHS flags "" d++")"
