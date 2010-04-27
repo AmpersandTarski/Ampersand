@@ -14,7 +14,7 @@ where
    import Options hiding (services)
    import Version               (versionbanner)
    import FPA                   (FPA(..),FPcompl)
-   import TypeInference.InfLibAGFuncs
+--   import TypeInference.InfLibAGFuncs
       
    fSpec2Haskell :: Fspc -> Options -> String
    fSpec2Haskell fSpec flags
@@ -373,7 +373,8 @@ where
                  newindent++"--  vis        = rd (map makeInline rels++map (mIs.target) rels)"   ++
                  newindent++"--  visible m  = makeInline m `elem` vis"                           ++
                  newindent++"--  qs         = quads visible (rules fSpec)"                       ++
-                 "\n -- *** ECA rules ***: "++concat [newindent++"  "++showHSname (r delt)++"{- delta-}"++newindent++"   = "++showHS flags (newindent++"     ") (r delt)
+                 "\n -- *** ECA rules ***: "++concat [newindent++"  "++showHSname (r delt)++" _ {- TODO: Replace '_' with 'delta' and use it.-} "
+                                                    ++newindent++"   = "++showHS flags (newindent++"     ") (r delt)
                                                      |r<-fsv_ecaRules fservice ]
           )
        ++ newindent++" -- Einde Fservice "++showHSname fservice
@@ -491,7 +492,7 @@ where
                       ,", rrcon = " ++ "("++showHS flags "" (rrcon r)++")"
                       ,", rrxpl = " ++ show(rrxpl r)
                       ,", rrtyp = " ++ showHS flags "" (rrtyp r)
-                      ,", rrtyp_proof = " ++ "("++showHS flags (indent ++ "   ") (rrtyp_proof r)++")"
+                      ,", rrtyp_proof = Nothing -- TBD generate a function for the proof."
                       ,", rrdcl = " ++ case rrdcl r of
                                         Nothing   -> "Nothing"
                                         Just(p,d) -> "Just("++showHS flags "" p++","++showHS flags "" d++")"
@@ -712,60 +713,60 @@ where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: InfTree                       ***
 -- \***********************************************************************
-   instance ShowHS InfTree where
-    showHSname itree = error ("!Fatal (module ShowHS 714): Illegal call to showHSname ("++show itree++"). An inference tree is an anonymous entity in Haskell code.")
-    showHS flags indent itree =
-        case itree of
-          InfExprs irt (ratype,raobj) itrees -> 
-              "InfExprs " ++ showHS flags indent irt ++ 
-              indent ++ "   (" ++ showRaType ratype ++ "," ++ "RelAlgObj{-"++show raobj++"-}" ++ ")" ++
-              indent ++ showHS flags (indent ++ "     ") itrees
-          InfRel drt ratype _ _ -> 
-              "InfRel " ++ showHS flags indent drt ++ " " ++ showRaType ratype
-      where 
-       showRaType rat = "RelAlgType{-"++show rat++"-}"
-
-   instance ShowHS RelDecl where
-    showHSname d = error ("!Fatal (module ShowHS 728): Illegal call to showHSname ("++show d++"). A declared ruletype is an anonymous entity in Haskell code.")
-    showHS _ indent d = case d of 
-                          RelDecl{}-> "RelDecl{ dname  = " ++ show (dname d) ++ indent
-                                   ++ "        ,dtype  = " ++ showRaType dtype ++ indent
-                                   ++ "        ,ishomo = " ++ show (ishomo d) 
-                          IDecl    -> "IDecl"
-                          VDecl    -> "VDecl"
-      where 
-       showRaType _ = "RelAlgType{- ++TODO++ -}"
-
-
-   instance ShowHS DeclRuleType where
-    showHSname drt = error ("!Fatal (module ShowHS 731): Illegal call to showHSname ("++show drt++"). A declared ruletype is an anonymous entity in Haskell code.")
-    showHS _ _ drt = case drt of
-					   D_rel     -> "D_rel"
-					   D_rel_h   -> "D_rel_h"
-					   D_rel_c   -> "D_rel_c"
-					   D_rel_c_h -> "D_rel_c_h"
-					   D_id      -> "D_id"
-					   D_v       -> "D_v"
-					   D_id_c    -> "D_id_c"
-					   D_v_c     -> "D_v_c"
-                        
-   instance ShowHS InfRuleType where
-    showHSname irt = error ("!Fatal (module ShowHS 743): Illegal call to showHSname ("++show irt++"). A inference ruletype is an anonymous entity in Haskell code.")
-    showHS _ _ irt = case irt of
-					   ISect_cs  -> "ISect_cs"
-					   ISect_ncs -> "ISect_ncs"
-					   ISect_mix -> "ISect_mix"
-					   Union_mix -> "Union_mix"
-					   Comp_ncs  -> "Comp_ncs"
-					   Comp_c1   -> "Comp_c1"
-					   Comp_c2   -> "Comp_c2"
-					   Comp_cs   -> "Comp_cs"
-					   RAdd_ncs  -> "RAdd_ncs"
-					   RAdd_c1   -> "RAdd_c1"
-					   RAdd_c2   -> "RAdd_c2"
-					   RAdd_cs   -> "RAdd_cs"
-					   Conv_nc   -> "Conv_nc"
-					   Conv_c    -> "Conv_c"
+--   instance ShowHS InfTree where
+--    showHSname itree = error ("!Fatal (module ShowHS 714): Illegal call to showHSname ("++show itree++"). An inference tree is an anonymous entity in Haskell code.")
+--    showHS flags indent itree =
+--        case itree of
+--          InfExprs irt (ratype,raobj) itrees -> 
+--              "InfExprs " ++ showHS flags indent irt ++ 
+--              indent ++ "   (" ++ showRaType ratype ++ "," ++ "RelAlgObj{-"++show raobj++"-}" ++ ")" ++
+--              indent ++ showHS flags (indent ++ "     ") itrees
+--          InfRel drt ratype _ _ -> 
+--              "InfRel " ++ showHS flags indent drt ++ " " ++ showRaType ratype
+--      where 
+--       showRaType rat = "RelAlgType{-"++show rat++"-}"
+--
+--   instance ShowHS RelDecl where
+--    showHSname d = error ("!Fatal (module ShowHS 728): Illegal call to showHSname ("++show d++"). A declared ruletype is an anonymous entity in Haskell code.")
+--    showHS _ indent d = case d of 
+--                          RelDecl{}-> "RelDecl{ dname  = " ++ show (dname d) ++ indent
+--                                   ++ "        ,dtype  = " ++ showRaType dtype ++ indent
+--                                   ++ "        ,ishomo = " ++ show (ishomo d) 
+--                          IDecl    -> "IDecl"
+--                          VDecl    -> "VDecl"
+--      where 
+--       showRaType _ = "RelAlgType{- ++TODO++ -}"
+--
+--
+--   instance ShowHS DeclRuleType where
+--    showHSname drt = error ("!Fatal (module ShowHS 731): Illegal call to showHSname ("++show drt++"). A declared ruletype is an anonymous entity in Haskell code.")
+--    showHS _ _ drt = case drt of
+--					   D_rel     -> "D_rel"
+--					   D_rel_h   -> "D_rel_h"
+--					   D_rel_c   -> "D_rel_c"
+--					   D_rel_c_h -> "D_rel_c_h"
+--					   D_id      -> "D_id"
+--					   D_v       -> "D_v"
+--					   D_id_c    -> "D_id_c"
+--					   D_v_c     -> "D_v_c"
+--                        
+--   instance ShowHS InfRuleType where
+--    showHSname irt = error ("!Fatal (module ShowHS 743): Illegal call to showHSname ("++show irt++"). A inference ruletype is an anonymous entity in Haskell code.")
+--    showHS _ _ irt = case irt of
+--					   ISect_cs  -> "ISect_cs"
+--					   ISect_ncs -> "ISect_ncs"
+--					   ISect_mix -> "ISect_mix"
+--					   Union_mix -> "Union_mix"
+--					   Comp_ncs  -> "Comp_ncs"
+--					   Comp_c1   -> "Comp_c1"
+--					   Comp_c2   -> "Comp_c2"
+--					   Comp_cs   -> "Comp_cs"
+--					   RAdd_ncs  -> "RAdd_ncs"
+--					   RAdd_c1   -> "RAdd_c1"
+--					   RAdd_c2   -> "RAdd_c2"
+--					   RAdd_cs   -> "RAdd_cs"
+--					   Conv_nc   -> "Conv_nc"
+--					   Conv_c    -> "Conv_c"
 					   
 -- \***********************************************************************
 -- \*** hulpfuncties                                                    ***
