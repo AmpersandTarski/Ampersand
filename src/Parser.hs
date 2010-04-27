@@ -39,7 +39,7 @@ parseADL adlstring flags fnFull =
                                                  ))
                             where Arch cs = slRes
                                   thepandoc = Pandoc (Meta [] [] []) (concat (map snd errs))
-                                  (outputfile,maketex,makepdf) = writepandoc flags thepandoc
+                                  (_,maketex,makepdf) = writepandoc flags thepandoc
        }
 
 

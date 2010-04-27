@@ -720,7 +720,7 @@ where
               "InfExprs " ++ showHS flags indent irt ++ 
               indent ++ "   (" ++ showRaType ratype ++ "," ++ "RelAlgObj{-"++show raobj++"-}" ++ ")" ++
               indent ++ showHS flags (indent ++ "     ") itrees
-          InfRel drt ratype rdcl i -> 
+          InfRel drt ratype _ _ -> 
               "InfRel " ++ showHS flags indent drt ++ " " ++ showRaType ratype
       where 
        showRaType rat = "RelAlgType{-"++show rat++"-}"
@@ -734,7 +734,7 @@ where
                           IDecl    -> "IDecl"
                           VDecl    -> "VDecl"
       where 
-       showRaType rat = "RelAlgType{- ++TODO++ -}"
+       showRaType _ = "RelAlgType{- ++TODO++ -}"
 
 
    instance ShowHS DeclRuleType where

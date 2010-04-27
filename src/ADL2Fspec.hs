@@ -4,7 +4,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
    import CommonClasses  (ABoolAlg(..))
    import Adl
-   import Strings
+--   import Strings
    import Auxiliaries    (eqCl, eqClass, sort')
    import Data.Fspec
    import Options        (Options)
@@ -12,7 +12,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Data.Plug
    import Char
    import ShowADL
-   import ShowHS
+--   import ShowHS
    import FPA
    
    makeFspec :: Options -> Context -> Fspc
@@ -438,7 +438,7 @@ So the first step is create the kernels ...   -}
    editMph e            = error("!Fatal (module ADL2Fspec 425): cannot determine an editable declaration in a composite expression: "++show e)
 
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
-   makeFservice context allQuads object
+   makeFservice context _ object
     = let s = Fservice{ fsv_objectdef = object  -- the object from which the service is drawn
 -- The relations that may be edited by the user of this service are represented by fsv_insrels and fsv_delrels.
 -- Editing means that tuples can be added to or removed from the population of the relation.
@@ -450,7 +450,7 @@ So the first step is create the kernels ...   -}
                       , fsv_rules     = invariants
                       , fsv_quads     = qs
 -- The ECA-rules that may be used by this service to restore invariants. TODO: de Delta-parameter is nog fout!
-                      , fsv_ecaRules  = [\delta->er{ecaAction = action}| er<-ecaRs, let action=ecaAction er]
+                      , fsv_ecaRules  = [\_->er{ecaAction = action'}| er<-ecaRs, let action'=ecaAction er]
 -- All signals that are visible in this service
                       , fsv_signals   = [sig|sig<-signals context]
 -- All fields/parameters of this service
@@ -482,9 +482,9 @@ So the first step is create the kernels ...   -}
         ecaRs       = preEmpt (assembleECAs visible qs)
 -- step 5: signalInvs contains the rules that might possibly be maintained by the user, while performing a transaction in this service.
 --         If none of the relations in a rule are visible, exclude the rule...
-        signalInvs  = [rule| rule<-signals context, not (null (map makeInline (mors rule) `isc` vis))]
+--        signalInvs  = [rule| rule<-signals context, not (null (map makeInline (mors rule) `isc` vis))]
 -- step 6: ECA rules derived from the signalInvs. These rules may be used to suggest ways to the user to restore signals.
-        signalRs    = preEmpt (assembleECAs visible (quads visible signalInvs))
+--        signalRs    = preEmpt (assembleECAs visible (quads visible signalInvs))
         depth :: ObjectDef -> Int
         depth obj   = foldr max 0 [depth o| o<-objats obj]+1
         trigs :: ObjectDef -> [Declaration->ECArule]
@@ -710,7 +710,7 @@ So the first step is create the kernels ...   -}
 -- preEmpt divides all ECA rules in uncascaded rules and cascaded rules.
 -- cascaded rules are those rules that have a Do component with event e, where e is known to block (for some other reason)
        new  = [er{ecaAction=normPA (ecaAction er)}| er<-ers]
-       cascaded = [er{ecaAction=action}| er<-new, let (c,action) = cascade (eMhp (ecaTriggr er)) (ecaAction er), c]
+       cascaded = [er{ecaAction=action'}| er<-new, let (c,action') = cascade (eMhp (ecaTriggr er)) (ecaAction er), c]
        uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
      cascade :: Morphism -> PAclause -> (Bool, PAclause)

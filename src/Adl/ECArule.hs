@@ -11,11 +11,11 @@ module Adl.ECArule (InsDel(..)
                    )
 where
 import Adl.Rule                      (Rules)
-import Adl.FilePos                   (nr)
+--import Adl.FilePos                   (nr)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism)
 import Adl.Concept                   (Concept)
-import Strings                       (chain,commaEng)
+import Strings                       (chain)
 
 
 -- | The following datatypes form a process algebra. ADL derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
@@ -110,8 +110,8 @@ instance Show PAclause where
       showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
       showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
 
-      motivate indent motive motives = [] -- concat [ indent++showConj m | m<-motives ]
-       where showConj (conj,rs) = "("++motive++" "++show conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"
+      motivate _ _ _ = [] -- concat [ indent++showConj m | m<-motives ]
+--       where showConj (conj,rs) = "("++motive++" "++show conj++" FROM "++commaEng "" ["R"++show (nr r)| r<-rs]++")"
       
 {-
 instance Show ECArule where

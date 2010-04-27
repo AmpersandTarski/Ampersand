@@ -2,13 +2,13 @@
 module NormalForms (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,nfPr,simplify,distribute)
 where
 --   import Adl
-   import Strings        (commaEng,chain)
+   import Strings        (commaEng)
    import Collection     (Collection (..))
    import Auxiliaries    (eqCl,eqClass)
    import ShowADL        (showADL)
    import Adl.ECArule    (PAclause(..),isAll,isChc,isBlk,isNop,isDo)
    import Adl.Expression 
-   import Adl.MorphismAndDeclaration (makeInline,inline,mIs)
+   import Adl.MorphismAndDeclaration (inline,mIs)
    import Adl.Concept
    import CommonClasses
    import Classes.Morphical

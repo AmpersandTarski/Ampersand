@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1-661" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
+versionNumber = "1.1-662" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
 {-
 SVN Version text:
-Nu ook linkjes bij relaties in .map bestanden.
+Warnings weer een beetje opgeschoond.
 -}

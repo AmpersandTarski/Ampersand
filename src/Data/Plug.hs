@@ -37,6 +37,7 @@ where
                       } deriving (Show)
 
   instance Object Plug where
+  -- TODO: PlugPHP is niet overal goed uitgewerkt. Kan later (bij de introductie van PlugPHP) tot lastige fouten leiden. 
    concept p = case p of
      PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++name p++".")
      PlugSql{}             -> head [c|(c,_)<-cLkpTbl p]
@@ -62,13 +63,19 @@ where
    populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
 
   isClass  :: Plug -> Bool
-  isClass  p@PlugSql{} = not (null [1|fld<-fields p, flduniq fld]) && not (null [1|fld<-fields p, not (flduniq fld)])
+  isClass  p = case p of
+      PlugSql{} -> not (null [1::Int|fld<-fields p, flduniq fld]) && not (null [1::Int|fld<-fields p, not (flduniq fld)])
+      PlugPhp{} ->  error ("!Fatal (module Data.Plug 67): No definition for isClass of plug "++name p++".")
 
   isBinary :: Plug -> Bool
-  isBinary p@PlugSql{} = length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
+  isBinary p = case p of
+      PlugSql{} -> length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
+      PlugPhp{} ->  error ("!Fatal (module Data.Plug 72): No definition for isBinary of plug "++name p++".")
 
   isScalar :: Plug -> Bool
-  isScalar p@PlugSql{} = length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
+  isScalar p = case p of
+      PlugSql{} -> length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
+      PlugPhp{} ->  error ("!Fatal (module Data.Plug 77): No definition for isScalar of plug "++name p++".")
 
   instance Association Plug where
      source p           = (source . fldexpr . head . fields) p
@@ -104,6 +111,7 @@ where
               | otherwise         = False  -- TODO: check correctness!
  -}
     isSignal p@PlugSql{} | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
+    isSignal p@PlugPhp{} = error ("!Fatal (module Data.Plug 114): No definition for isSignal of plug "++name p++".")
     isSignal _                        = False
 
   data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)

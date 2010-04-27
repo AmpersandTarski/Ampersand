@@ -16,8 +16,8 @@ module Calc ( deriveProofs
    import ShowECA
    import ShowHS
    import ShowADL            (showADL,showADLcode)
-   import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,nfPr,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
-   import Options            (Options(..),verboseP)
+   import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
+   import Options            (Options(..))
 
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
@@ -194,14 +194,14 @@ module Calc ( deriveProofs
                                            then "A reaction is not required, because  r |- r'. Proof:"++conjProof (Fu[Cp r,r'])++"\n"
                                            else if checkMono r ev m
                                            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
-                                           else let Tm delt _ = delta (sign m) in
+                                           else let Tm _ _ = delta (sign m) in
                                                 "An appropriate reaction on this event is required."
                                            --     showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)
                                      )
                                    | m<-rd [m'|x<-mors r, m'<-[x,flp x], inline m', not (isIdent m')] -- TODO: include proofs that allow: isIdent m'
                                    , ev<-[Ins,Del]
                                    , r'<-[subst (m, actSem ev m (delta (sign m))) r]
-                                 , viols<-[conjNF (Cp r')]
+                        --        , viols<-[conjNF (Cp r')]
                                    , True ]  -- (isTrue.conjNF) (Fu[Cp r,r'])
                                   | r<-[hc| cs<-[allClauses rule], (_,hcs)<-cl_conjNF cs, hc<-hcs]
                                   ]
