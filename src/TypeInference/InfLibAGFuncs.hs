@@ -65,7 +65,7 @@ data RelDecl = RelDecl {dname::String, dtype::RelAlgType, ishomo::Bool} | IDecl 
 
 type InfType = Either RelAlgType TError
 type GlbType = RelAlgType --the most specific type (the type if all type decisions decide to infer the most specific concept)
-type AltList = Either [(RelAlgType,GlbType)] TError
+data AltList = AltList [(RelAlgType,GlbType)] | AltListError TError
 data ListOf = ListOfUnion | ListOfISect | NoListOf deriving(Eq)
 
 instance Show RelAlgMorph where
@@ -83,7 +83,7 @@ instance Show RelAlgObj where
 
 data TError =
    TErrorAmb ETitle [RelAlgType] -- the type of the root expression is ambiguous
-  |TErrorU ETitle  -- the source or target of the type of the root expression is the universe
+  |TErrorU ETitle InfTree -- the source or target of the type of the root expression is the universe
   |TErrorUC ETitle RelAlgExpr RelAlgExpr -- the composition is over the universe
   |TError0 ETitle RelAlgObj --the concept is not defined in isas or part of the type of any env_decls
   |TError1 ETitle RelAlgExpr --the relation expression is not defined in the env_decls
@@ -272,48 +272,141 @@ rdisa isas ((x,y):xs)
  | otherwise = ((x,y):(rdisa isas xs))
   where xy_genof_t_in_xs = (not.null) [()|(x',y')<-xs,isgeneral x x' isas, isgeneral y y' isas]
 -}
+
+alttypes :: AltList -> [(RelAlgType,GlbType)]
+alttypes (AltList xs) = xs -- [x|Left x<-xs] ++ [((a,a),(sa,sa))|Right (a,sa)<-xs]
+alttypes (AltListError{}) = []
+
+alterror :: AltList -> TError
+alterror (AltListError x) = x
+alterror _ = fatal 282 "only use alterror if there is an error"
+
 --the decision for a and b must also be made here
 --the decision for a and b expresses itself in the type, and thus the alternatives, of the intersection/union
 --partiality is checked on the glb_a and glb_b
-alts_ababab :: ListOf -> (RelAlgExpr,[RelAlgExpr]) -> Isa -> AltList -> AltList -> AltList
+--IF there is not an error in hdalts or tlalts, but there will be one in hd.rtype or tl.rtype, then this is handled when calculating lhs.rtype.
+alts_ababab :: InfRuleType -> (RelAlgExpr,[RelAlgExpr]) -> Isa -> AltList -> AltList -> AltList
 alts_ababab _ (_,[]) _ ts _ = ts --function pattern needed for recursion while we defined union/intersection lists
-alts_ababab lo (hd,tl) isas (Left ts) (Left ts') = 
-   if null alts
-   then Right$TError2 "Incompatible comparison" (hd,map snd ts) (tl,map snd ts')  
-   else Left alts
+alts_ababab _ _ _ _ (AltListError err)  = AltListError err
+alts_ababab _ _ _ (AltListError err) _  = AltListError err
+alts_ababab rt (hd,tl) isas hdalts tlalts 
+--  |ishomoababab && not(null altsh) = AltListH altsh
+  |not(null alts) = AltList alts
+  |otherwise = AltListError$TError2 "Incompatible comparison" (hd,map snd (alttypes hdalts)) (tl,map snd (alttypes tlalts))  
    where
-   alts = [fatal 282 "While sasb and sasb' are isarelated and the (Universe,Universe) is pushed on final_infer_ababab it should not be possible to have errors in alts."|(Right x,_)<-alts'] ++ [(t,st)|(Left t,st)<-alts']
-   alts' :: [(InfType,GlbType)]
-   alts' = {-rdisa isas-} 
-          [(alt,(specific sa sa' isas,specific sb sb' isas))
-          |((a,b),(sa,sb))<-ts
-          ,((a',b'),(sa',sb'))<-ts'
-          ,isarelated sa sa' isas, isarelated sb sb' isas  --check if there is a glb_a and glb_b
-          --final_infer_ababab :: Isa -> InfRuleType -> nothing pushed yet, Left (Universe,Universe) 
-          --      -> for every alt of the head (AltList) -> for every alt of the tail (InfType) -> InfType 
-          ,let alt=final_infer_ababab isas (inferencerule_ababab lo hd tl) (Left (Universe,Universe)) (Left [((a,b),(sa,sb))]) (Left (a',b')) 
+   --if one of the subexpressions is homogeneous then so is the ababab expression
+--   ishomoababab = ishomoalt hdalts || ishomoalt tlalts
+   alts :: [(RelAlgType,GlbType)]
+   alts = {-rdisa isas-} 
+          [(alt,salt)
+          |((a,b),(sa,sb))<-alttypes hdalts
+          ,((a',b'),(sa',sb'))<-alttypes tlalts
+          --check if there is a glb_a and glb_b, i.e. infer_ababab can be applied
+          ,isarelated sa sa' isas, isarelated sb sb' isas  
+          --everything that can be inferred will be added to alts', keeping track of the most specific type 
+          ,let alt=infer_ababab isas rt (a,b) (a',b') 
+          ,let salt = (specific sa sa' isas,specific sb sb' isas)
           ]
-alts_ababab _ _ _ _ (Right err)  = Right err
-alts_ababab _ _ _ (Right err) _  = Right err
+{-   altslh :: [(RelAlgTypeH,GlbTypeH)]
+-   altslh = {-rdisa isas-} 
+-            [(alt,salt)
+-            |Right(a,sa)<-hdalts
+-            ,Left ((a',b'),(sa',sb'))<-tlalts
+-            --check if there is a glb_a and glb_b, i.e. infer_ababab can be applied
+-            ,isarelated sa sa' isas, isarelated sa sb' isas  
+-            --everything that can be inferred will be added to alts', keeping track of the most specific type 
+-            ,let (alta,altb)=infer_ababab isas (inferencerule_ababab lo hd tl) (a,a) (a',b')
+-            ,let salt = specific sa (specific sa' sb' isas) isas 
+-            ]
+-   altsh :: [(RelAlgTypeH,GlbTypeH)]
+-   altsh = {-rdisa isas-} 
+-          [(alt,salt)
+-          |((a,b),(sa,sb))<-alttypes hdalts
+-          ,((a',b'),(sa',sb'))<-alttypes tlalts
+-          --check if there is a glb_h, i.e. infer_ababab can be applied
+-          ,isarelated sa sa' isas, isarelated sb sb' isas  
+-          ,isarelated sa sb' isas, isarelated sb sa' isas
+-          --everything that can be inferred will be added to alts', keeping track of the most specific type 
+-          ,let ah = specific a b isas
+-          ,let ah' = specific a' b' isas
+-          ,let alt=infer_ababab isas (inferencerule_ababab lo hd tl) ah ah'
+-          ,let salt = specific (specific sa sa' isas) (specific sb sb' isas) isas 
+-          ] 
+-}
+
 
 --the decision for b is not made yet, only the partiality of the composition/addition is checked
 --the decision for b does not express itself in the type of the composition/addition expression
 --only in the calculated relation set of the expression
-alts_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> AltList -> AltList -> AltList
-alts_abbcac (l,r) isas (Left lts) (Left rts) = 
-   if null alts 
-   then Right$TError3 "Incompatible composition" (l,map snd lts) (r,map snd rts)
-   else Left alts
-   where alts = {-rdisa isas-} 
-                [((a,c),(sa,sc))|((a,b),(sa,sb))<-lts
-                                ,((b',c),(sb',sc))<-rts
-                                , isarelated sb sb' isas] --check if there is a glb_b
-alts_abbcac _ _ _ (Right err)  = Right err
-alts_abbcac _ _ (Right err) _  = Right err
+alts_abbcac :: InfRuleType -> (RelAlgExpr,RelAlgExpr) -> Isa -> AltList -> AltList -> AltList
+alts_abbcac _ _ _ _ (AltListError err)  = AltListError err
+alts_abbcac _ _ _ (AltListError err) _  = AltListError err
+alts_abbcac rt (l,r) isas lalts ralts 
+--  |ishomoabbcac && not(null altsh) = AltListH altsh
+  |not(null alts) = AltList alts
+  |otherwise = AltListError abbcacerror
+   where 
+   --if both of the subexpressions are homogeneous then so is the abbcac expression
+--   ishomoabbcac = ishomoalt lalts & ishomoalt ralts
+--   altsh = [(a,sa)|((a,a'),(sa,sa'))<-alts,a==a',sa==sa']
+--iedere (a,c) met hooguit één b /= Universe, dat is een alternatief
+   alts = [((a,c),(sa,sc))|((a,c),(sa,sc),b)<-rawalts,nootherb (a,c,b)]
+   nootherb (a,c,b) =  null [b'|((a',c'),_,b')<-rawalts,a==a',c==c',b/=b']
+--Als ik geen alternatief heb dan heb ik een fout
+-- OF een lijst
+--     + iedere (a,c) met meerdere b /= Universe <- Ambigue
+--     + iedere (a,c) met hooguit één b==Universe <- compositie over Universe
+-- OF als geen (a,c) i.e. null rawalts <- incompatibel  r s
+   abbcacerror = if null rawalts 
+                 then TError3 "Incompatible composition" (l,map snd (alttypes lalts)) (r,map snd (alttypes ralts))
+                 else if unierror
+                      then TErrorUC "Composition over the universal set" l r
+                      else TError4 "Ambiguous composition" (l,map fst (alttypes lalts)) (r,map fst (alttypes ralts)) ambb 
+   ambb = [b|b<-errorbs,b/=Universe]
+   unierror = not(null errorbs) && null ambb
+   errorbs = [b|((a',c'),_,b)<-rawalts,a==a',c==c']
+        where ((a,c),_,_) = head rawalts    --TODO -> one error with all ambiguous and universe errors instead of just one
+   rawalts = {-rdisa isas-} 
+             [((a,c),(sa,sc),altb)
+             |((a,b),(sa,sb))<-alttypes lalts
+             ,((b',c),(sb',sc))<-alttypes ralts
+             --check if there is a glb_b, i.e. infer_abbcac can be applied
+             ,isarelated sb sb' isas
+             ,let altb = infer_abbcac_b isas rt b b'] 
+--    | ishomoalt lalts & ishomoalt ralts
+--        =  {-rdisa isas-} 
+--           [((alta,alta),(salta,salta),alta)
+--           |(a,sa)<-(\AltListH xs->xs) lalts
+--           ,(a',sa')<-(\AltListH xs->xs) ralts
+--           --check if there is a glb_a, i.e. infer_abbcac can be applied
+--           ,isarelated sa sa' isas 
+--           ,let alta = infer_abbcac isas (inferencerule_abbcac orig) a a'
+--           ,let salta = specific sa sa' isas] 
+--    | ishomoalt lalts
+--         = {-rdisa isas-} 
+--           [((altb,c),(saltb,sc),altb)
+--           |(b,sb)<-(\AltListH xs->xs) lalts
+--           ,((b',c),(sb',sc))<-alttypes ralts
+--           --check if there is a glb_b, i.e. infer_abbcac can be applied
+--           ,isarelated sb sb' isas
+--           ,let altb = infer_abbcac isas (inferencerule_abbcac orig) b b'
+--           ,let saltb = specific sb sb' isas]
+--    | ishomoalt ralts
+--         = {-rdisa isas-} 
+--           [((a,altb),(sa,saltb),altb)
+--           |((a,b),(sa,sb))<-alttypes lalts
+--           ,(b',sb')<-(\AltListH xs->xs) ralts
+--           --check if there is a glb_b, i.e. infer_abbcac can be applied
+--           ,isarelated sb sb' isas
+--           ,let altb = infer_abbcac isas (inferencerule_abbcac orig) b b'
+--           ,let saltb = specific sb sb' isas]
+--    | otherwise
+
+--infer_abbcac_b :: Isa -> InfRuleType -> RelAlgObj -> RelAlgObj -> RelAlgObj
 
 alts_abba :: AltList -> AltList
-alts_abba (Left ts) = Left [((b,a),(sb,sa))|((a,b),(sa,sb))<-ts]
-alts_abba err = err
+alts_abba (AltList ts) = AltList [((b,a),(sb,sa))|((a,b),(sa,sb))<-ts]
+alts_abba err = err 
 
 --(article) -> D-Rel-c + D-RelH-c
 alts_compl :: RelAlgExpr -> AltList -> AltList
@@ -324,10 +417,10 @@ alts_compl me xs = case me of
 alts_mph :: [RelDecl] -> Isa -> RelAlgExpr -> AltList
 alts_mph reldecls isas me = 
    if null alts
-   then Right$TError1 "Relation undefined" me
+   then AltListError$TError1 "Relation undefined" me
    else if null declerrs
-        then Left [x|Left x<-alts]
-        else Right (head declerrs)
+        then AltList [x|Left x<-alts]
+        else AltListError (head declerrs)
    where 
    checkhomo d = if not(ishomo d) || a==b --REMARK -> a==b and not a `isarelated` b
                  then Left (a,b)
@@ -352,7 +445,7 @@ alts_mph reldecls isas me =
                                            |Left (c1,c2)<-alts' nm, isarelated c1 ua isas, isarelated c2 ub isas]
      --(article) -> D-Id + D-V
      --constant relations (I and V) have no declaration, use there type as alternative if concepts are defined
-     Morph _ (ua,ub) _ -> [Right$TError0 "Concept undefined" c|c<-[ua,ub],not(isdef c)]
+     Morph m (ua,ub) _ -> [Right$TError0 "Concept undefined" c|c<-[ua,ub],not(isdef c)]
                           ++ [Left ((ua,ub),(ua,ub))|isdef ua, isdef ub]
            where      
            --(article) -> D-Cpt-Rel + D-Cpt-Isa
@@ -373,39 +466,35 @@ alts_mph reldecls isas me =
 --other type objects must be inferred from the rtype of its subexpressions
 --------------------------------------------------------------------------------
 --DESCR -> given the type of the expression, push a type on the direct subexpressions
-push_type_ababab,push_type_abba,push_type_abab :: RelAlgType -> RelAlgType
-push_type_ababab t = t
+push_type_abba :: RelAlgType -> RelAlgType
 push_type_abba (x,y) = (y,x)
-push_type_abab t = t
 
+{-
 is_type_error :: InfType -> Bool
 is_type_error (Right _) = True
 is_type_error _ = False
 thetype :: InfType -> RelAlgType
 thetype (Left x) = x
 thetype (Right _) = fatal 356 "no Left, check is_type_error first before using function thetype."
+-}
 
-push_type_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> InfRuleType -> RelAlgType -> AltList -> AltList -> Either (RelAlgType,RelAlgType) TError
-push_type_abbcac _ _ _ _ _ (Left []) = fatal 329 "the AltList cannot be Left []."
-push_type_abbcac _ _ _ _ (Left []) _ = fatal 330 "the AltList cannot be Left []."
-push_type_abbcac _ _ _ _ _ (Right err) = Right err --error in rsub
-push_type_abbcac _ _ _ _ (Right err) _ = Right err --error in lsub
-push_type_abbcac (l,r) isas irule (inh_a,inh_c) (Left lalts) (Left ralts) = 
-  if length final_t==1
-       --REMARK: compositions are inferred from the right resulting in unnecessary composition ambiguities 
-       --        p.e. r;I;V results in ambiguity of composition I;V while I;V is inferred to push down a type and not (r;I);V
-  then if notuniverse then Left (fst(head final_t)) else Right$TErrorUC "Composition over the universal set" l r
-  else if null final_t
-            --this should not be possible while there are no user-defined type on expressions, only on relations
-       then fatal 338 "the expression has a type error, there cannot be a type for this composition expression."
-       else Right$TError4 "Ambiguous composition" (l,map fst lalts) (r,map fst ralts) [b|(((_,b),_),_)<-final_t]
-  where  --final_t is like alts_abbcac only with an inferred b, given the inherited type
-  notuniverse = snd(head final_t)
-  final_t = [(infer_t (not_universe inh_a a, b) (b',not_universe inh_c c),not(b==Universe && b'==Universe))
-            |((a,b),_)<-lalts,((b',c),_)<-ralts, isarelated a inh_a isas, isarelated c inh_c isas, isarelated b b' isas]
-  infer_t (a,b) (b',c)  = ( (a,final_b) , (final_b ,c) )
-    where final_b = infer_abbcac_b isas irule b b' 
-
+push_type_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> InfRuleType -> RelAlgType -> AltList -> AltList -> RelAlgObj
+push_type_abbcac _ _ _ _ _ (AltListError err) = fatal 478 "error should have been detected earlier"
+push_type_abbcac _ _ _ _ (AltListError err) _ = fatal 479 "error should have been detected earlier"
+push_type_abbcac (l,r) isas rt (inh_a,inh_c) lalts ralts = 
+  if length bs==1
+  then head bs
+  else fatal 485 "there must be only one b, because alts_abbcbc should have precalculated if there is only one b, otherwise it should have returned an error"
+  where
+  --filter the alternatives given the pushed type, GlbTypes are not needed anymore
+  --there must be only one b, because alts_abbcbc has precalculated if there is only one b, otherwise it returned an error
+  flalts = [(a,b)|((a,b),_)<-alttypes lalts,isarelated a inh_a isas]
+  fralts = [(b,c)|((b,c),_)<-alttypes ralts,isarelated c inh_c isas]
+  bs = [infer_abbcac_b isas rt b b' |(a,b)<-flalts,(b',c)<-fralts ,isarelated b b' isas] 
+--       --TODO CHECK THIS STATEMENT: compositions are inferred from the right resulting in unnecessary composition ambiguities 
+--       --        p.e. r;I;V results in ambiguity of composition I;V while I;V is inferred to push down a type and not (r;I);V
+ 
+{-
 lefttype :: Either (RelAlgType,RelAlgType) TError -> RelAlgType
 lefttype (Left (x,_)) = x
 lefttype (Right _) = fatal 348 "no Left, check is_b_error first before using function lefttype."
@@ -420,7 +509,7 @@ b_error _ = fatal 433 "no Right, check is_b_error first before using function b_
 is_b_error :: Either (RelAlgType,RelAlgType) TError -> Bool 
 is_b_error (Right _) = True
 is_b_error _ = False
-
+-}
 
 ----------------------------------------------------------------------------
 --synthesize rtype and env_mph
@@ -439,92 +528,44 @@ is_b_error _ = False
 --discovered during checking of the possible alternatives of the expression.
 ----------------------------------------------------------------------------
 
-final_infer_mph :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> (InfType,InfTree)
-final_infer_mph _ _ _ _ (Left []) = fatal 377 "the AltList cannot be Left []."
-final_infer_mph _ _ _ _ (Right err) = (Right err,fatal 371 "TODO: There is no inference tree in case of a type error.")
-final_infer_mph reldecls me isas (inh_a,inh_b) (Left alts) = final_t
+final_infer_mph :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> (RelAlgType,InfTree,RelDecl)
+final_infer_mph _ _ _ _ (AltListError err) = fatal 532 "error should have been detected earlier"
+final_infer_mph reldecls me isas (inh_a,inh_b) alts = ((fa,fb),tr,d) 
    where
-   alts' = [(a,b)|((a,b),_)<-alts, isarelated a inh_a isas && isarelated b inh_b isas]
-   final_t = if null alts' 
-             then fatal 383 "the expression has a type error, there cannot be a type for this relation."
-                  --this should not be possible while there are no user-defined type on expressions, only on relations
-             else if length alts'==1 
-                  then check_infer_homo (not_universe inh_a (fst$head alts')
-                                        ,not_universe inh_b (snd$head alts')) 
-                  else fatal 388 $ "the expression has a type error, there cannot be a type for this relation."
-                                   ++ show (alts',alts,me,(inh_a,inh_b))
-   check_infer_homo (a,b) 
-       | case me of
-          (Morph (DRel{}) _ _)->ishomo d
-          (Morph IdRel _ _)->True
-          _ -> False
-                   = if isarelated a b isas
-                     then (Left (specific a b isas,specific a b isas)
-                          ,case d of
-                              RelDecl{} -> InfRel D_rel_h (fst(head alts'),snd(head alts')) d i --in the inftree I want to see the declared type
-                              IDecl -> InfRel D_id (specific a b isas,specific a b isas) IDecl i
-                              VDecl -> fatal 463 "The universal relation does not have a homogeneous type"
-                          )
-                     else (Right$TError6 "Type is not homogeneous" (a,b) me d 
-                          ,fatal 466 "TODO: There is no inference tree in case of a type error.")
-       | otherwise = (Left (a,b)
-                     ,case d of
-                         RelDecl{} -> InfRel D_rel (fst(head alts'),snd(head alts')) d i --in the inftree I want to see the declared type
-                         IDecl -> fatal 470 "This should be a case of a homogeneous type i.e. (Morph IdRel _ _)"
-                         VDecl -> InfRel D_v (a,b) VDecl i
-                     )
-       where d = thedecl reldecls isas me (Left(a,b))
-             i = case me of (Morph _ _ i') -> i'; _ -> fatal 434 "This is not a simple expression.";
+   --filter the alternatives given the pushed type, GlbTypes are not needed anymore
+   falts = [(a,b)|((a,b),_)<-alttypes alts, isarelated a inh_a isas, isarelated b inh_b isas]
+   (fa,fb) = if length falts==1
+             then (not_universe (fst$head falts) inh_a
+                  ,not_universe (snd$head falts) inh_b) --the declared/userdefined type /= Universe
+             else fatal 540 $ "error should have been detected earlier"
+   d = if null ds
+       then fatal 405 "the expression has a type error, there is no declaration for this relation."
+       else head ds --one declaration is enough, there may be more...
+   ds = case me of
+        Morph (DRel nm) _ _ -> [d|d@(RelDecl{dtype=(c1,c2)})<-reldecls
+                                 ,dname d==nm, isarelated fa c1 isas, isarelated fb c2 isas]
+        Morph IdRel _ _ -> [IDecl]
+        Morph VRel _ _ -> [VDecl]
+        _ -> fatal 415 "function thedecl expects relation expressions only."
+   tr = case d of
+            RelDecl{} -> InfRel D_rel (fa,fb) d i 
+            IDecl -> InfRel D_id (fa,fb) IDecl i
+            VDecl -> InfRel D_v (fa,fb) VDecl i
+        where 
+        i = case me of Morph _ _ i' -> i'; _ -> fatal 434 "This is not a simple expression.";
    
-
---DESCR -> remark that the expression must have a type (no type error) to be able to get the declaration of a relation
-thedecl :: [RelDecl] -> Isa -> RelAlgExpr -> InfType -> RelDecl
-thedecl _ _ _ (Right _) = fatal 402 "the expression has a type error, there is no declaration for this relation."
-thedecl reldecls isas me (Left(a,b)) = 
-   if null alts
-   then fatal 405 "the expression has a type error, there is no declaration for this relation."
-   else if length alts==1   
-        then head alts
-        else fatal 408 $ "the expression has a type error, there cannot be more than one declaration for this relation."
-                          ++ show (alts,me,(a,b))
-   where 
-   alts = case me of
-     Morph (DRel nm) _ _ -> [d|d@(RelDecl{dtype=(c1,c2)})<-reldecls
-                              , dname d==nm, isarelated a c1 isas, isarelated b c2 isas]
-     Morph IdRel _ _ -> [IDecl]
-     Morph VRel _ _ -> [VDecl]
-     _ -> fatal 415 "function thedecl expects relation expressions only."
-
+{-
 final_infer_conv :: InfType -> InfType
 final_infer_conv (Left (a,b)) = Left (b,a)
 final_infer_conv err = err
 
 final_infer_abbcac:: Isa->InfType->InfType->InfType
 final_infer_abbcac isas (Left (a,b)) (Left (b',c))
-  | isarelated b b' isas = Left (a,c)
+  | isarelated b b' isas && not(b==Universe && b'==Universe) = Left (a,c)
   | otherwise = fatal 424 "the expression has a type error, there cannot be a type for this composition expression."
 final_infer_abbcac _ _ (Right err)  = (Right err)
 final_infer_abbcac _ (Right err) _  = (Right err)
-
---the @lhs.pushed_type is processed in the rtype of the most right conjunct/disjunct
-final_infer_ababab :: Isa -> InfRuleType -> InfType -> AltList -> InfType -> InfType
-final_infer_ababab _ _ _ (Right err) _ = Right err --error in the heads alternatives
-final_infer_ababab _ _ _ _ (Right err) = Right err --error in the tail
-final_infer_ababab _ _ (Right err) _ _= Right err --error in the pushed type
---final_infer_ababab isas Union_mix (Left (a,b)) (Left (a',b')) = error (show (a,b,a',b'))
-final_infer_ababab isas irule (Left (inh_a,inh_b)) (Left hdalts) (Left (a',b'))
-   = if length alts'==1   
-     then head alts'
-     else fatal 483 $ "the ababab expression has a type error."
-                          ++ show (hdalts,(a',b'),irule,(inh_a,inh_b))
-   where alts' = [Left$infer_ababab isas irule (a,b) (a',b')
-                    |((a,b),_)<-hdalts
-                    , isarelated a a' isas, isarelated b b' isas
-                    , isarelated a inh_a isas, isarelated b inh_b isas
-                    , isarelated a' inh_a isas, isarelated b' inh_b isas]
- --  | isarelated a a' isas && isarelated b b' isas = Left$infer_ababab isas irule (a,b) (a',b') 
- --  | otherwise = fatal 434 "or there should be an error, or only one matching alternative"
-
+-}
 
 ----------------------------------------------------------------------------
 --Normalise

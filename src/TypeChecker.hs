@@ -164,7 +164,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   where
   --DESCR -> use this function on all expressions
   enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
-  enrich_expr = infertype_and_populate popuMphDecl isas (rel_declarations ctxs)
+  enrich_expr = infertype_and_populate popuMphDecl isas (rel_declarations ctxs) (Anything,Anything)
   isas = isaRels (allCtxCpts ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs

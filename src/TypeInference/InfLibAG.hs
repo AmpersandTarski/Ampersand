@@ -19,30 +19,39 @@ module TypeInference.InfLibAG
 
 import TypeInference.InfLibAGFuncs
 
-infer:: [RelDecl] -> Isa -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError
-infer reldecls isas root_expr =
+infer:: [RelDecl] -> Isa -> RelAlgType -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError
+infer reldecls isas trytype root_expr =
   case rtype of
     Left (x,y) -> if x==Universe 
-                  then Right$TErrorU "The source of the expression is the universal set" 
+                  then Right$TErrorU "The source of the expression is the universal set" inftree 
                   else if  y==Universe
-                       then Right$TErrorU "The target of the expression is the universal set" 
-                       else Left ((x,y), env_mph, inftree)
+                       then Right$TErrorU "The target of the expression is the universal set" inftree
+                       else if not(null homoerrors)
+                            then head homoerrors
+                            else Left ((x,y), env_mph, inftree)
     Right err -> Right err
   where
   inftree = inftree_Syn_RelAlgExpr (agtree (head alltypes))
+  homoerrors = [Right$TError6 "Type is not homogeneous" (a,b) m d
+               |(m,(a,b),d)<-env_mph
+               ,case d of 
+                    IDecl->True
+                    RelDecl{} -> ishomo d
+                    _ -> False
+               ,not(isarelated a b isas)] --TODO
   env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (agtree (head alltypes))]
   env_in = env_in_Syn_RelAlgExpr (agtree (Universe,Universe))
   rtype = if length alltypes==1 
           then rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
           else if null alltypes
                --there is a type error in env_in
-               then (\(Right env_in_err) -> Right env_in_err) env_in
+               then case env_in of 
+                      AltListError env_in_err -> Right env_in_err
+                      _ -> fatal 172 "the AltList cannot be []."
                else Right$TErrorAmb "Ambiguous type" alltypes
-  alltypes = case env_in of
-     Left xs -> if null xs 
-                then fatal 214 "the AltList cannot be Left []."
-                else map fst xs 
-     _ -> []
+  alltypes =  if trytype==(Universe,Universe) 
+              then map fst (alttypes env_in) 
+              else [t|t<-map fst (alttypes env_in),t==trytype]
   agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
 
 ----------------------------------------------------------------------------
@@ -153,7 +162,6 @@ sem_ISectList_Cons hd_ tl_  =
        _lhsIlistof
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
-              _hdOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
@@ -161,6 +169,7 @@ sem_ISectList_Cons hd_ tl_  =
               _hdOenv_decls :: ([RelDecl])
               _hdOenv_isa :: Isa
               _hdOlistof :: ListOf
+              _hdOtype_down :: RelAlgType
               _tlOenv_decls :: ([RelDecl])
               _tlOenv_isa :: Isa
               _tlOlistof :: ListOf
@@ -178,21 +187,19 @@ sem_ISectList_Cons hd_ tl_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_ababab _lhsIlistof (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
-              _tp =
-                  if null _tlIme
-                  then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
-                                          (Left _lhsItype_down) _hdIenv_in (Left _lhsItype_down)
-                  else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
-                                          (Left _lhsItype_down) _hdIenv_in _tlIrtype
-              _hdOtype_down =
-                  if not(is_type_error _tp) then thetype _tp else fatal 55 "There should be a ababab error"
+                  alts_ababab _rt (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
+              _rt =
+                  inferencerule_ababab _lhsIlistof _hdIme _tlIme
               _lhsOrtype =
                   _tp
+              _tp =
+                  if (not.null)(alttypes _env)
+                  then Left _lhsItype_down
+                  else Right(alterror _env)
               _lhsOenv_mph =
                   _hdIenv_mph ++ _tlIenv_mph
               _hdax =
-                  headofaxiomlist (inferencerule_ababab _lhsIlistof _hdIme _tlIme) _tp _hdIinftree
+                  headofaxiomlist _rt _tp _hdIinftree
               _lhsOinftree =
                   if null _tlIme
                   then _hdax
@@ -207,6 +214,8 @@ sem_ISectList_Cons hd_ tl_  =
                   _lhsIenv_isa
               _hdOlistof =
                   _lhsIlistof
+              _hdOtype_down =
+                  _lhsItype_down
               _tlOenv_decls =
                   _lhsIenv_decls
               _tlOenv_isa =
@@ -232,7 +241,7 @@ sem_ISectList_Nil  =
               _lhsOinftree :: InfTree
               _lhsOme :: ISectList
               _lhsOenv_in =
-                  Left []
+                  AltList []
               _lhsOrtype =
                   fatal 45 "undefined rtype on Nil of ISect-/UnionList"
               _lhsOenv_mph =
@@ -315,29 +324,31 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
-              _t =
-                  push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
+                  alts_abbcac _rt (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
+              _rt =
+                  inferencerule_abbcac _me
               __tup1 =
-                  _ltp
-              (_,_cb) =
+                  _lhsItype_down
+              (_a,_) =
                   __tup1
+              (_,_c) =
+                  __tup1
+              _b =
+                  push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _rt _lhsItype_down _lsubIenv_in _rsubIenv_in
               _lsubOtype_down =
-                  _ltp
-              _ltp =
-                  if not(is_b_error _t) then lefttype _t else fatal 65 "There should be an ambiguous b error"
+                  (_a,_b)
               _rsubOtype_down =
-                  if not(is_b_error _t) then righttype _t else fatal 66 "There should be an ambiguous b error"
+                  (_b,_c)
               _lhsOrtype =
                   _tp
               _tp =
-                  if not(is_b_error _t)
-                  then final_infer_abbcac _lhsIenv_isa _lsubIrtype _rsubIrtype
-                  else Right(b_error _t)
+                  if (not.null)(alttypes _env)
+                  then Left(_a,_c)
+                  else Right(alterror _env)
               _lhsOenv_mph =
                   _lsubIenv_mph ++ _rsubIenv_mph
               _lhsOinftree =
-                  InfExprs (inferencerule_abbcac _me) (inferred _tp,_cb) [_lsubIinftree,_rsubIinftree]
+                  InfExprs _rt (inferred _tp,_b) [_lsubIinftree,_rsubIinftree]
               _me =
                   Comp _lsubIme _rsubIme
               _lhsOme =
@@ -367,7 +378,6 @@ sem_RelAlgExpr_Compl sub_  =
        _lhsIlistof
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
-              _subOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
@@ -375,6 +385,7 @@ sem_RelAlgExpr_Compl sub_  =
               _subOenv_decls :: ([RelDecl])
               _subOenv_isa :: Isa
               _subOlistof :: ListOf
+              _subOtype_down :: RelAlgType
               _subIenv_in :: AltList
               _subIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _subIinftree :: InfTree
@@ -382,8 +393,6 @@ sem_RelAlgExpr_Compl sub_  =
               _subIrtype :: InfType
               _lhsOenv_in =
                   alts_compl _me _subIenv_in
-              _subOtype_down =
-                  push_type_abab _lhsItype_down
               _tp =
                   case _me of
                      Compl (Morph{}) -> _subIrtype
@@ -404,6 +413,8 @@ sem_RelAlgExpr_Compl sub_  =
                   _lhsIenv_isa
               _subOlistof =
                   _lhsIlistof
+              _subOtype_down =
+                  _lhsItype_down
               ( _subIenv_in,_subIenv_mph,_subIinftree,_subIme,_subIrtype) =
                   (sub_ _subOenv_decls _subOenv_isa _subOlistof _subOtype_down )
           in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
@@ -435,7 +446,7 @@ sem_RelAlgExpr_Conv sub_  =
               _lhsOrtype =
                   _tp
               _tp =
-                  final_infer_conv _subIrtype
+                  Left _lhsItype_down
               _lhsOenv_mph =
                   _subIenv_mph
               _lhsOinftree =
@@ -526,13 +537,13 @@ sem_RelAlgExpr_ISect sublst_  =
        _lhsItype_down ->
          (let _sublstOlistof :: ListOf
               _lhsOenv_in :: AltList
-              _sublstOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _sublstOenv_decls :: ([RelDecl])
               _sublstOenv_isa :: Isa
+              _sublstOtype_down :: RelAlgType
               _sublstIenv_in :: AltList
               _sublstIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _sublstIinftree :: InfTree
@@ -544,8 +555,6 @@ sem_RelAlgExpr_ISect sublst_  =
                   _env
               _env =
                   _sublstIenv_in
-              _sublstOtype_down =
-                  push_type_ababab _lhsItype_down
               _lhsOrtype =
                   _sublstIrtype
               _lhsOenv_mph =
@@ -560,6 +569,8 @@ sem_RelAlgExpr_ISect sublst_  =
                   _lhsIenv_decls
               _sublstOenv_isa =
                   _lhsIenv_isa
+              _sublstOtype_down =
+                  _lhsItype_down
               ( _sublstIenv_in,_sublstIenv_mph,_sublstIinftree,_sublstIme,_sublstIrtype) =
                   (sublst_ _sublstOenv_decls _sublstOenv_isa _sublstOlistof _sublstOtype_down )
           in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
@@ -647,14 +658,18 @@ sem_RelAlgExpr_Morph rel_ usertype_ locid_  =
                   alts_mph _lhsIenv_decls _lhsIenv_isa _me
               __tup2 =
                   final_infer_mph _lhsIenv_decls _me _lhsIenv_isa _lhsItype_down _env
-              (_t,_) =
+              (_t,_,_) =
                   __tup2
-              (_,_tree) =
+              (_,_tree,_) =
+                  __tup2
+              (_,_,_d) =
                   __tup2
               _lhsOrtype =
-                  _t
+                  if (not.null)(alttypes _env)
+                  then Left _t
+                  else Right(alterror _env)
               _lhsOenv_mph =
-                  [( _me, _t, thedecl _lhsIenv_decls _lhsIenv_isa _me _t)]
+                  [( _me, Left _t, _d                                               )]
               _lhsOinftree =
                   _tree
               _me =
@@ -696,29 +711,31 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
-              _t =
-                  push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa (inferencerule_abbcac _me) _lhsItype_down _lsubIenv_in _rsubIenv_in
+                  alts_abbcac _rt (_lsubIme,_rsubIme) _lhsIenv_isa _lsubIenv_in _rsubIenv_in
+              _rt =
+                  inferencerule_abbcac _me
               __tup3 =
-                  _ltp
-              (_,_cb) =
+                  _lhsItype_down
+              (_a,_) =
                   __tup3
+              (_,_c) =
+                  __tup3
+              _b =
+                  push_type_abbcac (_lsubIme,_rsubIme) _lhsIenv_isa _rt _lhsItype_down _lsubIenv_in _rsubIenv_in
               _lsubOtype_down =
-                  _ltp
-              _ltp =
-                  if not(is_b_error _t) then lefttype _t else fatal 65 "There should be an ambiguous b error"
+                  (_a,_b)
               _rsubOtype_down =
-                  if not(is_b_error _t) then righttype _t else fatal 66 "There should be an ambiguous b error"
+                  (_b,_c)
               _lhsOrtype =
                   _tp
               _tp =
-                  if not(is_b_error _t)
-                  then final_infer_abbcac _lhsIenv_isa _lsubIrtype _rsubIrtype
-                  else Right(b_error _t)
+                  if (not.null)(alttypes _env)
+                  then Left(_a,_c)
+                  else Right(alterror _env)
               _lhsOenv_mph =
                   _lsubIenv_mph ++ _rsubIenv_mph
               _lhsOinftree =
-                  InfExprs (inferencerule_abbcac _me) (inferred _tp,_cb) [_lsubIinftree,_rsubIinftree]
+                  InfExprs _rt (inferred _tp,_b) [_lsubIinftree,_rsubIinftree]
               _me =
                   RAdd _lsubIme _rsubIme
               _lhsOme =
@@ -749,13 +766,13 @@ sem_RelAlgExpr_Union sublst_  =
        _lhsItype_down ->
          (let _sublstOlistof :: ListOf
               _lhsOenv_in :: AltList
-              _sublstOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _sublstOenv_decls :: ([RelDecl])
               _sublstOenv_isa :: Isa
+              _sublstOtype_down :: RelAlgType
               _sublstIenv_in :: AltList
               _sublstIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _sublstIinftree :: InfTree
@@ -767,8 +784,6 @@ sem_RelAlgExpr_Union sublst_  =
                   _env
               _env =
                   _sublstIenv_in
-              _sublstOtype_down =
-                  push_type_ababab _lhsItype_down
               _lhsOrtype =
                   _sublstIrtype
               _lhsOenv_mph =
@@ -783,6 +798,8 @@ sem_RelAlgExpr_Union sublst_  =
                   _lhsIenv_decls
               _sublstOenv_isa =
                   _lhsIenv_isa
+              _sublstOtype_down =
+                  _lhsItype_down
               ( _sublstIenv_in,_sublstIenv_mph,_sublstIinftree,_sublstIme,_sublstIrtype) =
                   (sublst_ _sublstOenv_decls _sublstOenv_isa _sublstOlistof _sublstOtype_down )
           in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
@@ -816,7 +833,6 @@ sem_UnionList_Cons hd_ tl_  =
        _lhsIlistof
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
-              _hdOtype_down :: RelAlgType
               _lhsOrtype :: InfType
               _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
@@ -824,6 +840,7 @@ sem_UnionList_Cons hd_ tl_  =
               _hdOenv_decls :: ([RelDecl])
               _hdOenv_isa :: Isa
               _hdOlistof :: ListOf
+              _hdOtype_down :: RelAlgType
               _tlOenv_decls :: ([RelDecl])
               _tlOenv_isa :: Isa
               _tlOlistof :: ListOf
@@ -841,21 +858,19 @@ sem_UnionList_Cons hd_ tl_  =
               _lhsOenv_in =
                   _env
               _env =
-                  alts_ababab _lhsIlistof (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
-              _tp =
-                  if null _tlIme
-                  then final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme [])
-                                          (Left _lhsItype_down) _hdIenv_in (Left _lhsItype_down)
-                  else final_infer_ababab _lhsIenv_isa (inferencerule_ababab _lhsIlistof _hdIme _tlIme)
-                                          (Left _lhsItype_down) _hdIenv_in _tlIrtype
-              _hdOtype_down =
-                  if not(is_type_error _tp) then thetype _tp else fatal 55 "There should be a ababab error"
+                  alts_ababab _rt (_hdIme,_tlIme) _lhsIenv_isa _hdIenv_in _tlIenv_in
+              _rt =
+                  inferencerule_ababab _lhsIlistof _hdIme _tlIme
               _lhsOrtype =
                   _tp
+              _tp =
+                  if (not.null)(alttypes _env)
+                  then Left _lhsItype_down
+                  else Right(alterror _env)
               _lhsOenv_mph =
                   _hdIenv_mph ++ _tlIenv_mph
               _hdax =
-                  headofaxiomlist (inferencerule_ababab _lhsIlistof _hdIme _tlIme) _tp _hdIinftree
+                  headofaxiomlist _rt _tp _hdIinftree
               _lhsOinftree =
                   if null _tlIme
                   then _hdax
@@ -870,6 +885,8 @@ sem_UnionList_Cons hd_ tl_  =
                   _lhsIenv_isa
               _hdOlistof =
                   _lhsIlistof
+              _hdOtype_down =
+                  _lhsItype_down
               _tlOenv_decls =
                   _lhsIenv_decls
               _tlOenv_isa =
@@ -895,7 +912,7 @@ sem_UnionList_Nil  =
               _lhsOinftree :: InfTree
               _lhsOme :: UnionList
               _lhsOenv_in =
-                  Left []
+                  AltList []
               _lhsOrtype =
                   fatal 45 "undefined rtype on Nil of ISect-/UnionList"
               _lhsOenv_mph =

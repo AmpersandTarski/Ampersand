@@ -24,21 +24,30 @@ import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
 import Strings
 
 class Identified a => Navigatable a where
+   servicename :: a -> String
+   itemstring :: a -> String 
    theURL :: Options -> a -> URL    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
-   theURL flags a = UStr {urlString = dirAtlas flags </> addExtension (spacesToUnderscores (name a)) "php"} 
+   theURL flags x 
+     = UStr { urlString = "Atlas.php?content=" ++ servicename x
+                      ++  "&User=" ++ user
+                      ++  "&Script=" ++ script
+                      ++  "&"++servicename x ++"="++qualify++itemstring x
+            }       
+      where --copied from atlas.hs
+      script = fileName flags
+      user = takeWhile (/='.') (userAtlas flags)
+      qualify = "("++user ++ "." ++ script ++ ")"  
+
 
 instance Navigatable Concept where
-   theURL flags cpt = UStr { urlString = "atlas.php?content=Concept"
-                                     ++  "&User=" ++ userAtlas flags
-                                     ++  "&Script=" ++ fileName flags
-                                     ++  "&Concept=(" ++userAtlas flags++"."++ fileName flags++")"++name cpt
-                           }         
+   servicename _ = "Concept" --see Atlas.adl
+   itemstring cpt = name cpt --copied from atlas.hs
+ 
 instance Navigatable Declaration where 
-   theURL flags dcl = UStr { urlString = "atlas.php?content=Relatiedetails"
-                                     ++  "&User=" ++ userAtlas flags
-                                     ++  "&Script=" ++ fileName flags
-                                     ++  "&Relatiedetails=(" ++userAtlas flags++"."++ fileName flags++")"++name dcl
-                           }         
+   servicename _ = "Relatiedetails" --see Atlas.adl
+   itemstring x@(Sgn{}) = name x ++ "::" ++ name(source x)++"*"++name(target x) --copied from atlas.hs (function relpred+cpttype)
+   itemstring x = name x    
+     
 -- Chapter 1: All objects that can be transformed to a conceptual diagram are Dotable...
 class Identified a => Dotable a where
    picType :: a -> PictType
@@ -168,14 +177,12 @@ dotG flags graphName cpts dcls idgs
                             (Declaration,Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         declarationNodesAndEdges (d,n)
-             = (    [dclHingeNode]   -- The node of the hinge 
-                  ++[dclNameNode]    -- node to place the name of the declaration
-               ,    [constrEdge (baseNodeId (source d)) (nodeID dclHingeNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
-                  ++[constrEdge (nodeID dclHingeNode)   (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
-                  ++[constrEdge (nodeID dclHingeNode)   (nodeID dclNameNode )    DclMiddleEdge True flags]  -- edge to connect the hinge node to the nameNode
+             = (    [dclNameNode]    -- node to place the name of the declaration
+               ,    [constrEdge (baseNodeId (source d)) (nodeID dclNameNode)   (DclSrcEdge d) True flags]     -- edge to connect the source with the hinge
+                  ++[constrEdge (nodeID dclNameNode)   (baseNodeId (target d)) (DclTgtEdge d) True flags]     -- edge to connect the hinge to the target
                )
           where
-            dclHingeNode   = constrNode ("dclHinge_"++show n) DclHingeNode   flags
+        --    dclHingeNode   = constrNode ("dclHinge_"++show n) DclHingeNode   flags
             dclNameNode    = constrNode ("dclName_"++show n) (DclNameNode d) flags
             
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
@@ -185,12 +192,6 @@ dotG flags graphName cpts dcls idgs
              = ( [] -- No node at all
                , [constrEdge (baseNodeId s) (baseNodeId g) IsaOnlyOneEdge True  flags] -- Just a single edge
                )
---           = (   [isaDotHingeNode]
---             ,   [constrEdge (baseNodeId s) (nodeID isaDotHingeNode) IsaEdge True flags]
---               ++[constrEdge (nodeID isaDotHingeNode) (baseNodeId t) IsaEdge True flags]
---             ) 
---          where
---            isaDotHingeNode  = constrNode ("isaHinge_"++show n) IsaHingeNode flags
 
                         
 constrNode :: a -> PictureObject -> Options -> DotNode a
@@ -219,12 +220,8 @@ data PictureObject = CptOnlyOneNode Concept     -- ^ Node of a concept that serv
                    | DclOnlyOneEdge Declaration -- ^ Edge of a relation that connects to the source and the target
                    | DclSrcEdge Declaration     -- ^ Edge of a relation that connects to the source
                    | DclTgtEdge Declaration     -- ^ Edge of a relation that connects to the target
-                   | DclHingeNode               -- ^ Node of a relation that serves as a hinge
                    | DclNameNode Declaration    -- ^ Node of a relation that shows the name
-                   | DclMiddleEdge              -- ^ Edge of a relation to connect hinges and/or namenode
                    | IsaOnlyOneEdge             -- ^ Edge of an ISA relation without a hinge node
-                   | IsaHingeNode               -- ^ Node of an ISA relation
-                   | IsaEdge                    -- ^ Edge of a Gen to connec the source to the target of it
                    | TotalPicture               -- ^ Graph attributes
          
 handleFlags :: PictureObject  -> Options -> [Attribute]
@@ -267,7 +264,7 @@ handleFlags po flags =
                           ]
       DclSrcEdge d -> [Len 1.2
  --                     ,ArrowHead (AType [(open,Normal)])    -- Geeft de richting van de relatie aan.
-                      ,ArrowHead ( if or [crowfoot flags, not (isFunction d)] 
+                      ,ArrowHead ( if crowfoot flags
                                    then AType [(open,Normal)]
                                    else noArrow
                                  )
@@ -275,6 +272,7 @@ handleFlags po flags =
                                    then crowfootArrowType False d
                                    else noArrow
                                  )
+                      ,HeadClip False
                       ]
       DclTgtEdge d -> [Len 1.2
                       , ArrowHead ( if crowfoot flags
@@ -282,31 +280,20 @@ handleFlags po flags =
                                    else plainArrowType True d
                                  )
                       ,ArrowTail noArrow
+                      ,TailClip False
                       ] 
-      DclHingeNode  -> [Shape PointShape, invisible ]
       DclNameNode d -> defaultNodeAtts ++ 
                        [ Label (StrLabel (name d))
                        , Shape PlainText
                        , BgColor (X11Color White)
                        , URL (theURL flags d) 
                        ]
-      DclMiddleEdge -> [ Len 0.1
-                       , ArrowHead noArrow
-                       , ArrowTail noArrow
-                       ]
-      IsaOnlyOneEdge-> [ Color [X11Color Red]
-                       , Len 1.5
-                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])
+      IsaOnlyOneEdge-> [ Len 1.5
+                       , ArrowHead vee
                        , ArrowTail noArrow
                        , dotted
                        ]
-      IsaEdge       -> [ Color [X11Color Red]
-                       , Len 0.6
-                       , ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])	
-                       , ArrowTail noArrow
-                       ] 
-      IsaHingeNode  -> handleFlags DclHingeNode flags
-      TotalPicture -> [  Overlap CompressOverlap ]
+      TotalPicture -> [  Overlap RemoveOverlaps ]
 
 --DESCR -> default Node attributes
 defaultNodeAtts :: [Attribute]
@@ -351,7 +338,7 @@ plainArrowType isHead d
    = case isHead of 
        True -> if isFunction d
                then normal
-               else noArrow 
+               else AType [(open,Normal)] 
        False -> noArrow
 
 noMod :: ArrowModifier

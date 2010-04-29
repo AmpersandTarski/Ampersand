@@ -10,15 +10,15 @@ proofdoc :: Fspc -> Pandoc
 proofdoc fSpec = Pandoc (Meta [] [] []) b
    where
    b = concat$
-       [pandoctree(rrtyp_proof r)|r<-rules fSpec]
-     ++[pandoctree(objctx_proof x)|od<-obs,x<-obs' od]
+       [pandoctree(rrtyp_proof r) Nothing|r<-rules fSpec]
+     ++[pandoctree(objctx_proof x) Nothing|od<-obs,x<-obs' od]
    obs = serviceS fSpec ++ concat [kdats k|k<-vkeys fSpec]
    obs' od = concat [(oda:obs' oda)|oda<-objats od]
 
 --writes an inference tree as a piece of latex
-pandoctree :: Maybe (InfTree,Expression) -> [Block]
-pandoctree Nothing = [Plain [Str "No inference tree has been calculated."]]
-pandoctree (Just (tr,x)) = orig++[Plain$[TeX ("Normalized expression: $"++term++"$\n"), TeX "\n\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"] ++ refs]
+pandoctree :: Maybe (InfTree,Expression) -> Maybe (Concept,Concept) -> [Block]
+pandoctree Nothing _ = [Plain [Str "No inference tree has been calculated."]]
+pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX ("Normalized expression: $"++term++"$\n"), TeX "\n\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"] ++ refs]
    where 
    (il,term,refs,_,_) = pandoctree' tr
    env :: Expression -> [(Int,(Declaration,[Concept]))]
@@ -35,8 +35,9 @@ pandoctree (Just (tr,x)) = orig++[Plain$[TeX ("Normalized expression: $"++term++
            Sgn{} -> (if null usrtype then name d else "("++name d ++show usrtype++")")
                     ++ "::" ++ show(source d) ++"*"++ show(target d) ++" at "++ show (decfpos d)
            _ -> if null usrtype then name d else name d ++show usrtype
+   (s,t) = case jt of {Just tp -> tp; _ -> (Anything,Anything)}
    orig = [Plain$
-             [TeX ("\\paragraph{Expression: $"++writeexpr x++"$}\n")
+             [TeX ("\\paragraph{Expression: $"++writeexpr x++"$}\n"++[c|c<-"["++show s++"*"++show t++"]",s/=Anything,t/=Anything])
              ,TeX "\\begin{enumerate}\n"]
            ++[TeX ("\\item["++show i++" =]"++writedecl d usrtype++"\n")|(i,(d,usrtype))<-sort' fst (env x)]
            ++[TeX "\\end{enumerate}\n"]

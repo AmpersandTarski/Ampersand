@@ -32,7 +32,7 @@ parseADL adlstring flags fnFull =
                                                                Nothing   -> error ("!Fatal (module Parser 34): Contact your dealer!")   --Nothing is niet aan de orde hier
                 (_, errs)-> if not(null cs) && theme flags==ProofTheme && fspecFormat flags==FLatex
                             then do {maketex;makepdf
-                                    ; return (head cs)} --Something must be returned
+                                    ; fail "report written"} --Something must be returned
                             else ioError (userError ("\nThe type analysis of "++fnFull++" yields errors.\n" ++
                                                   (concat ["!Error of type "++err'| (err',_)<-errs])++
                                                   "Nothing generated, please correct mistake(s) first.\n"

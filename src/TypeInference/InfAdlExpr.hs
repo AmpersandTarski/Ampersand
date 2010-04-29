@@ -27,7 +27,7 @@ module TypeInference.InfAdlExpr(infertype_and_populate) where
 import TypeInference.InfLibAG
 import Adl
 import ShowADL
-import Text.Pandoc (Block)
+import Text.Pandoc
 import Rendering.InfTree2Pandoc (pandoctree)
 
 fatal :: Int -> String -> a
@@ -37,13 +37,13 @@ fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg
 --ADL conversie
 ----------------------------------------------------------------------------
 --DESCR -> a function to add population to the morphisms in the expression, isa relations as a set of (Concept,Concept), declarations from the script, the expression => OR the type of the expression and the expression with typed and populated morphisms each of them bound to one declaration OR an error as String
-infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
-infertype_and_populate populate isas ds ex_in =
+infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> (Concept,Concept) -> Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
+infertype_and_populate populate isas ds (pushx,pushy) ex_in =
   case inf_expr of
     Left _ -> Left ((toCpt expr_src,toCpt expr_trg), enrich_expr uniqex,inftree)
-    Right err -> Right (printterror ds uniqex err,errortrees inferfromscript ds uniqex err)
+    Right err -> Right (printterror ds uniqex err,errortrees (infertype_and_populate populate isas ds) ds uniqex err)
   where
-  inferfromscript = infer (map fromDcl ds) (fromCptCpts isas)
+  inferfromscript = infer (map fromDcl ds) (fromCptCpts isas) (fromCpt pushx, fromCpt pushy)
   Left ((expr_src,expr_trg),env_mph,inftree) = inf_expr
   (uniqex,_) = uniquemphs 0 ex_in --give each morphism an identifier within the scope of this expression
   inf_expr = inferfromscript (fromExpr uniqex)
@@ -127,13 +127,13 @@ fromExpr (K1 ex) = fromExpr ex
 --TODO -> if I want "[1] Type mismatch in rule" to be recognized, then I'll have to analyse "[4] Incompatible comparison" errors. If the antecedent and consequent do have a type, then it is a type 1 error. But I do not want to make a union data type RuleOrExpression -> I want the rule operators to be expression operators so I can evaluate the expression.
 --TODO -> I could print more in case of --verbose
 printterror:: Declarations -> Expression -> TError -> String
---TErrorU ETitle  
+--TErrorU ETitle InfTree 
 -- the source or target of the type of the root expression is the universe
-printterror _ _ (TErrorU str) 
+printterror _ _ (TErrorU str _) 
               = "[0] "++str++"\n"
 --the composition is over the universe
 printterror _ root (TErrorUC str x y) 
-              = "[10] "++str++"\nLeft operand: "++operand root (therels x)++"\nRight operand: "++operand root (therels y)
+              = "[10] "++str++"\nLeft operand: "++operandstr root (therels x)++"\nRight operand: "++operandstr root (therels y)
 --TErrorAmb ETitle [RelAlgType] 
 -- the type of the root expression is ambiguous
 printterror _ _ (TErrorAmb str ts) 
@@ -152,20 +152,20 @@ printterror _ _ (TError1 _ _) = fatal 140 "TError1 expects a relation expression
 --TError2 ETitle (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType]) 
 --(ababab) there is no type in the first list matching a type in the second
 printterror _ root (TError2 str (x,txs) (xs,txss)) 
-              = "[4] "++str++"\nPossible types of left operand "++operand root (therels x)++":"++showtypes "\n\t" txs
-                           ++"\nPossible types of right operand "++operand root (concat (map therels xs))
+              = "[4] "++str++"\nPossible types of left operand "++operandstr root (therels x)++":"++showtypes "\n\t" txs
+                           ++"\nPossible types of right operand "++operandstr root (concat (map therels xs))
                                                                  ++":"++showtypes "\n\t" txss++"\n"
 --TError3 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) 
 --(abbcac) there is no b in the first list matching a b in the second
 printterror _ root (TError3 str (x,txs) (y,tys)) 
-              = "[5] "++str++"\nPossible types of left operand "++operand root (therels x)++":"++showtypes "\n\t" txs
-                           ++"\nPossible types of right operand "++operand root (therels y)++":"++showtypes "\n\t" tys++"\n"
+              = "[5] "++str++"\nPossible types of left operand "++operandstr root (therels x)++":"++showtypes "\n\t" txs
+                           ++"\nPossible types of right operand "++operandstr root (therels y)++":"++showtypes "\n\t" tys++"\n"
 --TError4 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj] 
 --(abbcac) there is more than one b in the first list matching a b in the second
 printterror _ root (TError4 str (x,txs) (y,tys) tbs) 
               = "[6] "++str++"\nCompositions are possible over: "++show tbs
-                           ++"\nPossible types of left operand "++operand root (therels x)++":"++showtypes "\n\t" txs
-                           ++"\nPossible types of right operand "++operand root (therels y)++":"++showtypes "\n\t" tys++"\n"
+                           ++"\nPossible types of left operand "++operandstr root (therels x)++":"++showtypes "\n\t" txs
+                           ++"\nPossible types of right operand "++operandstr root (therels y)++":"++showtypes "\n\t" tys++"\n"
 --TError5 ETitle RelDecl 
 --The declaration has an heteogeneous type and an homogeneous property
 printterror ds _ (TError5 str d) 
@@ -204,10 +204,10 @@ therels  (Implic lsub rsub) = therels lsub ++ therels rsub
 therels  (Equiv  lsub rsub) = therels lsub ++ therels rsub
 therels  (Morph  _ _ i) = [i]
 
-operand:: Expression -> [Int] -> String
-operand root rs 
-  |fst (operand' root) = showADL$snd (operand' root)
-  |otherwise = "?"
+operandstr:: Expression -> [Int] -> String
+operandstr root rs = showADL(operand root rs)
+operand:: Expression -> [Int] -> Expression
+operand root rs = snd (operand' root)
   where
   niks = Tm (V [] (NOthing,NOthing)) (-1)
   operand' (Tm m i) = if elem i rs then (True,Tm m i) else (False,niks)
@@ -229,5 +229,29 @@ operand root rs
 --         the error should contain subexpressions which can be inferred with inferfromscript
 --         the root expression, the declarations are provided
 --         operand root (therels x) is the original string of x::RelAlgExpr
-errortrees:: (RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError) -> Declarations -> Expression -> TError -> [Block]
-errortrees inferfromscript ds root err = []
+--errortrees:: (RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError) -> Declarations -> Expression -> TError -> [Block]
+errortrees::((Concept,Concept) -> Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])) 
+            -> Declarations -> Expression -> TError -> [Block]
+--TErrorU ETitle InfTree 
+-- the source or target of the type of the root expression is the universe
+errortrees f ds root err@(TErrorU _ inftree) 
+  = [Plain [TeX ("\\section{Type error in "++showADL root++" }\n"),Str (printterror ds root err)]]
+    ++pandoctree (Just (inftree,root)) Nothing
+--the composition is over the universe
+errortrees f ds root err@(TErrorUC _ x y) 
+  = [Plain [TeX ("\\section{Type error in "++showADL root++" }\n"),Str (printterror ds root err)]]
+    ++(inftreesub.f (Anything,Anything)) (operand root (therels x))
+    ++(inftreesub.f (Anything,Anything)) (operand root (therels y))
+--TError3 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) 
+--(abbcac) there is no b in the first list matching a b in the second 
+errortrees f ds root err@(TError3 str (x,txs) (y,tys))
+  = concat$[[Plain [TeX ("\\section{Type error in "++showADL root++" }\n"),Str (printterror ds root err)]]]
+         ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
+         ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels y))|(s,t)<-tys]
+errortrees inferfromscript ds root err = [Plain [Str ("No proof for error: " ++ (printterror ds root err))]]
+
+--TODO -> make it possible to push a type on it, then it is expected to have no type errors.
+inftreesub :: (Either ((Concept,Concept), Expression,InfTree) (String,[Block])) -> [Block]
+inftreesub (Left (tp,x,inftree)) = pandoctree (Just (inftree,x)) (Just tp)
+inftreesub (Right (_,inftree)) = inftree
+--inftreesub (Right err) = fatal 239 ("Subexpressions are expected to have no type errors:\n"++fst err)
