@@ -19,40 +19,72 @@ module TypeInference.InfLibAG
 
 import TypeInference.InfLibAGFuncs
 
+--step1: infer an expression with certaintype=(Universe,Universe)
+--step2: if ambiguous then you can pick an alternative from the error and infer again with a certaintype
 infer:: [RelDecl] -> Isa -> RelAlgType -> RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError
-infer reldecls isas trytype root_expr =
-  case rtype of
-    Left (x,y) -> if x==Universe 
-                  then Right$TErrorU "The source of the expression is the universal set" inftree 
-                  else if  y==Universe
-                       then Right$TErrorU "The target of the expression is the universal set" inftree
-                       else if not(null homoerrors)
-                            then head homoerrors
-                            else Left ((x,y), env_mph, inftree)
-    Right err -> Right err
+infer reldecls isas certaintype root_expr 
+  --in case alltypes==[] except when composition over universe error && there are things to fix
+  --   ENDWITHALTLISTERROR
+  --in case length alltypes>1 AND there is nothing to fix AND there are no other errors
+  --   ENDWITHAMBIGUOUSERROR
+  --for all morphism[a*b] bound to homogeneous declaration
+  --     if a==b (i.e. fixhomo==[]&&homoerrors==[]) then ENDWITHTYPE
+  --     if not(isarelated a b isas) then ENDWITHHOMOERROR
+  --     if isarelated a b isas && a/=b then LOOP_TRYFIXNEXTHOMOWITHSPECIFIC 
+  |null alltypes && (not compoveruniverseerror || null fixhomo) = case env_in of 
+      AltListError env_in_err -> Right env_in_err
+      _ -> fatal 174 "if AltList is [] then there must be an error."
+  |null fixhomo && null homoerrors && length alltypes>1 = Right$TErrorAmb "Ambiguous type" alltypes
+  |null fixhomo && null homoerrors = case rtype of
+      Left (x,y) -> if x==Universe 
+                    then Right$TErrorU "The source of the expression is the universal set" inftree 
+                    else if  y==Universe
+                         then Right$TErrorU "The target of the expression is the universal set" inftree
+                         else Left ((x,y), env_mph, inftree)
+      Right err -> Right err
+  |not(null homoerrors) = head homoerrors
+  |not(null fixhomo) && not(null fixattempts) = head ([Left x|Left x<-fixattempts] ++ [Right err|Right err<-fixattempts])
+  |otherwise = fatal 186 "is there any other option?"
   where
-  inftree = inftree_Syn_RelAlgExpr (agtree (head alltypes))
+  inftree = inftree_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
+  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (agtree (head alltypes))] --finalize by pushing the type down again
+  env_in = env_in_Syn_RelAlgExpr (agtree (Universe,Universe)) --no type is pushed down yet
+  rtype = rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
+  alltypes =  if certaintype==(Universe,Universe) 
+              then map fst (alttypes env_in) 
+              else if null altwithcertaintype
+                   then fatal 187 "A certaintype must be in the AltList of an expression"
+                   else altwithcertaintype
+  altwithcertaintype = [t|t<-map fst (alttypes env_in),t==certaintype]
+  agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
+  fixhomo = [(i,specific a b isas)
+            |(Morph _ _ i,(a,b),d)<-env_mph
+            ,case d of 
+                 IDecl->True
+                 RelDecl{} -> ishomo d
+                 _ -> False
+            ,isarelated a b isas,a/=b]
   homoerrors = [Right$TError6 "Type is not homogeneous" (a,b) m d
                |(m,(a,b),d)<-env_mph
                ,case d of 
                     IDecl->True
                     RelDecl{} -> ishomo d
                     _ -> False
-               ,not(isarelated a b isas)] --TODO
-  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (agtree (head alltypes))]
-  env_in = env_in_Syn_RelAlgExpr (agtree (Universe,Universe))
-  rtype = if length alltypes==1 
-          then rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
-          else if null alltypes
-               --there is a type error in env_in
-               then case env_in of 
-                      AltListError env_in_err -> Right env_in_err
-                      _ -> fatal 172 "the AltList cannot be []."
-               else Right$TErrorAmb "Ambiguous type" alltypes
-  alltypes =  if trytype==(Universe,Universe) 
-              then map fst (alttypes env_in) 
-              else [t|t<-map fst (alttypes env_in),t==trytype]
-  agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
+               ,not(isarelated a b isas)]
+  compoveruniverseerror = case rtype of
+         Right (TErrorUC{}) -> True
+         _ -> False
+  fixattempts = [infer reldecls isas certaintype (sethomotypeon (i,a) root_expr)|(i,a)<-fixhomo]
+  sethomotypeon (i,a) x = case x of
+     Comp l r -> Comp (sethomotypeon (i,a) l) (sethomotypeon (i,a) r)
+     Compl s -> Compl (sethomotypeon (i,a) s)
+     Conv s ->  Conv (sethomotypeon (i,a) s)
+     Equiv l r -> Equiv (sethomotypeon (i,a) l) (sethomotypeon (i,a) r)
+     ISect ss -> ISect (map (sethomotypeon (i,a)) ss)
+     Implic l r -> Implic (sethomotypeon (i,a) l) (sethomotypeon (i,a) r)
+     Morph m t i' -> if i==i' then Morph m (a,a) i else x 
+     RAdd l r -> RAdd (sethomotypeon (i,a) l) (sethomotypeon (i,a) r)
+     Union ss -> Union (map (sethomotypeon (i,a)) ss)
 
 ----------------------------------------------------------------------------
 --TEST
