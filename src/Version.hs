@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1-666" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
+versionNumber = "1.1-667" -- #1.#2-#3 : #1 major version; #2 student release version; #3 SVN revision number.
 {-
 SVN Version text:
-homogeneous property in type system
+type errors as pandoc blocks
 -}

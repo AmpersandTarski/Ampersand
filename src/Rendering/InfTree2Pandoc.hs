@@ -42,7 +42,8 @@ pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX ("Normalized expression: $"++ter
            ++[TeX ("\\item["++show i++" =]"++writedecl d usrtype++"\n")|(i,(d,usrtype))<-sort' fst (env x)]
            ++[TeX "\\end{enumerate}\n"]
           ]
-   writeexpr expr = showExpr (" \\cup ", " \\cap ", " \\dagger ", ";", "*", "+", "-", "(", ")") expr
+
+writeexpr expr = showExpr (" \\cup ", " \\cap ", " \\dagger ", ";", "*", "+", "-", "(", ")") expr
       where
       showExpr (union',inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr' = showchar (insParentheses expr')
          where
