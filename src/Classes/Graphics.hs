@@ -26,13 +26,12 @@ import Strings
 class Identified a => Navigatable a where
    servicename :: a -> String
    itemstring :: a -> String 
-   theURL :: Options -> a -> URL    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
+   theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
    theURL flags x 
-     = UStr { urlString = "Atlas.php?content=" ++ servicename x
-                      ++  "&User=" ++ user
-                      ++  "&Script=" ++ script
-                      ++  "&"++servicename x ++"="++qualify++itemstring x
-            }       
+     = "Atlas.php?content=" ++ servicename x
+            ++  "&User=" ++ user
+            ++  "&Script=" ++ script
+            ++  "&"++servicename x ++"="++qualify++itemstring x
       where --copied from atlas.hs
       script = fileName flags
       user = takeWhile (/='.') (userAtlas flags)

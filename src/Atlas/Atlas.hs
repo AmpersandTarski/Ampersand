@@ -12,14 +12,10 @@ import Typology
 import Collection     ( Collection (rd) ) 
 import Database.HDBC.ODBC 
 import Database.HDBC
-import Classes.Morphical
---import List(sort)
-import Classes.ViewPoint 
 import Picture
 import PredLogic (applyM)
 ------
 import Classes.Graphics
-import Data.GraphViz (urlString)
 
 data ATable = ATable {tableid::ATableId, tablename::String, columns::[String]} deriving (Show)
 data ATableId = 
@@ -181,7 +177,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
                            )     (map (take 1) xs)
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
-   pop' ATConcept = [[name x,description x,urlString(imgURL pic)]|x<-cpts,pic<-pics, origName pic==name x, pType pic == PTConcept]
+   pop' ATConcept = [[name x,description x,imgURL pic]|x<-cpts,pic<-pics, origName pic==name x, pType pic == PTConcept]
    pop' ATContains = [[relpred x,show y]| x@Sgn{}<-declarations fSpec,decusr x, y<-contents x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
    pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents x]
@@ -190,24 +186,24 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATSubExpression = [[cptsubexpr x y ,cptrule x]|x<-userrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
-   pop' ATPicture = [[urlString(imgURL pic)]|pic<-pics]
+   pop' ATPicture = [[imgURL pic]|pic<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Mph{})<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x@Sgn{}<-declarations fSpec, decusr x, y<-contents x]
               ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents x]
-   pop' ATPattern = [[name x,urlString(imgURL pic)]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
+   pop' ATPattern = [[name x,imgURL pic]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
    pop' ATPragmaExample = [[example x]|x@Sgn{}<-declarations fSpec, decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
                      --REMARK -> decls from pat instead of fSpec!
    pop' ATRelation = [[relpred x,expl x,example x,decpat x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATRelVar = [[relpred x,cpttype x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
-   pop' ATService = [[name fSpec,urlString(imgURL pic)]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
+   pop' ATService = [[name fSpec,imgURL pic]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
    pop' ATSignal = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$nextrule x signalrules,cptrule$prevrule x signalrules]|x<-signalrules]
    pop' ATType = [t x|x@Sgn{}<-declarations fSpec, decusr x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
-   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,urlString(imgURL pic),r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
+   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,imgURL pic,r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
    pop' ATViolRule = [[ y, x] | (x,y)<-identifiedviols]
    pop' ATViolHomoRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule homorules)]
    pop' ATViolMultRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule multrls)]

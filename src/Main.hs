@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Main where
 
-import Options               (getOptions,Options(..),verboseLn,verbose)
+import Options               (getOptions,Options(..),verboseLn,verbose )
 import Parser                (parseADL)
 import Adl                   (Context)
 import Data.Fspec            (Fspc)

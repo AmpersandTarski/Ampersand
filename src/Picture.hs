@@ -13,7 +13,6 @@ import Strings (spacesToUnderscores)
 import Control.Monad
 import Data.GraphViz
 
-
 type Pictures = [Picture]
 data Picture = Pict { origName     :: String    -- The original name of the object this picture was made for. (could include spaces!)
                     , pType        :: PictType  -- the type of the picture
@@ -22,7 +21,7 @@ data Picture = Pict { origName     :: String    -- The original name of the obje
                     , fullDot      :: FilePath  -- the full file path where the .dot file resides
                     , fspecPath    :: FilePath  -- the full file path where the .png file resides for functional specification
                     , atlasPath    :: FilePath  -- the full file path where the .png and .map file resides for Atlas
-                    , imgURL       :: URL       -- the URL that points to the generated .png imagefile, for use in the atlas
+                    , imgURL       :: EscString -- the URL that points to the generated .png imagefile, for use in the atlas
                     , dotProgName  :: String    -- the name of the program to use  ("dot" or "neato" )
                     , figlabel     :: String    -- the label of a picture (usefull for reffering to it e.g. in LaTeX)
                     , caption      :: String    -- a human readable name of this picture
@@ -49,7 +48,7 @@ makePictureObj flags name pTyp dotsource
            , fullDot    = dirOutput flags  </> relImgPath </> replaceExtension cdName "dot"
            , fspecPath  = dirOutput flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
            , atlasPath  = dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
-           , imgURL     = UStr (dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png")
+           , imgURL     = dirAtlas  flags  </> relImgPath </> System.FilePath.addExtension cdName "png"
            , pType      = pTyp
            , figlabel   = "fig:" ++ cdName
            , dotProgName = case pTyp of
