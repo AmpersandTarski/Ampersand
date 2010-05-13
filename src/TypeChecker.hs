@@ -297,14 +297,14 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
    --DESCR -> the expression must have the same structure as (normExpr rule)
   ruleexpr_inv :: Rule -> Expression -> Rule
   ruleexpr_inv rule x
-   -- | normExpr rule == x 
+   -- normExpr rule == x 
       = case x of 
         Fu [Cp a, c] -> if rrsrt rule==Implication then rule{rrant=a,rrcon=c} else err
         Fi [Fu [a, Cp c], Fu [Cp _,_]] -> if --a==a' && c==c' && 
                                                rrsrt rule==Equivalence 
                                             then rule{rrant=a,rrcon=c} else err
         _ -> if rrsrt rule==Truth then rule{rrcon=x} else err
-   -- | otherwise = err
+   -- otherwise = err
     where 
     err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not normExpr of rule "++show rule)
 

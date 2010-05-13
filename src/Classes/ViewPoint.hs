@@ -19,37 +19,37 @@ where
    import Typology                    (Inheritance(..))
 
    class Morphical a => ViewPoint a where
-     objectdef    :: a -> ObjectDef     -- The objectdef that characterizes this viewpoint
-     conceptDefs  :: a -> ConceptDefs   -- all concept definitions that are valid within this viewpoint
-     declarations :: a -> Declarations  -- all rules and relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
+     objectdef    :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
+     conceptDefs  :: a -> ConceptDefs   -- ^ all concept definitions that are valid within this viewpoint
+     declarations :: a -> Declarations  -- ^ all rules and relations that have a valid declaration in this viewpoint. (Don't confuse declarations with decls, which gives the relations that are used in a. The function decls is bound in Morphical.)
      --REMARK: declarations has been split up in two disjoints which used to be combined with `uni` instead of ++
      declarations x = rel_declarations x ++ rule_declarations x
-     rel_declarations :: a -> Declarations  -- all relations that have a valid declaration in this viewpoint.
-     rule_declarations :: a -> Declarations  -- all rules that have a valid declaration in this viewpoint.
-     rules        :: a -> Rules         -- all rules that are maintained within this viewpoint,
+     rel_declarations :: a -> Declarations  -- ^ all relations that have a valid declaration in this viewpoint.
+     rule_declarations :: a -> Declarations  -- ^ all rules that have a valid declaration in this viewpoint.
+     rules        :: a -> Rules         -- ^ all rules that are maintained within this viewpoint,
                                         --   which are not signal-, not multiplicity-, and not key rules.
-     signals      :: a -> Rules         -- all signals that are visible within this viewpoint
-                                        -- all relations used in signals and rules must have a valid declaration in the same viewpoint.
-     multrules    :: a -> Rules         -- all multiplicityrules that are maintained within this viewpoint.
+     signals      :: a -> Rules         -- ^ all signals that are visible within this viewpoint
+                                        -- ^ all relations used in signals and rules must have a valid declaration in the same viewpoint.
+     multrules    :: a -> Rules         -- ^ all multiplicityrules that are maintained within this viewpoint.
      multrules x = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
 --     keyrules    :: a -> Rules         -- all key rules that are maintained within this viewpoint.
 --     keyrules x = [rulefromKey k |k<-keyDefs x]
      objDefs      :: a -> ObjectDefs
-     keyDefs      :: a -> KeyDefs       -- all keys that are defined in a
-     gens         :: a -> Gens          -- all generalizations that are valid within this viewpoint
-     patterns     :: a -> Patterns      -- all patterns that are used in this viewpoint
+     keyDefs      :: a -> KeyDefs       -- ^ all keys that are defined in a
+     gens         :: a -> Gens          -- ^ all generalizations that are valid within this viewpoint
+     patterns     :: a -> Patterns      -- ^ all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept
      --TODO -> there are more rules than rules+multrules that can be violated
      violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
      violations x = [(r,viol) |r<-rules x++multrules x, viol<-ruleviolations r] 
 
    instance ViewPoint a => ViewPoint [a] where
-    objectdef _      = Obj { objnm   = ""         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                           , objpos  = Nowhere    -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
-                           , objctx  = Tm (mIs S) (-1) -- ^ this expression describes the instances of this object, related to their context. 
+    objectdef _      = Obj { objnm   = ""         --  view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                           , objpos  = Nowhere    --  position of this definition in the text of the ADL source file (filename, line number and column number)
+                           , objctx  = Tm (mIs S) (-1) --  this expression describes the instances of this object, related to their context. 
                            , objctx_proof = Nothing
-                           , objats  = []         -- ^ the attributes, which are object definitions themselves.
-                           , objstrs = []         -- ^ directives that specify the interface.
+                           , objats  = []         -- the attributes, which are object definitions themselves.
+                           , objstrs = []         -- directives that specify the interface.
                            }
     conceptDefs xs   = (concat. map conceptDefs) xs
     rel_declarations xs  = (rd . concat. map rel_declarations) xs
