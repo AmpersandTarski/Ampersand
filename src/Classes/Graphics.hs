@@ -12,7 +12,7 @@ import Data.GraphViz hiding (addExtension )
 --              -- 3) er is geen stap 3!
 --              -- 4) build on graphviz-2999.8.0.0
 -- Documentation about graphviz package: See http://hackage.haskell.org/package/graphviz
-import Adl
+import Adl 
 import Data.Fspec (Fspc,Fservice(..))
 import Options
 import Collection (Collection(uni,isc,rd))
@@ -20,8 +20,8 @@ import Typology (Inheritance(..))
 import Picture
 import Switchboard
 import Rendering.ClassDiagram
-import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
-import Strings
+--import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
+--import Strings
 
 class Identified a => Navigatable a where
    servicename :: a -> String

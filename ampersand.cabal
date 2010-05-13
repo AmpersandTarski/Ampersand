@@ -1,0 +1,28 @@
+name:          Ampersand
+version:       1.1.2
+author:        Stef Joosten
+maintainer:    stef@sig-cc.org
+synopsis:      Toolsuite for Rule-based software developement
+description:   The description goes here...( TODO )
+homepage:      www.sig-cc.org
+category:      Semantic web
+stability:     alpha
+Cabal-Version: >= 1.6
+build-type:    Simple
+--licence:       some licenseID
+copyright:     Stef Joosten
+Executable ADL
+  Main-Is:         Main.hs
+  Hs-Source-Dirs:  src
+  build-depends:   
+    graphviz   >= 2999.9.0.0 && < 2999.10 ,
+    HDBC-odbc  >= 2.2.3.0 && < 2.3,  
+    pandoc     >= 1.5.1.1 && < 1.6,
+    bytestring >= 0.9.1.5 && < 0.10,
+    filepath   >= 1.1.0.3 && < 1.2,
+    haskell98  >= 1.0.1.0 && < 1.1,
+    base       >= 4 && < 5,
+    directory  >= 1.0.1.0 && < 1.1,
+    HDBC       >= 2.2.6   && < 2.3,
+    containers >= 0.3     && < 0.4
+    
