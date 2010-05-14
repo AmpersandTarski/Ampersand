@@ -240,8 +240,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
       ncs    = concs r >- seenConcs                                             -- all concepts that are used for the first time
       cds    = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]         -- lookup their concept definitions, where available
       seenCs = concs r `uni` seenConcs
-      nds    = [d|d<-decls r, explainDecl flags d/=""] >- seenDeclarations      -- all declarations that are used for the first time
-      seenDs = [d|d<-decls r, explainDecl flags d/=""] `uni` seenDeclarations   -- all declarations that are used for the first time
+      nds    = [d|d<-decls r, not (isIdent d), explainDecl flags d/=""] >- seenDeclarations      -- all declarations that are used for the first time
+      seenDs = [d|d<-decls r, not (isIdent d), explainDecl flags d/=""] `uni` seenDeclarations   -- all declarations that are used for the first time
       n' = n+length cds+length nds+1
       ( dpNext, n'', seenCs', seenDs') = dpRule rs n' seenCs seenDs
 

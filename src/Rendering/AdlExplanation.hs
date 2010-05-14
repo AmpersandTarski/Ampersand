@@ -57,35 +57,35 @@ explainMult options d
          | null ([Sym,Asy]         >- multiplicities d) = name d++" is a property of "++(unCap.plural English .name.source) d++"."
          | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is an equivalence relation on "++(unCap.plural English .name.source) d++"."
          | null ([Asy,Trn]         >- multiplicities d) = name d++" is an ordering relation on "++(unCap.plural English .name.source) d++"."
-         | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
+         | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
                                                           ++" and vice versa."
-         | null ([Uni,Tot,Inj    ] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
-                                                          ++", but not for every "++(unCap.name.target) d++" there must be a "++(unCap.name.source) d++"."
-         | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
-                                                          ++", but every "++(unCap.name.target) d++" is related to one or more "++(unCap.plural English .name.source) d++"."
-         | null ([Uni,    Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for every "++(unCap.name.target) d++" (b), for which: "
+         | null ([Uni,Tot,Inj    ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
+                                                          ++", but not for each "++(unCap.name.target) d++" there must be a "++(unCap.name.source) d++"."
+         | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
+                                                          ++", but each "++(unCap.name.target) d++" is related to one or more "++(unCap.plural English .name.source) d++"."
+         | null ([Uni,    Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
                                                           ++applyM d "b" "a"
-                                                          ++", but not for every "++(unCap.name.source) d++" there must be a "++(unCap.name.target) d++"."
-         | null ([    Tot,Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for every "++(unCap.name.target) d++" (b), for which: "
+                                                          ++", but not for each "++(unCap.name.source) d++" there must be a "++(unCap.name.target) d++"."
+         | null ([    Tot,Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
                                                           ++applyM d "b" "a"
-                                                          ++", but every "++(unCap.name.source) d++" is related to one or more "++(unCap.plural English .name.target) d++"."
-         | null ([Uni,Tot        ] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)++"."
-         | null ([Uni,    Inj    ] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("at most one "++(unCap.name.target) d)
-                                                          ++" and every "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d++"."
-         | null ([Uni,        Sur] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("at most one "++(unCap.name.target) d)
-                                                          ++", whereas every "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d++"."
-         | null ([    Tot,Inj    ] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)
-                                                          ++", whereas every "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d++"."
-         | null ([    Tot,    Sur] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)
-                                                          ++" and every "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d++"."
-         | null ([        Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for every "++(unCap.name.target) d++" (b), for which: "
+                                                          ++", but each "++(unCap.name.source) d++" is related to one or more "++(unCap.plural English .name.target) d++"."
+         | null ([Uni,Tot        ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)++"."
+         | null ([Uni,    Inj    ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at most one "++(unCap.name.target) d)
+                                                          ++" and each "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d++"."
+         | null ([Uni,        Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at most one "++(unCap.name.target) d)
+                                                          ++", whereas each "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d++"."
+         | null ([    Tot,Inj    ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)
+                                                          ++", whereas each "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d++"."
+         | null ([    Tot,    Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)
+                                                          ++" and each "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d++"."
+         | null ([        Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
                                                           ++applyM d "b" "a"++"."
-         | null ([            Sur] >- multiplicities d) = "There is at least one "++(unCap.name.source) d++" (a) for every "++(unCap.name.target) d++" (b), for which: "
+         | null ([            Sur] >- multiplicities d) = "There is at least one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
                                                           ++applyM d "b" "a"++"."
-         | null ([        Inj    ] >- multiplicities d) = "There is at most one "++(unCap.name.source) d++" (a) for every "++(unCap.name.target) d++" (b), for which: "
+         | null ([        Inj    ] >- multiplicities d) = "There is at most one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
                                                           ++applyM d "b" "a"++"."
-         | null ([    Tot        ] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)++"."
-         | null ([Uni            ] >- multiplicities d) = applyM d ("every "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
+         | null ([    Tot        ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)++"."
+         | null ([Uni            ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
          | otherwise                                    = (if null (explain options d)
                                                            then "The sentence: "
                                                            else "So, the sentence: ")++
