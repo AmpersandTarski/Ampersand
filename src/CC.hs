@@ -14,6 +14,7 @@
    import Adl         
    import ShowADL     (showADL)
    import Languages
+   import Strings     (trim)
 
    keywordstxt :: [String]
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
@@ -374,7 +375,8 @@
    pPragma           = pKey "PRAGMA" *> pList1 pString
 
    pRecord          :: Parser Token Paire
-   pRecord           = mkPair<$ pSpec '(' <*> pString  <* pComma   <*> pString  <* pSpec ')'
+   pRecord           = mkPair<$ pSpec '(' <*> (trim <$> pString)  <* pComma   <*> (trim <$> pString)  <* pSpec ')'
+                     --where trimpair (x,y) = (trim x,trim y)
                                 
    get_tok_pos :: Token -> FilePos
    get_tok_pos     (Tok _ _ s l f) = FilePos (f,l,s)

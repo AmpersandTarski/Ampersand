@@ -28,7 +28,7 @@ data ATableId =
   |ATExplanation
   |ATSubExpression
   |ATHomoRule
-  |ATIsa
+--  |ATIsa
   |ATPicture
   |ATMorphisms
   |ATMorphismsSignal
@@ -60,7 +60,7 @@ tables =
    ,ATable ATExplanation "Explanation" ["I","user","script","display"] 
    ,ATable ATSubExpression "SubExpression" ["I","subexpressionof","user","script","display"] 
    ,ATable ATHomoRule "HomogeneousRule" ["I","property","on","type","explanation","pattern","user","script","display"] 
-   ,ATable ATIsa "IsaRelation" ["I","specific","general","pattern","user","script","display"] 
+--   ,ATable ATIsa "IsaRelation" ["I","specific","general","pattern","user","script","display"] 
    ,ATable ATPicture "Picture" ["I","user","script","display"] 
    ,ATable ATMorphisms "morphisms1" ["userrule","relation"] 
    ,ATable ATMorphismsSignal "morphisms2" ["signal","relation"] 
@@ -185,7 +185,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATExplanation = [[explainRule flags x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATSubExpression = [[cptsubexpr x y ,cptrule x]|x<-userrules, y<-subexprs x] 
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
-   pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
+   --pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
    pop' ATPicture = [[imgURL pic]|pic<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Mph{})<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]

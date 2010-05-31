@@ -1,6 +1,6 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | Deze module bevat operaties op strings.
-  module Strings (chain,unCap,upCap,firstCaps,remSpaces,spacesToUnderscores,spaces,spread,commaEng,commaNL)
+  module Strings (chain,unCap,upCap,firstCaps,remSpaces,trim,spacesToUnderscores,spaces,spread,commaEng,commaNL)
   where
 
    import Char (isUpper, toUpper, toLower)
@@ -25,6 +25,10 @@
    chain :: [b] -> [[b]] -> [b]
    chain _ [] = []
    chain str xs = foldl f (head xs) (tail xs) where f x y = x++str++y
+
+   trim      :: String -> String
+   trim      = f . f
+     where f = reverse . dropWhile (' '==)
 
    remSpaces :: String -> String
    remSpaces [] = []
