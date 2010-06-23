@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
-module Fspec2Pandoc (fSpec2Pandoc,laTeXtemplate)
+module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
 import Collection       (Collection (..))
 import Adl

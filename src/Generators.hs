@@ -93,14 +93,13 @@ doGenFspec fSpec flags
      verboseLn flags ("Document has been written into " ++ outputFile ++ ".") >>
      when (genGraphics flags && not(null thePictures)) 
           (foldr1 (>>) [ writePicture flags p| p<-thePictures] )              >>
-     -- preprocessing of the generated output file depends on the format:
-     case fspecFormat flags of   
-       FLatex  -> makePdfFile
-       _       -> return()
+     -- postProcessing of the generated output file depends on the format:
+     postProcessor
+     
        where
        (thePandoc,thePictures) = case theme flags of
               ProofTheme -> (proofdoc fSpec,[]) --generate a proof document
               _ -> fSpec2Pandoc fSpec flags --generate a func spec
-       (outputFile,makeOutput,makePdfFile) = writepandoc flags thePandoc
+       (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
 
               

@@ -1,5 +1,5 @@
+{-# OPTIONS_GHC -Wall #-}
 module Rendering.PandocAux where
-import Char                          
 import Version          (versionbanner)
 import Adl
 import Picture
@@ -31,7 +31,7 @@ import Maybe                  (fromJust)
 --         The first IO() is a Pandoc output format
 --         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
 writepandoc :: Options -> Pandoc -> (String,IO(),IO())
-writepandoc flags thePandoc = (outputFile,makeOutput,makePdfFile)
+writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
          outputFile = replaceExtension (combine (dirOutput flags) (baseName flags)) 
                                        (case fspecFormat flags of        
@@ -46,14 +46,14 @@ writepandoc flags thePandoc = (outputFile,makeOutput,makePdfFile)
               FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
                             writeFile outputFile (prettyPandoc thePandoc)
               FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
-                            writeFile outputFile (writeRTF ourDefaultWriterOptions thePandoc)
+                            writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
               FLatex  -> do --REMARK -> notice usage of fromJust
                             exists <- case texHdrFile flags of
                                          Just x -> doesFileExist x
                                          Nothing -> return False
                             header <- if exists 
                                       then readFile (fromJust$texHdrFile flags)
-                                      else return (laTeXtemplate flags)
+                                      else return (theTemplate flags)
                             verboseLn flags ("Generating to LaTeX: "++outputFile)
                             writeFile outputFile (writeLaTeX ourDefaultWriterOptions{writerTemplate=header} thePandoc)
               FHtml   -> do verboseLn flags ("Generating to HTML: "++outputFile)
@@ -70,8 +70,10 @@ writepandoc flags thePandoc = (outputFile,makeOutput,makePdfFile)
                                           , writerTableOfContents=True
                                           , writerNumberSections=True
                                           }
-         makePdfFile :: IO()
-         makePdfFile = do 
+         postProcessMonad :: IO()
+         postProcessMonad = 
+           case fspecFormat flags of   
+               FLatex  -> do 
                   --        removeOldFiles
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
                           verboseLn flags ("PdfLatex was called "++
@@ -79,203 +81,229 @@ writepandoc flags thePandoc = (outputFile,makeOutput,makePdfFile)
                                            case ready of
                                               True  -> "."
                                               False -> ", but did not solve all references!")                          
-            where 
---              removeOldFiles :: IO()
---              removeOldFiles
---                = mapM_ dump ["aux","pdf","toc","bbl","blg","brf","idx","ilg","ind","out",  -- possible output of pdfLatex
---                              "log0","log1","log2","log3","log4"]  --logfiles created on the fly. 
---              dump :: String -> IO()
---              dump extention =
---                do let file = replaceExtension outputFile extention
---                   exists <- doesFileExist file
---                   when exists (removeFile file)  
-                
-              doRestOfPdfLatex :: (Bool,Int) -> IO (Bool,Int)
-              doRestOfPdfLatex (ready, roundsSoFar)
-                = if or [ready, roundsSoFar > 4]    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
-                  then return (ready, roundsSoFar)
-                  else do callPdfLatexOnce
-                          let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed. 
-                          {- The log file should be renamed before reading, because readFile opens the file
-                             for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
-                             was read using readFile, it will fail because the file is still open. 8-((  
-                          -} 
-                          renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
-                          haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))  
-                          let notReady = isInfixOf needle haystack
-                          when notReady (verboseLn flags "Another round of pdfLatex is required. Hang on...")
-                        --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
-                          doRestOfPdfLatex (not notReady, roundsSoFar +1)
+                             where 
+                                doRestOfPdfLatex :: (Bool,Int) -> IO (Bool,Int)
+                                doRestOfPdfLatex (ready, roundsSoFar)
+                                  = if or [ready, roundsSoFar > 4]    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
+                                    then return (ready, roundsSoFar)
+                                    else do callPdfLatexOnce
+                                            let needle = "Rerun to get cross-references right." -- This is the text of the LaTeX Warning telling that label(s) may have changed. 
+                                            {- The log file should be renamed before reading, because readFile opens the file
+                                               for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
+                                               was read using readFile, it will fail because the file is still open. 8-((  
+                                            -} 
+                                            renameFile (replaceExtension outputFile "log") (replaceExtension outputFile ("log"++show roundsSoFar))
+                                            haystack <- readFile (replaceExtension outputFile ("log"++show roundsSoFar))  
+                                            let notReady = isInfixOf needle haystack
+                                            when notReady (verboseLn flags "Another round of pdfLatex is required. Hang on...")
+                                          --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
+                                            doRestOfPdfLatex (not notReady, roundsSoFar +1)
                   
-              callPdfLatexOnce :: IO ()
-              callPdfLatexOnce = 
-                 do result <- if os=="mingw32" || os=="mingw64" || os=="cygwin" || os=="windows" --REMARK: not a clear enum to check for windows OS
-                              then system ("pdflatex "++pdfflags++ outputFile++[x|x<-"> "++combine (dirOutput flags) "pdflog",not(verboseP flags)])  
-                              --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                              else system ("cd "++(dirOutput flags)
-                                         ++" && pdflatex "
-                                         ++ replaceExtension 
-                                              (baseName flags) 
-                                              (case fspecFormat flags of        
-                                                 FPandoc       -> ".pandoc"
-                                                 FRtf          -> ".rtf"
-                                                 FLatex        -> ".tex"
-                                                 FHtml         -> ".html"
-                                                 FOpenDocument -> ".odt"
-                                              )++[x|x<-"> pdflog",not(verboseP flags)])
-                    case result of 
-                       ExitSuccess   -> verboseLn flags ("PDF file created.")
-                       ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
-                    where
-                    pdfflags = " -include-directory="++(dirOutput flags)++ " -output-directory="++(dirOutput flags)++" "
-
-
+                                callPdfLatexOnce :: IO ()
+                                callPdfLatexOnce = 
+                                   do result <- if os=="mingw32" || os=="mingw64" || os=="cygwin" || os=="windows" --REMARK: not a clear enum to check for windows OS
+                                                then system ("pdflatex "++pdfflags++ outputFile++[x|x<-"> "++combine (dirOutput flags) "pdflog",not(verboseP flags)])  
+                                                --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
+                                                else system ("cd "++(dirOutput flags)
+                                                           ++" && pdflatex "
+                                                           ++ replaceExtension 
+                                                                (baseName flags) 
+                                                                (case fspecFormat flags of        
+                                                                   FPandoc       -> ".pandoc"
+                                                                   FRtf          -> ".rtf"
+                                                                   FLatex        -> ".tex"
+                                                                   FHtml         -> ".html"
+                                                                   FOpenDocument -> ".odt"
+                                                                )++[x|x<-"> pdflog",not(verboseP flags)])
+                                      case result of 
+                                         ExitSuccess   -> verboseLn flags ("PDF file created.")
+                                         ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
+                                      where
+                                      pdfflags = " -include-directory="++(dirOutput flags)++ " -output-directory="++(dirOutput flags)++" "
+               _  -> return()            
+               
 -- TODO: Han, wil jij nog eens goed naar de PanDoc template kijken.
 -- De onderstaande code is een vrij rauwe combinatie van de oude LaTeX header en het
 -- default PanDoc template. Dat krijg je door op de command line   pandoc -D latex  uit te voeren.
 -- In elk geval moeten de conditionals in LaTeX eruit en vervangen worden door Haskell conditionals.
 -- Wellicht wordt e.e.a. daardoor simpeler.
-laTeXtemplate :: Options->String
-laTeXtemplate flags
-   = chain "\n" (
-     [ "% This header is the default LaTeX template for generating documents with Ampersand."
-     , "% It was generated with "++versionbanner
-     , "% You can modify this file to make it fit your needs. However, the required knowledge of "
-     , "% LaTeX is not documented here. You can find help with that at http://en.wikibooks.org/wiki/LaTeX"
-     , "% see the ampersand user guide (TODO) for more information on how to apply your own LaTeX header"
-     , "%"
-     , "\\documentclass[10pt,a4paper]{report}              % Define the document class"
-     , "\\parskip 12pt plus 2.5pt minus 4pt                % Extra vertical space between paragraphs."
-     , "\\parindent 0em                                    % Width of paragraph indentation."
-     , ""
-     , "% -- pachages used for several purposes:"
-     , "\\usepackage{theorem}"
-     , "\\usepackage{amssymb}"
-     , "\\usepackage{amsmath}       % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
-  --   , "\\usepackage{hyperref}"
-     ] ++
-     ( case theme flags of
-        ProofTheme -> [ "\\usepackage[landscape]{geometry}"
-                      , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/logicmatters/l4llogiciansnew.html"
-                      , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/LaTeX/guides/BussGuide2.pdf"
-                      , "\\usepackage{bussproofs}"
-                      , "\\def\\defaultHypSeparation{\\hskip.0in}"
-                      , "\\def\\ScoreOverhang{1pt}"]
-        _ -> []
-     )++
-     ( case language flags of
-        Dutch   -> [ "\\usepackage[dutch]{babel}"
-                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]"
-                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}" ]
-        _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
-                   , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
-     )++
-     ["\\usepackage{graphicx}"                   | useGraphics flags] ++
---     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
-     [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
-     , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
-     , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
-     , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
-     , "\\newcommand{\\iden}{\\mathbb{I}}"
-     , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
-     , "\\newcommand{\\full}{\\mathbb{V}}"
-     , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
-     , "\\newcommand{\\relAdd}{\\dagger}"
-     , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
-     , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
-     , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
-     , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
-     , "\\newcommand{\\rel}{\\times}"
-     , "\\newcommand{\\compose}{;}"
-     , "\\newcommand{\\subs}{\\vdash}"
-     , "\\newcommand{\\fun}{\\rightarrow}"
-     , "\\newcommand{\\isa}{\\sqsubseteq}"
-     , "\\newcommand{\\N}{\\mbox{\\msb N}}"
-     , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
-     , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\rightarrow\\)}\\id{#3}}"
-     , "\\newcommand{\\signat}[3]{\\mbox{\\({#1}_{[{#2},{#3}]}\\)}}"
-     , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
-     , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\times\\)}\\id{#3}}"
-     , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
-     ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
-     [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
-{-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
- -    , "$if(xetex)$"
-     , "\\usepackage{ifxetex}"
-     , "\\ifxetex"
-     , "  \\usepackage{fontspec,xltxtra,xunicode}"
-     , "  \\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}"
-     , "\\else"
-     , "  \\usepackage[mathletters]{ucs}"
-     , "  \\usepackage[utf8x]{inputenc}"
-     , "\\fi"
-     , "$else$"
-     , "\\usepackage[mathletters]{ucs}"
-     , "\\usepackage[utf8x]{inputenc}"
-     , "$endif$" -}
-     , "$if(lhs)$"
-     , "\\usepackage{listings}"
-     , "\\lstnewenvironment{code}{\\lstset{language=Haskell,basicstyle=\\small\\ttfamily}}{}"
-     , "$endif$"
-     , "\\setlength{\\parindent}{0pt}"
-     , "\\setlength{\\parskip}{6pt plus 2pt minus 1pt}"
-     , "$if(verbatim-in-note)$"
-     , "\\usepackage{fancyvrb}"
-     , "$endif$"
-     , "$if(fancy-enums)$"
-     , "\\usepackage{enumerate}"
-     , "$endif$"
-     , "$if(tables)$"
-     , "\\usepackage{array}"
-     , "% This is needed because raggedright in table elements redefines \\\\:"
-     , "\\newcommand{\\PreserveBackslash}[1]{\\let\\temp=\\\\#1\\let\\\\=\\temp}"
-     , "\\let\\PBS=\\PreserveBackslash"
-     , "$endif$"
-     , "$if(strikeout)$"
-     , "\\usepackage[normalem]{ulem}"
-     , "$endif$"
-     , "$if(subscript)$"
-     , "\\newcommand{\\textsubscr}[1]{\\ensuremath{_{\\scriptsize\\textrm{#1}}}}"
-     , "$endif$"
-     , "$if(links)$"
-     , "\\usepackage[breaklinks=true]{hyperref}"
-     , "$endif$"
-     , "$if(url)$"
-     , "\\usepackage{url}"
-     , "$endif$"
-     , "$if(numbersections)$"
-     , "$else$"
-     , "\\setcounter{secnumdepth}{0}"
-     , "$endif$"
-     , "$if(verbatim-in-note)$"
-     , "\\VerbatimFootnotes % allows verbatim text in footnotes"
-     , "$endif$"
-     , "$for(header-includes)$"
-     , "$header-includes$"
-     , "$endfor$"
-     , ""
-     , "$if(title)$"
-     , "\\title{$title$}"
-     , "$endif$"
-     , "\\author{$for(author)$$author$$sep$\\\\$endfor$}"
-     , "$if(date)$"
-     , "\\date{$date$}"
-     , "$endif$"
-     , ""
-     , "\\begin{document}"
-     , "$if(title)$"
-     , "\\maketitle"
-     , "$endif$"
-     , ""
-     , "$if(toc)$"
-     , "\\tableofcontents"
-     , ""
-     , "$endif$"
-     , "$body$"
-     , ""
-     , "\\end{document}"
-     ])
+theTemplate :: Options -> String
+theTemplate flags 
+  = case fspecFormat flags of
+    FLatex -> chain "\n" (
+               [ "% This header is the default LaTeX template for generating documents with Ampersand."
+               , "% It was generated with "++versionbanner
+               , "% You can modify this file to make it fit your needs. However, the required knowledge of "
+               , "% LaTeX is not documented here. You can find help with that at http://en.wikibooks.org/wiki/LaTeX"
+               , "% see the ampersand user guide (TODO) for more information on how to apply your own LaTeX header"
+               , "%"
+               , "\\documentclass[10pt,a4paper]{report}              % Define the document class"
+               , "\\parskip 12pt plus 2.5pt minus 4pt                % Extra vertical space between paragraphs."
+               , "\\parindent 0em                                    % Width of paragraph indentation."
+               , ""
+               , "% -- pachages used for several purposes:"
+               , "\\usepackage{theorem}"
+               , "\\usepackage{amssymb}"
+               , "\\usepackage{amsmath}       % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
+            --   , "\\usepackage{hyperref}"
+               ] ++
+               ( case theme flags of
+                  ProofTheme -> [ "\\usepackage[landscape]{geometry}"
+                                , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/logicmatters/l4llogiciansnew.html"
+                                , "%http://www.phil.cam.ac.uk/teaching_staff/Smith/LaTeX/guides/BussGuide2.pdf"
+                                , "\\usepackage{bussproofs}"
+                                , "\\def\\defaultHypSeparation{\\hskip.0in}"
+                                , "\\def\\ScoreOverhang{1pt}"]
+                  _ -> []
+               )++
+               ( case language flags of
+                  Dutch   -> [ "\\usepackage[dutch]{babel}"
+                             , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]"
+                             , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}" ]
+                  _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
+                             , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
+               )++
+               ["\\usepackage{graphicx}"                   | useGraphics flags] ++
+          --     ["\\graphicspath{{"++posixFilePath (dirOutput flags)++"}}" {- | graphics flags, equalFilePath (dirOutput flags) "." -}] ++  -- for multiple directories use \graphicspath{{images_folder/}{other_folder/}{third_folder/}}
+               [ "\\def\\id#1{\\mbox{\\em #1\\/}}"
+               , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
+               , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
+               , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
+               , "\\newcommand{\\iden}{\\mathbb{I}}"
+               , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+               , "\\newcommand{\\full}{\\mathbb{V}}"
+               , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
+               , "\\newcommand{\\relAdd}{\\dagger}"
+               , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
+               , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+               , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+               , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
+               , "\\newcommand{\\rel}{\\times}"
+               , "\\newcommand{\\compose}{;}"
+               , "\\newcommand{\\subs}{\\vdash}"
+               , "\\newcommand{\\fun}{\\rightarrow}"
+               , "\\newcommand{\\isa}{\\sqsubseteq}"
+               , "\\newcommand{\\N}{\\mbox{\\msb N}}"
+               , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
+               , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\rightarrow\\)}\\id{#3}}"
+               , "\\newcommand{\\signat}[3]{\\mbox{\\({#1}_{[{#2},{#3}]}\\)}}"
+               , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
+               , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\times\\)}\\id{#3}}"
+               , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
+               ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
+               [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
+          {-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
+           -    , "$if(xetex)$"
+               , "\\usepackage{ifxetex}"
+               , "\\ifxetex"
+               , "  \\usepackage{fontspec,xltxtra,xunicode}"
+               , "  \\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}"
+               , "\\else"
+               , "  \\usepackage[mathletters]{ucs}"
+               , "  \\usepackage[utf8x]{inputenc}"
+               , "\\fi"
+               , "$else$"
+               , "\\usepackage[mathletters]{ucs}"
+               , "\\usepackage[utf8x]{inputenc}"
+               , "$endif$" -}
+               , "$if(lhs)$"
+               , "\\usepackage{listings}"
+               , "\\lstnewenvironment{code}{\\lstset{language=Haskell,basicstyle=\\small\\ttfamily}}{}"
+               , "$endif$"
+               , "\\setlength{\\parindent}{0pt}"
+               , "\\setlength{\\parskip}{6pt plus 2pt minus 1pt}"
+               , "$if(verbatim-in-note)$"
+               , "\\usepackage{fancyvrb}"
+               , "$endif$"
+               , "$if(fancy-enums)$"
+               , "\\usepackage{enumerate}"
+               , "$endif$"
+               , "$if(tables)$"
+               , "\\usepackage{array}"
+               , "% This is needed because raggedright in table elements redefines \\\\:"
+               , "\\newcommand{\\PreserveBackslash}[1]{\\let\\temp=\\\\#1\\let\\\\=\\temp}"
+               , "\\let\\PBS=\\PreserveBackslash"
+               , "$endif$"
+               , "$if(strikeout)$"
+               , "\\usepackage[normalem]{ulem}"
+               , "$endif$"
+               , "$if(subscript)$"
+               , "\\newcommand{\\textsubscr}[1]{\\ensuremath{_{\\scriptsize\\textrm{#1}}}}"
+               , "$endif$"
+               , "$if(links)$"
+               , "\\usepackage[breaklinks=true]{hyperref}"
+               , "$endif$"
+               , "$if(url)$"
+               , "\\usepackage{url}"
+               , "$endif$"
+               , "$if(numbersections)$"
+               , "$else$"
+               , "\\setcounter{secnumdepth}{0}"
+               , "$endif$"
+               , "$if(verbatim-in-note)$"
+               , "\\VerbatimFootnotes % allows verbatim text in footnotes"
+               , "$endif$"
+               , "$for(header-includes)$"
+               , "$header-includes$"
+               , "$endfor$"
+               , ""
+               , "$if(title)$"
+               , "\\title{$title$}"
+               , "$endif$"
+               , "\\author{$for(author)$$author$$sep$\\\\$endfor$}"
+               , "$if(date)$"
+               , "\\date{$date$}"
+               , "$endif$"
+               , ""
+               , "\\begin{document}"
+               , "$if(title)$"
+               , "\\maketitle"
+               , "$endif$"
+               , ""
+               , "$if(toc)$"
+               , "\\tableofcontents"
+               , ""
+               , "$endif$"
+               , "$body$"
+               , ""
+               , "\\end{document}"
+               ])
 
+
+    FRtf -> chain "\n" (
+               [ "$if(legacy-header)$"
+               , "$legacy-header$"
+               , "$else$"
+               , "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 \\fswiss Helvetica;}{\\f1 Courier;}}"
+               , "{\\colortbl;\\red255\\green0\\blue0;\\red0\\green0\\blue255;}"
+               , "\\widowctrl\\hyphauto"
+               , "$endif$"
+               , "$for(header-includes)$"
+               , "$header-includes$"
+               , "$endfor$"
+               , ""
+               , "$if(title)$"
+               , "{\\pard \\qc \\f0 \\sa180 \\li0 \\fi0 \\b \\fs36 $title$\\par}"
+               , "$endif$"
+               , "$for(author)$"
+               , "$endfor$"
+               , "$if(date)$"
+               , "{\\pard \\qc \\f0 \\sa180 \\li0 \\fi0  $date$\\par}"
+               , "$endif$"
+               , "$if(spacer)$"
+               , "{\\pard \\ql \\f0 \\sa180 \\li0 \\fi0 \\par}"
+               , "$endif$"
+               , "$for(include-before)$"
+               , "$include-before$"
+               , "$endfor$"
+               , "$body$"
+               , "$for(include-after)$"
+               , "$include-after$"
+               , "$endfor$"
+               , "}"
+               ])
+ 
+ 
 -----Linguistic goodies--------------------------------------
 
 count :: Options -> Int -> String -> String
@@ -466,36 +494,36 @@ latexEsc x
  = f x
    where f "" = ""
          f ('_':str) = "\\_"++f str
-         f ('\192':str) = "\\`A" ++f str   -- À
-         f ('\193':str) = "\\'A" ++f str   -- Á
-         f ('\196':str) = "\\\"A"++f str   -- Ä
-         f ('\200':str) = "\\`E" ++f str   -- È
-         f ('\201':str) = "\\'E" ++f str   -- É
-         f ('\203':str) = "\\\"E"++f str   -- Ë
-         f ('\204':str) = "\\`I" ++f str   -- Ì
-         f ('\205':str) = "\\'I" ++f str   -- Í
-         f ('\207':str) = "\\\"I"++f str   -- Ï
-         f ('\210':str) = "\\`O" ++f str   -- Ò
-         f ('\211':str) = "\\'O" ++f str   -- Ó
-         f ('\214':str) = "\\\"O"++f str   -- Ö
-         f ('\217':str) = "\\`U" ++f str   -- Ù
-         f ('\218':str) = "\\'U" ++f str   -- Ú
-         f ('\220':str) = "\\\"U"++f str   -- Ü
-         f ('\224':str) = "\\`a" ++f str   -- à
-         f ('\225':str) = "\\'a" ++f str   -- á
-         f ('\228':str) = "\\\"a"++f str   -- ä
-         f ('\232':str) = "\\`e" ++f str   -- è
-         f ('\233':str) = "\\'e" ++f str   -- é
-         f ('\235':str) = "\\\"e"++f str   -- ë
-         f ('\236':str) = "\\`i" ++f str   -- ì
-         f ('\237':str) = "\\'i" ++f str   -- í
-         f ('\239':str) = "\\\"i"++f str   -- ï
-         f ('\242':str) = "\\`o" ++f str   -- ò
-         f ('\243':str) = "\\'o" ++f str   -- ó
-         f ('\246':str) = "\\\"o"++f str   -- ö
-         f ('\249':str) = "\\`u" ++f str   -- ù
-         f ('\250':str) = "\\'u" ++f str   -- ú
-         f ('\252':str) = "\\\"u"++f str   -- ü
+         f ('\192':str) = "\\`A" ++f str   -- 
+         f ('\193':str) = "\\'A" ++f str   -- 
+         f ('\196':str) = "\\\"A"++f str   -- 
+         f ('\200':str) = "\\`E" ++f str   -- 
+         f ('\201':str) = "\\'E" ++f str   -- 
+         f ('\203':str) = "\\\"E"++f str   -- 
+         f ('\204':str) = "\\`I" ++f str   -- 
+         f ('\205':str) = "\\'I" ++f str   -- 
+         f ('\207':str) = "\\\"I"++f str   -- 
+         f ('\210':str) = "\\`O" ++f str   -- 
+         f ('\211':str) = "\\'O" ++f str   -- 
+         f ('\214':str) = "\\\"O"++f str   -- 
+         f ('\217':str) = "\\`U" ++f str   -- 
+         f ('\218':str) = "\\'U" ++f str   -- 
+         f ('\220':str) = "\\\"U"++f str   -- 
+         f ('\224':str) = "\\`a" ++f str   -- 
+         f ('\225':str) = "\\'a" ++f str   -- 
+         f ('\228':str) = "\\\"a"++f str   -- 
+         f ('\232':str) = "\\`e" ++f str   -- 
+         f ('\233':str) = "\\'e" ++f str   -- 
+         f ('\235':str) = "\\\"e"++f str   -- 
+         f ('\236':str) = "\\`i" ++f str   -- 
+         f ('\237':str) = "\\'i" ++f str   -- 
+         f ('\239':str) = "\\\"i"++f str   -- 
+         f ('\242':str) = "\\`o" ++f str   -- 
+         f ('\243':str) = "\\'o" ++f str   -- 
+         f ('\246':str) = "\\\"o"++f str   -- 
+         f ('\249':str) = "\\`u" ++f str   -- 
+         f ('\250':str) = "\\'u" ++f str   -- 
+         f ('\252':str) = "\\\"u"++f str   -- 
          f (c:str)   = c: f str
 
 --posixFilePath :: FilePath -> String
