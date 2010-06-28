@@ -28,7 +28,7 @@ import TypeInference.InfLibAG
 import Adl
 import ShowADL
 import Text.Pandoc
-import Rendering.InfTree2Pandoc (pandoctree,writeexpr)
+import Rendering.InfTree2Pandoc (pandoctree,writeexpr,writerule)
 
 fatal :: Int -> String -> a
 fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg )
@@ -235,52 +235,52 @@ errortrees::((Concept,Concept) -> Expression -> Either ((Concept,Concept), Expre
 --TErrorU ETitle InfTree 
 -- the source or target of the type of the root expression is the universe
 errortrees f ds root err@(TErrorU _ inftree) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err)]
     ++pandoctree (Just (inftree,root)) Nothing
 --the composition is over the universe
 errortrees f ds root err@(TErrorUC _ x y) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err),errpar1]
     ++(inftreesub.f (Anything,Anything)) (operand root (therels x))
     ++(inftreesub.f (Anything,Anything)) (operand root (therels y))
 --TErrorAmb ETitle [RelAlgType] 
 -- the type of the root expression is ambiguous
 errortrees f ds root err@(TErrorAmb str ts) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err),errpar1]
     ++ concat [(inftreesub.f (toCpt s,toCpt t)) root|(s,t)<-ts]
 --TError0 ETitle RelAlgObj
 --the object is not defined in isas and not used in env_decls 
 errortrees f ds root err@(TError0{}) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err)]
 --TError1 ETitle RelAlgExpr 
 --the relation expression is not defined in the env_decls
 errortrees f ds root err@(TError1{}) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err)]
 --TError2 ETitle (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType]) 
 --(ababab) there is no type in the first list matching a type in the second
 errortrees f ds root err@(TError2 str (x,txs) (xs,txss)) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err),errpar1]
     ++concat([(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
            ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (concat[therels x|x<-xs]))|(s,t)<-txss])
 --TError3 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) 
 --(abbcac) there is no b in the first list matching a b in the second 
 errortrees f ds root err@(TError3 str (x,txs) (y,tys))
-  = concat$[[Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]]
+  = concat$[[errsct root (printterror ds root err),errpar1]]
          ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
          ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels y))|(s,t)<-tys]
 --TError4 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj] 
 --(abbcac) there is more than one b in the first list matching a b in the second
 errortrees f ds root err@(TError4 str (x,txs) (y,tys) tbs) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err),errpar1]
     ++concat([(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
            ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels y))|(s,t)<-tys])
 --TError5 ETitle RelDecl 
 --The declaration has an heteogeneous type and an homogeneous property
 errortrees f ds root err@(TError5{})
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err)]
 --TError6 ETitle RelAlgType RelAlgExpr RelDecl 
 --The declaration bound to the relation expression has an homogeneous property, but the type inferred is heterogeneous
 errortrees f ds root err@(TError6 str t (Morph m _ _) d) 
-  = [Plain [TeX ("\\section{Type error in $"++writeexpr root++"$ }\n"),Str (printterror ds root err)]]
+  = [errsct root (printterror ds root err)]
 errortrees inferfromscript ds root err = [Plain [Str ("No proof for error: " ++ (printterror ds root err))]]
 
 --TODO -> make it possible to push a type on it, then it is expected to have no type errors.
@@ -288,3 +288,12 @@ inftreesub :: (Either ((Concept,Concept), Expression,InfTree) (String,[Block])) 
 inftreesub (Left (tp,x,inftree)) = pandoctree (Just (inftree,x)) (Just tp)
 inftreesub (Right (_,inftree)) = inftree
 --inftreesub (Right err) = fatal 239 ("Subexpressions are expected to have no type errors:\n"++fst err)
+
+errsct :: Expression -> String -> Block
+errsct x err = 
+   Plain [TeX ("\\section{Type error in $"++ writerule x++ "$ }\n")
+         ,TeX [c|c<-"By definition: $"++writerule x++" \\Leftrightarrow "++writeexpr x++"$ \\newline \n",writerule x/=writeexpr x] 
+         ,Str err
+         ]
+errpar1 :: Block
+errpar1 = Para [Str "Printed next is the list of proofs for all the possible types claimed in the error message."]

@@ -311,7 +311,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   bindRule :: Rule -> Either Rule (String,[Block],FilePos,OrigExpr)
   bindRule r@(Ru{}) = 
      if null err 
-     then Left$ (bindexpr){rrtyp=(c1,c2),rrtyp_proof=inftree, srrel=signaldecl}
+     then Left$ (bindexpr){rrtyp=(populate c1,populate c2),rrtyp_proof=inftree, srrel=signaldecl}
      else Right (err,block,rrfps r,OrigRule r) 
      where
      inf_r = enrich_expr (normExpr r)

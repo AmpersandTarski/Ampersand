@@ -583,7 +583,7 @@ normalise (Equiv ant cons) = normalise(ant |- cons) /\ normalise(cons |- ant)
 normalise (Compl (Implic ant cons)) = normalise$compl(compl ant \/ cons)
 normalise (Compl (Equiv ant cons)) = normalise$compl((ant |- cons) /\ (cons |- ant))
 --demorgan
-normalise (Compl (ISect xs)) = ISect$foldISect$map (normalise.compl) xs
+normalise (Compl (ISect xs)) = ISect$complsfirst$foldISect$map (normalise.compl) xs
 normalise (Compl (Union xs)) = Union$foldUnion$map (normalise.compl) xs
 normalise (Compl (Comp x y)) = normalise(compl x) *!* normalise(compl y)
 normalise (Compl (RAdd x y)) = normalise(compl x) *.* normalise(compl y)

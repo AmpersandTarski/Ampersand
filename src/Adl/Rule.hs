@@ -121,7 +121,7 @@ where
 
    ruleviolations :: Rule -> Pairs
    ruleviolations (Ru{rrsrt=rtyp,rrant=ant,rrcon=con,rrtyp=t}) 
-       | rtyp==Truth = con `contentsnotin` (Tm (V [] t) (-1))  --everything not in con
+       | rtyp==Truth = (Tm (V [] t) (-1)) `contentsnotin` con  --everything not in con
        | rtyp==Implication = ant `contentsnotin` con 
        | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
        where

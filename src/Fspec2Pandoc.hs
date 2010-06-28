@@ -102,7 +102,7 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                designPrinciples   level fSpec flags  ++
                caTxt                                 ++
                daTxt                                 ++
-               [b| (blocks,_)<-svcs, b<-blocks]      ++
+               if not studentversion then [b| (blocks,_)<-svcs, b<-blocks] else []      ++
                if not studentversion then fpAnalysis level fSpec flags else []  ++
                glossary level fSpec flags
              , [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] )
