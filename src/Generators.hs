@@ -28,6 +28,7 @@ generate flags fSpec =
         [ serviceGen   fSpec flags | services     flags] ++
         [ doGenFspec   fSpec flags | genFspec     flags] ++ 
         [ prove        fSpec flags | proofs       flags] ++
+        [ diagnose     fSpec flags | diag         flags] ++
         [ verbose flags "Done."]
        ) 
 
@@ -103,3 +104,20 @@ doGenFspec fSpec flags
        (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
 
               
+-- The following function assumes a syntactically correct ADL-script,
+-- which may contain type errors
+-- it prints a diagnosis of the script.
+-- Status: this is a stub. Nothing has been done on this topic so far.
+diagnose :: Fspc -> Options -> IO()
+diagnose fSpec flags
+   = verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)     >>
+--     putStr (diagnosis flags fSpec) >>
+     verboseLn flags ("Nothing written into " ++ outputFile ++ ", because diagnosis is not yet implemented.")
+       where
+       (thePandoc,thePictures) = case theme flags of
+              ProofTheme -> (proofdoc fSpec,[]) --generate a proof document
+              _ -> fSpec2Pandoc fSpec flags --generate a func spec
+       (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
+
+
+  

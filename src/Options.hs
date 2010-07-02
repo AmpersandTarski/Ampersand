@@ -32,6 +32,7 @@ data Options = Options { contextName   :: Maybe String
                        , theme         :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genXML        :: Bool
                        , genFspec      :: Bool
+                       , diag          :: Bool
                        , fspecFormat   :: FspecFormat
                        , genGraphics   :: Bool   -- if True, graphics will be generated for use in Ampersand products like the Atlas or Functional Spec
                        , useGraphics   :: Bool   -- if True, graphics will be used in the generated products. 
@@ -99,6 +100,7 @@ getOptions =
                       , userAtlas     = []
                       , genXML        = False
                       , genFspec      = False 
+                      , diag          = False 
                       , fspecFormat   = error ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
                       , genGraphics   = True
                       , useGraphics   = True
