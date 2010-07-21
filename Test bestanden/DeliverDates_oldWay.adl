@@ -251,15 +251,9 @@ SIGNAL teBetalen ON I |- paid~;paid EXPLANATION "De volgende factu(u)r(en) is/zi
 ENDPATTERN
 
 PATTERN Date -- provides onafter[Date*Date] and I[Date]
- CONCEPT Date "Een datum (dag in het jaar)" BYPLUG.
+ CONCEPT Date "Een datum (dag in het jaar)"
  onafter :: Date * Date PRAGMA "The day " " is on or after the day " " (the former comes later in time)"
- BYPLUG [SUR,TOT,RFX,TRN].
- PHPPLUG IsDateOnOrAfter {"FILE=date.plug.php"} : I[Date]
-    = [ date {"PHPARG","PHPTYPE=String"} : I
-      , date2 {"PHPARG","PHPTYPE=String"} : onafter
-      ]
- PHPPLUG IsDate {"FILE=date.plug.php"} : I[Date]
-    = [ date {"PHPARG","PHPTYPE=String"} : I
-      ]
+  = [ ("2010-10-24", "2011-01-03" );("2010-01-12", "2011-01-03");("2010-04-12", "2011-01-03")
+    ; ("2010-10-23", "2010-10-24" );("2010-01-11", "2010-01-12");("2010-04-11", "2010-04-12")].
 ENDPATTERN
 ENDCONTEXT
