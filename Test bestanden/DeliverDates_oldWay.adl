@@ -54,7 +54,7 @@ SERVICE Provider : I[Provider]
 SERVICE Bestellingen : I[Order]
  = [ van : from
    , aan : addressedTo
-   , betaaldeOrders : from;paid;delivery;of;V[Order*ONE]
+  -- , betaaldeOrders : from;paid;delivery;of;V[Order*ONE]
    , datum: date
    ]
 
@@ -71,7 +71,7 @@ SERVICE Levering : I[Delivery]
    , Order : of
    , klant : deliveredTo
    , datum: date
-   , betaald : deliveredTo;paid;delivery;V[Delivery*ONE]
+  -- , betaald : deliveredTo;paid;delivery;V[Delivery*ONE]
    ]
 
 SERVICE Orderitem : I[Product]
@@ -84,7 +84,7 @@ SERVICE Bestellijst : I[ONE]
  = [ LijstItem : V[ONE*Delivery]
       = [ leverancier : provided~	
         , klant : deliveredTo
-        , betaald : deliveredTo;paid;delivery;V[Delivery*ONE]
+       -- , betaald : deliveredTo;paid;delivery;V[Delivery*ONE]
         , bezorgdatum: date
    ]    ]
 
