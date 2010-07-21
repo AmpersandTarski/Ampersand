@@ -421,7 +421,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      -> String
                      -> String
 
-   noCollideUnlessTm (Tm _ _) _ nm = nm
+   noCollideUnlessTm (Tm _ _) _ nm = quote nm
    noCollideUnlessTm _  names nm = noCollide names nm
 
    selectExprMorph :: Fspc
@@ -446,7 +446,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExprMorph fSpec i src trg mph -- made for both Mph and I
     | isIdent mph = selectGeneric i (quote$sqlAttConcept fSpec (source mph),src) (quote$sqlAttConcept fSpec (target mph),trg) (quote (sqlConcept fSpec (source mph))) "1"-- (quote (sqlConcept fSpec (source mph))++" IS NOT NULL")
 -- note that sqlMorSrc may be called only with I{} and Mph{} patterns, which happens to be the case. Please take care when editing...
-    | otherwise   = selectGeneric i (sqlMorSrc fSpec mph,src) (sqlMorTrg fSpec mph,trg) (quote$sqlMorName fSpec mph) "1"
+    | otherwise   = selectGeneric i (quote$sqlMorSrc fSpec mph,src) (quote$sqlMorTrg fSpec mph,trg) (quote$sqlMorName fSpec mph) "1"
 
    selectExists' :: Int -> String -> String -> String
    selectExists' i tbl whr
