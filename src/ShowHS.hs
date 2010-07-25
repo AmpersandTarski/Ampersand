@@ -275,6 +275,7 @@ where
                   ,     ", pictPatts     = [] -- Pictures are not in this generated file." -- Plaatjes zijn niet verder uitgewerkt hier. Lijkt me ook niet nuttig. WAAROM? Stef, mee eens?
                   ,wrap ", vConceptDefs  = " indentA (showHS flags) (vConceptDefs fspec)
                   ,     ", themes        = ["++chain "," (map (showHS flags "") (themes fspec))++"]" 
+                  ,     ", fSexpls       = [ "++chain (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
                   ,     ", vctxenv       = vctxenv'"
                   ,"}" 
                   ] ++   
@@ -462,7 +463,7 @@ where
 --       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
 
    instance ShowHS PExplanation where
-    showHSname expla = error ("!Fatal (module ShowHS 396): a PExplanation is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 396): a PExplanation is anonymous with respect to showHS flags")
     showHS flags _ expla = 
        case expla of
          PExplConcept cd lng ref expl -> "PExplConcept "++show cd++" "

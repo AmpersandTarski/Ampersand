@@ -260,7 +260,7 @@
 -- DAAROM:
 --  (SJ) Waarom heeft een label (optioneel) strings?
 --  (GM) Dit is bedoeld als binding mechanisme voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
---  (SJ) Met het invoeren van referenties (t.b.v losse explanations) bestaat er een variant met props en eentje zonder.
+--  (SJ) Met het invoeren van referenties (t.b.v losse Explanations) bestaat er een variant met props en eentje zonder.
    pLabelProps      :: Parser Token Label
    pLabelProps       = lbl <$> pADLid_val_pos
                            <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}') `opt` [])

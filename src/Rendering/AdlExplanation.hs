@@ -21,13 +21,13 @@ import Options
 explainDecl :: Options -> Fspc -> Declaration -> String
 explainDecl options fSpec d
   = chain "\n" ([expl| expl<-expls]++[explainMult options fSpec d])
-    where expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, d'==d, lang==language options]
+    where expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, not (null expl), d'==d, lang==language options]
 
 explainMult :: Options -> Fspc ->Declaration -> String
 explainMult options fSpec d
  = upCap (explMult (language options))  -- WAAROM (SJ) is dit geen case statement? DAAROM (SJ) omdat de "|" notatie zo uitvoerig wordt gebruikt.
       where
-       expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, d'==d, lang==language options]
+       expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, not (null expl), d'==d, lang==language options]
        explMult Dutch
          | null ([Sym,Asy]         >- multiplicities d) = name d++" is een eigenschap van "++(unCap.plural Dutch .name.source) d++"."
          | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is een equivalentierelatie tussen "++(unCap.plural Dutch .name.source) d++"."
@@ -114,7 +114,7 @@ explainRule flags fSpec r
             Dutch   -> "Kunstmatige uitleg: "
          ++ showPredLogic flags r
     else explain flags r
-    where expls = [expl| ExplRule r' lang _ expl<-explanations fSpec, name r==name r', lang==language flags]
+    where expls = [expl| ExplRule r' lang _ expl<-explanations fSpec, not (null expl), name r==name r', lang==language flags]
                   ++[rrxpl r| not (null (rrxpl r))]
 
 

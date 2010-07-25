@@ -197,7 +197,7 @@ where
 
 
    instance XML PExplanation where
-     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for explanations.")
+     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for PExplanation.")
      mkXmlTree expr 
          = case expr of
                 PExplConcept     cdef  lang ref expla -> xpl "PECPT"  (simpleTag cdef) lang ref expla
@@ -212,7 +212,7 @@ where
                                        [PlainText expla]
 
    instance XML Explanation where
-     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for explanations.")
+     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for Explanation.")
      mkXmlTree expr 
          = case expr of
                 ExplConcept     cdef  lang ref expla -> xpl "ECPT"  (simpleTag (name cdef)) lang ref expla

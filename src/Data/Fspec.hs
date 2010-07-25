@@ -73,7 +73,7 @@ module Data.Fspec ( Fspc(..)
     isa          fSpec = fsisa  fSpec
 -- Once ADL allows explanations to be given from with a service declaration, these must be made visible by <explanations>
 -- Until that time, the list of explanations is (predictably) empty.
-    explanations fSpec = []
+    explanations fSpec = fSexpls fSpec
 
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.
@@ -92,6 +92,7 @@ module Data.Fspec ( Fspc(..)
                      , fsv_creating  :: Concepts               -- All concepts of which this service can create new instances
                      , fsv_deleting  :: Concepts               -- All concepts of which this service can delete instances
                      , fsv_fpa       :: FPA                    -- function point assessment of this service
+                     , fsv_expls     :: [Explanation]          -- The explanations of everything that is used in this service.
                      }
 
    instance Show Fservice where
@@ -134,7 +135,7 @@ module Data.Fspec ( Fspc(..)
                        where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
 -- Once ADL allows explanations to be given from with a service declaration, these must be made visible by <explanations>
 -- Until that time, the list of explanations is (predictably) empty.
-    explanations svc = []
+    explanations svc = fsv_expls svc
 
    type Fields = [Field]
    data Field  = Att { fld_name      :: String                 -- The name of this field

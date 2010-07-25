@@ -469,6 +469,7 @@ So the first step is create the kernels ...   -}
                                           2 -> IF Eenvoudig
                                           3 -> IF Gemiddeld
                                           _ -> IF Moeilijk 
+                      , fsv_expls     = [] -- TODO: alle explanations verzamelen van dingen die in de service zitten
                       } in s
     where
 -- step 1: the relations that yield potentially editable fields. These relations are called "visible".
