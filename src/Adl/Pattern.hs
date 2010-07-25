@@ -7,7 +7,7 @@ where
    import Adl.Gen                      (Gens)
    import Adl.MorphismAndDeclaration   (Declarations)
    import Adl.ConceptDef               (ConceptDefs)
-   import Adl.Explanation              (Explanations)
+   import Adl.Explanation              (PExplanations)
    import CommonClasses                (Identified(..))
    import Collection                   (Collection(..))
    
@@ -19,7 +19,7 @@ where
             , ptdcs :: Declarations  -- ^ The declarations declared in this pattern
             , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
             , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
-            , ptxps :: Explanations  -- ^ The explanations of elements defined in this pattern
+            , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
             }   --deriving (Show) -- voor debugging
 
 -- \***********************************************************************

@@ -125,18 +125,18 @@
                   | otherwise                 = "\""++ss++"\""
 
    instance ShowADL Explanation where
-    showADL (ExplConcept     cname lang ref expla) = "EXPLAIN CONCEPT "   ++cname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplDeclaration mph   lang ref expla) = "EXPLAIN RELATION "  ++showADL mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplRule        rname lang ref expla) = "EXPLAIN RULE "      ++rname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplKeyDef      kname lang ref expla) = "EXPLAIN KEY "       ++kname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplObjectDef   oname lang ref expla) = "EXPLAIN SERVICE "   ++oname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplPopulation  mph   lang ref expla) = "EXPLAIN POPULATION "++showADL mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplSQLPlug     sqlnm lang ref expla) = "EXPLAIN SQLPLUG "   ++sqlnm++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplPHPPlug     phpnm lang ref expla) = "EXPLAIN PHPPLUG "   ++phpnm++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplDeclaration mph   lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplPopulation  mph   lang ref expla) = "EXPLAIN POPULATION "++showADLcode fSpec mph++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec xpl = showADL xpl
+    showADL (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADL d++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++   " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++   " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++   " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++    " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++  " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec d++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++     " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++     " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++     " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADLcode fSpec (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
 
    -- The declarations of the pattern are supplemented by all declarations needed to define the rules.
    -- Thus, the resulting pattern is self-contained with respect to declarations.
@@ -342,8 +342,8 @@
        name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
        (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
         if null mults then "" else showL(map showADL mults))++
-       (if null(decprL decl++decprM decl++decprR decl) then "" else " PRAGMA "++chain " " (map show [decprL decl,decprM decl,decprR decl]))++
-       (if null (decexpl decl) then "" else " EXPLANATION \""++decexpl decl++"\"")
+       (if null(decprL decl++decprM decl++decprR decl) then "" else " PRAGMA "++chain " " (map show [decprL decl,decprM decl,decprR decl]))
+ -- obsolete 18 July 2010       ++ (if null (decexpl decl) then "" else " EXPLANATION \""++decexpl decl++"\"")
        ++"."
     showADL (Isn g s)
      = "I["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"

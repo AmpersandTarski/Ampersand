@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 --DESCR -> functions translating adl to natural language.
 --TODO -> Maybe this module is useful at more places than just func spec rendering. In that case it's not a Rendering module and it needs to be replaced
-module Rendering.AdlExplanation(explainArt,explainDecl,explainMult,explainRule) where
+module Rendering.AdlExplanation(explainDecl,explainMult,explainRule) where
 import Adl
 import Data.Fspec
 import Collection (Collection ((>-)))
 import Char (toLower)
-import Strings (unCap, upCap, firstCaps)
+import Strings (chain, unCap, upCap, firstCaps)
 import Languages(Lang(Dutch,English),plural)
 import PredLogic (showPredLogic, applyM)
 import Options
@@ -14,16 +14,20 @@ import Options
 --instance Explained Expression where
 --    explain flags e = showPredLogic flags e
 
-explainDecl :: Options -> Declaration -> String
-explainDecl options d
-  | explain options d=="NONE" = ""
---  | null (explain options d)  = 
-  | otherwise                 = explain options d++"\n"++explainMult options d
+-- The general idea is that an ADL declaration such as:
+-- EXPLAIN r[A*B] IN ENGLISH
+-- {+ This text explains why r[A*B] exists -}
+-- produces the exact right text in the functional specification
+explainDecl :: Options -> Fspc -> Declaration -> String
+explainDecl options fSpec d
+  = chain "\n" ([expl| expl<-expls]++[explainMult options fSpec d])
+    where expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, d'==d, lang==language options]
 
-explainMult :: Options -> Declaration -> String
-explainMult options d
+explainMult :: Options -> Fspc ->Declaration -> String
+explainMult options fSpec d
  = upCap (explMult (language options))  -- WAAROM (SJ) is dit geen case statement? DAAROM (SJ) omdat de "|" notatie zo uitvoerig wordt gebruikt.
       where
+       expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, d'==d, lang==language options]
        explMult Dutch
          | null ([Sym,Asy]         >- multiplicities d) = name d++" is een eigenschap van "++(unCap.plural Dutch .name.source) d++"."
          | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is een equivalentierelatie tussen "++(unCap.plural Dutch .name.source) d++"."
@@ -50,7 +54,7 @@ explainMult options d
                                                           ++applyM d "b" "a"++"."
          | null ([    Tot        ] >- multiplicities d) = applyM d ("elke "++(unCap.name.source) d) ("tenminste "++preciesEen++" "++(unCap.name.target) d)++"."
          | null ([Uni            ] >- multiplicities d) = applyM d ("elke "++(unCap.name.source) d) ("nul of "++preciesEen++" "++(unCap.name.target) d)++"."
-         | otherwise                                    = if null (explain options d)
+         | otherwise                                    = if null expls
                                                           then "De zin: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' heeft betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" "++(var [].source) d++" en een "++(unCap.name.target) d++" "++(var [source d].target) d++"."
                                                           else "Dus heeft de zin: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" "++(var [].source) d++" en een "++(unCap.name.target) d++" "++(var [source d].target) d++"."
        explMult English
@@ -86,7 +90,7 @@ explainMult options d
                                                           ++applyM d "b" "a"++"."
          | null ([    Tot        ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)++"."
          | null ([Uni            ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
-         | otherwise                                    = (if null (explain options d)
+         | otherwise                                    = (if null expls
                                                            then "The sentence: "
                                                            else "So, the sentence: ")++
                                                           doublequote (upCap (applyM d ((unCap.firstCaps.name.source) d++" "++(var [].source) d) ((unCap.firstCaps.name.target) d++" "++(var [source d].target) d)))++
@@ -102,22 +106,15 @@ var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit 
 var seen c = low c ++ ['\''| c'<-seen, low c == low c']
              where low idt= if null (name idt) then "x" else [(toLower.head.name) idt]
 
-explainArt :: Options -> Fspc -> Rule ->  String
-explainArt flags _ rul  -- TODO Geef een mooie uitleg van deze regel. 
-    = if null (explain flags rul)
-      then case language flags of
-              English   -> "Artificial explanation: "
-              Dutch     -> "Kunstmatige uitleg: " 
-           ++ showPredLogic flags rul
-      else explain flags rul
-
-explainRule :: Options -> Rule -> String
-explainRule flags r
-  = if null (explain flags r)
+explainRule :: Options -> Fspc -> Rule -> String
+explainRule flags fSpec r
+  = if null expls
     then case language flags of
             English -> "Artificial explanation: "
             Dutch   -> "Kunstmatige uitleg: "
          ++ showPredLogic flags r
-    else (if explain flags r=="NONE" then "" else explain flags r)
+    else explain flags r
+    where expls = [expl| ExplRule r' lang _ expl<-explanations fSpec, name r==name r', lang==language flags]
+                  ++[rrxpl r| not (null (rrxpl r))]
 
 

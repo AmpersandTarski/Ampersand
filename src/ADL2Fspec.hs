@@ -41,6 +41,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  , pictPatts    = [] --Nothing
                  , vConceptDefs = conceptDefs context
                  , themes       = themes'
+                 , fSexpls      = fSexpls'
                  , vctxenv      = ctxenv context
                  }
         allDecs = [ d{decprps_calc = multiplicities d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
@@ -203,6 +204,9 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         themes' = FTheme{tconcept=Anything,tfunctions=[],trules=themerules}
                   :(map maketheme$orderby [(wsopertheme oper, oper)
                                           |oper<-themeoperations, wsopertheme oper /= Nothing])
+        fSexpls' = explanations context                ++
+                   explanations (patterns context)     ++
+                   explanations (rules context)
         --TODO -> by default CRUD operations of datasets, possibly overruled by ECA or PHP plugs
         themeoperations = phpoperations++sqloperations
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
@@ -765,7 +769,7 @@ So the first step is create the kernels ...   -}
                                    , decprM  = ""
                                    , decprR  = ""
                                    , decpopu = []
-                                   , decexpl = ""
+                                   , decexplain = ""  -- obsolete as of 18 July 2010
                                    , decfpos = Nowhere
                                    , decid   = 0
                                    , deciss  = True

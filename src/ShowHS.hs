@@ -439,13 +439,21 @@ where
  -- TODO: showHS flags should generate valid Haskell code for the entire pattern. Right now, it doesn't
     showHSname pat = haskellIdentifier ("pat_"++name pat)
     showHS flags indent pat
-     = "Pat "++show (name pat)++
-       (if null (rules pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname r                    | r<-rules pat] ++            "]")++
-       (if null (ptgns pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") g| g<-ptgns pat] ++indent++"    ]")++
-       (if null (ptdcs pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname d                    | d<-ptdcs pat] ++            "]")++
-       (if null (ptcds pat) then " []" else indent++"    [" ++chain          "    , "  [showHSname c                    | c<-ptcds pat] ++            "]")++
-       (if null (ptkds pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") k| k<-ptkds pat] ++indent++"    ]")++
-       (if null (ptxps pat) then " []" else indent++"    [ "++chain (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]")
+     = chain (indent++"   ")
+       ([ "Pat "++show (name pat)
+        , if null (rules pat) then " [ {- no rules -} ]"
+                              else " [" ++chain          "    , "  [showHSname r                    | r<-rules pat] ++            "]"
+        , if null (ptgns pat) then " [ {- no generalizations -} ]"
+                              else " [ "++chain (indent++"    , ") [showHS flags (indent++"     ") g| g<-ptgns pat] ++indent++"    ]"
+        , if null (ptdcs pat) then " [ {- no declarations -} ]"
+                              else " [" ++chain          "    , "  [showHSname d                    | d<-ptdcs pat] ++            "]"
+        , if null (ptcds pat) then " [ {- no concept definitions -} ]"
+                              else " [" ++chain          "    , "  [showHSname c                    | c<-ptcds pat] ++            "]"
+        , if null (ptkds pat) then " [ {- no key definitions -} ]"
+                              else " [ "++chain (indent++"    , ") [showHS flags (indent++"     ") k| k<-ptkds pat] ++indent++"    ]"
+        , if null (ptxps pat) then " [ {- no explanations -} ]"
+                              else " [ "++chain (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]"
+        ])
 --       indent++"where"++
 --       (if null (ptdcs   pat) then "" else concat [indent++" "++showHSname d ++indent++"  = "++ showHS flags (indent++"    ") d |d <-ptdcs   pat] )++
 --       (if null (signals pat) then "" else concat [indent++" "++showHSname s ++indent++"  = "++ showHS flags (indent++"    ") s |r <-signals pat, let s=srrel r] )++
@@ -453,29 +461,39 @@ where
 --       (if null (ptcds   pat) then "" else concat [indent++" "++showHSname cd++indent++"  = "++ showHS flags (indent++"    ") cd|cd<-ptcds   pat] )++
 --       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
 
-   instance ShowHS Explanation where
-    showHSname expla = error ("!Fatal (module ShowHS 396): an explaination is anonymous with respect to showHS flags. Detected at: "++ showADL expla)
-    showHS flags indent expla = 
-      indent++"EXPLAIN "++
+   instance ShowHS PExplanation where
+    showHSname expla = error ("!Fatal (module ShowHS 396): a PExplanation is anonymous with respect to showHS flags")
+    showHS flags _ expla = 
        case expla of
-         ExplConcept s lng ref expl ->  "ExplConcept "++s++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplDeclaration mph lng ref expl ->  "ExplDeclaration "++showHS flags "" mph++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplRule s lng ref expl -> "ExplRule "++s++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplKeyDef s lng ref expl -> "ExplKeyDef "++s++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplObjectDef s lng ref expl -> "ExplObjectDef "++s++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplPattern s lng ref expl -> "ExplPattern "++s++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplPopulation mph lng ref expl -> "ExplPopulation "++showHS flags "" mph++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplSQLPlug s lng ref expl -> "ExplSQLPlug "++s++" "
-                                          ++show lng++" "++ref++" "++expl
-         ExplPHPPlug s lng ref expl -> "ExplPHPPlug "++s++" "
-                                          ++show lng++" "++ref++" "++expl
+         PExplConcept cd lng ref expl -> "PExplConcept "++show cd++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         PExplDeclaration mph lng ref expl ->  "PExplDeclaration ("++showHS flags "" mph++") "
+                                          ++show lng++" "++show ref++" "++show expl
+         PExplRule r lng ref expl -> "PExplRule "++show r++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         PExplKeyDef kd lng ref expl -> "PExplKeyDef "++show kd++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         PExplObjectDef s lng ref expl -> "PExplObjectDef "++show s++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         PExplPattern pname lng ref expl -> "PExplPattern "++show pname++" "
+                                          ++show lng++" "++show ref++" "++show expl
+
+   instance ShowHS Explanation where
+    showHSname expla = error ("!Fatal (module ShowHS 396): an Explanation is anonymous with respect to showHS flags. Detected at: "++ showADL expla)
+    showHS flags _ expla = 
+       case expla of
+         ExplConcept cd lng ref expl -> "ExplConcept "++showHSname cd++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         ExplDeclaration d lng ref expl ->  "ExplDeclaration ("++showHS flags "" d++") "
+                                          ++show lng++" "++show ref++" "++show expl
+         ExplRule r lng ref expl -> "ExplRule "++showHSname r++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         ExplKeyDef kd lng ref expl -> "ExplKeyDef "++showHSname kd++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         ExplObjectDef s lng ref expl -> "ExplObjectDef "++showHSname s++" "
+                                          ++show lng++" "++show ref++" "++show expl
+         ExplPattern pname lng ref expl -> "ExplPattern "++show pname++" "
+                                          ++show lng++" "++show ref++" "++show expl
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
@@ -626,7 +644,7 @@ where
                            ,", decprM  = " ++ show (decprM d)
                            ,", decprR  = " ++ show (decprR d)
                            ,", decpopu = " ++ show (decpopu d)
-                           ,", decexpl = " ++ show (decexpl d)
+ -- obsolete: 18 July 2010 ,", decexpl = " ++ show (decexpl d)
                            ,", decfpos = " ++ showHS flags "" (decfpos d)
                            ,", decid   = " ++ show (decid d)
                            ,", deciss  = " ++ show (deciss d)

@@ -23,7 +23,7 @@ module Data.Fspec ( Fspc(..)
    import Data.Plug                     
    import Picture                       (Pictures)
    import FPA
-   data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
+   data Fspc = Fspc { fsName       :: String               -- ^ The name of the specification, taken from the ADL-script
                     , vplugs       :: Plugs                -- ^ all plugs defined in the ADL-script
                     , plugs        :: Plugs                -- ^ all plugs (defined and derived)
                     , serviceS     :: ObjectDefs           -- ^ all services defined in the ADL-script
@@ -38,9 +38,10 @@ module Data.Fspec ( Fspc(..)
                     , fsisa        :: Inheritance Concept  -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: Patterns             -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Pictures             -- ^ List of pictures containing pattern pictures (in same order as patterns)
-                    , vConceptDefs :: ConceptDefs           -- ^ all conceptDefs defined in the ADL-script
-                    , themes       :: [FTheme]              -- ^ generated: one FTheme for every pattern
-                    , vctxenv   :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
+                    , vConceptDefs :: ConceptDefs          -- ^ all conceptDefs defined in the ADL-script
+                    , themes       :: [FTheme]             -- ^ generated: one FTheme for every pattern
+                    , fSexpls      :: [Explanation]        -- ^ all explanations that are valid within the current specification
+                    , vctxenv :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
 
    instance Morphical Fspc where
@@ -70,6 +71,9 @@ module Data.Fspec ( Fspc(..)
     gens         fSpec = vgens fSpec
     patterns     fSpec = vpatterns fSpec
     isa          fSpec = fsisa  fSpec
+-- Once ADL allows explanations to be given from with a service declaration, these must be made visible by <explanations>
+-- Until that time, the list of explanations is (predictably) empty.
+    explanations fSpec = []
 
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.
@@ -128,6 +132,9 @@ module Data.Fspec ( Fspc(..)
     patterns      _  = []
     isa          svc = Isa ts (concs svc>-[c| (g,s)<-ts,c<-[g,s]])
                        where ts = [(g,s)| g<-concs svc, s<-concs svc, g<s, null [c|c<-concs svc, g<c, c<s]]
+-- Once ADL allows explanations to be given from with a service declaration, these must be made visible by <explanations>
+-- Until that time, the list of explanations is (predictably) empty.
+    explanations svc = []
 
    type Fields = [Field]
    data Field  = Att { fld_name      :: String                 -- The name of this field

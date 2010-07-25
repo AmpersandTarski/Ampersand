@@ -34,6 +34,7 @@ module Adl ( Architecture(..)
            , ECArule(..)
            , Event(..)
            , PAclause(..)
+           , PExplanation(..)
            , Explanation(..)
            )
 where
@@ -64,7 +65,7 @@ where
                                          
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)
-   import Adl.Explanation                (Explanation(..))
+   import Adl.Explanation                (Explanation(..), PExplanation(..))
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules

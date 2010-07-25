@@ -8,7 +8,7 @@ where
    import Adl.MorphismAndDeclaration  (Declarations,Declaration)
    import Adl.KeyDef                  (KeyDefs)
    import Adl.ObjectDef               (ObjectDefs)
-   import Adl.Explanation             (Explanations)
+   import Adl.Explanation             (PExplanations)
    import Adl.Population              (Populations)
    import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression)
@@ -32,7 +32,7 @@ where
             , ctxcs    :: ConceptDefs               -- ^ The concept definitions defined in this context, outside the scope of patterns
             , ctxks    :: KeyDefs                   -- ^ The key definitions defined in this context, outside the scope of patterns
             , ctxos    :: ObjectDefs                -- ^ The attributes defined in this context, outside the scope of patterns
-            , ctxes    :: Explanations              -- ^ The explanations defined in this context, outside the scope of patterns
+            , ctxpes   :: PExplanations             -- ^ The pre-explanations defined in this context, outside the scope of patterns
             , ctxpops  :: Populations               -- ^ The populations defined in this context
             , ctxsql   :: ObjectDefs  --a list of sqlplugs
             , ctxphp   :: ObjectDefs  --a list of phpplugs

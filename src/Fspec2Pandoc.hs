@@ -230,8 +230,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
   dpRule (r:rs) n seenConcs seenDeclarations
    = ( [ [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))] |(c,cd)<-cds]++
-       [ [Para [symReqLabel d, Str$ explainDecl flags d]] |d<-nds] ++
-       [ [Para [symReqLabel r, Str$ explainRule flags r]] ] ++ dpNext
+       [ [Para [symReqLabel d, Str$ explainDecl flags fSpec d]] |d<-nds] ++
+       [ [Para [symReqLabel r, Str$ explainRule flags fSpec r]] ] ++ dpNext
      , n''
      , seenCs'
      , seenDs'
@@ -240,8 +240,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
       ncs    = concs r >- seenConcs                                             -- all concepts that are used for the first time
       cds    = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]         -- lookup their concept definitions, where available
       seenCs = concs r `uni` seenConcs
-      nds    = [d|d<-decls r, not (isIdent d), explainDecl flags d/=""] >- seenDeclarations      -- all declarations that are used for the first time
-      seenDs = [d|d<-decls r, not (isIdent d), explainDecl flags d/=""] `uni` seenDeclarations   -- all declarations that are used for the first time
+      nds    = [d|d<-decls r, not (isIdent d), explainDecl flags fSpec d/=""] >- seenDeclarations      -- all declarations that are used for the first time
+      seenDs = [d|d<-decls r, not (isIdent d), explainDecl flags fSpec d/=""] `uni` seenDeclarations   -- all declarations that are used for the first time
       n' = n+length cds+length nds+1
       ( dpNext, n'', seenCs', seenDs') = dpRule rs n' seenCs seenDs
 
@@ -267,7 +267,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
          newConcepts  = concs newRelations >- seenConcepts
          newRelations = [d| d@Sgn{}<-decls ([r| r<-rules fSpec++signals fSpec]), decusr d, d `notElem` seenRelations, not (null (multiplicities d))]
          paraConcs    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs]
-         paraDecls    = [Para [symReqLabel d, Str$ explainMult flags d] |d<-newRelations, not (isIdent d)]
+         paraDecls    = [Para [symReqLabel d, Str$ explainMult flags fSpec d] |d<-newRelations, not (isIdent d)]
       dpSections dpRul          -- a function that assembles the text for one rule.
                  (thm:thms)     -- The name of the patterns that are used in this specification.
                  seenConcepts   -- All concepts that have been defined in earlier sections
@@ -363,11 +363,12 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     iterat [] _ _ _ = []
     iterat (pat:ps) i seenConcepts seenDeclarations
      = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
+       ++ sctMotivation
        ++ (if (useGraphics flags) 
             then 
               (case language flags of             -- announce the conceptual diagram
-                Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptuele analyse van dit thema."]] ]
-                English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual analysis of this theme."]] ]
+                Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptueel diagram van dit thema."]] ]
+                English -> [Para [x | x<-[Str "Figure ", xrefReference (figlabel pict), Str " shows a conceptual diagram of this theme."]] ]
               ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
             else []
           )
@@ -377,6 +378,8 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
          pict = makePicture flags fSpec pat   -- the Picture that represents this service's knowledge graph
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
+         sctMotivation
+          = [Para [Str expl|ExplPattern nm l ref expl<-explanations fSpec, nm==name pat, l==language flags]]
          (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
          patRules     = [r| r<-rules fSpec,   r_pat r==name pat, r_usr r]
@@ -385,10 +388,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
     dpRule (r:rs) n seenConcs seenDeclarations
      = ( [ ( [Str (name r)]
-           , [ [ Plain [Str (explainRule flags r)]] ++
+           , [ [ Plain [Str (explainDecl flags fSpec d)]|d<-nds] ++
                [ Plain (text1)| not (null nds)] ++
                pandocEqnArray [ ([TeX ("\\id{"++latexEsc (name d)++"}")], [TeX ":"], [TeX ("\\id{"++latexEsc (name (source d))++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++latexEsc (name (target d))++"}"), symDefLabel d])
                               |d<-nds] ++
+               [ Plain [Str (explainRule flags fSpec r)]] ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
                pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cp (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
@@ -403,9 +407,9 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
         text1
          = case (length nds,language flags) of
              (1,Dutch)   -> let d = head nds in
-                            [TeX ("Om dit te formaliseren, introduceren we "++(if isFunction d then "functie" else "relation")++"~"),symDefRef d,TeX "."]
+                            [TeX ("Om dit te formaliseren, introduceren we "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " (",symDefRef d,Str "):"]
              (1,English) -> let d = head nds in
-                            [TeX ("In order to formalize this, we introduce "++(if isFunction d then "function" else "relation")++"~"),symDefRef d,TeX ":"]
+                            [TeX ("In order to formalize this, we introduce "++(if isFunction d then "function" else "relation")++" "),Str (name d),Str " (",symDefRef d,Str "):"]
              (l,Dutch)   -> [TeX "De formalisatie in vergelijking~", symDefRef r,TeX (" heeft de volgende "++count flags l "relatie"++" nodig.")]
              (l,English) -> [TeX "The formalization (equation~", symDefRef r,TeX (") requires the following "++count flags l "relation"++".")]
         text2
@@ -415,9 +419,9 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
              (0,_,Dutch)   -> [Str "We gebruiken definities ", TeX (commaNL "en" [str |d<-rds, let TeX str=symDefRef d])]
              (0,_,English) -> [Str "We use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
              (_,1,Dutch)   -> [Str "Daarnaast gebruiken we definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,1,English) -> [Str "Besides, we use definition ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,_,Dutch)   -> [Str "Daarnaast gebruiken we definities ", TeX (commaNL "en" [str |d<-rds, let TeX str=symDefRef d])]
-             (_,_,English) -> [Str "Besides, we use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
+             (_,1,English) -> [Str "We use definition ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
+             (_,_,Dutch)   -> [Str "Daarvoor gebruiken we definities ", TeX (commaNL "en" [str |d<-rds, let TeX str=symDefRef d])]
+             (_,_,English) -> [Str "For that we use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
            )++
            (case (length nds,language flags) of
              (1,Dutch)   -> [TeX " om eis~", symReqRef r, TeX " (pg.~", symReqPageRef r, Str ") te formaliseren:"]
@@ -442,7 +446,9 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
 dataAnalysis :: Int -> Fspc -> Options -> ([Block],Picture)
-dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainingDecls ++ [b | p<-datasets fSpec, b<-daPlug p] , classDiagramPicture )
+dataAnalysis lev fSpec flags
+ = ( header ++ daContents ++ daAssociations remainingDecls ++
+   [b | p<-datasets fSpec, b<-daPlug p] , classDiagramPicture )
  where 
   remainingDecls = declarations fSpec >- [d | p<-datasets fSpec, d<-decls p]
 
@@ -640,7 +646,7 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
    = if null content then [] else plugHeader ++ content
      where
        plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
-       content = daAttributes p ++ plugRules ++ plugSignals
+       content = daAttributes p ++ plugRules ++ plugSignals ++ iRules
        plugRules
         = case language flags of
            English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
@@ -677,6 +683,31 @@ dataAnalysis lev fSpec flags = ( header ++ daContents ++ daAssociations remainin
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende signalen. " ]
                               , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
+       iRules
+        = case language flags of
+           English -> case irs of
+                       []  -> []
+                       [e] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
+                              , Para [ Math DisplayMath $ showMathcode fSpec e]
+                              ]
+                       es  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
+                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
+                              ]
+           Dutch   -> case irs of
+                       []  -> []
+                       [e] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
+                              , Para [ Math DisplayMath $ showMathcode fSpec e]
+                              ]
+                       es  -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregels. " ]
+                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
+                              ]
+          where irs = [Fu fs| Quad m ccrs<-vquads fSpec
+                            , r_usr (cl_rule ccrs), isIdent m, source m `elem` [c|(c,_)<-cLkpTbl p]
+                            , (_,shifts)<-cl_conjNF ccrs
+                            , Fu fs<-shifts
+                            , let ns=[t| Cp t<-fs], length ns==1, Tm nega _<-ns
+                            , m==nega
+                            ]
 
 ------------------------------------------------------------
 serviceChap :: Int -> Fspc -> Options -> Fservice ->  ([Block],[Picture])

@@ -229,7 +229,7 @@
     where lexExpl' str c p ('-':'}':s) = token TkExpl str p fn: c (advc 2 p) s
           lexExpl' str c p ('{':'-':s) = lexNest fn (lexExpl' str c) (advc 2 p) s
           lexExpl' str c p ('-':'-':s) = lexExpl' str c  p (dropWhile (/= '\n') s)
-          lexExpl' str c p (x:s)       = lexExpl' (x:str) c (adv p x) s
+          lexExpl' str c p (x:s)       = lexExpl' (str++[x]) c (adv p x) s
           lexExpl' _ _ _ []            = [ errToken "Unterminated EXPLAIN section" pos fn ]
 
    scanString []            = ("",0,[])

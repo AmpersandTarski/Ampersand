@@ -179,7 +179,7 @@ where
                , decprM  :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , decprR  :: String
                , decpopu :: Pairs   -- ^ the list of tuples, of which the relation consists.
-               , decexpl :: String  -- ^ the explanation
+               , decexplain :: String   -- ^ the explanation (obsolete as of 18 July 2010)
                , decfpos :: FilePos -- ^ the position in the ADL source file where this declaration is declared.
                , decid   :: Int     -- ^ a unique number that can be used to identify the relation
                , deciss  :: Bool    -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
@@ -206,7 +206,7 @@ where
       d == d' = name d==name d' && source d==source d' && target d==target d'
    instance Show Declaration where
     showsPrec _ d
-     = showString (chain " " ([decnm d,"::",name (desrc d),"*",name (detrg d),show (decprps_calc d),"PRAGMA",show (decprL d),show (decprM d),show (decprR d)]++if null (decexpl d) then [] else ["EXPLANATION",show (decexpl d)]))
+     = showString (chain " " ([decnm d,"::",name (desrc d),"*",name (detrg d),show (decprps_calc d),"PRAGMA",show (decprL d),show (decprM d),show (decprR d)] {- obsolete: ++if null (decexpl d) then [] else ["EXPLANATION",show (decexpl d)] -} ))
    instance Identified Declaration where
     name d@Sgn{}   = decnm d
     name Isn{}     = "I"
@@ -294,10 +294,12 @@ where
    mIs c = I [] c c True
 
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
-                  
+
+{- obsolete 18 July 2010              
    instance Explained Declaration where
     explain _ d@Sgn{} = decexpl d    -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
     explain _ _ = ""
+-}
 
    isSgn :: Declaration -> Bool
    isSgn Sgn{} = True

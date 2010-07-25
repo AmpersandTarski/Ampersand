@@ -57,16 +57,16 @@
                        where  
                        rebexpr x y = (x,y)
                        universe = (Tm(V [] (cptAnything,cptAnything)) (-1),[]) --default: the universe
-                       rebuild nm env on ces = Ctx nm on empty [] pats [] ds cs ks os es pops sqlplugs phpplugs env
+                       rebuild nm env on ces = Ctx nm on empty [] pats [] ds cs ks os pes pops sqlplugs phpplugs env
                               where
                                ps   = [p| CPat p<-ces]
                                ds   = [d| CDcl d<-ces]
                                cs   = [c| CCon c<-ces]
                                ks   = [k| CKey k<-ces]
                                os   = [o| CObj o<-ces]
-                               es   = [e| CXpl e<-ces]
+                               pes  = [e| CXpl e<-ces]
                                pops = [Popu mph prs| CPop mph prs<-ces]
-                               pats = ps -- obsolete:  ++[Pat "CONTEXT" [] [] ds cs ks es| not (null ds && null cs && null ks)]
+                               pats = ps
                                sqlplugs = [plug| CSqlPlug plug<-ces]
                                phpplugs = [plug| CPhpPlug plug<-ces]
 
@@ -78,7 +78,7 @@
                        | CPop Morphism Pairs
                        | CSqlPlug ObjectDef
                        | CPhpPlug ObjectDef
-                       | CXpl Explanation
+                       | CXpl PExplanation
 
    pLanguageID        :: Parser Token Lang
    pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Dutch
@@ -91,16 +91,13 @@
    pRefID             :: Parser Token String
    pRefID              = (pKey "REF" *> pString) `opt` []
 
-   pExplain           :: Parser Token Explanation
-   pExplain            = ExplConcept     <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> pConid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplDeclaration <$ pKey "EXPLAIN" <* pKey "RELATION"   <*> pMorphism <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplRule        <$ pKey "EXPLAIN" <* pKey "RULE"       <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplKeyDef      <$ pKey "EXPLAIN" <* pKey "KEY"        <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplObjectDef   <$ pKey "EXPLAIN" <* pKey "SERVICE"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplPattern     <$ pKey "EXPLAIN" <* pKey "PATTERN"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplPopulation  <$ pKey "EXPLAIN" <* pKey "POPULATION" <*> pMorphism <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplSQLPlug     <$ pKey "EXPLAIN" <* pKey "SQLPLUG"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         ExplPHPPlug     <$ pKey "EXPLAIN" <* pKey "PHPPLUG"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl 
+   pExplain           :: Parser Token PExplanation
+   pExplain            = PExplConcept     <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> pConid    <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplDeclaration <$ pKey "EXPLAIN" <* pKey "RELATION"   <*> pMorphism <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplRule        <$ pKey "EXPLAIN" <* pKey "RULE"       <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplKeyDef      <$ pKey "EXPLAIN" <* pKey "KEY"        <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplObjectDef   <$ pKey "EXPLAIN" <* pKey "SERVICE"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplPattern     <$ pKey "EXPLAIN" <* pKey "PATTERN"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl
 
    pContextElement    :: Parser Token ContextElement
    pContextElement     = CPat     <$> pPattern      <|>
@@ -126,7 +123,7 @@
                      | Pm Declaration
                      | Pc ConceptDef
                      | Pk KeyDef
-                     | Pe Explanation
+                     | Pe PExplanation
 
    pPatElem         :: Parser Token PatElem
    pPatElem          = Pr <$> pRuleDef <|>
@@ -329,7 +326,7 @@
                                <*> (pKey "*" <|> pKey "->" ) 
                                <*> pConcept
                                <*> (pProps `opt` []) <*> (pPragma `opt` [])
-                               <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
+   -- obsolete (18 July 2010)  <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
                                <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
                        where rebuild :: String
                                      -> FilePos
@@ -338,11 +335,11 @@
                                      -> Concept
                                      -> [Prop]
                                      -> [String]
-                                     -> String
+   -- obsolete (18 July 2010)        -> String
                                      -> Pairs
                                      -> Declaration
-                             rebuild nm pos' s fun' t props pragma expla content
-                               = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content expla pos' 0 False True []
+                             rebuild nm pos' s fun' t props pragma {- obsolete 18 July 2010: expla -} content
+                               = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content "" {- obsolete 18 July 2010: expla -} pos' 0 False True []
                                  where pr = pragma++["","",""]
                                        props'= rd props `uni` if fun'=="->" then [Uni,Tot] else []
 

@@ -196,19 +196,31 @@ where
        = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
 
 
+   instance XML PExplanation where
+     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for explanations.")
+     mkXmlTree expr 
+         = case expr of
+                PExplConcept     cdef  lang ref expla -> xpl "PECPT"  (simpleTag cdef) lang ref expla
+                PExplDeclaration m     lang ref expla -> xpl "PEDECL" (simpleTag (name m++name(source m)++name(target m))) lang ref expla
+                PExplRule        r     lang ref expla -> xpl "PERULE" (simpleTag r) lang ref expla
+                PExplKeyDef      k     lang ref expla -> xpl "PEKEYD" (simpleTag k) lang ref expla
+                PExplObjectDef   o     lang ref expla -> xpl "PEODEF" (simpleTag o) lang ref expla
+                PExplPattern     pname lang ref expla -> xpl "PEPAT"  (simpleTag pname) lang ref expla
+      where
+       xpl :: String -> XTag -> Lang -> String -> String -> XTree
+       xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
+                                       [PlainText expla]
+
    instance XML Explanation where
      mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for explanations.")
      mkXmlTree expr 
          = case expr of
-               (ExplConcept     cname lang ref expla) -> xpl "ECPT"  (simpleTag cname) lang ref expla
-               (ExplDeclaration mph   lang ref expla) -> xpl "EDECL" (simpleTag (name mph++name(source mph)++name(target mph))) lang ref expla
-               (ExplRule        rname lang ref expla) -> xpl "ERULE" (simpleTag rname) lang ref expla
-               (ExplKeyDef      kname lang ref expla) -> xpl "EKEYD" (simpleTag kname) lang ref expla
-               (ExplObjectDef   oname lang ref expla) -> xpl "EODEF" (simpleTag oname) lang ref expla
-               (ExplPattern     pname lang ref expla) -> xpl "EPAT"  (simpleTag pname) lang ref expla
-               (ExplPopulation  mph   lang ref expla) -> xpl "EPOP"  (simpleTag (name mph++name(source mph)++name(target mph))) lang ref expla
-               (ExplSQLPlug     sqlnm lang ref expla) -> xpl "ESQLP" (simpleTag sqlnm) lang ref expla
-               (ExplPHPPlug     phpnm lang ref expla) -> xpl "EPHPP" (simpleTag phpnm) lang ref expla
+                ExplConcept     cdef  lang ref expla -> xpl "ECPT"  (simpleTag (name cdef)) lang ref expla
+                ExplDeclaration d     lang ref expla -> xpl "EDECL" (simpleTag (name d++name(source d)++name(target d))) lang ref expla
+                ExplRule        r     lang ref expla -> xpl "ERULE" (simpleTag (name r)) lang ref expla
+                ExplKeyDef      k     lang ref expla -> xpl "EKEYD" (simpleTag (name k)) lang ref expla
+                ExplObjectDef   o     lang ref expla -> xpl "EODEF" (simpleTag (name o)) lang ref expla
+                ExplPattern     pname lang ref expla -> xpl "EPAT"  (simpleTag pname) lang ref expla
       where
        xpl :: String -> XTag -> Lang -> String -> String -> XTree
        xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
@@ -259,7 +271,6 @@ where
                   ++[Elem (simpleTag "Pragma") 
                              [PlainText (show (prL++"%f"++prM++"%t"++prR))] 
                                 | not (null (prL++prM++prR))]
-                  ++ explainTree (decexpl d)
                   ++[Elem (simpleTag "Population") 
                              (map mkXmlTree (decpopu d)) 
                                 | not (null (decpopu d))]                 

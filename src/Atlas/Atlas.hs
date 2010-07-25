@@ -182,14 +182,14 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
    pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents x]
    pop' ATContainsSignal = [[cptrule x,show y]| x<-signalrules, y<-ruleviolations x]
-   pop' ATExplanation = [[explainRule flags x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|x@Sgn{}<-declarations fSpec, decusr x]
+   pop' ATExplanation = [[explainRule flags fSpec x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATSubExpression = [[cptsubexpr x y ,cptrule x]|x<-userrules, y<-subexprs x] 
-   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
+   pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags fSpec x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    --pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
    pop' ATPicture = [[imgURL pic]|pic<-pics]
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Mph{})<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]
-   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
+   pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags fSpec x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x@Sgn{}<-declarations fSpec, decusr x, y<-contents x]
               ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents x]
    pop' ATPattern = [[name x,imgURL pic]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
@@ -198,12 +198,12 @@ insertpops conn fSpec flags (tbl:tbls) pics =
                      --REMARK -> decls from pat instead of fSpec!
    pop' ATRelation = [[relpred x,expl x,example x,decpat x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATRelVar = [[relpred x,cpttype x]|x@Sgn{}<-declarations fSpec, decusr x]
-   pop' ATRule = [[cptrule x,cpttype x,explainRule flags x,r_pat x]|x<-atlasrules]
+   pop' ATRule = [[cptrule x,cpttype x,explainRule flags fSpec x,r_pat x]|x<-atlasrules]
    pop' ATService = [[name fSpec,imgURL pic]|pic<-pics, origName pic==name fSpec, pType pic == PTFservice]
-   pop' ATSignal = [[cptrule x,cpttype x,explainRule flags x,r_pat x,cptrule$nextrule x signalrules,cptrule$prevrule x signalrules]|x<-signalrules]
+   pop' ATSignal = [[cptrule x,cpttype x,explainRule flags fSpec x,r_pat x,cptrule$nextrule x signalrules,cptrule$prevrule x signalrules]|x<-signalrules]
    pop' ATType = [t x|x@Sgn{}<-declarations fSpec, decusr x] ++ [t x|x<-atlasrules]
         where t x = [cpttype x, name$source x, name$target x]
-   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags x,imgURL pic,r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
+   pop' ATUserRule = [[cptrule x,cpttype x,explainRule flags fSpec x,imgURL pic,r_pat x,cptrule$nextrule x userrules,cptrule$prevrule x userrules]|x<-userrules,pic<-pics, origName pic==name x, pType pic == PTRule]
    pop' ATViolRule = [[ y, x] | (x,y)<-identifiedviols]
    pop' ATViolHomoRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule homorules)]
    pop' ATViolMultRule = [[ y, x] | (x,y)<-identifiedviols, elem x (map cptrule multrls)]
@@ -232,7 +232,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    mphpred x = name x
    example d = if null (contents d) then  applyM d "x" "y" 
                else applyM d (fst$head$contents d) (snd$head$contents d)
-   expl d = if null(explain flags d) then "There is no description for this relation." else explain flags d
+   expl d = explainDecl flags fSpec d
    description::Concept->String
    description c = if null ds then "There is no description for this concept." else head ds
        where ds = [cddef cd|cd<-conceptDefs fSpec, name cd==name c]

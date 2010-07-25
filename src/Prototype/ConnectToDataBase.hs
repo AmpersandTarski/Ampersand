@@ -6,7 +6,7 @@
    import Options
    import Languages
    import ShowADL(showADLcode)
-   import Rendering.AdlExplanation(explainArt)
+   import Rendering.AdlExplanation(explainRule)
    import NormalForms (conjNF)
    import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,phpShow,pDebug,noCollide)
    import Version (versionbanner)
@@ -121,6 +121,6 @@
        dbError rule
         = case language flags of
            Dutch   -> phpShow("Overtreding ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-                      phpShow(")\nreden: \""++explainArt flags fSpec rule++"\"<BR>")++""
+                      phpShow(")\nreden: \""++explainRule flags fSpec rule++"\"<BR>")++""
            English -> phpShow("Violation ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-                      phpShow(")\nreason: \""++explainArt flags fSpec rule++"\"<BR>")++""
+                      phpShow(")\nreason: \""++explainRule flags fSpec rule++"\"<BR>")++""

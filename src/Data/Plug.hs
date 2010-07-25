@@ -15,7 +15,13 @@ module Data.Plug (Plug(..),Plugs
                  ,isScalar
                  ,isBinary)
 where
-  import Adl
+  import Adl.Concept (Concept(..),Association(..),Morphic(..))
+  import Adl.MorphismAndDeclaration
+  import Adl.Expression (Expression(..))
+  import Adl.ObjectDef (ObjectDef(..))
+  import Adl.FilePos (FilePos(..))
+  import Classes.Object (Object(..))
+  import CommonClasses
   import Collection  (rd)
   import FPA
   import Maybe
@@ -39,9 +45,9 @@ where
   instance Object Plug where
   -- TODO: PlugPHP is niet overal goed uitgewerkt. Kan later (bij de introductie van PlugPHP) tot lastige fouten leiden. 
    concept p = case p of
-     PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++name p++".")
+     PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++plname p++".")
      PlugSql{}             -> head [c|(c,_)<-cLkpTbl p]
-     PlugPhp{}             -> error ("!Fatal (module Data.Plug 40): No definition for concept of plug "++name p++".")
+     PlugPhp{}             -> error ("!Fatal (module Data.Plug 40): No definition for concept of plug "++plname p++".")
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
    attributes p = case p of 
      PlugSql{} -> 
@@ -58,29 +64,29 @@ where
                  where
                    mms' = [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
                    stop = [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
-     PlugPhp{} ->  error ("!Fatal (module Data.Plug 58): No definition for attributes of plug "++name p++".")
+     PlugPhp{} ->  error ("!Fatal (module Data.Plug 58): No definition for attributes of plug "++plname p++".")
    ctx p = Tm (mIs (concept p)) (-1)
-   populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
+   populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++plname p++".")
 
   isClass  :: Plug -> Bool
   isClass  p = case p of
       PlugSql{} -> not (null [1::Int|fld<-fields p, flduniq fld]) && not (null [1::Int|fld<-fields p, not (flduniq fld)])
-      PlugPhp{} ->  error ("!Fatal (module Data.Plug 67): No definition for isClass of plug "++name p++".")
+      PlugPhp{} ->  error ("!Fatal (module Data.Plug 67): No definition for isClass of plug "++plname p++".")
 
   isBinary :: Plug -> Bool
   isBinary p = case p of
       PlugSql{} -> length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
-      PlugPhp{} ->  error ("!Fatal (module Data.Plug 72): No definition for isBinary of plug "++name p++".")
+      PlugPhp{} ->  error ("!Fatal (module Data.Plug 72): No definition for isBinary of plug "++plname p++".")
 
   isScalar :: Plug -> Bool
   isScalar p = case p of
       PlugSql{} -> length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
-      PlugPhp{} ->  error ("!Fatal (module Data.Plug 77): No definition for isScalar of plug "++name p++".")
+      PlugPhp{} ->  error ("!Fatal (module Data.Plug 77): No definition for isScalar of plug "++plname p++".")
 
   instance Association Plug where
      source p           = (source . fldexpr . head . fields) p
      target p@PlugSql{} | isBinary p = target m where (m,_,_) = head (mLkpTbl p)
-     target p                        = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++name p++", because it is not binary.")
+     target p                        = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++plname p++", because it is not binary.")
 
   instance Morphic Plug where
  {- TBD (nog omzetten van Rule naar (binaire) Plug
@@ -111,7 +117,7 @@ where
               | otherwise         = False  -- TODO: check correctness!
  -}
     isSignal p@PlugSql{} | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
-    isSignal p@PlugPhp{} = error ("!Fatal (module Data.Plug 114): No definition for isSignal of plug "++name p++".")
+    isSignal p@PlugPhp{} = error ("!Fatal (module Data.Plug 114): No definition for isSignal of plug "++plname p++".")
     isSignal _                        = False
 
   data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
@@ -133,13 +139,13 @@ where
                              where typ = fromMaybe (fldtyp (target expr)) maybeTp
   
   instance Identified PhpValue where
-     name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> name x}
+     name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> objnm x}
 
   --DESCR -> plugs are sorted to optimize some algoritms. 
   instance Eq Plug where
-    x==y = name x==name y
+    x==y = plname x==plname y
   instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
-    compare x y = compare (name x) (name y)
+    compare x y = compare (plname x) (plname y)
   
   data SqlField = Fld { fldname     :: String
                       , fldexpr     :: Expression
@@ -181,31 +187,13 @@ where
   iskey :: SqlField->Bool
   iskey f = flduniq f && not (fldnull f)
   fldtyp :: Concept->SqlType
-  fldtyp nm = case name nm of { "BLOB"   -> SQLBlob;
-                                "PASS"   -> SQLPass;
-                                "STRING" -> SQLVarchar 255;
-                                "TEXT"   -> SQLText;
-                                _        -> SQLVarchar 255
+  fldtyp c = case cptnm c of { "BLOB"   -> SQLBlob;
+                              "PASS"   -> SQLPass;
+                              "STRING" -> SQLVarchar 255;
+                              "TEXT"   -> SQLText;
+                              _        -> SQLVarchar 255
                               }
 
   instance Identified Plug where
     name p = plname p
 
-  instance Morphical SqlField where
-    concs     f = [target e'|let e'=fldexpr f,isSur e']
-    mors      f = (rd.map makeInline.mors.fldexpr) f
-    morlist   f = morlist   (fldexpr f)
-    decls     f = decls     (fldexpr f)
-    closExprs f = closExprs (fldexpr f)
-    
-  instance Morphical Plug where
-    concs     p@PlugSql{} = concs     (fields p)
-    concs     PlugPhp{} = []                       -- To be done...
-    mors      p@PlugSql{} = mors      (fields p)
-    mors      PlugPhp{} = []                       -- To be done...
-    morlist   p@PlugSql{} = morlist   (fields p)
-    morlist   PlugPhp{} = []                       -- To be done...
-    decls     p@PlugSql{} = decls     (fields p)
-    decls     PlugPhp{} = []                       -- To be done...
-    closExprs p@PlugSql{} = closExprs (fields p)
-    closExprs PlugPhp{} = []                       -- To be done...

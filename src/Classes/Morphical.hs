@@ -8,7 +8,7 @@ module Classes.Morphical                 (Morphical(concs
                                                    ,idsOnly
                                          )         )
 where
-   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),MorphicId(..))
+   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),MorphicId(..),Morphic(..))
    import Adl.Context                    (Context(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..),Morphisms,Declarations
                                          ,makeDeclaration,makeInline,mIs)
@@ -18,7 +18,7 @@ where
    import Adl.KeyDef                     (KeyDef(..))
    import Adl.Pattern                    (Pattern(..))
    import Adl.Rule                       (Rule(..),RuleType(..))
-   
+   import Data.Plug
    import Classification                 (Classification,preCl)
    import Collection                     (Collection(..))
    import Typology                       (genEq,typology)
@@ -219,5 +219,22 @@ where
     decls     _ = []
     closExprs _ = []
 
-
+   instance Morphical SqlField where
+    concs     f = [target e'|let e'=fldexpr f,isSur e']
+    mors      f = (rd.map makeInline.mors.fldexpr) f
+    morlist   f = morlist   (fldexpr f)
+    decls     f = decls     (fldexpr f)
+    closExprs f = closExprs (fldexpr f)
     
+   instance Morphical Plug where
+    concs     p@PlugSql{} = concs     (fields p)
+    concs     PlugPhp{} = []                       -- To be done...
+    mors      p@PlugSql{} = mors      (fields p)
+    mors      PlugPhp{} = []                       -- To be done...
+    morlist   p@PlugSql{} = morlist   (fields p)
+    morlist   PlugPhp{} = []                       -- To be done...
+    decls     p@PlugSql{} = decls     (fields p)
+    decls     PlugPhp{} = []                       -- To be done...
+    closExprs p@PlugSql{} = closExprs (fields p)
+    closExprs PlugPhp{} = []                       -- To be done...
+

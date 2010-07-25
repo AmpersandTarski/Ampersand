@@ -7,12 +7,14 @@ where
    import Adl.Rule                    (Rule(..), rulefromProp, ruleviolations,Rules)
    import Adl.ObjectDef               (ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                  (KeyDefs)
-   import Adl.MorphismAndDeclaration  (Declarations,mIs)
+   import Adl.MorphismAndDeclaration  (Declarations,mIs,makeDeclaration)
    import Adl.Concept                 (Concept(..),Morphic(..))
    import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression(..))
    import Adl.Pair                    (Paire)
    import Adl.FilePos                 (Numbered(..),FilePos(..))
+   import Adl.Explanation             (Explanation(..),PExplanation(..))
+   import Languages
    import Classes.Morphical           (Morphical(..))
    import Collection                  (Collection(..))
    import CommonClasses               (Identified(..))
@@ -41,8 +43,12 @@ where
      isa          :: a -> Inheritance Concept
      --TODO -> there are more rules than rules+multrules that can be violated
      violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
-     violations x = [(r,viol) |r<-rules x++multrules x, viol<-ruleviolations r] 
-
+     violations x = [(r,viol) |r<-rules x++multrules x, viol<-ruleviolations r]
+-- For parser data structures (which are: Concept, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
+-- the function <explanations :: a -> [Explanation]> gives all explanations that are declared directly in <a>, but not in possible components of <a>.
+-- So if <a> is a context, it gives the explanations declared in <a>, but not those declared in patterns in <a>
+     explanations :: a -> [Explanation] -- all explanations declared in <a>. An explanation should answer the question "Why does <a> exist?"
+     
    instance ViewPoint a => ViewPoint [a] where
     objectdef _      = Obj { objnm   = ""         --  view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                            , objpos  = Nowhere    --  position of this definition in the text of the ADL source file (filename, line number and column number)
@@ -63,6 +69,7 @@ where
     patterns         = rd' name.concat.map patterns -- TODO: nagaan waar wordt afgedwongen dat elk pattern door zijn naam identificeerbaar is.
     isa              = foldr uni empty.map isa
     violations xs    = (concat. map violations) xs
+    explanations xs  = (concat. map explanations) xs
 
    instance ViewPoint Context where
     objectdef    context = Obj { objnm   = name context
@@ -82,6 +89,13 @@ where
     gens         context = gens (ctxpats context)
     patterns     context = ctxpats context
     isa          context = ctxisa  context
+    explanations context
+     = [ExplConcept    cd l ref expla| PExplConcept     nm  l ref expla<-ctxpes context, cd<-ctxcs context, name cd==nm] ++
+       [ExplDeclaration d l ref expla| PExplDeclaration mph l ref expla<-ctxpes context,  d<-ctxds context, makeDeclaration mph==d] ++
+       [ExplRule        r l ref expla| PExplRule        nm  l ref expla<-ctxpes context,  r<-ctxrs context, name r==nm] ++
+       [ExplKeyDef      k l ref expla| PExplKeyDef      nm  l ref expla<-ctxpes context,  k<-ctxks context, name k==nm] ++
+       [ExplObjectDef   o l ref expla| PExplObjectDef   nm  l ref expla<-ctxpes context,  o<-ctxos context, name o==nm] ++
+       [ExplPattern    pn l ref expla| PExplPattern     pn  l ref expla<-ctxpes context,  p<-ctxpats context, name p==pn]
 
    instance ViewPoint Pattern where
     objectdef    pat = Obj { objnm   = name pat
@@ -102,6 +116,12 @@ where
     patterns     pat = [pat]
     isa          pat = Isa ts (concs pat>-[c| g<-ptgns pat,c<-[gengen g,genspc g]])
                        where ts = clear [(gengen g,genspc g)| g<-ptgns pat]
+    explanations pat
+     = [ExplConcept    cd l ref expla| PExplConcept     nm  l ref expla<-ptxps pat, cd<-ptcds pat, name cd==nm] ++
+       [ExplDeclaration d l ref expla| PExplDeclaration mph l ref expla<-ptxps pat,  d<-ptdcs pat, makeDeclaration mph==d] ++
+       [ExplRule        r l ref expla| PExplRule        nm  l ref expla<-ptxps pat,  r<-ptrls pat, name r==nm] ++
+       [ExplKeyDef      k l ref expla| PExplKeyDef      nm  l ref expla<-ptxps pat,  k<-ptkds pat, name k==nm]
+
 
    instance ViewPoint Rule where
     objectdef rule = Obj { objnm   = name rule
@@ -129,6 +149,7 @@ where
     isa r      = Isa ts (concs r>-[c| (g,s)<-ts,c<-[g,s]])
                  where ts = [(g,s)| g<-concs r, s<-concs r, g<s, null [c|c<-concs r, g<c, c<s]]
 -- was    isa r = empty
+    explanations r = [ ExplRule r English "" (rrxpl r) ]
 
    clear :: [(Concept,Concept)] -> [(Concept,Concept)]
    clear abs' = rd [(a,b)| (a,b)<-abs', a/=b]
