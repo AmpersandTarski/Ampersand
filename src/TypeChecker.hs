@@ -73,7 +73,9 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
                  [ (err 
                    ++ "\n   in key definition expression " ++ showADL expr  
                    ++ "\n   at " ++ show fp ++ "\n",block)
-                 | (err,block,fp,OrigKeyDef expr)<-check3]
+                 | (err,block,fp,OrigKeyDef expr)<-check3] ++
+                 [ (err ++ "\n",block)
+                 | (err,block,_,OrigExpl)<-check3]
    check4 = checkSvcNameUniqueness ctxs
    check5 = checkPopulations ctxs
   -- check6 = checkSvcLabels ctxs
@@ -115,7 +117,7 @@ addsgndecls ::Context -> Context
 addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
   where allsgndecls = [srrel r | r<-allPatRules (allCtxPats [cx]), isSignal r]
 
-data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression
+data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression | OrigExpl
 
 -- enrichCtx supplies all information to the parse tree of a single context
 -- that can only be computed after the type checking process.
@@ -133,15 +135,19 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
-          ctxpats = [p | (p,_)<-ctxpatterns], -- all rules inside the scope of patterns
+          ctxpats = [p | (p,_,_)<-ctxpatterns], -- all rules inside the scope of patterns
           ctxrs   = [rule | Left rule<-ctxCtxRules], -- all rules outside the scope of patterns and all rules from within patterns
           ctxds   = ctxdecls, -- 
           ctxos   = [od | (od,_)<-ctxobjdefs], 
           ctxks   = [kd | (kd,_)<-ctxCtxKeys],
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
-          ctxphp  = [plug | (plug,_)<-ctxphpplugs]} 
+          ctxphp  = [plug | (plug,_)<-ctxphpplugs],
+          ctxpes  = [x |Left x<-map enrichexpl (ctxpes cx)]
+         } 
   ,  [err|Right err<-ctxCtxRules]
-   ++[err|(_,rs)<-ctxpatterns, Right err<-rs]
+   ++[err|(_,rs,_)<-ctxpatterns, Right err<-rs] --rule errors
+   ++[(err,[],Nowhere,OrigExpl)|(_,_,errs)<-ctxpatterns, err<-errs] --explanation errors
+   ++[(err,[],Nowhere,OrigExpl)|Right err<-map enrichexpl (ctxpes cx)]
    ++[err|(_,checkedexprs)<-ctxobjdefs,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxsqlplugs,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxphpplugs,  Right err<-checkedexprs]
@@ -196,11 +202,13 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 
 
   --DESCR -> enriching ctxpats
-  ctxpatterns :: [(Pattern,[Either Rule (String,[Block],FilePos,OrigExpr)])]
+  ctxpatterns :: [(Pattern,[Either Rule (String,[Block],FilePos,OrigExpr)],[String])]
   ctxpatterns
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
                                                     --     the patterns of this context
-  bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu},bindrules)
+  bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]}
+                      ,bindrules
+                      ,[err|Right err<-pexpls])
     where
     bindrules = map bindRule $ ptrls p
     boundrules = [br | Left br<-bindrules
@@ -214,6 +222,29 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     boundkds = [bk | (bk,_)<-bindkds]
     addpopu = let matches = [d' |d@Sgn{}<-ptdcs p, d'@Sgn{}<-ctxdecls, decfpos d==decfpos d']
               in matches ++ [d|d@Sgn{}<-ptdcs p, not$elem (decfpos d) (map decfpos matches)]
+    pexpls = map enrichexpl (ptxps p)
+
+  --Every Explanation must relate to something
+  enrichexpl x@(PExplConcept{}) = checkPExpl (allCtxCpts ctxs) x 
+  enrichexpl (PExplDeclaration mph l ref expla) = case enrich_expr (Tm mph (-1)) of
+     Left (_,Tm emph _,_) -> Left (PExplDeclaration emph l ref expla)
+     Right (err,_) -> Right ("Explanation for relation "++name mph++" could not be matched to a declaration because "++err)
+     _ -> error$ "!Fatal (module Typechecker 225): function enrichexpl: impossible case."
+  enrichexpl x@(PExplRule{}) = checkPExpl ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
+  enrichexpl x@(PExplKeyDef{}) = checkPExpl (ctxks cx) x
+  enrichexpl x@(PExplObjectDef{}) = checkPExpl (objDefs cx) x
+  enrichexpl x@(PExplPattern{}) = checkPExpl (ctxpats cx) x 
+
+  checkPExpl :: (Identified a) => [a] -> PExplanation -> Either PExplanation String
+  checkPExpl xs x 
+     | elem (name x) (map name xs) = Left x
+     | otherwise = Right ("There is an explanation for the non-existing "++explobj x++" " ++ name x)
+  explobj (PExplConcept _ _ _ _) = "concept"
+  explobj (PExplDeclaration _ _ _ _) = "declaration"
+  explobj (PExplRule _ _ _ _) = "rule"
+  explobj (PExplKeyDef _ _ _ _) = "key definition"
+  explobj (PExplObjectDef _ _ _ _) = "service definition"
+  explobj (PExplPattern _ _ _ _) = "pattern"
 
   --DESCR -> enriching ctxds
   --         take all declarations from patterns included (not extended) in this context
