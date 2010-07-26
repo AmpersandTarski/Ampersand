@@ -504,7 +504,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    sqlRel fSpec m
     = error ("!Fatal (module RelBinGenBasics 505): no plug exists for "++showADLcode fSpec m) 
 
--- WAAROM bestaat sqlRelPlugs? Bas, is het onderstaande antwoord correct?
+-- WAAROM bestaat sqlRelPlugs?
 -- DAAROM (SJ) sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
 -- Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
 -- Een expressie, 

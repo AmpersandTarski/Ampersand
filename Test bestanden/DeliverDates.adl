@@ -253,7 +253,7 @@ ENDPATTERN
 PATTERN Date -- provides onafter[Date*Date] and I[Date]
  CONCEPT Date "Een datum (dag in het jaar)" BYPLUG.
  onafter :: Date * Date PRAGMA "The day " " is on or after the day " " (the former comes later in time)"
- BYPLUG [SUR,TOT,RFX,TRN].
+ BYPLUG [SUR,TOT,RFX,TRN,ASY].
  PHPPLUG IsDateOnOrAfter {"FILE=date.plug.php"} : I[Date]
     = [ date {"PHPARG","PHPTYPE=String"} : I
       , date2 {"PHPARG","PHPTYPE=String"} : onafter
