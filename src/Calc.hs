@@ -133,12 +133,12 @@ module Calc ( deriveProofs
 --                                 if not (visible m) then Blk else
                                    doCode visible ev toExpr viols)
                                    [(conj,causes)]  -- the motivation for these actions
-                                | clause@(Fu fus) <- shifts
+                                | clause@(Fux fus) <- shifts
                                 , let clause' = conjNF (subst (m, actSem Ins m (delta (sign m))) clause)
-                                , let step    = conjNF (Fu[Cp clause,clause'])
+                                , let step    = conjNF (Fux[Cpx clause,clause'])
                                 , let viols   = conjNF (notCp clause')
-                                , let negs    = Fu [f| f<-fus, isNeg f]
-                                , let poss    = Fu [f| f<-fus, isPos f]
+                                , let negs    = Fux [f| f<-fus, isNeg f]
+                                , let poss    = Fux [f| f<-fus, isPos f]
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
@@ -164,7 +164,7 @@ module Calc ( deriveProofs
            ]++
            if rrsrt rule==Truth then [] else
               [ ("\nViolations are computed by (conjNF . Cp . normexpr) rule:\n     "++
-                 (conjProof. Cp . normExpr) rule++"\n"
+                 (conjProof. Cpx . normExpr) rule++"\n"
                 , "")
               , ("\nConjuncts:\n     "++
                  chain "\n     " (rd[ showADL conjunct
@@ -177,21 +177,21 @@ module Calc ( deriveProofs
                                    [ "event = "++show ev++" "++showADL m++"\n"++
                                      showADL r++"["++showADL m++":="++showADL (actSem ev m (delta (sign m)))++"] = r'\n"++
                                      "r'    = "++conjProof r'++"\n"++
-                                     "viols = r'-"++disjProof (Cp r')++"\n"++
+                                     "viols = r'-"++disjProof (Cpx r')++"\n"++
                                      "violations, considering that the valuation of "++showADL m++" has just been changed to "++showADL (actSem ev m (delta (sign m)))++
-                                     "            "++conjProof (Cp r) ++"\n"++
-                                     "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fu[Cp r,r'])++")"++
-                                        conjProof (Fu[Cp r,r'])++"\n"++
-                                     "delta: r-/\\r' = "++conjProof (Fi[notCp r,r'])++
-                                     "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fu[Cp r,r']))++"\n"++
+                                     "            "++conjProof (Cpx r) ++"\n"++
+                                     "reaction? evaluate r |- r' ("++(showADL.conjNF) (Fux[Cpx r,r'])++")"++
+                                        conjProof (Fux[Cpx r,r'])++"\n"++
+                                     "delta: r-/\\r' = "++conjProof (Fix[notCp r,r'])++
+                                     "\nNow compute a reaction\n(isTrue.conjNF) (Fu[Cp r,r']) = "++show ((isTrue.conjNF) (Fux[Cpx r,r']))++"\n"++
                                      (if null (lambda ev (Tm m (-1)) r)
                                       then "lambda "++showADL m++" ("++showADL r++") = empty\n"
                                       else -- for debug purposes:
                                            -- "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
                                            -- "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
                                            -- "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++
-                                           if (isTrue.conjNF) (Fu[Cp r,r'])
-                                           then "A reaction is not required, because  r |- r'. Proof:"++conjProof (Fu[Cp r,r'])++"\n"
+                                           if (isTrue.conjNF) (Fux[Cpx r,r'])
+                                           then "A reaction is not required, because  r |- r'. Proof:"++conjProof (Fux[Cpx r,r'])++"\n"
                                            else if checkMono r ev m
                                            then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let Tm _ _ = delta (sign m) in
@@ -237,18 +237,18 @@ module Calc ( deriveProofs
    reprAsRule r expr = r'{r_usr=False}
     where
      r' = case expr of
-           (Fu []) -> error ("!Fatal (module Calc 439): erroneous call to function reprAsRule r ("++showADL expr++").")
-           (Fu ts) -> if or [isNeg t|t<-ts] 
+           (Fux []) -> error ("!Fatal (module Calc 439): erroneous call to function reprAsRule r ("++showADL expr++").")
+           (Fux ts) -> if or [isNeg t|t<-ts] 
                       then r { rrsrt = Implication
-                             , rrant = Fi [notCp t|t<-ts,isNeg t]
-                             , rrcon = Fu [t|t<-ts,isPos t]
+                             , rrant = Fix [notCp t|t<-ts,isNeg t]
+                             , rrcon = Fux [t|t<-ts,isPos t]
                              }
                       else r { rrsrt = Truth
                              , rrant = error ("!Fatal (module Calc 446): erroneous call to antecedent of r "++showADL expr)
-                             , rrcon = Fu ts
+                             , rrcon = Fux ts
                              }  
            _ -> case disjNF expr of
-                      e@(Fu{}) -> reprAsRule r e
+                      e@(Fux{}) -> reprAsRule r e
                       _    -> r { rrsrt = Truth
                                 , rrant = (error ("!Fatal (module Calc 452): erroneous call to antecedent of r "++showADL expr))
                                 , rrcon = expr
@@ -295,8 +295,8 @@ module Calc ( deriveProofs
       = (rule (subst (m',neg') e1) (subst (m',pos') e1),["Monotony of "++showOp e2],"==>"):
          f prf (neg',pos')
          
-     start Ins  = (Tm m'(-1),Fu [Tm m'(-1),delta (sign m')])
-     start Del  = (Fi [Tm m'(-1),Cp (delta (sign m'))],Tm m'(-1))
+     start Ins  = (Tm m'(-1),Fux [Tm m'(-1),delta (sign m')])
+     start Del  = (Fix [Tm m'(-1),Cpx (delta (sign m'))],Tm m'(-1))
      rule :: Expression -> Expression -> Rule
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
                                        , rrant = error ("!Fatal (module Calc 487): illegal reference to antecedent in rule ("++showADL neg'++") |- ("++showADL pos'++")")
@@ -328,12 +328,12 @@ module Calc ( deriveProofs
                                        }
      showOp expr' = case expr' of
                      F{}      -> ";"
-                     Fd{}     -> "!"
-                     Fu{}     -> "\\/"
-                     Fi{}     -> "/\\"
-                     Cp{}     -> "-"
-                     K0{}     -> "*"
-                     K1{}     -> "+"
+                     Fdx{}     -> "!"
+                     Fux{}     -> "\\/"
+                     Fix{}     -> "/\\"
+                     Cpx{}     -> "-"
+                     K0x{}     -> "*"
+                     K1x{}     -> "+"
                      Tm mph _   -> if inline mph then "" else "~"
                      Tc{}     -> error("!Fatal (module Calc 529): call to showOp (Tc x) in module Calc.hs")
 
@@ -344,13 +344,13 @@ module Calc ( deriveProofs
     where
      result = f expr
      f (F fus)  = concat (map f fus)
-     f (Fd fus) = concat (map f fus)
-     f (Fi fus) = concat (map f fus)
-     f (Fu fus) = concat (map f fus)
+     f (Fdx fus) = concat (map f fus)
+     f (Fix fus) = concat (map f fus)
+     f (Fux fus) = concat (map f fus)
      f (Tm mph _) = [ True | makeInline mph==makeInline m ]
-     f (Cp e)   = [ not b| b<- f e]
-     f (K0 e)   = f e
-     f (K1 e)   = f e
+     f (Cpx e)   = [ not b| b<- f e]
+     f (K0x e)   = f e
+     f (K1x e)   = f e
      f (Tc e)   = f e
 
    lambda :: InsDel -> Expression -> Expression -> [Proof Expression]
@@ -368,66 +368,66 @@ module Calc ( deriveProofs
                                               ] -- isNeg is nog niet helemaal correct.
                      | or[null p|p<-fPrfs (F fs) ] -> []
                      | otherwise           -> [(expr,(\_->expr),   [derivtext tOp "mono" (first (lc (F fs))) expr],"<--"): (lc (F fs))]        
-              (Fu [f])  -> lam tOp e3 f
-              (Fu fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
-                     | length (const' (Fu fs))>0     -> [(expr,(\_->expr),   [derivtext tOp "mono" (inter' expr) expr],"<--")
+              (Fux [f])  -> lam tOp e3 f
+              (Fux fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
+                     | length (const' (Fux fs))>0     -> [(expr,(\_->expr),   [derivtext tOp "mono" (inter' expr) expr],"<--")
                                                         :prf
                                                        | prf<-lam tOp e3 (inter' expr)
                                                        ]
                      | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)]
-                     | or[null p|p<-fPrfs (Fu fs)] -> []
-                     | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc (Fu fs))) expr],"<--") : (lc (Fu fs))]
-              (Fd [f])  -> lam tOp e3 f
-              (Fd fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
+                     | or[null p|p<-fPrfs (Fux fs)] -> []
+                     | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc (Fux fs))) expr],"<--") : (lc (Fux fs))]
+              (Fdx [f])  -> lam tOp e3 f
+              (Fdx fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
                      | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)] -- isNeg is nog niet helemaal correct.
-                     | or[null p|p<-fPrfs (Fd fs)] -> []
-                     | otherwise           -> [(expr,(\_->expr),[derivtext tOp "mono" (first (lc (Fd fs))) expr],"<--"): (lc (Fd fs))]
-              (Fi [f])  -> lam tOp e3 f
-              (Fi fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
-                     | length (const' (Fi fs))>0     -> [(expr,(\_->expr),      [derivtext tOp "mono" (inter' expr) expr],"<--")
+                     | or[null p|p<-fPrfs (Fdx fs)] -> []
+                     | otherwise           -> [(expr,(\_->expr),[derivtext tOp "mono" (first (lc (Fdx fs))) expr],"<--"): (lc (Fdx fs))]
+              (Fix [f])  -> lam tOp e3 f
+              (Fix fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
+                     | length (const' (Fix fs))>0     -> [(expr,(\_->expr),      [derivtext tOp "mono" (inter' expr) expr],"<--")
                                                         :prf
                                                        | prf<-lam tOp e3 (inter' expr)
                                                        ]
                      | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)]
-                     | or[null p|p<-fPrfs (Fi fs)] -> []
+                     | or[null p|p<-fPrfs (Fix fs)] -> []
                      | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc expr)) expr],"<--") : (lc expr)]
-              (K0 x)   -> [(expr,(\x'->K0 x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
-              (K1 x)   -> [(expr,(\x'->K1 x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
-              (Cp x)   -> [(expr,(\x'->Cp x'),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e3 x]
+              (K0x x)   -> [(expr,(\x'->K0x x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
+              (K1x x)   -> [(expr,(\x'->K1x x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
+              (Cpx x)   -> [(expr,(\x'->Cpx x'),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e3 x]
               (Tc x)   -> lam tOp e3 x
               (Tm _ _)  ->  [[(e3,(\x->x),[],"")]]
 
            where
              deMrg expr'' = case expr'' of
-                              (F fs)  -> notCp (Fd [notCp f| f<-fs])
-                              (Fu fs) -> notCp (Fi [notCp f| f<-fs])
-                              (Fd fs) -> notCp (F  [notCp f| f<-fs])
-                              (Fi fs) -> notCp (Fu [notCp f| f<-fs])
+                              (F fs)  -> notCp (Fdx [notCp f| f<-fs])
+                              (Fux fs) -> notCp (Fix [notCp f| f<-fs])
+                              (Fdx fs) -> notCp (F  [notCp f| f<-fs])
+                              (Fix fs) -> notCp (Fux [notCp f| f<-fs])
                               Tm{} -> error ("!Fatal (module Calc 590). deMrg Tm{} is not defined.Consult your dealer!")
                               Tc{} -> error ("!Fatal (module Calc 591). deMrg Tc{} is not defined.Consult your dealer!")
-                              K0{} -> error ("!Fatal (module Calc 592). deMrg K0{} is not defined.Consult your dealer!")
-                              K1{} -> error ("!Fatal (module Calc 593). deMrg K1{} is not defined.Consult your dealer!")
-                              Cp{} -> error ("!Fatal (module Calc 594). deMrg Cp{} is not defined.Consult your dealer!")
+                              K0x{} -> error ("!Fatal (module Calc 592). deMrg K0{} is not defined.Consult your dealer!")
+                              K1x{} -> error ("!Fatal (module Calc 593). deMrg K1{} is not defined.Consult your dealer!")
+                              Cpx{} -> error ("!Fatal (module Calc 594). deMrg Cp{} is not defined.Consult your dealer!")
              fPrfs expr'' = case expr'' of
                               (F fs)  -> xs fs
-                              (Fu fs) -> xs fs
-                              (Fd fs) -> xs fs
-                              (Fi fs) -> xs fs
+                              (Fux fs) -> xs fs
+                              (Fdx fs) -> xs fs
+                              (Fix fs) -> xs fs
                               Tm{} -> error ("!Fatal (module Calc 600). fPrfs Tm{} is not defined.Consult your dealer!")
                               Tc{} -> error ("!Fatal (module Calc 601). fPrfs Tc{} is not defined.Consult your dealer!")
-                              K0{} -> error ("!Fatal (module Calc 602). fPrfs K0{} is not defined.Consult your dealer!")
-                              K1{} -> error ("!Fatal (module Calc 603). fPrfs K1{} is not defined.Consult your dealer!")
-                              Cp{} -> error ("!Fatal (module Calc 604). fPrfs Cp{} is not defined.Consult your dealer!")
+                              K0x{} -> error ("!Fatal (module Calc 602). fPrfs K0{} is not defined.Consult your dealer!")
+                              K1x{} -> error ("!Fatal (module Calc 603). fPrfs K1{} is not defined.Consult your dealer!")
+                              Cpx{} -> error ("!Fatal (module Calc 604). fPrfs Cp{} is not defined.Consult your dealer!")
                      where
                         xs fs = [lam tOp e3 f|f<-fs, isVar f e3]                       
              lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sort' length (rc expr'')))
              rc expr'' = remainders (vars expr'') (vars expr'')
              vars expr'' = map head (fPrfs expr'')
-             const' (Fu fs) = [f|f<-fs, isConst f e3]
-             const' (Fi fs) = [f|f<-fs, isConst f e3]
+             const' (Fux fs) = [f|f<-fs, isConst f e3]
+             const' (Fix fs) = [f|f<-fs, isConst f e3]
              const' expr'' = error ("!Fatal (module Calc 612). 'const'("++ show expr''++")' is not defined.Consult your dealer!")
-             inter' (Fu fs) = Fu [f|f<-fs, isVar f e3]
-             inter' (Fi fs) = Fi [f|f<-fs, isVar f e3]
+             inter' (Fux fs) = Fux [f|f<-fs, isVar f e3]
+             inter' (Fix fs) = Fix [f|f<-fs, isVar f e3]
              inter' expr'' = error ("!Fatal (module Calc 615). 'inter'("++ show expr''++")' is not defined.Consult your dealer!")
 
              

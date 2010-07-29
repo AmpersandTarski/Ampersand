@@ -173,23 +173,23 @@ where
                                                       ++[mkAttr "Target" (name(target mph))]
                                               )        ) 
                         | otherwise -> Elem (simpleTag flip') [mkXmlTree (Tm (flp mph) i)]
-               (Fu [])  -> Elem (simpleTag compl) 
+               (Fux [])  -> Elem (simpleTag compl) 
                                 [ Node (Tag rel [mkAttr "Name" "V"])]
-               (Fu [f]) -> mkXmlTree f
-               (Fu fs)  -> Elem (simpleTag union') (map mkXmlTree fs)
-               (Fi [])  -> Node (Tag rel [mkAttr "Name" "V"])
-               (Fi [f]) -> mkXmlTree f
-               (Fi fs)  -> Elem (simpleTag inter) (map mkXmlTree fs)
-               (Fd [])  -> Elem (simpleTag compl) 
+               (Fux [f]) -> mkXmlTree f
+               (Fux fs)  -> Elem (simpleTag union') (map mkXmlTree fs)
+               (Fix [])  -> Node (Tag rel [mkAttr "Name" "V"])
+               (Fix [f]) -> mkXmlTree f
+               (Fix fs)  -> Elem (simpleTag inter) (map mkXmlTree fs)
+               (Fdx [])  -> Elem (simpleTag compl) 
                                 [ Node (Tag rel [mkAttr "Name" "I"])]
-               (Fd [f]) -> mkXmlTree f
-               (Fd fs)  -> Elem (simpleTag rAdd) (map mkXmlTree fs)
+               (Fdx [f]) -> mkXmlTree f
+               (Fdx fs)  -> Elem (simpleTag rAdd) (map mkXmlTree fs)
                (F  [])  -> Node (Tag rel [mkAttr "Name" "I"])
                (F  [f]) -> mkXmlTree f
                (F  fs)  -> Elem (simpleTag rMul) (map mkXmlTree fs)
-               (K0 f)   -> Elem (simpleTag clos0) [mkXmlTree f]
-               (K1 f)   -> Elem (simpleTag clos1) [mkXmlTree f]
-               (Cp f)   -> Elem (simpleTag compl) [mkXmlTree f]
+               (K0x f)   -> Elem (simpleTag clos0) [mkXmlTree f]
+               (K1x f)   -> Elem (simpleTag clos1) [mkXmlTree f]
+               (Cpx f)   -> Elem (simpleTag compl) [mkXmlTree f]
                (Tc f)   -> mkXmlTree f
       where
       (union',inter,rAdd,rMul,clos0,clos1,compl,flip',rel)

@@ -68,7 +68,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
              srcFld = field srcNm
                             (if   is_Tot
                              then Tm (mIs (source m)) (-1)                                    -- DAAROM (SJ) Deze relatie mag als conceptentabel voor source m worden gebruikt, omdat ze totaal is.
-                             else Fi [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]    -- DAAROM (SJ) Deze expressie, nl. I/\m;m~,  representeert het domein van deze relatie. Dat is nodig, omdat er andere elementen in I kunnen zitten, die niet in het domein van m voorkomen. m kan dus niet als conceptentabel worden gebruikt.
+                             else Fix [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]    -- DAAROM (SJ) Deze expressie, nl. I/\m;m~,  representeert het domein van deze relatie. Dat is nodig, omdat er andere elementen in I kunnen zitten, die niet in het domein van m voorkomen. m kan dus niet als conceptentabel worden gebruikt.
                             )
                             Nothing
                             (not is_Sur)
@@ -84,8 +84,8 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         totals :: Morphisms
         totals
          = rd [ m | q<-quads visible (rules fSpec), isIdent (qMorph q)
-                  , (_,hcs)<-cl_conjNF (qClauses q), Fu fus<-hcs
-                  , antc<-[(conjNF.Fi) [notCp f| f<-fus, isNeg f]], isIdent antc
+                  , (_,hcs)<-cl_conjNF (qClauses q), Fux fus<-hcs
+                  , antc<-[(conjNF.Fix) [notCp f| f<-fus, isNeg f]], isIdent antc
                   , f<-fus, isPos f
                   , m<-tots f
                   ]
@@ -552,7 +552,7 @@ So the first step is create the kernels ...   -}
       --                , (not.null.lambda Ins (Tm m)) conj  -- causes infinite loop
       --                , not (checkMono conj Ins m)         -- causes infinite loop
                         , let conj' = subst (m, actSem Ins m (delta (sign m))) conj
-                        , (not.isTrue.conjNF) (Fu[Cp conj,conj']) -- the system must act to restore invariance     
+                        , (not.isTrue.conjNF) (Fux[Cpx conj,conj']) -- the system must act to restore invariance     
                         ]
                         rule)
       | rule<-rs
@@ -567,17 +567,17 @@ So the first step is create the kernels ...   -}
    allShifts :: Expression -> Expressions
    allShifts conjunct = rd [simplify (normFlp e')| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
     where
-       normFlp (Fu []) = Fu []
-       normFlp (Fu fs) = if length [m| f<-fs, m<-morlist f, inline m] <= length [m| f<-fs, m<-morlist f, not (inline m)]
-                         then Fu (map flp fs) else (Fu fs)
+       normFlp (Fux []) = Fux []
+       normFlp (Fux fs) = if length [m| f<-fs, m<-morlist f, inline m] <= length [m| f<-fs, m<-morlist f, not (inline m)]
+                         then Fux (map flp fs) else (Fux fs)
        normFlp _ = error ("!Fatal (module Calc 61): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
 
    shiftL :: Expression -> Expressions
    shiftL r
     | length antss+length conss /= length fus = error ("!Fatal (module Calc 65): shiftL will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
-    | idsOnly antss                           = [Fu ([Cp (F [Tm (mIs srcA)(-1)])]++map F conss)]
-    | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
+    | idsOnly antss                           = [Fux ([Cpx (F [Tm (mIs srcA)(-1)])]++map F conss)]
+    | otherwise                               = [Fux ([ Cpx (F (if null ts then id' css else ts))
                                                      | ts<-ass++if null ass then [id' css] else []]++
                                                      [ F (if null ts then id' ass else ts)
                                                      | ts<-css++if null css then [id' ass] else []])
@@ -586,9 +586,9 @@ So the first step is create the kernels ...   -}
                                                 , if null ass then error "!Fatal (module Calc 74): null ass in shiftL" else True
                                                 ]
     where
-     Fu fs = disjuncts r
+     Fux fs = disjuncts r
      fus = filter (not.isIdent) fs
-     antss = [ts | Cp (F ts)<-fus]
+     antss = [ts | Cpx (F ts)<-fus]
      conss = [ts | F ts<-fus]
      srcA = -- if null antss  then error ("!Fatal (module Calc 81): empty antecedent in shiftL ("++showHS options "" r++")") else
             if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc 82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
@@ -617,16 +617,16 @@ So the first step is create the kernels ...   -}
    shiftR r
     | length antss+length conss /= length fus = error ("!Fatal (module Calc 106): shiftR will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
-    | idsOnly conss                           = [Fu ([Cp (F [Tm (mIs srcA)(-1)])]++map F antss)]
-    | otherwise                               = [Fu ([ Cp (F (if null ts then id' css else ts))
+    | idsOnly conss                           = [Fux ([Cpx (F [Tm (mIs srcA)(-1)])]++map F antss)]
+    | otherwise                               = [Fux ([ Cpx (F (if null ts then id' css else ts))
                                                      | ts<-ass++if null ass then [id' css] else []]++
                                                      [ F (if null ts then id' ass else ts)
                                                      | ts<-css++if null css then [id' ass] else []])
                                                 | (ass,css)<-rd(move antss conss)]
     where
-     Fu fs = disjuncts r
+     Fux fs = disjuncts r
      fus = filter (not.isIdent) fs
-     antss = [ts | Cp (F ts)<-fus]
+     antss = [ts | Cpx (F ts)<-fus]
      conss = [ts | F ts<-fus]
      srcA = if null conss then error ("!Fatal (module Calc 119): empty consequent in shiftR ("++showADL r++")") else
             if length (eqClass order [ source (head cons) | cons<-conss])>1
@@ -671,12 +671,12 @@ So the first step is create the kernels ...   -}
 --                                 if not (visible m) then Blk else
                                    doCode visible ev toExpr viols)
                                    [(conj,causes)]  -- the motivation for these actions
-                                | clause@(Fu fus) <- shifts
+                                | clause@(Fux fus) <- shifts
                                 , let clause' = conjNF (subst (m, actSem Ins m (delta (sign m))) clause)
-                                , let step    = conjNF (Fu[Cp clause,clause'])
+                                , let step    = conjNF (Fux[Cpx clause,clause'])
                                 , let viols   = conjNF (notCp clause')
-                                , let negs    = Fu [f| f<-fus, isNeg f]
-                                , let poss    = Fu [f| f<-fus, isPos f]
+                                , let negs    = Fux [f| f<-fus, isNeg f]
+                                , let poss    = Fux [f| f<-fus, isPos f]
                                 , let frExpr  = if ev==Ins
                                                 then conjNF negs
                                                 else conjNF poss
@@ -738,26 +738,26 @@ So the first step is create the kernels ...   -}
 
    conjuncts :: Rule -> Expressions
    conjuncts = fiRule.conjNF.normExpr
-    where fiRule (Fi fis) = {- map disjuncts -} fis
+    where fiRule (Fix fis) = {- map disjuncts -} fis
           fiRule r        = [ {- disjuncts -} r]
 
 -- The function disjuncts yields an expression which has constructor Fu in every case.
    disjuncts :: Expression -> Expression
    disjuncts = fuRule
-    where fuRule (Fu cps) = (Fu . rd . map cpRule) cps
-          fuRule r        = Fu [cpRule r]
-          cpRule (Cp r)   = Cp (fRule r)
+    where fuRule (Fux cps) = (Fux . rd . map cpRule) cps
+          fuRule r        = Fux [cpRule r]
+          cpRule (Cpx r)   = Cpx (fRule r)
           cpRule r        = fRule r
           fRule (F ts)    = F ts
           fRule  r        = F [r]
 
    actSem :: InsDel -> Morphism -> Expression -> Expression
    actSem Ins m (Tm d _) | makeInline m==makeInline d = Tm m (-1)
-                       | otherwise                  = Fu[Tm m (-1),Tm d (-1)]
-   actSem Ins m delt   = disjNF (Fu[Tm m (-1),delt])
-   actSem Del m (Tm d _) | makeInline m==makeInline d = Fi[]
-                       | otherwise                  = Fi[Tm m (-1), Cp (Tm d (-1))]
-   actSem Del m delt   = conjNF (Fi[Tm m (-1),Cp delt])
+                       | otherwise                  = Fux[Tm m (-1),Tm d (-1)]
+   actSem Ins m delt   = disjNF (Fux[Tm m (-1),delt])
+   actSem Del m (Tm d _) | makeInline m==makeInline d = Fix[]
+                       | otherwise                  = Fix[Tm m (-1), Cpx (Tm d (-1))]
+   actSem Del m delt   = conjNF (Fix[Tm m (-1),Cpx delt])
  --  actSem Del m delt = Fi[m,Cp delt]
 
    delta :: (Concept, Concept) -> Expression
@@ -791,20 +791,20 @@ So the first step is create the kernels ...   -}
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
-          (_ ,  Fu [])   -> Blk motiv
-          (_ ,  Fi [])   -> Nop motiv
+          (_ ,  Fux [])   -> Blk motiv
+          (_ ,  Fix [])   -> Nop motiv
           (_ ,  F [])    -> error ("!Fatal (module Calc 366): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fd [])   -> error ("!Fatal (module Calc 368): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fd [])++",\n"++
+          (_ ,  Fdx [])   -> error ("!Fatal (module Calc 368): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fdx [])++",\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fu [t])  -> doCod deltaX tOp t motiv
-          (_ ,  Fi [t])  -> doCod deltaX tOp t motiv
+          (_ ,  Fux [t])  -> doCod deltaX tOp t motiv
+          (_ ,  Fix [t])  -> doCod deltaX tOp t motiv
           (_ ,  F [t])   -> doCod deltaX tOp t motiv
-          (_ ,  Fd [t])  -> doCod deltaX tOp t motiv
-          (Ins, Cp x)    -> doCod deltaX Del x motiv
-          (Del, Cp x)    -> doCod deltaX Ins x motiv
-          (Ins, Fu fs)   -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Ins, Fi fs)   -> All [ doCod deltaX Ins f []    | f<-fs ] motiv
+          (_ ,  Fdx [t])  -> doCod deltaX tOp t motiv
+          (Ins, Cpx x)    -> doCod deltaX Del x motiv
+          (Del, Cpx x)    -> doCod deltaX Ins x motiv
+          (Ins, Fux fs)   -> Chc [ doCod deltaX Ins f motiv | f<-fs{-, not (f==expr1 && Ins/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Ins, Fix fs)   -> All [ doCod deltaX Ins f []    | f<-fs ] motiv
           (Ins, F ts)    -> Chc [ if F ls==flp (F rs)
                                   then Chc [ New c fLft motiv
                                            , Sel c (F ls) fLft motiv
@@ -815,28 +815,28 @@ So the first step is create the kernels ...   -}
                                            ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (F rs) `lub` target (F ls)
-                                , let fLft = (\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Ins (F rs) [])
-                                , let fRht = (\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Ins (F ls) [])
+                                , let fLft = (\atom->doCod (disjNF (Fux[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cpx (F rs)])) Ins (F rs) [])
+                                , let fRht = (\atom->doCod (disjNF (Fux[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cpx (F ls)])) Ins (F ls) [])
                                 ] motiv
           (Del, F ts)    -> Chc [ if F ls==flp (F rs)
                                   then Chc [ Sel c (disjNF (F ls)) (\_->Rmv c fLft motiv) motiv
                                            , Sel c (disjNF (F ls)) fLft motiv
                                            ] motiv
-                                  else Chc [ Sel c (disjNF (Fi [F ls,flp(F rs)])) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
-                                           , Sel c (disjNF (Fi [F ls,flp(F rs)])) fLft motiv
-                                           , Sel c (disjNF (Fi [F ls,flp(F rs)])) fRht motiv
+                                  else Chc [ Sel c (disjNF (Fix [F ls,flp(F rs)])) (\_->Rmv c (\x->All [fLft x, fRht x] motiv) motiv) motiv
+                                           , Sel c (disjNF (Fix [F ls,flp(F rs)])) fLft motiv
+                                           , Sel c (disjNF (Fix [F ls,flp(F rs)])) fRht motiv
                                            ] motiv
                                 | (ls,rs)<-chop ts
                                 , let c = source (F rs) `lub` target (F ls)
-                                , let fLft = (\atom->doCod (disjNF (Fu[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cp (F rs)])) Del (F rs) [])
-                                , let fRht = (\atom->doCod (disjNF (Fu[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cp (F ls)])) Del (F ls) [])
+                                , let fLft = (\atom->doCod (disjNF (Fux[F [Tm (Mp1 atom [] c)(-1),v (c,source deltaX),deltaX],Cpx (F rs)])) Del (F rs) [])
+                                , let fRht = (\atom->doCod (disjNF (Fux[F [deltaX,v (target deltaX,c),Tm (Mp1 atom [] c)(-1)],Cpx (F ls)])) Del (F ls) [])
                                 ] motiv
-          (Del, Fu fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
-          (Del, Fi fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
+          (Del, Fux fs)   -> All [ doCod deltaX Del f []    | f<-fs{-, not (f==expr1 && Del/=tOp') -}] motiv -- the filter prevents self compensating PA-clauses.
+          (Del, Fix fs)   -> Chc [ doCod deltaX Del f motiv | f<-fs ] motiv
 -- Op basis van de Morgan is de procesalgebra in het geval van (Ins, Fd ts)  afleidbaar uit uit het geval van (Del, F ts) ...
-          (_  , Fd ts)   -> doCod deltaX tOp (Cp (F (map Cp ts))) motiv
-          (_  , K0 x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
-          (_  , K1 x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
+          (_  , Fdx ts)   -> doCod deltaX tOp (Cpx (F (map Cpx ts))) motiv
+          (_  , K0x x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
+          (_  , K1x x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
           (_  , Tm m _)  -> -- error ("DIAG ADL2Fspec 824:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                             (if editAble m then Do tOp exprX (deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])

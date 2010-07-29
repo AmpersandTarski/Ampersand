@@ -202,7 +202,7 @@ module PredLogic
                    |(v',w)<-zip [s'|(_,s',_)<-tail res] [t'|(_,_,t')<-init res]]
        ivs       = mkVar exclVars ics
 
-   assembleF exclVars (Fd ts) s t
+   assembleF exclVars (Fdx ts) s t
     = {- debug 
       if error("!Debug (module PredLogic 162): assembleFd exclVars (Fd ts)\nwith "++
                "exclVars = "++show exclVars++"\n          "++
@@ -239,11 +239,11 @@ module PredLogic
        unite v' w = if v' `order` w then v' `lub` w else error("!Fatal (module PredLogic 239): assembleFd")
        ci        = ca `unite` cc
        ivs       = ivsantc++ivscons
-   assembleF exclVars (Fu fs) s t
+   assembleF exclVars (Fux fs) s t
     = (Disj [fst (assembleF exclVars f s t)|f<-fs], exclVars)
-   assembleF exclVars (Fi fs) s t         
+   assembleF exclVars (Fix fs) s t         
     = (Conj [fst (assembleF exclVars f s t)|f<-fs], exclVars)
-   assembleF exclVars (Cp e) s t          
+   assembleF exclVars (Cpx e) s t          
     = (Not  (fst (assembleF exclVars e s t)), exclVars)
    assembleF exclVars e s t
     = if length (morlist e)==1 then (res, exclVars) else

@@ -582,20 +582,20 @@ where
                   else        show i
     showHS flags indent (Tc f)   = showHS flags indent f
     showHS _ _ (F [])   = "F [] <Id>"
-    showHS _ _ (Fd [])  = "Fd [] <nId>"
-    showHS _ _ (Fu [])  = "Fu [] {- False -}"
-    showHS _ _ (Fi [])  = "Fi [] {- True -}"
+    showHS _ _ (Fdx [])  = "Fd [] <nId>"
+    showHS _ _ (Fux [])  = "Fu [] {- False -}"
+    showHS _ _ (Fix [])  = "Fi [] {- True -}"
     showHS flags indent (F [t])  = "F ["++showHS flags (indent++"   ") t++"]"
     showHS flags indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS flags (indent++"    ") t| t<-ts]++indent++"  ]"
-    showHS flags indent (Fd [t]) = "Fd ["++showHS flags (indent++"    ") t++"]"
-    showHS flags indent (Fd ts)  = "Fd [ "++chain (indent++"   , ") [showHS flags (indent++"     ") t| t<-ts]++indent++"   ]"
-    showHS flags indent (Fu [f]) = "Fu ["++showHS flags (indent++"    ") f++"]"
-    showHS flags indent (Fu fs)  = "Fu [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
-    showHS flags indent (Fi [f]) = "Fi ["++showHS flags (indent++"    ") f++"]"
-    showHS flags indent (Fi fs)  = "Fi [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
-    showHS flags indent (K0 e')  = "K0 ("++showHS flags (indent++"    ") e'++")"
-    showHS flags indent (K1 e')  = "K1 ("++showHS flags (indent++"    ") e'++")"
-    showHS flags indent (Cp e')  = "Cp ("++showHS flags (indent++"    ") e'++")"
+    showHS flags indent (Fdx [t]) = "Fd ["++showHS flags (indent++"    ") t++"]"
+    showHS flags indent (Fdx ts)  = "Fd [ "++chain (indent++"   , ") [showHS flags (indent++"     ") t| t<-ts]++indent++"   ]"
+    showHS flags indent (Fux [f]) = "Fu ["++showHS flags (indent++"    ") f++"]"
+    showHS flags indent (Fux fs)  = "Fu [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
+    showHS flags indent (Fix [f]) = "Fi ["++showHS flags (indent++"    ") f++"]"
+    showHS flags indent (Fix fs)  = "Fi [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
+    showHS flags indent (K0x e')  = "K0 ("++showHS flags (indent++"    ") e'++")"
+    showHS flags indent (K1x e')  = "K1 ("++showHS flags (indent++"    ") e'++")"
+    showHS flags indent (Cpx e')  = "Cp ("++showHS flags (indent++"    ") e'++")"
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***

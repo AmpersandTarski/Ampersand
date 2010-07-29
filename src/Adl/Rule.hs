@@ -103,9 +103,9 @@ where
    normExpr rule
 --    | isSignal rule      = v (sign rule)   -- obsolete (seems silly, in retrospect. normExpr should simply produce the expression.)
     | ruleType rule==Truth = consequent rule
-    | ruleType rule==Implication = Fu [Cp (antecedent rule), consequent rule]
-    | ruleType rule==Equivalence = Fi [ Fu [    antecedent rule , Cp (consequent rule)]
-                                      , Fu [Cp (antecedent rule),     consequent rule ]]
+    | ruleType rule==Implication = Fux [Cpx (antecedent rule), consequent rule]
+    | ruleType rule==Equivalence = Fix [ Fux [    antecedent rule , Cpx (consequent rule)]
+                                      , Fux [Cpx (antecedent rule),     consequent rule ]]
     | otherwise          = error("!Fatal (module Rule 138): Cannot make an expression of "++show rule)
 
    ruleType :: Rule -> RuleType
@@ -145,7 +145,7 @@ where
                         Inj-> F [r,flp r]
                         Sur-> i$sign$F [flp r,r]
                         Sym-> r
-                        Asy-> Fi [flp r,r]
+                        Asy-> Fix [flp r,r]
                         Trn-> F [r,r]
                         Rfx-> i$sign r 
            , rrfps = pos d
@@ -155,7 +155,7 @@ where
                         Inj-> i$sign$F [r,flp r]
                         Sur-> F [flp r,r]
                         Sym-> flp r
-                        Asy-> i$sign$Fi [flp r,r]
+                        Asy-> i$sign$Fix [flp r,r]
                         Trn-> r
                         Rfx-> r
            , rrxpl = case prp of

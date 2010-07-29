@@ -22,12 +22,12 @@ where
     subst (mph,f) f'          = subs f'
      where
        subs (F ts)     = F  (subst (mph,f) ts)
-       subs (Fd ts)    = Fd (subst (mph,f) ts)
-       subs (Fu fs)    = Fu (subst (mph,f) fs)
-       subs (Fi fs)    = Fi (subst (mph,f) fs)
-       subs (K0 e')    = K0 (subst (mph,f) e')
-       subs (K1 e')    = K1 (subst (mph,f) e')
-       subs (Cp e')    = Cp (subst (mph,f) e')
+       subs (Fdx ts)    = Fdx (subst (mph,f) ts)
+       subs (Fux fs)    = Fux (subst (mph,f) fs)
+       subs (Fix fs)    = Fix (subst (mph,f) fs)
+       subs (K0x e')    = K0x (subst (mph,f) e')
+       subs (K1x e')    = K1x (subst (mph,f) e')
+       subs (Cpx e')    = Cpx (subst (mph,f) e')
        subs (Tc f'')   = Tc (subst (mph,f) f'')
        subs e'         = subst (mph,f) e'
 

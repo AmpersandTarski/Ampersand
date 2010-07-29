@@ -191,21 +191,21 @@
    pExpr            :: Parser Token Expression
    pExpr             = f <$> pList1Sep (pKey "\\/") pFactorI
                        where f [x] = x
-                             f  xs = Fu xs
+                             f  xs = Fux xs
 
 
 
    pFactorI         :: Parser Token Expression
    pFactorI          = f <$> pList1Sep (pKey "/\\") pFactor
                        where f [x] = x
-                             f  xs = Fi xs
+                             f  xs = Fix xs
 
 
 
    pFactor          :: Parser Token Expression
    pFactor           = f <$> pList1Sep (pKey "!") pTermD
                        where f [t]     = t
-                             f ts      = Fd ts
+                             f ts      = Fdx ts
 
 
 
@@ -222,9 +222,9 @@
                         tm xs pm ys   = f (Tm pm (-1)) (xs++ys)
                         tc xs pc ys   = f pc (xs++ys)
                         f t ('~':xs) = flp (f t xs)
-                        f t ('*':xs) = K0 (f t xs)
-                        f t ('+':xs) = K1 (f t xs)
-                        f t ('-':xs) = Cp (f t xs)
+                        f t ('*':xs) = K0x (f t xs)
+                        f t ('+':xs) = K1x (f t xs)
+                        f t ('-':xs) = Cpx (f t xs)
                         f _ (_:_)    = error ("!Fatal (module CC 189). Consult your dealer!")
                         f t []       = t
 

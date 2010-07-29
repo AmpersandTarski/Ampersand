@@ -445,17 +445,17 @@ instance ShowMath Expression where
 
 showchar :: Expression -> String
 showchar (Tm mph _) = showMath mph
-showchar (Fu [])  = "\\cmpl{\\full}"
-showchar (Fu fs)  = chain "\\cup" [showchar f| f<-fs]     -- union
-showchar (Fi [])  = "\\full"
-showchar (Fi fs)  = chain "\\cap" [showchar f| f<-fs]     -- intersection
-showchar (Fd [])  = "\\cmpl{\\iden}"
-showchar (Fd ts)  = chain "\\relAdd" [showchar t| t<-ts]  -- relative addition (dagger)
+showchar (Fux [])  = "\\cmpl{\\full}"
+showchar (Fux fs)  = chain "\\cup" [showchar f| f<-fs]     -- union
+showchar (Fix [])  = "\\full"
+showchar (Fix fs)  = chain "\\cap" [showchar f| f<-fs]     -- intersection
+showchar (Fdx [])  = "\\cmpl{\\iden}"
+showchar (Fdx ts)  = chain "\\relAdd" [showchar t| t<-ts]  -- relative addition (dagger)
 showchar (F [])   = "\\iden"
 showchar (F ts)   = chain "\\compose" [showchar t| t<-ts] -- relative multiplication (semicolon)
-showchar (K0 e')  = "\\kleenestar{"++showchar e'++"}"
-showchar (K1 e')  = "\\kleeneplus{"++showchar e'++"}"
-showchar (Cp e')  = "\\cmpl{"++showchar e'++"}"
+showchar (K0x e')  = "\\kleenestar{"++showchar e'++"}"
+showchar (K1x e')  = "\\kleeneplus{"++showchar e'++"}"
+showchar (Cpx e')  = "\\cmpl{"++showchar e'++"}"
 showchar (Tc f)   = "("++showchar f++")"
 
 instance ShowMath Morphism where

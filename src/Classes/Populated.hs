@@ -41,20 +41,20 @@ where
             (F  x)  -> if null x 
                          then error ("!Fatal (module Populated 41): no terms in contents ("++show expr++")") 
                          else foldr1 join [contents t| t<-x ]
-            (Fd x)  -> if null x 
+            (Fdx x)  -> if null x 
                          then error ("!Fatal (module Populated 44): no terms in contents ("++show expr++")") 
                          else let (dx,_,_,_)
                                    = foldr1 dagg [(ct,compl ct st tt,st,tt)
                                                  | t<-x, ct<-[contents t]
                                                  , st<-[conts (source t)], tt<-[conts (target t)] ]
                               in dx
-            (Fu x)  -> foldr uni [] [contents f| f<-x ]
-            (Fi x)  -> if null x 
+            (Fux x)  -> foldr uni [] [contents f| f<-x ]
+            (Fix x)  -> if null x 
                          then error ("!Fatal (module Populated 52): no factors in contents ("++show expr++")") 
                          else foldr1 isc [contents f| f<-x ]
-            (K0 x)  -> closPair (contents x) `join` [mkPair a a |a <-conts (source x `lub` target x)]
-            (K1 x)  -> closPair (contents x)
-            (Cp x)  -> [apair | apair <-cartesianProduct (conts (source x)) (conts (target x))
+            (K0x x)  -> closPair (contents x) `join` [mkPair a a |a <-conts (source x `lub` target x)]
+            (K1x x)  -> closPair (contents x)
+            (Cpx x)  -> [apair | apair <-cartesianProduct (conts (source x)) (conts (target x))
                               , not (apair `elem` contents x)  ]
          where
           -- dagg is de tegenhanger van join. Hij krijgt systematisch viertallen mee: een rij tupels (a),

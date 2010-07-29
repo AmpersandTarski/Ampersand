@@ -63,14 +63,14 @@
    mapExpr :: (Morphism->Morphism) -> Expression -> Expression
    mapExpr f expr = case expr of
       F xs  -> F  [mapExpr f x| x<-xs]
-      Fd xs -> Fd [mapExpr f x| x<-xs]
-      Fu xs -> Fu [mapExpr f x| x<-xs]
-      Fi xs -> Fi [mapExpr f x| x<-xs]
+      Fdx xs -> Fdx [mapExpr f x| x<-xs]
+      Fux xs -> Fux [mapExpr f x| x<-xs]
+      Fix xs -> Fix [mapExpr f x| x<-xs]
       Tm mp i -> Tm (f mp) i
       Tc x  -> Tc $ mapExpr f x
-      Cp x  -> Cp $ mapExpr f x
-      K0 x  -> K0 $ mapExpr f x
-      K1 x  -> K1 $ mapExpr f x
+      Cpx x  -> Cpx $ mapExpr f x
+      K0x x  -> K0x $ mapExpr f x
+      K1x x  -> K1x $ mapExpr f x
 
    mphatson :: Expression -> Expression
    mphatson = mapExpr f
@@ -223,17 +223,17 @@
 -- Besides, it must be readable as well.
    disambiguate :: Fspc -> Expression -> Expression
    disambiguate fSpec (Tm mph i) = Tm mph i
-   disambiguate fSpec (Fu fs)  = Fu [disambiguate fSpec f| f<-fs]
-   disambiguate fSpec (Fi fs)  = Fi [disambiguate fSpec f| f<-fs]
-   disambiguate fSpec (Fd [])  = Fd []
-   disambiguate fSpec (Fd [t]) = Fd [disambiguate fSpec t]
-   disambiguate fSpec (Fd ts)  = Fd (disamb fSpec [disambiguate fSpec t| t<-ts])
+   disambiguate fSpec (Fux fs)  = Fux [disambiguate fSpec f| f<-fs]
+   disambiguate fSpec (Fix fs)  = Fix [disambiguate fSpec f| f<-fs]
+   disambiguate fSpec (Fdx [])  = Fdx []
+   disambiguate fSpec (Fdx [t]) = Fdx [disambiguate fSpec t]
+   disambiguate fSpec (Fdx ts)  = Fdx (disamb fSpec [disambiguate fSpec t| t<-ts])
    disambiguate fSpec (F [])   = F  []
    disambiguate fSpec (F [t])  = F  [disambiguate fSpec t]
    disambiguate fSpec (F ts)   = F  (disamb fSpec [disambiguate fSpec t| t<-ts])
-   disambiguate fSpec (K0 e')  = K0 (disambiguate fSpec e')
-   disambiguate fSpec (K1 e')  = K1 (disambiguate fSpec e')
-   disambiguate fSpec (Cp e')  = Cp (disambiguate fSpec e')
+   disambiguate fSpec (K0x e')  = K0x (disambiguate fSpec e')
+   disambiguate fSpec (K1x e')  = K1x (disambiguate fSpec e')
+   disambiguate fSpec (Cpx e')  = Cpx (disambiguate fSpec e')
    disambiguate fSpec (Tc f)   = Tc (disambiguate fSpec f)
 
 -- Disamb disambiguates a list of terms (expressions) that come from an Fd or F expression.
@@ -269,9 +269,9 @@
                        halfway = length iss `div` 2
 -- The following function is used to force the type of a relation to be printed.
         types (Tm mph _) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
-        types (Fu fs)  = foldr isc [] [types f| f<-fs]
-        types (Fi fs)  = foldr isc [] [types f| f<-fs]
-        types (Fd ts)  = types (F ts) -- a nifty trick to save code. After all, the type computation is identical to F...
+        types (Fux fs)  = foldr isc [] [types f| f<-fs]
+        types (Fix fs)  = foldr isc [] [types f| f<-fs]
+        types (Fdx ts)  = types (F ts) -- a nifty trick to save code. After all, the type computation is identical to F...
         types (F  [])  = [[Anything,Anything]]
         types (F  ts)  = [[s,t]| s<-(rd.map head.head) ttyps, t<-(rd.map last.last) ttyps]
                          where
@@ -284,9 +284,9 @@
                            = [ [d| d<-types t, head d `elem` scs, last d `elem` tgs]
                              | ((scs,tgs),t)<-zip (zip (init iscSets) (tail iscSets)) ts
                              ]
-        types (K0 e')  = types e'
-        types (K1 e')  = types e'
-        types (Cp e')  = types e'
+        types (K0x e')  = types e'
+        types (K1x e')  = types e'
+        types (Cpx e')  = types e'
         types (Tc f)   = types f
 
    instance ShowADL Expression where
@@ -297,17 +297,17 @@
         = (showchar.insParentheses.disambiguate fSpec.mphatsoff) expr'
          where
           showchar (Tm mph _) = showADLcode fSpec mph
-          showchar (Fu [])  = "-V"
-          showchar (Fu fs)  = chain union [showchar f| f<-fs]
-          showchar (Fi [])  = "V"
-          showchar (Fi fs)  = chain inter [showchar f| f<-fs]
-          showchar (Fd [])  = "-I"
-          showchar (Fd ts)  = chain rAdd [showchar t| t<-ts]
+          showchar (Fux [])  = "-V"
+          showchar (Fux fs)  = chain union [showchar f| f<-fs]
+          showchar (Fix [])  = "V"
+          showchar (Fix fs)  = chain inter [showchar f| f<-fs]
+          showchar (Fdx [])  = "-I"
+          showchar (Fdx ts)  = chain rAdd [showchar t| t<-ts]
           showchar (F [])   = "I"
           showchar (F ts)   = chain rMul [showchar t| t<-ts]
-          showchar (K0 e')  = showchar e'++clos0
-          showchar (K1 e')  = showchar e'++clos1
-          showchar (Cp e')  = compl++showchar e'
+          showchar (K0x e')  = showchar e'++clos0
+          showchar (K1x e')  = showchar e'++clos1
+          showchar (Cpx e')  = compl++showchar e'
           showchar (Tc f)   = lpar++showchar f++rpar
 
    instance ShowADL Morphism where
@@ -439,21 +439,21 @@
     = rd [ (s,t')
          | (s,t)<-types fSpec (head fs), (s',t')<-types fSpec (last fs)
          ]  -- assuming that the expression is type correct (i.e. there exist intermediate types between all terms)
-   types fSpec (Fd []) = []
-   types fSpec (Fd fs)
+   types fSpec (Fdx []) = []
+   types fSpec (Fdx fs)
     = rd [ (s,t')
          | (s,t)<-types fSpec (head fs), (s',t')<-types fSpec (last fs)
          ]  -- assuming that the expression is type correct (i.e. there exist intermediate types between all terms)
-   types fSpec (Fu ts)
+   types fSpec (Fux ts)
     = rd [ (s,t)
          | term<-ts, (s,t)<-types fSpec term
          ]
-   types fSpec (Fi ts)
+   types fSpec (Fix ts)
     = rd [ (s,t)
          | term<-ts, (s,t)<-types fSpec term
          ]
-   types fSpec (Cp e) = types fSpec e
-   types fSpec (K0 e) = types fSpec e
-   types fSpec (K1 e) = types fSpec e
+   types fSpec (Cpx e) = types fSpec e
+   types fSpec (K0x e) = types fSpec e
+   types fSpec (K1x e) = types fSpec e
 
 

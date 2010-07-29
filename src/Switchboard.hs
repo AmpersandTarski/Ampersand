@@ -39,8 +39,8 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
          qs           = vquads fSpec
          conjuncts    = rd [conj   | Quad _ ccrs<-qs, (conj,_)<-cl_conjNF ccrs]
          clauses      = rd [clause | Quad _ ccrs<-qs, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
-         posTerms     = rd [term | Fu terms<-clauses, term<-terms, isPos term]
-         negTerms     = rd [notCp term | Fu terms<-clauses, term<-terms, isNeg term]
+         posTerms     = rd [term | Fux terms<-clauses, term<-terms, isPos term]
+         negTerms     = rd [notCp term | Fux terms<-clauses, term<-terms, isNeg term]
 --         colConj c    = head [ColorName color| (color,conj)<-zip allcolors conjs, c==conj]
 --                        where conjs = rd [conj | Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
 --                              allcolors = ["Linen", "red", "Green", "Yellow", "Blue", "Green", "Violet", "Blueviolet", "Mistyrose"
@@ -103,7 +103,7 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
                                    , edgeAttributes = []
                                    , directedEdge   = True
                                    }
-                         | c@(Fu fus)<-clauses, t<-fus, isNeg t]
+                         | c@(Fux fus)<-clauses, t<-fus, isNeg t]
 
          --DESCR -> 
          violEdgesDown = [ DotEdge { edgeFromNodeID = nameConj c
@@ -111,7 +111,7 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
                                    , edgeAttributes = []
                                    , directedEdge   = True
                                    }
-                         | c@(Fu fus)<-clauses, t<-fus, isPos t]
+                         | c@(Fux fus)<-clauses, t<-fus, isPos t]
 
          --DESCR -> Each edge represents an insert relation between a positive term on the left and a morphism on the right in which an insert will be done.
          insEdgesOut   = [ DotEdge { edgeFromNodeID = namePTerm t

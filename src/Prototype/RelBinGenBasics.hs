@@ -71,7 +71,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     = selectExpr fSpec i src            ('`':trg++"`") e'
    
    --TODO
-   selectExpr fSpec i src trg iex@(Fi lst'@(_:_:_))
+   selectExpr fSpec i src trg iex@(Fix lst'@(_:_:_))
     | length lst'==length simplectxbinding && source iex==target iex && length(snd$vctxenv fSpec)==length simplectxbinding
         = let phpvar1 = (snd.head)(snd$vctxenv fSpec) 
           in concat$ 
@@ -136,8 +136,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++["isect0."++src'++" IS NOT NULL", "isect0."++trg'++" IS NOT NULL"]
-   selectExpr fSpec i src trg (Fi [e']) = selectExpr fSpec i src trg e'
-   selectExpr _     _ _   _   (Fi [] ) = error ("!Fatal (module RelBinGenBasics 140): Cannot create query for Fi [] because type is unknown")
+   selectExpr fSpec i src trg (Fix [e']) = selectExpr fSpec i src trg e'
+   selectExpr _     _ _   _   (Fix [] ) = error ("!Fatal (module RelBinGenBasics 140): Cannot create query for Fi [] because type is unknown")
 
    selectExpr fSpec i src trg (F (Tm (V _ (s,_))_:fs@(_:_))) | s==cptS
      = selectGeneric i ("1",src) ("fst."++trg',trg)
@@ -273,10 +273,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
-   selectExpr fSpec i src trg (Fu [] ) = selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
-   selectExpr fSpec i src trg (Fu es') = (phpIndent i) ++ "(" ++ (selectExprInUnion fSpec i src trg (Fu es')) ++ (phpIndent i) ++ ")"
-   selectExpr fSpec i src trg (Cp (Tm (V _ _)_)) = selectExpr fSpec i src trg (Fu [])
-   selectExpr fSpec i src trg (Cp e' )
+   selectExpr fSpec i src trg (Fux [] ) = selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
+   selectExpr fSpec i src trg (Fux es') = (phpIndent i) ++ "(" ++ (selectExprInUnion fSpec i src trg (Fux es')) ++ (phpIndent i) ++ ")"
+   selectExpr fSpec i src trg (Cpx (Tm (V _ _)_)) = selectExpr fSpec i src trg (Fux [])
+   selectExpr fSpec i src trg (Cpx e' )
       = selectGeneric i ("cfst."++src',src) ("csnd."++trg',trg)
                         (quote (sqlConcept fSpec (source e')) ++ " AS cfst, "++selectExprBrac fSpec i trg' trg' (Tm (mIs (target e'))(-1))++" AS csnd")
                         ("NOT EXISTS ("++ (selectExists' (i+12)
@@ -288,12 +288,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                               trg' = noCollide [src'] (sqlAttConcept fSpec (target e'))
                               src2 = quote$sqlExprSrc fSpec e'
                               trg2 = noCollideUnlessTm e' [src2] (quote$sqlExprTrg fSpec e')
-   selectExpr fSpec i src trg (K0 _)
+   selectExpr fSpec i src trg (K0x _)
       = error ("!Fatal (module RelBinGenBasics 292): SQL cannot create closures K0")
-   selectExpr fSpec i src trg (K1 _)
+   selectExpr fSpec i src trg (K1x _)
       = error ("!Fatal (module RelBinGenBasics 294): SQL cannot create closures K1")
-   selectExpr fSpec i src trg (Fd  [e']       ) = selectExpr fSpec i src trg e'
-   selectExpr fSpec i src trg (Fd lst'@(fstm:_:_))
+   selectExpr fSpec i src trg (Fdx  [e']       ) = selectExpr fSpec i src trg e'
+   selectExpr fSpec i src trg (Fdx lst'@(fstm:_:_))
     = selectGeneric i (mainSrc,src) (mainTrg,trg)
                            (chain ", " (concExprs i ncs)) (chain ("\n"++[' '|n<-[0..i]]++"  AND ") (inner: cclauses ncs))
 {-  De concepten in lst' noemen we c0, c1, ... cn (met n de lengte van lst')
@@ -349,7 +349,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                            | (n,c)<-ncs
                            ]
                         
-   selectExpr _     _ _   _   (Fd  [] ) = error ("!Fatal (module RelBinGenBasics 352): Cannot create query for Fd [] because type is unknown")
+   selectExpr _     _ _   _   (Fdx  [] ) = error ("!Fatal (module RelBinGenBasics 352): Cannot create query for Fd [] because type is unknown")
 
    -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
    selectExprInUnion :: Fspc
@@ -361,12 +361,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExprInUnion fSpec i src trg (Tc  e'        ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg (F  [e']       ) =  selectExprInUnion fSpec i src trg e'
 
-   selectExprInUnion fSpec i src trg (Fi [e']       ) =  selectExprInUnion fSpec i src trg e'
+   selectExprInUnion fSpec i src trg (Fix [e']       ) =  selectExprInUnion fSpec i src trg e'
 -- WAAROM? Stef, waarom is onderstaand niet:
 -- selectExprInUnion fSpec i src trg (Fu (e':f     )) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec i src trg (Fu f     )) ++ (phpIndent i) ++ ""
 
-   selectExprInUnion fSpec i src trg (Fu (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec i src trg (Fu (f:fx))) ++ (phpIndent i) ++ ""
-   selectExprInUnion fSpec i src trg (Fu [e']       ) =  selectExprInUnion fSpec i src trg e'
+   selectExprInUnion fSpec i src trg (Fux (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') ++ (phpIndent i) ++ ") UNION (" ++ (selectExprInUnion fSpec i src trg (Fux (f:fx))) ++ (phpIndent i) ++ ""
+   selectExprInUnion fSpec i src trg (Fux [e']       ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg e'               =  selectExpr        fSpec (i+4) src trg e'
 
    selectExprBrac :: Fspc
@@ -381,9 +381,9 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     = selectExprBrac f i s         (quote t) e'
    selectExprBrac fSpec i src trg (Tc  e' )                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (F  [e'])                             = selectExprBrac fSpec i src trg e'
-   selectExprBrac fSpec i src trg (Fd [e'])                             = selectExprBrac fSpec i src trg e'
-   selectExprBrac fSpec i src trg (Fi [e'])                             = selectExprBrac fSpec i src trg e'
-   selectExprBrac fSpec i src trg (Fu [e'])                             = selectExprBrac fSpec i src trg e'
+   selectExprBrac fSpec i src trg (Fdx [e'])                             = selectExprBrac fSpec i src trg e'
+   selectExprBrac fSpec i src trg (Fix [e'])                             = selectExprBrac fSpec i src trg e'
+   selectExprBrac fSpec i src trg (Fux [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec _ src trg (Tm m@I{} _)
     | lowerCase(quote$sqlMorSrc fSpec m)==(quote$lowerCase$src)
       && lowerCase(quote$sqlMorTrg fSpec m)==(quote$lowerCase$trg) 
@@ -519,8 +519,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   , fld1<-[f|f<-fields plug,target (fldexpr f)==target e']
                   , let se = fldexpr fld0
                         te = fldexpr fld1
-                        bs = (isTrue.disjNF) (Fu [Cp e', F [flp se,te] ])  --       e' |- se~;te
-                        bt = (isTrue.disjNF) (Fu [Cp (F [flp se,te]),e'])  --       se~;te |- e'
+                        bs = (isTrue.disjNF) (Fux [Cpx e', F [flp se,te] ])  --       e' |- se~;te
+                        bt = (isTrue.disjNF) (Fux [Cpx (F [flp se,te]),e'])  --       se~;te |- e'
                   , bs && bt                                               --       e' = se~;te
                   {- the above should be enough.. but the relation algebra calculations
                      are not good enough yet. In particular:
@@ -532,11 +532,11 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                      The code below fixes exactly these ommissions
                   -}
                   || (isProp (se) && (te == e')
-                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e'))(-1), simplF [e',flp e'] ]
-                                          ,Cp$se]))
+                     && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e'))(-1), simplF [e',flp e'] ]
+                                          ,Cpx$se]))
                   || (isProp (te) && (se == flp e')
-                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e'))(-1), simplF [flp e',e'] ]
-                                          ,Cp$te]))
+                     && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e'))(-1), simplF [flp e',e'] ]
+                                          ,Cpx$te]))
                   {- found another exception:
                        isFalse (I;I /\ -I)
                      and
@@ -572,18 +572,18 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
       ses (F [])         = error ("!Fatal (module RelBinGenBasics 572): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (F [f])        = ses f
       ses (F fs)         = ses (head fs)
-      ses (Fu [])        = error ("!Fatal (module RelBinGenBasics 575): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (Fu [f])       = ses f
-      ses (Fu fs)        = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fi [])        = error ("!Fatal (module RelBinGenBasics 578): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (Fi [f])       = ses f
-      ses (Fi fs)        = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fd [])        = error ("!Fatal (module RelBinGenBasics 581): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (Fd [f])       = ses f
-      ses (Fd fs)        = ses (head fs)
-      ses (Cp e)         = ses e
-      ses (K0 e)         = ses e
-      ses (K1 e)         = ses e
+      ses (Fux [])        = error ("!Fatal (module RelBinGenBasics 575): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fux [f])       = ses f
+      ses (Fux fs)        = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+      ses (Fix [])        = error ("!Fatal (module RelBinGenBasics 578): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fix [f])       = ses f
+      ses (Fix fs)        = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+      ses (Fdx [])        = error ("!Fatal (module RelBinGenBasics 581): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fdx [f])       = ses f
+      ses (Fdx fs)        = ses (head fs)
+      ses (Cpx e)         = ses e
+      ses (K0x e)         = ses e
+      ses (K1x e)         = ses e
       ses (Tc e)         = ses e
       ses (Tm m@Mp1{} _) = "Att"++(name (mph1typ m))
       ses (Tm m@I{} _)   = sqlMorSrc fSpec m

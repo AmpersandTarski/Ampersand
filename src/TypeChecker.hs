@@ -330,8 +330,8 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   ruleexpr_inv rule x
    -- normExpr rule == x 
       = case x of 
-        Fu [Cp a, c] -> if rrsrt rule==Implication then rule{rrant=a,rrcon=c} else err
-        Fi [Fu [a, Cp c], Fu [Cp _,_]] -> if --a==a' && c==c' && 
+        Fux [Cpx a, c] -> if rrsrt rule==Implication then rule{rrant=a,rrcon=c} else err
+        Fix [Fux [a, Cpx c], Fux [Cpx _,_]] -> if --a==a' && c==c' && 
                                                rrsrt rule==Equivalence 
                                             then rule{rrant=a,rrcon=c} else err
         _ -> if rrsrt rule==Truth then rule{rrcon=x} else err
@@ -379,7 +379,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
          (Sgn (name key) c c [] [] "" "" "" [] "" (pos key) 0 False False "")         
     where
      c    = kdcpt key
-     antc = Fi [F [attexpr,flp attexpr]| attexpr<-[ctx att|att<-kdats key]]
+     antc = Fix [F [attexpr,flp attexpr]| attexpr<-[ctx att|att<-kdats key]]
      cons = Tm (mIs c)(-1)
 
   --DESCR -> enriching ctxos

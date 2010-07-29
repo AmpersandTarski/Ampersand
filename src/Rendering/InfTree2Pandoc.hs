@@ -24,13 +24,13 @@ pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX "\n\\begin{prooftree}\n"]++il ++
    env :: Expression -> [(Int,(Declaration,[Concept]))]
    env (Tm mp i) = [(i, (head(decls mp),mphats mp))]
    env (F xs) = concat(map env xs)
-   env (Fd xs) = concat(map env xs)
-   env (Fi xs) = concat(map env xs)
-   env (Fu xs) = concat(map env xs)
-   env (Cp ex) = env ex
+   env (Fdx xs) = concat(map env xs)
+   env (Fix xs) = concat(map env xs)
+   env (Fux xs) = concat(map env xs)
+   env (Cpx ex) = env ex
    env (Tc ex) = env ex
-   env (K0 ex) = env ex
-   env (K1 ex) = env ex 
+   env (K0x ex) = env ex
+   env (K1x ex) = env ex 
    writedecl d usrtype = case d of
            Sgn{} -> (if null usrtype then name d else "("++name d ++show usrtype++")")
                     ++ "::" ++ show(source d) ++"*"++ show(target d) ++" at "++ show (decfpos d)
@@ -47,8 +47,8 @@ pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX "\n\\begin{prooftree}\n"]++il ++
 --REMARK -> Assumes -r\/s and (r\/-s)/\(-r\/s) where originally rules
 --the expression must have the same structure as (normExpr rule)
 writerule :: Expression -> String
-writerule (Fu [Cp r, s]) = writeexpr r ++ " \\vdash " ++ writeexpr s
-writerule x@(Fi [Fu [r, Cp s], Fu [Cp r',s']]) 
+writerule (Fux [Cpx r, s]) = writeexpr r ++ " \\vdash " ++ writeexpr s
+writerule x@(Fix [Fux [r, Cpx s], Fux [Cpx r',s']]) 
      | writeexpr r==writeexpr r' && writeexpr s==writeexpr s' = writeexpr r ++ " \\equiv " ++ writeexpr s
      | otherwise = writeexpr x
 writerule x = writeexpr x
@@ -59,17 +59,17 @@ writeexpr expr = showExpr (" \\cup ", " \\cap ", " \\dagger ", ";", "*", "+", "-
       showExpr (union',inter,rAdd,rMul,clos0,clos1,_,lpar,rpar) expr' = showchar (insParentheses expr')
          where
          showchar (Tm mph _)  = name mph++if inline mph then "" else "^{\\smile}"
-         showchar (Fu []) = "-V"
-         showchar (Fu fs) = chain' union' fs
-         showchar (Fi []) = "V"
-         showchar (Fi fs) = chain' inter fs
-         showchar (Fd []) = "-I"
-         showchar (Fd ts) = chain' rAdd ts
+         showchar (Fux []) = "-V"
+         showchar (Fux fs) = chain' union' fs
+         showchar (Fix []) = "V"
+         showchar (Fix fs) = chain' inter fs
+         showchar (Fdx []) = "-I"
+         showchar (Fdx ts) = chain' rAdd ts
          showchar (F [])  = "I"
          showchar (F ts)  = chain' rMul ts
-         showchar (K0 e') = showchar e'++clos0
-         showchar (K1 e') = showchar e'++clos1
-         showchar (Cp e') = "\\overline{"++showchar e'++"}"
+         showchar (K0x e') = showchar e'++clos0
+         showchar (K1x e') = showchar e'++clos1
+         showchar (Cpx e') = "\\overline{"++showchar e'++"}"
          showchar (Tc f)  = lpar++showchar f++rpar
          chain' x' xs = head (map showchar xs) ++ concat [x' ++ f|f<-tail (map showchar xs)]
 

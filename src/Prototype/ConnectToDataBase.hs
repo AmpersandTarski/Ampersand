@@ -115,7 +115,7 @@
                  "  DB_debug("++dbError rule++",3);\n    "++
                  "  return false;\n    }"
            ) ++ "return true;\n  }"
-         | rule<-rules fSpec, rule'<-[(conjNF . Cp . normExpr) rule], src<-[sqlExprSrc fSpec rule'], trg<-[noCollide [src] (sqlExprTrg fSpec rule')] ]
+         | rule<-rules fSpec, rule'<-[(conjNF . Cpx . normExpr) rule], src<-[sqlExprSrc fSpec rule'], trg<-[noCollide [src] (sqlExprTrg fSpec rule')] ]
       where
        dbError :: Rule -> String
        dbError rule

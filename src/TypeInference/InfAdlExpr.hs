@@ -48,13 +48,13 @@ infertype_and_populate populate isas ds (pushx,pushy) ex_in =
   (uniqex,_) = uniquemphs 0 ex_in --give each morphism an identifier within the scope of this expression
   inf_expr = inferfromscript (fromExpr uniqex)
   enrich_expr (F exs) = F$map enrich_expr exs
-  enrich_expr (Fd exs) = Fd$map enrich_expr exs
-  enrich_expr (Fi exs) = Fi$map enrich_expr exs
-  enrich_expr (Fu exs) = Fu$map enrich_expr exs
-  enrich_expr (Cp ex) = Cp$enrich_expr ex
+  enrich_expr (Fdx exs) = Fdx$map enrich_expr exs
+  enrich_expr (Fix exs) = Fix$map enrich_expr exs
+  enrich_expr (Fux exs) = Fux$map enrich_expr exs
+  enrich_expr (Cpx ex) = Cpx$enrich_expr ex
   enrich_expr (Tc ex) = Tc$enrich_expr ex
-  enrich_expr (K0 ex) = K0$enrich_expr ex
-  enrich_expr (K1 ex) = K1$enrich_expr ex
+  enrich_expr (K0x ex) = K0x$enrich_expr ex
+  enrich_expr (K1x ex) = K1x$enrich_expr ex
   enrich_expr (Tm mp i) = Tm (populate typedmp) i --populate all the (Populated a) in the typed and bound morphism
    where
    --use the identifier to get the type of the morphism and the declaration from the morphism binding
@@ -114,15 +114,15 @@ fromExpr (Tm mp i) =
 fromExpr (F []) = fatal 109 $ "Expression has no sub expressions"++show (F [])++"." 
 fromExpr (F (ex:[])) = fromExpr ex
 fromExpr (F (ex:rexs)) = Comp (fromExpr ex) (fromExpr (F rexs))
-fromExpr (Fd []) = fatal 113 $ "Expression has no sub expressions"++show (Fd [])++"." 
-fromExpr (Fd (ex:[])) = fromExpr ex
-fromExpr (Fd (ex:rexs)) = RAdd (fromExpr ex) (fromExpr (Fd rexs))
-fromExpr (Fi exs) = ISect$map fromExpr exs
-fromExpr (Fu exs) = Union$map fromExpr exs
-fromExpr (Cp ex) = Compl (fromExpr ex)
+fromExpr (Fdx []) = fatal 113 $ "Expression has no sub expressions"++show (Fdx [])++"." 
+fromExpr (Fdx (ex:[])) = fromExpr ex
+fromExpr (Fdx (ex:rexs)) = RAdd (fromExpr ex) (fromExpr (Fdx rexs))
+fromExpr (Fix exs) = ISect$map fromExpr exs
+fromExpr (Fux exs) = Union$map fromExpr exs
+fromExpr (Cpx ex) = Compl (fromExpr ex)
 fromExpr (Tc ex) = fromExpr ex
-fromExpr (K0 ex) = fromExpr ex
-fromExpr (K1 ex) = fromExpr ex
+fromExpr (K0x ex) = fromExpr ex
+fromExpr (K1x ex) = fromExpr ex
 
 --TODO -> if I want "[1] Type mismatch in rule" to be recognized, then I'll have to analyse "[4] Incompatible comparison" errors. If the antecedent and consequent do have a type, then it is a type 1 error. But I do not want to make a union data type RuleOrExpression -> I want the rule operators to be expression operators so I can evaluate the expression.
 --TODO -> I could print more in case of --verbose
@@ -214,15 +214,15 @@ operand root rs = snd (operand' root)
   operand' (Tc x) = if fst(operand' x) then (True,Tc (snd(operand' x))) else (False,niks)
   operand' (F  xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
                        in (not(null xs'),if length xs'==1 then head xs' else (F xs'))
-  operand' (Fd xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
-                       in (not(null xs'),if length xs'==1 then head xs' else (Fd xs'))
-  operand' (Fi xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
-                       in (not(null xs'),if length xs'==1 then head xs' else (Fi xs'))
-  operand' (Fu xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
-                       in (not(null xs'),if length xs'==1 then head xs' else (Fu xs'))
-  operand' (K0 x) = if fst(operand' x) then (True,K0 (snd(operand' x))) else (False,niks)
-  operand' (K1 x) = if fst(operand' x) then (True,K1 (snd(operand' x))) else (False,niks)
-  operand' (Cp x) = if fst(operand' x) then (True,Cp (snd(operand' x))) else (False,niks)
+  operand' (Fdx xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
+                       in (not(null xs'),if length xs'==1 then head xs' else (Fdx xs'))
+  operand' (Fix xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
+                       in (not(null xs'),if length xs'==1 then head xs' else (Fix xs'))
+  operand' (Fux xs) = let xs'=[snd(operand' x) | x<-xs, fst(operand' x)]
+                       in (not(null xs'),if length xs'==1 then head xs' else (Fux xs'))
+  operand' (K0x x) = if fst(operand' x) then (True,K0x (snd(operand' x))) else (False,niks)
+  operand' (K1x x) = if fst(operand' x) then (True,K1x (snd(operand' x))) else (False,niks)
+  operand' (Cpx x) = if fst(operand' x) then (True,Cpx (snd(operand' x))) else (False,niks)
 
 --DESCR -> the inference trees of subexpressions, just before the error occurs
 --         or all the inference trees in case of ambiguity

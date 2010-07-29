@@ -395,7 +395,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
                [ Plain [Str (explainRule flags fSpec r)]] ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
-               pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cp (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
+               pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
                [ Plain (text4) | length nds>1]
              ] 
            ) ] ++ dpNext
@@ -701,11 +701,11 @@ dataAnalysis lev fSpec flags
                        es  -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregels. " ]
                               , BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
                               ]
-          where irs = [Fu fs| Quad m ccrs<-vquads fSpec
+          where irs = [Fux fs| Quad m ccrs<-vquads fSpec
                             , r_usr (cl_rule ccrs), isIdent m, source m `elem` [c|(c,_)<-cLkpTbl p]
                             , (_,shifts)<-cl_conjNF ccrs
-                            , Fu fs<-shifts
-                            , let ns=[t| Cp t<-fs], length ns==1, Tm nega _<-ns
+                            , Fux fs<-shifts
+                            , let ns=[t| Cpx t<-fs], length ns==1, Tm nega _<-ns
                             , m==nega
                             ]
 

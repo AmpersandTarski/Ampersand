@@ -63,7 +63,7 @@ where
                        | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.morlist.paTo.head) cl|cl<-long]++"together"])
                        | otherwise = (All ds ms, [])
                        where ds' = [ let p=head cl in
-                                     if length cl==1 then p else p{paTo=disjNF (Fu[paDelta c| c<-cl]), paMotiv=concat (map paMotiv cl)}
+                                     if length cl==1 then p else p{paTo=disjNF (Fux[paDelta c| c<-cl]), paMotiv=concat (map paMotiv cl)}
                                    | cl<-dCls ]
                                    ++[d| d<-ds, not (isDo d)]
                              nds  = map norm ds
@@ -110,20 +110,20 @@ where
     where
      (res,ss,equ) = nM expr []
      nM :: Expression -> Expressions -> (Expression,[String],String)
-     nM (K0 e')      _    = (K0 res', steps, equ')
+     nM (K0x e')      _    = (K0x res', steps, equ')
                              where (res',steps,equ') = nM e' []
-     nM (K1 e')      _    = (K1 res', steps, equ')
+     nM (K1x e')      _    = (K1x res', steps, equ')
                              where (res',steps,equ') = nM e' []
-     nM (Cp (Cp e')) _    = (e', ["compl of compl"],"<=>")
-     nM (Cp (Fi fs)) _    = if simpl then (notCp res',steps,equ') else (Fu (map notCp fs), ["De Morgan"], "<=>")
-                             where (res',steps,equ') = nM (Fi fs) []
-     nM (Cp (Fu fs)) _    = if simpl then (notCp res',steps,equ') else (Fi (map notCp fs), ["De Morgan"], "<=>")
-                             where (res',steps,equ') = nM (Fu fs) []
-     nM (Cp (Fd ts)) _    = if not simpl && and [isNeg t| t<-ts] 
+     nM (Cpx (Cpx e')) _    = (e', ["compl of compl"],"<=>")
+     nM (Cpx (Fix fs)) _    = if simpl then (notCp res',steps,equ') else (Fux (map notCp fs), ["De Morgan"], "<=>")
+                             where (res',steps,equ') = nM (Fix fs) []
+     nM (Cpx (Fux fs)) _    = if simpl then (notCp res',steps,equ') else (Fix (map notCp fs), ["De Morgan"], "<=>")
+                             where (res',steps,equ') = nM (Fux fs) []
+     nM (Cpx (Fdx ts)) _    = if not simpl && and [isNeg t| t<-ts] 
                                then (F (map notCp ts), ["De Morgan"], "<=>")
                                else (notCp res',steps,equ')
-                             where (res',steps,equ') = nM (Fd ts) []
-     nM (Cp e')      _    = (notCp res',steps,equ')
+                             where (res',steps,equ') = nM (Fdx ts) []
+     nM (Cpx e')      _    = (notCp res',steps,equ')
                              where (res',steps,equ') = nM e' []
      nM (Tc f)       _    = nM f []
      nM (F [t])      _    = nM t []
@@ -132,96 +132,96 @@ where
                    -- If only simplification is required, we are done now.
                           | simpl                   = (if isF f then F (t:unF f) else F [t,f], steps++steps', fEqu [equ',equ''])
                           | not eq && length ks>1 && isFd g && length gs>1
-                                                    = (F (Fd (F [k,head gs]:tail gs):ks'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
+                                                    = (F (Fdx (F [k,head gs]:tail gs):ks'), ["Peirce: r;(s!q) => (r;s)!q"],"==>")
                           | not eq && isFd k && length ue>1
-                                                    = (Fd (init ue++[F (last ue:ks)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
-                          | not eq && isFi k        = (distribute F Fi isF isFi (F (k:ks)), ["distribute /\\ over ;"], "==>")
-                          | isFu k                  = (distribute F Fu isF isFu (F (k:ks)), ["distribute \\/ over ;"], "<=>")
-                          | and [isNeg x|x<-(k:ks)] = (notCp (Fd [notCp x| x<-(k:ks)]), ["De Morgan"], "<=>")
-                          | isFu (last (k:ks))      = (Fu [F (init (k:ks)++[t'])|Fu xs<-[last (k:ks)], t'<-xs], ["distribute \\/ over ;"], "<=>")
+                                                    = (Fdx (init ue++[F (last ue:ks)]), ["Peirce: (r!s);q => r!(s;q)"],"==>")
+                          | not eq && isFi k        = (distribute F Fix isF isFi (F (k:ks)), ["distribute /\\ over ;"], "==>")
+                          | isFu k                  = (distribute F Fux isF isFu (F (k:ks)), ["distribute \\/ over ;"], "<=>")
+                          | and [isNeg x|x<-(k:ks)] = (notCp (Fdx [notCp x| x<-(k:ks)]), ["De Morgan"], "<=>")
+                          | isFu (last (k:ks))      = (Fux [F (init (k:ks)++[t'])|Fux xs<-[last (k:ks)], t'<-xs], ["distribute \\/ over ;"], "<=>")
                           | otherwise               = (if isF f then F (t:unF f) else F [t,f], steps++steps', fEqu [equ',equ''])
                           where (t,steps, equ')  = nM k []
                                 (f,steps',equ'') = nM (F ks) (k:rs)
                                 ue = unF k
-                                g@(Fd gs):ks' = ks
+                                g@(Fdx gs):ks' = ks
 
-     nM (Fd [k])    _     = nM k []
-     nM (Fd (k:ks)) rs    | or [isFd x|x<-k:ks]     = nM (Fd [y| x<-k:ks, y<-if isFd x then unF x else [x]]) rs
+     nM (Fdx [k])    _     = nM k []
+     nM (Fdx (k:ks)) rs    | or [isFd x|x<-k:ks]     = nM (Fdx [y| x<-k:ks, y<-if isFd x then unF x else [x]]) rs
                           | or [isNot x|x<-k:ks]    = (F [x|x<-k:ks,not (isNot x)], ["x!-I = x"], "<=>")
                    -- If only simplification is required, we are done now.
-                          | simpl                   = (if isFd f then Fd (t:unF f) else Fd [t,f], steps++steps', fEqu [equ',equ''])
-                          | not eq && isFu k        = (distribute Fd Fu isFd isFu (Fd (k:ks)), ["distribute \\/ over !"], "==>")
-                          | isFi k                  = (distribute Fd Fi isFd isFi (Fd (k:ks)), ["distribute /\\ over !"], "<=>")
+                          | simpl                   = (if isFd f then Fdx (t:unF f) else Fdx [t,f], steps++steps', fEqu [equ',equ''])
+                          | not eq && isFu k        = (distribute Fdx Fux isFd isFu (Fdx (k:ks)), ["distribute \\/ over !"], "==>")
+                          | isFi k                  = (distribute Fdx Fix isFd isFi (Fdx (k:ks)), ["distribute /\\ over !"], "<=>")
                           | and [isNeg x|x<-(k:ks)] = (notCp (F [notCp x| x<-(k:ks)]), ["De Morgan"], "<=>")
                           | length ks>1 && isNeg k && isPos g && isFunction k
-                                                    = (F [notCp k,Fd ks], ["f-!g = f;g if f is a function"], "<=>")
+                                                    = (F [notCp k,Fdx ks], ["f-!g = f;g if f is a function"], "<=>")
                           | length ks>1 && isPos k && isNeg g && isFunction (flp g)
-                                                    = (Fd ( F[k,notCp g]:ks'), ["f!g- = f;g if g~ is a function"], "<=>")
-                          | otherwise               = (if isFd f then Fd (t:unF f) else Fd [t,f], steps++steps', fEqu [equ',equ''])
+                                                    = (Fdx ( F[k,notCp g]:ks'), ["f!g- = f;g if g~ is a function"], "<=>")
+                          | otherwise               = (if isFd f then Fdx (t:unF f) else Fdx [t,f], steps++steps', fEqu [equ',equ''])
                           where (t,steps, equ')  = nM k []
-                                (f,steps',equ'') = nM (Fd ks) (k:rs)
+                                (f,steps',equ'') = nM (Fdx ks) (k:rs)
                                 g:ks' = ks
-     nM (Fi [k]) _   = nM k []
-     nM (Fu [k]) _   = nM k []
-     nM (Fi (k:ks)) rs
+     nM (Fix [k]) _   = nM k []
+     nM (Fux [k]) _   = nM k []
+     nM (Fix (k:ks)) rs
                      -- Associativity of /\:    (r/\s)/\t  -->  r/\s/\t      (implicit step)
-                            | or [isFi x|x<-k:ks]         = nM (Fi [y| x<-k:ks, y<-if isFi x then unF x else [x]]) rs
+                            | or [isFi x|x<-k:ks]         = nM (Fix [y| x<-k:ks, y<-if isFi x then unF x else [x]]) rs
                      -- If only simplification is required, we are done now.
-                            | simpl                       = (if isFi f then Fi (t:unF f) else Fi [t,f], steps++steps', fEqu [equ',equ''])
+                            | simpl                       = (if isFi f then Fix (t:unF f) else Fix [t,f], steps++steps', fEqu [equ',equ''])
                      -- Absorb equals:    r/\r  -->  r
-                            | or [length cl>1|cl<-absor3] = (Fi [head cl| cl<-absor3], [showADL e++"/\\"++showADL e++" = "++showADL e| cl<-absor3, length cl>1, let e=head cl], "<=>")
+                            | or [length cl>1|cl<-absor3] = (Fix [head cl| cl<-absor3], [showADL e++"/\\"++showADL e++" = "++showADL e| cl<-absor3, length cl>1, let e=head cl], "<=>")
                      -- Inconsistency:    r/\-r   -->  False
-                            | not (null incons)           = (Fu [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
+                            | not (null incons)           = (Fux [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
                      -- Inconsistency:    Fu []   -->  False
-                            | k==Fu []                    = (Fu [], ["inconsistency"], "<=>")
+                            | k==Fux []                    = (Fux [], ["inconsistency"], "<=>")
   -- this is unreachable    | k==Fi []                    = (Fi ks, ["x/\\V = x"], "<=>")
                      -- Inconsistency:    x/\\V-  -->  False
-                            | or[x==Fu []|x<-ks]          = (Fu [], ["x/\\V- = V-"], "<=>")
+                            | or[x==Fux []|x<-ks]          = (Fux [], ["x/\\V- = V-"], "<=>")
                      -- Absorb if r is antisymmetric:    r/\r~  -->  I    (note that a reflexive r incurs r/\r~ = I)
-                            | or [length cl>1|cl<-absor2] = ( Fu [if length cl>1 then Tm (mIs (source e)) (-1) else e| cl<-absor2, let e=head cl]
+                            | or [length cl>1|cl<-absor2] = ( Fux [if length cl>1 then Tm (mIs (source e)) (-1) else e| cl<-absor2, let e=head cl]
                                                             , [showADL e++"/\\"++showADL (flp e)++" = I, because"++showADL e++" is antisymmetric"| cl<-absor2, let e=head cl]
                                                             , if and [isRfx (head cl)| cl<-absor2, length cl>1] then "<=>" else "==>"
                                                             )
                      -- Absorb:    (x\\/y)/\\y  -->  y
-                            | isFu k && not (null absor0) = let f'=head absor0 in (Fi ks, ["absorb "++showADL k++" because of "++showADL f'++" ((x\\/y)/\\y = y))"], "<=>")
+                            | isFu k && not (null absor0) = let f'=head absor0 in (Fix ks, ["absorb "++showADL k++" because of "++showADL f'++" ((x\\/y)/\\y = y))"], "<=>")
                      -- Absorb:    (x\\/-y)/\\y  -->  x/\\y
-                            | isFu k && not (null absor1) = let (ts,f')=head absor1 in (Fi (ts++ks), ["absorb "++showADL f'], "<=>")
-                            | otherwise                   = (if isFi f then Fi (t:unF f) else Fi [t,f], steps++steps', fEqu [equ',equ''])
+                            | isFu k && not (null absor1) = let (ts,f')=head absor1 in (Fix (ts++ks), ["absorb "++showADL f'], "<=>")
+                            | otherwise                   = (if isFi f then Fix (t:unF f) else Fix [t,f], steps++steps', fEqu [equ',equ''])
                             where (t,steps, equ')  = nM k []
-                                  (f,steps',equ'') = nM (Fi ks) (k:rs)
+                                  (f,steps',equ'') = nM (Fix ks) (k:rs)
                                   incons = [x|x<-ks,x==notCp k]
                                   absor0 = [t'| t'<-unF k, f'<-ks++rs, t'==f']
-                                  absor1 = [(if length rest<=1 then rest else [Fu rest] , t')| t'<-unF k, f'<-ks++rs, notCp t'==f', let rest = [x|x<-unF k,x/=t']]
+                                  absor1 = [(if length rest<=1 then rest else [Fux rest] , t')| t'<-unF k, f'<-ks++rs, notCp t'==f', let rest = [x|x<-unF k,x/=t']]
                                   absor2 = eqClass same (rs++k:ks) where e `same` e' = if isRfx e && isAsy e && isRfx e' && isAsy e' then e==flp e' else False
                                   absor3 = eqClass (==) (rs++k:ks)
-     nM (Fu (k:ks)) rs
+     nM (Fux (k:ks)) rs
                      -- Associativity of \/:    (r\/s)\/t  -->  r\/s\/t      (implicit step)
-                            | or [isFu x|x<-k:ks]         = nM (Fu [y| x<-k:ks, y<-if isFu x then unF x else [x]]) rs
+                            | or [isFu x|x<-k:ks]         = nM (Fux [y| x<-k:ks, y<-if isFu x then unF x else [x]]) rs
                      -- If only simplification is required, we are done now.
-                            | simpl                       = (if isFu f then Fu (t:unF f) else Fu [t,f], steps++steps', fEqu [equ',equ''])
+                            | simpl                       = (if isFu f then Fux (t:unF f) else Fux [t,f], steps++steps', fEqu [equ',equ''])
                      -- Absorb equals:    r\/r  -->  r
-                            | or [length cl>1|cl<-absor3] = (Fu [head cl| cl<-absor3], [showADL e++"\\/"++showADL e++" = "++showADL e| cl<-absor3, length cl>1, let e=head cl], "<=>")
+                            | or [length cl>1|cl<-absor3] = (Fux [head cl| cl<-absor3], [showADL e++"\\/"++showADL e++" = "++showADL e| cl<-absor3, length cl>1, let e=head cl], "<=>")
                      -- Tautology:    r\/-r  -->  V
-                            | or [length cl>1|cl<-absor2] = let ncp (Cp e) = e; ncp e = e in
-                                                            (Fi [], take 1 [if length (morlist e)>1 then "let "++ showADL (ncp e)++" = e. Since -e\\/e = V we get" else showADL (notCp e)++"\\/"++showADL e++" = V"| cl<-absor2, length cl>1, let e=head cl], "<=>")
-                            | k==Fi []                    = (Fi [], ["tautology"], "<=>")
+                            | or [length cl>1|cl<-absor2] = let ncp (Cpx e) = e; ncp e = e in
+                                                            (Fix [], take 1 [if length (morlist e)>1 then "let "++ showADL (ncp e)++" = e. Since -e\\/e = V we get" else showADL (notCp e)++"\\/"++showADL e++" = V"| cl<-absor2, length cl>1, let e=head cl], "<=>")
+                            | k==Fix []                    = (Fix [], ["tautology"], "<=>")
   -- this is unreachable    | k==Fu []                    = (Fu ks, ["x\\/V- = x"], "<=>")
                      -- Tautology:    r\/V  -->  V
-                            | or[x==Fi []|x<-ks]          = (Fi [], ["x\\/V = V"], "<=>")
-                            | isFi k && not (null absor0) = let f'=head absor0 in (Fu ks, ["absorb "++showADL k++" because of "++showADL f'++" ((x/\\y)\\/y = y))"], "<=>")
-                            | isFi k && not (null absor1) = let (ts,f')=head absor1 in (Fu (ts++ks), ["absorb "++showADL f'++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
-                            | otherwise                   = (if isFu f then Fu (t:unF f) else Fu [t,f], steps++steps', fEqu [equ',equ''])
+                            | or[x==Fix []|x<-ks]          = (Fix [], ["x\\/V = V"], "<=>")
+                            | isFi k && not (null absor0) = let f'=head absor0 in (Fux ks, ["absorb "++showADL k++" because of "++showADL f'++" ((x/\\y)\\/y = y))"], "<=>")
+                            | isFi k && not (null absor1) = let (ts,f')=head absor1 in (Fux (ts++ks), ["absorb "++showADL f'++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
+                            | otherwise                   = (if isFu f then Fux (t:unF f) else Fux [t,f], steps++steps', fEqu [equ',equ''])
                             where (t,steps, equ')  = nM k []
-                                  (f,steps',equ'') = nM (Fu ks) (k:rs)
+                                  (f,steps',equ'') = nM (Fux ks) (k:rs)
                                   absor0 = [t'| t'<-unF k, f'<-ks++rs, t'==f']
-                                  absor1 = [(if length rest<=1 then rest else [Fi rest] , t')| t'<-unF k, f'<-ks++rs, notCp t'==f', rest<-[[x|x<-unF k,x/=t']]]
+                                  absor1 = [(if length rest<=1 then rest else [Fix rest] , t')| t'<-unF k, f'<-ks++rs, notCp t'==f', rest<-[[x|x<-unF k,x/=t']]]
                                   absor2 = eqClass same (rs++k:ks) where e `same` e' = e==notCp e'
                                   absor3 = eqClass (==) (rs++k:ks)
      nM (Tm m n) _        | isSym m && not (inline m) =  (Tm (flp m) n,[name m++" is symmetric"],"<=>")
                    -- Equivalence relation:    r  -->  I   if r is reflexive, transitive and symmetric.
                           | isEq && not (isIdent m)   = if isRfx m
-                                                        then (Fi [Tm (mIs (source m)) n], [showADL m++" is an equivalence relation"], "<=>")
-                                                        else (Fi [Tm (mIs (source m)) n], [showADL m++" is transitive and symmetric"], "==>")
+                                                        then (Fix [Tm (mIs (source m)) n], [showADL m++" is an equivalence relation"], "<=>")
+                                                        else (Fix [Tm (mIs (source m)) n], [showADL m++" is transitive and symmetric"], "==>")
                                                         where isEq = isTrn m && isSym m
      nM x _               = (x,[],"<=>")
 
@@ -230,9 +230,9 @@ where
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 
    unF :: Expression -> Expressions
-   unF (Fi es')  = es'
-   unF (Fu es')  = es'
-   unF (Fd es')  = es'
+   unF (Fix es')  = es'
+   unF (Fux es')  = es'
+   unF (Fdx es')  = es'
    unF (F  es')  = es'
    unF x        = [x]
 
@@ -304,8 +304,8 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
       where pr            = nfPr True (simplify expr)
             (expr',_,_)   = last pr
             step          = simplify expr/=expr' || and [null s| (_,ss,_)<-pr, s<-ss]
-            expr''        = simplify (distribute Fu Fi isFu isFi expr')   -- Distribute:    (x/\y)\/z  -->  x\/z /\ y\/z
-            pr'           = case or [isFi f|Fu fs<-[expr'], f<-fs] of
+            expr''        = simplify (distribute Fux Fix isFu isFi expr')   -- Distribute:    (x/\y)\/z  -->  x\/z /\ y\/z
+            pr'           = case or [isFi f|Fux fs<-[expr'], f<-fs] of
                              True -> [(expr',["Distribute:    (x/\\y)\\/z  <=>  x\\/z /\\ y\\/z"],"<=>"),(expr'',[],"<=>")]
                              _    -> [(expr',[],"<=>")]
             step'         = expr'/=expr'' || and [null s| (_,ss,_)<-pr', s<-ss]
@@ -332,8 +332,8 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
       where pr            = nfPr True expr
             (expr',_,_)   = last pr
             step          = simplify expr/=simplify expr'
-            expr''        = distribute Fi Fu isFi isFu expr'   -- Distribute:    (x\/y)/\z  -->  x/\z \/ y/\z
-            pr'           = case or [isFu f|Fi fs<-[expr'], f<-fs] of
+            expr''        = distribute Fix Fux isFi isFu expr'   -- Distribute:    (x\/y)/\z  -->  x/\z \/ y/\z
+            pr'           = case or [isFu f|Fix fs<-[expr'], f<-fs] of
                              True -> [(expr',["Distribute:    (x\\/y)/\\z  <=>  x/\\z \\/ y/\\z"],"<=>"),(expr'',[],"<=>")]
                              _    -> [(expr',[],"<=>")]
             step'         = simplify expr'/=simplify expr''
