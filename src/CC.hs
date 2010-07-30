@@ -22,7 +22,7 @@
                        , "SERVICE", "INITIAL", "SQLPLUG", "PHPPLUG"
                        , "POPULATION", "CONTAINS"
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP", "ALWAYS"
-                       , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON"
+                       , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON","TEST"
                        , "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V", "S"
                        , "PRAGMA", "EXPLANATION", "EXPLAIN", "IN", "REF", "ENGLISH", "DUTCH"
@@ -116,7 +116,7 @@
                        <*  pKey "ENDPATTERN"
                        where
                          rebuild :: String -> [PatElem] -> Pattern
-                         rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes] [e| Pe e<-pes]
+                         rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes] [e| Pe e<-pes] [e|Ptest e<-pes]
 
    data PatElem      = Pr Rule
                      | Pg Gen
@@ -124,6 +124,7 @@
                      | Pc ConceptDef
                      | Pk KeyDef
                      | Pe PExplanation
+                     | Ptest PExpression
 
    pPatElem         :: Parser Token PatElem
    pPatElem          = Pr <$> pRuleDef <|>
@@ -131,7 +132,8 @@
                        Pm <$> pDeclaration  <|>
                        Pc <$> pConceptDef   <|>
                        Pk <$> pKeyDef       <|>
-                       Pe <$> pExplain
+                       Pe <$> pExplain <|>
+                       Ptest <$ pKey "TEST" <*> pPExpression
 
    pSignal          :: Parser Token (String, FilePos)
    pSignal           = pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|>
@@ -187,6 +189,56 @@
    preStr           = g <$> pList1 (pKey "-")
                        where
                         g xs = if odd (length cs) then take 1 cs else [] where cs = concat xs
+
+                              
+   --Morphisms, or expressions in parentheses are terms with optional pre and post unary operators and optional type directive.
+   --pExpression parses expressions composed of these terms and (>1)-ary operators.
+   --pMorphism has already parsed the first type directive after a morphism without post-operator i.e. r[A*B][C*D] is possible.
+     --examples r[A*B][C*D];s <=> r[C*D];s 
+     --        -r[A*B][C*D];s <=> (-r)[C*D];s
+     --              r[A*B];s <=> r[A*B];s 
+     --             -r[A*B];s <=> (-r)[A*B];s
+     --        r[A*B]~[C*D];s <=> (r[A*B])~[C*D];s 
+     --       -r[A*B]~[C*D];s <=> ((-r)[A*B])~[C*D];s   
+   pPTerm :: Parser Token PExpression
+   pPTerm  = pe <$> preOp <*> (pSpec '(' *> pPExpression <* pSpec ')') <*> postOp
+                    <*> pType
+         <|> pm <$> preOp <*> pMorphism <*> postOp
+                    <*> pType
+     where 
+     pType = hm <$ pSpec '[' <*> pConcept <* pSpec ']'  
+         <|> ht <$ pSpec '[' <*> pConcept <* pKey "*" <*> pConcept <* pSpec ']'
+         `opt` Nothing
+         where hm c    = Just (c,c)
+               ht c1 c2 = Just (c1,c2)
+     preOp = pList1 (pKey (showADL Cp))  `opt` []
+     postOp = pList1 (pKey (showADL Co) <|> pKey (showADL K0) <|> pKey (showADL K1))  `opt` []
+     --operators on e are evaluated: first post from the inside out, then pre (from the inside out) (convention p.50 Maddux).
+     --(GM) Is this correct with respect to K0 and K1 (post) i.c.w. the complement (pre)?
+     pe pre e post t = settype(construct [op|op<-pUnOp(pre++reverse post)])
+         where
+         settype (TPExp m _) = TPExp m t
+         settype (MulPExp op xs _) = MulPExp op xs t
+         settype (BiPExp op x y _) = BiPExp op x y t
+         settype (UnPExp op x _) = UnPExp op x t       
+         pUnOp ops = [op |opc<-ops,op<-[Cp,Co,K0,K1],opc==showADL op]
+         construct [] = e
+         construct (x:xs) = UnPExp x (construct xs) Nothing
+     pm pre m post t = pe pre (TPExp m Nothing) post t'
+         where 
+         t' = if t==Nothing then mtp else t
+         mtp = case mphats m of 
+           [x] -> Just (x,x) 
+           [x,y] -> Just (x,y) 
+           _ -> Nothing
+   pPExpression :: Parser Token PExpression
+   pPExpression  = foldr pMultOp pPTerm [Fu,Fi,Fd,Fc] --The order of these operators is relevant (convention p.50 Maddux).
+     where 
+     pMultOp mop pnext = let g [x]= x
+                             g xs = MulPExp mop xs Nothing
+                         in g <$> pList1Sep (pKey (showADL mop)) pnext
+
+   
 
    pExpr            :: Parser Token Expression
    pExpr             = f <$> pList1Sep (pKey "\\/") pFactorI

@@ -10,6 +10,7 @@ where
    import Adl.Explanation              (PExplanations)
    import CommonClasses                (Identified(..))
    import Collection                   (Collection(..))
+   import Adl.Expression               (PExpression)
    
    type Patterns  = [Pattern]
    data Pattern
@@ -20,6 +21,7 @@ where
             , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
             , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
             , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
+            , testexpr :: [PExpression]
             }   --deriving (Show) -- voor debugging
 
 -- \***********************************************************************
@@ -48,6 +50,7 @@ where
            (ptcds pat `uni` ptcds pat')
            (ptkds pat `uni` ptkds pat')
            (ptxps pat  ++   ptxps pat')
+           []
 
 
             

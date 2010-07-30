@@ -34,7 +34,7 @@ where
              ++"\n  main :: IO ()"
              ++"\n  main = do flags <- getOptions"
              ++"\n            putStr (showHS flags \"\\n  \" fSpec_"++baseName flags++")"
-             ++"\n"
+             ++"\n"++"{- \n"++show [x|p<-vpatterns fSpec,x<-testexpr p] ++ "\n-}\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS flags "\n     " fSpec
 

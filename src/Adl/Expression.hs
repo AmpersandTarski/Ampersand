@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Expression (Expression(..),Expressions,isF,isFd,isFi,isFu
+module Adl.Expression (Expression(..),Expressionx(..),PExpression(..),UnOp(..),BiOp(..),MulOp(..),Expressions,isF,isFd,isFi,isFu
                       ,v
                       ,isPos,isNeg,notCp,insParentheses, uniquemphs)
 where
@@ -60,7 +60,6 @@ data Expressionx
   | BiExp  BiOp  Expressionx Expressionx Sign
   | UnExp  UnOp  Expressionx            Sign
     deriving (Show)
-
 
 isFu :: Expression -> Bool
 isFu Fux{}  = True
