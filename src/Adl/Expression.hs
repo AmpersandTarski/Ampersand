@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Expression (Expression(..),Expressionx(..),PExpression(..),UnOp(..),BiOp(..),MulOp(..),Expressions,isF,isFd,isFi,isFu
+module Adl.Expression (Expression(..),Expressionx(..),PExpression(..),UnOp(..),MulOp(..),Expressions,isF,isFd,isFi,isFu
                       ,v
                       ,isPos,isNeg,notCp,insParentheses, uniquemphs)
 where
@@ -33,32 +33,27 @@ data UnOp
   | Co -- ^ Converse ~
     deriving (Show)
 
-data BiOp
-  = Ri -- ^ Rule implication |-
-  | Re -- ^ Rule equivalence =
-    deriving (Show)
-
 data MulOp
   = Fc -- ^ composition ;
   | Fd -- ^ relative addition !
   | Fi -- ^ intersection
   | Fu -- ^ union \/
+  | Ri -- ^ Rule implication |-  => (r |- s |- t <=> (-r\/s) /\ (-s\/t) )
+  | Re -- ^ Rule equivalence =   => (r = s = t   <=> (r |- s |- t) /\ (t |- s |- r)
     deriving (Show)
 
 data PExpression
-  --        Oper. Operands                Explicit type / Type cast
-  = TPExp         Morphism                (Maybe Sign)
-  | MulPExp MulOp [PExpression]           (Maybe Sign)
-  | BiPExp  BiOp  PExpression PExpression (Maybe Sign)
-  | UnPExp  UnOp  PExpression             (Maybe Sign)
+  --        Oper. Operands      Explicit type / Type cast
+  = TPExp         Morphism      (Maybe Sign)
+  | MulPExp MulOp [PExpression] (Maybe Sign)
+  | UnPExp  UnOp  PExpression   (Maybe Sign)
     deriving (Show)
 
 data Expressionx
-  --       Oper. Relations             Type
-  = TExp         Declaration           Sign
-  | MulExp MulOp [Expressionx]          Sign
-  | BiExp  BiOp  Expressionx Expressionx Sign
-  | UnExp  UnOp  Expressionx            Sign
+  --       Oper. Relations     Type
+  = TExp         Declaration   Sign
+  | MulExp MulOp [Expressionx] Sign
+  | UnExp  UnOp  Expressionx   Sign
     deriving (Show)
 
 isFu :: Expression -> Bool

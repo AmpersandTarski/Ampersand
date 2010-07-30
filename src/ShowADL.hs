@@ -426,11 +426,6 @@
        p = ecaAction r
        shMotiv ms = commaEng "and" [ showADL conj++" FROM "++chain "," ["R"++show (nr r)| r<-rs]++")"| (conj,rs)<-ms]
 
-
-   instance ShowADL BiOp where
-    showADL Ri = "|-"
-    showADL Re = "="
-
    instance ShowADL UnOp where
     showADL K0 = "*"
     showADL K1 = "+"
@@ -442,6 +437,8 @@
     showADL Fd = "!"
     showADL Fi = "/\\"
     showADL Fu = "\\/"
+    showADL Ri = "|-"
+    showADL Re = "="
 ---------------------------------------
 --FUNCTIONS
 ---------------------------------------

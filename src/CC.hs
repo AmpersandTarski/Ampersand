@@ -198,8 +198,8 @@
      --        -r[A*B][C*D];s <=> (-r)[C*D];s
      --              r[A*B];s <=> r[A*B];s 
      --             -r[A*B];s <=> (-r)[A*B];s
-     --        r[A*B]~[C*D];s <=> (r[A*B])~[C*D];s 
-     --       -r[A*B]~[C*D];s <=> ((-r)[A*B])~[C*D];s   
+     --        r[A*B]~[C*D];s <=> (r[A*B]~)[C*D];s 
+     --       -r[A*B]~[C*D];s <=> (-r~)[C*D];s   
    pPTerm :: Parser Token PExpression
    pPTerm  = pe <$> preOp <*> (pSpec '(' *> pPExpression <* pSpec ')') <*> postOp
                     <*> pType
@@ -219,12 +219,11 @@
          where
          settype (TPExp m _) = TPExp m t
          settype (MulPExp op xs _) = MulPExp op xs t
-         settype (BiPExp op x y _) = BiPExp op x y t
          settype (UnPExp op x _) = UnPExp op x t       
          pUnOp ops = [op |opc<-ops,op<-[Cp,Co,K0,K1],opc==showADL op]
          construct [] = e
          construct (x:xs) = UnPExp x (construct xs) Nothing
-     pm pre m post t = pe pre (TPExp m Nothing) post t'
+     pm pre m post t = pe pre (TPExp m (if null pre then mtp else Nothing)) post t'
          where 
          t' = if t==Nothing then mtp else t
          mtp = case mphats m of 
@@ -232,13 +231,11 @@
            [x,y] -> Just (x,y) 
            _ -> Nothing
    pPExpression :: Parser Token PExpression
-   pPExpression  = foldr pMultOp pPTerm [Fu,Fi,Fd,Fc] --The order of these operators is relevant (convention p.50 Maddux).
+   pPExpression  = foldr pMultOp pPTerm [Re,Ri,Fu,Fi,Fd,Fc] --The order of these operators is relevant (convention p.50 Maddux).
      where 
      pMultOp mop pnext = let g [x]= x
                              g xs = MulPExp mop xs Nothing
-                         in g <$> pList1Sep (pKey (showADL mop)) pnext
-
-   
+                         in g <$> pList1Sep (pKey (showADL mop)) pnext   
 
    pExpr            :: Parser Token Expression
    pExpr             = f <$> pList1Sep (pKey "\\/") pFactorI
