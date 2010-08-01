@@ -174,7 +174,10 @@ getOptions =
             
 data DisplayMode = Public | Hidden 
 data FspecFormat = FPandoc | FRtf | FOpenDocument | FLatex | FHtml  deriving (Show, Eq)
-data DocTheme = DefaultTheme | ProofTheme | StudentTheme  deriving (Show, Eq)
+data DocTheme = DefaultTheme   -- Just the functional specification
+              | ProofTheme     -- A document with type inference proofs
+              | StudentTheme   -- An adjusted func spec for students of the business rules course
+                 deriving (Show, Eq)
     
 usageInfo' :: Options -> String
 -- When the user asks --help, then the public options are listed. However, if also --verbose is requested, the hidden ones are listed too.  
@@ -273,9 +276,9 @@ maxServicesOpt :: Options -> Options
 maxServicesOpt  opts = opts{allServices  = True}                            
 themeOpt :: String -> Options -> Options
 themeOpt t opts = opts{theme = case (map toUpper t) of 
-                                     "STUDENT" -> StudentTheme
-                                     "PROOF" -> ProofTheme
-                                     _ -> DefaultTheme}
+                                    "STUDENT" -> StudentTheme
+                                    "PROOF"   -> ProofTheme
+                                    _         -> DefaultTheme}
 dbNameOpt :: String -> Options -> Options
 dbNameOpt nm opts = opts{dbName = if nm == "" 
                                     then baseName opts

@@ -74,7 +74,6 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
          postProcessMonad = 
            case fspecFormat flags of   
                FLatex  -> do 
-                  --        removeOldFiles
                           (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
                           verboseLn flags ("PdfLatex was called "++
                                            (if nrOfRounds>1 then show nrOfRounds++" times" else "once")++
@@ -106,15 +105,8 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                 --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
                                                 else system ("cd "++(dirOutput flags)
                                                            ++" && pdflatex "
-                                                           ++ replaceExtension 
-                                                                (baseName flags) 
-                                                                (case fspecFormat flags of        
-                                                                   FPandoc       -> ".pandoc"
-                                                                   FRtf          -> ".rtf"
-                                                                   FLatex        -> ".tex"
-                                                                   FHtml         -> ".html"
-                                                                   FOpenDocument -> ".odt"
-                                                                )++[x|x<-"> pdflog",not(verboseP flags)])
+                                                           ++ replaceExtension (baseName flags) ".tex"
+                                                           ++ [x|x<-"> pdflog",not(verboseP flags)])
                                       case result of 
                                          ExitSuccess   -> verboseLn flags ("PDF file created.")
                                          ExitFailure x -> verboseLn flags ("Failure: " ++ show x)
@@ -160,7 +152,7 @@ theTemplate flags
                   Dutch   -> [ "\\usepackage[dutch]{babel}"
                              , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definitie}[section]"
                              , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Functionele eis}" ]
-                  _       -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
+                  English -> [ "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{definition}{Definition}[section]"
                              , "\\theoremstyle{plain}\\theorembodyfont{\\rmfamily}\\newtheorem{designrule}[definition]{Requirement}" ]
                )++
                ["\\usepackage{graphicx}"                   | useGraphics flags] ++
@@ -310,7 +302,7 @@ count :: Options -> Int -> String -> String
 count flags n x
  = case (language flags, n) of
       (Dutch  , 0) -> "geen "++plural Dutch x
-      (Dutch  , 1) -> preciesEen++" "++x                -- zou "één" moeten zijn, maar dit geeft een UTF-8 decoding error in de Haskell compiler (TODO).
+      (Dutch  , 1) -> preciesEen++" "++x                -- zou "Ã©Ã©n" moeten zijn, maar dit geeft een UTF-8 decoding error in de Haskell compiler (TODO).
       (Dutch  , 2) -> "twee "++plural Dutch x
       (Dutch  , 3) -> "drie "++plural Dutch x
       (Dutch  , 4) -> "vier "++plural Dutch x
@@ -326,7 +318,7 @@ count flags n x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
     where
-      preciesEen = "een (1)" --"één"  TODO moet nog utf8 resistent worden gemaakt.
+      preciesEen = "een (1)" --"Ã©Ã©n"  TODO moet nog utf8 resistent worden gemaakt.
     
 ------ Symbolic referencing ---------------------------------
 

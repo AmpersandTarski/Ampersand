@@ -20,15 +20,15 @@ import System.FilePath        (combine,replaceExtension)
 generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 
     sequence_ 
-       ([ verboseLn    flags "Generating..."]++
-        [ doGenAtlas   fSpec flags | genAtlas     flags] ++
-        [ doGenXML     fSpec flags | genXML       flags] ++
-        [ doGenHaskell fSpec flags | haskell      flags] ++ 
-        [ doGenProto   fSpec flags | genPrototype flags] ++
-        [ serviceGen   fSpec flags | services     flags] ++
-        [ doGenFspec   fSpec flags | genFspec     flags] ++ 
-        [ prove        fSpec flags | proofs       flags] ++
-        [ diagnose     fSpec flags | diag         flags] ++
+       ([ verboseLn     flags "Generating..."]++
+        [ doGenAtlas    fSpec flags | genAtlas     flags] ++
+        [ doGenXML      fSpec flags | genXML       flags] ++
+        [ doGenHaskell  fSpec flags | haskell      flags] ++ 
+        [ doGenProto    fSpec flags | genPrototype flags] ++
+        [ serviceGen    fSpec flags | services     flags] ++
+        [ doGenDocument fSpec flags | genFspec     flags] ++ 
+        [ prove         fSpec flags | proofs       flags] ++
+        [ diagnose      fSpec flags | diag         flags] ++
         [ verbose flags "Done."]
        ) 
 
@@ -81,14 +81,9 @@ doGenProto fSpec flags
 -- This function will generate all Pictures for a given Fspc. 
 -- the returned Fspc contains the details about the Pictures, so they
 -- can be referenced while rendering the Fspc.
--- This function used to generate just func specs, but it was actually suitable to generate any pandoc document with pictures from an fSpec.
--- The option "theme" defines the content or type of document
--- current themes are: 
---    proofs -> a document with type inference proofs
---    student -> an adjusted func spec for students of the business rules course
---    <no theme> -> just the func spec
-doGenFspec :: Fspc -> Options -> IO()
-doGenFspec fSpec flags
+-- This function generates a pandoc document, possibly with pictures from an fSpec.
+doGenDocument :: Fspc -> Options -> IO()
+doGenDocument fSpec flags
    = verboseLn flags ("Processing "++name fSpec++" towards "++outputFile)     >>
      makeOutput                                                               >>
      verboseLn flags ("Document has been written into " ++ outputFile ++ ".") >>
@@ -96,14 +91,17 @@ doGenFspec fSpec flags
           (foldr1 (>>) [ writePicture flags p| p<-thePictures] )              >>
      -- postProcessing of the generated output file depends on the format:
      postProcessor
-     
        where
-       (thePandoc,thePictures) = case theme flags of
-              ProofTheme -> (proofdoc fSpec,[]) --generate a proof document
-              _ -> fSpec2Pandoc fSpec flags --generate a func spec
+       (thePandoc,thePictures) 
+            = case theme flags of
+                 ProofTheme   -> (proofdoc fSpec,[])     --generate a proof document
+                 DefaultTheme -> funcSpec
+                 StudentTheme -> funcSpec
+               where funcSpec = fSpec2Pandoc fSpec flags --generate a func spec
        (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
 
-              
+
+
 -- The following function assumes a syntactically correct ADL-script,
 -- which may contain type errors
 -- it prints a diagnosis of the script.
@@ -114,10 +112,13 @@ diagnose fSpec flags
 --     putStr (diagnosis flags fSpec) >>
      verboseLn flags ("Nothing written into " ++ outputFile ++ ", because diagnosis is not yet implemented.")
        where
-       (thePandoc,thePictures) = case theme flags of
-              ProofTheme -> (proofdoc fSpec,[]) --generate a proof document
-              _ -> fSpec2Pandoc fSpec flags --generate a func spec
-       (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
+       (thePandoc,_)
+            = case theme flags of
+                 ProofTheme -> (proofdoc fSpec,[])      --generate a proof document
+                 DefaultTheme -> funcSpec
+                 StudentTheme -> funcSpec
+               where funcSpec = fSpec2Pandoc fSpec flags --generate a func spec
+       (outputFile,_,_) = writepandoc flags thePandoc
 
 
   
