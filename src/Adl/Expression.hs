@@ -24,8 +24,7 @@ data Expression  = Tm Morphism Int -- m  ^ simple morphism, possibly conversed  
                  | K0x Expression   -- e  ^ Reflexive and transitive closure        *
                  | K1x Expression   -- e  ^ Transitive closure                      +
                  | Cpx Expression   -- e  ^ Complement                              -
-                              --               deriving (Show)
-
+                               
 data UnOp
   = K0 -- ^ Reflexive and transitive closure *
   | K1 -- ^ Transitive closure +

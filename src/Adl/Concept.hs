@@ -15,6 +15,7 @@ where
                          )
    import Collection     ((>-))
    import Typology       (Typologic)
+   import {-# SOURCE #-} Adl.Expression (Expression(..))
    
    type Concepts = [Concept]
    data Concept
@@ -23,6 +24,7 @@ where
             , cptos :: [String]  -- ^Atoms
             }  -- ^C nm gE cs represents the set of instances cs by name nm.
       | S  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything']
+      | DExp Expression -- ^A concept containing exactly the population in the target of the expression. The letter D stands for derived
       | Anything -- ^Really Anything!
       | NOthing  -- ^Nothing at all
 
@@ -40,6 +42,7 @@ where
     S == S = True
     Anything == Anything = True
     NOthing == NOthing = True
+    DExp a == DExp b = a==b
     _ == _ = False
    instance Show Concept where
     showsPrec _ c = showString (name c)
@@ -48,6 +51,7 @@ where
     name S = "S"
     name Anything   = "Anything"
     name NOthing    = "NOthing"
+    name (DExp _)   = error "Derived concepts have no name (on line 53 in Concept.hs)"
 
    instance Association Concept where
     source c = c
@@ -58,6 +62,8 @@ where
     Anything <= _ = True
     _ <= Anything = False
     a@(C _ gE _) <= b = a `gE` b
+    (DExp _) <= _ = error "Derived concepts are not ordered (on line 64 in Concept.hs)"
+    _ <= (DExp _) = error "Derived concepts are not ordered (on line 65 in Concept.hs)"
     a <= b = a==b
 
    instance ABoolAlg Concept where
