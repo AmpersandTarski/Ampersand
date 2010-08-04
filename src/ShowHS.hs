@@ -9,7 +9,7 @@ where
    import Strings               (chain)
    import Adl
    import UU_Scanner            (Pos(..))
-   import ShowADL               (showADL) -- wenselijk voor foutmeldingen.
+   import ShowADL               (showADL,showADLcode) -- wenselijk voor foutmeldingen.
    import Auxiliaries           (showL)
    import Options hiding (services)
    import Version               (versionbanner)
@@ -34,7 +34,7 @@ where
              ++"\n  main :: IO ()"
              ++"\n  main = do flags <- getOptions"
              ++"\n            putStr (showHS flags \"\\n  \" fSpec_"++baseName flags++")"
-             ++"\n"++"{- \n"++show [x|p<-vpatterns fSpec,x<-testexpr p] ++ "\n-}\n"
+             ++"\n"++"{- \n"++show [x|p<-vpatterns fSpec,x<-testexpr p]++show [x|p<-vpatterns fSpec,x<-inftestexpr p] ++ "\n-}\n"
              ++"\n  fSpec_"++baseName flags++" :: Fspc"
              ++"\n  fSpec_"++baseName flags++"\n   = "++showHS flags "\n     " fSpec
 

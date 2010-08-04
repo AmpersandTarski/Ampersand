@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Expression (Expression(..),Expressionx(..),PExpression(..),UnOp(..),MulOp(..),Expressions,isF,isFd,isFi,isFu
+module Adl.Expression (Expression(..),Expressionx(..),PExpression(..),UnOp(..),MulOp(..),Expressions,PExpressions,isF,isFd,isFi,isFu
                       ,v
                       ,isPos,isNeg,notCp,insParentheses, uniquemphs)
 where
@@ -30,7 +30,7 @@ data UnOp
   | K1 -- ^ Transitive closure +
   | Cp -- ^ Complement -
   | Co -- ^ Converse ~
-    deriving (Show)
+    deriving (Show,Eq)
 
 data MulOp
   = Fc -- ^ composition ;
@@ -39,13 +39,16 @@ data MulOp
   | Fu -- ^ union \/
   | Ri -- ^ Rule implication |-  => (r |- s |- t <=> (-r\/s) /\ (-s\/t) )
   | Re -- ^ Rule equivalence =   => (r = s = t   <=> (r |- s |- t) /\ (t |- s |- r)
-    deriving (Show)
+    deriving (Show,Eq)
 
-data PExpression
-  --        Oper. Operands      Explicit type / Type cast
-  = TPExp         Morphism      (Maybe Sign)
-  | MulPExp MulOp [PExpression] (Maybe Sign)
-  | UnPExp  UnOp  PExpression   (Maybe Sign)
+type PExpressions a b = [PExpression a b]
+--at parse time: PExpression Morphism (Maybe Sign)
+--after type check: PExpression Declaration Sign
+data PExpression term tp
+  --        Oper. Operands              Type
+  = TPExp         term                  tp
+  | MulPExp MulOp [PExpression term tp] tp
+  | UnPExp  UnOp  (PExpression term tp) tp
     deriving (Show)
 
 data Expressionx

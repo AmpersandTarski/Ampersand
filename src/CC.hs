@@ -116,7 +116,7 @@
                        <*  pKey "ENDPATTERN"
                        where
                          rebuild :: String -> [PatElem] -> Pattern
-                         rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes] [e| Pe e<-pes] [e|Ptest e<-pes]
+                         rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes] [e| Pe e<-pes] [e|Ptest e<-pes] [] 
 
    data PatElem      = Pr Rule
                      | Pg Gen
@@ -124,7 +124,7 @@
                      | Pc ConceptDef
                      | Pk KeyDef
                      | Pe PExplanation
-                     | Ptest PExpression
+                     | Ptest (PExpression Morphism (Maybe Sign))
 
    pPatElem         :: Parser Token PatElem
    pPatElem          = Pr <$> pRuleDef <|>
@@ -134,6 +134,7 @@
                        Pk <$> pKeyDef       <|>
                        Pe <$> pExplain <|>
                        Ptest <$ pKey "TEST" <*> pPExpression
+
 
    pSignal          :: Parser Token (String, FilePos)
    pSignal           = pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|>
@@ -200,7 +201,7 @@
      --             -r[A*B];s <=> (-r)[A*B];s
      --        r[A*B]~[C*D];s <=> (r[A*B]~)[C*D];s 
      --       -r[A*B]~[C*D];s <=> (-r~)[C*D];s   
-   pPTerm :: Parser Token PExpression
+   pPTerm :: Parser Token (PExpression Morphism (Maybe Sign))
    pPTerm  = pe <$> preOp <*> (pSpec '(' *> pPExpression <* pSpec ')') <*> postOp
                     <*> pType
          <|> pm <$> preOp <*> pMorphism <*> postOp
@@ -230,7 +231,7 @@
            [x] -> Just (x,x) 
            [x,y] -> Just (x,y) 
            _ -> Nothing
-   pPExpression :: Parser Token PExpression
+   pPExpression :: Parser Token (PExpression Morphism (Maybe Sign))
    pPExpression  = foldr pMultOp pPTerm [Re,Ri,Fu,Fi,Fd,Fc] --The order of these operators is relevant (convention p.50 Maddux).
      where 
      pMultOp mop pnext = let g [x]= x

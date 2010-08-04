@@ -35,6 +35,7 @@ import Typology --USE -> Isa structure for enrichment
 import TypeInference.Input
 import TypeInference.Isa
 import TypeInference.InfAdlExpr
+import TypeInference.InfExpression
 import TypeInference.InfLibAG (InfTree)
 import ShowADL
 import Collection     ( Collection(..) )
@@ -206,10 +207,12 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   ctxpatterns
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
                                                     --     the patterns of this context
-  bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]}
+  bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]
+                         ,inftestexpr=typedexprs (rel_declarations ctxs) isas (testexpr p)
+                         }
                       ,bindrules
                       ,[err|Right err<-pexpls])
-    where
+    where    
     bindrules = map bindRule $ ptrls p
     boundrules = [br | Left br<-bindrules
                   --REMARK -> no rules generated in pattern because of generation of func spec, showadl etc. 

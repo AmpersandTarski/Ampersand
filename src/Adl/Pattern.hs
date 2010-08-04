@@ -5,12 +5,13 @@ where
    import Adl.KeyDef                   (KeyDefs)
    import Adl.Rule                     (Rules)
    import Adl.Gen                      (Gens)
-   import Adl.MorphismAndDeclaration   (Declarations)
+   import Adl.Concept                  (Sign)
+   import Adl.MorphismAndDeclaration   (Declarations,Declaration,Morphism)
    import Adl.ConceptDef               (ConceptDefs)
    import Adl.Explanation              (PExplanations)
    import CommonClasses                (Identified(..))
    import Collection                   (Collection(..))
-   import Adl.Expression               (PExpression)
+   import Adl.Expression               (PExpression,Expressionx)
    
    type Patterns  = [Pattern]
    data Pattern
@@ -21,7 +22,8 @@ where
             , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
             , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
             , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
-            , testexpr :: [PExpression]
+            , testexpr :: [PExpression Morphism (Maybe Sign)]
+            , inftestexpr :: [PExpression Declaration Sign]
             }   --deriving (Show) -- voor debugging
 
 -- \***********************************************************************
@@ -50,6 +52,7 @@ where
            (ptcds pat `uni` ptcds pat')
            (ptkds pat `uni` ptkds pat')
            (ptxps pat  ++   ptxps pat')
+           []
            []
 
 
