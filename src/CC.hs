@@ -195,12 +195,15 @@
    --Morphisms, or expressions in parentheses are terms with optional pre and post unary operators and optional type directive.
    --pExpression parses expressions composed of these terms and (>1)-ary operators.
    --pMorphism has already parsed the first type directive after a morphism without post-operator i.e. r[A*B][C*D] is possible.
-     --examples r[A*B][C*D];s <=> r[C*D];s 
-     --        -r[A*B][C*D];s <=> (-r)[C*D];s
-     --              r[A*B];s <=> r[A*B];s 
-     --             -r[A*B];s <=> (-r)[A*B];s
-     --        r[A*B]~[C*D];s <=> (r[A*B]~)[C*D];s 
-     --       -r[A*B]~[C*D];s <=> (-r~)[C*D];s   
+     --type correct examples given r::A*B i.e. [Y*Y] is irrelevant.
+        -- r[A*B]
+        -- r[Y*Y][A*B]
+        -- r[A*B]~
+        -- r[A*B]~[B*A]
+        -- -r[A*B]
+        -- -r[Y*Y][A*B]
+        -- -r[A*B]~
+        -- -r[Y*Y]~[B*A]  
    pPTerm :: Parser Token (PExpression Morphism (Maybe Sign))
    pPTerm  = pe <$> preOp <*> (pSpec '(' *> pPExpression <* pSpec ')') <*> postOp
                     <*> pType
@@ -221,12 +224,15 @@
          settype (TPExp m _) = TPExp m t
          settype (MulPExp op xs _) = MulPExp op xs t
          settype (UnPExp op x _) = UnPExp op x t       
-         pUnOp ops = [op |opc<-ops,op<-[Cp,Co,K0,K1],opc==showADL op]
          construct [] = e
          construct (x:xs) = UnPExp x (construct xs) Nothing
-     pm pre m post t = pe pre (TPExp m (if null pre then mtp else Nothing)) post t'
+     pUnOp ops = [op |opc<-ops,op<-[Cp,Co,K0,K1],opc==showADL op]
+     pm pre m post t = pe pre (TPExp m mtp') post t'
          where 
-         t' = if t==Nothing then mtp else t
+         mtp' = if null pre && t==Nothing then mtp else Nothing
+         t'   = if t==Nothing && mtp/=Nothing 
+                then if (even.length) [()|Co<-pUnOp post] then mtp else fmap (\(x,y)->(y,x)) mtp 
+                else t
          mtp = case mphats m of 
            [x] -> Just (x,x) 
            [x,y] -> Just (x,y) 
