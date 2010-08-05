@@ -271,7 +271,7 @@ instance Morphic Expression where
      (F ts)  -> foldr isc [Uni,Tot,Sur,Inj] (map multiplicities ts) -- homogene multiplicities can be used and deduced by and from rules: many rules are multiplicities (TODO)
      (Fdx _)  -> [] -- many rules with Fd in it are multiplicities (TODO). Solve perhaps by defining relation a = (Fd ts)
      (Fux _)  -> [] -- expr \/ a is Rfx if a is Rfx, is Tot if a is Tot (TODO), is Uni if both a and expr are uni
-     (Fix _)  -> [] -- expr /\ a is Asy if a is Asy, is Uni if a is Uni (TODO), is Uni if both a and expr are uni
+     (Fix _)  -> [] -- expr /\ a is Asy if a is Asy, is Uni if a is Uni (TODO), is Tot if both a and expr are tot
      (K0x e') -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
      (K1x e') -> [Trn] `uni` (multiplicities e'>-[Uni,Inj])
      (Cpx e') -> [p|p<-multiplicities e', p==Sym]

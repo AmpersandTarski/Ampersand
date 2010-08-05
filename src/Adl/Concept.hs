@@ -24,7 +24,7 @@ where
             , cptos :: [String]  -- ^Atoms
             }  -- ^C nm gE cs represents the set of instances cs by name nm.
       | S  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything']
-      | DExp Expression -- ^A concept containing exactly the population in the target of the expression. The letter D stands for derived
+      | DExp Expression -- ^A concept containing pairs representing the population in the expression. The letter D stands for derived
       | Anything -- ^Really Anything!
       | NOthing  -- ^Nothing at all
 
