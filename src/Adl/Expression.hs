@@ -305,17 +305,6 @@ instance Morphic Expression where
      (K0x _)     -> False
      (K1x _)     -> False
      (Cpx _)     -> False
-     
- typeUniq expr = case expr of
-     (Tm mph _) -> typeUniq mph -- I don't understand what typeUniq does - Bas. (TODO) WAAROM? (uitleggen bij de class definition, niet hier)
-     (Tc f)   -> typeUniq f
-     (F  ts)  -> and (map typeUniq ts)
-     (Fdx ts)  -> and (map typeUniq ts)
-     (Fux fs)  -> and (map typeUniq fs)
-     (Fix fs)  -> and (map typeUniq fs)
-     (K0x e')  -> typeUniq e'
-     (K1x e')  -> typeUniq e'
-     (Cpx e')  -> typeUniq e'
 
  isTrue expr = case expr of
      (F [])    -> False -- > fout voor singletons (TODO)

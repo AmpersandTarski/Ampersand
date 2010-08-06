@@ -80,8 +80,6 @@ where
              ,rrtyp = (target (rrtyp r),source (rrtyp r))
              }
   --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
-    typeUniq r | ruleType r==Truth = typeUniq (antecedent r)
-               | otherwise       = typeUniq (antecedent r) && typeUniq (consequent r)
 --    isIdent r = isIdent (normExpr r)
     isProp r  = isProp (normExpr r)
 

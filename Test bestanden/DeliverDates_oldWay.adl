@@ -227,8 +227,8 @@ SIGNAL factureren ON I |- delivery~;delivery EXPLANATION "De volgende leverantie
     ; ("9443a", "2011-01-03")
     ]. 
        
- from = delivery;provided~
-  EXPLANATION "There must be a delivery for every invoice sent."
+-- from = delivery;provided~
+--  EXPLANATION "There must be a delivery for every invoice sent."
  date |- delivery;date;onafter
   EXPLANATION "The date of an invoice must be on or after its delivery"
 
@@ -247,7 +247,7 @@ SIGNAL teBetalen ON I |- paid~;paid EXPLANATION "De volgende factu(u)r(en) is/zi
  paid |- sentTo~ EXPLANATION "Accept payments only for invoices sent"
  SIGNAL payable ON sentTo~ |- paid
  EXPLANATION "Invoices to be paid"
- sentTo = delivery;of;from
+ --sentTo = delivery;of;from
 ENDPATTERN
 
 PATTERN Date -- provides onafter[Date*Date] and I[Date]

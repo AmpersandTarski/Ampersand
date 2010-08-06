@@ -116,7 +116,6 @@ where
     singleton e     = isProp e && isTrue e
     equiv          :: a -> a -> Bool
     equiv m m' = source m==source m'&&target m==target m' || source m==target m'&&target m==source m'
-    typeUniq :: a -> Bool -- this says whether the type of 'a' and all of its constituent parts is defined (i.e. not "Anything")
     isFunction :: a -> Bool     
     isFunction m   = null ([Uni,Tot]>-multiplicities m)
     isFlpFunction :: a -> Bool
@@ -149,8 +148,6 @@ where
     isSignal _ = False
     singleton S = True
     singleton _ = False
-    typeUniq Anything = False
-    typeUniq _ = True
 
 
    isSingleton :: Concept -> Bool

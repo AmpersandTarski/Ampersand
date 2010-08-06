@@ -2,7 +2,7 @@
 module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,strReplace
  ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlAttConcept
  ,sqlPlugFields,indentBlock,phpShow,isOne,addToLast
- ,pDebug,noCollide -- used in Code.hs
+ ,pDebug,noCollide,indentBlockBetween
  ) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
    import Strings (commaEng,chain)
@@ -35,7 +35,18 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
         lnth = foldl max 0 (map length ls)
    indentBlock :: Int -> [String] -> [String]
    indentBlock i = map ((++) (take i (repeat ' ')))
-
+   
+   -- | will put the block after the first string, and put the second after the block
+   -- | If the block is just 1 line, indentBlockBetween will return just 1 line as well
+   indentBlockBetween :: String -- ^ precedes the block
+                      -> String -- ^ comes at the end of the block
+                      -> [String] -- ^ the block itself, (will be indented)
+                      -> String -- ^ result
+   indentBlockBetween pre post [] = pre++post
+   indentBlockBetween pre post [s] = pre++s++post
+   indentBlockBetween pre post block
+    = chain (phpIndent (length pre)) ((pre++head block):(init rest++[last rest++post]))
+    where rest = tail block
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit

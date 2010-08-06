@@ -136,18 +136,6 @@ where
            Mp1{}               -> False
     isFalse _   = False
     isSignal mph = isSignal (makeDeclaration mph)
-    typeUniq mph = case mph of
-           Mph{mphats = []}    ->  typeUniq (source (mphtyp mph)) && 
-                                   typeUniq (target (mphtyp mph))
-           Mph{mphats = _:_}   ->  True
-           I{mphats = []}      ->  typeUniq (mphgen mph) && 
-                                   typeUniq (mphspc mph)
-           I{mphats = _:_}     ->  True
-           V{mphats = []}      ->  typeUniq (mphgen mph) && 
-                                   typeUniq (mphspc mph)
-           V{mphats = _:_}     ->  True
-           Mp1{}               ->  error ("!Fatal (module Adl.MorphismAndDeclaration 159): typeUniq Mp1{} undefined.")
-    
 
 
    makeDeclaration :: Morphism -> Declaration
@@ -274,12 +262,7 @@ where
     isSignal d = case d of
            Sgn {}       -> deciss d
            _            -> False
-    typeUniq d = case d of
-           Sgn {}       -> typeUniq (desrc d) && typeUniq (detrg d)
-           Isn{}        -> typeUniq (degen d) && typeUniq (despc d)
-           Iscompl{}    -> typeUniq (degen d) && typeUniq (despc d)
-           Vs{}         -> typeUniq (degen d) && typeUniq (despc d)
-           
+
 
    -- | Deze declaratie is de reden dat Declaration en Morphism in precies een module moeten zitten.
    makeMph :: Declaration -> Morphism

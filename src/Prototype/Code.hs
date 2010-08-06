@@ -4,10 +4,13 @@ module Prototype.Code where
  --import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
  --import Strings (chain)
  import Adl 
- import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,phpShow,pDebug,noCollide,sqlRelPlugs)
+ import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,pDebug,noCollide,sqlRelPlugs,indentBlockBetween)
  import Data.Fspec
  import ShowHS
+
  import Data.Maybe
+ import NormalForms (simplify)
+
  
  data Function
   =  Function { fnname:: String
@@ -32,8 +35,8 @@ module Prototype.Code where
                  , postknowledge:: [CodeVariable] -- ^ variables we still know (not cleaned up)
                  }
  data CodeQuery
-  =  SQLBinary   {cqexpression::Expression } -- ^ get a binary relation from SQL (this can only be one expression)
-   | SQLComposed {cqsource:: Concept, cqexpressions::[Expression] } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
+  =  SQLBinary   {cqexpression::Expression, sqlquery::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually)
+   | SQLComposed {cqsource:: Concept, cqexpressions::[Expression], sqlquery::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
    | PHPPlug -- ^ todo, what does this look like?
    | PHPIntersect{cqfrom1::CodeVariable,cqfrom2::CodeVariable}
    | PHPJoin     {cqfrom1::CodeVariable,cqfrom2::CodeVariable}
@@ -104,10 +107,11 @@ module Prototype.Code where
          = [case s of
              S -> allT
              _ -> error "Cannot calculate a cross-product (inexhaustive patterns) in Code.hs"
-           | allT <- case t of DExp e -> getAllInExpr fSpec pre o e
+           | allT <- case t of DExp e' -> getAllInExpr fSpec pre o e'
                                _ -> error "Cannot get allT in Code.hs (inexhaustive patterns)"
            ]
-        getTarget _ = error "Cannot getTarget in Code.hs (inexhaustive patterns)"
+        getTarget _ | True = error "Cannot getTarget in Code.hs (patterns are still inexhaustive as of august 6th 2010. Deleting this line in Code.hs might fix things when getCodeForSingle is somewhat more complete)"
+        getTarget _ = []
         iterateOver _ = [] -- todo
  -- | Create code to fill a single variable with some expression
  getAllInExpr :: Fspc -- ^ contains information on what's in a DB and what's in a different kind of plug
@@ -122,25 +126,34 @@ module Prototype.Code where
  getAllInExpr fSpec pre var (Fdx [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var composed
   = -- we try to get the whole thing via SQL
-    [[Assignment pre (var:pre) var (SQLComposed (source composed) [composed])]
+    [[Assignment pre (var:pre) var (SQLBinary composed (sqlQuery fSpec composed))]
     | isExprInDB fSpec composed -- make sure we can
     ] ++
     -- divide: we try to get both sides of some operator, and then use a binary PHP composition
     [get1++get2++join++forget
-    | (e1,e2,opr) <- case composed of (F (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
-                                      (F (Cpx b:a:x)) -> [(F (a:x),b,PHPIsectComp)]
-                                      (F   (f:fs))    -> [(f,(F   fs),PHPJoin)]
-                                      (Fix (f:fs))    -> [(f,(Fix fs),PHPIntersect)]
-                                      (Fux (f:fs))    -> [(f,(Fix fs),PHPUnion)]
+    | (e1,e2,opr) <- case composed of (Fix (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
+                                      (Fix (Cpx b:a:x)) -> [(F (a:x),b,PHPIsectComp)]
+                                      (F   (f:fs))      -> [(f,(F   fs),PHPJoin)]
+                                      (Fix (f:fs))      -> [(f,(Fix fs),PHPIntersect)]
+                                      (Fux (f:fs))      -> [(f,(Fix fs),PHPUnion)]
                                       _ -> []
     , let var1=newVarFor (map cvname pre) e1
     , let var2=newVarFor (map cvname (var1:pre)) e2
+    -- code below is correct, and should work when getCodeForSingle is OK
+    --, get1<-maybeToList (getCodeForSingle fSpec pre var1)
+    --, get2<-maybeToList (getCodeForSingle fSpec (var1:pre) var2)
     , get1<-getAllInExpr fSpec pre var1 e1
     , get2<-getAllInExpr fSpec (var1:pre) var2 e2
     , let join=[Assignment (var1:var2:pre) (var1:var2:var:pre) var (opr var1 var2)]
     , let forget=[Forget (var1:var2:var:pre) (var:pre)]
-    ]
- 
+    ] ++
+    error ("getAllInExpr returned no result in Code.hs (this is OK for certain expressions, and this error message is for testing purposes only, the failed expression was: "++(show composed)++")")
+
+ -- | will get a straight-forward sql expression (binary) with a nice name for source and target
+ sqlQuery :: Fspc -> Expression -> String
+ sqlQuery fSpec expr
+  = selectExpr fSpec 0 src (noCollide [src] (sqlExprTrg fSpec expr)) expr
+  where src = sqlExprSrc fSpec expr
  -- | Will tell whether a certain expression is obtainable via the underlying database
  isExprInDB :: Fspc -- ^ info on the onderlying db
             -> Expression -- ^ expression needed
@@ -151,8 +164,13 @@ module Prototype.Code where
  newVarFor :: [String] -- ^ list of forbidden names
            -> Expression -- ^ value of the variable
            -> CodeVariable -- ^ the resulting variable
- newVarFor forbidden expr = CodeVarScalar (newVarNameFor forbidden expr) (target expr) (isUni expr) False expr
-
+ newVarFor forbidden expr
+  = CodeVarObject  (newVarNameFor forbidden expr) 
+                   [CodeVarScalar "" (target expr) (isUni expr) False expr]
+                   (source expr)
+                   True
+                   (Tm (V [] (S,source expr)) (error "did not assign number to Tm in Code.hs"))
+                  
  -- | Create a new name with the value of some expression, ensure that its name does not exist yet
  newVarNameFor :: [String] -- ^ list of forbidden names
                -> Expression -- ^ value of the variable
@@ -166,14 +184,40 @@ module Prototype.Code where
  newVarNameFor forbidden (K1x _) = noCollide forbidden "fixpt"
  newVarNameFor forbidden (Cpx _) = noCollide forbidden "cmplt"
  newVarNameFor forbidden _ = noCollide forbidden "expr"
-
  
  showCode :: Int -- indentation
           -> [Statement] -- code
           -> String
  showCode _ [] = ""
- showCode i (x:xs) = ""++"\n"++showCode i xs
- 
+ showCode i (x:xs)
+  = (case x of
+      Assignment{assignTo=to,query=q}
+       -> showAssignmentCode i to q
+      Iteration{loopOver=lp,stcode=c}
+       -> error "No way to generate iteration yet in Code.hs"
+      Forget{} -> []
+    )++"\n"++showCode i xs
+   where
+ -- | give the PHP code for an assignemt of some query to some variable
+ showAssignmentCode :: Int -- ^ indentation
+                    -> CodeVariable -- ^ the variable that will have a value after this
+                    -> CodeQuery -- ^ the query
+                    -> String -- ^ PHP code
+ showAssignmentCode i var quer
+  = case quer of
+     SQLBinary{sqlquery=str}
+      -> indentBlockBetween (sps ++ "$"++varname++" = DB_doquer_lookups('") "');" (lines str)
+     PHPIntersect{}
+      -> line "intersect"
+     PHPJoin{}
+      -> line "join"
+     PHPIsectComp{}
+      -> line "isectComp"
+     _ -> error "cannot showCode in Assignment of query (inexhaustive patterns in Code.hs)"
+    where
+     varname = cvname var
+     sps=take i (repeat ' ')
+     line str = sps ++ "$"++varname++"="++str++"($"++cvname (cqfrom1 quer)++",$"++cvname (cqfrom2 quer)++");"
  -- | Creates a codeVariable that contains the pairs indicated by some expression.
  -- | If it is possible to calculate the expression, getCodeFor should be able to get a CodeVariable constructed via codeVariableForBinary
  codeVariableForBinary :: String  -- ^ name of the variable to be created
@@ -200,8 +244,20 @@ module Prototype.Code where
                   }
     where 
           newConcForExpr = source srcRel -- source srcRel == source trgRel
-          srcRel = pairSource expr
-          trgRel = pairTarget expr
+          srcRel = pairSource (simplify (noDaggers expr))
+          trgRel = pairTarget (simplify (noDaggers expr))
+ 
+ -- | removes all daggers from the given expression
+ noDaggers :: Expression -> Expression
+ noDaggers (F (fs)) = F (map noDaggers fs)
+ noDaggers (Fix (fs)) = Fix (map noDaggers fs)
+ noDaggers (Fux (fs)) = Fix (map noDaggers fs)
+ noDaggers (Fdx (fs)) = Cpx (F (map noDaggers (map Cpx fs)))
+ noDaggers (Cpx (Cpx a)) = a
+ noDaggers (Cpx (Fdx fs)) = F (map noDaggers (map Cpx fs))
+ noDaggers (K0x e) = K0x (noDaggers e)
+ noDaggers (K1x e) = K1x (noDaggers e)
+ noDaggers c = c
  
  pairSource :: Expression -> Morphism
  pairSource e = makeMph (pairSourceDecl e)
