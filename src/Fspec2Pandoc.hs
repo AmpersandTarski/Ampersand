@@ -82,6 +82,7 @@ chpFPAlabel="chpFPAnalysis"
 --Change record to summarize the chronological development, revision and completion if the document is to be circulated internally
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
+--TODO [Picture] should be separated from here. Now it is too much entangled, which makes it too complex (and hence errorprone). 
 fSpec2Pandoc :: Fspc -> Options -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
     where meta = Meta titl authors date
@@ -332,8 +333,6 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
 conceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
   where
-  (caBlocks,pictures) = ( [b| (blocks,_)<-ca, b<-blocks], [picture| (_,picture)<-ca] )
-                        where ca=caSections (patterns fSpec)
   header :: [Block]
   header = labeledHeader lev chpCAlabel (case language flags of
                                             Dutch   ->  "Conceptuele Analyse"   
@@ -355,6 +354,8 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
                   , Str "and each principle is then translated in a rule. "
                   ]]
    )
+  (caBlocks,pictures) = ( [b| (blocks,_)<-ca, b<-blocks], [picture| (_,picture)<-ca] )
+                        where ca=caSections (patterns fSpec)
 
   caSections :: [Pattern] -> [([Block],Picture)]
   caSections pats = iterat pats 1 [] []

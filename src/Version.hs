@@ -9,5 +9,5 @@ versionNumber :: String
 versionNumber = "1.1.0.701" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-Code.hs geeft nu een aantal voorbeeldjes (werken nog niet ivm php-fouten)
+Class 'Explainable' geintroduceerd. Dit geeft vrijheid om eventueel semantisch verschillende vormen van explain-achtige functies te introduceren. 
 -}

@@ -27,7 +27,7 @@ where
     name (PExplObjectDef nm _ _ _) = nm
     name (PExplPattern nm _ _ _) = nm
 
--- PExplanation is the intended constructor. It contains the the object it explains.
+-- Explanation is the intended constructor. It contains the the object it explains.
 -- The enrichment process of the parser must map the names (from PExplanation) to the actual objects
 --                       Constructor     Object          RefID  Explanation
    data Explanation    = ExplConcept     ConceptDef  Lang String String

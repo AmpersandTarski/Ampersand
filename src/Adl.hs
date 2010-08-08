@@ -20,6 +20,7 @@ module Adl ( Architecture(..)
            , antecedent,notCp,cptAnything
            , Object(..)
            , ViewPoint(..)
+           , Explainable(..)
            , Morphical(..)
            , Association(..)
            , Morphic(..),normExpr
@@ -77,6 +78,7 @@ where
    import Classes.Key                    (Key(..))
    import Classes.Object                 (Object(..))
    import Classes.ViewPoint              (ViewPoint(..))
+   import Classes.Explainable            (Explainable(..))
    import CommonClasses                  (Identified(..)
                                          ,Explained(..))
 
