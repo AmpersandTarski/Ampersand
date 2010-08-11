@@ -2,7 +2,7 @@
 module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,strReplace
  ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlAttConcept
  ,sqlPlugFields,indentBlock,phpShow,isOne,addToLast
- ,pDebug,noCollide,indentBlockBetween
+ ,pDebug,noCollide,indentBlockBetween -- used in Code.hs
  ) where
    import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
    import Strings (commaEng,chain)
