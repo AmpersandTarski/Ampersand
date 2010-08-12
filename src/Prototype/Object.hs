@@ -18,10 +18,9 @@
      ,addSlashes,commentBlock,sqlPlugFields)
    import Data.Fspec
    import Data.Plug
-   -- import Debug.Trace
+   import Data.Maybe
    import Version (versionbanner)
    import Options
---   import PredLogic
    import Rendering.AdlExplanation
 
    objectServices :: Options 
@@ -47,12 +46,15 @@
 
    generateService_getEach :: Fspc -> String -> ObjectDef -> [String]
    generateService_getEach fSpec nm o
-    = ["function getEach"++phpIdentifier nm++"(){"
+    = if sql==Nothing then error "Cannot generate getEach code in Object.hs (line 49)"
+      else
+      ["function getEach"++phpIdentifier nm++"(){"
       ,"  return firstCol(DB_doquer('" ++
-        ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
+        (fromJust sql)  -- TODO: use PHP code instead, this might yield more getEach functions!
         ++"'));"
       ,"}\n"]
-
+    where sql = ( selectExpr fSpec 31 (sqlExprTrg fSpec (ctx o)) "" (flp (ctx o)))
+    
    generateService_read :: Fspc -> String -> ObjectDef -> [String]
    generateService_read _ nm object
     = ["function read"++phpIdentifier nm++"($id){"
@@ -164,15 +166,12 @@
      myName = name o
      doesExistQuer :: [Char] -> String
      doesExistQuer var
-      = selectExpr fSpec
-                   25
-                   (sqlExprSrc fSpec ctx')
-                   ""
-                   expr
+      = if sql==Nothing then error "Cannot check if exists in Object.hs" else fromJust sql
       where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
             tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))(-1)
             ctx' = simplify $ flp (ctx o)
             fs   = [es' | F es' <- [ctx']]
+            sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
    saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
    saveTransactions flags fSpec object
     = [ "function save(){"
@@ -570,15 +569,18 @@
                               , let r=if null$head l then tail l else l
                               , not (null r)
                               ]
+            joinOn :: ([String],String)->[String]
             joinOn ([t],jn) = [ (if isOne' then "     , "      else (if isArr then " " else "  LEFT")++" JOIN ")++t
                               ++(if isOne' then "" else " ON "++jn)]
             joinOn (ts,jn)  = [ (if isOne' then "     , " else (if isArr then " " else "  LEFT")++" JOIN ")++(head ts)]
                               ++indentBlock (if isOne' then 7 else 12) (tail ts)++(if isOne' then [] else (["    ON "++jn]))
             restLines (outAtt,n)
-              = splitLineBreak (selectExprBrac fSpec (-4)
+              = if sql==Nothing then error$ "Cannot get a query for "++(show$ objctx outAtt)++" in Object.hs (line 578)"
+                else splitLineBreak ((fromJust sql) ++ " AS f"++show n) -- better names?
+              where sql = selectExprBrac fSpec (-4)
                                                (if isOne' then "" else sqlExprSrc fSpec (objctx outAtt))
                                                (sqlExprTrg fSpec (objctx outAtt))
-                                               (objctx outAtt) ++ " AS f"++show n) -- better names?
+                                               (objctx outAtt)
             tableName gr@(p,_) = if name p == tableReName gr then "`"++name p++"`" else "`"++name p ++ "` AS "++tableReName gr
             tableReName :: (Plug,(ObjectDef,SqlField)) -> String
             tableReName gr   = head [nm | (nm,gr')<-renamedTables,gr'==gr]

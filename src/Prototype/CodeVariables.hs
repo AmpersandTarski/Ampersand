@@ -1,80 +1,79 @@
-module Prototype.CodeVariables (newVarFor,newSingleton,freshSingleton,pairSourceExpr,pairTargetExpr,codeVariableForBinary ) where
- import Prototype.CodeAuxiliaries (CodeVariable(..))
- import Adl (Concept(..),Expression(..),Declaration(..),Morphism(..),mIs, Prop(..),makeMph,Identified(..),isUni,source,target)
+module Prototype.CodeVariables (newVarFor,freshSingleton,singletonCV,pairSourceExpr,pairTargetExpr,codeVariableForBinary,CodeVar(..), CodeVarIndexed(..) ) where
+ import Prototype.CodeAuxiliaries (Named(..),nameFresh)
+ import Adl (Concept(..),Expression(..),Declaration(..),Morphism(..),mIs, Prop(..),makeMph,Identified(..),source,target)
  import Prototype.RelBinGenBasics(noCollide)
  import NormalForms (simplify)
 
- singletonCV :: CodeVariable
- singletonCV = CodeVarScalar ""
-                            S
-                            False
-                            (error "Single variable: cannot test whether it is sorted (in Code.hs)")
-                            (Tm (mIs S) (error "Term number undefined in Code.hs"))
+ -- | A data type containing the description of some variable in the target language.
+ -- | see for example the singletonCV, or codeVariableForBinary
+ data CodeVar = CodeVar
+  { cvIndexed :: CodeVarIndexed
+  , cvContent :: Either CodeVar [Named CodeVar]
+  , cvExpression :: Expression
+  } deriving (Eq)
+ data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
+ 
+ instance Show CodeVar where
+   show (CodeVar i c e) = show i++" "++show c++" '"++show e++"'"
+ 
+
+ singletonCV :: CodeVar
+ singletonCV = CodeVar NotIndexed (Right []) (Tm (mIs S) (error "Term number undefined in Code.hs"))
  -- | create a new singleton scalar variable, useful for in loops (as with newSingleton, but make sure the variable name is not taken)
- freshSingleton :: [CodeVariable] -- ^ variables with which this var should not collide by name
+ freshSingleton :: [Named CodeVar] -- ^ variables with which this var should not collide by name
                 -> String -- ^ preferred name
                 -> Concept -- ^ type of singleton
-                -> CodeVariable -- ^ result
+                -> Named CodeVar -- ^ result
  freshSingleton vars nm tp
-   = newSingleton realname tp
-     where realname = noCollide (map cvname vars) nm
+   = nameFresh vars nm (newSingleton ('$':nm) tp)
  -- | create a new singleton scalar variable, used by newSingleton, but also useful for in content attribute of a new CodeVarObject
- newSingleton :: String -> Concept -> CodeVariable
+ newSingleton :: String->Concept -> CodeVar
  newSingleton nm tp
-   = singletonCV{cvname=nm
-                ,cvtype=tp
-                ,cvexpression=Tm (Mp1 (nm) [] tp) (-1)}
-
+   = singletonCV{cvExpression=Tm (Mp1 (nm) [] tp) (-1)}
  -- | Create a new variable with the value of some expression, ensure that its name does not exist yet
  newVarFor :: [String] -- ^ list of forbidden names
            -> Expression -- ^ value of the variable
-           -> CodeVariable -- ^ the resulting variable
+           -> Named CodeVar -- ^ the resulting variable
  newVarFor forbidden expr
-  = CodeVarObject  (newVarNameFor forbidden expr) 
-                   [CodeVarScalar "" (target expr) (isUni expr) False expr]
-                   (source expr)
-                   True
-                   (Tm (V [] (S,source expr)) (error "did not assign number to Tm in Code.hs"))
-                  
+  = Named (newVarNameFor forbidden expr) 
+          CodeVar{cvContent=Left CodeVar{cvContent=Right [],cvExpression=expr,cvIndexed=NotIndexed}
+                 ,cvIndexed=IndexByName
+                 ,cvExpression=(Tm (V [] (S,source expr)) (error "did not assign number to Tm in Code.hs"))
+                 }
+ 
  -- | Create a new name with the value of some expression, ensure that its name does not exist yet
  newVarNameFor :: [String] -- ^ list of forbidden names
                -> Expression -- ^ value of the variable
                -> String -- ^ the resulting name
  newVarNameFor forbidden (Tm a _) = noCollide forbidden (name a)
- newVarNameFor forbidden (F _) = noCollide forbidden "join"
+ newVarNameFor forbidden (F _)   = noCollide forbidden "join"
  newVarNameFor forbidden (Fix _) = noCollide forbidden "isct"
  newVarNameFor forbidden (Fux _) = noCollide forbidden "unio"
  newVarNameFor forbidden (Fdx _) = noCollide forbidden "dggr"
  newVarNameFor forbidden (K0x _) = noCollide forbidden "reflfixpt"
  newVarNameFor forbidden (K1x _) = noCollide forbidden "fixpt"
  newVarNameFor forbidden (Cpx _) = noCollide forbidden "cmplt"
- newVarNameFor forbidden _ = noCollide forbidden "expr"
+ newVarNameFor forbidden _       = noCollide forbidden "expr"
  
    
  -- | Creates a codeVariable that contains the pairs indicated by some expression.
- -- | If it is possible to calculate the expression, getCodeFor should be able to get a CodeVariable constructed via codeVariableForBinary
+ -- | If it is possible to calculate the expression, getCodeFor should be able to get a Named CodeVar constructed via codeVariableForBinary
  codeVariableForBinary :: String       -- ^ name of the variable to be created
                        -> Expression   -- ^ value of the variable is list of tuples in this Expression
-                       -> CodeVariable
+                       -> Named CodeVar
  codeVariableForBinary str expr
-  = CodeVarObject { cvname=str
-                  , content=[CodeVarScalar{ cvname  ="0"
-                                          , cvtype  =source expr
-                                          , multiple=False
-                                          , sorted  =error "Sorted undefined (not multiple) in Code.hs"
-                                          , cvexpression=srcRel
-                                          }
-                            ,CodeVarScalar{ cvname  ="1"
-                                          , cvtype  =target expr
-                                          , multiple=False
-                                          , sorted  =error "Sorted undefined (not multiple) in Code.hs"
-                                          , cvexpression=trgRel
-                                          }
-                            ]
-                  , cvtype=newConcForExpr
-                  , multiple=True
-                  , cvexpression=Tm (V [] (S,newConcForExpr)) 1
-                  }
+  = Named str CodeVar{cvContent=Right [Named "0" CodeVar{cvIndexed=NotIndexed
+                                                        ,cvExpression=srcRel
+                                                        ,cvContent=Right []
+                                                        }
+                                      ,Named "1" CodeVar{cvIndexed=NotIndexed
+                                                        ,cvExpression=trgRel
+                                                        ,cvContent=Right []
+                                                        }
+                                      ]
+                     ,cvExpression=Tm (V [] (S,newConcForExpr)) (-1)
+                     ,cvIndexed=Indexed
+                     }
     where 
           newConcForExpr = source srcRel -- source srcRel == source trgRel
           srcRel = pairSourceExpr (simplify (noDaggers expr))

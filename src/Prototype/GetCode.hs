@@ -1,11 +1,13 @@
 module Prototype.GetCode (getCodeFor) where
- import Prototype.CodeAuxiliaries (Statement(..),CodeVariable(..),atleastOne,CodeQuery(..))
+ import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..))
+ import Prototype.CodeVariables (CodeVar(..))
+ import Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh)
  import Adl (Concept(..),Expression(..),Morphism(..),mIs,source,target)
- import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,noCollide,sqlRelPlugs)
+ import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,noCollide)
  import Data.Fspec (Fspc)
- import Prototype.CodeVariables (newVarFor,newSingleton,freshSingleton,pairSourceExpr,pairTargetExpr)-- manipulating variables
-
- getCodeFor :: Fspc->[CodeVariable]->[CodeVariable]->(Maybe [Statement])
+ import Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
+ 
+ getCodeFor :: Fspc->[Named CodeVar]->[Named CodeVar]->(Maybe [Statement])
  getCodeFor fSpec pre post
     = if null new then Just [] else
        case next of
@@ -16,7 +18,7 @@ module Prototype.GetCode (getCodeFor) where
    next = (getCodeForSingle fSpec pre (head new),getCodeFor fSpec ((head new):pre) post)
  
   
- getCodeForSingle :: Fspc->[CodeVariable]->CodeVariable->[[Statement]]
+ getCodeForSingle :: Fspc->[Named CodeVar]->Named CodeVar->[[Statement]]
  getCodeForSingle _ pre post | elem post pre = [[]] -- allready known info
  getCodeForSingle fSpec pre o
  -- TODO: make sure that newVarFor variables are read OK
@@ -36,63 +38,64 @@ module Prototype.GetCode (getCodeFor) where
       ]++
       -- try using some Mp1 value
       [ 
-        [--Iteration pre (pre++[o]) p byvar valvar code
+        [-- False is written below
         ]
       | p<-pre,F ((Tm Mp1{mph1val=mval} _):_)<-[e]
-      , mval==cvname p,False
+      , mval==nName p,False
       -- TODO: generate code (then use SERVICE to find a nice example to work and test this on)
       ]
      )
-  where e = cvexpression o
+  where e = cvExpression obj
+        obj = (nObject o)
         getAllTarget (DExp e')
          = atleastOne ("getAllTarget did not return something for (DExp e') with e'="++show e')
            [galines ++ renaming
-           | tmpvar<-[newVarFor (map cvname (o:pre)) e']
+           | tmpvar<-[newVarFor (map nName (o:pre)) e']
            , galines<-getCodeForSingle fSpec pre tmpvar
-           , renaming<-[[Iteration (tmpvar:pre) (o:tmpvar:pre) tmpvar s t
-                                   [Assignment (s:t:tmpvar:pre)
-                                               (s:t:o:tmpvar:pre)
-                                               [o,newSingleton "" (DExp e')]
-                                               (CQCompose fromTo)
+           , renaming<-[[Iteration (tmpvar:pre) (o:tmpvar:pre) (use tmpvar) s t'
+                        [Iteration (o:s:t:tmpvar:pre) (o:s:t:tmpvar:pre) (use t') t'' t
+                                   [Assignment (s:t:t':tmpvar:pre)
+                                               (s:t:t':o:tmpvar:pre)
+                                               (Named (nName o) (UseVar [Right (Named "" (UseVar []))]))
+                                               (CQCompose (map (\x->Named (fst x) (CQPlain (snd x))) fromTo))
                                    ]]
-                       | let c = case o of
-                                   CodeVarObject{content=x} -> x
-                                   x@CodeVarScalar{} -> [x]
+                        ]
+                       | let c = case obj of
+                                   CodeVar{cvContent=Right []} -> [o]
+                                   CodeVar{cvContent=Right x} -> (x)
+                                   _ -> []
                        , let s = freshSingleton (tmpvar:pre) "source" (source e')
-                       , let t = freshSingleton (s:tmpvar:pre) "target" (target e')
-                       , let fromTo = [ (cvname f,t')
+                       , let t' = nameFresh (s:tmpvar:pre) "t" singletonCV
+                       , let t = freshSingleton (s:t':tmpvar:pre) "target" (target e')
+                       , let t'' = nameFresh (s:t:tmpvar:pre) "i" singletonCV
+                       , let fromTo = [ (nName f, to)
                                       | f <- c 
-                                      , t' <- (case f of
-                                                CodeVarScalar{cvexpression=expr}
-                                                  ->    [s|expr==pairSourceExpr e']
-                                                     ++ [t|expr==pairTargetExpr e']
-                                                _ -> error ("case f does not match: "++show f)
-                                              )
+                                      , to <-    [use s|cvExpression (nObject f)==pairSourceExpr e']
+                                              ++ [use t|cvExpression (nObject f)==pairTargetExpr e']
                                       ]
                        , (length fromTo == length c) || error ("Length does not match in Code.hs: "++show (fromTo,c))
                        ]
            ]
         getAllTarget tp
-         = [[Assignment pre (o:pre) [o] (SQLComposed (source expr) [expr] (selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr))]
+         = [[Assignment pre (o:pre) (use o) (SQLComposed (source expr) [expr] sql)]
            | let expr=Tm (mIs(tp)) (-1)
-           , CodeVarScalar{} <-[o]
-           , isExprInDB fSpec expr -- make sure we can do this
+           , CodeVar{cvContent=Right []} <-[obj]
+           , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
            ]++
            [ l
-           | CodeVarObject{content=[c]}<-[o]
-           , cvname c == ""
-           , l<-getAllInExpr fSpec pre [o,c] (cvexpression c)
+           | CodeVar{cvContent=Left c}<-[obj]
+           , l<-getAllInExpr fSpec pre (use o) (cvExpression c)
            ]++
            [ error ("TODO: create complex objects for getAllTarget in Code.hs "++show c)
-           | CodeVarObject{content=c}<-[o]
+           | CodeVar{cvContent=Right (c:_)}<-[obj]
            ]
  
  -- | Create code to fill a single variable with some expression
  getAllInExpr :: Fspc -- ^ contains information on what's in a DB and what's in a different kind of plug
-                 ->[CodeVariable] -- ^ preknowledge (for administrative purposes)
-                 ->[CodeVariable] -- ^ variable to assign Expression to (see Assignment for details)
-                 ->Expression   -- ^ expression we'd like to know
-                 ->[[Statement]]-- ^ list of possible chunks of code that get Expression into CodeVariable, sorted from most efficient to least efficient (fastest way to get Expression)
+              -> [Named CodeVar] -- ^ preknowledge (for administrative purposes)
+              -> Named UseVar -- ^ variable to assign Expression to (see Assignment for details)
+              -> Expression   -- ^ expression we'd like to know
+              -> [[Statement]]-- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
  getAllInExpr fSpec pre var (Tc   e ) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (F   [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (Fix [e]) = getAllInExpr fSpec pre var e
@@ -101,8 +104,8 @@ module Prototype.GetCode (getCodeFor) where
  getAllInExpr fSpec pre var composed
   = atleastOne ("getAllInExpr returned no result in Code.hs (this is OK for certain expressions, and this error message is for testing purposes only, the failed expression was:\n "++(show composed)++"\n it has to be put into:\n "++(show var)++")")
     -- we try to get the whole thing via SQL
-    ( [[Assignment pre (head var:pre) var (SQLBinary composed (sqlQuery fSpec composed))]
-      | isExprInDB fSpec composed -- make sure we can
+    ( [[Assignment pre (obj:pre) (var) (SQLBinary composed sql)]
+      | Just sql<-[sqlQuery fSpec composed]
       ] ++
       -- divide: we try to get both sides of some operator, and then use a binary PHP composition
       [get1++get2++join++forget
@@ -112,25 +115,24 @@ module Prototype.GetCode (getCodeFor) where
                                         (Fix (f:fs))      -> [(f,(Fix fs),PHPIntersect)]
                                         (Fux (f:fs))      -> [(f,(Fix fs),PHPUnion)]
                                         _ -> [] -- error ("Failed composed namely "++show composed)
-      , let var1=newVarFor (map cvname (head var:pre)) e1
-      , let var2=newVarFor (map cvname (head var:var1:pre)) e2
+      , let var1=newVarFor (map nName (obj:pre)) e1
+      , let var2=newVarFor (map nName (obj:var1:pre)) e2
       -- code below is correct, and should work when getCodeForSingle is OK
       , get1<- getCodeForSingle fSpec pre var1
       , get2<- getCodeForSingle fSpec (var1:pre) var2
       --, get1<-getAllInExpr fSpec pre var1 e1
       --, get2<-getAllInExpr fSpec (var1:pre) var2 e2
-      , let join=[Assignment (var1:var2:pre) (var1:var2:head var:pre) var (opr var1 var2)]
-      , let forget=[Forget (var1:var2:head var:pre) (head var:pre)]
+      , let join=[Assignment (var1:var2:pre) (var1:var2:obj:pre) var (opr (CQPlain$use var1) (CQPlain$use var2))]
+      , let forget=[Forget (var1:var2:obj:pre) (obj:pre)]
       ]
     )
-  -- | will get a straight-forward sql expression (binary) with a nice name for source and target
- sqlQuery :: Fspc -> Expression -> String
+  where obj =reName (nName var) (newVarFor (map nName pre) composed)
+ -- | use a variable
+ use :: Named CodeVar -> Named UseVar
+ use s = Named (nName s) (UseVar [])
+ -- | will get a straight-forward sql expression (binary) with a nice name for source and target
+ -- | if, of course, such a sql expression exists
+ sqlQuery :: Fspc -> Expression -> Maybe String
  sqlQuery fSpec expr
   = selectExpr fSpec 0 src (noCollide [src] (sqlExprTrg fSpec expr)) expr
   where src = sqlExprSrc fSpec expr
- -- | Will tell whether a certain expression is obtainable via the underlying database
- isExprInDB :: Fspc -- ^ info on the onderlying db
-            -> Expression -- ^ expression needed
-            -> Bool -- ^ True means that the expression can be calculated using only the database
- isExprInDB fSpec e = [] /= sqlRelPlugs fSpec e -- TODO: use the entire code-generator for SQL instead of just a part of it
- 
