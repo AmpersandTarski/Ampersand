@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1.0.705" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumber = "1.1.0.706" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-Code.hs en derivaten in de code gehangen (er wordt nu daadwerkelijk gebruik van gemaakt, al valt dit niet direct op)
+Parser de PHPPlug code laten accepteren (grootste deel was al af, heb alleen BYPLUG toegevoegd)
 -}
