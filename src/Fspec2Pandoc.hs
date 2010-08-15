@@ -18,9 +18,9 @@ import Text.Pandoc
 import Version          (versionbanner)
 import Languages        (Lang(..))
 import PredLogic        (showPredLogic)
-import Options hiding (services) --importing (Options(..),FspecFormat(..),DocTheme(..))
+import Options hiding   (services) --importing (Options(..),FspecFormat(..),DocTheme(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
-import Rendering.AdlExplanation (explain,ExplainOutputFormat(..),format)
+import Rendering.AdlExplanation (explain,explains2Inlines)
 import Rendering.ClassDiagram
 import Switchboard      (switchboard1)
 import Classes.Graphics (makePicture)
@@ -231,8 +231,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
   dpRule (r:rs) n seenConcs seenDeclarations
    = ( [ [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))] |(c,cd)<-cds]++
-       [ [Para [symReqLabel d, Str$ format PlainText(explain fSpec flags d)]] |d<-nds] ++
-       [ [Para [symReqLabel r, Str$ format PlainText(explain fSpec flags r)]] ] ++ dpNext
+       [ [Para ([symReqLabel d]++ explains2Inlines (explain fSpec flags d))] |d<-nds] ++
+       [ [Para ([symReqLabel r]++ explains2Inlines (explain fSpec flags r))] ] ++ dpNext
      , n''
      , seenCs'
      , seenDs'
@@ -268,7 +268,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
          newConcepts  = concs newRelations >- seenConcepts
          newRelations = [d| d@Sgn{}<-decls ([r| r<-rules fSpec++signals fSpec]), decusr d, d `notElem` seenRelations, not (null (multiplicities d))]
          paraConcs    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs]
-         paraDecls    = [Para [symReqLabel d, Str$ format PlainText(explain fSpec flags d)] |d<-newRelations, not (isIdent d)]
+         paraDecls    = [Para ([symReqLabel d]++ explains2Inlines (explain fSpec flags d)) |d<-newRelations, not (isIdent d)]
       dpSections dpRul          -- a function that assembles the text for one rule.
                  (thm:thms)     -- The name of the patterns that are used in this specification.
                  seenConcepts   -- All concepts that have been defined in earlier sections
@@ -380,7 +380,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
-          = [Para [Str $ format PlainText(explain fSpec flags pat)   ]]
+          = [Para (explains2Inlines (explain fSpec flags pat))]
          (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
          patRules     = [r| r<-rules fSpec,   r_pat r==name pat, r_usr r]
@@ -389,11 +389,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
     dpRule (r:rs) n seenConcs seenDeclarations
      = ( [ ( [Str (name r)]
-           , [ [ Plain [Str $format PlainText(explain fSpec flags d)]|d<-nds] ++
+           , [ [ Plain (explains2Inlines(explain fSpec flags d))|d<-nds] ++
                [ Plain (text1)| not (null nds)] ++
                pandocEqnArray [ ([TeX ("\\id{"++latexEsc (name d)++"}")], [TeX ":"], [TeX ("\\id{"++latexEsc (name (source d))++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++latexEsc (name (target d))++"}"), symDefLabel d])
                               |d<-nds] ++
-               [ Plain [Str $format PlainText(explain fSpec flags r)]] ++
+               [ Plain (explains2Inlines(explain fSpec flags r))] ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
                pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++

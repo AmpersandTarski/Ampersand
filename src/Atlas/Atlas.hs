@@ -278,6 +278,7 @@ placeholders [] = []
 placeholders (_:[]) = "?"
 placeholders (_:xs) = "?," ++ placeholders xs
    
+--TODO Hier nog eens goed naar kijken. Welke uitvoer willen we hier eigenlijk genereren?
 explainRule :: Options -> Fspc -> Rule -> String
 explainRule flags fSpec r = format PlainText ( explain fSpec flags r) 
 explainDecl :: Options -> Fspc -> Declaration -> String

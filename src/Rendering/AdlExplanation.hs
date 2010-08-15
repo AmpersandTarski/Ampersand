@@ -1,13 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
 --DESCR -> functions translating adl to natural language.
 --TODO -> Maybe this module is useful at more places than just func spec rendering. In that case it's not a Rendering module and it needs to be replaced
-module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),format) where
+module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),explains2Inlines,format) where
 import Adl
 import Data.Fspec
 import Options
 import Data.Explain
 import Strings (chain)
 import Version (versionbanner)
+import Text.Pandoc
 --instance Explained Expression where
 --    explain flags e = showPredLogic flags e
 
@@ -115,4 +116,11 @@ format fmtType expls
  = chain "\n" (map (formatOne fmtType) expls)
  where formatOne ::  ExplainOutputFormat -> Explanation -> String
        formatOne PlainText expl = explainContent2String (explCont expl)
+
+explains2Inlines :: [Explanation] -> [Inline]
+explains2Inlines expls = 
+   case expls of
+      []   -> []
+      e:es -> explainContent2Inlines (explCont e) 
+              ++ [Str " "]++ explains2Inlines es
        

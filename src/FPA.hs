@@ -2,7 +2,7 @@
 module FPA 
 
 where
-   import Languages (Lang(..),ShowLang(..))
+   import Languages (Lang(..))
 
 -------------- Function Points ------------------
    data FPA = ILGV FPcompl -- bevat permanente, voor de gebruiker relevante gegevens. De gegevens worden door het systeem gebruikt en onderhouden. Onder "onderhouden" verstaat FPA het toevoegen, wijzigen of verwijderen van gegevens.
@@ -14,6 +14,9 @@ where
               deriving (Eq, Show)
 
    data FPcompl = Eenvoudig | Gemiddeld | Moeilijk deriving (Eq, Show)
+
+   class ShowLang a where
+    showLang :: Lang -> a -> String
 
    instance ShowLang FPcompl where
     showLang Dutch Eenvoudig   = "Eenvoudig"

@@ -1,14 +1,13 @@
  -- | This module does some string manipulation based on natural languages
    module Languages
               (  Lang(English,Dutch)
-               , ShowLang(showLang)
+               , allLangs
                , plural
               ) where
    import Char (toLower)
 
    data Lang = Dutch | English deriving (Show, Eq)
-   class ShowLang a where
-    showLang :: Lang -> a -> String
+   allLangs = [Dutch,English] -- All possible languages in ADL
 
 
    -- | Returns the plural of a given word based on a specific language
