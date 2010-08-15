@@ -11,7 +11,7 @@ where
    import Adl.Explanation              (PExplanations)
    import CommonClasses                (Identified(..))
    import Collection                   (Collection(..))
-   import Adl.Expression               (PExpression,Expressionx)
+   import Adl.Expression               (PExpression)
    
    type Patterns  = [Pattern]
    data Pattern

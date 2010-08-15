@@ -23,6 +23,7 @@ where
    import Adl
    import Languages
    import ShowADL
+   import Data.Explain
    import Data.Fspec
    import Time(ClockTime)
    import Version(versionbanner)
@@ -222,9 +223,9 @@ where
                 ExplObjectDef   o     lang ref expla -> xpl "EODEF" (simpleTag (name o)) lang ref expla
                 ExplPattern     pname lang ref expla -> xpl "EPAT"  (simpleTag pname) lang ref expla
       where
-       xpl :: String -> XTag -> Lang -> String -> String -> XTree
+       xpl :: String -> XTag -> Lang -> String -> ExplainContent -> XTree
        xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
-                                       [PlainText expla]
+                                       [PlainText (show expla)]
 
 
    instance XML Gen where

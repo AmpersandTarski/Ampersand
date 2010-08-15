@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
 module PredLogic
            ( PredLogicShow(..)
-           , applyM
            ) 
    where
 
@@ -348,17 +347,5 @@ module PredLogic
      mknew ex' (x:xs) | x `elem` ex' = mknew ex' ((x++"'"):xs)
                       | otherwise = x: mknew (ex'++[x]) xs
 
-   applyM :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. --wellicht ook verhuizen naar andere plek?
-   applyM decl d c =
-      case decl of
-        Sgn{}     -> if null (prL++prM++prR) 
-                       then d++" "++decnm decl++" "++c 
-                       else prL++d++prM++c++prR
-           where prL = decprL decl
-                 prM = decprM decl
-                 prR = decprR decl
-        Isn{}     -> d++" equals "++c
-        Iscompl{} -> d++" differs from "++c
-        Vs{}      -> show True
         
  

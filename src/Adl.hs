@@ -16,11 +16,11 @@ module Adl ( Architecture(..)
            , Prop(..)
            , isaRule
            , FilePos(..), Numbered(..)
-           , makeDeclaration,mIs,ruleType,isProperty
+           , makeDeclaration,mIs,ruleType,isProperty,applyM
            , antecedent,notCp,cptAnything
            , Object(..)
            , ViewPoint(..)
-           , Explainable(..)
+           , UserExplainable(..)
            , Morphical(..)
            , Association(..)
            , Morphic(..),normExpr
@@ -28,7 +28,7 @@ module Adl ( Architecture(..)
            , Populated(..)
            , Substitutive(..)
            , Identified(..)
-           , Explained(..)
+           , SelfExplained(..)
            , Label(..)
            , Paire,Pairs,srcPaire,trgPaire,mkPair
            , InsDel(..)
@@ -59,7 +59,7 @@ where
                                          ,isSgn
                                          ,makeMph,makeDeclaration
                                          ,inline,makeInline
-                                         ,mIs,isProperty)
+                                         ,mIs,isProperty,applyM)
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs,actions)
    import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
@@ -78,7 +78,7 @@ where
    import Classes.Key                    (Key(..))
    import Classes.Object                 (Object(..))
    import Classes.ViewPoint              (ViewPoint(..))
-   import Classes.Explainable            (Explainable(..))
+   import Classes.Explainable            (UserExplainable(..))
    import CommonClasses                  (Identified(..)
-                                         ,Explained(..))
+                                         ,SelfExplained(..))
 

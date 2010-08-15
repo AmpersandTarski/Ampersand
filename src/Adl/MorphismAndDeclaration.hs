@@ -5,18 +5,22 @@ module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
                                   ,makeInline,inline
                                   ,isIdent
                                   ,isSgn,mIs
-                                  ,isProperty)
+                                  ,isProperty
+                                  ,applyM)
 where
    import Adl.FilePos      (FilePos(..),Numbered(..))
    import Adl.Concept      (Concept,Concepts,Association(..),Sign,MorphicId(..),Morphic(..)
                            ,isSingleton)
    import Adl.Prop         (Prop(..),Props,flipProps)
    import Adl.Pair         (Pairs,flipPair) 
-   import Strings          (chain)
+   import Strings          (chain, unCap, upCap, firstCaps)
    import CommonClasses    (Identified(..),showSign
-                           , Explained(..)
-                           , ABoolAlg)    
+                           , ABoolAlg, SelfExplained(..))    
    import Collection       (Collection ((>-)))
+   import Data.Explain
+   import Languages        (Lang(..),plural)
+   import Char             (toLower)
+   
    
    type Morphisms = [Morphism]
    data Morphism  = 
@@ -167,7 +171,6 @@ where
                , decprM  :: String  -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , decprR  :: String
                , decpopu :: Pairs   -- ^ the list of tuples, of which the relation consists.
-               , decexplain :: String   -- ^ the explanation (obsolete as of 18 July 2010)
                , decfpos :: FilePos -- ^ the position in the ADL source file where this declaration is declared.
                , decid   :: Int     -- ^ a unique number that can be used to identify the relation
                , deciss  :: Bool    -- ^ if true, this is a signal relation; otherwise it is an ordinary relation.
@@ -279,6 +282,78 @@ where
 
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
 
+   instance SelfExplained Declaration where
+    autoExplain d = [string2AutoExplain Dutch dutchString]      --TODO: Omklussen naar block2AutoExplain. De uitvoer wordt 
+                  ++[string2AutoExplain English englishString]
+      where dutchString 
+		         | null ([Sym,Asy]         >- multiplicities d) = name d++" is een eigenschap van "++(unCap.plural Dutch .name.source) d++"."
+		         | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is een equivalentierelatie tussen "++(unCap.plural Dutch .name.source) d++"."
+		         | null ([Asy,Trn]         >- multiplicities d) = name d++" is een ordeningsrelatie tussen "++(unCap.plural Dutch .name.source) d++"."
+		         | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies "++preciesEen++" "++(unCap.name.target) d) ++" en vice versa."
+		         | null ([Uni,Tot,Inj]     >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies "++preciesEen++" "++(unCap.name.target) d) ++", maar niet voor elke "++(unCap.name.target) d++" hoeft er een "++(unCap.name.source) d++" te zijn."
+		         | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies "++preciesEen++" "++(unCap.name.target) d) ++", maar elke "++(unCap.name.target) d++" is gerelateerd aan "++preciesEen++" of meer "++(unCap.plural Dutch .name.source) d++"."
+		         | null ([Uni,Inj,Sur]     >- multiplicities d) = "Er is precies "++preciesEen++" "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: " ++applyM d "b" "a" ++", maar niet voor elke "++(unCap.name.source) d++" hoeft er een "++(unCap.name.target) d++" te zijn."
+		         | null ([Tot,Inj,Sur]     >- multiplicities d) = "Er is precies "++preciesEen++" "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "++applyM d "b" "a"++", maar elke "++(unCap.name.source) d++" mag gerelateerd zijn aan meerdere "++(unCap.plural Dutch .name.target) d++"."
+		         | null ([Uni,Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("precies "++preciesEen++" "++(unCap.name.target) d)++"."
+		         | null ([Uni,    Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten hoogste "++preciesEen++" "++(unCap.name.target) d)
+		                                                          ++" en elke "++(unCap.name.target) d++" is gerelateerd aan ten hoogste "++preciesEen++" "++(unCap.name.source) d++"."
+		         | null ([Uni,        Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("ten hoogste "++preciesEen++" "++(unCap.name.target) d)
+		                                                          ++", terwijl elke "++(unCap.name.target) d++" is gerelateerd aan tenminste "++preciesEen++" "++(unCap.name.source) d++"."
+		         | null ([    Tot,Inj    ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste "++preciesEen++" "++(unCap.name.target) d)
+		                                                          ++", terwijl elke "++(unCap.name.target) d++" is gerelateerd aan ten hoogste "++preciesEen++" "++(unCap.name.source) d++"."
+		         | null ([    Tot,    Sur] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste "++preciesEen++" "++(unCap.name.target) d)
+		                                                          ++" en elke "++(unCap.name.target) d++" is gerelateerd aan tenminste "++preciesEen++" "++(unCap.name.source) d++"."
+		         | null ([        Inj,Sur] >- multiplicities d) = "Er is precies "++preciesEen++" "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+		                                                          ++applyM d "b" "a"++"."
+		         | null ([            Sur] >- multiplicities d) = "Er is tenminste "++preciesEen++" "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+		                                                          ++applyM d "b" "a"++"."
+		         | null ([        Inj    ] >- multiplicities d) = "Er is hooguit "++preciesEen++" "++(unCap.name.source) d++" (a) voor elke "++(unCap.name.target) d++" (b), waarvoor geldt: "
+		                                                          ++applyM d "b" "a"++"."
+		         | null ([    Tot        ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("tenminste "++preciesEen++" "++(unCap.name.target) d)++"."
+		         | null ([Uni            ] >- multiplicities d) = applyM d ("Elke "++(unCap.name.source) d) ("nul of "++preciesEen++" "++(unCap.name.target) d)++"."
+		         | otherwise                                    = "De zin: ``"++applyM d ((var [].source) d) ((var [source d].target) d) ++"'' heeft betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" "++(var [].source) d++" en een "++(unCap.name.target) d++" "++(var [source d].target) d++"."
+		                                                          
+            englishString 
+		         | null ([Sym,Asy]         >- multiplicities d) = name d++" is a property of "++(unCap.plural English .name.source) d++"."
+		         | null ([Sym,Rfx,Trn]     >- multiplicities d) = name d++" is an equivalence relation on "++(unCap.plural English .name.source) d++"."
+		         | null ([Asy,Trn]         >- multiplicities d) = name d++" is an ordering relation on "++(unCap.plural English .name.source) d++"."
+		         | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
+		                                                          ++" and vice versa."
+		         | null ([Uni,Tot,Inj    ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
+		                                                          ++", but not for each "++(unCap.name.target) d++" there must be a "++(unCap.name.source) d++"."
+		         | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)
+		                                                          ++", but each "++(unCap.name.target) d++" is related to one or more "++(unCap.plural English .name.source) d++"."
+		         | null ([Uni,    Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
+		                                                          ++applyM d "b" "a"
+		                                                          ++", but not for each "++(unCap.name.source) d++" there must be a "++(unCap.name.target) d++"."
+		         | null ([    Tot,Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
+		                                                          ++applyM d "b" "a"
+		                                                          ++", but each "++(unCap.name.source) d++" is related to one or more "++(unCap.plural English .name.target) d++"."
+		         | null ([Uni,Tot        ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("exactly one "++(unCap.name.target) d)++"."
+		         | null ([Uni,    Inj    ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at most one "++(unCap.name.target) d)
+		                                                          ++" and each "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d++"."
+		         | null ([Uni,        Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at most one "++(unCap.name.target) d)
+		                                                          ++", whereas each "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d++"."
+		         | null ([    Tot,Inj    ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)
+		                                                          ++", whereas each "++(unCap.name.target) d++" is related to at most one "++(unCap.name.source) d++"."
+		         | null ([    Tot,    Sur] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)
+		                                                          ++" and each "++(unCap.name.target) d++" is related to at least one "++(unCap.name.source) d++"."
+		         | null ([        Inj,Sur] >- multiplicities d) = "There is exactly one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
+		                                                          ++applyM d "b" "a"++"."
+		         | null ([            Sur] >- multiplicities d) = "There is at least one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
+		                                                          ++applyM d "b" "a"++"."
+		         | null ([        Inj    ] >- multiplicities d) = "There is at most one "++(unCap.name.source) d++" (a) for each "++(unCap.name.target) d++" (b), for which: "
+		                                                          ++applyM d "b" "a"++"."
+		         | null ([    Tot        ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("at least one "++(unCap.name.target) d)++"."
+		         | null ([Uni            ] >- multiplicities d) = applyM d ("each "++(unCap.name.source) d) ("zero or one "++(unCap.name.target) d)++"."
+		         | otherwise                                    = "The sentence: "++
+		                                                          doublequote (upCap (applyM d ((unCap.firstCaps.name.source) d++" "++(var [].source) d) ((unCap.firstCaps.name.target) d++" "++(var [source d].target) d)))++
+		                                                          " is meaningful (i.e. it is either true or false) "++
+		                                                          "for any "++(unCap.name.source) d++" "++(var [].source) d++" and "++
+		                                                          (unCap.name.target) d++" "++(var [source d].target) d++"."
+            preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
+            doublequote :: String -> String
+            doublequote str = "``"++str++[' '|last str=='\'']++"''"
 {- obsolete 18 July 2010              
    instance Explained Declaration where
     explain _ d@Sgn{} = decexpl d    -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
@@ -289,4 +364,20 @@ where
    isSgn Sgn{} = True
    isSgn  _    = False
 
+   applyM :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. --wellicht ook verhuizen naar andere plek?
+   applyM decl d c =
+      case decl of
+        Sgn{}     -> if null (prL++prM++prR) 
+                       then d++" "++decnm decl++" "++c 
+                       else prL++d++prM++c++prR
+           where prL = decprL decl
+                 prM = decprM decl
+                 prR = decprR decl
+        Isn{}     -> d++" equals "++c
+        Iscompl{} -> d++" differs from "++c
+        Vs{}      -> show True
+
+   var :: Identified a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs
+   var seen c = low c ++ ['\''| c'<-seen, low c == low c']
+               where low idt= if null (name idt) then "x" else [(toLower.head.name) idt]
                         

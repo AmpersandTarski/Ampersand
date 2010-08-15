@@ -200,7 +200,7 @@
      close result
       = (concat
           [ ["if (!checkRule"++show (nr rul)++"()){"
-            ,"  $DB_err='"++(addSlashes (show(explainRule flags fSpec rul)))++"';"
+            ,"  $DB_err='"++(addSlashes (show(format PlainText (explain fSpec flags rul))))++"';"
             ,"} else"
             ]
           | rul <- rules fSpec

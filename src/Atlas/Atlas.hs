@@ -13,7 +13,7 @@ import Collection     ( Collection (rd) )
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Picture
-import PredLogic (applyM)
+--import PredLogic (applyM)
 ------
 import Classes.Graphics
 
@@ -278,4 +278,7 @@ placeholders [] = []
 placeholders (_:[]) = "?"
 placeholders (_:xs) = "?," ++ placeholders xs
    
-
+explainRule :: Options -> Fspc -> Rule -> String
+explainRule flags fSpec r = format PlainText ( explain fSpec flags r) 
+explainDecl :: Options -> Fspc -> Declaration -> String
+explainDecl flags fSpec d = format PlainText ( explain fSpec flags d)

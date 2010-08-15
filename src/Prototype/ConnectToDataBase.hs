@@ -6,7 +6,7 @@
    import Options
    import Languages
    import ShowADL(showADLcode)
-   import Rendering.AdlExplanation(explainRule)
+   import Rendering.AdlExplanation (explain,ExplainOutputFormat(..),format)
    import NormalForms (conjNF)
    import Prototype.RelBinGenBasics(phpShow,pDebug)
    import Version (versionbanner)
@@ -146,7 +146,7 @@
        dbError :: Rule -> String
        dbError rule
         = phpShow((langwords!!0)++" ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
-          phpShow(")\n"++(langwords!!1)++": \""++explainRule flags fSpec rule++"\"<BR>")++""
+          phpShow(")\n"++(langwords!!1)++": \""++format PlainText (explain fSpec flags rule)++"\"<BR>")++"" 
        langwords :: [String]
        langwords
         = case language flags of

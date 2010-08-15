@@ -15,7 +15,7 @@
    import ShowADL     (showADL)
    import Languages
    import Strings     (trim)
-
+   import Data.Explain(AutoExplain,string2AutoExplain)
    keywordstxt :: [String]
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
                        , "PATTERN", "ENDPATTERN"
@@ -156,15 +156,99 @@
                        ac False <$> pAlways <*>                             pExpr <*> ((pKey "EXPLANATION" *> pString) `opt` [])
                        where
                         hc isSg (lbl,po) antc po' cons expl
-                          = Ru Implication antc (rulepos (lbl,po) po') cons expl (cptAnything,cptAnything) Nothing Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "" True)
+                          = Ru { rrsrt = Implication
+                               , rrant = antc
+                               , rrfps = rulepos (lbl,po) po'
+                               , rrcon = cons
+                               , rrxpl = string2ExplainAllLang expl  
+                               , rrtyp = (cptAnything,cptAnything)
+                               , rrtyp_proof = Nothing
+                               , rrdcl = Nothing
+                               , runum = 0
+                               , r_pat = ""
+                               , r_usr = True
+                               , r_sgl = isSg
+                               , srrel = Sgn { decnm = lbl
+                                             , desrc = cptAnything
+                                             , detrg = cptAnything
+                                             , decprps = []
+                                             , decprps_calc = []
+                                             , decprL = ""
+                                             , decprM = ""
+                                             , decprR = ""
+                                             , decpopu = []
+                                             , decfpos = po
+                                             , decid  = 0
+                                             , deciss = isSg
+                                             , decusr = False
+                                             , decpat = ""
+                                             , decplug = True
+                               }             }
                         kc isSg (lbl,po) cons po' antc expl = hc isSg (lbl,po) antc po' cons expl
                         dc isSg (lbl,po) defd po' expr expl
-                          = Ru Equivalence defd (rulepos (lbl,po) po') expr expl (cptAnything,cptAnything) Nothing Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "" True)
+                          = Ru { rrsrt = Equivalence
+                               , rrant = defd
+                               , rrfps = rulepos (lbl,po) po'
+                               , rrcon = expr
+                               , rrxpl = string2ExplainAllLang expl
+                               , rrtyp = (cptAnything,cptAnything)
+                               , rrtyp_proof = Nothing
+                               , rrdcl = Nothing
+                               , runum = 0
+                               , r_pat = ""
+                               , r_usr = True
+                               , r_sgl = isSg
+                               , srrel = Sgn { decnm = lbl
+                                             , desrc = cptAnything
+                                             , detrg = cptAnything
+                                             , decprps = []
+                                             , decprps_calc = []
+                                             , decprL = ""
+                                             , decprM = ""
+                                             , decprR = ""
+                                             , decpopu = []
+                                             , decfpos = po
+                                             , decid  = 0
+                                             , deciss = isSg
+                                             , decusr = False
+                                             , decpat = ""
+                                             , decplug = True
+                               }             }
                         ac isSg (lbl,po) expr expl
-                          = Ru Truth defd po expr expl (cptAnything,cptAnything) Nothing Nothing 0 "" True isSg (Sgn lbl cptAnything cptAnything [] [] "" "" "" [] "" po 0 isSg False "" True)
+                          = Ru { rrsrt = Truth
+                               , rrant = defd
+                               , rrfps = po
+                               , rrcon = expr
+                               , rrxpl = string2ExplainAllLang expl
+                               , rrtyp = (cptAnything,cptAnything)
+                               , rrtyp_proof = Nothing
+                               , rrdcl = Nothing
+                               , runum = 0
+                               , r_pat = ""
+                               , r_usr = True
+                               , r_sgl = isSg
+                               , srrel = Sgn { decnm = lbl
+                                             , desrc = cptAnything
+                                             , detrg = cptAnything
+                                             , decprps = []
+                                             , decprps_calc = []
+                                             , decprL = ""
+                                             , decprM = ""
+                                             , decprR = ""
+                                             , decpopu = []
+                                             , decfpos = po
+                                             , decid  = 0
+                                             , deciss = isSg
+                                             , decusr = False
+                                             , decpat = ""
+                                             , decplug = True
+                               }             }
                          where defd=error ("!Fatal (module CC 145): defd undefined in pRuleDef "++showADL expr)
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
-
+                        string2ExplainAllLang :: String -> [AutoExplain]      -- TODO: This is a workaround to cope with the fact that in the current ADL syntax, it cannot be determined in what language the EXPLANATION part of the rule is written in. 
+                        string2ExplainAllLang str = [string2AutoExplain English str]
+                                                 ++ [string2AutoExplain Dutch str]
+                        
    pGen             :: Parser Token Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = G p (cptnew gen ) (cptnew spc ) ""
@@ -288,7 +372,7 @@
                        single  <$> pAtom 
                                <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)
                        where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
-                                                      (Sgn nm cptAnything cptAnything [] [] "" "" "" [] "" Nowhere 0 (nm/="") False [] True)
+                                                      (Sgn nm cptAnything cptAnything [] [] "" "" "" [] Nowhere 0 (nm/="") False [] True)
                              single nm c = Mp1 nm                   -- mph1val
                                                [c|c/=Anything]      -- mphats 
                                                c                    -- mph1typ
@@ -383,7 +467,6 @@
                                <*> (pProps `opt` [])
                                <*> ((True <$ pKey "BYPLUG") `opt` False)
                                <*> (pPragma `opt` [])
-   -- obsolete (18 July 2010)  <*> ((pKey "EXPLANATION" *> pString ) `opt` [])
                                <*> ((pKey "=" *> pContent) `opt` []) <* pSpec '.'
                        where rebuild :: String
                                      -> FilePos
@@ -394,11 +477,10 @@
                                      -> [Prop]
                                      -> Bool
                                      -> [String]
-   -- obsolete (18 July 2010)        -> String
                                      -> Pairs
                                      -> Declaration
-                             rebuild nm pos' s fun' t bp1 props bp2 pragma {- obsolete 18 July 2010: expla -} content
-                               = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content "" {- obsolete 18 July 2010: expla -} pos' 0 False True [] (bp1||bp2)
+                             rebuild nm pos' s fun' t bp1 props bp2 pragma content
+                               = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content pos' 0 False True [](bp1||bp2)
                                  where pr = pragma++["","",""]
                                        props'= rd props `uni` if fun'=="->" then [Uni,Tot] else []
 

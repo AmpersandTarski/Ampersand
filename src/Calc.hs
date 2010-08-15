@@ -18,7 +18,8 @@ module Calc ( deriveProofs
    import ShowADL            (showADL,showADLcode)
    import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import Options            (Options(..))
-
+   import Data.Explain
+   import Languages          (Lang(..))
    showClause  :: Fspc -> Clauses -> String
    showClause fSpec cl
     = "\nRule: "++showADLcode fSpec (cl_rule cl) ++concat
@@ -302,7 +303,8 @@ module Calc ( deriveProofs
                                        , rrant = error ("!Fatal (module Calc 487): illegal reference to antecedent in rule ("++showADL neg'++") |- ("++showADL pos'++")")
                                        , rrfps = Nowhere
                                        , rrcon = pos'
-                                       , rrxpl = ""
+                                       , rrxpl = [string2AutoExplain Dutch ("Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 306)")]
+                                              ++ [string2AutoExplain English ("Why is this rule created? (In Calc.hs, line 307)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrtyp_proof = Nothing
                                        , rrdcl = Nothing
@@ -316,7 +318,8 @@ module Calc ( deriveProofs
                                        , rrant = neg'
                                        , rrfps = Nowhere
                                        , rrcon = pos'
-                                       , rrxpl = ""
+                                       , rrxpl = [string2AutoExplain Dutch ("Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 321)")]
+                                              ++ [string2AutoExplain English ("Why is this rule created? (In Calc.hs, line 322)")]  --TODO Stef, gaarne de explanations aanvullen/verwijderen. Dank! Han.
                                        , rrtyp = sign neg' {- (neg `lub` pos) -}
                                        , rrtyp_proof = Nothing
                                        , rrdcl = Nothing

@@ -2,7 +2,7 @@
   module CommonClasses
   (  Identified(name) , showSign
    , ABoolAlg(glb,lub,order)
-   , Explained(explain)
+   , SelfExplained(..)
    , Conceptual(conts)
    , Morphics(anything)
    )
@@ -11,7 +11,7 @@
 
    import Collection(rd)
    import Strings(chain)
-   import Options
+   import Data.Explain
    ----------------------------------------------
    class Identified a where
     name   :: a->String
@@ -44,10 +44,9 @@
             | a <= b = b
             | otherwise = error ("!Fatal (module CommonClasses 48): lub undefined: a="++show a++", b="++show b)
 
-   class Explained a where
-    explain :: Options -> a -> String
-    explain _ _
-     = error "!Fatal (module CommonClasses 54): explain undefined"
+   class SelfExplained a where
+    --TODO: Samenvoegen met Explained
+    autoExplain :: a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
 
    class Conceptual a where
     conts :: a -> [String]                   -- the set of all instances in a concept

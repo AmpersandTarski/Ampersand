@@ -13,9 +13,10 @@ where
    import Adl.Prop
    import Classes.Populated
    import CommonClasses                 ( Identified(..)
-                                        , Explained(explain))
+                                        , SelfExplained(..))
    import TypeInference.InfLibAG        ( InfTree(..) )
-                                           
+   import Data.Explain
+   import Languages                                        
    type Rules = [Rule]
    data Rule =
   -- Ru c antc p cons expla sgn nr pn
@@ -27,7 +28,7 @@ where
            , rrfps    :: FilePos           -- ^ Position in the ADL file
            , rrcon    :: Expression        -- ^ Consequent
 --           , r_cpu :: Expressions       -- ^ This is a list of subexpressions, which must be computed.
-           , rrxpl    :: String            -- ^ Explanation
+           , rrxpl    :: [AutoExplain]     -- ^ ADL-generated explanations (for all known languages)
            , rrtyp    :: (Concept,Concept) -- ^ Sign of this rule
            , rrtyp_proof :: Maybe (InfTree,Expression)
            , rrdcl    :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
@@ -65,8 +66,8 @@ where
     source r  = fst (rrtyp r)
     target r  = snd (rrtyp r)
 
-   instance Explained Rule where
-    explain _ r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
+   instance SelfExplained Rule where
+    autoExplain  r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
 
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)
@@ -156,7 +157,8 @@ where
                         Asy-> i$sign$Fix [flp r,r]
                         Trn-> r
                         Rfx-> r
-           , rrxpl = case prp of
+           , rrxpl = [string2AutoExplain English (
+                      case prp of
                         Sym-> name d++"["++name (source d)++"*"++name (source d)++"] is symmetric."    
                         Asy-> name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric."
                         Trn-> name d++"["++name (source d)++"*"++name (source d)++"] is transitive."
@@ -165,6 +167,18 @@ where
                         Sur-> name d++"["++name (source d)++"*"++name (target d)++"] is surjective"
                         Inj-> name d++"["++name (source d)++"*"++name (target d)++"] is injective"
                         Tot-> name d++"["++name (source d)++"*"++name (target d)++"] is total"
+                        )] ++
+                     [string2AutoExplain Dutch (
+                      case prp of
+                        Sym-> name d++"["++name (source d)++"*"++name (source d)++"] is symmetrisch."    
+                        Asy-> name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetrisch."
+                        Trn-> name d++"["++name (source d)++"*"++name (source d)++"] is transitief."
+                        Rfx-> name d++"["++name (source d)++"*"++name (source d)++"] is reflexief."
+                        Uni-> name d++"["++name (source d)++"*"++name (target d)++"] is univalent"
+                        Sur-> name d++"["++name (source d)++"*"++name (target d)++"] is surjectief"
+                        Inj-> name d++"["++name (source d)++"*"++name (target d)++"] is injectief"
+                        Tot-> name d++"["++name (source d)++"*"++name (target d)++"] is totaal"
+                        )] 
            , rrtyp = case prp of
                         Uni-> sign$F [flp r,r]
                         Tot-> sign$F [r,flp r]

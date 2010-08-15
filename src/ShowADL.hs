@@ -7,6 +7,7 @@
   --                expliciet te maken.
   --                Daarmee produceert showADLcode volledig correcte ADL-code, dus typecorrect en zonder service-warnings.
 {-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# OPTIONS -XTypeSynonymInstances #-}
   module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
   where
    import Char                            (isAlphaNum,isUpper)
@@ -17,7 +18,8 @@
    import Data.Fspec 
    import Strings                         (chain, commaEng)
    import Auxiliaries                     (eqCl,showL)
-  
+   import Data.Explain
+   import Languages                       (Lang(..))
  --  import TypeInferenceEngine
  --  import TypeInference.ITree
  
@@ -125,18 +127,23 @@
                   | otherwise                 = "\""++ss++"\""
 
    instance ShowADL Explanation where
-    showADL (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADL d++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++   " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++   " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++   " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADL (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++    " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++  " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec d++" IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++     " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++     " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++     " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
-    showADLcode fSpec (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++      " IN "++show lang++(if null ref then "" else " REF "++ref)++(if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
+    showADL           (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADL d++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec d++" IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+
+   instance ShowADL ExplainContent where
+    showADL expla 
+       -- TODO: afspraken maken over de vertaling van explanations in adlcode van en naar Pandoc... (Nu alleen nog de inlines Str String en Linebreak)
+     = show expla -- (if '\n' `elem` expla then "\n{+ "++expla++"-}" else " -+ "++expla)
 
    -- The declarations of the pattern are supplemented by all declarations needed to define the rules.
    -- Thus, the resulting pattern is self-contained with respect to declarations.
@@ -410,22 +417,37 @@
                            | d<-declarations fSpec, not (null (decpopu d))]
              ds = [d| d@Sgn{}<-vrels fSpec, decusr d]
 
-   instance Explained ECArule where
-     explain options r
-      = case p of
-         Chc {} -> "Pick from "++show (length (paCls p))++" options, in order to maintain "++shMotiv (paMotiv p)++"."
-         All {} -> "Execute "++show (length (paCls p))++" ECA-rules, in order to maintain "++shMotiv (paMotiv p)++"."
-         Do  {paSrt=Ins} -> "Insert tuple(s) in "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
-         Do  {paSrt=Del} -> "Remove tuple(s) from "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
-         Sel {} -> "Select an element from "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
-         New {} -> "Create a new element in "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
-         Rmv {} -> "Remove an element from "++showADL (paTo p)++" to maintain "++shMotiv (paMotiv p)++"."
-         Nop {} -> "Do nothing to maintain "++shMotiv (paMotiv p)++", because it is still valid."
-         Blk {} -> "Abort to prevent violation of "++shMotiv (paMotiv p)
+   instance SelfExplained ECArule where   --TODO: Wat doet deze definitie in ShowADL???
+     autoExplain r
+      = [string2AutoExplain English 
+          ( case p of
+             Chc {} -> "Pick from "++show (length (paCls p))++" options, in order to maintain "++shMotivEng (paMotiv p)++"."
+             All {} -> "Execute "++show (length (paCls p))++" ECA-rules, in order to maintain "++shMotivEng (paMotiv p)++"."
+             Do  {paSrt=Ins} -> "Insert tuple(s) in "++showADL (paTo p)++" to maintain "++shMotivEng (paMotiv p)++"."
+             Do  {paSrt=Del} -> "Remove tuple(s) from "++showADL (paTo p)++" to maintain "++shMotivEng (paMotiv p)++"."
+             Sel {} -> "Select an element from "++showADL (paTo p)++" to maintain "++shMotivEng (paMotiv p)++"."
+             New {} -> "Create a new element in "++showADL (paTo p)++" to maintain "++shMotivEng (paMotiv p)++"."
+             Rmv {} -> "Remove an element from "++showADL (paTo p)++" to maintain "++shMotivEng (paMotiv p)++"."
+             Nop {} -> "Do nothing to maintain "++shMotivEng (paMotiv p)++", because it is still valid."
+             Blk {} -> "Abort to prevent violation of "++shMotivEng (paMotiv p)
+           )] ++
+         [string2AutoExplain Dutch
+           ( case p of
+             Chc {} -> "Kies uit "++show (length (paCls p))++" opties, om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             All {} -> "Voer "++show (length (paCls p))++" ECA-rules uit, om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             Do  {paSrt=Ins} -> "Voer tweetal(len) in in "++showADL (paTo p)++" om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             Do  {paSrt=Del} -> "Verwijder tweetal(len) uit "++showADL (paTo p)++" om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             Sel {} -> "Selecteer een element uit "++showADL (paTo p)++" om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             New {} -> "Maak een nieuw element aan in "++showADL (paTo p)++" om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             Rmv {} -> "Verwijder een element uit "++showADL (paTo p)++" om te garanderen dat "++shMotivDut (paMotiv p)++"."
+             Nop {} -> "Doe niets om te garanderen dat "++shMotivDut (paMotiv p)++", want het geldt nog steeds."
+             Blk {} -> "Breek af, om een overtreding te voorkomen van "++shMotivDut (paMotiv p)
+            )]
       where
        p = ecaAction r
-       shMotiv ms = commaEng "and" [ showADL conj++" FROM "++chain "," ["R"++show (nr r)| r<-rs]++")"| (conj,rs)<-ms]
-
+       shMotivEng ms = commaEng "and" [ showADL conj++" FROM "++chain "," ["R"++show (nr r)| r<-rs]++")"| (conj,rs)<-ms]
+       shMotivDut ms = shMotivEng ms  -- TODO: Nog even de nederlandse versie organiseren... 
+       
    instance ShowADL UnOp where
     showADL K0 = "*"
     showADL K1 = "+"

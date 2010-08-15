@@ -106,7 +106,6 @@ module Prototype.CodeVariables (newVarFor,freshSingleton,singletonCV,pairSourceE
                            , decprps=[], decprps_calc=[Uni,Tot]
                            , decprL="", decprM="", decprR=""
                            , decpopu=error "Decl has no population (Code.hs)" -- TODO? If so, get population from expr, and be sure to adjust pairTargetDecl as well.
-                           , decexplain=""
                            , decfpos=error "Decl is not on any position since it is ADL-defined (Code.hs)"
                            , decid=error "Decl has no number since it is ADL-defined (Code.hs)"
                            , deciss=False -- not a signal-relation

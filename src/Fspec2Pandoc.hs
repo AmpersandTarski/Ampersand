@@ -20,7 +20,7 @@ import Languages        (Lang(..))
 import PredLogic        (showPredLogic)
 import Options hiding (services) --importing (Options(..),FspecFormat(..),DocTheme(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
-import Rendering.AdlExplanation
+import Rendering.AdlExplanation (explain,ExplainOutputFormat(..),format)
 import Rendering.ClassDiagram
 import Switchboard      (switchboard1)
 import Classes.Graphics (makePicture)
@@ -231,8 +231,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
   dpRule (r:rs) n seenConcs seenDeclarations
    = ( [ [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))] |(c,cd)<-cds]++
-       [ [Para [symReqLabel d, Str$ explainDecl flags fSpec d]] |d<-nds] ++
-       [ [Para [symReqLabel r, Str$ explainRule flags fSpec r]] ] ++ dpNext
+       [ [Para [symReqLabel d, Str$ format PlainText(explain fSpec flags d)]] |d<-nds] ++
+       [ [Para [symReqLabel r, Str$ format PlainText(explain fSpec flags r)]] ] ++ dpNext
      , n''
      , seenCs'
      , seenDs'
@@ -241,8 +241,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
       ncs    = concs r >- seenConcs                                             -- all concepts that are used for the first time
       cds    = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]         -- lookup their concept definitions, where available
       seenCs = concs r `uni` seenConcs
-      nds    = [d|d<-decls r, not (isIdent d), explainDecl flags fSpec d/=""] >- seenDeclarations      -- all declarations that are used for the first time
-      seenDs = [d|d<-decls r, not (isIdent d), explainDecl flags fSpec d/=""] `uni` seenDeclarations   -- all declarations that are used for the first time
+      nds    = [d|d<-decls r, not (isIdent d), not (null (explain fSpec flags d))] >- seenDeclarations      -- all declarations that are used for the first time  -- TODO: Waarom alleen die die ook explanations hebben?
+      seenDs = [d|d<-decls r, not (isIdent d), not (null (explain fSpec flags d))] `uni` seenDeclarations   -- all declarations that are used for the first time  -- TODO: Waarom alleen die die ook explanations hebben?
       n' = n+length cds+length nds+1
       ( dpNext, n'', seenCs', seenDs') = dpRule rs n' seenCs seenDs
 
@@ -268,7 +268,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
          newConcepts  = concs newRelations >- seenConcepts
          newRelations = [d| d@Sgn{}<-decls ([r| r<-rules fSpec++signals fSpec]), decusr d, d `notElem` seenRelations, not (null (multiplicities d))]
          paraConcs    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs]
-         paraDecls    = [Para [symReqLabel d, Str$ explainMult flags fSpec d] |d<-newRelations, not (isIdent d)]
+         paraDecls    = [Para [symReqLabel d, Str$ format PlainText(explain fSpec flags d)] |d<-newRelations, not (isIdent d)]
       dpSections dpRul          -- a function that assembles the text for one rule.
                  (thm:thms)     -- The name of the patterns that are used in this specification.
                  seenConcepts   -- All concepts that have been defined in earlier sections
@@ -380,7 +380,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
-          = [Para [Str expl|ExplPattern nm l ref expl<-explanations fSpec, nm==name pat, l==language flags]]
+          = [Para [Str $ format PlainText(explain fSpec flags pat)   ]]
          (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
          patRules     = [r| r<-rules fSpec,   r_pat r==name pat, r_usr r]
@@ -389,11 +389,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
     dpRule (r:rs) n seenConcs seenDeclarations
      = ( [ ( [Str (name r)]
-           , [ [ Plain [Str (explainDecl flags fSpec d)]|d<-nds] ++
+           , [ [ Plain [Str $format PlainText(explain fSpec flags d)]|d<-nds] ++
                [ Plain (text1)| not (null nds)] ++
                pandocEqnArray [ ([TeX ("\\id{"++latexEsc (name d)++"}")], [TeX ":"], [TeX ("\\id{"++latexEsc (name (source d))++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++latexEsc (name (target d))++"}"), symDefLabel d])
                               |d<-nds] ++
-               [ Plain [Str (explainRule flags fSpec r)]] ++
+               [ Plain [Str $format PlainText(explain fSpec flags r)]] ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
                pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
@@ -941,5 +941,4 @@ glossary _ _ _ = []  --TODO
 --                                   showProof sh prf
 --                                   --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
 --showProof _  []                  = ""
-
 
