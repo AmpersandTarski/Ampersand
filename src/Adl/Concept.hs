@@ -4,7 +4,7 @@ module Adl.Concept ( Concept(..),Concepts
                    , Sign,GenR
                    , Association(..),Morphic(..),MorphicId(..)
                    , isSingleton
-                   , cptnew,cptAnything,cptS
+                   , cptnew,cptAnything,cptS,cptos'
                    ) 
 where
    import Adl.Prop       ( Prop(..))
@@ -21,7 +21,7 @@ where
    data Concept
       = C   { cptnm :: String    -- ^The name of this Concept
             , cptgE :: GenR 
-            , cptos :: [String]  -- ^Atoms
+            , cptos :: Maybe [String]  -- ^Atoms
             }  -- ^C nm gE cs represents the set of instances cs by name nm.
       | S  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything']
       | DExp Expression -- ^A concept containing pairs representing the population in the expression. The letter D stands for derived
@@ -29,7 +29,10 @@ where
       | NOthing  -- ^Nothing at all
 
    instance Typologic Concept
-
+   
+   cptos' :: Concept -> [String]
+   cptos' C{cptos=(Just x)} = x
+   cptos' _ = []
 
    type Sign = (Concept,Concept) 
    type GenR = Concept->Concept->Bool
@@ -79,7 +82,7 @@ where
    cptAnything :: Concept
    cptAnything = Anything      -- constructor
    cptnew :: String -> Concept
-   cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = []} --error ("!Fatal (module Concept 76): Concept has never been populated: " ++ nm)}
+   cptnew nm = C{ cptnm=nm, cptgE = (==), cptos = Nothing}
 
    class Association a where
      source, target :: a -> Concept
@@ -155,9 +158,9 @@ where
    
    instance Conceptual Concept where
     conts c@C{}    = cptos c
-    conts S        = error ("!Fatal (module Concept 157): S has exactly one atom, but that atom may not be referred to")
-    conts Anything = error ("!Fatal (module Concept 158): Anything is Everything...")
-    conts NOthing  = error ("!Fatal (module Concept 159): NOthing is not very much...")
+    conts S        = Nothing -- S has exactly one atom, but that atom may not be referred to
+    conts Anything = Nothing
+    conts NOthing  = Nothing
 
    instance Morphics Concept where
     anything c = c == Anything

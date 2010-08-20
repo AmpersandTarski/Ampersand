@@ -99,11 +99,13 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                      relPlugs             -- all plugs for relations not touched by definedplugs and gplugs
                     )
           where
-           gPlugs   = makePlugs context allDecs definedplugs
+           gPlugs   = makePlugs context savedDecs definedplugs
            relPlugs = [ mor2plug (makeMph d)
-                      | d<-allDecs
+                      | d<-savedDecs
                       , not (Inj `elem` multiplicities d)
                       , not (Uni `elem` multiplicities d)]
+           -- declerations to be saved in generated plugs: if decplug=True, the decleration has the BYPLUG and therefore may not be saved in a database
+           savedDecs= (filter (not.decplug) allDecs)
 
         uniqueNames :: [Plug]->[Plug]->[Plug]
         -- Some target systems may be case insensitive! For example MySQL.
@@ -150,18 +152,18 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 --- generation of services:
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities
-        cRels = [     morph d | d<-declarations context, decusr d, isTot d]++
-                [flp (morph d)| d<-declarations context, decusr d, not (isTot d) && isSur d]
+        cRels = [     morph d | d<-declarations context, decusr d, isTot d, not$decplug d]++
+                [flp (morph d)| d<-declarations context, decusr d, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities
-        dRels = [     morph d | d<-declarations context, decusr d, isInj d]++
-                [flp (morph d)| d<-declarations context, decusr d, not (isInj d) && isUni d]
+        dRels = [     morph d | d<-declarations context, decusr d, isInj d, not$decplug d]++
+                [flp (morph d)| d<-declarations context, decusr d, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute maximally total expressions and maximally injective expressions.
 --  DAAROM
 --   (GMI): Moet voor een concept dat 'los staat' (geen attribuut van, en heeft zelf geen attributen)
 --          geen service genereerd worden? => SERVICE Concept: I[Concept]
 --          VOORBEELD: PATTERN x r::A*B. s::B*C. t::A*C. ENDPATTERN geen multipliciteiten=>serviceGen=[]
-
+--  Antwoord: Jawel!
         maxTotExprs = clos cRels
         maxInjExprs = clos dRels
 --  Step 4: generate services from the maximally total expressions and maximally injective expressions.
@@ -174,7 +176,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  []               -- objstrs
            | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
            , let objattributes = recur [] cl
-           , not (null objattributes)
+           , not (null objattributes) -- de meeste plugs hebben in ieder geval I als attribuut
            , let e0=head cl, let c=source e0
            , map toLower (name c) `notElem` map (map toLower.name) scalarPlugs       -- exclude scalars
            ]
@@ -206,7 +208,6 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                           |oper<-themeoperations, wsopertheme oper /= Nothing])
         fSexpls' = explanationDeclarations context                ++
                    concat (map explanationDeclarations (patterns context))  
-                   
         --TODO -> by default CRUD operations of datasets, possibly overruled by ECA or PHP plugs
         themeoperations = phpoperations++sqloperations
         phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
@@ -302,7 +303,7 @@ So the first step is create the kernels ...   -}
                 isSQLId = isIdent m && isAuto
                 isAuto  = isIdent m
                            && not (null [key| key<-keyDefs context, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
-                           && null (contents m) -- and the the field may not contain any strings
+                           && (contents m==Nothing || contents m==Just []) -- and the the field may not contain any strings
                 table   = [ entry
                           | cl<-eqCl (map toLower.name) ms
                           , entry<-if length cl==1 then [(r,name r)|r<-cl] else tbl cl]
@@ -775,6 +776,7 @@ So the first step is create the kernels ...   -}
                                    , deciss  = True
                                    , decusr  = False
                                    , decpat  = ""
+                                   , decplug = True
                                    })) (-1)
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)

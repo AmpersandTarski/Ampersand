@@ -178,9 +178,9 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
    pop' ATConcept = [[name x,description x,imgURL pic]|x<-cpts,pic<-pics, origName pic==name x, pType pic == PTConcept]
-   pop' ATContains = [[relpred x,show y]| x@Sgn{}<-declarations fSpec,decusr x, y<-contents x]
+   pop' ATContains = [[relpred x,show y]| x@Sgn{}<-declarations fSpec,decusr x, y<-contents' x]
    pop' ATContainsConcept = [[x,y]|(x,y)<-cptsets] 
-   pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents x]
+   pop' ATContainsExpr = [[cptsubexpr r x,show y]| r<-userrules, x<-subexprs r, y<-contents' x]
    pop' ATContainsSignal = [[cptrule x,show y]| x<-signalrules, y<-ruleviolations x]
    pop' ATExplanation = [[explainRule flags fSpec x]|x<-atlasrules] ++ [[description x]|x<-cpts] ++ [[expl x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATSubExpression = [[cptsubexpr x y ,cptrule x]|x<-userrules, y<-subexprs x] 
@@ -190,8 +190,8 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Mph{})<-mors x]
    pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags fSpec x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
-   pop' ATPair = [[show y]| x@Sgn{}<-declarations fSpec, decusr x, y<-contents x]
-              ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents x]
+   pop' ATPair = [[show y]| x@Sgn{}<-declarations fSpec, decusr x, y<-contents' x]
+              ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents' x]
    pop' ATPattern = [[name x,imgURL pic]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
    pop' ATPragmaExample = [[example x]|x@Sgn{}<-declarations fSpec, decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
@@ -230,8 +230,8 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    relpred x = name x
    mphpred x@(Mph{}) = relpred (mphdcl x) 
    mphpred x = name x
-   example d = if null (contents d) then  applyM d "x" "y" 
-               else applyM d (fst$head$contents d) (snd$head$contents d)
+   example d = if null (contents' d) then  applyM d "x" "y" 
+               else applyM d (fst$head$contents' d) (snd$head$contents' d)
    expl d = explainDecl flags fSpec d
    description::Concept->String
    description c = if null ds then "There is no description for this concept." else head ds
@@ -239,7 +239,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    cptsubexpr r= \x -> cptexpr x ++ " (" ++(show$runum r)++")"
    cptexpr = showADLcode fSpec 
    cpts = (\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (isa fSpec)
-   cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos c]
+   cptsets = [(name c,x)|c@(C{})<-cpts, x<-cptos' c]
    cptrule x | isSignal x =  "SIGNAL: " ++ (cptrule$ x{r_sgl=False})
              | rrsrt x==Implication = cptexpr (rrant x) ++ " |- " ++ cptexpr (rrcon x)
              | rrsrt x==Equivalence = cptexpr (rrant x) ++ " = " ++ cptexpr (rrcon x)

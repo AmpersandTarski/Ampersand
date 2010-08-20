@@ -12,6 +12,7 @@
    import Collection(rd)
    import Strings(chain)
    import Data.Explain
+   import Data.Maybe
    ----------------------------------------------
    class Identified a where
     name   :: a->String
@@ -45,17 +46,21 @@
             | otherwise = error ("!Fatal (module CommonClasses 48): lub undefined: a="++show a++", b="++show b)
 
    class SelfExplained a where
-    --TODO: Samenvoegen met Explained
+    -- TODO: Samenvoegen met Explained
     autoExplain :: a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
 
    class Conceptual a where
-    conts :: a -> [String]                   -- the set of all instances in a concept
+    -- | the set of all instances in a concept (if we know it, Nothing otherwise)
+    conts :: a -> Maybe [String] 
 
    instance Conceptual a => Conceptual [a] where
-    conts = rd . concat . map conts
+    conts as | elem Nothing c = Nothing
+             | otherwise = Just$ rd (concat c')
+          where c = map conts as
+                c' = map fromJust c
 
    class Morphics a where
-    anything       :: a -> Bool
+    anything :: a -> Bool
 
    instance Morphics a => Morphics [a] where
     anything xs = and (map anything xs)

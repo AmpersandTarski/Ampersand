@@ -99,15 +99,15 @@
              --         the second field contains an expression Mph[A*B]
              --         we need the contents of the relation morphism only
              [ phpShow (srcPaire p) ++", "++ phpShow (trgPaire p)
-             | Tm (m'@Mph{}) _ <- map fldexpr (fields plug), p<-contents m']
+             | Tm (m'@Mph{}) _ <- map fldexpr (fields plug), p<-contents' m']
              else
              [ chain ", " [ head ([phpShow (trgPaire p)
-                                  | p<-contents$fldexpr f,a==srcPaire p
+                                  | p<-contents'$fldexpr f,a==srcPaire p
                                   ]++
                                   [phpShow a
                                   | isIdent (fldexpr f) -- this should go automatically, but does not
                                   ]++["NULL"])
                           | f<-fields plug]
-             | a<- rd $ map srcPaire (concat (map (contents.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
+             | a<- rd $ map srcPaire (concat (map (contents'.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
              ]
    

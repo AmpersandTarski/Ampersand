@@ -45,9 +45,9 @@ where
   instance Object Plug where
   -- TODO: PlugPHP is niet overal goed uitgewerkt. Kan later (bij de introductie van PlugPHP) tot lastige fouten leiden. 
    concept p = case p of
-     PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 38): empty lookup table for plug "++plname p++".")
+     PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")
      PlugSql{}             -> head [c|(c,_)<-cLkpTbl p]
-     PlugPhp{}             -> error ("!Fatal (module Data.Plug 40): No definition for concept of plug "++plname p++".")
+     PlugPhp{}             -> error ("!Fatal (module Data.Plug 50): No definition for concept of plug "++plname p++".")
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
    attributes p = case p of 
      PlugSql{} -> 

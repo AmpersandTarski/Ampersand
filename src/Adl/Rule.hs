@@ -124,7 +124,7 @@ where
        | rtyp==Implication = ant `contentsnotin` con 
        | rtyp==Equivalence = ant `contentsnotin` con ++ con `contentsnotin` ant 
        where
-       contentsnotin x y = [p|p<-contents x, not$elem p (contents y)]
+       contentsnotin x y = [p|Just c<-[contents x],p<-c,Just c'<-[contents y], not$elem p c']
    ruleviolations _ = []
  
    rulefromProp :: Prop -> Declaration -> Rule

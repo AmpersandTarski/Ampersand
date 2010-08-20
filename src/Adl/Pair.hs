@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XTypeSynonymInstances #-}
 module Adl.Pair    (Paire,Pairs
                     , join
                     , srcPaire,trgPaire
@@ -24,32 +24,41 @@ where
 --   trgPaire xs    = if null xs then error ("!Fatal (module Adl.Pair 26): trg []") else last xs
 --   mkPair a b = a:[b]
 
-   join::Pairs->Pairs->Pairs
-   join a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
-                    ((sort' (srcPaire.head).eqCl srcPaire) b)
-              where merge (xs:xss) (ys:yss)
-                     | trgPaire (head xs)<srcPaire (head ys) = merge xss (ys:yss)
-                     | trgPaire (head xs)>srcPaire (head ys) = merge (xs:xss) yss
-                     | otherwise = [mkPair (srcPaire x) (trgPaire y) |x<-xs,y<-ys]++ merge xss yss
-                    merge _ _ = []
-
    flipPair :: Paire -> Paire
    flipPair p = mkPair (trgPaire p) (srcPaire p)
 
+   -- | Operations for representations that act as a Kleene algebra (RA without complement and with the closure operators)
+   -- | A Kleene algebra has two binary operations 'union' and 'join', and one function 'closure' (usually written as +, á and * respectively)
+   class KAComputable a where
+     join :: a->a->a
+     closPair :: a->a
+     -- TODO: add the 'uni' operator
+   
+   instance (KAComputable a) => KAComputable (Maybe a) where
+     join (Just a) (Just b) = Just (join a b)
+     join _ _ = Nothing
+     closPair (Just p) = Just (closPair p)
+     closPair _ = Nothing
+      
+   instance KAComputable Pairs where
+     join a b = merge ((sort' (trgPaire.head).eqCl trgPaire) a)
+                    ((sort' (srcPaire.head).eqCl srcPaire) b)
+                where merge (xs:xss) (ys:yss)
+                       | trgPaire (head xs)<srcPaire (head ys) = merge xss (ys:yss)
+                       | trgPaire (head xs)>srcPaire (head ys) = merge (xs:xss) yss
+                       | otherwise = [mkPair (srcPaire x) (trgPaire y) |x<-xs,y<-ys]++ merge xss yss
+                      merge _ _ = []
    --DESCR -> [b] is a list of two: [c1,c2] indicating a path from c1 to c2
    --TODO -> if [b] == [] then head results in Prelude.head: empty list error
    --        if not length b == 2 then that element will be ignored
-   closPair :: Pairs -> Pairs
-   closPair ps = toPairs (clos1 (toList ps))
-     where
+     closPair ps = toPairs (clos1 (toList ps))
+      where
        toPairs :: [[String]] -> Pairs
        toPairs [] = []
        toPairs (p:pps) = (mkPair (head p) (last p)) : toPairs pps
        toList :: Pairs -> [[String]]
        toList [] = []
        toList (p:pps) = [[srcPaire p, trgPaire p]] ++ (toList pps)
-
-
 ----------------------------------------------------
 --  Warshall's transitive closure algorithm in Haskell:
 ----------------------------------------------------
@@ -66,15 +75,3 @@ where
        where
         f pairs (x:xs') = f (pairs `uni` [left e `pair` right e'|e<-pairs,right e==x,e'<-pairs,left e'==x]) xs'
         f pairs []      = pairs
-
-{-
-   test = closGeneric pair left right  [ (1,2), (2,3), (3,4), (4,5), (4,1), (10,10)]
-    where
-      pair   a b  = (a,b)
-      left  (a,b) = a
-      right (a,b) = b
-
-   ADL.Pair> test
-   [(1,2),(2,3),(3,4),(4,5),(4,1),(10,10),(1,3),(2,4),(1,4),(3,5),(3,1),(2,5),(2,1),(1,5),(1,1),(4,2),(4,3),(4,4),(3,2),(3,3),(2,2)]
-   ADL.Pair>
--}
