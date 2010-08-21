@@ -30,33 +30,3 @@ where
        [ExplRule        r l ref (string2ExplainContent expla)| PExplRule        nm  l ref expla<-ptxps pat,  r<-ptrls pat, name r==nm] ++
        [ExplKeyDef      k l ref (string2ExplainContent expla)| PExplKeyDef      nm  l ref expla<-ptxps pat,  k<-ptkds pat, name k==nm]
   
---  instance Explainable Rule where
---    explanations r = [ ExplRule r "" (rrxpl r) ]   
---    filterExplanations r expls flags = [e|e<-expls , isLang (language flags) e , isforRule r e  ] 
---  instance Explainable Concept where
---  --TODO: Invullen
---    
---  instance Explainable Declaration where
---  --TODO: Invullen
---    
----- Populations and Gen were once to be Explainable, but they do not belong to the class Identified. => Needs rethink
-----  instance Explainable Population where
-----  --TODO: Invullen
-----    
-----  instance Explainable Gen where
-----   --TODO: Invullen
---    
---  instance Explainable KeyDef where
---   --TODO: Invullen
---    
---  instance Explainable ObjectDef where
---   --TODO: Invullen
---    
---
---  isLang :: Lang -> Explanation -> Bool
---  isLang l expl = True 
---
---  isforRule :: Rule -> Explanation -> Bool
---  isforRule r (ExplRule a _ _) =  name r == name a 
---  isforRule _ _ = False
-  

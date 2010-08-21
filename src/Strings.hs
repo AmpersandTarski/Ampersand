@@ -1,6 +1,6 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | Deze module bevat operaties op strings.
-  module Strings (chain,unCap,upCap,firstCaps,remSpaces,trim,spacesToUnderscores,spaces,spread,commaEng,commaNL)
+  module Strings (chain,unCap,upCap,remSpaces,trim,spacesToUnderscores,spaces,spread,commaEng,commaNL)
   where
 
    import Char (isUpper, toUpper, toLower)

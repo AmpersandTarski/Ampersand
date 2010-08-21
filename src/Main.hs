@@ -12,7 +12,7 @@ import qualified Data.ByteString as Bin
 
 main :: IO ()
 main
- = do flags <- getOptions   
+ = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ Prelude.putStr (helpNVersionTexts flags)
        else if test flags
