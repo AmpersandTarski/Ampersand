@@ -2,9 +2,9 @@
   -- | Deze module bevat operaties op strings.
   module Strings (chain,unCap,upCap,remSpaces,trim,spacesToUnderscores,spaces,spread,commaEng,commaNL)
   where
-
    import Char (isUpper, toUpper, toLower)
 
+{- -- not used
    -- | firstCaps verwijdert spaties uit een string, en maakt van elk eerste letter van een woord een hoofdletter.
    firstCaps :: String -> String
    firstCaps "" = ""
@@ -12,7 +12,7 @@
    firstCaps ('_':'_':str) = firstCaps ('_':str)
    firstCaps ('_':c:str) = toUpper c:firstCaps str
    firstCaps (c:str) = c:firstCaps str
-
+-}
    unCap :: String -> String
    unCap [] = []
    unCap [h] = [toLower h]

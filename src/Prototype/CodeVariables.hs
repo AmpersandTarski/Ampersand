@@ -102,7 +102,7 @@ module Prototype.CodeVariables (newVarFor,freshSingleton,singletonCV,pairSourceE
  pairTargetDecl :: Expression -> Declaration
  pairTargetDecl e = (pairSourceDecl e){decnm="trg",detrg=target e}
  pairSourceDecl :: Expression -> Declaration
- pairSourceDecl expr = Sgn { decnm="src", desrc=DExp expr, detrg=source expr
+ pairSourceDecl expr = Sgn { decnm="src", desrc=DExp expr, detrg=source expr, decplug=True
                            , decprps=[], decprps_calc=[Uni,Tot]
                            , decprL="", decprM="", decprR=""
                            , decpopu=error "Decl has no population (Code.hs)" -- TODO? If so, get population from expr, and be sure to adjust pairTargetDecl as well.
