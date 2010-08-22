@@ -320,16 +320,25 @@ where
    instance XML (Declaration->ECArule) where
      mkTag _ = Tag "ECArule" []
      mkXmlTree _ = still2bdone "Declaration->ECArule"
-
+   
    instance XML Plug where
-     mkTag p = Tag plugType [ nameToAttr p]
-                 where plugType = case p of
-                                     PlugSql{} -> "PlugSql"
+     mkTag p = case p of
+                 PlugSql x -> mkTag x
+                 PlugPhp x -> mkTag x
+     mkXmlTree p = case p of
+                 PlugSql x -> mkXmlTree x
+                 PlugPhp x -> mkXmlTree x
+                 
+   instance XML PlugPHP where
+     mkTag p = Tag "PlugPhp" [ nameToAttr p]
+     mkXmlTree p
+      = Elem (mkTag p)
+             [ ] -- TODO
+   instance XML PlugSQL where
+     mkTag p = Tag "PlugSql" [ nameToAttr p]
      mkXmlTree p 
       = Elem (mkTag p) 
-          (case p of
-            PlugSql{} ->  [ Elem (simpleTag "Fields") (map mkXmlTree (fields p))]
-          )
+             [ Elem (simpleTag "Fields") (map mkXmlTree (fields p))]
    instance XML SqlField where
       mkTag x = Tag "Field" (   [mkAttr "name" (fldname x)]
                               ++[mkAttr "type" (showSQL (fldtype x))]

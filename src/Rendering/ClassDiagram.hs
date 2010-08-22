@@ -26,7 +26,9 @@
    class CdNode a where
     nodes :: a->[String]
 
-   
+   instance Morphic PlugSQL where
+    isSignal p | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
+    isSignal _              = False
 
    instance CdNode ClassDiag where
     nodes (OOclassdiagram cs as rs gs _) = rd (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
@@ -51,20 +53,15 @@
    instance CdNode Generalization where
     nodes (OOGener g ss) = g:ss
 
-
-   instance Morphic Plug where
-    isSignal p@PlugSql{} | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
-    isSignal _                        = False
-
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
        classes    = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
-                    | plug <- plugs fSpec, isClass plug
+                    | plug <- pickTypedPlug$ plugs fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
        assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
-                    | plug <- plugs fSpec, isBinary plug, not (isSignal plug)
+                    | plug <- pickTypedPlug$ plugs fSpec, isBinary plug, not (isSignal plug)
                     , if not (null (mLkpTbl plug)) then True else error("!Fatal (module ClassDiagram 65): empty lookup table in analysis of plug "++name plug++".")
                     , let m=head [r| (r,_,_)<-mLkpTbl plug]
                     , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 67): irregular association, because it has "++show (length (fields plug))++" fields.")
@@ -77,16 +74,16 @@
                      
        aggrs      = []
        geners     = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]
-       scalarPlgs = [p| p<-plugs fSpec, isScalar p]
+       scalarPlgs = [p| p<-pickTypedPlug$ plugs fSpec, isScalar p]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-fields plug, fldname fld/="i"]
-       attrels    = rd [d| plug<-plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
+       attrels    = rd [d| plug<-pickTypedPlug$ plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
        isProp d   = null([Sym,Asy]>-multiplicities d)
        scs = [d|d<-declarations fSpec] -- was: for the entire context
        lookup c = if null ps
                   then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
                   else head ps
-                  where ps = [p|p<-plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
+                  where ps = [p|p<-pickTypedPlug$ plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
    shDataModel (OOclassdiagram cs as rs gs _)
     = "OOclassdiagram\n>     "++chain "\n>     "
         [ lijstopmaak (map show cs),

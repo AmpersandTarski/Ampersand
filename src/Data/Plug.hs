@@ -13,38 +13,76 @@ module Data.Plug (Plug(..),Plugs
                  ,ActionType(..)
                  ,isClass
                  ,isScalar
-                 ,isBinary)
+                 ,isBinary
+                 ,IsPlug(..),PlugSQL(..),PlugPHP(..),plname,plfpa,renamePlug)
 where
   import Adl.Concept (Concept(..),Association(..))
   import Adl.MorphismAndDeclaration
   import Adl.Expression (Expression(..))
   import Adl.ObjectDef (ObjectDef(..))
   import Adl.FilePos (FilePos(..))
+  import Adl (isSur)
   import Classes.Object (Object(..))
+  import Classes.Morphical (Morphical(..))
   import CommonClasses (Identified(..))
   import FPA (FPA(..))
   import Maybe (fromMaybe)
   import Auxiliaries (sort')
+  import Prototype.CodeVariables (CodeVar(..))
+  
+  class IsPlug a where
+    makePlug :: a -> Plug
+    pickTypedPlug :: [Plug] -> [a]
+  
+  instance IsPlug Plug where
+    makePlug x = x
+    pickTypedPlug x = x
+  instance IsPlug PlugSQL where
+    makePlug x = PlugSql x
+    pickTypedPlug x = [p | (PlugSql p) <- x]
+  instance IsPlug PlugPHP where
+    makePlug x = PlugPhp x
+    pickTypedPlug x = [p | (PlugPhp p) <- x]
+  
+  plfpa :: (IsPlug a) => a -> FPA
+  plfpa p = case (makePlug p) of
+             PlugSql x -> sqlfpa x
+             PlugPhp x -> phpfpa x
+  plname :: (IsPlug a) => a -> String
+  plname p = case (makePlug p) of
+              PlugSql x -> sqlname x
+              PlugPhp x -> phpname x
+  renamePlug :: (IsPlug a) => a -> String -> a
+  renamePlug p nname
+   = case (makePlug p) of
+              PlugSql x -> head$ pickTypedPlug [PlugSql (x{sqlname=nname})]
+              PlugPhp x -> head$ pickTypedPlug [PlugPhp (x{phpname=nname})]
   
   type Plugs = [Plug]
-  data Plug = PlugSql { plname   :: String
+  data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
+  data PlugSQL = PlugSQL { sqlname   :: String
                       , fields   :: [SqlField]
                       , cLkpTbl  :: [(Concept,SqlField)]           -- lookup table that links concepts to column names in the plug
                       , mLkpTbl  :: [(Morphism,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug
-                      , plfpa    :: FPA -- functie punten analyse
+                      , sqlfpa    :: FPA -- ^ functie punten analyse
                       }
                deriving (Show)
-  
-  instance Object Plug where
-  -- TODO: PlugPHP is niet overal goed uitgewerkt. Kan later (bij de introductie van PlugPHP) tot lastige fouten leiden. 
-   concept p = case p of
-     PlugSql{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")
-     PlugSql{}             -> head [source m|(m,_,_)<-mLkpTbl p]
+  data PlugPHP = PlugPHP { phpname   :: String -- ^ the name of the function
+                      , phpfile	 :: Maybe String -- ^ the file in which the plug is located (Nothing means BuiltIn)
+                      , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
+                      , phpOut    :: CodeVar -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
+                      , phpVerifies:: Bool -- ^ whether the input of this plug is verified. False means that when the function is be called with non-existant input, it may not return false as output
+                      , phpfpa    :: FPA -- ^ functie punten analyse
+                      }
+               deriving (Show)
 
+  instance Object PlugSQL where
+   concept p = case p of
+     PlugSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")
+     PlugSQL{}             -> head [source m|(m,_,_)<-mLkpTbl p]
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
-   attributes p = case p of 
-     PlugSql{} -> 
-      [ Obj (fldname tFld)                                                   -- objnm 
+   attributes p
+    = [ Obj (fldname tFld)                                                   -- objnm 
             Nowhere                                                          -- objpos
             (if source a==concept p then Tm a (-1) else f (source a) [[a]])  -- objctx
             Nothing                                                          -- objctx_proof
@@ -61,22 +99,22 @@ where
    populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++plname p++".")
 
   
-  isClass  :: Plug -> Bool
+  isClass  :: PlugSQL -> Bool
   isClass  p = case p of
-      PlugSql{} -> not (null [1::Int|fld<-fields p, flduniq fld]) && not (null [1::Int|fld<-fields p, not (flduniq fld)])
+      PlugSQL{} -> not (null [1::Int|fld<-fields p, flduniq fld]) && not (null [1::Int|fld<-fields p, not (flduniq fld)])
 
-  isBinary :: Plug -> Bool
+  isBinary :: PlugSQL -> Bool
   isBinary p = case p of
-      PlugSql{} -> length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
+      PlugSQL{} -> length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
 
-  isScalar :: Plug -> Bool
+  isScalar :: PlugSQL -> Bool
   isScalar p = case p of
-      PlugSql{} -> length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
+      PlugSQL{} -> length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
 
-  instance Association Plug where
+  instance Association PlugSQL where
      source p           = (source . fldexpr . head . fields) p
-     target p@PlugSql{} | isBinary p = target m where (m,_,_) = head (mLkpTbl p)
-     target p                        = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++plname p++", because it is not binary.")
+     target p | isBinary p = target m where (m,_,_) = head (mLkpTbl p)
+     target p | otherwise  = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++plname p++", because it is not binary.")
 
 
 
@@ -102,8 +140,10 @@ where
      name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> objnm x}
 
   --DESCR -> plugs are sorted to optimize some algoritms. 
-  instance Eq Plug where
+  instance Eq PlugSQL where
     x==y = plname x==plname y
+  instance Eq PlugPHP where
+    x==y = plname x==plname y && phpfile x == phpfile y
   instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
     compare x y = compare (plname x) (plname y)
   
@@ -154,6 +194,25 @@ where
                               _        -> SQLVarchar 255
                               }
 
-  instance Identified Plug where
-    name p = plname p
 
+
+  instance Morphical SqlField where
+    concs     f = [target e'|let e'=fldexpr f,isSur e']
+    morlist   f = morlist   (fldexpr f)
+    decls     f = decls     (fldexpr f)
+    closExprs f = closExprs (fldexpr f)
+    
+  instance Morphical PlugSQL where
+    concs     p = concs     (fields p)
+    mors      p = mors      (fields p)
+    morlist   p = morlist   (fields p)
+    decls     p = decls     (fields p)
+    closExprs p = closExprs (fields p)
+  
+  instance Identified Plug where
+     name x = plname x
+  instance Identified PlugSQL where
+     name x = plname x
+  instance Identified PlugPHP where
+     name x = plname x
+  

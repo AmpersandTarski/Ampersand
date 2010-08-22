@@ -8,7 +8,7 @@ module Classes.Morphical                 (Morphical(concs
                                                    ,idsOnly
                                          )         )
 where
-   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),MorphicId(..),Morphic(..))
+   import Adl.Concept                    (Concept(..),Concepts,GenR,Association(..),MorphicId(..))
    import Adl.Context                    (Context(..))
    import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..),Morphisms,Declarations
                                          ,makeDeclaration,makeInline,mIs)
@@ -18,16 +18,16 @@ where
    import Adl.KeyDef                     (KeyDef(..))
    import Adl.Pattern                    (Pattern(..))
    import Adl.Rule                       (Rule(..),RuleType(..))
-   import Data.Plug
    import Classification                 (Classification,preCl)
    import Collection                     (Collection(..))
    import Typology                       (genEq,typology)
 
    class Morphical a where
-    concs        :: a -> Concepts                  -- the set of all concepts used in data structure a
-    mors         :: a -> Morphisms                 -- the set of all morphisms used within data structure a
-    morlist      :: a -> Morphisms                 -- the list of all morphisms used within data structure a
-    decls        :: a -> Declarations              -- all relations used in a. (Don't confuse decls with declarations, which produces the declarations declared in a. The function declarations is bound in ViewPoint)
+    concs        :: a -> Concepts                  -- ^ the set of all concepts used in data structure a
+    mors         :: a -> Morphisms                 -- ^ the set of all morphisms used within data structure a
+    mors = rd . map makeInline . morlist
+    morlist      :: a -> Morphisms                 -- ^ the list of all morphisms used within data structure a (the difference with mors is that morlist is not unique)
+    decls        :: a -> Declarations              -- ^ all relations used in a. (Don't confuse decls with declarations, which produces the declarations declared in a. The function declarations is bound in ViewPoint)
     decls x       = rd [makeDeclaration m|m<-mors x]
     genE         :: a -> GenR
     genE x        = if null cx then (==) else head cx where cx = [cptgE c|c<-concs x]
@@ -219,18 +219,3 @@ where
     genE g      = genE (genspc g)
     decls     _ = []
     closExprs _ = []
-
-   instance Morphical SqlField where
-    concs     f = [target e'|let e'=fldexpr f,isSur e']
-    mors      f = (rd.map makeInline.mors.fldexpr) f
-    morlist   f = morlist   (fldexpr f)
-    decls     f = decls     (fldexpr f)
-    closExprs f = closExprs (fldexpr f)
-    
-   instance Morphical Plug where
-    concs     p@PlugSql{} = concs     (fields p)
-    mors      p@PlugSql{} = mors      (fields p)
-    morlist   p@PlugSql{} = morlist   (fields p)
-    decls     p@PlugSql{} = decls     (fields p)
-    closExprs p@PlugSql{} = closExprs (fields p)
-

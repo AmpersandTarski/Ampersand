@@ -13,9 +13,8 @@
               )
    import ShowADL (showADL)
    import Collection (Collection (rd,rd',(>-)))
-   import Prototype.RelBinGenBasics(sqlExprSrc,sqlExprTrg,naming,selectExprBrac,indentBlock
-     ,sqlRelPlugs,addToLast,isOne,phpIdentifier,selectExpr
-     ,addSlashes,commentBlock,sqlPlugFields)
+   import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,selectExpr,sqlPlugFields)
+   import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
    import Data.Fspec
    import Data.Plug
    import Data.Maybe
@@ -260,7 +259,7 @@
                 (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                         ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
      delcode _ [] = error "!Fatal (module Prototype>Object 262): should not occur" -- , but generating no code for no request seems OK
-     delCodeElem :: Plug->([String],[ObjectDef])
+     delCodeElem :: PlugSQL->([String],[ObjectDef])
      delCodeElem plug
        = (   concat (map (delcode plug) (fullOccurences plug))
           ++ concat (map updelcd (occurences plug))
@@ -274,7 +273,7 @@
             else
             nestTo a
                    (\var -> delUpdt plug (a,s) var)
-     saveCodeElem :: Plug->([String],[ObjectDef])
+     saveCodeElem :: PlugSQL->([String],[ObjectDef])
      saveCodeElem plug
        = ( -- only delete if we have ALL information needed for refill, so use fullOccurences
            -- if we delete more, the plug would violate its transaction boundary
@@ -389,7 +388,7 @@
                                  ) ++ maybeId o
 
    --REMARK: only used for php function save()
-   plugAts :: Plug -> ObjectDef           -- parent (wrong values are allowed, see source)
+   plugAts :: PlugSQL -> ObjectDef           -- parent (wrong values are allowed, see source)
               -> ObjectDef                -- object itself
               -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
                  (ObjectDef,SqlField))]   -- target
@@ -403,9 +402,9 @@
      where noIdents obj = [att | att <- objats obj]--, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
 
    --REMARK: only used for php function save()
-   objPlugs :: Fspc -> ObjectDef -> [Plug]
+   objPlugs :: Fspc -> ObjectDef -> [PlugSQL]
    objPlugs fSpec object
-     = [plug|plug<-plugs fSpec, not (null (plugAts plug object object))]
+     = [plug|plug<-pickTypedPlug$ plugs fSpec, not (null (plugAts plug object object))]
    
    isObjUni :: ObjectDef -> Bool
    isObjUni obj = isUni (objctx obj)
@@ -493,7 +492,7 @@
                         ++ concat (map joinOn (tail tbls)) ++
                         (if isOne' then [] else [" WHERE " ++ snd (head tbls)])
                   )
-      where comboGroups'::[((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
+      where comboGroups'::[((PlugSQL,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
             comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WAAROM: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
             comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
 -- keyGroups representeert de plug-informatie die nodig is voor het atoom aan de rand van objIn, wat de bron is van waaruit objOut wordt opgebouwd.
@@ -514,8 +513,8 @@
                                    -- ++ trace ("Geen keyGroup voor "++name objOut) []
                                    ++ if isOne' then [] else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
                                  )
-            reduce :: [[((Plug,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
-                      -> [((Plug,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
+            reduce :: [[((PlugSQL,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
+                      -> [((PlugSQL,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
             reduce [] = []
             reduce (g:gs)    = (fst (head g),map snd g):reduce
                                [ res
@@ -582,9 +581,9 @@
                                                (sqlExprTrg fSpec (objctx outAtt))
                                                (objctx outAtt)
             tableName gr@(p,_) = if name p == tableReName gr then "`"++name p++"`" else "`"++name p ++ "` AS "++tableReName gr
-            tableReName :: (Plug,(ObjectDef,SqlField)) -> String
+            tableReName :: (PlugSQL,(ObjectDef,SqlField)) -> String
             tableReName gr   = head [nm | (nm,gr')<-renamedTables,gr'==gr]
-            renamedTables :: [(String,(Plug,(ObjectDef,SqlField)))]
+            renamedTables :: [(String,(PlugSQL,(ObjectDef,SqlField)))]
             renamedTables
               = naming (\p nm->(nm,p))                                                   -- function used to asign name a to element b
                        ( (\x->name(fst x))                                               

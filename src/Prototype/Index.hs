@@ -2,7 +2,8 @@
 {-# LANGUAGE ScopedTypeVariables#-}
   module Prototype.Index(htmlindex) where
    import Strings(chain)
-   import Prototype.RelBinGenBasics(indentBlock,isOne)
+   import Prototype.RelBinGenBasics(indentBlock)
+   import Prototype.RelBinGenSQL(isOne)
    import Version (versionbanner)
 --   import System.FilePath (addExtension)
    import Adl (name,ObjectDef)

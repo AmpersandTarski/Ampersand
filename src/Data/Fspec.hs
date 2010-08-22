@@ -16,7 +16,7 @@ module Data.Fspec ( Fspc(..)
                   )
  where
    import Adl            hiding (Association)
-   import Collection                    (uni,(>-))
+   import Collection                    ((>-))
    import Strings                       (chain)
    import Typology                      (Inheritance(..))
    import Data.Plug                     
@@ -41,14 +41,13 @@ module Data.Fspec ( Fspc(..)
                     , fSexpls      :: [Explanation]        -- ^ all explanations that are valid within the current specification
                     , vctxenv :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
-
+   
    instance Morphical Fspc where
     concs     fSpec = concs (vrels fSpec)                          -- The set of all concepts used in this Fspc
-    mors      fSpec = mors (vplugs fSpec) `uni` mors (serviceS fSpec) `uni` mors (vrules fSpec)
-    morlist   fSpec = morlist (vplugs fSpec) ++ morlist (serviceS fSpec) ++ morlist (vrules fSpec)
+    morlist   fSpec = morlist (serviceS fSpec) ++ morlist (vrules fSpec)
     genE      fSpec = genE (vrels fSpec)  
     closExprs fSpec = closExprs (rules fSpec++signals fSpec)
-
+   
    instance ViewPoint Fspc where
     objectdef    fSpec = Obj { objnm   = name fSpec
                              , objpos  = Nowhere
@@ -69,7 +68,8 @@ module Data.Fspec ( Fspc(..)
     gens         fSpec = vgens fSpec
     patterns     fSpec = vpatterns fSpec
     isa          fSpec = fsisa  fSpec
-
+   
+ 
 --   instance UserExplainable Fspc where
 ---- Once ADL allows explanations to be given from with a service declaration, these must be made visible by <explanations>
 ---- Until that time, the list of explanations is (predictably) empty.
@@ -194,8 +194,9 @@ module Data.Fspec ( Fspc(..)
    instance Identified FSid where
     name (FS_id nm) = nm
 
-   datasets :: Fspc -> [Plug]
-   datasets fSpec = [p| p<-plugs fSpec
+   
+   datasets :: Fspc -> [PlugSQL]
+   datasets fSpec = [p| p<-pickTypedPlug (plugs fSpec)
                       , fld<-take 1 (fields p), flduniq fld  -- this excludes associations, because they are not flduniq
                       , length (fields p)>1]                 -- this excludes scalar plugs
 

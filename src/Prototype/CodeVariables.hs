@@ -1,8 +1,16 @@
-module Prototype.CodeVariables (newVarFor,freshSingleton,singletonCV,pairSourceExpr,pairTargetExpr,codeVariableForBinary,CodeVar(..), CodeVarIndexed(..) ) where
+module Prototype.CodeVariables
+  (newVarFor
+  ,freshSingleton
+  ,singletonCV
+  ,pairSourceExpr
+  ,pairTargetExpr
+  ,codeVariableForBinary
+  ,CodeVar(..)
+  ,CodeVarIndexed(..)
+  ) where
  import Prototype.CodeAuxiliaries (Named(..),nameFresh)
  import Adl (Concept(..),Expression(..),Declaration(..),Morphism(..),mIs, Prop(..),makeMph,Identified(..),source,target)
  import Prototype.RelBinGenBasics(noCollide)
- import NormalForms (simplify)
 
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary
@@ -76,8 +84,8 @@ module Prototype.CodeVariables (newVarFor,freshSingleton,singletonCV,pairSourceE
                      }
     where 
           newConcForExpr = source srcRel -- source srcRel == source trgRel
-          srcRel = pairSourceExpr (simplify (noDaggers expr))
-          trgRel = pairTargetExpr (simplify (noDaggers expr))
+          srcRel = pairSourceExpr (noDaggers expr)
+          trgRel = pairTargetExpr (noDaggers expr)
  
  -- | removes all daggers from the given expression
  noDaggers :: Expression -> Expression

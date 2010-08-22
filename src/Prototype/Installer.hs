@@ -54,7 +54,7 @@
           , "if($existing==true){"
           ] ++ indentBlock 2 (concat (map checkPlugexists (plugs fSpec)))
           ++ ["}"]
-          ++ concat (map plugCode (plugs fSpec))
+          ++ concat (map plugCode (pickTypedPlug$ plugs fSpec))
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
         ) ++
         [ "}" ]
@@ -90,7 +90,7 @@
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(name plug)++"`\")){"
              , "  mysql_query(\"DROP TABLE `"++(name plug)++"`\");" --todo: incremental behaviour
              , "}" ]
-          mdata :: Plug -> [String]
+          mdata :: PlugSQL -> [String]
           mdata plug
            = if name plug==name S then [ "S" ] else
              if length (fields plug)==2 -- treat binary tables differently

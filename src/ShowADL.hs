@@ -20,7 +20,6 @@
    import Strings                         (chain)
    import Auxiliaries                     (eqCl,showL)
    import Data.Explain
-   import Options (defaultFlags,Options(..))
  --  import TypeInferenceEngine
  --  import TypeInference.ITree
  

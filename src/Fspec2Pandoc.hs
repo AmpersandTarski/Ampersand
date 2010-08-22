@@ -745,7 +745,7 @@ dataAnalysis lev fSpec flags
 -- Then, the homogeneous poperties are given, and finally
 -- the signals are documented.
 
-  daAttributes :: Plug -> [Block]
+  daAttributes :: PlugSQL -> [Block]
   daAttributes p
    = [ if language flags==Dutch
        then Para [ Str $ "De attributen van "++name p++" hebben de volgende multipliciteitsrestricties. "
@@ -812,7 +812,7 @@ dataAnalysis lev fSpec flags
   -- Multiplicity rules are not reported separately, because they are already taken care of in the multiplicity tables.
   -- Plugs that are associations between data sets and scalars are ignored.
 
-  daPlug :: Plug -> [Block]
+  daPlug :: PlugSQL -> [Block]
   daPlug p
    = if null content then [] else plugHeader ++ content
      where

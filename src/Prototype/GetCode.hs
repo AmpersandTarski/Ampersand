@@ -3,7 +3,8 @@ module Prototype.GetCode (getCodeFor) where
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh)
  import Adl (Concept(..),Expression(..),Morphism(..),mIs,source,target)
- import Prototype.RelBinGenBasics(selectExpr,sqlExprTrg,sqlExprSrc,noCollide)
+ import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
+ import Prototype.RelBinGenBasics(noCollide)
  import Data.Fspec (Fspc)
  import Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
  
@@ -107,6 +108,10 @@ module Prototype.GetCode (getCodeFor) where
     ( [[Assignment pre (obj:pre) (var) (SQLBinary composed sql)]
       | Just sql<-[sqlQuery fSpec composed]
       ] ++
+      -- if we don't succeed, try and get it via PHP
+      [[Assignment pre (obj:pre) (var) (PHPPlug php)]
+      | Just php<-[phpQuery fSpec composed]
+      ] ++
       -- divide: we try to get both sides of some operator, and then use a binary PHP composition
       [get1++get2++join++forget
       | (e1,e2,opr) <- case composed of (Fix (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
@@ -130,6 +135,10 @@ module Prototype.GetCode (getCodeFor) where
  -- | use a variable
  use :: Named CodeVar -> Named UseVar
  use s = Named (nName s) (UseVar [])
+ -- | will get a straight-forward php expression (binary)
+ phpQuery :: Fspc -> Expression -> Maybe (String)
+ phpQuery fSpec expr
+  = error "phpQuery undefined in GetCode.hs"
  -- | will get a straight-forward sql expression (binary) with a nice name for source and target
  -- | if, of course, such a sql expression exists
  sqlQuery :: Fspc -> Expression -> Maybe String

@@ -31,7 +31,7 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
  data CodeQuery
   =  SQLBinary   {cqexpression::Expression, sqlquery::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually)
    | SQLComposed {cqsource:: Concept, cqexpressions::[Expression], sqlquery::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
-   | PHPPlug -- ^ TODO: what does this look like?
+   | PHPPlug     {phpquery::String} -- ^ TODO: what does this look like? Currently, phpquery denotes the entire function call. Nothing to check and very language dependent!
    | PHPIntersect{cqfrom1::CodeQuery,cqfrom2::CodeQuery}
    | PHPJoin     {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
    | PHPIsectComp{cqfrom1::CodeQuery,cqfrom2::CodeQuery} -- ^ cqfrom1 /\ -cqfrom2

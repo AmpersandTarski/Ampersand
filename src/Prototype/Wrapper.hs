@@ -2,7 +2,8 @@
  module Prototype.Wrapper (objectWrapper) where
    import Strings(chain)
    import Adl
-   import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,isOne,commentBlock,addToLast)
+   import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
+   import Prototype.RelBinGenSQL(isOne)
    import Data.Fspec
    import Version (versionbanner)
 

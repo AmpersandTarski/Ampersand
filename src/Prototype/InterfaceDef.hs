@@ -3,7 +3,8 @@
   import Adl
   import Strings    (chain)
   import Data.Fspec
-  import Prototype.RelBinGenBasics(isOne, commentBlock, indentBlock)
+  import Prototype.RelBinGenBasics(commentBlock, indentBlock)
+  import Prototype.RelBinGenSQL(isOne)
   import Version (versionbanner)
    
   interfaceDef :: Fspc -> [ObjectDef] -> String -> String

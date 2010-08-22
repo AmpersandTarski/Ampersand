@@ -80,16 +80,16 @@ where
     showHSname plug = haskellIdentifier ("plug_"++plname plug)
     showHS flags indent plug   
       = case plug of
-           PlugSql{} -> (chain indent 
+           PlugSql p -> (chain indent 
                           ["let " ++ chain (indent++"    ")
-                                           [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields plug] ++indent++"in"
+                                           [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
                           ,"PlugSql{ plname  = " ++ (show.haskellIdentifier.plname) plug
-                          ,"       , fields  = ["++chain ", " (map showHSname (fields plug))++"]"
-                          ,"       , cLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
-                          ,"       , mLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl plug] ++ "]"
+                          ,"       , fields  = ["++chain ", " (map showHSname (fields p))++"]"
+                          ,"       , cLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
+                          ,"       , mLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
                           ,"       , plfpa   = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
-                          ])
+                          ]) 
 
    instance ShowHS PhpValue where
     showHSname _ = error ("!Fatal (module ShowHS): PhpValue is anonymous with respect to showHS flags.")
