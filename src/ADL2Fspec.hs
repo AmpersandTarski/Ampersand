@@ -16,7 +16,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import FPA
    
    makeFspec :: Options -> Context -> Fspc
-   makeFspec _ context = fSpec
+   makeFspec flags context = fSpec
     where
         allQuads = quads (\_->True) (rules context++multrules context)
         fSpec =
@@ -201,8 +201,8 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  (recur (trace++[c]) cl)   -- objats
                  []                        -- objstrs
            | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
-        fSexpls' = explanationDeclarations context                ++
-                   concat (map explanationDeclarations (patterns context))  
+        fSexpls' = explanationDeclarations flags context                ++
+                   concat (map (explanationDeclarations flags)(patterns context))  
 
 {- makePlugs computes a set of plugs to obtain wide tables with little redundancy.
    First, we determine the kernels for all plugs.

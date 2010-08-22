@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 --DESCR -> functions translating adl to natural language.
 --TODO -> Maybe this module is useful at more places than just func spec rendering. In that case it's not a Rendering module and it needs to be replaced
-module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),explains2Inlines,format) where
+module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),explain2Blocks,format) where
 import Adl
 import Data.Fspec
 import Options
@@ -24,7 +24,7 @@ import Text.Pandoc
 class Explainable a where 
   explain :: Fspc -> Options -> a -> [Explanation]
   explain fSpec flags x = 
-        filterExplanations x flags (fSexpls fSpec++ map (autoExpl2Explain x) (autoExplainsOf x)) 
+        filterExplanations x flags (fSexpls fSpec++ map (autoExpl2Explain x) (autoExplainsOf flags x)) 
   filterExplanations :: a             -- the object the filter is for 
                      -> Options       -- filter by language, and maybe later more.
                      -> [Explanation] -- A list of all explanations (most likely from the Fspec)
@@ -36,10 +36,10 @@ class Explainable a where
      where explForLang lang e = lang == explLang e
   autoExpl2Explain :: a -> AutoExplain -> Explanation
   explForObj :: a -> Explanation -> Bool
-  autoExplainsOf :: a -> [AutoExplain]
+  autoExplainsOf :: Options -> a -> [AutoExplain]
   
 instance Explainable ConceptDef where
-  autoExplainsOf _ = []
+  autoExplainsOf _ _ = []
   explForObj cd ExplConcept{explObjCD = cd'} = cd == cd'
   explForObj _ _ = False
   autoExpl2Explain cd (Because lang ec) = 
@@ -49,7 +49,7 @@ instance Explainable ConceptDef where
                           ,explCont  = ec}          
 
 instance Explainable Declaration where
-  autoExplainsOf decl = autoExplain decl
+  autoExplainsOf flags decl = autoExplain flags decl
   explForObj decl ExplDeclaration{explObjD = decl'} = decl == decl'
   explForObj _ _ = False
   autoExpl2Explain decl (Because lang ec) = 
@@ -59,7 +59,7 @@ instance Explainable Declaration where
                           ,explCont  = ec}
   
 instance Explainable Rule where
-  autoExplainsOf rule = autoExplain rule
+  autoExplainsOf flags rule = autoExplain flags rule
   explForObj rule ExplRule   {explObjR = rule'} = rule == rule'
   explForObj _ _ = False
   autoExpl2Explain rule (Because lang ec) = 
@@ -69,7 +69,7 @@ instance Explainable Rule where
                           ,explCont  = ec}
   
 instance Explainable KeyDef where
-  autoExplainsOf _ = []
+  autoExplainsOf _ _ = []
   explForObj kd ExplKeyDef {explObjKD = kd'} = kd ==kd'
   explForObj _ _ = False
   autoExpl2Explain kd (Because lang ec) =
@@ -79,7 +79,7 @@ instance Explainable KeyDef where
                           ,explCont  = ec}
 
 instance Explainable ObjectDef where
-  autoExplainsOf _ = []
+  autoExplainsOf _ _ = []
   explForObj od ExplObjectDef{explObjOD = od'} = od ==od'
   explForObj _ _ = False
   autoExpl2Explain od (Because lang ec) =
@@ -89,7 +89,7 @@ instance Explainable ObjectDef where
                           ,explCont  = ec}
 
 instance Explainable Pattern where
-  autoExplainsOf _ = []
+  autoExplainsOf _ _ = []
   explForObj pat ExplPattern {explObjP = patname} = name pat ==patname
   explForObj _ _ = False
   autoExpl2Explain pat (Because lang ec) =
@@ -117,10 +117,10 @@ format fmtType expls
  where formatOne ::  ExplainOutputFormat -> Explanation -> String
        formatOne PlainText expl = explainContent2String (explCont expl)
 
-explains2Inlines :: [Explanation] -> [Inline]
-explains2Inlines expls = 
-   case expls of
-      []   -> []
-      e:es -> explainContent2Inlines (explCont e) 
-              ++ [Str " "]++ explains2Inlines es
-       
+explain2Blocks :: Explanation -> [Block]
+explain2Blocks e = explainContent2Blocks (explCont e)
+--   case expls of
+--      []   -> []
+--      e:es -> explainContent2Inlines (explCont e) 
+--              ++ [Str " "]++ explains2Inlines es
+--       

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),DocTheme(..),allFspecFormats)
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),DocTheme(..),allFspecFormats,defaultFlags)
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -60,6 +60,9 @@ data Options = Options { contextName   :: Maybe String
                        , helpNVersionTexts :: [String] 
                        } deriving Show
     
+defaultFlags :: Options 
+defaultFlags = Options { language = Dutch} --TODO Verder invullen. 
+
 getOptions :: IO Options
 getOptions =
    do args     <- getArgs
@@ -124,7 +127,6 @@ getOptions =
                       , sqlPwd        = ""
                       , helpNVersionTexts = []
                       }
-
 
 
 

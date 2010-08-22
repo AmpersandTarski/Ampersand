@@ -136,8 +136,10 @@ theTemplate flags
                , "% -- pachages used for several purposes:"
                , "\\usepackage{theorem}"
                , "\\usepackage{amssymb}"
-               , "\\usepackage{amsmath}       % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
+               , "\\usepackage{amsmath}         % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
             --   , "\\usepackage{hyperref}"
+            --   , "\\usepackage{ucs}             % Provides various features for UTF8 (internationalization) stuff"
+            --   , "\\usepackage[utf8x]{inputenc} %"
                ] ++
                ( case theme flags of
                   ProofTheme -> [ "\\usepackage[landscape]{geometry}"

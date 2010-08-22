@@ -20,7 +20,7 @@ import Languages        (Lang(..))
 import PredLogic        (showPredLogic)
 import Options hiding   (services) --importing (Options(..),FspecFormat(..),DocTheme(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
-import Rendering.AdlExplanation (explain,explains2Inlines)
+import Rendering.AdlExplanation (explain,explain2Blocks)
 import Rendering.ClassDiagram
 import Switchboard      (switchboard1)
 import Classes.Graphics (makePicture)
@@ -314,9 +314,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                    ,Str "that have not been used in previous paragraphs."]
                                       )
                                      ]
-                              p:_ -> concat (map singleExplain (explain fSpec flags p))
-                  where singleExplain :: Explanation -> [Block]
-                        singleExplain e = [Para (explains2Inlines [e])]
+                              p:_ -> concat (map explain2Blocks (explain fSpec flags p))
+
               themeName = case nm of
                              Just s -> s
                              Nothing  -> "" 
@@ -329,10 +328,10 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
 				                                    []  -> []
 				                                    [c] -> [ Str $ "In deze sectie wordt het concept "
 				                                           , Emph [Str $ c]
-				                                           , Str $ "voor het eerst gebruikt. "]
+				                                           , Str $ " geïntroduceerd (voor het eerst gebruikt.)"]
 				                                    cs  -> [ Str $ "In deze sectie worden de concepten "
 				                                           , Str $ commaNL "en" cs
-				                                           , Str $ "voor het eerst gebruikt. "]
+				                                           , Str $ " geïntroduceerd (voor het eerst gebruikt.)"]
 				                                  )
 				                           ]
 				               English ->  [ Para (case [name cpt|(cpt,_)<-xs] of
@@ -358,10 +357,11 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                                    ++ 
                                                                    (if (null (explains cd))
                                                                       then [] 
-                                                                      else [Para (explains cd)])
+                                                                      else (explains cd)
+                                                                   )
                                                                   )
                                                       
-                      explains cd = explains2Inlines (explain fSpec flags cd) 
+                      explains cd = explains2Blocks (explain fSpec flags cd) 
 
 
 --                | null ccds = []
@@ -391,7 +391,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (restBlocks,c2) = sctds ds' c1
                       declBlock :: Declaration -> Counter -> ([Block],Counter)
                       declBlock d2 cnt = ([DefinitionList [( [Str ("Feittype "++show(getDecl cnt)++":")]
-                                                            ,[[Para ([symReqLabel d2]++ explains2Inlines (explain fSpec flags d2))]]
+                                                            ,   [[Para ([symReqLabel d2])]
+                                                             ++ explains2Blocks (explain fSpec flags d2)]
                                                            )
                                                           ]
                                           ]
@@ -408,7 +409,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule -> Counter -> ([Block],Counter)
                       ruleBlock r2 cnt = ([DefinitionList [( [Str ("Requirement "++show(getRule cnt)++":")]
-                                                            ,[[Para ([symReqLabel r2]++ explains2Inlines (explain fSpec flags r2))]]
+                                                            ,  [[Para ([symReqLabel r2])]
+                                                             ++ explains2Blocks (explain fSpec flags r2)]
                                                            )
                                                           ]
                                           ]
@@ -548,7 +550,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
          blocks  :: [([Inline], [[Block]])]
          blocks = sctRules ++ sctSignals
          sctMotivation
-          = [Para (explains2Inlines (explain fSpec flags pat))]
+          = explains2Blocks (explain fSpec flags pat)
          (sctRules,   i',  seenCrs, seenDrs) = dpRule patRules i seenConcepts seenDeclarations
          (sctSignals, i'', seenCss, seenDss) = dpRule patSignals i' seenCrs seenDrs
          patRules     = [r| r<-rules fSpec,   r_pat r==name pat, r_usr r]
@@ -557,11 +559,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
     dpRule (r:rs) n seenConcs seenDeclarations
      = ( [ ( [Str (name r)]
-           , [ [ Plain (explains2Inlines(explain fSpec flags d))|d<-nds] ++
+           , [ (concat [explains2Blocks(explain fSpec flags d)|d<-nds]) ++
                [ Plain (text1)| not (null nds)] ++
                pandocEqnArray [ ([TeX ("\\id{"++latexEsc (name d)++"}")], [TeX ":"], [TeX ("\\id{"++latexEsc (name (source d))++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++latexEsc (name (target d))++"}"), symDefLabel d])
                               |d<-nds] ++
-               [ Plain (explains2Inlines(explain fSpec flags r))] ++
+               (explains2Blocks(explain fSpec flags r)) ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
                pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
@@ -1121,3 +1123,5 @@ incDecl,incRule :: Counter -> Counter
 incDecl x = x{getDecl = getDecl x + 1}
 incRule x = x{getRule = getRule x + 1}
 
+explains2Blocks :: [Explanation] -> [Block]
+explains2Blocks es = concat (map explain2Blocks es)

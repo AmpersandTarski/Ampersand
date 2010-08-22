@@ -21,6 +21,7 @@ where
    import Languages        (Lang(..),plural)
    import Char             (toLower)
    import Text.Pandoc
+   import Options
    
    type Morphisms = [Morphism]
    data Morphism  = 
@@ -283,10 +284,8 @@ where
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
 
    instance SelfExplained Declaration where
-     autoExplain d = [inlines2AutoExplain Dutch   dutchInlines] 
-                 ++  [inlines2AutoExplain English englishInlines]
---    autoExplain d = [string2AutoExplain Dutch dutchString]      --TODO: Omklussen naar block2AutoExplain. De uitvoer wordt 
---                  ++[string2AutoExplain English englishString]
+     autoExplain flags d = [explainParagraph flags{language=Dutch}   dutchInlines] 
+                       ++  [explainParagraph flags{language=English} englishInlines]
       where dutchInlines 
                  | null ([Sym,Asy]         >- multiplicities d) = [Emph [Str (name d)]]
                                                                 ++[Str " is een eigenschap van "]

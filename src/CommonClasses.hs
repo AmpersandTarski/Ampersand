@@ -13,6 +13,7 @@
    import Strings(chain)
    import Data.Explain
    import Data.Maybe
+   import Options 
    ----------------------------------------------
    class Identified a where
     name   :: a->String
@@ -47,7 +48,7 @@
 
    class SelfExplained a where
     -- TODO: Samenvoegen met Explained
-    autoExplain :: a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
+    autoExplain :: Options -> a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
 
    class Conceptual a where
     -- | the set of all instances in a concept (if we know it, Nothing otherwise)

@@ -15,6 +15,7 @@
    import ShowADL     (showADL)
    import Languages
    import Strings     (trim)
+   import Options     (defaultFlags, Options(..))
    import Data.Explain(AutoExplain,string2AutoExplain)
    keywordstxt :: [String]
    keywordstxt       = [ "CONTEXT", "ENDCONTEXT", "EXTENDS"
@@ -246,8 +247,8 @@
                          where defd=error ("!Fatal (module CC 145): defd undefined in pRuleDef "++showADL expr)
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
                         string2ExplainAllLang :: String -> [AutoExplain]      -- TODO: This is a workaround to cope with the fact that in the current ADL syntax, it cannot be determined in what language the EXPLANATION part of the rule is written in. 
-                        string2ExplainAllLang str = [string2AutoExplain English str]
-                                                 ++ [string2AutoExplain Dutch str]
+                        string2ExplainAllLang str = [string2AutoExplain (defaultFlags {language=Dutch}) str]
+                                                 ++ [string2AutoExplain (defaultFlags {language=English}) str]
                         
    pGen             :: Parser Token Gen
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)

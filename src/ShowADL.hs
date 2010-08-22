@@ -20,6 +20,7 @@
    import Strings                         (chain)
    import Auxiliaries                     (eqCl,showL)
    import Data.Explain
+   import Options (defaultFlags,Options(..))
  --  import TypeInferenceEngine
  --  import TypeInference.ITree
  
@@ -405,9 +406,9 @@
                            | d<-declarations fSpec, not (null (decpopu d))]
              ds = [d| d@Sgn{}<-vrels fSpec, decusr d]
 {-
-   instance SelfExplained ECArule where   --TODO: Wat doet deze definitie in ShowADL???
-     autoExplain r
-      = [string2AutoExplain English 
+   instance SelfExplained ECArule where   --TODO: Wat doet deze definitie in ShowADL??? (Omdat ShowADL er in wordt gebruikt....)
+     autoExplain flags r
+      = [string2AutoExplain (defaultFlags {language = English}) 
           ( case p of
              Chc {} -> "Pick from "++show (length (paCls p))++" options, in order to maintain "++shMotivEng (paMotiv p)++"."
              All {} -> "Execute "++show (length (paCls p))++" ECA-rules, in order to maintain "++shMotivEng (paMotiv p)++"."
@@ -419,7 +420,7 @@
              Nop {} -> "Do nothing to maintain "++shMotivEng (paMotiv p)++", because it is still valid."
              Blk {} -> "Abort to prevent violation of "++shMotivEng (paMotiv p)
            )] ++
-         [string2AutoExplain Dutch
+         [string2AutoExplain (defaultFlags {language = Dutch})
            ( case p of
              Chc {} -> "Kies uit "++show (length (paCls p))++" opties, om te garanderen dat "++shMotivDut (paMotiv p)++"."
              All {} -> "Voer "++show (length (paCls p))++" ECA-rules uit, om te garanderen dat "++shMotivDut (paMotiv p)++"."

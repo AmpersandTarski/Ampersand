@@ -16,7 +16,9 @@ where
                                         , SelfExplained(..))
    import TypeInference.InfLibAG        ( InfTree(..) )
    import Data.Explain
-   import Languages                                        
+   import Languages  
+   import Options (defaultFlags,Options(..))
+                                         
    type Rules = [Rule]
    data Rule =
   -- Ru c antc p cons expla sgn nr pn
@@ -67,7 +69,7 @@ where
     target r  = snd (rrtyp r)
 
    instance SelfExplained Rule where
-    autoExplain  r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
+    autoExplain  flags r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
 
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)
@@ -157,7 +159,7 @@ where
                         Asy-> i$sign$Fix [flp r,r]
                         Trn-> r
                         Rfx-> r
-           , rrxpl = [string2AutoExplain English (
+           , rrxpl = [string2AutoExplain (defaultFlags {language = English}) (
                       case prp of
                         Sym-> name d++"["++name (source d)++"*"++name (source d)++"] is symmetric."    
                         Asy-> name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetric."
@@ -168,7 +170,7 @@ where
                         Inj-> name d++"["++name (source d)++"*"++name (target d)++"] is injective"
                         Tot-> name d++"["++name (source d)++"*"++name (target d)++"] is total"
                         )] ++
-                     [string2AutoExplain Dutch (
+                     [string2AutoExplain (defaultFlags {language = Dutch}) (
                       case prp of
                         Sym-> name d++"["++name (source d)++"*"++name (source d)++"] is symmetrisch."    
                         Asy-> name d++"["++name (source d)++"*"++name (source d)++"] is antisymmetrisch."
