@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,strReplace
- ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc,sqlAttConcept
+ ,selectExpr,selectExprBrac,addSlashes,sqlExprTrg,sqlExprSrc
  ,sqlPlugFields,indentBlock,phpShow,isOne,addToLast
  ,pDebug,noCollide,indentBlockBetween -- used in Code.hs
  ) where
-   import Char(isDigit,digitToInt,intToDigit,isAlphaNum,toLower)
+   import Char(isDigit,digitToInt,intToDigit,isAlphaNum)
    import Strings (chain)
    import Adl
    import ShowADL
@@ -25,17 +25,31 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    
    class Concatable a where
      toM :: a -> Maybe String
+     (+<+) :: a -> String -> a
+     (+>+) :: String -> a -> a
+     (+|+) :: a -> a -> a
    instance Concatable [Char] where
      toM a = Just a
+     (+<+) = (++)
+     (+>+) = (++)
+     (+|+) = (++)
    instance Concatable (Maybe [Char]) where
      toM a = a
+     (+<+) = (+++)
+     (+>+) = (+++)
+     (+|+) = (+++)
+   
+   infixr 4 +++
+   infixr 4 +>+
+   infixr 4 +<+
+   infixr 4 +|+
+   
+   (+++) :: (Concatable a,Concatable b) => a->b->Maybe String
+   (+++) a b = listToMaybe [a'++b'|Just a'<-[toM a],Just b'<-[toM b]]
    
    filterEmpty :: (Eq a) => [Maybe [a]] -> [Maybe [a]]
    filterEmpty = (filter (\x->not ((==) (Just []) x)))
    
-   (+++) :: (Concatable a,Concatable b)=> a->b-> (Maybe String)
-   infixr 4 +++
-   a +++ b = listToMaybe [a'++b'|Just a'<-[toM a],Just b'<-[toM b]]
    
    cChain :: (Concatable t, Concatable a) => a -> [t] -> Maybe [Char]
    cChain _ [] = Just []
@@ -174,7 +188,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExpr fSpec i src trg (F (Tm (V _ (s,_))_:fs@(_:_))) | s==cptS
      = selectGeneric i ("1",src) ("fst."++trg',trg)
                        (selectExprBrac fSpec i src' trg' (F fs) +++ " AS fst")
-                       ("fst."++trg'++" IS NOT NULL")
+                       (Just$ "fst."++trg'++" IS NOT NULL")
                        where src' = noCollideUnlessTm' (F fs) [trg'] (quote$sqlExprSrc fSpec (F fs))
                              trg' = quote$sqlExprTrg fSpec (F fs)
    selectExpr fSpec i src trg (F (s1@(Tm (Mp1{})_):(s2@(Tm (V _ _)_):(s3@(Tm (Mp1{})_):fx@(_:_))))) -- to make more use of the thing below
@@ -186,7 +200,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExpr fSpec i src trg (F (e'@(Tm sr@(Mp1{})_):(f:fx)))
       = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                         (selectExprBrac fSpec i src' trg' (F (f:fx))+++" AS fst")
-                        ("fst."++src'++" = "++mph1val sr)
+                        (Just$"fst."++src'++" = "++mph1val sr)
                         where src' = quote$sqlExprSrc fSpec e'
                               trg' = noCollideUnlessTm' (F (f:fx)) [src'] (quote$sqlExprTrg fSpec (F (f:fx)))
 
@@ -196,7 +210,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
        else
        selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         ((selectExprBrac fSpec i src' mid' e')+++" AS fst, "+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
-                        ("fst."++src'++" IS NOT NULL")
+                        ("fst."++src'+++" IS NOT NULL")
             where src' = quote$sqlExprSrc fSpec e'
                   mid' = quote$sqlExprTrg fSpec e'
                   mid2'= quote$sqlExprSrc fSpec f
@@ -272,29 +286,12 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExpr _     _ _   _   (F  [] ) = error ("!Fatal (module RelBinGenBasics 242): Cannot create query for F [] because type is unknown")
 
    selectExpr fSpec i src trg (Tm (V _ (s,t))_   ) 
-         | s==cptS && t==cptS = selectGeneric i ("1",src) ("1",trg)
-                                                ("(SELECT 1) AS csnd")
-                                                ("1"
-                                                )
-         | s==cptS            = selectGeneric i ("1",src) ("csnd."++trg',trg) 
-                                                (quote (sqlConcept fSpec t) ++ " AS csnd")
-                                                ("1"
-                                                )
-         | t==cptS            = selectGeneric i ("cfst."++src',src) ("1",trg)
-                                                (quote (sqlConcept fSpec s) ++ " AS cfst")
-                                                ("1"
-                                                )
-         | otherwise          = selectGeneric i ("cfst."++src',src) ("csnd."++trg'',trg)
-                                                ((quote (sqlConcept fSpec s) ++ " AS cfst, ")+++selectExprBrac fSpec i trg'' trg'' (Tm (mIs t)(-1))+++" AS csnd")
-                                                ("1"
-                                                )
-                        where src'  = if s==Anything
-                                      then error ("!Fatal (module RelBinGenBasics 262): selectExpr fSpec i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
-                                      else sqlAttConcept fSpec s
-                              trg'  = if t==Anything
-                                      then error ("!Fatal (module RelBinGenBasics 265): selectExpr fSpec i "++src++" "++trg++" (Tm (V _ ("++name s++","++name t++"))   )")
-                                      else sqlAttConcept fSpec t
-                              trg'' = noCollide' [src'] trg'
+    = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
+                  | (s',src') <- concNames "cfst" s
+                  , (t',trg') <- concNames "cfst" t
+                  , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else chain ", " (s'++t')
+                  ]
+    where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS csnd"],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c True)(-1))]
 
    selectExpr fSpec i src trg (Tm (I _ s _ _) _  ) | s == cptS = selectExpr fSpec i src trg (Tm (V [] (s,s))(-1))
 
@@ -303,7 +300,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
  --src*trg zijn strings die aangeven wat de gewenste uiteindelijke typering van de query is (naar php of hoger in de recursie)
  --het is dus wel mogelijk om een -V te genereren van het gewenste type, maar niet om een V te genereren (omdat de inhoud niet bekend is)
-   selectExpr _ i src trg (Fux [] ) = selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
+   selectExpr _ i src trg (Fux [] ) = toM$ selectGeneric i ("1",src) ("1",trg) ("(SELECT 1) AS a") ("0")
    selectExpr fSpec i src trg (Fux es') = (phpIndent i) ++ "(" +++ (selectExprInUnion fSpec i src trg (Fux es')) +++ (phpIndent i) ++ ")"
    selectExpr fSpec i src trg (Cpx (Tm (V _ _)_)) = selectExpr fSpec i src trg (Fux [])
    selectExpr fSpec i src trg (Cpx e' )
@@ -408,14 +405,9 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    selectExprBrac fSpec i src trg (Fdx [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (Fix [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg (Fux [e'])                             = selectExprBrac fSpec i src trg e'
-   selectExprBrac fSpec _ src trg (Tm m@I{} _)
-    | lowerCase(quote$sqlMorSrc fSpec m)==(quote$lowerCase$src)
-      && lowerCase(quote$sqlMorTrg fSpec m)==(quote$lowerCase$trg) 
-      = Just$ quote (sqlConcept fSpec (source m))
-   selectExprBrac fSpec _ src trg (Tm m@Mph{} _)
-    | lowerCase(quote$sqlMorSrc fSpec m)==(quote$lowerCase$src)
-      && lowerCase(quote$sqlMorTrg fSpec m)==(quote$lowerCase$trg) 
-      = Just (quote$sqlMorName fSpec m)
+   selectExprBrac fSpec i src trg e'@(Tm{})
+    = listToMaybe ([quote$p|(p,s,t)<-sqlRelPlugNames fSpec e',quote s==quote src,quote t==quote trg]
+                ++ maybeToList (selectExpr fSpec i src trg e'))
    selectExprBrac fSpec i src trg expr
     = phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    
@@ -461,8 +453,8 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
 
    selectExprMorph fSpec i src trg mph@V{}
     = selectGeneric i (src',src) (trg',trg)
-                      (quote (sqlConcept fSpec (source mph)) ++ " AS vfst, "++quote (sqlConcept fSpec (target mph)) ++ " AS vsnd")
-                      (src'++" IS NOT NULL AND "++trg'++" IS NOT NULL")
+                      (quote (sqlConcept fSpec (source mph)) +++ " AS vfst, "++quote (sqlConcept fSpec (target mph)) ++ " AS vsnd")
+                      (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
     where src'="vfst."++sqlAttConcept fSpec (source mph)
           trg'="vsnd."++sqlAttConcept fSpec (target mph)
    selectExprMorph _ _ src trg mph@Mp1{}
@@ -472,26 +464,27 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
     | src == trg = Just$ "SELECT "++mph1val mph++" AS "++src
     | otherwise  = Just$ "SELECT "++mph1val mph++" AS "++src++", "++mph1val mph++" AS "++trg
    selectExprMorph fSpec i src trg mph -- made for both Mph and I
-    | isIdent mph = selectGeneric i (quote$sqlAttConcept fSpec (source mph),src) (quote$sqlAttConcept fSpec (target mph),trg) (quote (sqlConcept fSpec (source mph))) "1"-- (quote (sqlConcept fSpec (source mph))++" IS NOT NULL")
--- note that sqlMorSrc may be called only with I{} and Mph{} patterns, which happens to be the case. Please take care when editing...
-    | otherwise   = selectGeneric i (quote$sqlMorSrc fSpec mph,src) (quote$sqlMorTrg fSpec mph,trg) (quote$sqlMorName fSpec mph) "1"
+    = listToMaybe [selectGeneric i (quote s,src) (quote t,trg) (quote p) "1"
+                  | (p,s,t)<-sqlRelPlugNames fSpec (Tm mph (-1))
+                  ]
+                  
 
    selectExists' :: (Concatable a,Concatable b) => Int -> a -> b -> (Maybe String)
    selectExists' i tbl whr
     = ("SELECT *" ++
        phpIndent i ++ "  FROM ") +++ tbl +++
       (phpIndent i ++ " WHERE ") +++ whr
-   selectGeneric :: (Concatable a, Concatable b) =>
+   selectGeneric :: (Concatable a) =>
                     Int             -- ^ indentation
                  -> (String,String) -- ^ (source field,source table)
                  -> (String,String) -- ^ (target field,target table)
                  -> a               -- ^ tables
-                 -> b               -- ^ the WHERE clause
-                 -> Maybe String
+                 -> a               -- ^ the WHERE clause
+                 -> a
    selectGeneric i src trg tbl whr
     = selectcl ++
-      phpIndent i ++ "  FROM "+++tbl+++
-      (if toM whr==Just "1" then Just "" else (phpIndent i ++ " WHERE ")+++whr)
+      phpIndent i ++ "  FROM " +>+ 
+      (if toM whr==Just "1" then tbl else tbl+|+(phpIndent i ++ " WHERE "+>+whr))
       where selectcl | snd src=="" && snd trg=="" = error ("!Fatal (module RelBinGenBasics 461): Source and target are \"\", use selectExists' for this purpose")
                      | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
                      | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
@@ -524,7 +517,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
    addSlashes "" = ""
    
 
-   sqlRel :: Fspc -> Morphism -> (Plug,SqlField,SqlField)
+{-   sqlRel :: Fspc -> Morphism -> (Plug,SqlField,SqlField)
    sqlRel fSpec m@Mph{}
     = if null pms then error ("!Fatal (module RelBinGenBasics 495): no plug found for morphism "++showADLcode fSpec m) else
       if not (null (tail pms)) then error ("!Fatal (module RelBinGenBasics 496): multiple plugs found for morphism "++showADLcode fSpec m) else
@@ -537,6 +530,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
       where pcs = [(p,col,col)|p@PlugSql{}<-plugs fSpec, (c,col)<-cLkpTbl p, c==target m]
    sqlRel fSpec m
     = error ("!Fatal (module RelBinGenBasics 505): no plug exists for "++showADLcode fSpec m) 
+-}
 
 -- WAAROM bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
@@ -547,6 +541,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                             | plug@PlugSql{}<-plugs fSpec
                             , (fld0,fld1)<-sqlPlugFields plug e
                             ] 
+
+   sqlRelPlugNames :: Fspc -> Expression -> [(String,String,String)] --(plug,source,target)
+   sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
+   
    sqlPlugFields :: Plug -> Expression -> [(SqlField, SqlField)]
    sqlPlugFields plug e' 
     = [(fld0,fld1)| fld0<-[f|f<-fields plug,target (fldexpr f)==source e']
@@ -580,10 +578,6 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   || (  (se == te) && isIdent e'
                      && (isSur se)
                      )
-{- obsolete?      , --IF the expression is the identity relation, then I want a plug designed for the concept of the identity i.e. the source of the plug must be equal to the type of the identity.
-                    --REMARK -> while user-defined plugs are on top of the list, they are applied before generated plugs , as wanted ("head cs"). But it's a bit coincidential if you ask GMI.
-                    case e' of (Tm (I{}) _) -> elem (source e') (map (source.fldexpr) (fields plug))
-                               _ -> True -}
                   ]
      where -- simplF: replace a;a~ by I if INJ&TOT
       simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
@@ -600,48 +594,48 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
        = error ("!Fatal (module RelBinGenBasics 566): Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
                -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
       replF ks = F (ks)
+
    sqlExprSrc :: Fspc->Expression -> String
    sqlExprSrc fSpec expr = ses expr
     where
-      ses (F [])         = error ("!Fatal (module RelBinGenBasics 572): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (F [])         = error ("!Fatal (module RelBinGenBasics 600): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (F [f])        = ses f
       ses (F fs)         = ses (head fs)
-      ses (Fux [])        = error ("!Fatal (module RelBinGenBasics 575): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fux [])        = error ("!Fatal (module RelBinGenBasics 603): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fux [f])       = ses f
       ses (Fux fs)        = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fix [])        = error ("!Fatal (module RelBinGenBasics 578): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fix [])        = error ("!Fatal (module RelBinGenBasics 606): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fix [f])       = ses f
       ses (Fix fs)        = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fdx [])        = error ("!Fatal (module RelBinGenBasics 581): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fdx [])        = error ("!Fatal (module RelBinGenBasics 609): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fdx [f])       = ses f
       ses (Fdx fs)        = ses (head fs)
       ses (Cpx e)         = ses e
       ses (K0x e)         = ses e
       ses (K1x e)         = ses e
       ses (Tc e)         = ses e
-      ses (Tm m@Mp1{} _) = "Att"++(name (mph1typ m))
-      ses (Tm m@I{} _)   = sqlMorSrc fSpec m
-      ses (Tm m@Mph{} _) = sqlMorSrc fSpec m
-      ses (Tm m@V{} _)   = sqlMorSrc fSpec (mIs (source m)) -- There is no sql representation of V[s,t], but the one we need is I[s].
-
+      ses (Tm m n) = case m of
+                      Mp1{} -> "Mp"++(name (mph1typ m))
+                      V{} -> ses (Tm I{mphats=[],mphgen=source m,mphspc=source m,mphyin=True} n)
+                      _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm m n)]++[show m])
    sqlExprTrg :: Fspc->Expression -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 
-   sqlMorName :: Fspc -> Morphism -> String
-   sqlMorName fSpec m@I{}   =    name p where (p,_,_) = sqlRel fSpec m
-   sqlMorName fSpec m@Mph{} =    name p where (p,_,_) = sqlRel fSpec m
-   sqlMorName fSpec m       = error ("!Fatal (module RelBinGenBasics 599): sqlMorName fSpec ("++showADLcode fSpec m++") has no representation.")
+--   sqlMorName :: Fspc -> Morphism -> String
+--   sqlMorName fSpec m@I{}   =    name p where (p,_,_) = sqlRel fSpec m
+--   sqlMorName fSpec m@Mph{} =    name p where (p,_,_) = sqlRel fSpec m
+--   sqlMorName fSpec m       = error ("!Fatal (module RelBinGenBasics 599): sqlMorName fSpec ("++showADLcode fSpec m++") has no representation.")
    
    -- these functions (USED TO BE: GMI 4 mrt 2010) exact copies of sqlRelSrc and sqlRelTrg!
-   sqlMorSrc  :: Fspc -> Morphism -> String
-   sqlMorSrc  fSpec m@I{}   = fldname s where (_,s,_) = sqlRel fSpec m
-   sqlMorSrc  fSpec m@Mph{} = fldname (if inline m then s else t) where (_,s,t) = sqlRel fSpec m
-   sqlMorSrc  fSpec m       = error ("!Fatal (module RelBinGenBasics 605): sqlMorSrc fSpec ("++showADLcode fSpec m++") has no representation.")
+--   sqlMorSrc  :: Fspc -> Morphism -> String
+--   sqlMorSrc  fSpec m@I{}   = fldname s where (_,s,_) = sqlRel fSpec m
+--   sqlMorSrc  fSpec m@Mph{} = fldname (if inline m then s else t) where (_,s,t) = sqlRel fSpec m
+--   sqlMorSrc  fSpec m       = error ("!Fatal (module RelBinGenBasics 605): sqlMorSrc fSpec ("++showADLcode fSpec m++") has no representation.")
 
-   sqlMorTrg  :: Fspc -> Morphism -> String
-   sqlMorTrg  fSpec m@I{}   = fldname t where (_,_,t) = sqlRel fSpec m
-   sqlMorTrg  fSpec m@Mph{} = fldname (if inline m then t else s) where (_,s,t) = sqlRel fSpec m
-   sqlMorTrg  fSpec m       = error ("!Fatal (module RelBinGenBasics 610): sqlMorTrg fSpec ("++showADLcode fSpec m++") has no representation.")
+--   sqlMorTrg  :: Fspc -> Morphism -> String
+--   sqlMorTrg  fSpec m@I{}   = fldname t where (_,_,t) = sqlRel fSpec m
+--   sqlMorTrg  fSpec m@Mph{} = fldname (if inline m then t else s) where (_,s,t) = sqlRel fSpec m
+--   sqlMorTrg  fSpec m       = error ("!Fatal (module RelBinGenBasics 610): sqlMorTrg fSpec ("++showADLcode fSpec m++") has no representation.")
 
 -- sqlConcept gives the name of the plug that contains all atoms of concept c.
    sqlConcept :: Fspc -> Concept -> String
@@ -668,71 +662,9 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,sqlRelPlugs,commentBlock,s
                   where cs = [fldname f|f<-fields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         appname =  name fSpec
 
-   lowerCase :: String->String
-   lowerCase = map toLower -- from Char
-
-
-
 --- uniqueNames p:ps | ((name p++(name source p)) `elem` (names ps)) = p:(uniqueNames ps)
    
    addToLast :: [a] -> [[a]] -> [[a]]
    addToLast _ [] = error "!Fatal (module RelBinGenBasics 645): addToLast: empty list"
    addToLast s as = (init as)++[last as++s]
-{-
-   --copied from revision 569, and isolated these functions for composing SELECT queries only
-   sqlRelPlugs_sel :: Fspc -> Expression -> [(Plug,SqlField,SqlField)] --(plug,source,target)
-   sqlRelPlugs_sel fSpec e' = rd [ (plug,sf,tf)
-                             | plug@PlugSql{}<-plugs fSpec
-                             , (sf,tf)<-sqlPlugFields_sel plug e'
-                             ]
-   sqlPlugFields_sel :: Plug -> Expression -> [(SqlField, SqlField)]
-   sqlPlugFields_sel plug e'
-                = [ (sf,tf)
-                  | sf<-[f|f<-fields plug,target (fldexpr f)==source e']
-                  , let se = fldexpr sf
-                  , tf<-[f|f<-fields plug,target (fldexpr f)==target e']
-                  , let te = fldexpr tf
-                  , (  (isTrue $disjNF$Fu [Cp e',simplF [flp se,te]])
-                    && (isFalse$disjNF$Fi [Cp e',simplF [flp se,te]])
-                    )
-                  {- the above should be enough.. but the relation algebra calculations
-                     are not good enough yet. In particular:
-                       isFalse ((I/\x);e /\ -e)
-                     and
-                       isTrue  ((I/\e;e~);e \/ -e)
-                     do not work (these should yield True instead of False in both cases)
-                     
-                     The code below fixes exactly these ommissions
-                  -}
-                  || (isProp (se) && (te == e')
-                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')) (-1), simplF [e',flp e'] ]
-                                          ,Cp$se]))
-                  || (isProp (te) && (se == flp e')
-                     && (isTrue$disjNF$Fu [Fi [ Tm (mIs (source e')) (-1), simplF [flp e',e'] ]
-                                          ,Cp$te]))
-                  {- found another exception:
-                       isFalse (I;I /\ -I)
-                     and
-                       isTrue  (I;I \/ -I)
-                     yield False, but should yield True
-                  -}
-                  || (  (se == te) && isIdent e'
-                     && (isSur se)
-                     )
-                  ]
-     where -- simplF: replace a;a~ by I if INJ&TOT
-      simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
-        where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
-               -- null occurs especialy in cases of [I;e] and [e;I]
-      replF (k:k2:ks) | k == flp k2 && isInj k && isTot k
-             = if null ks then Tm(mIs$source k)(-1) else replF ks
-      replF [a] = F [a]
-      replF (k:k2:ks) | fs /= [k2:ks] -- ie: if something is replaced by replF
-        = if null fs then F [k,res] else replF (k:head fs) -- we might replace something again!
-        where res = replF (k2:ks)
-              fs  = [m' | F m' <- [res]]
-      replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
-       = error ("!Fatal (module RelBinGenBasics 701): Could not define a properly typed I for F[] in replF in sqlPlugFields_sel in RelBinGenBasics.hs")
-               -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
-      replF ks = F (ks)
--}
+

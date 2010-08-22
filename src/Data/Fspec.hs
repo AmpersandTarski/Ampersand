@@ -11,7 +11,6 @@ module Data.Fspec ( Fspc(..)
                   , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
-                  , WSOperation(..), WSAction(..)
                   , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
                   , datasets
                   )
@@ -39,7 +38,6 @@ module Data.Fspec ( Fspc(..)
                     , vpatterns    :: Patterns              -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Pictures              -- ^ List of pictures containing pattern pictures (in same order as patterns)
                     , vConceptDefs :: ConceptDefs          -- ^ all conceptDefs defined in the ADL-script
-                    , themes       :: [FTheme]             -- ^ generated: one FTheme for every pattern
                     , fSexpls      :: [Explanation]        -- ^ all explanations that are valid within the current specification
                     , vctxenv :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
@@ -175,7 +173,6 @@ module Data.Fspec ( Fspc(..)
                      }
 
    data FTheme = FTheme { tconcept   :: Concept
-                        , tfunctions :: WSOperations
                         , trules     :: Rules 
                         }
    {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
@@ -184,12 +181,6 @@ module Data.Fspec ( Fspc(..)
     - * {interface message references} OPTIONAL. A set of Interface Message Reference components for the ordinary messages the operation accepts or sends.
     - ..."
     -}
-   type WSOperations = [WSOperation] 
-   data WSOperation = WSOper { wsaction ::WSAction
-                             , wsmsgin  ::ObjectDefs
-                             , wsmsgout ::ObjectDefs
-                             }
-   data WSAction = WSCreate | WSRead | WSUpdate |WSDelete deriving Show
    
    data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
            --  | NoName           -- some identified objects have no name...

@@ -140,6 +140,7 @@ where
     closExprs _ = []
     genE c = case c of
                 C{}        -> cptgE c
+                DExp{}    -> (<=)  ::Concept->Concept->Bool
                 S{}        -> (<=)  ::Concept->Concept->Bool
                 Anything   -> (<=)  ::Concept->Concept->Bool
                 NOthing    -> (<=)  ::Concept->Concept->Bool
@@ -228,13 +229,8 @@ where
     
    instance Morphical Plug where
     concs     p@PlugSql{} = concs     (fields p)
-    concs     PlugPhp{} = []                       -- To be done...
     mors      p@PlugSql{} = mors      (fields p)
-    mors      PlugPhp{} = []                       -- To be done...
     morlist   p@PlugSql{} = morlist   (fields p)
-    morlist   PlugPhp{} = []                       -- To be done...
     decls     p@PlugSql{} = decls     (fields p)
-    decls     PlugPhp{} = []                       -- To be done...
     closExprs p@PlugSql{} = closExprs (fields p)
-    closExprs PlugPhp{} = []                       -- To be done...
 

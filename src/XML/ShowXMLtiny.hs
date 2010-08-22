@@ -325,13 +325,10 @@ where
      mkTag p = Tag plugType [ nameToAttr p]
                  where plugType = case p of
                                      PlugSql{} -> "PlugSql"
-                                     PlugPhp{} -> "PlugPhp" 
      mkXmlTree p 
       = Elem (mkTag p) 
           (case p of
             PlugSql{} ->  [ Elem (simpleTag "Fields") (map mkXmlTree (fields p))]
-            PlugPhp{} ->( [])-- Elem (simpleTag "Arguments") (map mkXmlTree (fields p))]
-                   --     ++[ Elem (simpleTag "Fields") (map mkXmlTree (fields p))]
           )
    instance XML SqlField where
       mkTag x = Tag "Field" (   [mkAttr "name" (fldname x)]

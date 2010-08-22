@@ -40,7 +40,6 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  , vkeys        = keyDefs context
                  , pictPatts    = [] --Nothing
                  , vConceptDefs = conceptDefs context
-                 , themes       = themes'
                  , fSexpls      = fSexpls'
                  , vctxenv      = ctxenv context
                  }
@@ -139,7 +138,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                 lowerCase = map toLower -- from Char
 -}
         vsqlplugs = map makeSqlPlug (ctxsql context)
-        vphpplugs = map makePhpPlug (ctxphp context)
+        vphpplugs = [] --map makePhpPlug (ctxphp context)
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
         -- of relations together with multiplicity constraints. That is what serviceG does.
         -- This is meant to help a developer to build his own list of services, by providing a set of services that works.
@@ -202,22 +201,8 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  (recur (trace++[c]) cl)   -- objats
                  []                        -- objstrs
            | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
-        --TODO -> assign themerules to themes and remove them from the Anything theme
-        themes' = FTheme{tconcept=Anything,tfunctions=[],trules=themerules}
-                  :(map maketheme$orderby [(wsopertheme oper, oper)
-                                          |oper<-themeoperations, wsopertheme oper /= Nothing])
         fSexpls' = explanationDeclarations context                ++
                    concat (map explanationDeclarations (patterns context))  
-        --TODO -> by default CRUD operations of datasets, possibly overruled by ECA or PHP plugs
-        themeoperations = phpoperations++sqloperations
-        phpoperations =[makeDSOperation$makePhpPlug phpplug | phpplug<-(ctxphp context)]
-        sqloperations =[oper|obj<-ctxsql context, oper<-makeDSOperations (vkeys fSpec) obj]
-        --query copied from FSpec.hs revision 174
-        themerules = [r|p<-patterns context, r<-rules p++signals p]
-        maketheme (Just c,fs) = FTheme{tconcept=c,tfunctions=fs,trules=[]}
-        maketheme _ = error("!Fatal (module ADL2Fspec 235): function makeFspec.maketheme: The theme must involve a concept.")
-        orderby :: (Eq a) => [(a,b)] ->  [(a,[b])]
-        orderby xs =  [(x,[y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
 
 {- makePlugs computes a set of plugs to obtain wide tables with little redundancy.
    First, we determine the kernels for all plugs.
@@ -311,13 +296,13 @@ So the first step is create the kernels ...   -}
                           | cl<-eqCl (map toLower.name.source) rs
                           , entry<-if length cl==1 then [(r,name r++name (source r))|r<-cl] else [(r,name r++show i)|(r,i)<-zip cl [(0::Int)..]]]
 
--- makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
+-- | makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
    makeSqlPlug :: ObjectDef -> Plug
    makeSqlPlug obj = PlugSql (name obj)             -- plname
                              makeFields             -- fields
-                             cptflds                -- cLkpTbl -- TODO: invullen!
-                             mphflds                -- mLkpTbl -- TODO: invullen!
-                             (ILGV Eenvoudig)       -- plfpa
+                             cptflds                -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+                             mphflds                -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+                             (ILGV Eenvoudig)       -- functie punten analyse
       where
       --TODO: cptflds and mphflds assume that the user defined plug is a concept plug: 
       --      -> containing just one expression equivalent to the identity relation
@@ -356,81 +341,6 @@ So the first step is create the kernels ...   -}
           ('I':'d':_) -> SQLId 
           ('B':'o':'o':'l':_) -> SQLBool
           _ -> SQLVarchar 255 --TODO number
-
-   makePhpPlug :: ObjectDef -> Plug
-   makePhpPlug plug = PlugPhp{args=makeArgs,returns=makeReturns,function=PhpAction{action=makeActiontype,on=[]}
-                             ,phpfile="phpPlugs.inc.php",plname=name plug,plfpa=KGV Eenvoudig}
-      where
-      makeActiontype = head $ [case str of {"SELECT"->Read;
-                                            "CREATE"->Create;
-                                            "UPDATE"->Update;
-                                            "DELETE"->Delete;
-                                            _ -> error $ "!Fatal (module ADL2Fspec 341): Choose from ACTION=[SELECT|CREATE|UPDATE|DELETE].\n"  
-                                                         ++ show (objpos plug)
-                                           }
-                     | strs<-objstrs plug,'A':'C':'T':'I':'O':'N':'=':str<-strs]
-                     ++ [error $ "!Fatal (module ADL2Fspec 345): Specify ACTION=[SELECT|CREATE|UPDATE|DELETE] on phpplug.\n"  ++ show (objpos plug)]
-      makeReturns = head $ [PhpReturn {retval=PhpObject{objectdf=oa,phptype=makePhptype oa}}
-                           | oa<-objats plug, strs<-objstrs oa,"PHPRETURN"<-strs]
-                           ++ [PhpReturn {retval=PhpNull}]
-      makeArgs = [(i,PhpObject{objectdf=oa,phptype=makePhptype oa})
-                 | (i,oa)<-zip [(1::Int)..] (objats plug), strs<-(objstrs oa), elem "PHPARG" strs]
-   makePhptype :: ObjectDef -> PhpType
-   makePhptype objat = head $ [case str of {"String"->PhpString;
-                                            "Int"->PhpInt;
-                                            "Float"->PhpFloat;
-                                            "Array"->PhpArray;
-                                            _ -> error $ "!Fatal (module ADL2Fspec 356): Choose from PHPTYPE=[String|Int|Float|Array].\n"  
-                                                        ++ show (objpos objat)
-                                           }
-                     | strs<-objstrs objat,'P':'H':'P':'T':'Y':'P':'E':'=':str<-strs]
-                     ++ [error $ "!Fatal (module ADL2Fspec 360): Specify PHPTYPE=[String|Int|Float|Array] on PHPARG or PHPRETURN.\n"
-                                 ++ show (objpos objat)]
-
-   --DESCR -> Use for plugs that describe a single operation like PHP plugs
-   makeDSOperation :: Plug -> WSOperation
-   makeDSOperation PlugSql{} = error $ "!Fatal (module ADL2Fspec 365): function makeDSOperation: ECA plugs do not describe a single operation."
-   makeDSOperation p@PlugPhp{} = 
-       let nullval val = case val of
-                         PhpNull    -> True
-                         PhpObject{}-> False
-           towsaction x = case x of {Create->WSCreate;Read->WSRead;Update->WSUpdate;Delete->WSDelete}
-       in WSOper{wsaction=towsaction$action$function p
-                 ,wsmsgin=[objectdf arg|(_,arg)<-args p,nullval$arg]
-                 ,wsmsgout=[objectdf$retval$returns p|nullval$retval$returns p]
-                 }
-   --DESCR -> Use for objectdefs that describe all four CRUD operations like ECA plugs
-   makeDSOperations :: [KeyDef] -> ObjectDef -> [WSOperation]
-   makeDSOperations kds obj = 
-       [WSOper{wsaction=WSCreate,wsmsgin=[obj],wsmsgout=[]}
-       ,WSOper{wsaction=WSUpdate,wsmsgin=[obj],wsmsgout=[]}
-       ,WSOper{wsaction=WSDelete,wsmsgin=[obj],wsmsgout=[]}]
-     ++(if null keydefs then [readby []] else map readby keydefs)
-       where
-       keydefs = [kdats kd|kd<-kds,objtheme obj==keytheme kd]
-       readby keyobj = WSOper{wsaction=WSRead,wsmsgin=keyobj,wsmsgout=[obj]}
-   wsopertheme :: WSOperation -> Maybe Concept
-   wsopertheme oper = 
-      let msgthemes = map objtheme (wsmsgin oper++wsmsgout oper)
-      in if samethemes msgthemes then Just$head msgthemes else Nothing
-   
-   --REMARK -> called samethemes because only used in this context
-   samethemes :: (Eq a) => [a] -> Bool
-   samethemes [] = False
-   samethemes (_:[]) = True
-   samethemes (c:c':cs) = if c==c' then samethemes (c':cs) else False
-
-   --DESCR -> returns the concept on which the objectdef acts 
-   objtheme :: ObjectDef -> Concept
-   objtheme obj = case source$objctx obj of
-      S -> let objattheme = [objtheme objat|objat<-objats obj]
-           in if (not.null) objattheme then head objattheme
-              else S
-      c -> c
-
-   --DESCR -> returns the concept on which the keydef is defined 
-   keytheme :: KeyDef -> Concept
-   keytheme kd = kdcpt kd
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
    editable (Tm Mph{} _)  = True

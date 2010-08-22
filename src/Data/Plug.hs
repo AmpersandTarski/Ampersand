@@ -15,16 +15,15 @@ module Data.Plug (Plug(..),Plugs
                  ,isScalar
                  ,isBinary)
 where
-  import Adl.Concept (Concept(..),Association(..),Morphic(..))
+  import Adl.Concept (Concept(..),Association(..))
   import Adl.MorphismAndDeclaration
   import Adl.Expression (Expression(..))
   import Adl.ObjectDef (ObjectDef(..))
   import Adl.FilePos (FilePos(..))
   import Classes.Object (Object(..))
-  import CommonClasses
-  import Collection  (rd)
-  import FPA
-  import Maybe
+  import CommonClasses (Identified(..))
+  import FPA (FPA(..))
+  import Maybe (fromMaybe)
   import Auxiliaries (sort')
   
   type Plugs = [Plug]
@@ -32,22 +31,16 @@ where
                       , fields   :: [SqlField]
                       , cLkpTbl  :: [(Concept,SqlField)]           -- lookup table that links concepts to column names in the plug
                       , mLkpTbl  :: [(Morphism,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug
-                      , plfpa    :: FPA
+                      , plfpa    :: FPA -- functie punten analyse
                       }
-            | PlugPhp { args     :: PhpArgs
-                      , returns  :: PhpReturn
-                      , function :: PhpAction
-                      , phpfile  :: String
-                      , plname   :: String 
-                      , plfpa    :: FPA
-                      } deriving (Show)
-
+               deriving (Show)
+  
   instance Object Plug where
   -- TODO: PlugPHP is niet overal goed uitgewerkt. Kan later (bij de introductie van PlugPHP) tot lastige fouten leiden. 
    concept p = case p of
-     PlugSql{cLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")
-     PlugSql{}             -> head [c|(c,_)<-cLkpTbl p]
-     PlugPhp{}             -> error ("!Fatal (module Data.Plug 50): No definition for concept of plug "++plname p++".")
+     PlugSql{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")
+     PlugSql{}             -> head [source m|(m,_,_)<-mLkpTbl p]
+
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
    attributes p = case p of 
      PlugSql{} -> 
@@ -64,59 +57,28 @@ where
                  where
                    mms' = [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
                    stop = [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
-     PlugPhp{} ->  error ("!Fatal (module Data.Plug 58): No definition for attributes of plug "++plname p++".")
    ctx p = Tm (mIs (concept p)) (-1)
    populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++plname p++".")
 
+  
   isClass  :: Plug -> Bool
   isClass  p = case p of
       PlugSql{} -> not (null [1::Int|fld<-fields p, flduniq fld]) && not (null [1::Int|fld<-fields p, not (flduniq fld)])
-      PlugPhp{} ->  error ("!Fatal (module Data.Plug 67): No definition for isClass of plug "++plname p++".")
 
   isBinary :: Plug -> Bool
   isBinary p = case p of
       PlugSql{} -> length (fields p)==2 && null [fld|fld<-fields p, flduniq fld]
-      PlugPhp{} ->  error ("!Fatal (module Data.Plug 72): No definition for isBinary of plug "++plname p++".")
 
   isScalar :: Plug -> Bool
   isScalar p = case p of
       PlugSql{} -> length (fields p)<=1 && null [fld|fld<-fields p, flduniq fld]
-      PlugPhp{} ->  error ("!Fatal (module Data.Plug 77): No definition for isScalar of plug "++plname p++".")
 
   instance Association Plug where
      source p           = (source . fldexpr . head . fields) p
      target p@PlugSql{} | isBinary p = target m where (m,_,_) = head (mLkpTbl p)
      target p                        = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++plname p++", because it is not binary.")
 
-  instance Morphic Plug where
- {- TBD (nog omzetten van Rule naar (binaire) Plug
-    multiplicities _  = []
-    flp r = r{rrant = if rrsrt r == Truth
-                      then error ("!Fatal (module Rule 110): illegal call to antecedent in flp ("++show r++")")
-                      else flp (rrant r)
-             ,rrcon = flp (rrcon r)
-             ,rrtyp = (target (rrtyp r),source (rrtyp r))
-             }
-  --  isIdent r = error ("!Fatal (module Rule 116): isIdent not applicable to any rule:\n "++showHS "" r)
---    isIdent r = isIdent (normExpr r)
-    isProp r  = isProp (normExpr r)
 
-    isTrue r  = case ruleType r of
-                 Truth       -> isTrue (consequent r)
-                 Implication -> isFalse (antecedent r) || isTrue (consequent r)
-                 Equivalence -> antecedent r == consequent r
-                 Generalization -> error ("!Fatal (module Rule 88): isTrue not defined for a Generalisation.")
-    isFalse r = case ruleType r of
-                 Truth       -> isFalse (consequent r)
-                 Implication -> isTrue (antecedent r) && isFalse (consequent r)
-                 Equivalence -> notCp (antecedent r) == consequent r
-                 Generalization -> error ("!Fatal (module Rule 93): isFalse not defined for a Generalisation.")
-    isNot r   | ruleType r==Truth = isNot (consequent r)
-              | otherwise         = False  -- TODO: check correctness!
- -}
-    isSignal p@PlugSql{} | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
-    isSignal p@PlugPhp{} = error ("!Fatal (module Data.Plug 114): No definition for isSignal of plug "++plname p++".")
-    isSignal _                        = False
 
   data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
   data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)

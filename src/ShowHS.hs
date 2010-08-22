@@ -90,17 +90,6 @@ where
                           ,"       , plfpa   = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
                           ])
-           PlugPhp{} -> (chain indent 
-                          ["PlugPhp{ args = " ++ "[ "++
-                                            chain (indent++"                , ") [ "("++show i++","++showHS flags "" a++")"|(i,a)<-args plug]++
-                                            "                ]"
-                          ,"       , returns  = " ++ showHS flags "" (returns plug)
-                          ,"       , function = " ++ showHS flags "" (function plug)
-                          ,"       , phpfile  = " ++ (show.haskellIdentifier.phpfile) plug
-                          ,"       , plname   = " ++ (show.haskellIdentifier.plname) plug
-                          ,"       , plfpa    = " ++ showHS flags "" (plfpa plug)
-                          ,"       }"
-                          ])
 
    instance ShowHS PhpValue where
     showHSname _ = error ("!Fatal (module ShowHS): PhpValue is anonymous with respect to showHS flags.")
@@ -231,24 +220,12 @@ where
     showHS flags indent tme 
      = chain newindent
             ["FTheme{ tconcept   = " ++ showHS flags newindent (tconcept tme)
-            ,wrap  ", tfunctions = " indentA (\_->showHSname) (tfunctions tme)
             ,wrap  ", trules     = " indentA (\_->showHSname) (trules tme)
             ,      "}" 
             ]
             where newindent = indent ++"    "
                   indentA = newindent
 
-   instance ShowHS WSOperation where
-    showHSname _ = error ("!Fatal (module ShowHS 240): WSOperation is anonymous with respect to showHS flags.")
-    showHS _ indent wsop 
-     = chain newindent
-            ["WSOper{ wsaction   = " ++ show (wsaction wsop)
-            ,wrap  ", wsmsgin    = " indentA (\_->showHSname) (wsmsgin wsop)
-            ,wrap  ", wsmsgout   = " indentA (\_->showHSname) (wsmsgout wsop)
-            ,      "}" 
-            ]
-            where newindent = indent ++"    "
-                  indentA = newindent
 
 
 -- \***********************************************************************
@@ -274,7 +251,6 @@ where
                   ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
                   ,     ", pictPatts     = [] -- Pictures are not in this generated file." -- Plaatjes zijn niet verder uitgewerkt hier. Lijkt me ook niet nuttig. WAAROM? Stef, mee eens?
                   ,wrap ", vConceptDefs  = " indentA (showHS flags) (vConceptDefs fspec)
-                  ,     ", themes        = ["++chain "," (map (showHS flags "") (themes fspec))++"]" 
                   ,     ", fSexpls       = [ "++chain (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
                   ,     ", vctxenv       = vctxenv'"
                   ,"}" 
@@ -681,7 +657,8 @@ where
 
    instance ShowHS Concept where
     showHSname c = error ("!Fatal (module ShowHS 577): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
-    showHS _ _ c = case c of
+    showHS a b c = case c of
+                       (DExp e) -> "DExp "++showHS a b e
                        C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
                        S        -> "S "
                        Anything -> "Anything "

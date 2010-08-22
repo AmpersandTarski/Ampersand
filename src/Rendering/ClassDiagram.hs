@@ -5,7 +5,7 @@
   module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
    import CommonClasses (  Identified(name))
-   import Collection ( Collection(empty, (>-),rd) )
+   import Collection ( Collection((>-),rd) )
    import Strings (chain) 
    import Typology (Inheritance(Isa))
    import Adl
@@ -13,7 +13,6 @@
    import Data.Plug
    import Options
    import Data.Fspec
-   import Adl.ECArule
 
    --TODO -> copied from Auxiliaries because disabled (why disabled?)
    enc :: Bool -> String -> String
@@ -53,6 +52,10 @@
     nodes (OOGener g ss) = g:ss
 
 
+   instance Morphic Plug where
+    isSignal p@PlugSql{} | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
+    isSignal _                        = False
+
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
     where
@@ -81,7 +84,7 @@
        isProp d   = null([Sym,Asy]>-multiplicities d)
        scs = [d|d<-declarations fSpec] -- was: for the entire context
        lookup c = if null ps
-                  then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list"++show ps)
+                  then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
                   else head ps
                   where ps = [p|p<-plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
    shDataModel (OOclassdiagram cs as rs gs _)
