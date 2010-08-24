@@ -44,7 +44,7 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
          makeOutput
           =  case fspecFormat flags of
               FPandoc -> do verboseLn flags ("Generating to Pandoc: "++outputFile)
-                            writeFile outputFile (prettyPandoc thePandoc)
+                            writeFile outputFile (writeNative defaultWriterOptions  thePandoc)
               FRtf    -> do verboseLn flags ("Generating to Rich Text Format: "++outputFile)
                             writeFile outputFile (writeRTF ourDefaultWriterOptions{writerTemplate=theTemplate flags} thePandoc)
               FLatex  -> do --REMARK -> notice usage of fromJust

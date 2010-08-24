@@ -349,19 +349,16 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     
                   where
                       conceptNamesIntro = [name cpt|(cpt,Just _)<-xs]
-                      singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block]
+                      singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block] -- | this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
 -- SJ 24 aug 2010: Han, ik wil graag voorafgaand aan de definitie van een concept alle explanations van dat betreffende concept afgedrukt krijgen.
 -- Het onderstaande, concat (map explain2Blocks (explain fSpec flags c)), werkt niet. Kun jij dat voor me regelen?
-                      singleConceptStuff (c,mcd) = concat (map explain2Blocks (explain fSpec flags c))++
-                                                   case mcd of
-                                                       Nothing -> []
-                                                       Just cd -> ([Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))]
-                                                                   ++ 
-                                                                   (if (null (explains cd))
-                                                                      then [] 
-                                                                      else (explains cd)
-                                                                   )
-                                                                  )
+-- HJ 24 aug 2010: Ja hoor. Bij deze. 
+                      singleConceptStuff (c,mcd) = case mcd of
+                                                       Nothing -> []     -- If there is no conceptDef, then there is nothing to print, for there also cannot be any explains.
+                                                       Just cd -> explains cd 
+                                                                  ++
+                                                                  [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))]
+                                                                  
                                                       
                       explains cd = explains2Blocks (explain fSpec flags cd) 
 
@@ -392,13 +389,13 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = declBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       declBlock :: Declaration -> Counter -> ([Block],Counter)
-                      declBlock d2 cnt = ([DefinitionList [( [Str ("Eis "++show(getDecl cnt)++":")]
+                      declBlock d2 cnt = ([DefinitionList [( [Str ("Eis "++show(getEisnr cnt)++":")]
                                                             ,   [[Para ([symReqLabel d2])]
                                                              ++ explains2Blocks (explain fSpec flags d2)]
                                                            )
                                                           ]
                                           ]
-                                         ,incDecl cnt)
+                                         ,incEis cnt)
                                                        
               sctrs :: [Rule] -> Counter -> ([Block],Counter)
               sctrs xs c0 
@@ -410,13 +407,13 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ([DefinitionList [( [Str ("Eis "++show(getRule cnt)++":")]
+                      ruleBlock r2 cnt = ([DefinitionList [( [Str ("Eis "++show(getEisnr cnt)++":")]
                                                             ,  [[Para ([symReqLabel r2])]
                                                              ++ explains2Blocks (explain fSpec flags r2)]
                                                            )
                                                           ]
                                           ]
-                                         ,incRule cnt)
+                                         ,incEis cnt)
                       
                                           
 --    dpSections dpRule (rd (map r_pat (rules fSpec++signals fSpec))) [] [] 1
@@ -1115,15 +1112,16 @@ glossary _ _ _ = []  --TODO
 --showProof _  []                  = ""
 
 data Counter = Counter { --getConc :: Int
-                         getDecl :: Int
-                       , getRule :: Int
+                    --     getDecl :: Int
+                    --   , getRule :: Int
+                        getEisnr:: Int
                        }
 newCounter :: Counter
-newCounter = Counter 1 1
-incDecl,incRule :: Counter -> Counter
+newCounter = Counter 1
+incEis :: Counter -> Counter
 --incConc x = x{getConc = getConc x + 1}
-incDecl x = x{getDecl = getDecl x + 1}
-incRule x = x{getRule = getRule x + 1}
-
+--incDecl x = x{getDecl = getDecl x + 1}
+--incRule x = x{getRule = getRule x + 1}
+incEis x = x{getEisnr = getEisnr x + 1}
 explains2Blocks :: [Explanation] -> [Block]
 explains2Blocks es = concat (map explain2Blocks es)
