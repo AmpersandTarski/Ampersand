@@ -48,6 +48,12 @@ instance Explainable ConceptDef where
                           ,explRefId = versionbanner
                           ,explCont  = ec}          
 
+instance Explainable Concept where
+  autoExplainsOf _ _ = []
+  explForObj c ExplConcept{explObjCD = cd} = name c == name cd
+  explForObj _ _ = False
+--  autoExpl2Explain c (Because lang ec)   moet nog gemaakt worden... (SJ: 24 aug 2010)          
+
 instance Explainable Declaration where
   autoExplainsOf flags decl = autoExplain flags decl
   explForObj decl ExplDeclaration{explObjD = decl'} = decl == decl'

@@ -130,8 +130,8 @@ where
     showHSname _ = error ("!Fatal (module ShowHS): \"Event\" is anonymous with respect to showHS flags.")
     showHS flags indent e   
       = if take 1 indent == "\n"
-        then "On (" ++ show (eSrt e)++")" ++ indent++"   (" ++ showHS flags (indent++"    ") (eMhp e)++indent++"   )"
-        else "On (" ++ show (eSrt e)++") (" ++ showHS flags "" (eMhp e)++")"
+        then "On " ++ show (eSrt e)++indent++"   (" ++ showHS flags (indent++"    ") (eMhp e)++indent++"   )"
+        else "On " ++ show (eSrt e)++" (" ++ showHS flags "" (eMhp e)++")"
 
    instance ShowHS PAclause where
     showHSname _ = error ("!Fatal (module ShowHS): \"PAclause\" is anonymous with respect to showHS flags.")
@@ -462,7 +462,7 @@ where
        case expla of
          ExplConcept cd lng ref expl -> "ExplConcept "++showHSname cd++" "
                                           ++show lng++" "++show ref++" "++show expl
-         ExplDeclaration d lng ref expl ->  "ExplDeclaration ("++showHS flags "" d++") "
+         ExplDeclaration d lng ref expl ->  "ExplDeclaration "++showHSname d++" "
                                           ++show lng++" "++show ref++" "++show expl
          ExplRule r lng ref expl -> "ExplRule "++showHSname r++" "
                                           ++show lng++" "++show ref++" "++show expl
@@ -491,7 +491,7 @@ where
                       ,", rrtyp_proof = Nothing -- TBD generate a function for the proof."
                       ,", rrdcl = " ++ case rrdcl r of
                                         Nothing   -> "Nothing"
-                                        Just(p,d) -> "Just("++showHS flags "" p++","++showHS flags "" d++")"
+                                        Just(p,d) -> "Just("++showHS flags "" p++","++showHSname d++")"
                       ,", runum = " ++ show (runum r)
                       ,", r_pat = " ++ show (r_pat r)
                       ,", r_usr = " ++ show (r_usr r)

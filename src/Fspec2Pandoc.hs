@@ -324,17 +324,15 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                 = case xs of
                     []  -> ([],c0)
                     _   -> ( case language flags of
-				               Dutch   ->  [ Para (case [name cpt|(cpt,_)<-xs] of
+				               Dutch   ->  [ Para (case conceptNamesIntro of
 				                                    []  -> []
-				                                    [c] -> [ Str $ "In deze sectie wordt het concept "
-				                                           , Emph [Str $ c]
-				                                           , Str $ " geïntroduceerd (voor het eerst gebruikt.)"]
-				                                    cs  -> [ Str $ "In deze sectie worden de concepten "
-				                                           , Str $ commaNL "en" cs
-				                                           , Str $ " geïntroduceerd (voor het eerst gebruikt.)"]
+				                                    [c] -> [ Str $ "Deze sectie introduceert het concept "
+				                                           , Emph [Str $ c]]
+				                                    cs  -> [ Str $ "Deze sectie introduceert de concepten "
+				                                           , Str $ commaNL "en" cs]
 				                                  )
 				                           ]
-				               English ->  [ Para (case [name cpt|(cpt,_)<-xs] of
+				               English ->  [ Para (case conceptNamesIntro of
 				                                    []  -> []
 				                                    [c] -> [ Str $ "This section introduces concept "
 				                                           , Emph [Str $ c]
@@ -345,13 +343,17 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
 				                                    )
 				                           ]
                              ++
-                             concat (map singleConceptStuff xs),c0
+                             concat (map singleConceptStuff xs)
+                           , c0 -- TODO: Han, graag nog toevoegen:   +length conceptNamesIntro
                            )
                     
-                    
                   where
+                      conceptNamesIntro = [name cpt|(cpt,Just _)<-xs]
                       singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block]
-                      singleConceptStuff (c,mcd) = case mcd of
+-- SJ 24 aug 2010: Han, ik wil graag voorafgaand aan de definitie van een concept alle explanations van dat betreffende concept afgedrukt krijgen.
+-- Het onderstaande, concat (map explain2Blocks (explain fSpec flags c)), werkt niet. Kun jij dat voor me regelen?
+                      singleConceptStuff (c,mcd) = concat (map explain2Blocks (explain fSpec flags c))++
+                                                   case mcd of
                                                        Nothing -> []
                                                        Just cd -> ([Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))]
                                                                    ++ 
@@ -390,7 +392,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = declBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       declBlock :: Declaration -> Counter -> ([Block],Counter)
-                      declBlock d2 cnt = ([DefinitionList [( [Str ("Feittype "++show(getDecl cnt)++":")]
+                      declBlock d2 cnt = ([DefinitionList [( [Str ("Eis "++show(getDecl cnt)++":")]
                                                             ,   [[Para ([symReqLabel d2])]
                                                              ++ explains2Blocks (explain fSpec flags d2)]
                                                            )
@@ -408,7 +410,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ([DefinitionList [( [Str ("Requirement "++show(getRule cnt)++":")]
+                      ruleBlock r2 cnt = ([DefinitionList [( [Str ("Eis "++show(getRule cnt)++":")]
                                                             ,  [[Para ([symReqLabel r2])]
                                                              ++ explains2Blocks (explain fSpec flags r2)]
                                                            )
