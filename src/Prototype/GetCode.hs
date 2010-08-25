@@ -2,9 +2,9 @@ module Prototype.GetCode (getCodeFor) where
  import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..))
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh)
- import Adl (Concept(..),Expression(..),Morphism(..),mIs,source,target)
+ import Adl (Concept(..),Expression(..),Morphism(..),mIs,source,target,Identified(..),singleton)
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
- import Prototype.RelBinGenBasics(noCollide)
+ import Strings(noCollide)
  import Data.Fspec (Fspc)
  import Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
  
@@ -22,8 +22,9 @@ module Prototype.GetCode (getCodeFor) where
  getCodeForSingle :: Fspc->[Named CodeVar]->Named CodeVar->[[Statement]]
  getCodeForSingle _ pre post | elem post pre = [[]] -- allready known info
  getCodeForSingle fSpec pre o
+  | singleton (source e) -- als dit niet waar is, kan de variabele niet gevuld worden!!
  -- TODO: make sure that newVarFor variables are read OK
-  =  atleastOne ("getCodeForSingle did not return anything for an object of expression "++show e)
+  = atleastOne (" getCodeForSingle did not return anything for an object of expression ("++show e++")["++(show$ source e)++"*"++(show$ target e)++"]")
      -- to get code, we can try different strategies. Just concattenate all attempts
      -- Put the things you want most first (efficient stuff first)
      ([ -- here we try to find a partial overlap in pre:
@@ -33,22 +34,22 @@ module Prototype.GetCode (getCodeFor) where
       -- let's first try to find a singleton, those values we know already
       [ code |
         code<-case e of
-         (Tm (V{mphtyp=(S,t)}) _)
-          -> getAllTarget t      
-         _ -> error "Cannot get code in Code.hs (patterns are still inexhaustive as of august 6th 2010. Putting [] here might fix things when getCodeForSingle is somewhat more complete)"
-      ]++
-      -- try using some Mp1 value
-      [ 
-        [-- False is written below
-        ]
-      | p<-pre,F ((Tm Mp1{mph1val=mval} _):_)<-[e]
-      , mval==nName p,False
-      -- TODO: generate code (then use SERVICE to find a nice example to work and test this on)
+         (Tm (V{mphtyp=(_,t)}) _) -- source is al automatisch een singleton
+          -> getAllTarget t
+         (Tm mph _)
+          -> [ [ --(F$ reverse fs)
+               -- 
+               ]
+             | p<-pre
+             --, name p == v
+             , False
+             ]
       ]
      )
+  | otherwise = error "getCodeForSingle requires that source(cvExpression o) is a singleton"
   where e = cvExpression obj
         obj = (nObject o)
-        getAllTarget (DExp e')
+        getAllTarget (DExp e') -- this makes the object very predicatble: it will have a source (0) and a target (1) relation
          = atleastOne ("getAllTarget did not return something for (DExp e') with e'="++show e')
            [galines ++ renaming
            | tmpvar<-[newVarFor (map nName (o:pre)) e']
@@ -78,7 +79,7 @@ module Prototype.GetCode (getCodeFor) where
                        ]
            ]
         getAllTarget tp
-         = [[Assignment pre (o:pre) (use o) (SQLComposed (source expr) [expr] sql)]
+         = [[Assignment pre (o:pre) (use o) (SQLComposed (source expr) [Named (name$ source expr) expr] sql)]
            | let expr=Tm (mIs(tp)) (-1)
            , CodeVar{cvContent=Right []} <-[obj]
            , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
@@ -92,26 +93,27 @@ module Prototype.GetCode (getCodeFor) where
            ]
  
  -- | Create code to fill a single variable with some expression
- getAllInExpr :: Fspc -- ^ contains information on what's in a DB and what's in a different kind of plug
+ getAllInExpr :: Fspc            -- ^ contains information on what's in a DB and what's in a different kind of plug
               -> [Named CodeVar] -- ^ preknowledge (for administrative purposes)
-              -> Named UseVar -- ^ variable to assign Expression to (see Assignment for details)
-              -> Expression   -- ^ expression we'd like to know
-              -> [[Statement]]-- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
+              -> Named UseVar    -- ^ variable to assign Expression to (see Assignment for details)
+              -> Expression      -- ^ expression we'd like to know
+              -> [[Statement]]   -- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
  getAllInExpr fSpec pre var (Tc   e ) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (F   [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (Fix [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (Fux [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (Fdx [e]) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var composed
-  = atleastOne ("getAllInExpr returned no result in Code.hs (this is OK for certain expressions, and this error message is for testing purposes only, the failed expression was:\n "++(show composed)++"\n it has to be put into:\n "++(show var)++")")
-    -- we try to get the whole thing via SQL
+  = -- we try to get the whole thing via SQL
     ( [[Assignment pre (obj:pre) (var) (SQLBinary composed sql)]
       | Just sql<-[sqlQuery fSpec composed]
       ] ++
       -- if we don't succeed, try and get it via PHP
-      [[Assignment pre (obj:pre) (var) (PHPPlug php)]
+      {- -- does not work
+      [[Assignment pre (obj:pre) (var) (php)]
       | Just php<-[phpQuery fSpec composed]
       ] ++
+      -}
       -- divide: we try to get both sides of some operator, and then use a binary PHP composition
       [get1++get2++join++forget
       | (e1,e2,opr) <- case composed of (Fix (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
@@ -135,10 +137,21 @@ module Prototype.GetCode (getCodeFor) where
  -- | use a variable
  use :: Named CodeVar -> Named UseVar
  use s = Named (nName s) (UseVar [])
+ {- -- not used in first example, so not built here
  -- | will get a straight-forward php expression (binary)
- phpQuery :: Fspc -> Expression -> Maybe (String)
- phpQuery fSpec expr
-  = error "phpQuery undefined in GetCode.hs"
+ phpQuery :: Fspc -> [Named CodeVar] -> Expression -> Maybe (String)
+ phpQuery fSpec pre expr
+  = listToMaybe
+      [  PHPPlug {cqinput=in -- ^ list of arguments passed to the plug
+                 ,cqoutput=out
+                 ,cqphpplug::plname plug
+                 ,cqphpfile::phpfile plug
+                 }
+      | plug <- takeTypedPlug$ plugs fspec
+      , 
+        -- check if out is of the right form (binary)
+      ]
+  -}
  -- | will get a straight-forward sql expression (binary) with a nice name for source and target
  -- | if, of course, such a sql expression exists
  sqlQuery :: Fspc -> Expression -> Maybe String

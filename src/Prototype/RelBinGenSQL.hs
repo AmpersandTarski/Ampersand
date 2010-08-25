@@ -8,9 +8,9 @@ module Prototype.RelBinGenSQL
    import Data.Plug
    import NormalForms (conjNF,disjNF,simplify)
    import Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
-                                    ,cChain,isPrefixOf,filterEmpty)
+                                    ,cChain,filterEmpty,phpIndent)
    import Data.Maybe
-   import Char(isDigit,digitToInt,intToDigit,isAlphaNum)
+   import Char(isDigit,digitToInt,intToDigit)
    import Strings (chain)
    import Collection (Collection(rd))
    
@@ -22,19 +22,6 @@ module Prototype.RelBinGenSQL
    isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
    isOne :: ObjectDef -> Bool
    isOne o = isOneExpr$ctx o
-
-   
-   strReplace :: String -> String -> String -> String
-   strReplace _ _ "" = ""
-   strReplace "" _ str = str
-   strReplace src dst inp
-       = process inp
-         where
-           n = length src
-           process "" = ""
-           process st@(c:cs)
-             | src `isPrefixOf` st = dst ++ process (drop n st)
-             | otherwise           = c:process cs
 
    selectExpr ::    Fspc    -- current context
                  -> Int        -- indentation
@@ -431,24 +418,6 @@ module Prototype.RelBinGenSQL
           myafterPoint ( _ :xs) = myafterPoint xs
           myafterPoint []       = []
           afterPoint s = if (myafterPoint s == "") then s else myafterPoint s
-   
-   phpIndent :: Int -> [Char]
-   phpIndent i = "\n"++take i (repeat ' ')
-
-   phpIdentifier :: String -> String
-   phpIdentifier (s:str) | isDigit s = "I"++phpIdentifier (s:str)
-   phpIdentifier str = [c| c<-str, isAlphaNum c]
-
-   phpShow :: String -> String
-   phpShow str = "'" ++ addSlashes str ++ "'"
-
-   addSlashes :: String -> String
-   addSlashes ('\'': cs) = "\\'"++addSlashes cs
-   addSlashes ('"': cs) = "\\\""++addSlashes cs
-   addSlashes ('\\': cs) = "\\\\"++addSlashes cs
-   addSlashes (c:cs) = c:addSlashes cs
-   addSlashes "" = ""
-   
 
 {-   sqlRel :: Fspc -> Morphism -> (Plug,SqlField,SqlField)
    sqlRel fSpec m@Mph{}
@@ -594,10 +563,4 @@ module Prototype.RelBinGenSQL
                   head cs
                   where cs = [fldname f|f<-fields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         appname =  name fSpec
-
---- uniqueNames p:ps | ((name p++(name source p)) `elem` (names ps)) = p:(uniqueNames ps)
-   
-   addToLast :: [a] -> [[a]] -> [[a]]
-   addToLast _ [] = error "!Fatal (module RelBinGenBasics 645): addToLast: empty list"
-   addToLast s as = (init as)++[last as++s]
 

@@ -60,20 +60,21 @@ where
   
   type Plugs = [Plug]
   data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
-  data PlugSQL = PlugSQL { sqlname   :: String
-                      , fields   :: [SqlField]
-                      , cLkpTbl  :: [(Concept,SqlField)]           -- lookup table that links concepts to column names in the plug
-                      , mLkpTbl  :: [(Morphism,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug
-                      , sqlfpa    :: FPA -- ^ functie punten analyse
-                      }
-               deriving (Show)
-  data PlugPHP = PlugPHP { phpname   :: String -- ^ the name of the function
-                      , phpfile	 :: Maybe String -- ^ the file in which the plug is located (Nothing means BuiltIn)
-                      , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
-                      , phpOut    :: CodeVar -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
-                      , phpVerifies:: Bool -- ^ whether the input of this plug is verified. False means that when the function is be called with non-existant input, it may not return false as output
-                      , phpfpa    :: FPA -- ^ functie punten analyse
-                      }
+  data PlugSQL
+   = PlugSQL { sqlname   :: String
+             , fields    :: [SqlField]
+             , cLkpTbl   :: [(Concept,SqlField)]           -- lookup table that links concepts to column names in the plug
+             , mLkpTbl   :: [(Morphism,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug
+             , sqlfpa    :: FPA -- ^ functie punten analyse
+             } deriving (Show)
+  data PlugPHP
+   = PlugPHP { phpname   :: String       -- ^ the name of the function
+             , phpfile	 :: Maybe String -- ^ the file in which the plug is located (Nothing means it is built in already)
+             , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
+             , phpOut    :: CodeVar      -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
+             , phpSafe   :: Bool         -- ^ whether the input of this plug is verified. False means that the function can be called with non-existant input, such that it does not return false as output or causes undesired side effects
+             , phpfpa    :: FPA          -- ^ functie punten analyse
+             }
                deriving (Show)
 
   instance Object PlugSQL where
@@ -143,7 +144,7 @@ where
   instance Eq PlugSQL where
     x==y = plname x==plname y
   instance Eq PlugPHP where
-    x==y = plname x==plname y && phpfile x == phpfile y
+    x==y = plname x==plname y && phpfile x == phpfile y && phpinArgs x == phpinArgs y
   instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
     compare x y = compare (plname x) (plname y)
   

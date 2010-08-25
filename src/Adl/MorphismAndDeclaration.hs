@@ -45,6 +45,7 @@ where
                   | V   { mphats :: Concepts         -- ^ the (optional) attributes specified inline.
                         , mphtyp :: Sign             -- ^ the allocated type.
                         }
+                  -- | Een Mp1 is een deelverzameling van I, zou dus vervangen moeten worden voor I van een Mp1-type
                   | Mp1 { mph1val :: String          -- ^ the value of the one morphism
                         , mphats  :: Concepts        -- ^ the (optional) attribute specified inline. ADL syntax allows at most one concept in this list.
                         , mph1typ :: Concept         -- ^ the allocated type.

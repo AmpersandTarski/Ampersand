@@ -2,6 +2,7 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
  import Adl (Concept(..),Expression(..))
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (Named(..))
+
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
  data Statement
   =  Iteration   { preknowledge :: [Named CodeVar]
@@ -30,8 +31,12 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
    show (UseVar (Right s:xs)) = "["++show s++"]"++(show xs)
  data CodeQuery
   =  SQLBinary   {cqexpression::Expression, sqlquery::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually)
-   | SQLComposed {cqsource:: Concept, cqexpressions::[Expression], sqlquery::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
-   | PHPPlug     {phpquery::String} -- ^ TODO: what does this look like? Currently, phpquery denotes the entire function call. Nothing to check and very language dependent!
+   | SQLComposed {cqsource:: Concept, cqExpressions::[Named Expression], sqlquery::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
+   | PHPPlug     {cqinput::[CodeQuery] -- ^ list of arguments passed to the plug
+                 ,cqoutput::CodeVar -- ^ the output variable
+                 ,cqphpplug::String -- ^ the name of the plug
+                 ,cqphpfile::Maybe String -- ^ the file name on where to find this plug
+                 }
    | PHPIntersect{cqfrom1::CodeQuery,cqfrom2::CodeQuery}
    | PHPJoin     {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
    | PHPIsectComp{cqfrom1::CodeQuery,cqfrom2::CodeQuery} -- ^ cqfrom1 /\ -cqfrom2
@@ -39,4 +44,5 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
    | PHPUnion    {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
    | CQCompose   {cqFrom::[Named CodeQuery]}    -- ^ as SQLComposed: combine different codeQueries by name
    | CQPlain     (Named UseVar)            -- ^ simply get some variable and return it
+   | CQConstant  {cqQuotedValue::String}   -- ^ a constant such as "Hello world", true, or date()
    deriving (Show,Eq)

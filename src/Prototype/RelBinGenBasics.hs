@@ -2,13 +2,12 @@
 module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
  ,addSlashes,zipnum,Concatable(..),(+++)
  ,indentBlock,phpShow,addToLast
- ,pDebug,noCollide,indentBlockBetween,quote
- ,cChain,isPrefixOf,filterEmpty 
+ ,pDebug,indentBlockBetween,quote
+ ,cChain,filterEmpty,phpIndent
  ) where
-   import Char(isDigit,digitToInt,intToDigit,isAlphaNum)
+   import Char(isAlphaNum,isDigit)
    import Strings (chain)
    import List(isPrefixOf)
-   import Collection (Collection(rd))
    import Auxiliaries (naming)
    import Data.Maybe
 
@@ -88,61 +87,6 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
            process st@(c:cs)
              | src `isPrefixOf` st = dst ++ process (drop n st)
              | otherwise           = c:process cs
-
-   -- | does the same as noCollide, but ensures that all names used have `quotes` around them (for mySQL)
-   noCollide' :: [String] -> String -> String
-   noCollide' nms nm = quote$noCollide (map unquote nms) (unquote nm)
-   unquote :: String->String
-   unquote ('`':xs) = init xs
-   unquote xs = xs
-   -- | changes its second argument by appending a digit, such that it does not occur in its first argument 
-   noCollide :: [String] -- ^ forbidden names
-             -> String -- ^ preferred name
-             -> String -- ^ a unique name (does not occur in forbidden names)
-   noCollide names nm | nm `elem` names = noCollide names (namepart (reverse nm) ++ changeNr (numberpart (reverse nm)))
-                      | otherwise = nm
-    where
-      namepart str   = reverse (dropWhile isDigit str)
-      numberpart str = reverse (takeWhile isDigit str)
-      changeNr x     = int2string (string2int x+1)
-      --  changeNr x = show (read x +1)
-      string2int :: String -> Int
-      string2int  = enc.reverse
-       where enc "" = 0
-             enc (c:cs) = digitToInt c + 10* enc cs
-      int2string :: Int -> String
-      int2string 0 = "0"
-      int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
-
-   selectExists' :: (Concatable a,Concatable b) => Int -> a -> b -> (Maybe String)
-   selectExists' i tbl whr
-    = ("SELECT *" ++
-       phpIndent i ++ "  FROM ") +++ tbl +++
-      (phpIndent i ++ " WHERE ") +++ whr
-   selectGeneric :: (Concatable a) =>
-                    Int             -- ^ indentation
-                 -> (String,String) -- ^ (source field,source table)
-                 -> (String,String) -- ^ (target field,target table)
-                 -> a               -- ^ tables
-                 -> a               -- ^ the WHERE clause
-                 -> a
-   selectGeneric i src trg tbl whr
-    = selectcl ++
-      phpIndent i ++ "  FROM " +>+ 
-      (if toM whr==Just "1" then tbl else tbl+|+(phpIndent i ++ " WHERE "+>+whr))
-      where selectcl | snd src=="" && snd trg=="" = error ("!Fatal (module RelBinGenBasics 461): Source and target are \"\", use selectExists' for this purpose")
-                     | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
-                     | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
-                     | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
-                     | otherwise = "SELECT DISTINCT " ++ selectSelItem src ++", "++selectSelItem trg
-   selectSelItem :: (String, String) -> String
-   selectSelItem (att,alias)
-     | unquote (afterPoint att) == unquote alias = att
-     | otherwise                                 = att++" AS "++alias
-    where myafterPoint ('.':xs) = xs
-          myafterPoint ( _ :xs) = myafterPoint xs
-          myafterPoint []       = []
-          afterPoint s = if (myafterPoint s == "") then s else myafterPoint s
    
    phpIndent :: Int -> [Char]
    phpIndent i = "\n"++take i (repeat ' ')
@@ -165,4 +109,3 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
    addToLast :: [a] -> [[a]] -> [[a]]
    addToLast _ [] = error "!Fatal (module RelBinGenBasics 645): addToLast: empty list"
    addToLast s as = (init as)++[last as++s]
-

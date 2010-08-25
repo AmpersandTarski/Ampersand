@@ -1,7 +1,7 @@
 {-# LANGUAGE Rank2Types, KindSignatures, GeneralizedNewtypeDeriving #-}
 
 module Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh) where
- import Prototype.RelBinGenBasics(noCollide)
+ import Strings(noCollide)
 
  data (Eq a) => Named a = Named { nName :: String, nObject :: a} deriving (Eq)
  instance (Show a,Eq a)=> Show (Named a) where

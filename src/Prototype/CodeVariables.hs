@@ -10,7 +10,7 @@ module Prototype.CodeVariables
   ) where
  import Prototype.CodeAuxiliaries (Named(..),nameFresh)
  import Adl (Concept(..),Expression(..),Declaration(..),Morphism(..),mIs, Prop(..),makeMph,Identified(..),source,target)
- import Prototype.RelBinGenBasics(noCollide)
+ import Strings(noCollide)
 
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary
