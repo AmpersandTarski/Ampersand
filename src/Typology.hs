@@ -7,7 +7,6 @@ module Typology
           , genEq
           )
 where
---   import Auxiliaries    ( isPrefix )
    import Collection     ( Collection(..))
 
    data Inheritance a = Isa [(a,a)] [a] deriving (Eq,Show)

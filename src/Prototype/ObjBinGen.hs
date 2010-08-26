@@ -16,6 +16,8 @@
    import System.Directory
    import Options hiding (services)
    import qualified Data.ByteString as Bin
+   import UTF8  
+   import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
     
    phpObjServices :: Fspc -> Options -> IO()
    phpObjServices fSpec flags

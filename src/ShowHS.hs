@@ -30,6 +30,8 @@ where
              ++"\n  import FPA"
              ++"\n  import Options (getOptions)"
              ++"\n  import TypeInference.InfLibAGFuncs"
+             ++"\n  import UTF8"  
+             ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
              ++"\n  main :: IO ()"
              ++"\n  main = do flags <- getOptions"

@@ -1,1 +1,3 @@
 Issue: EXPLAIN CONCEPT syntax does not result in texts in fspecs, whereas the traditional CONCEPT syntax does.
+
+This is a *feature*. EXPLAIN CONCEPT is only rewarded for CONCEPTs that the user has explicitly defined.... 8-s

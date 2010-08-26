@@ -16,6 +16,8 @@ import Picture
 import Rendering.InfTree2Pandoc (proofdoc)
 import Rendering.PandocAux (writepandoc)
 import System.FilePath        (combine,replaceExtension)
+import UTF8  
+import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
 generate :: Options -> Fspc -> IO ()
 generate flags fSpec = 

@@ -7,35 +7,37 @@ import Adl                   (Context)
 import Data.Fspec            (Fspc)
 import ADL2Fspec             (makeFspec)
 import Generators            (generate)
-import System.FilePath
-import qualified Data.ByteString as Bin
+import UTF8  
+import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+--import System.FilePath
+--import qualified Data.ByteString as Bin
 
 main :: IO ()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
-       then mapM_ Prelude.putStr (helpNVersionTexts flags)
-       else if test flags
-            then testprog flags
-            else
-              (    parseFile flags 
-               >>= calculate flags 
-               >>= generate flags
-              ) 
-   where
-     testprog flags = let fnFull = fileName flags in
-                      do{ deBinTekst <- Bin.readFile fnFull
-                        ; deTxtTekst <- readFile fnFull
-                        ; (writeFile (addExtension fnFull ".onelinerbin") (", SF \""++fnFull++"\"     True   "++show (show deBinTekst))
-                           >>
-                           writeFile (addExtension fnFull ".onelinertxt") (", SF \""++fnFull++"\"     False  "++show deTxtTekst)
-                           )}
+       then mapM_ putStr (helpNVersionTexts flags)
+--       else if test flags
+--            then testprog flags
+       else
+          (    parseFile flags 
+           >>= calculate flags 
+           >>= generate flags
+          ) 
+--   where
+--     testprog flags = let fnFull = fileName flags in
+--                      do{ deBinTekst <- Bin.readFile fnFull
+--                        ; deTxtTekst <- readFile fnFull
+--                        ; (writeFile (addExtension fnFull ".onelinerbin") (", SF \""++fnFull++"\"     True   "++show (show deBinTekst))
+--                           >>
+--                           writeFile (addExtension fnFull ".onelinertxt") (", SF \""++fnFull++"\"     False  "++show deTxtTekst)
+--                           )}
                 
 parseFile :: Options -> IO(Context)
 parseFile flags  
       = let fnFull = fileName flags in
         do verbose flags "Parsing... "
-           adlText <- Prelude.readFile fnFull
+           adlText <- readFile fnFull
            parseADL adlText flags fnFull 
 
 calculate :: Options -> Context -> IO(Fspc)

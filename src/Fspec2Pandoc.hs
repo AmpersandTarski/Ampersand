@@ -101,8 +101,8 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           docContents
            = ( introduction       level fSpec flags  ++
                designPrinciples   level fSpec flags  ++
-               caTxt                                 ++
-               daTxt                                 ++
+          --     caTxt                                 ++
+          --     daTxt                                 ++
                if studentversion then [] else [b| (blocks,_)<-svcs, b<-blocks] ++
                if studentversion then fpAnalysis level fSpec flags else [] ++
                glossary level fSpec flags 

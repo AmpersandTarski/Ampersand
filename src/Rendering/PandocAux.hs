@@ -7,13 +7,15 @@ import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
 import Strings          (unCap, chain)
-import Text.Pandoc  
+import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
                           -- 2) cabal-install pandoc  (onder windows: cabal install pandoc)
                           -- 3) Het kan zijn dat dit nog niet werkt, zie http://groups.google.com/group/pandoc-discuss/browse_thread/thread/a8fc3a627aeec7f2
                           --    als dat het geval is, kan deze module worden overruled in Generators.hs    
-                          -- Built on pandoc 1.4                             
+                          -- Built on pandoc 1.6                             
+import UTF8  
+import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Languages        (Lang(..),plural)
 import Options hiding (services) --importing (Options(..),FspecFormat(..))
 
@@ -138,8 +140,8 @@ theTemplate flags
                , "\\usepackage{amssymb}"
                , "\\usepackage{amsmath}         % Provides various features to facilitate writing math formulas and to improve the typographical quality of their output."
             --   , "\\usepackage{hyperref}"
-            --   , "\\usepackage{ucs}             % Provides various features for UTF8 (internationalization) stuff"
-            --   , "\\usepackage[utf8x]{inputenc} %"
+               , "\\usepackage{ucs}             % Provides various features for UTF8 (internationalization) stuff"
+               , "\\usepackage[utf8x]{inputenc} %"
                ] ++
                ( case theme flags of
                   ProofTheme -> [ "\\usepackage[landscape]{geometry}"
@@ -484,41 +486,41 @@ latexEscShw :: (Show a) => a -> [Char]
 latexEscShw x = latexEsc (show x)
 
 latexEsc :: [Char] -> [Char]
-latexEsc x
- = f x
-   where f "" = ""
-         f ('_':str) = "\\_"++f str
-         f ('\192':str) = "\\`A" ++f str   -- 
-         f ('\193':str) = "\\'A" ++f str   -- 
-         f ('\196':str) = "\\\"A"++f str   -- 
-         f ('\200':str) = "\\`E" ++f str   -- 
-         f ('\201':str) = "\\'E" ++f str   -- 
-         f ('\203':str) = "\\\"E"++f str   -- 
-         f ('\204':str) = "\\`I" ++f str   -- 
-         f ('\205':str) = "\\'I" ++f str   -- 
-         f ('\207':str) = "\\\"I"++f str   -- 
-         f ('\210':str) = "\\`O" ++f str   -- 
-         f ('\211':str) = "\\'O" ++f str   -- 
-         f ('\214':str) = "\\\"O"++f str   -- 
-         f ('\217':str) = "\\`U" ++f str   -- 
-         f ('\218':str) = "\\'U" ++f str   -- 
-         f ('\220':str) = "\\\"U"++f str   -- 
-         f ('\224':str) = "\\`a" ++f str   -- 
-         f ('\225':str) = "\\'a" ++f str   -- 
-         f ('\228':str) = "\\\"a"++f str   -- 
-         f ('\232':str) = "\\`e" ++f str   -- 
-         f ('\233':str) = "\\'e" ++f str   -- 
-         f ('\235':str) = "\\\"e"++f str   -- 
-         f ('\236':str) = "\\`i" ++f str   -- 
-         f ('\237':str) = "\\'i" ++f str   -- 
-         f ('\239':str) = "\\\"i"++f str   -- 
-         f ('\242':str) = "\\`o" ++f str   -- 
-         f ('\243':str) = "\\'o" ++f str   -- 
-         f ('\246':str) = "\\\"o"++f str   -- 
-         f ('\249':str) = "\\`u" ++f str   -- 
-         f ('\250':str) = "\\'u" ++f str   -- 
-         f ('\252':str) = "\\\"u"++f str   -- 
-         f (c:str)   = c: f str
+latexEsc x = x
+-- = f x
+--   where f "" = ""
+--         f ('_':str) = "\\_"++f str
+--         f ('\192':str) = "\\`A" ++f str   -- 
+--         f ('\193':str) = "\\'A" ++f str   -- 
+--         f ('\196':str) = "\\\"A"++f str   -- 
+--         f ('\200':str) = "\\`E" ++f str   -- 
+--         f ('\201':str) = "\\'E" ++f str   -- 
+--         f ('\203':str) = "\\\"E"++f str   -- 
+--         f ('\204':str) = "\\`I" ++f str   -- 
+--         f ('\205':str) = "\\'I" ++f str   -- 
+--         f ('\207':str) = "\\\"I"++f str   -- 
+--         f ('\210':str) = "\\`O" ++f str   -- 
+--         f ('\211':str) = "\\'O" ++f str   -- 
+--         f ('\214':str) = "\\\"O"++f str   -- 
+--         f ('\217':str) = "\\`U" ++f str   -- 
+--         f ('\218':str) = "\\'U" ++f str   -- 
+--         f ('\220':str) = "\\\"U"++f str   -- 
+--         f ('\224':str) = "\\`a" ++f str   -- 
+--         f ('\225':str) = "\\'a" ++f str   -- 
+--         f ('\228':str) = "\\\"a"++f str   -- 
+--         f ('\232':str) = "\\`e" ++f str   -- 
+--         f ('\233':str) = "\\'e" ++f str   -- 
+--         f ('\235':str) = "\\\"e"++f str   -- 
+--         f ('\236':str) = "\\`i" ++f str   -- 
+--         f ('\237':str) = "\\'i" ++f str   -- 
+--         f ('\239':str) = "\\\"i"++f str   -- 
+--         f ('\242':str) = "\\`o" ++f str   -- 
+--         f ('\243':str) = "\\'o" ++f str   -- 
+--         f ('\246':str) = "\\\"o"++f str   -- 
+--         f ('\249':str) = "\\`u" ++f str   -- 
+--         f ('\250':str) = "\\'u" ++f str   -- 
+--         f ('\252':str) = "\\\"u"++f str   -- 
+--         f (c:str)   = c: f str
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...

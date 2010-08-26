@@ -12,6 +12,8 @@ import Languages
 import Strings (spacesToUnderscores)
 import Control.Monad
 import Data.GraphViz
+import UTF8  
+import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
 type Pictures = [Picture]
 data Picture = Pict { origName     :: String    -- The original name of the object this picture was made for. (could include spaces!)

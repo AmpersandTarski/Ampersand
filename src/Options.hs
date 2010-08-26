@@ -14,6 +14,8 @@ import Control.Monad
 import Strings               (chain)
 import Version(versionNumber)
 import Maybe
+import UTF8  
+import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
