@@ -1,0 +1,363 @@
+FOUTMELDING:
+<QUOTE
+12:30:22 D:\CC_Demos\ADL_Onderzoek\workspace\PolicyMgt> "F:\RJ$\Prive\CC model repository\AMPpro
+gs\ADLvs1.1.0.717.exe" "F:\RJ$\Prive\CC model repository\Adlfiles\PolicyMgt.adl" -p"D:\CC_Demos\
+ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc" --verbose
+Checking output directories...
+Parsing... F:\RJ$\Prive\CC model repository\Adlfiles\PolicyMgt.adl has been parsed.
+Calculating...
+Generating...
+Checking on rule violations...
+No violations found.
+Generating prototype...
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\js\edit.js, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\js\navigate.js, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\js\jquery-1.3.2.min.js, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\fonts\myriad_pro_700.font.js, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\js\cufon-yui.js, becauseit already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\css\screen.css, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\css\reset.css, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\add.gif, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\menu_bg.jpg, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\ampersand_logo.jpg, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\header_decoration.jpg, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\edit.gif, becauseit already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\del.gif, because it already exists.
+  Skipping D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc\images\button.gif, because it already exists.
+---------------------------
+Generating php Object files with ADL
+---------------------------
+  Generating index.htm
+  Generating Installer.php
+  Generating PolicyMgt.php
+  Generating interfaceDef.inc.php
+  Generating connectToDataBase.inc.php
+ADLvs1.1.0.717.exe: !Fatal (module RelBinGenBasics 606): evaluating (Fi []) in sqlExprSrc (V)
+
+
+12:30:23 D:\CC_Demos\ADL_Onderzoek\workspace\PolicyMgt>
+UNQUOTE>
+
+Het ADL bestand dat deze foutmelding leverde staat hieronder.
+
+CONTEXT PolicyMgt -- DATE: do 26-08-2010  12:30:22,46
+-- (file:  2DO.txt ) -- 
+---------------------------------------------------------------------
+-- (C) 2010, TNO/RJ
+-- 2DO: alles moet nog worden gedaan...
+---------------------------------------------------------------------
+{-===================================================================-}
+-- (file:  Holons.pat ) -- 
+PATTERN Holons -- WIJZIGER: rieks.joosten@tno.nl
+{- This pattern is meant to include notions related to scoping.
+-}
+-----------------------------------------------------------------------
+{- Revision history
+RJ/20100803 - distinction between obligation rules and expectation rules.
+RJ/20100729 - Created holons pattern (split off from PolicyMgt
+-}
+-----------------------------------------------------------------------
+EXPLAIN PATTERN Holons IN ENGLISH
+{+Holons allow discussions to be disected into multiple (trees) of (smaller) discussions, such that in the end all discussions are individually graspable, yet together form a consistent whole. In other words, holons facilitate compliance with Anderson's 'cope-ability criterion', i.e. that humans can only graps some 5.
+-}
+
+-- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__
+EXPLAIN CONCEPT Holon IN ENGLISH
+{+scope ('afbakening' in Dutch) that is committed to comply with a specific set of rules (the 'book of laws', or the 'rules of engagement' for the holon). Our use of this term is loosely inspired on  the contents found at `WikiPedia <http://en.wikipedia.org/wiki/Holon_%28philosophy%29>`__.
+
+Examples of (our) holons are:
+
+- a military patrol in a UN mission in Uruzgan (e.g. having been assigned the task of trying to find roadbombs);
+- a financial department of an enterprise;
+- a process whose aim it is to get all bills paid for orders of stocked items;
+- a system whose purpose it is to deliver documents upon request;
+- a person who wants to live a life in luxury;
+
+All holons have in common that there is a set of rules that they are committed to comply with. These 'obligationrules' (or 'rules-of-engagement'), specific for each holon, define (and constrain) the work that is done within (the scope of) a holon. Thus, a holon should be able to report on the level of compliance to these rules. Also, a holon may want to assess the risk involved by non-compliance. Examples of obligationrules for holons are:
+
+- the military patrol may have a rule 'firing shall not be done on civilians';
+- the financial department may have a rule 'income shall exceed expenses by at least 10%';
+- the process may have a rule 'unpaid bills sent more than 4 weeks ago shall be handed over to an incasso bureau';
+- the system may have a rule 'documents shall only be sent to subscribers';
+- the person may have a rule 'I must not do anything that may harm other people'.
+
+All holons also have in common that there is a set of rules that they expect to be complied with, either by other holons, by themselves, or by nature (G.O.D. = a Gathering Of Deities). These 'expectationrules' are the consequence of acknowledging that no holon can do everything all by itself. It is useful for a holon to know its expectations (and from whom this is expeced) so that it can verify whether or not its expectations are being met, and take action if this is not the case.
+-}
+
+isParentOf :: Holon * Holon [ASY] PRAGMA "" " is a parent of ".
+EXPLAIN RELATION isParentOf IN ENGLISH {+A holon has as many parents as there are hierarchies of which it is  a part. It is characteristic of holons to be part of multiple hierarchies (also called holarchies).-}
+
+RULE holons0 MAINTAINS isParentOf |- -I
+EXPLAIN RULE holons0 IN ENGLISH {+Holons cannot be their own parents in the same way that people are not their own children or parents.-}
+
+committedTo :: Holon * Rule PRAGMA "" " is committed to comply with ".
+EXPLAIN RELATION committedTo[Holon*Rule] IN ENGLISH {+Holons serve as scopes within which commitment exists to comply with rules.-} 
+
+expectedBy  :: Rule * Holon PRAGMA "Compliance to " " is expected by ".
+EXPLAIN RELATION expectedBy[Rule*Holon] IN ENGLISH {+A holon may have expectations, i.e. rules that somehow, outside the scope of control of the holon, are expected to be satisfied.-} 
+
+expectedFrom:: Rule * Holon PRAGMA "Compliance to " " is expected from ".
+EXPLAIN RELATION expectedFrom[Rule*Holon] IN ENGLISH {+An expectation of a holon can be assigned to other holons, meaning that these other holons are expected to satisfy the rule representing the expectation.-} 
+
+RULE "rule attachment" MAINTAINS
+I[Rule] |- committedTo~;committedTo \/ expectedBy;expectedBy~
+EXPLAIN RULE "rule attachment" IN ENGLISH {+Every rule is either committed to or expected by a(t least one) holon.-}
+
+RULE "rules for oneself" MAINTAINS
+expectedBy /\ expectedFrom |- committedTo[Holon*Rule]~
+EXPLAIN RULE "rules for oneself" IN ENGLISH {+A rule that a holon expects itself to comply with, is implicitly committed to by that holon.-}
+
+RULE "uncommitted expectation" SIGNALS
+expectedFrom[Rule*Holon] |- committedTo~
+EXPLAIN RULE "uncommitted expectation" IN ENGLISH {+If a holon expects itself or another holon to comply with a rule, that holon should have committed itself to this rule; if not, work needs to be done to fix the situation.-}
+
+-----------------------------------------------------------------------
+ENDPATTERN
+{-===================================================================-}
+-- (file:  Holons.svc ) -- 
+-----------------------------------------------------------------------
+{- Revision history
+RJ/20100803 - first setup.
+-}
+-----------------------------------------------------------------------
+
+SERVICE "HolonRules": I[Holon]
+= [ "Holon"         : I[Holon]
+  , "committedTo"   : committedTo[Holon*Rule]
+  , "expected"      : expectedBy[Rule*Holon]~
+  = [ "expected"    : I[Rule]
+    , "expectedFrom": expectedFrom
+  ] ]
+
+{-
+SERVICE "HolonPolicies": I[Holon]
+= [ "Holon"         : I[Holon]
+  , "committedTo"   : committedTo[Holon*Policy]
+  , "expected"      : expectedBy[Policy*Holon]~
+  = [ "expected"    : I[Policy]
+    , "expectedFrom": expectedFrom
+  ] ]
+-}
+-----------------------------------------------------------------------
+{- examples from other sources, for inspiration
+
+SERVICE "RuleHolons": I[ONE]
+= [ "Rol"        : V[ONE*]
+  = [ "Naam"     : personAssignedRole~;pName
+  ] ]
+
+SERVICE "Dossiers": I[ONE]
+= [ "Dossier van" : V[ONE*DossierArtefact];pDossier~
+  = [ "Naam"    : pName
+    , "Dossier" : pDossier
+  ] ]
+
+SERVICE "Dossiers": V[ONE*DossierArtefact];pDossier~
+= [ "Dossiers"  : I[Person]
+  = [ "Naam"    : pName
+    , "Dossier" : pDossier
+  ] ]
+-}
+-----------------------------------------------------------------------
+{-===================================================================-}
+-- (file:  RiskMatrix.pat ) -- 
+PATTERN RiskMatrix -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN RiskMatrix IN ENGLISH REF "RJ"
+{+A risk matrix is a mechanism that helps holon(owner)s to
+
+a) make an inventory of risks that it runs, under the assumption that a risk is defined as the expected amount of damage a holon suffers from not complying with an obligation.
+b) define ExpectedPolicies by which such risks can be mitigated.
+
+The pattern 'RiskComputations' builds on this pattern, extending it with functionality for assessing risks.
+-}
+-----------------------------------------------------------------------
+{- Revision history
+RJ/20100803 - (thoroughly) revised pattern, with more explicit room for the risk matrix itself.
+RJ/20100725 - first draft of pattern, according to whiteboard session.
+-}
+-----------------------------------------------------------------------
+EXPLAIN CONCEPT RiskMatrix IN ENGLISH REF "RJ" 
+{+a specification of all data that is to be presented in view to a user, where all of this data is meaningful to a specified holon. Typically, this specification includes:
+
+a) a set of obligationrules of the holon;
+b) a set of attribute types for obligationrules;
+c) a set of expectationrules of the holon;
+d) a set of attribute types for expectationrules;
+e) optionally: the set of computationcoefficients that relate the obligationsrules and expectationrules as indicated sub b) and sub d), for a specific computationmethod.
+-}
+
+rmOblRule :: RiskMatrix * Rule         PRAGMA "An obligation in " " is ".
+rmExpRule :: RiskMatrix * Rule         PRAGMA "An expectation in " " is ".
+rmOblRAT  :: RiskMatrix * RuleAttrType PRAGMA "The obligation attributes to use in risk matrices of type " " are of category ".
+rmExpRAT  :: RiskMatrix * RuleAttrType PRAGMA "The expectation attributes to use in risk matrices of type " " are of category ".
+rmtComp   :: RiskMatrixType * Method   PRAGMA "Conversion between obligation and expectation attributes (or vice versa) for risk matrices of type " " is done by ".
+
+-----------------------------------------------------------------------
+EXPLAIN CONCEPT RiskMatrix IN ENGLISH {+Every RiskMatrix is associated with a specific holon. Every obligation or expectation rule associated to the risk matrix must be an obligation or expectation rule of this holon.-}
+
+rmHolon :: RiskMatrix -> Holon PRAGMA "" " uses rules that are obligations or expectations of ".
+
+RULE obligations MAINTAINS rmHolon~; rmOblRule |- committedTo
+EXPLAIN RULE obligations IN ENGLISH {+Every obligation rule in a risk matrix constitutes an obligation of the risk matrixes holon.-}
+
+RULE expectations MAINTAINS rmHolon~; rmExpRule |- expectedBy~
+EXPLAIN RULE expectations IN ENGLISH {+Every expectation rule in a risk matrix constitutes an expectation of the risk matrixes holon.-}
+
+-----------------------------------------------------------------------
+EXPLAIN CONCEPT RATCategory IN ENGLISH {+As some rule attribute types (e.g. 'Risk' or 'Impact') are irrelevant for expectationrules, while others (such as 'Probability') are relevant for both expectationrules and obligationrules, rule attribute types are categorized by the text 'obligation' and/or 'expectation' that indicates for which kind of rules an attribute type is relevant.-}
+
+ratCat :: RuleAttrType * RATCategory PRAGMA "" " is useful for rules in the category "
+  = [ ("Impact", "obligation")
+    ; ("Importance", "expectation")
+    ; ("ExpProbability", "expectation")
+    ; ("OblProbability", "obligation")
+    ; ("Risk", "obligation")
+    ].
+
+RULE ratcategories MAINTAINS I[RATCategory] = 'obligation' \/ 'expectation'
+EXPLAIN RULE ratcategories IN ENGLISH {+There are only two RATCategories: 'obligation's and 'expectation's.-}
+
+RULE obligationattributes MAINTAINS I /\ rmOblRAT~;rmOblRAT |- ratCat; 'obligation'; ratCat~
+EXPLAIN RULE obligationattributes IN ENGLISH {+Risk matrix types that use attribute types for obligationrules may only do so if the attribute type is relevant for obligationrules.-}
+
+RULE expectationattributes MAINTAINS I /\ rmExpRAT~;rmExpRAT |- ratCat; 'expectation'; ratCat~
+EXPLAIN RULE expectationattributes IN ENGLISH {+Risk matrix types that use attribute types for expectationrules may only do so if the attribute type is relevant for expectationrules.-}
+
+-----------------------------------------------------------------------
+EXPLAIN CONCEPT RuleAttrType IN ENGLISH {+classification of RuleAttrs, that have specific names such as 'Risk', 'Impact', 'Probability', 'Importance' etc. Every rule attribute type specifies the data type of values of rule attribute instantiations. Also, each RuleAttrType is categorized (see concept RATCategory for details).-}
+
+ratName     :: RuleAttrType -> Text PRAGMA "" " is referred to by the name "
+  = [ ("Impact", "Impact")
+    ; ("Importance", "Importance")
+    ; ("ExpProbability", "Probability")
+    ; ("OblProbability", "Probability")
+    ; ("Risk", "Risk")
+    ].
+EXPLAIN RELATION ratName IN ENGLISH {+Examples of names that are used to refer to attribute types: 'Risk', 'Impact', 'Probability', 'Importance', etc.-}
+
+ratDataType :: RuleAttrType -> DataType PRAGMA "Values of attributes in " " use data of type "
+  = [ ("Impact", "LMH")
+    ; ("Importance", "LMH")
+    ; ("ExpProbability", "LMH")
+    ; ("OblProbability", "LMH")
+    ; ("Risk", "LMH")
+    ].
+EXPLAIN RELATION ratDataType IN ENGLISH {+Values of attributes for the usual attribute types (e.g. 'Risk', 'Impact', 'Probability', 'Importance') will be 'L' (Low), 'M' (Medium), or 'H' (High)-}
+
+-----------------------------------------------------------------------
+EXPLAIN CONCEPT RuleAttr IN ENGLISH {+an attribute for (matrix) rules. RuleAttrs come in types, such as 'Risk', 'Impact', 'Probability', 'Importance' etc. Also, RuleAttrs may be assigned values (whose datatype is specified by the RuleAttrType of which the RuleAttr is an instantiation).-}
+
+raType  :: RuleAttr -> RuleAttrType PRAGMA "" " has a value of type ".
+raRule  :: RuleAttr -> Rule PRAGMA "The meaning of " " is with respect to ".
+raHolon :: RuleAttr -> Holon PRAGMA "" " has a meaning within (the scope of) ".
+
+RULE ruleattrID MAINTAINS I[RuleAttr] = raType;raType~ /\ raRule;raRule~ /\ raHolon;raHolon~
+EXPLAIN RULE ruleattrID IN ENGLISH {+Every rule attribute is uniquely characterized by:
+
+a) its type;
+b) the rule with which it is associated;
+c) the holon to which it is associated.
+-}
+
+RULE obligationattributes MAINTAINS rmOblRule; raRule~; raType |- rmOblRAT 
+EXPLAIN RULE obligationattributes IN ENGLISH {+Every attribute that is assigned to an obligation rule in a risk matrix, must be of a type that is specified for obligation rules for this type of risk matrices.-}
+
+RULE expectationattributes MAINTAINS rmExpRule; raRule~; raType |- rmExpRAT 
+EXPLAIN RULE expectationattributes IN ENGLISH {+Every attribute that is assigned to an expectation rule in a risk matrix, must be of a type that is specified for expectation rules for this type of risk matrices.-}
+
+-----------------------------------------------------------------------
+EXPLAIN CONCEPT AttrValue IN ENGLISH {+Attribute values can be any, as long as their data type complies with what is specified by the associated RuleAttrType.-}
+
+raValue :: RuleAttr * AttrValue [UNI] PRAGMA "The value of " " is ".
+valDataType :: AttrValue -> DataType PRAGMA "The data represented by " " is of type ".
+
+RULE data_attr_typecheck MAINTAINS raValue; valDataType = raType; ratDataType
+EXPLAIN RULE data_attr_typecheck IN ENGLISH {+The data type of a value of a risk attribute must be the same as the data type assigned to the risk attribute type.-}
+
+-----------------------------------------------------------------------
+ENDPATTERN
+{-===================================================================-}
+-- (file:  RiskComputations.pat ) -- 
+PATTERN RiskComputations -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN RiskComputations IN ENGLISH REF "RJ" {+This pattern deals withthe computation of values for the 'Risk' attributes of obligationrules, based on the values of 'OblProbability' and 'Impact' attributes of obligationsrules.-}
+-----------------------------------------------------------------------
+{- Revision history
+RJ/20100803 - first draft of pattern.
+-}
+-----------------------------------------------------------------------
+EXPLAIN RULE when_to_compute_riskvalues IN ENGLISH {+This rule represents the define-time specifications stating when risk values are to be computed.-}
+RULE when_to_compute_riskvalues MAINTAINS
+(  committedTo~
+ /\  raRule~;(I /\ raValue;raValue~ /\ raType;'OblProbability';raType~); raHolon
+ /\  raRule~;(I /\ raValue;raValue~ /\ raType;'Impact';raType~); raHolon
+) |- raRule~;(I /\ raValue;raValue~ /\ raType;'Risk';raType~); raHolon
+EXPLAIN RULE when_to_compute_riskvalues IN ENGLISH {+For all obligationrules within the scope of a holon and for which  values have been assigned to their Impact and OblProbability attributes, the risk shall be computed.-}
+
+EXPLAIN RULE how_to_compute_riskvalues IN ENGLISH {+The following rule states how the computation of risk values is to be performed at runtime.-}
+RULE how_to_compute_riskvalues MAINTAINS
+I /\ raType;'Risk';raType~ = 
+ (  (raHolon;raHolon~/\raRule;raRule~)
+    ;(I/\raType;'Impact';raType~)
+    ;raValue;calcRiskArg2~
+ /\ (raHolon;raHolon~/\raRule;raRule~)
+    ;(I/\raType;'OblProbability';raType~)
+    ;raValue;calcRiskArg1~
+ )  ;calcRisk;raValue~
+    ;(raHolon;raHolon~/\raRule;raRule~)
+EXPLAIN RULE how_to_compute_riskvalues IN ENGLISH {+The value of the risk attribute of a rule in a holon is to be computed from the values of the impact and probability attributes of the same rule within the same holon.-}
+
+ENDPATTERN
+-----------------------------------------------------------------------
+PATTERN CalcRisk -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN CalcRisk IN ENGLISH REF "RJ" {+This pattern defines the way in which risks are computed.-}
+
+calcRiskArg1 :: CalcRisk -> AttrValue.
+calcRiskArg2 :: CalcRisk -> AttrValue.
+calcRisk     :: CalcRisk -> AttrValue.
+
+RULE calcrisk MAINTAINS I[CalcRisk] = calcRiskArg1;calcRiskArg1~ /\ calcRiskArg2;calcRiskArg2~
+EXPLAIN RULE calcrisk IN ENGLISH {+A risk calculation is uniquely determined by its two arguments.-}
+
+ENDPATTERN
+----------------------------------------------------------------------
+POPULATION valDataType CONTAINS [("L", "LMH"); ("M", "LMH"); ("H", "LMH")]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("LL", "L") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("LL", "L") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("LL", "L") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("LM", "L") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("LM", "M") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("LM", "L") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("LH", "L") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("LH", "H") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("LH", "M") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("ML", "M") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("ML", "L") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("ML", "L") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("MM", "M") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("MM", "M") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("MM", "M") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("MH", "M") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("MH", "H") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("MH", "H") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("HL", "H") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("HL", "L") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("HL", "M") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("HM", "H") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("HM", "M") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("HM", "H") ]
+
+POPULATION calcRiskArg1[CalcRisk*AttrValue]  CONTAINS [ ("HH", "H") ]
+POPULATION calcRiskArg2[CalcRisk*AttrValue]  CONTAINS [ ("HH", "H") ]
+POPULATION calcRisk[CalcRisk*AttrValue]      CONTAINS [ ("HH", "H") ]
+
+-----------------------------------------------------------------------
+{-===================================================================-}
+ENDCONTEXT
