@@ -1,0 +1,11 @@
+Issue: there are textual symbols that cannot be doublequoted.
+
+One example of this is:
+
+EXPLAIN CONCEPT "Policy" IN ENGLISH {+explanatory text.-}
+
+which leads to a compiler error. However, the syntax
+
+EXPLAIN CONCEPT Policy IN ENGLISH {+explanatory text.-}
+
+poses no problems. 
