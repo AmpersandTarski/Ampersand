@@ -1,0 +1,21 @@
+Issue: The name of (the relation that represents) a signal is used for different purposes (and hence with different meanings) in the generated documentation; this makes choosing the name for such a relation a dilemma. 
+
+EXAMPLE:
+
+RULE spolicy1 SIGNALS expectedFrom[Policy*Holon] |- committedTo~
+EXPLAIN RULE spolicy1 IN ENGLISH {+<explantory text>-}
+
+This leads to the followin gtext in the "Loose ends..." section:
+QUOTE
+Eis 27: The sentence: \p spolicy1 h" is meaningful (i.e. it is either true or
+false) for any policy p and holon h.
+ENDQUOTE
+
+It also leads to the following text 
+QUOTE
+spolicy1 <explanatory text>
+We use definitions 3.14 and 3.9. A signal is produced when:
+expectedFrom /\ -committedTo~
+ENDQUOTE
+
+The dilemma is that the name for a rule (signal) is equivalent to the name for a relation, which is different from the PRAGMA associated to the relation. One solution would be to require signals to be defined as relations, and use the associated PRAGMAs.  That also would allow them to be EXPLAINed.

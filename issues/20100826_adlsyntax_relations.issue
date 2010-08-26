@@ -1,0 +1,20 @@
+Issue: the syntax for declaring a relation differs from the syntax of every other use of relations.
+
+Relations are declared as follows:
+
+name :: Concept1 * Concept2.
+
+(optionally with multiplicities, PRAGMA etc.)
+
+Relations are typically used as follows:
+
+a) name
+b) name[Concept1*Concept2]
+
+It would be esthetically more pleasing if the syntax for use as inicated sub (b) would be equal to that in which it is defined. Also, it would allow the definition of relations to be cut-and-pasted whenever necessary, rather than having to type it in another syntax.
+
+Suggestion: Add the following syntax to ADL:
+
+name[Concept1*Concept2].
+(optionally with multiplicities, PRAGMA etc.)
+
