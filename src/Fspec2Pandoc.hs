@@ -101,8 +101,8 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           docContents
            = ( introduction       level fSpec flags  ++
                designPrinciples   level fSpec flags  ++
-          --     caTxt                                 ++
-          --     daTxt                                 ++
+               caTxt                                 ++
+               daTxt                                 ++
                if studentversion then [] else [b| (blocks,_)<-svcs, b<-blocks] ++
                if studentversion then fpAnalysis level fSpec flags else [] ++
                glossary level fSpec flags 
@@ -116,19 +116,6 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                    (_,daPic)  = dataAnalysis       level fSpec flags
                    (_,caPics) = conceptualAnalysis level fSpec flags
                    studentversion = theme flags == StudentTheme
---          (docContents,pictures)
---           = ( introduction       level fSpec flags  ++
---               designPrinciples   level fSpec flags  ++
---               caTxt                                 ++
---               daTxt                                 ++
---               if studentversion then [] else [b| (blocks,_)<-svcs, b<-blocks] ++
---               if studentversion then fpAnalysis level fSpec flags else [] ++
---               glossary level fSpec flags
---             , [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] )
---             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
---                   (daTxt,daPic)  = dataAnalysis       level fSpec flags
---                   (caTxt,caPics) = conceptualAnalysis level fSpec flags
---                   studentversion = theme flags == StudentTheme
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 ------------------------------------------------------------                
 
@@ -560,7 +547,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
      = ( [ ( [Str (name r)]
            , [ (concat [explains2Blocks(explain fSpec flags d)|d<-nds]) ++
                [ Plain (text1)| not (null nds)] ++
-               pandocEqnArray [ ([TeX ("\\id{"++latexEsc (name d)++"}")], [TeX ":"], [TeX ("\\id{"++latexEsc (name (source d))++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++latexEsc (name (target d))++"}"), symDefLabel d])
+               pandocEqnArray [ ([TeX ("\\id{"++name d++"}")], [TeX ":"], [TeX ("\\id{"++name (source d)++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++name (target d)++"}"), symDefLabel d])
                               |d<-nds] ++
                (explains2Blocks(explain fSpec flags r)) ++
                [ Plain (text2)| not (null rds)] ++
@@ -691,8 +678,8 @@ dataAnalysis lev fSpec flags
                  else TeX $ "relation&total&surjective\\\\ \\hline\\hline\n"
                ]++
                [ TeX $ chain "&" [ if source d==target d
-                                   then "\\(\\signt{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}\\)"              -- veld
-                                   else "\\(\\signat{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
+                                   then "\\(\\signt{"++name d++"}{"++latexEscShw (source d)++"}\\)"              -- veld
+                                   else "\\(\\signat{"++name d++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
                                  , if isTot d then "\\(\\surd\\)" else ""
                                  , if isSur d then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
@@ -703,8 +690,8 @@ dataAnalysis lev fSpec flags
      ]++
 -- the homogeneous properties:
      [ Para [ if language flags==Dutch
-                then TeX $ "Een relatie, \\id{"++latexEsc (name d)++"}, is homogeen en heeft de volgende eigenschappen: "
-                else TeX $ "One relation, \\id{"++latexEsc (name d)++"}, is homogeneous and has the following properties: "]
+                then TeX $ "Een relatie, \\id{"++name d++"}, is homogeen en heeft de volgende eigenschappen: "
+                else TeX $ "One relation, \\id{"++name d++"}, is homogeneous and has the following properties: "]
      | length hMults==1, d<-hMults ]++
      [ Para [ if language flags==Dutch
                 then TeX $ "In aanvulling daarop hebben de homogene relaties de volgende eigenschappen: "
@@ -715,7 +702,7 @@ dataAnalysis lev fSpec flags
                  then TeX $ "relatie&Rfx&Trn&Sym&Asy&Prop\\\\ \\hline\\hline\n"
                  else TeX $ "relation&Rfx&Trn&Sym&Asy&Prop\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ "\\signt{"++latexEsc (name d)++"}{"++latexEscShw (source d)++"}"              -- veld
+               [ TeX $ chain "&" [ "\\signt{"++name d++"}{"++latexEscShw (source d)++"}"              -- veld
                                  , if isRfx d            then "\\(\\surd\\)" else ""
                                  , if isTrn d            then "\\(\\surd\\)" else ""
                                  , if isSym d            then "\\(\\surd\\)" else ""
@@ -729,12 +716,12 @@ dataAnalysis lev fSpec flags
      | length hMults>0 ]++
 -- the signals
      [ Para [ if language flags==Dutch
-                then TeX $ "Er is een enkel signaal: \\id{"++latexEsc (name d)++"}."
-                else TeX $ "There is but one signal: \\id{"++latexEsc (name d)++"}." ]
+                then TeX $ "Er is een enkel signaal: \\id{"++name d++"}."
+                else TeX $ "There is but one signal: \\id{"++name d++"}." ]
      | length sgnls==1, d<-sgnls ]++
      [ Para [ if language flags==Dutch
-                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]
-                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]]
+                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++name d++"}" | d<-sgnls]
+                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++name d++"}" | d<-sgnls]]
      | length sgnls>1 ]
      where
       hMults  = [d| d@Sgn{}<-declarations fSpec, homogeneous d, decusr d]
@@ -756,7 +743,7 @@ dataAnalysis lev fSpec flags
                  then TeX $ "attribuut&type&verplicht&uniek\\\\ \\hline\\hline\n"
                  else TeX $ "attribute&type&compulsory&unique\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ latexEsc (fldname fld)
+               [ TeX $ chain "&" [ fldname fld
                                  , latexEscShw (target (fldexpr fld))
                                  , if fldnull fld then "" else "\\(\\surd\\)"
                                  , if flduniq fld then "\\(\\surd\\)" else ""
@@ -769,12 +756,12 @@ dataAnalysis lev fSpec flags
 -- the homogeneous properties have already been reported in the general section of this chapter.
 -- the signals
      [ Para [ if language flags==Dutch
-                then TeX $ "Er is een enkel signaal: \\id{"++latexEsc (name d)++"}."
-                else TeX $ "There is but one signal: \\id{"++latexEsc (name d)++"}." ]
+                then TeX $ "Er is een enkel signaal: \\id{"++name d++"}."
+                else TeX $ "There is but one signal: \\id{"++name d++"}." ]
      | length sgnls==1, d<-sgnls ]++
      [ Para [ if language flags==Dutch
-                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]
-                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++latexEsc (name d)++"}" | d<-sgnls]]
+                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++name d++"}" | d<-sgnls]
+                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++name d++"}" | d<-sgnls]]
      | length sgnls>1 ]
      where
       sgnls   = [d| d@Sgn{}<-declarations fSpec, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
@@ -1084,14 +1071,14 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
       FLatex -> [Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           chain "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [latexEsc (name plug), latexEscShw (plfpa plug), (latexEscShw.fPoints.plfpa) plug]
+                          chain "\\\\\n" [ chain "&" [name plug, latexEscShw (plfpa plug), (latexEscShw.fPoints.plfpa) plug]
                                          | plug<-datasets fSpec
                                          , fPoints (plfpa plug)>0] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           chain "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [latexEsc (name svc), latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
+                          chain "\\\\\n" [ chain "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 

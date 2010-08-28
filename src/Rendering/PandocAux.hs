@@ -7,6 +7,7 @@ import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
 import Strings          (unCap, chain)
+import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
                           -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
@@ -322,7 +323,7 @@ count flags n x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
     where
-      preciesEen = "een (1)" --"één"  TODO moet nog utf8 resistent worden gemaakt.
+      preciesEen = [chr 233]++[chr 233]++"n (1)" --Hmmm. Dit werkt nog steeds niet. Raar, maar ik zoek het uit. TODO. 
     
 ------ Symbolic referencing ---------------------------------
 
@@ -342,13 +343,13 @@ class SymRef a where
   symDefPageRef c = TeX $ "\\pageref{Def"++symLabel c++"}"
 
 instance SymRef Concept where
-  symLabel c = "Concept:"++latexEsc [x|x<-name c, x/='_']
+  symLabel c = "Concept:"++stripSpecialChars [x|x<-name c, x/='_']
 
 instance SymRef Declaration where
-  symLabel d = "Decl:"++latexEsc [x|x<-name d++name (source d)++name (target d), x/='_']
+  symLabel d = "Decl:"++stripSpecialChars [x|x<-name d++name (source d)++name (target d), x/='_']
 
 instance SymRef Rule where
-  symLabel r = "Rule:"++latexEsc [x|x<-name r, x/='_']
+  symLabel r = "Rule:"++stripSpecialChars [x|x<-name r, x/='_']
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [TeX ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
@@ -364,7 +365,7 @@ instance SymRef Rule where
 
 labeledHeader :: Int -> String -> String -> [Block]
 labeledHeader 0 lbl str =
-                 [Para [TeX ("\\chapter{"++latexEsc str++"}"), xrefLabel lbl]]
+                 [Para [TeX ("\\chapter{"++str++"}"), xrefLabel lbl]]
 labeledHeader lev lbl str =
                  [Header lev [Str str]]
               ++ [Para [xrefLabel lbl]]
@@ -383,7 +384,7 @@ xrefFigure1 pict =
    [ TeX "\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{.3}[.3]{"
    , Image [Str $ "Here, "++uniqueName pict++" should have been visible"] ((uniqueName pict), (figlabel pict))
    , TeX "}\n"
-   , TeX ("\\caption{"++latexEsc (caption pict)++"}\n") 
+   , TeX ("\\caption{"++caption pict++"}\n") 
    , xrefLabel (figlabel pict)
    , TeX "\n\\end{center}\n\\end{figure}"]
 
@@ -415,8 +416,8 @@ class ShowMath a where
  showMathcode _ x = showMath x
 
 instance ShowMath Concept where
- showMath c = "\\id{"++latexEsc (name c)++"}"
- showMathcode _ c = "\\id{"++latexEsc (name c)++"}"
+ showMath c = "\\id{"++name c++"}"
+ showMathcode _ c = "\\id{"++name c++"}"
 
 instance ShowMath Gen where
  showMath g = showMath (genspc g) ++"\\ \\le\\ "++showMath (gengen g)
@@ -458,7 +459,7 @@ instance ShowMath Morphism where
  showMath mph@(Mph{})
   = if inline mph then mstr else "\\flip{"++mstr++"}"
     where
-      mstr  = "\\id{"++latexEsc (name mph)++"}"++
+      mstr  = "\\id{"++name mph++"}"++
               if null (mphats mph)
               then (if inline mph && mphtyp mph==(source s, target s) || not (inline mph) && mphtyp mph==(target s,source s) then "" else showSign [a,b])
               else showSign (mphats mph)
@@ -474,7 +475,7 @@ instance ShowMath Morphism where
 
 instance ShowMath Declaration where
  showMath decl@(Sgn{})
-  = "\\declare{"++latexEsc (name decl)++"}{"++latexEsc (name (source decl))++"}{"++latexEsc (name (target decl))++"}"
+  = "\\declare{"++name decl++"}{"++name (source decl)++"}{"++name (target decl)++"}"
  showMath Isn{}
   = "\\iden"
  showMath Vs{}
@@ -483,44 +484,55 @@ instance ShowMath Declaration where
   = "\\cmpl{\\iden}"
 
 latexEscShw :: (Show a) => a -> [Char]
-latexEscShw x = latexEsc (show x)
+latexEscShw x = show x
 
-latexEsc :: [Char] -> [Char]
-latexEsc x = x
--- = f x
---   where f "" = ""
---         f ('_':str) = "\\_"++f str
---         f ('\192':str) = "\\`A" ++f str   -- 
---         f ('\193':str) = "\\'A" ++f str   -- 
---         f ('\196':str) = "\\\"A"++f str   -- 
---         f ('\200':str) = "\\`E" ++f str   -- 
---         f ('\201':str) = "\\'E" ++f str   -- 
---         f ('\203':str) = "\\\"E"++f str   -- 
---         f ('\204':str) = "\\`I" ++f str   -- 
---         f ('\205':str) = "\\'I" ++f str   -- 
---         f ('\207':str) = "\\\"I"++f str   -- 
---         f ('\210':str) = "\\`O" ++f str   -- 
---         f ('\211':str) = "\\'O" ++f str   -- 
---         f ('\214':str) = "\\\"O"++f str   -- 
---         f ('\217':str) = "\\`U" ++f str   -- 
---         f ('\218':str) = "\\'U" ++f str   -- 
---         f ('\220':str) = "\\\"U"++f str   -- 
---         f ('\224':str) = "\\`a" ++f str   -- 
---         f ('\225':str) = "\\'a" ++f str   -- 
---         f ('\228':str) = "\\\"a"++f str   -- 
---         f ('\232':str) = "\\`e" ++f str   -- 
---         f ('\233':str) = "\\'e" ++f str   -- 
---         f ('\235':str) = "\\\"e"++f str   -- 
---         f ('\236':str) = "\\`i" ++f str   -- 
---         f ('\237':str) = "\\'i" ++f str   -- 
---         f ('\239':str) = "\\\"i"++f str   -- 
---         f ('\242':str) = "\\`o" ++f str   -- 
---         f ('\243':str) = "\\'o" ++f str   -- 
---         f ('\246':str) = "\\\"o"++f str   -- 
---         f ('\249':str) = "\\`u" ++f str   -- 
---         f ('\250':str) = "\\'u" ++f str   -- 
---         f ('\252':str) = "\\\"u"++f str   -- 
---         f (c:str)   = c: f str
+latexEsc' :: [Char] -> [Char]
+latexEsc' x =  x
+
+stripSpecialChars :: [Char] -> [Char] 
+stripSpecialChars x 
+       = case x of
+             []   -> []
+             c:cs -> (if isAscii c 
+                     then [c]
+                     else "__"++ show (ord c)++"__")
+                     ++stripSpecialChars cs
+             
+             
+      where     
+         f "" = ""
+         f ('_':str) = "\\_"++f str
+         f ('\192':str) = "\\`A" ++f str   -- 
+         f ('\193':str) = "\\'A" ++f str   -- 
+         f ('\196':str) = "\\\"A"++f str   -- 
+         f ('\200':str) = "\\`E" ++f str   -- 
+         f ('\201':str) = "\\'E" ++f str   -- 
+         f ('\203':str) = "\\\"E"++f str   -- 
+         f ('\204':str) = "\\`I" ++f str   -- 
+         f ('\205':str) = "\\'I" ++f str   -- 
+         f ('\207':str) = "\\\"I"++f str   -- 
+         f ('\210':str) = "\\`O" ++f str   -- 
+         f ('\211':str) = "\\'O" ++f str   -- 
+         f ('\214':str) = "\\\"O"++f str   -- 
+         f ('\217':str) = "\\`U" ++f str   -- 
+         f ('\218':str) = "\\'U" ++f str   -- 
+         f ('\220':str) = "\\\"U"++f str   -- 
+         f ('\224':str) = "\\`a" ++f str   -- 
+         f ('\225':str) = "\\'a" ++f str   -- 
+         f ('\228':str) = "\\\"a"++f str   -- 
+         f ('\232':str) = "\\`e" ++f str   -- 
+         f ('\233':str) = "\\'e" ++f str   -- 
+         f ('\235':str) = "\\\"e"++f str   -- 
+         f ('\236':str) = "\\`i" ++f str   -- 
+         f ('\237':str) = "\\'i" ++f str   -- 
+         f ('\239':str) = "\\\"i"++f str   -- 
+         f ('\242':str) = "\\`o" ++f str   -- 
+         f ('\243':str) = "\\'o" ++f str   -- 
+         f ('\246':str) = "\\\"o"++f str   -- 
+         f ('\249':str) = "\\`u" ++f str   -- 
+         f ('\250':str) = "\\'u" ++f str   -- 
+         f ('\252':str) = "\\\"u"++f str   -- 
+         f (c:str)   = c: f str
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
@@ -533,4 +545,6 @@ makeDefinition flags c cdef
      English -> [Str ("A"++(if unCap (take 1 c) `elem` ["a","e","i","o","u"] then "n" else "")++" ")]++str++[Str (" is "++cdef)]
      Dutch   -> [Str "Een "]++str++[Str (" is "++cdef)]
     where
-     str = [Emph [Str (unCap c)]]++[TeX ("\\index{"++latexEsc (unCap c)++"}\\marge{"++latexEsc (unCap c)++"}") | fspecFormat flags==FLatex]
+     str = [Emph [Str (unCap c)]
+           ,TeX ("\\index{"++unCap c++"}\\marge{"++unCap c++"}") ]
+     
