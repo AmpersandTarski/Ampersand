@@ -22,7 +22,7 @@ where
    import Char             (toLower)
    import Text.Pandoc
    import Options
-   
+   import Strings          (preciesEen)
    type Morphisms = [Morphism]
    data Morphism  = 
                    Mph  { mphnm :: String            -- ^ the name of the morphism. This is the same name as
@@ -434,8 +434,7 @@ where
 		                                                        ++[Str (" and "++(unCap.name.target) d++" ")]
 		                                                        ++[Str ((var [source d].target) d)]
 		                                                        ++[Str "."]
-            preciesEen = "een(1)" --"één"  TODO moet utf8 resistent worden gemaakt.
-
+            
 
    isSgn :: Declaration -> Bool
    isSgn Sgn{} = True

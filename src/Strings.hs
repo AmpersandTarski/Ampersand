@@ -1,9 +1,9 @@
   {-# OPTIONS_GHC -Wall #-}
   -- | Deze module bevat operaties op strings.
-  module Strings (chain,unCap,upCap,remSpaces,trim,spacesToUnderscores,spaces,spread,commaEng,commaNL,noCollide)
+  module Strings (chain,unCap,upCap,remSpaces,trim,spacesToUnderscores,spaces,spread,commaEng,commaNL,noCollide,preciesEen)
   where
    import Char (isUpper, toUpper, toLower)
-   import Char(isDigit,digitToInt,intToDigit)
+   import Char(isDigit,digitToInt,intToDigit,chr)
 
    -- | changes its second argument by appending a digit, such that it does not occur in its first argument 
    noCollide :: [String] -- ^ forbidden names
@@ -92,3 +92,7 @@
    commaNL _ [a]    = a
    commaNL str (a:as) = a++", "++commaNL str as
    commaNL _ []     = ""
+
+   preciesEen :: String
+   preciesEen = [chr 233]++[chr 233]++"n"
+    

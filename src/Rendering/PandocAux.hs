@@ -6,7 +6,7 @@ import Picture
 import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
-import Strings          (unCap, chain)
+import Strings          (unCap, chain,preciesEen)
 import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
@@ -307,7 +307,7 @@ count :: Options -> Int -> String -> String
 count flags n x
  = case (language flags, n) of
       (Dutch  , 0) -> "geen "++plural Dutch x
-      (Dutch  , 1) -> preciesEen++" "++x                -- zou "één" moeten zijn, maar dit geeft een UTF-8 decoding error in de Haskell compiler (TODO).
+      (Dutch  , 1) -> preciesEen++" "++x
       (Dutch  , 2) -> "twee "++plural Dutch x
       (Dutch  , 3) -> "drie "++plural Dutch x
       (Dutch  , 4) -> "vier "++plural Dutch x
@@ -322,9 +322,8 @@ count flags n x
       (English, 5) -> "five "++plural English x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
-    where
-      preciesEen = [chr 233]++[chr 233]++"n (1)" --Hmmm. Dit werkt nog steeds niet. Raar, maar ik zoek het uit. TODO. 
     
+      
 ------ Symbolic referencing ---------------------------------
 
 class SymRef a where
@@ -343,13 +342,13 @@ class SymRef a where
   symDefPageRef c = TeX $ "\\pageref{Def"++symLabel c++"}"
 
 instance SymRef Concept where
-  symLabel c = "Concept:"++stripSpecialChars [x|x<-name c, x/='_']
+  symLabel c = "Concept:"++stripSpecialChars (name c)
 
 instance SymRef Declaration where
-  symLabel d = "Decl:"++stripSpecialChars [x|x<-name d++name (source d)++name (target d), x/='_']
+  symLabel d = "Decl:"++stripSpecialChars (name d++name (source d)++name (target d))
 
 instance SymRef Rule where
-  symLabel r = "Rule:"++stripSpecialChars [x|x<-name r, x/='_']
+  symLabel r = "Rule:"++stripSpecialChars (name r)
 
 --   xrefChptReference :: String -> [Inline]
 --   xrefChptReference myLabel = [TeX ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
@@ -492,47 +491,13 @@ latexEsc' x =  x
 stripSpecialChars :: [Char] -> [Char] 
 stripSpecialChars x 
        = case x of
-             []   -> []
-             c:cs -> (if isAscii c 
-                     then [c]
-                     else "__"++ show (ord c)++"__")
-                     ++stripSpecialChars cs
+             []     -> []
+             '_':cs -> "\\_"++cs
+             c:cs   -> (if isAscii c 
+                       then [c]
+                       else "__"++ show (ord c)++"__")
+                       ++stripSpecialChars cs
              
-             
-      where     
-         f "" = ""
-         f ('_':str) = "\\_"++f str
-         f ('\192':str) = "\\`A" ++f str   -- 
-         f ('\193':str) = "\\'A" ++f str   -- 
-         f ('\196':str) = "\\\"A"++f str   -- 
-         f ('\200':str) = "\\`E" ++f str   -- 
-         f ('\201':str) = "\\'E" ++f str   -- 
-         f ('\203':str) = "\\\"E"++f str   -- 
-         f ('\204':str) = "\\`I" ++f str   -- 
-         f ('\205':str) = "\\'I" ++f str   -- 
-         f ('\207':str) = "\\\"I"++f str   -- 
-         f ('\210':str) = "\\`O" ++f str   -- 
-         f ('\211':str) = "\\'O" ++f str   -- 
-         f ('\214':str) = "\\\"O"++f str   -- 
-         f ('\217':str) = "\\`U" ++f str   -- 
-         f ('\218':str) = "\\'U" ++f str   -- 
-         f ('\220':str) = "\\\"U"++f str   -- 
-         f ('\224':str) = "\\`a" ++f str   -- 
-         f ('\225':str) = "\\'a" ++f str   -- 
-         f ('\228':str) = "\\\"a"++f str   -- 
-         f ('\232':str) = "\\`e" ++f str   -- 
-         f ('\233':str) = "\\'e" ++f str   -- 
-         f ('\235':str) = "\\\"e"++f str   -- 
-         f ('\236':str) = "\\`i" ++f str   -- 
-         f ('\237':str) = "\\'i" ++f str   -- 
-         f ('\239':str) = "\\\"i"++f str   -- 
-         f ('\242':str) = "\\`o" ++f str   -- 
-         f ('\243':str) = "\\'o" ++f str   -- 
-         f ('\246':str) = "\\\"o"++f str   -- 
-         f ('\249':str) = "\\`u" ++f str   -- 
-         f ('\250':str) = "\\'u" ++f str   -- 
-         f ('\252':str) = "\\\"u"++f str   -- 
-         f (c:str)   = c: f str
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...

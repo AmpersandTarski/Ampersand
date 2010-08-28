@@ -972,7 +972,7 @@ serviceChap lev fSpec flags svc
                   recur e f | null (fld_sub f) = fld e f
                             | otherwise        = fld e f ++
                                                  [ BulletList [recur (F [e,fld_expr f']) f'| f'<-fld_sub f] ]
-           fld e f = [ Para [ Str (fld_name f++if null cols then "" else "("++chain ", " cols++")") ]
+           fld e f = [ Para [ Str (dealWithUnderscores (fld_name f)++if null cols then "" else "("++chain ", " cols++")") ]
                      , Para [ Str "display on start: ", Math InlineMath $ showMathcode fSpec (conjNF e) ]
                      ] {- ++
                      [ Para [ Str $ "exec on insert: "++ showECA fSpec "\n>     "  (fld_onIns f arg)]
@@ -983,7 +983,13 @@ serviceChap lev fSpec flags svc
                          ["nieuw"        | fld_insAble f]++
                          ["verwijderbaar"| fld_delAble f]
                      
-
+  dealWithUnderscores :: [Char] -> [Char]
+  dealWithUnderscores x = 
+         case x of 
+           []     -> []
+           '_':cs -> "\\_" ++ dealWithUnderscores cs
+           c:cs   -> c : dealWithUnderscores cs
+           
   txtKnowledgeGraph :: [Block]
   txtKnowledgeGraph
    = (case language flags of                                     -- announce the knowledge graph
