@@ -1,10 +1,26 @@
-module Rendering.InfTree2Pandoc where
+  {-# OPTIONS_GHC -Wall #-}
+module Rendering.InfTree2Pandoc (texOnly_proofdoc
+                                ,texOnly_pandoctree
+                                ,texOnly_writeexpr
+                                ,texOnly_writerule
+                                ) 
+where
 import Text.Pandoc 
 import TypeInference.InfLibAG (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
 import Data.Fspec   hiding (services)
 import Adl
 import Auxiliaries (sort')
 
+texOnly_proofdoc :: Fspc -> Pandoc
+texOnly_proofdoc    = proofdoc
+texOnly_pandoctree :: Maybe (InfTree, Expression)
+                      -> Maybe (Concept, Concept)
+                      -> [Block]
+texOnly_pandoctree  = pandoctree
+texOnly_writeexpr :: Expression -> String
+texOnly_writeexpr   = writeexpr
+texOnly_writerule :: Expression -> String
+texOnly_writerule   = writerule
 --a document with proofs for the fspec
 proofdoc :: Fspc -> Pandoc
 proofdoc fSpec = Pandoc (Meta [] [] []) b
@@ -183,6 +199,7 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs) --(c1,c2) is the inferred type for un
    |otherwise=error "TODO 90"
 
 
+tpstr :: RelAlgType -> String
 tpstr (x,y) = ltxstr (show x++"*"++show y)
 --inflib translates ONE to a concept with name #S#
 ltxstr :: String -> String

@@ -9,12 +9,6 @@ import Picture
 import Data.Fspec
 import Strings          (upCap, commaNL, commaEng, chain)
 import Text.Pandoc  
-  --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
-                          -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
-                          -- 2) cabal-install pandoc  (onder windows: cabal install pandoc)
-                          -- 3) Het kan zijn dat dit nog niet werkt, zie http://groups.google.com/group/pandoc-discuss/browse_thread/thread/a8fc3a627aeec7f2
-                          --    als dat het geval is, kan deze module worden overruled in Generators.hs    
-                          -- Built on pandoc 1.4                             
 import Version          (versionbanner)
 import Languages        (Lang(..))
 import PredLogic        (showPredLogic)
@@ -301,7 +295,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                    ,Str "that have not been used in previous paragraphs."]
                                       )
                                      ]
-                              p:_ -> concat (map explain2Blocks (explain fSpec flags p))
+                              [p] -> concat (map explain2Blocks (explain fSpec flags p))
+                              _   -> error ("!Fatal (module Fspec2Pandoc 299): Multple themes are called '"++themeName++"'.") 
 
               themeName = case nm of
                              Just s -> s
@@ -402,87 +397,6 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                           ]
                                          ,incEis cnt)
                       
-                                          
---    dpSections dpRule (rd (map r_pat (rules fSpec++signals fSpec))) [] [] 1
---     where
-  --TODO -> It may be nice to print the class of the dataset from the class diagram
---      dpSections dpRul          -- a function that assembles the text for one rule.
---                 themes         -- The name of the patterns that are used in this specification.
---                 seenConcepts   -- All concepts that have been defined in earlier sections
---                 seenRelations  -- All relations whose multiplicities have been defined in earlier sections.
---                 i              -- unique definition numbers (start at 1)
---       = case themes of
---           []  -> -- There are no more patterns left. There may be material left, though...
---                  if emptySection' then [] else 
---                     ([Para [Str introRest]] ++ --new section to explain this theme
---                      [OrderedList (i, Decimal, DefaultDelim) [[b]|b<-paraConcs' ++ paraDecls']])   -- tells which rules and signals are being introduced
---           (thm:thms)
---               -> if emptySection'' then [] else ([Header (lev+1) [Str thm]]  --new section to explain this theme
---                  ++ sctConcepts  -- tells which new concepts are introduced in this section.
---                  ++ [ OrderedList (i, Decimal, DefaultDelim) ((sctRules'', thm) ++ (sctSignals'', thm))| not (null ((sctRules'' thm)++ (sctSignals'' thm))) ]   -- tells which rules and signals are being introduced
---                  ++ dpSections dpRul thms (seenCss'') (seenDss'') i'')
---           where
---            introRest = case language flags of
---                            English -> "At the end of this chapter, the following definitions have to be made for the sake of completeness."
---                            Dutch   -> "Aan het eind van dit hoofdstuk gebiedt de volledigheid nog om het volgende te definieren."
---            emptySection' = null conceptdefs' && null newRelations'
---            conceptdefs'  = [(c,cd)| c<-newConcepts', cd<-conceptDefs fSpec, cdnm cd==name c]  -- show only those definitions that are actually used in this specification.
---            newConcepts'  = concs newRelations' >- seenConcepts
---            newRelations' = [d| d@Sgn{}<-decls ([r| r<-rules fSpec++signals fSpec]), decusr d, d `notElem` seenRelations, not (null (multiplicities d))]
---            paraConcs'    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs']
---            paraDecls'    = [Para ([symReqLabel d]++ explains2Inlines (explain fSpec flags d)) |d<-newRelations', not (isIdent d)]
---
---
---            emptySection'' = null newConcepts'' && null (sctRules'' ++ sctSignals'')
---            ((sctRules''),  i',  seenCrs'', seenDrs'') = dpRul (patRules'') i seenConcepts seenRelations
---            ((sctSignals''), i'', seenCss'', seenDss'') = dpRul (patSignals'') i' seenCrs'' seenDrs''
---            conceptdefs''  = [(c,cd)| c<-concs fSpec, cd<-conceptDefs fSpec, cdnm cd==name c]  -- show only those definitions that are actually used in this specification.
---            (patRules'')    = [r| r<-rules fSpec,   r_pat r==thm, r_usr r]
---            (patSignals'')  = [s| s<-signals fSpec, r_pat s==thm]
---            newConcepts''  = concs ((patRules'' ) ++patSignals'') >- seenConcepts
---            thm = fst themes
-----         newRelations = filter (not.isIdent) (decls (patRules++patSignals) >- seenRelations)
---            sctConcepts
---             = if null newConcepts'' then [] else
---              case language flags of
---               Dutch   ->  [ Para $ (case [name c|(c,_)<-conceptdefs'', c `elem` newConcepts''] of
---                                      []  -> []
---                                      [c] -> [ Str $ "Deze sectie introduceert het concept "
---                                             , Str $ c
---                                             , Str $ ". "]
---                                      cs  -> [ Str $ "Deze sectie introduceert de concepten "
---                                             , Str $ commaNL "en" cs
---                                             , Str $ ". "]
---                                    )++
---                                    (case [name c| c<-newConcepts'', c `notElem` [c'| (c',_)<-conceptdefs'']] of
---                                      []  -> []
---                                      [c] -> [ Str $ "Concept "
---                                             , Str $ c
---                                             , Str $ " wordt in deze sectie geintroduceerd zonder definitie. "]
---                                      cs  -> [ Str $ "Deze sectie introduceert concepten "
---                                             , Str $ commaNL "en" cs
---                                             , Str $ " zonder definitie. "]
---                                    )
---                           ]
---               English ->  [ Para $ (case [name c|(c,_)<-conceptdefs'', c `elem` newConcepts''] of
---                                      []  -> []
---                                      [c] -> [ Str $ "This section introduces concept "
---                                             , Str $ c
---                                             , Str $ ". "]
---                                      cs  -> [ Str $ "This section introduces concepts "
---                                             , Str $ commaEng "and" cs
---                                             , Str $ ". "]
---                                    )++
---                                    (case [name c| c<-newConcepts'', c `notElem` [c'| (c',_)<-conceptdefs'']] of
---                                      []  -> []
---                                      [c] -> [ Str $ "Concept "
---                                             , Str $ c
---                                             , Str $ " is introduced in this section without a definition."]
---                                      cs  -> [ Str $ "This section introduces concepts "
---                                             , Str $ commaEng "and" cs
---                                             , Str $ " without definition. "]
---                                    )
---                           ]
 
      
 ------------------------------------------------------------
@@ -547,7 +461,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
      = ( [ ( [Str (name r)]
            , [ (concat [explains2Blocks(explain fSpec flags d)|d<-nds]) ++
                [ Plain (text1)| not (null nds)] ++
-               pandocEqnArray [ ([TeX ("\\id{"++name d++"}")], [TeX ":"], [TeX ("\\id{"++name (source d)++"}"++(if isFunction d then "\\fun" else "\\times" )++"\\id{"++name (target d)++"}"), symDefLabel d])
+               pandocEqnArray [ ([TeX (texOnly_Id(name d))], [TeX ":"], [TeX (texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel )++texOnly_Id(name(target d))), symDefLabel d])
                               |d<-nds] ++
                (explains2Blocks(explain fSpec flags r)) ++
                [ Plain (text2)| not (null rds)] ++
@@ -690,8 +604,8 @@ dataAnalysis lev fSpec flags
      ]++
 -- the homogeneous properties:
      [ Para [ if language flags==Dutch
-                then TeX $ "Een relatie, \\id{"++name d++"}, is homogeen en heeft de volgende eigenschappen: "
-                else TeX $ "One relation, \\id{"++name d++"}, is homogeneous and has the following properties: "]
+                then TeX $ "Een relatie, "++texOnly_Id(name d)++", is homogeen en heeft de volgende eigenschappen: "
+                else TeX $ "One relation, "++texOnly_Id(name d)++", is homogeneous and has the following properties: "]
      | length hMults==1, d<-hMults ]++
      [ Para [ if language flags==Dutch
                 then TeX $ "In aanvulling daarop hebben de homogene relaties de volgende eigenschappen: "
@@ -716,12 +630,12 @@ dataAnalysis lev fSpec flags
      | length hMults>0 ]++
 -- the signals
      [ Para [ if language flags==Dutch
-                then TeX $ "Er is een enkel signaal: \\id{"++name d++"}."
-                else TeX $ "There is but one signal: \\id{"++name d++"}." ]
+                then TeX $ "Er is een enkel signaal: "++texOnly_Id(name d)++"."
+                else TeX $ "There is but one signal: "++texOnly_Id(name d)++"." ]
      | length sgnls==1, d<-sgnls ]++
      [ Para [ if language flags==Dutch
-                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++name d++"}" | d<-sgnls]
-                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++name d++"}" | d<-sgnls]]
+                then TeX $ "De volgende signalen bestaan: "++commaNL "en" [texOnly_Id(name d) | d<-sgnls]
+                else TeX $ "The following signals exist: "++commaEng "and" [texOnly_Id(name d)| d<-sgnls]]
      | length sgnls>1 ]
      where
       hMults  = [d| d@Sgn{}<-declarations fSpec, homogeneous d, decusr d]
@@ -755,13 +669,15 @@ dataAnalysis lev fSpec flags
      ]++
 -- the homogeneous properties have already been reported in the general section of this chapter.
 -- the signals
-     [ Para [ if language flags==Dutch
-                then TeX $ "Er is een enkel signaal: \\id{"++name d++"}."
-                else TeX $ "There is but one signal: \\id{"++name d++"}." ]
+     [ Para ( if language flags==Dutch
+                then [TeX $ "Er is een enkel signaal: "++texOnly_Id(name d)++"."]
+                else [TeX $ "There is but one signal: "++texOnly_Id(name d)++"."]
+            )
      | length sgnls==1, d<-sgnls ]++
-     [ Para [ if language flags==Dutch
-                then TeX $ "De volgende signalen bestaan: "++commaNL "en" ["\\id{"++name d++"}" | d<-sgnls]
-                else TeX $ "The following signals exist: "++commaEng "and" ["\\id{"++name d++"}" | d<-sgnls]]
+     [ Para ( if language flags==Dutch
+                then [TeX $ "De volgende signalen bestaan: "++commaNL "en" [texOnly_Id(name d) | d<-sgnls]]
+                else [TeX $ "The following signals exist: "++commaEng "and" [texOnly_Id(name d) | d<-sgnls]]
+            )
      | length sgnls>1 ]
      where
       sgnls   = [d| d@Sgn{}<-declarations fSpec, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults

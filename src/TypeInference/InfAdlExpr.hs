@@ -28,7 +28,7 @@ import TypeInference.InfLibAG
 import Adl
 import ShowADL
 import Text.Pandoc
-import Rendering.InfTree2Pandoc (pandoctree,writeexpr,writerule)
+import Rendering.InfTree2Pandoc (texOnly_pandoctree,texOnly_writeexpr,texOnly_writerule)
 
 fatal :: Int -> String -> a
 fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg )
@@ -236,7 +236,7 @@ errortrees::((Concept,Concept) -> Expression -> Either ((Concept,Concept), Expre
 -- the source or target of the type of the root expression is the universe
 errortrees f ds root err@(TErrorU _ inftree) 
   = [errsct root (printterror ds root err)]
-    ++pandoctree (Just (inftree,root)) Nothing
+    ++texOnly_pandoctree (Just (inftree,root)) Nothing
 --the composition is over the universe
 errortrees f ds root err@(TErrorUC _ x y) 
   = [errsct root (printterror ds root err),errpar1]
@@ -285,14 +285,14 @@ errortrees inferfromscript ds root err = [Plain [Str ("No proof for error: " ++ 
 
 --TODO -> make it possible to push a type on it, then it is expected to have no type errors.
 inftreesub :: (Either ((Concept,Concept), Expression,InfTree) (String,[Block])) -> [Block]
-inftreesub (Left (tp,x,inftree)) = pandoctree (Just (inftree,x)) (Just tp)
+inftreesub (Left (tp,x,inftree)) = texOnly_pandoctree (Just (inftree,x)) (Just tp)
 inftreesub (Right (_,inftree)) = inftree
 --inftreesub (Right err) = fatal 239 ("Subexpressions are expected to have no type errors:\n"++fst err)
 
 errsct :: Expression -> String -> Block
 errsct x err = 
-   Plain [TeX ("\\section{Type error in $"++ writerule x++ "$ }\n")
-         ,TeX [c|c<-"By definition: $"++writerule x++" \\Leftrightarrow "++writeexpr x++"$ \\newline \n",writerule x/=writeexpr x] 
+   Plain [TeX ("\\section{Type error in $"++ texOnly_writerule x++ "$ }\n")
+         ,TeX [c|c<-"By definition: $"++texOnly_writerule x++" \\Leftrightarrow "++texOnly_writeexpr x++"$ \\newline \n",texOnly_writerule x/=texOnly_writeexpr x] 
          ,Str err
          ]
 errpar1 :: Block

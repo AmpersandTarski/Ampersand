@@ -13,7 +13,7 @@ import Adl
 import Fspec2Pandoc           (fSpec2Pandoc)
 import Atlas.Atlas
 import Picture
-import Rendering.InfTree2Pandoc (proofdoc)
+import Rendering.InfTree2Pandoc (texOnly_proofdoc)
 import Rendering.PandocAux (writepandoc)
 import System.FilePath        (combine,replaceExtension)
 import UTF8  
@@ -96,12 +96,13 @@ doGenDocument fSpec flags
        where
        (thePandoc,thePictures) 
             = case theme flags of
-                 ProofTheme   -> (proofdoc fSpec,[])     --generate a proof document
+                 ProofTheme   -> case fspecFormat flags of
+                                   FLatex -> (texOnly_proofdoc fSpec,[])     --generate a proof document
+                                   _      -> error "ADL only supports proof documents output in LaTeX format. try `-fLatex` "
                  DefaultTheme -> funcSpec
                  StudentTheme -> funcSpec
                where funcSpec = fSpec2Pandoc fSpec flags --generate a func spec
        (outputFile,makeOutput,postProcessor) = writepandoc flags thePandoc
-
 
 
 -- The following function assumes a syntactically correct ADL-script,
@@ -116,7 +117,9 @@ diagnose fSpec flags
        where
        (thePandoc,_)
             = case theme flags of
-                 ProofTheme -> (proofdoc fSpec,[])      --generate a proof document
+                 ProofTheme   -> case fspecFormat flags of
+                                   FLatex -> (texOnly_proofdoc fSpec,[])     --generate a proof document
+                                   _      -> error "ADL only supports proof documents output in LaTeX format. try `-fLatex` "
                  DefaultTheme -> funcSpec
                  StudentTheme -> funcSpec
                where funcSpec = fSpec2Pandoc fSpec flags --generate a func spec

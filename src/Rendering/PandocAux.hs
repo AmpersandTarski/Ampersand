@@ -1,5 +1,22 @@
 {-# OPTIONS_GHC -Wall #-}
-module Rendering.PandocAux where
+module Rendering.PandocAux ( writepandoc
+                           , labeledHeader
+                           , xrefReference
+                           , symDefLabel, symDefRef
+                           , symReqLabel, symReqRef, symReqPageRef
+                           , makeDefinition
+                           , xrefFigure1
+                           , pandocEqnArray
+                           , pandocEquation
+                           , count
+                           , showMathcode
+                           , latexEscShw
+                           , xrefCitation
+                           , texOnly_Id
+                           , texOnly_fun
+                           , texOnly_rel
+                           )
+where
 import Version          (versionbanner)
 import Adl
 import Picture
@@ -170,23 +187,23 @@ theTemplate flags
                , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
                , "\\newcommand{\\full}{\\mathbb{V}}"
                , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
-               , "\\newcommand{\\relAdd}{\\dagger}"
+           --    , "\\newcommand{\\relAdd}{\\dagger}"
                , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
                , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
                , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
                , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
-               , "\\newcommand{\\rel}{\\times}"
-               , "\\newcommand{\\compose}{;}"
+           --    , "\\newcommand{\\rel}{\\times}"
+           --    , "\\newcommand{\\compose}{;}"
                , "\\newcommand{\\subs}{\\vdash}"
-               , "\\newcommand{\\fun}{\\rightarrow}"
+           --    , "\\newcommand{\\fun}{\\rightarrow}"
                , "\\newcommand{\\isa}{\\sqsubseteq}"
                , "\\newcommand{\\N}{\\mbox{\\msb N}}"
-               , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
-               , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\rightarrow\\)}\\id{#3}}"
+               , "\\newcommand{\\disjn}[1]{"++texOnly_Id("disjoint")++"(#1)}"
+               , "\\newcommand{\\fsignat}[3]{"++texOnly_Id("#1")++":"++texOnly_Id("#2")++"\\mbox{\\("++texOnly_fun++"\\)}"++texOnly_Id("#3")++"}"
                , "\\newcommand{\\signat}[3]{\\mbox{\\({#1}_{[{#2},{#3}]}\\)}}"
                , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
-               , "\\newcommand{\\declare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\times\\)}\\id{#3}}"
-               , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\id{#2}\\mbox{\\(\\fun\\)}\\id{#3}}"
+               , "\\newcommand{\\declare}[3]{"++texOnly_Id("#1")++":"++texOnly_Id("#2")++"\\mbox{\\("++texOnly_rel++"\\)}"++texOnly_Id("#3")++"}"
+               , "\\newcommand{\\fdeclare}[3]{"++texOnly_Id("#1")++":"++texOnly_Id("#2")++"\\mbox{\\("++texOnly_fun++"\\)}"++texOnly_Id("#3")++"}"
                ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
                [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
           {-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
@@ -415,8 +432,8 @@ class ShowMath a where
  showMathcode _ x = showMath x
 
 instance ShowMath Concept where
- showMath c = "\\id{"++name c++"}"
- showMathcode _ c = "\\id{"++name c++"}"
+ showMath c = texOnly_Id(name c)
+ showMathcode _ c = texOnly_Id(name c)
 
 instance ShowMath Gen where
  showMath g = showMath (genspc g) ++"\\ \\le\\ "++showMath (gengen g)
@@ -426,13 +443,13 @@ instance ShowMath Rule where
  showMath r = error ("!Fatal (module Fspec2Pandoc 889): Please supply specification of the context in showMath "++showADL r)
  showMathcode fSpec r
   = {- ( if isSignal r
-      then "\\verb#RULE # \\id{"++name r++"}\\ \\verb# SIGNALS #"
-      else "\\verb#RULE # \\id{"++name r++"}\\ \\verb# MAINTAINS #"
+      then "\\verb#RULE # "++texId(name r)++"\\ \\verb# SIGNALS #"
+      else "\\verb#RULE # "++texId(name r)++"\\ \\verb# MAINTAINS #"
     )++  -}
     case rrsrt r of
       Truth          -> showMathcode fSpec (rrcon r)
-      Implication    -> showMathcode fSpec (rrant r) ++"\\ \\subs\\ "++showMathcode fSpec (rrcon r)
-      Equivalence    -> showMathcode fSpec (rrant r) ++"\\ =\\ " ++showMathcode fSpec (rrcon r)
+      Implication    -> showMathcode fSpec (rrant r) ++"\\ "++texOnly_subs  ++"\\ "++showMathcode fSpec (rrcon r)
+      Equivalence    -> showMathcode fSpec (rrant r) ++"\\ "++texOnly_equals++"\\ "++showMathcode fSpec (rrcon r)
       Generalization -> showMathcode fSpec (G (pos r) (source (rrcon r)) (source (rrant r)) "")
 
 instance ShowMath Expression where
@@ -446,9 +463,9 @@ showchar (Fux fs)  = chain "\\cup" [showchar f| f<-fs]     -- union
 showchar (Fix [])  = "\\full"
 showchar (Fix fs)  = chain "\\cap" [showchar f| f<-fs]     -- intersection
 showchar (Fdx [])  = "\\cmpl{\\iden}"
-showchar (Fdx ts)  = chain "\\relAdd" [showchar t| t<-ts]  -- relative addition (dagger)
+showchar (Fdx ts)  = chain texOnly_relAdd [showchar t| t<-ts]  -- relative addition (dagger)
 showchar (F [])   = "\\iden"
-showchar (F ts)   = chain "\\compose" [showchar t| t<-ts] -- relative multiplication (semicolon)
+showchar (F ts)   = chain texOnly_compose [showchar t| t<-ts] -- relative multiplication (semicolon)
 showchar (K0x e')  = "\\kleenestar{"++showchar e'++"}"
 showchar (K1x e')  = "\\kleeneplus{"++showchar e'++"}"
 showchar (Cpx e')  = "\\cmpl{"++showchar e'++"}"
@@ -458,7 +475,7 @@ instance ShowMath Morphism where
  showMath mph@(Mph{})
   = if inline mph then mstr else "\\flip{"++mstr++"}"
     where
-      mstr  = "\\id{"++name mph++"}"++
+      mstr  = texOnly_Id(name mph)++
               if null (mphats mph)
               then (if inline mph && mphtyp mph==(source s, target s) || not (inline mph) && mphtyp mph==(target s,source s) then "" else showSign [a,b])
               else showSign (mphats mph)
@@ -485,9 +502,6 @@ instance ShowMath Declaration where
 latexEscShw :: (Show a) => a -> [Char]
 latexEscShw x = show x
 
-latexEsc' :: [Char] -> [Char]
-latexEsc' x =  x
-
 stripSpecialChars :: [Char] -> [Char] 
 stripSpecialChars x 
        = case x of
@@ -512,4 +526,29 @@ makeDefinition flags c cdef
     where
      str = [Emph [Str (unCap c)]
            ,TeX ("\\index{"++unCap c++"}\\marge{"++unCap c++"}") ]
-     
+
+
+---------------------------
+--- LaTeX related stuff ---
+---------------------------
+
+texOnly_Id :: String -> String
+texOnly_Id s = "\\id{"++s++"}"    
+
+texOnly_fun :: String
+texOnly_fun = "\\rightarrow"
+
+texOnly_rel :: String
+texOnly_rel = "\\times" 
+
+texOnly_relAdd :: String
+texOnly_relAdd = "\\dagger"
+
+texOnly_compose :: String
+texOnly_compose = ";"
+
+texOnly_subs :: String
+texOnly_subs = "\\vdash"
+
+texOnly_equals :: String
+texOnly_equals = "=" 
