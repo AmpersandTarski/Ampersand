@@ -1,1 +1,5 @@
 Issue: EXPLAIN PATTERN syntax should be included in chapter 2 of fspecs, which currently is not the case.
+
+Yes it is. However, the focus of fspecs is currently only on LaTeX (PDF). Word or other formats are known to be buggy, or do not work at all.
+
+Rieks, als je het hier mee eens bent, mag je dit bestand verwijderen. Anders graag je voorbeeld .adl script.   

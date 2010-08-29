@@ -1,3 +1,10 @@
+[2010-08-29, Han:]
+Please include error message. 
+I Suppose this has to do with comparing the name of the ConceptDef with the name of the EXPLAIN. 
+
+
+
+[2010-08-26, Rieks:]
 Issue: there are textual symbols that cannot be doublequoted.
 
 One example of this is:

@@ -1,3 +1,10 @@
+[2010-08-29, Han:]
+What you say is that *name* of the rule is used as a reference to the rule itself, but also as a reference to the signal that the rule is supposed to trigger. A solution could be to add a prefix and/or suffix to the name in one of these cases. 
+questions: A) Would that help? B) if so, what do you suggest?
+
+
+
+[2010-08-26, Rieks:]
 Issue: The name of (the relation that represents) a signal is used for different purposes (and hence with different meanings) in the generated documentation; this makes choosing the name for such a relation a dilemma. 
 
 EXAMPLE:
