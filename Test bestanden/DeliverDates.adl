@@ -3,7 +3,7 @@ CONTEXT Deliveries
 SERVICE Customer : I[Client]
  = [ Order : from[Order*Client]~
       = [ Store: addressedTo
-        , Items : item
+        , Items : orderitem
         , bestelnummer: accepted~;accepted /\ I  -- alleen de geaccepteerde orders
         , besteldatum: date
         ]
@@ -28,7 +28,7 @@ SERVICE Provider : I[Provider]
  = [ Order : addressedTo~
       = [ ordernumber: I[Order]
         , from : from
-        , Items : item
+        , Items : orderitem
         , accepted: accepted~;addressedTo~ /\ I
         , besteldatum: date
         ]
@@ -75,7 +75,7 @@ SERVICE Levering : I[Delivery]
    ]
 
 SERVICE Orderitem : I[Product]
- = [ klant : item~;from
+ = [ klant : orderitem~;from
    , leverancier : item~;provided~
    ]
 
@@ -90,7 +90,7 @@ SERVICE Bestellijst : I[ONE]
 
 PATTERN Deliveries
 
- item :: Order * Product
+ orderitem :: Order * Product
   = [ ("C45666"                  , "Jelly beans"  )
     ; ("Order 22/09/2006 Cookies", "Cookies"      )
     ; ("C45683"                  , "Peanut butter")
@@ -120,9 +120,9 @@ SIGNAL deliver ON I |- of~;of EXPLANATION "De volgende order zit in de pijplijn"
     ; ("Jelly beans #4921"  , "C45666"                  )
     ; ("Peanut butter #1993", "C45683"                  )
     ].
- item[Delivery*Product] |- of;item
+ item[Delivery*Product] |- of;orderitem
   EXPLANATION "There must be an order for every item delivered."
- of;item |- item[Delivery*Product]
+ of;orderitem |- item[Delivery*Product]
   EXPLANATION "All items ordered must be delivered."
  provided :: Provider * Delivery [SUR,INJ] PRAGMA "Provider " " has delivered delivery "
   = [ ("Candy's candy", "Cookies #0382")

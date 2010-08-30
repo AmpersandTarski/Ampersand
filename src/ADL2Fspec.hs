@@ -9,10 +9,12 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Options        (Options)
    import NormalForms(conjNF,disjNF,normPA,simplify)
    import Data.Plug
-   import Prototype.CodeVariables (CodeVar(..))
+   import Prototype.CodeAuxiliaries (Named(..))
+   import Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
    import Char
    import ShowADL
    import FPA
+   import Data.Maybe (listToMaybe)
    
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec
@@ -308,15 +310,27 @@ So the first step is create the kernels ...   -}
               fpa           -- the number of function points to be counted for this plug
      where
       inFile :: Maybe String
-      inFile = error "undefined inFile in ADL2Fspec.hs"
+      inFile = listToMaybe [ file --objstrs = [["FILE=date.plug.php"]]
+                           | x<-objstrs obj
+                           , str<-x
+                           , (m,file)<-[splitAt 5 str]
+                           , m=="FILE="
+                           ]
       inAttrs :: [CodeVar]
-      inAttrs = error "undefined inAttrs in ADL2Fspec.hs"
+      inAttrs = [toAttr attr | attr<-objats obj, (or$ map (elem "PHPARG") (objstrs attr))]
+      toAttr :: ObjectDef -> CodeVar
+      toAttr a = CodeVar{cvIndexed=IndexByName -- TODO, read this from parameters
+                        ,cvContent=Right [] -- TODO!! Allow complex objects..
+                        ,cvExpression=objctx a}
       outObj :: CodeVar
-      outObj = error "undefined outObj in ADL2Fspec.hs"
+      outObj = CodeVar{cvIndexed=IndexByName
+                      ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
+                      ,cvExpression=objctx obj}
       verifiesInput::Bool
-      verifiesInput = False
+      verifiesInput = True
       fpa::FPA
       fpa = (ILGV Eenvoudig)
+      
    
 -- | makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
    makeSqlPlug :: ObjectDef -> PlugSQL

@@ -3,6 +3,7 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
  import Prototype.CodeAuxiliaries(Named(..))
  import Prototype.RelBinGenBasics(indentBlockBetween)
  import qualified Data.Set as Set
+ import Strings (chain)
  
  showCode :: Int -> [Statement] -> String
  showCode i s = fst (showCodeAndGetHeaders i s)
@@ -75,7 +76,26 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
       -> line "isectComp" (Set.singleton "function intersect($a,$b){$c=array();foreach($a as $i=>$v){if(!isset($b[$i])){$c[$i]=$v}else{foreach($v as $v2) if(!isElem($b[$i],$v2)){addOneTo($c[$i],$v2)}}} return $c;}"
                            `Set.union` isElem
                            `Set.union` addOneTo)
-     _ -> error ("cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in Code.hs)")
+     PHPBinCheck{}
+      -> foldr1 (+++)
+                ([("(false==="++cqphpplug rest++"(",Set.empty)]++
+                 [(prefix++str,sets)|(prefix,(str,sets))<-zip ("":repeat ",")$ map assignment (cqinput rest)]
+                 ++[(")?array():array(",Set.empty)
+                   ,assignment (fst$ cqreturn rest)
+                   ,("=>",Set.empty)
+                   ,assignment (snd$ cqreturn rest)
+                   ,("))",(case (cqphpfile rest) of
+                                 Just str -> Set.singleton$ "require \""++str++"\";"
+                                 Nothing -> Set.empty
+                          )
+                    )
+                   ]
+                 )
+     PHPCompl1{}
+      -> ("(",Set.empty)+++(assignment$ cqfrom rest)+++
+         ("?array():array("++(showUseVar.fst$ cqtuple rest)
+                     ++"=>"++(showUseVar.snd$ cqtuple rest)++"))",Set.empty)
+     _ -> error ("cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in ShowCode.hs on line 100)")
     where
      line str set = ( str++"("++fst (assignment (cqfrom1 rest))++","++fst (assignment (cqfrom2 rest))++")"
                     , snd(assignment (cqfrom1 rest)) `Set.union` snd(assignment (cqfrom2 rest)) `Set.union` set)

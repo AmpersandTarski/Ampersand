@@ -76,7 +76,7 @@ where
              , phpfpa    :: FPA          -- ^ functie punten analyse
              }
                deriving (Show)
-
+  
   instance Object PlugSQL where
    concept p = case p of
      PlugSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")

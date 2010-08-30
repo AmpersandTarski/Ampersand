@@ -11,12 +11,14 @@ module Prototype.CodeVariables
  import Prototype.CodeAuxiliaries (Named(..),nameFresh)
  import Adl (Concept(..),Expression(..),Declaration(..),Morphism(..),mIs, Prop(..),makeMph,Identified(..),source,target)
  import Strings(noCollide)
+ import {-# SOURCE #-} Prototype.CodeStatement (UseVar(..))
 
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary
  data CodeVar = CodeVar
   { cvIndexed :: CodeVarIndexed
-  , cvContent :: Either CodeVar [Named CodeVar]
+  , cvContent :: Either CodeVar -- ^ intended for indexed stuff: $var[$i] returns a codeVar
+                        [Named CodeVar] -- ^ intended for objects/associative arrays: $var["nName"] is a codeVar
   , cvExpression :: Expression
   } deriving (Eq)
  data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
@@ -30,14 +32,14 @@ module Prototype.CodeVariables
  -- | create a new singleton scalar variable, useful for in loops (as with newSingleton, but make sure the variable name is not taken)
  freshSingleton :: [Named CodeVar] -- ^ variables with which this var should not collide by name
                 -> String -- ^ preferred name
-                -> Concept -- ^ type of singleton
+                -> Concept -- ^ (more generic) type of singleton
                 -> Named CodeVar -- ^ result
- freshSingleton vars nm tp
-   = nameFresh vars nm (newSingleton ('$':nm) tp)
+ freshSingleton vars nm _
+   = nameFresh vars nm (newSingleton (nm))
  -- | create a new singleton scalar variable, used by newSingleton, but also useful for in content attribute of a new CodeVarObject
- newSingleton :: String->Concept -> CodeVar
- newSingleton nm tp
-   = singletonCV{cvExpression=Tm (Mp1 (nm) [] tp) (-1)}
+ newSingleton :: String -> CodeVar
+ newSingleton nm
+   = singletonCV{cvExpression=(Tm (mIs (I1 (Named nm (UseVar []))))(-1))}
  -- | Create a new variable with the value of some expression, ensure that its name does not exist yet
  newVarFor :: [String] -- ^ list of forbidden names
            -> Expression -- ^ value of the variable

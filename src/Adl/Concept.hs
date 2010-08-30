@@ -15,7 +15,7 @@ where
                         )
   import Collection     ((>-))
   import Typology       (Typologic)
-  import {-# SOURCE #-} Adl.Expression (Expression(..))
+  import {-# SOURCE #-} Adl.Expression (Expression)
   import {-# SOURCE #-} Prototype.CodeStatement
   import Prototype.CodeAuxiliaries (Named(..))
   
@@ -49,6 +49,7 @@ where
    Anything == Anything = True
    NOthing == NOthing = True
    DExp a == DExp b = a==b
+   I1 a == I1 b = a==b
    _ == _ = False
   instance Show Concept where
    showsPrec _ c = showString (name c)
@@ -57,7 +58,8 @@ where
    name S = "S"
    name Anything   = "Anything"
    name NOthing    = "NOthing"
-   name (DExp _)   = error "Derived concepts have no name (on line 53 in Concept.hs)"
+   name (DExp _)   = "SomeExpression"
+   name (I1 x)     = nName x
 
   instance Association Concept where
    source c = c
@@ -165,6 +167,7 @@ where
    conts S        = Nothing -- S has exactly one atom, but that atom may not be referred to
    conts Anything = Nothing
    conts NOthing  = Nothing
+   --conts (DExp e) = conts e
 
   instance Morphics Concept where
    anything c = c == Anything

@@ -75,8 +75,8 @@ SERVICE Levering : I[Delivery]
    ]
 
 SERVICE Orderitem : I[Product]
- = [ klant : item~;from
-   , leverancier : item~;provided~
+ = [ klant : item[Order*Product]~;from
+   , leverancier : item[Delivery*Product]~;provided~
    ]
 
 

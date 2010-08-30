@@ -442,7 +442,11 @@ module Prototype.RelBinGenSQL
    sqlRelPlugs fSpec e = rd [ (plug,fld0,fld1)
                             | plug<-pickTypedPlug$ plugs fSpec
                             , (fld0,fld1)<-sqlPlugFields plug e
-                            ] 
+                            ] ++
+                            [ (plug,fld1,fld0)
+                            | plug<-pickTypedPlug$ plugs fSpec
+                            , (fld0,fld1)<-sqlPlugFields plug (flp e)
+                            ]
 
    sqlRelPlugNames :: Fspc -> Expression -> [(String,String,String)] --(plug,source,target)
    sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
