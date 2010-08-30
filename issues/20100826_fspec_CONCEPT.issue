@@ -1,3 +1,25 @@
+[2010-08-29, Rieks:]
+Hier is de foutmelding:
+<QUOTE>
+ 8:39:35 D:\CC_Demos\ADL_Onderzoek\workspace\PolicyMgt> "F:\RJ$\Prive\CC model repository\AMPprogs\ADLvs1.1.0.717.exe" "F:\RJ$\Prive\CC model repository\Adlfiles\PolicyMgt.adl" -p"D:\CC_Demos\ADL_Onderzoek\OU - ADL\trunk\apps\PolicyMgt\inc" --verbose
+Checking output directories...
+Parsing... ADLvs1.1.0.717.exe: !Fatal (module UU_parsing 509):
+Expecting upper case identifier ?uc?
+before string "Holon" at line 24, column 17 of file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\PolicyMgt.adl"
+Try deleting symbol string "Holon" at line 24, column 17 of file "F:\\RJ$\\Prive\\CC model repository\\Adlfiles\\PolicyMgt.adl"
+
+</QUOTE>
+
+Hieronder quoteer ik een stukje sourcetekst waarin de in de foutmelding bedoelde 'line 24' is vervat; deze 'line 24' is de regel uit de volgende 'QUOTE' die begint met 'EXPLAIN CONCEPT "Holon"'
+
+<QUOTE>
+CONCEPT Holon "a scope committed to comply with a specific set of rules (its obligationrules) and expects itself or other holons to comply with a specific set of rules (its expectationrules)"
+EXPLAIN CONCEPT "Holon" IN ENGLISH
+{+Our use of this term is loosely inspired on  the contents found at `WikiPedia <http://en.wikipedia.org/wiki/Holon_%28philosophy%29>`_.
+</QUOTE>
+
+
+
 [2010-08-29, Han:]
 Please include error message. 
 I Suppose this has to do with comparing the name of the ConceptDef with the name of the EXPLAIN. 

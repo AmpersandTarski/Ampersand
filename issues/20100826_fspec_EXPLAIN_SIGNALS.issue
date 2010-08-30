@@ -1,3 +1,7 @@
+[2010-08-30, Rieks:]
+I already suggested a solution (see last paragraph @2010-08-26). The point is that in one context, 'spolicy1' refers to a rule that is to be maintained while in another context, 'spolicy1' refers to a relation that contains the violations thereof. In my opinion, there's no quick fix for this (but then, for this moment it's also not a very big deal). Perhaps Stef has some bright ideas on this?
+
+
 [2010-08-29, Han:]
 What you say is that *name* of the rule is used as a reference to the rule itself, but also as a reference to the signal that the rule is supposed to trigger. A solution could be to add a prefix and/or suffix to the name in one of these cases. 
 questions: A) Would that help? B) if so, what do you suggest?
