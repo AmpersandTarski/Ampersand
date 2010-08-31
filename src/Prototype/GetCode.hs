@@ -173,12 +173,11 @@ module Prototype.GetCode (getCodeFor) where
                           , assignment <- getCodeForSingle fSpec pre var1
                           ] 
                 (F fs) -> [assignment++
-                           [Iteration (var1:pre)
-                                      (obj:var1:pre)
-                                      (use var1)
-                                      loopby       
-                                      loopvalue    
-                                      stcode'       
+                           [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
+                                      [Iteration (var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
+                                                 (use tmp) tmp2 loopvalue
+                                                 stcode'
+                                      ]
                            ,Forget (var1:obj:pre) (obj:pre)]
                           | (assign,(f1,f2))
                               <- map (\x->(\pre' var2 s t->[Assignment pre' 
@@ -194,6 +193,8 @@ module Prototype.GetCode (getCodeFor) where
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1
                           , let loopby = getScalar (var1:pre) "i" (source f1)
+                          , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
+                          , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
                           , let loopvalue = getScalar (var1:loopby:pre) "i" (target f1)
                           , stcode'<- [ get
                                         ++ assign pre' var2 (use loopby)
@@ -205,18 +206,19 @@ module Prototype.GetCode (getCodeFor) where
                                       ]
                           ]
                 (Fix fs)->[assignment++
-                           [Iteration (var1:pre)
-                                     (obj:var1:pre)
-                                     (use var1)
-                                     loopby       
-                                     loopvalue    
-                                     stcode'   
+                           [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
+                                      [Iteration (var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
+                                                 (use tmp) tmp2 loopvalue
+                                                 stcode'
+                                      ]  
                            ,Forget (var1:obj:pre) (obj:pre)]
                           | (i,f1) <- zipnum fs
                           , f2<-applyOprOnLists Fix$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1
                           , let loopby = getScalar (var1:pre) "i" (source f1)
+                          , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
+                          , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
                           , let loopvalue = getScalar (var1:loopby:pre) "i" (target f1)
                           , stcode' <- [ get ++ 
                                         [Assignment pre' 

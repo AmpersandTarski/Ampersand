@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "ADL vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1.0.729" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumber = "1.1.0.731" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-Eerste keer dat PHP PLUG's door de ADL compiler komen. (nu nog door de PHP compiler)
+PHP Plugs volledig ingevoerd. Er bestaat een voorbeeld dat werkt !
 -}

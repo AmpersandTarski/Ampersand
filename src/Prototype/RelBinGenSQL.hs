@@ -211,7 +211,7 @@ module Prototype.RelBinGenSQL
                   , (t',trg') <- concNames "cfst" t
                   , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else chain ", " (s'++t')
                   ]
-    where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS csnd"],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c True)(-1))]
+    where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c True)(-1))]
 
    selectExpr fSpec i src trg (Tm (I _ s _ _) _  ) | s == cptS = selectExpr fSpec i src trg (Tm (V [] (s,s))(-1))
 
@@ -301,13 +301,9 @@ module Prototype.RelBinGenSQL
                      -> Maybe String
    selectExprInUnion fSpec i src trg (Tc  e'        ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg (F  [e']       ) =  selectExprInUnion fSpec i src trg e'
-
    selectExprInUnion fSpec i src trg (Fix [e']       ) =  selectExprInUnion fSpec i src trg e'
--- WAAROM? Stef, waarom is onderstaand niet:
--- selectExprInUnion fSpec i src trg (Fu (e':f     )) = (selectExprInUnion fSpec i src trg e') +++ (phpIndent i) ++ ") UNION (" +++ (selectExprInUnion fSpec i src trg (Fu f     )) +++ (phpIndent i) ++ ""
-
-   selectExprInUnion fSpec i src trg (Fux (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') +++ (phpIndent i) ++ ") UNION (" +++ (selectExprInUnion fSpec i src trg (Fux (f:fx))) +++ (phpIndent i) ++ ""
    selectExprInUnion fSpec i src trg (Fux [e']       ) =  selectExprInUnion fSpec i src trg e'
+   selectExprInUnion fSpec i src trg (Fux (e':(f:fx))) = (selectExprInUnion fSpec i src trg e') +++ (phpIndent i) ++ ") UNION (" +++ (selectExprInUnion fSpec i src trg (Fux (f:fx))) +++ (phpIndent i) ++ ""
    selectExprInUnion fSpec i src trg e'               =  selectExpr        fSpec (i+4) src trg e'
 
    selectExprBrac :: Fspc
@@ -327,7 +323,7 @@ module Prototype.RelBinGenSQL
    selectExprBrac fSpec i src trg (Fux [e'])                             = selectExprBrac fSpec i src trg e'
    selectExprBrac fSpec i src trg e'@(Tm{})
     = listToMaybe ([quote$p|(p,s,t)<-sqlRelPlugNames fSpec e',quote s==quote src,quote t==quote trg]
-                ++ maybeToList (selectExpr fSpec i src trg e'))
+                ++ maybeToList ("( " +++selectExpr fSpec (i+2) src trg e'+++" )"))
    selectExprBrac fSpec i src trg expr
     = phpIndent (i+5) ++ "( " +++ selectExpr fSpec (i+7) src trg expr+++ phpIndent(i+5)++")"
    

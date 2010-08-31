@@ -24,7 +24,7 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
        -> ("\n",Set.empty)+++showAssignmentCode i to q
       Iteration{loopOver=lp,loopBy=lb,loopValue=lv,stcode=c}
        -> (concat ["\n"++sps++"$"++nName decl++"=array();"|decl<-postknowledge x,notElem (nName decl) ("":map nName (preknowledge x))]
-          ++"\n"++sps
+          ++"\n"++sps++"if(is_array("++showUseVar lp++"))"++"\n"++sps
           ++"foreach("++showUseVar lp++" as $"++nName lb++"=>$"++nName lv++"){"
           ,headersForUV lp)
           +++showCodeAndGetHeaders (i+2) c
@@ -63,7 +63,7 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
                           | (c,f)<-zip ('(':repeat ',') fm
                           ]
       , Set.unions [snd$assignment (nObject f)|f<-fm])
-   assignment (CQPlain nuv) = (showUseVar nuv,headersForUV nuv)
+   assignment (CQPlain nuv) = ("@"++showUseVar nuv,headersForUV nuv)
    assignment rest =
      case rest of
      PHPIntersect{}
@@ -71,9 +71,9 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
                            `Set.union` isElem
                            `Set.union` addOneTo)
      PHPJoin{}
-      -> line "joinvars" (Set.singleton "function joinvars($a,$b){$c=array();foreach($a as $i=>$v){foreach($v as $v2) $c[$i]=$b[$v2];}return $c;}")
+      -> line "joinvars" (Set.singleton "function joinvars($a,$b){$c=array();foreach($a as $i=>$v){foreach($v as $v2) $c[$i]=@$b[$v2];}return $c;}")
      PHPIsectComp{}
-      -> line "isectComp" (Set.singleton "function intersect($a,$b){$c=array();foreach($a as $i=>$v){if(!isset($b[$i])){$c[$i]=$v}else{foreach($v as $v2) if(!isElem($b[$i],$v2)){addOneTo($c[$i],$v2)}}} return $c;}"
+      -> line "isectComp" (Set.singleton "function isectComp($a,$b){$c=array();foreach($a as $i=>$v){if(!isset($b[$i])){$c[$i]=$v}else{foreach($v as $v2) if(!isElem($b[$i],$v2)){addOneTo($c[$i],$v2)}}} return $c;}"
                            `Set.union` isElem
                            `Set.union` addOneTo)
      PHPBinCheck{}
@@ -91,7 +91,7 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
                     )
                    ]
                  )
-     PHPCompl1{}
+     PHPCompl1{} 
       -> ("(",Set.empty)+++(assignment$ cqfrom rest)+++
          ("?array():array("++(showUseVar.fst$ cqtuple rest)
                      ++"=>"++(showUseVar.snd$ cqtuple rest)++"))",Set.empty)
