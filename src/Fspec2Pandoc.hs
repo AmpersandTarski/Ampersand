@@ -7,7 +7,7 @@ import Adl
 import Data.Plug
 import Picture
 import Data.Fspec
-import Strings          (upCap, commaNL, commaEng, chain)
+import Strings          (upCap, commaNL, commaEng, chain, preciesEen)
 import Text.Pandoc  
 import Version          (versionbanner)
 import Languages        (Lang(..))
@@ -239,7 +239,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                             else Just (head cds)
                             where cds = [cd | cd <- vConceptDefs fSpec, name c == name cd]
            allDecls    = [d| d@Sgn{}<- vrels fSpec]   -- All declarations declared in this specification, but only Sgn is shown
-           allRules    = vrules fSpec  -- All rules that apply in the entire Fspc, including all signals
+           allRules    = [r| r<-vrules fSpec
+                           , r_usr r]  -- All *user declared* rules that apply in the entire Fspc, including all signals
       aThemeAtATime :: ([(Concept,Maybe ConceptDef)],[Declaration],[Rule]) -- all stuff that has been processed in previous sections
                  --   -> ([(Concept,Maybe ConceptDef)],[Declaration],[Rule]) -- all stuff that still has to be processed into the comming sections
                     -> [String]        -- the names of the patterns that still have to be processed into this specification
@@ -371,7 +372,11 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = declBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
                       declBlock :: Declaration -> Counter -> ([Block],Counter)
-                      declBlock d2 cnt = ([DefinitionList [( [Str ("Eis "++show(getEisnr cnt)++":")]
+                      declBlock d2 cnt = ([DefinitionList [( [Str (case language flags of
+				                                                     Dutch   -> "Eis "
+				                                                     English -> "Requirement ")
+                                                             ,Str (show(getEisnr cnt))
+                                                             ,Str ":"]
                                                             ,   [[Para ([symReqLabel d2])]
                                                              ++ explains2Blocks (explain fSpec flags d2)]
                                                            )
@@ -389,7 +394,11 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
                       ruleBlock :: Rule -> Counter -> ([Block],Counter)
-                      ruleBlock r2 cnt = ([DefinitionList [( [Str ("Eis "++show(getEisnr cnt)++":")]
+                      ruleBlock r2 cnt = ([DefinitionList [( [Str (case language flags of
+				                                                     Dutch   -> "Eis "
+				                                                     English -> "Requirement ")
+                                                             ,Str (show(getEisnr cnt))
+                                                             ,Str ":"]
                                                             ,  [[Para ([symReqLabel r2])]
                                                              ++ explains2Blocks (explain fSpec flags r2)]
                                                            )
@@ -750,7 +759,7 @@ dataAnalysis lev fSpec flags
                               ]
            Dutch   -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
                        []  -> []
-                       [s] -> [ Para [ Str "Deze gegevensverzameling genereert \\'e\\'en signaal. " ]  -- Zou "��n" moeten zijn ipv "\\'e\\'en", maar dit geeft een lexical error in string/character literal (UTF-8 decoding error) in de Haskell compiler
+                       [s] -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" signaal. ") ] 
                               , Para [ Math DisplayMath $ showMathcode fSpec s]
                               ]
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende signalen. " ]

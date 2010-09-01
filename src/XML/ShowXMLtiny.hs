@@ -67,6 +67,7 @@ where
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
           ++ [ Elem (simpleTag "Violations") (map violation2XmlTree (violations f))]
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
+          ++ [ Elem (simpleTag "Explanations")(map mkXmlTree (fSexpls f))]
                  )
              where violation2XmlTree :: (Rule,Paire) -> XTree
                    violation2XmlTree (r,p) = 
@@ -197,35 +198,54 @@ where
        = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
 
 
+--   instance XML PExplanation where
+--     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for PExplanation.")
+--     mkXmlTree expr 
+--         = case expr of
+--                PExplConcept     cdef  lang ref expla -> xpl "PECPT"  (simpleTag cdef) lang ref expla
+--                PExplDeclaration m     lang ref expla -> xpl "PEDECL" (simpleTag (name m++name(source m)++name(target m))) lang ref expla
+--                PExplRule        r     lang ref expla -> xpl "PERULE" (simpleTag r) lang ref expla
+--                PExplKeyDef      k     lang ref expla -> xpl "PEKEYD" (simpleTag k) lang ref expla
+--                PExplObjectDef   o     lang ref expla -> xpl "PEODEF" (simpleTag o) lang ref expla
+--                PExplPattern     pname lang ref expla -> xpl "PEPAT"  (simpleTag pname) lang ref expla
+--      where
+--       xpl :: String -> XTag -> Lang -> String -> String -> XTree
+--       xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
+--                                       [PlainText expla]
+
    instance XML PExplanation where
-     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for PExplanation.")
-     mkXmlTree expr 
-         = case expr of
-                PExplConcept     cdef  lang ref expla -> xpl "PECPT"  (simpleTag cdef) lang ref expla
-                PExplDeclaration m     lang ref expla -> xpl "PEDECL" (simpleTag (name m++name(source m)++name(target m))) lang ref expla
-                PExplRule        r     lang ref expla -> xpl "PERULE" (simpleTag r) lang ref expla
-                PExplKeyDef      k     lang ref expla -> xpl "PEKEYD" (simpleTag k) lang ref expla
-                PExplObjectDef   o     lang ref expla -> xpl "PEODEF" (simpleTag o) lang ref expla
-                PExplPattern     pname lang ref expla -> xpl "PEPAT"  (simpleTag pname) lang ref expla
-      where
-       xpl :: String -> XTag -> Lang -> String -> String -> XTree
-       xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
-                                       [PlainText expla]
+     mkTag expl  
+        = case expl of
+                PExplConcept{}     -> Tag "ExplConcept"     atts
+                PExplDeclaration{} -> Tag "ExplDeclaration" atts
+                PExplRule{}        -> Tag "ExplRule"        atts
+                PExplKeyDef{}      -> Tag "ExplKeyDef"      atts
+                PExplObjectDef{}   -> Tag "ExplObjectDef"   atts
+                PExplPattern{}     -> Tag "ExplPattern"     atts
+           where
+            atts ::  [XAtt]
+            atts = [mkAttr "Explains" (name expl)
+                   ,mkAttr "Lang" (show(pexLang expl))
+                   ,mkAttr "Ref" (pexRefID expl)]
+     mkXmlTree expl 
+         = Elem (mkTag expl) [PlainText (show (pexExpl expl))]
 
    instance XML Explanation where
-     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for Explanation.")
-     mkXmlTree expr 
-         = case expr of
-                ExplConcept     cdef  lang ref expla -> xpl "ECPT"  (simpleTag (name cdef)) lang ref expla
-                ExplDeclaration d     lang ref expla -> xpl "EDECL" (simpleTag (name d++name(source d)++name(target d))) lang ref expla
-                ExplRule        r     lang ref expla -> xpl "ERULE" (simpleTag (name r)) lang ref expla
-                ExplKeyDef      k     lang ref expla -> xpl "EKEYD" (simpleTag (name k)) lang ref expla
-                ExplObjectDef   o     lang ref expla -> xpl "EODEF" (simpleTag (name o)) lang ref expla
-                ExplPattern     pname lang ref expla -> xpl "EPAT"  (simpleTag pname) lang ref expla
-      where
-       xpl :: String -> XTag -> Lang -> String -> ExplainContent -> XTree
-       xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
-                                       [PlainText (show expla)]
+     mkTag expl 
+        = case expl of
+                ExplConcept     cdef  lang ref _ -> Tag "ExplConcept"     (atts (name cdef) lang ref)
+                ExplDeclaration d     lang ref _ -> Tag "ExplDeclaration" (atts (name d++name(source d)++name(target d)) lang ref)
+                ExplRule        r     lang ref _ -> Tag "ExplRule"        (atts (name r) lang ref)
+                ExplKeyDef      k     lang ref _ -> Tag "ExplKeyDef"      (atts (name k) lang ref)
+                ExplObjectDef   o     lang ref _ -> Tag "ExplObjectDef"   (atts (name o) lang ref)
+                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
+           where
+            atts :: String -> Lang -> String -> [XAtt]
+            atts str lang ref = [mkAttr "Explains" str
+                                ,mkAttr "Lang" (show lang)
+                                ,mkAttr "Ref" ref]
+     mkXmlTree expl 
+         = Elem (mkTag expl) [PlainText (show (explCont expl))]
 
 
    instance XML Gen where

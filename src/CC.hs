@@ -114,7 +114,16 @@
                        <*  pKey "ENDPATTERN"
                        where
                          rebuild :: String -> [PatElem] -> Pattern
-                         rebuild nm pes = Pat nm [r{r_pat=nm}|Pr r<-pes] [gen{genpat=nm} |Pg gen<-pes] [mph{decpat=nm}| Pm mph@(Sgn{})<-pes] [c| Pc c<-pes] [k| Pk k<-pes] [e| Pe e<-pes] [e|Ptest e<-pes] [] 
+                         rebuild nm pes = Pat { ptnm        = nm
+                                              , ptrls       = [r{r_pat=nm}|Pr r<-pes]
+                                              , ptgns       = [gen{genpat=nm} |Pg gen<-pes]
+                                              , ptdcs       = [mph{decpat=nm}| Pm mph@(Sgn{})<-pes]
+                                              , ptcds       = [c| Pc c<-pes]
+                                              , ptkds       = [k| Pk k<-pes]
+                                              , ptxps       = [e| Pe e<-pes]
+                                              , testexpr    = [e|Ptest e<-pes]
+                                              , inftestexpr = []
+                                              } 
 
    data PatElem      = Pr Rule
                      | Pg Gen

@@ -32,12 +32,12 @@ string2ExplainContent :: Options -> String -> ExplainContent
 
 string2ExplainContent flags text = parseToPAdl text  --TODO: Met de flags kunnen we wellicht verschillende pandoc parsers organiseren....
 parseToPAdl :: String -> PandocADL
-parseToPAdl s = case readRST defaultParserState s of
+parseToPAdl s = case readRST defaultParserState{stateStandalone=False} s of
                      Pandoc _ xs  -> PAdl xs
                      _            -> PAdl [Para [Str s]] 
                         
 explainContent2String :: ExplainContent -> String
-explainContent2String ec = writeMarkdown defaultWriterOptions dummyPandoc
+explainContent2String ec = writeRST defaultWriterOptions {writerStandalone = False} dummyPandoc
   where dummyPandoc = Pandoc (Meta [][][]) theBlock  --TODO Resultaat bekijken, eventueel moet er nog wat van de string worden gesloopt. 
         PAdl theBlock = ec
 

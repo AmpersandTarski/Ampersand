@@ -28,5 +28,7 @@ where
      = [ExplConcept    cd l ref (string2ExplainContent flags expla)| PExplConcept     nm  l ref expla<-ptxps pat, cd<-ptcds pat, name cd==nm] ++
        [ExplDeclaration d l ref (string2ExplainContent flags expla)| PExplDeclaration mph l ref expla<-ptxps pat,  d<-ptdcs pat, makeDeclaration mph==d] ++
        [ExplRule        r l ref (string2ExplainContent flags expla)| PExplRule        nm  l ref expla<-ptxps pat,  r<-ptrls pat, name r==nm] ++
-       [ExplKeyDef      k l ref (string2ExplainContent flags expla)| PExplKeyDef      nm  l ref expla<-ptxps pat,  k<-ptkds pat, name k==nm]
+       [ExplKeyDef      k l ref (string2ExplainContent flags expla)| PExplKeyDef      nm  l ref expla<-ptxps pat,  k<-ptkds pat, name k==nm] ++
+  --     [ExplObjectDef   o l ref (string2ExplainContent flags expla)| PExplObjectDef   nm  l ref expla<-ptxps pat,  o<-ctxos context, name o==nm] ++
+       [ExplPattern    pn l ref (string2ExplainContent flags expla)| PExplPattern     pn  l ref expla<-ptxps pat  ]
   

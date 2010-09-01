@@ -96,7 +96,7 @@ instance Explainable ObjectDef where
 
 instance Explainable Pattern where
   autoExplainsOf _ _ = []
-  explForObj pat ExplPattern {explObjP = patname} = name pat ==patname
+  explForObj pat e@ExplPattern{} = (name pat ==name e)
   explForObj _ _ = False
   autoExpl2Explain pat (Because lang ec) =
               ExplPattern {explObjP  = name pat
