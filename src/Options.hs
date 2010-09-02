@@ -44,6 +44,7 @@ data Options = Options { contextName   :: Maybe String
                        , dirOutput     :: String -- the directory to generate the output in.
                        , beeper        :: Bool
                        , crowfoot      :: Bool
+                       , showPredExpr  :: Bool   -- for generated output, show predicate logic?
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
                        , texHdrFile    :: Maybe String --the string represents a FilePath to some .tex containing just tex header instructions
@@ -117,6 +118,7 @@ getOptions =
                   --    , texHdrFile    = error ("!Fatal (module Options 120): Specify the path location of "++progName)++" in your system PATH variable."
                       , beeper        = False
                       , crowfoot      = False
+                      , showPredExpr  = False
                       , language      = Dutch
                       , progrName     = progName
                       , fileName      = error ("!Fatal (module Options 123): no default value for fileName.")
@@ -207,7 +209,7 @@ options = map pp
 
           , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
           , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("the prototype will use database with name (name overrides environment variable "++ envdbName ++ "). when both are't set, defaults to filename (without '.adl')")), Public)
-           , ((Option ['t']       ["theme"]      (ReqArg themeOpt "theme")   ("p.e. student")), Public)
+          , ((Option ['t']     ["theme"]       (ReqArg themeOpt "theme")   ("p.e. student")), Public)
           , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively."), Public)
           , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
 
@@ -227,6 +229,7 @@ options = map pp
 
           , ((Option []        ["beeper"]      (NoArg beeperOpt)           "generate beeper instead of checker."), Public)
           , ((Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics."), Public)
+          , ((Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the for of predicat logic." ), Public)
           , ((Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')."), Public)
           , ((Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only."), Hidden)
 
@@ -321,6 +324,8 @@ beeperOpt :: Options -> Options
 beeperOpt       opts = opts{beeper       = True}
 crowfootOpt :: Options -> Options
 crowfootOpt     opts = opts{crowfoot     = True}
+predLogicOpt :: Options -> Options
+predLogicOpt    opts = opts{showPredExpr = True}
 languageOpt :: String -> Options -> Options
 languageOpt l   opts = opts{language     = case map toUpper l of
                                              "NL"  -> Dutch

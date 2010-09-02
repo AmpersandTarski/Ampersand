@@ -231,21 +231,30 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
     where
       (theBlocks,_) = aThemeAtATime toBeProcessedStuff ts newCounter 
       ts = rd (map r_pat (vrules fSpec)) --Only process patterns that contain rules. 
-      toBeProcessedStuff = ( allConcepts , allDecls , allRules )
+      toBeProcessedStuff = ( allConceptsThatMustBeShown
+                           , allDeclsThatMustBeShown
+                           , allRulesThatMustBeShown ) 
          where
-           allConcepts = [(c,mcd c)| c<-concs fSpec]
-                  where 
-                    mcd c = if null cds then Nothing
-                            else Just (head cds)
-                            where cds = [cd | cd <- vConceptDefs fSpec, name c == name cd]
-           allDecls    = [d| d@Sgn{}<- vrels fSpec]   -- All declarations declared in this specification, but only Sgn is shown
-           allRules    = [r| r<-vrules fSpec
-                           , r_usr r]  -- All *user declared* rules that apply in the entire Fspc, including all signals
-      aThemeAtATime :: ([(Concept,Maybe ConceptDef)],[Declaration],[Rule]) -- all stuff that has been processed in previous sections
-                 --   -> ([(Concept,Maybe ConceptDef)],[Declaration],[Rule]) -- all stuff that still has to be processed into the comming sections
-                    -> [String]        -- the names of the patterns that still have to be processed into this specification
-                    -> Counter             -- unique definition numbers (start at 1)
-                    -> ([Block],Counter)   -- The blocks that define the resulting document and the last used unique definition number
+           allConceptsThatMustBeShown     -- All concepts that have at least one explanation. Explanations are 
+                                          -- currently bound to the conceptDefinitions of a concept.   
+              = [(c, Just cd)| c <-concs fSpec
+                             , cd <- vConceptDefs fSpec
+                             , name c == name cd
+                             , not (null (explain fSpec flags cd))
+                ]           
+           allDeclsThatMustBeShown        -- All declarations declared in this specification, but only Sgn is shown,
+                                          -- and only those declarations that have at least one explanation.
+              = [d| d@Sgn{}<- vrels fSpec
+                  , not (null ( explain fSpec flags d))
+                ]
+           allRulesThatMustBeShown         
+               = [r| r<-vrules fSpec      -- All *user declared* rules that apply in the entire Fspc, including all signals
+                   , r_usr r
+                 ]
+      aThemeAtATime :: ([(Concept,Maybe ConceptDef)],[Declaration],[Rule]) -- all stuff that still must be processed into the comming sections
+                    -> [String]          -- the names of the patterns that must be processed into this specification
+                    -> Counter           -- unique definition counters
+                    -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
       aThemeAtATime  still2doPre themes' iPre
            = case themes' of
               []  -> printOneTheme Nothing still2doPre iPre
@@ -327,15 +336,12 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
 				                           ]
                              ++
                              concat (map singleConceptStuff xs)
-                           , c0 -- TODO: Han, graag nog toevoegen:   +length conceptNamesIntro
+                           , c0
                            )
                     
                   where
                       conceptNamesIntro = [name cpt|(cpt,Just _)<-xs]
                       singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block] -- | this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
--- SJ 24 aug 2010: Han, ik wil graag voorafgaand aan de definitie van een concept alle explanations van dat betreffende concept afgedrukt krijgen.
--- Het onderstaande, concat (map explain2Blocks (explain fSpec flags c)), werkt niet. Kun jij dat voor me regelen?
--- HJ 24 aug 2010: Ja hoor. Bij deze. 
                       singleConceptStuff (c,mcd) = case mcd of
                                                        Nothing -> []     -- If there is no conceptDef, then there is nothing to print, for there also cannot be any explains.
                                                        Just cd -> explains cd 
@@ -346,22 +352,6 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       explains cd = explains2Blocks (explain fSpec flags cd) 
 
 
---                | null ccds = []
---                | otherwise = [Para [Str ("Aantal concepten = "++show (length ccds))]]
---                | otherwise = case language flags of 
---                                Dutch ->   [Para [Str "Deze paragraaf introduceert de volgende concepten:"]
---                                           ,DefinitionList (map printCCD ccds)]
---                                English -> [Para [Str "This paragraph introduces the following concepts:"]
---                                           ,DefinitionList (map printCCD ccds)]
---                               where
---                                 printCCD :: (Concept,ConceptDef) -> ([Inline], [[Block]])
---                                 printCCD (c,cd) = ([Str (name c)],[[Para [Str "TODO: Def." ]]])
-
-
---         paraConcs :: [Block]
---         paraConcs    = [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd)) |(c,cd)<-conceptdefs]
---         paraDecls :: [Block]
---         paraDecls    = [Para ([symReqLabel d]++ explains2Inlines (explain fSpec flags d)) |d<-newRelations, not (isIdent d)]
               sctds :: [Declaration] -> Counter -> ([Block],Counter)
               sctds xs c0 
                 = case xs of
@@ -475,7 +465,10 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
                (explains2Blocks(explain fSpec flags r)) ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
-               pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r] ++
+               (if showPredExpr flags 
+                 then [ Plain [Code "Predicate logic does not show (jet)"]]
+                 else pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r]
+               )++
                [ Plain (text4) | length nds>1]
              ] 
            ) ] ++ dpNext
