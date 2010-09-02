@@ -1,4 +1,4 @@
-module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
+module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute) where
  import Adl (Concept(..),Expression(..))
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (Named(..))
@@ -29,6 +29,15 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
    show (UseVar []) = ""
    show (UseVar (Left  s:xs)) = "["++show s++"]"++(show xs)
    show (UseVar (Right s:xs)) = "["++show s++"]"++(show xs)
+   
+ useAttribute :: Either String (Named UseVar) -- ^ use this attribute
+              -> Named UseVar -- ^ of this variable
+              -> Named UseVar
+ useAttribute s var = var{nObject=UseVar {uvList=varlist++[s]}}
+   where varlist=uvList(nObject var)
+ 
+ 
+ 
  data CodeQuery
   =  SQLBinary   {cqexpression::Expression, sqlquery::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually) Will fill target only
    | SQLComposed {cqsource:: Concept, cqExpressions::[Named Expression], sqlquery::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
@@ -47,6 +56,7 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..)) where
    | PHPIsectComp{cqfrom1::CodeQuery,cqfrom2::CodeQuery} -- ^ cqfrom1 /\ -cqfrom2
    | PHPDagger   {cqfrom1::CodeQuery,cqfrom2::CodeQuery,cqAll::CodeQuery}
    | PHPUnion    {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
+   | PHPAdd1     {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
    | PHPCompl1   {cqtuple::(Named UseVar,Named UseVar),cqfrom::CodeQuery}
    | CQCompose   {cqFrom::[Named CodeQuery]}-- ^ as SQLComposed: combine different codeQueries by name
    | CQPlain     (Named UseVar)             -- ^ simply get some variable and return it

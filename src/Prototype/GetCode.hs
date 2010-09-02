@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.GetCode (getCodeFor) where
- import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..))
+ import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute)
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName)
  import Adl (Concept(..), Expression(..),Morphism(..),mIs,isIdent,flp,source,sign,target,Identified(..),singleton)
@@ -163,18 +163,18 @@ module Prototype.GetCode (getCodeFor) where
                           [ assignment++
                             [Assignment (var1:pre)
                                         (obj:var1:pre)
-                                        var
-                                        (PHPCompl1 (s,t) (CQPlain (use var1)))
+                                        (var)
+                                        (PHPCompl1 (s,t) (CQPlain (useAttribute (Right s)$ use var1)))
                             ,Forget (var1:obj:pre) (obj:pre)]
-                          | var1 <- [getAVar pre$ (changeSource (I1 s) $ changeTarget (I1 t) f)
-                                    ,getAVar pre$ changeTarget (I1 t) f
-                                    ,getAVar pre$ changeSource (I1 s) f
+                          | var1 <- [getAVar (obj:pre)$ (changeSource (I1 s) $ changeTarget (I1 t) f)
+                                    ,getAVar (obj:pre)$ changeTarget (I1 t) f
+                                    ,getAVar (obj:pre)$ changeSource (I1 s) f
                                     ]
                           , assignment <- getCodeForSingle fSpec pre var1
                           ] 
                 (F fs) -> [assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
-                                      [Iteration (var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
+                                      [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
                                                  stcode'
                                       ]
@@ -190,44 +190,45 @@ module Prototype.GetCode (getCodeFor) where
                                                                    (Named (nName var ) (UseVar [Right t]))
                                                                    (CQPlain s)]
                                            ,x)) (splitAssoc F (map flp (reverse fs)))
-                          , let var1 = getAVar pre f1
+                          , let var1 = getAVar (obj:pre) f1
                           , assignment <- getCodeForSingle fSpec pre var1
-                          , let loopby = getScalar (var1:pre) "i" (source f1)
+                          , let loopby = getScalar (obj:var1:pre) "i" (source f1)
                           , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
                           , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
-                          , let loopvalue = getScalar (var1:loopby:pre) "i" (target f1)
+                          , let loopvalue = getScalar (obj:loopby:tmp:var1:tmp2:pre) "i" (target f1)
                           , stcode'<- [ get
                                         ++ assign pre' var2 (use loopby)
                                                             (Named (nName var2) (UseVar [Right (use loopvalue)]))
                                         ++ [Forget (var2:pre') pre']
-                                      | let pre'=(var1:obj:loopby:pre)
+                                      | let pre'=(obj:loopby:tmp:var1:tmp2:loopvalue:pre)
                                       , let var2=getAVar pre' (changeSource (I1 (use loopvalue)) f2)
                                       , get<-getCodeForSingle fSpec pre' var2
                                       ]
                           ]
                 (Fix fs)->[assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
-                                      [Iteration (var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
+                                      [Iteration (obj:var1:loopby:tmp:pre) (obj:loopby:tmp:var1:pre)
                                                  (use tmp) tmp2 loopvalue
                                                  stcode'
-                                      ]  
+                                      ]
                            ,Forget (var1:obj:pre) (obj:pre)]
                           | (i,f1) <- zipnum fs
                           , f2<-applyOprOnLists Fix$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
                           , assignment <- getCodeForSingle fSpec pre var1
-                          , let loopby = getScalar (var1:pre) "i" (source f1)
+                          , let loopby = getScalar (obj:var1:pre) "i" (source f1)
                           , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
                           , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
-                          , let loopvalue = getScalar (var1:loopby:pre) "i" (target f1)
+                          , let loopvalue = getScalar (obj:loopby:tmp:var1:tmp2:pre) "i" (target f1)
                           , stcode' <- [ get ++ 
                                         [Assignment pre' 
                                                     (var2:pre')
-                                                    (Named (nName var ) (UseVar [Right (use loopby)]))
-                                                    (CQPlain (Named (nName var2) (UseVar [Right (use loopvalue)])))
-                                        ] ++ [Forget (var2:pre') pre']
-                                      | let pre'=(var1:obj:loopby:pre)
-                                      , let var2=getAVar pre' (changeSource (I1 (use loopby)) (flp$ changeSource (I1 (use loopvalue)) (flp f2)))
+                                                    addTo
+                                                    (PHPAdd1 (CQPlain addTo) (CQPlain (Named (nName var2) (UseVar [Right (use loopby),Left "0"]))))
+                                        ,Forget (var2:pre') pre']
+                                      | let pre'=(obj:loopby:tmp:var1:tmp2:loopvalue:pre)
+                                      , let var2=getAVar pre' (changeSource (I1 (use loopby)) (changeTarget (I1 (use loopvalue)) f2))
+                                      , let addTo=(Named (nName var ) (UseVar [Right (use loopby)]))
                                       , get<-atleastOne ("getCodeForSingle in GetCode.hs should return something in Fi for "++show var2++" (just removing this error on line 231 might fix the problem)")$
                                              getCodeForSingle fSpec pre' var2
                                       ]

@@ -82,9 +82,9 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
                  [(prefix++str,sets)|(prefix,(str,sets))<-zip ("":repeat ",")$ map assignment (cqinput rest)]
                  ++[(")?array():array(",Set.empty)
                    ,assignment (fst$ cqreturn rest)
-                   ,("=>",Set.empty)
+                   ,("=>array(",Set.empty)
                    ,assignment (snd$ cqreturn rest)
-                   ,("))",(case (cqphpfile rest) of
+                   ,(")))",(case (cqphpfile rest) of
                                  Just str -> Set.singleton$ "require \""++str++"\";"
                                  Nothing -> Set.empty
                           )
@@ -92,14 +92,16 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
                    ]
                  )
      PHPCompl1{} 
-      -> ("(",Set.empty)+++(assignment$ cqfrom rest)+++
-         ("?array():array("++(showUseVar.fst$ cqtuple rest)
-                     ++"=>"++(showUseVar.snd$ cqtuple rest)++"))",Set.empty)
+      -> ("(count(",Set.empty)+++(assignment$ cqfrom rest)+++
+         (")?array():array("++(showUseVar.fst$ cqtuple rest)
+                     ++"=>array("++(showUseVar.snd$ cqtuple rest)++")))",Set.empty)
+     PHPAdd1{}
+      -> line "addOneTo" addOneTo
      _ -> error ("cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in ShowCode.hs on line 100)")
     where
      line str set = ( str++"("++fst (assignment (cqfrom1 rest))++","++fst (assignment (cqfrom2 rest))++")"
                     , snd(assignment (cqfrom1 rest)) `Set.union` snd(assignment (cqfrom2 rest)) `Set.union` set)
    isElem = Set.singleton "function isElem($a,$b){ foreach($b as $c){ if($c==$a) return true;} return false;}"
-   dbDoquer=Set.singleton "function DB_doquer_lookups($s){ $v=DB_doquer($s); $r=array(); foreach($v as $v2) addOneTo($r[$v2[0]],$v2[1]); return $v;}"
+   dbDoquer=Set.singleton "function DB_doquer_lookups($s){ $v=DB_doquer($s); $r=array(); foreach($v as $v2) addOneTo($r[$v2[0]],$v2[1]); return $r;}"
             `Set.union` addOneTo
-   addOneTo=Set.singleton "function addOneTo(&$var,$val){if(!isset($var))$var=array();$var[]=$val;}"
+   addOneTo=Set.singleton "function addOneTo(&$var,$val){if(!isset($var))$var=array();if(isset($val)) $var[]=$val;return $var;}"
