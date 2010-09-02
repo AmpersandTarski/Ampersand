@@ -466,8 +466,9 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
                (if showPredExpr flags 
-                 then [ Plain [Code "Predicate logic does not show (jet)"]]
-                 else pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r), symDefLabel r]
+                 then [Plain [Str (if isSignal r then  showPredLogic flags (conjNF (Cpx (normExpr r))) else showPredLogic flags r), symDefLabel r]]
+                 else pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r)
+                                          , symDefLabel r]
                )++
                [ Plain (text4) | length nds>1]
              ] 

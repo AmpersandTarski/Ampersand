@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
 module PredLogic
-           ( PredLogicShow(..)
+           ( PredLogicShow(showPredLogic)
            ) 
    where
 
