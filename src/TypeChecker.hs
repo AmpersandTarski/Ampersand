@@ -208,7 +208,8 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
                                                     --     the patterns of this context
   bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]
-                         ,inftestexpr=typedexprs (rel_declarations ctxs) isas (testexpr p)
+                         ,inftestexpr=typedexprs (rel_declarations ctxs) isas (testexpr p) 
+                                   ++ [error (show xs) | let xs=typeerrors (rel_declarations ctxs) isas (testexpr p),not(null xs)]
                          }
                       ,bindrules
                       ,[err|Right err<-pexpls])
