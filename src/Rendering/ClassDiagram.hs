@@ -94,16 +94,8 @@
           lijstopmaak xs = "[ "++chain "\n>     , " xs++"\n>     ]"
 
    classdiagram2dot  cd@(OOclassdiagram cs as rs gs (_, concspat))
-            = "digraph G {bgcolor=transparent\n" ++        
-      --        "    fontname = \"Courier\" \n" ++
-      --        "    fontsize = 18 \n" ++
-      --        "    node [ \n" ++
-      --        "            fontname = \"Courier\" \n" ++
-      --        "            fontsize = 8 \n" ++
-      --        "            shape = \"record\" \n" ++
-      --        "    ] \n" ++
+            = "digraph G {rankdir=LR;bgcolor=transparent\n" ++        
               "    edge [ \n" ++
-      --        "            fontname = \"Courier\" \n" ++
               "            fontsize = 11"++(if layout=="neato" then ", len = 3" else "")++" \n" ++
               "    ]\n" ++
               classes2dot cs (nodes cd>-nodes cs)++ "\n" ++
