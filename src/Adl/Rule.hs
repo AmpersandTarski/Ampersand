@@ -6,7 +6,7 @@ where
    import Adl.FilePos                   ( FilePos(..),Numbered(..))
    import Adl.Concept                   ( Concept(..)
                                         , Association(..)
-                                        , MorphicId(..),Morphic(..))
+                                        , MorphicId(..),Morphic(..),Signaling(..))
    import Adl.MorphismAndDeclaration    ( Morphism(..),Declaration(..),mIs)
    import Adl.Expression                ( Expression(..),notCp)
    import Adl.Pair                      ( Pairs)
@@ -74,6 +74,9 @@ where
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)
 
+   instance Signaling Rule where
+    isSignal r = r_sgl r
+   
    instance Morphic Rule where
     multiplicities _  = []
     flp r = r{rrant = if rrsrt r == Truth
@@ -98,7 +101,6 @@ where
                  Generalization -> error ("!Fatal (module Rule 93): isFalse not defined for a Generalisation.")
     isNot r   | ruleType r==Truth = isNot (consequent r)
               | otherwise         = False  -- TODO: check correctness!
-    isSignal r = r_sgl r
 
    normExpr :: Rule -> Expression
    normExpr rule

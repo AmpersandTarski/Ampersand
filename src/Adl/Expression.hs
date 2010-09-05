@@ -263,7 +263,7 @@ isPos (Cpx _) = False
 isPos _ = True
 isNeg :: Expression -> Bool
 isNeg e' = not (isPos e')
-
+ 
 instance Morphic Expression where
  multiplicities expr = case expr of
      (Tm mph _)-> multiplicities mph
@@ -332,8 +332,6 @@ instance Morphic Expression where
      (Cpx e')   -> isTrue e'
      (Tm mph _)  -> isFalse mph
      (Tc f)    -> isFalse f
-
- isSignal _ = False
 
  isProp expr = case expr of
      (F ts)    -> null ([Asy,Sym]>-multiplicities (F ts)) || and [null ([Asy,Sym]>-multiplicities t)| t<-ts]

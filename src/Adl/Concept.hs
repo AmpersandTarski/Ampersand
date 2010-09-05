@@ -2,7 +2,7 @@
 {-# OPTIONS -XTypeSynonymInstances #-}
 module Adl.Concept ( Concept(..),Concepts
                    , Sign,GenR
-                   , Association(..),Morphic(..),MorphicId(..)
+                   , Association(..),Morphic(..),MorphicId(..),Signaling(..)
                    , isSingleton
                    , cptnew,cptAnything,cptS,cptos'
                    ) 
@@ -107,6 +107,8 @@ where
   instance MorphicId Concept where
    isIdent _ = True    -- > tells whether the argument is equivalent to I
   
+  class Association a => Signaling a where
+   isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
     
    
   class Association a => Morphic a where
@@ -119,7 +121,7 @@ where
    isNot          :: a -> Bool  -- > tells whether the argument is equivalent to I-
    isTrue         :: a -> Bool  -- > tells whether the argument is equivalent to V
    isFalse        :: a -> Bool  -- > tells whether the argument is equivalent to V-
-   isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
+ --  isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
    singleton      :: a -> Bool  -- > tells whether V=I
    singleton e     = isProp e && isTrue e
    equiv          :: a -> a -> Bool
@@ -153,12 +155,13 @@ where
    isNot _   = False   -- > tells whether the argument is equivalent to I-
    isTrue c = singleton c
    isFalse _ = False
-   isSignal _ = False
    singleton S = True
    singleton I1{} = True
    singleton _ = False
 
-
+  instance Signaling Concept where
+   isSignal _ = False
+   
   isSingleton :: Concept -> Bool
   isSingleton s = s == S
   

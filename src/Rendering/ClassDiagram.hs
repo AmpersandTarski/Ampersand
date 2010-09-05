@@ -8,12 +8,12 @@
    import Collection ( Collection((>-),rd) )
    import Strings (chain) 
    import Typology (Inheritance(Isa))
-   import Adl
+   import Adl  hiding (Association)
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options
-   import Data.Fspec
-
+   import Data.Fspec      (Fspc,plugs)
+--   import Data.ClassDiag  
    --TODO -> copied from Auxiliaries because disabled (why disabled?)
    enc :: Bool -> String -> String
    enc upper (c:cs) | not (isAlphaNum c) = '_': htmlEnc c ++ enc upper cs
@@ -26,9 +26,6 @@
    class CdNode a where
     nodes :: a->[String]
 
-   instance Morphic PlugSQL where
-    isSignal p | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
-    isSignal _              = False
 
    instance CdNode ClassDiag where
     nodes (OOclassdiagram cs as rs gs _) = rd (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
@@ -44,7 +41,7 @@
    instance CdNode Method where
     nodes m = []
 
-   instance CdNode Data.Fspec.Association where
+   instance CdNode Association where
     nodes (OOAssoc s ml rl t mr rr) = [s,t]
 
    instance CdNode Aggregation where
@@ -153,9 +150,9 @@
                 map toUpper nm=="EDGE"
              then (enc True . head) [ nm++show i | i<-[1..], not ((nm++show i) `elem` map name (concspat) )]
              else enc True nm
-          associations2dot :: [Data.Fspec.Association] -> [Char]
+          associations2dot :: [Association] -> [Char]
           associations2dot as = chain "\n" (map association2dot as) ++ "\n"
-          association2dot :: Data.Fspec.Association -> [Char]
+          association2dot :: Association -> [Char]
           association2dot (OOAssoc from m1 n1 to m2 n2) =
               "      edge [ \n" ++
               "              arrowhead = \"none\" \n" ++
@@ -350,6 +347,62 @@
    --               where
 
 
+-------------- Class Diagrams ------------------
+   data ClassDiag = OOclassdiagram {classes     :: [Class]            --
+                                   ,assocs      :: [Association]      --
+                                   ,aggrs       :: [Aggregation]      --
+                                   ,geners      :: [Generalization]   --
+                                   ,nameandcpts :: (String,Concepts)}
+                            deriving Show
+   instance Identified ClassDiag where
+      name cd = n
+        where (n,_) = nameandcpts cd
+        
+   data Class          = OOClass        String             --
+                                        [Attribute]        --
+                                        [Method]           --
+                                    deriving Show
+   data Attribute      = OOAttr         String             -- name of the attribute
+                                        String             -- type of the attribute (Concept name or built-in type)
+                                        Bool               -- fNull:  says whether the attribute may be left open
+                                    deriving Show
+   data Association    = OOAssoc        String             -- source: the left hand side class
+                                        String             -- left hand side multiplicities
+                                        String             -- left hand side role
+                                        String             -- target: the right hand side class
+                                        String             -- right hand side multiplicities
+                                        String             -- right hand side role
+                                    deriving Show
+   data Aggregation    = OOAggr         Deleting           --
+                                        String             --
+                                        String             --
+                                    deriving (Show, Eq)
+   data Generalization = OOGener        String             --
+                                        [String]           --
+                                    deriving (Show, Eq)
+
+   data Deleting       = Open | Close                      --
+                                    deriving (Show, Eq)
+   data Method         = OOMethodC      String             -- name of this method, which creates a new object (producing a handle)
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodR      String             -- name of this method, which yields the attribute values of an object (using a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodS      String             -- name of this method, which selects an object using key attributes (producing a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodU      String             -- name of this method, which updates an object (using a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                       | OOMethodD      String             -- name of this method, which deletes an object (using nothing but a handle).
+                       | OOMethod       String             -- name of this method, which deletes an object (using nothing but a handle).
+                                        [Attribute]        -- list of parameters: attribute names and types
+                                        String             -- result: a type
+
+   instance Show Method where
+    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"):handle")
+    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n _ _<-as]++"]")
+    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-ks]++"):handle")
+    showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
+    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n _ _<-cs]++")")
+    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"): "++r)
 
 
 

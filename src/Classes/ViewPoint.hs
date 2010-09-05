@@ -8,7 +8,7 @@ where
    import Adl.ObjectDef               (ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                  (KeyDefs)
    import Adl.MorphismAndDeclaration  (Declarations,mIs)
-   import Adl.Concept                 (Concept(..),Morphic(..))
+   import Adl.Concept                 (Concept(..),Morphic(..),Signaling(..))
    import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression(..))
    import Adl.Pair                    (Paire)

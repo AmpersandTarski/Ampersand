@@ -21,7 +21,7 @@ module Adl ( Architecture(..)
            , Object(..)
            , ViewPoint(..)
            , UserExplainable(..)
-           , Morphical(..)
+           , Morphical(..),Signaling(..)
            , Association(..)
            , Morphic(..),normExpr
            , MorphicId(..)
@@ -43,7 +43,7 @@ where
    import Adl.Concept                    (Concept(..),Concepts,cptnew,cptS,cptAnything,cptos' 
                                          ,Sign,GenR()
                                          ,Association(..)
-                                         ,MorphicId(..),Morphic(..))
+                                         ,MorphicId(..),Morphic(..),Signaling(..))
    import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
    import Adl.Context                    (Context(..),Contexts
                                          ,Architecture(..))

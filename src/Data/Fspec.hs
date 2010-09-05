@@ -11,13 +11,11 @@ module Data.Fspec ( Fspc(..)
                   , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
-                  , ClassDiag(..), Class(..), Attribute(..), Association(..), Aggregation(..), Generalization(..), Deleting(..), Method(..)
                   , datasets
                   )
  where
    import Adl            hiding (Association)
    import Collection                    ((>-))
-   import Strings                       (chain)
    import Typology                      (Inheritance(..))
    import Data.Plug                     
    import Picture                       (Pictures)
@@ -200,58 +198,3 @@ module Data.Fspec ( Fspc(..)
                       , fld<-take 1 (fields p), flduniq fld  -- this excludes associations, because they are not flduniq
                       , length (fields p)>1]                 -- this excludes scalar plugs
 
--------------- Class Diagrams ------------------
-   data ClassDiag = OOclassdiagram {classes     :: [Class]            --
-                                   ,assocs      :: [Association]      --
-                                   ,aggrs       :: [Aggregation]      --
-                                   ,geners      :: [Generalization]   --
-                                   ,nameandcpts :: (String,Concepts)}
-                            deriving Show
-   instance Identified ClassDiag where
-      name cd = n
-        where (n,_) = nameandcpts cd
-        
-   data Class          = OOClass        String             --
-                                        [Attribute]        --
-                                        [Method]           --
-                                    deriving Show
-   data Attribute      = OOAttr         String             -- name of the attribute
-                                        String             -- type of the attribute (Concept name or built-in type)
-                                        Bool               -- fNull:  says whether the attribute may be left open
-                                    deriving Show
-   data Association    = OOAssoc        String             -- source: the left hand side class
-                                        String             -- left hand side multiplicities
-                                        String             -- left hand side role
-                                        String             -- target: the right hand side class
-                                        String             -- right hand side multiplicities
-                                        String             -- right hand side role
-                                    deriving Show
-   data Aggregation    = OOAggr         Deleting           --
-                                        String             --
-                                        String             --
-                                    deriving (Show, Eq)
-   data Generalization = OOGener        String             --
-                                        [String]           --
-                                    deriving (Show, Eq)
-   data Deleting       = Open | Close                      --
-                                    deriving (Show, Eq)
-   data Method         = OOMethodC      String             -- name of this method, which creates a new object (producing a handle)
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodR      String             -- name of this method, which yields the attribute values of an object (using a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodS      String             -- name of this method, which selects an object using key attributes (producing a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodU      String             -- name of this method, which updates an object (using a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                       | OOMethodD      String             -- name of this method, which deletes an object (using nothing but a handle).
-                       | OOMethod       String             -- name of this method, which deletes an object (using nothing but a handle).
-                                        [Attribute]        -- list of parameters: attribute names and types
-                                        String             -- result: a type
-
-   instance Show Method where
-    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"):handle")
-    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n _ _<-as]++"]")
-    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-ks]++"):handle")
-    showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
-    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n _ _<-cs]++")")
-    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"): "++r)

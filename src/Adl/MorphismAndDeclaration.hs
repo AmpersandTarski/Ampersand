@@ -9,7 +9,7 @@ module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
                                   ,applyM)
 where
    import Adl.FilePos      (FilePos(..),Numbered(..))
-   import Adl.Concept      (Concept,Concepts,Association(..),Sign,MorphicId(..),Morphic(..)
+   import Adl.Concept      (Concept,Concepts,Association(..),Sign,MorphicId(..),Morphic(..),Signaling(..)
                            ,isSingleton)
    import Adl.Prop         (Prop(..),Props,flipProps)
    import Adl.Pair         (Pairs,flipPair) 
@@ -103,6 +103,8 @@ where
                    V{}   -> source mph == target mph && isSingleton (source mph)
                    _     -> False
    
+   instance Signaling Morphism where
+    isSignal mph = isSignal (makeDeclaration mph)
    instance Morphic Morphism where
     multiplicities mph 
       = case mph of
@@ -141,7 +143,7 @@ where
            I{}                 -> singleton (mphspc mph)
            Mp1{}               -> False
     isFalse _   = False
-    isSignal mph = isSignal (makeDeclaration mph)
+    
 
 
    makeDeclaration :: Morphism -> Declaration
@@ -232,7 +234,12 @@ where
     isIdent d = case d of
                  Isn{} -> True   -- > tells whether the argument is equivalent to I
                  _     -> False
+   instance Signaling Declaration where
+    isSignal d = case d of
+           Sgn {}       -> deciss d
+           _            -> False
 
+   
    instance Morphic Declaration where
     multiplicities d = case d of
            Sgn {}       -> decprps_calc d
@@ -265,10 +272,6 @@ where
            Vs{}         -> True
            _            -> False
     isFalse _ = False
-    isSignal d = case d of
-           Sgn {}       -> deciss d
-           _            -> False
-
 
    -- | Deze declaratie is de reden dat Declaration en Morphism in precies een module moeten zitten.
    makeMph :: Declaration -> Morphism

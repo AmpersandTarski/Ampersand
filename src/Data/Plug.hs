@@ -16,7 +16,7 @@ module Data.Plug (Plug(..),Plugs
                  ,isBinary
                  ,IsPlug(..),PlugSQL(..),PlugPHP(..),plname,plfpa,renamePlug)
 where
-  import Adl.Concept (Concept(..),Association(..))
+  import Adl.Concept (Concept(..),Association(..),Signaling(..))
   import Adl.MorphismAndDeclaration
   import Adl.Expression (Expression(..))
   import Adl.ObjectDef (ObjectDef(..))
@@ -116,6 +116,10 @@ where
      source p           = (source . fldexpr . head . fields) p
      target p | isBinary p = target m where (m,_,_) = head (mLkpTbl p)
      target p | otherwise  = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++plname p++", because it is not binary.")
+
+  instance Signaling PlugSQL where
+   isSignal p | isBinary p = isSignal m where (m,_,_) = head (mLkpTbl p)
+   isSignal _              = False
 
 
 
