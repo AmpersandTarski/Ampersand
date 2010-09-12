@@ -1,0 +1,251 @@
+[Rieks:]
+Issue: The following file passes the ADL compiler (though not the code generator, but that's not the issue here). However, an attempt to generate a LaTeX fspec results in the following error message:
+
+<QUOTE>
+ADLvs1.1.0.739.exe: !Fatal (module CC 145): defd undefined in pRuleDef ctRule;subExprOf~*;predic
+ate
+<\QUOTE>
+
+The .adl file that produced this error is as follows:
+
+<QUOTE>
+CONTEXT BPM -- DATE: zo 12-09-2010   8:13:05,28
+-- (file:  2DO.txt ) -- 
+---------------------------------------------------------------------
+-- (C) 2010, TNO/RJ
+-- Dit bestand is work-in-progress en is helemaal gebaseerd op het werk dat Michiel Stornebrink voor zijn afstuderen doet bij TNO.
+---------------------------------------------------------------------
+{-===================================================================-}
+-- (file:  BPM.pat ) -- 
+PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN BPM IN ENGLISH
+{+Business Process Managmeent (BPM) is the art of defining
+
+- result criteria for business processes;
+- preconditions for doing the work involved;
+- policy/procedural rules that workers should abide by as they do their work;
+
+as well as keeping all rules in these three classes up-to-date.
+-}
+-- Markup uses `reStructuredTexts <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_
+
+CONCEPT Process "a specification of one result criterion, one precondition and a set of procedural rules."
+EXPLAIN CONCEPT Process IN ENGLISH {+The purpose of any process is to scope work. This allows people to focus on only that part of all the work that is 'inside scope', i.e. inside the process. This is necessary in order to stay within the intrinsic human limitations as referred to e.g. by [Anderson]_.
+
+The scope of processes is specified by a set of rules, consisting of
+
+- one precondition, which defines the condition upon which work may commence;
+- one postcondition, which defines the condition upon which work terminates;
+- any number of procedural rules, each of which specifies a condition that within a process should be satisfied at any time.
+
+An example process called 'Ordering' might be defined by:
+
+- precondition: 'Orders shall be associated with a Customer, and its list of ordered items shall not be empty.'; 
+- postcondition: 'Orders shall be processed, meaning that every order shall either be rejected, or it shall be accepted, paid for and delivered.';
+- procedural rules: 
+
+  - 'Order processing may only take place during working hours';
+  - 'Approving an order may only be done by a person in the role of Approver';
+  - 'An order shall only be delivered after payment for that order has been received.'
+
+-}
+
+preCdx :: Process -> Expression PRAGMA "Work within " " can only start if " " evaluates to 'true', i.e. when its precondition is met".
+EXPLAIN RELATION preCdx IN ENGLISH {+In order to be able to unambiguously state when this is the case, every process has precisely one precondition. Preconditions define when work in the scope of a process may start; this is the case whenever the expression that constitutes the precondition evaluates to 'true'. For example, the precondition of an ordering process might be: 'Orders shall be associated with a Customer, and its list of ordered items shall not be empty.'.-}
+
+postCdx :: Process -> Expression PRAGMA "All work done within " " is aimed at ensuring that " " becomes 'true', thus fulfilling the postcondition of the process".
+EXPLAIN RELATION postCdx IN ENGLISH {+In order to be able to unambiguously state when this is the case, every process has precisely one postcondition. Postconditions define when work in the scope of a process terminates; this is the case whenever the expression that constitutes the postcondition evaluates to 'true'. Thus, all work that is done within the scope of a process aims to fulfill this postcondition. For example, the postcondition of an ordering process might be: 'Orders shall be processed, meaning that every order shall either be rejected, or it shall be accepted, paid for and delivered.'-}
+
+procCdx :: Process * Expression PRAGMA "All work done within " " is expected to ensure that " " remains (or becomes) 'true', i.e. ensuring that the rule the expression refers to is complied with at all times".
+EXPLAIN RELATION procCdx IN ENGLISH {+In order to prevent workers to engage in activities that are unacceptable, every process has a set of procedural rules that define the conditions that should be satisfied throughout the time that work within a process is carried out. The procedural rules of a process govern the work that is done within that process in a similar way as the laws of a country, or rules in a business policy govern the behaviour of citizens c.q. employees.-}
+
+subProcOf :: Process * Process [ASY] PRAGMA "" " is a process that is embedded in ".
+EXPLAIN RELATION subProcOf IN ENGLISH {+In order to maintain an overview of complex work items, the notion 'subprocess' or 'child process' (and its converse 'parent process') is defined. Considering that a process is a scope within work is done, it is conceivable that keeping an overview of all the work within one scope becomes too complex. Then, carving out scopes within the process scope, stating that such carvings are (inner) contexts of the process, i.e. not part of the process itself, makes that the work that remains within the process scope may again become manageable (see :include_figure:`subprocesses.png`). Each scope that is carved out of a process obviously scopes work, and hence shoulc be a process. These processes are subprocesses or child processes of the process which they are carved out of. Conversely, the latter process is a parent process of its childeren. Like with children, (child) processes may have multiple parents.-}
+
+RULE "subProcOf is antisymmetric" MAINTAINS subProcOf /\ subProcOf~ |- I 
+EXPLANATION "It shall be ensured that subprocesses do not result in cyclic chains."
+EXPLAIN RULE "subProcOf is antisymmetric" IN ENGLISH {+In a similar fashion that parents are not descendents of themselves, processes are not children (or further descendents) of themselves. This is to prevent cyclic chains of (sub)processes.-}
+
+subExprOf :: Expression * Expression [ASY] PRAGMA "" " is an expression contained within ".
+EXPLAIN RELATION subExprOf IN ENGLISH {+In order to be able to evaluate expressions, it is necessary to be able to decompose complex expressions into more basic parts. Considering that expressions are logical combinations of (other) expressions, any expression *e* that is combined with at least one operator (and optionally other expressions) such that the result is a valid expression, is called a subexpression of the latter expression. The latter expression is called a parent (expression) of *e*, and *e* is called a subexpression or child expression of any of its parents.-}
+RULE "subExprOf is antisymmetric" MAINTAINS subExprOf /\ subExprOf~ |- I
+EXPLAIN RULE "subExprOf is antisymmetric" IN ENGLISH{+It shall be ensured that the decomposition of expressions does not result in cyclic chains.-}
+
+RULE "results of subprocesses" MAINTAINS subProcOf |- postCdx;((procCdx \/ postCdx) \/ subProcOf~;preCdx;subExprOf*)~
+EXPLAIN RULE "results of subprocesses" IN ENGLISH 
+{+In order for a process that consists of subprocesses to guarantee that it can actually deliver the results that it aims to achieve (its postcondition), it must have a means to coordinate its subprocesses. One of the elements of this coordination is to constrain the postconditions of its subprocesses to expressions that are useful for this coordinative work. To be more precise, it is required that every subprocess of a (parent) process has a postcondition that is any one of:
+
+- the postcondition of its parent process;
+- an expression that is part of the procCdx of its parent process;
+- an expression that is part of the postcondition of its parent process
+
+-}
+
+RULE "procedural rules inheritance" MAINTAINS subProcOf; procCdx |- procCdx
+EXPLANATION "Every process shall maintain (comply with) every procedural rule of any of its parent processes."
+EXPLAIN RULE "procedural rules inheritance" IN ENGLISH {+In order to guarantee that all work within a process maintains all procedural rules defined for that process, it is necessary to impose these procedural rules onto all of its subprocesses as well. 
+
+Thus, the set of procedural rules for a process consists of every procedural rule of every of its parent processes, and any additional rules that are specific to the process.-}
+
+ENDPATTERN
+{-===================================================================-}
+PATTERN Cases -- WIJZIGER: rieks.joosten@tno.nl
+EXPLAIN PATTERN Cases IN ENGLISH
+{+In order be able to supply process workers with automated support, it is necessary to distinguish between the various sets of data that they may work with at some point in time. This pattern provides the terminology and rules for distinguishing such sets of data at runtime, as well as for specifying the composition of such data sets (definetime).-}
+
+{-===================================================================-}
+-- cases and case types
+
+CONCEPT Case "a (runtime) collection of data for the treatment of which a specific set of (integrity) rules apply."
+EXPLAIN CONCEPT Case IN ENGLISH {+For different purposes, sets of data have to be treated in coherence. For example, an amount of money might be a set of data consisting of a number (integer, double integer or real number) and a monetary unit (such as USD or Euro), for which rules are defined such that you can add two or more amounts of money. Another example would be an element of a pricelist, defined as the combination of an item identifier and an amount of money, with the rule that the amount of money is the price you pay in exchange for obtaining 1 instance of the item. Combining cases, e.g. computing the amount of money that you have to pay in exchange for an arbitrary set of items, may only be done provided that all rules are maintained. This property, namely that all rules are adhered to, is called data integrity. The consequence of having this property is that the amount of money you have to pay is computed as an addition of amounts (as defined for amounts), given the item prices (as defined by the pricelist) and the number of items, and not by any other means.-}
+
+CONCEPT CaseType "the (definetime) specification of data collections that are to  be treated according to a specifc set of (integrity) rules."
+EXPLAIN CONCEPT CaseType IN ENGLISH {+Every data set that has to be treated in coherence (i.e. each Case) has a structure, i.e. every data element is of a specific type. Also, rules (constraints) that apply to this data determine the semantics of this data as it is part of the Case. A CaseType is the specification of the structure of cases of a similar kind, as well as the rules that should be satisfied by every case of that kind. For example, the case type 'Order' might specify that the set of coherent data consists of a 'legal party' and a 'list of items'.-}
+
+ctRule :: CaseType * Expression PRAGMA "Any work done on a case that instantiates " " should ensure that " " remains (or becomes) 'true'".
+EXPLAIN RELATION ctRule IN ENGLISH {+Maintaining the integrity and/or  meaning of data within a Case means that this data comply with a set of rules that define this integrity/meaning. Therefore, each CaseType comes with a set of rules that defines the integrity/meaning of every Case that is an instantation thereof.-}
+
+ctRule; subExprOf~*; predicate
+RULE "case type predicate expressions" MAINTAINS predicate; subExprOf*; ctRule~ |- predicateAttrType; belongsto; subCaseTypeOf*
+EXPLANATION "Every predicate that appears in a rule that is to be maintained within cases of a certain case type, must be associated with a case attribute type that belongs to a case type in the transitive closure of the aforementioned case type."
+EXPLAIN RULE "case type predicate expressions" IN ENGLISH {+For every case type, it is necessary to ensure that all rules that it must uphold, can be evaluated for every of its runtime instances (cases). Therefore, for every such case, a link must exist between that case and all data necessary for evaluating such rules because only then can all predicates in such rules be  replaced with data. Consequently, this data must be the value of a case attribute of a case type that is the case type of the aforementioned case, or of any subcase type.-}
+
+--! Hier moet nog een RULE komen die garandeert dat ctRules worden afgedwongen.
+
+CONCEPT CaseAttrType "the specification of a data type having a specific meaning."
+EXPLAIN CONCEPT CaseAttrType IN ENGLISH {+Data becomes information by classifying it. For example, the character sequence 'Micky Mouse' becomes informative (information) only after having been classified e.g. as the name of a Disney character, or the name of a computer. Also, the text 'store' only becomes information after it is classified either as a verb or as a noun. A CaseAttrType represents a class of data elements that have a specific meaning within the scope of a case of a specific type. CaseAttrTypes may be treated as predicates (echt waar?) in rules, meaning that instances thereof (that all appear in a single case) should satisfy the rules specified by the case type that the case instantiates.-}
+
+CONCEPT CaseAttr "a value that is part of the data set of a specific case, with a specific meaning as defined by its CaseAttrType."
+
+caseType :: Case -> CaseType PRAGMA "" " is of type ".
+EXPLAIN RELATION caseType IN ENGLISH {+Cases are instances of a specific type; this means that the case is a collection of data elements, i.e.values of case attributes whose type is defined by the CaseType.-}
+
+belongsto :: CaseAttr -> Case PRAGMA "" " belongs to ".
+belongsto :: CaseAttrType -> CaseType PRAGMA "" " belongs to ".
+
+RULE "type checking for case attributes" MAINTAINS belongsto;caseType = caType;belongsto
+EXPLAIN RULE "type checking for case attributes" IN ENGLISH {+Every attribute that belongs to a specific case shall be of the attribute-type as specified by the case-type.-}
+{-===================================================================-}
+-- nesting of cases
+subCaseTypeOf :: CaseType * CaseType PRAGMA "Cases that instantiate " " may contain subcases that instantiate ".
+EXPLAIN RELATION subCaseTypeOf IN ENGLISH {+Classifying information in terms of other information classes allows us to describe and handle complex cohesions of data. This is facilitated by allowing CaseTypes to not only define CaseAttrTypes, but also other CaseTypes.-}
+
+subCaseOf :: Case * Case [ASY] PRAGMA "" " is a subcase (is 'contained' within) ".
+
+RULE "type checking for nested cases" MAINTAINS subCaseOf;caseType |- caseType;subCaseTypeOf
+EXPLAIN RULE "type checking for nested cases" IN ENGLISH {+Every case that is a subcase of a case of a specifc type shall be of a case-type as specified by the case type of the latter case.-}
+{-===================================================================-}
+-- Attributes, attribute types, their values and data types
+caType :: CaseAttr -> CaseAttrType PRAGMA "" " is an instance of ".
+caValue :: CaseAttr * Value [UNI] PRAGMA  "" " has been implicitly (by means of a default value) or explicitly assigned ".
+caAssVal :: CaseAttr * Value [UNI] PRAGMA "" " has been explicitly assigned ".
+
+catDatatype :: CaseAttrType -> Datatype PRAGMA "" " specifies that values assigned to its instances must be of type ".
+catDefVal :: CaseAttrType * Value [UNI] PRAGMA "Case attributes of type " " will be assigned " " by default".
+
+valType :: Value -> Datatype PRAGMA "" " is an instance of ".
+
+RULE "type checking for values of case attributes" MAINTAINS caValue;valType |- caType;catDatatype
+
+RULE "type checking for default values" MAINTAINS catDefVal |- catDatatype;valType~
+
+RULE "determine value assignment" MAINTAINS caValue = caAssVal \/ (I /\ -(caAssVal;caAssVal~));caType;catDefVal
+
+-- The below stuff reminds us of the fact that we need to supply rules for the evaluation of expressions
+predicate :: Expression * Expression [SYM,ASY] PRAGMA "" " is a predicate, meaning that " " has no subexpressions".
+EXPLAIN RELATION predicate IN ENGLISH {+Some expressions cannot be decomposed into smaller parts. Such 'atomic' expressions are called 'predicates', i.e. have the 'predicate' property.-}
+
+RULE predicates MAINTAINS predicate = -(subExprOf~;subExprOf)
+EXPLANATION "Expressions that have no subexpressions are (called) predicates."
+EXPLAIN RULE predicates IN ENGLISH {+Predicate expressions are distinct from non-predicates in the sense that they directly relate to data that may be operated upon (CRUD), whereas nonpredicate expressions need to be computed from predicates and subexpressions.-}
+
+predicateAttrType :: Expression * CaseAttrType [INJ,UNI] PRAGMA "When evaluating " ", it must be replaced with data of a case attribute of type".
+EXPLAIN RELATION predicateAttrType IN ENGLISH {+In order to be able to evaluate expressions at runtime, every expression must either be replaced by the result of computations with the results of the evaluation of its subexpressions, or by data in case the expression is a predicate. A mapping between (predicate) expressions and case attribute types enables the automated substitution of predicates by data at runtime.-}
+
+RULE caseAttrTypes MAINTAINS predicate |- predicateAttrType;predicateAttrType~ /\ -(predicateAttrType;predicateAttrType~ /\ -I )
+EXPLANATION "Every predicate that may appear in an expression must be mapped onto a single case attribute type."
+EXPLAIN RULE caseAttrTypes IN ENGLISH {+In order to ensure that every expression that defines a rule, can be evaluated at runtime, it is necessary that every predicate of that expression maps onto a case attribute type, so that at runtime data is available to evaluate the expression. It shall be prohibited that other predicates map onto the same case attribute type.-}
+
+{-===================================================================-}
+-- Expression evaluation (to some degree, that is)
+
+-- Evaluation of rules using non-case-related data
+vak :: Expression * Expression [SYM,ASY] PRAGMA "" " has been evaluated to 'TRUE'".
+reval :: Expression * Boolean  [UNI] PRAGMA "The result of evaluating " " has led to ".
+RULE "Truth of non-case-related rules" MAINTAINS 
+vak = I /\ procCdx~;procCdx /\ reval;'TRUE';reval~
+EXPLAIN RULE "Truth of non-case-related rules" IN ENGLISH {+Procedures are sets of rules that need to be complied with - period. Therefore, procedural rules may not contain case-related data as this data may not be available (as usually is the case when a new case in a procedure starts). Any rule in which case-related data appears, are to be specified as a precondition and/or postcondition of process(es).-}
+
+-- Evaluation of rules using case-related data
+effects :: Process -> CaseType [SUR] PRAGMA "" " operates on cases of type ".
+va :: Case * Expression PRAGMA "" " complies with ".
+xxxCase :: XXX -> Case.
+xxxRule :: XXX -> Expression.
+xxxReval:: XXX -> Boolean.
+I = xxxCase;xxxCase~ /\ xxxRule;xxxRule~
+RULE "Truth of case-related rules" MAINTAINS 
+va[Case*Expression] = ((dmenu~ \/ caseType;effects~);(preCdx \/ postCdx);xxxRule~ /\ xxxCase~);(I/\xxxReval;true;xxxReval~);xxxRule
+EXPLAIN RULE "Truth of case-related rules" IN ENGLISH {+For a specific case, it must be possible to evaluate the pre- and postconditions of every process that either effects cases of similar types, or may appear in menu's of such cases. The reason for this is that this is the condition under which such processes may be activated (see rule [ref]).-}
+
+-- Booleans, since we need them above
+true  :: Boolean * Boolean [SYM,ASY] =[ ("TRUE",  "TRUE")  ].
+false :: Boolean * Boolean [SYM,ASY] =[ ("FALSE", "FALSE") ].
+I[Boolean] = (true /\ -false) \/ (-true /\ false)
+
+{-===================================================================-}
+-- Contents of the Process menu window
+pmenu :: Process * Process PRAGMA "Als het scherm van " " wordt getoond, dan wordt " " daar in het procesmenu getoond".
+RULE "Contents of process menus" MAINTAINS
+pmenu = subProcOf;(I /\ (-procCdx!vak);procCdx~);(-(dsel;dsel~) \/ dsel; va; preCdx~)
+EXPLAIN RULE "Contents of process menus" IN ENGLISH {+In a process application, at all times the screen shows a menu (called the pmenu) of processes that can be clicked on (so as to select them for execution). At any particular time, the pmenu shown relates to the process (activity) that is currently being executed/active (called the 'active process'). The contents of this particular pmenu consists of all subprocesses of the active process provided the following conditions are all satisfied:
+
+- all procedural rules of the subprocess must be satisfied. Note that since every procedural rule of the active process is inherited by all of its subprocesses, this implies that if a procedural rule of the active process is not satisfied, then none of its subprocesses will satisfy this condition;
+- if a case is selected to be worked on then all preconditions of the subprocess (using data of the selected case) must be satisfied. Note that if no case is selected, every subprocess may appear in the pmenu.
+-}
+
+{-===================================================================-}
+-- Contents of the Data/Case menu window
+dmenu :: Process * Case PRAGMA "Als het scherm van " " wordt getoond, dan wordt " " daar in het dmenu getoond".
+RULE "Contents of data menus" MAINTAINS
+dmenu = (I /\ ((-procCdx)!vak);procCdx~);(effects; caseType~ /\ postCdx;-va~ /\ preCdx;va~)
+EXPLAIN RULE "Contents of data menus" IN ENGLISH {+In a process application, at all times the screen shows a menu (called the dmenu) of data  elements (entities, cases) that can be clicked on (so as to select them for further processing). At any particular time, the dmenu shows the cases that are relevant to the process (activity) that is currently being executed/active (called the 'active process'). The contents of this particular dmenu consists of all cases for which the following conditions are satisfied:
+
+- all precedural rules for the process have been satisfied. Note that this implies that if a single procedural rule is not satisfied, the dmenu is empty.
+- the case is of a type that can be processed by the active process;
+- the postcondition of the active process is not satisfied for the case;
+- the precondition is satisfied for the case;
+-}
+
+{-===================================================================-}
+-- Contents of the selected Data/Case Window.
+dsel :: Process * Case [UNI] PRAGMA "Within " ", " " is selected for further processing".
+
+dselCase :: Case * Case PRAGMA "Whenever " " appears in a dmenu and it is selected by the active process, then " " appears in its submenu".
+RULE "Data window contents - cases" MAINTAINS
+dselCase = (-(dsel~;dsel) /\ I)--; moet nog worden afgemaakt a.d.h.v. input van Michiel.
+EXPLAIN RULE "Data window contents - cases" IN ENGLISH {+In a process application, at any time a case is selected the screen shows a window (called the dwindow) containing the contents of a selected case. Since a case can contain other cases (subcases of the first case), this window shows such subcases. The cases that are shown in the dwindow satisfy the following conditions:
+
+- the case is a subcase of the case that the active process has selected;
+- [MOET NOG WORDEN AFGEMAAKT a.d.h.v. INPUT VAN MICHIEL.
+-}
+
+dselAttr :: Case * CaseAttr PRAGMA "Whenever " " appears in a dmenu and it is selected by the active process, then " " appears in its submenu".
+RULE "Data window contents - attributes" MAINTAINS
+dselAttr = (-(dsel~;dsel) /\ I);belongsto~ --; moet nog worden afgemaakt a.d.h.v. input van Michiel.
+EXPLAIN RULE "Data window contents - attributes" IN ENGLISH {+In a process application, at any time a case is selected the screen shows a window (called the dwindow) containing the contents of a selected case. Since a case can contain attributes, this window shows such attributes. The attributes that are shown in the dwindow satisfy the following conditions:
+
+- [MOET NOG WORDEN AFGEMAAKT a.d.h.v. INPUT VAN MICHIEL.
+-}
+
+ENDPATTERN
+{-===================================================================-}
+PATTERN Mischellaneous
+
+
+-- The below stuff reminds us of the fact that we need to be able to execute code from some file
+activity :: Process * Fileid [UNI,INJ,SUR] PRAGMA "" " executes through the code found in  ".
+
+ENDPATTERN
+{-===================================================================-}
+ENDCONTEXT
+<\ENDQUOTE>
