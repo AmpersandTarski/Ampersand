@@ -1,3 +1,34 @@
+[Han:]
+This is probably because the Lazy character of ADL. What makes you say that the file passes the ADL compiler?
+In my case, the very same .adl file yields:
+<QUOTE>
+C:\data\ADL\models>ampersand --language=UK --verbose -fl bpm.adl
+Checking output directories...
+Parsing... adl.exe: user error (
+The type analysis of bpm.adl yields errors.
+!Error of type [3] Relation undefined: subProcOf
+
+   in RULE results of subprocesses MAINTAINS subProcOf |- postCdx;(procCdx~ \/ p
+ostCdx~ \/ subExprOf~*;preCdx~;subProcOf)
+   at line 63, file "bpm.adl"
+!Error of type [3] Relation undefined: procCdx
+
+   in RULE procedural rules inheritance MAINTAINS subProcOf;procCdx |- procCdx
+   at line 73, file "bpm.adl"
+!Error of type [3] Relation undefined: caseType
+
+   in RULE type checking for case attributes MAINTAINS belongsto;caseType = caTy
+pe;belongsto
+   at line 115, file "bpm.adl"
+!Error of type [3] Relation undefined: va
+
+   in RULE Contents of data menus MAINTAINS dmenu = (I/\(-procCdx!vak);procCdx~)
+;(effects;caseType~/\postCdx;-va~/\preCdx;va~)
+   at line 198, file "bpm.adl"
+Nothing generated, please correct mistake(s) first.
+)
+</QUOTE>
+
 [Rieks:]
 Issue: The following file passes the ADL compiler (though not the code generator, but that's not the issue here). However, an attempt to generate a LaTeX fspec results in the following error message:
 

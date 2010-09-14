@@ -205,6 +205,16 @@ theTemplate flags
                , "\\newcommand{\\declare}[3]{"++texOnly_Id("#1")++":"++texOnly_Id("#2")++"\\mbox{\\("++texOnly_rel++"\\)}"++texOnly_Id("#3")++"}"
                , "\\newcommand{\\fdeclare}[3]{"++texOnly_Id("#1")++":"++texOnly_Id("#2")++"\\mbox{\\("++texOnly_fun++"\\)}"++texOnly_Id("#3")++"}"
                ] ++ (if language flags == Dutch then [ "\\selectlanguage{dutch}" ] else [] )++
+               [ "% ====================================================================================="
+               , "% == The hyperref package will take care of turning all internal references of your  =="
+               , "% == document into hyperlinks. For this to work properly some magic is necessary,    =="
+               , "% == so you have to put \\usepackage[pdftex]{hyperref} as the last command            =="
+               , "% == into the preamble of your document.                                             =="
+               , "% == Many options are available to customize the behaviour of the hyperref           =="
+               , "% == package. See http://ctan.tug.org/tex-archive/info/lshort/english/lshort.pdf     =="
+               , "% ====================================================================================="
+               , "\\usepackage[pdftex,colorlinks=false]{hyperref}"
+               ] ++
                [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
           {-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
            -    , "$if(xetex)$"
