@@ -11,14 +11,17 @@ TRUE
 
 1
 ADL (ampersand) files
-20
+29
 CONTEXT Piet
-PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl
+PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
+{- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
 
-preCdx  :: Proces -> Conditie.
+--! Line comment die er qua colouring uitspringt kan soms handig zijn.
+
+{-preCdx  :: Proces -> Conditie.-}
 postCdx :: Proces -> Conditie.
 kader   :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden".
-
+ "sfdkfj"
 deelProcVan :: Proces * Proces [ASY] PRAGMA "" " is een deelproces van ".
 deelCdxVan  :: Conditie * Conditie [ASY] PRAGMA "" " is een deelconditie  van ".
 
@@ -27,40 +30,200 @@ activiteit :: Proces * Activiteit [UNI,INJ,SUR] PRAGMA "" " wordt uitgevoerd mid
 deelProcVan |- postCdx;(kader \/ postCdx \/ deelProcVan~; preCdx; deelCdxVan{-*-})~
 EXPLANATION "Voor elk (sub)proces die onderdeel is van een (super)proces geldt dat de het subproces een postconditie heeft die (a) ofwel een kaderregel is, (b) ofwel de postconditie is van het superproces, (c) ofwel een (onderdeel is van) de preconditie van een (mogelijk ander) subproces van het(zelfde) superproces."
 
-deelProcVan; kader |- kader
+deelProcVan; kader |- kader \/ V-
 EXPLANATION "Het kader van een proces dat een deelproces is van een (super)proces, bevat alle kader(conditie)s van dat superproces."
 
+--Sommige [*maar niet alle*] syntaxfouten worden met rood aangegeven. Voorbeelden:
+kader :: aap * noot.
+kader :: Aap * noot.
+kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
+kader :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden"
+kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
 ENDPATTERN
 ENDCONTEXT
 0
 FALSE
-10
-Comments
+24
+Err-EXPLAIN+keyword
+Error if EXPLAIN is NOT followed by a suitable keyword
+(?<=EXPLAIN\s)(?!\s*+(CONTEXT|PATTERN|CONCEPT|RELATION|RULE))\s*+\w*\s*
+FALSE
+FALSE
+15
+0
 
-^[ \t]*rem.*$
+
+0
+FALSE
+Err-ExplainRELATION(IN lang)
+Errof if EXPLAIN RELATION misses the 'IN DUTCH' or 'IN ENLGISH' syntax
+\bEXPLAIN\b\s*+RELATION\s*+\b([a-z]\w*+)\b\s*+(?#Optional:Concepts)(\[[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+\s*+\])?+(?#Optional:REF)(\s*+REF\s+"[^"]*+")?+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(\s*+IN\s++(DUTCH|ENGLISH)))
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Syntax - EXPLAIN 2
+Error if EXPLAIN (followed by a suitable keyword) misses the 'IN DUTCH' or 'IN ENLGISH' syntax
+\bEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXPLAIN\b\s*+(CONTEXT|PATTERN|RULE|CONCEPT)\s*+(?(?=")"[\s\w]*+"|\w*+)\s*+(?#check for 'IN DUTCH' or 'IN ENGLISH')(?!(IN DUTCH|IN ENGLISH))
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-IN(lang)comment
+Error if 'IN DUTCH' or 'IN ENGLISH' is not followed by {+ <text> -}
+\bIN\s++(DUTCH|ENGLISH)\s*+(REF\s*+"[^"]*")?+\s*+([^\{]|\{[^\+])
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-nRULE MAINTAINS or SIGNALS
+ERROR if RULE is not followed by a relation symbol and/or keyword MAINTAINS or SIGNALS is missing
+(?<=(?<!EXPLAIN\s*)\bRULE[\s]+)("[^"]*(?=\s*(MAINTAINS|SIGNALS))|((?!(MAINTAINS|SIGNALS)).)*$)
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-Concepts(name)
+Error if the name of a concept starts with a lower case char
+(?<=\bCONCEPT[\s]+)\b("[a-z]\w*"|[a-z]\w*)\b
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-Relations(name)
+Error if the name of a relation starts with an upper case char
+\b[A-Z]\w*\b(?=[\s]*::)
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-Relations(left concept)
+ERROR if relation declaration uses (left) concept name starting with lower case char
+::\s*+[^A-Z]
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-Relations(relspec)
+Error if relation declaration does not specify a '*' or '->'
+(?<=[^:])::\s*+[A-Z]\w*+\s*+(?(?=\-)\-[^\>]|[^\*])
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Err-Relations(right concept)
+ERROR if relation declaration uses (right) concept name starting with lower case char
+(?<=[^:])::\s*+[A-Z]\w*+\s*+(\-\>|\*)\s*+[^A-Z]
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Relations
+Execute the 'Relations' subscheme when a relation is found.
+(?<=[^:]:::::::::::::::::::::::::::::::::::::::::::::(?=[^:])\s*\b)(?=[^\.]*+\.)[^\.]*+(?=\.)
+FALSE
+FALSE
+0
+0
+
+
+0
+FALSE
+Err-Relations(period)
+Error if a relation declaration does not terminate with a period
+(?<=[^:])::\s*+[A-Z]\w*+\s*+(\*|-\>)\s*+[A-Z]\w*+(?#Optional:multiplicities)\s*+(?(?!\[)|\[[^\]]*\])(?#Optional:Pragma)\s*+(PRAGMA(\s*\"[^"]*\"){1,3})?+(?#optional populationlist and required period)\s*+(?(?!=\s*+\[)|=\s*+\[[^\]]*\]\s*)[\s\n\r]*+[^\.$]
+FALSE
+FALSE
+15
+0
+
+
+0
+FALSE
+Line Comment (emphasized)
+Text after --! on the same line
+[^-]--![^\n\r]*+
+FALSE
+FALSE
+20
+0
+
+
+3
+FALSE
+Line Comment (folding point)
+Text after --[ on the same line
+[^-]--\[[^\n\r]*+
+FALSE
+FALSE
+21
+0
+
+
+3
+FALSE
+Line Comment
+Text after -- on the same line
+[^-]--
 TRUE
 FALSE
 5
 0
 
 
-0
-TRUE
-Relation
-
-^[ \t]*::\S+[ \t]*$
-TRUE
+3
 FALSE
-12
-0
-
-
-0
+Block Comment
+Text between {+ or {- and -}
+{(\+|-)
 FALSE
-Reserved words
+FALSE
+5
+0
 
-\b(?:echo|off|on|if|not|exist|exit|for|in|do|call|set|errorlevel|cd|md|cls|copy|dir|pause|del|delete|erase|type|popd|pushd|prompt|rd|setlocal|endlocal|echoconfig|dosonly)\b
-TRUE
+
+4
+FALSE
+Multiplicities
+
+\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|TRN)(\s*+,(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|TRN))*+)?+)?+\s*+\]
+FALSE
 FALSE
 7
 0
@@ -68,10 +231,65 @@ FALSE
 
 0
 FALSE
-Common utilities
+operators
 
-\b(ATTRIB|BACKUP|CHKDSK|CHOICE|DELTREE|DISKCOPY|DOSKEY|EDIT|FC|FDISK|FIND|FORMAT|KEYB|LABEL|MEM|MKDIR|MODE|MORE|MOVE|NET|REPLACE|RESTORE|RMDIR|SCANDISK|SORT|SUBST|XCOPY|XCOPY32|AT|CACLS|CONVERT|FINDSTR|START|TITLE)\b
-TRUE
+-\||\|-|-|->|>|=|~|\+|;|!|\*|::|:|\/|/\\|\\|/|<>
+FALSE
+FALSE
+13
+0
+
+
+0
+FALSE
+V, I and S
+
+\b[VIS](\[\s*[A-Z]\w*\s*[*]\s*[A-Z]\w*\s*\])?\b
+FALSE
+FALSE
+13
+0
+
+
+0
+FALSE
+Reserved words
+
+\b(CONTEXT|ENDCONTEXT|EXTENDS|PATTERN|ENDPATTERN|SERVICE|INITIAL|SQLPLUG|PHPPLUG|POPULATION|CONTAINS|CONCEPT|RELATION|PRAGMA|RULE|MAINTAINS|SIGNALS|EXPLAIN|IN|ENGLISH|DUTCH|REF|EXPLANATION|KEY|IMPORT|GEN|ISA)\b
+FALSE
+FALSE
+7
+0
+
+
+0
+FALSE
+Relations (function name)
+
+\b("[a-z_]\w*"|[a-z_]\w*)\b(?=[\s]*::)
+FALSE
+FALSE
+8
+0
+
+
+0
+FALSE
+Rules (function name)
+
+(?<=\bRULE[\s]+)\b("[a-z_]\w*"|[a-z_]\w*)\b(?=[\s]*(MAINTAINS|SIGNALS))
+FALSE
+FALSE
+8
+0
+
+
+0
+FALSE
+Concepts, Patterns, Contexts  (function name)
+
+(?<=\b(CONTEXT|PATTERN|CONCEPT)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+FALSE
 FALSE
 8
 0
@@ -81,80 +299,25 @@ FALSE
 FALSE
 string
 
-"[^"\r\n]++"?
+"[^"\r\n]*"
 FALSE
 FALSE
-0
-0
-
-
-0
-FALSE
-Batch file parameter
-
-%[0-9]++
-FALSE
-FALSE
-10
+19
 0
 
 
 0
 FALSE
-Environment Variable
-
-%[a-zA-Z0-9]++%
-FALSE
-FALSE
-16
-0
-
-
-0
-FALSE
-Special character
-
-[><|=@&]++
-FALSE
-FALSE
-13
-0
-
-
-0
-FALSE
-Command line parameter
-
- [/-]\S++
-FALSE
-FALSE
-11
-0
-
-
-0
-FALSE
-Goto
-
-\bgoto[ \t]*\S*
-FALSE
-FALSE
-7
-0
-
-
-0
-FALSE
-7
+8
 {-
 -}
 TRUE
-0
+2
 {+
 -}
 FALSE
-0
-PATTERN
+2
+(?<!END)PATTERN
 ENDPATTERN
 FALSE
 0
@@ -164,6 +327,10 @@ FALSE
 0
 =[
 ]
+TRUE
+0
+[*
+*]
 FALSE
 0
 (
@@ -174,4 +341,102 @@ TRUE
 "
 FALSE
 2
+2
+line comments
+1
+5
+FALSE
+4
+mailaddres
+
+\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
+FALSE
+FALSE
+1
+3
+
+
 0
+FALSE
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+FALSE
+FALSE
+1
+4
+
+
+0
+FALSE
+empasize stuff
+Stuff between [! and a subsequent ] (or eol) will be highlighed
+\*\*[^*]*\*\*
+FALSE
+FALSE
+20
+0
+
+
+0
+FALSE
+end of text
+
+(?=$)
+FALSE
+FALSE
+0
+0
+
+
+1
+FALSE
+block comments
+1
+5
+FALSE
+4
+mailaddres
+
+\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
+FALSE
+FALSE
+1
+3
+
+
+0
+FALSE
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+FALSE
+FALSE
+1
+0
+
+
+0
+FALSE
+empasize stuff
+Stuff between [! and a subsequent ] (or eol) will be highlighed
+\*\*[^*]*\*\*
+FALSE
+FALSE
+20
+0
+
+
+0
+FALSE
+end of text
+
+-}
+FALSE
+FALSE
+5
+0
+
+
+1
+FALSE
