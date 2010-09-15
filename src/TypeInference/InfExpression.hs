@@ -4,6 +4,7 @@ module TypeInference.InfExpression where
 --you can define the polymorph DATA PExpression a b, but it does not match our expectations
 
 import Adl
+import Data.List (union,nubBy,nub)
 
 --the type containing inh and syn atts
 type InfExpression  = 
@@ -89,22 +90,27 @@ infer_MulPExp mop subs usercast     decls_ isa_ autocast_
         --     if there is no such thing then autocast_==Nothing => reltype=amb.comp
         ttype = ttypemerge tryac subs --ttype respecting autocast_ should be equal to (tf(reltype substuples))
         rtype = case length ttype of
-              1 -> Left tf
-              _ -> analyseerror
+           1 -> Left tf
+           _ -> analyseerror
         infex = MulPExp mop (map typedexpr the_subs_tuples) (thetype rtype)
         proof = []
         hm = False --foldr (&&) True (map ishomo (head(alts tryac subs))) --all composed are homogeneous <-> mulpexp is homogeneous, just check the head alt.
         {--push inherited on subexpressions--}  --alternative::[SynAtts] one SynAtts for each subexpression
         tryac =  if castcondition usercast autocast_ isa_ then cast usercast autocast_ else error "No match with user cast"
-        ttypemerge ac ss | length ss<2 = concat(concat[map trytype subalts|subalts<-alts ac ss])
-                         | otherwise    = ptf[concat(map trytype subalts)|subalts<-alts ac ss] -- = concat[ptf(map trytype alt)|alt<-alts ac ss] --types of all alternatives are potential types of this expression
+      --  no_alt (xs,_) = [if null x then [] else x|x<-xs]
+        ttypemerge ac ss 
+           | length ss<2 = concat(concat[map trytype s_tpls|s_tpls<-fst (alts ac ss)])
+           | otherwise    = ptf[concat(map trytype s_tpls)|s_tpls<-fst (alts ac ss)] --types of all alternatives are potential types of this expression
          --alts => list of alternatives for a composition of subexpressions (ss) given an autocast (ac) 
         the_subs_tuples :: [SynAtts] --one SynAtts for each subexpression
         the_subs_tuples                    --autocast is not free anymore i.e. equal to tf
-           = [head sub_tplss|sub_tplss<-subs_tplss
-                            ,if length sub_tplss==1 then True 
-                             else error (show("there are alternatives i.e. ambiguous reltype",ttype,[concat(map trytype subalts)|subalts<-alts tryac subs],map trytype sub_tplss))]
-           where subs_tplss = alts (Just tf) subs           
+           = [head sub_tplss
+             |sub_tplss<-subs_tplss
+     --        ,if length sub_tplss==1 then True 
+       --       else error (show("there are alternatives i.e. ambiguous reltype"
+         --                ,ttype,[concat(map trytype s_tpls)|let Left ss_tplss=alts tryac subs,s_tpls<-ss_tplss],map trytype sub_tplss))
+             ]
+           where subs_tplss = case alts (Just tf) subs of (x,_) -> x; _ -> error "xxx"
         alts = comp_alts ttypemerge decls_ isa_
         {--typing functions--}
         ptf :: [[Sign]] -> [Sign] --calculate the trytype from the trytypes of the subs 
@@ -117,7 +123,7 @@ infer_MulPExp mop subs usercast     decls_ isa_ autocast_
         tf | length ttype==1 = head ttype
            | otherwise = error "tf undefined: tf is defined iff length ttype==1"
         {--error analysis--} 
-        analyseerror = Right ["xxx"]--Right (comp_errors ttypemerge decls_ isa_ tryac subs)
+        analyseerror = {-Right ["xxx"] --}Right (snd( alts tryac subs)) --Right (comp_errors (alts tryac subs))
     in  (infex,rmdupl [] ttype,rtype,proof,hm) --return synthesized (use of nub, see comments@ttype)
  |otherwise =
     let --push inherited on subexpressions
@@ -220,12 +226,13 @@ rmdupl prets (t:ts)
 ss_merge::[[[SynAtts]]]->[[SynAtts]]
 ss_merge [] = []
 ss_merge (x:[]) = x
-ss_merge (x:y:xs) = foldr concatelems x xs
+ss_merge (x:xs) = foldr concatelems x xs 
 concatelems::[[SynAtts]] -> [[SynAtts]] -> [[SynAtts]]
 concatelems [] [] = []
 concatelems [] _ = error "sdfds"
 concatelems _ [] = error "sdfsd"
-concatelems (x:xs) (y:ys) = (x++y):(concatelems xs ys)
+concatelems (x:xs) (y:ys) = --if length (concatelems xs ys)>3 then error (show ([map trytype ccc|ccc<-(x++y):(concatelems xs ys)])) else 
+                            (x `Data.List.union` y):(concatelems xs ys)
 
 testy (Just x) = Left x
 testy _ = Right ["Anything"]
@@ -239,21 +246,50 @@ inerror (Right _) = True
 
 ------------------------------------------------------------
 ------------------------------------------------------------
-
-comp_errors :: (Maybe (Concept, Concept)-> [InfExpression]-> [(Concept, Concept)])
-             -> [Declaration] -> [(Concept,Concept)] -> (Maybe Sign) -> [InfExpression] -> [TErr]
-comp_errors _ _ _ _ [] = []
-comp_errors ttypemerge decls_ isa_ ac (s:ss) 
+--or reltype=Left type + infex exists or Right TErr
+--comp_errors :: [[SynAtts]] -> [TErr]
+--comp_errors [] = []
+--comp_errors (s_tpls:ss_tplss) 
   -- | null ss = [s_tpls]
-  = ["composition"++show (ttypemerge ac (s:ss),length(comp_alts ttypemerge decls_ isa_ ac (s:ss)))]
+--  = --["composition"++show (ttypemerge ac (s:ss),length(comp_alts ttypemerge decls_ isa_ ac (s:ss)))]
+  --  map reltype s_tpls 
 
+--the type alternatives of some composition of a list of subexpressions
+--one alternative is a list of SynAtts, exactly one SynAtt for each subexpression possibly yielding an error in the subexpression
+--if there is no alternative yielding a type, then all alternatives yield errors
+--if there is an alternative yielding a type, then all alternatives yield types
+--if there are more alternatives yielding types, then the composition expression as a whole is ambiguous, 
+--but it might be unambiguous within a larger expression (i.e. with a different ac)
+--if there are more alternatives yielding errors, then it could be either one i.e. the actual mistake of the user is undecided,
+--but the actual mistake might be decided within a larger expression (i.e. with a different ac)
+--
+--the goal is to return all alternatives: sss_tplss = s_tpls:ss_tplss
+--where
+--s_tpls => all alternatives for s where source=a and target="some source in ptf(ss) with target(ss)=c"
+--ss_tplss (recursion) => all alternatives for each s' in ss
+--                     = comp_alts ss 
+--                       where ac=("some target of concat(map trytype s_tpls)", c)
+--
+--if there are no such s_tpls, then this could be caused by that:
+--1) ss yields an error i.e. there are no ptf(ss)
+--   => returning the tuple of s with source=a and open target is to general if there are target(s)="some source in ptf(take (ok_untill 0) ss)"
+--      if there are such sources (b) then return for all b the tuple of s with source=a and target=b
+--      otherwise check cause 2 
+--      +> if s does compose to some left part of ss then ss_tplss=comp_alts (take (ok_untill 0) ss) ++ comp_alts (drop (ok_untill 0) ss)
+--2) there is no s_tpl that can be composed to any ss_tpls 
+--   "x can be composed to y" => there is a target(x)=source(y)
+--   if there are alternatives for s i.e. trytype (s with source=a and open target) is not null
+--   then explicitly cast all trytypes (_,b) to tuples of s with source=a and target=b <= interpretation:one tuple=one alternative
+--   otherwise check cause 3
+--3) there are no alternatives for s where source=a
+--   => return the tuple of s with source=a and open target (yielding an error)
 comp_alts :: (Maybe (Concept, Concept)-> [InfExpression]-> [(Concept, Concept)])
-             -> [Declaration] -> [(Concept,Concept)] -> (Maybe Sign) -> [InfExpression] -> [[SynAtts]]
-comp_alts _ _ _ _ [] = []
-comp_alts ttypemerge decls_ isa_ ac (s:ss) 
-   | null ss = [s_tpls]
-   | length sss_tplss==length (s:ss) =sss_tplss
-   | otherwise = error "alternative requires at least one tuple for each s:ss"
+             -> [Declaration] -> [(Concept,Concept)] -> (Maybe Sign) -> [InfExpression] -> ([[SynAtts]],[TErr])
+comp_alts _ _ _ _ [] = ([],[])
+comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac could be different for ttype and rtype
+ --  | null ss = ([s_tpls],s_err)
+   | length sss_tplss==length (s:ss) =(sss_tplss,sss_errs)
+   | otherwise = error (show(length sss_tplss,length (s:ss),sss_errs)++"alternative requires at least one tuple for each s:ss")
    where
    --find the error in ss p.e. s=r,ss=s;t;v. s;ss yields error, but maybe r;s;t does not: ok_untill 0 = 2
    --(take (ok_untill 0) ss) yields no errors
@@ -265,15 +301,17 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss)
       | null(ttypemerge Nothing (take (n+1) ss)) = n
       | n>length ss = error "n may not be greater than the length of ss"
       | otherwise = ok_untill (n+1)
-   ok_bs = map fst(ttypemerge Nothing (take (ok_untill 0) ss)) 
+   ok_bs 
+      | length ss==ok_untill 0 = map fst ptf_ss --respect c in case Just (a,c)=ac
+      | otherwise = map fst(ttypemerge Nothing (take (ok_untill 0) ss)) 
    ------------------------------------------------------------------------------------------------------
    ptf_ss::[Sign]   --the cast(source(ss)) is (still) unknown, target(ss) may be restricted by ac 
-   ptf_ss        
+   ptf_ss          
       | null ss     = []                                                    --s is the last subexpression i.e. no composition i.e. ptf_ss=[]
       | ac==Nothing = ttypemerge Nothing ss                                     
-      | otherwise   = let Just (_,c)=ac in ttypemerge (Just(Anything,c)) ss --some ss, cast(target(ss))=c
+      | otherwise   = let Just (_,c)=ac in ttypemerge (Just (Anything,c)) ss --some ss, cast(target(ss))=c
    ------------------------------------------------------------------------------------------------------
-   s_tpls                              --the alternatives (tuples) for s
+   (s_tpls,s_err)                      --the alternatives (tuples) for s, possibly yielding an error
     = (handle_error_in_s.handle_no_composition.handle_error_in_ss)
       [s  decls_ isa_ (Just(a,b))
       | (a,b)<-trytype trystpl         --if null (trytype trystpl) then s yields error (see handle_error_in_s)
@@ -290,7 +328,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss)
          | null ss     = s decls_ isa_ ac                                      --s is the last subexpression, cast(type(s))=ac
          | otherwise   = let Just (a,_)=ac in s decls_ isa_ (Just(a,Anything)) --some s, cast(source(s))=a is composed to ss
       handle_error_in_ss []            --if ss yields error or null ss, try to reduce the number of s_tpls
-         | null ptf_ss                 
+ --        | null ptf_ss                 
            = [s  decls_ isa_ (Just(a,b))
              | (a,b)<-trytype trystpl  --if null (trytype trystpl) then s yields error
              , if ac==Nothing || (a\-\fst(jst ac)) isa_ then True else error "condition must have been implemented by trystplx"
@@ -305,39 +343,63 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss)
              , if ac==Nothing || (a\-\fst(jst ac)) isa_ then True else error "condition must have been implemented by trystply"
              ]
       handle_no_composition xs = xs    --there is a composition
-      handle_error_in_s [] = [trystpl] --s yields error -> return the tuple that yields the error i.e. trystpl
-      handle_error_in_s xs = xs        --there is no error in s
+      handle_error_in_s [] = case reltype trystpl of
+             Right err -> ([],err)
+             _ -> error "expecting type error in s" -- ([trystpl],["error in s"]) --s yields error -> return the tuple that yields the error i.e. trystpl
+      handle_error_in_s xs = (xs,[])        --there is no error in s
    ------------------------------------------------------------------------------------------------------
-   sss_tplss::[[SynAtts]]          --the alternatives (lists of tuples) per subexpression in s:ss
-   sss_tplss = s_tpls:ss_tplss
-      where 
-      ss_tplss                     --the alternatives (lists of tuples) per subexpression in ss
-       = if null ptf_ss then       --error in ss, split ss before location of error
-            if null ss_err_split1         --redundant? split1<=take 0 ss, split2<=drop 0 ss == handle_comp_error []
-            then handle_comp_error []
-            else ss_err_split1 ++ ss_err_split2 
-         else handle_comp_error ok_comp_ss
-      handle_comp_error [] = no_comp_ss
-      handle_comp_error xs = xs  
-   ss_err_split1 =
-      ss_merge
-      [ comp_alts ttypemerge decls_ isa_ (Just (b',Anything)) (take (ok_untill 0) ss)
-      | s_tpl<-s_tpls
-      , (a,b)<-trytype s_tpl
-      , b'<-ok_bs
-      , (b\-\b') isa_
-      ]
-   ss_err_split2 = comp_alts ttypemerge decls_ isa_ (if ac==Nothing then Nothing else let Just (_,c)=ac in (Just (Anything,c))) (drop (ok_untill 0) ss)
-   no_comp_ss = comp_alts ttypemerge decls_ isa_ (if ac==Nothing then Nothing else let Just (_,c)=ac in (Just (Anything,c))) ss
-   ok_comp_ss 
-    = ss_merge
-      [ comp_alts ttypemerge decls_ isa_ (Just (b',c)) ss
-      | s_tpl<-s_tpls
-      , (a,b)<-trytype s_tpl
+   --sss_tplss::[[SynAtts]]          --the alternatives (lists of tuples) per subexpression in s:ss
+   (sss_tplss,sss_errs) 
+    = (s_tpls:ss_tplss
+      ,s_err++ss_errs)             --error analysis rule: report all errors within a subexpression Ri
+                                     --comp_alts is recursive so all Ri will be s_tpls possibly yielding s_err at sometime
+   (ss_tplss,ss_errs) 
+     -- | length ss==2 = error (show (null s_tpls,s_err,ptf_ss,ok_bs,s_ss_bs,s_trytypes))
+      | null ss = ([],[])
+      | null s_tpls && null s_err = error "there must be an alternative or error for s"
+      | not(null s_tpls) && not(null s_err)  = error "there may not be both an alternative and error for s"
+      --s yields error -> STEP 1 => no composition error, just error(s) of s and ss
+      | null s_tpls && not(null ptf_ss) = --s yields error, ss does not or only amb comp
+         (tpls ss_alts_ptf, errs ss_alts_ptf) 
+      | null s_tpls && null ptf_ss = --s yields error, ss does too 
+         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "ss has no error1?")
+      --s yields no error
+      | null ptf_ss && ok_untill 0==0 = --head ss yields an error  -> STEP 1 => no composition error, just error(s) of ss
+         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "ss has no error2?")
+        --ss yields an error, but there are ok_bs -> STEP2 => error(s) of ss + potential composition error of s and split1 --TODO merge multiple amb errors?
+      | null ptf_ss && null s_ss_bs = --incompatible composition of s and split1
+         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then ("incompatible1_"++show (length ss)):(errs ss_alts_no_ptf) else error ("ss has no error3?"++show(ok_untill 0, ok_bs,s_trytypes,length s_ss_alts_no_ptf)))
+      | null ptf_ss && length s_ss_bs==1 = -- s and split1 compose
+         (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) then errs s_ss_alts_no_ptf else error "ss has no error4?")
+      | null ptf_ss && length s_ss_bs>1 = --ambiguous composition of s and split1 
+         (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) then ("ambiguous1_"++show (length ss)):(errs s_ss_alts_no_ptf) else error "ss has no error5?")
+      --both s and ss yield no error or only amb comp -> STEP2 => potential composition error of s and ss + potential amb.comps in ss --TODO merge multiple amb errors?
+      | null s_ss_bs = --incompatible composition of s and ss
+         (tpls ss_alts_ptf,  ("incompatible2_"++show (length ss)):(show (ok_bs,s_trytypes)):(errs ss_alts_ptf))
+      | length s_ss_bs==1 = -- s and ss compose
+         (tpls s_ss_alts_ptf, errs s_ss_alts_ptf)
+      | length s_ss_bs>1 = --ambiguous composition of s and ss, different alternatives may yield the same error => unduplicate
+         (tpls s_ss_alts_ptf, ("ambiguous2_"++show (length ss)):(show (ok_bs,s_trytypes)):(errs s_ss_alts_ptf))
+      | otherwise = error "are there other options?"
+
+   tpls xs = ss_merge (map fst xs)--[x |Left x<-xs] --removes duplicate alternatives
+   errs xs = (nub.concat) (map snd xs) --[x |Right x<-xs] --errors of all alternatives on a heap
+   s_trytypes = [(a,b)| s_tpl<-s_tpls, (a,b)<-trytype s_tpl]
+   s_ss_bs = nubBy (\x y->fst x==fst y) [(b,b')|(_,b)<-s_trytypes,b'<-ok_bs,(b\-\b') isa_]
+   ss_alts_ptf = --ss_alts independent of s, when there are ptf_ss
+      [comp_alts ttypemerge decls_ isa_ (Just (b,c)) ss
+      |(b,c)<-ptf_ss]
+   ss_alts_no_ptf = --ss_alts indepent of s, when ss yields error
+      [comp_alts ttypemerge decls_ isa_ (if ac==Nothing then Nothing else let Just (_,c)=ac in (Just (Anything,c))) ss]
+   s_ss_alts_ptf = --ss_alts dependent of s, when there are ptf_ss
+      [comp_alts ttypemerge decls_ isa_ (Just (b',c)) ss
+      | (_,b)<-s_trytypes
       , (b',c)<-ptf_ss
-      , (b\-\b') isa_
-      , if ac==Nothing || (c\-\snd(jst ac)) isa_ then True else error "condition must have been implemented by ptf_ss"
-      ] 
+      , (b\-\b') isa_]
+   s_ss_alts_no_ptf = --ss_alts dependent of s, when ss yields error
+      [comp_alts ttypemerge decls_ isa_ (if ac==Nothing then (Just (b,Anything)) 
+                                         else let Just (_,c)=ac in (Just (b,c))) ss
+      | (_,b)<-s_ss_bs]
    ------------------------------------------------------------------------------------------------------
    --end of comp_alts------------------------------------------------------------------------------------
    ------------------------------------------------------------------------------------------------------

@@ -49,7 +49,7 @@ data PExpression term tp
   = TPExp         term                  tp
   | MulPExp MulOp [PExpression term tp] tp
   | UnPExp  UnOp  (PExpression term tp) tp
-    deriving (Show)
+    deriving (Show,Eq)
 
 data Expressionx
   --       Oper. Relations     Type
