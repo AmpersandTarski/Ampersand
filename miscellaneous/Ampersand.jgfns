@@ -1,0 +1,131 @@
+JGFNS
+1
+Download the JGsoft File Navigation Scheme Editor from http://www.editpadpro.com/fns.html to create and edit JGsoft File Navigation Schemes
+Ampersand
+*.adl,*.pat,*.pop
+
+Rieks Joosten
+rieks.joosten@tno.nl
+
+1
+Thanks to JGSoft for providing the example.
+2
+Outside any block
+2
+Start of block
+-16777208
+-16777211
+To properly nest the braces, we need to use a separate layout "block", and set the foldable range to end where the layout "block" finds the closing bracket
+{-|{\+
+0
+0
+2
+0
+1
+0
+
+0
+
+
+0
+0
+1
+0
+
+3
+
+0
+Comment and string
+-16777208
+-16777211
+This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
+'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
+0
+1
+0
+0
+0
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
+Block
+3
+Start of block
+-16777208
+-16777211
+With this element we make the layout "block" toggle to itself.  This will add "block" to the stack of layouts to toggle back to.  The stack is popped by "end of block".  This way, the layout "block" can be nested into itself.
+{-|{\+
+0
+0
+2
+0
+1
+0
+
+0
+
+
+0
+0
+1
+0
+
+3
+
+0
+End of block
+-16777208
+-16777211
+Toggle back to the previous layout, either "block" or "outside any block", and end the foldable range of whichever "start of block" element that toggled to the "block" layout
+-}
+0
+0
+5
+0
+0
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
+Comment and string
+-16777208
+-16777211
+This element does nothing except to make sure that the start/end of block elements don't match curly braces inside comments or strings.
+'[^'\r\n]*'|"[^"\r\n]*"|--[^\r\n]*|{-.*?-}
+0
+1
+0
+0
+0
+0
+
+0
+
+
+0
+0
+0
+0
+
+1
+
+0
