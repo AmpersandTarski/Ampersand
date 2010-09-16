@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),DocTheme(..),allFspecFormats,defaultFlags)
+module Options (Options(..),getOptions,usageInfo',verboseLn,verbose,FspecFormat(..),DocTheme(..),allFspecFormats,defaultFlags,PandocFormat(..))
 where
 --import List                  (isSuffixOf)
 import System                (getArgs, getProgName)
@@ -60,40 +60,23 @@ data Options = Options { contextName   :: Maybe String
                        , sqlLogin      :: String
                        , sqlPwd        :: String
                        , verbosephp    :: Bool
-                       , helpNVersionTexts :: [String] 
+                       , helpNVersionTexts :: [String]
+                       , defaultPandocReader :: PandocFormat 
                        } deriving Show
     
+data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
+allPandocFormats :: [PandocFormat]
+allPandocFormats = [HTML,ReST,LaTeX,Markdown]
 defaultFlags :: Options 
-defaultFlags = Options { language = Dutch} --TODO Verder invullen. 
-
-getOptions :: IO Options
-getOptions =
-   do args     <- getArgs
-      progName <- getProgName
-      defaultOpts <- defaultOptionsM
-      (flags,fNames)  <- case getOpt Permute (each options) args of
-                         (o,n,[])    -> return ((foldl (flip id) (defaultOpts) o ),n)
-                         (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
-      checkNSetOptionsAndFileNameM (flags,fNames)
-  where 
-     defaultOptionsM :: IO(Options)
-     defaultOptionsM  =
-           do clocktime <- getClockTime
-              progName <- getProgName
-              exePath <- findExecutable progName
-              env <- getEnvironment
-              return
-               Options{ genTime                = clocktime
-                      , dirAtlas      = fromMaybe "."       (lookup envdirAtlas     env)
-                      , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
-                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env)
-                      , dbName        = fromMaybe ""        (lookup envdbName       env)
-                      , logName       = fromMaybe "ADL.log" (lookup envlogName      env)
-                      , dirExec       = case exePath of
-                                          Nothing -> error ("!Fatal (module Options 126): Specify the path location of "++progName++" in your system PATH variable.")
-                                          Just s  -> takeDirectory s
-                      , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
-                      , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
+defaultFlags = Options {genTime       = error ("!Fatal (module Options 71): No monadic options available.")
+                      , dirAtlas      = error ("!Fatal (module Options 72): No monadic options available.")
+                      , dirOutput     = error ("!Fatal (module Options 73): No monadic options available.")
+                      , dirPrototype  = error ("!Fatal (module Options 74): No monadic options available.")
+                      , dbName        = error ("!Fatal (module Options 75): No monadic options available.")
+                      , logName       = error ("!Fatal (module Options 76): No monadic options available.")
+                      , dirExec       = error ("!Fatal (module Options 77): No monadic options available.")
+                      , preVersion    = error ("!Fatal (module Options 78): No monadic options available.")
+                      , postVersion   = error ("!Fatal (module Options 79): No monadic options available.")
                       , theme         = DefaultTheme
                       , contextName   = Nothing
                       , showVersion   = False
@@ -120,7 +103,7 @@ getOptions =
                       , crowfoot      = False
                       , showPredExpr  = False
                       , language      = Dutch
-                      , progrName     = progName
+                      , progrName     = error ("!Fatal (module Options 106): No monadic options available.")
                       , fileName      = error ("!Fatal (module Options 123): no default value for fileName.")
                       , baseName      = error ("!Fatal (module Options 124): no default value for baseName.")
                       , services      = False
@@ -129,7 +112,40 @@ getOptions =
                       , sqlHost       = "localhost"
                       , sqlLogin      = "root"
                       , sqlPwd        = ""
+                      , defaultPandocReader = ReST
                       , helpNVersionTexts = []
+                      }
+
+getOptions :: IO Options
+getOptions =
+   do args     <- getArgs
+      progName <- getProgName
+      defaultOpts <- defaultOptionsM
+      (flags,fNames)  <- case getOpt Permute (each options) args of
+                         (o,n,[])    -> return ((foldl (flip id) (defaultOpts) o ),n)
+                         (_,_,errs)  -> ioError (userError (concat errs ++ usageInfo'' progName))
+      checkNSetOptionsAndFileNameM (flags,fNames)
+  where 
+     defaultOptionsM :: IO(Options)
+     defaultOptionsM  =
+           do clocktime <- getClockTime
+              progName <- getProgName
+              exePath <- findExecutable progName
+              env <- getEnvironment
+              return
+               defaultFlags
+                      { genTime       = clocktime
+                      , dirAtlas      = fromMaybe "."       (lookup envdirAtlas     env)
+                      , dirOutput     = fromMaybe "."       (lookup envdirOutput    env)
+                      , dirPrototype  = fromMaybe "."       (lookup envdirPrototype env)
+                      , dbName        = fromMaybe ""        (lookup envdbName       env)
+                      , logName       = fromMaybe "ADL.log" (lookup envlogName      env)
+                      , dirExec       = case exePath of
+                                          Nothing -> error ("!Fatal (module Options 126): Specify the path location of "++progName++" in your system PATH variable.")
+                                          Just s  -> takeDirectory s
+                      , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
+                      , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
+                      , progrName     = progName
                       }
 
 
@@ -219,7 +235,9 @@ options = map pp
           , ((Option ['a']     ["atlas"]       (OptArg atlasOpt "dir")     ("generate atlas (optional an output directory, defaults to current directory) (dir overrides  environment variable"++ envdirAtlas ++ ").")), Public)
           , ((Option []        ["user"]        (ReqArg userOpt "user")     ("generate atlas content for this user.")), Public)
           , ((Option ['f']     ["fspec"]       (ReqArg fspecRenderOpt "format")  
-                                                                           ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
+                                                                          ("generate a functional specification document in specified format ("++allFspecFormats++").")), Public)
+          , ((Option []        ["freeTextFormat"]
+                                               (ReqArg ftfOpt "textFormat")("default format of free texts (like the ones in EXPLANATIONs) in the .adl script. Possible values are: "++show allPandocFormats++".")), Public) 
           , ((Option []        ["headerfile"]  (ReqArg languageOpt "filename") "use your own custom header file to prefix to the text before rendering."), Public)
           , ((Option []        ["noGraphics"]  (NoArg noGraphicsOpt)       "save compilation time by not generating any graphics."), Public)
           , ((Option []        ["Switchboard"] (NoArg switchboardOpt)      "generate switchboard graphics in services documentation for diagnostic purposes."), Hidden)
@@ -306,6 +324,13 @@ fspecRenderOpt w opts = opts{ genFspec=True
                                                  _         -> fspecFormat opts
                                                 
                             }
+ftfOpt :: String -> Options -> Options
+ftfOpt w opts = opts {defaultPandocReader = case (map toUpper w) of
+                                                    ('M': _ ) -> Markdown
+                                                    ('L': _ ) -> LaTeX
+                                                    ('H': _ ) -> HTML
+                                                    _         -> ReST
+                     }
 allFspecFormats :: String
 allFspecFormats = "Pandoc, Rtf, OpenDocument, Latex, Html"
 switchboardOpt :: Options -> Options
