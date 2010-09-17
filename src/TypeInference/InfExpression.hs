@@ -49,94 +49,136 @@ typeerrors ds isas xs = [err|ix <-[infer x ds isas Nothing | x<-xs],inerror(relt
 --stop de attributen van een expr in de infer functie met gelijke structuur
 --een attr x van het type PExpression gaat er in als (infer x) = inh atts tuple
 infer :: PExpression Morphism (Maybe Sign) -> InfExpression 
-infer (MulPExp mop subs usercast )  = infer_MulPExp mop (map infer subs) usercast
-infer (UnPExp uop sub usercast )  = infer_UnPExp uop (infer sub) usercast 
+infer me@(MulPExp mop subs usercast )  = infer_MulPExp me mop (map infer subs) usercast
+infer me@(UnPExp uop sub usercast )  = infer_UnPExp me uop (infer sub) usercast 
 infer (TPExp subm usercast )  = infer_TPExp subm usercast 
 
+{-
 -- inh: *_  (decls and isa do not change)
 -- syn: _* 
-infer_UnPExp :: UnOp -> InfExpression  ->  Maybe Sign ->  InfExpression 
-infer_UnPExp uop sub usercast     decls_ isa_ autocast_ =
+--
+-- COMMON FUNCTION NAMES
+-- ttype => trytype of this expression
+--          potential type(s) ignoring the parent expression (i.e. the autocast_)
+--          calculate using trytypes of subs with autocast=Nothing, filter the result by usercast
+--          in case there is a usercast on this expression, ttype will be null or have the usercast as only element
+-- rtype => reltype of this expression
+--          the type or type error given the context expression (i.e. the autocast_)
+--          the parent expression bases autocasts on elements of ttype and usercasts in the parent expression
+--          if the usercast in the parent expression does not match the ttype, then it will never ask for the reltype
+-- infex => typedexpr of this expression
+--          the context will not ask for the typed expression if reltype yields a type error
+-}
+
+infer_UnPExp :: PExpression Morphism (Maybe Sign) -> UnOp -> InfExpression  ->  Maybe Sign ->  InfExpression 
+infer_UnPExp me uop sub usercast     decls_ isa_ autocast_ =
     let {--calculate synthesized--}
-        ttype = ptf (trytype (subtuple subac))
-        rtype = lmap tf(reltype (subtuple subac))         --no type conditions on unpexp i.e. no errors will be discovered here
-        infex = UnPExp uop (typedexpr (subtuple subac)) (thetype rtype)
+        ttype = filtercast (ptf (trytype (subtuple Nothing)))
+        rtype = checkcast(lmap tf(reltype (subtuple autocast_)))         --no type conditions on unpexp i.e. no errors will be discovered here
+        infex = UnPExp uop (typedexpr (subtuple autocast_)) (thetype rtype)
         proof = []
         hm =ishomo (subtuple usercast)
     in  (infex,ttype,rtype,proof,hm)                      --return synthesized
     where
     {--push inherited on subexpression--}
-    subtuple = sub decls_ isa_                            --the synth. atts of the subexpression with free autocast
-    subac    = if castcondition usercast autocast_ isa_   --pass cast down to the sub
-               then fmap tf_inv (cast usercast autocast_) --use the inverse type
-               else error "No match with user cast"
+    subtuple = sub decls_ isa_ 
+    filtercast xs = [x|x<-xs, castcondition usercast (Just x) isa_]
+    checkcast (Left (a,b)) = if castcondition usercast (Just (a,b)) isa_ then Left(jst(cast usercast (Just (a,b)))) else Right ["undefined"]
+    checkcast x = x
     {--typing functions--}
-    ptf = map tf                 --the pre-type function resembles the type function
+    ptf = map tf 
     tf (a,b) | uop==Co   = (b,a)
              | otherwise = (a,b)
     tf_inv = tf                  --the inverse of tf equals tf,  but you never know which unary operators will be added
 
-infer_MulPExp :: MulOp -> [InfExpression]  ->  (Maybe Sign) ->  InfExpression 
-infer_MulPExp mop subs usercast     decls_ isa_ autocast_ 
+infer_MulPExp :: PExpression Morphism (Maybe Sign) -> MulOp -> [InfExpression]  ->  (Maybe Sign) ->  InfExpression 
+infer_MulPExp me mop subs usercast     decls_ isa_ autocast_ 
  |elem mop [Fc,Fd] =
     let {--calculate synthesized--}
         --if ttype contains duplicates, then there must be an ambiguous composition like r::A*B,r::A*C,s::B*D,s::C*D => ttype=[(A,D),(A,D)]
         --thus duplicates are useful for erroranalysis, but will be BOTH/ALL be removed from trytype of this expression
         --because there will be no way to correct this from the context with an autocast_, and thus it is not a potential type
         --in other words, if there is another alternative p.e ttype=[(A,D),(A,D),(X,Y)] 
-        --then the ambiguous composition is ignored (trytype=rmdupl [] ttype = [(X,Y)])
+        --then the ambiguous composition is ignored (trytype=rmdupl [] ttype = [(X,Y)]) [remark this differs from (nub ttype=[(A,D),(X,Y)])]
         --TODO -> Do I really want amb.comp to be ignored?
-        --case if there is some context that autocasts (X,Y) then it is ok -> reltype
-        --     if there is no such thing then autocast_==Nothing => reltype=amb.comp
-        ttype = ttypemerge tryac subs --ttype respecting autocast_ should be equal to (tf(reltype substuples))
-        rtype = case length ttype of
-           1 -> Left tf
-           _ -> analyseerror
+        ttype' ac = rmdupl [] (ttypemerge ac subs)       --potential types with certain cast
+        ttype = filtercast usercast (ttype' Nothing)     --potential types without cast, restricted to usecast
+        rtype' = filtercast usercast (ttype' autocast_)  --potential types of expression given context/parent expression, restricted to usercast
+        rtype = case length rtype' of
+           1 -> Left tf                                  --there is a type
+           0 -> if null (ttype' Nothing)                 --even without cast there is not a type
+                then Right (snd( alts Nothing subs))
+                else 
+                if null ttype                            --without cast there are potential types, but none of them matches the usercast
+                then Right ["undefined2"]
+                else error ("mismatching autocast?")
+           _ -> Right ["ambiguous expression: "]         --no cast has solved the ambiguity
         infex = MulPExp mop (map typedexpr the_subs_tuples) (thetype rtype)
         proof = []
         hm = False --foldr (&&) True (map ishomo (head(alts tryac subs))) --all composed are homogeneous <-> mulpexp is homogeneous, just check the head alt.
-        {--push inherited on subexpressions--}  --alternative::[SynAtts] one SynAtts for each subexpression
-        tryac =  if castcondition usercast autocast_ isa_ then cast usercast autocast_ else error "No match with user cast"
-      --  no_alt (xs,_) = [if null x then [] else x|x<-xs]
+        {--push inherited on subexpressions--}
+        alts = comp_alts ttypemerge decls_ isa_          --error analysis is mostly integrated in comp_alts
+        filtercast ac xs = [x|x<-xs, castcondition ac (Just x) isa_] 
         ttypemerge ac ss 
            | length ss<2 = concat(concat[map trytype s_tpls|s_tpls<-fst (alts ac ss)])
            | otherwise    = ptf[concat(map trytype s_tpls)|s_tpls<-fst (alts ac ss)] --types of all alternatives are potential types of this expression
-         --alts => list of alternatives for a composition of subexpressions (ss) given an autocast (ac) 
-        the_subs_tuples :: [SynAtts] --one SynAtts for each subexpression
-        the_subs_tuples                    --autocast is not free anymore i.e. equal to tf
-           = [head sub_tplss
-             |sub_tplss<-subs_tplss
-     --        ,if length sub_tplss==1 then True 
-       --       else error (show("there are alternatives i.e. ambiguous reltype"
-         --                ,ttype,[concat(map trytype s_tpls)|let Left ss_tplss=alts tryac subs,s_tpls<-ss_tplss],map trytype sub_tplss))
-             ]
-           where subs_tplss = case alts (Just tf) subs of (x,_) -> x; _ -> error "xxx"
-        alts = comp_alts ttypemerge decls_ isa_
+        the_subs_tuples :: [SynAtts]                     --one SynAtts for each subexpression
+        the_subs_tuples          
+         = [head sub_tplss
+           |sub_tplss<-subs_tplss
+           ,if length sub_tplss==1 then True 
+            else error ("there are alternatives i.e. ambiguous reltype")
+           ]
+           where (subs_tplss,_) = alts (Just tf) subs
         {--typing functions--}
-        ptf :: [[Sign]] -> [Sign] --calculate the trytype from the trytypes of the subs 
+        ptf :: [[Sign]] -> [Sign]                        --calculate the trytype from the trytypes of the subs 
         ptf [] = error "there must be subs so there must be trytype lists for them"
         ptf (tts:ttss) = concat[map (tp a) (cs [b] ttss)|(a,b)<-tts]
            where
            tp a c = (a,c)
            cs bs [] = bs
            cs bs (x:xs) = cs [c|b<-bs,(b',c)<-x,(b\-\b') isa_] xs
-        tf | length ttype==1 = head ttype
-           | otherwise = error "tf undefined: tf is defined iff length ttype==1"
+        tf | length rtype'==1 = head rtype'
+           | otherwise = error "tf undefined: tf is defined iff length rtype'==1"
         {--error analysis--} 
-        analyseerror = {-Right ["xxx"] --}Right (snd( alts tryac subs)) --Right (comp_errors (alts tryac subs))
-    in  (infex,rmdupl [] ttype,rtype,proof,hm) --return synthesized (use of nub, see comments@ttype)
- |otherwise =
-    let --push inherited on subexpressions
-        autocast = Nothing
-        substuples = [sub decls_ isa_ autocast | sub<-subs]
-        --calculate synthesized
-        ttype = []
-        rtype = testy usercast
-        infex = MulPExp mop (map typedexpr substuples) (thetype rtype)
+    in  (infex,ttype,rtype,proof,hm) --return synthesized
+ |elem mop [Fi,Fu,Ri,Re] =
+    let {--calculate synthesized--}
+        ttype' ab = ptf (map trytype (subs_alts ab))
+        ttype = filtercast usercast (ttype' Nothing)
+        rtype' = filtercast usercast (ttype' autocast_)
+        rtype = case length rtype' of
+           1 -> Left tf
+           0 -> analyseerror
+           _ -> Right ["ambiguous expression2: "++show ttype]
+        infex = MulPExp mop (map typedexpr the_subs_tuples) (thetype rtype)
         proof = []
-        hm = foldr (||) False (map ishomo substuples) --one comparable is homogeneous <-> mulpexp is homogeneous
-             && elem mop [Re,Ri,Fi,Fu]
-    in  (infex,ttype,rtype,proof,hm) --return synthesized 
+        hm = False --foldr (&&) True (map ishomo (head(alts tryac subs))) --all composed are homogeneous <-> mulpexp is homogeneous, just check the head alt.
+        {--push inherited on subexpressions--}
+        subs_alts :: Maybe Sign -> [SynAtts]
+        subs_alts ab = [sub decls_ isa_ ab| sub<-subs]
+        filtercast ac xs = [x|x<-xs, castcondition ac (Just x) isa_]
+        the_subs_tuples = [sub decls_ isa_ (Just tf)| sub<-subs]
+        {--typing functions--}
+        ptf :: [[Sign]] -> [Sign] --calculate the trytype from the trytypes of the subs 
+        ptf [] = error "there must be subs so there must be trytype lists for them"
+        ptf (tts:[]) = tts --take the trytypes of the last sub as a startpoint and see what will be left of it in the end
+        ptf (tts:ttss) = [(x\\-//y) isa_|x<-ptf ttss,y<-tts,(x\\-\\y) isa_]
+        tf | length rtype'==1 = head rtype'
+           | otherwise = error "tf undefined: tf is defined iff length rtype'==1"
+        {--error analysis--} 
+        --cast is useful if it is isa-related to some element of ttype'
+        --NICE TODO FOR LONG REPORT -> if ttype'==[cast] then cast=unnecessary  
+        analyseerror 
+           | (not.null) errs_in_subs = Right errs_in_subs
+           | null (ttype' Nothing) = Right ["incompatible comparison"]
+           | null ttype = Right ["relation undefined: " ++ show me ++ "\npossible types are: " ++ show (ttype' Nothing) ]
+           | otherwise = error "what?"
+        errs_in_subs = concat [errs|Right errs<-map reltype (subs_alts Nothing)] 
+        --TODO, if no sub has null trytype then the there are only amb errors i.e. incompatible comparison
+        --if one or more sub has null trytype then forget (in the short report) about the amb subs as they are most likely solved by fixing the sub yielding an error
+    in  (infex,ttype,rtype,proof,hm) --return synthesized
+ |otherwise = error "there is nothing else"
 
 infer_TPExp :: Morphism  ->  (Maybe Sign) ->  InfExpression 
 infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be added to decls_
@@ -204,15 +246,18 @@ cast :: Maybe Sign -> Maybe Sign -> Maybe Sign
 cast usercast@(Just _) _ = usercast
 cast _ autocast = autocast
 
--- (\-/) :: Concept -> Concept -> OnIsa Concept
--- (\-/) a b | elem (
--- (/-\) :: Concept -> Concept -> OnIsa Concept
+(\-/) :: Concept -> Concept -> OnIsa Concept
+(\-/) a b = (\isas -> if elem (a,b) isas then a else if elem (b,a) isas then b else error ("not a isa b or b isa a"++show (a,b)))
+(\\-//) :: Sign -> Sign -> OnIsa Sign
+(\\-//) (a,b) (c,d) = (\isas -> ((a\-/c) isas,(b\-/d) isas))
 
 --TODO -> there exists a prelude function
+jst::Maybe a -> a
 jst (Just x) = x
 jst Nothing = error "check ac/=Nothing"
 
---TODO-> check if wanted (used in composition on trytype, but not sure if I want this, see comments at ttype of composition)
+--duplicates are BOTH/ALL removed, so different then function nub which keeps one of them
+rmdupl::(Eq a)=>[a]->[a]->[a]
 rmdupl _ [] = []
 rmdupl prets (t:ts) 
    | elem t prets || elem t ts =    rmdupl (t:prets) ts
@@ -231,11 +276,7 @@ concatelems::[[SynAtts]] -> [[SynAtts]] -> [[SynAtts]]
 concatelems [] [] = []
 concatelems [] _ = error "sdfds"
 concatelems _ [] = error "sdfsd"
-concatelems (x:xs) (y:ys) = --if length (concatelems xs ys)>3 then error (show ([map trytype ccc|ccc<-(x++y):(concatelems xs ys)])) else 
-                            (x `Data.List.union` y):(concatelems xs ys)
-
-testy (Just x) = Left x
-testy _ = Right ["Anything"]
+concatelems (x:xs) (y:ys) = (x `Data.List.union` y):(concatelems xs ys)
 
 thetype :: Either Sign [TErr] -> Sign
 thetype (Left t) = t
@@ -302,8 +343,8 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       | n>length ss = error "n may not be greater than the length of ss"
       | otherwise = ok_untill (n+1)
    ok_bs 
-      | length ss==ok_untill 0 = map fst ptf_ss --respect c in case Just (a,c)=ac
-      | otherwise = map fst(ttypemerge Nothing (take (ok_untill 0) ss)) 
+      | length ss==ok_untill 0 = nub(map fst ptf_ss) --respect c in case Just (a,c)=ac
+      | otherwise = nub(map fst(ttypemerge Nothing (take (ok_untill 0) ss)) )
    ------------------------------------------------------------------------------------------------------
    ptf_ss::[Sign]   --the cast(source(ss)) is (still) unknown, target(ss) may be restricted by ac 
    ptf_ss          
@@ -316,11 +357,10 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       [s  decls_ isa_ (Just(a,b))
       | (a,b)<-trytype trystpl         --if null (trytype trystpl) then s yields error (see handle_error_in_s)
       , if ac==Nothing || (a\-\fst(jst ac)) isa_ then True else error "condition must have been implemented by trystpl"
-      , (b',c)<-ptf_ss                 --if null ptf_ss then there is no composition because ss yields error or null ss, 
+      , (b',c)<-nubBy (\x y->fst x==fst y) ptf_ss                 --if null ptf_ss then there is no composition because ss yields error or null ss, 
                                        --if length ss>1 then maybe s could be composed with (take n<length ss);start n=1;n++
       , (b\-\b') isa_                  --if not null ptf_ss and there is no such b and b' then there is no composition because
                                        --the composition of s and ss is incompatible
-      , if ac==Nothing || (c\-\snd(jst ac)) isa_ then True else error "condition must have been implemented by ptf_ss"
       ]
       where 
       trystpl                          --the cast(target(s)) is (still) unknown, source(s) may be restricted by ac 
