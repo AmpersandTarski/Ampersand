@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wall #-}
-module Adl.Expression (Expression(..),Expressionx(..),PExpression(..),UnOp(..),MulOp(..),Expressions,PExpressions,isF,isFd,isFi,isFu
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+module Adl.Expression (Expression(..),PExpression(..),UnOp(..),MulOp(..),Expressions,PExpressions,isF,isFd,isFi,isFu
                       ,v
                       ,isPos,isNeg,notCp,insParentheses, uniquemphs)
 where
@@ -41,6 +41,18 @@ data MulOp
   | Re -- ^ Rule equivalence =   => (r = s = t   <=> (r |- s |- t) /\ (t |- s |- r)
     deriving (Show,Eq)
 
+data Op = Op1 UnOp | Opn MulOp
+
+--see cc.hs => [Re,Ri,Fu,Fi,Fd,Fc] unop
+precedence::Op->Int
+precedence (Op1 _) = 0
+precedence (Opn Fc) = 1
+precedence (Opn Fd) = 2
+precedence (Opn Fi) = 3
+precedence (Opn Fu) = 4
+precedence (Opn Ri) = 5
+precedence (Opn Re) = 6
+
 type PExpressions a b = [PExpression a b]
 --at parse time: PExpression Morphism (Maybe Sign)
 --after type check: PExpression Declaration Sign
@@ -49,14 +61,35 @@ data PExpression term tp
   = TPExp         term                  tp
   | MulPExp MulOp [PExpression term tp] tp
   | UnPExp  UnOp  (PExpression term tp) tp
-    deriving (Show,Eq)
+    deriving (Eq)
 
-data Expressionx
+instance Show (PExpression Morphism (Maybe Sign)) where
+ show (TPExp term Nothing)          = name term
+ show (TPExp term (Just (a,b)))      = name term++"["++name a++"*"++name b++"]"
+ show (MulPExp mop xs Nothing)      = show mop ++ concat [usebrackets (Opn mop) (oper x) <??> show x |x<-xs]
+ show (MulPExp mop xs (Just (a,b)))  = show mop ++ concat [True <??> show x |x<-xs]++"["++name a++"*"++name b++"]"
+ show (UnPExp uop x Nothing)      = show uop ++ (usebrackets (Op1 uop) (oper x) <??> show x) 
+ show (UnPExp uop x (Just (a,b)))  = show uop ++ (True <??> show x)++"["++name a++"*"++name b++"]"
+
+oper (TPExp{}) = Nothing
+oper (MulPExp mop _ _) = Just (Opn mop)
+oper (UnPExp uop _ _) = Just (Op1 uop)
+(<??>) True x = "("++x++")"
+(<??>) False x = x
+usebrackets _ Nothing = False
+usebrackets op1 (Just op2) = precedence op1 <= precedence op2
+
+instance Show (PExpression Declaration Sign) where
+ show (TPExp term _)          = name term
+ show (MulPExp mop xs _)      = show mop ++ concat [usebrackets (Opn mop) (oper x) <??> show x |x<-xs]
+ show (UnPExp uop x _)      = show uop ++ show (usebrackets (Op1 uop) (oper x) <??> show x)
+
+--data Expressionx
   --       Oper. Relations     Type
-  = TExp         Declaration   Sign
-  | MulExp MulOp [Expressionx] Sign
-  | UnExp  UnOp  Expressionx   Sign
-    deriving (Show)
+--  = TExp         Declaration   Sign
+--  | MulExp MulOp [Expressionx] Sign
+--  | UnExp  UnOp  Expressionx   Sign
+--    deriving (Show)
 
 isFu :: Expression -> Bool
 isFu Fux{}  = True
