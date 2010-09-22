@@ -1,3 +1,6 @@
+[Rieks:] @Han: The reason I say that the file passes the ADL compiler is because - with me - it does. 
+If you search for 'subProcOf ::', you will find that it is defined on line 51 (using the line numbers of the .ADL file). Also, it is used on line 54 in a rule, and I find it remarkable that your compiler output does not provide a 'relation undefined' error for this occurrance. 
+
 [Han:]
 This is probably because the Lazy character of ADL. What makes you say that the file passes the ADL compiler?
 In my case, the very same .adl file yields:
