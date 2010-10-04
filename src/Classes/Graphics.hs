@@ -259,6 +259,7 @@ handleFlags po flags =
                                        then crowfootArrowType False d
                                        else plainArrowType False d
                                       )
+                          , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                           , URL (theURL flags d)
                           ]
       DclSrcEdge d -> [Len 1.2
@@ -272,6 +273,7 @@ handleFlags po flags =
                                    else noArrow
                                  )
                       ,HeadClip False
+                      , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ]
       DclTgtEdge d -> [Len 1.2
                       , ArrowHead ( if crowfoot flags
@@ -352,19 +354,19 @@ open  = noMod {arrowFill = OpenArrow}
 --  = n
 
 -- hulpfuncties, voor tijdelijk. TODO, opschonen
---transparant :: Attribute
---transparant = Color [Transparant]
+--transparent :: Attribute
+--transparent = Color [X11Color Transparent]
 --orange :: Attribute
---orange = Color [ColorName "orange"]
+--orange = Color [X11Color  Orange]
 --yellow :: Attribute
---yellow = Color [ColorName "yellow"]
+--yellow = Color [X11Color  Yellow]
 --purple :: Attribute
---purple = Color [ColorName "purple"]
+--purple = Color [X11Color  Purple]
 --cyan :: Attribute
---cyan = Color [ColorName "cyan"]
+--cyan = Color [X11Color  Cyan]
 --brown :: Attribute
---brown = Color [ColorName "brown"]
+--brown = Color [X11Color  Brown]
 --cgreen :: Attribute
---cgreen = Color [ColorName "green"]
+--cgreen = Color [X11Color  Green]
 --cred :: Attribute
---cred = Color [ColorName "red"]
+--cred = Color [X11Color  Red]

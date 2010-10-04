@@ -658,7 +658,7 @@ dataAnalysis lev fSpec flags
      , Para  $ [ TeX $ "\\begin{tabular}{|llcc|}\\hline\n"
                , if language flags==Dutch
                  then TeX $ "attribuut&type&verplicht&uniek\\\\ \\hline\\hline\n"
-                 else TeX $ "attribute&type&compulsory&unique\\\\ \\hline\\hline\n"
+                 else TeX $ "attribute&type&mandatory&unique\\\\ \\hline\\hline\n"
                ]++
                [ TeX $ chain "&" [ fldname fld
                                  , latexEscShw (target (fldexpr fld))
