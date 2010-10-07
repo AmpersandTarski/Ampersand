@@ -28,7 +28,7 @@ module Data.Fspec ( Fspc(..)
                     , services     :: Fservices             -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , vrules       :: Rules                 -- ^ All rules that apply in the entire Fspc, including all signals
                     , vkeys        :: KeyDefs               -- ^ All keys that apply in the entire Fspc
-                    , vgens        :: Gens                  -- ^ All keys that apply in the entire Fspc
+                    , vgens        :: Gens                  -- ^ All gens that apply in the entire Fspc
                     , vconjs       :: Expressions           -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
                     , vquads       :: Quads                 -- ^ All quads generated (by ADL2Fspec) from non-signal rules
                     , vrels        :: Declarations          -- ^ All declarations declared in this specification
@@ -194,6 +194,7 @@ module Data.Fspec ( Fspc(..)
 
    
    datasets :: Fspc -> [PlugSQL]
+--   --WAAROM? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
    datasets fSpec = [p| p<-pickTypedPlug (plugs fSpec)
                       , fld<-take 1 (fields p), flduniq fld  -- this excludes associations, because they are not flduniq
                       , length (fields p)>1]                 -- this excludes scalar plugs

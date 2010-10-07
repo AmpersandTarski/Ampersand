@@ -1,9 +1,9 @@
+{-# OPTIONS_GHC -Wall #-}
 module Prototype.ShowCode (showCode,showCodeHeaders) where
  import Prototype.CodeStatement(Statement(..),CodeQuery(..),UseVar(..))
  import Prototype.CodeAuxiliaries(Named(..))
  import Prototype.RelBinGenBasics(indentBlockBetween)
  import qualified Data.Set as Set
- import Strings (chain)
  
  showCode :: Int -> [Statement] -> String
  showCode i s = fst (showCodeAndGetHeaders i s)

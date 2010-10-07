@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 module Prototype.CodeVariables
   (newVarFor
   ,freshSingleton
