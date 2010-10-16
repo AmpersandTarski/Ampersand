@@ -20,7 +20,7 @@ module Data.Fspec ( Fspc(..)
    import Data.Plug                     
    import Picture                       (Pictures)
    import FPA
-   data Fspc = Fspc { fsName       :: String               -- ^ The name of the specification, taken from the ADL-script
+   data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
                     , vplugs       :: Plugs                 -- ^ all plugs defined in the ADL-script
                     , plugs        :: Plugs                 -- ^ all plugs (defined and derived)
                     , serviceS     :: ObjectDefs            -- ^ all services defined in the ADL-script
@@ -35,8 +35,8 @@ module Data.Fspec ( Fspc(..)
                     , fsisa        :: Inheritance Concept   -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: Patterns              -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Pictures              -- ^ List of pictures containing pattern pictures (in same order as patterns)
-                    , vConceptDefs :: ConceptDefs          -- ^ all conceptDefs defined in the ADL-script
-                    , fSexpls      :: [Explanation]        -- ^ all explanations that are valid within the current specification
+                    , vConceptDefs :: ConceptDefs           -- ^ all conceptDefs defined in the ADL-script
+                    , fSexpls      :: [Explanation]         -- ^ all explanations that are valid within the current specification
                     , vctxenv :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
    
@@ -195,6 +195,16 @@ module Data.Fspec ( Fspc(..)
    
    datasets :: Fspc -> [PlugSQL]
 --   --WAAROM? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
+{- DAAROM!
+	Dat heeft te maken met de vertaling van binaire relaties naar datasets (entiteiten) en relaties.
+	Datasets worden gevormd door alle relaties vanuit een concept univalent af te sluiten.
+	Dat wil zeggen: vanuit dat concept komt elk attribuut overeen met een univalente expressie.
+	In de praktijk doen de meeste relaties mee in een of andere entiteit.
+	Alleen de relaties die in geen enkele dataset meedoen, worden als binaire relatie behandeld.
+	De twee soorten plug komen overeen met datasets resp. relaties (Of, voor ER-adepten, in entiteiten resp. relaties)
+	Het antwoord op je vraag: Er bestaan wel degelijk plugs met slechts twee kolommen getoond worden als dataset,
+	namelijk een entiteit met twee attributen.
+-}
    datasets fSpec = [p| p<-pickTypedPlug (plugs fSpec)
                       , fld<-take 1 (fields p), flduniq fld  -- this excludes associations, because they are not flduniq
                       , length (fields p)>1]                 -- this excludes scalar plugs

@@ -90,12 +90,13 @@
    pRefID              = (pKey "REF" *> pString) `opt` []
 
    pExplain           :: Parser Token PExplanation
-   pExplain            = PExplConcept     <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> (pConid <|> pString)  <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplDeclaration <$ pKey "EXPLAIN" <* pKey "RELATION"   <*> pMorphism <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplRule        <$ pKey "EXPLAIN" <* pKey "RULE"       <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplKeyDef      <$ pKey "EXPLAIN" <* pKey "KEY"        <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplObjectDef   <$ pKey "EXPLAIN" <* pKey "SERVICE"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplPattern     <$ pKey "EXPLAIN" <* pKey "PATTERN"    <*> pADLid    <*> pLanguageID <*> pRefID <*> pExpl
+   pExplain            = PExplConcept     <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> (pConid <|> pString) <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplDeclaration <$ pKey "EXPLAIN" <* pKey "RELATION"   <*> pMorphism            <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplRule        <$ pKey "EXPLAIN" <* pKey "RULE"       <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplKeyDef      <$ pKey "EXPLAIN" <* pKey "KEY"        <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplObjectDef   <$ pKey "EXPLAIN" <* pKey "SERVICE"    <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplPattern     <$ pKey "EXPLAIN" <* pKey "PATTERN"    <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
+                         PExplContext     <$ pKey "EXPLAIN" <* pKey "CONTEXT"    <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl
 
    pContextElement    :: Parser Token ContextElement
    pContextElement     = CPat     <$> pPattern      <|>

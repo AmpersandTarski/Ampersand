@@ -204,6 +204,8 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  (recur (trace++[c]) cl)   -- objats
                  []                        -- objstrs
            | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
+-- WAAROM: Han, de bedoeling was dat alle explanations die geldig zijn in deze fSpec, in de volgende definitie staan.
+-- Is dat ook zo? Antw: Ja. (telefonisch met Han besproken)
         fSexpls' = explanationDeclarations flags context                ++
                    concat (map (explanationDeclarations flags)(patterns context))  
 
@@ -351,6 +353,8 @@ So the first step is create the kernels ...   -}
       mphflds = [(m,cptfld,f)|f<-makeFields, length (mors(fldexpr f))==1,m@(Mph{})<-mors(fldexpr f), let (_,cptfld)=head cptflds]
       makeFields ::  [SqlField]
       makeFields =  -- WAAROM?? @Stef: Waarom is hier niet de constructor 'field' (uit Data.Plug) gebruikt??? Volgens mij maakt dat verschil bij de fldauto, maar ik doorgrond het niet helemaal.
+-- DAAROM!! @Han: Ik weet het antwoord niet. Ik vermoed dat dit gewoon met 'field' moet.
+-- Het veld 'fldauto' geeft aan of het een autoincrement veld moet zijn, en het huidige antwoord daarop (att `elem` autoFields) lijkt me fout.
         [Fld (name att)                 -- fldname : 
              (objctx att)               -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
              (sqltp att)                -- fldtype :

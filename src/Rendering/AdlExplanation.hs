@@ -13,27 +13,23 @@ import Text.Pandoc
 --    explain flags e = showPredLogic flags e
 
 -- The general idea is that an ADL declaration such as:
--- EXPLAIN r[A*B] IN ENGLISH
--- {+ This text explains why r[A*B] exists -}
+--     EXPLAIN r[A*B] IN ENGLISH
+--     {+ This text explains why r[A*B] exists -}
 -- produces the exact right text in the functional specification
---explainDecl :: Options -> Fspc -> Declaration -> [Explanation]
---explainDecl flags fSpec d = filterExplanations d (fSexpls fSpec) flags
---  = chain "\n" ([expl| expl<-expls]++[explainMult options fSpec d])
---    where expls = [expl| ExplDeclaration d' lang _ expl<-explanations fSpec, not (null expl), d'==d, lang==language options]
 
+
+-- The class Explainable exists so that we can write the Haskell expression 'explain fSpec flags x' anywhere we like for every
+-- type of x that could possibly be motivated in an Explanation.
+-- 'explain fSpec flags x' produces all explanations related to x from the context (fSpec) that are available in the language specified in 'flags'.
+-- The other functions in this class are solely meant to be used in the definition of explain.
+-- They are defined once for each instance of Explainable, not be used in other code.
+-- TODO: Han, kan dat worden afgeschermd, zodat de programmeur alleen 'explain' ziet en de andere functies dus niet kan gebruiken?
 class Explainable a where 
   explain :: Fspc -> Options -> a -> [Explanation]
-  explain fSpec flags x = 
-        filterExplanations x flags (fSexpls fSpec++ map (autoExpl2Explain x) (autoExplainsOf flags x)) 
-  filterExplanations :: a             -- the object the filter is for 
-                     -> Options       -- filter by language, and maybe later more.
-                     -> [Explanation] -- A list of all explanations (most likely from the Fspec)
-                     -> [Explanation] -- the relevant explanations
-  filterExplanations a flags expls = [e | e<-expls 
-                                        , explForObj a e
-                                        , explForLang (language flags) e
-                                     ]
-     where explForLang lang e = lang == explLang e
+  explain fSpec flags x = [e | e<-fSexpls fSpec++ map (autoExpl2Explain x) (autoExplainsOf flags x) 
+                             , explForObj x e
+                             , language flags == explLang e
+                          ]
   autoExpl2Explain :: a -> AutoExplain -> Explanation
   explForObj :: a -> Explanation -> Bool
   autoExplainsOf :: Options -> a -> [AutoExplain]
@@ -74,6 +70,18 @@ instance Explainable Rule where
                           ,explRefId = versionbanner
                           ,explCont  = ec}
   
+--explainRule :: Options -> Fspc -> Rule -> [Explanation]
+--explainRule flags fSpec r
+--  = if null relevants
+--    then [ExplRule r "ADL-generated" (artExpls English "Artificial explanation: ")]
+--      ++ [ExplRule r "ADL-gegenereerd" (artExpls Dutch "Kunstmatige uitleg: ")]
+--    else relevants ++ [ExplRule r "" (rrxpl r)]
+--      where
+--        artExpls :: Lang -> String -> ExplainContents
+--        artExpls lang str = string2Explain lang (str ++ showPredLogic flags{language=lang} r) 
+--        l = language flags
+--        relevants = filterExplanations r (explanations fSpec) flags
+
 instance Explainable KeyDef where
   autoExplainsOf _ _ = []
   explForObj kd ExplKeyDef {explObjKD = kd'} = kd ==kd'
@@ -104,17 +112,15 @@ instance Explainable Pattern where
                           ,explRefId = versionbanner
                           ,explCont  = ec}
 
---explainRule :: Options -> Fspc -> Rule -> [Explanation]
---explainRule flags fSpec r
---  = if null relevants
---    then [ExplRule r "ADL-generated" (artExpls English "Artificial explanation: ")]
---      ++ [ExplRule r "ADL-gegenereerd" (artExpls Dutch "Kunstmatige uitleg: ")]
---    else relevants ++ [ExplRule r "" (rrxpl r)]
---      where
---        artExpls :: Lang -> String -> ExplainContents
---        artExpls lang str = string2Explain lang (str ++ showPredLogic flags{language=lang} r) 
---        l = language flags
---        relevants = filterExplanations r (explanations fSpec) flags
+instance Explainable Context where
+  autoExplainsOf _ _ = []
+  explForObj ctx e@ExplContext{} = (name ctx == name e)
+  explForObj _ _ = False
+  autoExpl2Explain ctx (Because lang ec) =
+              ExplContext {explObjC  = name ctx
+                          ,explLang  = lang
+                          ,explRefId = versionbanner
+                          ,explCont  = ec}
 
 data ExplainOutputFormat = PlainText 
 format  :: ExplainOutputFormat -> [Explanation] -> String

@@ -133,10 +133,10 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 ]
           , Para 
                 [ Str "De conceptuele analyse in hoofdstuk ", xrefReference chpCAlabel
-                , Str " is bedoeld voor informatici om ", Str (name fSpec), Str " te bouwen. "
-                , Str "Tevens is het bedoeld voor testers om te valideren of alle afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str " worden nageleefd. "
-                , Str "Hoofdstuk ", xrefReference chpCAlabel, Str " bevat dan ook een formele representatie van elke afspraak. "
-                , Str "Daarmee ligt de consistentie van alle afspraken vast en is de interpretatie van de afspraken eenduidig."
+                , Str " is bedoeld voor requirements engineers en architecten om de afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str " te valideren. "
+                , Str "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
+                , Str "Dit hoofdstuk bevat dan ook een formele representatie van elke afspraak. "
+                , Str "Daarmee ligt de consistentie van alle afspraken vast en is de interpretatie van de eisen eenduidig."
                 ]
           , Para 
                 [ Str "De hoofdstukken die dan volgen zijn bedoeld voor de bouwers van ", Str (name fSpec), Str ". "
@@ -166,10 +166,10 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 ]
           , Para 
                 [ Str "The conceptual analysis in chapter ", xrefReference chpCAlabel
-                , Str " is meant for software engineers to build ", Str (name fSpec), Str ". "
-                , Str "It is also intended to help testers to validate whether all requirements from chapter ", xrefReference chpFRlabel, Str " are met. "
-                , Str "Chapter ", xrefReference chpCAlabel, Str " contains a formal representation of each commitment precisely for that reason. "
-                , Str "It defines the consistency of all commitments, yielding an unambiguous interpretation."
+                , Str " is meant for requirements engineers and architects to validate the requirements from chapter ", xrefReference chpFRlabel
+                , Str "It is also meant for testers to come up with correct test cases. "
+                , Str "Therefore, this chapter contains a formal representation of each commitment. "
+                , Str "It defines the consistency of all commitments, yielding an unambiguous interpretation of all requirements."
                 ]
           , Para 
                 [ Str "Chapters that follow have the builders of ", Str (name fSpec), Str " as their intended audience. "
@@ -264,7 +264,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
            (still2doCCDsPre, still2doDclsPre, still2doRulesPre) = still2doPre
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) processNow iPre
            (blocksOfThemes,iPost)     = aThemeAtATime stuff2PrintLater xs iPostFirst
-           processNow = (ccds2PrintNow, decls2PrintNow, rules2PrintNow)
+           processNow = (ccds2PrintNow, decls2PrintNow, [r| r<-rules2PrintNow, r_usr r]) -- Han, ik heb het al gedaan... (SJ, 31 aug 2010)
            rules2PrintNow =[r| r<-still2doRulesPre, r_pat r == x]
            rules2PrintLater = still2doRulesPre >- rules2PrintNow
            decls2PrintNow =[d| d<-still2doDclsPre, (d `eleM` (decls rules2PrintNow))]
@@ -389,8 +389,8 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
 				                                                     English -> "Requirement ")
                                                              ,Str (show(getEisnr cnt))
                                                              ,Str ":"]
-                                                            ,  [[Para ([symReqLabel r2])]
-                                                             ++ explains2Blocks (explain fSpec flags r2)]
+                                                            ,  [ [Para ([symReqLabel r2])] ++
+                                                                 explains2Blocks (explain fSpec flags r2)]
                                                            )
                                                           ]
                                           ]
@@ -409,6 +409,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
                                         )
   caIntro :: [Block]
   caIntro = 
+--   explains2Blocks (explain fSpec flags fSpec) ++ -- hier moet de explanation van de context komen.
    (case (language flags) of
       Dutch   -> [Para
                   [ Str "Dit hoofdstuk geeft een analyse van de regels uit hoofdstuk "
@@ -433,8 +434,8 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     iterat [] _ _ _ = []
     iterat (pat:ps) i seenConcepts seenDeclarations
      = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
-       ++ sctMotivation
-       ++ (if (useGraphics flags) 
+       ++ sctMotivation                       -- The section startss with the reason why this theme exists,
+       ++ (if (useGraphics flags)             -- followed by a conceptual model for this theme
             then 
               (case language flags of             -- announce the conceptual diagram
                 Dutch   -> [Para [x | x<-[Str "Figuur ", xrefReference (figlabel pict), Str " geeft een conceptueel diagram van dit thema."]] ]
@@ -442,6 +443,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
               ) ++ [Plain (xrefFigure1 pict)]          -- draw the conceptual diagram
             else []
           )
+                                              -- now provide the text of this theme.
        ++ (if null blocks then [] else [DefinitionList blocks])
        , pict):  iterat ps i'' seenCss seenDss
        where
@@ -458,11 +460,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
     dpRule [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
     dpRule (r:rs) n seenConcs seenDeclarations
      = ( [ ( [Str (name r)]
-           , [ (concat [explains2Blocks(explain fSpec flags d)|d<-nds]) ++
+           , [ (explains2Blocks (explain fSpec flags r)) ++                  -- Als eerste de uitleg van de betreffende regel..
+               (concat [explains2Blocks (explain fSpec flags d)|d<-nds]) ++  -- Dan de uitleg van de betreffende relaties
                [ Plain (text1)| not (null nds)] ++
                pandocEqnArray [ ([TeX (texOnly_Id(name d))], [TeX ":"], [TeX (texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel )++texOnly_Id(name(target d))), symDefLabel d])
                               |d<-nds] ++
-               (explains2Blocks(explain fSpec flags r)) ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
                (if showPredExpr flags 
@@ -481,11 +483,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
         text1
          = case (length nds,language flags) of
              (1,Dutch)   -> let d = head nds in
-                            [TeX ("Om dit te formaliseren, introduceren we "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " (",symDefRef d,Str "):"]
+                            [TeX ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",symDefRef d,Str "):"]
              (1,English) -> let d = head nds in
-                            [TeX ("In order to formalize this, we introduce "++(if isFunction d then "function" else "relation")++" "),Str (name d),Str " (",symDefRef d,Str "):"]
-             (l,Dutch)   -> [TeX "De formalisatie in vergelijking~", symDefRef r,TeX (" heeft de volgende "++count flags l "relatie"++" nodig.")]
-             (l,English) -> [TeX "The formalization (equation~", symDefRef r,TeX (") requires the following "++count flags l "relation"++".")]
+                            [TeX ("In order to formalize this, a "++(if isFunction d then "function" else "relation")++" "),Str (name d),Str " is introduced (",symDefRef d,Str "):"]
+             (l,Dutch)   -> [TeX "Om te komen tot de formalisatie in vergelijking~", symDefRef r,TeX (" zijn de volgende "++count flags l "relatie"++" nodig.")]
+             (l,English) -> [TeX "To arrive at the formalization in equation~", symDefRef r,TeX (", the following "++count flags l "relation"++" are introduced.")]
         text2
          = (case (length nds,length rds,language flags) of
              (0,1,Dutch)   -> [Str "Definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
