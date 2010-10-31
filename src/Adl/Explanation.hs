@@ -59,6 +59,7 @@ where
 -- The enrichment process of the parser must map the names (from PExplanation) to the actual objects
 --                       Constructor     Object          RefID  Explanation
    data Explanation    = ExplConcept{explObjCD :: ConceptDef     -- The object that is explained.  Han, WAAROM hebben alle explObj<X> een suffix <X>?
+                                                                 --                                  DAAROM: Het type is verschillend. Haskell hanteert de regel dat het type van een veld in een datatype declaratie eenduidig te bepalen moet zijn.
                                     ,explLang  :: Lang           -- The language of the explaination
                                     ,explRefId :: String         -- The reference of the explaination
                                     ,explCont  :: ExplainContent -- The actual explanaition.

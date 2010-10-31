@@ -24,6 +24,7 @@ import Text.Pandoc
 -- The other functions in this class are solely meant to be used in the definition of explain.
 -- They are defined once for each instance of Explainable, not be used in other code.
 -- TODO: Han, kan dat worden afgeschermd, zodat de programmeur alleen 'explain' ziet en de andere functies dus niet kan gebruiken?
+--     @Stef: Ja, het is al zoveel mogelijk afgeschermd (zie definities die deze module exporteert, hierboven) maar er wordt nog gebruik van gemaakt voor oa foutmeldingen in de atlas, en het prototype. Zodra iemand iets anders verzint voor het gebruik van "ExplainOutputFormat(..),explain2Blocks,format", kunnen deze uit de export-list van deze module worden verwijderd.
 class Explainable a where 
   explain :: Fspc -> Options -> a -> [Explanation]
   explain fSpec flags x = [e | e<-fSexpls fSpec++ map (autoExpl2Explain x) (autoExplainsOf flags x) 
@@ -70,18 +71,6 @@ instance Explainable Rule where
                           ,explRefId = versionbanner
                           ,explCont  = ec}
   
---explainRule :: Options -> Fspc -> Rule -> [Explanation]
---explainRule flags fSpec r
---  = if null relevants
---    then [ExplRule r "ADL-generated" (artExpls English "Artificial explanation: ")]
---      ++ [ExplRule r "ADL-gegenereerd" (artExpls Dutch "Kunstmatige uitleg: ")]
---    else relevants ++ [ExplRule r "" (rrxpl r)]
---      where
---        artExpls :: Lang -> String -> ExplainContents
---        artExpls lang str = string2Explain lang (str ++ showPredLogic flags{language=lang} r) 
---        l = language flags
---        relevants = filterExplanations r (explanations fSpec) flags
-
 instance Explainable KeyDef where
   autoExplainsOf _ _ = []
   explForObj kd ExplKeyDef {explObjKD = kd'} = kd ==kd'
