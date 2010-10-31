@@ -431,9 +431,9 @@ module Prototype.RelBinGenSQL
 -}
 
 -- WAAROM bestaat sqlRelPlugs?
--- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
--- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
--- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
+   -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
+   -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
+   -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
    sqlRelPlugs :: Fspc -> Expression -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e = rd [ (plug,fld0,fld1)
                             | plug<-pickTypedPlug$ plugs fSpec

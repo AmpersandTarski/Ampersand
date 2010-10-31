@@ -3,10 +3,11 @@
 
    module UU_Parsing (parseIO,Symbol(..),pPacked
                       ,Parser
-                      , (<$>) , (<$), (<*>), (<*) , (*>), (<|>)
                       ,pList,pListSep,pList1,pList1Sep,pSym
-                      ,pSucceed
-                      ,opt, Sequence,Alternative, IsParser)
+                      ,opt
+                      ,Sequence((<$>), (<$), (<*>), (<*), (*>), pSucceed )
+                      ,Alternative((<|>))
+                      ,IsParser)
 --   (
 --   Result,
 --   mapOnePars,

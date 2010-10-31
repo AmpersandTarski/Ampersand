@@ -15,7 +15,7 @@ module Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh) where
    = Named realname obj
      where realname = noCollide (map nName vars) nm
 
-  -- | make sure a function returns at least one item (run-time check) or give a debug error
+ -- | make sure a function returns at least one item (run-time check) or give a debug error
  atleastOne :: forall t. [Char] -> [t] -> [t]
  atleastOne errormsg [] = error errormsg
  atleastOne _ (a:as) = a:as

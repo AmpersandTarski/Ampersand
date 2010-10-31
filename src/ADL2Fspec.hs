@@ -301,7 +301,7 @@ So the first step is create the kernels ...   -}
                           | cl<-eqCl (map toLower.name.source) rs
                           , entry<-if length cl==1 then [(r,name r++name (source r))|r<-cl] else [(r,name r++show i)|(r,i)<-zip cl [(0::Int)..]]]
 
--- | makePhpPlug is used to make user defined plugs, with PHP functions to get the data from. Note that these plug's cannot be used to store anything.
+   -- | makePhpPlug is used to make user defined plugs, with PHP functions to get the data from. Note that these plug's cannot be used to store anything.
    makePhpPlug :: ObjectDef -> PlugPHP
    makePhpPlug obj
     = PlugPHP (name obj)    -- plname (function name)
@@ -334,7 +334,7 @@ So the first step is create the kernels ...   -}
       fpa = (ILGV Eenvoudig)
       
    
--- | makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
+   -- | makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
    makeSqlPlug :: ObjectDef -> PlugSQL
    makeSqlPlug obj
     = PlugSQL (name obj)     -- plname (table name)

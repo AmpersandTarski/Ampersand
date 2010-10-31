@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module ShowHS (showHS,ShowHS(),fSpec2Haskell)
+module ShowHS (ShowHS(showHS),fSpec2Haskell)
 where
 
    import Char                  (isAlphaNum,toLower)

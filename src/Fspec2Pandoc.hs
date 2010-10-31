@@ -341,7 +341,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                     
                   where
                       conceptNamesIntro = [name cpt|(cpt,Just _)<-xs]
-                      singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block] -- | this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
+                      singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block] -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
                       singleConceptStuff (c,mcd) = case mcd of
                                                        Nothing -> []     -- If there is no conceptDef, then there is nothing to print, for there also cannot be any explains.
                                                        Just cd -> explains cd 

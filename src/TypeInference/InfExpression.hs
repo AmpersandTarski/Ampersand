@@ -293,7 +293,7 @@ inerror (Right _) = True
 --comp_errors :: [[SynAtts]] -> [TErr]
 --comp_errors [] = []
 --comp_errors (s_tpls:ss_tplss) 
-  -- | null ss = [s_tpls]
+--     | null ss = [s_tpls]
 --  = --["composition"++show (ttypemerge ac (s:ss),length(comp_alts ttypemerge decls_ isa_ ac (s:ss)))]
   --  map reltype s_tpls 
 
@@ -398,7 +398,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       ,s_err++ss_errs)             --error analysis rule: report all errors within a subexpression Ri
                                      --comp_alts is recursive so all Ri will be s_tpls possibly yielding s_err at sometime
    (ss_tplss,ss_errs) 
-     -- | length ss==2 = error (show (null s_tpls,s_err,ptf_ss,ok_bs,s_ss_bs,s_trytypes))
+     --  | length ss==2 = error (show (null s_tpls,s_err,ptf_ss,ok_bs,s_ss_bs,s_trytypes))
       | null ss = ([],[])
       | null s_tpls && null s_err = error "there must be an alternative or error for s"
       | not(null s_tpls) && not(null s_err)  = error "there may not be both an alternative and error for s"

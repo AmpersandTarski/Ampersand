@@ -256,7 +256,7 @@ module Prototype.GetCode (getCodeFor) where
  phpQuery :: Fspc -> [Named CodeVar] -> Expression -> Maybe (CodeQuery)
  phpQuery fSpec _ expr
   = listToMaybe
-      [  PHPBinCheck {cqinput=map CQPlain [s,t] -- ^ arguments passed to the plug
+      [  PHPBinCheck {cqinput=map CQPlain [s,t] -- arguments passed to the plug
                      ,cqreturn=(CQPlain s,CQPlain t)
                      ,cqphpplug=plname plug
                      ,cqphpfile=phpfile plug

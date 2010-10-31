@@ -18,8 +18,9 @@ module Prototype.CodeVariables
  -- | see for example the singletonCV, or codeVariableForBinary
  data CodeVar = CodeVar
   { cvIndexed :: CodeVarIndexed
-  , cvContent :: Either CodeVar -- ^ intended for indexed stuff: $var[$i] returns a codeVar
-                        [Named CodeVar] -- ^ intended for objects/associative arrays: $var["nName"] is a codeVar
+    -- | Content can either be a CodeVar, intended for indexed stuff: $var[$i] returns a codeVar,
+    --                    OR  [Named CodeVar], intended for objects/associative arrays: $var["nName"] is a codeVar 
+  , cvContent :: Either CodeVar [Named CodeVar] 
   , cvExpression :: Expression
   } deriving (Eq)
  data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
