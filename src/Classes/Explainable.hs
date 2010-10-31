@@ -8,7 +8,7 @@ where
   import CommonClasses               (Identified(..))
   import Data.Explain
   import Options 
--- For parser data structures (which are: Concept, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
+-- For parser data structures (which are: ConceptDef, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
 -- the function <explanations :: a -> [Explanation]> gives all explanations that are declared directly in <a>, but not in possible components of <a>.
 -- So if <a> is a context, it gives the explanations declared in <a>, but not those declared in patterns in <a>
   class UserExplainable a where
@@ -16,7 +16,7 @@ where
 
   instance UserExplainable Context where
     explanationDeclarations flags context
-     = [ExplConcept    cd l ref (string2ExplainContent flags expla)| PExplConcept     nm  l ref expla<-ctxpes context, cd<-ctxcs context, name cd==nm] ++
+     = [ExplConceptDef cd l ref (string2ExplainContent flags expla)| PExplConceptDef  nm  l ref expla<-ctxpes context, cd<-ctxcs context, name cd==nm] ++
        [ExplDeclaration d l ref (string2ExplainContent flags expla)| PExplDeclaration mph l ref expla<-ctxpes context,  d<-ctxds context, makeDeclaration mph==d] ++
        [ExplRule        r l ref (string2ExplainContent flags expla)| PExplRule        nm  l ref expla<-ctxpes context,  r<-ctxrs context, name r==nm] ++
        [ExplKeyDef      k l ref (string2ExplainContent flags expla)| PExplKeyDef      nm  l ref expla<-ctxpes context,  k<-ctxks context, name k==nm] ++
@@ -25,7 +25,7 @@ where
  
   instance UserExplainable Pattern where
     explanationDeclarations flags pat
-     = [ExplConcept    cd l ref (string2ExplainContent flags expla)| PExplConcept     nm  l ref expla<-ptxps pat, cd<-ptcds pat, name cd==nm] ++
+     = [ExplConceptDef cd l ref (string2ExplainContent flags expla)| PExplConceptDef  nm  l ref expla<-ptxps pat, cd<-ptcds pat, name cd==nm] ++
        [ExplDeclaration d l ref (string2ExplainContent flags expla)| PExplDeclaration mph l ref expla<-ptxps pat,  d<-ptdcs pat, makeDeclaration mph==d] ++
        [ExplRule        r l ref (string2ExplainContent flags expla)| PExplRule        nm  l ref expla<-ptxps pat,  r<-ptrls pat, name r==nm] ++
        [ExplKeyDef      k l ref (string2ExplainContent flags expla)| PExplKeyDef      nm  l ref expla<-ptxps pat,  k<-ptkds pat, name k==nm] ++

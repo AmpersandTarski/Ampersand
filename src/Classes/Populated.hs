@@ -19,13 +19,9 @@ where
    
    instance Populated Concept where
     contents c 
-       = case c of
-           C {}     -> case cptos c of
-                          Nothing->Nothing
-                          Just c'-> Just [mkPair s s|s<-c']
-           S        -> Nothing --Cannot refer to the contents of S
-           Anything -> Nothing --Cannot refer to the contents of Anything
-           NOthing  -> Nothing --Cannot refer to the contents of Nothing
+       = case conts c of
+           Nothing->Nothing
+           Just c'-> Just [mkPair s s|s<-c']
 
    instance Populated Declaration where
     contents d 

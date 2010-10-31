@@ -229,7 +229,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     pexpls = map enrichexpl (ptxps p)
 
   --Every Explanation must relate to something
-  enrichexpl x@(PExplConcept{}) = checkPExpl (allCtxCpts ctxs) x 
+  enrichexpl x@(PExplConceptDef{}) = checkPExpl (allCtxCpts ctxs) x 
   enrichexpl (PExplDeclaration mph l ref expla) = case enrich_expr (Tm mph (-1)) of
      Left (_,Tm emph _,_) -> Left (PExplDeclaration emph l ref expla)
      Right (err,_) -> Right ("Explanation for relation "++name mph++" could not be matched to a declaration because "++err)
@@ -243,7 +243,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   checkPExpl xs x 
      | elem (name x) (map name xs) = Left x
      | otherwise = Right ("There is an explanation for the non-existing "++explobj x++" " ++ name x)
-  explobj (PExplConcept _ _ _ _) = "concept"
+  explobj (PExplConceptDef _ _ _ _) = "concept"
   explobj (PExplDeclaration _ _ _ _) = "declaration"
   explobj (PExplRule _ _ _ _) = "rule"
   explobj (PExplKeyDef _ _ _ _) = "key definition"

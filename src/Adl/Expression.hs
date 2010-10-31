@@ -71,11 +71,16 @@ instance Show (PExpression Morphism (Maybe Sign)) where
  show (UnPExp uop x Nothing)      = show uop ++ (usebrackets (Op1 uop) (oper x) <??> show x) 
  show (UnPExp uop x (Just (a,b)))  = show uop ++ (True <??> show x)++"["++name a++"*"++name b++"]"
 
+oper :: PExpression term tp -> Maybe Op
 oper (TPExp{}) = Nothing
 oper (MulPExp mop _ _) = Just (Opn mop)
 oper (UnPExp uop _ _) = Just (Op1 uop)
+
+(<??>) :: Bool -> [Char] -> [Char]
 (<??>) True x = "("++x++")"
 (<??>) False x = x
+
+usebrackets :: Op -> Maybe Op -> Bool
 usebrackets _ Nothing = False
 usebrackets op1 (Just op2) = precedence op1 <= precedence op2
 

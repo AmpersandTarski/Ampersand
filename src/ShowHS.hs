@@ -85,13 +85,24 @@ where
            PlugSql p -> (chain indent 
                           ["let " ++ chain (indent++"    ")
                                            [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
-                          ,"PlugSql{ plname  = " ++ (show.haskellIdentifier.plname) plug
+                          ,"PlugSql{ sqlname = " ++ (show.haskellIdentifier.plname) plug
                           ,"       , fields  = ["++chain ", " (map showHSname (fields p))++"]"
                           ,"       , cLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
                           ,"       , mLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
-                          ,"       , plfpa   = " ++ showHS flags "" (plfpa plug)
+                          ,"       , sqlfpa  = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
-                          ]) 
+                          ])
+           PlugPhp p ->  (chain indent 
+                          ["let x = x in -- TODO: This code should be fixed. " -- ++ chain (indent++"    ")
+                                  --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
+                          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.plname) plug
+                          ,"       , phpfile   = "++show (phpfile p)
+                          ,"       , phpinArgs = [ "++chain (indent++"                   , ") [show cv| cv <-phpinArgs p] ++ "]"
+                          ,"       , phpOut    = "++show (phpOut p)
+                          ,"       , phpSafe   = "++show (phpSafe p)
+                          ,"       , phpfpa    = " ++ showHS flags "" (plfpa plug)
+                          ,"       }"
+                          ])
 
    instance ShowHS PhpValue where
     showHSname _ = error ("!Fatal (module ShowHS): PhpValue is anonymous with respect to showHS flags.")
@@ -445,7 +456,7 @@ where
     showHSname _ = error ("!Fatal (module ShowHS 396): a PExplanation is anonymous with respect to showHS flags")
     showHS flags _ expla = 
        case expla of
-         PExplConcept cd lng ref expl -> "PExplConcept "++show cd++" "
+         PExplConceptDef cd lng ref expl -> "PExplConceptDef "++show cd++" "
                                           ++show lng++" "++show ref++" "++show expl
          PExplDeclaration mph lng ref expl ->  "PExplDeclaration ("++showHS flags "" mph++") "
                                           ++show lng++" "++show ref++" "++show expl
@@ -457,12 +468,13 @@ where
                                           ++show lng++" "++show ref++" "++show expl
          PExplPattern pname lng ref expl -> "PExplPattern "++show pname++" "
                                           ++show lng++" "++show ref++" "++show expl
-
+         PExplContext cname lng ref expl -> "PExplContext "++show cname++" "
+                                          ++show lng++" "++show ref++" "++show expl
    instance ShowHS Explanation where
     showHSname expla = error ("!Fatal (module ShowHS 396): an Explanation is anonymous with respect to showHS flags. Detected at: "++ showADL expla)
-    showHS flags _ expla = 
+    showHS _ _ expla = 
        case expla of
-         ExplConcept cd lng ref expl -> "ExplConcept "++showHSname cd++" "
+         ExplConceptDef cd lng ref expl -> "ExplConceptDef "++showHSname cd++" "
                                           ++show lng++" "++show ref++" "++show expl
          ExplDeclaration d lng ref expl ->  "ExplDeclaration "++showHSname d++" "
                                           ++show lng++" "++show ref++" "++show expl
@@ -474,7 +486,8 @@ where
                                           ++show lng++" "++show ref++" "++show expl
          ExplPattern pname lng ref expl -> "ExplPattern "++show pname++" "
                                           ++show lng++" "++show ref++" "++show expl
-
+         ExplContext cname lng ref expl -> "ExplContext "++show cname++" "
+                                          ++show lng++" "++show ref++" "++show expl
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
@@ -661,11 +674,11 @@ where
     showHSname c = error ("!Fatal (module ShowHS 577): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
     showHS a b c = case c of
                        (DExp e) -> "DExp "++showHS a b e
-                       C{}      -> "C "++show (name c) ++ " gE []"    -- contents not shown.
+                       C{}      -> "C "++show (name c) ++ " gE [] "    -- contents not shown.
                        S        -> "S "
                        Anything -> "Anything "
                        NOthing  -> "NOthing "
-   
+                       (I1 x)   -> "I1 " ++ show x
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FPA                           ***
 -- \***********************************************************************

@@ -326,7 +326,9 @@ theTemplate flags
                , "$endfor$"
                , "}"
                ])
- 
+    FPandoc -> error ("!Fatal (module PandocAux 329): No template defined for Pandoc output") 
+    FOpenDocument -> error ("!Fatal (module PandocAux 330): No template defined for ODF output") 
+    FHtml -> error ("!Fatal (module PandocAux 331): No template defined for HTML output") 
  
 -----Linguistic goodies--------------------------------------
 

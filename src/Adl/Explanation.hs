@@ -14,7 +14,7 @@ where
 -- PExplanation is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
-   data PExplanation   = PExplConcept     {pexName :: String
+   data PExplanation   = PExplConceptDef  {pexName :: String
                                           ,pexLang :: Lang
                                           ,pexRefID:: String
                                           ,pexExpl :: String
@@ -58,12 +58,14 @@ where
 -- Explanation is the intended constructor. It contains the object it explains.
 -- The enrichment process of the parser must map the names (from PExplanation) to the actual objects
 --                       Constructor     Object          RefID  Explanation
-   data Explanation    = ExplConcept{explObjCD :: ConceptDef     -- The object that is explained.  Han, WAAROM hebben alle explObj<X> een suffix <X>?
+   data Explanation   = ExplConceptDef
+                                    {explObjCD :: ConceptDef     -- The object that is explained.  Han, WAAROM hebben alle explObj<X> een suffix <X>?
                                                                  --                                  DAAROM: Het type is verschillend. Haskell hanteert de regel dat het type van een veld in een datatype declaratie eenduidig te bepalen moet zijn.
                                     ,explLang  :: Lang           -- The language of the explaination
                                     ,explRefId :: String         -- The reference of the explaination
                                     ,explCont  :: ExplainContent -- The actual explanaition.
                                     }
+                       
                        | ExplDeclaration
                                     {explObjD  :: Declaration    -- The object that is explained.
                                     ,explLang  :: Lang           -- The language of the explaination
@@ -99,7 +101,7 @@ where
 
    instance Identified Explanation where    -- Not really the identifier, but the name of the object it references...
     name e = case e of
-       ExplConcept{}     -> name (explObjCD e)
+       ExplConceptDef{}  -> name (explObjCD e)
        ExplDeclaration{} -> name (explObjD e) ++name (source (explObjD e))++name (target(explObjD e))
        ExplRule{}        -> name (explObjR e)
        ExplKeyDef{}      -> name (explObjKD e)

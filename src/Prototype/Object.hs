@@ -20,7 +20,7 @@
    import Data.Maybe
    import Version (versionbanner)
    import Options
-   import Rendering.AdlExplanation
+   import Rendering.AdlExplanation (explain, format, ExplainOutputFormat(PlainText))
 
    objectServices :: Options 
                   -> Fspc

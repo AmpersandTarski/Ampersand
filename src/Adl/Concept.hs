@@ -170,7 +170,11 @@ where
    conts S        = Nothing -- S has exactly one atom, but that atom may not be referred to
    conts Anything = Nothing
    conts NOthing  = Nothing
+   conts (DExp _) = -- WAAROM? Waarom is dit niet gedefinieerd? 
+                    error ("!Fatal (module Concept 174): conts undefined for DExp. ")
    --conts (DExp e) = conts e
+   conts (I1 _)   = -- WAAROM? Waarom is dit niet gedefinieerd? 
+                    error ("!Fatal (module Concept 177): conts undefined for I1. ")
 
   instance Morphics Concept where
    anything c = c == Anything

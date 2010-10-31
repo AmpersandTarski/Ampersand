@@ -305,7 +305,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                    ,Str "that have not been used in previous paragraphs."]
                                       )
                                      ]
-                              [p] -> concat (map explain2Blocks (explain fSpec flags p))
+                              [p] -> explains2Blocks (explain fSpec flags p)
                               _   -> error ("!Fatal (module Fspec2Pandoc 299): Multple themes are called '"++themeName++"'.") 
 
               themeName = case nm of

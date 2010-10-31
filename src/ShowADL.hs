@@ -115,18 +115,21 @@
                   | otherwise                 = "\""++ss++"\""
 
    instance ShowADL Explanation where
-    showADL           (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplConceptDef  cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
     showADL           (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADL d++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
     showADL           (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
     showADL           (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
     showADL           (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
     showADL           (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _ (ExplConcept     cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL           (ExplContext     cname lang ref expla) = "EXPLAIN CONTEXT "   ++cname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+
+    showADLcode _     (ExplConceptDef  cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
     showADLcode fSpec (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec d++" IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _ (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _ (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _ (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _ (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode _     (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode _     (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode _     (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode _     (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode _     (ExplContext     cname lang ref expla) = "EXPLAIN CONTEXT "   ++cname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
 
    instance ShowADL ExplainContent where
     showADL expla 

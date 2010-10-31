@@ -37,17 +37,17 @@ class Explainable a where
   
 instance Explainable ConceptDef where
   autoExplainsOf _ _ = []
-  explForObj cd ExplConcept{explObjCD = cd'} = cd == cd'
+  explForObj cd ExplConceptDef{explObjCD = cd'} = cd == cd'
   explForObj _ _ = False
   autoExpl2Explain cd (Because lang ec) = 
-               ExplConcept{explObjCD = cd
+            ExplConceptDef{explObjCD = cd
                           ,explLang  = lang
                           ,explRefId = versionbanner
                           ,explCont  = ec}          
 
 instance Explainable Concept where
   autoExplainsOf _ _ = []
-  explForObj c ExplConcept{explObjCD = cd} = name c == name cd
+  explForObj c ExplConceptDef{explObjCD = cd} = name c == name cd
   explForObj _ _ = False
 --  autoExpl2Explain c (Because lang ec)   moet nog gemaakt worden... (SJ: 24 aug 2010)          
 
@@ -103,10 +103,10 @@ instance Explainable Pattern where
 
 instance Explainable Context where
   autoExplainsOf _ _ = []
-  explForObj ctx e@ExplContext{} = (name ctx == name e)
+  explForObj ctx' e@ExplContext{} = (name ctx' == name e)
   explForObj _ _ = False
-  autoExpl2Explain ctx (Because lang ec) =
-              ExplContext {explObjC  = name ctx
+  autoExpl2Explain ctx' (Because lang ec) =
+              ExplContext {explObjC  = name ctx'
                           ,explLang  = lang
                           ,explRefId = versionbanner
                           ,explCont  = ec}

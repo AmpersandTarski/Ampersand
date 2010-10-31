@@ -199,11 +199,11 @@ constrNode nodeId pObj flags
             , nodeAttributes = handleFlags pObj flags
             }
 constrEdge :: a -> a -> PictureObject -> Bool -> Options -> DotEdge a
-constrEdge nodeFrom nodeTo pObj isDirected flags 
+constrEdge nodeFrom nodeTo pObj isDirected' flags 
   = DotEdge { edgeFromNodeID = nodeFrom
             , edgeToNodeID   = nodeTo
             , edgeAttributes = handleFlags pObj flags
-            , directedEdge   = isDirected
+            , directedEdge   = isDirected'
             }
 --DESCR -> a picture consists of arcs (relations), concepts, and ISA relations between concepts
 --         arcs are attached to a source or target concept

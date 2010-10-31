@@ -90,7 +90,7 @@
    pRefID              = (pKey "REF" *> pString) `opt` []
 
    pExplain           :: Parser Token PExplanation
-   pExplain            = PExplConcept     <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> (pConid <|> pString) <*> pLanguageID <*> pRefID <*> pExpl <|>
+   pExplain            = PExplConceptDef  <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> (pConid <|> pString) <*> pLanguageID <*> pRefID <*> pExpl <|>
                          PExplDeclaration <$ pKey "EXPLAIN" <* pKey "RELATION"   <*> pMorphism            <*> pLanguageID <*> pRefID <*> pExpl <|>
                          PExplRule        <$ pKey "EXPLAIN" <* pKey "RULE"       <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
                          PExplKeyDef      <$ pKey "EXPLAIN" <* pKey "KEY"        <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>

@@ -140,11 +140,11 @@ where
     closExprs _ = []
     genE c = case c of
                 C{}        -> cptgE c
-                DExp{}    -> (<=)  ::Concept->Concept->Bool
+                DExp{}     -> (<=)  ::Concept->Concept->Bool
                 S{}        -> (<=)  ::Concept->Concept->Bool
                 Anything   -> (<=)  ::Concept->Concept->Bool
                 NOthing    -> (<=)  ::Concept->Concept->Bool
-
+                I1{}       -> (<=)  ::Concept->Concept->Bool
    instance Morphical ObjectDef where
     concs     obj = [target (objctx obj)] `uni` concs (objats obj)
     mors      obj = mors (objctx obj) `uni` mors (objats obj) `uni` mors (target (objctx obj))  -- opletten: de expressie (objctx obj) hoort hier ook bij.
