@@ -44,6 +44,7 @@ data Options = Options { contextName   :: Maybe String
                        , dirOutput     :: String -- the directory to generate the output in.
                        , beeper        :: Bool
                        , crowfoot      :: Bool
+                       , blackWhite    :: Bool  -- only use black/white in graphics
                        , showPredExpr  :: Bool   -- for generated output, show predicate logic?
                        , language      :: Lang
                        , dirExec       :: String --the base for relative paths to input files
@@ -101,6 +102,7 @@ defaultFlags = Options {genTime       = error ("!Fatal (module Options 71): No m
                   --    , texHdrFile    = error ("!Fatal (module Options 120): Specify the path location of "++progName)++" in your system PATH variable."
                       , beeper        = False
                       , crowfoot      = False
+                      , blackWhite    = False
                       , showPredExpr  = False
                       , language      = Dutch
                       , progrName     = error ("!Fatal (module Options 106): No monadic options available.")
@@ -247,6 +249,7 @@ options = map pp
 
           , ((Option []        ["beeper"]      (NoArg beeperOpt)           "generate beeper instead of checker."), Public)
           , ((Option []        ["crowfoot"]    (NoArg crowfootOpt)         "generate crowfoot notation in graphics."), Public)
+          , ((Option []        ["blackWhite"]  (NoArg blackWhiteOpt)       "do not use colours in generated graphics"), Public)
           , ((Option []        ["predLogic"]   (NoArg predLogicOpt)        "show logical expressions in the for of predicat logic." ), Public)
           , ((Option []        ["language"]    (ReqArg languageOpt "lang") "language to be used, ('NL' or 'UK')."), Public)
           , ((Option []        ["test"]        (NoArg testOpt)             "Used for test purposes only."), Hidden)
@@ -349,6 +352,8 @@ beeperOpt :: Options -> Options
 beeperOpt       opts = opts{beeper       = True}
 crowfootOpt :: Options -> Options
 crowfootOpt     opts = opts{crowfoot     = True}
+blackWhiteOpt :: Options -> Options
+blackWhiteOpt  opts = opts{blackWhite = True}
 predLogicOpt :: Options -> Options
 predLogicOpt    opts = opts{showPredExpr = True}
 languageOpt :: String -> Options -> Options
