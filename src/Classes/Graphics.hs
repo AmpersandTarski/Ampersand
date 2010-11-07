@@ -58,7 +58,7 @@ instance Dotable ClassDiag where
    picType _ = PTClassDiagram
    toDot _ _ _ = error ("!TODO (module Graphics 31): ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd.") 
    makePicture flags _ cd =
-          makePictureObj flags (name cd) (picType cd) (classdiagram2dot cd) 
+          makePictureObj flags (name cd) (picType cd) (classdiagram2dot flags cd) 
 instance Dotable Concept where
    picType _ = PTConcept
    toDot fSpec flags c = dotG flags (name c) cpts dcls idgs

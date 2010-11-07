@@ -48,7 +48,7 @@ where
                                           ,pexLang :: Lang
                                           ,pexRefID:: String
                                           ,pexExpl :: String
-                                          }
+                                          } deriving Show -- this is only for testing purposes.
 
    instance Identified PExplanation where
     name pe = case pe of

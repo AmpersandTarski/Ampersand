@@ -229,6 +229,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
     pexpls = map enrichexpl (ptxps p)
 
   --Every Explanation must relate to something
+  enrichexpl :: PExplanation -> Either PExplanation String
   enrichexpl x@(PExplConceptDef{}) = checkPExpl (allCtxCpts ctxs) x 
   enrichexpl (PExplDeclaration mph l ref expla) = case enrich_expr (Tm mph (-1)) of
      Left (_,Tm emph _,_) -> Left (PExplDeclaration emph l ref expla)
@@ -238,6 +239,8 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   enrichexpl x@(PExplKeyDef{}) = checkPExpl (ctxks cx) x
   enrichexpl x@(PExplObjectDef{}) = checkPExpl (objDefs cx) x
   enrichexpl x@(PExplPattern{}) = checkPExpl (ctxpats cx) x 
+  enrichexpl x@(PExplContext{}) = checkPExpl [cx] x
+  enrichexpl x = error("!Fatal (module TypeChecker 243): Non-exhaustive pattern in function enrichexpl ("++show x++")")
 
   checkPExpl :: (Identified a) => [a] -> PExplanation -> Either PExplanation String
   checkPExpl xs x 

@@ -578,7 +578,7 @@ dataAnalysis lev fSpec flags
   classDiagramPicture :: Picture
   classDiagramPicture = makePicture flags fSpec classDiagram
 --      where
---       cdDot = classdiagram2dot classDiagram
+--       cdDot = classdiagram2dot flags classDiagram
 
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations

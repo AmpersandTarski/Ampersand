@@ -90,7 +90,7 @@
     where lijstopmaak [] = "[]"
           lijstopmaak xs = "[ "++chain "\n>     , " xs++"\n>     ]"
 
-   classdiagram2dot  cd@(OOclassdiagram cs as rs gs (_, concspat))
+   classdiagram2dot flags cd@(OOclassdiagram cs as rs gs (_, concspat))
             = "digraph G {rankdir=LR;bgcolor=transparent\n" ++        
               "    edge [ \n" ++
               "            fontsize = 11"++(if layout=="neato" then ", len = 3" else "")++" \n" ++
@@ -191,7 +191,8 @@
 
  
   -------------------------------
-  --        GENERALIZATIONS:   --       -- TODO : Wat bedoelt stef hier mee?? Wat is de syntax?
+  --        GENERALIZATIONS:   --       -- ADL statements such as "GEN Dolphin ISA Animal" are called generalization.
+  --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead 
   -------------------------------
           generalizations2dot :: [Generalization] -> [Char]
           generalizations2dot gs = chain "\n" (map generalization2dot gs) ++ "\n"
@@ -208,7 +209,11 @@
               "              taillabel = \"\"\n"    ++
               "              arrowtail = \"none\" \n" ++
               "              arrowhead = onormal \n" ++
-              "              color = red" ++
+              "              arrowsize = 2.0 \n" ++
+              "              "++( if blackWhite flags
+                                  then "              style = dashed"
+                                  else "              color = red"
+                                ) ++
               "              label =\"\"" ++
               "      ]\n" ++
               "       " ++ alias b ++ " -> " ++ alias a ++ "\n"
