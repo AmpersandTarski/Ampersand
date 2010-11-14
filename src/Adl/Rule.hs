@@ -12,8 +12,7 @@ where
    import Adl.Pair                      ( Pairs)
    import Adl.Prop
    import Classes.Populated
-   import CommonClasses                 ( Identified(..)
-                                        , SelfExplained(..))
+   import CommonClasses                 ( Identified(..))
    import TypeInference.InfLibAG        ( InfTree(..) )
    import Data.Explain
    import Languages  
@@ -67,9 +66,6 @@ where
    instance Association Rule where
     source r  = fst (rrtyp r)
     target r  = snd (rrtyp r)
-
-   instance SelfExplained Rule where
-    autoExplains _ r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
 
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)

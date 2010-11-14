@@ -28,7 +28,6 @@ module Adl ( Architecture(..)
            , Populated(..)
            , Substitutive(..)
            , Identified(..)
-           , SelfExplained(..)
            , Label(..)
            , Paire,Pairs,srcPaire,trgPaire,mkPair
            , InsDel(..)
@@ -79,6 +78,5 @@ where
    import Classes.Object                 (Object(..))
    import Classes.ViewPoint              (ViewPoint(..))
    import Classes.Explainable            (explanationDeclarations)
-   import CommonClasses                  (Identified(..)
-                                         ,SelfExplained(..))
+   import CommonClasses                  (Identified(..))
 
