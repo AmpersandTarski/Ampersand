@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Explanation (Explanation(..),PExplanation(..),Explanations,PExplanations)
+module Adl.Explanation (Explanation(..),PExplanation(..),PExplObj(..),Explanations,PExplanations,ExplObj(..))
 where
    import Languages                    (Lang)
    import Adl.MorphismAndDeclaration   (Morphism,Declaration)
@@ -14,102 +14,64 @@ where
 -- PExplanation is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
-   data PExplanation   = PExplConceptDef  {pexName :: String
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          }
-                       | PExplDeclaration {pedMph  :: Morphism
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          }
-                       | PExplRule        {pexName :: String
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          }
-                       | PExplKeyDef      {pexName :: String
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          }
-                       | PExplObjectDef   {pexName :: String
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          }
-                       | PExplPattern     {pexName :: String
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          }
-                       | PExplContext     {pexName :: String
-                                          ,pexLang :: Lang
-                                          ,pexRefID:: String
-                                          ,pexExpl :: String
-                                          } deriving Show -- this is only for testing purposes.
+   data PExplObj = PExplConceptDef String
+                 | PExplDeclaration Morphism
+                 | PExplRule String
+                 | PExplKeyDef String
+                 | PExplObjectDef String
+                 | PExplPattern String
+                 | PExplContext String
+   instance Identified PExplObj where
+     name pe = case pe of 
+        PExplConceptDef str -> str
+        PExplDeclaration mph -> name mph
+        PExplRule str -> str
+        PExplKeyDef str -> str
+        PExplObjectDef str -> str
+        PExplPattern str -> str
+        PExplContext str -> str
+        
+   data PExplanation = PExpl {pexObj  :: PExplObj
+                                ,pexLang :: Lang
+                                ,pexRefID:: String
+                                ,pexExpl :: String
+                                }
 
    instance Identified PExplanation where
-    name pe = case pe of
-       PExplDeclaration{} -> name (pedMph pe)
-       _                  -> pexName pe
+    name pe = name (pexObj pe)
+
+
+   data ExplObj = ExplConceptDef ConceptDef
+                | ExplDeclaration Declaration
+                | ExplRule Rule
+                | ExplKeyDef KeyDef
+                | ExplObjectDef ObjectDef
+                | ExplPattern String   -- SJ: To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
+                | ExplContext String   -- SJ: To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PExplContext is identical to the ExplContext
+                  deriving Show --handy for XML creation
+                  
+   instance Identified ExplObj where    -- Not really the identifier, but the name of the object it references...
+    name e = case e of
+       ExplConceptDef cd -> name cd
+       ExplDeclaration d -> name d ++name (source d)++name (target d)
+       ExplRule r        -> name r
+       ExplKeyDef kd     -> name kd
+       ExplObjectDef od  -> name od
+       ExplPattern str   -> str
+       ExplContext str   -> str
+
 
 -- Explanation is the intended constructor. It contains the object it explains.
 -- The enrichment process of the parser must map the names (from PExplanation) to the actual objects
 --                       Constructor     Object          RefID  Explanation
-   data Explanation   = ExplConceptDef
-                                    {explObjCD :: ConceptDef     -- The object that is explained.  Han, WAAROM hebben alle explObj<X> een suffix <X>?
-                                                                 --                                  DAAROM: Het type is verschillend. Haskell hanteert de regel dat het type van een veld in een datatype declaratie eenduidig te bepalen moet zijn.
-                                    ,explLang  :: Lang           -- The language of the explaination
-                                    ,explRefId :: String         -- The reference of the explaination
-                                    ,explCont  :: ExplainContent -- The actual explanaition.
-                                    }
-                       
-                       | ExplDeclaration
-                                    {explObjD  :: Declaration    -- The object that is explained.
-                                    ,explLang  :: Lang           -- The language of the explaination
-                                    ,explRefId :: String         -- The reference of the explaination
-                                    ,explCont  :: ExplainContent -- The actual explanaition.
-                                    }
-                       | ExplRule   {explObjR  :: Rule           -- The object that is explained.
-                                    ,explLang  :: Lang           -- The language of the explaination
-                                    ,explRefId :: String         -- The reference of the explaination
-                                    ,explCont  :: ExplainContent -- The actual explanaition.
-                                    }
-                       | ExplKeyDef {explObjKD :: KeyDef         -- The object that is explained.
-                                    ,explLang  :: Lang           -- The language of the explaination
-                                    ,explRefId :: String         -- The reference of the explaination
-                                    ,explCont  :: ExplainContent -- The actual explanaition.
-                                    }
-                       | ExplObjectDef
-                                    {explObjOD :: ObjectDef      -- The object that is explained.
-                                    ,explLang  :: Lang           -- The language of the explaination
-                                    ,explRefId :: String         -- The reference of the explaination
-                                    ,explCont  :: ExplainContent -- The actual explanaition.
-                                    }
-                       | ExplPattern{explObjP :: String          -- SJ: To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
-                                    ,explLang  :: Lang           -- The language of the explaination
-                                    ,explRefId :: String         -- The reference of the explaination
-                                    ,explCont  :: ExplainContent -- The actual explanaition.
-                                    }
-                       | ExplContext{explObjC  :: String         -- SJ: To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
+   data Explanation  = Expl      {explObj   :: ExplObj        -- The object that is explained.
                                     ,explLang  :: Lang           -- The language of the explaination
                                     ,explRefId :: String         -- The reference of the explaination
                                     ,explCont  :: ExplainContent -- The actual explanaition.
                                     }deriving Show  --handy for XML creation
 
    instance Identified Explanation where    -- Not really the identifier, but the name of the object it references...
-    name e = case e of
-       ExplConceptDef{}  -> name (explObjCD e)
-       ExplDeclaration{} -> name (explObjD e) ++name (source (explObjD e))++name (target(explObjD e))
-       ExplRule{}        -> name (explObjR e)
-       ExplKeyDef{}      -> name (explObjKD e)
-       ExplObjectDef{}   -> name (explObjOD e)
-       ExplPattern{}     ->      (explObjP e)
-       ExplContext{}     ->      (explObjC e)
- 
- 
+    name e = name (explObj e)
  
    type Explanations  = [Explanation]
    type PExplanations = [PExplanation]

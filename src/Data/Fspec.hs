@@ -36,7 +36,7 @@ module Data.Fspec ( Fspc(..)
                     , vpatterns    :: Patterns              -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Pictures              -- ^ List of pictures containing pattern pictures (in same order as patterns)
                     , vConceptDefs :: ConceptDefs           -- ^ all conceptDefs defined in the ADL-script
-                    , fSexpls      :: [Explanation]         -- ^ all explanations that are valid within the current specification
+                    , fSexpls      :: Explanations          -- ^ all explanations that are valid within the current specification
                     , vctxenv :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
    
@@ -90,7 +90,7 @@ module Data.Fspec ( Fspc(..)
                      , fsv_creating  :: Concepts               -- All concepts of which this service can create new instances
                      , fsv_deleting  :: Concepts               -- All concepts of which this service can delete instances
                      , fsv_fpa       :: FPA                    -- function point assessment of this service
-                     , fsv_expls     :: [Explanation]          -- The explanations of everything that is used in this service.
+                     , fsv_expls     :: Explanations           -- The explanations of everything that is used in this service.
                      }
 
    instance Show Fservice where

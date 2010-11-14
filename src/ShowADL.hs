@@ -115,22 +115,26 @@
                   | otherwise                 = "\""++ss++"\""
 
    instance ShowADL Explanation where
-    showADL           (ExplConceptDef  cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADL           (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADL d++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADL           (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADL           (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADL           (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADL           (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADL           (ExplContext     cname lang ref expla) = "EXPLAIN CONTEXT "   ++cname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADL (Expl eObj lang ref expla) = "EXPLAIN "++showADL eObj++" IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
+    showADLcode fSpec (Expl eObj lang ref expla) = "EXPLAIN "++showADLcode fSpec eObj++" IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
 
-    showADLcode _     (ExplConceptDef  cdef  lang ref expla) = "EXPLAIN CONCEPT "   ++name cdef++          " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode fSpec (ExplDeclaration d     lang ref expla) = "EXPLAIN RELATION "  ++showADLcode fSpec d++" IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _     (ExplRule        r     lang ref expla) = "EXPLAIN RULE "      ++name r++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _     (ExplKeyDef      k     lang ref expla) = "EXPLAIN KEY "       ++name k++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _     (ExplObjectDef   o     lang ref expla) = "EXPLAIN SERVICE "   ++name o++             " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _     (ExplPattern     pname lang ref expla) = "EXPLAIN PATTERN "   ++pname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-    showADLcode _     (ExplContext     cname lang ref expla) = "EXPLAIN CONTEXT "   ++cname++              " IN "++show lang++(if null ref then "" else " REF "++ref)++ showADL expla
-
+   instance ShowADL ExplObj where
+      showADL e = case e of
+         ExplConceptDef cd -> "CONCEPT "++name cd
+         ExplDeclaration d -> "RELATION "++showADL d
+         ExplRule r        -> "RULE "++name r
+         ExplKeyDef kd     -> "KEY "++name kd
+         ExplObjectDef od  -> "SERVICE "++name od
+         ExplPattern str   -> "PATTERN "++str
+         ExplContext str   -> "CONTEXT "++str
+      showADLcode fSpec e = case e of
+         ExplConceptDef cd -> "CONCEPT "++name cd
+         ExplDeclaration d -> "RELATION "++showADLcode fSpec d
+         ExplRule r        -> "RULE "++name r
+         ExplKeyDef kd     -> "KEY "++name kd
+         ExplObjectDef od  -> "SERVICE "++name od
+         ExplPattern str   -> "PATTERN "++str
+         ExplContext str   -> "CONTEXT "++str 
    instance ShowADL ExplainContent where
     showADL expla 
        -- TODO: afspraken maken over de vertaling van explanations in adlcode van en naar Pandoc... (Nu alleen nog de inlines Str String en Linebreak)
@@ -409,7 +413,7 @@
              ds = [d| d@Sgn{}<-vrels fSpec, decusr d]
 {-
    instance SelfExplained ECArule where   --TODO: Wat doet deze definitie in ShowADL??? (Omdat ShowADL er in wordt gebruikt....)
-     autoExplain flags r
+     autoExplains flags r
       = [string2AutoExplain (defaultFlags {language = English}) 
           ( case p of
              Chc {} -> "Pick from "++show (length (paCls p))++" options, in order to maintain "++shMotivEng (paMotiv p)++"."

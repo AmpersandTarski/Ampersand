@@ -288,8 +288,8 @@ where
    instance ABoolAlg Morphism  -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
 
    instance SelfExplained Declaration where
-     autoExplain flags d = [explainParagraph flags{language=Dutch}   dutchInlines] 
-                       ++  [explainParagraph flags{language=English} englishInlines]
+     autoExplains flags d = [explainParagraph flags{language=Dutch}   dutchInlines] 
+                        ++  [explainParagraph flags{language=English} englishInlines]
       where dutchInlines 
                  | null ([Sym,Asy]         >- multiplicities d) = [Emph [Str (name d)]]
                                                                 ++[Str " is een eigenschap van "]

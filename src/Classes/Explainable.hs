@@ -1,34 +1,48 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Explainable (UserExplainable(..)) 
+module Classes.Explainable (explanationDeclarations)--UserExplainable(..)) 
 where
-  import Adl.Explanation             (Explanation(..),PExplanation(..))
   import Adl.Context                 (Context(..))
   import Adl.Pattern                 (Pattern(..))
   import Adl.MorphismAndDeclaration  (makeDeclaration)
   import CommonClasses               (Identified(..))
   import Data.Explain
   import Options 
+  import Adl.Explanation
+  import Classes.ViewPoint
+
 -- For parser data structures (which are: ConceptDef, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
 -- the function <explanations :: a -> [Explanation]> gives all explanations that are declared directly in <a>, but not in possible components of <a>.
 -- So if <a> is a context, it gives the explanations declared in <a>, but not those declared in patterns in <a>
-  class UserExplainable a where
-    explanationDeclarations :: Options -> a -> [Explanation] -- all explanations declared in <a>. An explanation should answer the question "Why does <a> exist?"
+
+  class ViewPoint a => UserExplainable a where
+    pExplains :: a -> PExplanations
+    explanationDeclarations :: Options -> a -> Explanations -- all explanations declared in <a>. An explanation should answer the question "Why does <a> exist?"
+    explanationDeclarations flags ue
+     = [Expl (toExplObj pExplObj) l ref (string2ExplainContent flags expla) | PExpl pExplObj l ref expla        <- pExplains ue]
+         where
+           toExplObj :: PExplObj -> ExplObj
+           toExplObj pe = case pe of 
+             PExplConceptDef str  -> ExplConceptDef (getByName str (conceptDefs ue))
+             PExplDeclaration mph -> ExplDeclaration (makeDeclaration mph)
+             PExplRule str        -> ExplRule (getByName str (rules ue))
+             PExplKeyDef str      -> ExplKeyDef (getByName str (keyDefs ue))
+             PExplObjectDef str   -> ExplObjectDef (getByName str (objDefs ue))
+             PExplPattern str     -> ExplPattern str
+             PExplContext str     -> ExplContext str
 
   instance UserExplainable Context where
-    explanationDeclarations flags context
-     = [ExplConceptDef cd l ref (string2ExplainContent flags expla)| PExplConceptDef  nm  l ref expla<-ctxpes context, cd<-ctxcs context, name cd==nm] ++
-       [ExplDeclaration d l ref (string2ExplainContent flags expla)| PExplDeclaration mph l ref expla<-ctxpes context,  d<-ctxds context, makeDeclaration mph==d] ++
-       [ExplRule        r l ref (string2ExplainContent flags expla)| PExplRule        nm  l ref expla<-ctxpes context,  r<-ctxrs context, name r==nm] ++
-       [ExplKeyDef      k l ref (string2ExplainContent flags expla)| PExplKeyDef      nm  l ref expla<-ctxpes context,  k<-ctxks context, name k==nm] ++
-       [ExplObjectDef   o l ref (string2ExplainContent flags expla)| PExplObjectDef   nm  l ref expla<-ctxpes context,  o<-ctxos context, name o==nm] ++
-       [ExplPattern    pn l ref (string2ExplainContent flags expla)| PExplPattern     pn  l ref expla<-ctxpes context,  p<-ctxpats context, name p==pn]
+    pExplains context = ctxps context
  
   instance UserExplainable Pattern where
-    explanationDeclarations flags pat
-     = [ExplConceptDef cd l ref (string2ExplainContent flags expla)| PExplConceptDef  nm  l ref expla<-ptxps pat, cd<-ptcds pat, name cd==nm] ++
-       [ExplDeclaration d l ref (string2ExplainContent flags expla)| PExplDeclaration mph l ref expla<-ptxps pat,  d<-ptdcs pat, makeDeclaration mph==d] ++
-       [ExplRule        r l ref (string2ExplainContent flags expla)| PExplRule        nm  l ref expla<-ptxps pat,  r<-ptrls pat, name r==nm] ++
-       [ExplKeyDef      k l ref (string2ExplainContent flags expla)| PExplKeyDef      nm  l ref expla<-ptxps pat,  k<-ptkds pat, name k==nm] ++
-  --     [ExplObjectDef   o l ref (string2ExplainContent flags expla)| PExplObjectDef   nm  l ref expla<-ptxps pat,  o<-ctxos context, name o==nm] ++
-       [ExplPattern    pn l ref (string2ExplainContent flags expla)| PExplPattern     pn  l ref expla<-ptxps pat  ]
+    pExplains pat = ptxps pat
+  
+  
+  getByName :: Identified a => String -> [a] -> a 
+  getByName str cds = 
+      case (filter hasRightName cds) of
+           []  -> error ("!Fatal (module Explainable 36): No definition for '"++str++"'.")
+           [c] -> c
+           _   -> error ("!Fatal (module Explainable 38): Multiple definitions for '"++str++"'.")
+    where
+      hasRightName cd = name cd == str   
   

@@ -143,12 +143,12 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
           ctxks   = [kd | (kd,_)<-ctxCtxKeys],
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
           ctxphp  = [plug | (plug,_)<-ctxphpplugs],
-          ctxpes  = [x |Left x<-map enrichexpl (ctxpes cx)]
+          ctxps   = [x |Left x<-map enrichexpl (ctxps cx)]
          } 
   ,  [err|Right err<-ctxCtxRules]
    ++[err|(_,rs,_)<-ctxpatterns, Right err<-rs] --rule errors
    ++[(err,[],Nowhere,OrigExpl)|(_,_,errs)<-ctxpatterns, err<-errs] --explanation errors
-   ++[(err,[],Nowhere,OrigExpl)|Right err<-map enrichexpl (ctxpes cx)]
+   ++[(err,[],Nowhere,OrigExpl)|Right err<-map enrichexpl (ctxps cx)]
    ++[err|(_,checkedexprs)<-ctxobjdefs,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxsqlplugs,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxphpplugs,  Right err<-checkedexprs]
@@ -230,29 +230,34 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
 
   --Every Explanation must relate to something
   enrichexpl :: PExplanation -> Either PExplanation String
-  enrichexpl x@(PExplConceptDef{}) = checkPExpl (allCtxCpts ctxs) x 
-  enrichexpl (PExplDeclaration mph l ref expla) = case enrich_expr (Tm mph (-1)) of
-     Left (_,Tm emph _,_) -> Left (PExplDeclaration emph l ref expla)
+  enrichexpl pExpl = case enrichexplobj (pexObj pExpl) of
+                       Left _ -> Left pExpl
+                       Right str -> Right str
+  
+  enrichexplobj :: PExplObj -> Either PExplObj String
+  enrichexplobj x@(PExplConceptDef{}) = checkPExplobj (allCtxCpts ctxs) x 
+  enrichexplobj (PExplDeclaration mph ) = case enrich_expr (Tm mph (-1)) of
+     Left (_,Tm emph _,_) -> Left (PExplDeclaration emph )
      Right (err,_) -> Right ("Explanation for relation "++name mph++" could not be matched to a declaration because "++err)
-     _ -> error$ "!Fatal (module Typechecker 225): function enrichexpl: impossible case."
-  enrichexpl x@(PExplRule{}) = checkPExpl ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
-  enrichexpl x@(PExplKeyDef{}) = checkPExpl (ctxks cx) x
-  enrichexpl x@(PExplObjectDef{}) = checkPExpl (objDefs cx) x
-  enrichexpl x@(PExplPattern{}) = checkPExpl (ctxpats cx) x 
-  enrichexpl x@(PExplContext{}) = checkPExpl [cx] x
-  enrichexpl x = error("!Fatal (module TypeChecker 243): Non-exhaustive pattern in function enrichexpl ("++show x++")")
+     x -> error$ "!Fatal (module Typechecker 225): function enrichexplobj: impossible case."
+  enrichexplobj x@(PExplRule{}) = checkPExplobj ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
+  enrichexplobj x@(PExplKeyDef{}) = checkPExplobj (ctxks cx) x
+  enrichexplobj x@(PExplObjectDef{}) = checkPExplobj (objDefs cx) x
+  enrichexplobj x@(PExplPattern{}) = checkPExplobj (ctxpats cx) x 
+  enrichexplobj x@(PExplContext{}) = checkPExplobj [cx] x
 
-  checkPExpl :: (Identified a) => [a] -> PExplanation -> Either PExplanation String
-  checkPExpl xs x 
+  checkPExplobj :: (Identified a) => [a] -> PExplObj -> Either PExplObj String
+  checkPExplobj xs x
      | elem (name x) (map name xs) = Left x
      | otherwise = Right ("There is an explanation for the non-existing "++explobj x++" " ++ name x)
-  explobj (PExplConceptDef _ _ _ _) = "concept"
-  explobj (PExplDeclaration _ _ _ _) = "declaration"
-  explobj (PExplRule _ _ _ _) = "rule"
-  explobj (PExplKeyDef _ _ _ _) = "key definition"
-  explobj (PExplObjectDef _ _ _ _) = "service definition"
-  explobj (PExplPattern _ _ _ _) = "pattern"
-
+   where
+    explobj (PExplConceptDef _) = "concept"
+    explobj (PExplDeclaration _) = "declaration"
+    explobj (PExplRule _) = "rule"
+    explobj (PExplKeyDef _) = "key definition"
+    explobj (PExplObjectDef _) = "service definition"
+    explobj (PExplPattern _) = "pattern"
+   
   --DESCR -> enriching ctxds
   --         take all declarations from patterns included (not extended) in this context
   --         Use the sign of the declaration to populate the source and target

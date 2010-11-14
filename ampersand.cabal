@@ -4,7 +4,7 @@ author:        Stef Joosten
 maintainer:    stef.joosten@ou.nl
 synopsis:      Toolsuite for Rule-based software developement
 description:   The description goes here...( TODO )
-homepage:      www.sig-cc.org
+homepage:      ampersand.sourceforge.net
 category:      Semantic web
 stability:     alpha
 Cabal-Version: >= 1.6

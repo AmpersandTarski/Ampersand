@@ -48,7 +48,7 @@
 
    class SelfExplained a where
     -- TODO: Samenvoegen met Explained
-    autoExplain :: Options -> a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
+    autoExplains :: Options -> a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
 
    class Conceptual a where
     -- | the set of all instances in a concept (if we know it, Nothing otherwise)

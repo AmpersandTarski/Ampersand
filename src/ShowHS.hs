@@ -453,41 +453,45 @@ where
 --       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
 
    instance ShowHS PExplanation where
-    showHSname _ = error ("!Fatal (module ShowHS 396): a PExplanation is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 456): a PExplanation is anonymous with respect to showHS flags")
     showHS flags _ expla = 
-       case expla of
-         PExplConceptDef cd lng ref expl -> "PExplConceptDef "++show cd++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         PExplDeclaration mph lng ref expl ->  "PExplDeclaration ("++showHS flags "" mph++") "
-                                          ++show lng++" "++show ref++" "++show expl
-         PExplRule r lng ref expl -> "PExplRule "++show r++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         PExplKeyDef kd lng ref expl -> "PExplKeyDef "++show kd++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         PExplObjectDef s lng ref expl -> "PExplObjectDef "++show s++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         PExplPattern pname lng ref expl -> "PExplPattern "++show pname++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         PExplContext cname lng ref expl -> "PExplContext "++show cname++" "
-                                          ++show lng++" "++show ref++" "++show expl
+       "PExpl "++showHS flags "" (pexObj expla)++" "
+               ++show (pexLang  expla)++" "
+               ++show (pexRefID expla)++" "
+               ++show (pexExpl  expla)
+
+   instance ShowHS PExplObj where
+    showHSname _ = error ("!Fatal (module ShowHS 464): a PExplObj is anonymous with respect to showHS flags")
+    showHS flags _ peObj = case peObj of 
+             PExplConceptDef str  -> "PExplConceptDef " ++show str
+             PExplDeclaration mph -> "PExplDeclaration "++showHS flags "" mph
+             PExplRule str        -> "PExplRule "       ++show str
+             PExplKeyDef str      -> "PExplKeyDef "     ++show str
+             PExplObjectDef str   -> "PExplObjectDef "  ++show str
+             PExplPattern str     -> "PExplPattern "    ++show str
+             PExplContext str     -> "PExplContext "    ++show str
+            
+               
    instance ShowHS Explanation where
-    showHSname expla = error ("!Fatal (module ShowHS 396): an Explanation is anonymous with respect to showHS flags. Detected at: "++ showADL expla)
-    showHS _ _ expla = 
-       case expla of
-         ExplConceptDef cd lng ref expl -> "ExplConceptDef "++showHSname cd++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         ExplDeclaration d lng ref expl ->  "ExplDeclaration "++showHSname d++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         ExplRule r lng ref expl -> "ExplRule "++showHSname r++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         ExplKeyDef kd lng ref expl -> "ExplKeyDef "++showHSname kd++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         ExplObjectDef s lng ref expl -> "ExplObjectDef "++showHSname s++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         ExplPattern pname lng ref expl -> "ExplPattern "++show pname++" "
-                                          ++show lng++" "++show ref++" "++show expl
-         ExplContext cname lng ref expl -> "ExplContext "++show cname++" "
-                                          ++show lng++" "++show ref++" "++show expl
+    showHSname _ = error ("!Fatal (module ShowHS 476): a Explanation is anonymous with respect to showHS flags")
+    showHS flags _ expla = 
+       "Expl "++showHS flags "" (explObj expla)++" "
+               ++show (explLang  expla)++" "
+               ++show (explRefId expla)++" "
+               ++show (explCont  expla)
+
+   instance ShowHS ExplObj where
+    showHSname _ = error ("!Fatal (module ShowHS 484): a ExplObj is anonymous with respect to showHS flags")
+    showHS flags i peObj = case peObj of 
+             ExplConceptDef cd  -> "ExplConceptDef " ++showHS flags i cd
+             ExplDeclaration d  -> "ExplDeclaration "++showHS flags i d
+             ExplRule r         -> "ExplRule "       ++showHS flags i r
+             ExplKeyDef kd      -> "ExplKeyDef "     ++showHS flags i kd
+             ExplObjectDef od   -> "ExplObjectDef "  ++showHS flags i od
+             ExplPattern str    -> "ExplPattern "    ++show str
+             ExplContext str    -> "ExplContext "    ++show str
+            
+
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************

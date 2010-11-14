@@ -20,7 +20,7 @@ module Adl ( Architecture(..)
            , antecedent,notCp,cptAnything
            , Object(..)
            , ViewPoint(..)
-           , UserExplainable(..)
+           , explanationDeclarations
            , Morphical(..),Signaling(..)
            , Association(..)
            , Morphic(..),normExpr
@@ -35,7 +35,7 @@ module Adl ( Architecture(..)
            , ECArule(..)
            , Event(..)
            , PAclause(..)
-           , PExplanation(..)
+           , PExplanation(..),PExplObj(..), Explanations,ExplObj(..)
            , Explanation(..)
            )
 where
@@ -66,7 +66,7 @@ where
                                          
    import Classes.Populated              (Populated(..))
    import Adl.Pattern                    (Pattern(..),Patterns,union)
-   import Adl.Explanation                (Explanation(..), PExplanation(..))
+   import Adl.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))
    import Adl.Rule                       (Rule(..),Rules
@@ -78,7 +78,7 @@ where
    import Classes.Key                    (Key(..))
    import Classes.Object                 (Object(..))
    import Classes.ViewPoint              (ViewPoint(..))
-   import Classes.Explainable            (UserExplainable(..))
+   import Classes.Explainable            (explanationDeclarations)
    import CommonClasses                  (Identified(..)
                                          ,SelfExplained(..))
 

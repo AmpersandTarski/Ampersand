@@ -26,90 +26,74 @@ import Text.Pandoc
 -- TODO: Han, kan dat worden afgeschermd, zodat de programmeur alleen 'explain' ziet en de andere functies dus niet kan gebruiken?
 --     @Stef: Ja, het is al zoveel mogelijk afgeschermd (zie definities die deze module exporteert, hierboven) maar er wordt nog gebruik van gemaakt voor oa foutmeldingen in de atlas, en het prototype. Zodra iemand iets anders verzint voor het gebruik van "ExplainOutputFormat(..),explain2Blocks,format", kunnen deze uit de export-list van deze module worden verwijderd.
 class Explainable a where 
+  autoExplainsOf :: Options -> a -> [Explanation]
+  autoExplainsOf _ _ = []
   explain :: Fspc -> Options -> a -> [Explanation]
-  explain fSpec flags x = [e | e<-fSexpls fSpec++ map (autoExpl2Explain x) (autoExplainsOf flags x) 
-                             , explForObj x e
+  explain fSpec flags x = [e | e<-fSexpls fSpec++autoExplainsOf flags x 
+                             , explForObj x (explObj e)
                              , language flags == explLang e
                           ]
-  autoExpl2Explain :: a -> AutoExplain -> Explanation
-  explForObj :: a -> Explanation -> Bool
-  autoExplainsOf :: Options -> a -> [AutoExplain]
+  explForObj :: a -> ExplObj -> Bool          -- Given an Explainable object and an ExplObj, return TRUE if and only if there is a match.
   
 instance Explainable ConceptDef where
-  autoExplainsOf _ _ = []
-  explForObj cd ExplConceptDef{explObjCD = cd'} = cd == cd'
+  explForObj x (ExplConceptDef x') = x == x'
   explForObj _ _ = False
-  autoExpl2Explain cd (Because lang ec) = 
-            ExplConceptDef{explObjCD = cd
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}          
 
 instance Explainable Concept where
-  autoExplainsOf _ _ = []
-  explForObj c ExplConceptDef{explObjCD = cd} = name c == name cd
+  explForObj x (ExplConceptDef x') = name x == name x'
   explForObj _ _ = False
---  autoExpl2Explain c (Because lang ec)   moet nog gemaakt worden... (SJ: 24 aug 2010)          
 
 instance Explainable Declaration where
-  autoExplainsOf flags decl = autoExplain flags decl
-  explForObj decl ExplDeclaration{explObjD = decl'} = decl == decl'
+  autoExplainsOf flags decl = map (toExpl decl) (autoExplains flags decl)
+     where 
+       toExpl :: Declaration -> AutoExplain -> Explanation
+       toExpl d (Because l econt) = Expl (ExplDeclaration d) l versionbanner econt
+  explForObj x (ExplDeclaration x') = x == x'
   explForObj _ _ = False
-  autoExpl2Explain decl (Because lang ec) = 
-           ExplDeclaration{explObjD  = decl
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}
   
 instance Explainable Rule where
-  autoExplainsOf flags rule = autoExplain flags rule
-  explForObj rule ExplRule   {explObjR = rule'} = rule == rule'
+  autoExplainsOf flags rule = map (toExpl rule) (autoExplains flags rule)
+     where
+        toExpl :: Rule -> AutoExplain -> Explanation
+        toExpl r (Because l econt) = Expl ( ExplRule r) l versionbanner econt
+  explForObj x (ExplRule x') = x == x'
   explForObj _ _ = False
-  autoExpl2Explain rule (Because lang ec) = 
-                 ExplRule {explObjR  = rule
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}
   
 instance Explainable KeyDef where
-  autoExplainsOf _ _ = []
-  explForObj kd ExplKeyDef {explObjKD = kd'} = kd ==kd'
+  explForObj x (ExplKeyDef x') = x == x'
   explForObj _ _ = False
-  autoExpl2Explain kd (Because lang ec) =
-               ExplKeyDef {explObjKD = kd
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}
+--  autoExpl2Explain kd (Because lang ec) =
+--               ExplKeyDef {explObjKD = kd
+--                          ,explLang  = lang
+--                          ,explRefId = versionbanner
+--                          ,explCont  = ec}
 
 instance Explainable ObjectDef where
-  autoExplainsOf _ _ = []
-  explForObj od ExplObjectDef{explObjOD = od'} = od ==od'
+  explForObj x (ExplObjectDef x') = x == x'
   explForObj _ _ = False
-  autoExpl2Explain od (Because lang ec) =
-             ExplObjectDef{explObjOD = od
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}
+--  autoExpl2Explain od (Because lang ec) =
+--             ExplObjectDef{explObjOD = od
+--                          ,explLang  = lang
+--                          ,explRefId = versionbanner
+--                          ,explCont  = ec}
 
 instance Explainable Pattern where
-  autoExplainsOf _ _ = []
-  explForObj pat e@ExplPattern{} = (name pat ==name e)
+  explForObj x (ExplPattern str) = name x == str
   explForObj _ _ = False
-  autoExpl2Explain pat (Because lang ec) =
-              ExplPattern {explObjP  = name pat
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}
+--  autoExpl2Explain pat (Because lang ec) =
+--              ExplPattern {explObjP  = name pat
+--                          ,explLang  = lang
+--                          ,explRefId = versionbanner
+--                          ,explCont  = ec}
 
 instance Explainable Context where
-  autoExplainsOf _ _ = []
-  explForObj ctx' e@ExplContext{} = (name ctx' == name e)
+  explForObj x (ExplContext str) = name x == str
   explForObj _ _ = False
-  autoExpl2Explain ctx' (Because lang ec) =
-              ExplContext {explObjC  = name ctx'
-                          ,explLang  = lang
-                          ,explRefId = versionbanner
-                          ,explCont  = ec}
+--  autoExpl2Explain ctx' (Because lang ec) =
+--              ExplContext {explObjC  = name ctx'
+--                          ,explLang  = lang
+--                          ,explRefId = versionbanner
+--                          ,explCont  = ec}
 
 data ExplainOutputFormat = PlainText 
 format  :: ExplainOutputFormat -> [Explanation] -> String

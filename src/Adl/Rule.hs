@@ -69,7 +69,7 @@ where
     target r  = snd (rrtyp r)
 
    instance SelfExplained Rule where
-    autoExplain _ r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
+    autoExplains _ r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
 
    instance MorphicId Rule where
     isIdent r = isIdent (normExpr r)

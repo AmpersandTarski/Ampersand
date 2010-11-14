@@ -21,7 +21,7 @@ where
 -- TODO: Als het ADL bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
    import Adl
-   import Languages
+--   import Languages
    import ShowADL
 --   import Data.Explain
    import Data.Fspec
@@ -198,31 +198,19 @@ where
        = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
 
 
---   instance XML PExplanation where
---     mkTag _  = error ("!Fatal (module ShowXMLtiny 198): mkTag should not be used for PExplanation.")
---     mkXmlTree expr 
---         = case expr of
---                PExplConceptDef  cdef  lang ref expla -> xpl "PECPT"  (simpleTag cdef) lang ref expla
---                PExplDeclaration m     lang ref expla -> xpl "PEDECL" (simpleTag (name m++name(source m)++name(target m))) lang ref expla
---                PExplRule        r     lang ref expla -> xpl "PERULE" (simpleTag r) lang ref expla
---                PExplKeyDef      k     lang ref expla -> xpl "PEKEYD" (simpleTag k) lang ref expla
---                PExplObjectDef   o     lang ref expla -> xpl "PEODEF" (simpleTag o) lang ref expla
---                PExplPattern     pname lang ref expla -> xpl "PEPAT"  (simpleTag pname) lang ref expla
---      where
---       xpl :: String -> XTag -> Lang -> String -> String -> XTree
---       xpl _ t lang ref expla = Elem (t{tAtts = tAtts t++ [ mkAttr "LANG" (show lang), mkAttr "REF" ref ]})
---                                       [PlainText expla]
 
    instance XML PExplanation where
-     mkTag expl  
-        = case expl of
-                PExplConceptDef{}  -> Tag "ExplConceptDef"  atts
-                PExplDeclaration{} -> Tag "ExplDeclaration" atts
-                PExplRule{}        -> Tag "ExplRule"        atts
-                PExplKeyDef{}      -> Tag "ExplKeyDef"      atts
-                PExplObjectDef{}   -> Tag "ExplObjectDef"   atts
-                PExplPattern{}     -> Tag "ExplPattern"     atts
-                PExplContext{}     -> Tag "ExplContext"     atts
+     mkTag expl =
+       Tag "PExpl" atts
+        
+--        = case expl of
+--                PExplConceptDef{}  -> Tag "ExplConceptDef"  atts
+--                PExplDeclaration{} -> Tag "ExplDeclaration" atts
+--                PExplRule{}        -> Tag "ExplRule"        atts
+--                PExplKeyDef{}      -> Tag "ExplKeyDef"      atts
+--                PExplObjectDef{}   -> Tag "ExplObjectDef"   atts
+--                PExplPattern{}     -> Tag "ExplPattern"     atts
+--                PExplContext{}     -> Tag "ExplContext"     atts
            where
             atts ::  [XAtt]
             atts = [mkAttr "Explains" (name expl)
@@ -232,20 +220,23 @@ where
          = Elem (mkTag expl) [PlainText (show (pexExpl expl))]
 
    instance XML Explanation where
-     mkTag expl 
-        = case expl of
-                ExplConceptDef  cdef  lang ref _ -> Tag "ExplConceptDef"  (atts (name cdef) lang ref)
-                ExplDeclaration d     lang ref _ -> Tag "ExplDeclaration" (atts (name d++name(source d)++name(target d)) lang ref)
-                ExplRule        r     lang ref _ -> Tag "ExplRule"        (atts (name r) lang ref)
-                ExplKeyDef      k     lang ref _ -> Tag "ExplKeyDef"      (atts (name k) lang ref)
-                ExplObjectDef   o     lang ref _ -> Tag "ExplObjectDef"   (atts (name o) lang ref)
-                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
-                ExplContext     cname lang ref _ -> Tag "ExplContext"     (atts cname lang ref)
-           where
-            atts :: String -> Lang -> String -> [XAtt]
-            atts str lang ref = [mkAttr "Explains" str
-                                ,mkAttr "Lang" (show lang)
-                                ,mkAttr "Ref" ref]
+     mkTag expl = Tag "Expl" [mkAttr "Explains" (name expl)
+                             ,mkAttr "Lang" (show (explLang expl))
+                             ,mkAttr "Ref" (explRefId expl)]
+
+--        = case expl of
+--                ExplConceptDef  cdef  lang ref _ -> Tag "ExplConceptDef"  (atts (name cdef) lang ref)
+--                ExplDeclaration d     lang ref _ -> Tag "ExplDeclaration" (atts (name d++name(source d)++name(target d)) lang ref)
+--                ExplRule        r     lang ref _ -> Tag "ExplRule"        (atts (name r) lang ref)
+--                ExplKeyDef      k     lang ref _ -> Tag "ExplKeyDef"      (atts (name k) lang ref)
+--                ExplObjectDef   o     lang ref _ -> Tag "ExplObjectDef"   (atts (name o) lang ref)
+--                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
+--                ExplContext     cname lang ref _ -> Tag "ExplContext"     (atts cname lang ref)
+--           where
+--            atts :: String -> Lang -> String -> [XAtt]
+--            atts str lang ref = [mkAttr "Explains" str
+--                                ,mkAttr "Lang" (show lang)
+--                                ,mkAttr "Ref" ref]
      mkXmlTree expl 
          = Elem (mkTag expl) [PlainText (show (explCont expl))]
 

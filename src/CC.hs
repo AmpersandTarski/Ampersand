@@ -90,13 +90,17 @@
    pRefID              = (pKey "REF" *> pString) `opt` []
 
    pExplain           :: Parser Token PExplanation
-   pExplain            = PExplConceptDef  <$ pKey "EXPLAIN" <* pKey "CONCEPT"    <*> (pConid <|> pString) <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplDeclaration <$ pKey "EXPLAIN" <* pKey "RELATION"   <*> pMorphism            <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplRule        <$ pKey "EXPLAIN" <* pKey "RULE"       <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplKeyDef      <$ pKey "EXPLAIN" <* pKey "KEY"        <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplObjectDef   <$ pKey "EXPLAIN" <* pKey "SERVICE"    <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplPattern     <$ pKey "EXPLAIN" <* pKey "PATTERN"    <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl <|>
-                         PExplContext     <$ pKey "EXPLAIN" <* pKey "CONTEXT"    <*> pADLid               <*> pLanguageID <*> pRefID <*> pExpl
+   pExplain            = PExpl <$ pKey "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl
+
+   pExplObj           :: Parser Token PExplObj
+   pExplObj            = PExplConceptDef  <$ pKey "CONCEPT"    <*> (pConid <|> pString) <|>
+                         PExplDeclaration <$ pKey "RELATION"   <*> pMorphism            <|>
+                         PExplRule        <$ pKey "RULE"       <*> pADLid               <|>
+                         PExplKeyDef      <$ pKey "KEY"        <*> pADLid               <|>  
+                         PExplObjectDef   <$ pKey "SERVICE"    <*> pADLid               <|>
+                         PExplPattern     <$ pKey "PATTERN"    <*> pADLid               <|>
+                         PExplContext     <$ pKey "CONTEXT"    <*> pADLid
+
 
    pContextElement    :: Parser Token ContextElement
    pContextElement     = CPat     <$> pPattern      <|>
@@ -135,12 +139,12 @@
                      | Ptest (PExpression Morphism (Maybe Sign))
 
    pPatElem         :: Parser Token PatElem
-   pPatElem          = Pr <$> pRuleDef <|>
+   pPatElem          = Pr <$> pRuleDef      <|>
                        Pg <$> pGen          <|>
                        Pm <$> pDeclaration  <|>
                        Pc <$> pConceptDef   <|>
                        Pk <$> pKeyDef       <|>
-                       Pe <$> pExplain <|>
+                       Pe <$> pExplain      <|>
                        Ptest <$ pKey "TEST" <*> pPExpression
 
 
