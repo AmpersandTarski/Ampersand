@@ -141,7 +141,7 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
            where
            tp a c = (a,c)
            cs bs [] = bs
-           cs bs (x:xs) = cs [c|b<-bs,(b',c)<-x,(b\-\b') isa_] xs
+           cs bs (x:xs) = cs [c|b<-bs,(b',c)<-x,(b*!*b') isa_] xs
         tf | length rtype'==1 = head rtype'
            | otherwise = error "tf undefined: tf is defined iff length rtype'==1 z"
         {--error analysis--} 
@@ -167,7 +167,7 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
         ptf :: [[Sign]] -> [Sign] --calculate the trytype from the trytypes of the subs 
         ptf [] = error "there must be subs so there must be trytype lists for them"
         ptf (tts:[]) = tts --take the trytypes of the last sub as a startpoint and see what will be left of it in the end
-        ptf (tts:ttss) = [(x\\-//y) isa_|x<-ptf ttss,y<-tts,(x\\-\\y) isa_]
+        ptf (tts:ttss) = [(x**-**y) isa_|x<-ptf ttss,y<-tts,(x**!!**y) isa_]
         tf | length rtype'==1 = head rtype'
            | otherwise = error "tf undefined: tf is defined iff length rtype'==1 y"
         {--error analysis--} 
@@ -201,7 +201,7 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
         hm = not$foldr (||) False [ isIdent d || null[()|p<-decprps d,elem p [Asy,Rfx,Sym,Trn]] |d<-ds usercast]
         --iff all (ds usercast) are homogeneous, then hm=True i.e. hm applies to ttype, not rtype. implemented: not(d is heterogeneous)
         {--bind subm to decl--}
-        ds (Just (a,b)) = [d|d<-decls_, name subm==name d, (sign d \\-\\ (a,b)) isa_] --bind subm to decl with free autocast
+        ds (Just (a,b)) = [d|d<-decls_, name subm==name d, (sign d **!!** (a,b)) isa_] --bind subm to decl with free autocast
         ds Nothing      = [d|d<-decls_, name subm==name d]
         filtercast ac xs = [x|x<-xs, castcondition ac (Just x) isa_]
         {--typing functions--}
@@ -229,10 +229,10 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
 type OnIsa a = [(Concept,Concept)] -> a
 
 --cptgE of Concept is still (==), so I can't use the functions order,glb,lub
-(\-\) :: Concept -> Concept -> OnIsa Bool
-(\-\) a b = (\isas -> elem (a,b) isas || elem (b,a) isas)
-(\\-\\) :: Sign -> Sign -> OnIsa Bool
-(\\-\\) (a,b) (c,d) = (\isas -> (a\-\c) isas && (b\-\d) isas)
+(*!*) :: Concept -> Concept -> OnIsa Bool
+(*!*) a b = (\isas -> elem (a,b) isas || elem (b,a) isas)
+(**!!**) :: Sign -> Sign -> OnIsa Bool
+(**!!**) (a,b) (c,d) = (\isas -> (a*!*c) isas && (b*!*d) isas)
 
 lmap :: (a -> a) -> Either a b -> Either a b
 lmap f (Left x) = Left (f x)
@@ -242,16 +242,17 @@ rmap f (Right x) = Right (f x)
 rmap _ y = y
 
 castcondition :: Maybe Sign -> Maybe Sign -> OnIsa Bool
-castcondition (Just x) (Just y) = x \\-\\ y
+castcondition (Just x) (Just y) = x **!!** y
 castcondition _ _ = (\_ -> True)
 cast :: Maybe Sign -> Maybe Sign -> Maybe Sign
 cast usercast@(Just _) _ = usercast
 cast _ autocast = autocast
 
-(\-/) :: Concept -> Concept -> OnIsa Concept
-(\-/) a b = (\isas -> if elem (a,b) isas then a else if elem (b,a) isas then b else error ("not a isa b or b isa a"++show (a,b)))
-(\\-//) :: Sign -> Sign -> OnIsa Sign
-(\\-//) (a,b) (c,d) = (\isas -> ((a\-/c) isas,(b\-/d) isas))
+-- The following function has been renamed (used to be (\-/), but sourceGraph couldn't handle this...
+(*-*) :: Concept -> Concept -> OnIsa Concept
+(*-*) a b = (\isas -> if elem (a,b) isas then a else if elem (b,a) isas then b else error ("not a isa b or b isa a"++show (a,b)))
+(**-**) :: Sign -> Sign -> OnIsa Sign
+(**-**) (a,b) (c,d) = (\isas -> ((a*-*c) isas,(b*-*d) isas))
 
 --TODO -> there exists a prelude function
 jst::Maybe a -> a
@@ -360,10 +361,10 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       --(if length ss==6 then error(show(trytype trystpl,ok_bs,ptf_ss,nubBy (\x y->fst x==fst y) ptf_ss)) else 
       [s  decls_ isa_ (Just(a,b))
       | (a,b)<-trytype trystpl         --if null (trytype trystpl) then s yields error (see handle_error_in_s)
-      , ac==Nothing || (a\-\fst(jst ac)) isa_
+      , ac==Nothing || (a*!*fst(jst ac)) isa_
       , (b',c)<-nubBy (\x y->fst x==fst y) ptf_ss                 --if null ptf_ss then there is no composition because ss yields error or null ss, 
                                        --if length ss>1 then maybe s could be composed with (take n<length ss);start n=1;n++
-      , (b\-\b') isa_                  --if not null ptf_ss and there is no such b and b' then there is no composition because
+      , (b*!*b') isa_                  --if not null ptf_ss and there is no such b and b' then there is no composition because
                                        --the composition of s and ss is incompatible
       ] --)
       where 
@@ -375,16 +376,16 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
  --        | null ptf_ss                 
            = [s  decls_ isa_ (Just(a,b))
              | (a,b)<-trytype trystpl  --if null (trytype trystpl) then s yields error
-             , ac==Nothing || (a\-\fst(jst ac)) isa_
+             , ac==Nothing || (a*!*fst(jst ac)) isa_
              , b'<-ok_bs               --if null ok_bs then (head ss) yields error or null ss
-             , (b\-\b') isa_           --if not null ok_bs and there is no such b and b' then there is no composition because
+             , (b*!*b') isa_           --if not null ok_bs and there is no such b and b' then there is no composition because
                                        --the composition of s and some (take n<length ss);start n=1;n++ is incompatible
              ]
       handle_error_in_ss xs = xs       --there is no error in ss composition and not null ss
       handle_no_composition []
            = [s  decls_ isa_ (Just(a,b))
              | (a,b)<-trytype trystpl  --if null (trytype trystpl) then s yields error
-             , ac==Nothing || (a\-\fst(jst ac)) isa_
+             , ac==Nothing || (a*!*fst(jst ac)) isa_
              ]
       handle_no_composition xs = xs    --there is a composition
       handle_error_in_s [] = case reltype trystpl of
@@ -429,7 +430,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
    tpls xs = ss_merge (map fst xs)--[x |Left x<-xs] --removes duplicate alternatives
    errs xs = (nub.concat) (map snd xs) --[x |Right x<-xs] --errors of all alternatives on a heap
    s_trytypes = [(a,b)| s_tpl<-s_tpls, (a,b)<-trytype s_tpl]
-   s_ss_bs = nubBy (\x y->fst x==fst y) [(b,b')|(_,b)<-s_trytypes,b'<-ok_bs,(b\-\b') isa_]
+   s_ss_bs = nubBy (\x y->fst x==fst y) [(b,b')|(_,b)<-s_trytypes,b'<-ok_bs,(b*!*b') isa_]
    ss_alts_ptf = --ss_alts independent of s, when there are ptf_ss
       [comp_alts ttypemerge decls_ isa_ (Just (b,c)) ss
       |(b,c)<-ptf_ss]
@@ -439,7 +440,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       [comp_alts ttypemerge decls_ isa_ (Just (b',c)) ss
       | (_,b)<-s_trytypes
       , (b',c)<-ptf_ss
-      , (b\-\b') isa_]
+      , (b*!*b') isa_]
    s_ss_alts_no_ptf = --ss_alts dependent of s, when ss yields error
       [comp_alts ttypemerge decls_ isa_ (if ac==Nothing then (Just (b,Anything)) 
                                          else let Just (_,c)=ac in (Just (b,c))) ss
