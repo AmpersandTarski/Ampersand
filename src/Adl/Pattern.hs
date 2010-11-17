@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Pattern (Pattern(..),Patterns
-                   ,union)
+module Adl.Pattern (Pattern(..),Patterns)
+               --    ,union)
 where
    import Adl.KeyDef                   (KeyDefs)
    import Adl.Rule                     (Rules)

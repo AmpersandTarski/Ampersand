@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl ( Architecture(..)
            , Context(..),Contexts
-           , Pattern(..),Patterns,union
+           , Pattern(..),Patterns
            , Rule(..),Rules,consequent, rulefromProp, ruleviolations
            , KeyDef(..),KeyDefs,Key(..)
            , Population(..),Populations
            , ObjectDef(..),ObjectDefs,actions
-           , Expression(..),PExpressions,PExpression(..), Expressions,isPos,isNeg,insParentheses, uniquemphs,UnOp(..),MulOp(..)
+           , Expression(..),PExpressions,PExpression(..), Expressions,isPos,isNeg,insParentheses,UnOp(..),MulOp(..)
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
            , Declaration(..),Declarations,isSgn
@@ -16,7 +16,7 @@ module Adl ( Architecture(..)
            , Prop(..)
            , isaRule
            , FilePos(..), Numbered(..)
-           , makeDeclaration,mIs,ruleType,isProperty,applyM
+           , makeDeclaration,mIs,ruleType,applyM
            , antecedent,notCp,cptAnything
            , Object(..)
            , ViewPoint(..)
@@ -47,7 +47,7 @@ where
    import Adl.Context                    (Context(..),Contexts
                                          ,Architecture(..))
    import Adl.Expression                 (Expression(..),PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
-                                         ,isPos,isNeg,v,notCp,insParentheses, uniquemphs)
+                                         ,isPos,isNeg,v,notCp,insParentheses)
    import Adl.FilePos                    (FilePos(..)
                                          ,Numbered(..))
    import Adl.Gen                        (Gen(..),Gens)
@@ -58,13 +58,13 @@ where
                                          ,isSgn
                                          ,makeMph,makeDeclaration
                                          ,inline,makeInline
-                                         ,mIs,isProperty,applyM)
+                                         ,mIs,applyM)
    import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs,actions)
    import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          
    import Classes.Populated              (Populated(..))
-   import Adl.Pattern                    (Pattern(..),Patterns,union)
+   import Adl.Pattern                    (Pattern(..),Patterns)
    import Adl.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
    import Adl.Population                 (Population(..),Populations)
    import Adl.Prop                       (Prop(..))

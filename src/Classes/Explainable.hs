@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Explainable (explanationDeclarations)--UserExplainable(..)) 
+module Classes.Explainable (explanationDeclarations) 
 where
   import Adl.Context                 (Context(..))
   import Adl.Pattern                 (Pattern(..))
@@ -29,6 +29,14 @@ where
              PExplObjectDef str   -> ExplObjectDef (getByName str (objDefs ue))
              PExplPattern str     -> ExplPattern str
              PExplContext str     -> ExplContext str
+           getByName :: Identified a => String -> [a] -> a 
+           getByName str cds = 
+              case (filter hasRightName cds) of
+                []  -> error ("!Fatal (module Explainable 36): No definition for '"++str++"'.")
+                [c] -> c
+                _   -> error ("!Fatal (module Explainable 38): Multiple definitions for '"++str++"'.")
+             where
+               hasRightName cd = name cd == str   
 
   instance UserExplainable Context where
     pExplains context = ctxps context
@@ -37,12 +45,4 @@ where
     pExplains pat = ptxps pat
   
   
-  getByName :: Identified a => String -> [a] -> a 
-  getByName str cds = 
-      case (filter hasRightName cds) of
-           []  -> error ("!Fatal (module Explainable 36): No definition for '"++str++"'.")
-           [c] -> c
-           _   -> error ("!Fatal (module Explainable 38): Multiple definitions for '"++str++"'.")
-    where
-      hasRightName cd = name cd == str   
   

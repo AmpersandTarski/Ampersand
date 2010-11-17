@@ -17,22 +17,11 @@ where
    xs `akin` ys
     = head xs==head ys && last xs==last ys && (xs `sub` ys || ys `sub` xs)
 
---   kin :: Eq a => IsaPath a -> IsaPath a -> Bool
---   xs `kin` ys
---    = head xs==head ys && (xs `sub` ys || ys `sub` xs)
-
    sub :: Eq a => IsaPath a -> IsaPath a -> Bool
    (x:xs) `sub` (y:ys) = if x==y then xs `sub` ys else xs `sub` (y:ys)
    _      `sub`    ys  = null ys
 
    data Typology a = Typ [IsaPath a] deriving Show
-
-
-
-
-
-
-
 
    genEq :: Eq a => Typology a -> a->a->Bool
    genEq (Typ world) left right = if left==right then True  else or[f left right ps|ps<-world]
@@ -42,16 +31,6 @@ where
         where
          p1 = dropWhile (/=l) ps
          p2 = dropWhile (/=r) p1
-
---   makeIsa :: Eq a => Typology a -> Inheritance a
---   makeIsa (Typ paths)
---     = Isa (rd [(a,b)|path<-paths, length path>1, (a,b)<-zip path (tail path)])
---           (rd [c| [c]<-paths])
---
---
-
-
-
 
 
    class Eq a => Typologic a where
@@ -105,8 +84,6 @@ where
        longest l []     = l
        longest l (x:xs) | f' x l    = longest x xs
                         | otherwise = longest l xs
-
-
 
 
    instance Collection Inheritance where

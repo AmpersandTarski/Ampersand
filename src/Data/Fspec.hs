@@ -68,11 +68,6 @@ module Data.Fspec ( Fspc(..)
     isa          fSpec = fsisa  fSpec
    
  
---   instance UserExplainable Fspc where
----- Once ADL allows explanations to be given from with a service declaration, these must be made visible by <explanations>
----- Until that time, the list of explanations is (predictably) empty.
---     explanations fSpec = fSexpls fSpec
-
    --DESCR -> Fservice contains everything needed to render the specification, the code, and the documentation including proofs of a single service.
    --         All "intelligence" is put in assembling an Fservice.
    --         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.

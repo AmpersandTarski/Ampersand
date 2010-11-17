@@ -4,9 +4,7 @@ module Classification (
              , root
              , makeClassifications
              , preCl
-             , locatesF
              , makeClassificationsF
-             , mapCl
    ) 
 where
    import CommonClasses ( Identified(..)
@@ -23,9 +21,6 @@ where
    subs :: Classification a -> [Classification a]
    subs (Cl _ cls) = cls
    subs Bottom = error ("!Fatal (module Classification 25): subs Bottom is not defined.")
-   mapCl :: (t -> a) -> Classification t -> Classification a
-   mapCl _ Bottom       = Bottom
-   mapCl f (Cl c cls)   = Cl (f c) (map (mapCl f) cls)
    preCl :: Classification a -> [a]
    preCl Bottom         = []
    preCl (Cl c cls)     = [c] ++ concat (map preCl cls)
@@ -158,13 +153,6 @@ For this reason, the links in the graph are taken into the result tree
 {- Opletten: in de initiele aanroep van maketree staat (rd [(edge,src edge) |edge<-edges]).
 Dat is incorrect, omdat het eerste element van het tupel niet "edge" moet zijn maar een relatie die van buiten komt.
 -}
-
-   locatesF :: (a->Bool) -> Classification a -> [Classification a]
-   locatesF _ Bottom = []
-   locatesF f (Cl r cls) 
-     | f r = [Cl r cls]
-     | otherwise = concat (map (locatesF f) cls)
-
 
 
    instance Conceptual a => Conceptual (Classification a) where

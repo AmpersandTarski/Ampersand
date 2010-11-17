@@ -5,7 +5,6 @@ module Adl.MorphismAndDeclaration (Morphism(..),Morphisms
                                   ,makeInline,inline
                                   ,isIdent
                                   ,isSgn,mIs
-                                  ,isProperty
                                   ,applyM)
 where
    import Adl.FilePos      (FilePos(..),Numbered(..))
@@ -146,9 +145,6 @@ where
                I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WAAROM?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
                V{}   -> Vs { degen = source  (sign m), despc = target (sign m)}
                Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}
-
-   isProperty :: Morphism -> Bool
-   isProperty mph   = null([Sym,Asy]>-multiplicities mph)
     
    inline :: Morphism -> Bool
    inline m =  case m of

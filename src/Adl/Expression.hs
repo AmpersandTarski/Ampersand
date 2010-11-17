@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module Adl.Expression (Expression(..),PExpression(..),UnOp(..),MulOp(..),Expressions,PExpressions,isF,isFd,isFi,isFu
                       ,v
-                      ,isPos,isNeg,notCp,insParentheses, uniquemphs)
+                      ,isPos,isNeg,notCp,insParentheses)
 where
 import Adl.MorphismAndDeclaration  (Morphism(..),Declaration(..),inline)
 import Adl.FilePos                 (Numbered(..))
@@ -112,37 +112,6 @@ isFd :: Expression -> Bool
 isFd Fdx{}  = True
 isFd _     = False
 
---DESCR -> if you need an identifier for morphisms within the scope of an expression 
-uniquemphs :: Int -> Expression -> (Expression,Int)
-uniquemphs i (Tm mp _) = (Tm mp (i+1),i+1)
-uniquemphs i (F []) = (F [],i)
-uniquemphs i (F (ex:rexs)) = (F (lft:rghts),ri)
-   where
-   (lft,li) = uniquemphs i ex
-   (F rghts,ri) = (uniquemphs li (F rexs))
-uniquemphs i (Fdx []) = (Fdx [],i)
-uniquemphs i (Fdx (ex:rexs)) = (Fdx (lft:rghts),ri)
-   where
-   (lft,li) = uniquemphs i ex
-   (Fdx rghts,ri) = (uniquemphs li (Fdx rexs))
-uniquemphs i (Fix []) = (Fix [],i)
-uniquemphs i (Fix (ex:rexs)) = (Fix (lft:rghts),ri)
-   where
-   (lft,li) = uniquemphs i ex
-   (Fix rghts,ri) = (uniquemphs li (Fix rexs))
-uniquemphs i (Fux []) = (Fux [],i)
-uniquemphs i (Fux (ex:rexs)) = (Fux (lft:rghts),ri)
-   where
-   (lft,li) = uniquemphs i ex
-   (Fux rghts,ri) = (uniquemphs li (Fux rexs))
-uniquemphs i (Cpx ex) = (Cpx sb, si)
-   where (sb,si) = uniquemphs i ex
-uniquemphs i (Tc ex) = (Tc sb, si)
-   where (sb,si) = uniquemphs i ex
-uniquemphs i (K0x ex) = (K0x sb, si)
-   where (sb,si) = uniquemphs i ex
-uniquemphs i (K1x ex) = (K1x sb, si)
-   where (sb,si) = uniquemphs i ex
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
