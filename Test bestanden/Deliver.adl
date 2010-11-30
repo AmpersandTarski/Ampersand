@@ -80,12 +80,9 @@ SERVICE Bestellijst : I[ONE]
 
 PATTERN Deliveries
 
- item :: Order * Product
-  = [ ("C45666"                  , "Jelly beans"  )
-    ; ("Order 22/09/2006 Cookies", "Cookies"      )
-    ; ("C45683"                  , "Peanut butter")
-    ].
- item :: Delivery * Product
+ item :: Order * Product PRAGMA "" " mentions " " as an order item".
+
+ item :: Delivery * Product PRAGMA "" " has " " as an order item"
   = [ ("Jelly beans #4921"  , "Jelly beans"  )
     ; ("Cookies #0382"      , "Cookies"      )
     ; ("Peanut butter #1993", "Peanut butter")
@@ -93,9 +90,11 @@ PATTERN Deliveries
 
 -- Er mag tijdelijk een order zijn zonder delivery. dus moet de surjectiviteit van 'of' worden gesignaleerd....
 
-SIGNAL deliver ON I |- of~;of EXPLANATION "De volgende order zit in de pijplijn"
+RULE deliver SIGNALS I |- of~;of EXPLANATION "De volgende order zit in de pijplijn"
 
- of :: Delivery -> Order
+
+
+ of :: Delivery -> Order PRAGMA "" " corresponds to "
   = [ ("Cookies #0382"      , "Order 22/09/2006 Cookies")
     ; ("Jelly beans #4921"  , "C45666"                  )
     ; ("Peanut butter #1993", "C45683"                  )
@@ -104,7 +103,7 @@ SIGNAL deliver ON I |- of~;of EXPLANATION "De volgende order zit in de pijplijn"
   EXPLANATION "There must be an order for every item delivered."
  of;item |- item[Delivery*Product]
   EXPLANATION "All items ordered must be delivered."
- provided :: Provider * Delivery [SUR,INJ] PRAGMA "Provider " " has delivered delivery "
+ provided :: Provider * Delivery [SUR,INJ] PRAGMA "" " has delivered "
   = [ ("Candy’s candy", "Cookies #0382")
     ; ("Carter"       , "Jelly beans #4921")
     ; ("Carter"       , "Peanut butter #1993")
@@ -113,7 +112,7 @@ SIGNAL deliver ON I |- of~;of EXPLANATION "De volgende order zit in de pijplijn"
 -- Er mag tijdelijk een order zijn die nog niet is geaccepteerd. dus moet de surjectiviteit van 'accepted' worden gesignaleerd....
 SIGNAL accepteren ON I |- accepted~;accepted EXPLANATION "De volgende order(s) is/zijn nog niet geaccepteerd."
 
- accepted :: Provider * Order [INJ] PRAGMA "Provider " " has accepted order "
+ accepted :: Provider * Order [INJ] PRAGMA "" " has accepted"
   = [ ("Candy’s candy", "Order 22/09/2006 Cookies")
     ; ("Carter"       , "C45666"                  )
     ; ("Carter"       , "C45683"                  )
@@ -132,39 +131,24 @@ SIGNAL order ON addressedTo~ |- accepted  -- \ref{rule 1} % uit het artikel
  accepted;of~ |- provided
   EXPLANATION "If a provider has accepted an order, then that provider is the one to make the delivery"
 
-{- Something funny:
-      accepted;of~ |- provided
- =>     { monotony }
-      accepted;of~;of |- provided;of
- =>     { I |- of~;of  ('of' is surjective) }
-      accepted |- provided;of
-The funny thing is: if   <RULE accepted;of~ |- provided\>   is always satisfied, then so is <RULE accepted |- provided;of\>.
-However, The signal <SIGNAL deliver\>, which signals violation of the latter, is being raised during the demo.
-So <RULE accepted |- provided;of\> can be violated.
-So <RULE accepted;of~ |- provided\> is not always satisfied.
-So COMPUTING does not keep a rule satisfied at all times.
--}
--- provided |- accepted;of~  -- Since of is a function, this is equivalent to provided;of |- accepted
---  EXPLANATION "No delivery is made to a client without an order accepted by the producer. (1.38)"
-
 -- \ref{rule 3}
 --	Ultimately, each order accepted must be delivered by the provider who has accepted that order.
 --	The provider will be signalled of orders waiting to be delivered.
  SIGNAL deliver ON accepted |- provided;of
   EXPLANATION "deliverable orders"
 
- addressedTo :: Order -> Provider PRAGMA "Order " " was issued to provider "
+ addressedTo :: Order -> Provider PRAGMA "" " was issued to "
   = [ ("Order 22/09/2006 Cookies", "Candy’s candy")
     ; ("C45666"                  , "Carter"       )
     ; ("C45683"                  , "Carter"       )
     ].
 
- deliveredTo :: Delivery -> Client
+ deliveredTo :: Delivery -> Client PRAGMA "" " is delivered to "
   = [ ("Jelly beans #4921",	"Applegate")
     ; ("Cookies #0382",	"Brown")
     ; ("Peanut butter #1993",	"Conway")
     ].
- from :: Order -> Client
+ from :: Order -> Client PRAGMA "" " was ordered by "
   = [ ("C45666"                  , "Applegate")
     ; ("Order 22/09/2006 Cookies", "Brown"    )
     ; ("C45683"                  , "Conway"   )
@@ -174,7 +158,7 @@ So COMPUTING does not keep a rule satisfied at all times.
  of;from |- deliveredTo
   EXPLANATION "Deliveries are made to the client who ordered the delivery."
 
- sentTo :: Invoice -> Client PRAGMA "Invoice " " was sent to "
+ sentTo :: Invoice -> Client PRAGMA "" " was sent to "
   = [ ("5362a", "Applegate")
     ; ("721i" , "Brown"    )
     ; ("9443a", "Conway"   )
@@ -183,7 +167,7 @@ So COMPUTING does not keep a rule satisfied at all times.
 -- Er mag tijdelijk een leverantie zijn zonder rekening. dus moet de surjectiviteit van 'delivery' worden gesignaleerd....
 SIGNAL factureren ON I |- delivery~;delivery EXPLANATION "De volgende leverantie(s) is/zijn nog niet gefactureerd."
 
- delivery :: Invoice -> Delivery PRAGMA "Invoice " " covers delivery "
+ delivery :: Invoice -> Delivery PRAGMA "" " covers "
   = [ ("5362a", "Jelly beans #4921")
     ; ("721i" , "Cookies #0382"    )
     ; ("9443a", "Peanut butter #1993"   )
@@ -193,7 +177,7 @@ SIGNAL factureren ON I |- delivery~;delivery EXPLANATION "De volgende leverantie
  delivery~;sentTo |- deliveredTo
   EXPLANATION "A client accepts invoices for delivered orders only. (1.39)"
 
- from :: Invoice -> Provider PRAGMA "Invoice " " has been sent by "
+ from :: Invoice -> Provider PRAGMA "" " has been sent by "
   = [ ("721i" , "Candy’s candy")
     ; ("5362a", "Carter"       )
     ; ("9443a", "Carter"       )
@@ -209,7 +193,7 @@ SIGNAL pending ON provided = from~;delivery
 -- Dus moet de surjectiviteit van 'paid' worden gesignaleerd....
 SIGNAL teBetalen ON I |- paid~;paid EXPLANATION "De volgende leverantie(s) is/zijn nog niet gefactureerd."
 
- paid :: Client * Invoice [INJ] PRAGMA "Client " " has paid invoice "
+ paid :: Client * Invoice [INJ] PRAGMA "" " has paid "
   = [ ("Applegate", "5362a")
     ; ("Brown", "721i")
     ; ("Conway", "9443a")
@@ -219,4 +203,11 @@ SIGNAL teBetalen ON I |- paid~;paid EXPLANATION "De volgende leverantie(s) is/zi
  EXPLANATION "Invoices to be paid"
  sentTo = delivery;of;from
 ENDPATTERN
+
+ POPULATION item[Order*Product] CONTAINS
+    [ ("C45666"                  , "Jelly beans"  )
+    ; ("Order 22/09/2006 Cookies", "Cookies"      )
+    ; ("C45683"                  , "Peanut butter")
+    ]
+
 ENDCONTEXT
