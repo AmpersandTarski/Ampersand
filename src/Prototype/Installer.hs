@@ -93,6 +93,10 @@
           mdata :: PlugSQL -> [String]
           mdata plug
            = if name plug==name S then [ "S" ] else
+    --         if length (fields plug)==1
+      --       then error$show (name plug,fields plug, [ contents(source i) --phpShow (srcPaire p) ++", "++ phpShow (trgPaire p)
+        --          | Tm (i@I{}) _ <- map fldexpr (fields plug){-, p<-contents' i-}])
+          --   else
              if length (fields plug)==2 -- treat binary tables differently
              then
              --DESCR -> the first field contains an expression::[A*A] which can be the expression I[A]

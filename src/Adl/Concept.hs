@@ -55,7 +55,7 @@ where
    showsPrec _ c = showString (name c)
   instance Identified Concept where
    name (C {cptnm = nm}) = nm
-   name S = "S"
+   name S = "ONE"
    name Anything   = "Anything"
    name NOthing    = "NOthing"
    name (DExp _)   = "SomeExpression"

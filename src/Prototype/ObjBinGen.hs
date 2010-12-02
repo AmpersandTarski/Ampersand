@@ -28,7 +28,7 @@
       >> write "index.htm"                 (htmlindex fSpec serviceObjects flags)
       >> write "Installer.php"             (installer fSpec flags)
       >> write (name fSpec++".php")        (contextGen fSpec)
-      >> write "interfaceDef.inc.php"      (interfaceDef fSpec serviceObjects (dbName flags))
+      >> write "interfaceDef.inc.php"      (interfaceDef fSpec serviceObjects flags)
       >> write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
       >> (if sqlLogPwdDefd flags then -- if either login or password for SQL has been specified then make a dbsettings file
              verboseLn flags ("  Writing username and password: dbsettings.php")
@@ -43,7 +43,7 @@
          ]
       >> verboseLn flags ("Wrapper files for all objects:")
       >> sequence_
-         [ write (addExtension (name o) ".php") (objectWrapper fSpec o)
+         [ write (addExtension (name o) ".php") (objectWrapper fSpec serviceObjects o)
          | o <- serviceObjects
          ]
       >> verboseLn flags ("\n")
@@ -57,7 +57,11 @@
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
-       serviceObjects = serviceG fSpec++serviceS fSpec -- serviceS come from the ADL-script. serviceG generates additional services.
+       --TODO -> moet dit niet ooit vervangen worden door (services fSpec)?
+       serviceObjects 
+          | null (serviceS fSpec) =  serviceG fSpec
+          | allServices flags = serviceG fSpec ++ serviceS fSpec -- serviceS come from the ADL-script. serviceG generates additional services.
+          | otherwise = serviceS fSpec
 
 
 

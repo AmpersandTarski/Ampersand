@@ -20,8 +20,10 @@ module Prototype.RelBinGenSQL
    -- als dit zo is, hoeven we alleen dat ene concept te tonen
    isOneExpr :: Expression -> Bool
    isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
+--   isOne :: ObjectDef -> Bool
+--   isOne o = isOneExpr$ctx o
    isOne :: ObjectDef -> Bool
-   isOne o = isOneExpr$ctx o
+   isOne o = source (ctx o) == cptS
 
    selectExpr ::    Fspc    -- current context
                  -> Int        -- indentation

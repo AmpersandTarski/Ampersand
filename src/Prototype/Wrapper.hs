@@ -7,8 +7,9 @@
    import Data.Fspec
    import Version (versionbanner)
 
-   objectWrapper :: Fspc -> ObjectDef -> String
-   objectWrapper fSpec o
+   --serviceObjects is needed to determine whether some instance of a concept has services to display it i.e. does it become a link
+   objectWrapper :: Fspc -> [ObjectDef] ->  ObjectDef -> String
+   objectWrapper fSpec serviceObjects o
     = chain "\n" $
       [ "<?php // generated with "++versionbanner ]
       ++ commentBlock ["","  Interface V1.3.1","","","  Using interfaceDef",""] ++
@@ -302,7 +303,7 @@
         gotoPages att idvar
           = [ ("'.serviceref('"++name serv++"', array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
               ,name serv)
-            | serv<-(serviceS fSpec)
+            | serv<-serviceObjects
             , target (objctx serv) == target (objctx att)
             ]
         gotoDiv gotoP path

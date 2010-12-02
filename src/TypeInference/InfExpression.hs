@@ -87,7 +87,7 @@ infer_UnPExp me uop sub usercast     decls_ isa_ autocast_ =
     filtercast xs = [x|x<-xs, castcondition usercast (Just x) isa_]
     checkcast (Left (a,b)) 
        | castcondition usercast (Just (a,b)) isa_ = Left(jst(cast usercast (Just (a,b)))) 
-       | otherwise =  Right ["relation undefined: " ++ show me ++ "\npossible types are: " ++ show (ptf (trytype (subtuple Nothing))) ]
+       | otherwise =  Right ["\n\nrelation undefined: " ++ show me ++ "\npossible types are: " ++ show (ptf (trytype (subtuple Nothing))) ]
     checkcast x = x
     {--typing functions--}
     ptf = map tf 
@@ -114,9 +114,9 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
                 then Right (snd( alts Nothing subs))
                 else 
                 if null ttype                            --without cast there are potential types, but none of them matches the usercast
-                then Right ["relation undefined: " ++ show me ++ "\npossible types are: " ++ show (ttype' Nothing) ]
+                then Right ["\n\nrelation undefined: " ++ show me ++ "\npossible types are: " ++ show (ttype' Nothing) ]
                 else error ("mismatching autocast?")
-           _ -> Right ["ambiguous type: " ++ show me ++ "\npossible types are: " ++ show ttype ]
+           _ -> Right ["\n\nambiguous relation: " ++ show me ++ "\npossible types are: " ++ show ttype ]
         infex = MulPExp mop (map typedexpr the_subs_tuples) (thetype rtype)
         proof = []
         hm = False --foldr (&&) True (map ishomo (head(alts tryac subs))) --all composed are homogeneous <-> mulpexp is homogeneous, just check the head alt.
@@ -154,7 +154,7 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
         rtype = case length rtype' of
            1 -> Left tf
            0 -> analyseerror
-           _ -> Right ["ambiguous type: " ++ show me ++ "\npossible types are: " ++ show ttype ]
+           _ -> Right ["\n\nambiguous relation: " ++ show me ++ "\npossible types are: " ++ show ttype ]
         infex = MulPExp mop (map typedexpr the_subs_tuples) (thetype rtype)
         proof = []
         hm = False --foldr (&&) True (map ishomo (head(alts tryac subs))) --all composed are homogeneous <-> mulpexp is homogeneous, just check the head alt.
@@ -174,12 +174,20 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
         --cast is useful if it is isa-related to some element of ttype'
         --NICE TODO FOR LONG REPORT -> if ttype'==[cast] then cast=unnecessary  
         analyseerror 
-           | (not.null) errs_in_subs && not all_amb_subs = Right errs_in_subs
-           | null (ttype' Nothing) = Right ["incompatible comparison"]
+           | (not.null) errs_in_subs = Right errs_in_subs
+           | null (ttype' Nothing) = Right ["\n\nincompatible comparison: rel1 /\\ rel2" -- ++ show me
+                 ++ (if length subs==2 
+                     then "\npossible types of "++(show.head) mesubs     ++": " ++ (show.trytype.head.subs_alts) Nothing
+                       ++ "\npossible types of "++(show.head.tail) mesubs++": " ++ (show.trytype.head.tail.subs_alts) Nothing
+                     else concat ["\ntype "++ show t ++ " suits " ++ show (suit t)|t<-ts]
+                    )]
            | null ttype = Right ["relation undefined: " ++ show me ++ "\npossible types are: " ++ show (ttype' Nothing) ]
            | otherwise = error "what?"
-        errs_in_subs = concat [errs|Right errs<-map reltype (subs_alts Nothing)] 
-        all_amb_subs = null [()|s<-subs_alts autocast_,length(filtercast usercast (trytype s))<2] 
+           where MulPExp _ mesubs _ = me
+                 suit t = [x|x<-mesubs, tx<-trytype (infer x decls_ isa_ Nothing),t==tx]
+                 ts = (nub.concat)(map trytype (subs_alts Nothing))
+        --filter ambiguous errors, as ambiguity is only relevant if me is ambiguous.
+        errs_in_subs = concat [errs|x<-subs_alts Nothing, let Right errs = reltype x, null (trytype x)] 
         --TODO, if no sub has null trytype then the there are only amb errors i.e. incompatible comparison
         --if one or more sub has null trytype then forget (in the short report) about the amb subs as they are most likely solved by fixing the sub yielding an error
     in  (infex,ttype,rtype,proof,hm) --return synthesized
@@ -193,7 +201,7 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
         rtype = case length ttype of
               1 -> Left tf                               --TODO -> check not Anything; check+infer homo
               0 -> analyseerror
-              _ -> Right ["ambiguous type: " ++ show (TPExp subm usercast) ++ "\npossible types are: " ++ show ttype ]
+              _ -> Right ["\n\nambiguous relation: " ++ show (TPExp subm usercast) ++ "\npossible types are: " ++ show ttype ]
         infex  
            | (not.null)(ds (Just tf)) = TPExp (head (ds (Just tf))) (thetype rtype) --TODO if ds (Just tf)>1 then warning of duplicates in long report
            | otherwise = error "morphism must be bound to some declaration"
@@ -212,10 +220,10 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
         analyseerror 
            | null(ds Nothing) && chkundeclcpt = (\(Right err)-> Right (("relation undeclared: " ++ show (TPExp subm (Nothing::(Maybe Sign)))):err)) undeclcpt
            | chkundeclcpt = undeclcpt
-           | otherwise = Right ["relation undeclared: " ++ show (TPExp subm usercast)]
+           | otherwise = Right ["\n\nrelation undeclared: " ++ show (TPExp subm usercast)]
         undeclcpt = case usercast of
              Just (c1,c2) -> if not(elem c1 cpts) || not(elem c2 cpts)
-                             then Right ["Unknown concept: "++show x|x<-[c1,c2],not(elem x cpts)]
+                             then Right ["\n\nunknown concept: "++show x|x<-[c1,c2],not(elem x cpts)]
                              else error "No undecl cpt -> chkundeclcpt first"
              Nothing      -> error "No user type -> chkundeclcpt first"
         chkundeclcpt = case usercast of --TODO check ook concepts in usercasts op expressies
@@ -413,18 +421,27 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
          (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "ss has no error2?")
         --ss yields an error, but there are ok_bs -> STEP2 => error(s) of ss + potential composition error of s and split1 --TODO merge multiple amb errors?
       | null ptf_ss && null s_ss_bs = --incompatible composition of s and split1
-         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then ("incompatible1_"++show (length ss)):(errs ss_alts_no_ptf) else error ("ss has no error3?"++show(ok_untill 0, ok_bs,s_trytypes,length s_ss_alts_no_ptf)))
+         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) 
+                               then ("\n\nincompatible composition\npossible types of " ++ show (typedexpr (head s_tpls))
+                                   ++": "++show s_trytypes)
+                                    :(errs ss_alts_no_ptf) 
+                               else error ("ss has no error3?"++show(ok_untill 0, ok_bs,s_trytypes,length s_ss_alts_no_ptf)))
       | null ptf_ss && length s_ss_bs==1 = -- s and split1 compose
          (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) then errs s_ss_alts_no_ptf else error "ss has no error4?")
       | null ptf_ss && length s_ss_bs>1 = --ambiguous composition of s and split1 
-         (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) then ("ambiguous1_"++show (length ss)):(errs s_ss_alts_no_ptf) else error "ss has no error5?")
+         (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) 
+                                 then ("\n\nambiguous1_"++show (length ss))
+                                      :(errs s_ss_alts_no_ptf) 
+                                 else error "ss has no error5?")
       --both s and ss yield no error or only amb comp -> STEP2 => potential composition error of s and ss + potential amb.comps in ss --TODO merge multiple amb errors?
       | null s_ss_bs = --incompatible composition of s and ss
-         (tpls ss_alts_ptf,  ("incompatible2_"++show (length ss)):(show (ok_bs,s_trytypes)):(errs ss_alts_ptf))
+         (tpls ss_alts_ptf,  ("\n\nincompatible2_"++show (length ss)):(show (ok_bs,s_trytypes))
+                             :(errs ss_alts_ptf))
       | length s_ss_bs==1 = -- s and ss compose
          (tpls s_ss_alts_ptf, errs s_ss_alts_ptf)
       | length s_ss_bs>1 = --ambiguous composition of s and ss, different alternatives may yield the same error => unduplicate
-         (tpls s_ss_alts_ptf, ("ambiguous2_"++show (length ss)):(show (ok_bs,s_trytypes)):(errs s_ss_alts_ptf))
+         (tpls s_ss_alts_ptf, ("\n\nambiguous2_"++show (length ss)):(show (ok_bs,s_trytypes))
+                              :(errs s_ss_alts_ptf))
       | otherwise = error "are there other options?"
 
    tpls xs = ss_merge (map fst xs)--[x |Left x<-xs] --removes duplicate alternatives

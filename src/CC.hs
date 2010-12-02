@@ -25,7 +25,7 @@
                        , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "PROP", "ALWAYS"
                        , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON","TEST"
                        , "RELATION", "CONCEPT", "KEY"
-                       , "IMPORT", "GEN", "ISA", "I", "V", "S"
+                       , "IMPORT", "GEN", "ISA", "I", "V"
                        , "PRAGMA", "EXPLANATION", "EXPLAIN", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
                        , "BYPLUG"

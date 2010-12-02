@@ -6,7 +6,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Adl
    import Auxiliaries    (eqCl, eqClass, sort')
    import Data.Fspec
-   import Options        (Options)
+   import Options        (Options(language,genPrototype))
    import NormalForms(conjNF,disjNF,normPA,simplify)
    import Data.Plug
    import Prototype.CodeAuxiliaries (Named(..))
@@ -14,21 +14,27 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Char
    import ShowADL
    import FPA
+   import Languages(plural)
    import Data.Maybe (listToMaybe)
+   import Typology 
    
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec
     where
         allQuads = quads (\_->True) (rules context++multrules context)
         fSpec =
-            Fspc { fsName       = name context
+            Fspc { fsName       = if genPrototype flags 
+                                  then "ctx" ++ (name context) --ctx to get unique name for php if there are (plural) concept names equal to context name
+                                  else (name context) 
                    -- serviceS contains the services defined in the ADL-script.
                    -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
                    -- A generic user interface (the Lonneker interface) is already available.
                  , vplugs       = definedplugs
                  , plugs        = allplugs
                  , serviceS     = attributes context -- services specified in the ADL script
-                 , serviceG     = [ o| o<-serviceGen, not (objctx o `elem` map objctx (serviceS fSpec))]   -- generated services
+                 , serviceG     = [ o| o<-serviceGen
+                                     , isIdent (objctx o) && source (objctx o)==cptS
+                                     || not (objctx o `elem` map objctx (serviceS fSpec))]   -- generated services
                  , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
                  , vrules       = rules context++signals context
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
@@ -169,6 +175,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         maxTotExprs = clos cRels
         maxInjExprs = clos dRels
 --  Step 4: generate services from the maximally total expressions and maximally injective expressions.
+--          and generate V[ONE*Concept] for each concept
         serviceGen
          = [ Obj (name c)         -- objnm
                  Nowhere          -- objpos
@@ -181,6 +188,17 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
            , not (null objattributes) -- de meeste plugs hebben in ieder geval I als attribuut
            , let e0=head cl, let c=source e0
            , map toLower (name c) `notElem` map (map toLower.plname) scalarPlugs -- exclude scalar SQL-tables
+           ]
+           ++ 
+           [ Obj (plural (language flags)(name c))         -- objnm
+                 Nowhere          -- objpos
+                 (Tm (mIs S)(-1)) -- objctx
+                 Nothing          -- objctx_proof
+                 [att]            -- objats
+                 []               -- objstrs
+             --TODO: is er ergens een algemene functie om de set van alle concepten te bemachtigen?
+           | c<-(\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (ctxisa context)
+           , let att = Obj (name c) Nowhere (Tm (V [cptS,c] (cptS,c))(-1)) Nothing [] []
            ]
         scalarPlugs = [makePlug p|p<-pickTypedPlug allplugs, isScalar p]
 --  Auxiliaries for generating services:

@@ -5,10 +5,12 @@
   import Data.Fspec
   import Prototype.RelBinGenBasics(commentBlock, indentBlock)
   import Prototype.RelBinGenSQL(isOne)
+  import Languages(Lang(..))
+  import Options(Options(language))
   import Version (versionbanner)
    
-  interfaceDef :: Fspc -> [ObjectDef] -> String -> String
-  interfaceDef fspc serviceObjects _ = chain "\n"
+  interfaceDef :: Fspc -> [ObjectDef] -> Options -> String
+  interfaceDef fspc serviceObjects flags = chain "\n"
      (
         [ "<?php"
         , "// interfaceDef.inc.php"
@@ -53,7 +55,7 @@
         
         
         [ "    <?php if (isset($_SESSION[\"home\"])) { //$_SESSION[\"home\"] can be set by the parent CONTEXT application like Meterkast is in the relation with Atlas"
-        , "      echo '<a HREF=\"'.$_SESSION[\"home\"].'\" TITLE=\"Back to main page\" class=\"menuItem\" >"
+        , "      echo '<a HREF=\"'.$_SESSION[\"home\"].'\" TITLE=\""++hometitle++"\" class=\"menuItem\" >"
         , "      Back to main page"
 	, "      </a>';} ?>"
         , "      </li></ul>"
@@ -104,9 +106,10 @@
         , "}"
         , "function serviceref($svc,$env=array() ) {"
         , "  $ref = '"++name fspc++".php?content='.$svc;"
-        , "  foreach($GLOBALS['ctxenv'] as $key => $value){ //CONTEXT wide variables"
+        , "  if (isset($GLOBALS['ctxenv'])){"
+        , "   foreach($GLOBALS['ctxenv'] as $key => $value){ //CONTEXT wide variables"
         , "     $ref = $ref.'&'.$key.'='.$value;"
-        , "  }"
+        , "  }}"
         , "  foreach($env as $key => $value){"
         , "     $ref = $ref.'&'.$key.'='.$value;"
         , "  }"
@@ -121,9 +124,14 @@
         ]
      )
      where
-       menuItems = concat [ [ "<a href=\"<?php echo serviceref('"++name o++"');?>\" TITLE=\"Toon alle "++name o++"\" class=\"menuItem\">"
-                            , "  "++name o++""
-                            , "</a>"
-                            ]
-                          | o<-serviceObjects, isOne o
-                          ]
+     hometitle = case language flags of Dutch -> "Terug naar script"; English -> "Back to script"
+     menuItems 
+       = concat [ [ "<a href=\""++svcref
+                , "  "++name o++""
+                , "</a>"
+                ]
+                | o<-serviceObjects
+                , isOne o
+                , let svctitle = case language flags of Dutch -> "Toon alle "++name o; English -> "Show all " ++name o
+                , let svcref="<?php echo serviceref('"++name o++"');?>\" TITLE=\""++svctitle++"\" class=\"menuItem\">"
+                ]

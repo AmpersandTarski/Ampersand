@@ -11,7 +11,7 @@
               ,Identified(..),mors,Morphism(..),ViewPoint(..)
               ,Object(..),isIdent,Expression(..),mIs
               )
-   import ShowADL (showADL)
+   import ShowADL (showADL,showADLcode)
    import Collection (Collection (rd,rd',(>-)))
    import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,selectExpr,sqlPlugFields)
    import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
@@ -31,7 +31,7 @@
       ([ "<?php // generated with "++versionbanner
        , ""
        , "/********* on "++(show (pos o))
-       , showADL o
+       , showADLcode fSpec o
        , " *********/"
        , ""
        ] ++ showClasses flags fSpec o ++

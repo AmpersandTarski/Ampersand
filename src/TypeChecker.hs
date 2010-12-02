@@ -209,7 +209,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                                                     --     the patterns of this context
   bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]
                          ,inftestexpr=typedexprs (rel_declarations ctxs) isas (testexpr p) 
-                                   ++ [error (show xs) | let xs=typeerrors (rel_declarations ctxs) isas (testexpr p),not(null xs)]
+                                   ++ [error (concat (concat xs)) | let xs=typeerrors (rel_declarations ctxs) isas (testexpr p),not(null xs)]
                          }
                       ,bindrules
                       ,[err|Right err<-pexpls])
@@ -312,10 +312,10 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                where allpopd = [popd|popd<-rd popuRels, d==popd] 
   --DESCR -> Add population to concept
   populate :: Concept -> Concept
-  populate c@(C{}) = c{cptos=if cptos c == Nothing then Nothing
-                             else Just (rd$[srcPaire p|d<-popuRels,Just c'<-[contents c],p<-c',elem (source d,c) isatree]
-                                         ++[trgPaire p|d<-popuRels,Just c'<-[contents c],p<-c',elem (target d,c) isatree]
-                                       )
+  populate c@(C{}) = --c{cptos=Nothing
+                     c{cptos= Just (rd$[srcPaire p|d<-popuRels,p<-contents' d,elem (source d,c) isatree]
+                                     ++[trgPaire p|d<-popuRels,p<-contents' d,elem (target d,c) isatree]
+                                   )
                       ,cptgE=(\c1 c2 -> elem (c1,c2) isas)}
   populate c       = c
 
