@@ -17,7 +17,7 @@ Executable ADL
   Hs-Source-Dirs:  src
   build-depends:   
     graphviz   >= 2999.9.0.0 && < 2999.10 ,
-    HDBC-odbc  >= 2.2.3.0 && < 2.3,  
+    HDBC-odbc  == 2.2.3.0,  
     pandoc     >= 1.6 && < 1.7,
     bytestring >= 0.9.1.5 && < 0.10,
     utf8-string>= 0.3.6,
