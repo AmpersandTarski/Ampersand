@@ -495,23 +495,23 @@ module Prototype.RelBinGenSQL
         where res = replF (k2:ks)
               fs  = [m' | F m' <- [res]]
       replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
-       = error ("!Fatal (module RelBinGenBasics 566): Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
+       = error ("!Fatal (module RelBinGenSQL 566): Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
                -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
       replF ks = F (ks)
 
    sqlExprSrc :: Fspc->Expression -> String
    sqlExprSrc fSpec expr = ses expr
     where
-      ses (F [])         = error ("!Fatal (module RelBinGenBasics 600): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (F [])         = error ("!Fatal (module RelBinGenSQL 600): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (F [f])        = ses f
       ses (F fs)         = ses (head fs)
-      ses (Fux [])        = error ("!Fatal (module RelBinGenBasics 603): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fux [])        = error ("!Fatal (module RelBinGenSQL 603): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fux [f])       = ses f
       ses (Fux fs)        = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fix [])        = error ("!Fatal (module RelBinGenBasics 606): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fix [])        = error ("!Fatal (module RelBinGenSQL 606): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fix [f])       = ses f
       ses (Fix fs)        = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fdx [])        = error ("!Fatal (module RelBinGenBasics 609): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fdx [])        = error ("!Fatal (module RelBinGenSQL 609): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fdx [f])       = ses f
       ses (Fdx fs)        = ses (head fs)
       ses (Cpx e)         = ses e

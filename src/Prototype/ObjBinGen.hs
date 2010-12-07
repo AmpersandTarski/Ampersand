@@ -43,7 +43,7 @@
          ]
       >> verboseLn flags ("Wrapper files for all objects:")
       >> sequence_
-         [ write (addExtension (name o) ".php") (objectWrapper fSpec serviceObjects o)
+         [ write (addExtension (name o) ".php") (objectWrapper fSpec serviceObjects o flags)
          | o <- serviceObjects
          ]
       >> verboseLn flags ("\n")
