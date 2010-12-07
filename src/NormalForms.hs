@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module NormalForms (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,nfPr,simplify,distribute)
+module NormalForms (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute)
 where
 --   import Adl
    import Strings        (commaEng)

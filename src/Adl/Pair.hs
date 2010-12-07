@@ -4,7 +4,6 @@ module Adl.Pair    (Paire,Pairs
                     , srcPaire,trgPaire
                     , flipPair,mkPair
                     , closPair
-                    , closGeneric
                    ) 
 where
 --   import Data.Tuple    -- TODO Is dit niet veel beter te gebruiken?  
@@ -19,10 +18,6 @@ where
    mkPair a b = (a,b)
    srcPaire = fst
    trgPaire = snd
---   type Paire     = [String]
---   srcPaire xs    = if null xs then error ("!Fatal (module Adl.Pair 25): src []") else head xs
---   trgPaire xs    = if null xs then error ("!Fatal (module Adl.Pair 26): trg []") else last xs
---   mkPair a b = a:[b]
 
    flipPair :: Paire -> Paire
    flipPair p = mkPair (trgPaire p) (srcPaire p)
@@ -69,9 +64,3 @@ where
             f q (x:xs') = f (q `uni` [[a,b']|[a,b]<-q,b==x,[a',b']<-q,a'==x]) xs'
             f q []      = q
 
-   closGeneric :: (Eq a,Eq b) => (a->a->b) -> (b->a) -> (b->a) -> [b] -> [b]     -- e.g. a list of pairs
-   closGeneric pair left right xs
-     = f xs (rd (map left xs) `isc` rd (map right xs))
-       where
-        f pairs (x:xs') = f (pairs `uni` [left e `pair` right e'|e<-pairs,right e==x,e'<-pairs,left e'==x]) xs'
-        f pairs []      = pairs

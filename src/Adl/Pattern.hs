@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Pattern (Pattern(..),Patterns)
-               --    ,union)
 where
    import Adl.KeyDef                   (KeyDefs)
    import Adl.Rule                     (Rules)
@@ -10,7 +9,6 @@ where
    import Adl.ConceptDef               (ConceptDefs)
    import Adl.Explanation              (PExplanations)
    import CommonClasses                (Identified(..))
-   import Collection                   (Collection(..))
    import Adl.Expression               (PExpression)
    
    type Patterns  = [Pattern]
@@ -43,17 +41,3 @@ where
    instance Identified Pattern where
     name pat = ptnm pat
 
-   union :: Pattern -> Pattern -> Pattern
-   union pat pat'
-     = Pat (ptnm pat')
-           (ptrls pat `uni` ptrls pat')
-           (ptgns pat `uni` ptgns pat')
-           (ptdcs pat `uni` ptdcs pat')
-           (ptcds pat `uni` ptcds pat')
-           (ptkds pat `uni` ptkds pat')
-           (ptxps pat  ++   ptxps pat')
-           []
-           []
-
-
-            

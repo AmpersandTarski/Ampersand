@@ -1,4 +1,4 @@
-{-  TODO: Warningvrij maken # OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 --TODO -> clean and stuff. Among which moving classdiagram2dot to Graphviz library implementation (see Classes/Graphics.hs).
 --        I only helped it on its feet and I have put in the fSpec, now it generates stuff. I like stuff :)
 
@@ -31,33 +31,33 @@
     nodes (OOclassdiagram cs as rs gs _) = rd (concat (map nodes cs++map nodes as++map nodes rs++map nodes gs))
 
    instance CdNode Class where
-    nodes (OOClass c as ms) = [c]
+    nodes (OOClass c _ _) = [c]
    instance CdNode a => CdNode [a] where
     nodes = concat.map nodes
 
    instance CdNode Attribute where
-    nodes (OOAttr nm t fNull) = [t]
+    nodes (OOAttr _ t _) = [t]
 
    instance CdNode Method where
-    nodes m = []
+    nodes _ = []
 
    instance CdNode Association where
-    nodes (OOAssoc s ml rl t mr rr) = [s,t]
+    nodes (OOAssoc s _ _ t _ _) = [s,t]
 
    instance CdNode Aggregation where
-    nodes (OOAggr d s t) = [s,t]
+    nodes (OOAggr _ s t) = [s,t]
 
    instance CdNode Generalization where
     nodes (OOGener g ss) = g:ss
 
    cdAnalysis :: Fspc -> Options -> ClassDiag
-   cdAnalysis fSpec flags = OOclassdiagram classes assocs aggrs geners (name fSpec, concs fSpec)
+   cdAnalysis fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
     where
-       classes    = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
+       classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
                     | plug <- pickTypedPlug$ plugs fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
-       assocs     = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
+       assocs'    = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
                     | plug <- pickTypedPlug$ plugs fSpec, isBinary plug, not (isSignal plug)
                     , if not (null (mLkpTbl plug)) then True else error("!Fatal (module ClassDiagram 65): empty lookup table in analysis of plug "++name plug++".")
                     , let m=head [r| (r,_,_)<-mLkpTbl plug]
@@ -67,38 +67,27 @@
                     where
                      multiplicity f | fldnull f = ""
                                     | otherwise = "1..n"
-                     nm f = name.concept.lookup.f.fldexpr
+                     nm f = name.concept.lookup'.f.fldexpr
                      
-       aggrs      = []
-       geners     = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs cs = isa fSpec, gs<-eqCl fst pcs]
-       scalarPlgs = [p| p<-pickTypedPlug$ plugs fSpec, isScalar p]
+       aggrs'     = []
+       geners'    = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs _ = isa fSpec, gs<-eqCl fst pcs]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-fields plug, fldname fld/="i"]
-       attrels    = rd [d| plug<-pickTypedPlug$ plugs fSpec, fld<-fields plug, fldname fld/="i", d<-decls (fldexpr fld)]
-       isProp d   = null([Sym,Asy]>-multiplicities d)
-       scs = [d|d<-declarations fSpec] -- was: for the entire context
-       lookup c = if null ps
-                  then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
-                  else head ps
-                  where ps = [p|p<-pickTypedPlug$ plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
-   shDataModel (OOclassdiagram cs as rs gs _)
-    = "OOclassdiagram\n>     "++chain "\n>     "
-        [ lijstopmaak (map show cs),
-          lijstopmaak (map show as),
-          lijstopmaak (map show rs),
-          lijstopmaak (map show gs)]
-    where lijstopmaak [] = "[]"
-          lijstopmaak xs = "[ "++chain "\n>     , " xs++"\n>     ]"
+       lookup' c = if null ps
+                   then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
+                   else head ps
+                   where ps = [p|p<-pickTypedPlug$ plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
 
-   classdiagram2dot flags cd@(OOclassdiagram cs as rs gs (_, concspat))
+   classdiagram2dot :: Options -> ClassDiag -> String
+   classdiagram2dot flags cd@(OOclassdiagram cs' as' rs' gs' (_, concspat))
             = "digraph G {rankdir=LR;bgcolor=transparent\n" ++        
               "    edge [ \n" ++
               "            fontsize = 11"++(if layout=="neato" then ", len = 3" else "")++" \n" ++
               "    ]\n" ++
-              classes2dot cs (nodes cd>-nodes cs)++ "\n" ++
-              associations2dot as ++ "\n" ++
-              aggregations2dot rs ++ "\n" ++
-              generalizations2dot gs ++
+              classes2dot cs' (nodes cd>-nodes cs')++ "\n" ++
+              associations2dot as' ++ "\n" ++
+              aggregations2dot rs' ++ "\n" ++
+              generalizations2dot gs' ++
               "\n}\n"
 
           where
@@ -112,9 +101,9 @@
           clas2dot :: String -> String
           clas2dot n = spaces 5 ++ alias n ++ " [shape=box label=\""++n++"\"]"
           class2dot :: Class -> [Char]
-          class2dot (OOClass n as ms) = spaces 5 ++ alias n ++ " [\n" ++
-                                        spaces 7 ++ "shape=plaintext \n" ++
-                                                (classlabel n as ms) ++
+          class2dot (OOClass n' as'' ms') = spaces 5 ++ alias n' ++ " [\n" ++
+                                           spaces 7 ++ "shape=plaintext \n" ++
+                                                   (classlabel n' as'' ms') ++
                                                     "\n     ]"
             where
               classlabel n as ms = spaces 7 ++ "label =<" ++
@@ -148,12 +137,12 @@
           alias nm
            = if map toUpper nm=="NODE" ||
                 map toUpper nm=="EDGE"
-             then (enc True . head) [ nm++show i | i<-[1..], not ((nm++show i) `elem` map name (concspat) )]
+             then (enc True . head) [ nm++show (i::Int) | i<-[1..], not ((nm++show i) `elem` map name (concspat) )]
              else enc True nm
           associations2dot :: [Association] -> [Char]
           associations2dot as = chain "\n" (map association2dot as) ++ "\n"
           association2dot :: Association -> [Char]
-          association2dot (OOAssoc from m1 n1 to m2 n2) =
+          association2dot (OOAssoc from m1 _ to m2 n2) =
               "      edge [ \n" ++
               "              arrowhead = \"none\" \n" ++
               "              arrowtail = \"none\" \n" ++
@@ -164,8 +153,8 @@
               "       " ++ alias from ++ " -> " ++ alias to
               where 
                  nametable "" = "\"\""
-                 nametable name = dothtml (dottable notableborderopts 
-                                              (dotrow "" (dotcell "" name)))
+                 nametable name' = dothtml (dottable notableborderopts 
+                                              (dotrow "" (dotcell "" name')))
 
 
   -------------------------------
@@ -179,14 +168,14 @@
               "      edge [ \n" ++
               "              headlabel = \"\"\n"    ++
               "              taillabel = \"\"\n"    ++
-              "              arrowtail = " ++ tail del ++" \n" ++
+              "              arrowtail = " ++ aTail del ++" \n" ++
               "              arrowhead = \"none\" \n" ++
               "              label =\"\"" ++
               "      ]\n" ++
               "       " ++ alias from ++ " -> " ++ alias to
               where
-                 tail Open  = "\"odiamond\""
-                 tail Close = "\"diamond\""
+                 aTail Open  = "\"odiamond\""
+                 aTail Close = "\"diamond\""
  
 
  
@@ -198,12 +187,12 @@
           generalizations2dot gs = chain "\n" (map generalization2dot gs) ++ "\n"
  
           generalization2dot :: Generalization -> [Char]
-          generalization2dot (OOGener a []) = ""
+          generalization2dot (OOGener _ []) = ""
           generalization2dot (OOGener a subs) = (genEdge a firstsub) ++ (generalization2dot (OOGener a restsubs))
            where
              firstsub = head subs
              restsubs = tail subs
-             genEdge a b =
+             genEdge a' b =
               "      edge [ \n" ++
               "              headlabel = \"\"\n"    ++
               "              taillabel = \"\"\n"    ++
@@ -216,7 +205,7 @@
                                 ) ++
               "              label =\"\"" ++
               "      ]\n" ++
-              "       " ++ alias b ++ " -> " ++ alias a ++ "\n"
+              "       " ++ alias b ++ " -> " ++ alias a' ++ "\n"
 
    dothtml :: String -> String
    dothtml content = "<\n  " ++ content ++ "\n>"
@@ -247,24 +236,20 @@
 
 
    dotfont :: String -> String -> String
-   dotfont opts a  = a --"\n<FONT"  ++ opts ++">" ++ (indent 2 trya) ++ "</FONT>"   ??? DIT WERKT NIET???
-     where
-       trya :: String
-       trya = if (onlyignorechars a) then "### Error: Empty FONT not allowed in dot!" else a
+   dotfont _ a  = a --"\n<FONT"  ++ opts ++">" ++ (indent 2 trya) ++ "</FONT>"   ??? DIT WERKT NIET???
 
    emptydottable :: String -> String
    emptydottable opts =  "\n<TABLE" ++ opts ++ "><TR><TD BGCOLOR=\"white\"><FONT COLOR=\"white\">.</FONT></TD></TR></TABLE>"
    notableborderopts :: String
    notableborderopts  = " BORDER=\"0\" CELLBORDER=\"0\" CELLSPACING=\"0\""
    indent :: Int -> String -> String
-   indent n "" = ""
+   indent _ "" = ""
    indent n ('\n':str) = "\n" ++ (spaces n) ++ (indent n str)
    indent n (c:str) = c : indent n str
 
    spaces :: Int -> String
- --  spaces 0 = ""
- --  spaces n | n > 0  = " " ++ (spaces (n-1))
-   spaces n = [ ' ' | i<-[1..n]]
+   spaces n = replicate n ' '
+
    onlyignorechars:: String -> Bool
    onlyignorechars "" = True
    onlyignorechars (c:cs) =
@@ -279,78 +264,6 @@
    
 
  
-   --data Opt = Topt
-   data Topts = Tops [DotOpt]
-   data Ropts = Rops [DotOpt]
-   data Copts = Cops [DotOpt]
-   type DotOpt = String
-
-   data DotHtmlTable = DTable Topts [DotHtmlRow]
-   data DotHtmlRow   = DRow  Ropts [DotHtmlCell]
-   data DotHtmlCell  = DCell Copts String
- 
- 
-
-   dottableopmaak :: DotHtmlTable -> String
-   dottableopmaak (DTable opts dotrows)
-       =  "<TABLE" ++ (optopmaak opts) ++ ">" ++
-             (indent 2 ("\n" ++ (chain "\n" (map dotrowopmaak dotrows)))) ++
-          "\n</TABLE>"
-
-   dotrowopmaak :: DotHtmlRow -> String
-   dotrowopmaak (DRow opts dotcells)
-       =  "<TR" ++ (optopmaak opts) ++ ">" ++
-             (indent 2 ("\n" ++ (chain "\n" (map dotcelopmaak dotcells)))) ++
-          "\n</TR>"
- 
-   dotcelopmaak :: DotHtmlCell -> String
-   dotcelopmaak (DCell opts str)
-       =  indent 0 ( "<TD" ++ (optopmaak opts) ++ ">\n" ++
-                        str ++ "\n" ++
-                     "</TD>")
-
-
-   optopmaak dotopts = "" -- TODO HAN. De opmaak van opties moet nog worden geregeld.
-
-   dcell :: Int -> DotHtmlCell
-   dcell n =  DCell opts str
-      where
-         opts = Cops []              --[(" Copt " ++ show n)]
-         str = " Celinhoud " ++ show n
-
-   drow :: Int -> DotHtmlRow
-   drow n = DRow opts cells
-      where
-         opts = Rops []  --(" Ropt " ++ show n)
-         cells = [ dcell i | i <- [1..n]]
-
-   dtablefortesting :: Int -> Int -> DotHtmlTable
-   dtablefortesting n m = DTable opts rows
-      where
-         opts = Tops []            --(" Topt " ++ show n)
-         rows = [ drow n | i <- [1..m]]
-
- 
-
- 
-   --rows :: String -> [ String -> String]
-   --rows = "rowoptions" [" optiecel1"  "cel 1" ]
-
-   --dothtmlrow :: String -> [String -> String] -> String
-   --dothtmlrow rowopts [] = dotrow rowopts (emptydottable notableborderopts)
-   --dothtmlrow rowopts cells = " test " -- dotrow "" " arow "
-
-   --dothtmltable :: String -> [String -> [String -> String]] -> String
-   --dothtmltable topts [] =  emptydottable topts
-   --dothtmltable topts rowitems = dottable topts  chainedrows
-   --   where
-   --     chainedrows :: String
-   --     chainedrows = (chain "\n" aap) ++ "\n"
-   --          where
-   --            aap :: String -> String
-   --            aap = (map dothtmlrow rows)
-   --               where
-
 
 -------------- Class Diagrams ------------------
    data ClassDiag = OOclassdiagram {classes     :: [Class]            --
@@ -412,40 +325,41 @@
 
 
 
-
-   testCD
-    = OOclassdiagram
-      [ OOClass "Plan" [ooAttr "afkomst" "Actor"] []
-      , OOClass "Formulier" [ooAttr "plan" "Plan",ooAttr "van" "Actor",ooAttr "aan" "Actor",ooAttr "sessie" "Sessie"] []
-      , OOClass "Dossier" [ooAttr "eigenaar" "Actor"] []
-      , OOClass "Gegeven" [ooAttr "type" "Gegevenstype",ooAttr "in" "Dossier",ooAttr "veldnaam" "Veldnaam",ooAttr "waarde" "Waarde"] []
-      , OOClass "Veld" [ooAttr "type" "Veldtype",ooAttr "waarde" "Waarde"] []
-      , OOClass "Veldtype" [ooAttr "veldnaam" "Veldnaam",ooAttr "formuliertype" "Plan",ooAttr "gegevenstype" "Gegevenstype"] []
-      , OOClass "Sessie" [ooAttr "dossier" "Dossier",ooAttr "uitgevoerd" "Actor"] []
-      ]
-      [ OOAssoc "Plan" "0..n" "" "Plan" "0..n" "stap"
-      , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "inzage"
-      , OOAssoc "Formulier" "0..n" "" "Formulier" "0..n" "in"
-      , OOAssoc "Formulier" "0..n" "" "Plan" "0..n" "stap"
-      , OOAssoc "Autorisatie" "0..n" "" "Actor" "0..n" "aan"
-      , OOAssoc "Gegeven" "0..n" "" "Formulier" "0..n" "op"
-      , OOAssoc "Gegeven" "0..n" "" "Actor" "0..n" "inzage"
-      , OOAssoc "Actor" "0..n" "" "Actor" "0..n" "gedeeld"
-      , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "inzagerecht"
-      , OOAssoc "Gegeven" "0..n" "" "Actor" "0..n" "inzagerecht"
-      , OOAssoc "Autorisatie" "0..n" "" "Gegeven" "0..n" "object"
-      , OOAssoc "Actie" "0..n" "" "Gegeven" "0..n" "object"
-      , OOAssoc "Autorisatie" "0..n" "" "Actie" "0..n" "op"
-      , OOAssoc "Autorisatie" "0..n" "" "Actor" "0..n" "door"
-      , OOAssoc "Actie" "0..n" "" "Actor" "0..n" "door"
-      , OOAssoc "Veld" "0..n" "" "Gegeven" "0..n" "bindt"
-      , OOAssoc "Sessie" "0..1" "" "Actor" "0..1" "actief"
-      , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "openstaand"
-      , OOAssoc "Gegeven" "0..n" "" "Actor" "0..n" "openstaand"
-      ]
-      [ OOAggr Close "Dossier" "Formulier"
-      , OOAggr Close "Formulier" "Veld"
-      ]
-      []
-      ("NoPat",[])
-      where ooAttr nm t = OOAttr nm t True
+--
+--   testCD
+--    = OOclassdiagram
+--      [ OOClass "Plan" [ooAttr "afkomst" "Actor"] []
+--      , OOClass "Formulier" [ooAttr "plan" "Plan",ooAttr "van" "Actor",ooAttr "aan" "Actor",ooAttr "sessie" "Sessie"] []
+--      , OOClass "Dossier" [ooAttr "eigenaar" "Actor"] []
+--      , OOClass "Gegeven" [ooAttr "type" "Gegevenstype",ooAttr "in" "Dossier",ooAttr "veldnaam" "Veldnaam",ooAttr "waarde" "Waarde"] []
+--      , OOClass "Veld" [ooAttr "type" "Veldtype",ooAttr "waarde" "Waarde"] []
+--      , OOClass "Veldtype" [ooAttr "veldnaam" "Veldnaam",ooAttr "formuliertype" "Plan",ooAttr "gegevenstype" "Gegevenstype"] []
+--      , OOClass "Sessie" [ooAttr "dossier" "Dossier",ooAttr "uitgevoerd" "Actor"] []
+--      ]
+--      [ OOAssoc "Plan" "0..n" "" "Plan" "0..n" "stap"
+--      , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "inzage"
+--      , OOAssoc "Formulier" "0..n" "" "Formulier" "0..n" "in"
+--      , OOAssoc "Formulier" "0..n" "" "Plan" "0..n" "stap"
+--      , OOAssoc "Autorisatie" "0..n" "" "Actor" "0..n" "aan"
+--      , OOAssoc "Gegeven" "0..n" "" "Formulier" "0..n" "op"
+--      , OOAssoc "Gegeven" "0..n" "" "Actor" "0..n" "inzage"
+--      , OOAssoc "Actor" "0..n" "" "Actor" "0..n" "gedeeld"
+--      , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "inzagerecht"
+--      , OOAssoc "Gegeven" "0..n" "" "Actor" "0..n" "inzagerecht"
+--      , OOAssoc "Autorisatie" "0..n" "" "Gegeven" "0..n" "object"
+--      , OOAssoc "Actie" "0..n" "" "Gegeven" "0..n" "object"
+--      , OOAssoc "Autorisatie" "0..n" "" "Actie" "0..n" "op"
+--      , OOAssoc "Autorisatie" "0..n" "" "Actor" "0..n" "door"
+--      , OOAssoc "Actie" "0..n" "" "Actor" "0..n" "door"
+--      , OOAssoc "Veld" "0..n" "" "Gegeven" "0..n" "bindt"
+--      , OOAssoc "Sessie" "0..1" "" "Actor" "0..1" "actief"
+--      , OOAssoc "Formulier" "0..n" "" "Actor" "0..n" "openstaand"
+--      , OOAssoc "Gegeven" "0..n" "" "Actor" "0..n" "openstaand"
+--      ]
+--      [ OOAggr Close "Dossier" "Formulier"
+--      , OOAggr Close "Formulier" "Veld"
+--      ]
+--      []
+--      ("NoPat",[])
+--      where ooAttr nm t = OOAttr nm t True
+      

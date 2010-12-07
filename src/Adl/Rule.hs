@@ -100,11 +100,10 @@ where
 
    normExpr :: Rule -> Expression
    normExpr rule
---    | isSignal rule      = v (sign rule)   -- obsolete (seems silly, in retrospect. normExpr should simply produce the expression.)
     | ruleType rule==Truth = consequent rule
     | ruleType rule==Implication = Fux [Cpx (antecedent rule), consequent rule]
-    | ruleType rule==Equivalence = Fix [ Fux [    antecedent rule , Cpx (consequent rule)]
-                                      , Fux [Cpx (antecedent rule),     consequent rule ]]
+    | ruleType rule==Equivalence = Fix [ Fux [     antecedent rule , Cpx (consequent rule)]
+                                       , Fux [Cpx (antecedent rule),      consequent rule ]]
     | otherwise          = error("!Fatal (module Rule 138): Cannot make an expression of "++show rule)
 
    ruleType :: Rule -> RuleType

@@ -11,7 +11,7 @@
               ,Identified(..),mors,Morphism(..),ViewPoint(..)
               ,Object(..),isIdent,Expression(..),mIs
               )
-   import ShowADL (showADL,showADLcode)
+   import ShowADL (showADLcode)
    import Collection (Collection (rd,rd',(>-)))
    import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,selectExpr,sqlPlugFields)
    import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)

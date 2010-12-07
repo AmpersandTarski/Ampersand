@@ -2,17 +2,12 @@
 module Classification (
                Classification(Cl)
              , root
-             , makeClassifications
              , preCl
-             , makeClassificationsF
    ) 
 where
-   import CommonClasses ( Identified(..)
-                        , Conceptual(conts)
-                        ) 
-   import Collection  (Collection(..))
-   import Auxiliaries (eqCl) 
-   import Strings     (chain)
+   import CommonClasses (Identified(..)) 
+   import Collection    (Collection(..))
+   import Strings       (chain)
 
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a
@@ -123,39 +118,9 @@ The precondition is that the graph cycle free.
        maketree roots tuples'' = [ Cl root' (trees tuples'' root')| root'<-roots]
        trees tuples'' root' = maketree (rd [b |(a,b)<-tuples'', root'==a]) [(a,b) |(a,b)<-tuples'', root'/=a]
 
-{- the following is a variation on the same theme. The condition that the root of a tree equals the left
-element of a tuple is generalized to a function, that provides the criterion to match the two. -}
-   makeClassificationsF :: (Eq a,Eq b) => (a->b) -> [(a,a)] -> [Classification a]
-   makeClassificationsF f tuples'
-    = maketree (map head (eqCl f [a |(a,_)<-tuples', not (f a `elem` rd [f b |(_,b)<-tuples'])]))
-               (rd tuples')
-      where
-       maketree roots tuples'' = [ Cl root' (trees tuples'' root')| root'<-roots]
-       trees tuples'' root' = maketree (map head (eqCl f [b |(a,b)<-tuples'', f root'==f a])) [(a,b) |(a,b)<-tuples'', f root'/=f a]
-
-{- In the following attempt, we generalize away from tuples.
-Assume that the left element of a tuple is obtained by a function src, and the right element by the function trg.
-This is done if there is more information in the graph than just the left and the right element.
-For this reason, the links in the graph are taken into the result tree
--}
---                          src ::          trg::          roots
-{-
-   makeTrees :: (Eq node,Eq edge) => (edge->node) -> (edge->node) -> [edge] -> [Classification (edge,node)]
-   makeTrees src trg edges
-    = maketree (rd [(edge,src edge) |edge<-edges])  -- the nodes that are root
-               (rd edges)                           -- the graph in which trees are built
-      where
-       maketree roots edges' = [ Cl (x,root') (trees edges' root')| (x,root')<-roots]
-       trees edges' root'
-        = maketree [(edge,trg edge) |edge<-edges', root'==src edge]  -- select the nodes to visit next
-                   [edge |edge<-edges', root'/=src edge]             -- remove links and avoid cycles
--}
-{- Opletten: in de initiele aanroep van maketree staat (rd [(edge,src edge) |edge<-edges]).
-Dat is incorrect, omdat het eerste element van het tupel niet "edge" moet zijn maar een relatie die van buiten komt.
--}
 
 
-   instance Conceptual a => Conceptual (Classification a) where
-    conts = conts . preCl 
+--   instance Conceptual a => Conceptual (Classification a) where
+--    conts = conts . preCl 
 
 

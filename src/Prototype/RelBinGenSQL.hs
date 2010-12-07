@@ -6,7 +6,7 @@ module Prototype.RelBinGenSQL
    import ShowADL
    import Data.Fspec
    import Data.Plug
-   import NormalForms (conjNF,disjNF,simplify)
+   import NormalForms (disjNF,simplify)
    import Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                     ,cChain,filterEmpty,phpIndent)
    import Data.Maybe
@@ -18,8 +18,8 @@ module Prototype.RelBinGenSQL
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
    -- als dit zo is, hoeven we alleen dat ene concept te tonen
-   isOneExpr :: Expression -> Bool
-   isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
+  -- isOneExpr :: Expression -> Bool
+  -- isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
 --   isOne :: ObjectDef -> Bool
 --   isOne o = isOneExpr$ctx o
    isOne :: ObjectDef -> Bool

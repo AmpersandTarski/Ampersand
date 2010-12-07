@@ -9,29 +9,17 @@ import ADL2Fspec             (makeFspec)
 import Generators            (generate)
 import UTF8  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
---import System.FilePath
---import qualified Data.ByteString as Bin
 
 main :: IO ()
 main
  = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts flags)
---       else if test flags
---            then testprog flags
        else
           (    parseFile flags 
            >>= calculate flags 
            >>= generate flags
           ) 
---   where
---     testprog flags = let fnFull = fileName flags in
---                      do{ deBinTekst <- Bin.readFile fnFull
---                        ; deTxtTekst <- readFile fnFull
---                        ; (writeFile (addExtension fnFull ".onelinerbin") (", SF \""++fnFull++"\"     True   "++show (show deBinTekst))
---                           >>
---                           writeFile (addExtension fnFull ".onelinertxt") (", SF \""++fnFull++"\"     False  "++show deTxtTekst)
---                           )}
                 
 parseFile :: Options -> IO(Context)
 parseFile flags  
