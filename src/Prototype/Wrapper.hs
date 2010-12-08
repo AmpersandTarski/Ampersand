@@ -117,8 +117,8 @@ objectWrapper fSpec serviceObjects o flags
    appname         = name fSpec
    showObjectCode --display some concept instance in read or edit mode by definition of SERVICE
     = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - ADL Prototype</TITLE>\""
-      , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'<SCRIPT type=\"text/javascript\""
-                ++ " src=\"js/navigate.js\"></SCRIPT>').\"\\n\" );"
+      , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
+                ++ " src=\"js/navigate.js\"></SCRIPT>'.\"\\n\" );"
       , "if($edit)"
       , "    echo '<FORM name=\"editForm\" action=\"'.$_SERVER['PHP_SELF'].'\" method=\"POST\" class=\"Edit\">';"
       ]
@@ -147,9 +147,9 @@ objectWrapper fSpec serviceObjects o flags
 --some small functions
 -----------------------------------------
 selfref2::String->String->String
-selfref2 objid act = "serviceref($_REQUEST['content'], array('"++objid++"'=>urlencode($"++objid++"->getId()),'"++act++"'=>1))"
+selfref2 objid act = "serviceref($_REQUEST['content'],false,false, array('"++objid++"'=>urlencode($"++objid++"->getId()),'"++act++"'=>1))"
 selfref1::String->String
-selfref1 objid = "serviceref($_REQUEST['content'], array('"++objid++"'=>urlencode($"++objid++"->getId()) ))"
+selfref1 objid = "serviceref($_REQUEST['content'],false,false, array('"++objid++"'=>urlencode($"++objid++"->getId()) ))"
 selfref::String
 selfref = "serviceref($_REQUEST['content'])"
 displaydirective::ObjectDef->[(String,String)]
@@ -195,7 +195,7 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    [ "<DIV class=\"Floater "++(name att0)++"\">"
    , "  <DIV class=\"FloaterHeader\">"++(name att0)++"</DIV>"
    , "  <DIV class=\"FloaterContent\"><?php"
-   , "      $"++ phpIdentifier (name att0) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att0)++"();"
+   , "      $"++ phpIdentifier (name att0) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att0)++"();" --read instance from DB
    ] 
    ++ indentBlock 6 content --(see attContent below)
    ++
@@ -219,9 +219,30 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    -----------------------------------------
    --CONTENT functions
    -----------------------------------------
+   --the content for an att0 has already been read in a class instance for this service
+   -- recall: $"++ phpIdentifier (name att0) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att0)++"();"
+   --content enters at attContent with 
+   --   att=att0
+   --   var=("$"++phpIdentifier (name att0))
+   --   depth=(0::Integer),path=path0,cls=cls0
+   --attContent makes a suitable frame based on the multiplicity of (objctx att)
+   --depth increases with 1 iff not(UNI), this should sync with phpList2Array (saving request) and attEdit (javascript functions) for synced paths
+   --uniAtt prints the values as links in read mode and as values in edit mode
+   --if there are objats, then the instances on this level are printed as headers with links
+   --through attHeaders the recursion of attContent is made with
+   --   att'= a
+   --   var'=(var++"['"++name a++"']")
+   --   path'=(path++"."++show n)
    gotoPages :: ObjectDef->String->[(String,String)]
    gotoPages att idvar
-     = [ ("'.serviceref('"++name serv++"', array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
+     = [ ("'.serviceref('"++name serv++"',false,$edit, array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
+         ,name serv)
+       | serv<-serviceObjects
+       , target (objctx serv) == target (objctx att)
+       ]
+   gotoPagesNew :: ObjectDef->[(String,String)]
+   gotoPagesNew att
+     = [ ("'.serviceref('"++name serv++"',$edit).'"
          ,name serv)
        | serv<-serviceObjects
        , target (objctx serv) == target (objctx att)
@@ -231,19 +252,26 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
       [ "echo '<LI><A HREF=\""++link++"\">"++txt++"</A></LI>';"
       | (link,txt) <- gotoP] ++
       [ "echo '</UL></DIV>';" ]
+   gotoDivNew gotoP path
+    = [ "echo '<DIV class=\"Goto\" id=\"GoTo"++path++"\"><UL>';"] ++
+      [ "echo '<LI><A HREF=\""++link++"\">new "++txt++"</A></LI>';"
+      | (link,txt) <- gotoP] ++
+      [ "echo '</UL></DIV>';" ]
    ----------------
    -- attContent shows a list of values, using uniAtt if it is only one
    attContent var depth path cls att 
-    | not (isUni (objctx att))
+    | not (isUni (objctx att)) --(not(UNI) with or without objats) 
       = let
         content = uniAtt atnm idvar (depth+1) (path ++".'.$i"++show depth++".'") cls att
         atnm = if "$"++phpIdentifier (name att)==var then "$v"++show depth else "$"++phpIdentifier (name att)
         idvar = if "$"++phpIdentifier (name att)==var then "$idv"++show depth else "$id"++phpIdentifier (name att)
+        gotoP = gotoPagesNew att
         in
         [ "echo '"
         , "<UL>';"
         , "foreach("++var++" as $i"++show depth++"=>"++idvar ++"){"
-        , "  "++atnm ++"="++(if null (displaydirective att) then idvar 
+        , --atnm is set to I(idvar) or value(idvar), where value is the name of the display relation
+          "  "++atnm ++"="++(if null (displaydirective att) then idvar
                        else (if null(objats att)
                              then "display('"++displaytbl att++"','"++displaycol att++"',"++idvar++")"
                              else idvar)) ++ ";" 
@@ -251,17 +279,59 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         , "  <LI CLASS=\"item UI"++cls++"\" ID=\""++(path ++".'.$i"++show depth++".'")++"\">';"
         , if null(objats att) || null(displaydirective att) 
           then [] 
-          else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);"]
+          else "  echo display('"++displaytbl att++"','"++displaycol att++"',"++idvar++"['id']);"
+        ]
         ++ indentBlock 4 content ++
         [ "  echo '</LI>';"
         , "}"
-        , "if($edit) echo '"
-        , "  <LI CLASS=\"new UI"++cls++ "\" ID=\""
-                           ++(path ++".'.count("++var++").'")++"\">new "++name att++"</LI>';"
-        , "echo '"
+        ]
+      --  , "  <A HREF=\"'.serviceref('Obj',$edit).'">new Obj</A>';"
+        ++
+        (if null gotoP --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
+         then   [ "if($edit) echo '"
+                , "  <LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"]
+         else 
+          (if length gotoP == 1
+           then [ "if($edit) echo '" --TODO so these LI's should become one dropdown
+                , "  <LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>"
+                , "  <LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">"
+                , "    <A HREF=\""++(fst$head gotoP)++"\">new instance of "++name att++"</A>"
+                , "  </LI>';" ]
+           else [ "if($edit) {" --TODO and these LI's should become one dropdown too
+                , "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
+                , "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"
+                , "  echo '<A class=\"GotoLink\" id=\"To"++path++"\">new instance of "++name att++"</A>';"]
+               ++ indentBlock 2 (gotoDivNew gotoP path) ++
+                [ "  echo '</LI>';"
+                , "}" ]
+-- <DIV class="GotoArrow" id="To0">
+--   new Obj
+-- </DIV>
+-- <DIV class="Goto" id="GoTo0">
+--   <UL>
+--    <LI><A HREF="ctxSimple.php?content=Obj&new=1">new Obj</A></LI>
+--    <LI><A HREF="ctxSimple.php?content=OtherSvcForObj&new=1">new OtherSvcForObj</A></LI>
+--   </UL>
+-- </DIV>
+--
+-- <LI CLASS="item UI" ID="0.0">
+--            <A class="GotoLink" id="To0.0">ObjX</A>
+--            <DIV class="Goto" id="GoTo0.0">
+--              <UL>
+--                <LI><A HREF="ctxSimple.php?content=Obj&Obj=ObjX">Obj</A></LI>
+--                <LI><A HREF="ctxSimple.php?content=OtherSvcForObj&OtherSvcForObj=ObjX">OtherSvcForObj</A></LI>
+--              </UL>
+--             </DIV>
+-- </LI>
+ 
+
+          )
+        )
+        ++
+        [ "echo '"
         , "</UL>';"
         ]
-    | objats att==[] --attContent
+    | objats att==[] --attContent (UNI without objats)
       = let
         content = uniAtt (dvar var) var depth path cls att
     --       spanordiv = if isTot (objctx att) then "SPAN" else "DIV"
@@ -280,14 +350,14 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
               , "  echo '</DIV>';"] ++ indentBlock 2 content ++
               [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
               ]
-    | (isTot(objctx att)) --attContent
+    | (isTot(objctx att)) --attContent (UNI & TOT with objats)
       = let
         content = uniAtt (var) var depth path cls att
         in
         [ "echo '<DIV CLASS=\"UI"++cls++"\" ID=\""++path++"\">';" ]
         ++ indentBlock 2 content ++
         [ "echo '</DIV>';" ]
-    | otherwise --attContent
+    | otherwise --attContent (UNI & not(TOT) with objats)
       = let
         content = uniAtt (var) var depth path cls att
         in
@@ -318,7 +388,7 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         in
         if not (isTot (objctx att)) && isUni (objctx att)
         then [ "if(isset("++var++")){" ] ++ indentBlock 2 content ++ ["}"]
-        else content
+        else ["if("++var++"==''){echo 'nothing';}", "else{"] ++ content ++ ["}"]
     | otherwise --uniAtt
       = let
         gotoP = gotoPages att (idvar ++ "['id']")
