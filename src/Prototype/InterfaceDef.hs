@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
- module Prototype.InterfaceDef where
+module Prototype.InterfaceDef where
   import Adl
   import Strings    (chain)
   import Data.Fspec

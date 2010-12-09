@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-  module CommonClasses
+module CommonClasses
   (  Identified(name) , showSign
    , ABoolAlg(glb,lub,order)
    , Conceptual(conts)

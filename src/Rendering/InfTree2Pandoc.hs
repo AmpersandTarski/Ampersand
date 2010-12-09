@@ -1,4 +1,4 @@
-  {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}
 module Rendering.InfTree2Pandoc (texOnly_proofdoc
                                 ,texOnly_pandoctree
                                 ,texOnly_writeexpr

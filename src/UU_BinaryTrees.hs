@@ -1,18 +1,4 @@
 {-# LINE 1 "UU_BinaryTrees.lhs" #-}
-#line 1 "UU_BinaryTrees.lhs"
-
-
-
-
-
-
-
-
-
-
-
-
-
    module UU_BinaryTrees 
    ( BinSearchTree(..)
    , tab2tree

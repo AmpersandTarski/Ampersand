@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
-  module Prototype.Object(objectServices) where
+module Prototype.Object(objectServices) where
    --import Char(toUpper)
    import Strings(chain)
    import NormalForms (disjNF,simplify)

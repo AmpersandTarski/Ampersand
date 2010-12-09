@@ -1,7 +1,6 @@
-{-# LINE 1 "UU_Scanner.lhs" #-}
-#line 1 "UU_Scanner.lhs"
-  {-# OPTIONS -XFlexibleContexts #-}
-   module UU_Scanner where
+{-# OPTIONS -XFlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+module UU_Scanner where
 
    import Char
    import List

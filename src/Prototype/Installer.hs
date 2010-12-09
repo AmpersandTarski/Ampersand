@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
- module Prototype.Installer where
+module Prototype.Installer where
   import Adl
   import Strings    (chain)
   import Data.Plug

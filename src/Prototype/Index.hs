@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
-  module Prototype.Index(htmlindex) where
+module Prototype.Index(htmlindex) where
    import Strings(chain)
    import Prototype.RelBinGenBasics(indentBlock)
    import Prototype.RelBinGenSQL(isOne)

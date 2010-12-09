@@ -9,7 +9,7 @@
   -- VRAAG (SJC): Als STRING de code is die showADLcode fSpec produceert, zou dan STRING == showADL (parse STRING) (context (parse STRING)) moeten gelden?
 {-# OPTIONS_GHC -XFlexibleInstances -Wall #-}
 {-# OPTIONS -XTypeSynonymInstances #-}
-  module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
+module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
   where
    import Char                            (isAlphaNum)
    import CommonClasses

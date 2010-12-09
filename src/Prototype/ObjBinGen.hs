@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-  module Prototype.ObjBinGen  (phpObjServices)
+module Prototype.ObjBinGen  (phpObjServices)
   where
  
    import CommonClasses

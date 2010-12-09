@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-  module Prototype.ConnectToDataBase (connectToDataBase) 
+module Prototype.ConnectToDataBase (connectToDataBase) 
   where
    import Strings (chain) 
    import Adl

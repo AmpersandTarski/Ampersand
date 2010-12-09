@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XFlexibleContexts #-}
- module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
+{-# LANGUAGE FlexibleContexts #-}
+module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    import UU_Scanner  ( Token(..),TokenType(..),noPos
                       , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
    import UU_Parsing  (Parser
