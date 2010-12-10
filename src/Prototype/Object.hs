@@ -13,7 +13,7 @@ module Prototype.Object(objectServices) where
               )
    import ShowADL (showADLcode)
    import Collection (Collection (rd,rd',(>-)))
-   import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,selectExpr,sqlPlugFields)
+   import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
    import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
    import Data.Fspec
    import Data.Plug
@@ -490,7 +490,7 @@ module Prototype.Object(objectServices) where
                    else ["  FROM " ++ head (fst (head tbls))]
                         ++ (indentBlock 7 (tail (fst (head tbls))))
                         ++ concat (map joinOn (tail tbls)) ++
-                        (if isOne' then [] else [" WHERE " ++ snd (head tbls)])
+                        (if isOne' objOut then [] else [" WHERE " ++ snd (head tbls)])
                   )
       where comboGroups'::[((PlugSQL,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
             comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WAAROM: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
@@ -511,7 +511,7 @@ module Prototype.Object(objectServices) where
                                    -- Voor debuggen onderstaande trace regel uitcommentaren
                                    -- en Debug.trace aan de imports toevoegen
                                    -- ++ trace ("Geen keyGroup voor "++name objOut) []
-                                   ++ if isOne' then [] else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
+                                   ++ if isOne' objOut then [] else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
                                  )
             reduce :: [[((PlugSQL,(ObjectDef,SqlField)),(ObjectDef,SqlField))]]
                       -> [((PlugSQL,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
@@ -534,7 +534,6 @@ module Prototype.Object(objectServices) where
             takeOff a (F (b:bs)) | disjNF a== disjNF b = Just (F bs)
             takeOff a e' | isIdent a = Just e'
             takeOff _ _ = Nothing
-            isOne' = isOne objOut
             aOuts           = [a|a<-objats( objOut)]
             rest :: [(ObjectDef,Integer)]
             rest            = zip [ a | a<-aOuts
@@ -569,15 +568,18 @@ module Prototype.Object(objectServices) where
                               , not (null r)
                               ]
             joinOn :: ([String],String)->[String]
-            joinOn ([t],jn) = [ (if isOne' then "     , "      else (if isArr then " " else "  LEFT")++" JOIN ")++t
-                              ++(if isOne' then "" else " ON "++jn)]
-            joinOn (ts,jn)  = [ (if isOne' then "     , " else (if isArr then " " else "  LEFT")++" JOIN ")++(head ts)]
-                              ++indentBlock (if isOne' then 7 else 12) (tail ts)++(if isOne' then [] else (["    ON "++jn]))
+            joinOn ([t],jn) = [ (if isOne' objOut then "     , "      else (if isArr then " " else "  LEFT")++" JOIN ")++t
+                              ++(if isOne' objOut then "" else " ON "++jn)]
+            joinOn (ts,jn)  = [ (if isOne' objOut then "     , " else (if isArr then " " else "  LEFT")++" JOIN ")++(head ts)]
+                              ++indentBlock (if isOne' objOut then 7 else 12) (tail ts)++(if isOne' objOut then [] else (["    ON "++jn]))
             restLines (outAtt,n)
-              = if sql==Nothing then error$ "Cannot get a query for "++(show$ objctx outAtt)++" in Object.hs (line 578)"
+              = if sql==Nothing then error$ "Cannot get a query for "
+                                        ++(show( objctx outAtt
+                                          ,sqlExprTrg fSpec (objctx outAtt),isOne' objOut,sqlExprSrc fSpec (objctx outAtt) 
+                                          ))++" in Object.hs (line 578)"
                 else splitLineBreak ((fromJust sql) ++ " AS f"++show n) -- better names?
               where sql = selectExprBrac fSpec (-4)
-                                               (if isOne' then "" else sqlExprSrc fSpec (objctx outAtt))
+                                               (if isOne' objOut then "" else sqlExprSrc fSpec (objctx outAtt))
                                                (sqlExprTrg fSpec (objctx outAtt))
                                                (objctx outAtt)
             tableName gr@(p,_) = if name p == tableReName gr then "`"++name p++"`" else "`"++name p ++ "` AS "++tableReName gr

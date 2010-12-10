@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module Prototype.RelBinGenSQL
- (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne
+ (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne'
  ) where 
    import Adl
    import ShowADL
    import Data.Fspec
    import Data.Plug
-   import NormalForms (disjNF,simplify)
+   import NormalForms (conjNF,disjNF,simplify)
    import Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                     ,cChain,filterEmpty,phpIndent)
    import Data.Maybe
@@ -18,10 +18,16 @@ module Prototype.RelBinGenSQL
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
    -- de vraag die we hier stellen is: komen we steeds op eenzelfde concept uit
    -- als dit zo is, hoeven we alleen dat ene concept te tonen
-  -- isOneExpr :: Expression -> Bool
-  -- isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
---   isOne :: ObjectDef -> Bool
---   isOne o = isOneExpr$ctx o
+   --
+   -- Bovenstaand commentaar snap ik niet (gmi)
+   -- in de php code heb je een instantie van een concept (ID=,$id,etc.) 
+   -- soms is het id constant i.e. source (ctx o) == cptS.
+   -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
+   -- daarom heb ik ze opgesplitst
+   isOneExpr :: Expression -> Bool
+   isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
+   isOne' :: ObjectDef -> Bool
+   isOne' o = isOneExpr$ctx o
    isOne :: ObjectDef -> Bool
    isOne o = source (ctx o) == cptS
 

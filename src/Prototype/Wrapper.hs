@@ -126,7 +126,7 @@ objectWrapper fSpec serviceObjects o flags
       ( if not (isOne o)
         then ["if($edit && $"++objectId++"->isNew())"
              ,if autoid flags --if not autoid then the user has to come up with an identifier for the new instance
-              then "     echo '<H1>New instance of "++objectName++"</H1>';"
+              then "     echo '<H1>New instance of "++objectName++"</H1>';"--TODO maybe I should generate an ID here and put it in a hidden INPUT NAME=ID
               else "     echo '<P><INPUT TYPE=\"TEXT\" NAME=\"ID\" VALUE=\"'.addslashes($"++objectId++"->getId()).'\" /></P>';"
              ,"else echo '<H1>'."++
                   (if null (displaydirective o) 
@@ -159,6 +159,9 @@ displaytbl::ObjectDef->String
 displaytbl obj = fst(head$displaydirective obj)
 displaycol::ObjectDef->String
 displaycol obj = snd(head$displaydirective obj)
+--use novalue to display an item which does not exist
+novalue::String
+novalue = "<I>Nothing</I>"
 
 -----------------------------------------
 --display/edit the instances related to the identifier of some concept instance (objectId) by definition of SERVICE (att0)
@@ -176,6 +179,9 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    newBlocks = attEdit ("$"++phpIdentifier (name att0)) (0::Integer) path0 cls0 att0
    in
    --BEGIN : content (in read or edit mode)
+   --By default javascript controls read and edit mode layout for "item UI" and "new UI" (see edit.js for edit mode)
+   --other items are the same in read and edit mode
+   --navigate.js handles Goto* classes
    if elem "PICTURE" [x|xs<-objstrs att0,x<-xs] 
    --TODO-> replace by checking (target att0)==Cpt "Picture" && Picture ISA Datatype
    --The meaning of and the concept name "Datatype" is claimed by Ampersand.
@@ -204,6 +210,7 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    , "</DIV>"
    ] --END: content
    ++ --BEGIN: edit blocks (see attEdit below)
+   --REQUEST FOR COMMENT: what do the edit blocks do at runtime?
    if null newBlocks then [] 
    else
    [ "<?php if($edit){ ?>"
@@ -219,7 +226,7 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    -----------------------------------------
    --CONTENT functions
    -----------------------------------------
-   --the content for an att0 has already been read in a class instance for this service
+   --the content for an att0 has already been read in a php class instance for this service
    -- recall: $"++ phpIdentifier (name att0) ++" = $" ++ objectId ++ "->get_" ++ phpIdentifier (name att0)++"();"
    --content enters at attContent with 
    --   att=att0
@@ -233,28 +240,26 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    --   att'= a
    --   var'=(var++"['"++name a++"']")
    --   path'=(path++"."++show n)
+   -----------
+   --gotoPages returns the list of suitable service links for an (objctxatt) in edit or read mode and a name for it
    gotoPages :: ObjectDef->String->[(String,String)]
-   gotoPages att idvar
+   gotoPages att idvar 
      = [ ("'.serviceref('"++name serv++"',false,$edit, array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
          ,name serv)
        | serv<-serviceObjects
        , target (objctx serv) == target (objctx att)
        ]
-   gotoPagesNew :: ObjectDef->[(String,String)]
+   --gotoPagesNew like gotoPages only in new mode
    gotoPagesNew att
      = [ ("'.serviceref('"++name serv++"',$edit).'"
-         ,name serv)
+         ,"new "++ name serv)
        | serv<-serviceObjects
        , target (objctx serv) == target (objctx att)
        ]
+   --In case there is more than one gotoPage, gotoDiv generates suitable code for a gotoPage
    gotoDiv gotoP path
     = [ "echo '<DIV class=\"Goto\" id=\"GoTo"++path++"\"><UL>';"] ++
       [ "echo '<LI><A HREF=\""++link++"\">"++txt++"</A></LI>';"
-      | (link,txt) <- gotoP] ++
-      [ "echo '</UL></DIV>';" ]
-   gotoDivNew gotoP path
-    = [ "echo '<DIV class=\"Goto\" id=\"GoTo"++path++"\"><UL>';"] ++
-      [ "echo '<LI><A HREF=\""++link++"\">new "++txt++"</A></LI>';"
       | (link,txt) <- gotoP] ++
       [ "echo '</UL></DIV>';" ]
    ----------------
@@ -285,7 +290,6 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         [ "  echo '</LI>';"
         , "}"
         ]
-      --  , "  <A HREF=\"'.serviceref('Obj',$edit).'">new Obj</A>';"
         ++
         (if null gotoP --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
          then   [ "if($edit) echo '"
@@ -301,73 +305,62 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
                 , "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
                 , "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"
                 , "  echo '<A class=\"GotoLink\" id=\"To"++path++"\">new instance of "++name att++"</A>';"]
-               ++ indentBlock 2 (gotoDivNew gotoP path) ++
+               ++ indentBlock 2 (gotoDiv gotoP path) ++
                 [ "  echo '</LI>';"
                 , "}" ]
--- <DIV class="GotoArrow" id="To0">
---   new Obj
--- </DIV>
--- <DIV class="Goto" id="GoTo0">
---   <UL>
---    <LI><A HREF="ctxSimple.php?content=Obj&new=1">new Obj</A></LI>
---    <LI><A HREF="ctxSimple.php?content=OtherSvcForObj&new=1">new OtherSvcForObj</A></LI>
---   </UL>
--- </DIV>
---
--- <LI CLASS="item UI" ID="0.0">
---            <A class="GotoLink" id="To0.0">ObjX</A>
---            <DIV class="Goto" id="GoTo0.0">
---              <UL>
---                <LI><A HREF="ctxSimple.php?content=Obj&Obj=ObjX">Obj</A></LI>
---                <LI><A HREF="ctxSimple.php?content=OtherSvcForObj&OtherSvcForObj=ObjX">OtherSvcForObj</A></LI>
---              </UL>
---             </DIV>
--- </LI>
- 
-
           )
         )
         ++
         [ "echo '"
         , "</UL>';"
         ]
-    | objats att==[] --attContent (UNI without objats)
-      = let
-        content = uniAtt (dvar var) var depth path cls att
+--    | objats att==[] --attContent (UNI without objats)
+--      = let
+--        content = uniAtt (dvar var) var depth path cls att
     --       spanordiv = if isTot (objctx att) then "SPAN" else "DIV"
-        dvar var'@('$':x) = if null (displaydirective att) then var' else ('$':("display"++x))
-        dvar x = x
-        in
-        if isTot (objctx att)
-        then  [ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" 
-              , "  "++dvar var ++"="++(if null (displaydirective att) then var 
-                       else "display('"++displaytbl att++"','"++displaycol att++"',"++var++")") ++ ";"]
-             ++ content ++ [ "echo '</SPAN>';" ]
-        else  [ "if (isset("++var++")){"
-              , "  "++dvar var ++"="++(if null (displaydirective att) then var 
-                       else "display('"++displaytbl att++"','"++displaycol att++"',"++var++")") ++ ";"
-              , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"
-              , "  echo '</DIV>';"] ++ indentBlock 2 content ++
-              [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
-              ]
-    | (isTot(objctx att)) --attContent (UNI & TOT with objats)
+--        dvar var'@('$':x) = if null (displaydirective att) then var' else ('$':("display"++x))
+--        dvar x = x
+--        val | null (displaydirective att) = var
+--            | otherwise = "display('"++displaytbl att++"','"++displaycol att++"',"++var++")"
+--        in
+--        if isTot (objctx att) --waarom is TOT->SPAN en UNI->DIV?
+--        then  [ "echo '<SPAN CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" 
+--              , "  "++dvar var ++"="++ val ++ ";"]
+--             ++ content 
+--             ++ [ "echo '</SPAN>';" ]
+--        else  [ "if (isset("++var++")){" --in case of TOT, $var must be set except in case of new mode
+--              , "  "++dvar var ++"="++val ++ ";"
+--              , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"
+--              , "  echo '</DIV>';"]
+--             ++ indentBlock 2 content ++
+--              [ "} else echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\">"++novalue++"</DIV>';" ]
+--    | (isTot(objctx att)) --attContent (UNI & TOT with objats)
+--      = let
+--        content = uniAtt (var) var depth path cls att
+--        in --the relation instance exists or is pretended(!) to exist in case of new mode => item UI
+--           --TODO -> when dropdown is implemented a <new instance> link exists in the dropdown
+--           --        untill then new instances have to be created in a separate transaction (only picking existing)
+--        [ "//PICK an existing item"++path++". Creating instances is not/should not be possible."
+--        , "echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';" ] --TODO TEST: assumed that CLASS=UI should be CLASS=item UI
+--        ++ indentBlock 2 content ++
+--        [ "echo '</DIV>';" ]
+    | otherwise --attContent (UNI with or without objats)
       = let
         content = uniAtt (var) var depth path cls att
         in
-        [ "echo '<DIV CLASS=\"UI"++cls++"\" ID=\""++path++"\">';" ]
-        ++ indentBlock 2 content ++
-        [ "echo '</DIV>';" ]
-    | otherwise --attContent (UNI & not(TOT) with objats)
-      = let
-        content = uniAtt (var) var depth path cls att
-        in
-        [ "if(isset("++var++")){"
-         , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"]
-         ++ indentBlock 4 content ++
-         [ "  echo '</DIV>';"
-         , "}else{"
-         , "  echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\"><I>Nothing</I></DIV>';"
-         , "}"]    
+        --TODO -> when dropdown is implemented a <new instance> link exists in the dropdown
+        --        untill then new instances have to be created in a separate transaction (only picking existing)
+        [ "//PICK an existing item"++path++". Creating instances should at most be possible for simple Concepts."
+        , "if(isset("++var++")){" --in case of TOT (+UNI), $var must be set.
+                                  --TODO: in new mode it is implemented as $var='', which is wrong, because at save '' will become an instance of the target concept
+           --the relation instance exists => item UI
+        , "  echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">';"
+        , "}else{"
+          --no relation instance exists => new UI
+        , "  echo '<DIV CLASS=\"new UI"++cls++"\" ID=\""++path++"\">';"
+        , "}"]
+        ++ indentBlock 4 content --uniAtt returns novalue if $var is not set or $var==''
+        ++ [ "echo '</DIV>';"]
    ----------------end: attContent
    uniAtt var idvar depth path cls att
     | null (objats att)
@@ -386,9 +379,9 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         echobit= "htmlspecialchars("++var++")"
         gotoP = gotoPages att idvar
         in
-        if not (isTot (objctx att)) && isUni (objctx att)
-        then [ "if(isset("++var++")){" ] ++ indentBlock 2 content ++ ["}"]
-        else ["if("++var++"==''){echo 'nothing';}", "else{"] ++ content ++ ["}"]
+        if isUni (objctx att) --TODO: how do you prevent the novalue to be saved?
+        then [ "if(isset("++var++") && "++var++"!=''){" ] ++ indentBlock 2 content ++ ["} else {echo '"++novalue++"';}"]
+        else [ "if("++var++"==''){echo '"++novalue++"';}", "else{"] ++ content ++ ["}"]
     | otherwise --uniAtt
       = let
         gotoP = gotoPages att (idvar ++ "['id']")
@@ -466,7 +459,7 @@ showBlockJS cls att
                               then "<SPAN CLASS=\"item UI"++acls c a++"\" ID=\""++n
                                    ++"\">" ++ concat (attCode n (acls c a) a) ++"</SPAN>"
                               else "<DIV CLASS=\"new UI"++acls c a++"\" ID=\""
-                                   ++n++"\"><I>Nothing</I></DIV>"
+                                   ++n++"\">"++novalue++"</DIV>"
                          else "<UL><LI CLASS=\"new UI"++acls c a
                               ++"\" ID=\""++n++"\">new "++(name a)++"</LI></UL>"
      acls c a = c++"_"++(phpIdentifier (name a))
