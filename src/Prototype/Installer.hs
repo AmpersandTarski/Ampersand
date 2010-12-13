@@ -75,39 +75,20 @@ module Prototype.Installer where
                     )
              ++ ["                  ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
-             ++ (if (null $ mdata plug) then [] else
+             ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
                                  , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
                                  ]++ indentBlock 12
-                                                 ( [ comma++ " (" ++md++ ")"
-                                                   | (md,comma)<-zip (mdata plug) ("VALUES":repeat "      ,")
+                                                 ( [ comma++ " (" ++valuechain md++ ")"
+                                                   | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")
                                                    ]
                                                  )
                                  ++ ["            \");"
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              )
+          valuechain record = chain ", " [if null fld then "NULL" else phpShow fld|fld<-record]
           checkPlugexists plug
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(name plug)++"`\")){"
              , "  mysql_query(\"DROP TABLE `"++(name plug)++"`\");" --todo: incremental behaviour
              , "}" ]
-          mdata :: PlugSQL -> [String]
-          mdata plug
-           = if name plug==name S then [ "S" ] else
-             if length (fields plug)==2 -- treat binary tables differently
-             then
-             --DESCR -> the first field contains an expression::[A*A] which can be the expression I[A]
-             --         the second field contains an expression Mph[A*B]
-             --         we need the contents of the relation morphism only
-             [ phpShow (srcPaire p) ++", "++ phpShow (trgPaire p)
-             | Tm (m'@Mph{}) _ <- map fldexpr (fields plug), p<-contents' m']
-             else
-             [ chain ", " [ head ([phpShow (trgPaire p)
-                                  | p<-contents'$fldexpr f,a==srcPaire p
-                                  ]++
-                                  [phpShow a
-                                  | isIdent (fldexpr f) -- this should go automatically, but does not
-                                  ]++["NULL"])
-                          | f<-fields plug]
-             | a<- rd $ map srcPaire (concat (map (contents'.fldexpr) (fields plug))) -- be sure that the concepts return their respective populations
-             ]
    
