@@ -6,7 +6,7 @@ module PredLogic
 
    import CommonClasses (ABoolAlg(..))
    import Collection (Collection((>-)))
-   import Strings(chain)
+   import Data.List
    import Auxiliaries (eqCl)
    import Adl
    import ShowADL
@@ -52,13 +52,13 @@ module PredLogic
                       = case lang of
                          English -> if null vs then "" else
                                     if q=="Exists"
-                                    then chain " and " ["there exist"++(if length vs'==1 then "s a "++dType else " "++plural English dType)++" called "++chain ", " vs' | (vs',dType)<-vss]
+                                    then intercalate " and " ["there exist"++(if length vs'==1 then "s a "++dType else " "++plural English dType)++" called "++intercalate ", " vs' | (vs',dType)<-vss]
                                     else "If "++langVars "Exists" vs++", "
                                     where
                                      vss = [(map fst vs',show(snd (head vs'))) |vs'<-eqCl snd vs]
                          Dutch   -> if null vs then "" else
                                     if q=="Er is"
-                                    then chain " en " ["er "++(if length vs'==1 then "is een "++dType else "zijn "++plural Dutch dType)++" genaamd "++chain ", " vs' | (vs',dType)<-vss]
+                                    then intercalate " en " ["er "++(if length vs'==1 then "is een "++dType else "zijn "++plural Dutch dType)++" genaamd "++intercalate ", " vs' | (vs',dType)<-vss]
                                     else "Als "++langVars "Er is" vs++", "
                                     where
                                      vss = [(map fst vs',show(snd (head vs'))) |vs'<-eqCl snd vs]
@@ -76,10 +76,10 @@ module PredLogic
                   Equiv lhs rhs       -> wrap i 2 (breakP++charshow 2 lhs++spaceP++equivP++spaceP++ charshow 2 rhs)
                   Disj rs             -> if null rs 
                                          then "" 
-                                         else wrap i 3 (chain (spaceP++orP ++spaceP) (map (charshow 3) rs))
+                                         else wrap i 3 (intercalate (spaceP++orP ++spaceP) (map (charshow 3) rs))
                   Conj rs             -> if null rs 
                                          then "" 
-                                         else wrap i 4 (chain (spaceP++andP++spaceP) (map (charshow 4) rs))
+                                         else wrap i 4 (intercalate (spaceP++andP++spaceP) (map (charshow 4) rs))
                   Funs x ls           -> case ls of
                                             []    -> x
                                             m:ms  -> if isIdent m then charshow i (Funs x ms) else charshow i (Funs (funP m x) ms)

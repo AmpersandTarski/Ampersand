@@ -15,7 +15,7 @@ module TypeInference.InfLibAGFuncs where
      env_isa:Isa
      type_down:RelAlgType
      listof:ListOf
-   | {-chain attributes-}
+   | {-intercalate attributes-}
    | {-synthesized attributes-}
      me:SELF --copy of myself to investigate me
      env_in:AltList

@@ -1,17 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.Installer where
   import Adl
-  import Strings    (chain)
+  import Data.List
   import Data.Plug
   import Data.Fspec
-  import Collection (rd)
   import Options
 --  import NormalForms(conjNF)
   import Prototype.RelBinGenBasics(phpShow,indentBlock,commentBlock,addSlashes)
 --  import Debug.Trace
 
   installer :: Fspc -> Options -> String
-  installer fSpec flags = "<?php\n  " ++ chain "\n  "
+  installer fSpec flags = "<?php\n  " ++ intercalate "\n  "
      (
         [ "// Try to connect to the database\n"
         , "if(isset($DB_host)&&!isset($_REQUEST['DB_host'])){"
@@ -77,7 +76,7 @@ module Prototype.Installer where
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
-                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++chain "," ["`"++fldname f++"` "|f<-fields plug]++")"
+                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` "|f<-fields plug]++")"
                                  ]++ indentBlock 12
                                                  ( [ comma++ " (" ++valuechain md++ ")"
                                                    | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")
@@ -86,7 +85,7 @@ module Prototype.Installer where
                                  ++ ["            \");"
                                  , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              )
-          valuechain record = chain ", " [if null fld then "NULL" else phpShow fld|fld<-record]
+          valuechain record = intercalate ", " [if null fld then "NULL" else phpShow fld|fld<-record]
           checkPlugexists plug
            = [ "if($columns = mysql_query(\"SHOW COLUMNS FROM `"++(name plug)++"`\")){"
              , "  mysql_query(\"DROP TABLE `"++(name plug)++"`\");" --todo: incremental behaviour

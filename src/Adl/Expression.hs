@@ -10,7 +10,7 @@ import Adl.Concept                 (Concept(..),Association(..)
                                    ,MorphicId(..),Morphic(..))
 import Adl.Prop                    (Prop(..))
 import Collection                  (Collection (..))
-import Strings                     (chain)
+import Data.List hiding (union)
 import CommonClasses               (Identified(..), ABoolAlg(..))
 import Auxiliaries                 (eqClass, sord')
 
@@ -139,13 +139,13 @@ instance Show Expression where
    --    wrap i j str = if i<=j then str else lpar++str++rpar
        showchar (Tm mph _)  = name mph++if inline mph then "" else "~"
        showchar (Fux []) = "-V"
-       showchar (Fux fs) = chain union [showchar f| f<-fs]
+       showchar (Fux fs) = intercalate union [showchar f| f<-fs]
        showchar (Fix []) = "V"
-       showchar (Fix fs) = chain inter [showchar f| f<-fs]
+       showchar (Fix fs) = intercalate inter [showchar f| f<-fs]
        showchar (Fdx []) = "-I"
-       showchar (Fdx ts) = chain rAdd [showchar t| t<-ts]
+       showchar (Fdx ts) = intercalate rAdd [showchar t| t<-ts]
        showchar (F [])  = "I"
-       showchar (F ts)  = chain rMul [showchar t| t<-ts]
+       showchar (F ts)  = intercalate rMul [showchar t| t<-ts]
        showchar (K0x e') = showchar e'++clos0
        showchar (K1x e') = showchar e'++clos1
        showchar (Cpx e') = compl++showchar e'

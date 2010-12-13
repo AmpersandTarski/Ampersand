@@ -1,5 +1,4 @@
-{-# LINE 1 "UU_BinaryTrees.lhs" #-}
-   module UU_BinaryTrees 
+module UU_BinaryTrees 
    ( BinSearchTree(..)
    , tab2tree
    , btFind

@@ -2,11 +2,10 @@
 module Prototype.GetCode (getCodeFor) where
  import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute)
  import Prototype.CodeVariables (CodeVar(..))
- import Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName)
+ import Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
  import Adl (Concept(..), Expression(..),Morphism(..),mIs,isIdent,flp,source,sign,target,Identified(..),singleton)
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import Prototype.RelBinGenBasics(zipnum)
- import Strings(noCollide)
  import Data.Fspec (Fspc(plugs))
  import Data.Plug (IsPlug(..),plname,PlugPHP(..))
  import Prototype.CodeAuxiliaries(Named(..))

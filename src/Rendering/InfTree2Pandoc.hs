@@ -76,18 +76,18 @@ writeexpr expr = showExpr (" \\cup ", " \\cap ", " \\dagger ", ";", "*", "+", "-
          where
          showchar (Tm mph _)  = name mph++if inline mph then "" else "^{\\smile}"
          showchar (Fux []) = "-V"
-         showchar (Fux fs) = chain' union' fs
+         showchar (Fux fs) = intercalate' union' fs
          showchar (Fix []) = "V"
-         showchar (Fix fs) = chain' inter fs
+         showchar (Fix fs) = intercalate' inter fs
          showchar (Fdx []) = "-I"
-         showchar (Fdx ts) = chain' rAdd ts
+         showchar (Fdx ts) = intercalate' rAdd ts
          showchar (F [])  = "I"
-         showchar (F ts)  = chain' rMul ts
+         showchar (F ts)  = intercalate' rMul ts
          showchar (K0x e') = showchar e'++clos0
          showchar (K1x e') = showchar e'++clos1
          showchar (Cpx e') = "\\overline{"++showchar e'++"}"
          showchar (Tc f)  = lpar++showchar f++rpar
-         chain' x' xs = head (map showchar xs) ++ concat [x' ++ f|f<-tail (map showchar xs)]
+         intercalate' x' xs = head (map showchar xs) ++ concat [x' ++ f|f<-tail (map showchar xs)]
 
 --writes a subtree as a separate tree i.e. the proof of a premise of the parent tree
 pandoctree_ref :: (String,InfTree) -> [Inline]

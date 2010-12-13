@@ -12,7 +12,7 @@ where
                            ,isSingleton)
    import Adl.Prop         (Prop(..),Props,flipProps)
    import Adl.Pair         (Pairs,flipPair) 
-   import Strings          (chain)
+   import Data.List
    import CommonClasses    (Identified(..),showSign
                            , ABoolAlg)    
    import Collection       (Collection ((>-)))
@@ -192,7 +192,7 @@ where
       d == d' = name d==name d' && source d==source d' && target d==target d'
    instance Show Declaration where
     showsPrec _ d
-     = showString (chain " " ([decnm d,"::",name (desrc d),"*",name (detrg d),show (decprps_calc d),"PRAGMA",show (decprL d),show (decprM d),show (decprR d)] {- obsolete: ++if null (decexpl d) then [] else ["EXPLANATION",show (decexpl d)] -} ))
+     = showString (intercalate " " ([decnm d,"::",name (desrc d),"*",name (detrg d),show (decprps_calc d),"PRAGMA",show (decprL d),show (decprM d),show (decprR d)] {- obsolete: ++if null (decexpl d) then [] else ["EXPLANATION",show (decexpl d)] -} ))
    instance Identified Declaration where
     name d@Sgn{}   = decnm d
     name Isn{}     = "I"

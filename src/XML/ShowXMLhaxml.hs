@@ -22,7 +22,6 @@ where
 
    import CommonClasses(Identified(..))
    import Auxiliaries(showL)
-   import Strings(chain)
    import Data.Fspec
    import Adl
    import ShowADL

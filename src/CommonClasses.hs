@@ -9,14 +9,15 @@ module CommonClasses
   where
 
    import Collection(rd)
-   import Strings(chain)
    import Data.Maybe
+   import Data.List
+   
    ----------------------------------------------
    class Identified a where
     name   :: a->String
 
    showSign :: Identified a => [a] -> String
-   showSign cs = "["++(chain "*".rd.map name) cs++"]"
+   showSign cs = "["++(intercalate "*".rd.map name) cs++"]"
 
    instance Identified a => Identified [a] where
     name [] = ""

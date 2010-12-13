@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.ContextGen where
   import Adl
-  import Strings    (chain)
+  import Data.List
   import Data.Fspec
   import Version (versionbanner)
    
   contextGen :: Fspc -> String
-  contextGen fspc = "<?php\n  " ++ chain "\n  "
+  contextGen fspc = "<?php\n  " ++ intercalate "\n  "
      (
         [ "// "++name fspc++".php"
         , "// Generated with "++ versionbanner

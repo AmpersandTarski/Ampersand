@@ -6,7 +6,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
    import CommonClasses (  Identified(name))
    import Collection ( Collection((>-),rd) )
-   import Strings (chain) 
+   import Data.List
    import Typology (Inheritance(Isa))
    import Adl  hiding (Association)
    import Auxiliaries (eqCl)
@@ -95,8 +95,8 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
           classes2dot :: [Class] -> [String] -> [Char]
           classes2dot cs os
            = defaultclass ++
-             (if null cs then "" else "\n" ++ chain "\n" (map class2dot cs))++
-             (if null os then "" else "\n" ++ chain "\n" (map clas2dot os))
+             (if null cs then "" else "\n" ++ intercalate "\n" (map class2dot cs))++
+             (if null os then "" else "\n" ++ intercalate "\n" (map clas2dot os))
              where defaultclass = "    Node [shape = box] \n"
           clas2dot :: String -> String
           clas2dot n = spaces 5 ++ alias n ++ " [shape=box label=\""++n++"\"]"
@@ -119,14 +119,14 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
 
               attribs2dot :: [Attribute] -> [Char]
               attribs2dot [] = emptydottable notableborderopts
-              attribs2dot as = (dottable notableborderopts (chain "" (map attrib2dot as)))
+              attribs2dot as = (dottable notableborderopts (intercalate "" (map attrib2dot as)))
  
               attrib2dot :: Attribute -> [Char]
               attrib2dot (OOAttr n t fNull) = dotrow "" (dotcell " ALIGN=\"left\"" ((if fNull then "o " else "+ ") ++ n ++ " : " ++ t))
 
               methods2dot :: [Method] -> [Char]
               methods2dot [] = emptydottable notableborderopts
-              methods2dot ms = dottable notableborderopts (chain "" (map method2dot ms))
+              methods2dot ms = dottable notableborderopts (intercalate "" (map method2dot ms))
 
               method2dot :: Method -> [Char]
               method2dot m =  dotrow "" (dotcell " ALIGN=\"left\"" ("+ " ++ show m ))
@@ -140,7 +140,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
              then (enc True . head) [ nm++show (i::Int) | i<-[1..], not ((nm++show i) `elem` map name (concspat) )]
              else enc True nm
           associations2dot :: [Association] -> [Char]
-          associations2dot as = chain "\n" (map association2dot as) ++ "\n"
+          associations2dot as = intercalate "\n" (map association2dot as) ++ "\n"
           association2dot :: Association -> [Char]
           association2dot (OOAssoc from m1 _ to m2 n2) =
               "      edge [ \n" ++
@@ -161,7 +161,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
   --        AGGREGATIONS:      --
   -------------------------------
           aggregations2dot :: [Aggregation] -> [Char]
-          aggregations2dot rs = chain "\n" (map aggregation2dot rs) ++ "\n"
+          aggregations2dot rs = intercalate "\n" (map aggregation2dot rs) ++ "\n"
           aggregation2dot :: Aggregation -> [Char]
  
           aggregation2dot (OOAggr del from to) =
@@ -184,7 +184,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
   --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead 
   -------------------------------
           generalizations2dot :: [Generalization] -> [Char]
-          generalizations2dot gs = chain "\n" (map generalization2dot gs) ++ "\n"
+          generalizations2dot gs = intercalate "\n" (map generalization2dot gs) ++ "\n"
  
           generalization2dot :: Generalization -> [Char]
           generalization2dot (OOGener _ []) = ""
@@ -315,12 +315,12 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
                                         String             -- result: a type
 
    instance Show Method where
-    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"):handle")
-    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++chain "," [ n | OOAttr n _ _<-as]++"]")
-    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++chain "," [ n | OOAttr n _ _<-ks]++"):handle")
+    showsPrec _ (OOMethodC nm cs)  = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"):handle")
+    showsPrec _ (OOMethodR nm as)  = showString (nm++"(handle):["++intercalate "," [ n | OOAttr n _ _<-as]++"]")
+    showsPrec _ (OOMethodS nm ks)  = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-ks]++"):handle")
     showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
-    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++chain "," [ n | OOAttr n _ _<-cs]++")")
-    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++chain "," [ n | OOAttr n _ _<-cs]++"): "++r)
+    showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++intercalate "," [ n | OOAttr n _ _<-cs]++")")
+    showsPrec _ (OOMethod nm cs r) = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r)
 
 
 

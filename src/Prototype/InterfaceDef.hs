@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.InterfaceDef where
   import Adl
-  import Strings    (chain)
+  import Data.List
   import Data.Fspec
   import Prototype.RelBinGenBasics(commentBlock, indentBlock)
   import Prototype.RelBinGenSQL(isOne)
@@ -10,7 +10,7 @@ module Prototype.InterfaceDef where
   import Version (versionbanner)
    
   interfaceDef :: Fspc -> [ObjectDef] -> Options -> String
-  interfaceDef fspc serviceObjects flags = chain "\n"
+  interfaceDef fspc serviceObjects flags = intercalate "\n"
      (
         [ "<?php"
         , "// interfaceDef.inc.php"

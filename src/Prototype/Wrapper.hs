@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.Wrapper (objectWrapper) where
-import Strings(chain)
+import Data.List
 import Adl
 import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
 import Prototype.RelBinGenSQL(isOne)
@@ -11,7 +11,7 @@ import Options        (Options(autoid))
 --serviceObjects is needed to determine whether some instance of a concept has services to display it i.e. does it become a link
 objectWrapper :: Fspc -> [ObjectDef] ->  ObjectDef -> Options -> String
 objectWrapper fSpec serviceObjects o flags
- = chain "\n" $
+ = intercalate "\n" $
    [ "<?php // generated with "++versionbanner ]
   ++
    commentBlock ["","  Interface V1.3.1","","","  Using interfaceDef",""]
@@ -35,10 +35,10 @@ objectWrapper fSpec serviceObjects o flags
    indentBlock 4 (concat [phpList2Array 0 ("$"++phpIdentifier (name a)) (show n) a | (a,n)<-zip (objats o) [(0::Integer)..]])
   ++
    ( if isOne o
-     then [ "    $"++objectId++"=new "++objectId++"(" ++ chain ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
+     then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++");"
           ] 
-     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']," ++ chain ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
+     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']," ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++".'&" ++ objectId ++"='.urlencode($"++objectId++"->getId())"++");"
           ] 
    )
@@ -409,8 +409,8 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         )++
         ["echo '"
         ,"<DIV>';"]
-        ++ chain ["echo '</DIV>"
-                 ,"<DIV>';"] content
+        ++ intercalate ["echo '</DIV>"
+                       ,"<DIV>';"] content
         ++ ["echo '"
            ,"</DIV>';"
            ,"if($edit) echo '"

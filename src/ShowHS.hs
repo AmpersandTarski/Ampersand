@@ -6,11 +6,10 @@ where
    import Typology              (Inheritance(..))
    import Data.Plug
    import Data.Fspec
-   import Strings               (chain)
+   import Data.List
    import Adl
    import UU_Scanner            (Pos(..))
    import ShowADL               (showADL)--,showADLcode) -- wenselijk voor foutmeldingen.
-   import Auxiliaries           (showL)
    import Options hiding (services)
    import Version               (versionbanner)
    import FPA                   (FPA(..),FPcompl)
@@ -47,14 +46,14 @@ where
       case xs of
         []  -> "[]"
         [x] -> "[ "++f (indent++"  ") x++" ]"
-        _   -> "[ "++chain (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
+        _   -> "[ "++intercalate (indent++", ") [f (indent++"  ") x| x<-xs]++indent++"]"
 
    class ShowHS a where
     showHSname :: a -> String
     showHS     :: Options -> String -> a -> String
 
    instance ShowHS a => ShowHS [a] where
-    showHSname xs = "["++chain "," (map showHSname xs)++"]"
+    showHSname xs = "["++intercalate "," (map showHSname xs)++"]"
     showHS flags indent xs = wrap "" (indent++" ") (showHS flags) xs
     
    instance ShowHS a => ShowHS (Maybe a) where
@@ -82,22 +81,22 @@ where
     showHSname plug = haskellIdentifier ("plug_"++plname plug)
     showHS flags indent plug   
       = case plug of
-           PlugSql p -> (chain indent 
-                          ["let " ++ chain (indent++"    ")
-                                           [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
+           PlugSql p -> (intercalate indent 
+                          ["let " ++ intercalate (indent++"    ")
+                                                 [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
                           ,"PlugSql{ sqlname = " ++ (show.haskellIdentifier.plname) plug
-                          ,"       , fields  = ["++chain ", " (map showHSname (fields p))++"]"
-                          ,"       , cLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
-                          ,"       , mLkpTbl = [ "++chain (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
+                          ,"       , fields  = ["++intercalate ", " (map showHSname (fields p))++"]"
+                          ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
+                          ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
                           ,"       , sqlfpa  = " ++ showHS flags "" (plfpa plug)
                           ,"       }"
                           ])
-           PlugPhp p ->  (chain indent 
-                          ["let x = x in -- TODO: This code should be fixed. " -- ++ chain (indent++"    ")
+           PlugPhp p ->  (intercalate indent 
+                          ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
                                   --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
                           ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.plname) plug
                           ,"       , phpfile   = "++show (phpfile p)
-                          ,"       , phpinArgs = [ "++chain (indent++"                   , ") [show cv| cv <-phpinArgs p] ++ "]"
+                          ,"       , phpinArgs = [ "++intercalate (indent++"                   , ") [show cv| cv <-phpinArgs p] ++ "]"
                           ,"       , phpOut    = "++show (phpOut p)
                           ,"       , phpSafe   = "++show (phpSafe p)
                           ,"       , phpfpa    = " ++ showHS flags "" (plfpa plug)
@@ -125,9 +124,9 @@ where
    instance ShowHS PhpAction where
     showHSname _ = error ("!Fatal (module ShowHS): PhpAction is anonymous with respect to showHS flags.")
     showHS flags indent act
-      = (chain (indent ++"    ") 
+      = (intercalate (indent ++"    ") 
           [ "PhpAction { action = " ++ showHS flags "" (action act)
-          , "          , on     = " ++ "["++chain ", " (map (showHS flags "") (on act))++"]"
+          , "          , on     = " ++ "["++intercalate ", " (map (showHS flags "") (on act))++"]"
           , "          }"
           ])
 
@@ -152,7 +151,7 @@ where
       = case p of
            Chc{} -> wrap "Chc " (indent ++"    ") (showHS flags) (paCls p)++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-           All{} -> "All [ "++chain (indent++"    , ") (map (showHS flags (indent++"      ")) (paCls p))++indent++"    ]"++
+           All{} -> "All [ "++intercalate (indent++"    , ") (map (showHS flags (indent++"      ")) (paCls p))++indent++"    ]"++
                     wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
            Do{}  ->  "Do "++show (paSrt p)++ " ("++showHS flags (indent++"        ") (paTo p)++indent++"       )"++
                             indent++"       ("++showHS flags (indent++"        ") (paDelta p)++indent++"       )"++
@@ -182,7 +181,7 @@ where
    instance ShowHS SqlField where
     showHSname sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
     showHS flags indent sqFd
-      = (chain indent
+      = (intercalate indent
           [ "Fld { fldname = " ++ show (fldname sqFd)
           , "    , fldexpr = " ++ showHS flags "" (fldexpr sqFd)
           , "    , fldtype = " ++ showHS flags "" (fldtype sqFd)
@@ -209,7 +208,7 @@ where
    instance ShowHS Quad where
     showHSname _ = error ("!Fatal (module ShowHS 207): Quad is anonymous with respect to showHS flags.")
     showHS flags indent q 
-      = (chain indent
+      = (intercalate indent
           [ "Quad{ qMorph   = " ++ showHS flags newindent (qMorph q)
           , "    , qClauses = " ++ showHS flags newindent (qClauses q)
           , "    }"
@@ -220,7 +219,7 @@ where
    instance ShowHS Clauses where
     showHSname _ = error ("!Fatal (module ShowHS 218): Clauses is anonymous with respect to showHS flags.")
     showHS flags indent c
-      = (chain indent
+      = (intercalate indent
           [ "Clauses{ cl_conjNF = " ++ showHS flags newindent (cl_conjNF c)
           , "       , cl_rule   = " ++ showHS flags newindent (cl_rule c)
           , "       }"
@@ -231,7 +230,7 @@ where
    instance ShowHS FTheme where
     showHSname _ = error ("!Fatal (module ShowHS 228): FTheme is anonymous with respect to showHS flags.")
     showHS flags indent tme 
-     = chain newindent
+     = intercalate newindent
             ["FTheme{ tconcept   = " ++ showHS flags newindent (tconcept tme)
             ,wrap  ", trules     = " indentA (\_->showHSname) (trules tme)
             ,      "}" 
@@ -247,7 +246,7 @@ where
    instance ShowHS Fspc where
     showHSname fspec = haskellIdentifier ("fSpc_"++name fspec)
     showHS flags indent fspec
-     = chain (indent ++"    ") 
+     = intercalate (indent ++"    ") 
             ["Fspc{ fsName = " ++ show (name fspec)
                   ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
                   ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
@@ -264,7 +263,7 @@ where
                   ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
                   ,     ", pictPatts     = [] -- Pictures are not in this generated file." -- Plaatjes zijn niet verder uitgewerkt hier. Lijkt me ook niet nuttig. WAAROM? Stef, mee eens?
                   ,wrap ", vConceptDefs  = " indentA (showHS flags) (vConceptDefs fspec)
-                  ,     ", fSexpls       = [ "++chain (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
+                  ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
                   ,     ", vctxenv       = vctxenv'"
                   ,"}" 
                   ] ++   
@@ -272,7 +271,7 @@ where
        indent++" isa' = "++    showHS flags (indent ++ "        ") (fsisa fspec)++
        indent++" vctxenv' = ("++showHS flags (indent ++ "        ") envExpr ++ ", bindings)"++
        indent++" bindings = "++(if null bindings then "[]" else
-                                 "[ "++chain (indentB++", ") (map showbinding bindings)++indentB++"]")++
+                                 "[ "++intercalate (indentB++", ") (map showbinding bindings)++indentB++"]")++
        
        
        indent++" gE = genEq (typology isa')"++
@@ -280,10 +279,10 @@ where
         
         "\n -- ***Services Specified in ADL script***: "++
        indent++" serviceS' = "++(if null (serviceS fspec) then "[]" else
-                                 "[ "++chain (indentB++", ") (map (showHS flags indentB) (serviceS fspec))++indentB++"]")++
+                                 "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceS fspec))++indentB++"]")++
         "\n -- ***Services Generated by the ADL compiler ***: "++
        indent++" serviceG' = "++(if null (serviceG fspec) then "[]" else
-                                 "[ "++chain (indentB++", ") (map (showHS flags indentB) (serviceG fspec))++indentB++"]")++
+                                 "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceG fspec))++indentB++"]")++
        (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-patterns fspec ]++"\n")++
 
 -- WAAROM?  staan hier verschillende lijstjes met services?
@@ -329,32 +328,32 @@ where
      = "Fservice{ -- The declaration of a service, which was either specified by the programmer or generated by the compiler:\n"
        ++ newindent++" fsv_objectdef = ("++showHS flags (newindent++"      ") (fsv_objectdef fservice)++")"
        ++ "\n-- The relations in which the user may insert elements:"
-       ++ newindent++",fsv_insrels   = [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_insrels  fservice))++newindent++"     ]"
+       ++ newindent++",fsv_insrels   = [ "++intercalate (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_insrels  fservice))++newindent++"     ]"
        ++ "\n-- The relations from which the user may remove elements:"
-       ++ newindent++",fsv_delrels   = [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_delrels  fservice))++newindent++"     ]"
+       ++ newindent++",fsv_delrels   = [ "++intercalate (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_delrels  fservice))++newindent++"     ]"
        ++ "\n-- All rules that may be affected by this service:"
 -- TODO: ShowHS Fservice weer op z'n voeten zetten.
---      ++ newindent++",fsv_rules     = [ "++chain (newindent++"     , ")
+--      ++ newindent++",fsv_rules     = [ "++intercalate (newindent++"     , ")
 --          [showHSname r ++ if null (selfExplain flags r) then "" else "    -"++"- " ++ show (selfExplain flags r)| r<-fsv_rules fservice]
 --          ++newindent++"     ]"
        ++ "\n-- The Quads that are used to make a switchboard. (generated by ADL2Fspec)"
-       ++ newindent++",fsv_quads     = [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_quads  fservice))++newindent++"     ]"
+       ++ newindent++",fsv_quads     = [ "++intercalate (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_quads  fservice))++newindent++"     ]"
        ++ newindent++",fsv_ecaRules  = "
        ++ (if null (fsv_ecaRules fservice)
                    then "[] -- This service uses no ECA-rules"
                    else "\n-- ECA-rules that may be used by this service to restore invariants. (generated by ADL2Fspec)"
-                        ++ newindent++"     [ "++chain (newindent++"     , ") (map showHSname [r delt|r<-fsv_ecaRules fservice])++newindent++"     ]")
+                        ++ newindent++"     [ "++intercalate (newindent++"     , ") (map showHSname [r delt|r<-fsv_ecaRules fservice])++newindent++"     ]")
        ++ newindent++",fsv_signals  = "
        ++ (if null (fsv_signals fservice)
                    then "[] -- There are no signals visible in this service"
                    else "\n-- All signals that are visible in this service:"
-                        ++ newindent++"     [ "++chain (newindent++"     , ") (map showHSname (fsv_signals fservice))++newindent++"     ]")
+                        ++ newindent++"     [ "++intercalate (newindent++"     , ") (map showHSname (fsv_signals fservice))++newindent++"     ]")
        ++ newindent++",fsv_fields   =  -- All fields/parameters of this service:"
-       ++ newindent++"     [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_fields   fservice))++newindent++"     ]"
+       ++ newindent++"     [ "++intercalate (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_fields   fservice))++newindent++"     ]"
        ++ newindent++",fsv_creating =  -- All concepts of which this service can create new instances"
-       ++ newindent++"     [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_creating fservice))++newindent++"     ]"
+       ++ newindent++"     [ "++intercalate (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_creating fservice))++newindent++"     ]"
        ++ newindent++",fsv_deleting =  -- All concepts of which this service can delete instances"
-       ++ newindent++"     [ "++chain (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_deleting fservice))++newindent++"     ]"
+       ++ newindent++"     [ "++intercalate (newindent++"     , ") (map (showHS flags (newindent++"       ")) (fsv_deleting fservice))++newindent++"     ]"
        ++ newindent++",fsv_fpa      =  -- function point assessment of this service:"
        ++ newindent++"     ("++showHS flags (newindent++"      ") (fsv_fpa fservice)++")"
        ++ newindent++"}"
@@ -387,7 +386,7 @@ where
        ++ ( if null (fld_sub fld)
             then indent++"    , fld_sub      = []"
             else indent++"    , fld_sub      = [ "++
-                 chain (indent++"                     , ")
+                 intercalate (indent++"                     , ")
                        [showHS flags (indent++"                       ") att| att<-fld_sub  fld]
                        ++indent++"                     ]" )
        ++ indent++"    , fld_expr     = "++showHS flags (indent++"                       ") (fld_expr fld)
@@ -430,20 +429,20 @@ where
  -- TODO: showHS flags should generate valid Haskell code for the entire pattern. Right now, it doesn't
     showHSname pat = haskellIdentifier ("pat_"++name pat)
     showHS flags indent pat
-     = chain (indent++"   ")
+     = intercalate (indent++"   ")
        ([ "Pat "++show (name pat)
         , if null (rules pat) then " [ {- no rules -} ]"
-                              else " [" ++chain          "    , "  [showHSname r                    | r<-rules pat] ++            "]"
+                              else " [" ++intercalate          "    , "  [showHSname r                    | r<-rules pat] ++            "]"
         , if null (ptgns pat) then " [ {- no generalizations -} ]"
-                              else " [ "++chain (indent++"    , ") [showHS flags (indent++"     ") g| g<-ptgns pat] ++indent++"    ]"
+                              else " [ "++intercalate (indent++"    , ") [showHS flags (indent++"     ") g| g<-ptgns pat] ++indent++"    ]"
         , if null (ptdcs pat) then " [ {- no declarations -} ]"
-                              else " [" ++chain          "    , "  [showHSname d                    | d<-ptdcs pat] ++            "]"
+                              else " [" ++intercalate          "    , "  [showHSname d                    | d<-ptdcs pat] ++            "]"
         , if null (ptcds pat) then " [ {- no concept definitions -} ]"
-                              else " [" ++chain          "    , "  [showHSname c                    | c<-ptcds pat] ++            "]"
+                              else " [" ++intercalate          "    , "  [showHSname c                    | c<-ptcds pat] ++            "]"
         , if null (ptkds pat) then " [ {- no key definitions -} ]"
-                              else " [ "++chain (indent++"    , ") [showHS flags (indent++"     ") k| k<-ptkds pat] ++indent++"    ]"
+                              else " [ "++intercalate (indent++"    , ") [showHS flags (indent++"     ") k| k<-ptkds pat] ++indent++"    ]"
         , if null (ptxps pat) then " [ {- no explanations -} ]"
-                              else " [ "++chain (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]"
+                              else " [ "++intercalate (indent++"    , ") [showHS flags (indent++"     ") e| e<-ptxps pat] ++indent++"    ]"
         ])
 --       indent++"where"++
 --       (if null (ptdcs   pat) then "" else concat [indent++" "++showHSname d ++indent++"  = "++ showHS flags (indent++"    ") d |d <-ptdcs   pat] )++
@@ -500,7 +499,7 @@ where
     showHSname r = "rule"++show (runum r)
     showHS flags indent r   
       = case r of
-           Ru{} -> (chain newIndent 
+           Ru{} -> (intercalate newIndent 
                     ["Ru{ rrsrt = " ++ showHS flags "" (rrsrt r)
                       ,", rrant = " ++ "("++showHS flags "" (rrant r)++")"
                       ,", rrfps = " ++ "("++showHS flags "" (rrfps r)++")"
@@ -536,7 +535,7 @@ where
     showHSname kd = haskellIdentifier ("kDef_"++name kd)
     showHS flags indent kd
      = "Kd ("++showHS flags "" (kdpos kd)++") "++show (kdlbl kd)++" ("++showHS flags "" (kdcpt kd)++")"
-       ++indent++"  [ "++chain (indent++"  , ") [showHS flags (indent++"    ") a|a<-(kdats kd)]++indent++"  ]"
+       ++indent++"  [ "++intercalate (indent++"  , ") [showHS flags (indent++"    ") a|a<-(kdats kd)]++indent++"  ]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Population                    ***
@@ -546,7 +545,7 @@ where
     showHSname pop = haskellIdentifier ("pop_"++name mph++name (source mph)++name (target mph))
         where mph = popm pop
     showHS flags indent pop
-     = "Popu ("++showHS flags "" (popm pop)++")"++indent++"     [ "++chain (indent++"     , ") (map show (popps pop))++indent++"     ]"
+     = "Popu ("++showHS flags "" (popm pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: ObjectDef                     ***
@@ -555,14 +554,14 @@ where
    instance ShowHS ObjectDef where
     showHSname obj = haskellIdentifier ("oDef_"++name obj)
     showHS flags indent r 
-     = (chain (indent++"   ") 
+     = (intercalate (indent++"   ") 
            ["Obj{ objnm = " ++ show(objnm r)
                 ,", objpos = " ++ showHS flags "" (objpos r)
                 ,", objctx = " ++ showHS flags "" (objctx r)
                 ,", objctx_proof = Nothing -- TBD: generation of proof in this haskell code."
-                ,", objats = " ++ "["++chain (indent ++ "              ,")
-                                             (map (showHS flags (indent ++"               "))
-                                                  (objats r))
+                ,", objats = " ++ "["++intercalate (indent ++ "              ,")
+                                                   (map (showHS flags (indent ++"               "))
+                                                        (objats r))
                                 ++"]"
                 ,", objstrs = " ++ show(objstrs r)
            ])++"}"
@@ -582,13 +581,13 @@ where
     showHS _ _ (Fux [])  = "Fu [] {- False -}"
     showHS _ _ (Fix [])  = "Fi [] {- True -}"
     showHS flags indent (F [t])  = "F ["++showHS flags (indent++"   ") t++"]"
-    showHS flags indent (F ts)   = "F [ "++chain (indent++"  , ") [showHS flags (indent++"    ") t| t<-ts]++indent++"  ]"
+    showHS flags indent (F ts)   = "F [ "++intercalate (indent++"  , ") [showHS flags (indent++"    ") t| t<-ts]++indent++"  ]"
     showHS flags indent (Fdx [t]) = "Fd ["++showHS flags (indent++"    ") t++"]"
-    showHS flags indent (Fdx ts)  = "Fd [ "++chain (indent++"   , ") [showHS flags (indent++"     ") t| t<-ts]++indent++"   ]"
+    showHS flags indent (Fdx ts)  = "Fd [ "++intercalate (indent++"   , ") [showHS flags (indent++"     ") t| t<-ts]++indent++"   ]"
     showHS flags indent (Fux [f]) = "Fu ["++showHS flags (indent++"    ") f++"]"
-    showHS flags indent (Fux fs)  = "Fu [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
+    showHS flags indent (Fux fs)  = "Fu [ "++intercalate (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
     showHS flags indent (Fix [f]) = "Fi ["++showHS flags (indent++"    ") f++"]"
-    showHS flags indent (Fix fs)  = "Fi [ "++chain (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
+    showHS flags indent (Fix fs)  = "Fi [ "++intercalate (indent++"   , ") [showHS flags (indent++"     ") f| f<-fs]++indent++"   ]"
     showHS flags indent (K0x e')  = "K0 ("++showHS flags (indent++"    ") e'++")"
     showHS flags indent (K1x e')  = "K1 ("++showHS flags (indent++"    ") e'++")"
     showHS flags indent (Cpx e')  = "Cp ("++showHS flags (indent++"    ") e'++")"
@@ -631,7 +630,7 @@ where
                  | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++name (target d)) -- relations generated per rule
     showHS flags indent d 
        = case d of 
-          Sgn{}     -> (chain newIndent
+          Sgn{}     -> (intercalate newIndent
                         ["Sgn{ decnm   = " ++ show (decnm d)
                            ,", desrc   = " ++ showHS flags "" (desrc d)
                            ,", detrg   = " ++ showHS flags "" (detrg d)
@@ -648,15 +647,15 @@ where
                            ,", decusr  = " ++ show (decusr d)
                            ,", decpat  = " ++ show (decpat d)
                         ])++"}"
-          Isn{}     -> (chain newIndent
+          Isn{}     -> (intercalate newIndent
                         ["Isn{ degen   = " ++ showHS flags "" (degen d)
                            ,", despc   = " ++ showHS flags "" (despc d)
                         ])++"}"
-          Iscompl{} -> (chain newIndent
+          Iscompl{} -> (intercalate newIndent
                         ["Isn{ degen   = " ++ showHS flags "" (degen d)
                            ,", despc   = " ++ showHS flags "" (despc d)
                         ])++"}"
-          Vs{}      -> (chain newIndent
+          Vs{}      -> (intercalate newIndent
                         ["Isn{ degen   = " ++ showHS flags "" (degen d)
                            ,", despc   = " ++ showHS flags "" (despc d)
                         ])++"}"
@@ -798,3 +797,5 @@ where
       lowerFirst (c:cs') = toLower c: cs'
       lowerFirst _       = ""
 
+   showL   :: [String] -> String
+   showL xs = "["++intercalate "," xs++"]"

@@ -23,7 +23,7 @@ import Picture
 import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
-import Strings          (unCap, chain,preciesEen)
+import Strings          (unCap, preciesEen)
 import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
@@ -42,7 +42,7 @@ import System                 (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath        (combine,replaceExtension)
 import System.Directory
 import System.Info (os)
-import Data.List              (isInfixOf)
+import Data.List              (isInfixOf,intercalate)
 import Control.Monad
 import Maybe                  (fromJust)
 
@@ -142,7 +142,7 @@ writepandoc flags thePandoc = (outputFile,makeOutput,postProcessMonad)
 theTemplate :: Options -> String
 theTemplate flags 
   = case fspecFormat flags of
-    FLatex -> chain "\n" (
+    FLatex -> intercalate "\n" (
                [ "% This header is the default LaTeX template for generating documents with Ampersand."
                , "% It was generated with "++versionbanner
                , "% You can modify this file to make it fit your needs. However, the required knowledge of "
@@ -294,7 +294,7 @@ theTemplate flags
                ])
 
 
-    FRtf -> chain "\n" (
+    FRtf -> intercalate "\n" (
                [ "$if(legacy-header)$"
                , "$legacy-header$"
                , "$else$"
@@ -419,7 +419,7 @@ xrefFigure1 pict =
 pandocEqnArray :: [([Inline],[Inline],[Inline])] -> [Block]
 pandocEqnArray xs
  = [ Para ([ TeX "\\begin{eqnarray}\n   " ]++
-           chain [LineBreak,Str "\n   "] [ a++[TeX "&"]++b++[TeX "&"]++c | (a,b,c)<-xs ]++
+           intercalate [LineBreak,Str "\n   "] [ a++[TeX "&"]++b++[TeX "&"]++c | (a,b,c)<-xs ]++
            [ TeX ("\n\\end{eqnarray}") ]
           )
    | not (null xs)]
@@ -471,13 +471,13 @@ instance ShowMath Expression where
 showchar :: Expression -> String
 showchar (Tm mph _) = showMath mph
 showchar (Fux [])  = "\\cmpl{\\full}"
-showchar (Fux fs)  = chain "\\cup" [showchar f| f<-fs]     -- union
+showchar (Fux fs)  = intercalate "\\cup" [showchar f| f<-fs]     -- union
 showchar (Fix [])  = "\\full"
-showchar (Fix fs)  = chain "\\cap" [showchar f| f<-fs]     -- intersection
+showchar (Fix fs)  = intercalate "\\cap" [showchar f| f<-fs]     -- intersection
 showchar (Fdx [])  = "\\cmpl{\\iden}"
-showchar (Fdx ts)  = chain texOnly_relAdd [showchar t| t<-ts]  -- relative addition (dagger)
+showchar (Fdx ts)  = intercalate texOnly_relAdd [showchar t| t<-ts]  -- relative addition (dagger)
 showchar (F [])   = "\\iden"
-showchar (F ts)   = chain texOnly_compose [showchar t| t<-ts] -- relative multiplication (semicolon)
+showchar (F ts)   = intercalate texOnly_compose [showchar t| t<-ts] -- relative multiplication (semicolon)
 showchar (K0x e')  = "\\kleenestar{"++showchar e'++"}"
 showchar (K1x e')  = "\\kleeneplus{"++showchar e'++"}"
 showchar (Cpx e')  = "\\cmpl{"++showchar e'++"}"

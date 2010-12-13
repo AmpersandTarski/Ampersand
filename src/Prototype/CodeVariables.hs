@@ -9,9 +9,8 @@ module Prototype.CodeVariables
   ,CodeVar(..)
   ,CodeVarIndexed(..)
   ) where
- import Prototype.CodeAuxiliaries (Named(..),nameFresh)
+ import Prototype.CodeAuxiliaries (Named(..),nameFresh,noCollide)
  import Adl (Concept(..),Expression(..),Declaration(..),Morphism(..),mIs, Prop(..),makeMph,Identified(..),source,target)
- import Strings(noCollide)
  import {-# SOURCE #-} Prototype.CodeStatement (UseVar(..))
 
  -- | A data type containing the description of some variable in the target language.

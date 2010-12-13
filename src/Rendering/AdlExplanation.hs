@@ -6,7 +6,8 @@ import Adl hiding (applyM)
 import Data.Fspec
 import Options
 import Data.Explain
-import Strings          (chain, unCap,preciesEen)
+import Data.List
+import Strings          (unCap,preciesEen)
 import Version (versionbanner)
 import Languages        (Lang(..),plural)
 import Collection       (Collection ((>-)))
@@ -81,7 +82,7 @@ instance Explainable Context where
 data ExplainOutputFormat = PlainText 
 format  :: ExplainOutputFormat -> [Explanation] -> String
 format fmtType expls
-   = chain "\n" (map (formatOne fmtType) expls)
+   = intercalate "\n" (map (formatOne fmtType) expls)
    where formatOne ::  ExplainOutputFormat -> Explanation -> String
          formatOne PlainText expl = explainContent2String (explCont expl)
 

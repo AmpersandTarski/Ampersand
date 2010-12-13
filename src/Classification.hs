@@ -7,7 +7,7 @@ module Classification (
 where
    import CommonClasses (Identified(..)) 
    import Collection    (Collection(..))
-   import Strings       (chain)
+   import Data.List hiding (insert)
 
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a
@@ -36,8 +36,8 @@ where
      = showString (shw "\n  " cls)
        where
         shw indent (Cl r' cls')
-         = chain indent (show r':[shw (indent++"  ") (Cl r'' cls'')
-                                | Cl r'' cls''<-cls'])
+         = intercalate indent (show r':[shw (indent++"  ") (Cl r'' cls'')
+                                      | Cl r'' cls''<-cls'])
         shw _ Bottom = ""
 
 

@@ -6,11 +6,10 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
  ,cChain,filterEmpty,phpIndent
  ) where
    import Char(isAlphaNum,isDigit)
-   import Strings (chain)
-   import List(isPrefixOf)
    import Auxiliaries (naming)
    import Data.Maybe
-
+   import Data.List
+   
    zipnum :: [b] -> [(Int, b)]
    zipnum = zip [(0::Int)..]
    
@@ -73,7 +72,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
    indentBlockBetween pre post [] = pre++post
    indentBlockBetween pre post [s] = pre++s++post
    indentBlockBetween pre post block
-    = chain (phpIndent (length pre)) ((pre++head block):(init rest++[last rest++post]))
+    = intercalate (phpIndent (length pre)) ((pre++head block):(init rest++[last rest++post]))
     where rest = tail block
    
    strReplace :: String -> String -> String -> String

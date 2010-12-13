@@ -2,7 +2,6 @@
 {-# LANGUAGE ScopedTypeVariables#-}
 module Prototype.Object(objectServices) where
    --import Char(toUpper)
-   import Strings(chain)
    import NormalForms (disjNF,simplify)
    import Auxiliaries (eqCl)
    import Adl (target
@@ -18,6 +17,7 @@ module Prototype.Object(objectServices) where
    import Data.Fspec
    import Data.Plug
    import Data.Maybe
+   import Data.List  hiding (group)
    import Version (versionbanner)
    import Options
    import Rendering.AdlExplanation (explain, format, ExplainOutputFormat(PlainText))
@@ -27,7 +27,7 @@ module Prototype.Object(objectServices) where
                   -> ObjectDef
                   -> String
    objectServices flags fSpec o
-    = (chain "\n  "
+    = (intercalate "\n  "
       ([ "<?php // generated with "++versionbanner
        , ""
        , "/********* on "++(show (pos o))
@@ -90,7 +90,7 @@ module Prototype.Object(objectServices) where
             ( if isOne o then [] else ["protected $id=false;","protected $_new=true;"] )
             ++ ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]++
             ["function "++myName++"(" ++ (if isOne o then "" else "$id=null, ")
-                                        ++ (chain ", " [phpVar (name a)++"=null" | a<-attributes o])
+                                        ++ (intercalate ", " [phpVar (name a)++"=null" | a<-attributes o])
                                         ++"){"
             ]++["  $this->id=$id;" | not (isOne o)]
             ++ ["  $this->_"++phpIdentifier (name a)++"="++phpVar (name a)++";"| a <- attributes o]
@@ -355,9 +355,9 @@ module Prototype.Object(objectServices) where
                  insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
                  insQuery var
                    = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug
-                     ++ "` ("++chain "," ["`"++fldname f++"`" | (_,f)<-rd' (fldname.snd) attrs]
+                     ++ "` ("++intercalate "," ["`"++fldname f++"`" | (_,f)<-rd' (fldname.snd) attrs]
                      ++ ") VALUES (" ++
-                     chain ", "
+                     intercalate ", "
                            [ if fldnull f || fldauto f
                              then "\".(" ++ ( if fldauto f && o==object
                                               then "!$newID"
@@ -369,7 +369,7 @@ module Prototype.Object(objectServices) where
                            ] ++ ")\", 5)"
                  updQuery var
                    = "DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
-                     chain ", "
+                     intercalate ", "
                            [ "`"++fldname f++"`="++
                              if fldnull f && not (f==s)
                              then "\".(" ++ ( if fldauto f && o==object

@@ -11,7 +11,7 @@ module Prototype.RelBinGenSQL
                                     ,cChain,filterEmpty,phpIndent)
    import Data.Maybe
    import Char(isDigit,digitToInt,intToDigit)
-   import Strings (chain)
+   import Data.List
    import Collection (Collection(rd))
    
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
@@ -230,7 +230,7 @@ module Prototype.RelBinGenSQL
     = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
                   | (s',src') <- concNames "cfst" s
                   , (t',trg') <- concNames "cfst" t
-                  , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else chain ", " (s'++t')
+                  , let tbls = if length (s'++t') == 0 then "(SELECT 1) AS csnd" else intercalate ", " (s'++t')
                   ]
     where concNames pfx c = [([],"1")|c==cptS]++[([quote p ++ " AS "++pfx],pfx++"."++s') | (p,s',_) <- sqlRelPlugNames fSpec (Tm (I [] c c True)(-1))]
 

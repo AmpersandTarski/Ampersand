@@ -11,11 +11,11 @@ import System.FilePath
 import System.Directory
 import Time
 import Control.Monad
-import Strings               (chain)
 import Version(versionNumber)
 import Maybe
 import UTF8  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
+import Data.List
 -- | This data constructor is able to hold all kind of information that is useful to 
 --   express what the user would like ADL to do. 
 data Options = Options { contextName   :: Maybe String
@@ -176,7 +176,7 @@ getOptions =
                                                             ""  -> basename fName
                                                             str -> str
                                         }
-                x:xs    -> error ("too many files: "++ (chain ", " (x:xs)) ++useHelp)
+                x:xs    -> error ("too many files: "++ (intercalate ", " (x:xs)) ++useHelp)
        
        where
           basename :: FilePath -> String
@@ -266,7 +266,7 @@ options = map pp
            pp (Option a b' c d,e) = (Option a b' c d',e)
               where d' =  afkappen [] [] (words d) 40
                     afkappen :: [[String]] -> [String] -> [String] -> Int -> String
-                    afkappen regels []    []   _ = chain ("\n") (map unwords regels)
+                    afkappen regels []    []   _ = intercalate ("\n") (map unwords regels)
                     afkappen regels totnu []   b = afkappen (regels++[totnu]) [] [] b
                     afkappen regels totnu (w:ws) b 
                           | length (unwords totnu) < b - length w = afkappen regels (totnu++[w]) ws b

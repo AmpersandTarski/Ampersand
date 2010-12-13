@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.ConnectToDataBase (connectToDataBase) 
   where
-   import Strings (chain) 
+   import Data.List
    import Adl
    import Options
    import Languages
@@ -15,7 +15,7 @@ module Prototype.ConnectToDataBase (connectToDataBase)
 
    connectToDataBase :: Fspc -> Options -> String
    connectToDataBase fSpec flags 
-    = (chain "\n  " 
+    = (intercalate "\n  " 
       ([ "<?php // generated with "++versionbanner
        , "require \"dbsettings.php\";"
        , ""

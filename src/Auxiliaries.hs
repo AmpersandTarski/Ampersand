@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Auxiliaries
-   ( showL
-   , sort
+   ( sort
    , eqCl 
    , eqClass
    , naming
@@ -9,7 +8,6 @@ module Auxiliaries
    , sord'
    )
   where
-   import Strings (chain)
 
 {- naming - a naming function
   The objective is to name all items in a list uniquely
@@ -32,9 +30,6 @@ module Auxiliaries
                    = head [assignFunc l (a l):naming assignFunc as (a l:taken) ls
                           | a<-as, a l `notElem` taken]
    
-
-   showL   :: [String] -> String
-   showL xs = "["++chain "," xs++"]"
 
    eqClass :: (a -> a -> Bool) -> [a] -> [[a]]
    eqClass _ [] = []

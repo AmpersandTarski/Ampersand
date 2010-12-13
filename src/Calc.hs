@@ -9,7 +9,8 @@ module Calc ( deriveProofs
 
    import Collection         (Collection (isc,rd,rd'))
    import Auxiliaries        (sort',eqCl)
-   import Strings            (spread,chain,commaEng)
+   import Strings            (commaEng)
+   import Data.List
    import Adl
    import Data.Fspec
    import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode)
@@ -33,10 +34,10 @@ module Calc ( deriveProofs
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
    testService :: Fspc -> ObjectDef -> String
    testService fSpec object
-    = "\nService "++ objnm object++"("++chain ", " [showADL m++":"++name (target m)| m<-rels]++")\n"++
+    = "\nService "++ objnm object++"("++intercalate ", " [showADL m++":"++name (target m)| m<-rels]++")\n"++
       " - The parameters correspond to editable fields in a UI-service.\n   "++
       showADLcode fSpec object++"\n"++
-      " - Invariants:\n   "++chain "\n   " [showADLcode fSpec rule    | rule<-invariants]++"\n"++
+      " - Invariants:\n   "++intercalate "\n   " [showADLcode fSpec rule    | rule<-invariants]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invariants]++"\n"++
 {-
@@ -44,7 +45,7 @@ module Calc ( deriveProofs
                                  ++"\n------ Derivation ----->"++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction eca))++"\n<------End Derivation --"
                                | eca<-ecaRs]++"\n\n"++
 -}
-      " - Visible relations:\n   "++chain "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
+      " - Visible relations:\n   "++intercalate "\n   " (spread 80 ", " [showADLcode fSpec m  | m<-vis])++"\n"
     where
 --        showQ i (m, shs,conj,r)
 --         = "\nQuad "++show i++":\nmorphism: "++showADLcode fSpec m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
@@ -60,6 +61,20 @@ module Calc ( deriveProofs
         editable _             = False
         editMph (Tm m@Mph{} _) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editMph e              = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
+        -- De functie spread verspreidt strings over kolommen met een breedte van n.
+        -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.
+        -- Hij probeert daarbij zo weinig mogelijk regels te gebruiken,
+        -- en alleen de grens van n te overschrijden als een string zelf langer is dan n.
+        spread :: Int -> String -> [String] -> [String]
+        spread n str = f ""
+         where f stored []       = [stored| not (null stored)]
+               f [] (cs:css)     = f cs css
+               f stored (cs:css) = if length stored > n then stored: f cs css else
+                                   if length new <= n then f new css else stored: f cs css
+                                   where new = stored++str++cs
+
+
+
 
    deriveProofs :: Options -> Fspc -> String
    deriveProofs flags fSpec
@@ -67,14 +82,14 @@ module Calc ( deriveProofs
       --proof (signals fSpec)++
       "\nTransformation of user specified rules into ECA rules for "++name fSpec++"\n--------------\n"++
       "\nFirst step: determine quads\n--------------\n"++
-      chain "\n--------------\n"
+      intercalate "\n--------------\n"
       [   "relation m:               "++showADLcode fSpec m++
         "\nHorn clause:              "++showADLcode fSpec hc++
         "\nis derived from conjunct: "++showADLcode fSpec conj++
         "\nis derived from rule:     "++showADLcode fSpec r
       | Quad m ccrs<-qs, let r=cl_rule ccrs, (conj,hcs)<-cl_conjNF ccrs, hc<-hcs ]++
       "\n\nSecond step: collect Horn clauses\n--------------\n"++
-      chain "\n--------------\n"
+      intercalate "\n--------------\n"
       [ "Horn clause "++showADLcode fSpec hc++"\nis derived from rule "++showADLcode fSpec r++
         case length ms of
          0 -> "no relations affect this clause"
@@ -87,34 +102,34 @@ module Calc ( deriveProofs
           ]
       ]++
       "\n\nThird step: determine ECA rules\n--------------\n"++
-      chain "\n--------------\n"
+      intercalate "\n--------------\n"
       [ "ECA Rule "++showECA fSpec "\n  " ecarule{ecaAction=normPA (ecaAction ecarule)} ++
         if verboseP flags
         then let ds = [paDelta e| e@Do{}<-[ecaAction ecarule]] in
              "\nnormalized action\n "++showECA fSpec "\n  " (normPA (ecaAction ecarule))++
              (if null ds then "" else 
-              "\ndelta expression\n "++chain "\n " [showADLcode fSpec d| d<-ds]++
+              "\ndelta expression\n "++intercalate "\n " [showADLcode fSpec d| d<-ds]++
               "\nderivation:\n "++showProof (showADLcode fSpec) (nfProof (head ds))++
               "\ndisjunctly normalized delta expression\n "++showADLcode fSpec (disjNF (head ds)))
         else ""
       | (er,i) <- zip ecas [(1::Int)..], let ecarule = er i]++
       "\n\nFourth step: cascade blocking rules\n--------------\n"++
-      chain "\n--------------\n"
+      intercalate "\n--------------\n"
       [ "ECA Rule "++showECA fSpec "\n  " er
       | er<-preEmpt ecaRs]++
       "\nFinal step: derivations --------------\n"++
 
-      chain "\n--------------\n"
-      [ chain "\n" ["   "++stmt++if null comment then "" else "\n<=> { "++comment++". }"
+      intercalate "\n--------------\n"
+      [ intercalate "\n" ["   "++stmt++if null comment then "" else "\n<=> { "++comment++". }"
                    | (stmt,comment)<-cleanup (derivation rule)]
       | rule<-rules fSpec]++
       "\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
       "Ontological analysis: \n  "++
-      chain "\n\n  " [name o++"("++chain ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
+      intercalate "\n\n  " [name o++"("++intercalate ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
                      | o<-serviceS fSpec]++
       "\n--------------\n"++
       "Analyzing services: \n     "++
-      chain "\n     " [testService fSpec o| o<-take 1 (serviceG fSpec)]++
+      intercalate "\n     " [testService fSpec o| o<-take 1 (serviceG fSpec)]++
       "\n--------------\n"
       where 
        qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).
@@ -168,13 +183,13 @@ module Calc ( deriveProofs
                  (conjProof. Cpx . normExpr) rule++"\n"
                 , "")
               , ("\nConjuncts:\n     "++
-                 chain "\n     " (rd[ showADL conjunct
+                 intercalate "\n     " (rd[ showADL conjunct
                                     | conjunct<-conjuncts rule])
                 , "")
               , ("\n"++showClause fSpec (allClauses rule)
                 , "")
               , ("\nAvailable code fragments on rule "++show (nr rule)++":\n     "++
-                   chain "\n     " [showADL (reprAsRule rule r)++ " yields\n"++chain "\n\n"
+                   intercalate "\n     " [showADL (reprAsRule rule r)++ " yields\n"++intercalate "\n\n"
                                    [ "event = "++show ev++" "++showADL m++"\n"++
                                      showADL r++"["++showADL m++":="++showADL (actSem ev m (delta (sign m)))++"] = r'\n"++
                                      "r'    = "++conjProof r'++"\n"++
@@ -188,8 +203,8 @@ module Calc ( deriveProofs
                                      (if null (lambda ev (Tm m (-1)) r)
                                       then "lambda "++showADL m++" ("++showADL r++") = empty\n"
                                       else -- for debug purposes:
-                                           -- "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(chain "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
-                                           -- "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-chain "\n". map -}showPr.derivMono r ev) m++"\n"++
+                                           -- "lambda "++show ev++" "++showADL m++" ("++showADL r++") = \n"++(intercalate "\n\n".map showPr.lambda ev (Tm m)) r++"\n"++
+                                           -- "derivMono ("++showADL r++") "++show ev++" "++showADL m++"\n = "++({-intercalate "\n". map -}showPr.derivMono r ev) m++"\n"++
                                            -- "\nNow compute checkMono r ev m = \n"++show (checkMono r ev m)++"\n"++
                                            if (isTrue.conjNF) (Fux[Cpx r,r'])
                                            then "A reaction is not required, because  r |- r'. Proof:"++conjProof (Fux[Cpx r,r'])++"\n"
@@ -271,7 +286,7 @@ module Calc ( deriveProofs
    showProof :: (expr->String) -> Proof expr -> String
    showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
    showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
-                                      "\n"++(if null ss then "   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain " and " ss++" }")++
+                                      "\n"++(if null ss then "   "++equ else if null equ then intercalate " " ss else "   "++equ++" { "++intercalate " and " ss++" }")++
                                       showProof sh prf
                                       --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
    showProof _  []                  = ""

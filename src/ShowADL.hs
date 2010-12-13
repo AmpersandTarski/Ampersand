@@ -17,11 +17,9 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    import Adl
    
    import Data.Fspec 
-   import Strings                         (chain)
-   import Auxiliaries                     (eqCl,showL)
+   import Data.List
+   import Auxiliaries                     (eqCl)
    import Data.Explain
- --  import TypeInferenceEngine
- --  import TypeInference.ITree
  
    class ShowADL a where
     showADL :: a -> String
@@ -88,8 +86,9 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
      where recur :: String -> [ObjectDef] -> String
            recur ind objs
             = ind++" = [ "++
-              chain (ind++"   , ") [ name o++
-                                     (if null (objstrs o) then "" else " {"++chain ", " [chain " " (map str ss)| ss<-objstrs o]++"}")++
+              intercalate (ind++"   , ") 
+                                [ name o++
+                                     (if null (objstrs o) then "" else " {"++intercalate ", " [intercalate " " (map str ss)| ss<-objstrs o]++"}")++
                                      " : "++(if isIdent (objctx o) then showSign[target (objctx o)] else
                                              if isTrue  (objctx o) then showSign[S,target (objctx o)] else
                                              showADL (objctx o))++
@@ -103,8 +102,9 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
      where recur :: String -> [ObjectDef] -> String
            recur ind objs
             = ind++" = [ "++
-              chain (ind++"   , ") [ name o++(if name o `elem` cls then show i else "")++
-                                     (if null (objstrs o) then "" else " {"++chain ", " [chain " " (map str ss)| ss<-objstrs o]++"}")++
+              intercalate (ind++"   , ") 
+                                  [ name o++(if name o `elem` cls then show i else "")++
+                                     (if null (objstrs o) then "" else " {"++intercalate ", " [intercalate " " (map str ss)| ss<-objstrs o]++"}")++
                                      " : "++showADLcode fSpec (objctx o)++
                                      if null (objats o) then "" else recur (ind++"     ") (objats o)
                                   | (o,i)<-zip objs [(1::Integer)..]
@@ -145,21 +145,21 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    instance ShowADL Pattern where
     showADL pat
      = "PATTERN " ++ name pat 
-       ++ (if null (ptrls pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptrls pat)) ++ "\n")
-       ++ (if null (ptgns pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptgns pat)) ++ "\n")
-       ++ (if null (ptdcs pat)  then "" else "\n  " ++chain "\n  " (map showADL ds         ) ++ "\n")
-       ++ (if null (ptcds pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptcds pat)) ++ "\n")
-       ++ (if null (ptkds pat)  then "" else "\n  " ++chain "\n  " (map showADL (ptkds pat)) ++ "\n")
+       ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
+       ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
+       ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL ds         ) ++ "\n")
+       ++ (if null (ptcds pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptcds pat)) ++ "\n")
+       ++ (if null (ptkds pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptkds pat)) ++ "\n")
        ++ "ENDPATTERN"
        where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` decls (ptrls pat) `uni` decls (ptkds pat)
                                , decusr d, not (d `elem` ptdcs pat)]
     showADLcode fSpec pat
      = "PATTERN " ++ name pat 
-       ++ (if null (ptrls pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptrls pat)) ++ "\n")
-       ++ (if null (ptgns pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptgns pat)) ++ "\n")
-       ++ (if null (ptdcs pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) ds         ) ++ "\n")
-       ++ (if null (ptcds pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptcds pat)) ++ "\n")
-       ++ (if null (ptkds pat)  then "" else "\n  " ++chain "\n  " (map (showADLcode fSpec) (ptkds pat)) ++ "\n")
+       ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) (ptrls pat)) ++ "\n")
+       ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) (ptgns pat)) ++ "\n")
+       ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) ds         ) ++ "\n")
+       ++ (if null (ptcds pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) (ptcds pat)) ++ "\n")
+       ++ (if null (ptkds pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) (ptkds pat)) ++ "\n")
        ++ "ENDPATTERN"
        where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` decls (ptrls pat) `uni` decls (ptkds pat)
                                , decusr d, not (d `elem` ptdcs pat)]
@@ -211,13 +211,13 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADL kd 
      = "KEY "++kdlbl kd
              ++": "++name (kdcpt kd)
-             ++"("++chain ", " [(if null (name o) then "" else name o++":") ++ showADL (objctx o)
-                               | o<-kdats kd]++")"
+             ++"("++intercalate ", " [(if null (name o) then "" else name o++":") ++ showADL (objctx o)
+                                     | o<-kdats kd]++")"
     showADLcode fSpec kd 
      = "KEY "++kdlbl kd
              ++": "++name (kdcpt kd)
-             ++"("++chain ", " [(if null (name o) then "" else name o++":") ++ showADLcode fSpec (objctx o)
-                               | o<-kdats kd]++")"
+             ++"("++intercalate ", " [(if null (name o) then "" else name o++":") ++ showADLcode fSpec (objctx o)
+                                     | o<-kdats kd]++")"
 
 
 -- disambiguate :: Fspc -> Expression -> Expression
@@ -300,13 +300,13 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
          where
           showchar (Tm mph _) = showADLcode fSpec mph
           showchar (Fux [])  = "-V"
-          showchar (Fux fs)  = chain union' [showchar f| f<-fs]
+          showchar (Fux fs)  = intercalate union' [showchar f| f<-fs]
           showchar (Fix [])  = "V"
-          showchar (Fix fs)  = chain inter [showchar f| f<-fs]
+          showchar (Fix fs)  = intercalate inter [showchar f| f<-fs]
           showchar (Fdx [])  = "-I"
-          showchar (Fdx ts)  = chain rAdd [showchar t| t<-ts]
+          showchar (Fdx ts)  = intercalate rAdd [showchar t| t<-ts]
           showchar (F [])   = "I"
-          showchar (F ts)   = chain rMul [showchar t| t<-ts]
+          showchar (F ts)   = intercalate rMul [showchar t| t<-ts]
           showchar (K0x e')  = showchar e'++clos0
           showchar (K1x e')  = showchar e'++clos1
           showchar (Cpx e')  = compl++showchar e'
@@ -344,9 +344,12 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
        (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
         if null mults then "" else showL(map showADL mults))++
-       (if null(decprL decl++decprM decl++decprR decl) then "" else " PRAGMA "++chain " " (map show [decprL decl,decprM decl,decprR decl]))
+       (if null(decprL decl++decprM decl++decprR decl) then "" else " PRAGMA "++intercalate " " (map show [decprL decl,decprM decl,decprR decl]))
  -- obsolete 18 July 2010       ++ (if null (decexpl decl) then "" else " EXPLANATION \""++decexpl decl++"\"")
        ++"."
+        where
+          showL   :: [String] -> String
+          showL xs = "["++intercalate "," xs++"]"
     showADL (Isn g s)
      = "I["++show (name g)++(if g==s then "" else "*"++show (name s))++"]"
     showADL (Iscompl g s)
@@ -360,11 +363,11 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    instance ShowADL Population where
     showADL (Popu m ps)
      = "POPULATION "++showADL m++" CONTAINS\n"++
-       indent++"[ "++chain ("\n"++indent++"; ") (map show ps)++indent++"]"
+       indent++"[ "++intercalate ("\n"++indent++"; ") (map show ps)++indent++"]"
        where indent = "   "
     showADLcode fSpec (Popu m ps)
      = "POPULATION "++showADLcode fSpec m++" CONTAINS\n"++
-       indent++"[ "++chain ("\n"++indent++"; ") (map show ps)++indent++"]"
+       indent++"[ "++intercalate ("\n"++indent++"; ") (map show ps)++indent++"]"
        where indent = "   "
 
    instance ShowADL Concept where
@@ -375,7 +378,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
      = "\n  CONCEPT "++show (name cd)++" "++show (cddef cd)++" "++(if null (cdref cd) then "" else show (cdref cd))
 
    instance ShowADL Architecture where
-    showADL arch = chain "\n\n" (map showADL (archContexts arch))
+    showADL arch = intercalate "\n\n" (map showADL (archContexts arch))
 
    -- In de body van de context worden de regels afgedrukt die in de context zijn gedefinieerd, maar buiten de patterns.
    -- Daarbij worden de relaties afgedrukt die bij deze regels horen, zodat het geheel zelfstandig leesbaar is.
@@ -383,13 +386,13 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADL _ = error("!Fatal (module showADL 369): showADL on Contexts is deliberately undefined. Please use showADLcode fSpec instead.")
     showADLcode fSpec context
      = "CONTEXT " ++name context
-       ++ (if null (ctxon context)   then "" else "EXTENDS "++chain ", "   (ctxon context)                 ++ "\n")
-       ++ (if null (ctxos context)   then "" else "\n"      ++chain "\n\n" (map (showADLcode fSpec) (ctxos context))   ++ "\n")
-       ++ (if null (ctxcs context)   then "" else "\n"      ++chain "\n"   (map (showADLcode fSpec) (ctxcs context))   ++ "\n")
-       ++ (if null ds                then "" else "\n"      ++chain "\n"   (map (showADLcode fSpec) ds             )   ++ "\n")
-       ++ (if null (ctxks context)   then "" else "\n"      ++chain "\n"   (map (showADLcode fSpec) (ctxks context))   ++ "\n")
-       ++ (if null (ctxpats context) then "" else "\n"      ++chain "\n\n" (map (showADLcode fSpec) (ctxpats context)) ++ "\n")
-       ++ (if null (ctxpops context) then "" else "\n"      ++chain "\n\n" (map (showADLcode fSpec) (ctxpops context)) ++ "\n")
+       ++ (if null (ctxon context)   then "" else "EXTENDS "++intercalate ", "   (ctxon context)                 ++ "\n")
+       ++ (if null (ctxos context)   then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxos context))   ++ "\n")
+       ++ (if null (ctxcs context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxcs context))   ++ "\n")
+       ++ (if null ds                then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) ds             )   ++ "\n")
+       ++ (if null (ctxks context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxks context))   ++ "\n")
+       ++ (if null (ctxpats context) then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxpats context)) ++ "\n")
+       ++ (if null (ctxpops context) then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxpops context)) ++ "\n")
        ++ "\n\nENDCONTEXT"
        where ds = [d| d@Sgn{}<-ctxds context `uni` decls (ctxrs context) `uni` decls (mors (ctxks context)), decusr d]
 
@@ -400,13 +403,13 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADL fSpec = showADLcode fSpec fSpec
     showADLcode fSpec' fSpec
      = "CONTEXT " ++name fSpec
-       ++ (if null (objDefs fSpec)     then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (objDefs fSpec))     ++ "\n")
-       ++ (if null (patterns fSpec)    then "" else "\n"++chain "\n\n" (map (showADLcode fSpec') (patterns fSpec))    ++ "\n")
-       ++ (if null (conceptDefs fSpec) then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (conceptDefs fSpec)) ++ "\n")
-       ++ (if null (vgens fSpec)       then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vgens fSpec))       ++ "\n")
-       ++ (if null (vkeys fSpec)       then "" else "\n"++chain "\n"   (map (showADLcode fSpec') (vkeys fSpec))       ++ "\n")
-       ++ (if null ds                  then "" else "\n"++chain "\n"   (map (showADLcode fSpec') ds)                  ++ "\n")
-       ++ (if null showADLpops         then "" else "\n"++chain "\n\n" showADLpops                                    ++ "\n")
+       ++ (if null (objDefs fSpec)     then "" else "\n"++intercalate "\n\n" (map (showADLcode fSpec') (objDefs fSpec))     ++ "\n")
+       ++ (if null (patterns fSpec)    then "" else "\n"++intercalate "\n\n" (map (showADLcode fSpec') (patterns fSpec))    ++ "\n")
+       ++ (if null (conceptDefs fSpec) then "" else "\n"++intercalate "\n"   (map (showADLcode fSpec') (conceptDefs fSpec)) ++ "\n")
+       ++ (if null (vgens fSpec)       then "" else "\n"++intercalate "\n"   (map (showADLcode fSpec') (vgens fSpec))       ++ "\n")
+       ++ (if null (vkeys fSpec)       then "" else "\n"++intercalate "\n"   (map (showADLcode fSpec') (vkeys fSpec))       ++ "\n")
+       ++ (if null ds                  then "" else "\n"++intercalate "\n"   (map (showADLcode fSpec') ds)                  ++ "\n")
+       ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
        ++ "\n\nENDCONTEXT"
        where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
                            | d<-declarations fSpec, not (null (decpopu d))]
@@ -440,7 +443,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
             )]
       where
        p = ecaAction r
-       shMotivEng ms = commaEng "and" [ showADL conj++" FROM "++chain "," ["R"++show (nr r')| r'<-rs]++")"| (conj,rs)<-ms]
+       shMotivEng ms = commaEng "and" [ showADL conj++" FROM "++intercalate "," ["R"++show (nr r')| r'<-rs]++")"| (conj,rs)<-ms]
        shMotivDut ms = shMotivEng ms  -- TODO: Nog even de nederlandse versie organiseren... 
 -}
  

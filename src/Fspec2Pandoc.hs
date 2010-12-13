@@ -6,8 +6,9 @@ import Collection       (Collection (..))
 import Adl
 import Data.Plug
 import Picture
+import Data.List
 import Data.Fspec
-import Strings          (upCap, commaNL, commaEng, chain, preciesEen)
+import Strings          (upCap, commaNL, commaEng, preciesEen)
 import Text.Pandoc  
 import Version          (versionbanner)
 import Languages        (Lang(..))
@@ -596,7 +597,8 @@ dataAnalysis lev fSpec flags
                  then TeX $ "relatie&totaal&surjectief\\\\ \\hline\\hline\n"
                  else TeX $ "relation&total&surjective\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ if source d==target d
+               [ TeX $ intercalate "&" 
+                                 [ if source d==target d
                                    then "\\(\\signt{"++name d++"}{"++latexEscShw (source d)++"}\\)"              -- veld
                                    else "\\(\\signat{"++name d++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
                                  , if isTot d then "\\(\\surd\\)" else ""
@@ -621,7 +623,8 @@ dataAnalysis lev fSpec flags
                  then TeX $ "relatie&Rfx&Trn&Sym&Asy&Prop\\\\ \\hline\\hline\n"
                  else TeX $ "relation&Rfx&Trn&Sym&Asy&Prop\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ "\\signt{"++name d++"}{"++latexEscShw (source d)++"}"              -- veld
+               [ TeX $ intercalate "&" 
+                                 [ "\\signt{"++name d++"}{"++latexEscShw (source d)++"}"              -- veld
                                  , if isRfx d            then "\\(\\surd\\)" else ""
                                  , if isTrn d            then "\\(\\surd\\)" else ""
                                  , if isSym d            then "\\(\\surd\\)" else ""
@@ -662,7 +665,8 @@ dataAnalysis lev fSpec flags
                  then TeX $ "attribuut&type&verplicht&uniek\\\\ \\hline\\hline\n"
                  else TeX $ "attribute&type&mandatory&unique\\\\ \\hline\\hline\n"
                ]++
-               [ TeX $ chain "&" [ fldname fld
+               [ TeX $ intercalate 
+                             "&" [ fldname fld
                                  , latexEscShw (target (fldexpr fld))
                                  , if fldnull fld then "" else "\\(\\surd\\)"
                                  , if flduniq fld then "\\(\\surd\\)" else ""
@@ -850,7 +854,7 @@ serviceChap lev fSpec flags svc
          mrs = [r|r<-fsv_rules svc, r_usr r, r `notElem` ars]-- rules that may be affected, but are maintained manually
       --   mss = ""-- signals that can be emptied by this service
      in case (language flags) of
-      Dutch ->   chain " " 
+      Dutch ->   intercalate " " 
                  [ case length ars of
                     0 -> ""
                     1 -> " Regel "++name (head ars)++" wordt door deze service gehandhaafd zonder interventie van de gebruiker."
@@ -860,7 +864,7 @@ serviceChap lev fSpec flags svc
                     1 -> " Regel "++name (head mrs)++" wordt door de gebruiker van deze service gehandhaafd."
                     _ -> "Regels "++commaNL "en" (map name mrs)++" worden door de gebruiker van deze service gehandhaafd. "
                  ]
-      English -> chain " " 
+      English -> intercalate " " 
                  [ case length ars of
                     0 -> ""
                     1 -> " Rule "++name (head ars)++" is being maintained by this service, without intervention of the user."
@@ -893,7 +897,7 @@ serviceChap lev fSpec flags svc
                   recur e f | null (fld_sub f) = fld e f
                             | otherwise        = fld e f ++
                                                  [ BulletList [recur (F [e,fld_expr f']) f'| f'<-fld_sub f] ]
-           fld e f = [ Para [ Str (dealWithUnderscores (fld_name f)++if null cols then "" else "("++chain ", " cols++")") ]
+           fld e f = [ Para [ Str (dealWithUnderscores (fld_name f)++if null cols then "" else "("++intercalate ", " cols++")") ]
                      , Para [ Str "display on start: ", Math InlineMath $ showMathcode fSpec (conjNF e) ]
                      ] {- ++
                      [ Para [ Str $ "exec on insert: "++ showECA fSpec "\n>     "  (fld_onIns f arg)]
@@ -997,15 +1001,15 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
    = case fspecFormat flags of
       FLatex -> [Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
-                          chain "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [name plug, latexEscShw (plfpa plug), (latexEscShw.fPoints.plfpa) plug]
+                          intercalate "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
+                          intercalate "\\\\\n" [ intercalate "&" [name plug, latexEscShw (plfpa plug), (latexEscShw.fPoints.plfpa) plug]
                                          | plug<-datasets fSpec
                                          , fPoints (plfpa plug)>0] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
-                          chain "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
-                          chain "\\\\\n" [ chain "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
+                          intercalate "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
+                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 
@@ -1020,7 +1024,7 @@ glossary _ _ _ = []  --TODO
 --showProof :: (expr->String) -> Proof expr -> String
 --showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
 --showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
---                                   "\n"++(if null ss then "\n   "++equ else if null equ then chain " " ss else "   "++equ++" { "++chain "; " ss++" }")++
+--                                   "\n"++(if null ss then "\n   "++equ else if null equ then intercalate " " ss else "   "++equ++" { "++intercalate "; " ss++" }")++
 --                                   showProof sh prf
 --                                   --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
 --showProof _  []                  = ""

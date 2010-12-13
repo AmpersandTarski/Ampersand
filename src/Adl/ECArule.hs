@@ -15,7 +15,7 @@ import Adl.Rule                      (Rules)
 import Adl.Expression                (Expression)
 import Adl.MorphismAndDeclaration    (Morphism)
 import Adl.Concept                   (Concept)
-import Strings                       (chain)
+import Data.List
 
 
 -- | The following datatypes form a process algebra. ADL derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
@@ -105,8 +105,8 @@ instance Show PAclause where
       showFragm indent (Rmv c clause m) = "REMOVE x:"++indent++"       "++show c++";"++indent++"    "++showFragm (indent++"    ") (clause "x")++motivate indent "MAINTAINING" m
       showFragm indent (Sel c e r m)    = "SELECT x:"++indent++"       "++show c++" FROM codomain("++show e++");"
                                           ++indent++"    "++showFragm (indent++"    ") (r "x")++motivate indent "MAINTAINING" m
-      showFragm indent (Chc ds m)       = "ONE of"++indent++"       "++chain (indent++"       ") [showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
-      showFragm indent (All ds m)       = "ALL of"++indent++"       "++chain (indent++"       ") [showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+      showFragm indent (Chc ds m)       = "ONE of"++indent++"       "++intercalate (indent++"       ") [showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
+      showFragm indent (All ds m)       = "ALL of"++indent++"       "++intercalate (indent++"       ") [showFragm (indent++"       ") d| d<-ds]++motivate indent "MAINTAINING" m
       showFragm indent (Nop m)          = "DO NOTHING"++motivate indent "TO MAINTAIN" m
       showFragm indent (Blk m)          = "BLOCK"++motivate indent "CANNOT CHANGE" m
 

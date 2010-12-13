@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE ScopedTypeVariables#-}
 module Prototype.Index(htmlindex) where
-   import Strings(chain)
+   import Data.List
    import Prototype.RelBinGenBasics(indentBlock)
    import Prototype.RelBinGenSQL(isOne)
    import Version (versionbanner)
@@ -13,7 +13,7 @@ module Prototype.Index(htmlindex) where
    
    htmlindex :: Fspc -> [ObjectDef] -> Options -> [Char]
    htmlindex fSpec serviceObjects flags
-    = chain "\n  "
+    = intercalate "\n  "
       ( [ "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         , "<html><head>"
         , "  <title>"++appname++"- ADL Prototype</title>"
