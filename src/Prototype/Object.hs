@@ -496,7 +496,9 @@ module Prototype.Object(objectServices) where
             comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WAAROM: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
             comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
 -- keyGroups representeert de plug-informatie die nodig is voor het atoom aan de rand van objIn, wat de bron is van waaruit objOut wordt opgebouwd.
-            keyGroups   = take 1 ( [gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s] ++ 
+-- 10dec2010: (fldnull s) kan true zijn voor keyGroup als s: INJ, maar niet SUR, en in kernel.
+--      N.B. als sqlRelPlugs (zie combos) aangeeft dat (plug,fld0,fld1) gebruikt kan worden dan maakt het toch niet uit of (fldnull s) waar is of niet?
+            keyGroups   = take 1 ( comboGroups' {-[gr|gr@((_,(_,s)),_)<-comboGroups',not $ fldnull s]-} ++ 
                                    [((p,(objIn,s)),[(objIn,t)])
                                    | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]   -- zoek een conceptentabel op....
                                    -- in het geval van I[ONE] geeft sqlRelPlugs niets terug
@@ -563,7 +565,8 @@ module Prototype.Object(objectServices) where
                                  )
                               | (a,n)<-rest
                               , not (isIdent (objctx a))
-                              , let l=restLines (a,n), not (null l)
+                              , let l=restLines (a,n)
+                              , not (null l)
                               , let r=if null$head l then tail l else l
                               , not (null r)
                               ]

@@ -27,7 +27,20 @@ module Prototype.RelBinGenSQL
    isOneExpr :: Expression -> Bool
    isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
    isOne' :: ObjectDef -> Bool
-   isOne' o = isOneExpr$ctx o
+   isOne' o = isOne o -- isOneExpr$ctx o
+                      --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.
+                      --      isOneExpr (rev:771) kan in de problemen komen bij doSqlGet (error "line 578 Object.hs"). 
+                      --      in dat geval komt isOne (huidige rev) ook in de problemen (error iets met keygroup)
+                      --      Dit heeft te maken met ingewikkelde kernels.
+                      --      case waarbij INJ cruciale rol speelt:
+                      --  value1 :: Obj -> Datatype [INJ].
+                      --  attr1 :: Obj -> Attr.
+                      --  attr2 :: Obj * Attr[UNI].
+                      --  value2 :: Attr -> Datatype.
+                      --  volgens mij was deze case ook al problematisch
+                      --  value1 :: Obj * Datatype [INJ].
+                      --  attr1 :: Obj * Attr [UNI].
+                      --  value2 :: Attr -> Datatype.
    isOne :: ObjectDef -> Bool
    isOne o = source (ctx o) == cptS
 
@@ -456,6 +469,7 @@ module Prototype.RelBinGenSQL
    sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
    
    sqlPlugFields :: PlugSQL -> Expression -> [(SqlField, SqlField)]
+   sqlPlugFields plug (Tm m@(Mph{}) _) = [(fld0,fld1)|(m',fld0,fld1)<-mLkpTbl plug, m==m']
    sqlPlugFields plug e' 
     = [(fld0,fld1)| fld0<-[f|f<-fields plug,target (fldexpr f)==source e']
                   , fld1<-[f|f<-fields plug,target (fldexpr f)==target e']
