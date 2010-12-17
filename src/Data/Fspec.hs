@@ -200,7 +200,5 @@ module Data.Fspec ( Fspc(..)
 	Het antwoord op je vraag: Er bestaan wel degelijk plugs met slechts twee kolommen getoond worden als dataset,
 	namelijk een entiteit met twee attributen.
 -}
-   datasets fSpec = [p| p<-pickTypedPlug (plugs fSpec)
-                      , fld<-take 1 (fields p), flduniq fld  -- this excludes associations, because they are not flduniq
-                      , length (fields p)>1]                 -- this excludes scalar plugs
+   datasets fSpec = [p| p@(TblSQL{})<-pickTypedPlug (plugs fSpec)]
 

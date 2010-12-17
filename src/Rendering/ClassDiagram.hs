@@ -53,16 +53,16 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
     where
+       isClass  :: PlugSQL -> Bool
+       isClass  p = not (null [1::Int|fld<-tblfields p, flduniq fld]) && not (null [1::Int|fld<-tblfields p, not (flduniq fld)])
        classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
                     | plug <- pickTypedPlug$ plugs fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
        assocs'    = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
-                    | plug <- pickTypedPlug$ plugs fSpec, isBinary plug, not (isSignal plug)
-                    , if not (null (mLkpTbl plug)) then True else error("!Fatal (module ClassDiagram 65): empty lookup table in analysis of plug "++name plug++".")
-                    , let m=head [r| (r,_,_)<-mLkpTbl plug]
-                    , if length (fields plug)==2 then True else error("!Fatal (module ClassDiagram 67): irregular association, because it has "++show (length (fields plug))++" fields.")
-                    , [s,t]<-[fields plug]
+                    | plug@(BinSQL{}) <- pickTypedPlug$ plugs fSpec, not (isSignal plug)
+                    , let m=mLkp plug
+                    , let (s,t)=columns plug
                     ]
                     where
                      multiplicity f | fldnull f = ""
@@ -72,11 +72,11 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        aggrs'     = []
        geners'    = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs _ = isa fSpec, gs<-eqCl fst pcs]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
-                    | fld<-fields plug, fldname fld/="i"]
+                    | fld<-tblfields plug, fldname fld/="i"]
        lookup' c = if null ps
                    then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
                    else head ps
-                   where ps = [p|p<-pickTypedPlug$ plugs fSpec, c `elem` [c'|(c',_)<-cLkpTbl p]]
+                   where ps = [p|p<-pickTypedPlug$ plugs fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c'|(c',_)<-cLkpTbl p, c'==c]]
 
    classdiagram2dot :: Options -> ClassDiag -> String
    classdiagram2dot flags cd@(OOclassdiagram cs' as' rs' gs' (_, concspat))
@@ -321,9 +321,6 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
     showsPrec _ (OOMethodD nm)     = showString (nm++"(handle)")
     showsPrec _ (OOMethodU nm cs)  = showString (nm++"(handle,"++intercalate "," [ n | OOAttr n _ _<-cs]++")")
     showsPrec _ (OOMethod nm cs r) = showString (nm++"("++intercalate "," [ n | OOAttr n _ _<-cs]++"): "++r)
-
-
-
 
 --
 --   testCD

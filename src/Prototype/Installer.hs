@@ -59,24 +59,24 @@ module Prototype.Installer where
         [ "}" ]
      ) ++ "\n?>\n"
     where plugCode plug
-           = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (fields plug)))
+           = commentBlock (["Plug "++name plug,"","fields:"]++(map (\x->show (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (tblfields plug)))
              ++
              [ "mysql_query(\"CREATE TABLE `"++name plug++"`"]
              ++ indentBlock 17
                     ( [ comma: " `" ++ fldname f ++ "` " ++ showSQL (fldtype f) ++ autoIncr ++ nul
-                      | (f,comma)<-zip (fields plug) ('(':repeat ',')
+                      | (f,comma)<-zip (tblfields plug) ('(':repeat ',')
                       , let nul = if fldnull f then "" else " NOT NULL"
                       , let autoIncr = if fldauto f
                                        then " AUTO_INCREMENT" else ""
                       ] ++
                       [", UNIQUE KEY (`"++fldname key++"`)"
-                      | key <- fields plug, flduniq key, not (fldnull key)]
+                      | key <- tblfields plug, flduniq key, not (fldnull key)]
                     )
              ++ ["                  ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
              ++ (if (null $ tblcontents plug) then [] else
                  [ "else"
-                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` "|f<-fields plug]++")"
+                                 , "mysql_query(\"INSERT IGNORE INTO `"++name plug++"` ("++intercalate "," ["`"++fldname f++"` "|f<-tblfields plug]++")"
                                  ]++ indentBlock 12
                                                  ( [ comma++ " (" ++valuechain md++ ")"
                                                    | (md,comma)<-zip (tblcontents plug) ("VALUES":repeat "      ,")

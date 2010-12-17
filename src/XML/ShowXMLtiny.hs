@@ -347,7 +347,7 @@ where
      mkXmlTree p
       = Elem (mkTag p)
              [ ] -- TODO
-   instance XML PlugSQL where
+   instance XML PlugSQL where --TODO151210 -> tags for BinSQL and ScalarSQL
      mkTag p = Tag "PlugSql" [ nameToAttr p]
      mkXmlTree p 
       = Elem (mkTag p) 

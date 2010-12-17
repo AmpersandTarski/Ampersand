@@ -673,7 +673,7 @@ dataAnalysis lev fSpec flags
                                  , if fldnull fld then "" else "\\(\\surd\\)"
                                  , if flduniq fld then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | fld<-fields p
+               | fld<-tblfields p
                ]++
                [ TeX "\\hline\n\\end{tabular}"
                ]
@@ -810,12 +810,15 @@ dataAnalysis lev fSpec flags
                                 else BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
                               ]
           where irs = [Fux fs| Quad m ccrs<-vquads fSpec
-                            , r_usr (cl_rule ccrs), isIdent m, source m `elem` [c|(c,_)<-cLkpTbl p]
+                            , r_usr (cl_rule ccrs), isIdent m, source m `elem` pcpts
                             , (_,shifts)<-cl_conjNF ccrs
                             , Fux fs<-shifts
                             , let ns=[t| Cpx t<-fs], length ns==1, Tm nega _<-ns
                             , m==nega
                             ]
+                pcpts = case p of
+                  ScalarSQL{} -> [cLkp p]
+                  _           -> map fst (cLkpTbl p)
 
 ------------------------------------------------------------
 serviceChap :: Int -> Fspc -> Options -> Fservice ->  ([Block],[Picture])

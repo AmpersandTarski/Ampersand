@@ -81,6 +81,7 @@ where
     showHSname plug = haskellIdentifier ("plug_"++plname plug)
     showHS flags indent plug   
       = case plug of
+           --TODO151210 -> add instance ShowHS PlugSQL
            PlugSql p -> (intercalate indent 
                           ["let " ++ intercalate (indent++"    ")
                                                  [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"

@@ -467,12 +467,14 @@ module Prototype.RelBinGenSQL
 
    sqlRelPlugNames :: Fspc -> Expression -> [(String,String,String)] --(plug,source,target)
    sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
-   
+
    sqlPlugFields :: PlugSQL -> Expression -> [(SqlField, SqlField)]
-   sqlPlugFields plug (Tm m@(Mph{}) _) = [(fld0,fld1)|(m',fld0,fld1)<-mLkpTbl plug, m==m']
+   sqlPlugFields plug@(TblSQL{}) (Tm m@(Mph{}) _) = [(fld0,fld1)|(m',fld0,fld1)<-mLkpTbl plug, m==m']
+   sqlPlugFields plug@(BinSQL{}) (Tm m@(Mph{}) _) = [columns plug|m==mLkp plug]
+   --TODO151210 -> use cLkp in case of (Tm (I{}) _) => why reason if already known
    sqlPlugFields plug e' 
-    = [(fld0,fld1)| fld0<-[f|f<-fields plug,target (fldexpr f)==source e']
-                  , fld1<-[f|f<-fields plug,target (fldexpr f)==target e']
+    = [(fld0,fld1)| fld0<-[f|f<-tblfields plug,target (fldexpr f)==source e']
+                  , fld1<-[f|f<-tblfields plug,target (fldexpr f)==target e']
                   , let se = fldexpr fld0
                         te = fldexpr fld1
                         bs = (isTrue.disjNF) (Fux [Cpx e', F [flp se,te] ])  --       e' |- se~;te
@@ -565,13 +567,14 @@ module Prototype.RelBinGenSQL
    sqlConcept :: Fspc -> Concept -> String
    sqlConcept fSpec c = name (sqlConceptPlug fSpec c)
    
--- sqlConcept yields the plug that contains all atoms of concept c. Since there may be more of them, the fist one is returned.
+-- sqlConcept yields the plug that contains all atoms of concept c. Since there may be more of them, the first one is returned.
    sqlConceptPlug :: Fspc -> Concept -> PlugSQL
    sqlConceptPlug fSpec c | c==cptS = error ("!Fatal (module RelBinGenBasics 618): Concept ONE may not be represented in SQL.")
                           | otherwise
                 = if null ps then error ("!Fatal (module RelBinGenBasics 620): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
                   head ps
-                  where ps = [plug|plug<-pickTypedPlug$ plugs fSpec, not (null [c'|(c',_)<-cLkpTbl plug, c'==c])]
+                  where ps = [plug|plug<-pickTypedPlug$ plugs fSpec
+                                  , not (null (case plug of ScalarSQL{} -> [c|c==cLkp plug]; _ -> [c'|(c',_)<-cLkpTbl plug, c'==c]))]
 
 -- was:                  
 -- sqlConceptPlug fSpec c  = if null cs then error ("!Fatal (module RelBinGenBasics 703): Concept \""++show c++"\" does not occur in fSpec (sqlConceptPlug in module RelBinGenBasics)") else
@@ -583,6 +586,6 @@ module Prototype.RelBinGenSQL
                          | otherwise
                 = if null cs then error ("!Fatal (module RelBinGenBasics 632): Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
                   head cs
-                  where cs = [fldname f|f<-fields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+                  where cs = [fldname f|f<-tblfields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         appname =  name fSpec
 
