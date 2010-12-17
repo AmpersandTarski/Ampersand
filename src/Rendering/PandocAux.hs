@@ -27,8 +27,10 @@ import Strings          (unCap, preciesEen)
 import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
-                          -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
-                          -- 2) cabal-install pandoc  (onder windows: cabal install pandoc)
+                          -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/)
+                          -- 2) dan roep je op je command line:
+                          --       (onder unix)    cabal-install pandoc
+                          --       (onder windows) cabal install pandoc
                           -- 3) Het kan zijn dat dit nog niet werkt, zie http://groups.google.com/group/pandoc-discuss/browse_thread/thread/a8fc3a627aeec7f2
                           --    als dat het geval is, kan deze module worden overruled in Generators.hs    
                           -- Built on pandoc 1.6                             
@@ -326,9 +328,9 @@ theTemplate flags
                , "$endfor$"
                , "}"
                ])
-    FPandoc -> error ("!Fatal (module PandocAux 329): No template defined for Pandoc output") 
-    FOpenDocument -> error ("!Fatal (module PandocAux 330): No template defined for ODF output") 
-    FHtml -> error ("!Fatal (module PandocAux 331): No template defined for HTML output") 
+    FPandoc       -> error ("!Fatal (module Rendering.PandocAux 329): No template defined for Pandoc output") 
+    FOpenDocument -> error ("!Fatal (module Rendering.PandocAux 330): No template defined for ODF output") 
+    FHtml         -> error ("!Fatal (module Rendering.PandocAux 331): No template defined for HTML output") 
  
 -----Linguistic goodies--------------------------------------
 
@@ -452,7 +454,7 @@ instance ShowMath Gen where
  showMathcode fSpec g = showMathcode fSpec (genspc g) ++"\\ \\le\\ "++showMathcode fSpec (gengen g)
 
 instance ShowMath Rule where
- showMath r = error ("!Fatal (module Fspec2Pandoc 889): Please supply specification of the context in showMath "++showADL r)
+ showMath r = error ("!Fatal (module Rendering.PandocAux 455): Please supply specification of the context in showMath "++showADL r)
  showMathcode fSpec r
   = {- ( if isSignal r
       then "\\verb#RULE # "++texId(name r)++"\\ \\verb# SIGNALS #"

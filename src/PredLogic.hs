@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
 module PredLogic
-           ( PredLogicShow(showPredLogic)
+           ( PredLogicShow(..), showLatex
            ) 
    where
 
@@ -33,23 +33,97 @@ module PredLogic
 --     case language flags of
 --        English  -> 
 
-   predLshow :: Lang -> PredLogic -> String
-   predLshow lang e
-    = charshow 0 e
-        where
-         (forallP, existsP, impliesP, equivP, orP, andP, notP, relP, funP, showVarsP, breakP, spaceP)
-            = case lang of
-                English -> ("For each", "There exists", implies, "is equivalent to", "or", "and", "not", rel, fun, langVars , "\n  ", " ")
-                Dutch   -> ("Voor elke", "Er is een", implies, "is equivalent met", "of", "en", "niet", rel, fun, langVars , "\n  ", " ")
+   class PredLogicShow a where
+     showPredLogic :: Options -> a -> String
+     showPredLogic flags r =  
+       predLshow (natLangOps flags) (toPredLogic r)
+     toPredLogic :: a -> PredLogic
+
+   instance PredLogicShow Rule where
+     toPredLogic = rule2predLogic
+
+   instance PredLogicShow Expression where
+     toPredLogic = expr2predLogic
+
+-- showLatex ought to produce PandDoc mathematics instead of LaTeX source code.
+-- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
+-- It circumvents the PanDoc structure and goes straight to LaTeX source code.
+   showLatex :: PredLogic -> String
+   showLatex x
+    = predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\wedge", "\\neg", rel, fun, mathVars, "", " ", apply) x
+      where rel m lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
+              = if isIdent m then lhs++"\\ =\\ "++rhs else
+                case name m of
+                 "lt"     -> lhs++"\\ <\\ "++rhs
+                 "gt"     -> lhs++"\\ >\\ "++rhs
+                 "le"     -> lhs++"\\ \\leq\\ "++rhs
+                 "leq"    -> lhs++"\\ \\leq\\ "++rhs
+                 "ge"     -> lhs++"\\ \\geq\\ "++rhs
+                 "geq"    -> lhs++"\\ \\geq\\ "++rhs
+                 _        -> lhs++"\\ \\id{"++name m++"}\\ "++rhs
+            fun m e = "\\id{"++name m++"}"++"("++e++")"
+            implies antc cons = antc++" \\Rightarrow "++cons
+            apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. 
+            apply decl d c =
+               case decl of
+                 Sgn{}     -> d++"\\ \\id{"++decnm decl++"}\\ "++c
+                 Isn{}     -> d++"\\ =\\ "++c
+                 Iscompl{} -> d++"\\ \not =\\ "++c
+                 Vs{}      -> "V"
+            mathVars :: String -> [(String,Concept)] -> String
+            mathVars q vs
+             = if null vs then "" else
+               q++" "++intercalate "; " [intercalate ", " var++"::"++dType | (var,dType)<-vss]++": "
                where
-                  rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
+                vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
+
+-- natLangOps exists for the purpose of translating a predicate logic expression to natural language.
+-- It yields a vector of mostly strings, which are used to assemble a natural language text in one of the natural languages supported by Ampersand.
+   natLangOps :: Identified a => Options -> ([Char],
+                                            [Char],
+                                            [Char] -> [Char] -> [Char],
+                                            [Char],
+                                            [Char],
+                                            [Char],
+                                            [Char],
+                                            Morphism -> String -> String -> String,
+                                            a -> [Char] -> [Char],
+                                            String -> [(String, Concept)] -> String,
+                                            [Char],
+                                            [Char],
+                                            Declaration -> String -> String -> String)
+   natLangOps flags
+            = case language flags of
+-- parameternamen:         (forallP,     existsP,        impliesP, equivP,             orP,  andP,  notP,  relP, funP, showVarsP, breakP, spaceP)
+                English -> ("For each",  "There exists", implies, "is equivalent to",  "or", "and", "not",  rel, fun,  langVars , "\n  ", " ", apply)
+                Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "niet", rel, fun,  langVars , "\n  ", " ", apply)
+               where
+                  rel m lhs rhs = apply (makeDeclaration m) lhs rhs
                   fun m x' = name m++"("++x'++")"
-                  implies antc cons = case lang of 
+                  implies antc cons = case language flags of 
                                         English  -> "If "++antc++", then "++cons
                                         Dutch    -> "Als "++antc++", dan "++cons
+                  apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. 
+                  apply decl d c =
+                     case decl of
+                       Sgn{}     -> if null (prL++prM++prR) 
+                                      then d++" "++decnm decl++" "++c 
+                                      else prL++d++prM++c++prR
+                          where prL = decprL decl
+                                prM = decprM decl
+                                prR = decprR decl
+                       Isn{}     -> case language flags of 
+                                        English  -> d++" equals "++c
+                                        Dutch    -> d++" is gelijk aan "++c
+                       Iscompl{} -> case language flags of 
+                                        English  -> d++" differs from "++c
+                                        Dutch    -> d++" verschilt van "++c
+                       Vs{}      -> case language flags of 
+                                        English  -> show True
+                                        Dutch    -> "Waar"
                   langVars :: String -> [(String, Concept)] -> String
                   langVars q vs
-                      = case lang of
+                      = case language flags of
                          English -> if null vs then "" else
                                     if q=="Exists"
                                     then intercalate " and " ["there exist"++(if length vs'==1 then "s a "++dType else " "++plural English dType)++" called "++intercalate ", " vs' | (vs',dType)<-vss]
@@ -62,10 +136,28 @@ module PredLogic
                                     else "Als "++langVars "Er is" vs++", "
                                     where
                                      vss = [(map fst vs',show(snd (head vs'))) |vs'<-eqCl snd vs]
-                  
-                  
-                  
-                  
+
+-- predLshow exists for the purpose of translating a predicate logic expression to natural language.
+-- It uses a vector of operators (mostly strings) in order to produce text. This vector can be produced by, for example, natLangOps.
+-- example:  'predLshow (natLangOps flags) e' translates expression 'e'
+-- into a string that contains a natural language representation of 'e'.
+   predLshow :: ( String                                    -- forallP
+                , String                                    -- existsP
+                , String -> String -> String                -- impliesP
+                , String                                    -- equivP
+                , String                                    -- orP
+                , String                                    -- andP
+                , String                                    -- notP
+                , Morphism -> String -> String -> String    -- relP
+                , Morphism -> String -> String              -- funP
+                , String -> [(String, Concept)] -> String   -- showVarsP
+                , String                                    -- breakP
+                , String                                    -- spaceP
+                , Declaration -> String -> String -> String -- apply
+                ) -> PredLogic -> String
+   predLshow (forallP, existsP, impliesP, equivP, orP, andP, notP, relP, funP, showVarsP, breakP, spaceP, apply) e
+    = charshow 0 e
+        where
          wrap i j str = if i<=j then str else "("++str++")"
          charshow :: Integer -> PredLogic -> String
          charshow i predexpr
@@ -84,13 +176,13 @@ module PredLogic
                                             []    -> x
                                             m:ms  -> if isIdent m then charshow i (Funs x ms) else charshow i (Funs (funP m x) ms)
                   Rel pexpr m pexpr'  -> case (pexpr,pexpr') of
-                                            (Funs l [] , Funs r [])  -> wrap i 5 (applyM (makeDeclaration m) l r)
+                                            (Funs l [] , Funs r [])  -> wrap i 5 (apply (makeDeclaration m) l r)
                                             (Funs x [l], Funs r [])  -> wrap i 5 (if isIdent m
-                                                                                  then applyM (makeDeclaration l) x r
-                                                                                  else applyM (makeDeclaration m) x r)
+                                                                                  then apply (makeDeclaration l) x r
+                                                                                  else apply (makeDeclaration m) x r)
                                             (Funs l [] , Funs y [r]) -> wrap i 5 (if isIdent m
-                                                                                  then applyM (makeDeclaration r) l y
-                                                                                  else applyM (makeDeclaration m) l y)
+                                                                                  then apply (makeDeclaration r) l y
+                                                                                  else apply (makeDeclaration m) l y)
                                             (lhs,rhs)                -> wrap i 5 (if inline m
                                                                                   then relP m (charshow 5 lhs) (charshow 5 rhs)
                                                                                   else relP m (charshow 5 rhs) (charshow 5 lhs))
@@ -98,29 +190,12 @@ module PredLogic
                   Pred nm v'          -> nm++"{"++v'++"}"
 
 
---   instance Show PredLogic where
---    showsPrec p x = showString (predLshow flags ("For all", "Exists", implies, "<=>", "=", "\\=", "||", "&", "not", rel, fun, mathVars, "", " ") x)
---                    where rel m lhs rhs = lhs++" "++name m++" "++rhs
---                          fun m x = name m++"("++x++")"
---                          implies antc cons = antc++" ==> "++cons
-
 --objOrShow :: Options -> PredLogic -> String
---objOrShow flags = predLshow flags ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars flags, "\n", " ")
+--objOrShow flags = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "NOT", rel, fun, langVars flags, "\n", " ")
 --               where rel m lhs rhs = applyM (makeDeclaration m) lhs rhs
 --                     fun m x = x++"."++name m
 --                     implies antc cons = "IF "++antc++" THEN "++cons
 
-   class PredLogicShow a where
-     showPredLogic :: Options -> a -> String
-     
-   instance PredLogicShow Rule where
-     showPredLogic flags r =  
-       predLshow (language flags) (rule2predLogic r)
-
-   instance PredLogicShow Expression where
-     showPredLogic flags expr = 
-       predLshow (language flags) (expr2predLogic expr)
-       
    rule2predLogic :: Rule -> PredLogic
    rule2predLogic ru = assemble (normRule ru)
      where 

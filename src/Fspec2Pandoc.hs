@@ -12,7 +12,7 @@ import Strings          (upCap, commaNL, commaEng, preciesEen)
 import Text.Pandoc  
 import Version          (versionbanner)
 import Languages        (Lang(..))
-import PredLogic        (showPredLogic)
+import PredLogic        (PredLogicShow(..), showLatex)
 import Options hiding   (services) --importing (Options(..),FspecFormat(..),DocTheme(..))
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation (explain,explain2Blocks)
@@ -25,15 +25,18 @@ import Rendering.PandocAux
 
 --DESCR ->
 --The functional specification starts with an introduction
---The second chapter defines the functionality of the system by datasets and rules.
---Datasets are specified through PLUGS in ADL. The dataset is build around one concept, 
---also called the theme. Functionalities defined on the theme by one or more plugs are
---described together with the rules that apply to the dataset. Rules not described by
---the dataset are described in the last section of chapter 2.
+--The second chapter defines the functionality of the system for stakeholders.
+--Because we assume these stakeholders to speak the language of the primary process without any technical knowledge,
+--the second chapter contains natural language only. 
 --The third chapter is intended for the analyst. It contains all the rules mentioned in
 --natural language in the second chapter. It presents the trace from natural language
 --to the formal rule.
 --The fourth chapter presents a datamodel together with all the multiplicity rules.
+-- by datasets and rules.
+--Datasets are specified through PLUGS in ADL. The dataset is build around one concept, 
+--also called the theme. Functionalities defined on the theme by one or more plugs are
+--described together with the rules that apply to the dataset. Rules not described by
+--the dataset are described in the last section of chapter 2.
 --The following chapters each present a SERVICE
 --The specification end with a glossary.
 
@@ -468,10 +471,9 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
                               |d<-nds] ++
                [ Plain (text2)| not (null rds)] ++
                [ Plain (text3)| isSignal r] ++
-               (if showPredExpr flags 
-                 then [Plain [Str (if isSignal r then  showPredLogic flags (conjNF (Cpx (normExpr r))) else showPredLogic flags r), symDefLabel r]]
-                 else pandocEquation [TeX (if isSignal r then showMathcode fSpec (conjNF (Cpx (normExpr r))) else showMathcode fSpec r)
-                                          , symDefLabel r]
+               (if showPredExpr flags
+                then pandocEquation [TeX (showLatex (toPredLogic r)), symDefLabel r]
+                else pandocEquation [TeX (showMathcode fSpec r), symDefLabel r]
                )++
                [ Plain (text4) | length nds>1]
              ] 
@@ -484,11 +486,11 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
         text1
          = case (length nds,language flags) of
              (1,Dutch)   -> let d = head nds in
-                            [TeX ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",symDefRef d,Str "):"]
+                            [Str ("Om dit te formaliseren is een "++(if isFunction d then "functie" else "relatie")++" "),Str (name d),Str " nodig (",symDefRef d,Str "):"]
              (1,English) -> let d = head nds in
-                            [TeX ("In order to formalize this, a "++(if isFunction d then "function" else "relation")++" "),Str (name d),Str " is introduced (",symDefRef d,Str "):"]
-             (l,Dutch)   -> [TeX "Om te komen tot de formalisatie in vergelijking~", symDefRef r,TeX (" zijn de volgende "++count flags l "relatie"++" nodig.")]
-             (l,English) -> [TeX "To arrive at the formalization in equation~", symDefRef r,TeX (", the following "++count flags l "relation"++" are introduced.")]
+                            [Str ("In order to formalize this, a "++(if isFunction d then "function" else "relation")++" "),Str (name d),Str " is introduced (",symDefRef d,Str "):"]
+             (l,Dutch)   -> [TeX "Om te komen tot de formalisatie in vergelijking~", symDefRef r,Str (" zijn de volgende "++count flags l "relatie"++" nodig.")]
+             (l,English) -> [TeX "To arrive at the formalization in equation~", symDefRef r,Str (", the following "++count flags l "relation"++" are introduced.")]
         text2
          = (case (length nds,length rds,language flags) of
              (0,1,Dutch)   -> [Str "Definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ") wordt gebruikt"]
@@ -497,8 +499,8 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
              (0,_,English) -> [Str "We use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
              (_,1,Dutch)   -> [Str "Daarnaast gebruiken we definitie ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
              (_,1,English) -> [Str "We use definition ", symDefRef (head rds), Space, Str "(", Str (name (head rds)), Str ")"]
-             (_,_,Dutch)   -> [Str "Daarvoor gebruiken we definities ", TeX (commaNL "en" [str |d<-rds, let TeX str=symDefRef d])]
-             (_,_,English) -> [Str "For that we use definitions ", TeX (commaEng "and" [str |d<-rds, let TeX str=symDefRef d])]
+             (_,_,Dutch)   -> [Str "Ook gebruiken we definities ", TeX (commaNL "en" [str++"("++texOnly_Id (name d)++")" |d<-rds, let TeX str=symDefRef d])]
+             (_,_,English) -> [Str "We also use definitions ", TeX (commaEng "and" [str++"("++texOnly_Id (name d)++")" |d<-rds, let TeX str=symDefRef d])]
            )++
            (case (length nds,language flags) of
              (1,Dutch)   -> [TeX " om eis~", symReqRef r, TeX " (pg.~", symReqPageRef r, Str ") te formaliseren:"]
@@ -734,54 +736,78 @@ dataAnalysis lev fSpec flags
            English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
                        []  -> []
                        [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
-                              , Para [ Math DisplayMath $ showMathcode fSpec r]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec r]
                               ]
                        rs  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
-                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]]| r<-rs ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
                               ]
            Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
                        []  -> []
                        [r] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
-                              , Para [ Math DisplayMath $ showMathcode fSpec r]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic r)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec r]
                               ]
                        rs  -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregels. " ]
-                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]]| r<-rs ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
                               ]
        plugSignals
         = case language flags of
            English -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set generates one signal. " ]
-                              , Para [ Math DisplayMath $ showMathcode fSpec s]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec s]
                               ]
                        ss  -> [ Para [ Str "This data set generates the following signals. " ]
-                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]]| s<-ss ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
            Dutch   -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" signaal. ") ] 
-                              , Para [ Math DisplayMath $ showMathcode fSpec s]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec s]
                               ]
                        ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende signalen. " ]
-                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]]| s<-ss ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
        iRules
         = case language flags of
            English -> case irs of
                        []  -> []
                        [e] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
-                              , Para [ Math DisplayMath $ showMathcode fSpec e]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec e]
                               ]
                        es  -> [ Para [ Str "This data set shall maintain the following integrity rules. " ]
-                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]]| e<-es ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
                               ]
            Dutch   -> case irs of
                        []  -> []
                        [e] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
-                              , Para [ Math DisplayMath $ showMathcode fSpec e]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic e)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec e]
                               ]
                        es  -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregels. " ]
-                              , BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic e)) ]]| e<-es ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec e]]| e<-es ]
                               ]
           where irs = [Fux fs| Quad m ccrs<-vquads fSpec
                             , r_usr (cl_rule ccrs), isIdent m, source m `elem` [c|(c,_)<-cLkpTbl p]
