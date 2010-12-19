@@ -88,6 +88,33 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
         savedDecs= (filter (not.decplug) allDecs)
+--TODO151210 -> Plug A is overbodig, want A zit al in plug r
+--CONTEXT Temp
+--PATTERN Temp
+--r::A*B[TOT].
+--t::E*F[UNI].
+--ENDPATTERN
+--ENDCONTEXT
+{-
+    **************************************
+    * Plug E                               *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * t  [UNI]                             *
+    **************************************
+    * Plug F                               *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    **************************************
+    * Plug B                               *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    **************************************
+    * Plug A                               *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    **************************************
+    * Plug r                               *
+    * I  [INJ,SUR,UNI,TOT,SYM,ASY,TRN,RFX] *
+    * r  [TOT]                             *
+    **************************************
+-}
         -------------------
         --END: making plugs
         -------------------

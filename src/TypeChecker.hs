@@ -450,7 +450,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
                    (Obj {objats=kdats kd,
                          objnm=kdlbl kd,
                          objpos=kdpos kd,
-                         objctx=Tm (mIs (kdcpt kd))(-1),
+                         objctx=Tm (I [kdcpt kd] (kdcpt kd) (kdcpt kd) True) (-1), --REMARK -> mIs is not used because it does not set mphats
                          objctx_proof=Nothing,
                          objstrs=[[]]}) Nothing
 
