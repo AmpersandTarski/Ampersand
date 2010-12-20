@@ -8,7 +8,8 @@ where
    import Data.Fspec
    import Data.List
    import Adl
-   import UU_Scanner            (Pos(..))
+   import qualified UU_Scanner
+  --          (Pos(..) 
    import ShowADL               (showADL)--,showADLcode) -- wenselijk voor foutmeldingen.
    import Options hiding (services)
    import Version               (versionbanner)
@@ -82,16 +83,36 @@ where
     showHS flags indent plug   
       = case plug of
            --TODO151210 -> add instance ShowHS PlugSQL
-           PlugSql p -> (intercalate indent 
-                          ["let " ++ intercalate (indent++"    ")
-                                                 [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
-                          ,"PlugSql{ sqlname = " ++ (show.haskellIdentifier.plname) plug
-                          ,"       , fields  = ["++intercalate ", " (map showHSname (fields p))++"]"
-                          ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
-                          ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
-                          ,"       , sqlfpa  = " ++ showHS flags "" (plfpa plug)
-                          ,"       }"
-                          ])
+           PlugSql p -> (case p of
+               TblSQL{} -> (intercalate indent 
+                           ["let " ++ intercalate (indent++"    ")
+                                                  [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
+                           ,"TblSQL{ sqlname = " ++ (show.haskellIdentifier.plname) plug
+                           ,"      , fields  = ["++intercalate ", " (map showHSname (fields p))++"]"
+                           ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
+                           ,"      , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
+                           ,"      , sqlfpa  = " ++ showHS flags "" (plfpa plug)
+                           ,"      }"
+                           ])
+               BinSQL{} -> (intercalate indent 
+                           ["let " ++ showHSname (fst (columns p))++indent++"     = "++showHS flags (indent++"       ") (fst (columns p))
+                                   ++ (indent++"    ") ++ showHSname (snd (columns p))++indent++"     = "++showHS flags (indent++"       ") (snd (columns p))
+                                   ++indent++"in"
+                           ,"BinSQL{ sqlname = " ++ (show.haskellIdentifier.plname) plug
+                           ,"      , columns = ("++(showHSname (fst (columns p)))++ ", " ++ (showHSname (snd (columns p)))++")"
+                           ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
+                           ,"      , mLkp = "++showHS flags "" (mLkp p)
+                           ,"      , sqlfpa  = " ++ showHS flags "" (plfpa plug)
+                           ,"      }"
+                           ])
+               ScalarSQL{} -> (intercalate indent 
+                           ["ScalarSQL{ sqlname = " ++ (show.haskellIdentifier.plname) plug
+                           ,"         , column = "++showHS flags "" (column p)
+                           ,"         , cLkpTbl = "++showHS flags "" (cLkp p)
+                           ,"         , sqlfpa  = " ++ showHS flags "" (plfpa plug)
+                           ,"         }"
+                           ])
+                        )
            PlugPhp p ->  (intercalate indent 
                           ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
                                   --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
@@ -721,7 +742,7 @@ where
 
    instance ShowHS FilePos where
     showHSname p = error ("!Fatal (module ShowHS 621): Illegal call to showHSname ("++show p++"). A position is an anonymous entity in Haskell code.")
-    showHS _ _ (FilePos (fn,Pos l c,sym))
+    showHS _ _ (FilePos (fn,UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
     showHS _ _ Nowhere
       = "Nowhere"
