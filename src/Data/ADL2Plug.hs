@@ -1,4 +1,11 @@
-module Data.ADL2Plug (mor2plug,makePlugs,makePhpPlug,makeSqlPlug)
+{-# OPTIONS_GHC -Wall #-}  
+module Data.ADL2Plug 
+  (mor2plug --make a binary sqlplug for a morphism that is neither inj nor uni
+  ,makeTblPlugs --generate non-binary sqlplugs for morphisms that are at least inj or uni, but not already in some user defined sqlplug
+  ,makePhpPlug --make a phpplug from an ObjectDef (user-defined php plug)
+  ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
+  ,mph2fld --create field for TblSQL or ScalarSQL plugs 
+  )
 where
 import Collection     (Collection((>-)))
 import Adl
@@ -10,40 +17,122 @@ import Char
 import FPA
 import Data.Maybe (listToMaybe)
 
--- mor2plug creates associations between plugs that represent wide tables.
--- this concerns relations that are not univalent nor injective,
+-----------------------------------------
+--mor2plug
+-----------------------------------------
+-- mor2plug creates associations (BinSQL) between plugs that represent wide tables.
+-- Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
+--
+-- this concerns relations that are not univalent nor injective, i.e. flduniq=False for both columns
 -- Univalent relations and injective relations cannot be associations, because they are used as attributes in wide tables.
+-- REMARK -> imagine a context with only one univalent relation r::A*B.
+--           Then r can be found in a wide table plug (TblSQL) with a list of two columns [I[A],r], 
+--           and not in a BinSQL with a pair of columns (I/\r;r~, r)
+--
+-- the relation m (or m~) is stored in this plug
+-- the domain of m is stored in the first column with fldexpr=I/\m;m~
+-- the codomain of m is stored in the second column with fldexpr=m
+-- REMARK -> NULL is not an element of the domain or codomain of m i.e. fldnull=False for both columns
+--
+-- a total property of m (or m~) implies that the domain of m equals the domain of I[source m] i.e. I/\m;m~ = I
+-- Thus, this plug can be used to lookup concept (source m) 
+-- REMARK -> whether the total property holds is decided by multiplicities m and totals, where totals is a function in ADL2Fspec
+--
+-- REMARK -> fldtype is set by the constructor function field
+-- REMARK -> because m cannot be INJ or UNI, m must be a BinSQL and cannot be a ScalarSQL or TblSQL
+-- REMARK -> a BinSQL has the same meaning as a TblSQL with mLkpTbl=[(m,fld1,fld2)]
+--  i.e. fldexpr fld2 holds the relation from fld1 to fld2, which is m
+--       and the rule (fldexpr fld1)~;(fldexpr fld1);m = m holds (see comments mph2fld)
+--  to get this meaning, fld1 and fld2 cannot be constructed with mph2fld, because fld1 is not a kernel field!
+--  let id::(source m)->(source m)[INJ] such that id=I /\ m;m~:
+--  + fld1={fldexpr=id,fldnull=not(isTot m),flduniq=isInj m}
+--  + fld2={fldexpr=m ,fldnull=not(isTot (id;m) ,flduniq=isInj (id;m)}
+--  if isTot m then id=I else not(isSur id)
 mor2plug :: Morphism -> [Morphism] -> PlugSQL
 mor2plug  m totals
-         = if Inj `elem` mults || Uni `elem` mults then error ("!Fatal (module ADL2Fspec 64): unexpected call of mor2plug("++show m++"), because it is injective or univalent.") else
-           if not is_Tot && is_Sur then mor2plug (flp m) totals else
-           BinSQL (name m)                                                    -- plname
-                  (srcFld,trgFld)                                             -- columns
-                  ([(source m,srcFld)| is_Tot]++[(target m,trgFld)| is_Sur])  -- cLkpTbl
-                  m                                                           -- mLkp
-                  NO                                                          -- plfpa 
-           where
-             srcNm = (if name (source m)==name (target m) then "s_" else "")++name (source m)
-             trgNm = (if name (source m)==name (target m) then "t_" else "")++name (target m)
-             srcFld = field srcNm
-                            (if   is_Tot
-                             then Tm (mIs (source m)) (-1)                                    -- DAAROM (SJ) Deze relatie mag als conceptentabel voor source m worden gebruikt, omdat ze totaal is.
-                             else Fix [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]    -- DAAROM (SJ) Deze expressie, nl. I/\m;m~,  representeert het domein van deze relatie. Dat is nodig, omdat er andere elementen in I kunnen zitten, die niet in het domein van m voorkomen. m kan dus niet als conceptentabel worden gebruikt.
-                            )
-                            Nothing
-                            (not is_Sur)
-                            (isUni m {- will be False -})
-             trgFld = field trgNm
-                            (Tm m (-1))
-                            Nothing
-                            (not is_Tot)
-                            (isInj m {- will be False -})
-             mults = multiplicities m
-             is_Tot = Tot `elem` mults || m `elem` totals
-             is_Sur = Sur `elem` mults || flp m `elem` totals
+  | Inj `elem` (multiplicities m) || Uni `elem` (multiplicities m) 
+    = error ("!Fatal (module ADL2Plug 35): unexpected call of mor2plug("++show m++"), because it is injective or univalent.")
+  | not is_Tot && is_Sur 
+    = mor2plug (flp m) totals
+  | otherwise
+    = BinSQL (name m)                                                    -- plname
+              (srcFld,trgFld)                                             -- columns
+              ([(source m,srcFld)| is_Tot]++[(target m,trgFld)| is_Sur])  -- cLkpTbl
+              m                                                           -- mLkp
+              NO                                                          -- plfpa 
+   where
+   srcNm = (if name (source m)==name (target m) then "s_" else "")++name (source m)
+   trgNm = (if name (source m)==name (target m) then "t_" else "")++name (target m)
+   srcFld = Fld srcNm                         --fldname
+                (if   is_Tot
+                 then Tm (mIs (source m)) (-1)
+                 else Fix [Tm (mIs (source m))(-1),F [Tm m(-1),flp (Tm m(-1))]]
+                )                             --fldexpr
+                (SQLVarchar 255)              --fldtype
+                False                         --fldnull
+                (isUni m {- will be False -}) --flduniq
+   trgFld = Fld trgNm                         --fldname
+                (Tm m (-1))                   --fldexpr
+                (SQLVarchar 255)              --fldtype
+                False                         --fldnull
+                (isInj m {- will be False -}) --flduniq
+   is_Tot = Tot `elem` (multiplicities m) || m `elem` totals
+   is_Sur = Sur `elem` (multiplicities m) || flp m `elem` totals
 
+-----------------------------------------
+--mph2fld
+-----------------------------------------
+-- Each morphism yields one field f1 in the plug...
+-- m is the relation from some kernel field k1 to f1
+-- (fldexpr k1) is the relation from the plug's imaginary ID to k1
+-- (fldexpr k1);m is the relation from ID to f1
+-- the rule (fldexpr k1)~;(fldexpr k1);m = m holds because m is uni and (fldexpr k1) is uni,inj,sur
+-- REMARK -> m may be tot or sur, but not inj. (fldexpr k1) may be tot.
+--
+-- fldnull and fldunique are based on the multiplicity of the relation (kernelpath);m) from ID to (target m)
+-- it is given that ID is unique and not null
+-- fldnull=not(isTot (kernelpath);m)
+-- flduniq=isInj (kernelpath);m
+-- 
+-- (kernel++plugAtts) defines the name space, making sure that all fields within a plug have unique names.
+--
+-- WHY151210 -> why sqltype=SQLID if there are any keys around and (isIdent m) and the field does not contain strings?
+--              what is the motivation for this implementation?
+mph2fld :: [KeyDef] -> [Morphism] -> [Morphism] -> Morphism -> SqlField
+mph2fld keyds kernel plugAtts m
+ = Fld fldName                                      -- fldname : 
+       (Tm m (-1))                                  -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+       (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
+       (maybenull m)                                -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
+                                                    --           Error: only if source m is the I-field of this plug.
+       (isInj m)                                    -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
+                                                    -- all kernel fldexprs are inj
+                                                    -- Therefore, a composition of kernel expr (I;kernelpath;m) will also be inj.
+                                                    -- It is enough to check isInj m
+   where 
+   fldName = head [nm| (m',nm)<-table, m==m']
+   isSQLId = isIdent m 
+              && not (null [key| key<-keyds, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
+              && (contents m==Nothing || contents m==Just []) -- and the the field may not contain any strings
+   table   = [ entry
+             | cl<-eqCl (map toLower.name) (kernel++plugAtts)
+             , entry<-if length cl==1 then [(r,name r)|r<-cl] else tbl cl]
+   tbl rs  = [ entry
+             | cl<-eqCl (map toLower.name.source) rs
+             , entry<-if length cl==1 then [(r,name r++name (source r))|r<-cl] else [(r,name r++show i)|(r,i)<-zip cl [(0::Int)..]]]
+   --in a wide table, m can be total, but the field for its target may contain NULL values if the (kernel) field for its source may
+   --a kernel field may contain NULL values if
+   --  + its field expr is not total OR
+   --  + its field expr is not the identity relation AND the (kernel) field for its source may contain NULL values
+   --(if the fldexpr of a kernel field is the identity, 
+   -- then the fldexpr defines the relation between this kernel field and this kernel field (fldnull=not(isTot I) and flduniq=isInj I)
+   -- otherwise it is the relation between this kernel field and some other kernel field)
+   maybenull x = (not.null) [()|k<-kernel,target k==source x, (elem x kernel && not (isTot x)) || (not (isIdent k) && maybenull k)]
 
-{- makePlugs computes a set of plugs to obtain wide tables with little redundancy.
+-----------------------------------------
+--makeTblPlugs
+-----------------------------------------
+{- makeTblPlugs computes a set of plugs to obtain wide tables with little redundancy.
    First, we determine the kernels for all plugs.
    A kernel is a set of univalent, injective, and surjective relations, with one root concept.
    The root of a kernel is the concept that is either the source of a relation in the kernel, or that relation is reachable from the source by a surjective path.
@@ -57,24 +146,31 @@ mor2plug  m totals
    By the way, parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities.
    This parameter was added to makePlugs to avoid recomputation of the extra multiplicities.
 -}
-makePlugs :: Context -> Declarations -> [PlugSQL] -> [PlugSQL]
-makePlugs context allDecs currentPlugs
+--WHY151210 -> why is currentPlugs of type [PlugSQL] and not [Plug]? 
+--             I would expect if there is a PHP plug for some decl, you will not need to store its mph in a sql plug
+makeTblPlugs :: Context -> Declarations -> [PlugSQL] -> [PlugSQL]
+makeTblPlugs context allDecs currentPlugs
  = sort' ((0-).length.fields)
-    [ TblSQL (name c)               -- plname
-              plugFields             -- fields
-              conceptLookuptable     -- cLkpTbl
-              attributeLookuptable   -- mLkpTbl
-              (ILGV Eenvoudig)       -- plfpa
+    [ if ((foldr (&&) True [isIdent m|(m,_,_)<-attributeLookuptable]) && length conceptLookuptable==1)  
+      then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
+      ScalarSQL (name c) (mph2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
+      else
+      TblSQL (name c)               -- plname
+             plugFields             -- fields
+             conceptLookuptable     -- cLkpTbl
+             attributeLookuptable   -- mLkpTbl
+             (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
     , let c = target (head kernel)               -- one concept from the kernel is designated to "lead" this plug.
-          plugMors              = kernel++[a| a<-attMors, source a `elem` concs kernel]
+          plugAtts              = [a| a<-attMors, source a `elem` concs kernel]
+          plugMors              = kernel++plugAtts
           plugFields            = [fld a| a<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable   :: [(Concept,SqlField)]
           conceptLookuptable    = [(target m,fld m)|cl<-eqCl target kernel, let m=head cl]
           attributeLookuptable :: [(Morphism,SqlField,SqlField)]
           attributeLookuptable  = [(m,lookupC (source m),fld m)| m<-plugMors] -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
           lookupC cpt           = head [f|(c',f)<-conceptLookuptable, cpt==c']
-          fld                   = mph2fld plugMors
+          fld                   = mph2fld (keyDefs context) kernel plugAtts
     ]
    where   
 -- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the ADL-script are excluded from the process.
@@ -113,28 +209,69 @@ So the first step is create the kernels ...   -}
        Step 3: compute the remaining relations (code: [r| r<-rs, source r `notElem` concs [ms| (_,ms)<-kernels]] )
        And call recursively until there are none left. -}
 
--- Each morphism yields one field in the plug...
--- The parameter ms defines the name space, making sure that all fields within a plug have unique names.
-    mph2fld :: [Morphism] -> Morphism -> SqlField
-    mph2fld ms m 
-     = Fld fldName                                      -- fldname : 
-           (Tm m (-1))                                  -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-           (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
-           (not (isTot m))                              -- fldnull : can there be empty field-values? (intended for data dictionary of DB-implementation)
-                                                        --           Error: only if source m is the I-field of this plug.
-           (isInj m)                                    -- flduniq : are all field-values unique? (intended for data dictionary of DB-implementation)
-       where fldName = head [nm| (m',nm)<-table, m==m']
-             isSQLId = isIdent m && isAuto
-             isAuto  = isIdent m
-                        && not (null [key| key<-keyDefs context, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
-                        && (contents m==Nothing || contents m==Just []) -- and the the field may not contain any strings
-             table   = [ entry
-                       | cl<-eqCl (map toLower.name) ms
-                       , entry<-if length cl==1 then [(r,name r)|r<-cl] else tbl cl]
-             tbl rs  = [ entry
-                       | cl<-eqCl (map toLower.name.source) rs
-                       , entry<-if length cl==1 then [(r,name r++name (source r))|r<-cl] else [(r,name r++show i)|(r,i)<-zip cl [(0::Int)..]]]
 
+-----------------------------------------
+--makeSqlPlug
+-----------------------------------------
+--makeSqlPlug is used to make user defined plugs. One advantage is that the field names and types can be controlled by the user. 
+--
+--TODO151210 -> (see also Instance Object PlugSQL)
+--              cLkpTbl TblSQL{} can have more than one concept i.e. one for each kernel field
+--              a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug (i.e. fldnull=False)
+--              When is an ObjectDef a ScalarPlug or BinPlug?
+--              When do you want to define your own Scalar or BinPlug
+makeSqlPlug :: ObjectDef -> PlugSQL
+makeSqlPlug obj
+ | null(objats obj) && isIdent(objctx obj)
+   = ScalarSQL (name obj)  cptfld c NO
+ | null(objats obj) --TODO151210 -> assuming objctx obj is Mph{} if it is not I{}
+   = error "TODO151210 -> implement defining binary plugs in ASCII"
+ | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
+   = TblSQL (name obj)     -- plname (table name)
+     makeFields             -- fields
+     [(c,cptfld)]           -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+     mphflds                -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+     (ILGV Eenvoudig)       -- functie punten analyse
+ | otherwise = error "!Fatal (module ADL2Plug 204): Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
+  where
+   --TODO: cptflds and mphflds assume that the user defined plug is a concept plug: 
+   --      -> containing just one expression equivalent to the identity relation
+   --      -> if the expression is not the identity relation then it is a simple expression (a morphism)
+   --      if there are more expressions equivalent to the identity relation then a fatal
+   --      the others would probably be ignored by updates and inserts, but fldnull=false => save errors in SQL?
+   (c,cptfld) = (\xs->if length xs==1 then head xs else error "!Fatal (module ADL2Plug 211): Implementation expects only one identity relation in plug.")
+             [(source (fldexpr f),f)|f<-makeFields, isIdent(fldexpr f)]
+   mphflds = [(m,cptfld,f)|f<-makeFields, length (mors(fldexpr f))==1,m@(Mph{})<-mors(fldexpr f)]
+   makeFields ::  [SqlField]
+   makeFields = 
+     [Fld (name att)                 -- fldname : 
+          (objctx att)               -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+          (sqltp att)                -- fldtype :
+          (not (isTot wideexpr))     -- fldnull : can there be empty field-values? 
+          (isInj wideexpr)           -- flduniq : are all field-values unique?
+     | att<-objats obj
+     , let wideexpr = F [objctx obj, objctx att] --in a wide table, (objctx att) can be total, but the field for its target may contain NULL values
+     ]
+   sqltp :: ObjectDef -> SqlType
+   sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
+                      ++[SQLVarchar 255]
+   makeSqltype :: String -> SqlType
+   makeSqltype str = case str of
+       ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
+       ('P':'a':'s':'s':_) -> SQLPass
+       ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
+       ('B':'l':'o':'b':_) -> SQLBlob
+       ('S':'i':'n':'g':'l':'e':_) -> SQLSingle
+       ('D':'o':'u':'b':'l':'e':_) -> SQLDouble
+       ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
+       ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
+       ('I':'d':_) -> SQLId 
+       ('B':'o':'o':'l':_) -> SQLBool
+       _ -> SQLVarchar 255 --TODO number
+
+-----------------------------------------
+--makePhpPlug
+-----------------------------------------
 -- | makePhpPlug is used to make user defined plugs, with PHP functions to get the data from. Note that these plug's cannot be used to store anything.
 makePhpPlug :: ObjectDef -> PlugPHP
 makePhpPlug obj
@@ -143,7 +280,7 @@ makePhpPlug obj
            inAttrs       -- the input of this plug (list of arguments)
            outObj        -- the output of this plug (single object or scalar). If inAttrs does not exist, plug should return false.
            verifiesInput -- whether the input of this plug is verified
-           fpa           -- the number of function points to be counted for this plug
+           (ILGV Eenvoudig) -- the number of function points to be counted for this plug
   where
    inFile :: Maybe String
    inFile = listToMaybe [ file --objstrs = [["FILE=date.plug.php"]]
@@ -163,58 +300,6 @@ makePhpPlug obj
                    ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
                    ,cvExpression=objctx obj}
    verifiesInput::Bool
-   verifiesInput = True
-   fpa::FPA
-   fpa = (ILGV Eenvoudig)
-   
+   verifiesInput = True   
 
--- | makeSqlPlug is used to make user defined plugs. One advantage is that the field names can be controlled by the user. 
-makeSqlPlug :: ObjectDef -> PlugSQL
-makeSqlPlug obj
- --TODO151210 -> (see also Instance Object PlugSQL) When is an ObjectDef a ScalarPlug or BinPlug?
- | null(objats obj) && isIdent(objctx obj)
-   = ScalarSQL (name obj)  cptfld c NO
- | null(objats obj) --TODO151210 -> assuming objctx obj is Mph{} if it is not I{}
-   = error "TODO151210 -> implement defining binary plugs"
- | otherwise
-   = TblSQL (name obj)     -- plname (table name)
-     makeFields             -- fields
-     [(c,cptfld)]           -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     mphflds                -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     (ILGV Eenvoudig)       -- functie punten analyse
-  where
-   --TODO: cptflds and mphflds assume that the user defined plug is a concept plug: 
-   --      -> containing just one expression equivalent to the identity relation
-   --      -> if the expression is not the identity relation then it is a simple expression (a morphism)
-   --      if there are more expressions equivalent to the identity relation then a fatal
-   --      the others would probably be ignored by updates and inserts, but fldnull=false => save errors in SQL?
-   (c,cptfld) = (\xs->if length xs==1 then head xs else error "!Fatal (module ADL2Fspec 319): Implementation expects only one identity relation in plug.")
-             [(source (fldexpr f),f)|f<-makeFields, isIdent(fldexpr f)]
-   mphflds = [(m,cptfld,f)|f<-makeFields, length (mors(fldexpr f))==1,m@(Mph{})<-mors(fldexpr f)]
-   makeFields ::  [SqlField]
-   makeFields =  -- WAAROM?? @Stef: Waarom is hier niet de constructor 'field' (uit Data.Plug) gebruikt??? Volgens mij maakt dat verschil bij de fldauto, maar ik doorgrond het niet helemaal.
--- DAAROM!! @Han: Ik weet het antwoord niet. Ik vermoed dat dit gewoon met 'field' moet.
--- Het veld 'fldauto' geeft aan of het een autoincrement veld moet zijn, en het huidige antwoord daarop (att `elem` autoFields) lijkt me fout.
-     [Fld (name att)                 -- fldname : 
-          (objctx att)               -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-          (sqltp att)                -- fldtype :
-          (not (isTot (objctx att))) -- fldnull : can there be empty field-values? 
-          (isInj (objctx att))       -- flduniq : are all field-values unique?
-     | att<-objats obj
-     ]
-   sqltp :: ObjectDef -> SqlType
-   sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
-                      ++[SQLVarchar 255]
-   makeSqltype :: String -> SqlType
-   makeSqltype str = case str of
-       ('V':'a':'r':'c':'h':'a':'r':_) -> SQLVarchar 255 --TODO number
-       ('P':'a':'s':'s':_) -> SQLPass
-       ('C':'h':'a':'r':_) -> SQLChar 255 --TODO number
-       ('B':'l':'o':'b':_) -> SQLBlob
-       ('S':'i':'n':'g':'l':'e':_) -> SQLSingle
-       ('D':'o':'u':'b':'l':'e':_) -> SQLDouble
-       ('u':'I':'n':'t':_) -> SQLuInt 4 --TODO number
-       ('s':'I':'n':'t':_) -> SQLsInt 4 --TODO number
-       ('I':'d':_) -> SQLId 
-       ('B':'o':'o':'l':_) -> SQLBool
-       _ -> SQLVarchar 255 --TODO number
+

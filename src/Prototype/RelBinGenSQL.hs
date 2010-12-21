@@ -436,32 +436,17 @@ module Prototype.RelBinGenSQL
           myafterPoint []       = []
           afterPoint s = if (myafterPoint s == "") then s else myafterPoint s
 
-{-   sqlRel :: Fspc -> Morphism -> (Plug,SqlField,SqlField)
-   sqlRel fSpec m@Mph{}
-    = if null pms then error ("!Fatal (module RelBinGenBasics 495): no plug found for morphism "++showADLcode fSpec m) else
-      if not (null (tail pms)) then error ("!Fatal (module RelBinGenBasics 496): multiple plugs found for morphism "++showADLcode fSpec m) else
-      head pms
-      where pms = [(p,ms,mt)|p@PlugSql{}<-plugs fSpec, (m',ms,mt)<-mLkpTbl p, makeDeclaration m==makeDeclaration m']
-   sqlRel fSpec m@I{}
-    = if null pcs
-      then error ("!Fatal (module RelBinGenBasics 501): no plug found for concept "++showADLcode fSpec (target m))
-      else head pcs
-      where pcs = [(p,col,col)|p@PlugSql{}<-plugs fSpec, (c,col)<-cLkpTbl p, c==target m]
-   sqlRel fSpec m
-    = error ("!Fatal (module RelBinGenBasics 505): no plug exists for "++showADLcode fSpec m) 
--}
-
 -- WAAROM bestaat sqlRelPlugs?
    -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
    -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
    -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
    sqlRelPlugs :: Fspc -> Expression -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e = rd [ (plug,fld0,fld1)
-                            | plug<-pickTypedPlug$ plugs fSpec
+                            | PlugSql plug<-plugs fSpec
                             , (fld0,fld1)<-sqlPlugFields plug e
                             ] ++
                             [ (plug,fld1,fld0)
-                            | plug<-pickTypedPlug$ plugs fSpec
+                            | PlugSql plug<-plugs fSpec
                             , (fld0,fld1)<-sqlPlugFields plug (flp e)
                             ]
 
@@ -547,22 +532,6 @@ module Prototype.RelBinGenSQL
    sqlExprTrg :: Fspc->Expression -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 
---   sqlMorName :: Fspc -> Morphism -> String
---   sqlMorName fSpec m@I{}   =    name p where (p,_,_) = sqlRel fSpec m
---   sqlMorName fSpec m@Mph{} =    name p where (p,_,_) = sqlRel fSpec m
---   sqlMorName fSpec m       = error ("!Fatal (module RelBinGenBasics 599): sqlMorName fSpec ("++showADLcode fSpec m++") has no representation.")
-   
-   -- these functions (USED TO BE: GMI 4 mrt 2010) exact copies of sqlRelSrc and sqlRelTrg!
---   sqlMorSrc  :: Fspc -> Morphism -> String
---   sqlMorSrc  fSpec m@I{}   = fldname s where (_,s,_) = sqlRel fSpec m
---   sqlMorSrc  fSpec m@Mph{} = fldname (if inline m then s else t) where (_,s,t) = sqlRel fSpec m
---   sqlMorSrc  fSpec m       = error ("!Fatal (module RelBinGenBasics 605): sqlMorSrc fSpec ("++showADLcode fSpec m++") has no representation.")
-
---   sqlMorTrg  :: Fspc -> Morphism -> String
---   sqlMorTrg  fSpec m@I{}   = fldname t where (_,_,t) = sqlRel fSpec m
---   sqlMorTrg  fSpec m@Mph{} = fldname (if inline m then t else s) where (_,s,t) = sqlRel fSpec m
---   sqlMorTrg  fSpec m       = error ("!Fatal (module RelBinGenBasics 610): sqlMorTrg fSpec ("++showADLcode fSpec m++") has no representation.")
-
 -- sqlConcept gives the name of the plug that contains all atoms of concept c.
    sqlConcept :: Fspc -> Concept -> String
    sqlConcept fSpec c = name (sqlConceptPlug fSpec c)
@@ -573,13 +542,9 @@ module Prototype.RelBinGenSQL
                           | otherwise
                 = if null ps then error ("!Fatal (module RelBinGenBasics 620): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
                   head ps
-                  where ps = [plug|plug<-pickTypedPlug$ plugs fSpec
+                  where ps = [plug|PlugSql plug<-plugs fSpec
                                   , not (null (case plug of ScalarSQL{} -> [c|c==cLkp plug]; _ -> [c'|(c',_)<-cLkpTbl plug, c'==c]))]
 
--- was:                  
--- sqlConceptPlug fSpec c  = if null cs then error ("!Fatal (module RelBinGenBasics 703): Concept \""++show c++"\" does not occur in fSpec (sqlConceptPlug in module RelBinGenBasics)") else
---                           head cs
---                           where cs = [plug | plug@PlugSql{}<-plugs fSpec, c'<-concs plug, c'==c]
 
    sqlAttConcept :: Fspc -> Concept -> String
    sqlAttConcept fSpec c | c==cptS = "ONE"

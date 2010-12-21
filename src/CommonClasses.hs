@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module CommonClasses
-  (  Identified(name) , showSign
+  (  Identified(name,rename),uniqueNames , showSign
    , ABoolAlg(glb,lub,order)
    , Conceptual(conts)
    , Morphics(anything)
@@ -11,10 +11,23 @@ module CommonClasses
    import Collection(rd)
    import Data.Maybe
    import Data.List
+   import Auxiliaries    (eqCl)
+   import Char (toLower)
    
    ----------------------------------------------
    class Identified a where
     name   :: a->String
+    rename :: a->String->a
+    rename x _ = error ("!Fatal (module CommonClasses 19): some Identified element named " ++ name x ++ " cannot be renamed.")
+
+   --the function uniqueNames ensures case-insensitive unique names like sql plug names
+   uniqueNames :: (Identified a) => [String]->[a]->[a]
+   uniqueNames taken xs
+    = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+         , p <-if name (head cl) `elem` taken || length cl>1
+               then [rename p (name p++show i)| (p,i)<-zip cl [(1::Int)..]]
+               else cl
+      ]
 
    showSign :: Identified a => [a] -> String
    showSign cs = "["++(intercalate "*".rd.map name) cs++"]"

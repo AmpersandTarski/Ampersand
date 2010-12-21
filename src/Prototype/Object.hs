@@ -402,9 +402,10 @@ plugAts plug p o = ( [ ((o,sf),(o,tf))
   where noIdents obj = [att | att <- objats obj]--, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
 
 --REMARK: only used for php function save()
+--WHY151210 -> (see also Data.FSpec and Rendering.ClassDiagram) can't a php plug be a (php-)function for saving things?
 objPlugs :: Fspc -> ObjectDef -> [PlugSQL]
 objPlugs fSpec object
-  = [plug|plug<-pickTypedPlug$ plugs fSpec, not (null (plugAts plug object object))]
+  = [plug|PlugSql plug<-plugs fSpec, not (null (plugAts plug object object))]
 
 isObjUni :: ObjectDef -> Bool
 isObjUni obj = isUni (objctx obj)

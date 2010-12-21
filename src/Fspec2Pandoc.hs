@@ -1057,9 +1057,9 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
       FLatex -> [Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           intercalate "&" ["data set", "analysis", "points"] ++"\\\\\\hline\n"++
-                          intercalate "\\\\\n" [ intercalate "&" [name plug, latexEscShw (plfpa plug), (latexEscShw.fPoints.plfpa) plug]
+                          intercalate "\\\\\n" [ intercalate "&" [name plug, latexEscShw (fpa plug), (latexEscShw.fPoints.fpa) plug]
                                          | plug<-datasets fSpec
-                                         , fPoints (plfpa plug)>0] ++
+                                         , fPoints (fpa plug)>0] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++

@@ -13,7 +13,7 @@ where
    import ShowADL               (showADL)--,showADLcode) -- wenselijk voor foutmeldingen.
    import Options hiding (services)
    import Version               (versionbanner)
-   import FPA                   (FPA(..),FPcompl)
+   import FPA                   (FPA(..),FPcompl,fpa)
 --   import TypeInference.InfLibAGFuncs
       
    fSpec2Haskell :: Fspc -> Options -> String
@@ -79,7 +79,7 @@ where
 -- \*** Eigenschappen met betrekking tot: Plug                          ***
 -- \***********************************************************************
    instance ShowHS Plug where
-    showHSname plug = haskellIdentifier ("plug_"++plname plug)
+    showHSname plug = haskellIdentifier ("plug_"++name plug)
     showHS flags indent plug   
       = case plug of
            --TODO151210 -> add instance ShowHS PlugSQL
@@ -87,41 +87,41 @@ where
                TblSQL{} -> (intercalate indent 
                            ["let " ++ intercalate (indent++"    ")
                                                   [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
-                           ,"TblSQL{ sqlname = " ++ (show.haskellIdentifier.plname) plug
+                           ,"TblSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
                            ,"      , fields  = ["++intercalate ", " (map showHSname (fields p))++"]"
                            ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
                            ,"      , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
-                           ,"      , sqlfpa  = " ++ showHS flags "" (plfpa plug)
+                           ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
                            ,"      }"
                            ])
                BinSQL{} -> (intercalate indent 
                            ["let " ++ showHSname (fst (columns p))++indent++"     = "++showHS flags (indent++"       ") (fst (columns p))
                                    ++ (indent++"    ") ++ showHSname (snd (columns p))++indent++"     = "++showHS flags (indent++"       ") (snd (columns p))
                                    ++indent++"in"
-                           ,"BinSQL{ sqlname = " ++ (show.haskellIdentifier.plname) plug
+                           ,"BinSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
                            ,"      , columns = ("++(showHSname (fst (columns p)))++ ", " ++ (showHSname (snd (columns p)))++")"
                            ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
                            ,"      , mLkp = "++showHS flags "" (mLkp p)
-                           ,"      , sqlfpa  = " ++ showHS flags "" (plfpa plug)
+                           ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
                            ,"      }"
                            ])
                ScalarSQL{} -> (intercalate indent 
-                           ["ScalarSQL{ sqlname = " ++ (show.haskellIdentifier.plname) plug
+                           ["ScalarSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
                            ,"         , column = "++showHS flags "" (column p)
                            ,"         , cLkpTbl = "++showHS flags "" (cLkp p)
-                           ,"         , sqlfpa  = " ++ showHS flags "" (plfpa plug)
+                           ,"         , sqlfpa  = " ++ showHS flags "" (fpa plug)
                            ,"         }"
                            ])
                         )
            PlugPhp p ->  (intercalate indent 
                           ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
                                   --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
-                          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.plname) plug
+                          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.name) plug
                           ,"       , phpfile   = "++show (phpfile p)
                           ,"       , phpinArgs = [ "++intercalate (indent++"                   , ") [show cv| cv <-phpinArgs p] ++ "]"
                           ,"       , phpOut    = "++show (phpOut p)
                           ,"       , phpSafe   = "++show (phpSafe p)
-                          ,"       , phpfpa    = " ++ showHS flags "" (plfpa plug)
+                          ,"       , phpfpa    = " ++ showHS flags "" (fpa plug)
                           ,"       }"
                           ])
 

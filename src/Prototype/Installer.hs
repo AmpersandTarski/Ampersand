@@ -53,7 +53,7 @@ module Prototype.Installer where
           , "if($existing==true){"
           ] ++ indentBlock 2 (concat (map checkPlugexists (plugs fSpec)))
           ++ ["}"]
-          ++ concat (map plugCode (pickTypedPlug$ plugs fSpec))
+          ++ concat (map plugCode [p| PlugSql p<-plugs fSpec])
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
         ) ++
         [ "}" ]

@@ -7,7 +7,7 @@ module Prototype.GetCode (getCodeFor) where
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import Prototype.RelBinGenBasics(zipnum)
  import Data.Fspec (Fspc(plugs))
- import Data.Plug (IsPlug(..),plname,PlugPHP(..))
+ import Data.Plug (PlugPHP(..),Plug(..))
  import Prototype.CodeAuxiliaries(Named(..))
  import Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
  import Data.Maybe (listToMaybe)
@@ -257,10 +257,10 @@ module Prototype.GetCode (getCodeFor) where
   = listToMaybe
       [  PHPBinCheck {cqinput=map CQPlain [s,t] -- arguments passed to the plug
                      ,cqreturn=(CQPlain s,CQPlain t)
-                     ,cqphpplug=plname plug
+                     ,cqphpplug=name plug
                      ,cqphpfile=phpfile plug
                      }
-      | plug <- pickTypedPlug$ plugs fSpec
+      | PlugPhp plug <- plugs fSpec
       , phpSafe plug
       , (I1 s,I1 t) <- [sign expr]
       , length (phpinArgs plug)==2

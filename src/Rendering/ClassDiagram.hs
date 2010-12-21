@@ -53,14 +53,15 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    cdAnalysis :: Fspc -> Options -> ClassDiag
    cdAnalysis fSpec _ = OOclassdiagram classes' assocs' aggrs' geners' (name fSpec, concs fSpec)
     where
+       --WHY151210 -> (see also datasets in Data.Fspec.hs) can't a php plug be a class?
        isClass  :: PlugSQL -> Bool
        isClass  p = not (null [1::Int|fld<-tblfields p, flduniq fld]) && not (null [1::Int|fld<-tblfields p, not (flduniq fld)])
        classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
-                    | plug <- pickTypedPlug$ plugs fSpec, isClass plug
+                    | PlugSql plug <- plugs fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
        assocs'    = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
-                    | plug@(BinSQL{}) <- pickTypedPlug$ plugs fSpec, not (isSignal plug)
+                    | PlugSql plug@(BinSQL{}) <-plugs fSpec, not (isSignal plug)
                     , let m=mLkp plug
                     , let (s,t)=columns plug
                     ]
@@ -76,7 +77,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        lookup' c = if null ps
                    then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
                    else head ps
-                   where ps = [p|p<-pickTypedPlug$ plugs fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c'|(c',_)<-cLkpTbl p, c'==c]]
+                   where ps = [p|PlugSql p<-plugs fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c'|(c',_)<-cLkpTbl p, c'==c]]
 
    classdiagram2dot :: Options -> ClassDiag -> String
    classdiagram2dot flags cd@(OOclassdiagram cs' as' rs' gs' (_, concspat))

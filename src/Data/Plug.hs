@@ -6,7 +6,6 @@ module Data.Plug (Plug(..),Plugs
                  ,tblfields
                  ,tblcontents
                  ,entityfield,entityconcept
-                 ,field
                  ,fldauto
                  ,PhpValue(..)
                  ,PhpType(..)
@@ -15,7 +14,7 @@ module Data.Plug (Plug(..),Plugs
                  ,PhpAction(..)
                  ,iskey
                  ,ActionType(..)
-                 ,IsPlug(..),PlugSQL(..),PlugPHP(..),plname,plfpa,renamePlug)
+                 ,PlugSQL(..),PlugPHP(..))
 where
 import Adl.Concept (Concept(..),Association(..),Signaling(..),cptnew)
 import Adl.MorphismAndDeclaration
@@ -28,71 +27,95 @@ import Classes.Object (Object(..))
 import Classes.Populated (contents')
 import Classes.Morphical (Morphical(..))
 import CommonClasses (Identified(..))
-import FPA (FPA(..))
-import Maybe (fromMaybe)
+import FPA (FPA(..),FPAble(..))
 import Auxiliaries (sort')
 import Prototype.CodeVariables (CodeVar(..))
 import List(elemIndex)
 
-class IsPlug a where
-  makePlug :: a -> Plug
-  pickTypedPlug :: [Plug] -> [a]
-
-instance IsPlug Plug where
-  makePlug x = x
-  pickTypedPlug x = x
-instance IsPlug PlugSQL where
-  makePlug x = PlugSql (try2specific x) 
-  pickTypedPlug x = [p | (PlugSql p) <- x]
-instance IsPlug PlugPHP where
-  makePlug x = PlugPhp x
-  pickTypedPlug x = [p | (PlugPhp p) <- x]
-
---use the most specific constructor for PlugSQL
-try2specific :: PlugSQL -> PlugSQL
-try2specific p@(TblSQL nm (fld1:_) cs ms fp)
-  | (foldr (&&) True [isIdent m|(m,_,_)<-ms]) && length cs==1 
-    --scalar if one concept and all morphisms are identities
-     = let (c,_) = head cs
-       in ScalarSQL nm (field (name c) (Tm (mIs c) (-1)) (Just (fldtype fld1)) False True) c fp
-  | length (fields p)==2 && null [fld|fld<-fields p, flduniq fld] 
-    --the imaginary ID field is assumed not to exist (you may imagine it later)
-    --as there is no unique field, the plug must be binary
-    --thus, this condition could never be met as p could never be a TblSQL in the first place
-     = error ("!Fatal (module Data.Plug 60): TblSQL "++nm++" is binary???.")
-  | otherwise = p
-try2specific p@(BinSQL nm (fld1,_) ((c,_):[]) m fp)  
-  | isIdent m 
-    --scalar if one concept and the morphism is an identity
-     = ScalarSQL nm (field (name c) (Tm (mIs c) (-1)) (Just (fldtype fld1)) False True) c fp
-  | otherwise = p
-try2specific p = p
-
-plfpa :: (IsPlug a) => a -> FPA
-plfpa p = case (makePlug p) of
-           PlugSql x -> sqlfpa x
-           PlugPhp x -> phpfpa x
-plname :: (IsPlug a) => a -> String
-plname p = case (makePlug p) of
-            PlugSql x -> sqlname x
-            PlugPhp x -> phpname x
-renamePlug :: (IsPlug a) => a -> String -> a
-renamePlug p nname
- = case (makePlug p) of
-            PlugSql x -> head$ pickTypedPlug [PlugSql (x{sqlname=nname})]
-            PlugPhp x -> head$ pickTypedPlug [PlugPhp (x{phpname=nname})]
-
+----------------------------------------------
+--Plug
+----------------------------------------------
+--TODO151210 -> define what a plug is and what it should do
+--Plugs are of the class Object just like Services(??? => PHP plug isn't an instance of Object)
+--An Object is an entity to do things with like reading, updating, creating,deleting.
+--A Service is an Object using only Plugs for reading and writing data; a Plug is a data service maintaining the rules for one object:
+-- + GEN Service,Plug ISA Object
+-- + cando::Operation*Object
+-- + uses::Service*Plug [TOT].
+-- + maintains::Plug*Rule.
+-- + signals::Service*SignalRule.
+--
+--Plugs can currently be implemented in PHP or SQL.
 type Plugs = [Plug]
 data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
 
+instance FPAble Plug where
+  fpa (PlugSql p) = fpa p
+  fpa (PlugPhp p) = fpa p
+instance FPAble PlugSQL where
+  fpa p = sqlfpa p
+instance FPAble PlugPHP where
+  fpa p = phpfpa p
+
+instance Identified Plug where
+  name (PlugSql p) = name p
+  name (PlugPhp p) = name p
+  rename (PlugSql p) x = PlugSql (rename p x)
+  rename (PlugPhp p) x = PlugPhp (rename p x)
+instance Identified PlugSQL where
+  name p = sqlname p
+  rename p x = p{sqlname=x}
+instance Identified PlugPHP where
+  name p = phpname p
+  rename p x = p{phpname=x}
+
+--DESCR -> plugs are sorted to optimize some algoritms. 
+instance Eq PlugSQL where
+  x==y = name x==name y
+instance Eq PlugPHP where
+  x==y = name x==name y && phpfile x == phpfile y && phpinArgs x == phpinArgs y
+instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
+  compare x y = compare (name x) (name y)
+
+----------------------------------------------
+--PlugPHP
+----------------------------------------------
+data PlugPHP
+ = PlugPHP { phpname   :: String       -- ^ the name of the function
+           , phpfile	 :: Maybe String -- ^ the file in which the plug is located (Nothing means it is built in already)
+           , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
+           , phpOut    :: CodeVar      -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
+           , phpSafe   :: Bool         -- ^ whether the input of this plug is verified. False means that the function can be called with non-existant input, such that it does not return false as output or causes undesired side effects
+           , phpfpa    :: FPA          -- ^ functie punten analyse
+           }
+             deriving (Show)
+
+data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
+data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
+type PhpArgs = [(Int,PhpValue)]
+data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
+--DO you need on::[Morphism]? makeFspec sets an empty list
+data PhpAction = PhpAction {action::ActionType, on::[Morphism]} deriving (Show)
+data ActionType = Create | Read | Update | Delete deriving (Show)
+
+instance Identified PhpValue where
+   name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> objnm x}
+
+
+----------------------------------------------
+--PlugSQL
+----------------------------------------------
 --TblSQL, BinSQL, and ScalarSQL hold different entities.
---BinSQL -> stores one morphism m in two ordered columns
+--BinSQL -> (see the only constructor function mor2plug in ADL2Plug for detailed comments)
+--          stores one morphism m in two ordered columns
 --          i.e. a tuple of SqlField -> (source m,target m) with (fldexpr=I/\m;m~, fldexpr=m) 
 --            (note: if m TOT then (I/\m;m~ = I). Thus, the concept (source m) is stored in this plug too)
 --          with tblcontents = [[x,y]|(x,y)<-contents' m]. 
+--          Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
 --ScalarSQL -> stores one concept c in one column
 --             i.e. a SqlField -> c
---             with tblcontents = [[x]|(x,_)<-contents' c]. 
+--             with tblcontents = [[x]|(x,_)<-contents' c].
+--             Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. fldexpr=I[c]
 --TblSQL -> stores a related collection of morphisms: a kernel of concepts and attribute morphisms of this kernel
 --           i.e. a list of SqlField given some A -> [target m | m::A*B,isUni m,isTot m, isInj m] 
 --                                                ++ [target m | m::A*B,isUni m, not(isTot m), not(isSur m)]
@@ -145,14 +168,19 @@ data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
 --                           If I am right the function isTrue tries to support sqlRelFields e by ignoring the type error in kn;a1.
 --                           That is wrong! 
 
+--the entityfield is not implemented as part of the data type PlugSQL
+--It is a constant which may or may not be used (you may always imagine it)
 --TODO151210 -> generate the entityfield if options = --autoid -p
+--REMARK151210 -> one would expect I[entityconcept p], 
+--                but any p (as instance of Object) has one always existing concept p suitable to replace entityconcept p.
+--                concept p and entityconcept p are related uni,tot,inj,sur.
 entityfield :: PlugSQL -> SqlField
 entityfield p
-  = field (name (entityconcept p)) --name of imaginary entity concept stored in plug
-          (Tm (mIs (concept p)) (-1)) --fldexpr
-          (Just SQLId) --fldtype
-          False --isnull
-          True --isuniq
+  = Fld (name (entityconcept p)) --name of imaginary entity concept stored in plug
+        (Tm (mIs (concept p)) (-1)) --fldexpr
+        SQLId --fldtype
+        False --isnull
+        True --isuniq
 --the entity stored in a plug is an imaginary concept, that is uni,tot,inj,sur with (concept p)
 --REMARK: there is a (concept p) because all kernel fields are related SUR with (concept p)
 entityconcept :: PlugSQL -> Concept
@@ -187,15 +215,6 @@ data PlugSQL
    deriving (Show) 
 
 
-data PlugPHP
- = PlugPHP { phpname   :: String       -- ^ the name of the function
-           , phpfile	 :: Maybe String -- ^ the file in which the plug is located (Nothing means it is built in already)
-           , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
-           , phpOut    :: CodeVar      -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
-           , phpSafe   :: Bool         -- ^ whether the input of this plug is verified. False means that the function can be called with non-existant input, such that it does not return false as output or causes undesired side effects
-           , phpfpa    :: FPA          -- ^ functie punten analyse
-           }
-             deriving (Show)
 
 --Maintain rule: Object ObjectDef = Object (makeSqlPlug :: ObjectDef -> PlugSQL)
 --TODO151210 -> Build a check which checks this rule for userdefined/showADL generated plugs(::[ObjectDef]) 
@@ -206,7 +225,7 @@ data PlugPHP
 --           The first option has been implemented in instance ObjectPlugSQL i.e. attributes=[], ctx=Tm m (-1)
 instance Object PlugSQL where
  concept p = case p of
-   TblSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++plname p++".")
+   TblSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++name p++".")
    TblSQL{}             -> --TODO151210-> deze functieimplementatie zou beter moeten matchen met onderstaande beschrijving
                             --        nu wordt aangenomen dat de source van het 1e mph in mLkpTbl de source van de plug is.
                             --a relation between kernel concepts r::A*B is at least [UNI,INJ]
@@ -220,7 +239,7 @@ instance Object PlugSQL where
                             --then (concept PlugSQL{}) may be A or B
                             --REMARK -> (source p) used to be implemented as (source . fldexpr . head . fields) p. That is different!
                             head [source m|(m,_,_)<-mLkpTbl p]
-   BinSQL{} -> source (mLkp p)
+   BinSQL{} -> source (mLkp p) --REMARK151210 -> the concept is actually ID such that I[ID]=I[source m]/\m;m~
    ScalarSQL{} -> cLkp p
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2Fspec for explanation about kernels.
  attributes p@(TblSQL{})
@@ -240,7 +259,7 @@ instance Object PlugSQL where
  attributes _ = [] --no attributes for BinSQL and ScalarSQL
  ctx p@(BinSQL{}) = Tm (mLkp p) (-1)
  ctx p = Tm (mIs (concept p)) (-1)
- populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++plname p++".") --TODO -> (see tblcontents)
+ populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".") --TODO -> (see tblcontents)
 
 --WHY151210 -> why do I need PlugSQL to be an Association
 --       in other words why do I need a (target p) for BinSQL and ScalarSQL only
@@ -249,42 +268,12 @@ instance Association PlugSQL where
    source p               = concept p
    target p@(BinSQL{})    = target (mLkp p)
    target p@(ScalarSQL{}) = cLkp p
-   target p               = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++plname p++", because it is not binary.")
+   target p               = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++name p++", because it is not binary.")
 
 --WHY151210 -> why can only binary plugs be signals?
 instance Signaling PlugSQL where
  isSignal p@(BinSQL{}) = isSignal (mLkp p)
  isSignal _            = False
-
-
-
-data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
-data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
-type PhpArgs = [(Int,PhpValue)]
-data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
---DO you need on::[Morphism]? makeFspec sets an empty list
-data PhpAction = PhpAction {action::ActionType, on::[Morphism]} deriving (Show)
-data ActionType = Create | Read | Update | Delete deriving (Show)
-
-field :: String->Expression->(Maybe SqlType)->Bool->Bool->SqlField
-field nm expr maybeTp nul uniq = Fld { fldname = nm
-                                     , fldexpr = expr
-                                     , fldtype = typ
-                                     , fldnull = nul
-                                     , flduniq = uniq
-                                     }
-                           where typ = fromMaybe (fldtyp (target expr)) maybeTp
-
-instance Identified PhpValue where
-   name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> objnm x}
-
---DESCR -> plugs are sorted to optimize some algoritms. 
-instance Eq PlugSQL where
-  x==y = plname x==plname y
-instance Eq PlugPHP where
-  x==y = plname x==plname y && phpfile x == phpfile y && phpinArgs x == phpinArgs y
-instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
-  compare x y = compare (plname x) (plname y)
 
 data SqlField = Fld { fldname     :: String
                     , fldexpr     :: Expression
@@ -326,15 +315,6 @@ showSQL (SQLBool     ) = "BOOLEAN"
           
 iskey :: SqlField->Bool
 iskey f = flduniq f && not (fldnull f)
---TODO -> does this imply that "BLOB","PASS", etc are reserved concept names?
-fldtyp :: Concept->SqlType
-fldtyp c = case cptnm c of { "BLOB"   -> SQLBlob;
-                            "PASS"   -> SQLPass;
-                            "STRING" -> SQLVarchar 255;
-                            "TEXT"   -> SQLText;
-                            _        -> SQLVarchar 255
-                            }
-
 
 --TODO151210 -> revise Morphical SqlField & PlugSQL
 --   concs f = [target e'|let e'=fldexpr f,isSur e']
@@ -361,13 +341,6 @@ localfunction::PlugSQL -> [SqlField]
 localfunction p@(TblSQL{}) = fields p
 localfunction p@(BinSQL{}) = [fst (columns p),snd (columns p)]
 localfunction p@(ScalarSQL{}) = [column p]
-
-instance Identified Plug where
-   name x = plname x
-instance Identified PlugSQL where
-   name x = plname x
-instance Identified PlugPHP where
-   name x = plname x
 
 tblfields::PlugSQL->[SqlField]
 tblfields plug = case plug of

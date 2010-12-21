@@ -190,8 +190,8 @@ module Data.Fspec ( Fspc(..)
 
    
    datasets :: Fspc -> [PlugSQL]
---   --WAAROM? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
-{- DAAROM!
+   --   --WAAROM? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
+   {- DAAROM!
 	Dat heeft te maken met de vertaling van binaire relaties naar datasets (entiteiten) en relaties.
 	Datasets worden gevormd door alle relaties vanuit een concept univalent af te sluiten.
 	Dat wil zeggen: vanuit dat concept komt elk attribuut overeen met een univalente expressie.
@@ -200,6 +200,7 @@ module Data.Fspec ( Fspc(..)
 	De twee soorten plug komen overeen met datasets resp. relaties (Of, voor ER-adepten, in entiteiten resp. relaties)
 	Het antwoord op je vraag: Er bestaan wel degelijk plugs met slechts twee kolommen getoond worden als dataset,
 	namelijk een entiteit met twee attributen.
--}
-   datasets fSpec = [p| p@(TblSQL{})<-pickTypedPlug (plugs fSpec)]
+   -}
+   -- WHY151210 -> can't a php plug be a dataset?
+   datasets fSpec = [p| PlugSql p@(TblSQL{})<-plugs fSpec]
 
