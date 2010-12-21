@@ -3,7 +3,7 @@ module Adl ( Architecture(..)
            , Context(..),Contexts
            , Pattern(..),Patterns
            , Rule(..),Rules,consequent, rulefromProp, ruleviolations
-           , KeyDef(..),KeyDefs,Key(..)
+           , KeyDef(..),KeyDefs
            , Population(..),Populations
            , ObjectDef(..),ObjectDefs,actions
            , Expression(..),PExpressions,PExpression(..), Expressions,isPos,isNeg,insParentheses,UnOp(..),MulOp(..)
@@ -74,7 +74,6 @@ where
                                          ,normExpr)
    import Classes.Morphical              (Morphical(..))
    import Classes.Substitutive           (Substitutive(..))
-   import Classes.Key                    (Key(..))
    import Classes.Object                 (Object(..))
    import Classes.ViewPoint              (ViewPoint(..))
    import Classes.Explainable            (explanationDeclarations)
