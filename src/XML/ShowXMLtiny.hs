@@ -64,6 +64,7 @@ where
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
           ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 
           ++ [ Elem (simpleTag "Rules")    (map mkXmlTree (vrules f))] 
+          ++ [ Elem (simpleTag "GRules")   (map mkXmlTree (grules f))] 
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 
           ++ [ Elem (simpleTag "Violations") (map violation2XmlTree (violations f))]
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 

@@ -27,6 +27,7 @@ module Data.Fspec ( Fspc(..)
                     , serviceG     :: ObjectDefs            -- ^ all services derived from the basic ontology
                     , services     :: Fservices             -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , vrules       :: Rules                 -- ^ All rules that apply in the entire Fspc, including all signals
+                    , grules       :: Rules                 -- ^ All rules that are generated: multiplicity rules and key rules
                     , vkeys        :: KeyDefs               -- ^ All keys that apply in the entire Fspc
                     , vgens        :: Gens                  -- ^ All gens that apply in the entire Fspc
                     , vconjs       :: Expressions           -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules

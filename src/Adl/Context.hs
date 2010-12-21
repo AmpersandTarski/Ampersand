@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Context (Context(..),Contexts
                    ,Architecture(..))
+-- This module exports datatype 'Context', which represents a single context as it emerges after type checking.
+-- This data structure is as accurate a representation of the Ampersand script as possible, with minimal redundancy.
+-- It is type correct, because it is not generated unless the type checker is fully satisfied with the user's script.
 where
    import Adl.Concept                 (Concept)
    import Adl.Pattern                 (Patterns)
@@ -27,7 +30,7 @@ where
             , ctxisa   :: Inheritance Concept       -- ^ A data structure containing the generalization structure of concepts
             , ctxwrld  :: [Classification Context]  -- ^ A tree, being the transitive closure of the 'extends' (see formal definition) relation.
             , ctxpats  :: Patterns                  -- ^ The patterns defined in this context
-            , ctxrs    :: Rules                     -- ^ All rules that are valid within this context
+            , ctxrs    :: Rules                     -- ^ All user defined rules in this context, but outside patterns
             , ctxds    :: Declarations              -- ^ The declarations defined in this context, outside the scope of patterns
             , ctxcs    :: ConceptDefs               -- ^ The concept definitions defined in this context, outside the scope of patterns
             , ctxks    :: KeyDefs                   -- ^ The key definitions defined in this context, outside the scope of patterns

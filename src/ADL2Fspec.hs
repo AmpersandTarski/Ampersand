@@ -19,7 +19,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec
     where
-        allQuads = quads (\_->True) (rules context++multrules context)
+        allQuads = quads (\_->True) (rules context++multrules context++keyrules context)
         fSpec =
             Fspc { fsName       = if genPrototype flags 
                                   then "ctx" ++ (name context) --ctx to get unique name for php if there are (plural) concept names equal to context name
@@ -35,6 +35,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                      || not (objctx o `elem` map objctx (serviceS fSpec))]   -- generated services
                  , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
                  , vrules       = rules context++signals context
+                 , grules       = multrules context++keyrules context
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
                  , vrels        = allDecs

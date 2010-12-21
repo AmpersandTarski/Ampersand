@@ -234,7 +234,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpRequirements = theBlocks
     where
       (theBlocks,_) = aThemeAtATime toBeProcessedStuff ts newCounter 
-      ts = rd (map r_pat (vrules fSpec)) --Only process patterns that contain rules. 
+      ts = rd (map r_pat (vrules fSpec)) --Only process patterns that contain user-defined rules and signals. 
       toBeProcessedStuff = ( allConceptsThatMustBeShown
                            , allDeclsThatMustBeShown
                            , allRulesThatMustBeShown ) 
@@ -594,6 +594,7 @@ dataAnalysis lev fSpec flags
                  ]
        else Para [ Str $ upCap (name fSpec)++" has the following associations and multiplicity constraints. "
                  ]
+-- the heterogeneous properties:
      , Para  $ [ TeX $ "\\begin{tabular}{|l|cc|}\\hline\n"
                , if language flags==Dutch
                  then TeX $ "relatie&totaal&surjectief\\\\ \\hline\\hline\n"
@@ -638,9 +639,18 @@ dataAnalysis lev fSpec flags
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
      | length hMults>0 ]++
+-- the keys
+     [ Para [ if language flags==Dutch
+                then TeX $ "Er is "++preciesEen++" key: "++texOnly_Id(name k)++"."
+                else TeX $ "There is but one key: "++texOnly_Id(name k)++"." ]
+     | length keyds==1, k<-keyds ]++
+     [ Para [ if language flags==Dutch
+                then TeX $ "De volgende keys bestaan: "++commaNL "en" [texOnly_Id(name k) | k<-keyds]
+                else TeX $ "The following keys exist: "++commaEng "and" [texOnly_Id(name k)| k<-keyds]]
+     | length keyds>1 ]++
 -- the signals
      [ Para [ if language flags==Dutch
-                then TeX $ "Er is een enkel signaal: "++texOnly_Id(name d)++"."
+                then TeX $ "Er is "++preciesEen++" signaal: "++texOnly_Id(name d)++"."
                 else TeX $ "There is but one signal: "++texOnly_Id(name d)++"." ]
      | length sgnls==1, d<-sgnls ]++
      [ Para [ if language flags==Dutch
@@ -650,6 +660,7 @@ dataAnalysis lev fSpec flags
      where
       hMults  = [d| d@Sgn{}<-declarations fSpec, homogeneous d, decusr d]
       sgnls   = [d| d@Sgn{}<-ds, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
+      keyds   = keyDefs fSpec -- all key definitions
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations
 -- Then, the homogeneous poperties are given, and finally
@@ -673,23 +684,12 @@ dataAnalysis lev fSpec flags
                                  , if fldnull fld then "" else "\\(\\surd\\)"
                                  , if flduniq fld then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | fld<-tblfields p
+               | fld<-tail $ tblfields p  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
                ]++
                [ TeX "\\hline\n\\end{tabular}"
                ]
-     ]++
+     ]
 -- the homogeneous properties have already been reported in the general section of this chapter.
--- the signals
-     [ Para ( if language flags==Dutch
-                then [TeX $ "Er is een enkel signaal: "++texOnly_Id(name d)++"."]
-                else [TeX $ "There is but one signal: "++texOnly_Id(name d)++"."]
-            )
-     | length sgnls==1, d<-sgnls ]++
-     [ Para ( if language flags==Dutch
-                then [TeX $ "De volgende signalen bestaan: "++commaNL "en" [texOnly_Id(name d) | d<-sgnls]]
-                else [TeX $ "The following signals exist: "++commaEng "and" [texOnly_Id(name d) | d<-sgnls]]
-            )
-     | length sgnls>1 ]
      where
       sgnls   = [d| d@Sgn{}<-declarations fSpec, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
 {- voorgestelde multipliciteitenanalyse....
@@ -730,7 +730,7 @@ dataAnalysis lev fSpec flags
    = if null content then [] else plugHeader ++ content
      where
        plugHeader = labeledHeader (lev+1) ("sct:plug "++name p) (name p)
-       content = daAttributes p ++ plugRules ++ plugSignals ++ iRules
+       content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of
            English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
@@ -756,6 +756,32 @@ dataAnalysis lev fSpec flags
                               , if showPredExpr flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]]| r<-rs ]
                                 else BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
+                              ]
+       plugKeydefs
+        = case language flags of
+           English -> case [k| k<-keyrules fSpec, null (decls k >- decls p)] of
+                       []  -> []
+                       [s] -> [ Para [ Str "This data set contains one key. " ]
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec s]
+                              ]
+                       ss  -> [ Para [ Str "This data set contains the following keys. " ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]]| s<-ss ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
+                              ]
+           Dutch   -> case [k| k<-keyrules fSpec, null (decls k >- decls p)] of
+                       []  -> []
+                       [s] -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" key. ") ] 
+                              , if showPredExpr flags
+                                then Para [ Math DisplayMath (showLatex (toPredLogic s)) ]
+                                else Para [ Math DisplayMath $ showMathcode fSpec s]
+                              ]
+                       ss  -> [ Para [ Str "Deze gegevensverzameling genereert de volgende keys. " ]
+                              , if showPredExpr flags
+                                then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]]| s<-ss ]
+                                else BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
        plugSignals
         = case language flags of
@@ -883,7 +909,7 @@ serviceChap lev fSpec flags svc
          mrs = [r|r<-fsv_rules svc, r_usr r, r `notElem` ars]-- rules that may be affected, but are maintained manually
       --   mss = ""-- signals that can be emptied by this service
      in case (language flags) of
-      Dutch ->   intercalate " " 
+      Dutch ->   intercalate " "
                  [ case length ars of
                     0 -> ""
                     1 -> " Regel "++name (head ars)++" wordt door deze service gehandhaafd zonder interventie van de gebruiker."
@@ -893,7 +919,7 @@ serviceChap lev fSpec flags svc
                     1 -> " Regel "++name (head mrs)++" wordt door de gebruiker van deze service gehandhaafd."
                     _ -> "Regels "++commaNL "en" (map name mrs)++" worden door de gebruiker van deze service gehandhaafd. "
                  ]
-      English -> intercalate " " 
+      English -> intercalate " "
                  [ case length ars of
                     0 -> ""
                     1 -> " Rule "++name (head ars)++" is being maintained by this service, without intervention of the user."
@@ -1044,7 +1070,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
       _      -> [Plain $ 
                   [ Str "???" ]
                 ]   
-         
+
 ------------------------------------------------------------
 glossary :: Int -> Fspc -> Options ->  [Block]
 glossary _ _ _ = []  --TODO

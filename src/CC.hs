@@ -27,9 +27,10 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                        , "RULE", "MAINTAINS", "SIGNALS", "SIGNAL", "ON","TEST"
                        , "RELATION", "CONCEPT", "KEY"
                        , "IMPORT", "GEN", "ISA", "I", "V"
-                       , "PRAGMA", "EXPLANATION", "EXPLAIN", "IN", "REF", "ENGLISH", "DUTCH"
+                       , "PRAGMA", "EXPLANATION", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "ONE", "BIND", "TOPHP", "BINDING"
                        , "BYPLUG"
+                       , "ROLE", "EDITS", "USES"
                        ]
    keywordsops :: [String]
    keywordsops       = [ "-|", "|-", "-", "->", ">", "=", "~", "+", ";", "!", "*", "::", ":", "\\/", "/\\", "\\", "/", "<>" ]
@@ -85,13 +86,14 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                           lang str = case str of
                                       "DUTCH"      -> Dutch
                                       "ENGLISH"    -> English
-                                      _ -> error ("!Fatal (module CC 93): "++if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
+                                      _ -> error ("!Fatal (module CC 89): "++if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
 
    pRefID             :: Parser Token String
    pRefID              = (pKey "REF" *> pString) `opt` []
 
    pExplain           :: Parser Token PExplanation
-   pExplain            = PExpl <$ pKey "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl
+   pExplain            = PExpl <$ pKey "EXPLAIN" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl      <|>  -- syntax will become obsolete
+                         PExpl <$ pKey "PURPOSE" <*> pExplObj <*> pLanguageID <*> pRefID <*> pExpl
 
    pExplObj           :: Parser Token PExplObj
    pExplObj            = PExplConceptDef  <$ pKey "CONCEPT"    <*> (pConid <|> pString) <|>
@@ -150,7 +152,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 
 
    pSignal          :: Parser Token (String, FilePos)
-   pSignal           = pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|>
+   pSignal           = --pKey "SIGNAL" *> pADLid_val_pos <* pKey "ON"       <|> obsolete syntax
                          pKey "RULE" *> pADLid_val_pos <* pKey "SIGNALS"
    pAlways          :: Parser Token (String, FilePos)
    pAlways           = ( pKey "RULE" *> pADLid_val_pos <* pKey "MAINTAINS" ) `opt` ("",Nowhere)

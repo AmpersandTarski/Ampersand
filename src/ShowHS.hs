@@ -276,6 +276,7 @@ where
                   ,     ", serviceG      = serviceG'"
                   ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
+                  ,wrap ", grules        = " indentA (\_->showHSname) (grules fspec)
                   ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
                   ,wrap ", vgens         = " indentA (showHS flags) (vgens fspec)
                   ,wrap ", vconjs        = " indentA (showHS flags) (vconjs fspec)
@@ -326,8 +327,11 @@ where
         "\n -- ***Declarations of Services ***: "++
         concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-services fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
-        "\n -- ***Declarations of RULES ***: "++
+        "\n -- ***User defined of RULES ***: "++
         concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r|r<-vrules   fspec ]++"\n")++        
+       (if null (grules   fspec ) then "" else
+        "\n -- ***generated RULES ***: "++
+        concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r|r<-grules   fspec ]++"\n")++        
        (if null (vrels fspec)     then "" else
         "\n -- ***Declarations OF RELATIONS ***: "++
         concat [indent++" "++showHSname d++indent++"  = "++showHS flags (indent++"    ") d|d<- vrels fspec]++"\n")++

@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Key            (Key(keys)) 
+module Classes.Key            (Key(keys))
+-- WAAROM bestaat deze module? het idee is om keys uit elk datatype te halen door middel van de functie keydefs uit de class ViewPoint.
+-- De class 'Key' lijkt dubbelop. 'Key' en 'keys' worden nergens gebruikt. Opruimen?
 where
    import Adl.Concept         (Concept)
    import Adl.ObjectDef       (ObjectDef)

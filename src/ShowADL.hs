@@ -188,25 +188,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    instance ShowADL Gen where
     showADL (G _ g s _) = "GEN "++showADL s++" ISA "++show g
     showADLcode fSpec (G _ g s _) = "GEN "++showADLcode fSpec s++" ISA "++showADLcode fSpec  g
-{-
- KEY pairs: Pair(  SERVICE l : I[Atom]
-   = [ 
-     ],  SERVICE r : I[Atom]
-   = [ 
-     ])
 
- KEY pairs: Pair(l:left,r:right)
-  Kd {kdlbl = "pairs", kdctx = I, kdats = [Obj {objnm = "l", objctx = left, objats = [], objstrs = []},Obj {objnm = "r", objctx = right, objats = [], objstrs = []}]}
-
-   pKeyDef           = kd <$ pKey "KEY" <*> pLabel <*> pConcept <* pSpec '(' <*> pList1Sep (pSpec ',') pKeyAtt <* pSpec ')'
-                        where kd :: Label -> Concept -> ObjectDefs -> KeyDef 
-                              kd (Lbl nm p _) c ats = Kd p nm c ats
-
-   data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
-                    , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                    , kdcpt :: Concept      -- ^ this expression describes the instances of this object, related to their context
-                    , kdats :: ObjectDefs   -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
--}
    instance ShowADL KeyDef where
     showADL kd 
      = "KEY "++kdlbl kd
@@ -389,12 +371,11 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        ++ (if null (ctxon context)   then "" else "EXTENDS "++intercalate ", "   (ctxon context)                 ++ "\n")
        ++ (if null (ctxos context)   then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxos context))   ++ "\n")
        ++ (if null (ctxcs context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxcs context))   ++ "\n")
-       ++ (if null ds                then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) ds             )   ++ "\n")
+       ++ (if null (ctxds context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxds context))   ++ "\n")
        ++ (if null (ctxks context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxks context))   ++ "\n")
        ++ (if null (ctxpats context) then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxpats context)) ++ "\n")
        ++ (if null (ctxpops context) then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxpops context)) ++ "\n")
        ++ "\n\nENDCONTEXT"
-       where ds = [d| d@Sgn{}<-ctxds context `uni` decls (ctxrs context) `uni` decls (mors (ctxks context)), decusr d]
 
 
 -- WAAROM?  Stef, wat is de toegevoegde waarde van ShowADL Context nu we ShowADL Fspc hebben?
