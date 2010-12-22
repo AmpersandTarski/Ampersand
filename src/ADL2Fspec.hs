@@ -35,7 +35,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                      || not (objctx o `elem` map objctx (serviceS fSpec))]   -- generated services
                  , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
                  , vrules       = rules context++signals context
-                 , grules       = multrules context++keyrules context
+                 , grules       = number (length (rules context++signals context)) (multrules context++keyrules context)
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
                  , vrels        = allDecs
@@ -48,6 +48,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  , fSexpls      = fSexpls'
                  , vctxenv      = ctxenv context
                  }
+        number n rs = [r{runum=i} | (i,r)<-zip [n..] rs]
         allDecs = [ d{decprps_calc = multiplicities d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
                                                       `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
                   | d<-declarations context, deciss d || decusr d

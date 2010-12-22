@@ -150,7 +150,7 @@ mph2fld keyds kernel plugAtts m
 --             I would expect if there is a PHP plug for some decl, you will not need to store its mph in a sql plug
 makeTblPlugs :: Context -> Declarations -> [PlugSQL] -> [PlugSQL]
 makeTblPlugs context allDecs currentPlugs
- = sort' ((0-).length.fields)
+ = sort' ((0-).length.tblfields)
     [ if ((foldr (&&) True [isIdent m|(m,_,_)<-attributeLookuptable]) && length conceptLookuptable==1)  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
       ScalarSQL (name c) (mph2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)

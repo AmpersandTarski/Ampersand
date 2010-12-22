@@ -186,22 +186,8 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                , r_pat = ""
                                , r_usr = True
                                , r_sgl = isSg
-                               , srrel = Sgn { decnm = lbl
-                                             , desrc = cptAnything
-                                             , detrg = cptAnything
-                                             , decprps = []
-                                             , decprps_calc = []
-                                             , decprL = ""
-                                             , decprM = ""
-                                             , decprR = ""
-                                             , decpopu = []
-                                             , decfpos = po
-                                             , decid  = 0
-                                             , deciss = isSg
-                                             , decusr = False
-                                             , decpat = ""
-                                             , decplug = True
-                               }             }
+                               , srrel = emptySignalDeclaration lbl po isSg
+                               }
                         kc isSg (lbl,po) cons po' antc expl = hc isSg (lbl,po) antc po' cons expl
                         dc isSg (lbl,po) defd po' expr expl
                           = Ru { rrsrt = Equivalence
@@ -216,22 +202,8 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                , r_pat = ""
                                , r_usr = True
                                , r_sgl = isSg
-                               , srrel = Sgn { decnm = lbl
-                                             , desrc = cptAnything
-                                             , detrg = cptAnything
-                                             , decprps = []
-                                             , decprps_calc = []
-                                             , decprL = ""
-                                             , decprM = ""
-                                             , decprR = ""
-                                             , decpopu = []
-                                             , decfpos = po
-                                             , decid  = 0
-                                             , deciss = isSg
-                                             , decusr = False
-                                             , decpat = ""
-                                             , decplug = True
-                               }             }
+                               , srrel = emptySignalDeclaration lbl po isSg
+                               }
                         ac isSg (lbl,po) expr expl
                           = Ru { rrsrt = Truth
                                , rrant = defd
@@ -245,23 +217,25 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                , r_pat = ""
                                , r_usr = True
                                , r_sgl = isSg
-                               , srrel = Sgn { decnm = lbl
-                                             , desrc = cptAnything
-                                             , detrg = cptAnything
-                                             , decprps = []
-                                             , decprps_calc = []
-                                             , decprL = ""
-                                             , decprM = ""
-                                             , decprR = ""
-                                             , decpopu = []
-                                             , decfpos = po
-                                             , decid  = 0
-                                             , deciss = isSg
-                                             , decusr = False
-                                             , decpat = ""
-                                             , decplug = True
-                               }             }
-                         where defd=error ("!Fatal (module CC 145): defd undefined in pRuleDef "++showADL expr)
+                               , srrel = emptySignalDeclaration lbl po isSg
+                               }
+                         where defd=error ("!Fatal (module CC 222): defd undefined in pRuleDef "++showADL expr)
+                        emptySignalDeclaration lbl po isSg
+                         = Sgn lbl         -- decnm
+                               cptAnything -- desrc
+                               cptAnything -- detrg
+                               []          -- decprps
+                               []          -- decprps_calc
+                               ""          -- decprL
+                               ""          -- decprM
+                               ""          -- decprR
+                               []          -- decpopu
+                               po          -- decfpos
+                               0           -- decid
+                               isSg        -- deciss
+                               False       -- decusr
+                               ""          -- decpat
+                               True        -- decplug
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
                         string2ExplainAllLang :: String -> [AutoExplain]      -- TODO: This is a workaround to cope with the fact that in the current ADL syntax, it cannot be determined in what language the EXPLANATION part of the rule is written in. 
                         string2ExplainAllLang str = [string2AutoExplain (defaultFlags {language=Dutch}) str]
@@ -380,7 +354,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                         f t ('*':xs) = K0x (f t xs)
                         f t ('+':xs) = K1x (f t xs)
                         f t ('-':xs) = Cpx (f t xs)
-                        f _ (_:_)    = error ("!Fatal (module CC 189). Consult your dealer!")
+                        f _ (_:_)    = error ("!Fatal (module CC 357). Consult your dealer!")
                         f t []       = t
 
    pMorphism        :: Parser Token Morphism
@@ -399,7 +373,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                              v' []                  = V [] (cptAnything, cptAnything)
                              v' [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
                              v' [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
-                             v' _  = error ("!Fatal (module CC 216): relation cannot have more than two concepts as type")
+                             v' _  = error ("!Fatal (module CC 376): relation cannot have more than two concepts as type")
                              emp c | c == cptnew ""     = cptAnything
                                    | otherwise          = c
                              pTwo = (one' <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>
@@ -522,7 +496,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                              f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
                              k "TOT" = Tot
                              k "UNI" = Uni
-                             k s = error ("!Fatal (module CC 316): Unknown property tag has been used: " ++ show s)
+                             k s = error ("!Fatal (module CC 499): Unknown property tag has been used: " ++ show s)
 
    pProp'           :: Parser Token String
    pProp'            = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"

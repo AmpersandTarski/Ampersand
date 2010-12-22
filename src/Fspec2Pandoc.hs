@@ -226,7 +226,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                      , Str "The chief architect is responsible for the consistency of all rules "
                      , Str "and for a buildable design. "
                      , Str "For this reason, the rules are written by the architect "
-                     , Str "and validated by the apporopriate stakeholders. "
+                     , Str "and validated by the appropriate stakeholders. "
                      , Str "The current chapter requires user approval on behalf of the patron. "
                      , Str "All following chapters are technical and are meant for builders, testers and auditors. "
                      ]]

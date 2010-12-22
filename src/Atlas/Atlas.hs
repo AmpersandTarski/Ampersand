@@ -13,7 +13,6 @@ import Collection     ( Collection (rd) )
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Picture
---import PredLogic (applyM)
 ------
 import Classes.Graphics
 

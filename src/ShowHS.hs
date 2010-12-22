@@ -419,7 +419,7 @@ where
        ++ indent++"    , fld_mph      = "++
           ( if fld_editable fld
             then showHS flags (indent++"      ") (fld_mph     fld)
-            else "error(\"!Fatal (module ShowHS 343): reference to undefined editrelation in field "++fld_name fld++"\")" )
+            else "error(\"!Fatal: reference to undefined editrelation in field "++fld_name fld++"\")" )
        ++ indent++"    , fld_editable = "++show (fld_editable fld)
        ++ indent++"    , fld_list     = "++show (fld_list     fld)
        ++ indent++"    , fld_must     = "++show (fld_must     fld)
@@ -429,12 +429,12 @@ where
        ++ indent++"    , fld_onIns    = "++
           ( if fld_insAble fld
             then "(\\d->"++showHSname (fld_onIns fld arg)++" d)"
-            else "error(\"!Fatal (module ShowHS 353): reference to undefined insert action in field "++fld_name fld++"\")" )
+            else "error(\"!Fatal: reference to undefined insert action in field "++fld_name fld++"\")" )
        ++ indent++"    , fld_delAble  = "++                     show (fld_delAble  fld)
        ++ indent++"    , fld_onDel    = "++
           ( if fld_delAble fld
             then "(\\d->"++showHSname (fld_onDel fld arg)++" d)"
-            else "error(\"!Fatal (module ShowHS 358): reference to undefined delete action in field "++fld_name fld++"\")" )
+            else "error(\"!Fatal: reference to undefined delete action in field "++fld_name fld++"\")" )
        ++ indent++"    }"
        where arg = error ("!Fatal (module ShowHS 360): reference to undefined argument of ECA rule")
 

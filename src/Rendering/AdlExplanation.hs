@@ -249,7 +249,7 @@ instance SelfExplained Declaration where
             applyM decl a b =
                case decl of
                  Sgn{}     -> if null (prL++prM++prR) 
-                                then [Str a]++[Str (" "++decnm decl++" ")]++[Str b ]
+                                then [Str (upCap a)]++[Str (" corresponds to ")]++[Str b ]++[Str (" in relation "++decnm decl)]
                                 else [Str (upCap str)| let str=prL++" "++a++" "++prM++" "++b++" "++prR]
                               where prL = decprL decl
                                     prM = decprM decl

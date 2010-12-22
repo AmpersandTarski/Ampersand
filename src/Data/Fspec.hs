@@ -58,8 +58,6 @@ module Data.Fspec ( Fspc(..)
     conceptDefs  fSpec = vConceptDefs fSpec
     --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?). 
     declarations fSpec = vrels fSpec
-    rel_declarations _ = error "error (module Fspec 63): in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?)"
-    rule_declarations _ = error "error (module Fspec 64): in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?)"
     rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
     signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
     objDefs      fSpec = serviceS fSpec ++ serviceG fSpec
@@ -117,8 +115,6 @@ module Data.Fspec ( Fspc(..)
     conceptDefs   _  = []                                  -- The set of all concept definitions in this Fservice
     declarations  _  = []                                  -- Currently, no declarations are made within a service.
     --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?).
-    rel_declarations _ = error "error (module Fspec 118): in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?)"
-    rule_declarations _ = error "error (module Fspec 119): in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?)"
     rules        svc = [r| r<-fsv_rules svc]
     signals      svc = [r| r<-fsv_signals svc]
     objDefs      svc = [fsv_objectdef svc]

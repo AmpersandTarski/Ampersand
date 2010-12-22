@@ -170,7 +170,7 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   where
   --DESCR -> use this function on all expressions
   enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
-  enrich_expr = infertype_and_populate popuMphDecl isas (rel_declarations ctxs) (Anything,Anything)
+  enrich_expr = infertype_and_populate popuMphDecl isas [d| d<-declarations ctxs, decusr d] (Anything,Anything)
   isas = isaRels (allCtxCpts ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs
@@ -207,8 +207,8 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
      = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
                                                     --     the patterns of this context
   bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]
-                         ,inftestexpr=typedexprs (rel_declarations ctxs) isas (testexpr p) 
-                                   ++ [error (concat (concat xs)) | let xs=typeerrors (rel_declarations ctxs) isas (testexpr p),not(null xs)]
+                         ,inftestexpr=typedexprs [d| d<-declarations ctxs, decusr d] isas (testexpr p) 
+                                   ++ [error (concat (concat xs)) | let xs=typeerrors [d| d<-declarations ctxs, decusr d] isas (testexpr p),not(null xs)]
                          }
                       ,bindrules
                       ,[err|Right err<-pexpls])
@@ -267,8 +267,9 @@ enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
   popuRels :: Declarations
   popuRels = mygroupby matches (declarations_ctxs)
       where
-      --REMARK -> Do NOT use declarations ctxs, because they contain decls from signal rules that are not typechecked yet!
-      -- signal rules cannot be populated at this point, they need to be populated AFTER type checking based on the populations of real relation declarations.
+      -- REMARK:  Use only declarations that are user defined, because generated declarations (e.g. decls from signal rules)
+      --          are not typechecked yet! Signal rules cannot be populated at this point.
+      --          They need to be populated AFTER type checking based on the populations of user defined relation declarations.
       declarations_ctxs =  [d|cx'<-ctxs,p<-ctxpats cx',d<-ptdcs p++ctxds cx']
       matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations_ctxs) pop) | cx'<-ctxs, pop<-ctxpops cx']] 
       mygroupby :: [(Population, Declaration)] -> Declarations -> Declarations
@@ -475,7 +476,7 @@ checkLabels svcs =
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration
 checkPopulations :: Contexts -> Errors
-checkPopulations ctxs = [(err,[])|Right err<-[popdeclaration (rel_declarations ctxs) pop | cx<-ctxs, pop<-ctxpops cx]]
+checkPopulations ctxs = [(err,[])|Right err<-[popdeclaration [d| d<-declarations ctxs, decusr d] pop | cx<-ctxs, pop<-ctxpops cx]]
 
 
 ------------------
