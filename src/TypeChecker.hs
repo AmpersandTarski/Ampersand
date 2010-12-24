@@ -104,10 +104,10 @@ enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx
 
 --DESCR -> contains enrichment functionality which should be temporary
 postenrich :: Context -> Context
-postenrich cx@(Ctx{}) = addsgndecls $ renumber cx
+postenrich cx = addsgndecls $ renumber cx
 renumber :: Context -> Context
-renumber cx@(Ctx{}) = cx {ctxpats=renumberPats (length (ctxrs cx)) (ctxpats cx),
-                          ctxrs=[r{r_pat="", runum=i} | (i,r)<-zip [1..] (ctxrs cx)]}
+renumber cx = cx {ctxpats=renumberPats (length (ctxrs cx)) (ctxpats cx),
+                  ctxrs=[r{r_pat="", runum=i} | (i,r)<-zip [1..] (ctxrs cx)]}
   where
    renumberPats :: Int -> Patterns -> Patterns
    renumberPats n (pat:ps) = pat{ptrls=[r{r_pat=name pat, runum=i} | (i,r)<-zip [n..] (ptrls pat)]}
@@ -115,7 +115,7 @@ renumber cx@(Ctx{}) = cx {ctxpats=renumberPats (length (ctxrs cx)) (ctxpats cx),
    renumberPats _ [] = []
 
 addsgndecls ::Context -> Context
-addsgndecls cx@(Ctx{}) = cx {ctxds=(ctxds cx)++allsgndecls }
+addsgndecls cx = cx {ctxds=(ctxds cx)++allsgndecls }
   where allsgndecls = [srrel r | r<-allPatRules (allCtxPats [cx]), isSignal r]
 
 data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression | OrigExpl
@@ -132,7 +132,7 @@ data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression | 
 --   - rule generation:   Rules that are derived from Keys specified in the ADL-script
 
 enrichCtx :: Context -> Contexts -> (Context,[(String,[Block],FilePos,OrigExpr)])
-enrichCtx cx@(Ctx{}) ctxs = --if zzz then error(show xxx) else
+enrichCtx cx ctxs = --if zzz then error(show xxx) else
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
@@ -534,14 +534,13 @@ buildCtxTree :: ContextFound -> Contexts -> CtxTree
 buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
 buildCtxTree cxf@(Found cx) ctxs
            --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
-           = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- case cx of Ctx{} -> ctxon cx]
+           = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- ctxon cx]
 
 --DESCR -> search for a context by name and return the first one found
 srchContext :: Contexts -> String -> ContextFound
 srchContext [] srchstr = NotFound srchstr
-srchContext (cx:ctxs) srchstr
-         | case cx of Ctx{} -> (ctxnm cx==srchstr)
-                               = Found cx
+srchContext (cx:ctxs) srchstr 
+         | (ctxnm cx==srchstr) = Found cx
          | otherwise = srchContext ctxs srchstr
 
 foundCtx :: ContextFound -> Bool
@@ -549,7 +548,7 @@ foundCtx (Found _) = True
 foundCtx _         = False
 
 ctxName :: ContextFound -> ContextName
-ctxName (Found cx)      = case cx of Ctx{} -> ctxnm cx
+ctxName (Found cx)      = ctxnm cx
 ctxName (NotFound cxnm) = cxnm
 
 

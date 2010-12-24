@@ -8,16 +8,19 @@ import Adl
    --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
    --          context names should be unique
 removeCtx :: Contexts -> Context -> Contexts
-removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
+-- WAAROM?? Waarom niet gewoon de Eq van Context gebruiken?? 
+--          Het wordt dan : removeCtx ctxs cx = filter (/= cx) ctxs
+-- was: removeCtx ctxs cx = [cx' | cx'<-ctxs, not((case cx of Ctx{} -> ctxnm cx) == (case cx' of Ctx{} -> ctxnm cx'))]
+removeCtx ctxs cx = filter (/= cx) ctxs
 
 --DESCR -> all the patterns of contexts
 allCtxPats :: Contexts -> Patterns
-allCtxPats ctxs = concat [case cx of Ctx{} -> ctxpats cx | cx<-ctxs]
+allCtxPats ctxs = concat [ctxpats cx | cx<-ctxs]
 
  
 --DESCR -> all the Rules of patterns
 allPatRules :: Patterns -> Rules
-allPatRules ps = concat [case p of Pat{} -> ptrls p | p<-ps]
+allPatRules ps = concat [ptrls p | p<-ps]
 
 allCtxCpts :: Contexts -> Concepts
 allCtxCpts ctxs

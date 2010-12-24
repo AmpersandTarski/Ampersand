@@ -12,7 +12,33 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       )
    import Collection  (Collection(..))
    import Auxiliaries (sort)
-   import Adl         
+   import Adl         (Architecture(..)
+                      ,Concept(..)
+                      ,ConceptDef(..)
+                      ,Context(..)
+                      ,Declaration(..)
+                      ,Expression(..)
+                      ,Gen(..)
+                      ,KeyDef(..)
+                      ,Label(..)
+                      ,Morphism(..)
+                      ,ObjectDef(..),ObjectDefs
+                      ,Pairs,Paire,mkPair
+                      ,Pattern(..)
+                      ,PExplanation(..)
+                      ,Population(..)
+                      ,Prop(..)
+                      ,Rule(..),RuleType(..)
+                      ,PExplObj(..)
+                      ,PExpression(..)
+                      ,FilePos(..)
+                      ,Sign
+                      ,UnOp(..),MulOp(..)
+                      ,cptAnything
+                      ,cptnew
+                      ,flp
+                      ,cptS
+                      )
    import ShowADL     (showADL)
    import Languages
    import Strings     (trim)
@@ -57,18 +83,23 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                        where  
                        rebexpr x y = (x,y)
                        universe = (Tm(V [] (cptAnything,cptAnything)) (-1),[]) --default: the universe
-                       rebuild nm env on ces = Ctx nm on empty [] pats [] ds cs ks os pes pops sqlplugs phpplugs env
-                              where
-                               ps   = [p| CPat p<-ces]
-                               ds   = [d| CDcl d<-ces]
-                               cs   = [c| CCon c<-ces]
-                               ks   = [k| CKey k<-ces]
-                               os   = [o| CObj o<-ces]
-                               pes  = [e| CXpl e<-ces]
-                               pops = [Popu mph prs| CPop mph prs<-ces]
-                               pats = ps
-                               sqlplugs = [plug| CSqlPlug plug<-ces]
-                               phpplugs = [plug| CPhpPlug plug<-ces]
+                       rebuild nm env on ces = 
+                          Ctx { ctxnm = nm
+                              , ctxon = on
+                              , ctxisa = empty
+                              , ctxwrld = []
+                              , ctxpats = [p| CPat p<-ces]
+                              , ctxrs   = []
+                              , ctxds   = [d| CDcl d<-ces]
+                              , ctxcs   = [c| CCon c<-ces]
+                              , ctxks   = [k| CKey k<-ces]
+                              , ctxos   = [o| CObj o<-ces]
+                              , ctxps   = [e| CXpl e<-ces]
+                              , ctxpops = [Popu mph prs| CPop mph prs<-ces]
+                              , ctxsql  = [plug| CSqlPlug plug<-ces]
+                              , ctxphp  = [plug| CPhpPlug plug<-ces]
+                              , ctxenv  = env
+                              }
 
    data ContextElement = CPat Pattern
                        | CDcl Declaration
