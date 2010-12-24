@@ -162,7 +162,7 @@ makeTblPlugs context allDecs currentPlugs
              (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
     , let c = target (head kernel)               -- one concept from the kernel is designated to "lead" this plug.
-          plugAtts              = [a| a<-attMors, source a `elem` concs kernel]
+          plugAtts              = [a| a<-attMors, source a `elem` concs kernel] --plugAtts link directly to some kernelfield
           plugMors              = kernel++plugAtts
           plugFields            = [fld a| a<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable   :: [(Concept,SqlField)]
@@ -220,38 +220,40 @@ So the first step is create the kernels ...   -}
 --              a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug (i.e. fldnull=False)
 --              When is an ObjectDef a ScalarPlug or BinPlug?
 --              When do you want to define your own Scalar or BinPlug
-makeSqlPlug :: ObjectDef -> PlugSQL
-makeSqlPlug obj
+--mph2fld  (keyDefs context) kernel plugAtts m
+makeSqlPlug :: Context -> ObjectDef -> PlugSQL
+makeSqlPlug context obj
  | null(objats obj) && isIdent(objctx obj)
-   = ScalarSQL (name obj)  cptfld c NO
+   = ScalarSQL (name obj) (mph2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
  | null(objats obj) --TODO151210 -> assuming objctx obj is Mph{} if it is not I{}
    = error "TODO151210 -> implement defining binary plugs in ASCII"
  | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
    = TblSQL (name obj)     -- plname (table name)
-     makeFields             -- fields
-     [(c,cptfld)]           -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-     mphflds                -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+     plugFields             -- fields
+     conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+     attributeLookuptable   -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      (ILGV Eenvoudig)       -- functie punten analyse
  | otherwise = error "!Fatal (module ADL2Plug 204): Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
-  where
-   --TODO: cptflds and mphflds assume that the user defined plug is a concept plug: 
-   --      -> containing just one expression equivalent to the identity relation
-   --      -> if the expression is not the identity relation then it is a simple expression (a morphism)
-   --      if there are more expressions equivalent to the identity relation then a fatal
-   --      the others would probably be ignored by updates and inserts, but fldnull=false => save errors in SQL?
-   (c,cptfld) = (\xs->if length xs==1 then head xs else error "!Fatal (module ADL2Plug 211): Implementation expects only one identity relation in plug.")
-             [(source (fldexpr f),f)|f<-makeFields, isIdent(fldexpr f)]
-   mphflds = [(m,cptfld,f)|f<-makeFields, length (mors(fldexpr f))==1,m@(Mph{})<-mors(fldexpr f)]
-   makeFields ::  [SqlField]
-   makeFields = 
-     [Fld (name att)                 -- fldname : 
-          (objctx att)               -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-          (sqltp att)                -- fldtype :
-          (not (isTot wideexpr))     -- fldnull : can there be empty field-values? 
-          (isInj wideexpr)           -- flduniq : are all field-values unique?
-     | att<-objats obj
-     , let wideexpr = F [objctx obj, objctx att] --in a wide table, (objctx att) can be total, but the field for its target may contain NULL values
-     ]
+  where       
+   c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
+     = source(objctx obj) 
+   mphs --fields are user-defined as one deep objats with objctx=m. note: type incorrect or non-morphism objats are ignored
+     = [(m,sqltp att)|att<-objats obj, (Tm m@(Mph{}) _)<-[objctx att],source m==c]   
+   kernel --I[c] and every non-homogeneous m or m~ which is at least uni,inj,sur are kernel fields 
+          --REMARK -> homogeneous m or m~ which are at least uni,inj,sur are inefficient in a way
+          --          if also TOT than m=I => duplicates, 
+          --          otherwise if m would be implemented as GEN (target m) ISA C then (target m) could become a kernel field
+     = [(mIs c,sqltp obj)] 
+       ++ [(m,tp)|(m,tp)<-mphs,source m/=target m,isUni m, isInj m, isSur m]
+       ++ [(flp m,tp)|(m,tp)<-mphs,source m/=target m,isUni m, isInj m, isTot m, not (isSur m)]
+   attMors --all user-defined non-kernel fields are attributes of (mph2fld (objctx c))
+     = (mphs >- kernel) >- [(flp m,tp)|(m,tp)<-kernel] --note: m<-mphs where m=objctx obj are ignored (objctx obj=I)
+   plugMors              = kernel++attMors
+   plugFields            = [fld m tp| (m,tp)<-plugMors] 
+   fld m tp              = (mph2fld (keyDefs context) (map fst kernel) (map fst attMors) m){fldtype=tp} --redefine sqltype
+   conceptLookuptable    = [(target m,fld m tp)|(m,tp)<-kernel]
+   attributeLookuptable  = [(m,lookupC (source m),fld m tp)| (m,tp)<-plugMors] 
+   lookupC cpt           = head [f|(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
    sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                       ++[SQLVarchar 255]

@@ -69,7 +69,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         --------------
         --making plugs
         --------------
-        vsqlplugs = [PlugSql (makeSqlPlug p)| p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
+        vsqlplugs = [PlugSql (makeSqlPlug context p)| p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         vphpplugs = [PlugPhp (makePhpPlug p)| p<-ctxphp context]
         definedplugs = vsqlplugs ++ vphpplugs
         allplugs = definedplugs ++      -- all plugs defined by the user

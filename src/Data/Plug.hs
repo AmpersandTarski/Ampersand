@@ -3,6 +3,7 @@ module Data.Plug (Plug(..),Plugs
                  ,SqlField(..)
                  ,SqlType(..)
                  ,showSQL
+                 ,requiredFields
                  ,tblfields
                  ,tblcontents
                  ,entityfield,entityconcept
@@ -22,15 +23,16 @@ import Adl.Expression (Expression(..))
 import Adl.ObjectDef (ObjectDef(..))
 import Adl.FilePos (FilePos(..))
 import Adl.Pair (Paire)
-import Adl (isSur)
+import Adl (isSur,isTot,isInj,isUni)
+import Collection((>-))
 import Classes.Object (Object(..))
 import Classes.Populated (contents')
 import Classes.Morphical (Morphical(..))
 import CommonClasses (Identified(..))
 import FPA (FPA(..),FPAble(..))
-import Auxiliaries (sort')
+import Auxiliaries (sort',eqClass)
 import Prototype.CodeVariables (CodeVar(..))
-import List(elemIndex)
+import List(elemIndex,nub)
 
 ----------------------------------------------
 --Plug
@@ -74,8 +76,6 @@ instance Eq PlugSQL where
   x==y = name x==name y
 instance Eq PlugPHP where
   x==y = name x==name y && phpfile x == phpfile y && phpinArgs x == phpinArgs y
-instance Ord Plug where -- WAAROM (SJ) Waarom is Plug een instance van Ord?
-  compare x y = compare (name x) (name y)
 
 ----------------------------------------------
 --PlugPHP
@@ -284,9 +284,6 @@ data SqlField = Fld { fldname     :: String
 fldauto::SqlField->Bool -- is the field auto increment?
 fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f && isIdent (fldexpr f)
 
-instance Ord SqlField where
-  compare a b = compare (fldname a) (fldname b)
-
 data SqlType = SQLChar    Int
              | SQLBlob              -- cannot compare, but can show (as a file)
              | SQLPass              -- password, encrypted: cannot show, but can compare
@@ -298,7 +295,7 @@ data SqlType = SQLChar    Int
              | SQLId                -- autoincrement integer
              | SQLVarchar Int
              | SQLBool              -- exists y/n
-             deriving (Eq, Ord,Show)
+             deriving (Eq,Show)
 
 showSQL :: SqlType -> String
 showSQL (SQLChar    n) = "CHAR("++show n++")"
@@ -313,8 +310,116 @@ showSQL (SQLId       ) = "INT"
 showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLBool     ) = "BOOLEAN"
           
-iskey :: SqlField->Bool
-iskey f = flduniq f && not (fldnull f)
+--every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL
+iskey :: PlugSQL->SqlField->Bool
+iskey plug@(ScalarSQL{}) f = column plug==f
+iskey plug@(BinSQL{}) f --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\m;m~=I i.e. a key for this plug
+  | isUni(mLkp plug) || isInj(mLkp plug) = error "!Fatal (module Data/Plug 317): BinSQL may not store a univalent or injective mph, use TblSQL instead."
+  | otherwise              = f==fst(columns plug) && (isTot(mLkp plug))
+iskey plug@(TblSQL{}) f    = elem f (map snd (cLkpTbl plug))
+
+--the kernel of SqlFields is ordered by existence of elements for some instance of the entity stored in the plug.
+--fldexpr of key is the relation with a similar or larger key.
+--(similar = uni,tot,inj,sur, includes = uni,inj,sur)
+--
+--each kernel field is a key to attributes and itself (kfld), and each attribute field is related to one kernel field (kfld)
+--kfld may be smaller than the ID of the plug, but larger than other kernel fields in the plug
+--All (kernel) fields larger than or similar to kfld and their total attributes are required.
+--(remark that the total property of an attribute points to the relation of the att with its key, which is not the ID of the plug per se)
+--Smaller (kernel) fields and their total attributes may contain NULL where kfld does not and are not required.
+--
+--auto increment fields are not considered to be required
+requiredFields :: PlugSQL -> SqlField ->[SqlField]
+requiredFields plug@(ScalarSQL{}) _ = [column plug]
+requiredFields plug@(BinSQL{}) _ = [fst(columns plug),snd(columns plug)]
+requiredFields plug@(TblSQL{}) fld 
+ = [f|f<-(requiredkeys++requiredatts), not (fldauto f)] 
+  where
+  kfld | null findfld = error ("!Fatal (module Data/Plug 338): fld "++fldname fld++" must be in the plug "++name plug++".")
+       | iskey plug fld = fld
+       | otherwise = fst(head findfld) --fld is an attribute field, take its kernel field
+  findfld = [(k,maybek)|(_,k,maybek)<-mLkpTbl plug,fld==maybek]
+  requiredkeys = similar++requiredup 
+  requiredatts = [a|k<-requiredkeys,(k',a)<-attrels plug,k==k',isTot(fldexpr a)]
+  -----------
+  --kernelclusters is a list of kernel field clusters clustered by similarity
+  --similar is the cluster where kfld is in
+  similar = [c|Cluster cs<-kernelclusters plug,kfld `elem` cs,c<-cs]
+  --the kernel fields in which a similar field is included, but not a similar field
+  --(clusterBy includeskey [Cluster [x]] (kernelrels plug) returns one inclusion chain (cluster) from ID to x 
+  --Thus, similar elements of elements in the chain (except x) are not taken into account yet (see similarskeysup and requiredup)
+  keysup = (nub[rf|x<-similar
+                  ,cs<-map cslist(clusterBy includeskey [Cluster [x]] (kernelrels plug))
+                  ,rf<-cs]
+           ) >- similar
+  --there can be a key1 similar to a key2 in keysup, but key1 is not in keysup.
+  --key1 is required just like key2 because they are similar
+  similarskeysup = nub[key1|Cluster cs<-kernelclusters plug
+                           ,key1<-cs 
+                           ,key2<-keysup
+                           ,elem key2 cs
+                           ,not(elem key1 keysup)]
+  --the similarskeysup may have required fields not in keysup (recursion)
+  --add those which are not in keysup yet
+  requiredup = nub(keysup++requiredbysimilarkeysup)
+  requiredbysimilarkeysup = nub[rf|x<-similarskeysup,rf<-requiredFields plug x]
+  -----------
+
+--the clusters of kernel sqlfields that are similar because they relate uni,inj,tot,sur
+kernelclusters ::PlugSQL -> [Cluster SqlField]
+kernelclusters plug@(ScalarSQL{}) = [Cluster [column plug]]
+kernelclusters (BinSQL{})         = [] --a binary plugs has no kernel (or at most (entityfield plug))
+kernelclusters plug@(TblSQL{})    = clusterBy similarkey [] (kernelrels plug)
+
+--similar key: some source key s that is not equal to target key t (i.e. not the identity), but related uni,tot,inj,sur in some other way
+similarkey::(SqlField,SqlField)->Bool
+similarkey (s,t) = s/=t && isTot (fldexpr t) && isSur (fldexpr t) && isInj (fldexpr t) && isUni (fldexpr t)
+
+--includes key: some target key t that is related to source key s uni,inj,sur but not tot
+includeskey::(SqlField,SqlField)->Bool
+includeskey (_,t) = not(isTot (fldexpr t)) && isSur (fldexpr t) && isInj (fldexpr t) && isUni (fldexpr t)
+
+--mLkpTbl stores the relation of some target field with one source field
+--an iskey target field is a kernel field related to some similar or larger kernel field
+--any other target field is an attribute field related to its kernel field
+kernelrels::PlugSQL ->[(SqlField,SqlField)]
+kernelrels plug@(ScalarSQL{}) = [(column plug,column plug)]
+kernelrels (BinSQL{})         = error "!Fatal (module Data/Plug 384): Binary plugs do not know the concept of kernel fields."
+kernelrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,iskey plug tfld] 
+attrels::PlugSQL ->[(SqlField,SqlField)]
+attrels plug@(ScalarSQL{}) = [(column plug,column plug)]
+attrels (BinSQL{})         = error "!Fatal (module Data/Plug 388): Binary plugs do not know the concept of attribute fields."
+attrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,not(iskey plug tfld)] 
+
+--clusterBy clusters similar items like eqClass clusters equal items
+--[(a,a)] defines flat relations between items (not closed)
+--((a,a) -> Bool) defines some transitive relation between two items (for example similarity, equality, inclusion)
+--[Cluster a] defines the initial set of clusters which may be [] 
+--            EXAMPLE USE -> 
+--            if the relation is not symmetric and you need one chain from x to the top
+--            then set [Cluster [x]]
+--            (note: ClusterBy does not take into account any other relation than the one provided!)
+--TODO -> test plugs that require more than one run (i.e. a composition of kernel fields n>2: ID(fld1;fld2;..;fldn)KernelConcept )
+--REMARK151210 -> I have made a data type of cluster instead of just list to distinguish between lists and clusters (type checked and better readable code)
+--                It is an idea to do the same for eqCl and eqClass (Class=Cluster or v.v.)
+data Cluster a = Cluster [a] deriving (Eq,Show)
+cslist :: Cluster a -> [a]
+cslist (Cluster xs) = xs
+clusterBy :: (Show a,Eq a) => ((a,a) -> Bool) -> [Cluster a] -> [(a,a)] -> [Cluster a]
+clusterBy f [] xs = clusterBy f [Cluster [b]|(_,b)<-xs] xs --initial clusters, for every target there will be a cluster at first (see mergeclusters)
+clusterBy f cs xs  
+   | cs==nxtrun = mergeclusters cs 
+   | otherwise = clusterBy f (mergeclusters nxtrun) xs
+   where 
+   nxtrun = [Cluster (addtohead (head ys)++ys)|Cluster ys<-cs, not(null ys)]
+   addtohead y =[fst x| x<-xs, snd x==y, f x] --if x=(fst x);y and (f x), then fst x is chained to y 
+   --we can merge clusters with equal heads, because
+   -- + similar things are chained to the head of the cluster
+   -- + and the head of mergeclusters == head of every cluster in cs' because we mergecluster each time we add one thing to the head of some cluster
+   mergeclusters cs' = [Cluster (nub(concat cl))|cl<-eqClass eqhead (map cslist cs')] 
+   eqhead c1 c2 
+     | null (c1++c2) = error ("!Fatal (module Data/Plug 418): clusters are not expected to be empty at this point.")
+     | otherwise = head c1==head c2
 
 --TODO151210 -> revise Morphical SqlField & PlugSQL
 --   concs f = [target e'|let e'=fldexpr f,isSur e']

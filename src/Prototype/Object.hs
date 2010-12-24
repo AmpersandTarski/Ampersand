@@ -4,7 +4,7 @@ module Prototype.Object(objectServices) where
 --import Char(toUpper)
 import NormalForms (disjNF,simplify)
 import Auxiliaries (eqCl)
-import Adl (target
+import Adl (target,source
            --,Concept(..),Declaration(..),isTrue,makeInline
            ,ObjectDef(..),Numbered(..),Morphic(..)
            ,Identified(..),mors,Morphism(..),ViewPoint(..)
@@ -173,6 +173,8 @@ showClasses flags fSpec o
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
 saveTransactions flags fSpec object
+  -- | True = error $ show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec]
+ | otherwise
  = [ "function save(){"
    , "  DB_doquer('START TRANSACTION');"
    ] ++ indentBlock 2
@@ -238,18 +240,31 @@ saveTransactions flags fSpec object
                               then var++"['"++name a'++"']"
                               else "$v"++show d
                   , ans<-nestToRecur attr fnc a' (mvar) (d+1)]
-  occurences       plug = (eqCl fst) $ rd $ concat (map (plugAts plug object) (objats object))
+  --occurences = ((obj,srcfld),(obj/objatt,trgfld)) clustered by (obj,srcfld)
+  --REMARK151210 -> a plug attr field always has a srcfld that is a kernel field, i.e. srcfld is always a kernel field (iskey plug srcfld = True)
+  --                as long as fldexpr of attr fields are morphisms, a cluster in occurences is the cluster of a kernel field
+  --                (cluster of kernel field = all required fields of kernel field [note: some kernel fields may contain NULL])
+  --                when fldexpr of attr fields is an univalent and total complex expr e.g. r;s;t with source C
+  --                     and I[C] is a kernel fldexpr
+  --                     and SERVICE svc: I[C] = [theR : r = [theS : s = [theT : t]]] 
+  --                     then trgfld with fldexpr r;s;t is required, but it will not be in occurences => isLargeOccurance=False
+  --                     however it has been covered by the service, so isLargeOccurance should be True
+  --                Thus, the php save function may be incorrect for plugs with complex exprs as fldexpr of attr fields
+  occurences       plug = (eqCl fst) $ rd $ plugAts plug object
+  --CORRECT COMMENT?
+  --fullOccurences are occurences covering all fields in a plug?
+  --fullOccurences are deleted and inserted again instead of updated?
   fullOccurences   plug = filter (isFullOccurance plug) (occurences plug)
   isFullGroup      set a = null (set >- (map (snd . snd) a ++ [snd$fst$head a]))
   isFullOccurance  plug = isFullGroup (tblfields plug)
-  isLargeOccurance plug = isFullGroup (requiredFields plug)
-  requiredFields   plug = [f| f <- tblfields plug
-                            , isTot (fldexpr f)
-                            -- I used to remove ident fields from the requiredFields, but they ARE required
-                            -- The reason I did this, was because auto increment fields are not
-                            -- So let's remove the auto increment fields:
-                            , not (fldauto f)
-                            ]
+  --isLargeOccurance tells whether all required fields are in some cluster in (occurences plug)
+  --fields are required from the perspective of a kernel field from plug which may contain NULL
+  --not from the perspective of (concept plug)
+  --Thus, some attr field f is required if source(fldexpr f) == target(fldexpr attsrc) && isTot(fldexpr f)
+  --      some kernel field f is required if it is SUR with some fld in the path from I[concept plug];..;(fldexpr attsrc)
+  --auto increment fields are not considered to be required
+  isLargeOccurance plug attsrc 
+    = isFullGroup (requiredFields plug attsrc)
   delUpdt plug (o,s) var
     = [ "if(isset("++var++maybeId o++")) DB_doquer(\"UPDATE `"++name plug
         ++"` SET `"++fldname s++"`=NULL WHERE `"
@@ -267,12 +282,13 @@ saveTransactions flags fSpec object
       )
     where
       updelcd [] = []
-      updelcd is@(((a,s),_):_)
-       = if is `elem` fullOccurences plug || not (fldnull s)
+      updelcd ids@(((attobj,attsrc),_):_)
+       = if isFullOccurance plug ids || iskey plug attsrc || not (fldnull attsrc) 
          then []--"//Cannot (or should not) delete using UPDATE in plug "++name plug++", field "++fldname s]
+                --WHY1511210 -> why not?
          else
-         nestTo a
-                (\var -> delUpdt plug (a,s) var)
+         nestTo attobj
+                (\var -> delUpdt plug (attobj,attsrc) var)
   saveCodeElem :: PlugSQL->([String],[ObjectDef])
   saveCodeElem plug
     = ( -- only delete if we have ALL information needed for refill, so use fullOccurences
@@ -284,13 +300,13 @@ saveTransactions flags fSpec object
       rd $ map (fst . snd) (concat (occurences plug)))
     where
      inscode [] = [] -- there are probably no empty groups, and we cannot modify them anyways
-     inscode is@(((a,s),_):_)
-      = if not (isLargeOccurance plug is) && null keys -- if we have keys, we may use them to UPDATE
-        then ["// no code for "++name a++","++fldname s++" in "++name plug]
+     inscode ids@(((attobj,attsrc),_):_)
+      = if not (isLargeOccurance plug attsrc ids) && null keys -- if we have keys, we may use them to UPDATE
+        then ["// no code for "++name attobj++","++fldname attsrc++" in "++name plug]
         else
-        nestTo a
+        nestTo attobj
                 (\var
-                  -> (if is `elem` fullOccurences plug || not (fldnull s) then [] else delUpdt plug (a,s) var) ++
+                  -> (if isFullOccurance plug ids || iskey plug attsrc || not (fldnull attsrc) then [] else delUpdt plug (attobj,attsrc) var) ++
                      concat [indentBlock (2*n)
                                         ( ( if fldnull f
                                             then (:)("if(count("++var++"['"++name o++"'])==0) "
@@ -303,18 +319,18 @@ saveTransactions flags fSpec object
                                         )
                             | ((o,f),n) <-zip nunios [0..]] ++
                     indentBlock (2*length nunios)
-                    ( if (isLargeOccurance plug) is -- attempt INSERT first
-                      then ( if ((isFullOccurance plug) is || null keys)
+                    ( if isLargeOccurance plug attsrc ids -- attempt INSERT first
+                      then ( if (isFullOccurance plug ids || null keys)
                               then -- na een DELETE, of bij null keys kan geen UPDATE
                                   -- reden: een UPDATE heeft een key nodig om zich te hechten
                                   -- (en na een delete hebben we die waarde net weggegooid)
                                   [ "$res="++insQuery var++";" ] ++
                                   if null keys
                                   then []
-                                  else if(a==object)
+                                  else if(attobj==object)
                                        then [ "if($newID) $this->setId($me['id']=mysql_insert_id());"]
-                                       else [ "if($res!==false && !isset("++var++maybeId a++"))"
-                                            , "  "++var++maybeId a++"=mysql_insert_id();" ]
+                                       else [ "if($res!==false && !isset("++var++maybeId attobj++"))"
+                                            , "  "++var++maybeId attobj++"=mysql_insert_id();" ]
                               else
                               [ insQuery var ++";"
                                 -- zoals hierboven gezegd: een key is nodig voor een UPDATE
@@ -337,7 +353,7 @@ saveTransactions flags fSpec object
                     ]
                 )
         where attrs  = ownAts ++ -- ook het identiteit-veld toevoegen (meestal de SQL-`id`)
-                        [ (a, s) | s `notElem` (map snd ownAts)]
+                        [ (attobj, attsrc) | attsrc `notElem` (map snd ownAts)]
               keys :: [(ObjectDef,SqlField)]
               keys   = if length attrs==1
                         then [] -- het kan gebeuren dat er precies een attr is
@@ -345,13 +361,13 @@ saveTransactions flags fSpec object
                                 -- echt veel meer voor. Gevolg van deze keuze is dat de UPDATE
                                 -- expressies met UPDATE .. SET (lege lijst) WHERE key=val
                                 -- niet meer voorkomen, netjes weggefilterd worden
-                        else filter (iskey.snd) $ reverse attrs -- eerst de voor de hand liggende
+                        else filter ((iskey plug).snd) $ reverse attrs -- eerst de voor de hand liggende
               key    = if null keys
                         then error ("!Fatal (module Prototype>Object 351): ObjBinGenObject-saveCodeElem-inscode: Cannot get a key for the plug "++name plug)
                         else head keys
                 -- nunios: Not UNI ObjectS: objects that are not Uni
-              nunios = [(o,f)|(o,f)<-ownAts, a/=o, not $ isUni (objctx o)]
-              ownAts = map snd is
+              nunios = [(o,f)|(o,f)<-ownAts, attobj/=o, not $ isUni (objctx o)]
+              ownAts = map snd ids
               insQuery :: String -> String  -- (var as returned by nestTo) -> (query)
               insQuery var
                 = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug
@@ -371,7 +387,7 @@ saveTransactions flags fSpec object
                 = "DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
                   intercalate ", "
                         [ "`"++fldname f++"`="++
-                          if fldnull f && not (f==s)
+                          if fldnull f && not (f==attsrc)
                           then "\".(" ++ ( if fldauto f && o==object
                                            then "!$newID"
                                            else "(null!=" ++ varname var o ++ ")"
@@ -380,32 +396,44 @@ saveTransactions flags fSpec object
                           else "'\".addslashes("++varname var o++").\"'"
                         | (o,f)<-attrs, fst key/=o
                         ] ++ " WHERE `"++fldname (snd key)++"`='\".addslashes("++varname var (fst key)++").\"'" ++"\", 5)"
-              varname var o = ( if a == o
+              varname var o = ( if attobj == o
                                 then var
                                 else if isUni (objctx o)
                                       then var++"['"++(name o)++"']"
                                       else "$"++(phpIdentifier $ name o)
                               ) ++ maybeId o
 
---REMARK: only used for php function save()
-plugAts :: PlugSQL -> ObjectDef           -- parent (wrong values are allowed, see source)
-           -> ObjectDef                -- object itself
-           -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
-              (ObjectDef,SqlField))]   -- target
-plugAts plug p o = ( [ ((o,sf),(o,tf))
-                     | (sf,tf)<-sqlPlugFields plug (Tm (mIs (target (objctx o))) (-1))
-                     ] ++
-                     [ ((p,sf),(o,tf))
-                     | (sf,tf)<-sqlPlugFields plug (objctx o)
-                     ]
-                   ) ++ concat (map (plugAts plug o) (noIdents o))
-  where noIdents obj = [att | att <- objats obj]--, not$isIdent$objctx obj] ++ concat [noIdents att | att<-objats obj,isIdent$objctx obj]
-
+--objPlugs returns the plugs needed to save data visible in this service.
+--A plug is needed if sqlPlugFields returns two fields for some objctx of object/objats or the identify of its target (see plugAts)
 --REMARK: only used for php function save()
 --WHY151210 -> (see also Data.FSpec and Rendering.ClassDiagram) can't a php plug be a (php-)function for saving things?
 objPlugs :: Fspc -> ObjectDef -> [PlugSQL]
-objPlugs fSpec object
-  = [plug|PlugSql plug<-plugs fSpec, not (null (plugAts plug object object))]
+objPlugs fSpec object = [plug|PlugSql plug<-plugs fSpec, not (null (plugAts plug object))]
+
+--plugAts returns the source/target fields related to object=>objats for objctx of object=>objats
+--REMARK: only used for php function save()
+plugAts :: PlugSQL -> ObjectDef -> [((ObjectDef, SqlField), (ObjectDef,SqlField))]
+plugAts plug object = plugAts' object object --you do not want to forget to mention where the (objctx object) is stored (it is not always I)
+  where
+  plugAts' :: ObjectDef           -- parent (wrong values are allowed, see source)
+             -> ObjectDef                -- object itself
+             -> [((ObjectDef, SqlField), -- source (may include the wrong-valued-'parent')
+                (ObjectDef,SqlField))]   -- target
+  plugAts' p o 
+   = nub$
+     ([ ((o,sf),(o,tf))
+      | (sf,tf)<-sqlPlugFields plug (Tm (mIs (target (objctx o))) (-1))
+      ]
+--     ++ TODO -> I also want fields if some flip matches, sqlPlugFields 
+--      [ ((p,sf),(o,tf))
+--      | (sf,tf)<-sqlPlugFields plug (flp(objctx o))
+--      ]
+     ++
+      [ ((p,sf),(o,tf))
+      | (sf,tf)<-sqlPlugFields plug (objctx o)
+      ])
+     ++ concat (map (plugAts' o) [att | att <- objats o])
+
 
 isObjUni :: ObjectDef -> Bool
 isObjUni obj = isUni (objctx obj)

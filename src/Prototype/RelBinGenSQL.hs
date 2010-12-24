@@ -454,42 +454,47 @@ module Prototype.RelBinGenSQL
    sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
 
    sqlPlugFields :: PlugSQL -> Expression -> [(SqlField, SqlField)]
+   --the place where a Mph{} can be found is stored in mLkpTbl of TblSQL or mLkp of BinSQL => no reasoning required
    sqlPlugFields plug@(TblSQL{}) (Tm m@(Mph{}) _) = [(fld0,fld1)|(m',fld0,fld1)<-mLkpTbl plug, m==m']
    sqlPlugFields plug@(BinSQL{}) (Tm m@(Mph{}) _) = [columns plug|m==mLkp plug]
-   --TODO151210 -> use cLkp in case of (Tm (I{}) _) => why reason if already known
    sqlPlugFields plug e' 
-    = [(fld0,fld1)| fld0<-[f|f<-tblfields plug,target (fldexpr f)==source e']
-                  , fld1<-[f|f<-tblfields plug,target (fldexpr f)==target e']
-                  , let se = fldexpr fld0
-                        te = fldexpr fld1
-                        bs = (isTrue.disjNF) (Fux [Cpx e', F [flp se,te] ])  --       e' |- se~;te
-                        bt = (isTrue.disjNF) (Fux [Cpx (F [flp se,te]),e'])  --       se~;te |- e'
-                  , bs && bt                                               --       e' = se~;te
-                  {- the above should be enough.. but the relation algebra calculations
-                     are not good enough yet. In particular:
-                       isFalse ((I/\x);e /\ -e)
-                     and
-                       isTrue  ((I/\e;e~);e \/ -e)
-                     do not work (these should yield True instead of False in both cases)
-                     
-                     The code below fixes exactly these ommissions
-                  -}
-                  || (isProp (se) && (te == e')
-                     && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e'))(-1), simplF [e',flp e'] ]
-                                          ,Cpx$se]))
-                  || (isProp (te) && (se == flp e')
-                     && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e'))(-1), simplF [flp e',e'] ]
-                                          ,Cpx$te]))
-                  {- found another exception:
-                       isFalse (I;I /\ -I)
-                     and
-                       isTrue  (I;I \/ -I)
-                     yield False, but should yield True
-                  -}
-                  || (  (se == te) && isIdent e'
-                     && (isSur se)
-                     )
-                  ]
+    | isIdent e' --the place where a (isIdent e) can be found is stored in cLkpTbl of TblSQL or BinSQL, or cLkp of ScalarSQL => no reasoning required
+     = case plug of
+       ScalarSQL{} -> [(column plug,column plug)|cLkp plug==source e']
+       _ -> [(fld,fld)|(c,fld)<-cLkpTbl plug,c==source e']
+    | otherwise
+     = [(fld0,fld1)| fld0<-[f|f<-tblfields plug,target (fldexpr f)==source e']
+                   , fld1<-[f|f<-tblfields plug,target (fldexpr f)==target e']
+                   , let se = fldexpr fld0
+                         te = fldexpr fld1
+                         bs = (isTrue.disjNF) (Fux [Cpx e', F [flp se,te] ])  --       e' |- se~;te
+                         bt = (isTrue.disjNF) (Fux [Cpx (F [flp se,te]),e'])  --       se~;te |- e'
+                   , bs && bt                                               --       e' = se~;te
+                   {- the above should be enough.. but the relation algebra calculations
+                      are not good enough yet. In particular:
+                        isFalse ((I/\x);e /\ -e)
+                      and
+                        isTrue  ((I/\e;e~);e \/ -e)
+                      do not work (these should yield True instead of False in both cases)
+                      
+                      The code below fixes exactly these ommissions
+                   -}
+                   || (isProp (se) && (te == e')
+                      && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e'))(-1), simplF [e',flp e'] ]
+                                           ,Cpx$se]))
+                   || (isProp (te) && (se == flp e')
+                      && (isTrue$disjNF$Fux [Fix [ Tm (mIs (source e'))(-1), simplF [flp e',e'] ]
+                                           ,Cpx$te]))
+                   {- found another exception:
+                        isFalse (I;I /\ -I)
+                      and
+                        isTrue  (I;I \/ -I)
+                      yield False, but should yield True
+                   -}
+                   || (  (se == te) && isIdent e'
+                      && (isSur se)
+                      )
+                   ]
      where -- simplF: replace a;a~ by I if INJ&TOT
       simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
         where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.
