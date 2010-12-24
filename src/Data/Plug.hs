@@ -3,7 +3,7 @@ module Data.Plug (Plug(..),Plugs
                  ,SqlField(..)
                  ,SqlType(..)
                  ,showSQL
-                 ,requiredFields
+                 ,requiredFields,requires
                  ,tblfields
                  ,tblcontents
                  ,entityfield,entityconcept
@@ -311,6 +311,11 @@ showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
 showSQL (SQLBool     ) = "BOOLEAN"
           
 --every kernel field is a key, kernel fields are in cLkpTbl or the column of ScalarSQL
+--iskey refers to UNIQUE INDEX and not UNIQUE KEY!!!
+--iskey may contain NULL, but their index (the entityfield of the plug) must be unique for a kernel field (iskey=True)
+--the field that is isIdent and iskey (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE KEY
+--KeyDefs define UNIQUE KEY (fld1,fld2,..,fldn)
+--TODO151210->iskey is a bad name, 'key' is misused in more cases => CLEAN UP!
 iskey :: PlugSQL->SqlField->Bool
 iskey plug@(ScalarSQL{}) f = column plug==f
 iskey plug@(BinSQL{}) f --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\m;m~=I i.e. a key for this plug
@@ -364,6 +369,10 @@ requiredFields plug@(TblSQL{}) fld
   requiredup = nub(keysup++requiredbysimilarkeysup)
   requiredbysimilarkeysup = nub[rf|x<-similarskeysup,rf<-requiredFields plug x]
   -----------
+
+--fld1 requires fld2 in plug?
+requires :: PlugSQL -> (SqlField,SqlField) ->Bool
+requires plug (fld1,fld2) = elem fld2 (requiredFields plug fld1)
 
 --the clusters of kernel sqlfields that are similar because they relate uni,inj,tot,sur
 kernelclusters ::PlugSQL -> [Cluster SqlField]

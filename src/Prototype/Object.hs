@@ -251,18 +251,14 @@ saveTransactions flags fSpec object
   --                     however it has been covered by the service, so isLargeOccurance should be True
   --                Thus, the php save function may be incorrect for plugs with complex exprs as fldexpr of attr fields
   occurences       plug = (eqCl fst) $ rd $ plugAts plug object
-  --CORRECT COMMENT?
-  --fullOccurences are occurences covering all fields in a plug?
-  --fullOccurences are deleted and inserted again instead of updated?
+  --fullOccurences are occurences of some object covering all fields in a plug
+  --fullOccurences are deleted and inserted again instead of updated
   fullOccurences   plug = filter (isFullOccurance plug) (occurences plug)
-  isFullGroup      set a = null (set >- (map (snd . snd) a ++ [snd$fst$head a]))
+  occurencesfields a = (map (snd . snd) a ++ [snd$fst$head a])
+  isFullGroup      set a = null (set >- (occurencesfields a))
   isFullOccurance  plug = isFullGroup (tblfields plug)
-  --isLargeOccurance tells whether all required fields are in some cluster in (occurences plug)
-  --fields are required from the perspective of a kernel field from plug which may contain NULL
-  --not from the perspective of (concept plug)
-  --Thus, some attr field f is required if source(fldexpr f) == target(fldexpr attsrc) && isTot(fldexpr f)
-  --      some kernel field f is required if it is SUR with some fld in the path from I[concept plug];..;(fldexpr attsrc)
-  --auto increment fields are not considered to be required
+  --isLargeOccurance tells whether all required fields of attsrc are in some cluster in (occurences plug)
+  --fields are required from the perspective of the field for the $id of some object which is not necessarily a UNIQUE KEY of the objects's plug
   isLargeOccurance plug attsrc 
     = isFullGroup (requiredFields plug attsrc)
   delUpdt plug (o,s) var
@@ -332,15 +328,24 @@ saveTransactions flags fSpec object
                                        else [ "if($res!==false && !isset("++var++maybeId attobj++"))"
                                             , "  "++var++maybeId attobj++"=mysql_insert_id();" ]
                               else
+                              -- try insert
+                              -- the var[id] can correspond to a UNIQUE KEY or UNIQUE INDEX
+                              -- if an insert of a UNIQUE KEY fails then we may try to update
+                              -- if an insert of a UNIQUE INDEX fails we may not
+                              -- we need to cut the kernel element var[id] and everything depending on it from its current index (UPDATE)
+                              --         ++ copy deep everything where var[id] depends upon (SELECT)
+                              -- and paste it (with potentially changed values) as a new index (INSERT)
                               [ insQuery var ++";"
                                 -- zoals hierboven gezegd: een key is nodig voor een UPDATE
                                 -- daarom moeten we checken of var[id] een waarde heeft
                                 -- zo niet, dan is ofwel de key null, ofwel de te inserten waarde
                               , "if(mysql_affected_rows()==0 && "++var++"['id']!=null){"
                               , "  //nothing inserted, try updating:"
-                              , "  "++updQuery var++";"
-                              , "}"
                               ]
+                              ++ (if fldnull (snd objkfld)
+                                 then [ "  "++line++";"|line<-copycutinsQuery var]
+                                 else [ "  "++updQuery var++";"])
+                              ++ [ "}" ]
                             )
                       else -- we cannot INSERT because we do not have all required information
                             [ "if(isset("++var++"['id']))"
@@ -362,9 +367,10 @@ saveTransactions flags fSpec object
                                 -- expressies met UPDATE .. SET (lege lijst) WHERE key=val
                                 -- niet meer voorkomen, netjes weggefilterd worden
                         else filter ((iskey plug).snd) $ reverse attrs -- eerst de voor de hand liggende
-              key    = if null keys
-                        then error ("!Fatal (module Prototype>Object 351): ObjBinGenObject-saveCodeElem-inscode: Cannot get a key for the plug "++name plug)
-                        else head keys
+              objkfld --this is the kernel field with instances of $id of this object
+                | null (findkfld++keys) = error ("!Fatal (module Prototype>Object 351): There is no key for this object in plug "++name plug)
+                | otherwise = head (findkfld++keys)
+              findkfld = [(svc,fld)|(svc,fld)<-keys,concept attobj==target(fldexpr fld)]
                 -- nunios: Not UNI ObjectS: objects that are not Uni
               nunios = [(o,f)|(o,f)<-ownAts, attobj/=o, not $ isUni (objctx o)]
               ownAts = map snd ids
@@ -383,6 +389,65 @@ saveTransactions flags fSpec object
                           else "'\".addslashes("++varname var o++").\"'"
                         | (o,f)<-rd' (fldname.snd) attrs
                         ] ++ ")\", 5)"
+              --like insQuery, only also taking values not in $me from $old (i.e. copyflds)
+              --the names of array old are fldnames
+              copyinsQuery :: String -> String  
+              copyinsQuery var
+                = "DB_doquer(\"" ++ "INSERT IGNORE INTO `"++name plug
+                  ++ "` ("
+                  ++  intercalate "," (["`"++fldname f++"`" | (_,f)<-rd' (fldname.snd) attrs]
+                                     ++["`"++fldname f++"`" |f<-copyflds])
+                  ++ ") VALUES ("
+                  ++ intercalate ", "
+                        ([ if fldnull f || fldauto f
+                           then "\".(" ++ ( if fldauto f && o==object
+                                            then "!$newID"
+                                            else "(null!=" ++ varname var o ++ ")"
+                                          ) ++ "?\"'\".addslashes("
+                               ++ varname var o ++ ").\"'\":\"NULL\").\""
+                           else "'\".addslashes("++varname var o++").\"'"
+                         | (o,f)<-rd' (fldname.snd) attrs
+                         ]
+                         ++
+                         [if fldnull f || fldauto f
+                           then "\".((null!=$old['" ++ fldname f ++ "'])"
+                                           ++ "?\"'\".addslashes($old['" ++ fldname f ++ "']).\"'\":\"NULL\").\""
+                           else "'\".addslashes($old['" ++ fldname f ++ "']).\"'"
+                         |f<-copyflds] 
+                        )
+                  ++ ")\", 5)"
+              --var and everything that requires var is set to NULL in the current record of var (WHERE varfld=var)
+              --all these vars must be covered in this service to be able to insert them in 
+              --TODO151210 -> service generation does not put fldexpr=(flp m) [UNI] in the service of its kernel field 
+              --              but in the service of its target field
+              --              Put it in both!! 
+--      //(tblfields behalve wat ik al heb) && required
+--      $old = firstRow(DB_doquer("SELECT `Datatype`.`I` FROM `Datatype` WHERE `Datatype`.`value1`='".addslashes($me['id'])."'")); 
+--	//set to NULL value1 en alles dat value1 als requiredFld heeft
+--	DB_doquer("UPDATE `Datatype` SET `value1`=NULL, `attr1`=NULL, `attr2`=NULL WHERE `value1`='".addslashes($me['id'])."'", 5);
+--	//nog een keer insert
+              copycutinsQuery var
+               | isFullGroup requiresFld ids
+                = [ if null copyflds then "//all required fields are available"
+                    else "$old = firstRow(DB_doquer(\"SELECT "
+                                      ++ (intercalate ", " ["`"++fldname f++"`"| f<-copyflds])
+                                      ++ " FROM `"++name plug++"`"
+                                      ++ " WHERE `"++fldname (snd objkfld)++"`='\".addslashes("++varname var (fst objkfld)++").\"'\"));"
+                  ,"DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
+                   intercalate ", "
+                         [ "`"++fldname f++"`="++
+                           if fldnull f then "NULL"
+                           else error "!Fatal (module Prototype>Object 410): you cannot use copycutupdinsQuery for objkfld=UNIQUE KEY"
+                         | (o,f)<-attrs, elem f requiresFld
+                         ] ++ " WHERE `"++fldname (snd objkfld)++"`='\".addslashes("++varname var (fst objkfld)++").\"'" ++"\", 5)"
+                  , if null copyflds then insQuery var 
+                    else copyinsQuery var
+                  ]
+               | otherwise = ["//Service is not suitable for updates in plug "++ name plug]
+              requiresFld = [f |f<-tblfields plug, requires plug (f,snd objkfld)]
+              --copyflds is tblfields which are required by $id (objkfld) except what's in $me (i.e. occurencesfields ids)
+              --this way I do not require a very large service object only to be able to edit an object
+              copyflds = [f|f<-tblfields plug, elem f (requiredFields plug (snd objkfld)),not(elem f (occurencesfields ids))]
               updQuery var
                 = "DB_doquer(\"" ++ "UPDATE `"++name plug++"` SET " ++
                   intercalate ", "
@@ -394,8 +459,8 @@ saveTransactions flags fSpec object
                                          ) ++ "?\"'\".addslashes("
                               ++ varname var o ++ ").\"'\":\"NULL\").\""
                           else "'\".addslashes("++varname var o++").\"'"
-                        | (o,f)<-attrs, fst key/=o
-                        ] ++ " WHERE `"++fldname (snd key)++"`='\".addslashes("++varname var (fst key)++").\"'" ++"\", 5)"
+                        | (o,f)<-attrs, fst objkfld/=o
+                        ] ++ " WHERE `"++fldname (snd objkfld)++"`='\".addslashes("++varname var (fst objkfld)++").\"'" ++"\", 5)"
               varname var o = ( if attobj == o
                                 then var
                                 else if isUni (objctx o)

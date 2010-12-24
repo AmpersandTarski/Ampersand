@@ -68,9 +68,13 @@ module Prototype.Installer where
                       , let nul = if fldnull f then "" else " NOT NULL"
                       , let autoIncr = if fldauto f
                                        then " AUTO_INCREMENT" else ""
-                      ] ++
+                      ]
+                     ++
                       [", UNIQUE KEY (`"++fldname key++"`)"
-                      | key <- tblfields plug, flduniq key, not (fldnull key)]
+                      | key <- tblfields plug, flduniq key, not (fldnull key)] --TODO151210 -> Add KeyDefs as UNIQUE KEY
+                     ++
+                      [", UNIQUE INDEX (`"++fldname kernelfld++"`)" --kernelfields are unique indexes (they are already unique keys if not fldnull)
+                      | kernelfld <- tblfields plug, iskey plug kernelfld, fldnull kernelfld]
                     )
              ++ ["                  ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]
