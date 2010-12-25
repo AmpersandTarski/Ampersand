@@ -36,7 +36,7 @@ where
                        where d' = case d of
                                     Blk{} -> d
                                     _     -> d{paMotiv = ms} 
--- DAAROM? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
+-- BECAUSE? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
 -- Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
 -- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie Adl.ECArule).
 -- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.

@@ -22,6 +22,7 @@
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 module TypeChecker (typecheck, Error, Errors) where
 
+import Auxiliaries (eqCl)
 import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 --import Data.List    -- USE -> unionBy
@@ -77,7 +78,7 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
                  | (err,block,fp,OrigKeyDef expr)<-check3] ++
                  [ (err ++ "\n",block)
                  | (err,block,_,OrigExpl)<-check3]
-   check4 = checkSvcNameUniqueness ctxs
+   check4 = checkObjDefNameUniqueness ctxs
    check5 = checkPopulations ctxs
   -- check6 = checkSvcLabels ctxs
    checkresult = if null check1 then 
@@ -139,7 +140,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
           ctxpats = [p | (p,_,_)<-ctxpatterns],                    -- contains all user defined rules inside the scope of patterns
           ctxrs   = [rule | r<-ctxrs cx, Left rule<-[bindRule r]], -- all user defined rules outside the scope of patterns
           ctxds   = ctxdecls, -- 
-          ctxos   = [od | (od,_)<-ctxobjdefs], 
+          ctxsvcs = [od | (od,_)<-ctxservices], 
           ctxks   = [kd | (kd,_)<-ctxCtxKeys],
           ctxsql  = [plug | (plug,_)<-ctxsqlplugs],
           ctxphp  = [plug | (plug,_)<-ctxphpplugs],
@@ -149,7 +150,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
    ++[err|(_,rs,_)<-ctxpatterns, Right err<-rs] --rule errors
    ++[(err,[],Nowhere,OrigExpl)|(_,_,errs)<-ctxpatterns, err<-errs] --explanation errors
    ++[(err,[],Nowhere,OrigExpl)|Right err<-map enrichexpl (ctxps cx)]
-   ++[err|(_,checkedexprs)<-ctxobjdefs,  Right err<-checkedexprs]
+   ++[err|(_,checkedexprs)<-ctxservices,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxsqlplugs,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxphpplugs,  Right err<-checkedexprs]
    ++[err|(_,checkedexprs)<-ctxCtxKeys, Right err<-checkedexprs]
@@ -164,7 +165,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
                            (ctxdecls)   --relations declared in this context only, outside the scope of patterns
                            (ctxcptdefs) --concept defs of this context only
                            (ctxks cx)   --bind keydefs
-                           (ctxos cx)   --change mphdcl and mphtyp on morphisms in expressions
+                           (ctxsvcs cx) --change mphdcl and mphtyp on morphisms in expressions
                            (ctxpops cx) --copy populations
                               -}
   where
@@ -181,19 +182,19 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   isatree = isaRels (allCtxCpts ctxs) (gens ctxs)
 
   --DESCR -> enriching ctxisa
-  {- WAAROM worden de concepten in de Isa structuur gepopuleerd? Gebeurt er ooit iets met deze populatie?
- - DAAROM  GMI: Ja
-  -- WAAROM worden de concepten in isac nogmaals gepopuleerd, terwijl de concepten uit isar al gepopuleerd zijn? 
-  -- DAAROM GMI: alleen concepten in een GEN .. ISA .. declaratie zitten in isar
-  -- WAAROM loopt dit via Set.? 
-  -- DAAROM GMI: Een Set is een lijst zonder doublures. Het had hier weinig nut omdat van de Set meteen weer een lijst wordt gemaakt in Hierarchy. De vraag zou eerder moeten zijn, waarom is Hierarchy een data structuur van twee lijsten en niet van twee Sets.
+  {- WHY worden de concepten in de Isa structuur gepopuleerd? Gebeurt er ooit iets met deze populatie?
+ - BECAUSE  GMI: Ja
+  -- WHY worden de concepten in isac nogmaals gepopuleerd, terwijl de concepten uit isar al gepopuleerd zijn? 
+  -- BECAUSE GMI: alleen concepten in een GEN .. ISA .. declaratie zitten in isar
+  -- WHY loopt dit via Set.? 
+  -- BECAUSE GMI: Een Set is een lijst zonder doublures. Het had hier weinig nut omdat van de Set meteen weer een lijst wordt gemaakt in Hierarchy. De vraag zou eerder moeten zijn, waarom is Hierarchy een data structuur van twee lijsten en niet van twee Sets.
   hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
     where
     isar = [(populate$gengen g,populate$genspc g) | g<-gens ctxs]
     isac = map populate$rd (map fst isar++map snd isar)
   -}
-  -- WAAROM wordt Anything weggefilterd?
-  -- DAAROM (SJ) Gedurende het type checken zijn types nog niet toegekend, waardoor concs soms Anything bevat.
+  -- WHY wordt Anything weggefilterd?
+  -- BECAUSE (SJ) Gedurende het type checken zijn types nog niet toegekend, waardoor concs soms Anything bevat.
   -- Na het typechecking proces mag dat niet meer voorkomen, en dient concs altijd concepten van de vorm C{} op te leveren.
   hierarchy = Isa isar isac
     where
@@ -364,7 +365,17 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
 
-  --DESCR -> enriching ctxos
+  ctxservices :: [(Service,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+  ctxservices = [bindService sv Nothing | sv<-ctxsvcs cx]
+  --add the upper expression to me and infer me and bind type
+  --pass the new upper expression to the children and bindObjDef them
+  bindService ::  Service -> Maybe Expression -> (Service,[Either Expression (String,[Block],FilePos,OrigExpr)])
+  bindService svc mbtopexpr = (svc {svObj=od},checkedexprs)
+    where 
+    (od,checkedexprs) = bindObjDef (svObj svc) mbtopexpr
+  -------end bindService---------------------------------------------------------------
+  
+  --DESCR -> enriching ctxobjdefs
   --         bind the expression and nested object defs of all object defs in the context
   ctxobjdefs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
   ctxobjdefs = [bindObjDef od Nothing | od<-objDefs cx]
@@ -451,17 +462,44 @@ checkCtxExtLoops ctxs = composeError (concat [findLoops cx | cx<- ctxs])
                                   , foundCtx (srchContext ctxs (ctxName cxf))]
 
 --DESCR -> check rule: Every SERVICE, PHPPLUG, and SQLPLUG must have a unique name
+checkObjDefNameUniqueness :: Contexts -> Errors
+checkObjDefNameUniqueness ctxs = printerrs (checkLabels ods)
+  where -- ods collects all ObjectDefs from the contexts
+        ods = [od|cx<-ctxs, od<-map svObj (ctxsvcs cx)++ctxsql cx ++ ctxphp cx]
+
+        -- checkLabels groups the services and sibling labels with the same name
+        -- checkLabels :: [ObjectDef] -> [[ObjectDef]]
+        checkLabels objs = [ cl | cl<-eqCl name objs, length cl>1]          -- ^ the top level of duplicate names
+                           : concat [checkLabels (objats obj) | obj<-objs]  -- ^ detect duplicates within objects by recursion
+
+        -- printerrs prints fancy messages. The first one is the top level. All others are about labels inside objectDefs.
+        printerrs [] = []
+        printerrs (sObs:attObss)
+         = [ ( "\nService or plug name " ++ name (head sObs) ++ " is not unique:"++
+               concat ["\n  "++show (pos obj) |obj<-sOb]
+             , [])
+           | sOb<-sObs, not (null sOb)] 
+           ++
+           [("\nLabel " ++ name (head attObs) ++ " in service or plug is not unique on sibling level:"
+                     ++ (concat ["\n  "++show (pos obj) |obj<-attOb]),[])
+           |attObs<-attObss, attOb<-attObs, not (null attOb)]
+           ++[("\n", [])]
+
+{- The following code was substituted by checkObjDefNameUniqueness (above) on 24 dec 2010 by SJ.
+It is now obsolete
+--DESCR -> check rule: Every SERVICE, PHPPLUG, and SQLPLUG must have a unique name
 checkSvcNameUniqueness :: Contexts -> Errors
 checkSvcNameUniqueness ctxs = 
-    let svcs = [svc|cx<-ctxs, svc<-ctxos cx ++ ctxsql cx ++ ctxphp cx]
+    let svcs = [svc|cx<-ctxs, svc<-ctxsvcs cx ++ ctxsql cx ++ ctxphp cx]
         printerrs [] = []
-        printerrs (svcnms:lblnms) = 
-          [("Service or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs]),[])
-          |(svcnm,svcposs)<-svcnms] 
-          ++
-          [("Label " ++ lbnm ++ " in service or plug must be unique on sibling level:"
-                    ++ (concat ["\n"++show lbpos |lbpos<-lblposs]),[])
-          |lbl<-lblnms, (lbnm,lblposs)<-lbl]
+        printerrs (svcnms:lblnms)
+         = [("\nService or plug name " ++ svcnm ++ " is not unique:"++ (concat ["\n"++show svcpos |svcpos<-svcposs]),[])
+           |(svcnm,svcposs)<-svcnms] 
+           ++
+           [("\nLabel " ++ lbnm ++ " in service or plug must be unique on sibling level:"
+                     ++ (concat ["\n"++show lbpos |lbpos<-lblposs]),[])
+           |lbl<-lblnms, (lbnm,lblposs)<-lbl]
+           ++"\n"
     in  printerrs$checkLabels svcs
 
 --DESCR -> group the services and sibling labels with the same name but different file positions
@@ -471,7 +509,7 @@ checkLabels svcs =
         orderby xs =  [(x,rd [y|(x',y)<-xs,x==x']) |x<-rd [dx|(dx,_)<-xs] ]
     in  (orderby [(objnm svc,objpos svc)|svc<-svcs, svc'<-svcs, objnm svc==objnm svc', objpos svc/=objpos svc'])
         :[check | checks<-map checkLabels (map objats svcs), check<-checks]
-
+-}
    
 
 --DESCR -> check rule: Every POPULATION must relate to a declaration

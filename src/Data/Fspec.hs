@@ -32,7 +32,8 @@ module Data.Fspec ( Fspc(..)
                     , vgens        :: Gens                  -- ^ All gens that apply in the entire Fspc
                     , vconjs       :: Expressions           -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
                     , vquads       :: Quads                 -- ^ All quads generated (by ADL2Fspec) from non-signal rules
-                    , vrels        :: Declarations          -- ^ All declarations declared in this specification
+                    , vrels        :: Declarations          -- ^ All declarations declared in this specification, being
+                                                            -- ^ user defined declarations and one declaration for each signal.
                     , fsisa        :: Inheritance Concept   -- ^ generated: The data structure containing the generalization structure of concepts
                     , vpatterns    :: Patterns              -- ^ all patterns taken from the ADL-script
                     , pictPatts    :: Pictures              -- ^ List of pictures containing pattern pictures (in same order as patterns)
@@ -186,8 +187,8 @@ module Data.Fspec ( Fspc(..)
 
    
    datasets :: Fspc -> [PlugSQL]
-   --   --WAAROM? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
-   {- DAAROM!
+   --   --WHY? Stef, waarom worden de plugs met slechts twee kolommen niet getoond als dataset?.
+   {- BECAUSE!
 	Dat heeft te maken met de vertaling van binaire relaties naar datasets (entiteiten) en relaties.
 	Datasets worden gevormd door alle relaties vanuit een concept univalent af te sluiten.
 	Dat wil zeggen: vanuit dat concept komt elk attribuut overeen met een univalente expressie.

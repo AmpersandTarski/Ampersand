@@ -140,7 +140,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         dRels = [     morph d | d<-declarations context, decusr d, isInj d, not$decplug d]++
                 [flp (morph d)| d<-declarations context, decusr d, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute maximally total expressions and maximally injective expressions.
---  DAAROM
+--  BECAUSE
 --   (GMI): Moet voor een concept dat 'los staat' (geen attribuut van, en heeft zelf geen attributen)
 --          geen service genereerd worden? => SERVICE Concept: I[Concept]
 --          VOORBEELD: PATTERN x r::A*B. s::B*C. t::A*C. ENDPATTERN geen multipliciteiten=>serviceGen=[]
@@ -196,7 +196,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  (recur (trace++[c]) cl)   -- objats
                  []                        -- objstrs
            | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
--- WAAROM: Han, de bedoeling was dat alle explanations die geldig zijn in deze fSpec, in de volgende definitie staan.
+-- WHY: Han, de bedoeling was dat alle explanations die geldig zijn in deze fSpec, in de volgende definitie staan.
 -- Is dat ook zo? Antw: Ja. (telefonisch met Han besproken)
         fSexpls' = explanationDeclarations flags context                ++
                    concat (map (explanationDeclarations flags)(patterns context))  

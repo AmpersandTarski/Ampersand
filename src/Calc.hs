@@ -57,9 +57,9 @@ module Calc ( deriveProofs
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
 --        qs         = vquads fSpec
 --        ecaRs      = assembleECAs visible qs
-        editable (Tm Mph{} _)  = True    --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+        editable (Tm Mph{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editable _             = False
-        editMph (Tm m@Mph{} _) = m       --WAAROM?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+        editMph (Tm m@Mph{} _) = m       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
         editMph e              = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
         -- De functie spread verspreidt strings over kolommen met een breedte van n.
         -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.
@@ -209,7 +209,7 @@ module Calc ( deriveProofs
                                            if (isTrue.conjNF) (Fux[Cpx r,r'])
                                            then "A reaction is not required, because  r |- r'. Proof:"++conjProof (Fux[Cpx r,r'])++"\n"
                                            else if checkMono r ev m
-                                           then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WAAROM? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
+                                           then "A reaction is not required, because  r |- r'. Proof:"{-++(showPr.derivMono r ev) m-}++"NIET TYPECORRECT: (showPr.derivMono r ev) m"++"\n"  --WHY? Stef, gaarne herstellen...Deze fout vond ik nadat ik het type van showProof had opgegeven.
                                            else let Tm _ _ = delta (sign m) in
                                                 "An appropriate reaction on this event is required."
                                            --     showECA fSpec "\n  " (ECA (On ev m) delt (doCode visible Ins r viols conj [rule]) 0)

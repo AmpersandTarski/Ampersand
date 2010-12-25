@@ -31,7 +31,10 @@ where
                               compareDecls (ctxds cx1) (ctxds cx2),
                               compareCDefs (ctxcs cx1) (ctxcs cx2),
                               compareKDefs (ctxks cx1) (ctxks cx2),
-                              compareODefs (ctxos cx1) (ctxos cx2)]
+                              compareODefs (ctxsvcs cx1) (ctxsvcs cx2),
+                              compareRoSs (ctxros cx1) (ctxros cx2),
+                              compareMEds (ctxmed cx1) (ctxmed cx2),
+                              compareSeRs (ctxser cx1) (ctxser cx2)]
    compareContext _ _ = Just $ "Only comparing Contexts with constructor Ctx\n"
 
    --Isa [(a,a)] [a]
@@ -233,7 +236,13 @@ where
                               compareODefs (objats od1) (objats od2),
                               compareDirectives (objstrs od1) (objstrs od2)]
    compareODef _ _ = Just $ "Only comparing Object defs with constructor Obj\n"
-          
+
+   compareRoSs :: [RoleService] -> [RoleService] -> Maybe String
+   compareRoSs ros ros' = "TODO: Gerard, would you write code for compareRoSs?
+
+   compareMEds :: [RoleRelation] -> [RoleRelation] -> Maybe String
+   compareMEds rr rr' = "TODO: Gerard, would you write code for compareMEds?
+
    ----------------------------------------------------
 
 

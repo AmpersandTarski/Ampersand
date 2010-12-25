@@ -385,7 +385,7 @@ instance SymRef Rule where
 --   xrefChptReference myLabel = [TeX ("\\ref{section:"++myLabel++"}")] --TODO werkt nog niet correct
 ---   xrefTableReference :: String -> [Inline]
 --   xrefTableReference myLabel = [TeX ("\\ref{tab:"++myLabel++"}")]
--- DAAROM: Why (SJ) does the code of labeledHeader look stupid?
+-- BECAUSE: Why (SJ) does the code of labeledHeader look stupid?
 --         When Han looked at pandoc code TexInfo.hs blockToTexinfo ln.208,
 --         he expected chapter,section,sub,subsub respectively.
 --         However, he got section,sub,subsub,plain text respectively.

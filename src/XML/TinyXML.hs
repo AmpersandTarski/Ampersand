@@ -5,8 +5,8 @@ module XML.TinyXML where
    data XTree = Elem { etag  :: XTag
                      , etrees :: [XTree]
                      }
-              | Node { ntag  :: XTag  -- WAAROM? is Node nodig? Immers een Elem met een lege etrees doet precies hetzelfde...
-                                      -- DAAROM! De show van een Node laat maar één tag zien. Een Elem showt een begin- en end-tag.
+              | Node { ntag  :: XTag  -- WHY? is Node nodig? Immers een Elem met een lege etrees doet precies hetzelfde...
+                                      -- BECAUSE! De show van een Node laat maar één tag zien. Een Elem showt een begin- en end-tag.
                      }
               | PlainText {ptstr :: String}
    data XTag =  Tag  { tName :: String

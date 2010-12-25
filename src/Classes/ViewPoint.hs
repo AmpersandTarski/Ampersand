@@ -5,7 +5,7 @@ where
    import Adl.Pattern                 (Pattern(..),Patterns)
    import Adl.Gen                     (Gen(..),Gens)
    import Adl.Rule                    (Rule(..),RuleType(..),rulefromProp, ruleviolations,Rules)
-   import Adl.ObjectDef               (ObjectDef(..),ObjectDefs)
+   import Adl.ObjectDef               (Service(..),ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                  (KeyDef(..),KeyDefs)
    import Adl.MorphismAndDeclaration  (Declarations,mIs,Declaration(..))
    import Adl.Concept                 (Concept(..),Morphic(..),Signaling(..))
@@ -99,7 +99,7 @@ where
     declarations context = declarations (ctxpats context) `uni` ctxds context
     rules        context = rules   (ctxpats context) ++ [r| r<-ctxrs context, not (isSignal r)]  -- all user defined rules
     signals      context = signals (ctxpats context) ++ [r| r<-ctxrs context,      isSignal r]   -- all user defined signals
-    objDefs      context = ctxos   context
+    objDefs      context = [svObj s| s<-ctxsvcs context]
     keyDefs      context = rd$keyDefs (ctxpats context) ++ ctxks context -- TODO: Hoe wordt gezorgd dat de keys uniek identificeerbaar zijn?
     gens         context = gens (ctxpats context)
     patterns     context = ctxpats context

@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl ( Architecture(..)
-           , Context(..),Contexts
+           , Context(..),Contexts,RoleService(..),RoleRelation(..)
            , Pattern(..),Patterns
            , Rule(..),Rules,consequent, rulefromProp, ruleviolations
            , KeyDef(..),KeyDefs
            , Population(..),Populations
-           , ObjectDef(..),ObjectDefs,actions
+           , ObjectDef(..),ObjectDefs,Service(..),actions
            , Expression(..),PExpressions,PExpression(..), Expressions,isPos,isNeg,insParentheses,UnOp(..),MulOp(..)
            , Gen(..),Gens
            , Morphism(..),Morphisms,inline,makeMph,makeInline
@@ -45,6 +45,7 @@ where
                                          ,MorphicId(..),Morphic(..),Signaling(..))
    import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
    import Adl.Context                    (Context(..),Contexts
+                                         ,RoleService(..),RoleRelation(..)
                                          ,Architecture(..))
    import Adl.Expression                 (Expression(..),PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
                                          ,isPos,isNeg,v,notCp,insParentheses)
@@ -59,7 +60,7 @@ where
                                          ,makeMph,makeDeclaration
                                          ,inline,makeInline
                                          ,mIs,applyM)
-   import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs,actions)
+   import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs,Service(..),actions)
    import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
    import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          

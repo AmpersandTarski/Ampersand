@@ -254,7 +254,7 @@ instance MorphicId Expression where
        (K0x _)  -> False
        (K1x _)  -> False
        (F [])  -> False
-       (F (_:_))-> False   -- WAAROM?? Stef, is dit goed? Het ziet er zo raar uit... (Vergelijk ook deze versie met de vorige.)
+       (F (_:_))-> False   -- WHY?? Stef, is dit goed? Het ziet er zo raar uit... (Vergelijk ook deze versie met de vorige.)
 
  
 
@@ -299,7 +299,7 @@ instance Morphic Expression where
      (Tc f)     -> isNot f
      (F [])     -> False
      (F [t])    -> isNot t        
-     (F (_:_))  -> False       -- WAAROM?? Stef, is dit goed? Het ziet er zo raar uit... (Vergelijk ook deze versie met de vorige.)
+     (F (_:_))  -> False       -- WHY?? Stef, is dit goed? Het ziet er zo raar uit... (Vergelijk ook deze versie met de vorige.)
      (Fdx [])    -> False
      (Fdx [t])   -> isNot t
      (Fdx (_:_)) -> False

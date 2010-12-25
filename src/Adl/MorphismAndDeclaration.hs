@@ -78,7 +78,7 @@ where
     name m = name (makeDeclaration m)
 
    instance Association Morphism where
-    sign   m@Mph{}               = mphtyp m    -- DAAROM: dit is niet afhankelijk van mphyin. mphtyp geeft het actuele type weer van dit morphisme. Yin regelt de verhouding tussen morfisme m en de bijbehorende declaratie, mphdcl m. Yin heeft dan ook geen invloed op het type van m (zijnde mphtyp m).
+    sign   m@Mph{}               = mphtyp m    -- BECAUSE: dit is niet afhankelijk van mphyin. mphtyp geeft het actuele type weer van dit morphisme. Yin regelt de verhouding tussen morfisme m en de bijbehorende declaratie, mphdcl m. Yin heeft dan ook geen invloed op het type van m (zijnde mphtyp m).
     sign   (I _ g s yin)         = if yin then (s,g) else (g,s)
     sign   (V _ (a,b))           = (a,b)
     sign   m@Mp1{}               = if null (mphats m) then (mph1typ m,mph1typ m) else (head (mphats m),last (mphats m))
@@ -142,14 +142,14 @@ where
    makeDeclaration :: Morphism -> Declaration
    makeDeclaration m = case m of
                Mph{} -> mphdcl m
-               I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WAAROM?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
+               I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WHY?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
                V{}   -> Vs { degen = source  (sign m), despc = target (sign m)}
                Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}
     
    inline :: Morphism -> Bool
    inline m =  case m of
                 Mph{} -> mphyin m
-                I{}   -> True    --WAAROM? Stef, wat is de reden van de mphyin bij I{} ?? Verwijderen of in werking stellen. Nu is het half, en dus fout!
+                I{}   -> True    --WHY? Stef, wat is de reden van de mphyin bij I{} ?? Verwijderen of in werking stellen. Nu is het half, en dus fout!
                 V{}   -> True
                 Mp1{} -> True
 

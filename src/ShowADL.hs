@@ -1,4 +1,4 @@
-  -- | DAAROM (HJ) Wat is precies het doel van Show vs ShowADL ??
+  -- | BECAUSE (HJ) Wat is precies het doel van Show vs ShowADL ??
   -- ANTWOORD (SJ): De standaard-show is alleen bedoeld voor simpele foutmeldingen tijdens het testen.
   --                showADL is bedoeld om ADL source code te genereren.
   --                showADL is contextonafhankelijk, en produceert syntactisch correcte ADL-code, die echter wel typefouten zou kunnen bevatten,
@@ -6,7 +6,9 @@
   --                showADLcode maakt gebruik van ontologische informatie in Fspc, namelijk vRels en isa, om in dit soort gevallen het type
   --                expliciet te maken.
   --                Daarmee produceert showADLcode volledig correcte ADL-code, dus typecorrect en zonder service-warnings.
-  -- VRAAG (SJC): Als STRING de code is die showADLcode fSpec produceert, zou dan STRING == showADL (parse STRING) (context (parse STRING)) moeten gelden?
+  -- Question (SJC): If STRING is the code produced by showADLcode fSpec, would STRING == showADL (parse STRING) (context (parse STRING)) be true?
+  -- Answer (SJ):   No, not for every STRING. Yet, for every fSpec we want  semantics fSpec == semantics (parse (showADLcode fSpec fSpec)).
+  --                Note that 'parse' and 'semantics' do not exist in this shape, so the actual expression is slightly more complicated.
 {-# OPTIONS_GHC -XFlexibleInstances -Wall #-}
 {-# OPTIONS -XTypeSynonymInstances #-}
 module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
@@ -75,11 +77,11 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 
 
    instance ShowADL ObjectDef where
-   -- WAAROM (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
+   -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
    --              Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'inline', 'source' en
    --              'target' hier al bekend zijn.
    --              Dat lijkt me hier nog niet op z'n plaats, als je alleen maar wat wilt kunnen 'prettyprinten'. 
-   -- ANTWOORD (SJ): Dit blijft nog even zo, omdat showADL gebruikt wordt in het genereren van services.
+   -- BECAUSE (SJ): Dit blijft nog even zo, omdat showADL gebruikt wordt in het genereren van services.
    --              Zolang we dat nog niet onder de knie hebben blijft de code wat troebel.
     showADL obj = "  SERVICE "++name obj++" : I["++(name (target (objctx obj)))++"]"++
                   recur "\n  " (objats obj)
@@ -188,6 +190,26 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    instance ShowADL Gen where
     showADL (G _ g s _) = "GEN "++showADL s++" ISA "++show g
     showADLcode fSpec (G _ g s _) = "GEN "++showADLcode fSpec s++" ISA "++showADLcode fSpec  g
+
+   instance ShowADL RoleService where
+    showADL r = "ROLE "++intercalate ", " (map show (rsRole r))++" USES "++intercalate ", " (map show (rsServ r))
+    showADLcode _ r = showADL r
+
+   instance ShowADL RoleRelation where
+    showADL r
+     = "ROLE "++intercalate ", " (map show (rrRole r))++" EDITS "++intercalate ", " (map showADL (rrRel r))
+    showADLcode fSpec r
+     = "ROLE "++intercalate ", " (map show (rrRole r))++" EDITS "++intercalate ", " (map (showADLcode fSpec) (rrRel r))
+
+   instance ShowADL Service where
+    showADL sv 
+     = "SERVICE "++svName sv
+             ++"("++intercalate ", " [showADL m | m<-svParams sv]++")\n"
+             ++showADL (svObj sv)
+    showADLcode fSpec sv 
+     = "SERVICE "++svName sv
+             ++"("++intercalate ", " [showADLcode fSpec m | m<-svParams sv]++")\n"
+             ++showADLcode fSpec (svObj sv)
 
    instance ShowADL KeyDef where
     showADL kd 
@@ -369,7 +391,9 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADLcode fSpec context
      = "CONTEXT " ++name context
        ++ (if null (ctxon context)   then "" else "EXTENDS "++intercalate ", "   (ctxon context)                 ++ "\n")
-       ++ (if null (ctxos context)   then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxos context))   ++ "\n")
+       ++ (if null (ctxros context)  then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxros context))  ++ "\n") -- ^All role service assignments
+       ++ (if null (ctxmed context)  then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxmed context))  ++ "\n") -- ^If a role-relation combination occurs here, this role may edit that relation.
+       ++ (if null (ctxsvcs context) then "" else "\n"      ++intercalate "\n\n" (map (showADLcode fSpec) (ctxsvcs context)) ++ "\n")
        ++ (if null (ctxcs context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxcs context))   ++ "\n")
        ++ (if null (ctxds context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxds context))   ++ "\n")
        ++ (if null (ctxks context)   then "" else "\n"      ++intercalate "\n"   (map (showADLcode fSpec) (ctxks context))   ++ "\n")
@@ -378,8 +402,8 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        ++ "\n\nENDCONTEXT"
 
 
--- WAAROM?  Stef, wat is de toegevoegde waarde van ShowADL Context nu we ShowADL Fspc hebben?
--- DAAROM (SJ) voor debugging is het wel eens handig om een Context in ADL te kunnen afdrukken...
+-- WHY?  Stef, what is the added value of ShowADL Context now we have ShowADL Fspc ?
+-- BECAUSE (SJ) for debugging purposes, it might come in handy to be able to print a Context in .ADL format...
    instance ShowADL Fspc where
     showADL fSpec = showADLcode fSpec fSpec
     showADLcode fSpec' fSpec

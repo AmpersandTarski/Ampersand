@@ -113,8 +113,8 @@ where
    
   class Association a => Morphic a where
    multiplicities :: a -> [Prop]
-   multiplicities _ = []  --WAAROM? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
-                          --DAAROM! Als default regel is er niets mis mee. Als je niets specificeert heeft het ding geen multipliciteitseigenschappen....
+   multiplicities _ = []  --WHY? Stef, dit stond er eerst, maar ik geloof niet dat dat goed is. zelfs niet als default regel. Toch?
+                          --BECAUSE! Als default regel is er niets mis mee. Als je niets specificeert heeft het ding geen multipliciteitseigenschappen....
    flp            :: a -> a
 --   isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
    isProp         :: a -> Bool  -- > tells whether the argument is a property
@@ -170,10 +170,10 @@ where
    conts S        = Nothing -- S has exactly one atom, but that atom may not be referred to
    conts Anything = Nothing
    conts NOthing  = Nothing
-   conts (DExp _) = -- WAAROM? Waarom is dit niet gedefinieerd? 
+   conts (DExp _) = -- WHY? Waarom is dit niet gedefinieerd? 
                     error ("!Fatal (module Concept 174): conts undefined for DExp. ")
    --conts (DExp e) = conts e
-   conts (I1 _)   = -- WAAROM? Waarom is dit niet gedefinieerd? 
+   conts (I1 _)   = -- WHY? Waarom is dit niet gedefinieerd? 
                     error ("!Fatal (module Concept 177): conts undefined for I1. ")
 
   instance Morphics Concept where

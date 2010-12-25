@@ -261,9 +261,9 @@ insertpops conn fSpec flags (tbl:tbls) pics =
 -- Gerard, het bovenstaande werk hoort Adl2fSpec te doen.
    Hieronder het alternatief. Graag checken of je de details vindt kloppen. Het resultaat zou identiek moeten zijn.
 -}
--- WAAROM (SJ) Waarom worden userrules en signalrules gesorteerd?
--- OMDAT (gmi) HDBC sorteert alfabetisch, om logische next en previous rule te bepalen wordt gesorteerd. 
--- WAAROM - DAAROM -> we gebruiken decprps ipv multiplicities omdat we nu nog geen afgeleide eigenschappen in de atlas willen hebben 
+-- WHY (SJ) Waarom worden userrules en signalrules gesorteerd?
+-- BECAUSE (gmi) HDBC sorteert alfabetisch, om logische next en previous rule te bepalen wordt gesorteerd. 
+-- WHY - BECAUSE -> we gebruiken decprps ipv multiplicities omdat we nu nog geen afgeleide eigenschappen in de atlas willen hebben 
    userrules   = sort' (\x->r_pat x++cptrule x) [r| r<-rules fSpec,  r_usr r]
    signalrules = sort' (\x->r_pat x++cptrule x) [r| r<-signals fSpec]
    multrls = [rulefromProp p d |d@Sgn{}<-declarations fSpec, decusr d, p<-decprps d, elem p [Uni,Tot,Inj,Sur]]

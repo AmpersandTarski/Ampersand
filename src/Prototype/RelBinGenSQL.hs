@@ -436,7 +436,7 @@ module Prototype.RelBinGenSQL
           myafterPoint []       = []
           afterPoint s = if (myafterPoint s == "") then s else myafterPoint s
 
--- WAAROM bestaat sqlRelPlugs?
+-- WHY bestaat sqlRelPlugs?
    -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
    -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
    -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen

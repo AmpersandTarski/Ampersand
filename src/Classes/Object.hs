@@ -8,7 +8,7 @@ module Classes.Object        (Object( concept
                              ) 
 where
    import Adl.Concept        (Concept,cptAnything,Association(..))
-   import Adl.ObjectDef      (ObjectDef(..))
+   import Adl.ObjectDef      (ObjectDef(..),Service(..))
    import Adl.Expression     (Expression)
    import Adl.Population     (Population)
    import Adl.Context        (Context(..))
@@ -23,7 +23,7 @@ where
 
    instance Object Context where
     concept _      = cptAnything
-    attributes c   = ctxos c
+    attributes c   = [svObj s| s<-ctxsvcs c]
     ctx        _   = error ("!Fatal (module Classes.Object 27): Cannot evaluate the context expression of the current context (yet)")
     populations  c = ctxpops c
     extends c      = ctxon c

@@ -22,7 +22,8 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       ,KeyDef(..)
                       ,Label(..)
                       ,Morphism(..)
-                      ,ObjectDef(..),ObjectDefs
+                      ,Service(..),ObjectDef(..),ObjectDefs
+                      ,RoleRelation(..),RoleService(..)
                       ,Pairs,Paire,mkPair
                       ,Pattern(..)
                       ,PExplanation(..)
@@ -84,17 +85,19 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                        rebexpr x y = (x,y)
                        universe = (Tm(V [] (cptAnything,cptAnything)) (-1),[]) --default: the universe
                        rebuild nm env on ces = 
-                          Ctx { ctxnm = nm
-                              , ctxon = on
-                              , ctxisa = empty
+                          Ctx { ctxnm   = nm
+                              , ctxon   = on
+                              , ctxisa  = empty
                               , ctxwrld = []
                               , ctxpats = [p| CPat p<-ces]
                               , ctxrs   = []
                               , ctxds   = [d| CDcl d<-ces]
                               , ctxcs   = [c| CCon c<-ces]
                               , ctxks   = [k| CKey k<-ces]
-                              , ctxos   = [o| CObj o<-ces]
+                              , ctxsvcs = [s| Csvc s<-ces]
                               , ctxps   = [e| CXpl e<-ces]
+                              , ctxros  = [r| CRos r<-ces]
+                              , ctxmed  = [r| CMed r<-ces]
                               , ctxpops = [Popu mph prs| CPop mph prs<-ces]
                               , ctxsql  = [plug| CSqlPlug plug<-ces]
                               , ctxphp  = [plug| CPhpPlug plug<-ces]
@@ -105,11 +108,13 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                        | CDcl Declaration
                        | CCon ConceptDef
                        | CKey KeyDef
-                       | CObj ObjectDef
+                       | Csvc Service
                        | CPop Morphism Pairs
                        | CSqlPlug ObjectDef
                        | CPhpPlug ObjectDef
                        | CXpl PExplanation
+                       | CRos RoleService
+                       | CMed RoleRelation
 
    pLanguageID        :: Parser Token Lang
    pLanguageID         = lang <$> (pKey "IN" *> (pKey "DUTCH" <|> pKey "ENGLISH")) `opt` Dutch
@@ -141,10 +146,12 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                          CDcl     <$> pDeclaration  <|>
                          CCon     <$> pConceptDef   <|>
                          CKey     <$> pKeyDef       <|>
-                         CObj     <$> pObjDef       <|>
+                         Csvc     <$> pService      <|>
                          CSqlPlug <$> pSqlplug      <|>
                          CPhpPlug <$> pPhpplug      <|>
                          CXpl     <$> pExplain      <|>
+                         CRos     <$> pRoleService  <|>
+                         CMed     <$> pRoleRelation <|>
                          CPop     <$  pKey "POPULATION" <*> pMorphism <* pKey "CONTAINS" <*> pContent
 
    pPattern         :: Parser Token Pattern
@@ -417,16 +424,18 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    pConcept          = (cptS <$ pKey "ONE") <|> (cptnew <$> (pConid <|> pString))
                       -- where c str = C str (==) []
 
--- DAAROM:
+-- BECAUSE:
 --  (SJ) Waarom heeft een label (optioneel) strings?
 --  (GM) Dit is bedoeld als binding mechanisme voor implementatiespecifieke (SQL/PHP plug,PHP web app,etc) properties
 --  (SJ) Met het invoeren van referenties (t.b.v losse Explanations) bestaat er een variant met props en eentje zonder.
    pLabelProps      :: Parser Token Label
    pLabelProps       = lbl <$> pADLid_val_pos
-                           <*> ((pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}') `opt` [])
+                           <*> (pArgs `opt` [])
                            <*  pKey_pos ":"
                        where lbl :: (String, FilePos) -> [[String]] -> Label
                              lbl (nm,pos') strs = Lbl nm pos' strs
+                             pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
+
 
    pADLid           :: Parser Token String
    pADLid            = pVarid <|> pConid <|> pString
@@ -459,26 +468,52 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                        where attL (Lbl nm p strs) attexpr = Obj nm p attexpr Nothing [] strs
                              att attexpr = Obj "" Nowhere attexpr Nothing [] []
 
-   pObjDef          :: Parser Token ObjectDef
-   pObjDef           = pKey_pos "SERVICE" *> pObj
+   pRoleService     :: Parser Token RoleService
+   pRoleService      = rs <$> pKey_pos "ROLE"               <*>
+                              pList1Sep (pSpec ',') pString <*
+                              pKey "USES"                   <*>
+                              pList1Sep (pSpec ',') pString 
+                       where rs p r s = RS r s p
 
-   pSqlplug          :: Parser Token ObjectDef
-   pSqlplug           = pKey_pos "SQLPLUG" *> pObj
+   pRoleRelation    :: Parser Token RoleRelation
+   pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
+                              pList1Sep (pSpec ',') pString <*
+                              pKey "EDITS"                  <*>
+                              pList1Sep (pSpec ',') pMorphism
+                       where rr p r m = RR r m p
 
-   pPhpplug          :: Parser Token ObjectDef
-   pPhpplug           = pKey_pos "PHPPLUG" *> pObj
+   pSqlplug         :: Parser Token ObjectDef
+   pSqlplug          = pKey_pos "SQLPLUG" *> pObj
 
+   pPhpplug         :: Parser Token ObjectDef
+   pPhpplug          = pKey_pos "PHPPLUG" *> pObj
+
+   pService         :: Parser Token Service
+   pService          = lbl <$> (pKey "SERVICE" *> pADLid_val_pos)    <*>
+                               (pParams `opt` [])                    <*>
+                               (pKey ":" *> pExpr)                   <*>       -- the context expression (mostly: I[c])
+                               (pAttrs `opt` [])                               -- the subobjects
+                       where lbl :: (String, FilePos) -> [Morphism] -> Expression -> [ObjectDef] -> Service
+                             lbl (nm,p) params  expr ats
+                              = Serv { svName   = nm
+                                     , svParams = params
+                                     , svObj    = Obj nm p expr Nothing ats []
+                                     , svPos    = p
+                                     }
+                             pParams = pSpec '(' *> pList1Sep (pSpec ',') pMorphism <* pSpec ')' 
+                             pAttrs  = pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']'
+
+   pObj             :: Parser Token ObjectDef
+   pObj              = obj <$> pLabelProps
+                           <*> pExpr                                             -- the context expression (mostly: I[c])
+                           <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop WHY (SJ) does this exist? It is not used, so for what future use is this intended?
+                           <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- the subobjects
+                       where obj (Lbl nm pos' strs) expr _ ats = Obj nm pos' expr Nothing ats strs
 
 
    optional :: (Sequence p, Alternative p) => p a -> p (Maybe a)
    optional a        = Just <$> a <|> pSucceed Nothing
 
-   pObj             :: Parser Token ObjectDef
-   pObj              = obj <$> pLabelProps
-                           <*> pExpr                                             -- de contextexpressie (default: I[c])
-                           <*> (optional (pKey "ALWAYS" *> pProps') )            -- uni of tot of prop
-                           <*> ((pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']') `opt` [])  -- de subobjecten
-                       where obj (Lbl nm pos' strs) expr _ ats = Obj nm pos' expr Nothing ats strs
 
    pDeclaration     :: Parser Token Declaration
    pDeclaration      = rebuild <$> pVarid 

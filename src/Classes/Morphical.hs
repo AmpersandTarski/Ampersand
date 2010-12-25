@@ -14,7 +14,7 @@ where
                                          ,makeDeclaration,makeInline,mIs)
    import Adl.Gen                        (Gen(..))
    import Adl.Expression                 (Expression(..),Expressions)
-   import Adl.ObjectDef                  (ObjectDef(..))
+   import Adl.ObjectDef                  (ObjectDef(..),Service(..))
    import Adl.KeyDef                     (KeyDef(..))
    import Adl.Pattern                    (Pattern(..))
    import Adl.Rule                       (Rule(..),RuleType(..))
@@ -27,7 +27,7 @@ where
     mors         :: a -> Morphisms                 -- ^ the set of all morphisms used within data structure a
     mors = rd . map makeInline . morlist
     morlist      :: a -> Morphisms                 -- ^ the list of all morphisms used within data structure a (the difference with mors is that morlist is not unique)
-    decls        :: a -> Declarations              -- ^ all relations used in a. (Don't confuse decls with declarations, which produces the declarations declared in a. The function declarations is bound in ViewPoint)
+    decls        :: a -> Declarations              -- ^ all relations used in a. (use declarations for relations declared in a. The function declarations is bound in ViewPoint)
     decls x       = rd [makeDeclaration m|m<-mors x]
     genE         :: a -> GenR
     genE x        = if null cx then (==) else head cx where cx = [cptgE c|c<-concs x]
@@ -52,15 +52,15 @@ where
 
    instance Morphical Context where
     concs     c = concs (ctxds c) `uni` concs (ctxpats c)
-    mors      c = mors (ctxpats c) `uni` mors (ctxos c)
-    morlist   c = morlist (ctxpats c)++morlist (ctxos c)
-    decls     c = decls (ctxrs c) `uni`                 -- the relations used in the rules (outside the scope of patterns)
-                  decls (ctxks c) `uni`                 -- the relations used in KeyDefs
-                  decls (ctxos c) `uni`                 -- the relations used in ObjDefs
+    mors      c = mors (ctxpats c) `uni` mors [svObj s| s<-ctxsvcs c]
+    morlist   c = morlist (ctxpats c)++morlist [svObj s| s<-ctxsvcs c]
+    decls     c = decls (ctxrs c)               `uni`   -- the relations used in the rules (outside the scope of patterns)
+                  decls (ctxks c)               `uni`   -- the relations used in KeyDefs
+                  decls [svObj s| s<-ctxsvcs c] `uni`   -- the relations used in Services
                   rd [d| pat<-ctxpats c, d<-decls pat]  -- the relations used in Patterns
   -- TOELICHTING: de populatie staat nog verspreid over declarations en population statements. In Fspc komen die bij elkaar.
     genE      c = genEq (typology (ctxisa c))
-    closExprs c = closExprs (ctxpats c) `uni` closExprs (ctxos c)
+    closExprs c = closExprs (ctxpats c) `uni` closExprs [svObj s| s<-ctxsvcs c]
 
    instance Morphical KeyDef where
     concs     kd = [kdcpt kd] `uni` concs (kdats kd)
@@ -182,9 +182,9 @@ where
     genE      pat = genE (ptdcs pat++decls [r| r<-ptrls pat])  
     closExprs pat = closExprs (ptrls pat)
 
-   -- WAAROM??? wordt bij Truth de antecedent niet meegenomen?
+   -- WHY??? wordt bij Truth de antecedent niet meegenomen?
    --           Er kunnen toch andere concepten en/of morphismen in de expressies aanwezig zijn in de lhs dan in de rhs??
-   -- DAAROM!!! een implicatie is antc |- cons, ofwel -antc\/cons
+   -- BECAUSE!!! een implicatie is antc |- cons, ofwel -antc\/cons
    --           een truth is      expr        , ofwel -V   \/expr,   ofwel  V |- expr
    --           Daarom laten we de antecedent helemaal weg.
    --           Het systeem genereert zelfs een !Fatal wanneer je naar de antecedent van een Truth zou refereren.

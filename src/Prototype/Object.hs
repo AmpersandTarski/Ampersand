@@ -587,7 +587,7 @@ doSqlGet fSpec isArr objIn objOut
                      (if isOne' objOut then [] else [" WHERE " ++ snd (head tbls)])
                )
    where comboGroups'::[((PlugSQL,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
-         comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WAAROM: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
+         comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) --WHY: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker? Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
          comboGroups = keyGroups ++ (comboGroups' >- keyGroups)
 -- keyGroups representeert de plug-informatie die nodig is voor het atoom aan de rand van objIn, wat de bron is van waaruit objOut wordt opgebouwd.
 -- 10dec2010: (fldnull s) kan true zijn voor keyGroup als s: INJ, maar niet SUR, en in kernel.
