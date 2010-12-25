@@ -483,7 +483,6 @@ checkObjDefNameUniqueness ctxs = printerrs (checkLabels ods)
            [("\nLabel " ++ name (head attObs) ++ " in service or plug is not unique on sibling level:"
                      ++ (concat ["\n  "++show (pos obj) |obj<-attOb]),[])
            |attObs<-attObss, attOb<-attObs, not (null attOb)]
-           ++[("\n", [])]
 
 {- The following code was substituted by checkObjDefNameUniqueness (above) on 24 dec 2010 by SJ.
 It is now obsolete
