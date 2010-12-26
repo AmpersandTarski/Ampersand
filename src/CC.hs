@@ -90,7 +90,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                               , ctxisa  = empty
                               , ctxwrld = []
                               , ctxpats = [p| CPat p<-ces]
-                              , ctxrs   = []
+                              , ctxrs   = [r| CRul r<-ces]
                               , ctxds   = [d| CDcl d<-ces]
                               , ctxcs   = [c| CCon c<-ces]
                               , ctxks   = [k| CKey k<-ces]
@@ -106,6 +106,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 
    data ContextElement = CPat Pattern
                        | CDcl Declaration
+                       | CRul Rule
                        | CCon ConceptDef
                        | CKey KeyDef
                        | Csvc Service

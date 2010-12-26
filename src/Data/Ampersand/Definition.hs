@@ -10,14 +10,42 @@ module Data.Ampersand.Definition (
    Identified(name),
    Association(source,target,sign),
    -- * Data structures 
-   Concept(..),
-   Relation(..),
-   Declaration(..),
-   Expression(..),
-   Morphism(..),
-   Prop(..),Props,
-   Pairs,flipPair,
-   Population(..)    
+--   Concept(..),
+--   Relation(..),
+--   Declaration(..),
+--   Expression(..),
+--   Morphism(..),
+--   Prop(..),Props,
+--   Pairs,flipPair,
+--   Population(..)    
+--   )
+   Architecture(..)
+  ,Concept(..)
+  ,ConceptDef(..)
+  ,Context(..)
+  ,Declaration(..)
+  ,Expression(..)
+  ,Gen(..)
+  ,KeyDef(..)
+  ,Label(..)
+  ,Morphism(..)
+  ,Service(..),ObjectDef(..),ObjectDefs
+  ,RoleRelation(..),RoleService(..)
+  ,Pairs,Paire,mkPair
+  ,Pattern(..)
+  ,PExplanation(..)
+  ,Population(..)
+  ,Prop(..)
+  ,Rule(..),RuleType(..)
+  ,PExplObj(..)
+  ,PExpression(..)
+  ,FilePos(..)
+  ,Sign
+  ,UnOp(..),MulOp(..)
+                         
+   
+   
+   
    )where
 import Data.List  (intercalate)
 import Collection (rd) -- TODO: must be removed from here. 
@@ -25,7 +53,7 @@ import Adl.Pair (Pairs,flipPair)-- TODO: Must be fully moved to here
 import Adl.Prop        -- TODO: Must be fully moved to here
 import Adl.FilePos     -- TODO: Must be fully moved to here
 import Classification  (Classification)
-
+import Text.Pandoc
 ------------------------- *Classes* ------------------------
 -- | Naming things makes referencing to it easy (in an informal way, of course)
 class Identified a where
@@ -60,8 +88,12 @@ data Context
          , ctxds    :: Declarations              -- ^ The declarations defined in this context, outside the scope of patterns
          , ctxcs    :: ConceptDefs               -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctxks    :: KeyDefs                   -- ^ The key definitions defined in this context, outside the scope of patterns
-         , ctxos    :: ObjectDefs                -- ^ The attributes defined in this context, outside the scope of patterns
+         , ctxsvcs  :: [Service]                 -- ^ The services defined in this context, outside the scope of patterns
          , ctxps    :: PExplanations             -- ^ The pre-explanations defined in this context, outside the scope of patterns
+         , ctxros   :: [RoleService]             -- ^ The assignment of roles to ObjectDefs (also called role service assignments).
+                                                 --   If r is an element of rsRole (ctxros ctx) and s is an element of rsServ (ctxros ctx), then role r may use service s.
+         , ctxmed   :: [RoleRelation]            -- ^ The assignment of roles to ObjectDefs.
+                                                 --   If r is an element of rrRole (ctxmed ctx) and p is an element of rrRel (ctxmed ctx), then role r may edit relation p.
          , ctxpops  :: Populations               -- ^ The populations defined in this context
          , ctxsql   :: ObjectDefs  --a list of sqlplugs
          , ctxphp   :: ObjectDefs  --a list of phpplugs
@@ -138,7 +170,7 @@ data Population r
    = Popu { popr  :: Relation r
           , popps :: Pairs
           }
-
+type Populations r = [Population r]
 instance (Identified r, Eq r) => Association (Population r) r where
   source pop = source (popr pop)
   target pop = target (popr pop)
@@ -179,6 +211,7 @@ data Declaration
          , despc :: Concept
          }
 
+type Declarations = [Declaration]
 instance Eq Declaration where
    d == d' = name d==name d' && source d==source d' && target d==target d'
 
@@ -245,12 +278,189 @@ data Expression r
    | Mph r               -- ^The basic relation
 
 ---------------------------------------------------------------- 
+-- | Patterns are a container for rules that fit a specific theme.
+data Pattern
+   = Pat { ptnm  :: String        -- ^ Name of this pattern
+         , ptrls :: Rules         -- ^ The rules declared in this pattern
+         , ptgns :: Gens          -- ^ The generalizations defined in this pattern
+         , ptdcs :: Declarations  -- ^ The declarations declared in this pattern
+         , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
+         , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
+         , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
+--         , testexpr :: [PExpression Morphism (Maybe Sign)]
+--         , inftestexpr :: [PExpression Declaration Sign]
+         }   --deriving (Show) -- voor debugging
+type Patterns = [Pattern]
+
+instance Identified Pattern where
+  name pat = ptnm pat
 
 ---------------------------------------------------------------- 
+data RuleType = Implication | Equivalence | Truth {- | Generalization (obsolete?)-} deriving (Eq,Show)
+data Rule
+   = Ru { rrsrt    :: RuleType          -- ^ One of the following:
+                                        --    | Implication if this is an implication;
+                                        --    | Equivalence if this is an equivalence;
+                                        --    | Truth  if this is an ALWAYS expression.
+        , rrant    :: Expression        -- ^ Antecedent
+        , rrfps    :: FilePos           -- ^ Position in the ADL file
+        , rrcon    :: Expression        -- ^ Consequent
+        , rrxpl    :: [AutoExplain]     -- ^ ADL-generated explanations (for all known languages)
+        , rrtyp    :: (Concept,Concept) -- ^ Sign of this rule
+ --       , rrtyp_proof :: Maybe (InfTree,Expression)
+        , rrdcl    :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
+        , runum    :: Int               -- ^ Rule number
+        , r_pat    :: String            -- ^ Name of pattern in which it was defined.
+        , r_usr    :: Bool              -- ^ True if this rule was specified explicitly as a rule in the ADL-script; False if it follows implicitly from the ADL-script and generated by a computer
+        , r_sgl    :: Bool              -- ^ True if this is a signal; False if it is an ALWAYS rule
+        , srrel    :: Declaration       -- ^ the signal relation
+        } deriving (Eq)
+type Rules = [Rule]
+
+instance Ord Rule where
+  compare r r' = compare (runum r) (runum r')
+
+instance Show Rule where
+  showsPrec _ x =
+     case x of
+        Ru{rrsrt = Implication   } -> showString$ show(rrant x) ++ " |- " ++ (show$rrcon x)
+        Ru{rrsrt = Equivalence   } -> showString$ show(rrant x) ++ " = "  ++ (show$rrcon x)
+        Ru{rrsrt = Truth         } -> showString$ show(rrcon x)
+        
+instance Identified Rule where
+  name r = if null (name (srrel r)) then "Rule"++show (runum r) else name (srrel r)
+    
+instance Association Rule where
+  source r  = fst (rrtyp r)
+  target r  = snd (rrtyp r)
+
 
 ---------------------------------------------------------------- 
+data ConceptDef 
+   = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
+         , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
+         , cdplug:: Bool     -- ^ Whether the user specifically told ADL n—t to store this concept in the database
+         , cddef :: String   -- ^ The textual definition of this concept.
+         , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+         }   deriving (Show)
+
+type ConceptDefs = [ConceptDef]
+instance Eq ConceptDef where
+  cd == cd' = cdnm cd == cdnm cd'
+
+instance Identified ConceptDef where
+  name cd = cdnm cd
+   
 
 ---------------------------------------------------------------- 
+data KeyDef 
+   = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
+        , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+        , kdcpt :: Concept      -- ^ this expression describes the instances of this object, related to their context
+        , kdats :: ObjectDefs   -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
+        } deriving (Eq,Show)
+type KeyDefs = [KeyDef]
+
+instance Identified KeyDef where
+  name kd = kdlbl kd
+
+---------------------------------------------------------------- 
+data Service 
+   = Serv { svName   :: String
+          , svParams :: [Morphism]
+          , svObj    :: ObjectDef
+          , svPos    :: FilePos
+          }
+
+---------------------------------------------------------------- 
+data ObjectDef 
+   = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+         , objpos  :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
+         , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
+--         , objctx_proof :: Maybe (InfTree,Expression)
+         , objats  :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
+         , objstrs :: [[String]]     -- ^ directives that specify the interface.
+         } deriving (Eq, Show)       -- ^ just for debugging (zie ook instance Show ObjectDef)
+type ObjectDefs = [ObjectDef]
+
+instance Identified ObjectDef where
+  name obj = objnm obj
+
+---------------------------------------------------------------- 
+-- | PExplanation is a parse-time constructor. It contains the name of the object it explains.
+-- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
+--                       Constructor      name          RefID  Explanation
+data PExplanation 
+   = PExpl {pexObj  :: PExplObj
+           ,pexLang :: Lang
+           ,pexRefID:: String
+           ,pexExpl :: String
+           }
+type PExplanations = [PExplanation]
+
+instance Identified PExplanation where
+  name pe = name (pexObj pe)
+
+data PExplObj 
+   = PExplConceptDef String
+   | PExplDeclaration Morphism
+   | PExplRule String
+   | PExplKeyDef String
+   | PExplObjectDef String
+   | PExplPattern String
+   | PExplContext String
+
+instance Identified PExplObj where
+  name pe = case pe of 
+     PExplConceptDef str -> str
+     PExplDeclaration mph -> name mph
+     PExplRule str -> str
+     PExplKeyDef str -> str
+     PExplObjectDef str -> str
+     PExplPattern str -> str
+     PExplContext str -> str
+        
+---------------------------------------------------------------- 
+data Lang = Dutch | English deriving (Show, Eq)
+
+
+---------------------------------------------------------------- 
+-- | A RoleService rs means that a role called 'rsRole rs' may use the ObjectDef called 'rsServ rs'
+data RoleService
+   = RS { rsRole :: [String]       -- ^ name of a role
+        , rsServ :: [String]       -- ^ name of an ObjectDef
+        , rsPos  :: FilePos        -- ^ position in the Ampersand script
+        } deriving (Eq, Show)      -- ^ just for debugging
+
+-- | A RoleRelation rs means that a role called 'rsRole rs' may use the ObjectDef called 'rsServ rs'
+data RoleRelation
+   = RR { rrRole :: [String]       -- ^ name of a role
+        , rrRel  :: [Morphism]     -- ^ name of a Relation
+        , rrPos  :: FilePos        -- ^ position in the Ampersand script
+        } deriving (Eq, Show)      -- ^ just for debugging
+
+---------------------------------------------------------------- 
+data Gen
+   = G { genfp  :: FilePos         -- ^ the position of the GEN-rule
+       , gengen :: Concept         -- ^ generic concept
+       , genspc :: Concept         -- ^ specific concept
+       , genpat :: String          -- ^ pattern of declaration
+       }
+type Gens = [Gen]
+
+instance Eq Gen where
+   g == g' = gengen g == gengen g' &&
+             genspc g == genspc g'
+
+instance Show Gen where
+-- This show is used in error messages. It should therefore not display the term's type
+  showsPrec _ g = showString ("GEN "++show (genspc g)++" ISA "++show (gengen g))
+   
+
+---------------------------------------------------------------- 
+data AutoExplain = Because Lang ExplainContent deriving (Eq,Show)
+ 
+type ExplainContent = [Block]
 
 
 
@@ -265,4 +475,5 @@ data Expression r
 -------------------- *Auxilliary functions* ---------------------
 showSign :: Identified a => [a] -> String
 showSign cs = "["++(intercalate "*".rd.map name) cs++"]"
+
            
