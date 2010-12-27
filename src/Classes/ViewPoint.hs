@@ -68,13 +68,14 @@ where
       cons = Tm (mIs c)(-1)
 
    instance ViewPoint a => ViewPoint [a] where
-    objectdef _      = Obj { objnm   = ""         --  view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+    objectdef _      = error ("!Fatal (module ViewPoint 71): Cannot make an object from an arbitrary list")
+    {- used to be:     Obj { objnm   = ""         --  view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                            , objpos  = Nowhere    --  position of this definition in the text of the ADL source file (filename, line number and column number)
                            , objctx  = Tm (mIs S) (-1) --  this expression describes the instances of this object, related to their context. 
                            , objctx_proof = Nothing
                            , objats  = []         -- the attributes, which are object definitions themselves.
                            , objstrs = []         -- directives that specify the interface.
-                           }
+                          -}
     conceptDefs xs   = (concat. map conceptDefs) xs
     declarations xs  = (rd . concat. map declarations) xs
     rules xs         = (concat . map rules) xs

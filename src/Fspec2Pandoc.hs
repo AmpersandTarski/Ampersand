@@ -2,6 +2,7 @@
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
+import Auxiliaries      (eqCl)
 import Collection       (Collection (..))
 import Adl
 import Data.Plug
@@ -48,6 +49,8 @@ chpFRlabel :: String
 chpFRlabel="chpFunctionalRequirements"
 chpCAlabel :: String
 chpCAlabel="chpConceptualAnalysis"
+chpPAlabel :: String
+chpPAlabel="chpProcessAnalysis"
 chpDAlabel :: String
 chpDAlabel="chpDataAnalysis"
 chpFPAlabel :: String
@@ -97,22 +100,24 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           date = [Str (show(genTime flags))]
           
           docContents
-           = ( introduction       level fSpec flags  ++
-               designPrinciples   level fSpec flags  ++
-               caTxt                                 ++
-               daTxt                                 ++
+           = ( introduction       level fSpec flags      ++
+               designPrinciples   level fSpec flags      ++
+               caTxt                                     ++
+               (if noProcesses fSpec then [] else paTxt) ++
+               daTxt                                     ++
                if studentversion then [] else [b| (blocks,_)<-svcs, b<-blocks] ++
                if studentversion then fpAnalysis level fSpec flags else [] ++
                glossary level fSpec flags 
                )
              where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
-                   (daTxt,_) = dataAnalysis       level fSpec flags
                    (caTxt,_) = conceptualAnalysis level fSpec flags
+                   paTxt     = processAnalysis    level fSpec flags
+                   (daTxt,_) = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
           pictures = [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] 
              where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
-                   (_,daPic)  = dataAnalysis       level fSpec flags
                    (_,caPics) = conceptualAnalysis level fSpec flags
+                   (_,daPic)  = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
           level = 0 --1=chapter, 2=section, 3=subsection, 4=subsubsection, _=plain text
 ------------------------------------------------------------                
@@ -524,6 +529,79 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
+
+-- If an ADL-script contains no reference to any role whatsoever, a process analysis is meaningless.
+-- In that case it will not be printed. To detect whether this is the case, we can look whether the
+-- roleServices and mayEdit attributes remain empty.
+noProcesses :: Fspc -> Bool
+noProcesses fSpec = null (roleServices fSpec) && null (mayEdit fSpec)
+
+processAnalysis :: Int -> Fspc -> Options -> [Block]
+processAnalysis lev fSpec flags
+ = header ++ roleServiceBlocks
+ where 
+  header :: [Block]
+  header = labeledHeader lev chpPAlabel (case language flags of
+                                              Dutch   ->  "Procesanalyse"   
+                                              English ->  "Process Analysis"
+                                        )
+  roleServiceBlocks :: [Block]
+  roleServiceBlocks
+   = [ if language flags==Dutch
+       then Para [ Str $ upCap (name fSpec)++" kent rollen aan services toe. "
+                 , Str $ "De volgende tabel toont de services waar een rol toegang toe heeft."
+                 ]
+       else Para [ Str $ upCap (name fSpec)++" assigns roles to services. "
+                 , Str $ "The following table shows to which services each role has access."
+                 ]
+-- the table containing the role-services assignments
+     , Para  $ [ TeX $ "\\begin{tabular}{|l|l|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "Rol&Service\\\\ \\hline\n"
+                 else TeX $ "Role&Service\\\\ \\hline\n"
+               ]++
+               [ TeX $ intercalate "\\\\ \\hline\n" 
+                       [ role++"&"++name svc++
+                         concat[ "\\\\\n&"++name (snd rs) | rs<-tail rsClass]
+                       | rsClass<-eqCl fst (roleServices fSpec)
+                       , let role=fst (head rsClass), let svc=snd (head rsClass)
+                       ]
+               ]++
+               [ TeX $ "\\\\ \\hline\n" | not (null rolelessSvs)]++
+               [ TeX $ intercalate "\\\\\n" [ "&"++name svc | svc<-rolelessSvs] ]++
+               [ TeX $ "\\\\ \\hline\n\\end{tabular}" ]
+     , if language flags==Dutch
+       then Para [ Str $ upCap (name fSpec)++" kent rollen aan relaties toe. "
+                 , Str $ "De volgende tabel toont de relaties waarvan de inhoud gewijzigd kan worden door iemand die een bepaalde rol vervult."
+                 ]
+       else Para [ Str $ upCap (name fSpec)++" assigns roles to relations. "
+                 , Str $ "The following table shows the relations, the content of which can be altered by anyone who fulfills a given role."
+                 ]
+-- the table containing the role-services assignments
+     , Para  $ [ TeX $ "\\begin{tabular}{|l|l|}\\hline\n"
+               , if language flags==Dutch
+                 then TeX $ "Rol&Relatie\\\\ \\hline\n"
+                 else TeX $ "Role&Relation\\\\ \\hline\n"
+               ]++
+               [ TeX $ intercalate "\\\\ \\hline\n" 
+                       [ role++"&"++showMathcode fSpec m++
+                         concat[ "\\\\\n&"++showMathcode fSpec (snd rs) | rs<-tail rrClass]
+                       | rrClass<-eqCl fst (mayEdit fSpec)
+                       , let role=fst (head rrClass), let m=snd (head rrClass)
+                       ]
+               ]++
+               [ TeX $ "\\\\ \\hline\n" | not (null rolelessRels)]++
+               [ TeX $ intercalate "\\\\\n" [ "&"++showMathcode fSpec d | d<-rolelessRels] ]++
+               [ TeX $ "\\\\ \\hline\n\\end{tabular}"
+               ]
+     ]
+     where
+      rolelessSvs  = [ svc | svc<-services fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
+      rolelessRels = [ d | d<-declarations fSpec, not (d `elem` (rd.map snd) (mayEdit fSpec)) ]
+
+------------------------------------------------------------
+--DESCR -> the data analysis contains a section for each class diagram in the fspec
+--         the class diagram and multiplicity rules are printed
 dataAnalysis :: Int -> Fspc -> Options -> ([Block],Picture)
 dataAnalysis lev fSpec flags
  = ( header ++ daContents ++ daAssociations remainingDecls ++
@@ -691,7 +769,6 @@ dataAnalysis lev fSpec flags
      ]
 -- the homogeneous properties have already been reported in the general section of this chapter.
      where
-      sgnls   = [d| d@Sgn{}<-declarations fSpec, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
 {- voorgestelde multipliciteitenanalyse....
       clauses = rd [clause | Quad _ ccrs<-vquads fSpec, (_,shifts)<-cl_conjNF ccrs, clause<-shifts]
       is = rd [m| Fu fus<-clauses

@@ -285,12 +285,8 @@ makePhpPlug obj
            (ILGV Eenvoudig) -- the number of function points to be counted for this plug
   where
    inFile :: Maybe String
-   inFile = listToMaybe [ file --objstrs = [["FILE=date.plug.php"]]
-                        | x<-objstrs obj
-                        , str<-x
-                        , (m,file)<-[splitAt 5 str]
-                        , m=="FILE="
-                        ]
+   inFile = listToMaybe [ str    --objstrs obj = [["FILE=date.plug.php"]]
+                        | x<-objstrs obj, 'F':'I':'L':'E':'=':str<-x ]
    inAttrs :: [CodeVar]
    inAttrs = [toAttr attr | attr<-objats obj, (or$ map (elem "PHPARG") (objstrs attr))]
    toAttr :: ObjectDef -> CodeVar

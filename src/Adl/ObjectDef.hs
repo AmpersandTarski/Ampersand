@@ -10,6 +10,7 @@ where
      
    data Service = Serv { svName   :: String
                        , svParams :: [Morphism]
+                       , svArgs   :: [[String]]
                        , svObj    :: ObjectDef
                        , svPos    :: FilePos
                        }

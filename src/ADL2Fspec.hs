@@ -14,7 +14,6 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import ShowADL
    import FPA
    import Languages(plural)
-   import Typology 
    
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec
@@ -32,8 +31,16 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  , serviceS     = attributes context -- services specified in the ADL script
                  , serviceG     = [ o| o<-serviceGen
                                      , isIdent (objctx o) && source (objctx o)==cptS
-                                     || not (objctx o `elem` map objctx (serviceS fSpec))]   -- generated services
+                                     || not (objctx o `elem` map objctx (serviceS fSpec))]  -- generated services
                  , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
+                 , roleServices = let lookup sv = if length servFs == 1 then head servFs else
+                                                  error("!Fatal (module ADL2Fspec 40): Mistake in the type checker. It should check that all services have unique names.")
+                                                  where servFs = [s|s<-services fSpec, name s==sv] in
+                                  [(role,svc)| RS rs svcs _<-ctxros context                 -- ^ roleServices says which roles may use which service
+                                             , sv<-svcs, let svc=lookup sv
+                                             , role<-rs]
+                 , mayEdit      = [(role,makeDeclaration m)| RR rs ms _<-ctxmed context     -- ^ mayEdit says which roles may change the population of which relation.
+                                                           , m<-ms, role<-rs]
                  , vrules       = rules context++signals context
                  , grules       = number (length (rules context++signals context)) (multrules context++keyrules context)
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
@@ -131,6 +138,8 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         -- Attributen van elk object hebben unieke namen.
 
 --- generation of services:
+--  ADL generates services for the purpose of quick prototyping. A script without any mention of services is supplemented
+--  by a number of service definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities
         cRels = [     morph d | d<-declarations context, decusr d, isTot d, not$decplug d]++
@@ -169,8 +178,10 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  Nothing          -- objctx_proof
                  [att]            -- objats
                  []               -- objstrs
-             --TODO: is er ergens een algemene functie om de set van alle concepten te bemachtigen?
-           | c<-(\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (ctxisa context)
+             --TODO: (GMI) Do we have a general function that produces the set of all concepts?
+       --  | c<-(\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (ctxisa context)
+             --SJ: yes, there is...
+           | c<-concs context
            , let att = Obj (name c) Nowhere (Tm (V [cptS,c] (cptS,c))(-1)) Nothing [] []
            ]
         --REMARK151210 -> only used to exclude scalar SQL-tables, thus scalar PHP plugs (if something like that exists) are not considered

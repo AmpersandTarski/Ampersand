@@ -515,26 +515,26 @@ module Prototype.RelBinGenSQL
    sqlExprSrc :: Fspc->Expression -> String
    sqlExprSrc fSpec expr = ses expr
     where
-      ses (F [])         = error ("!Fatal (module RelBinGenSQL 600): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (F [f])        = ses f
-      ses (F fs)         = ses (head fs)
-      ses (Fux [])        = error ("!Fatal (module RelBinGenSQL 603): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (Fux [f])       = ses f
-      ses (Fux fs)        = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fix [])        = error ("!Fatal (module RelBinGenSQL 606): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (Fix [f])       = ses f
-      ses (Fix fs)        = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fdx [])        = error ("!Fatal (module RelBinGenSQL 609): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
-      ses (Fdx [f])       = ses f
-      ses (Fdx fs)        = ses (head fs)
-      ses (Cpx e)         = ses e
-      ses (K0x e)         = ses e
-      ses (K1x e)         = ses e
-      ses (Tc e)         = ses e
-      ses (Tm m n) = case m of
-                      Mp1{} -> "Mp"++(name (mph1typ m))
-                      V{} -> ses (Tm I{mphats=[],mphgen=source m,mphspc=source m,mphyin=True} n)
-                      _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm m n)]++[show m])
+      ses (F [])    = error ("!Fatal (module RelBinGenSQL 600): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (F [f])   = ses f
+      ses (F fs)    = ses (head fs)
+      ses (Fux [])  = error ("!Fatal (module RelBinGenSQL 603): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fux [f]) = ses f
+      ses (Fux fs)  = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+      ses (Fix [])  = error ("!Fatal (module RelBinGenSQL 606): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fix [f]) = ses f
+      ses (Fix fs)  = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
+      ses (Fdx [])  = error ("!Fatal (module RelBinGenSQL 609): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fdx [f]) = ses f
+      ses (Fdx fs)  = ses (head fs)
+      ses (Cpx e)   = ses e
+      ses (K0x e)   = ses e
+      ses (K1x e)   = ses e
+      ses (Tc e)    = ses e
+      ses (Tm m n)  = case m of
+                       Mp1{} -> "Mp"++(name (mph1typ m))
+                       V{} -> ses (Tm I{mphats=[],mphgen=source m,mphspc=source m,mphyin=True} n)
+                       _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm m n)]++[show m])
    sqlExprTrg :: Fspc->Expression -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 

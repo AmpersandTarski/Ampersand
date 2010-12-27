@@ -26,6 +26,8 @@ module Data.Fspec ( Fspc(..)
                     , serviceS     :: ObjectDefs            -- ^ all services defined in the ADL-script
                     , serviceG     :: ObjectDefs            -- ^ all services derived from the basic ontology
                     , services     :: Fservices             -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , roleServices :: [(String,Fservice)]   -- ^ the relation saying which roles may use which service
+                    , mayEdit      :: [(String,Declaration)]-- ^ the relation saying which roles may change the population of which relation.
                     , vrules       :: Rules                 -- ^ All rules that apply in the entire Fspc, including all signals
                     , grules       :: Rules                 -- ^ All rules that are generated: multiplicity rules and key rules
                     , vkeys        :: KeyDefs               -- ^ All keys that apply in the entire Fspc

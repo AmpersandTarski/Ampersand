@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module ShowHS (ShowHS(showHS),fSpec2Haskell)
 where
 
@@ -275,17 +275,29 @@ where
                   ,     ", serviceS      = serviceS'"
                   ,     ", serviceG      = serviceG'"
                   ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
+             --   ,wrap ", roleServices  = " indentA (showHS flags)   (roleServices fspec)
+             --   ,wrap ", mayEdit       = " indentA (showHS flags)   (mayEdit fspec)
+                  ,     ", roleServices  = " ++
+                        case roleServices fspec of
+                          []      -> "[]"
+                          [(r,s)] -> "[ ("++show r++", "++show s++") ]"
+                          _       -> "[ "++intercalate (indentA++", ") ["("++show r++","++show s++")"| (r,s)<-roleServices fspec]++indentA++"]"
+                  ,     ", mayEdit       = " ++
+                        case mayEdit fspec of
+                          []      -> "[]"
+                          [(r,m)] -> "[ ("++show r++", "++showHS flags (indentA++"  ") m++") ]"
+                          _       -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS flags (indentA++"  ") m++")"| (r,m)<-mayEdit fspec]++indentA++"]"
                   ,wrap ", vrules        = " indentA (\_->showHSname) (vrules fspec)
                   ,wrap ", grules        = " indentA (\_->showHSname) (grules fspec)
                   ,wrap ", vkeys         = " indentA (\_->showHSname) (vkeys fspec)
-                  ,wrap ", vgens         = " indentA (showHS flags) (vgens fspec)
-                  ,wrap ", vconjs        = " indentA (showHS flags) (vconjs fspec)
-                  ,wrap ", vquads        = " indentA (showHS flags) (vquads fspec)
+                  ,wrap ", vgens         = " indentA (showHS flags)   (vgens fspec)
+                  ,wrap ", vconjs        = " indentA (showHS flags)   (vconjs fspec)
+                  ,wrap ", vquads        = " indentA (showHS flags)   (vquads fspec)
                   ,wrap ", vrels         = " indentA (\_->showHSname) (vrels fspec)
                   ,     ", fsisa         = isa'"
                   ,wrap ", vpatterns     = " indentA (\_->showHSname) (patterns fspec)
-                  ,     ", pictPatts     = []                                      -- Pictures are not in this generated file."
-                  ,wrap ", vConceptDefs  = " indentA (showHS flags) (vConceptDefs fspec)
+                  ,     ", pictPatts     = []                                    -- Pictures are not in this generated file."
+                  ,wrap ", vConceptDefs  = " indentA (showHS flags)   (vConceptDefs fspec)
                   ,     ", fSexpls       = [ "++intercalate (indentA++", ") (map (showHS flags "") (fSexpls fspec))++"]" 
                   ,     ", vctxenv       = vctxenv'"
                   ,"}" 
@@ -344,6 +356,21 @@ where
                  showbinding :: (Declaration,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
+
+-- \***********************************************************************
+-- \*** Eigenschappen met betrekking tot: RoleService en RoleRelation   ***
+-- \***********************************************************************
+
+   instance ShowHS RoleService where
+    showHSname _ = error ("!Fatal (module ShowHS 365): a RoleService is anonymous with respect to showHS flags")
+    showHS flags ind rs
+     = " RS "++show (rsRole rs)++" "++show (rsServ rs)++" "++showHS flags (ind++"    ") (rsPos rs)
+   
+   instance ShowHS RoleRelation where
+    showHSname _ = error ("!Fatal (module ShowHS 360): a RoleRelation is anonymous with respect to showHS flags")
+    showHS flags ind rr
+     = " RR "++show (rrRole rr)++" "++showHS flags (ind++"    ") (rrRel rr)++" "++showHS flags (ind++"    ") (rrPos rr)
+   
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
 -- \***********************************************************************

@@ -471,14 +471,14 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 
    pRoleService     :: Parser Token RoleService
    pRoleService      = rs <$> pKey_pos "ROLE"               <*>
-                              pList1Sep (pSpec ',') pString <*
+                              pList1Sep (pSpec ',') pADLid  <*
                               pKey "USES"                   <*>
-                              pList1Sep (pSpec ',') pString 
+                              pList1Sep (pSpec ',') pADLid 
                        where rs p r s = RS r s p
 
    pRoleRelation    :: Parser Token RoleRelation
    pRoleRelation      = rr <$> pKey_pos "ROLE"              <*>
-                              pList1Sep (pSpec ',') pString <*
+                              pList1Sep (pSpec ',') pADLid  <*
                               pKey "EDITS"                  <*>
                               pList1Sep (pSpec ',') pMorphism
                        where rr p r m = RR r m p
@@ -490,18 +490,27 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    pPhpplug          = pKey_pos "PHPPLUG" *> pObj
 
    pService         :: Parser Token Service
-   pService          = lbl <$> (pKey "SERVICE" *> pADLid_val_pos)    <*>
-                               (pParams `opt` [])                    <*>
-                               (pKey ":" *> pExpr)                   <*>       -- the context expression (mostly: I[c])
-                               (pAttrs `opt` [])                               -- the subobjects
-                       where lbl :: (String, FilePos) -> [Morphism] -> Expression -> [ObjectDef] -> Service
-                             lbl (nm,p) params  expr ats
+   pService          = lbl <$> (pKey "SERVICE" *> pADLid_val_pos) <*>
+                               (pParams `opt` [])                 <*>  -- ^ a list of morphisms, which are editable within this service.
+                               (pArgs `opt` [])                   <*>  -- ^ a list of arguments for code generation.
+                               (pKey ":" *> pExpr)                <*>  -- ^ the context expression (mostly: I[c])
+                               (pAttrs `opt` [])                       -- ^ the subobjects
+                       where lbl :: (String, FilePos) -> [Morphism] -> [[String]] -> Expression -> [ObjectDef] -> Service
+                             lbl (nm,p) params args expr ats
                               = Serv { svName   = nm
                                      , svParams = params
-                                     , svObj    = Obj nm p expr Nothing ats []
+                                     , svArgs   = args
+                                     , svObj    = Obj { objnm        = nm    
+                                                      , objpos       =  p
+                                                      , objctx       = expr
+                                                      , objctx_proof = Nothing
+                                                      , objats       = ats
+                                                      , objstrs      = args
+                                                      }
                                      , svPos    = p
                                      }
                              pParams = pSpec '(' *> pList1Sep (pSpec ',') pMorphism <* pSpec ')' 
+                             pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'
                              pAttrs  = pKey "=" *> pSpec '[' *> pListSep (pSpec ',') pObj <* pSpec ']'
 
    pObj             :: Parser Token ObjectDef

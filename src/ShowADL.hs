@@ -205,10 +205,12 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADL sv 
      = "SERVICE "++svName sv
              ++"("++intercalate ", " [showADL m | m<-svParams sv]++")\n"
+             ++"{"++intercalate ", " [intercalate " " strs | strs<-svArgs sv]++"}\n"
              ++showADL (svObj sv)
     showADLcode fSpec sv 
      = "SERVICE "++svName sv
              ++"("++intercalate ", " [showADLcode fSpec m | m<-svParams sv]++")\n"
+             ++"{"++intercalate ", " [intercalate " " strs | strs<-svArgs sv]++"}\n"
              ++showADLcode fSpec (svObj sv)
 
    instance ShowADL KeyDef where
@@ -403,7 +405,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 
 
 -- WHY?  Stef, what is the added value of ShowADL Context now we have ShowADL Fspc ?
--- BECAUSE (SJ) for debugging purposes, it might come in handy to be able to print a Context in .ADL format...
+-- BECAUSE (SJ) for debugging purposes, it might be useful to be able to print a Context in .ADL format...
    instance ShowADL Fspc where
     showADL fSpec = showADLcode fSpec fSpec
     showADLcode fSpec' fSpec
