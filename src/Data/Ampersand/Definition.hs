@@ -78,22 +78,19 @@ data Architecture = Arch { archContexts :: [Context]}
 
 ---------------------------------------------------------------- 
 data Context
--- TODO: ctxisa, ctxwrld en ctxrs zijn na parsen leeg. Ze horen waarschijnlijk niet in Context thuis, maar in Fspec
    = Ctx { ctxnm    :: String                    -- ^ The name of this context
          , ctxon    :: [String]                  -- ^ The list of extends (= context names of contexts) whose rules are imported
---         , ctxisa   :: Inheritance Concept       -- ^ A data structure containing the generalization structure of concepts
---         , ctxwrld  :: [Classification Context]  -- ^ A tree, being the transitive closure of the 'extends' (see formal definition) relation.
          , ctxpats  :: Patterns                  -- ^ The patterns defined in this context
---         , ctxrs    :: Rules                     -- ^ All user defined rules in this context, but outside patterns
+         , ctxrs    :: Rules                     -- ^ All user defined rules in this context, but outside patterns
          , ctxds    :: Declarations              -- ^ The declarations defined in this context, outside the scope of patterns
          , ctxcs    :: ConceptDefs               -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctxks    :: KeyDefs                   -- ^ The key definitions defined in this context, outside the scope of patterns
          , ctxsvcs  :: [Service]                 -- ^ The services defined in this context, outside the scope of patterns
          , ctxps    :: PExplanations             -- ^ The pre-explanations defined in this context, outside the scope of patterns
-         , ctxros   :: [RoleService]             -- ^ The assignment of roles to ObjectDefs (also called role service assignments).
-                                                 --   If r is an element of rsRole (ctxros ctx) and s is an element of rsServ (ctxros ctx), then role r may use service s.
-         , ctxmed   :: [RoleRelation]            -- ^ The assignment of roles to ObjectDefs.
-                                                 --   If r is an element of rrRole (ctxmed ctx) and p is an element of rrRel (ctxmed ctx), then role r may edit relation p.
+ --        , ctxros   :: [RoleService]             -- ^ The assignment of roles to ObjectDefs (also called role service assignments).
+ --                                                --   If r is an element of rsRole (ctxros ctx) and s is an element of rsServ (ctxros ctx), then role r may use service s.
+ --        , ctxmed   :: [RoleRelation]            -- ^ The assignment of roles to ObjectDefs.
+ --                                                --   If r is an element of rrRole (ctxmed ctx) and p is an element of rrRel (ctxmed ctx), then role r may edit relation p.
          , ctxpops  :: Populations               -- ^ The populations defined in this context
          , ctxsql   :: ObjectDefs  --a list of sqlplugs
          , ctxphp   :: ObjectDefs  --a list of phpplugs
@@ -110,6 +107,42 @@ instance Identified Context where
   name ctx = ctxnm ctx
 
 
+---------------------------------------------------------------- 
+-- | Patterns are a container for rules that fit a specific theme.
+data Pattern
+   = Pat { ptnm  :: String        -- ^ Name of this pattern
+         , ptrls :: Rules         -- ^ The rules declared in this pattern
+         , ptgns :: Gens          -- ^ The generalizations defined in this pattern
+         , ptdcs :: Declarations  -- ^ The declarations declared in this pattern
+         , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
+         , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
+         , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
+--         , testexpr :: [PExpression Morphism (Maybe Sign)]
+--         , inftestexpr :: [PExpression Declaration Sign]
+         }   --deriving (Show) -- voor debugging
+type Patterns = [Pattern]
+
+instance Identified Pattern where
+  name pat = ptnm pat
+
+---------------------------------------------------------------- 
+data ConceptDef 
+   = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
+         , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
+         , cdplug:: Bool     -- ^ Whether the user specifically told ADL n—t to store this concept in the database
+         , cddef :: String   -- ^ The textual definition of this concept.
+         , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
+         }   deriving (Show)
+
+type ConceptDefs = [ConceptDef]
+instance Eq ConceptDef where
+  cd == cd' = cdnm cd == cdnm cd'
+
+instance Identified ConceptDef where
+  name cd = cdnm cd
+   
+
+---------------------------------------------------------------- 
 -- | The basic Concept.
 data Concept
    = C   { cptnm :: String          -- ^The name of this Concept
@@ -131,51 +164,6 @@ instance Identified Concept where
 instance Ord Concept where
  a@(C _ gE _) <= b = a `gE` b
 
-
----------------------------------------------------------------- 
--- | The basic Relation
-data Relation c
-   = Rel { relnm :: String -- ^The name of the relation
-         , relsrc :: c     -- ^Source concept
-         , reltrg :: c     -- ^Target concept
-         , relflp :: Bool  -- ^Whether this relation is flipped
-         }
-    | I  { reltyp :: c }   -- ^identity relation
-    | V  { reltyp :: c }   -- ^full relation
-      deriving Eq
-
-instance Identified (Relation c) where
-  name r = case r of
-             Rel{} -> relnm r
-             I{}   -> "I"
-             V{}   -> "V"
-               
-instance  (Identified c, Eq c) => Association (Relation c) c where
-  source r = case r of
-       Rel{} -> relsrc r
-       _     -> reltyp r
-  target r = case r of
-       Rel{} -> reltrg r
-       _     -> reltyp r
-    
-instance (Identified c, Eq c) => Show (Relation c) where
-  showsPrec _ r = showString (name r++
-     (case r of
-      Rel{relflp = False} -> showSign [target r,source r]++"~"
-      _                   -> showSign [source r,target r]
-     )                        )
-                               
----------------------------------------------------------------- 
-data Population r 
-   = Popu { popr  :: Relation r
-          , popps :: Pairs
-          }
-type Populations r = [Population r]
-instance (Identified r, Eq r) => Association (Population r) r where
-  source pop = source (popr pop)
-  target pop = target (popr pop)
-
- 
 
 ---------------------------------------------------------------- 
 -- | The parse-time construction for a relation between concepts
@@ -268,6 +256,52 @@ instance (Identified c, Eq c) => Association (Morphism c) Concept where
   target m = target (mphdcl m)
 
 ---------------------------------------------------------------- 
+-- | The basic Relation
+data Relation c
+   = Rel { relnm :: String -- ^The name of the relation
+         , relsrc :: c     -- ^Source concept
+         , reltrg :: c     -- ^Target concept
+         , relflp :: Bool  -- ^Whether this relation is flipped
+         }
+    | I  { reltyp :: c }   -- ^identity relation
+    | V  { reltyp :: c }   -- ^full relation
+      deriving Eq
+
+instance Identified (Relation c) where
+  name r = case r of
+             Rel{} -> relnm r
+             I{}   -> "I"
+             V{}   -> "V"
+               
+instance  (Identified c, Eq c) => Association (Relation c) c where
+  source r = case r of
+       Rel{} -> relsrc r
+       _     -> reltyp r
+  target r = case r of
+       Rel{} -> reltrg r
+       _     -> reltyp r
+    
+instance (Identified c, Eq c) => Show (Relation c) where
+  showsPrec _ r = showString (name r++
+     (case r of
+      Rel{relflp = False} -> showSign [target r,source r]++"~"
+      _                   -> showSign [source r,target r]
+     )                        )
+                               
+---------------------------------------------------------------- 
+-- | The pairs of related atoms in source and target of a relation.
+data Population r 
+   = Popu { popr  :: Relation r
+          , popps :: Pairs
+          }
+type Populations r = [Population r]
+instance (Identified r, Eq r) => Association (Population r) r where
+  source pop = source (popr pop)
+  target pop = target (popr pop)
+
+ 
+
+---------------------------------------------------------------- 
 -- | The basic Expression
 data Expression r
    = Fi [(Expression r)] -- ^Intersect of expressions
@@ -276,24 +310,6 @@ data Expression r
    | Fj [(Expression r)] -- ^Join of expressions
    | Fd [(Expression r)] -- ^Dagger of expressions
    | Mph r               -- ^The basic relation
-
----------------------------------------------------------------- 
--- | Patterns are a container for rules that fit a specific theme.
-data Pattern
-   = Pat { ptnm  :: String        -- ^ Name of this pattern
-         , ptrls :: Rules         -- ^ The rules declared in this pattern
-         , ptgns :: Gens          -- ^ The generalizations defined in this pattern
-         , ptdcs :: Declarations  -- ^ The declarations declared in this pattern
-         , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
-         , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
-         , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
---         , testexpr :: [PExpression Morphism (Maybe Sign)]
---         , inftestexpr :: [PExpression Declaration Sign]
-         }   --deriving (Show) -- voor debugging
-type Patterns = [Pattern]
-
-instance Identified Pattern where
-  name pat = ptnm pat
 
 ---------------------------------------------------------------- 
 data RuleType = Implication | Equivalence | Truth {- | Generalization (obsolete?)-} deriving (Eq,Show)
@@ -307,7 +323,6 @@ data Rule
         , rrcon    :: Expression        -- ^ Consequent
         , rrxpl    :: [AutoExplain]     -- ^ ADL-generated explanations (for all known languages)
         , rrtyp    :: (Concept,Concept) -- ^ Sign of this rule
- --       , rrtyp_proof :: Maybe (InfTree,Expression)
         , rrdcl    :: Maybe (Prop,Declaration)  -- ^ The property, if this rule originates from a property on a Declaration
         , runum    :: Int               -- ^ Rule number
         , r_pat    :: String            -- ^ Name of pattern in which it was defined.
@@ -336,23 +351,6 @@ instance Association Rule where
 
 
 ---------------------------------------------------------------- 
-data ConceptDef 
-   = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
-         , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
-         , cdplug:: Bool     -- ^ Whether the user specifically told ADL n—t to store this concept in the database
-         , cddef :: String   -- ^ The textual definition of this concept.
-         , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
-         }   deriving (Show)
-
-type ConceptDefs = [ConceptDef]
-instance Eq ConceptDef where
-  cd == cd' = cdnm cd == cdnm cd'
-
-instance Identified ConceptDef where
-  name cd = cdnm cd
-   
-
----------------------------------------------------------------- 
 data KeyDef 
    = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the ADL source file (filename, line number and column number).
         , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -376,8 +374,7 @@ data Service
 data ObjectDef 
    = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
          , objpos  :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
-         , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
---         , objctx_proof :: Maybe (InfTree,Expression)
+         , objctx  :: (Expression r)   -- ^ this expression describes the instances of this object, related to their context. 
          , objats  :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
          , objstrs :: [[String]]     -- ^ directives that specify the interface.
          } deriving (Eq, Show)       -- ^ just for debugging (zie ook instance Show ObjectDef)
@@ -403,7 +400,7 @@ instance Identified PExplanation where
 
 data PExplObj 
    = PExplConceptDef String
-   | PExplDeclaration Morphism
+   | PExplDeclaration (Morphism Concept)
    | PExplRule String
    | PExplKeyDef String
    | PExplObjectDef String
@@ -421,6 +418,7 @@ instance Identified PExplObj where
      PExplContext str -> str
         
 ---------------------------------------------------------------- 
+-- | The languages that currently are available in Ampersand
 data Lang = Dutch | English deriving (Show, Eq)
 
 
