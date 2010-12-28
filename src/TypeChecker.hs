@@ -33,7 +33,7 @@ import Data.Tree    -- USE -> data Tree a
 import Classification --USE -> cast from data.Tree to Classification for enrichment
 import Typology --USE -> Isa structure for enrichment
 
-import TypeInference.Input
+--import TypeInference.Input
 import TypeInference.Isa
 import TypeInference.InfAdlExpr
 import TypeInference.InfExpression
@@ -117,7 +117,7 @@ renumber cx = cx {ctxpats=renumberPats (length (ctxrs cx)) (ctxpats cx),
 
 addsgndecls ::Context -> Context
 addsgndecls cx = cx {ctxds=(ctxds cx)++allsgndecls }
-  where allsgndecls = [srrel r | r<-allPatRules (allCtxPats [cx]), isSignal r]
+  where allsgndecls = [srrel r | r<-rules cx, isSignal r]
 
 data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression | OrigExpl
 
@@ -172,14 +172,14 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   --DESCR -> use this function on all expressions
   enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
   enrich_expr = infertype_and_populate popuMphDecl isas [d| d<-declarations ctxs, decusr d] (Anything,Anything)
-  isas = isaRels (allCtxCpts ctxs) (gens ctxs)
+  isas = isaRels (concs ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
   ctxtree = buildCtxTree (Found cx) ctxs
   Cl _ world = toClassification $ ctxtree
 --TODO -> declared objects from all ctxs are in scope
 --  allCtx = map fromFoundCtx $ flatten ctxtree
 
-  isatree = isaRels (allCtxCpts ctxs) (gens ctxs)
+  isatree = isaRels (concs ctxs) (gens ctxs)
 
   --DESCR -> enriching ctxisa
   {- WHY worden de concepten in de Isa structuur gepopuleerd? Gebeurt er ooit iets met deze populatie?
@@ -188,7 +188,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   -- BECAUSE GMI: alleen concepten in een GEN .. ISA .. declaratie zitten in isar
   -- WHY loopt dit via Set.? 
   -- BECAUSE GMI: Een Set is een lijst zonder doublures. Het had hier weinig nut omdat van de Set meteen weer een lijst wordt gemaakt in Hierarchy. De vraag zou eerder moeten zijn, waarom is Hierarchy een data structuur van twee lijsten en niet van twee Sets.
-  hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ allCtxCpts ctxs) Set.\\ (Set.fromList isac))
+  hierarchy = Isa isar $map populate (Set.toList $ (Set.fromList $ concs ctxs) Set.\\ (Set.fromList isac))
     where
     isar = [(populate$gengen g,populate$genspc g) | g<-gens ctxs]
     isac = map populate$rd (map fst isar++map snd isar)
@@ -235,7 +235,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
                        Right str -> Right str
   
   enrichexplobj :: PExplObj -> Either PExplObj String
-  enrichexplobj x@(PExplConceptDef{}) = checkPExplobj (allCtxCpts ctxs) x 
+  enrichexplobj x@(PExplConceptDef{}) = checkPExplobj (concs ctxs) x 
   enrichexplobj (PExplDeclaration mph ) = case enrich_expr (Tm mph (-1)) of
      Left (_,Tm emph _,_) -> Left (PExplDeclaration emph )
      Right (err,_) -> Right ("Explanation for relation "++name mph++" could not be matched to a declaration because "++err)
@@ -271,7 +271,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
       -- REMARK:  Use only declarations that are user defined, because generated declarations (e.g. decls from signal rules)
       --          are not typechecked yet! Signal rules cannot be populated at this point.
       --          They need to be populated AFTER type checking based on the populations of user defined relation declarations.
-      declarations_ctxs =  [d|cx'<-ctxs,p<-ctxpats cx',d<-ptdcs p++ctxds cx']
+      declarations_ctxs = [d|d<-declarations ctxs, decusr d]
       matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations_ctxs) pop) | cx'<-ctxs, pop<-ctxpops cx']] 
       mygroupby :: [(Population, Declaration)] -> Declarations -> Declarations
       mygroupby [] res = res
@@ -571,7 +571,7 @@ buildCtxTree :: ContextFound -> Contexts -> CtxTree
 buildCtxTree cxnf@(NotFound _) _          = Node cxnf []
 buildCtxTree cxf@(Found cx) ctxs
            --a context may be put in the CtxTree only once, so if you put it now, then don't use it again to build the sub trees (thus remove it)
-           = Node cxf [buildCtxTree (srchContext ctxs cxon) (removeCtx ctxs cx) | cxon <- ctxon cx]
+           = Node cxf [buildCtxTree (srchContext ctxs cxon) (filter (/= cx) ctxs) | cxon <- ctxon cx]
 
 --DESCR -> search for a context by name and return the first one found
 srchContext :: Contexts -> String -> ContextFound

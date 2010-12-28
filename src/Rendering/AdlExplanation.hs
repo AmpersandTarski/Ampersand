@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
---DESCR -> functions translating adl to natural language.
---TODO -> Maybe this module is useful at more places than just func spec rendering. In that case it's not a Rendering module and it needs to be replaced
+--TODO -> Maybe this module is useful at more places than just func spec rendering.
+--        In that case it's not a Rendering module and it needs to be replaced
 module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),explain2Blocks,format) where
 import Adl hiding (applyM)
 import Data.Fspec
@@ -13,31 +13,33 @@ import Languages        (Lang(..),plural)
 import Collection       (Collection ((>-)))
 import Text.Pandoc
 import Char             (toLower)
---instance Explained Expression where
---    explain flags e = showPredLogic flags e
 
 -- The general idea is that an ADL declaration such as:
 --     EXPLAIN r[A*B] IN ENGLISH
 --     {+ This text explains why r[A*B] exists -}
 -- produces the exact right text in the functional specification
 
-
 -- The class Explainable exists so that we can write the Haskell expression 'explain fSpec flags x' anywhere we like for every
 -- type of x that could possibly be motivated in an Explanation.
--- 'explain fSpec flags x' produces all explanations related to x from the context (fSpec) that are available in the language specified in 'flags'.
+-- 'explain fSpec flags x' produces all explanations related to x from the context (fSpec)
+--  that are available in the language specified in 'flags'.
 -- The other functions in this class are solely meant to be used in the definition of explain.
 -- They are defined once for each instance of Explainable, not be used in other code.
--- TODO: Han, kan dat worden afgeschermd, zodat de programmeur alleen 'explain' ziet en de andere functies dus niet kan gebruiken?
---     @Stef: Ja, het is al zoveel mogelijk afgeschermd (zie definities die deze module exporteert, hierboven) maar er wordt nog gebruik van gemaakt voor oa foutmeldingen in de atlas, en het prototype. Zodra iemand iets anders verzint voor het gebruik van "ExplainOutputFormat(..),explain2Blocks,format", kunnen deze uit de export-list van deze module worden verwijderd.
+-- TODO: Han, kan dat worden afgeschermd, zodat de programmeur alleen 'explain' ziet en de andere functies
+--       dus niet kan gebruiken?
+--     @Stef: Ja, het is al zoveel mogelijk afgeschermd (zie definities die deze module exporteert, hierboven)
+--     maar er wordt nog gebruik van gemaakt voor oa foutmeldingen in de atlas, en het prototype.
+--     Zodra iemand iets anders verzint voor het gebruik van "ExplainOutputFormat(..),explain2Blocks,format",
+--     kunnen deze uit de export-list van deze module worden verwijderd.
 class Explainable a where 
   autoExplainsOf :: Options -> a -> [Explanation]
   autoExplainsOf _ _ = []
   explain :: Fspc -> Options -> a -> [Explanation]
   explain fSpec flags x = [e | e<-fSexpls fSpec++autoExplainsOf flags x 
-                             , explForObj x (explObj e)
+                             , explForObj x (explObj e)                  -- ^ informally: "if x and e are the same"
                              , language flags == explLang e
                           ]
-  explForObj :: a -> ExplObj -> Bool          -- Given an Explainable object and an ExplObj, return TRUE if and only if there is a match.
+  explForObj :: a -> ExplObj -> Bool    -- Given an Explainable object and an ExplObj, return TRUE if they concern the identical object.
   
 instance Explainable ConceptDef where
   explForObj x (ExplConceptDef x') = x == x'

@@ -5,10 +5,11 @@ where
    import Adl.Pattern                 (Pattern(..),Patterns)
    import Adl.Gen                     (Gen(..),Gens)
    import Adl.Rule                    (Rule(..),RuleType(..),rulefromProp, ruleviolations,Rules)
+   import Adl.Prop                    (Prop(..))
    import Adl.ObjectDef               (Service(..),ObjectDef(..),ObjectDefs)
    import Adl.KeyDef                  (KeyDef(..),KeyDefs)
-   import Adl.MorphismAndDeclaration  (Declarations,mIs,Declaration(..))
-   import Adl.Concept                 (Concept(..),Morphic(..),Signaling(..))
+   import Adl.MorphismAndDeclaration  (Declarations,mIs,Declaration(..),makeDeclaration)
+   import Adl.Concept                 (Concept(..),Morphic(..),Signaling(..),Association(..))
    import Adl.ConceptDef              (ConceptDefs)
    import Adl.Expression              (Expression(..))
    import Adl.Pair                    (Paire)
@@ -24,8 +25,9 @@ where
    class Morphical a => ViewPoint a where
      objectdef    :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
      conceptDefs  :: a -> ConceptDefs   -- ^ all concept definitions that are valid within this viewpoint
-     declarations :: a -> Declarations  -- ^ all declarations that exist in the scope of this viewpoint.
-                                        -- ^ These are user defined declarations and one declaration for each signal rule.
+     declarations :: a -> Declarations  -- ^ all relations that exist in the scope of this viewpoint.
+                                        -- ^ These are user defined declarations and all generated declarations,
+                                        -- ^ i.e. one declaration for each GEN and one for each signal rule.
                                         -- ^ Don't confuse declarations with decls, which gives the relations that are
                                         -- ^ used in a. The function decls is bound in Morphical.)
      --REMARK: declarations has been split up in two disjoints which used to be combined with `uni` instead of ++
@@ -115,7 +117,25 @@ where
                            , objstrs = []
                            }
     conceptDefs  pat = ptcds pat
-    declarations pat = ptdcs pat 
+    declarations pat = ptdcs pat `uni` map makeDecl (ptgns pat)
+                       where
+                        makeDecl g
+                         = Sgn  { decnm   = "isa"
+                                , desrc   = source g
+                                , detrg   = target g
+                                , decprps = [Uni,Tot,Inj]
+                                , decprps_calc = []
+                                , decprL  = ""
+                                , decprM  = "is a"
+                                , decprR  = ""
+                                , decpopu = []
+                                , decfpos = Nowhere
+                                , decid   = 0
+                                , deciss  = True
+                                , decusr  = False
+                                , decpat  = ""
+                                , decplug = True
+                                }
     rules        pat = [r|r<-ptrls pat, not (isSignal r)]
     signals      pat = [r|r<-ptrls pat,      isSignal r ]
     objDefs       _  = []
@@ -144,7 +164,7 @@ where
     patterns r = [Pat{ ptnm  = ""
                      , ptrls = [r]
                      , ptgns = [G Nowhere g s ""|g<-concs r, s<-concs r, g<s, null [x| x<-concs r>-[g,s], g<x, x<s]]
-                     , ptdcs = []
+                     , ptdcs = [makeDeclaration m| m<-mors r]
                      , ptcds = []
                      , ptkds = []
                      , ptxps = []

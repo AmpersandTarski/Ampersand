@@ -2,7 +2,7 @@
 module Adl.Gen (Gen(..),Gens)
 where
    import Adl.FilePos   (FilePos)
-   import Adl.Concept   (Concept)
+   import Adl.Concept   (Concept,Association(..))
    
    type Gens      = [Gen]
    data Gen       = G { genfp  :: FilePos         -- ^ the position of the GEN-rule
@@ -23,3 +23,6 @@ where
     showsPrec _ g = showString ("GEN "++show (genspc g)++" ISA "++show (gengen g))
    
                       
+   instance Association Gen where
+    source g = genspc g
+    target g = gengen g

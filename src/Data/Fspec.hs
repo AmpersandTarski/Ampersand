@@ -20,27 +20,28 @@ module Data.Fspec ( Fspc(..)
    import Data.Plug                     
    import Picture                       (Pictures)
    import FPA
-   data Fspc = Fspc { fsName       :: String                -- ^ The name of the specification, taken from the ADL-script
-                    , vplugs       :: Plugs                 -- ^ all plugs defined in the ADL-script
-                    , plugs        :: Plugs                 -- ^ all plugs (defined and derived)
-                    , serviceS     :: ObjectDefs            -- ^ all services defined in the ADL-script
-                    , serviceG     :: ObjectDefs            -- ^ all services derived from the basic ontology
-                    , services     :: Fservices             -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
-                    , roleServices :: [(String,Fservice)]   -- ^ the relation saying which roles may use which service
-                    , mayEdit      :: [(String,Declaration)]-- ^ the relation saying which roles may change the population of which relation.
-                    , vrules       :: Rules                 -- ^ All rules that apply in the entire Fspc, including all signals
-                    , grules       :: Rules                 -- ^ All rules that are generated: multiplicity rules and key rules
-                    , vkeys        :: KeyDefs               -- ^ All keys that apply in the entire Fspc
-                    , vgens        :: Gens                  -- ^ All gens that apply in the entire Fspc
-                    , vconjs       :: Expressions           -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
-                    , vquads       :: Quads                 -- ^ All quads generated (by ADL2Fspec) from non-signal rules
-                    , vrels        :: Declarations          -- ^ All declarations declared in this specification, being
-                                                            -- ^ user defined declarations and one declaration for each signal.
-                    , fsisa        :: Inheritance Concept   -- ^ generated: The data structure containing the generalization structure of concepts
-                    , vpatterns    :: Patterns              -- ^ all patterns taken from the ADL-script
-                    , pictPatts    :: Pictures              -- ^ List of pictures containing pattern pictures (in same order as patterns)
-                    , vConceptDefs :: ConceptDefs           -- ^ all conceptDefs defined in the ADL-script
-                    , fSexpls      :: Explanations          -- ^ all explanations that are valid within the current specification
+   data Fspc = Fspc { fsName       :: String                 -- ^ The name of the specification, taken from the ADL-script
+                    , vplugs       :: Plugs                  -- ^ All plugs defined in the ADL-script
+                    , plugs        :: Plugs                  -- ^ All plugs (defined and derived)
+                    , serviceS     :: ObjectDefs             -- ^ All services defined in the ADL-script
+                    , serviceG     :: ObjectDefs             -- ^ All services derived from the basic ontology
+                    , services     :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , roleServices :: [(String,Fservice)]    -- ^ the relation saying which roles may use which service
+                    , mayEdit      :: [(String,Declaration)] -- ^ the relation saying which roles may change the population of which relation.
+                    , vrules       :: Rules                  -- ^ All rules that apply in the entire Fspc, including all signals
+                    , grules       :: Rules                  -- ^ All rules that are generated: multiplicity rules and key rules
+                    , vkeys        :: KeyDefs                -- ^ All keys that apply in the entire Fspc
+                    , vgens        :: Gens                   -- ^ All gens that apply in the entire Fspc
+                    , vconjs       :: Expressions            -- ^ All conjuncts generated (by ADL2Fspec) from non-signal rules
+                    , vquads       :: Quads                  -- ^ All quads generated (by ADL2Fspec) from non-signal rules
+                    , vrels        :: Declarations           -- ^ All user defined and generated declarations.
+                                                             -- ^ The generated declarations are all generalizations and
+                                                             -- ^ one declaration for each signal.
+                    , fsisa        :: Inheritance Concept    -- ^ generated: The data structure containing the generalization structure of concepts
+                    , vpatterns    :: Patterns               -- ^ All patterns taken from the ADL-script
+                    , pictPatts    :: Pictures               -- ^ List of pictures containing pattern pictures (in same order as patterns)
+                    , vConceptDefs :: ConceptDefs            -- ^ All conceptDefs defined in the ADL-script
+                    , fSexpls      :: Explanations           -- ^ All explanations that have been declared within the current specification.
                     , vctxenv :: (Expression,[(Declaration,String)]) --an expression on the context with unbound morphisms, to be bound in this environment
                     }
    

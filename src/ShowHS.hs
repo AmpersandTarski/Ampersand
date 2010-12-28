@@ -3,6 +3,7 @@ module ShowHS (ShowHS(showHS),fSpec2Haskell)
 where
 
    import Char                  (isAlphaNum,toLower)
+   import Strings               (unCap)
    import Typology              (Inheritance(..))
    import Data.Plug
    import Data.Fspec
@@ -568,11 +569,11 @@ where
    instance ShowHS ExplObj where
     showHSname _ = error ("!Fatal (module ShowHS 484): a ExplObj is anonymous with respect to showHS flags")
     showHS flags i peObj = case peObj of 
-             ExplConceptDef cd  -> "ExplConceptDef " ++showHS flags i cd
-             ExplDeclaration d  -> "ExplDeclaration "++showHS flags i d
-             ExplRule r         -> "ExplRule "       ++showHS flags i r
-             ExplKeyDef kd      -> "ExplKeyDef "     ++showHS flags i kd
-             ExplObjectDef od   -> "ExplObjectDef "  ++showHS flags i od
+             ExplConceptDef cd  -> "ExplConceptDef " ++showHSname cd
+             ExplDeclaration d  -> "ExplDeclaration "++showHSname d
+             ExplRule r         -> "ExplRule "       ++showHSname r
+             ExplKeyDef kd      -> "ExplKeyDef "     ++showHSname kd
+             ExplObjectDef od   -> "ExplObjectDef "  ++showHSname od
              ExplPattern str    -> "ExplPattern "    ++show str
              ExplContext str    -> "ExplContext "    ++show str
             
@@ -875,14 +876,12 @@ where
 -- \***********************************************************************
 
    haskellIdentifier :: String -> String
-   haskellIdentifier cs = lowerFirst (hsId cs)
+   haskellIdentifier cs = unCap (hsId cs)
     where
       hsId ('_': cs')             = '_': hsId cs'
       hsId (c:cs') | isAlphaNum c = c: hsId cs'
                    | otherwise    = hsId cs'
       hsId ""                     = ""
-      lowerFirst (c:cs') = toLower c: cs'
-      lowerFirst _       = ""
 
    showL   :: [String] -> String
    showL xs = "["++intercalate "," xs++"]"

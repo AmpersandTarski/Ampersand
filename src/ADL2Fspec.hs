@@ -33,11 +33,11 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                      , isIdent (objctx o) && source (objctx o)==cptS
                                      || not (objctx o `elem` map objctx (serviceS fSpec))]  -- generated services
                  , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
-                 , roleServices = let lookup sv = if length servFs == 1 then head servFs else
-                                                  error("!Fatal (module ADL2Fspec 40): Mistake in the type checker. It should check that all services have unique names.")
-                                                  where servFs = [s|s<-services fSpec, name s==sv] in
+                 , roleServices = let lookp sv = if length servFs == 1 then head servFs else
+                                                 error("!Fatal (module ADL2Fspec 40): Mistake in the type checker. It should check that all services have unique names.")
+                                                 where servFs = [s|s<-services fSpec, name s==sv] in
                                   [(role,svc)| RS rs svcs _<-ctxros context                 -- ^ roleServices says which roles may use which service
-                                             , sv<-svcs, let svc=lookup sv
+                                             , sv<-svcs, let svc=lookp sv
                                              , role<-rs]
                  , mayEdit      = [(role,makeDeclaration m)| RR rs ms _<-ctxmed context     -- ^ mayEdit says which roles may change the population of which relation.
                                                            , m<-ms, role<-rs]
@@ -45,7 +45,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  , grules       = number (length (rules context++signals context)) (multrules context++keyrules context)
                  , vconjs       = rd [conj| Quad _ ccrs<-allQuads, (conj,_)<-cl_conjNF ccrs]
                  , vquads       = allQuads
-                 , vrels        = allDecs
+                 , vrels        = allDecs -- contains all user defined plus all generated relations.
                  , fsisa        = ctxisa context
                  , vpatterns    = patterns context
                  , vgens        = gens context
@@ -58,8 +58,24 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         number n rs = [r{runum=i} | (i,r)<-zip [n..] rs]
         allDecs = [ d{decprps_calc = multiplicities d `uni` [Tot|m<-totals, d==makeDeclaration m, inline m]
                                                       `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
-                  | d<-declarations context, deciss d || decusr d
-                  ]
+                  | d<-declarations context -- , deciss d || decusr d
+                  ]++
+                  [ Sgn  { decnm   = "isa"
+                         , desrc   = source g
+                         , detrg   = target g
+                         , decprps = [Uni,Tot,Inj]
+                         , decprps_calc = []
+                         , decprL  = ""
+                         , decprM  = "is a"
+                         , decprR  = ""
+                         , decpopu = []
+                         , decfpos = Nowhere
+                         , decid   = 0
+                         , deciss  = True
+                         , decusr  = False
+                         , decpat  = ""
+                         , decplug = True
+                         } | g<-gens context]
 
         totals :: Morphisms
         totals
@@ -141,13 +157,13 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 --  ADL generates services for the purpose of quick prototyping. A script without any mention of services is supplemented
 --  by a number of service definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
---          to ensure insertability of entities
-        cRels = [     morph d | d<-declarations context, decusr d, isTot d, not$decplug d]++
-                [flp (morph d)| d<-declarations context, decusr d, not (isTot d) && isSur d, not$decplug d]
+--          to ensure insertability of entities (signal declarations are excluded)
+        cRels = [     morph d | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
+                [flp (morph d)| d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
---          to ensure deletability of entities
-        dRels = [     morph d | d<-declarations context, decusr d, isInj d, not$decplug d]++
-                [flp (morph d)| d<-declarations context, decusr d, not (isInj d) && isUni d, not$decplug d]
+--          to ensure deletability of entities (signal declarations are excluded)
+        dRels = [     morph d | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
+                [flp (morph d)| d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute maximally total expressions and maximally injective expressions.
 --  BECAUSE
 --   (GMI): Moet voor een concept dat 'los staat' (geen attribuut van, en heeft zelf geen attributen)
@@ -207,11 +223,9 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                  (recur (trace++[c]) cl)   -- objats
                  []                        -- objstrs
            | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
--- WHY: Han, de bedoeling was dat alle explanations die geldig zijn in deze fSpec, in de volgende definitie staan.
--- Is dat ook zo? Antw: Ja. (telefonisch met Han besproken)
+-- The following definition contains all explanations that are declared within the current fSpec.
         fSexpls' = explanationDeclarations flags context                ++
-                   concat (map (explanationDeclarations flags)(patterns context))  
-
+                   concat (map (explanationDeclarations flags)(patterns context))
 
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...

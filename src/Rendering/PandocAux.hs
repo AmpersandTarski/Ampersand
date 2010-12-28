@@ -23,7 +23,7 @@ import Picture
 import ShowADL
 import CommonClasses    (showSign)
 import Data.Fspec
-import Strings          (unCap, preciesEen)
+import Strings          (unCap, upCap, preciesEen)
 import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
@@ -516,14 +516,15 @@ instance ShowMath Declaration where
 latexEscShw :: (Show a) => a -> [Char]
 latexEscShw x = show x
 
+-- stripSpecialChars is used inside LaTeX references, where identifiers with underscores cannot be handled.
 stripSpecialChars :: [Char] -> [Char] 
 stripSpecialChars x 
        = case x of
              []     -> []
-             '_':cs -> "\\_"++cs
+             '_':cs -> upCap (stripSpecialChars cs)  -- ^ since underscore is not allowed, use capital instead
              c:cs   -> (if isAscii c 
                        then [c]
-                       else "__"++ show (ord c)++"__")
+                       else "__"++ show (ord c)++"__")  -- TODO: is this allowed in LaTeX references?
                        ++stripSpecialChars cs
              
 
@@ -547,7 +548,10 @@ makeDefinition flags c cdef
 ---------------------------
 
 texOnly_Id :: String -> String
-texOnly_Id s = "\\id{"++s++"}"    
+texOnly_Id s = "\\id{"++escape s++"}"
+ where escape "" = ""
+       escape ('_': str) = "\\_"++escape str
+       escape (s:str)    = s:escape str
 
 texOnly_fun :: String
 texOnly_fun = "\\rightarrow"

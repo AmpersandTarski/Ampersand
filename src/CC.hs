@@ -164,7 +164,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                          rebuild nm pes = Pat { ptnm        = nm
                                               , ptrls       = [r{r_pat=nm}|Pr r<-pes]
                                               , ptgns       = [gen{genpat=nm} |Pg gen<-pes]
-                                              , ptdcs       = [mph{decpat=nm}| Pm mph@(Sgn{})<-pes]
+                                              , ptdcs       = [d{decpat=nm}| Pd d@(Sgn{})<-pes]
                                               , ptcds       = [c| Pc c<-pes]
                                               , ptkds       = [k| Pk k<-pes]
                                               , ptxps       = [e| Pe e<-pes]
@@ -174,7 +174,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 
    data PatElem      = Pr Rule
                      | Pg Gen
-                     | Pm Declaration
+                     | Pd Declaration
                      | Pc ConceptDef
                      | Pk KeyDef
                      | Pe PExplanation
@@ -183,7 +183,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    pPatElem         :: Parser Token PatElem
    pPatElem          = Pr <$> pRuleDef      <|>
                        Pg <$> pGen          <|>
-                       Pm <$> pDeclaration  <|>
+                       Pd <$> pDeclaration  <|>
                        Pc <$> pConceptDef   <|>
                        Pk <$> pKeyDef       <|>
                        Pe <$> pExplain      <|>
@@ -501,7 +501,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                      , svParams = params
                                      , svArgs   = args
                                      , svObj    = Obj { objnm        = nm    
-                                                      , objpos       =  p
+                                                      , objpos       = p
                                                       , objctx       = expr
                                                       , objctx_proof = Nothing
                                                       , objats       = ats

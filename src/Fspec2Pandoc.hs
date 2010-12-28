@@ -253,7 +253,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                 ]           
            allDeclsThatMustBeShown        -- All declarations declared in this specification, but only Sgn is shown,
                                           -- and only those declarations that have at least one explanation.
-              = [d| d@Sgn{}<- vrels fSpec
+              = [d| d@Sgn{}<- declarations fSpec
                   , not (null ( explain fSpec flags d))
                 ]
            allRulesThatMustBeShown         
@@ -360,7 +360,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                                       
                       explains cd = explains2Blocks (explain fSpec flags cd) 
 
-
+-- sctds prints the requirements related to declarations that are introduced in this theme.
               sctds :: [Declaration] -> Counter -> ([Block],Counter)
               sctds xs c0 
                 = case xs of
@@ -1040,12 +1040,12 @@ serviceChap lev fSpec flags svc
                          ["nieuw"        | fld_insAble f]++
                          ["verwijderbaar"| fld_delAble f]
                      
-  dealWithUnderscores :: [Char] -> [Char]
-  dealWithUnderscores x = 
-         case x of 
-           []     -> []
-           '_':cs -> "\\_" ++ dealWithUnderscores cs
-           c:cs   -> c : dealWithUnderscores cs
+           dealWithUnderscores :: [Char] -> [Char]
+           dealWithUnderscores x = 
+                  case x of 
+                    []     -> []
+                    '_':cs -> "\\_" ++ dealWithUnderscores cs
+                    c:cs   -> c : dealWithUnderscores cs
            
   txtKnowledgeGraph :: [Block]
   txtKnowledgeGraph

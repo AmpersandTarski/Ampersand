@@ -110,7 +110,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
                                      " : "++showADLcode fSpec (objctx o)++
                                      if null (objats o) then "" else recur (ind++"     ") (objats o)
                                   | (o,i)<-zip objs [(1::Integer)..]
-                                  , cls<-[[name c|cl<-eqCl name (vrels fSpec), length cl>1, c<-take 1 cl]]
+                                  , cls<-[[name c|cl<-eqCl name (declarations fSpec), length cl>1, c<-take 1 cl]]
                                   ]++
               ind++"   ]"
            str ss | and [isAlphaNum c| c<-ss] = ss
@@ -137,6 +137,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
          ExplObjectDef od  -> "SERVICE "++name od
          ExplPattern str   -> "PATTERN "++str
          ExplContext str   -> "CONTEXT "++str 
+
    instance ShowADL ExplainContent where
     showADL expla 
        -- TODO: afspraken maken over de vertaling van explanations in adlcode van en naar Pandoc... (Nu alleen nog de inlines Str String en Linebreak)
@@ -276,7 +277,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
                        rss = drop halfway iss
                        halfway = length iss `div` 2
 -- The following function is used to force the type of a relation to be printed.
-        types (Tm mph _) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-vrels fSpec, name mph==name d] else [mphats mph]
+        types (Tm mph _) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-declarations fSpec, name mph==name d] else [mphats mph]
         types (Fux fs)  = foldr isc [] [types f| f<-fs]
         types (Fix fs)  = foldr isc [] [types f| f<-fs]
         types (Fdx ts')  = types (F ts') -- a nifty trick to save code. After all, the type computation is identical to F...
@@ -336,7 +337,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
      = decnm (mphdcl mph)++
        (if null (mphats mph) then "" else showSign (mphats mph))++
        if inline mph then "" else "~"
-       -- where dss = [(name.head) cl| cl<-eqCl name (vrels fSpec), length cl>1]
+       -- where dss = [(name.head) cl| cl<-eqCl name (declarations fSpec), length cl>1]
     showADLcode _ (I atts g s yin)
      = "I"++if null atts then showSign [g,s] else showSign atts++if g==s then "" else if yin then "" else "~"
     showADLcode _ (V atts (a,b))
@@ -420,7 +421,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        ++ "\n\nENDCONTEXT"
        where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
                            | d<-declarations fSpec, not (null (decpopu d))]
-             ds = [d| d@Sgn{}<-vrels fSpec, decusr d]
+             ds = [d| d@Sgn{}<-declarations fSpec, decusr d]
 {-
    instance SelfExplained ECArule where   --TODO: Wat doet deze definitie in ShowADL??? (Omdat ShowADL er in wordt gebruikt....)
      autoExplains flags r

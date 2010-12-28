@@ -6,13 +6,13 @@ module Prototype.RelBinGenSQL
    import ShowADL
    import Data.Fspec
    import Data.Plug
-   import NormalForms (conjNF,disjNF,simplify)
+   import NormalForms (disjNF,simplify)
    import Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote
                                     ,cChain,filterEmpty,phpIndent)
    import Data.Maybe
    import Char(isDigit,digitToInt,intToDigit)
    import Data.List
-   import Collection (Collection(rd))
+-- import Collection (Collection(rd))
    
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden
@@ -24,8 +24,8 @@ module Prototype.RelBinGenSQL
    -- soms is het id constant i.e. source (ctx o) == cptS.
    -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
    -- daarom heb ik ze opgesplitst
-   isOneExpr :: Expression -> Bool
-   isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
+-- isOneExpr :: Expression -> Bool
+-- isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
    isOne' :: ObjectDef -> Bool
    isOne' o = isOne o -- isOneExpr$ctx o
                       --TODO: isOneExpr zorgt sowieso voor slechte select queries (doSqlGet), misschien kan deze wel weg.

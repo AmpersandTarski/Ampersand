@@ -13,6 +13,7 @@ module PredLogic
    import Languages (Lang(English,Dutch), plural)
    import Options
    import Char (toLower)
+   import Rendering.PandocAux 
  
  --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook AdlExplanation. HJO. 
    data PredLogic       
@@ -60,13 +61,13 @@ module PredLogic
                  "leq"    -> lhs++"\\ \\leq\\ "++rhs
                  "ge"     -> lhs++"\\ \\geq\\ "++rhs
                  "geq"    -> lhs++"\\ \\geq\\ "++rhs
-                 _        -> lhs++"\\ \\id{"++name m++"}\\ "++rhs
-            fun m e = "\\id{"++name m++"}"++"("++e++")"
+                 _        -> lhs++"\\ "++texOnly_Id (name m)++"\\ "++rhs
+            fun m e = texOnly_Id (name m)++"("++e++")"
             implies antc cons = antc++" \\Rightarrow "++cons
             apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. 
             apply decl d c =
                case decl of
-                 Sgn{}     -> d++"\\ \\id{"++decnm decl++"}\\ "++c
+                 Sgn{}     -> d++"\\ "++texOnly_Id (name decl)++"\\ "++c
                  Isn{}     -> d++"\\ =\\ "++c
                  Iscompl{} -> d++"\\ \not =\\ "++c
                  Vs{}      -> "V"
