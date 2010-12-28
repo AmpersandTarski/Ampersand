@@ -2,7 +2,7 @@
 module ShowHS (ShowHS(showHS),fSpec2Haskell)
 where
 
-   import Char                  (isAlphaNum,toLower)
+   import Char                  (isAlphaNum)
    import Strings               (unCap)
    import Typology              (Inheritance(..))
    import Data.Plug

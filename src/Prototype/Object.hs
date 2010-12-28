@@ -4,7 +4,7 @@ module Prototype.Object(objectServices) where
 --import Char(toUpper)
 import NormalForms (disjNF,simplify)
 import Auxiliaries (eqCl)
-import Adl (target,source
+import Adl (target
            --,Concept(..),Declaration(..),isTrue,makeInline
            ,ObjectDef(..),Numbered(..),Morphic(..)
            ,Identified(..),mors,Morphism(..),ViewPoint(..)

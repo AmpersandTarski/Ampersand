@@ -60,7 +60,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                                       `uni` [Sur|m<-totals, d==makeDeclaration m, not (inline m)]}
                   | d<-declarations context -- , deciss d || decusr d
                   ]++
-                  [ Sgn  { decnm   = "isa"
+                  [ Sgn  { decnm   = "ISA"
                          , desrc   = source g
                          , detrg   = target g
                          , decprps = [Uni,Tot,Inj]
