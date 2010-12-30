@@ -62,11 +62,12 @@ class Identified a where
 -- | Association. 
 --  This class resides over here, because it is required in some instances of Show.
 -- 'source' and 'target' are the minimal functions to define for an instance.
-class (Eq c,Identified c) => Association a c | a -> c  where
-    source, target :: a -> c
-    sign           :: a -> (c,c)
+-- ***class (Eq c,Identified c) => Association a c | a -> c  where
+class Association a where
+    source, target :: a -> Concept
+    sign           :: a -> (Concept,Concept)
     sign x = (source x,target x) 
-    swap           :: a -> (c,c)
+    swap           :: a -> (Concept,Concept)
     swap x = (target x,source x)
     homogeneous :: a -> Bool
     homogeneous s = source s == target s
@@ -220,7 +221,7 @@ instance Identified Declaration where
   name Iscompl{} = "-I"
   name Vs{}      = "V"
 
-instance Association Declaration Concept where
+instance Association Declaration where
    source d = case d of
                 Sgn {}    -> desrc d
                 Isn {}    -> despc d
@@ -235,45 +236,45 @@ instance Association Declaration Concept where
 
 ---------------------------------------------------------------- 
 -- ^A relation for during parsing
-data Morphism c                    
-   = MpRel { mphrel :: Relation c  -- ^The actual relation
+data Morphism                     
+   = MpRel { mphrel :: Relation    -- ^The actual relation
            , mphdcl :: Declaration -- ^Where the morphism was declared
            , mphpos :: FilePos     -- ^File and position of this relation
-           , mphats :: [c]         -- ^The specified concepts
+           , mphats :: [Concept]   -- ^The specified concepts
            } deriving Show
 
-instance Eq c => Eq (Morphism c) where
+instance Eq Morphism where
   m == m' = mphrel m == mphrel m'
  
-instance (Identified c, Eq c, Ord c) => Ord (Morphism c) where
+instance Ord Morphism where
   a <= b = source a <= source b && target a <= target b
 
-instance Identified (Morphism c) where
+instance Identified Morphism where
   name m = name (mphdcl m)
 
-instance (Identified c, Eq c) => Association (Morphism c) Concept where  
+instance Association Morphism where  
   source m = source (mphdcl m)
   target m = target (mphdcl m)
 
 ---------------------------------------------------------------- 
 -- | The basic Relation
-data Relation c
+data Relation 
    = Rel { relnm :: String -- ^The name of the relation
-         , relsrc :: c     -- ^Source concept
-         , reltrg :: c     -- ^Target concept
+         , relsrc :: Concept     -- ^Source concept
+         , reltrg :: Concept     -- ^Target concept
          , relflp :: Bool  -- ^Whether this relation is flipped
          }
-    | I  { reltyp :: c }   -- ^identity relation
-    | V  { reltyp :: c }   -- ^full relation
+    | I  { reltyp :: Concept }   -- ^identity relation
+    | V  { reltyp :: Concept }   -- ^full relation
       deriving Eq
 
-instance Identified (Relation c) where
+instance Identified (Relation ) where
   name r = case r of
              Rel{} -> relnm r
              I{}   -> "I"
              V{}   -> "V"
                
-instance  (Identified c, Eq c) => Association (Relation c) c where
+instance Association Relation where
   source r = case r of
        Rel{} -> relsrc r
        _     -> reltyp r
@@ -281,7 +282,7 @@ instance  (Identified c, Eq c) => Association (Relation c) c where
        Rel{} -> reltrg r
        _     -> reltyp r
     
-instance (Identified c, Eq c) => Show (Relation c) where
+instance Show Relation where
   showsPrec _ r = showString (name r++
      (case r of
       Rel{relflp = False} -> showSign [target r,source r]++"~"
@@ -290,12 +291,12 @@ instance (Identified c, Eq c) => Show (Relation c) where
                                
 ---------------------------------------------------------------- 
 -- | The pairs of related atoms in source and target of a relation.
-data Population r 
-   = Popu { popr  :: Relation r
+data Population  
+   = Popu { popr  :: Relation 
           , popps :: Pairs
           }
-type Populations r = [Population r]
-instance (Identified r, Eq r) => Association (Population r) r where
+type Populations  = [Population ]
+instance Association Population where
   source pop = source (popr pop)
   target pop = target (popr pop)
 
@@ -303,14 +304,35 @@ instance (Identified r, Eq r) => Association (Population r) r where
 
 ---------------------------------------------------------------- 
 -- | The basic Expression
-data Expression r
-   = Fi [(Expression r)] -- ^Intersect of expressions
-   | Fu [(Expression r)] -- ^Union of expressions
-   | Cp (Expression r)   -- ^Complement of an expression
-   | Fj [(Expression r)] -- ^Join of expressions
-   | Fd [(Expression r)] -- ^Dagger of expressions
-   | Mph r               -- ^The basic relation
+data Expression
+   = Finter     [Expression]   -- ^Intersect of expressions           /\  (Fi)
+   | Funion     [Expression]   -- ^Union of expressions               \/  (Fu)
+   | Complement  Expression    -- ^Complement of an expression        -   (Cp)
+   | Fcomp      [Expression]   -- ^Composition of expressions         ;   (Fc)
+   | FrAdd      [Expression]   -- ^relative addition of expressions   !   (Fd)
+   | Brackets    Expression    -- ^Bracketed expression              ( ... ) 
+   | Mph         Relation      -- ^The basic relation                      
+instance Show Expression where
 
+data UnOp
+  = K0 -- ^ Reflexive and transitive closure *
+  | K1 -- ^ Transitive closure +
+  | Cp -- ^ Complement -
+  | Co -- ^ Converse ~
+    deriving (Show,Eq)
+
+data MulOp
+  = Fc -- ^ composition ;
+  | Fd -- ^ relative addition !
+  | Fi -- ^ intersection
+  | Fu -- ^ union \/
+  | Ri -- ^ Rule implication |-  => (r |- s |- t <=> (-r\/s) /\ (-s\/t) )
+  | Re -- ^ Rule equivalence =   => (r = s = t   <=> (r |- s |- t) /\ (t |- s |- r)
+    deriving (Show,Eq)
+
+data Op = Op1 UnOp | Opn MulOp
+  
+  
 ---------------------------------------------------------------- 
 data RuleType = Implication | Equivalence | Truth {- | Generalization (obsolete?)-} deriving (Eq,Show)
 data Rule
@@ -329,7 +351,7 @@ data Rule
         , r_usr    :: Bool              -- ^ True if this rule was specified explicitly as a rule in the ADL-script; False if it follows implicitly from the ADL-script and generated by a computer
         , r_sgl    :: Bool              -- ^ True if this is a signal; False if it is an ALWAYS rule
         , srrel    :: Declaration       -- ^ the signal relation
-        } deriving (Eq)
+        } 
 type Rules = [Rule]
 
 instance Ord Rule where
@@ -356,7 +378,7 @@ data KeyDef
         , kdlbl :: String       -- ^ the name (or label) of this Key. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
         , kdcpt :: Concept      -- ^ this expression describes the instances of this object, related to their context
         , kdats :: ObjectDefs   -- ^ the constituent attributes (i.e. name/expression pairs) of this key.
-        } deriving (Eq,Show)
+        } 
 type KeyDefs = [KeyDef]
 
 instance Identified KeyDef where
@@ -374,10 +396,10 @@ data Service
 data ObjectDef 
    = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
          , objpos  :: FilePos        -- ^ position of this definition in the text of the ADL source file (filename, line number and column number)
-         , objctx  :: (Expression r)   -- ^ this expression describes the instances of this object, related to their context. 
+         , objctx  :: Expression     -- ^ this expression describes the instances of this object, related to their context. 
          , objats  :: ObjectDefs     -- ^ the attributes, which are object definitions themselves.
          , objstrs :: [[String]]     -- ^ directives that specify the interface.
-         } deriving (Eq, Show)       -- ^ just for debugging (zie ook instance Show ObjectDef)
+         } 
 type ObjectDefs = [ObjectDef]
 
 instance Identified ObjectDef where
@@ -400,7 +422,7 @@ instance Identified PExplanation where
 
 data PExplObj 
    = PExplConceptDef String
-   | PExplDeclaration (Morphism Concept)
+   | PExplDeclaration Morphism
    | PExplRule String
    | PExplKeyDef String
    | PExplObjectDef String

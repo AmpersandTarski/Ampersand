@@ -1,0 +1,104 @@
+Architecture   = Context { Context } .
+Context        = CONTEXT Conid \n 
+                  [ ":" Expr [ BINDING Bind { "," Bind }]] \n
+                  [ EXTENDS Conid { "," Conid} ] \n
+		          { ContextElement }  \n
+				  ENDCONTEXT .
+Bind           = BIND Declaration TOPHP (Conid | String).
+LanguageID     = IN ( DUTCH | ENGLISH ).
+RefID          = REF String .
+Explain        = ( EXPLAIN | PURPOSE ) LanguageID RefID Expl .
+ExplObj        = ( CONCEPT (Conid | String)
+                 | RELATION Morphism 
+			     | RULE ADLid
+			     | KEY ADLid
+			     | SERVICE ADLid
+     		     | PATTERN ADLid
+			     | CONTEXT ADLid
+			     ).
+ContextElement = ( Pattern
+                 | Declaration
+				 | ConceptDef
+				 | KeyDef
+				 | Service
+				 | SQLplug
+				 | Phpplug
+				 | Explain
+				 | RoleService
+				 | RoleRelation
+				 | POPULATION Morphism CONTAINS Content
+				 ).
+
+Pattern        = PATTERN (Conid | String)
+                 { PatElem } ENDPATTERN .
+PatElem        = ( RuleDef
+                 | Gen
+				 | Declaration
+				 | ConceptDef
+				 | Keydef
+				 | Explain
+				 | TEST PExpression
+				 ).
+Signal         = RULE ADLid SIGNALS.
+Always         = RULE ADLid MAINTAINS.
+RuleDef        = ( Signal Expr "|-" Expr [ EXPLANATION String ]
+                 | Signal Expr "-|" Expr [ EXPLANATION String ]
+                 | Signal Expr "="  Expr [ EXPLANATION String ]
+                 | Signal Expr           [ EXPLANATION String ]
+				 | Always Expr "|-" Expr [ EXPLANATION String ]
+                 | Always Expr "-|" Expr [ EXPLANATION String ]
+                 | Always Expr "="  Expr [ EXPLANATION String ]
+                 | Always Expr           [ EXPLANATION String ]
+				 ) .
+
+Gen            = GEN (Conid | String) ISA (Conid | String) .
+PostStr        = ( "~" | "+" | "-" | "*" ) { ( "~" | "+" | "-" | "*" )} .
+PreStr         = "-" {  "-" } .
+PTerm          = ( preOp "(" PExpression ")" postOp Type
+                 | preOp Morphism postOp Type
+                 ) .
+Type           = "[" Concept [ "*" Concept ] "]" .
+preOp          = { "-" } .				 
+postOp         = { ( "~" | "+" | "*") } .
+PExpression    = PTerm { ( ";" | "!" | "/\" | "\/" | "|-" | "=") PTerm } .
+Expr           = FactorI { "\/" FactorI } .
+FactorI        = Factor  { "/\" Factor  } .
+Factor         = TermD   { "!"  TermD } .
+TermD          = Term    { ";"  Term  } .
+Term           = ( [ preStr ] Morphism [ postStr ] 
+                 | [ preStr ] "(" Expr ")" [ postStr ] 
+				 ) .
+Term2          = [ preStr ] ( Morphism | "(" Expr ")" ) [ postStr ] . 
+Morphism       = ( ( I | Atom ) 
+                      [ "[" Concept "]" ] 
+                 | ( V | Varid ) 
+				      [ "[" ( Concept 
+				            | Concept "*" Concept 
+					        ) "]" ] 
+				 ) . 
+Concept        = ( ONE | Conid | String ) .
+LabelProps     = ADLid [ "{" ADLid { "," ADLid } "}" ] ":" .
+ConceptDef     = CONCEPT (Conid | String) [BYPLUG] String [String] .				 
+KeyDef         = KEY LabelProps Concept "("	KeyAtt {"," KeyAtt} ")".
+KeyAtt         = [ LabelProps ] Expr.
+RoleService    = ROLE ADLid { "," ADLid } USES ADLid { "," ADLid } .
+RoleRelation   = ROLE ADLid { "," ADLid } EDITS Morphism { "," Morphism } .
+Sqlplug        = SQLPLUG Obj . 
+Phpplug        = PHPPLUG Obj . 
+Service        = SERVICE ADLid \n
+                  [ "(" Morphism { "," Morphism } ")" ] \n
+                  [ "{" ADLid { ADLid } [ "," ADLid { ADLid } ] "}" ] \n
+				  ":" Expr \n
+				  [ "=" "[" [ Obj { "," Obj } ] "]" ].
+Obj            = LabelProps Expr \n
+                 [ ALWAYS  {( UNI  | TOT | PROP )} ]  \n
+                 [ "=" "[" Obj { "," Obj } "]" ].		
+Declaration    = Varid "::" Concept ( "*" | "->" ) Concept \n
+                 [ BYPLUG ] [ Props ] \n 
+				 [ BYPLUG ] [ Pragma ] \n
+				 [ "=" Content ] "." .	
+Content        = "[" [ Record { ";" Record } ] "]" .
+Props          = "[" [ Prop { "," Prop } ] "]" .
+Prop           = ( UNI | INJ |  SUR| TOT | SYM | ASY | TRN | RFX ). 
+Pragma         = PRAGMA String { String } . 	
+Record         = "(" String "," String ")". 
