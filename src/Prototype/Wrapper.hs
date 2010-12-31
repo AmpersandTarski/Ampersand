@@ -8,7 +8,7 @@ import Data.Fspec
 import Version (versionbanner)
 import Options        (Options(autoid))
 
---serviceObjects is needed to determine whether some instance of a concept has services to display it i.e. does it become a link
+--serviceObjects is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
 objectWrapper :: Fspc -> [ObjectDef] ->  ObjectDef -> Options -> String
 objectWrapper fSpec serviceObjects o flags
  = intercalate "\n" $
@@ -103,7 +103,6 @@ objectWrapper fSpec serviceObjects o flags
           , "    writeHead(\"<TITLE>No "++objectName++" object selected - " ++ appname ++" - ADL Prototype</TITLE>\");"
           , "    ?><i>No "++objectName++" object selected</i><?php "
           , "  }"
-          , "  $buttons.=ifaceButton($_SERVER['PHP_SELF'].\"?new=1\",\"New\");"
           , "}"
           ]
    )
@@ -290,26 +289,25 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         [ "  echo '</LI>';"
         , "}"
         ]
+        ++ --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
+        [ "if($edit) { //" ++ show (actions att)]
         ++
-        (if null gotoP --TODO new UI should become a dropdown to create a new relation instance, including <new concept instance> which are links (gotoP)
-         then   [ "if($edit) echo '"
-                , "  <LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"]
-         else 
-          (if length gotoP == 1
-           then [ "if($edit) echo '" --TODO so these LI's should become one dropdown
-                , "  <LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>"
-                , "  <LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">"
-                , "    <A HREF=\""++(fst$head gotoP)++"\">new instance of "++name att++"</A>"
-                , "  </LI>';" ]
-           else [ "if($edit) {" --TODO and these LI's should become one dropdown too
-                , "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
-                , "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"
-                , "  echo '<A class=\"GotoLink\" id=\"To"++path++"\">new instance of "++name att++"</A>';"]
-               ++ indentBlock 2 (gotoDiv gotoP path) ++
-                [ "  echo '</LI>';"
-                , "}" ]
-          )
+        [ "  echo '<LI CLASS=\"new UI"++cls++ "\" ID=\""++(path ++".'.count("++var++").'")++"\">enter instance of "++name att++"</LI>';"
+        | elem "Edit" (actions att)]
+        ++
+        (if not(null gotoP) && elem "New" (actions att) 
+         then 
+         [ "  echo '<LI CLASS=\"newlink UI"++cls++ "\" ID=\""++(path ++".'.(count("++var++")+1).'")++"\">';"]
+         ++ (if length gotoP==1 
+             then [ "  echo '<A HREF=\""++(fst$head gotoP)++"\">new instance of "++name att++"</A>';"]
+             else [ "  echo '<A class=\"GotoLink\" id=\"To"++path++"\">new instance of "++name att++"</A>';"]
+                  ++ indentBlock 2 (gotoDiv gotoP path)
+            )
+         ++
+         [ "  echo '</LI>';" ]
+         else []
         )
+        ++ [ "}" ]
         ++
         [ "echo '"
         , "</UL>';"

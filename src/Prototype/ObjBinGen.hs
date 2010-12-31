@@ -4,6 +4,7 @@ module Prototype.ObjBinGen  (phpObjServices)
  
    import CommonClasses
    import Data.Fspec
+   import Data.Plug(Plug(..),DataObject(..))
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)
@@ -12,6 +13,7 @@ module Prototype.ObjBinGen  (phpObjServices)
    import Prototype.Index               (htmlindex)
    import Prototype.RelBinGenBasics     (addSlashes)
    import Prototype.ContextGen          (contextGen)
+   import Prototype.DataObject          (dataServices)
    import System.FilePath               
    import System.Directory
    import Options hiding (services)
@@ -36,6 +38,11 @@ module Prototype.ObjBinGen  (phpObjServices)
           else
              verboseLn flags ("  Skipping dbsettings.php (Installer.php will create this file)")
          )
+      >> verboseLn flags ("data service files for all data objects:")
+      >> sequence_
+         [ write (addExtension ("data_"++name p) ".inc.php") (dataServices flags fSpec (DataObject p))
+         | PlugSql p <- plugs fSpec
+         ]
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
          [ write (addExtension (name o) ".inc.php") (objectServices flags fSpec o)

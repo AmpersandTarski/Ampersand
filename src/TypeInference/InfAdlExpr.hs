@@ -107,7 +107,7 @@ uniquemphs i (K1x ex) = (K1x sb, si)
 
 
 fromCptCpts :: [(Concept,Concept)] -> Isa
-fromCptCpts xs = [(fromCpt c1,fromCpt c2) |(c1,c2)<-xs]
+fromCptCpts xs = (fromCpt S,fromCpt S):[(fromCpt c1,fromCpt c2) |(c1,c2)<-xs]
 fromCpt :: Concept -> RelAlgObj
 fromCpt Anything = Universe
 fromCpt NOthing = EmptyObject

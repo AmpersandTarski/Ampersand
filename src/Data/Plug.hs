@@ -15,7 +15,8 @@ module Data.Plug (Plug(..),Plugs
                  ,PhpAction(..)
                  ,iskey
                  ,ActionType(..)
-                 ,PlugSQL(..),PlugPHP(..))
+                 ,PlugSQL(..),PlugPHP(..)
+                 ,DataObject(..))
 where
 import Adl.Concept (Concept(..),Association(..),Signaling(..),cptnew)
 import Adl.MorphismAndDeclaration
@@ -33,6 +34,55 @@ import FPA (FPA(..),FPAble(..))
 import Auxiliaries (sort',eqClass)
 import Prototype.CodeVariables (CodeVar(..))
 import List(elemIndex,nub)
+
+--a data object is always generated.
+--There is one data object for each generated sql plug.
+--We can rely on a well-formed set of data objects:
+-- 1) no duplication of relation elements (population)
+--    -> data services harvest (read) and distribute (edit) data from and to [Plug]
+-- 2) Rules within the scope of a data object can and will be maintained in the data service.
+--    -> (Composite) services get their data (unpredicatable which data) from one or more data objects.
+--       From a service object it is complex to determine whether you may commit (e.g. are all requiredFields for this edit action available)
+--       A data object has implemented the rules that determine just that.
+--       Separate data and composite services is a solution.
+--       Composite services maintain rules that are not within the scope of any data object.
+data DataObject = DataObject PlugSQL deriving (Show,Eq)
+
+--in imaginary ASCII: the reverse of makeSqlPlug => DATAOBJECT dataobject: ctx = attributes
+instance Object DataObject where
+ --one kernel field is chosen to represent the entityconcept
+ concept (DataObject p)
+  = concept p  
+ --(note: concept p does not only represent the entityconcept, it is also itself i.e. an attribute of the entityconcept)
+ attributes (DataObject p@(ScalarSQL{}))
+  = [(fld2objdef (column p) [])]
+ attributes (DataObject p@(BinSQL{}))
+  = (fld2objdef (fst(columns p)) []):dobj2objats ("bin"++name p) (fst(columns p)) []
+ attributes (DataObject p@(TblSQL{}))
+  = if length mbfld==1 
+    then (fld2objdef (head mbfld) []):(dobj2objats ("tbl"++name p) (head mbfld) (mLkpTbl p))
+    else error "!fatal (module Data.Plug 59): cannot find field of dataobject"
+    where mbfld = [fld|(c,fld)<-cLkpTbl p, c==concept p]
+ ctx (DataObject p@(ScalarSQL{}))
+  = fldexpr (column p)
+ ctx (DataObject p@(BinSQL{}))
+  = fldexpr (fst(columns p))
+ ctx (DataObject p@(TblSQL{}))
+  = if length mbexpr==1 
+    then head mbexpr 
+    else error "!fatal (module Data.Plug 70): cannot find ctx of dataobject"
+    where mbexpr = [fldexpr fld|(c,fld)<-cLkpTbl p, c==concept p] 
+ --TODO -> (see tblcontents)
+ populations (DataObject p) 
+  = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
+
+dobj2objats::String->SqlField->[(Morphism,SqlField,SqlField)]->[ObjectDef]
+dobj2objats nm fld mlkp = objats(fld2objdef fld (fld2objats fld mlkp))
+fld2objdef::SqlField->[ObjectDef]->ObjectDef
+fld2objdef fld ats = Obj (fldname fld) Nowhere (fldexpr fld) Nothing ats []
+fld2objats::SqlField->[(Morphism,SqlField,SqlField)]->[ObjectDef]
+fld2objats fld mlkp = [fld2objdef t (fld2objats t mlkp)|(m,s,t)<-mlkp,fld==s,s/=t]
+
 
 ----------------------------------------------
 --Plug

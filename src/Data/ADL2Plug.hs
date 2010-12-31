@@ -115,11 +115,12 @@ mph2fld keyds kernel plugAtts m
               && not (null [key| key<-keyds, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
               && (contents m==Nothing || contents m==Just []) -- and the the field may not contain any strings
    table   = [ entry
-             | cl<-eqCl (map toLower.name) (kernel++plugAtts)
-             , entry<-if length cl==1 then [(r,name r)|r<-cl] else tbl cl]
+             | cl<-eqCl (map toLower.niceidname) (kernel++plugAtts)
+             , entry<-if length cl==1 then [(r,niceidname r)|r<-cl] else tbl cl]
    tbl rs  = [ entry
              | cl<-eqCl (map toLower.name.source) rs
-             , entry<-if length cl==1 then [(r,name r++name (source r))|r<-cl] else [(r,name r++show i)|(r,i)<-zip cl [(0::Int)..]]]
+             , entry<-if length cl==1 then [(r,niceidname r++name (source r))|r<-cl] else [(r,niceidname r++show i)|(r,i)<-zip cl [(0::Int)..]]]
+   niceidname r = if name r == "I" then name(target r) else name r
    --in a wide table, m can be total, but the field for its target may contain NULL values if the (kernel) field for its source may
    --a kernel field may contain NULL values if
    --  + its field expr is not total OR
