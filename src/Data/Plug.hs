@@ -3,7 +3,7 @@ module Data.Plug (Plug(..),Plugs
                  ,SqlField(..)
                  ,SqlType(..)
                  ,showSQL
-                 ,requiredFields,requires,plugpath
+                 ,requiredFields,requires,plugpath,eLkpTbl
                  ,tblfields
                  ,tblcontents
                  ,entityfield,entityconcept
@@ -449,6 +449,10 @@ requires plug (fld1,fld2) = elem fld2 (requiredFields plug fld1)
 --composition from srcfld to trgfld
 plugpath :: PlugSQL -> SqlField -> SqlField -> Expression
 plugpath p@(BinSQL{}) srcfld trgfld
+  | srcfld==trgfld = let tm=Tm (mLkp p)(-1) --(note: mLkp p is the relation from fst to snd column of BinSQL)
+                     in if srcfld==fst(columns p) 
+                        then F [tm,flp tm] --domain of m
+                        else F [flp tm,tm] --codomain of m
   | srcfld==fst(columns p) && trgfld==snd(columns p) = fldexpr trgfld
   | trgfld==fst(columns p) && srcfld==snd(columns p) = flp(fldexpr srcfld)
   | otherwise = error ("!Fatal (module Data/Plug 436): BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p))
@@ -478,7 +482,7 @@ plugpath p@(TblSQL{}) srcfld trgfld
          else
          if (not.null) (pathsoverIs trgfld srcfld) 
          then flp(F (head (pathsoverIs trgfld srcfld)))
-         else error ("!Fatal (module Data/Plug 455): no kernelpath:"++show(fldname srcfld,fldname trgfld,name p))
+         else error ("!Fatal (module Data/Plug 455): no kernelpath:"++show(fldname srcfld,fldname trgfld,name p,[(show es,fldname s,fldname t)|(es,s,t)<-eLkpTbl p]))
   --paths from I to field t
   pathsfromIs t = [(e,es,et)|(e,es,et)<-eLkpTbl p,et==t,not (null e),isIdent(head e)] 
   --paths from s to t over I[X]
@@ -491,17 +495,17 @@ plugpath p@(TblSQL{}) srcfld trgfld
 --[Expression] implies a 'composition' from SqlField to SqlField which may be empty (no path found) or length==1 (no composition but just head)
 --use plugpath to get the Expression from srcfld to trgfld
 eLkpTbl::PlugSQL -> [([Expression],SqlField,SqlField)]
-eLkpTbl p = eLkpTbl' 0 (mLkpTbl p) []
+eLkpTbl p = let mst=[(m,s,t)|(m,s,t)<-mLkpTbl p, s/=t] in addIs (eLkpTbl' mst [([Tm m (-1)],s,t)|(m,s,t)<-mst])
   where
-  eLkpTbl'::Int->[(Morphism,SqlField,SqlField)]->[([Expression],SqlField,SqlField)]->[([Expression],SqlField,SqlField)]
---  eLkpTbl' 4 x y = error (show(x,[(fldname s, fldname t, es)|(es,s,t)<-nub y]))
-  eLkpTbl' 0 mst _ = eLkpTbl' 1 [(m,s,t)|(m,s,t)<-mst] [([Tm m (-1)],s,t)|(m,s,t)<-mst, s/=t] --initial est
-  eLkpTbl' _ [] est = nub est --est implies (F est) (note: nub because every mph is a starting point in initial est)
-  eLkpTbl' i mst est = if recur==est then nub est else recur
+  addIs est = let ist=[(i,ifld)|(i,ifld,ifld')<-mLkpTbl p, ifld==ifld']
+              in est ++ [((Tm i(-1)):e,ifld,et)|(i,ifld)<-ist,(e,es,et)<-est,es==ifld]
+  eLkpTbl'::[(Morphism,SqlField,SqlField)]->[([Expression],SqlField,SqlField)]->[([Expression],SqlField,SqlField)]
+  eLkpTbl' mst est = if null things2add then nub est else recur
     where
     addfront mt = [(e,es,et)|(e,es,et)<-est,mt==es]
     addback  ms = [(e,es,et)|(e,es,et)<-est,ms==et]
-    recur = eLkpTbl' (i+1)
+    things2add = [()|(m,ms,mt)<-mst,x<-addfront mt++addback ms]
+    recur = eLkpTbl'
       [(m,ms,mt)|(m,ms,mt)<-mst,(not.null)(addfront mt),(not.null)(addback ms)] --keep the mst that will not be added to the front or the back (yet)
       (est --keep what you got
        ++ [(((Tm m (-1)):e),ms,et)|(m,ms,mt)<-mst,(e,_,et)<-addfront mt] --add m to the front (except identities)

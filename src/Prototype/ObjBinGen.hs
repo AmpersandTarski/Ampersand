@@ -4,7 +4,7 @@ module Prototype.ObjBinGen  (phpObjServices)
  
    import CommonClasses
    import Data.Fspec
-   import Data.Plug {- (Plug(..),DataObject(..)) -}
+   --import Data.Plug {- (Plug(..),DataObject(..)) -}
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)
@@ -13,7 +13,7 @@ module Prototype.ObjBinGen  (phpObjServices)
    import Prototype.Index               (htmlindex)
    import Prototype.RelBinGenBasics     (addSlashes)
    import Prototype.ContextGen          (contextGen)
-   import Prototype.DataObject          (dataServices)
+   --import Prototype.DataObject          (dataServices)
    import System.FilePath               
    import System.Directory
    import Options hiding (services)
@@ -23,17 +23,12 @@ module Prototype.ObjBinGen  (phpObjServices)
     
    phpObjServices :: Fspc -> Options -> IO()
    phpObjServices fSpec flags
-     = 
-      let ps = [p|PlugSql p<-plugs fSpec]
-          fs = fields$head ps
-          ns = map fldnull fs
-      in
-      writeStaticFiles flags
+     = writeStaticFiles flags
       >> verboseLn flags "---------------------------"
       >> verboseLn flags "Generating php Object files with ADL"
       >> verboseLn flags "---------------------------"
       >> write "index.htm"                 (htmlindex fSpec serviceObjects flags)
-     -- >> verboseLn flags (show (name(head ps))) >> error ""
+    --  >> verboseLn flags (show [(name p,[(show e,fldname s,fldname t)|(e,s,t)<-eLkpTbl p])|PlugSql p@(TblSQL{})<-plugs fSpec]) >> error ""
       >> write "Installer.php"             (installer fSpec flags)
       >> write (name fSpec++".php")        (contextGen fSpec)
       >> write "interfaceDef.inc.php"      (interfaceDef fSpec serviceObjects flags)

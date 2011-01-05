@@ -129,8 +129,8 @@ showClasses flags fSpec o
                                , "  }" ]
                            | a' <- attributes o]
                    ) ++
-         ["}\n"]++
-         saveTransactions flags fSpec o
+         ["}\n"]
+         ++ saveTransactions flags fSpec o
          ++ (concat
              [ ["function set_"++phpIdentifier (name a)++"($val){"
                ,"  $this->_"++phpIdentifier (name a)++"=$val;"
@@ -555,6 +555,7 @@ doPhpGet fSpec objVar depth objIn objOut
                              (doSqlGet fSpec True
                                             objIn
                                             objOut{objats=[truncKeepUni (if null(objats aout) then aout else aout{objnm="id"})]})
+ 
     nesting var idvar aout = (doPhpGet fSpec
                                        var
                                        (depth+1)
@@ -576,6 +577,12 @@ doPhpGet fSpec objVar depth objIn objOut
 -}
 doSqlGet :: Fspc -> Bool -> ObjectDef -> ObjectDef -> [String]
 doSqlGet fSpec isArr objIn objOut
+--TODO -> SERVICE xxx :I[ONE] = [c :V[ONE*C]], strange SELECT with internal SELECT, sometimes on a strange table:
+--e.g. SERVICE Relationen :I[ONE] = [Relations :V[ONE*Relation]] of Atlas results in
+--SELECT DISTINCT `f1`.`on` AS `Relation`       FROM ( SELECT DISTINCT cfst.on               FROM `HomogeneousRule` AS cfst ) AS f1
+-- | {-objctx objIn==Tm(mIs(cptnew "Relation"))(-1) &&-} isOne' objOut 
+  --  = error(show(objIn,objOut))
+ | otherwise
   = ["SELECT DISTINCT " ++ head fieldNames      ]
     ++ map ((++) "     , ")
            (tail fieldNames) 
