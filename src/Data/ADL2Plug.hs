@@ -16,6 +16,7 @@ import Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
 import Char
 import FPA
 import Data.Maybe (listToMaybe)
+import Data.List (nub)
 
 -----------------------------------------
 --mor2plug
@@ -110,7 +111,9 @@ mph2fld keyds kernel plugAtts m
                                                     -- Therefore, a composition of kernel expr (I;kernelpath;m) will also be inj.
                                                     -- It is enough to check isInj m
    where 
-   fldName = head [nm| (m',nm)<-table, m==m']
+   fldName = if null [nm| (m',nm)<-table, m==m'] 
+             then error ("!Fatal (module ADL2Plug 271): null names in table for m: " ++ show (m,table))
+             else head [nm| (m',nm)<-table, m==m']
    isSQLId = isIdent m 
               && not (null [key| key<-keyds, kdcpt key==target m]) -- if there are any keys around, make this plug autoincrement.
               && (contents m==Nothing || contents m==Just []) -- and the the field may not contain any strings
@@ -128,7 +131,10 @@ mph2fld keyds kernel plugAtts m
    --(if the fldexpr of a kernel field is the identity, 
    -- then the fldexpr defines the relation between this kernel field and this kernel field (fldnull=not(isTot I) and flduniq=isInj I)
    -- otherwise it is the relation between this kernel field and some other kernel field)
-   maybenull x = (not.null) [()|k<-kernel,target k==source x, (elem x kernel && not (isTot x)) || (not (isIdent k) && maybenull k)]
+   maybenull x 
+    | length(map target kernel) > length(nub(map target kernel))
+       = error "more than one kernel field for the same concept"
+    | otherwise = null [()|k<-kernel,target k==source x, isTot x, isIdent k || not(maybenull k)]
 
 -----------------------------------------
 --makeTblPlugs
@@ -162,16 +168,23 @@ makeTblPlugs context allDecs currentPlugs
              attributeLookuptable   -- mLkpTbl
              (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
-    , let c = target (head kernel)               -- one concept from the kernel is designated to "lead" this plug.
-          plugAtts              = [a| a<-attMors, source a `elem` concs kernel] --plugAtts link directly to some kernelfield
-          plugMors              = kernel++plugAtts
+    , let mainkernel = [m|cl<-eqCl target kernel,not(null cl), let m=head cl] --the part of the kernel for concept lookups (cLkpTbl) and linking mphs to (mLkpTbl)
+          restkernel = kernel >- mainkernel --the complement of mainkernel
+          c = if null mainkernel
+              then error "!Fatal (module ADL2Plug 172): nul mainkernel."
+              else target (head mainkernel)               -- one concept from the kernel is designated to "lead" this plug.
+          plugAtts              = [a| a<-attMors, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
+          plugMors              = mainkernel++restkernel++plugAtts --all morphisms for which the target is stored in the plug
           plugFields            = [fld a| a<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable   :: [(Concept,SqlField)]
-          conceptLookuptable    = [(target m,fld m)|cl<-eqCl target kernel, let m=head cl]
+          conceptLookuptable    = [(target m,fld m)|m<-mainkernel]
           attributeLookuptable :: [(Morphism,SqlField,SqlField)]
-          attributeLookuptable  = [(m,lookupC (source m),fld m)| m<-plugMors] -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
-          lookupC cpt           = head [f|(c',f)<-conceptLookuptable, cpt==c']
-          fld                   = mph2fld (keyDefs context) kernel plugAtts
+          attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
+                                  [(m,lookupC (source m),fld m)| m<-plugMors] 
+          lookupC cpt           = if null [f|(c',f)<-conceptLookuptable, cpt==c'] 
+                                  then error "!Fatal (module ADL2Plug 182): null cLkptable."
+                                  else head [f|(c',f)<-conceptLookuptable, cpt==c']
+          fld                   = mph2fld (keyDefs context) mainkernel (restkernel++plugAtts)
     ]
    where   
 -- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the ADL-script are excluded from the process.
@@ -188,10 +201,13 @@ makeTblPlugs context allDecs currentPlugs
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
 So the first step is create the kernels ...   -}
+--fst kernels = subset of kernel where no two kernel fields have the same target i.e. cLkpTbl
+--              attMors will link (see mLkpTbl) to these kernel fields
+--snd kernels = complement of (fst kernels) (thus, we will not link attMors to these kernel fields directly)
     kernels :: [[Morphism]]
     kernels
      = --error ("Diag ADL2Fspec "++show (kernelMors)++"\n"++show (map fst iniKernels)++"\n"++show (expand iniKernels))++
-       [ mIs c: ms               -- one morphism for each concept in the kernel
+       [ mIs c: ms  -- at least one morphism for each concept in the kernel
        | (c,ms)<-f iniKernels    -- the initial kernels
        ]
        where
@@ -254,7 +270,9 @@ makeSqlPlug context obj
    fld m tp              = (mph2fld (keyDefs context) (map fst kernel) (map fst attMors) m){fldtype=tp} --redefine sqltype
    conceptLookuptable    = [(target m,fld m tp)|(m,tp)<-kernel]
    attributeLookuptable  = [(m,lookupC (source m),fld m tp)| (m,tp)<-plugMors] 
-   lookupC cpt           = head [f|(c',f)<-conceptLookuptable, cpt==c']
+   lookupC cpt           = if null [f|(c',f)<-conceptLookuptable, cpt==c'] 
+                           then error "!Fatal (module ADL2Plug 271): null cLkptable."
+                           else head [f|(c',f)<-conceptLookuptable, cpt==c']
    sqltp :: ObjectDef -> SqlType
    sqltp att = head $ [makeSqltype sqltp' | strs<-objstrs att,('S':'Q':'L':'T':'Y':'P':'E':'=':sqltp')<-strs]
                       ++[SQLVarchar 255]

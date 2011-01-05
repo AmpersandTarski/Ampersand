@@ -4,7 +4,7 @@ module Prototype.ObjBinGen  (phpObjServices)
  
    import CommonClasses
    import Data.Fspec
-   import Data.Plug(Plug(..),DataObject(..))
+   import Data.Plug {- (Plug(..),DataObject(..)) -}
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)
@@ -23,11 +23,17 @@ module Prototype.ObjBinGen  (phpObjServices)
     
    phpObjServices :: Fspc -> Options -> IO()
    phpObjServices fSpec flags
-     =   writeStaticFiles flags
+     = 
+      let ps = [p|PlugSql p<-plugs fSpec]
+          fs = fields$head ps
+          ns = map fldnull fs
+      in
+      writeStaticFiles flags
       >> verboseLn flags "---------------------------"
       >> verboseLn flags "Generating php Object files with ADL"
       >> verboseLn flags "---------------------------"
       >> write "index.htm"                 (htmlindex fSpec serviceObjects flags)
+     -- >> verboseLn flags (show (name(head ps))) >> error ""
       >> write "Installer.php"             (installer fSpec flags)
       >> write (name fSpec++".php")        (contextGen fSpec)
       >> write "interfaceDef.inc.php"      (interfaceDef fSpec serviceObjects flags)
@@ -38,11 +44,11 @@ module Prototype.ObjBinGen  (phpObjServices)
           else
              verboseLn flags ("  Skipping dbsettings.php (Installer.php will create this file)")
          )
-      >> verboseLn flags ("data service files for all data objects:")
-      >> sequence_
-         [ write (addExtension ("data_"++name p) ".inc.php") (dataServices flags fSpec (DataObject p))
-         | PlugSql p <- plugs fSpec
-         ]
+  --    >> verboseLn flags ("data service files for all data objects:")
+  --    >> sequence_
+  --       [ write (addExtension ("data_"++name p) ".inc.php") (dataServices flags fSpec (DataObject p))
+  --       | PlugSql p <- plugs fSpec
+  --       ]
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
          [ write (addExtension (name o) ".inc.php") (objectServices flags fSpec o)
@@ -65,12 +71,8 @@ module Prototype.ObjBinGen  (phpObjServices)
                     ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
        --TODO -> moet dit niet ooit vervangen worden door (services fSpec)?
-       serviceObjects 
-          | null (serviceS fSpec) =  serviceG fSpec
-          | allServices flags = serviceG fSpec ++ serviceS fSpec -- serviceS come from the ADL-script. serviceG generates additional services.
-          | otherwise = serviceS fSpec
-
-
+       --JA..
+       serviceObjects = map fsv_objectdef (services fSpec)
 
    data StaticFile = SF { relFP         :: [FilePath] -- relative path including basename and extension
                         , isBinary      :: Bool

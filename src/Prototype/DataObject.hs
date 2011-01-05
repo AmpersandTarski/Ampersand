@@ -211,6 +211,60 @@ conceptclass flags fSpec (DataObject dobj) (c,cfld)
    [ "}\n" ]
   
 --TODO -> save and del function of class
+--
+--save or del is called on some $this with values that may or may not have changed.
+--thus, $this contains values from the screen, which may be equal to $this->id in the current database a.k.a. $old.
+--to be sure that $this contains values from the screen and $old is read from the database, you can check protected $_old
+-- $this has to be compared with $old=new ClassOfThis($this->getId())
+--note: SERVICE initiates and closes TRANSACTION
+--
+--saving/deleting this where !isset($id):
+-- find the largest class instance id that isset (the class that requires the least number of fields) and call save/delete on that class
+--
+--saving this where isset($id::A) and $_new:
+--  INSERT $this => complain if there are missing required fields
+--                  check existence of all morAtts in $this (see NOTE on changing a morAtt)
+--
+--saving this where isset($id::A) and !$_new:
+-- -> check changes in morAtt attfld attached to $id or a kernel sibling sibfld (uni,tot,inj,sur) 
+--    (fldexpr attfld==m::A*B) (relatie sibfld=r::A*C)
+--    UPDATE? => complain if there are missing required fields
+--               check existence of all morAtts in $this (see NOTE on changing a morAtt)
+--    =>if isset($this->getsibfld())
+--      then if $this->getsibfld()!=$old->getsibfld()) 
+--           then UPDATE
+--           else nochange     
+--      if isset($this->getattfld())
+--      then if $this->getattfld()!=$old->getattfld()) 
+--           then UPDATE
+--           else nochange
+--      else if isTot(m) 
+--           then nochange
+--           else if !isset($old->getattfld())
+--                then nochange
+--                else TODO15122010 -> ??? is the univalent attribute set to null or does the SERVICE not include this attribute ??? 
+--                                     assume nochange if only $id isset, UPDATE otherwise
+-- -> check changes in kernel fields in kernelcluster of kfld of $id (fldexpr kfld=m::A*B uni,tot,sur)
+--    if all kfld' unchanged then save(kfld) 
+--    else check if kfld' already exists => cut/paste it
+--
+-- check changes in kernelFld kfld in kernelcluster of $id (expr::A*B [uni,tot,inj,sur])
+-- check changes in kernelFld kfld attached to $id (fldexpr kfld==m::A*B)
+--                                                                   UPDATE(new Obj with old datatype where Obj=NULL)
+--                                                                   UPDATE(changed Obj with unchanged datatype)
+--                                                                   INSERT()
+--                                                                   CUTUPDATE(changed datatype)}
+--deleting this where isset($id::A): 
+--  if $_new then DO NOTHING
+--  else if not(fldnull $id) then delete $this (DELETE WHERE $id)
+--       else set $this to NULL (UPDATE $this=array of null WHERE $old->id)
+--
+--NOTE: changing a morAtt with m::A*B is picking a new $x::B which may or may not exist in class B.
+--  If $x exists in class B or scalar then OK
+--  If $x does not exist in class B then 
+--     if B is scalar then OK => recalculate scalar
+--     else (class B exists) (new B($x)).save() => save will complain if there are required fields i.e. $x has to be created first
+--          note: if SERVICE contains requiredfields for $x then the SERVICE should save $x before $this
 saveTransactions :: Options -> Fspc -> DataObject -> (Concept,SqlField) -> [String]
 saveTransactions _ _ _ _ = []
 --saveTransactions flags fSpec (DataObject dobj) (c,cfld) = []

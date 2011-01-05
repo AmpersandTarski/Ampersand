@@ -74,7 +74,7 @@ module Prototype.Installer where
                       | key <- tblfields plug, flduniq key, not (fldnull key)] --TODO151210 -> Add KeyDefs as UNIQUE KEY
                      ++
                       [", UNIQUE INDEX (`"++fldname kernelfld++"`)" --kernelfields are unique indexes (they are already unique keys if not fldnull)
-                      | kernelfld <- tblfields plug, iskey plug kernelfld, fldnull kernelfld]
+                      | kernelfld <- tblfields plug, flduniq kernelfld, fldnull kernelfld]
                     )
              ++ ["                  ) TYPE=InnoDB DEFAULT CHARACTER SET latin1 COLLATE latin1_bin\");"
              , "if($err=mysql_error()) { $error=true; echo $err.'<br />'; }"]

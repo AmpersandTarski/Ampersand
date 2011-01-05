@@ -6,7 +6,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Adl
    import Auxiliaries    (eqCl, eqClass)
    import Data.Fspec
-   import Options        (Options(language,genPrototype))
+   import Options        (Options(language,genPrototype,theme),DocTheme(..))
    import NormalForms(conjNF,disjNF,normPA,simplify)
    import Data.Plug
    import Data.ADL2Plug
@@ -88,6 +88,9 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
            where tots (F fs) = [m| Tm m _<-take 1 fs]++[flp m| Tm m _<-take 1 (reverse fs)]
                  tots _ = []
                  visible _ = True -- for computing totality, we take all quads into account.
+        -- The following definition contains all explanations that are declared within the current fSpec.
+        fSexpls' = explanationDeclarations flags context                ++
+                   concat (map (explanationDeclarations flags)(patterns context))
 
         --------------
         --making plugs
@@ -113,7 +116,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         -- WHAT -> is a BYPLUG?
         savedDecs= (filter (not.decplug) allDecs)
 
---TODO151210 -> Plug A is overbodig, want A zit al in plug r
+        --TODO151210 -> Plug A is overbodig, want A zit al in plug r
 --CONTEXT Temp
 --PATTERN Temp
 --r::A*B[TOT].
@@ -143,7 +146,9 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         -------------------
         --END: making plugs
         -------------------
-
+        -------------------
+        --making services
+        -------------------
         -- services (type ObjectDef) can be generated from a basic ontology. That is: they can be derived from a set
         -- of relations together with multiplicity constraints. That is what serviceG does.
         -- This is meant to help a developer to build his own list of services, by providing a set of services that works.
@@ -164,47 +169,12 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 --          to ensure deletability of entities (signal declarations are excluded)
         dRels = [     morph d | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
                 [flp (morph d)| d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+        --  Auxiliaries for generating services:
+        morph d = Mph (name d) (pos d) [] (source d,target d) True d
 --  Step 3: compute maximally total expressions and maximally injective expressions.
---  BECAUSE
---   (GMI): Moet voor een concept dat 'los staat' (geen attribuut van, en heeft zelf geen attributen)
---          geen service genereerd worden? => SERVICE Concept: I[Concept]
---          VOORBEELD: PATTERN x r::A*B. s::B*C. t::A*C. ENDPATTERN geen multipliciteiten=>serviceGen=[]
---  Antwoord: Jawel!
         maxTotExprs = clos cRels
         maxInjExprs = clos dRels
---  Step 4: generate services from the maximally total expressions and maximally injective expressions.
---          and generate V[ONE*Concept] for each concept
-        serviceGen
-         = [ Obj (name c)         -- objnm
-                 Nowhere          -- objpos
-                 (Tm (mIs c)(-1)) -- objctx
-                 Nothing          -- objctx_proof
-                 objattributes    -- objats
-                 []               -- objstrs
-           | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
-           , let objattributes = recur [] cl
-           , not (null objattributes) -- de meeste plugs hebben in ieder geval I als attribuut
-           , let e0=head cl, let c=source e0
-           , map toLower (name c) `notElem` map (map toLower.name) scalarPlugs -- exclude scalar SQL-tables
-           ]
-           ++ 
-           [ Obj (plural (language flags)(name c))         -- objnm
-                 Nowhere          -- objpos
-                 (Tm (mIs S)(-1)) -- objctx
-                 Nothing          -- objctx_proof
-                 [att]            -- objats
-                 []               -- objstrs
-             --TODO: (GMI) Do we have a general function that produces the set of all concepts?
-       --  | c<-(\(Isa isas cs) -> rd$[c|c@(C{})<-cs]++[c|(c,_)<-isas]++[c|(_,c)<-isas]) (ctxisa context)
-             --SJ: yes, there is...
-           | c<-concs context
-           , let att = Obj (name c) Nowhere (Tm (V [cptS,c] (cptS,c))(-1)) Nothing [] []
-           ]
-        --REMARK151210 -> only used to exclude scalar SQL-tables, thus scalar PHP plugs (if something like that exists) are not considered
-        scalarPlugs = [PlugSql p|PlugSql p@(ScalarSQL{})<-allplugs]
---  Auxiliaries for generating services:
-        morph d = Mph (name d) (pos d) [] (source d,target d) True d
---    Warshall's transitive closure algorithm, adapted for this purpose:
+        --    Warshall's transitive closure algorithm, adapted for this purpose:
         clos :: Morphisms -> Expressions
         clos xs
          = f [F [Tm x (-1)]| x<-xs] (rd (map source xs) `isc` rd (map target xs))
@@ -214,18 +184,138 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                              , null (ls `isc` rs)
                                              ]) xs'
             f q []      = q
-       
-        recur trace es
-         = [ Obj (showADLcode fSpec t)     -- objnm
-                 Nowhere                   -- objpos
-                 t                         -- objctx
-                 Nothing                   -- objctx_proof
-                 (recur (trace++[c]) cl)   -- objats
-                 []                        -- objstrs
-           | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
--- The following definition contains all explanations that are declared within the current fSpec.
-        fSexpls' = explanationDeclarations flags context                ++
-                   concat (map (explanationDeclarations flags)(patterns context))
+--  Step 4: a) generate services starting with SERVICE concept: I[Concept]
+--          b) generate services starting with SERVICE concepts: V[ONE*Concept] 
+--          note: based on a theme one can pick a certain set of generated services (there is not one correct set)
+--                default theme => generate services from the clos total expressions and clos injective expressions (see step1-3).
+--                                 PRO: any rule set can be maintained AND every relation can be edited
+--                                 CON: step 3 may explode leading to unacceptable compile time
+--                student theme => generate services based on plugs i.e. SERVICE entityplug: I[ID] hiding I[ID] (note: step1-3 are skipped)
+--                                 For every concept A in ScalarSQL and TblSQL (cLkp) there is a SERVICE with attributes:
+--                                   -> each non-bijective kernelfield B required by A (non-bijective flds with less or equal NULLs)
+--                                      -> each total attrfield m with source m=B (non-lists) (note: uni&tot m are required for A)
+--                                   -> each bijective (required) kernelfield C of A (bijective flds with equal NULLs)
+--                                      -> each total attrfield m with source m=C (non-lists) (note: uni&tot m are required for A)
+--                                   -> each attrfield m with source m=A (non-lists)
+--                                   -> each target_m_field where m in BinSQL with source m=A (lists)
+--                                   -> each non-bijective kernelfield D that requires A (non-bijective flds with more or equal NULLs)
+--                                 note: the SERVICE of C is similar to that of A, only instance of C is $id 
+--                                 note: the SERVICE of B contains links to the service of A, C and D
+--                                       => if A and ID are bijective, then all fields in the plug + some BinSQL can be edited by SERVICE gen:I[GEN]
+--                                 PRO-CON: opposite of PRO-CON of default theme
+--                                 note: student rules in the atlas are always signal rules (not maintained)
+--                                       and every m can be edited in the student theme, 
+--                                           because every concept A is in exactly one TblSQL or ScalarSQL 
+--                                           (i.e. SERVICE A:I[A] exists with attributes for each target_m_field where m in BinSQL with source m=A)
+--                                       thus, no CON for contexts with only signals 
+        serviceGen = step4a ++ step4b
+        step4a
+         | theme flags == StudentTheme 
+         = let cptsvcs = [(c,cfld,p)| PlugSql p@(TblSQL{})   <-allplugs, (c,cfld)<-cLkpTbl p]
+                      ++ [(cLkp p,column p,p)| PlugSql p@(ScalarSQL{})<-allplugs]
+               binplugs = [p| PlugSql p@(BinSQL{})<-allplugs]
+               --bijective or non-bijective required kernelfields (excl.field for ID and cfld )
+               reqks p cfld = [kfld| kfld<-requiredFields p cfld,iskey p kfld, kfld/=cfld]
+               --atts of kfld required by cfld
+               reqatts kfld p cfld = [attfld| (kfld',attfld)<-attrels p, kfld==kfld', elem attfld (requiredFields p cfld)]
+               --atts of cfld
+               myatts p cfld = [attfld| (cfld',attfld)<-attrels p, cfld==cfld']
+               --objats of Obj{kfld} within service for cfld
+               katts kfld p cfld
+                 = [Obj { objnm   = fldname attfld
+                        , objpos  = Nowhere
+                        , objctx  = plugpath p kfld attfld --composition from kfld to attfld
+                        , objctx_proof = Nothing
+                        , objats  = []
+                        , objstrs = [] }
+                        |attfld<-reqatts kfld p cfld]
+               --non-bijective kernelfields that require cfld
+               ksreq p cfld = [kfld |kfld<-tblfields p,iskey p kfld, requires p (kfld,cfld), not(elem kfld (bijectivefields p cfld))]
+               --objats for service for concept c (see comment above)
+               catts p c cfld
+                 = [Obj { objnm   = show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
+                        , objpos  = Nowhere
+                        , objctx  = plugpath p cfld kfld --composition from cfld to kfld
+                        , objctx_proof = Nothing
+                        , objats  = katts kfld p cfld
+                        , objstrs = [] }
+                   | kfld<-reqks p cfld] 
+                   ++ 
+                   [Obj { objnm   = fldname attfld
+                               , objpos  = Nowhere
+                               , objctx  = plugpath p cfld attfld --composition from cfld to attfld
+                               , objctx_proof = Nothing
+                               , objats  = []
+                               , objstrs = [] }
+                              | attfld<-myatts p cfld] 
+                   ++
+                   [Obj { objnm   = name bp
+                        , objpos  = Nowhere
+                        , objctx  = if source(mLkp bp)==c then Tm (mLkp bp) (-1) else flp (Tm (mLkp bp)(-1))
+                        , objctx_proof = Nothing
+                        , objats  = []
+                        , objstrs = [] }
+                   | bp<-binplugs, source(mLkp bp)==c || target(mLkp bp)==c]
+                   ++
+                   [Obj { objnm   = show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
+                        , objpos  = Nowhere
+                        , objctx  = plugpath p cfld kfld --composition from cfld to kfld
+                        , objctx_proof = Nothing
+                        , objats  = [] --note: atts of kfld are not required for cfld (kfld isn't either)
+                        , objstrs = [] }
+                   | kfld<-ksreq p cfld]
+           in
+           --service for each concept in TblSQL or ScalarSQL
+           [Obj { objnm   = name c
+                , objpos  = Nowhere
+                , objctx  = case p of TblSQL{} -> Tm (mIs c) (-1); _ -> fldexpr cfld
+                , objctx_proof = Nothing
+                , objats  = catts p c cfld
+                , objstrs = [] }
+           | (c,cfld,p)<-cptsvcs] 
+         --end student theme
+         --otherwise: default theme
+         | otherwise --note: the uni of maxInj and maxTot may take significant time (e.g. -p while generating index.htm)
+                     --note: associations without any multiplicity are not in any Service
+                     --note: scalars with only associations without any multiplicity are not in any Service
+         = let recur trace es
+                = [ Obj (showADLcode fSpec t)     -- objnm
+                        Nowhere                   -- objpos
+                        t                         -- objctx
+                        Nothing                   -- objctx_proof
+                        (recur (trace++[c]) cl)   -- objats
+                        []                        -- objstrs
+                  | cl<-eqCl (\(F ts)->head ts) es, F ts<-take 1 cl, t<-[head ts], c<-[source t], c `notElem` trace ]
+           in
+           [ Obj (name c)         -- objnm
+                 Nowhere          -- objpos
+                 (Tm (mIs c)(-1)) -- objctx
+                 Nothing          -- objctx_proof
+                 objattributes    -- objats
+                 []               -- objstrs
+           | cl <- eqCl source (maxTotExprs `uni` maxInjExprs)
+           , let objattributes = recur [] cl
+           , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
+           , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs) 
+             not (length objattributes==1 && isIdent(objctx(head objattributes)))  
+           , let e0=head cl, let c=source e0
+           ]
+        --end otherwise: default theme
+        --end stap4a
+        step4b --generate lists of concept instances for those concepts that have a generated SERVICE in step4a 
+         = [ Obj (plural (language flags)(name c))         -- objnm
+                 Nowhere          -- objpos
+                 (Tm (mIs S)(-1)) -- objctx
+                 Nothing          -- objctx_proof
+                 [att]            -- objats
+                 []               -- objstrs
+           | svcc<-step4a
+           , let c = source(objctx svcc)
+           , let att = Obj (name c) Nowhere (Tm (V [cptS,c] (cptS,c))(-1)) Nothing [] []
+           ]
+        ----------------------
+        --END: making services
+        ----------------------
 
 
    editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...

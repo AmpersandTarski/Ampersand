@@ -3,7 +3,7 @@ module Data.Plug (Plug(..),Plugs
                  ,SqlField(..)
                  ,SqlType(..)
                  ,showSQL
-                 ,requiredFields,requires
+                 ,requiredFields,requires,plugpath
                  ,tblfields
                  ,tblcontents
                  ,entityfield,entityconcept
@@ -13,7 +13,7 @@ module Data.Plug (Plug(..),Plugs
                  ,PhpArgs
                  ,PhpReturn(..)
                  ,PhpAction(..)
-                 ,iskey
+                 ,iskey,kernelrels,attrels,bijectivefields
                  ,ActionType(..)
                  ,PlugSQL(..),PlugPHP(..)
                  ,DataObject(..))
@@ -24,7 +24,7 @@ import Adl.Expression (Expression(..))
 import Adl.ObjectDef (ObjectDef(..))
 import Adl.FilePos (FilePos(..))
 import Adl.Pair (Paire)
-import Adl (isSur,isTot,isInj,isUni)
+import Adl (isSur,isTot,isInj,isUni,flp)
 import Collection((>-))
 import Classes.Object (Object(..))
 import Classes.Populated (contents')
@@ -302,10 +302,16 @@ instance Object PlugSQL where
     where
      f c mms = if null stop                                     -- a path from c to a is not found (yet)
                then f c mms'                                    -- so add another step to the recursion
-               else F [Tm m (-1)| m<-head (sort' length stop)]  -- pick the shortest path and turn it into an expression.
+               else if null (sort' length stop) 
+                    then error "!Fatal (module Data/Plug 306): null (sort' length stop)." 
+                    else F [Tm m (-1)| m<-head (sort' length stop)]  -- pick the shortest path and turn it into an expression.
                where
-                 mms' = [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
-                 stop = [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
+                 mms' = if elem [] mms 
+                        then error "!Fatal (module Data/Plug 310): null in mms."
+                        else [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
+                 stop = if elem [] mms'
+                        then error "!Fatal (module Data/Plug 313): null in mms'."
+                        else [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
  attributes _ = [] --no attributes for BinSQL and ScalarSQL
  ctx p@(BinSQL{}) = Tm (mLkp p) (-1)
  ctx p = Tm (mIs (concept p)) (-1)
@@ -366,12 +372,28 @@ showSQL (SQLBool     ) = "BOOLEAN"
 --the field that is isIdent and iskey (i.e. concept plug), or any similar (uni,inj,sur,tot) field is also UNIQUE KEY
 --KeyDefs define UNIQUE KEY (fld1,fld2,..,fldn)
 --TODO151210->iskey is a bad name, 'key' is misused in more cases => CLEAN UP!
+--REMARK -> a kernel field does not have to be in cLkpTbl, in that cast there is another kernel field that is 
+--          thus I must check whether fldexpr isUni && isInj && isSur
 iskey :: PlugSQL->SqlField->Bool
 iskey plug@(ScalarSQL{}) f = column plug==f
 iskey plug@(BinSQL{}) f --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\m;m~=I i.e. a key for this plug
   | isUni(mLkp plug) || isInj(mLkp plug) = error "!Fatal (module Data/Plug 317): BinSQL may not store a univalent or injective mph, use TblSQL instead."
-  | otherwise              = f==fst(columns plug) && (isTot(mLkp plug))
-iskey plug@(TblSQL{}) f    = elem f (map snd (cLkpTbl plug))
+  | otherwise              = False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
+iskey plug@(TblSQL{}) f    = elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
+
+--mLkpTbl stores the relation of some target field with one source field
+--an iskey target field is a kernel field related to some similar or larger kernel field
+--any other target field is an attribute field related to its kernel field
+kernelrels::PlugSQL ->[(SqlField,SqlField)]
+kernelrels plug@(ScalarSQL{}) = [(column plug,column plug)]
+kernelrels (BinSQL{})         = error "!Fatal (module Data/Plug 384): Binary plugs do not know the concept of kernel fields."
+kernelrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,iskey plug tfld] 
+attrels::PlugSQL ->[(SqlField,SqlField)]
+attrels plug@(ScalarSQL{}) = [(column plug,column plug)]
+attrels (BinSQL{})         = error "!Fatal (module Data/Plug 388): Binary plugs do not know the concept of attribute fields."
+attrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,not(iskey plug tfld)] 
+
+
 
 --the kernel of SqlFields is ordered by existence of elements for some instance of the entity stored in the plug.
 --fldexpr of key is the relation with a similar or larger key.
@@ -424,6 +446,72 @@ requiredFields plug@(TblSQL{}) fld
 requires :: PlugSQL -> (SqlField,SqlField) ->Bool
 requires plug (fld1,fld2) = elem fld2 (requiredFields plug fld1)
 
+--composition from srcfld to trgfld
+plugpath :: PlugSQL -> SqlField -> SqlField -> Expression
+plugpath p@(BinSQL{}) srcfld trgfld
+  | srcfld==fst(columns p) && trgfld==snd(columns p) = fldexpr trgfld
+  | trgfld==fst(columns p) && srcfld==snd(columns p) = flp(fldexpr srcfld)
+  | otherwise = error ("!Fatal (module Data/Plug 436): BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p))
+plugpath p@(ScalarSQL{}) srcfld trgfld
+  | srcfld==trgfld = fldexpr trgfld
+  | otherwise = error ("!Fatal (module Data/Plug 437): scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p))
+plugpath p@(TblSQL{}) srcfld trgfld  
+  | srcfld==trgfld = Tm (mIs (target(fldexpr trgfld))) (-1)
+  | otherwise = path
+  where
+  path = if (not.null) (paths srcfld trgfld) 
+         then if length(head (paths srcfld trgfld))==1 then head(head (paths srcfld trgfld)) else F (head (paths srcfld trgfld))
+         else
+         if (not.null) (paths trgfld srcfld) 
+         then if length(head (paths trgfld srcfld))==1 then flp(head(head (paths trgfld srcfld))) else flp(F (head (paths trgfld srcfld)))
+         else pathoverI
+  --paths from s to t by connecting m from mLkpTbl
+  --the (m,srcfld,trgfld) from mLkpTbl form paths longer paths if connected: (trgfld m1==srcfld m2) => (m1;m2,srcfld m1,trgfld m2)
+  paths s t = [e|(e,es,et)<-eLkpTbl p,s==es,t==et]
+  --bijective kernel fields, which are bijective with ID of plug have fldexpr=I[X].
+  --thus, path closures of these kernel fields are disjoint (path closure=set of fields reachable by paths),
+  --      because these kernel fields connect to themselves by m=I[X] (i.e. end of path).
+  --connect two paths over I[X] (I[X];srce)~;(I[X];trge) => filter I[X] => srcpath~;trgpath
+  pathoverI 
+       = if (not.null) (pathsoverIs srcfld trgfld) 
+         then F (head (pathsoverIs srcfld trgfld))
+         else
+         if (not.null) (pathsoverIs trgfld srcfld) 
+         then flp(F (head (pathsoverIs trgfld srcfld)))
+         else error ("!Fatal (module Data/Plug 455): no kernelpath:"++show(fldname srcfld,fldname trgfld,name p))
+  --paths from I to field t
+  pathsfromIs t = [(e,es,et)|(e,es,et)<-eLkpTbl p,et==t,not (null e),isIdent(head e)] 
+  --paths from s to t over I[X]
+  pathsoverIs s t = [flpsrce++(tail trge) 
+                    |(srce,srces,srcet)<-pathsfromIs s
+                    ,(trge,trges,trget)<-pathsfromIs t
+                    ,srces==trges, let F flpsrce= flp(F (tail srce))] 
+  
+
+--[Expression] implies a 'composition' from SqlField to SqlField which may be empty (no path found) or length==1 (no composition but just head)
+--use plugpath to get the Expression from srcfld to trgfld
+eLkpTbl::PlugSQL -> [([Expression],SqlField,SqlField)]
+eLkpTbl p = eLkpTbl' 0 (mLkpTbl p) []
+  where
+  eLkpTbl'::Int->[(Morphism,SqlField,SqlField)]->[([Expression],SqlField,SqlField)]->[([Expression],SqlField,SqlField)]
+--  eLkpTbl' 4 x y = error (show(x,[(fldname s, fldname t, es)|(es,s,t)<-nub y]))
+  eLkpTbl' 0 mst _ = eLkpTbl' 1 [(m,s,t)|(m,s,t)<-mst] [([Tm m (-1)],s,t)|(m,s,t)<-mst, s/=t] --initial est
+  eLkpTbl' _ [] est = nub est --est implies (F est) (note: nub because every mph is a starting point in initial est)
+  eLkpTbl' i mst est = if recur==est then nub est else recur
+    where
+    addfront mt = [(e,es,et)|(e,es,et)<-est,mt==es]
+    addback  ms = [(e,es,et)|(e,es,et)<-est,ms==et]
+    recur = eLkpTbl' (i+1)
+      [(m,ms,mt)|(m,ms,mt)<-mst,(not.null)(addfront mt),(not.null)(addback ms)] --keep the mst that will not be added to the front or the back (yet)
+      (est --keep what you got
+       ++ [(((Tm m (-1)):e),ms,et)|(m,ms,mt)<-mst,(e,_,et)<-addfront mt] --add m to the front (except identities)
+       ++ [(e++[Tm m (-1)] ,es,mt)|(m,ms,mt)<-mst,(e,es,_)<-addback ms] --add m to the back  (except identities) 
+      )
+
+--bijective fields of f (incl. f)
+bijectivefields::PlugSQL -> SqlField -> [SqlField]
+bijectivefields p f = [bij|Cluster fs<-kernelclusters p,elem f fs,bij<-fs]
+
 --the clusters of kernel sqlfields that are similar because they relate uni,inj,tot,sur
 kernelclusters ::PlugSQL -> [Cluster SqlField]
 kernelclusters plug@(ScalarSQL{}) = [Cluster [column plug]]
@@ -437,18 +525,6 @@ similarkey (s,t) = s/=t && isTot (fldexpr t) && isSur (fldexpr t) && isInj (flde
 --includes key: some target key t that is related to source key s uni,inj,sur but not tot
 includeskey::(SqlField,SqlField)->Bool
 includeskey (_,t) = not(isTot (fldexpr t)) && isSur (fldexpr t) && isInj (fldexpr t) && isUni (fldexpr t)
-
---mLkpTbl stores the relation of some target field with one source field
---an iskey target field is a kernel field related to some similar or larger kernel field
---any other target field is an attribute field related to its kernel field
-kernelrels::PlugSQL ->[(SqlField,SqlField)]
-kernelrels plug@(ScalarSQL{}) = [(column plug,column plug)]
-kernelrels (BinSQL{})         = error "!Fatal (module Data/Plug 384): Binary plugs do not know the concept of kernel fields."
-kernelrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,iskey plug tfld] 
-attrels::PlugSQL ->[(SqlField,SqlField)]
-attrels plug@(ScalarSQL{}) = [(column plug,column plug)]
-attrels (BinSQL{})         = error "!Fatal (module Data/Plug 388): Binary plugs do not know the concept of attribute fields."
-attrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,not(iskey plug tfld)] 
 
 --clusterBy clusters similar items like eqClass clusters equal items
 --[(a,a)] defines flat relations between items (not closed)
@@ -524,6 +600,7 @@ tblcontents plug@(TblSQL{})
  --where NULL in a kernel field implies NULL in the following kernel fields
  --and the first field is unique and not null
  --(m,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold m or (flp m), s and t are assumed to be different
+ | null(fields plug) = error ("!Fatal (module Data/Plug 527): no fields in plug.")
  | flduniq idfld && not(fldnull idfld) && isIdent (fldexpr idfld)
    = let 
      pos fld = case elemIndex fld (fields plug) of 
