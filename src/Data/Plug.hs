@@ -460,7 +460,8 @@ plugpath p@(ScalarSQL{}) srcfld trgfld
   | srcfld==trgfld = fldexpr trgfld
   | otherwise = error ("!Fatal (module Data/Plug 437): scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p))
 plugpath p@(TblSQL{}) srcfld trgfld  
-  | srcfld==trgfld = Tm (mIs (target(fldexpr trgfld))) (-1)
+  | srcfld==trgfld && iskey p trgfld = Tm (mIs (target(fldexpr trgfld))) (-1)
+  | srcfld==trgfld && not(iskey p trgfld) = F [flp (fldexpr trgfld),(fldexpr trgfld)] --codomain of m of morAtt
   | otherwise = path
   where
   path = if (not.null) (paths srcfld trgfld) 

@@ -219,10 +219,10 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                --atts of kfld required by cfld
                reqatts kfld p cfld = [attfld| (kfld',attfld)<-attrels p, kfld==kfld', elem attfld (requiredFields p cfld)]
                --atts of cfld
-               myatts p cfld = [attfld| (cfld',attfld)<-attrels p, cfld==cfld']
+               myatts p cfld = [attfld| (cfld',attfld)<-attrels p, cfld==cfld',cfld/=attfld]
                --objats of Obj{kfld} within service for cfld
                katts kfld p cfld
-                 = [Obj { objnm   = fldname attfld
+                 = [Obj { objnm   = "katts"++fldname attfld
                         , objpos  = Nowhere
                         , objctx  = plugpath p kfld attfld --composition from kfld to attfld
                         , objctx_proof = Nothing
@@ -233,7 +233,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                ksreq p cfld = [kfld |kfld<-tblfields p,iskey p kfld, requires p (kfld,cfld), not(elem kfld (bijectivefields p cfld))]
                --objats for service for concept c (see comment above)
                catts p c cfld
-                 = [Obj { objnm   = show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
+                 = [Obj { objnm   = "reqks"++show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
                         , objpos  = Nowhere
                         , objctx  = plugpath p cfld kfld --composition from cfld to kfld
                         , objctx_proof = Nothing
@@ -241,7 +241,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                         , objstrs = [] }
                    | kfld<-reqks p cfld] 
                    ++ 
-                   [Obj { objnm   = fldname attfld
+                   [Obj { objnm   = "myatts"++fldname attfld
                                , objpos  = Nowhere
                                , objctx  = plugpath p cfld attfld --composition from cfld to attfld
                                , objctx_proof = Nothing
@@ -249,7 +249,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                , objstrs = [] }
                               | attfld<-myatts p cfld] 
                    ++
-                   [Obj { objnm   = name bp
+                   [Obj { objnm   = "bin"++name bp
                         , objpos  = Nowhere
                         , objctx  = if source(mLkp bp)==c then Tm (mLkp bp) (-1) else flp (Tm (mLkp bp)(-1))
                         , objctx_proof = Nothing
@@ -257,7 +257,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                         , objstrs = [] }
                    | bp<-binplugs, source(mLkp bp)==c || target(mLkp bp)==c]
                    ++
-                   [Obj { objnm   = show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
+                   [Obj { objnm   = "ksreq"++show(plugpath p cfld kfld) --TODO -> nice name? (fldname of kernel field is not always nice)
                         , objpos  = Nowhere
                         , objctx  = plugpath p cfld kfld --composition from cfld to kfld
                         , objctx_proof = Nothing

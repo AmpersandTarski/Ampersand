@@ -38,7 +38,8 @@ objectWrapper fSpec serviceObjects o flags
      then [ "    $"++objectId++"=new "++objectId++"(" ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++");"
           ] 
-     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']," ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
+     else [ "    $"++objectId++"=new "++objectId++"(@$_REQUEST['ID']" ++ [','|not(null (objats o))]
+                                  ++ intercalate ", " ["$"++phpIdentifier (name a) | a<-objats o]++");"
           , "    if($"++objectId++"->save()!==false) die('ok:'."++selfref++".'&" ++ objectId ++"='.urlencode($"++objectId++"->getId())"++");"
           ] 
    )

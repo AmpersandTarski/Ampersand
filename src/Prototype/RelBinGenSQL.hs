@@ -441,10 +441,11 @@ module Prototype.RelBinGenSQL
    -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
    -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
    sqlRelPlugs :: Fspc -> Expression -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
-   sqlRelPlugs fSpec e = [ (plug,fld0,fld1)
-                         | PlugSql plug<-plugs fSpec
-                         , (fld0,fld1)<-sqlPlugFields plug e
-                         ]
+   sqlRelPlugs fSpec e
+    = [ (plug,fld0,fld1)
+      | PlugSql plug<-plugs fSpec
+      , (fld0,fld1)<-sqlPlugFields plug e
+      ]
 
    sqlRelPlugNames :: Fspc -> Expression -> [(String,String,String)] --(plug,source,target)
    sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
@@ -454,7 +455,7 @@ module Prototype.RelBinGenSQL
    --then return (fld0,fld1)
    --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
    sqlPlugFields :: PlugSQL -> Expression -> [(SqlField, SqlField)]
-   sqlPlugFields p e
+   sqlPlugFields p e 
      = nub [(fld0,fld1)
            | fld0<-[f|f<-tblfields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
            , fld1<-[f|f<-tblfields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
