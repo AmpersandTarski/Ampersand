@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 {-
 TODO -> detect composition over universe
            RULE testUinverse2 MAINTAINS I[Order];V;V;V;I[Order]
@@ -18,26 +19,33 @@ TODO -> detect composition over universe
    "[8] Type is not homogeneous" 
    
    Isa errors:
-   error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
-                       ++ " if the order of "++show c2++" and "++show c3 ++ 
-                       " is not specified. Specify the order with a GEN .. ISA .."
-                       |(c1,c2,c3)<-checkrels]
+   error ("!Fatal (module TypeInference.InfLibAdlExpr 22): "++
+          show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
+                       ++ " if "++show c2++" and "++show c3 ++ 
+                       " are not comparable. Specify the order with a GEN .. ISA .."
+                       |(c1,c2,c3)<-checkrels])
  -}
 module TypeInference.InfAdlExpr(infertype_and_populate) where
 import TypeInference.InfLibAG
-import Adl
+import ADL
 import ShowADL
 import Text.Pandoc
 import Rendering.InfTree2Pandoc (texOnly_pandoctree,texOnly_writeexpr,texOnly_writerule)
 
 fatal :: Int -> String -> a
-fatal regel msg = error ("!Fatal (module InfLibAdlExpr "++show regel++"): "++msg )
+fatal regel msg = error ("!Fatal (module TypeInference.InfLibAdlExpr "++show regel++"): "++msg )
 
 ----------------------------------------------------------------------------
---ADL conversie
+--Ampersand conversie
 ----------------------------------------------------------------------------
---DESCR -> a function to add population to the morphisms in the expression, isa relations as a set of (Concept,Concept), declarations from the script, the expression => OR the type of the expression and the expression with typed and populated morphisms each of them bound to one declaration OR an error as String
-infertype_and_populate :: (Morphism -> Morphism) -> [(Concept,Concept)] -> Declarations -> (Concept,Concept) -> Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
+--DESCR -> a function to add population to the relations in the expression, isa relations as a set of (Concept,Concept), declarations from the script, the expression => OR the type of the expression and the expression with typed and populated relations each of them bound to one declaration OR an error as String
+infertype_and_populate
+   :: (Relation Concept -> Relation Concept) ->
+      [(Concept,Concept)] ->
+      [Declaration Concept] ->
+      (Concept,Concept) ->
+      Expression (Relation Concept) ->
+      Either ((Concept,Concept), Expression (Relation Concept) ,InfTree) (String,[Block])
 infertype_and_populate populate isas ds (pushx,pushy) ex_in =
   case inf_expr of
     Left _ -> Left ((toCpt expr_src,toCpt expr_trg), enrich_expr uniqex,inftree)
@@ -64,8 +72,8 @@ infertype_and_populate populate isas ds (pushx,pushy) ex_in =
    (ec1,ec2,d) = if null ts then (NOthing,NOthing,d) else head ts
    typedmp = case mp of
       Mph{} -> if inline mp 
-               then mp {mphtyp=(ec1,ec2),mphdcl=toDcl}
-               else mp {mphtyp=(ec2,ec1),mphdcl=toDcl}
+               then mp {mphsrc=ec1,mphtrg=ec2,mphdcl=toDcl}
+               else mp {mphsrc=ec2,mphtrg=ec1,mphdcl=toDcl}
       I{} -> mp {mphgen=ec1, mphspc=ec1}
       V{} -> mp {mphtyp=(ec1,ec2)}
       Mp1{} -> mp {mph1typ=ec1}
@@ -73,8 +81,8 @@ infertype_and_populate populate isas ds (pushx,pushy) ex_in =
            else head ds'
       where ds' = [d'|d'<-ds, name d'==dname d, dtype d==(fromCpt(source d'),fromCpt(target d'))]
 
---DESCR -> if you need an identifier for morphisms within the scope of an expression 
-uniquemphs :: Int -> Expression -> (Expression,Int)
+--DESCR -> if you need an identifier for relations within the scope of an expression 
+uniquemphs :: Int -> Expression (Relation c) -> (Expression (Relation c), Int)
 uniquemphs i (Tm mp _) = (Tm mp (i+1),i+1)
 uniquemphs i (F []) = (F [],i)
 uniquemphs i (F (ex:rexs)) = (F (lft:rghts),ri)
@@ -118,21 +126,21 @@ toCpt Universe = Anything
 toCpt EmptyObject = NOthing 
 toCpt (Object "#S#") = S 
 toCpt (Object c1) = cptnew c1 
-fromDcl :: Declaration -> RelDecl
+fromDcl :: Declaration Concept -> RelDecl
 fromDcl d@(Sgn{}) = RelDecl {dname=name d
                             ,dtype=(fromCpt$source d,fromCpt$target d)
                             ,ishomo=foldr (||) False [True|p<-decprps d, elem p [Asy,Sym,Rfx,Trn]]
                             }
 fromDcl _ = fatal 88 "only relation variables, not identities etc."
    
-fromMphats :: Concepts -> RelAlgType
+fromMphats :: [Concept] -> RelAlgType
 fromMphats [] = (Universe,Universe)
 fromMphats [c1] = (fromCpt c1,fromCpt c1)
 fromMphats [c1,c2] = (fromCpt c1,fromCpt c2)
 fromMphats _ = fatal 94 "too many mphats"
  
---REMARK -> there will never be a Flip, because it is parsed flippedwise. The Flip is still implemented for other parse trees than the current ADL parse tree.
-fromExpr :: Expression -> RelAlgExpr
+--REMARK -> there will never be a Flip, because it is parsed flippedwise. The Flip is still implemented for other parse trees than the current Ampersand parse tree.
+fromExpr :: Expression (Relation Concept) -> RelAlgExpr
 fromExpr (Tm mp@(Mph{mphyin=False}) i) = 
    Conv (Morph morph ((\(x,y)->(y,x))$fromMphats (mphats mp)) i)
    where morph = DRel{rname=name mp}
@@ -144,10 +152,10 @@ fromExpr (Tm mp i) =
      I{} -> IdRel
      V{} -> VRel
      Mp1{} -> IdRel
-fromExpr (F []) = fatal 109 $ "Expression has no sub expressions"++show (F [])++"." 
+fromExpr (F []) = fatal 109 $ "Expression has no sub expressions F []." 
 fromExpr (F (ex:[])) = fromExpr ex
 fromExpr (F (ex:rexs)) = Comp (fromExpr ex) (fromExpr (F rexs))
-fromExpr (Fdx []) = fatal 113 $ "Expression has no sub expressions"++show (Fdx [])++"." 
+fromExpr (Fdx []) = fatal 113 $ "Expression has no sub expressions F []." 
 fromExpr (Fdx (ex:[])) = fromExpr ex
 fromExpr (Fdx (ex:rexs)) = RAdd (fromExpr ex) (fromExpr (Fdx rexs))
 fromExpr (Fix exs) = ISect$map fromExpr exs
@@ -159,7 +167,7 @@ fromExpr (K1x ex) = fromExpr ex
 
 --TODO -> if I want "[1] Type mismatch in rule" to be recognized, then I'll have to analyse "[4] Incompatible comparison" errors. If the antecedent and consequent do have a type, then it is a type 1 error. But I do not want to make a union data type RuleOrExpression -> I want the rule operators to be expression operators so I can evaluate the expression.
 --TODO -> I could print more in case of --verbose
-printterror:: Declarations -> Expression -> TError -> String
+printterror:: [Declaration Concept] -> Expression (Relation Concept) -> TError -> String
 --TErrorU ETitle InfTree 
 -- the source or target of the type of the root expression is the universe
 printterror _ _ (TErrorU str _) 
@@ -203,7 +211,7 @@ printterror _ root (TError4 str (x,txs) (y,tys) tbs)
 --The declaration has an heteogeneous type and an homogeneous property
 printterror ds _ (TError5 str d) 
               = "[7] "++str++" "++showADL toDcl++"\n"
-              where toDcl = if null ds' then error "fatal: could not find original declaration."
+              where toDcl = if null ds' then error "!Fatal (module TypeInference.InfLibAdlExpr 214): could not find original declaration."
                             else head ds'
                             where ds' = [d'|d'<-ds, name d'==dname d, dtype d==(fromCpt(source d'),fromCpt(target d'))]
 --TError6 ETitle RelAlgType RelAlgExpr RelDecl 
@@ -216,10 +224,10 @@ printterror ds _ (TError6 str t (Morph m _ _) d)
                             IdRel{} -> "\nThe identity relation is an homogeneous relation"
                             _ -> fatal 174 "This cannot be a homogeneous relation."
                       )++"\n"
-              where toDcl = if null ds' then error "fatal: could not find original declaration."
+              where toDcl = if null ds' then error "!Fatal (module TypeInference.InfLibAdlExpr 227): could not find original declaration."
                             else head ds'
                             where ds' = [d'|d'<-ds, name d'==dname d, dtype d==(fromCpt(source d'),fromCpt(target d'))]
-printterror _ _ (TError6 _ _ _ _) = fatal 179 "TError6 expects a relation expression."
+printterror _ _ (TError6 _ _ _ _) = fatal 223 "TError6 expects a relation expression."
 
 showtype :: (RelAlgObj,RelAlgObj) -> String
 showtype (x,y) = show x++"*"++show y
@@ -237,9 +245,9 @@ therels  (Implic lsub rsub) = therels lsub ++ therels rsub
 therels  (Equiv  lsub rsub) = therels lsub ++ therels rsub
 therels  (Morph  _ _ i) = [i]
 
-operandstr:: Expression -> [Int] -> String
+operandstr:: Expression (Relation Concept) -> [Int] -> String
 operandstr root rs = showADL(operand root rs)
-operand:: Expression -> [Int] -> Expression
+operand:: Expression (Relation Concept) -> [Int] -> Expression (Relation Concept)
 operand root rs = snd (operand' root)
   where
   niks = Tm (V [] (NOthing,NOthing)) (-1)
@@ -262,12 +270,12 @@ operand root rs = snd (operand' root)
 --         the error should contain subexpressions which can be inferred with inferfromscript
 --         the root expression, the declarations are provided
 --         operand root (therels x) is the original string of x::RelAlgExpr
---errortrees:: (RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError) -> Declarations -> Expression -> TError -> [Block]
-errortrees::((Concept,Concept) -> Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])) 
-            -> Declarations -> Expression -> TError -> [Block]
+--errortrees:: (RelAlgExpr -> Either (RelAlgType,[(RelAlgExpr,RelAlgType,RelDecl)],InfTree) TError) -> [Declaration Concept] -> Expression -> TError -> [Block]
+errortrees::((Concept,Concept) -> Expression (Relation Concept) -> Either ((Concept,Concept), Expression (Relation Concept),InfTree) (String,[Block])) 
+            -> [Declaration Concept] -> Expression (Relation Concept) -> TError -> [Block]
 --TErrorU ETitle InfTree 
 -- the source or target of the type of the root expression is the universe
-errortrees f ds root err@(TErrorU _ inftree) 
+errortrees _ ds root err@(TErrorU _ inftree) 
   = [errsct root (printterror ds root err)]
     ++texOnly_pandoctree (Just (inftree,root)) Nothing
 --the composition is over the universe
@@ -277,52 +285,52 @@ errortrees f ds root err@(TErrorUC _ x y)
     ++(inftreesub.f (Anything,Anything)) (operand root (therels y))
 --TErrorAmb ETitle [RelAlgType] 
 -- the type of the root expression is ambiguous
-errortrees f ds root err@(TErrorAmb str ts) 
+errortrees f ds root err@(TErrorAmb _ ts) 
   = [errsct root (printterror ds root err),errpar1]
     ++ concat [(inftreesub.f (toCpt s,toCpt t)) root|(s,t)<-ts]
 --TError0 ETitle RelAlgObj
 --the object is not defined in isas and not used in env_decls 
-errortrees f ds root err@(TError0{}) 
+errortrees _ ds root err@(TError0{}) 
   = [errsct root (printterror ds root err)]
 --TError1 ETitle RelAlgExpr 
 --the relation expression is not defined in the env_decls
-errortrees f ds root err@(TError1{}) 
+errortrees _ ds root err@(TError1{}) 
   = [errsct root (printterror ds root err)]
 --TError2 ETitle (RelAlgExpr,[RelAlgType]) ([RelAlgExpr],[RelAlgType]) 
 --(ababab) there is no type in the first list matching a type in the second
-errortrees f ds root err@(TError2 str (x,txs) (xs,txss)) 
+errortrees f ds root err@(TError2 _ (x,txs) (xs,txss)) 
   = [errsct root (printterror ds root err),errpar1]
     ++concat([(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
-           ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (concat[therels x|x<-xs]))|(s,t)<-txss])
+           ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (concat[therels e|e<-xs]))|(s,t)<-txss])
 --TError3 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) 
 --(abbcac) there is no b in the first list matching a b in the second 
-errortrees f ds root err@(TError3 str (x,txs) (y,tys))
+errortrees f ds root err@(TError3 _ (x,txs) (y,tys))
   = concat$[[errsct root (printterror ds root err),errpar1]]
          ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
          ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels y))|(s,t)<-tys]
 --TError4 ETitle (RelAlgExpr,[RelAlgType]) (RelAlgExpr,[RelAlgType]) [RelAlgObj] 
 --(abbcac) there is more than one b in the first list matching a b in the second
-errortrees f ds root err@(TError4 str (x,txs) (y,tys) tbs) 
+errortrees f ds root err@(TError4 _ (x,txs) (y,tys) _) 
   = [errsct root (printterror ds root err),errpar1]
     ++concat([(inftreesub.f (toCpt s,toCpt t)) (operand root (therels x))|(s,t)<-txs]
            ++[(inftreesub.f (toCpt s,toCpt t)) (operand root (therels y))|(s,t)<-tys])
 --TError5 ETitle RelDecl 
 --The declaration has an heteogeneous type and an homogeneous property
-errortrees f ds root err@(TError5{})
+errortrees _ ds root err@(TError5{})
   = [errsct root (printterror ds root err)]
 --TError6 ETitle RelAlgType RelAlgExpr RelDecl 
 --The declaration bound to the relation expression has an homogeneous property, but the type inferred is heterogeneous
-errortrees f ds root err@(TError6 str t (Morph m _ _) d) 
+errortrees _ ds root err@(TError6 _ _ (Morph _ _ _) _) 
   = [errsct root (printterror ds root err)]
-errortrees inferfromscript ds root err = [Plain [Str ("No proof for error: " ++ (printterror ds root err))]]
+errortrees _ ds root err = [Plain [Str ("No proof for error: " ++ (printterror ds root err))]]
 
 --TODO -> make it possible to push a type on it, then it is expected to have no type errors.
-inftreesub :: (Either ((Concept,Concept), Expression,InfTree) (String,[Block])) -> [Block]
+inftreesub :: (Either ((Concept,Concept), Expression (Relation Concept),InfTree) (String,[Block])) -> [Block]
 inftreesub (Left (tp,x,inftree)) = texOnly_pandoctree (Just (inftree,x)) (Just tp)
 inftreesub (Right (_,inftree)) = inftree
 --inftreesub (Right err) = fatal 239 ("Subexpressions are expected to have no type errors:\n"++fst err)
 
-errsct :: Expression -> String -> Block
+errsct :: Expression (Relation Concept) -> String -> Block
 errsct x err = 
    Plain [TeX ("\\section{Type error in $"++ texOnly_writerule x++ "$ }\n")
          ,TeX [c|c<-"By definition: $"++texOnly_writerule x++" \\Leftrightarrow "++texOnly_writeexpr x++"$ \\newline \n",texOnly_writerule x/=texOnly_writeexpr x] 

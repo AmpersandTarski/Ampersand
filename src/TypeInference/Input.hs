@@ -2,7 +2,7 @@
 module TypeInference.Input (allPatRules,allCtxPats,removeCtx) where
 import Auxiliaries (eqCl)
 import Collection (rd,uni)
-import Adl  
+import ADL  
 
    --DESCR -> removes a context from contexts
    --REMARK -> if a context is removed of which the name is not unique, then all the contexts with that name will be removed
@@ -22,7 +22,7 @@ allCtxPats ctxs = concat [ctxpats cx | cx<-ctxs]
 allPatRules :: Patterns -> Rules
 allPatRules ps = concat [ptrls p | p<-ps]
 
-allCtxCpts :: Contexts -> Concepts
+allCtxCpts :: Contexts -> [Concept]
 allCtxCpts ctxs
  = inject [ c { cptos = Just$rd (concat [atoms| (_,atoms)<-cl])  }
    | cl<-eqCl fst ([(source d,dom d (decpopu d))| d<-declarations ctxs]++[(target d,cod d (decpopu d))| d<-declarations ctxs]++

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.ECArule (InsDel(..)
+module ADL.ECArule (InsDel(..)
                    ,ECArule(..)
                    ,Event(..)
                    ,PAclause(..)
@@ -10,77 +10,78 @@ module Adl.ECArule (InsDel(..)
                    ,isDo
                    )
 where
-import Adl.Rule                      (Rules)
---import Adl.FilePos                   (nr)
-import Adl.Expression                (Expression)
-import Adl.MorphismAndDeclaration    (Morphism)
-import Adl.Concept                   (Concept)
+import ADL.Rule                      (Rules)
+--import ADL.FilePos                   (nr)
+import ADL.Expression                (Expression)
+import ADL.MorphismAndDeclaration    (Relation,Identified)
+import ADL.Concept                   (Concept)
 import Data.List
 
 
--- | The following datatypes form a process algebra. ADL derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
+-- | The following datatypes form a process algebra. Ampersand derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
 --   An example: suppose you have large shoes, which means that there is no way you can fit you shoes through your trousers. What does this mean for the process of dressing in the morning? Well, if the shoes won't fit through your trousers, you must first put on your trousers, and then put on your shoes. So the order of putting on trousers and putting on shoes is dictated by the (static) fact that your shoes are too big to fit through your trousers. When undressing, the order is reversed: you must take off your shoes before taking off your trousers. This example ilustrates how the order of activities is restricted by an invariant property. So it is possible to derive some dynamic behaviour from static properties.
 
 data InsDel   = Ins | Del
                 deriving (Show,Eq)
-data ECArule  = ECA { ecaTriggr :: Event         -- The event on which this rule is activated
-                    , ecaDelta  :: Morphism      -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
-                    , ecaAction :: PAclause      -- The action to be taken when triggered.
-                    , ecaNum    :: Int           -- A unique number that identifies the ECArule within its scope.
+data ECArule c= ECA { ecaTriggr :: Event c               -- The event on which this rule is activated
+                    , ecaDelta  :: Relation c            -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
+                    , ecaAction :: PAclause (Relation c) -- The action to be taken when triggered.
+                    , ecaNum    :: Int                   -- A unique number that identifies the ECArule within its scope.
                     } deriving (Show,Eq)
-data Event    = On { eSrt :: InsDel
-                   , eMhp :: Morphism
+data Event c  = On { eSrt :: InsDel
+                   , eMhp :: Relation c
                    } deriving (Show,Eq)
-data PAclause = Chc { paCls   :: [PAclause]
-                    , paMotiv :: [(Expression,Rules )] -- tells which conjunct from which rule is being maintained
+data PAclause r
+              = Chc { paCls   :: [PAclause r]
+                    , paMotiv :: [(Expression r,Rules r )] -- tells which conjunct from which rule is being maintained
                     }
-              | All { paCls   :: [PAclause]
-                    , paMotiv :: [(Expression,Rules )]
+              | All { paCls   :: [PAclause r]
+                    , paMotiv :: [(Expression r,Rules r )]
                     }
               | Do  { paSrt   :: InsDel                -- do Insert or Delete
-                    , paTo    :: Expression            -- into toExpr    or from toExpr
-                    , paDelta :: Expression            -- delta
-                    , paMotiv :: [(Expression,Rules )]
+                    , paTo    :: Expression r            -- into toExpr    or from toExpr
+                    , paDelta :: Expression r            -- delta
+                    , paMotiv :: [(Expression r,Rules r )]
                     }
               | Sel { paCpt   :: Concept               -- pick an existing instance of type c
-                    , paExp   :: Expression            -- the expression to pick from
-                    , paCl    :: String->PAclause      -- the completion of the clause
-                    , paMotiv :: [(Expression,Rules )]
+                    , paExp   :: Expression r            -- the expression to pick from
+                    , paCl    :: String->PAclause r      -- the completion of the clause
+                    , paMotiv :: [(Expression r,Rules r )]
                     }
               | New { paCpt   :: Concept               -- make a new instance of type c
-                    , paCl    :: String->PAclause      -- to be done after creating the concept
-                    , paMotiv :: [(Expression,Rules )]
+                    , paCl    :: String->PAclause r      -- to be done after creating the concept
+                    , paMotiv :: [(Expression r,Rules r )]
                     }
               | Rmv { paCpt   :: Concept               -- remove an instance of type c
-                    , paCl    :: String->PAclause      -- to be done after removing the concept
-                    , paMotiv :: [(Expression,Rules )]
+                    , paCl    :: String->PAclause r      -- to be done after removing the concept
+                    , paMotiv :: [(Expression r,Rules r )]
                     }
-              | Nop { paMotiv :: [(Expression,Rules )]  -- tells which conjunct from which rule is being maintained
+              | Nop { paMotiv :: [(Expression r,Rules r )]  -- tells which conjunct from which rule is being maintained
                     }
-              | Blk { paMotiv :: [(Expression,Rules )]  -- tells which expression from which rule has caused the blockage
+              | Blk { paMotiv :: [(Expression r,Rules r )]  -- tells which expression from which rule has caused the blockage
                     }
 
-isAll :: PAclause -> Bool
+isAll :: PAclause r -> Bool
 isAll All{} = True
 isAll _     = False
 
-isChc :: PAclause -> Bool
+isChc :: PAclause r -> Bool
 isChc Chc{} = True
 isChc _     = False
 
-isBlk :: PAclause -> Bool
+isBlk :: PAclause r -> Bool
 isBlk Blk{} = True
 isBlk _     = False
 
-isNop :: PAclause -> Bool
+isNop :: PAclause r -> Bool
 isNop Nop{} = True
 isNop _     = False
 
-isDo :: PAclause -> Bool
+isDo :: PAclause r -> Bool
 isDo Do{}   = True
 isDo _      = False
 
-instance Eq PAclause where
+instance (Show r, Identified r, Eq r) => Eq (PAclause r) where
  Chc ds _ == Chc ds' _ = ds==ds'
  All ds _ == All ds' _ = ds==ds'
  p@Do{}   ==   p'@Do{} = paSrt p==paSrt p' && paTo p==paTo p' && paDelta p==paDelta p'
@@ -90,7 +91,7 @@ instance Eq PAclause where
  _ == _ = False
 
       
-instance Show PAclause where
+instance (Show r) => Show (PAclause r) where
     showsPrec _ p = showString (showFragm "\n> " p)
      where
       showFragm indent pa@Do{}

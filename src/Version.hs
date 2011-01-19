@@ -3,11 +3,14 @@ module Version (versionbanner,versionNumber)
 where
 
 versionbanner :: String
-versionbanner = "ADL vs. "++versionNumber 
+versionbanner = "Ampersand vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1.0.812" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumber = "1.1.0.818" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-reorganized getPhpCode in Object.hs to find my bug and fix it.
+SJ: Types have been parameterized.
+For example, Expression is now of type (Expression (Relation Concept)).
+The reason for doing this is to force ourselves to keep the key algorithms generic.
+For instance, normalization should work for Expression r, and not be specific for (Expression (Relation Concept)).
 -}

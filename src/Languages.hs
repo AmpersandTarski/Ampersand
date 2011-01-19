@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
  -- | This module does some string manipulation based on natural languages
    module Languages
               (  Lang(English,Dutch)
@@ -7,7 +8,8 @@
    import Char (toLower)
 
    data Lang = Dutch | English deriving (Show, Eq)
-   allLangs = [Dutch,English] -- All possible languages in ADL
+   allLangs :: [Lang]
+   allLangs = [Dutch,English] -- All possible languages in Ampersand
 
 
    -- | Returns the plural of a given word based on a specific language

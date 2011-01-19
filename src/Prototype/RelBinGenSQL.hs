@@ -2,7 +2,7 @@
 module Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne'
  ) where 
-   import Adl
+   import ADL
    import ShowADL
    import Data.Fspec
    import Data.Plug
@@ -24,7 +24,7 @@ module Prototype.RelBinGenSQL
    -- soms is het id constant i.e. source (ctx o) == cptS.
    -- In SQL code generatie (doSqlGet) wordt volgens mij bovenstaande betekenis aan "is One" gegeven (was: isOne'= isOne objOut)
    -- daarom heb ik ze opgesplitst
--- isOneExpr :: Expression -> Bool
+-- isOneExpr :: Expression (Relation Concept) -> Bool
 -- isOneExpr e' = (isUni.conjNF.F) [v (source (e'),source (e')),e']
    isOne' :: ObjectDef -> Bool
    isOne' o = isOne o -- isOneExpr$ctx o
@@ -48,7 +48,7 @@ module Prototype.RelBinGenSQL
                  -> Int        -- indentation
                  -> String     -- SQL name of the source of this expression, as assigned by the environment 
                  -> String     -- SQL name of the target of this expression, as assigned by the environment
-                 -> Expression -- expression to be translated
+                 -> Expression (Relation Concept) -- expression to be translated
                  -> Maybe String     -- resulting SQL expression
    -- quote the attributes (such that column-names such as `Right` or `in` won't yield errors)
    selectExpr fSpec i src@(_:_) trg       e' | head src /= '`'
@@ -86,8 +86,8 @@ module Prototype.RelBinGenSQL
             lst     = [t|t<-lst', not (elem t mp1Tm)]
             posTms  = if null posTms' then map notCp (take 1 negTms') else posTms' -- we take a term out of negTms' if we have to, to ensure length posTms>0
             negTms  = if null posTms' then tail negTms' else negTms' -- if the first term is in posTms', don't calculate it here
-            posTms' = [t| t<-lst, isPos t && not (isIdent t)]++[t| t<-lst, isPos t && isIdent t] -- the code to calculate I is better if it is not the first term
-            negTms' = [notCp t| t<-lst, isNeg t && isIdent t]++[notCp t| t<-lst, isNeg t && not (isIdent t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
+            posTms' = [t| t<-lst, isPos t && not (isI t)]++[t| t<-lst, isPos t && isI t] -- the code to calculate I is better if it is not the first term
+            negTms' = [notCp t| t<-lst, isNeg t && isI t]++[notCp t| t<-lst, isNeg t && not (isI t)] -- should a negTerm become a posTerm (for reasons described above), it can best be an -I.
             exprbracs' = [ case brc of
                             Just s->Just (s ++ " AS isect"++show n)
                             Nothing->Nothing
@@ -96,7 +96,7 @@ module Prototype.RelBinGenSQL
                          , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                          , let brc = selectExprBrac fSpec i src'' trg'' l
                          ]
-            wherecl   = [Just$ if isIdent l
+            wherecl   = [Just$ if isI l
                          then  "isect0."++src'++" = isect0."++trg' -- this is the code to calculate ../\I. The code below will work, but is longer
                          else "(isect0."++src'++" = isect"++show n++"."++src''
                          ++ " AND isect0."++trg'++" = isect"++show n++"."++trg''++")"
@@ -111,7 +111,7 @@ module Prototype.RelBinGenSQL
                           ++ " AND isect0."++trg'++" = "++mph1val m2 -- sorce and target are unequal
                         | (F ((Tm m1@(Mp1{}) _):(Tm (V _ _)_):(Tm m2@(Mp1{})_):[])) <- mp1Tm
                         ]++
-                        [if isIdent l
+                        [if isI l
                          then  Just ("isect0."++src'++" <> isect0."++trg') -- this code will calculate ../\-I
                          else  "NOT EXISTS ("+++(selectExists' (i+12)
                                                               ((selectExprBrac fSpec (i+12) src'' trg'' l) +++ " AS cp")
@@ -124,7 +124,7 @@ module Prototype.RelBinGenSQL
    selectExpr fSpec i src trg (Fix [e']) = selectExpr fSpec i src trg e'
    -- Why not return Nothing?
    -- Reason: Fix [] should not occur in the query at all! This is not a question of whether the data is in the database.. it might be (it depends on the type of Fi []), but we just don't know
-   selectExpr _     _ _   _   (Fix [] ) = error ("!Fatal (module RelBinGenBasics 140): Cannot create query for Fi [] because type is unknown")
+   selectExpr _     _ _   _   (Fix [] ) = error ("!Fatal (module Prototype.RelBinGenSQL 127): Cannot create query for Fi [] because type is unknown")
 
    selectExpr fSpec i src trg (F (Tm (V _ (s,_))_:fs@(_:_))) | s==cptS
      = selectGeneric i ("1",src) ("fst."++trg',trg)
@@ -147,7 +147,7 @@ module Prototype.RelBinGenSQL
 
    selectExpr fSpec i src trg (F (e':((Tm (V _ _)_):(f:fx)))) = -- prevent calculating V in this case
        if src==trg && not (isProp e')
-       then error ("!Fatal (module RelBinGenBasics 163): selectExpr 2 src and trg are equal ("++src++") in "++showADL e')
+       then error ("!Fatal (module Prototype.RelBinGenSQL 150): selectExpr 2 src and trg are equal ("++src++") in "++showADL e')
        else
        selectGeneric i ("fst."++src',src) ("snd."++trg',trg)
                         ((selectExprBrac fSpec i src' mid' e')+++" AS fst, "+++(selectExprBrac fSpec i mid2' trg' f)+++" AS snd")
@@ -183,9 +183,9 @@ module Prototype.RelBinGenSQL
             concExprs = [e| (_,e,_)<-concExpr]
             concExpr  = [ (n,selectExprBrac fSpec i sm sm tm +++ " AS "++concNm n, sm)
                         | (n,c)<-ncs, tm<-[Tm (mIs c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
-            concTp n = head ([t| (i',_,t)<-concExpr, n==i']++error("!Fatal (module RelBinGenBasics 199) concTp"))
-            concNm n = head (["c"++show n| (i',_,_)<-concExpr, n==i']++error("!Fatal (module RelBinGenBasics 200) concNm"))
-            -- de SQL-expressies voor de elementen uit lst', die elk een ADL-expressie representeren
+            concTp n = head ([t| (i',_,t)<-concExpr, n==i']++error("!Fatal (module Prototype.RelBinGenSQL 186) concTp"))
+            concNm n = head (["c"++show n| (i',_,_)<-concExpr, n==i']++error("!Fatal (module Prototype.RelBinGenSQL 187) concNm"))
+            -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
             exprbracs = [e| (_,e,_,_)<-exprbrac]
             exprbrac  = [ (n,selectExprBrac fSpec i src'' trg'' l +++ " AS "++exprNm n , src'' , trg'' )
                         | (n,l)<-zipnum lst'
@@ -193,9 +193,9 @@ module Prototype.RelBinGenSQL
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                         ]
-            exprS n  = head ([s| (i',_,s,_)<-exprbrac, n==i']++error("!Fatal (module RelBinGenBasics 210) exprS"))  -- source type
-            exprT n  = head ([t| (i',_,_,t)<-exprbrac, n==i']++error("!Fatal (module RelBinGenBasics 211) exprT"))  -- target type
-            exprNm n = head (["F"++show n| (i',_,_,_)<-exprbrac, n==i']++error("!Fatal (module RelBinGenBasics 212) exprNm"))
+            exprS n  = head ([s| (i',_,s,_)<-exprbrac, n==i']++error("!Fatal (module Prototype.RelBinGenSQL 196) exprS"))  -- source type
+            exprT n  = head ([t| (i',_,_,t)<-exprbrac, n==i']++error("!Fatal (module Prototype.RelBinGenSQL 197) exprT"))  -- target type
+            exprNm n = head (["F"++show n| (i',_,_,_)<-exprbrac, n==i']++error("!Fatal (module Prototype.RelBinGenSQL 198) exprNm"))
             -- de where expressies bevatten alle "magie".
             wherecl   = filterEmpty
                         [ if isNeg l
@@ -224,7 +224,7 @@ module Prototype.RelBinGenSQL
                         | (n,c)<-ncs
                         ]
                         where inCs n = n `elem` map fst ncs
-   selectExpr _     _ _   _   (F  [] ) = error ("!Fatal (module RelBinGenBasics 242): Cannot create query for F [] because type is unknown")
+   selectExpr _     _ _   _   (F  [] ) = error ("!Fatal (module Prototype.RelBinGenSQL 227): Cannot create query for F [] because type is unknown")
 
    selectExpr fSpec i src trg (Tm (V _ (s,t))_   ) 
     = listToMaybe [selectGeneric i (src',src) (trg',trg) tbls "1"
@@ -257,9 +257,9 @@ module Prototype.RelBinGenSQL
                               src2 = quote$sqlExprSrc fSpec e'
                               trg2 = noCollideUnlessTm' e' [src2] (quote$sqlExprTrg fSpec e')
    selectExpr _ _ _ _ (K0x _)
-      = error ("!Fatal (module RelBinGenBasics 292): SQL cannot create closures K0")
+      = error ("!Fatal (module Prototype.RelBinGenSQL 260): SQL cannot create closures K0")
    selectExpr _ _ _ _ (K1x _)
-      = error ("!Fatal (module RelBinGenBasics 294): SQL cannot create closures K1")
+      = error ("!Fatal (module Prototype.RelBinGenSQL 262): SQL cannot create closures K1")
    selectExpr fSpec i src trg (Fdx  [e']       ) = selectExpr fSpec i src trg e'
    selectExpr fSpec i src trg (Fdx lst'@(fstm:_:_))
     = selectGeneric i (mainSrc,src) (mainTrg,trg)
@@ -283,7 +283,7 @@ module Prototype.RelBinGenSQL
             -- de SQL-expressies voor de concepten van lst', maar nu in SQL
             concExprs i' ncs'' = [ selectExprBrac fSpec i' sm sm tm +++ " AS c"++show n
                               | (n,c)<-ncs'', tm<-[Tm (mIs c) (-1)], sm<-[quote$sqlExprSrc fSpec tm] ]
-            -- de SQL-expressies voor de elementen uit lst', die elk een ADL-expressie representeren
+            -- de SQL-expressies voor de elementen uit lst', die elk een Ampersand expressie representeren
             inner     = "NOT EXISTS ("+++selectExists' (i+19)
                                                              (cChain ", " (concExprs (i+19) ncs'))
                                                              (cChain (phpIndent (i+19)++"  AND ") (wherecl++cclauses ncs'))
@@ -311,14 +311,14 @@ module Prototype.RelBinGenSQL
                            | (n,c)<-ncs''
                            ]
                         
-   selectExpr _     _ _   _   (Fdx  [] ) = error ("!Fatal (module RelBinGenBasics 352): Cannot create query for Fd [] because type is unknown")
+   selectExpr _     _ _   _   (Fdx  [] ) = error ("!Fatal (module Prototype.RelBinGenSQL 314): Cannot create query for Fd [] because type is unknown")
 
    -- selectExprInUnion is om de recursie te verbergen (deze veroorzaakt sql fouten)
    selectExprInUnion :: Fspc
                      -> Int
                      -> String
                      -> String
-                     -> Expression
+                     -> Expression (Relation Concept) 
                      -> Maybe String
    selectExprInUnion fSpec i src trg (Tc  e'        ) =  selectExprInUnion fSpec i src trg e'
    selectExprInUnion fSpec i src trg (F  [e']       ) =  selectExprInUnion fSpec i src trg e'
@@ -331,7 +331,7 @@ module Prototype.RelBinGenSQL
                   -> Int        -- ^ indentation
                   -> String     -- ^ source name (preferably quoted)
                   -> String     -- ^ target name (preferably quoted)
-                  -> Expression -- ^ Whatever expression to generate an SQL query for
+                  -> Expression (Relation Concept)  -- ^ Whatever expression to generate an SQL query for
                   -> Maybe String
    selectExprBrac    f i s@(_:_)   t         e' | head s /= '`'
     = selectExprBrac f i (quote s) t         e'
@@ -373,7 +373,7 @@ module Prototype.RelBinGenSQL
       int2string 0 = "0"
       int2string n = if n `div` 10 == 0 then [intToDigit (n `rem` 10)|n>0] else int2string (n `div` 10)++[intToDigit (n `rem` 10)]
    
-   noCollideUnlessTm' :: Expression
+   noCollideUnlessTm' :: Expression (Relation Concept) 
                      -> [String]
                      -> String
                      -> String
@@ -385,7 +385,7 @@ module Prototype.RelBinGenSQL
                    -> Int
                    -> String -- ^ source
                    -> String -- ^ target
-                   -> Morphism
+                   -> Relation Concept
                    -> Maybe String
 
    selectExprMorph fSpec i src trg mph@V{}
@@ -395,7 +395,7 @@ module Prototype.RelBinGenSQL
     where src'="vfst."++sqlAttConcept fSpec (source mph)
           trg'="vsnd."++sqlAttConcept fSpec (target mph)
    selectExprMorph _ _ src trg mph@Mp1{}
-    | src == ""&&trg=="" = error ("!Fatal (module RelBinGenBasics 441): Source and target are \"\", use selectExists' for this purpose")
+    | src == ""&&trg=="" = error ("!Fatal (module Prototype.RelBinGenSQL 398): Source and target are \"\", use selectExists' for this purpose")
     | src == ""  = Just$ "SELECT "++mph1val mph++" AS "++trg
     | trg == ""  = Just$ "SELECT "++mph1val mph++" AS "++src
     | src == trg = Just$ "SELECT "++mph1val mph++" AS "++src
@@ -422,7 +422,7 @@ module Prototype.RelBinGenSQL
     = selectcl ++
       phpIndent i ++ "  FROM " +>+ 
       (if toM whr==Just "1" then tbl else tbl+|+(phpIndent i ++ " WHERE "+>+whr))
-      where selectcl | snd src=="" && snd trg=="" = error ("!Fatal (module RelBinGenBasics 461): Source and target are \"\", use selectExists' for this purpose")
+      where selectcl | snd src=="" && snd trg=="" = error ("!Fatal (module Prototype.RelBinGenSQL 425): Source and target are \"\", use selectExists' for this purpose")
                      | snd src==snd trg  = "SELECT DISTINCT " ++ selectSelItem src
                      | snd src==""   = "SELECT DISTINCT " ++ selectSelItem trg
                      | snd trg==""   = "SELECT DISTINCT " ++ selectSelItem src
@@ -440,21 +440,21 @@ module Prototype.RelBinGenSQL
    -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin expressie e is opgeslagen.
    -- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
    -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
-   sqlRelPlugs :: Fspc -> Expression -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
+   sqlRelPlugs :: Fspc -> Expression (Relation Concept)  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e
     = [ (plug,fld0,fld1)
       | PlugSql plug<-plugs fSpec
       , (fld0,fld1)<-sqlPlugFields plug e
       ]
 
-   sqlRelPlugNames :: Fspc -> Expression -> [(String,String,String)] --(plug,source,target)
+   sqlRelPlugNames :: Fspc -> Expression (Relation Concept)  -> [(String,String,String)] --(plug,source,target)
    sqlRelPlugNames f e = [(name p,fldname s,fldname t)|(p,s,t)<-sqlRelPlugs f e]
 
    --iff proven that e is equivalent to plugexpr
    --   AND not proven that e is not equivalent to plugexpr
    --then return (fld0,fld1)
    --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
-   sqlPlugFields :: PlugSQL -> Expression -> [(SqlField, SqlField)]
+   sqlPlugFields :: PlugSQL -> Expression (Relation Concept)  -> [(SqlField, SqlField)]
    sqlPlugFields p e 
      = nub [(fld0,fld1)
            | fld0<-[f|f<-tblfields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
@@ -509,24 +509,24 @@ module Prototype.RelBinGenSQL
        where res = replF (k2:ks)
              fs  = [m' | F m' <- [res]]
      replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
-      = error ("!Fatal (module RelBinGenSQL 566): Could not define a properly typed I for F[] in replF in sqlPlugFields in RelBinGenBasics.hs")
+      = error ("!Fatal (module Prototype.RelBinGenSQL 512): Could not define a properly typed I for F[] in replF in sqlPlugFields in Prototype/RelBinGenSQL.hs")
               -- this error does not guarantee, however, that simplF yields no F []. In particular: simplify (F [I;I]) == F []
      replF ks = F (ks)
-     ----------------- 
+     -----------------
 
-   sqlExprSrc :: Fspc->Expression -> String
+   sqlExprSrc :: Fspc->Expression (Relation Concept) -> String
    sqlExprSrc fSpec expr = ses expr
     where
-      ses (F [])    = error ("!Fatal (module RelBinGenSQL 600): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (F [])    = error ("!Fatal (module Prototype.RelBinGenSQL 520): "++if expr==F[] then "calling sqlExprSrc (F [])" else "evaluating (F []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (F [f])   = ses f
       ses (F fs)    = ses (head fs)
-      ses (Fux [])  = error ("!Fatal (module RelBinGenSQL 603): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fux [])  = error ("!Fatal (module Prototype.RelBinGenSQL 523): "++if expr==F[] then "calling sqlExprSrc (Fu [])" else "evaluating (Fu []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fux [f]) = ses f
       ses (Fux fs)  = ses (head fs) --all subexprs have the same type --was: (head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fix [])  = error ("!Fatal (module RelBinGenSQL 606): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fix [])  = error ("!Fatal (module Prototype.RelBinGenSQL 526): "++if expr==F[] then "calling sqlExprSrc (Fi [])" else "evaluating (Fi []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fix [f]) = ses f
       ses (Fix fs)  = ses (head fs) --all subexprs have the same type --was:(head (filter l fs)) where l = (==foldr1 lub (map source fs)).source
-      ses (Fdx [])  = error ("!Fatal (module RelBinGenSQL 609): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
+      ses (Fdx [])  = error ("!Fatal (module Prototype.RelBinGenSQL 529): "++if expr==F[] then "calling sqlExprSrc (Fd [])" else "evaluating (Fd []) in sqlExprSrc ("++showADLcode fSpec expr++")")
       ses (Fdx [f]) = ses f
       ses (Fdx fs)  = ses (head fs)
       ses (Cpx e)   = ses e
@@ -537,7 +537,7 @@ module Prototype.RelBinGenSQL
                        Mp1{} -> "Mp"++(name (mph1typ m))
                        V{} -> ses (Tm I{mphats=[],mphgen=source m,mphspc=source m,mphyin=True} n)
                        _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm m n)]++[show m])
-   sqlExprTrg :: Fspc->Expression -> String
+   sqlExprTrg :: Fspc->Expression (Relation Concept) -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')
 
 -- sqlConcept gives the name of the plug that contains all atoms of concept c.
@@ -546,9 +546,9 @@ module Prototype.RelBinGenSQL
    
 -- sqlConcept yields the plug that contains all atoms of concept c. Since there may be more of them, the first one is returned.
    sqlConceptPlug :: Fspc -> Concept -> PlugSQL
-   sqlConceptPlug fSpec c | c==cptS = error ("!Fatal (module RelBinGenBasics 618): Concept ONE may not be represented in SQL.")
+   sqlConceptPlug fSpec c | c==cptS = error ("!Fatal (module Prototype.RelBinGenSQL 549): Concept ONE may not be represented in SQL.")
                           | otherwise
-                = if null ps then error ("!Fatal (module RelBinGenBasics 620): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module RelBinGenBasics)") else
+                = if null ps then error ("!Fatal (module Prototype.RelBinGenSQL 551): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module Prototype.RelBinGenSQL)") else
                   head ps
                   where ps = [plug|PlugSql plug<-plugs fSpec
                                   , not (null (case plug of ScalarSQL{} -> [c|c==cLkp plug]; _ -> [c'|(c',_)<-cLkpTbl plug, c'==c]))]
@@ -557,7 +557,7 @@ module Prototype.RelBinGenSQL
    sqlAttConcept :: Fspc -> Concept -> String
    sqlAttConcept fSpec c | c==cptS = "ONE"
                          | otherwise
-                = if null cs then error ("!Fatal (module RelBinGenBasics 632): Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module RelBinGenBasics)") else
+                = if null cs then error ("!Fatal (module Prototype.RelBinGenSQL 560): Concept \""++show c++"\" does not occur in its plug in fSpec \""++appname++"\" (sqlAttConcept in module Prototype.RelBinGenSQL)") else
                   head cs
                   where cs = [fldname f|f<-tblfields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
                         appname =  name fSpec

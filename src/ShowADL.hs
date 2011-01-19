@@ -1,23 +1,20 @@
+{-# OPTIONS_GHC -Wall -XUndecidableInstances -XFlexibleContexts -XFlexibleInstances -XScopedTypeVariables -XTypeSynonymInstances #-}
   -- | BECAUSE (HJ) Wat is precies het doel van Show vs ShowADL ??
   -- ANTWOORD (SJ): De standaard-show is alleen bedoeld voor simpele foutmeldingen tijdens het testen.
-  --                showADL is bedoeld om ADL source code te genereren.
-  --                showADL is contextonafhankelijk, en produceert syntactisch correcte ADL-code, die echter wel typefouten zou kunnen bevatten,
+  --                showADL is bedoeld om Ampersand syntax te genereren.
+  --                showADL is contextonafhankelijk, en produceert syntactisch correcte Ampersand code, die echter wel typefouten zou kunnen bevatten,
   --                namelijk dubbelzinnigheden die met een expliciet type opgelost hadden kunnen worden.
   --                showADLcode maakt gebruik van ontologische informatie in Fspc, namelijk vRels en isa, om in dit soort gevallen het type
   --                expliciet te maken.
-  --                Daarmee produceert showADLcode volledig correcte ADL-code, dus typecorrect en zonder service-warnings.
+  --                Daarmee produceert showADLcode volledig correcte Ampersand code, dus typecorrect en zonder service-warnings.
   -- Question (SJC): If STRING is the code produced by showADLcode fSpec, would STRING == showADL (parse STRING) (context (parse STRING)) be true?
   -- Answer (SJ):   No, not for every STRING. Yet, for every fSpec we want  semantics fSpec == semantics (parse (showADLcode fSpec fSpec)).
   --                Note that 'parse' and 'semantics' do not exist in this shape, so the actual expression is slightly more complicated.
-{-# OPTIONS_GHC -XFlexibleInstances -Wall #-}
-{-# OPTIONS -XTypeSynonymInstances #-}
 module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
   where
    import Char                            (isAlphaNum)
-   import CommonClasses
    import Collection                      (Collection(..))
-   import Adl
-   
+   import ADL
    import Data.Fspec 
    import Data.List
    import Auxiliaries                     (eqCl)
@@ -46,34 +43,21 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    --TODO -> sort on file position
    --TODO -> ALWAYS cannot be used in combination with -p -l or -s and maybe more, because something tries to retrieve the rrant, which is an error.
    --TODO -> ALWAYS pProps (ObjectDef) is ignored. It may be enabled some day to communicate interface policies
-   --TODO -> move the flips from Morphism to Expression data type
+   --TODO -> move the flips from Relation to Expression data type
    --TODO -> remove application of double complement rule from the parser
    --TODO -> remove removal of brackets on ; expression from the parser
 
+   mphatson :: Eq c => Expression (Relation c) -> Expression (Relation c)
+   mphatson = mapExpression f
+    where f m = case m of
+                 Mph{mphats=[]}->if inline m then m{mphats=[source m,target m]} else  m{mphats=[target m,source m]}
+                 _ -> m
 
-   mapExpr :: (Morphism->Morphism) -> Expression -> Expression
-   mapExpr f expr = case expr of
-      F xs  -> F  [mapExpr f x| x<-xs]
-      Fdx xs -> Fdx [mapExpr f x| x<-xs]
-      Fux xs -> Fux [mapExpr f x| x<-xs]
-      Fix xs -> Fix [mapExpr f x| x<-xs]
-      Tm mp i -> Tm (f mp) i
-      Tc x  -> Tc $ mapExpr f x
-      Cpx x  -> Cpx $ mapExpr f x
-      K0x x  -> K0x $ mapExpr f x
-      K1x x  -> K1x $ mapExpr f x
-
-   mphatson :: Expression -> Expression
-   mphatson = mapExpr f
-    where f mp = case mp of
-                 Mph{mphats=[], mphtyp=(c1,c2)}->if inline mp then mp{mphats=[c1,c2]} else  mp{mphats=[c2,c1]}
-                 _ -> mp
-
-   mphatsoff :: Expression -> Expression
-   mphatsoff = mapExpr f
-    where f mp = case mp of
-                 Mph{} -> mp{mphats=[]}
-                 _     -> mp
+   mphatsoff :: Expression (Relation c) -> Expression (Relation c)
+   mphatsoff = mapExpression f
+    where f m = case m of
+                 Mph{} -> m{mphats=[]}
+                 _     -> m
 
 
    instance ShowADL ObjectDef where
@@ -91,7 +75,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
               intercalate (ind++"   , ") 
                                 [ name o++
                                      (if null (objstrs o) then "" else " {"++intercalate ", " [intercalate " " (map str ss)| ss<-objstrs o]++"}")++
-                                     " : "++(if isIdent (objctx o) then showSign[target (objctx o)] else
+                                     " : "++(-- if isIdent (objctx o) then showSign[target (objctx o)] else -- TODO: deze functionaliteit aanzetten
                                              if isTrue  (objctx o) then showSign[S,target (objctx o)] else
                                              showADL (objctx o))++
                                      if null (objats o) then "" else recur (ind++"     ") (objats o)
@@ -154,7 +138,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        ++ (if null (ptcds pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptcds pat)) ++ "\n")
        ++ (if null (ptkds pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptkds pat)) ++ "\n")
        ++ "ENDPATTERN"
-       where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` decls (ptrls pat) `uni` decls (ptkds pat)
+       where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` rd [makeDeclaration m| m<-mors (ptrls pat) `uni` mors (ptkds pat)]
                                , decusr d, not (d `elem` ptdcs pat)]
     showADLcode fSpec pat
      = "PATTERN " ++ name pat 
@@ -164,11 +148,11 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        ++ (if null (ptcds pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) (ptcds pat)) ++ "\n")
        ++ (if null (ptkds pat)  then "" else "\n  " ++intercalate "\n  " (map (showADLcode fSpec) (ptkds pat)) ++ "\n")
        ++ "ENDPATTERN"
-       where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` decls (ptrls pat) `uni` decls (ptkds pat)
+       where ds = ptdcs pat++[d| d@Sgn{}<-declarations pat `uni` rd [makeDeclaration m| m<-mors (ptrls pat) `uni` mors (ptkds pat)]
                                , decusr d, not (d `elem` ptdcs pat)]
 
 
-   instance ShowADL Rule where
+   instance (Show c, SpecHierarchy c, Association r c, Show r, ShowADL c, ShowADL (Expression r)) => ShowADL (Rule r) where
     showADL r
      = (if isSignal r
        then "RULE "++name r++" SIGNALS "
@@ -188,19 +172,19 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
             Equivalence    -> showADLcode fSpec (rrant r) ++" = " ++showADLcode fSpec (rrcon r)
             Generalization -> showADLcode fSpec (G (pos r) (source (rrcon r)) (source (rrant r)) (r_pat r))
 
-   instance ShowADL Gen where
-    showADL (G _ g s _) = "GEN "++showADL s++" ISA "++show g
+   instance ShowADL c => ShowADL (Gen c) where
+    showADL (G _ g s _) = "GEN "++showADL s++" ISA "++showADL g
     showADLcode fSpec (G _ g s _) = "GEN "++showADLcode fSpec s++" ISA "++showADLcode fSpec  g
 
    instance ShowADL RoleService where
-    showADL r = "ROLE "++intercalate ", " (map show (rsRole r))++" USES "++intercalate ", " (map show (rsServ r))
+    showADL r = "ROLE "++intercalate ", " (map show (rsRoles r))++" USES "++intercalate ", " (map show (rsServices r))
     showADLcode _ r = showADL r
 
    instance ShowADL RoleRelation where
     showADL r
-     = "ROLE "++intercalate ", " (map show (rrRole r))++" EDITS "++intercalate ", " (map showADL (rrRel r))
+     = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map showADL (rrRels r))
     showADLcode fSpec r
-     = "ROLE "++intercalate ", " (map show (rrRole r))++" EDITS "++intercalate ", " (map (showADLcode fSpec) (rrRel r))
+     = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map (showADLcode fSpec) (rrRels r))
 
    instance ShowADL Service where
     showADL sv 
@@ -227,27 +211,32 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
                                      | o<-kdats kd]++")"
 
 
--- disambiguate :: Fspc -> Expression -> Expression
--- This function must ensure that an expression, when printed, can be parsed with no ambiguity.
+-- The function 'disambiguate' must ensure that an expression, when printed, can be parsed with no ambiguity.
 -- Besides, it must be readable as well.
-   disambiguate :: Fspc -> Expression -> Expression
-   disambiguate _ (Tm mph i) = Tm mph i
+-- The effect is that the mphats attribute of all relations in an expression will be set,
+-- if otherwise there would be multiple interpretations possible.
+-- In the absence of disambiguity, the mphats attribute remains empty.
+-- This is done by looking at the concept sets between two adjacent terms.
+-- Internal to this definition, type information has been given for documentation purposes.
+-- Since fSpec is specific for Concept, the type for disambiguate is specific to Expression (Relation Concept).
+-- One call to 'declarations fSpec' is the only reason why the type of disambiguate is specific for Concept.
+   disambiguate :: Fspc -> Expression (Relation Concept) -> Expression (Relation Concept)
+   disambiguate _   (Tm mph i)  = Tm mph i
    disambiguate fSpec (Fux fs)  = Fux [disambiguate fSpec f| f<-fs]
    disambiguate fSpec (Fix fs)  = Fix [disambiguate fSpec f| f<-fs]
-   disambiguate _ (Fdx [])  = Fdx []
+   disambiguate _     (Fdx [])  = Fdx []
    disambiguate fSpec (Fdx [t]) = Fdx [disambiguate fSpec t]
    disambiguate fSpec (Fdx ts)  = Fdx (disamb fSpec [disambiguate fSpec t| t<-ts])
-   disambiguate _ (F [])   = F  []
-   disambiguate fSpec (F [t])  = F  [disambiguate fSpec t]
-   disambiguate fSpec (F ts)   = F  (disamb fSpec [disambiguate fSpec t| t<-ts])
+   disambiguate _     (F [])    = F   []
+   disambiguate fSpec (F [t])   = F   [disambiguate fSpec t]
+   disambiguate fSpec (F ts)    = F   (disamb fSpec [disambiguate fSpec t| t<-ts])
    disambiguate fSpec (K0x e')  = K0x (disambiguate fSpec e')
    disambiguate fSpec (K1x e')  = K1x (disambiguate fSpec e')
    disambiguate fSpec (Cpx e')  = Cpx (disambiguate fSpec e')
-   disambiguate fSpec (Tc f)   = Tc (disambiguate fSpec f)
+   disambiguate fSpec (Tc f)    = Tc  (disambiguate fSpec f)
 
 -- Disamb disambiguates a list of terms (expressions) that come from an Fd or F expression.
--- This is done by looking at the concept sets between two adjacent terms.
-   disamb :: Fspc -> Expressions -> Expressions
+   disamb :: Fspc -> [Expression (Relation Concept)] -> [Expression (Relation Concept)]
    disamb fSpec ts
      = let ims=strands1 triples in
        if length ims==1 then head ims++[t|(_,_,t)<-[last triples]] else disamb fSpec (concat ims++[t|(_,_,t)<-[last triples]])
@@ -255,6 +244,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 -- The list 'triples' contains the concept sets between two adjacent terms.
 -- A concept set contains all possibilities for allocating a concept (i.e. type) between two adjacent terms
 -- A concept set with more than one concept shows a possible ambiguity,  that 'disamb' will resolve.
+--      triples :: [(Expression (Relation Concept),[Concept],Expression (Relation Concept))]
         triples
          = [ (t, (rd.map last.types) t `isc` (rd.map head.types) t', t')
            | (t,t')<-zip (init ts) (tail ts)]
@@ -262,43 +252,53 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 --  triples without a problem (i.e. the concept set is not longer than 1); these are dealt with by p1
 --  and triples with an ambiguity; these are partially disambiguated by pn.
 --  Since pn does its job partially, we have put a fixpoint over the entire function 'disamb', making sure the whole job is done.
-        strands1 :: [(Expression,Concepts,Expression)] -> [Expressions]
+--      strands1 :: [(Expression (Relation Concept),[Concept],Expression (Relation Concept))]
+--                  ->  [[Expression (Relation Concept)]]
         strands1 []  = []
         strands1 iss = p1 (takeWhile select iss): strandsn (dropWhile select iss)
                        where select (_,m,_) = length m<=1
+--      strandsn :: [(Expression (Relation Concept),[Concept],Expression (Relation Concept))]
+--                  ->  [[Expression (Relation Concept)]]
         strandsn []  = []
         strandsn iss = pn (takeWhile select iss): strands1 (dropWhile select iss)
                        where select (_,m,_) = length m>1
+--      p1 :: [(Expression (Relation Concept),[Concept],Expression (Relation Concept))] -> [Expression (Relation Concept)]
         p1 iss = [s| (s,_,_)<-iss]
-        pn [] = error("!Fatal (module ShowADL 441): calling pn with empty list")
+--      pn :: [(Expression (Relation Concept),[Concept],Expression (Relation Concept))] -> [Expression (Relation Concept)]
+        pn [] = error("!Fatal (module ShowADL 265): calling pn with empty list")
         pn [(s,_,t)] = [s,Tm (mIs (target s `lub` source t)) (-1)]
         pn iss = [s|(s,_,_)<-lss]++[mphatson s|(s,_,_)<-[head rss]]++[s|(s,_,_)<-tail rss]
                  where lss = take halfway iss
                        rss = drop halfway iss
                        halfway = length iss `div` 2
 -- The following function is used to force the type of a relation to be printed.
-        types (Tm mph _) = if null (mphats mph) then rd [if inline mph then [source d,target d] else [target d,source d]|d<-declarations fSpec, name mph==name d] else [mphats mph]
-        types (Fux fs)  = foldr isc [] [types f| f<-fs]
-        types (Fix fs)  = foldr isc [] [types f| f<-fs]
+--      types :: Expression (Relation Concept) -> [[Concept]]
+        types (Tm mph _) = if null (mphats mph)
+                           then rd [ if inline mph then [source d,target d] else [target d,source d]
+                                   | d<-declarations fSpec, name mph==name d]   -- Note: fSpec is specific for Concept, so this is the only reason why the type of disamb is specific to Expression (Relation Concept)
+                           else [mphats mph]
+        types (Fux fs)   = foldr isc [] [types f| f<-fs]
+        types (Fix fs)   = foldr isc [] [types f| f<-fs]
         types (Fdx ts')  = types (F ts') -- a nifty trick to save code. After all, the type computation is identical to F...
-        types (F  [])  = [[Anything,Anything]]
-        types (F  ts')  = [[s,t]| s<-(rd.map head.head) ttyps, t<-(rd.map last.last) ttyps]
-                         where
-                          iscSets 
-                           = [(rd.map head.types.head) ts'] ++
-                             [ (rd.map last.types) t `isc` (rd.map head.types) t
-                             | (t,_)<-zip (init ts') (tail ts')] ++
-                             [(rd.map last.types.last) ts']
-                          ttyps
-                           = [ [d| d<-types t, head d `elem` scs, last d `elem` tgs]
-                             | ((scs,tgs),t)<-zip (zip (init iscSets) (tail iscSets)) ts'
-                             ]
+        types (F  [])    = error "!Fatal (module ShowADL 280): types (F []) = [[Anything,Anything]]"
+        types (F  ts')   = [[s,t]| s<-(rd.map head.head) ttyps, t<-(rd.map last.last) ttyps]
+                          where
+--                         iscSets :: [[Concept]] -- the list of 'in-between-concepts'
+                           iscSets 
+                            = [(rd.map head.types.head) ts'] ++
+                              [ (rd.map last.types) t `isc` (rd.map head.types) t'
+                              | (t,t')<-zip (init ts') (tail ts')] ++
+                              [(rd.map last.types.last) ts']
+                           ttyps -- the list of which each element corresponds to this list of types allocatable to t, in which t<-ts')
+                            = [ [d| d<-types t, head d `elem` scs, last d `elem` tgs]
+                              | ((scs,tgs),t)<-zip (zip (init iscSets) (tail iscSets)) ts'
+                              ]
         types (K0x e')  = types e'
         types (K1x e')  = types e'
         types (Cpx e')  = types e'
-        types (Tc f)   = types f
+        types (Tc f)    = types f
 
-   instance ShowADL Expression where
+   instance ShowADL (Expression (Relation Concept)) where
     showADL e = show e
     showADLcode fSpec expr  = showExpr (" \\/ ", "/\\", "!", ";", "*", "+", "-", "(", ")") expr
       where
@@ -306,27 +306,29 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
         = (showchar.insParentheses.disambiguate fSpec.mphatsoff) expr'
          where
           showchar (Tm mph _) = showADLcode fSpec mph
-          showchar (Fux [])  = "-V"
-          showchar (Fux fs)  = intercalate union' [showchar f| f<-fs]
-          showchar (Fix [])  = "V"
-          showchar (Fix fs)  = intercalate inter [showchar f| f<-fs]
-          showchar (Fdx [])  = "-I"
-          showchar (Fdx ts)  = intercalate rAdd [showchar t| t<-ts]
-          showchar (F [])   = "I"
-          showchar (F ts)   = intercalate rMul [showchar t| t<-ts]
-          showchar (K0x e')  = showchar e'++clos0
-          showchar (K1x e')  = showchar e'++clos1
-          showchar (Cpx e')  = compl++showchar e'
-          showchar (Tc f)   = lpar++showchar f++rpar
+          showchar (Fux [])   = "-V"
+          showchar (Fux fs)   = intercalate union' [showchar f| f<-fs]
+          showchar (Fix [])   = "V"
+          showchar (Fix fs)   = intercalate inter [showchar f| f<-fs]
+          showchar (Fdx [])   = "-I"
+          showchar (Fdx ts)   = intercalate rAdd [showchar t| t<-ts]
+          showchar (F [])     = "I"
+          showchar (F ts)     = intercalate rMul [showchar t| t<-ts]
+          showchar (K0x e')   = showchar e'++clos0
+          showchar (K1x e')   = showchar e'++clos1
+          showchar (Cpx e')   = compl++showchar e'
+          showchar (Tc f)     = lpar++showchar f++rpar
 
-   instance ShowADL Morphism where
+   instance (Eq c, Identified c, ShowADL c) => ShowADL (Relation c) where
     showADL m@Mph{}
      = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} decnm s)++
        (if null (mphats m)
-            then (if yin && sgn==(source s, target s) || not yin && sgn==(target s,source s) then "" else showSign [a,b])
+            then (if       inline m && source m==source s && target m==target s
+                    || not(inline m)&& source m==target s && target m==source s
+                  then "" else showSign [source m,target m])
             else showSign (mphats m))++
-       if yin then "" else "~"
-       where s = mphdcl m; yin = mphyin m; sgn@(a,b) = mphtyp m
+       if inline m then "" else "~"
+       where s = makeDeclaration m
     showADL (I atts g s yin)
      = "I"++if null atts then "" else showSign atts++if g==s then "" else if yin then "" else "~"
     showADL (V atts _)
@@ -345,9 +347,9 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADLcode _ m@(Mp1{})
      = "'"++mph1val m++"'"++(showSign [mph1typ m])
 
-   instance ShowADL Declaration where
+   instance (Identified c, Conceptual c) => ShowADL (Declaration c) where
     showADL decl@Sgn{}
-     = if not (decusr decl) then error("!Fatal (module ShowADL 304): call to ShowADL for declarations can be done on user defined relations only.") else
+     = if not (decusr decl) then error("!Fatal (module ShowADL 347): call to ShowADL for declarations can be done on user defined relations only.") else
        name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
        (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
         if null mults then "" else showL(map showADL mults))++
@@ -367,7 +369,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    instance ShowADL Prop where
     showADL p = show p
 
-   instance ShowADL Population where
+   instance ShowADL (Population Concept) where
     showADL (Popu m ps)
      = "POPULATION "++showADL m++" CONTAINS\n"++
        indent++"[ "++intercalate ("\n"++indent++"; ") (map show ps)++indent++"]"
@@ -390,7 +392,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    -- In de body van de context worden de regels afgedrukt die in de context zijn gedefinieerd, maar buiten de patterns.
    -- Daarbij worden de relaties afgedrukt die bij deze regels horen, zodat het geheel zelfstandig leesbaar is.
    instance ShowADL Context where
-    showADL _ = error("!Fatal (module showADL 369): showADL on Contexts is deliberately undefined. Please use showADLcode fSpec instead.")
+    showADL _ = error("!Fatal (module showADL 390): showADL on Contexts is deliberately undefined. Please use showADLcode fSpec instead.")
     showADLcode fSpec context
      = "CONTEXT " ++name context
        ++ (if null (ctxon context)   then "" else "EXTENDS "++intercalate ", "   (ctxon context)                 ++ "\n")
@@ -406,7 +408,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 
 
 -- WHY?  Stef, what is the added value of ShowADL Context now we have ShowADL Fspc ?
--- BECAUSE (SJ) for debugging purposes, it might be useful to be able to print a Context in .ADL format...
+-- BECAUSE (SJ) for debugging purposes, it might be useful to be able to print a Context in .Ampersand syntax...
    instance ShowADL Fspc where
     showADL fSpec = showADLcode fSpec fSpec
     showADLcode fSpec' fSpec

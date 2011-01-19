@@ -1,9 +1,9 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleContexts #-}
 module Prototype.GetCode (getCodeFor) where
- import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute)
+ import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..))
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
- import Adl (Concept(..), Expression(..),Morphism(..),mIs,isIdent,flp,source,sign,target,Identified(..),singleton)
+ import ADL (Expression(..),mapExpression,Relation(..),mapMorphism,SpecHierarchy(..),mIs,flp,source,sign,target,Identified(..),Concept(..))
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import Prototype.RelBinGenBasics(zipnum)
  import Data.Fspec (Fspc(plugs))
@@ -29,7 +29,7 @@ module Prototype.GetCode (getCodeFor) where
  getCodeForSingle :: Fspc->[Named CodeVar]->Named CodeVar->[[Statement]]
  getCodeForSingle _ pre post | elem post pre = [[]] -- allready known info
  getCodeForSingle fSpec pre o
-  | singleton (source e) -- als dit niet waar is, kan de variabele niet gevuld worden!!
+ -- | precondition: isSingleton (source (cvExpression (nObject o)))
  -- TODO: make sure that newVarFor variables are read OK. More specifically: o may have attributes, these should be given a value!!
   =  -- to get code, we can try different strategies. Just concattenate all attempts
      -- Put the things you want most first (efficient stuff first)
@@ -40,18 +40,17 @@ module Prototype.GetCode (getCodeFor) where
        code<-case e of
         (Tm (V{mphtyp=(_,t)}) _) -- source is al automatisch een singleton
          -> getAllTarget t
-        _ -> error ("please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e)
+        _ -> error ("!Fatal (module GetCode 43): please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e)
      ]
-  | otherwise = error "getCodeForSingle requires that source(cvExpression o) is a singleton (in GetCode.hs)"
   where e = cvExpression obj
-        obj = (nObject o)
-        getAllTarget (DExp e') -- this makes the object very predicatble: it will have a source (0) and a target (1) relation
-         = atleastOne ("getAllTarget did not return something for (DExp e') in GetCode.hs with e'="++show e')
+        obj = nObject o
+        getAllTarget (PHPexp e') -- this makes the object very predictable: it will have a source (0) and a target (1) relation
+         = atleastOne ("!Fatal (module GetCode 49): getAllTarget did not return something for (PHPexp e') with e'="++show e')
            [galines ++ renaming
-           | tmpvar<-[newVarFor (map nName (o:pre)) e']
-           , galines <- atleastOne ("getCodeForSingle in GetCode.hs should return something for e'="++show e'++"\n"
+           | tmpvar<-[newVarFor (map nName (o:pre)) (conc2php e')]
+           , galines <- atleastOne ("!Fatal (module GetCode 52): getCodeForSingle should return something for e'="++show e'++"\n"
                                    ) $
-                        getCodeForSingle fSpec pre tmpvar
+                        getCodeForSingle fSpec pre tmpvar -- WHY? How do we know that tmpvar is a singleton?
            , renaming<-[[Iteration (tmpvar:pre) (o:tmpvar:pre) (use tmpvar) s t'
                         [Iteration (o:s:t:tmpvar:pre) (o:s:t:tmpvar:pre) (use t') t'' t
                                    [Assignment (s:t:t':tmpvar:pre)
@@ -60,35 +59,47 @@ module Prototype.GetCode (getCodeFor) where
                                                (CQCompose (map (\x->Named (fst x) (CQPlain (snd x))) fromTo))
                                    ]]
                         ]
-                       | let c = case obj of
+                       | let c  = case obj of
                                    CodeVar{cvContent=Right []} -> [o]
-                                   CodeVar{cvContent=Right x} -> (x)
+                                   CodeVar{cvContent=Right xs} -> xs
                                    _ -> []
-                       , let s = freshSingleton (tmpvar:pre) "source" (source e')
+                       , let s  = freshSingleton (tmpvar:pre) "source" (PHPC (source e'))
                        , let t' = nameFresh (s:tmpvar:pre) "t" singletonCV
-                       , let t = freshSingleton (s:t':tmpvar:pre) "target" (target e')
+                       , let t  = freshSingleton (s:t':tmpvar:pre) "target" (PHPC (target e'))
                        , let t'' = nameFresh (s:t:tmpvar:pre) "i" singletonCV
                        , let fromTo = [ (nName f, to)
                                       | f <- c 
                                       , to <-    [use s|cvExpression (nObject f)==pairSourceExpr e']
                                               ++ [use t|cvExpression (nObject f)==pairTargetExpr e']
                                       ]
-                       , (length fromTo == length c) || error ("Length does not match in GetCode.hs: "++show (fromTo,c)++", to fix this, start checking and verifying all attributes of obj and get a perfect match. Do NOT fix by just removing this error: this might cause an assignment to not-match")
+                       , (length fromTo == length c) || error ("!Fatal (module GetCode 75): Length does not match: "++show (fromTo,c)++", to fix this, start checking and verifying all attributes of obj and get a perfect match. Do NOT fix by just removing this error: this might cause an assignment to not-match")
                        ]
            ]
-        getAllTarget tp
-         = [[Assignment pre (o:pre) (use o) (SQLComposed (source expr) [Named (name$ source expr) expr] sql)]
-           | let expr=Tm (mIs(tp)) (-1) -- get the type of the target of the expression just as I
+        getAllTarget tp@(PHPC c)
+         = [[Assignment pre (o:pre) (use o) (SQLComposed c [Named (name c) pxpr] sql)]
+           | let pxpr=Tm (mIs tp) (-1)
+           , let expr=Tm (mIs c) (-1)
            , CodeVar{cvContent=Right []} <-[obj]
            , Just sql <- [selectExpr fSpec 0 "" (sqlExprTrg fSpec expr) expr]
            ]++
            [ l
-           | CodeVar{cvContent=Left c}<-[obj]
-           , l<-getAllInExpr fSpec pre (use o) (cvExpression c)
+           | CodeVar{cvContent=Left cv}<-[obj]
+           , l<-getAllInExpr fSpec pre (use o) (cvExpression cv)
            ]++
-           [ error ("TODO: create complex objects for getAllTarget in Code.hs "++show c)
-           | CodeVar{cvContent=Right c}<-[obj]
+           [ error ("!Fatal (module GetCode 89): TODO: create complex objects for getAllTarget "++show cv)
+           | CodeVar{cvContent=Right cv}<-[obj]
            ]
+        getAllTarget _
+         = error ("!Fatal (module GetCode 93): missing code for getAllTarget")
+
+ conc2php :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
+ conc2php e = mapExpression (mapMorphism PHPC) e
+
+ php2conc :: Expression (Relation PHPconcept) -> Expression (Relation Concept)
+ php2conc e = mapExpression (mapMorphism f) e
+              where f (PHPC c) = c
+                    f _ = error("!Fatal (module GetCode 101): Non-exhaustive pattern for PHPconcept in php2conc")
+
  
  -- | Create code to fill a single variable with some expression.
  -- | The resulting variable is of the most basic kind: $var[$everysource]=array($target1,$target2,...);
@@ -96,7 +107,7 @@ module Prototype.GetCode (getCodeFor) where
  getAllInExpr :: Fspc            -- ^ contains information on what's in a DB and what's in a different kind of plug
               -> [Named CodeVar] -- ^ preknowledge (for administrative purposes)
               -> Named UseVar    -- ^ variable to assign Expression to (see Assignment for details)
-              -> Expression      -- ^ expression we'd like to know
+              -> Expression (Relation PHPconcept)    -- ^ expression we'd like to know
               -> [[Statement]]   -- ^ list of possible chunks of code that get Expression into Named CodeVar, sorted from most efficient to least efficient (fastest way to get Expression)
  getAllInExpr fSpec pre var (Tc   e ) = getAllInExpr fSpec pre var e
  getAllInExpr fSpec pre var (F   [e]) = getAllInExpr fSpec pre var e
@@ -112,7 +123,7 @@ module Prototype.GetCode (getCodeFor) where
      
      -- Here we try to get the whole thing via a single SQL query
      [[Assignment pre (obj:pre) var (SQLBinary composed sql)]
-     | Just sql<-[sqlQuery fSpec composed]
+     | Just sql<-[sqlQuery fSpec expr]
      ] ++
      
      -- Get an expression from a PHP plug
@@ -125,17 +136,17 @@ module Prototype.GetCode (getCodeFor) where
      -- We may do 'divide' in several ways.
      -- Either get both sides of the operator completely, which is done below
      [get1++get2++join++forget
-     | (e1,e2,opr) <- case composed of (Fix (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
-                                       (Fix (Cpx b:a:x)) -> [(F (a:x),b,PHPIsectComp)]
-                                       (F   (f:fs))      -> [(f,(F   fs),PHPJoin)]
-                                       (Fix (f:fs))      -> [(f,(Fix fs),PHPIntersect)]
-                                       (Fux (f:fs))      -> [(f,(Fix fs),PHPUnion)]
-                                       _ -> [] -- error ("Failed composed namely "++show composed)
-     , let var1=getAVar pre e1
-     , let var2=getAVar (var1:pre) e2
+     | (e1,e2,opr) <- case expr of (Fix (a:Cpx b:x)) -> [(F (a:x),b,PHPIsectComp)]
+                                   (Fix (Cpx b:a:x)) -> [(F (a:x),b,PHPIsectComp)]
+                                   (F   (f:fs))      -> [(f,(F   fs),PHPJoin)]
+                                   (Fix (f:fs))      -> [(f,(Fix fs),PHPIntersect)]
+                                   (Fux (f:fs))      -> [(f,(Fix fs),PHPUnion)]
+                                   _ -> [] -- error ("!Fatal (module GetCode 144): Failed composed namely "++show composed)
+     , let var1=getAVar pre (conc2php e1)
+     , let var2=getAVar (var1:pre) (conc2php e2)
      -- code below is correct, and should work when getCodeForSingle is OK
-     , get1<- getCodeForSingle fSpec pre var1
-     , get2<- getCodeForSingle fSpec (var1:pre) var2
+     , get1<- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
+     , get2<- getCodeForSingle fSpec (var1:pre) var2 -- WHY? How do we know that var2 is a singleton?
      -- we may decide to use this shortcut instead:
      --, get1<-getAllInExpr fSpec pre (use var1) e1
      --, get2<-getAllInExpr fSpec (var1:pre) (use var2) e2
@@ -157,19 +168,20 @@ module Prototype.GetCode (getCodeFor) where
      [ code
      | code <- case composed of
                 -- NOTE ON Cpx !!! When Cpx becomes typed, the pattern below should be changed, and changeSource as well!
-                (F [Tm (I _ (I1 s) _ _) _,Cpx f,Tm (I _ (I1 t) _ _) _])
-                       -> atleastOne ("getCodeForSingle in GetCode.hs should return something in Cpx for "++show f)$ -- SJC put this here
+                (F [Tm (I _ (PHPI1 s) _ _) _, Cpx f, Tm (I _ (PHPI1 t) _ _) _])
+                       -> atleastOne ("!Fatal (module GetCode 161): getCodeForSingle should return something in Cpx for "++show f)$ -- SJC put this here
                           [ assignment++
                             [Assignment (var1:pre)
                                         (obj:var1:pre)
                                         (var)
                                         (PHPCompl1 (s,t) (CQPlain (useAttribute (Right s)$ use var1)))
+ --                                    | PHPCompl1   { cqtuple::(Named UseVar,Named UseVar), cqfrom ::CodeQuery}
                             ,Forget (var1:obj:pre) (obj:pre)]
-                          | var1 <- [getAVar (obj:pre)$ (changeSource (I1 s) $ changeTarget (I1 t) f)
-                                    ,getAVar (obj:pre)$ changeTarget (I1 t) f
-                                    ,getAVar (obj:pre)$ changeSource (I1 s) f
+                          | var1 <- [getAVar (obj:pre) (changeSource (PHPI1 s) (changeTarget (PHPI1 t) f))
+                                    ,getAVar (obj:pre) (changeTarget (PHPI1 t) f)
+                                    ,getAVar (obj:pre) (changeSource (PHPI1 s) f)
                                     ]
-                          , assignment <- getCodeForSingle fSpec pre var1
+                          , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           ] 
                 (F fs) -> [assignment++
                            [Iteration (var1:pre) (obj:var1:pre) (use var1) loopby tmp
@@ -190,7 +202,7 @@ module Prototype.GetCode (getCodeFor) where
                                                                    (CQPlain s)]
                                            ,x)) (splitAssoc F (map flp (reverse fs)))
                           , let var1 = getAVar (obj:pre) f1
-                          , assignment <- getCodeForSingle fSpec pre var1
+                          , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (source f1)
                           , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
                           , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
@@ -200,8 +212,8 @@ module Prototype.GetCode (getCodeFor) where
                                                             (Named (nName var2) (UseVar [Right (use loopvalue)]))
                                         ++ [Forget (var2:pre') pre']
                                       | let pre'=(obj:loopby:tmp:var1:tmp2:loopvalue:pre)
-                                      , let var2=getAVar pre' (changeSource (I1 (use loopvalue)) f2)
-                                      , get<-getCodeForSingle fSpec pre' var2
+                                      , let var2=getAVar pre' (changeSource (PHPI1 (use loopvalue)) f2)
+                                      , get<-getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
                 (Fix fs)->[assignment++
@@ -214,7 +226,7 @@ module Prototype.GetCode (getCodeFor) where
                           | (i,f1) <- zipnum fs
                           , f2<-applyOprOnLists Fix$ take i fs ++ drop (i+1) fs
                           , let var1 = getAVar pre f1
-                          , assignment <- getCodeForSingle fSpec pre var1
+                          , assignment <- getCodeForSingle fSpec pre var1 -- WHY? How do we know that var1 is a singleton?
                           , let loopby = getScalar (obj:var1:pre) "i" (source f1)
                           , let tmp = nameFresh (obj:loopby:var1:pre) "i" singletonCV
                           , let tmp2 = nameFresh (obj:loopby:tmp:var1:pre) "i" singletonCV
@@ -226,15 +238,16 @@ module Prototype.GetCode (getCodeFor) where
                                                     (PHPAdd1 (CQPlain addTo) (CQPlain (Named (nName var2) (UseVar [Right (use loopby),Left "0"]))))
                                         ,Forget (var2:pre') pre']
                                       | let pre'=(obj:loopby:tmp:var1:tmp2:loopvalue:pre)
-                                      , let var2=getAVar pre' (changeSource (I1 (use loopby)) (changeTarget (I1 (use loopvalue)) f2))
+                                      , let var2=getAVar pre' (changeSource (PHPI1 (use loopby)) (changeTarget (PHPI1 (use loopvalue)) f2))
                                       , let addTo=(Named (nName var ) (UseVar [Right (use loopby)]))
-                                      , get<-atleastOne ("getCodeForSingle in GetCode.hs should return something in Fi for "++show var2++" (just removing this error on line 231 might fix the problem)")$
-                                             getCodeForSingle fSpec pre' var2
+                                      , get<-atleastOne ("!Fatal (module GetCode 231): getCodeForSingle should return something in Fi for "++show var2++" (just removing this error on line 231 might fix the problem)")$
+                                             getCodeForSingle fSpec pre' var2 -- WHY? How do we know that var2 is a singleton?
                                       ]
                           ]
                 _ -> []
      ]
-  where obj =reName (nName var) (newVarFor (map nName pre) composed)
+  where expr = php2conc composed
+        obj =reName (nName var) (newVarFor (map nName pre) composed)
         -- create a new variable, ensuring that no overlap occurs in the namespaces concerning preknowledge
         getAVar pre' = newVarFor (map nName (obj:pre'))
         getScalar pre' nm = freshSingleton (obj:pre') nm
@@ -247,12 +260,13 @@ module Prototype.GetCode (getCodeFor) where
         applyOprOnLists opr a@(_:_:_) = [opr a]
         applyOprOnLists _ [x] = [x]
         applyOprOnLists _ [] = []
+
  -- | use a variable
  use :: Named CodeVar -> Named UseVar
  use s = Named (nName s) (UseVar [])
  
  -- | will get a straight-forward php expression (binary)
- phpQuery :: Fspc -> [Named CodeVar] -> Expression -> Maybe (CodeQuery)
+ phpQuery :: Fspc -> [Named CodeVar] -> Expression (Relation PHPconcept) -> Maybe (CodeQuery)
  phpQuery fSpec _ expr
   = listToMaybe
       [  PHPBinCheck {cqinput=map CQPlain [s,t] -- arguments passed to the plug
@@ -262,43 +276,35 @@ module Prototype.GetCode (getCodeFor) where
                      }
       | PlugPhp plug <- plugs fSpec
       , phpSafe plug
-      , (I1 s,I1 t) <- [sign expr]
+      , (PHPI1 s,PHPI1 t) <- [sign expr]
       , length (phpinArgs plug)==2
       , let pExpr = cvExpression (last (phpinArgs plug))
-      , isIdent (cvExpression (head (phpinArgs plug)))
-      , (changeSource (I1 s) (changeTarget (I1 t) pExpr) == expr)
+--      , isIdent (cvExpression (head (phpinArgs plug))) -- let's assume this property (WHY?)
+      , (changeSource (PHPI1 s) (changeTarget (PHPI1 t) pExpr) == expr)
       ]
 
- -- | will get a straight-forward sql expression (binary) with a nice name for source and target
+ -- | will get a straightforward sql expression (binary) with a nice name for source and target
  -- | if, of course, such a sql expression exists
- sqlQuery :: Fspc -> Expression -> Maybe String
+ sqlQuery :: Fspc -> Expression (Relation Concept)-> Maybe String
  sqlQuery fSpec expr
   = selectExpr fSpec 0 src (noCollide [src] (sqlExprTrg fSpec expr)) expr
   where src = sqlExprSrc fSpec expr
  
- changeTarget :: Concept -> Expression -> Expression
+ changeTarget :: (Show c, Identified c, SpecHierarchy c) => c -> Expression (Relation c) -> Expression (Relation c)
  changeTarget c = flp . changeSource c . flp
  -- | change the source of some expression into c. We assume that c ISA source expression.
- changeSource :: Concept -> Expression -> Expression
- changeSource c (Tc (x)) =changeSource c x
- changeSource c (K0x (x))=changeSource c x
- changeSource c (K1x (x))=changeSource c x
- changeSource c (F (a:as))
-   = case changeSource c a of
-      F(bs) -> F (bs++as)
-      expr -> F (expr:as)
- changeSource c (Fdx (a:as))
-   = case changeSource c a of
-      Fdx(bs) -> Fdx (bs++as)
-      expr -> Fdx (expr:as)
- changeSource c (Fix as) = Fix$ map (changeSource c) as
- changeSource c (Fux as) = Fux$ map (changeSource c) as
- changeSource c (Cpx as) = F [Tm (mIs c)(-1),Cpx as]
- changeSource c (Tm m _)
-  = case m of
-     Mp1{} -> error "changeSource in getAllInExpr in GetCode.hs should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type I1 here."
-     I{} -> Tm (I [] c c True) (-1)
-     V{mphtyp=(_,t)} -> Tm (V [] (c,t)) (-1)
-     Mph{mphtyp=(_,t)} -> Tm m{mphtyp=(c,t)} (-1)
- changeSource _ (F []) = F []
- changeSource _ (Fdx []) = Fdx []
+ changeSource :: (Show c, Identified c, SpecHierarchy c) => c -> Expression (Relation c) -> Expression (Relation c)
+ changeSource c (Tc  x)  = Tc  (changeSource c x)
+ changeSource c (K0x x)  = K0x (changeSource c x)
+ changeSource c (K1x x)  = K1x (changeSource c x)
+ changeSource c (F fs)   = F   [changeSource c f | f<-fs]
+ changeSource c (Fdx fs) = Fdx [changeSource c f | f<-fs]
+ changeSource c (Fix ts) = Fix [changeSource c t | t<-ts]
+ changeSource c (Fux ts) = Fux [changeSource c t | t<-ts]
+ changeSource c (Cpx x ) = F [Tm (mIs c)(-1),Cpx x]    -- TODO: is dit correct?
+ changeSource c (Tm m i) = Tm m' i
+  where m' = case m of
+               Mph{} -> m{mphsrc=c}
+               I{} -> I [] c c True
+               V{mphtyp=(_,t)} -> V [] (c,t)
+               Mp1{} -> error "!Fatal (module GetCode 310): changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

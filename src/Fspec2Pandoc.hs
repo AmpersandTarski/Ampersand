@@ -4,7 +4,7 @@ module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
 import Auxiliaries      (eqCl)
 import Collection       (Collection (..))
-import Adl
+import ADL
 import Data.Plug
 import Picture
 import Data.List
@@ -34,7 +34,7 @@ import Rendering.PandocAux
 --to the formal rule.
 --The fourth chapter presents a datamodel together with all the multiplicity rules.
 -- by datasets and rules.
---Datasets are specified through PLUGS in ADL. The dataset is build around one concept, 
+--Datasets are specified through PLUGS in Ampersand. The dataset is build around one concept, 
 --also called the theme. Functionalities defined on the theme by one or more plugs are
 --described together with the rules that apply to the dataset. Rules not described by
 --the dataset are described in the last section of chapter 2.
@@ -260,7 +260,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                = [r| r<-vrules fSpec      -- All *user declared* rules that apply in the entire Fspc, including all signals
                    , r_usr r
                  ]
-      aThemeAtATime :: ([(Concept,Maybe ConceptDef)],[Declaration],[Rule]) -- all stuff that still must be processed into the comming sections
+      aThemeAtATime :: ([(Concept,Maybe ConceptDef)],[Declaration Concept],[Rule (Relation Concept)]) -- all stuff that still must be processed into the comming sections
                     -> [String]          -- the names of the patterns that must be processed into this specification
                     -> Counter           -- unique definition counters
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
@@ -273,10 +273,10 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
            (still2doCCDsPre, still2doDclsPre, still2doRulesPre) = still2doPre
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) processNow iPre
            (blocksOfThemes,iPost)     = aThemeAtATime stuff2PrintLater xs iPostFirst
-           processNow = (ccds2PrintNow, decls2PrintNow, [r| r<-rules2PrintNow, r_usr r]) -- Han, ik heb het al gedaan... (SJ, 31 aug 2010)
+           processNow = (ccds2PrintNow, decls2PrintNow, [r| r<-rules2PrintNow, r_usr r])
            rules2PrintNow =[r| r<-still2doRulesPre, r_pat r == x]
            rules2PrintLater = still2doRulesPre >- rules2PrintNow
-           decls2PrintNow =[d| d<-still2doDclsPre, (d `eleM` (decls rules2PrintNow))]
+           decls2PrintNow =[d| d<-still2doDclsPre, (d `eleM` map makeDeclaration (mors rules2PrintNow))]
            decls2PrintLater = still2doDclsPre >- decls2PrintNow
            ccds2PrintNow = [(c,cd)|(c,cd)<- still2doCCDsPre, c `eleM` (concs rules2PrintNow)]
            ccds2PrintLater = still2doCCDsPre >- ccds2PrintNow
@@ -284,7 +284,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
            
 
       printOneTheme :: Maybe String -- name of the theme to process (if any)
-                    -> ([(Concept,Maybe ConceptDef)],[Declaration],[Rule])  -- Stuff to print in this section
+                    -> ([(Concept,Maybe ConceptDef)],[Declaration Concept],[Rule (Relation Concept)])  -- Stuff to print in this section
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
       printOneTheme nm (ccds2print, decls2print, rules2print) counters1
@@ -315,7 +315,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                       )
                                      ]
                               [p] -> explains2Blocks (explain fSpec flags p)
-                              _   -> error ("!Fatal (module Fspec2Pandoc 299): Multple themes are called '"++themeName++"'.") 
+                              _   -> error ("!Fatal (module Fspec2Pandoc 318): Multple themes are called '"++themeName++"'.") 
 
               themeName = case nm of
                              Just s -> s
@@ -361,7 +361,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       explains cd = explains2Blocks (explain fSpec flags cd) 
 
 -- sctds prints the requirements related to declarations that are introduced in this theme.
-              sctds :: [Declaration] -> Counter -> ([Block],Counter)
+              sctds :: [Declaration Concept] -> Counter -> ([Block],Counter)
               sctds xs c0 
                 = case xs of
                     []  -> ([],c0)
@@ -370,7 +370,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       d':ds' = xs
                       (fstBlocks,c1) = declBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
-                      declBlock :: Declaration -> Counter -> ([Block],Counter)
+                      declBlock :: Declaration Concept -> Counter -> ([Block],Counter)
                       declBlock d2 cnt = ([DefinitionList [( [Str (case language flags of
 				                                                     Dutch   -> "Eis "
 				                                                     English -> "Requirement ")
@@ -383,7 +383,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                           ]
                                          ,incEis cnt)
                                                        
-              sctrs :: [Rule] -> Counter -> ([Block],Counter)
+              sctrs :: [Rule (Relation Concept)] -> Counter -> ([Block],Counter)
               sctrs xs c0 
                 = case xs of
                     []  -> ([],c0)
@@ -392,7 +392,7 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                       r':rs' = xs
                       (fstBlocks,c1) = ruleBlock r' c0
                       (restBlocks,c2) = sctrs rs' c1
-                      ruleBlock :: Rule -> Counter -> ([Block],Counter)
+                      ruleBlock :: Rule (Relation Concept) -> Counter -> ([Block],Counter)
                       ruleBlock r2 cnt = ([DefinitionList [( [Str (case language flags of
 				                                                     Dutch   -> "Eis "
 				                                                     English -> "Requirement ")
@@ -439,7 +439,7 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
   caSections :: [Pattern] -> [([Block],Picture)]
   caSections pats = iterat pats 1 [] []
    where
-    iterat :: [Pattern] -> Int -> [Concept] -> [Declaration] -> [([Block],Picture)]
+    iterat :: [Pattern] -> Int -> [Concept] -> [Declaration Concept] -> [([Block],Picture)]
     iterat [] _ _ _ = []
     iterat (pat:ps) i seenConcepts seenDeclarations
      = ( [Header (lev+1) [Str (name pat)]]    -- new section to explain this theme
@@ -522,15 +522,15 @@ conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
              English -> [TeX "This corresponds to requirement~", symReqRef r, TeX " on page~", symReqPageRef r, Str "."]
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd)| c<-ncs, cd<-conceptDefs fSpec, cdnm cd==name c]    -- ... and their definitions
-        nds = [d| d<-decls r >- seenDeclarations, isSgn d]     -- newly seen declarations
-        rds = [d| d<-decls r `isc` seenDeclarations, isSgn d]  -- previously seen declarations
-        ( dpNext, n', seenCs,  seenDs ) = dpRule rs (n+length cds+length nds+1) (concs r `uni` seenConcs) (decls r `uni` seenDeclarations)
-
+        nds = [d| d<-ds >- seenDeclarations, isSgn d]     -- newly seen declarations
+        rds = [d| d<-ds `isc` seenDeclarations, isSgn d]  -- previously seen declarations
+        ( dpNext, n', seenCs,  seenDs ) = dpRule rs (n+length cds+length nds+1) (concs r `uni` seenConcs) (ds `uni` seenDeclarations)
+        ds  = map makeDeclaration (mors r)
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fspec
 --         the class diagram and multiplicity rules are printed
 
--- If an ADL-script contains no reference to any role whatsoever, a process analysis is meaningless.
+-- If an Ampersand script contains no reference to any role whatsoever, a process analysis is meaningless.
 -- In that case it will not be printed. To detect whether this is the case, we can look whether the
 -- roleServices and mayEdit attributes remain empty.
 noProcesses :: Fspc -> Bool
@@ -607,7 +607,7 @@ dataAnalysis lev fSpec flags
  = ( header ++ daContents ++ daAssociations remainingDecls ++
    [b | p<-datasets fSpec, b<-daPlug p] , classDiagramPicture )
  where 
-  remainingDecls = declarations fSpec >- [d | p<-datasets fSpec, d<-decls p]
+  remainingDecls = declarations fSpec >- [d | p<-datasets fSpec, d<-map makeDeclaration (mors p)]
 
   header :: [Block]
   header = labeledHeader lev chpDAlabel (case language flags of
@@ -665,7 +665,7 @@ dataAnalysis lev fSpec flags
 -- First, we document the heterogeneous properties of all relations
 -- Then, the homogeneous poperties are given, and finally
 -- the signals are documented.
-  daAssociations :: [Declaration] -> [Block]
+  daAssociations :: [Declaration Concept] -> [Block]
   daAssociations ds
    = [ if language flags==Dutch
        then Para [ Str $ upCap (name fSpec)++" heeft de volgende associaties en multipliciteitsrestricties. "
@@ -787,10 +787,10 @@ dataAnalysis lev fSpec flags
                 ]
       strands (F fs) = [fs]
       strands _      = []    -- <--  we could maybe do better than this...
-      tots = [d| t<-ts, inline t, d<-decls t]
-      unis = [d| t<-is, inline t, d<-decls t]
-      surs = [d| t<-ts, not (inline t), d<-decls t]
-      injs = [d| t<-is, not (inline t), d<-decls t]
+      tots = [d| t<-ts, inline t, d<-map makeDeclaration (mors t)]
+      unis = [d| t<-is, inline t, d<-map makeDeclaration (mors t)]
+      surs = [d| t<-ts, not (inline t), d<-map makeDeclaration (mors t)]
+      injs = [d| t<-is, not (inline t), d<-map makeDeclaration (mors t)]
 -}
 
   -- daPlugs describes data sets.
@@ -810,7 +810,7 @@ dataAnalysis lev fSpec flags
        content = daAttributes p ++ plugRules ++ plugSignals ++ plugKeydefs ++ iRules
        plugRules
         = case language flags of
-           English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
+           English -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (mors r >- mors p)] of
                        []  -> []
                        [r] -> [ Para [ Str "This data set shall maintain the following integrity rule. " ]
                               , if showPredExpr flags
@@ -822,7 +822,7 @@ dataAnalysis lev fSpec flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic r)) ]]| r<-rs ]
                                 else BulletList [[Para [Math DisplayMath $ showMathcode fSpec r]]| r<-rs ]
                               ]
-           Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (decls r >- decls p)] of
+           Dutch   -> case [r| r@(Ru{})<-rules fSpec, r_usr r, null (mors r >- mors p)] of
                        []  -> []
                        [r] -> [ Para [ Str "Deze gegevensverzameling handhaaft de volgende integriteitsregel. " ]
                               , if showPredExpr flags
@@ -836,7 +836,7 @@ dataAnalysis lev fSpec flags
                               ]
        plugKeydefs
         = case language flags of
-           English -> case [k| k<-keyrules fSpec, null (decls k >- decls p)] of
+           English -> case [k| k<-keyrules fSpec, null (mors k >- mors p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set contains one key. " ]
                               , if showPredExpr flags
@@ -848,7 +848,7 @@ dataAnalysis lev fSpec flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]]| s<-ss ]
                                 else BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
-           Dutch   -> case [k| k<-keyrules fSpec, null (decls k >- decls p)] of
+           Dutch   -> case [k| k<-keyrules fSpec, null (mors k >- mors p)] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" key. ") ] 
                               , if showPredExpr flags
@@ -862,7 +862,7 @@ dataAnalysis lev fSpec flags
                               ]
        plugSignals
         = case language flags of
-           English -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
+           English -> case [r| r<-signals fSpec, null (mors r >- mors p)] of
                        []  -> []
                        [s] -> [ Para [ Str "This data set generates one signal. " ]
                               , if showPredExpr flags
@@ -874,7 +874,7 @@ dataAnalysis lev fSpec flags
                                 then BulletList [[Para [ Math DisplayMath (showLatex (toPredLogic s)) ]]| s<-ss ]
                                 else BulletList [[Para [Math DisplayMath $ showMathcode fSpec s]]| s<-ss ]
                               ]
-           Dutch   -> case [r| r<-signals fSpec, null (decls r >- decls p)] of
+           Dutch   -> case [r| r<-signals fSpec, null (mors r >- mors p)] of
                        []  -> []
                        [s] -> [ Para [ Str ("Deze gegevensverzameling genereert "++preciesEen++" signaal. ") ] 
                               , if showPredExpr flags
@@ -1025,7 +1025,7 @@ serviceChap lev fSpec flags svc
           ]
      where flds :: Block
            flds = BulletList [recur (objctx (fsv_objectdef svc)) f| f<-fsv_fields svc]
-            where recur :: Expression -> Field -> [Block]
+            where recur :: Expression (Relation Concept) -> Field -> [Block]
                   recur e f | null (fld_sub f) = fld e f
                             | otherwise        = fld e f ++
                                                  [ BulletList [recur (F [e,fld_expr f']) f'| f'<-fld_sub f] ]
@@ -1033,7 +1033,7 @@ serviceChap lev fSpec flags svc
                      , Para [ Str "display on start: ", Math InlineMath $ showMathcode fSpec (conjNF e) ]
                      ] {- ++
                      [ Para [ Str $ "exec on insert: "++ showECA fSpec "\n>     "  (fld_onIns f arg)]
-                     | fld_insAble f, arg<-[error ("!TODO (module Fspec2Pandoc 707): hier moet een declaratie \"Delta\" staan")] ]
+                     | fld_insAble f, arg<-[error ("!TODO (module Fspec2Pandoc 1036    ): hier moet een declaratie \"Delta\" staan")] ]
 -}
             where cols = ["lijst"        | fld_list    f]++
                          ["verplicht"    | fld_must    f]++
@@ -1089,7 +1089,7 @@ serviceChap lev fSpec flags svc
 --  voor het bewijs         ++showProof (showECA fSpec "\n>     ") (proofPA (ecaAction (eca arg)))
 --                          ++"\n<------End Derivation --"
                     ]
-                 | eca<-fsv_ecaRules svc, arg<-[error ("!TODO (module Fspec2Pandoc 754): hier moet een declaratie \"Delta\" staan")]
+                 | eca<-fsv_ecaRules svc, arg<-[error ("!TODO (module Fspec2Pandoc 1092): hier moet een declaratie \"Delta\" staan")]
                  ]
       English -> [] --TODO
 -}

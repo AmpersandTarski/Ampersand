@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Prop (Prop(..),Props
+module ADL.Prop (Prop(..),Props
                 ,flipProps)
 where
 

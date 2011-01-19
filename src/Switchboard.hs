@@ -7,7 +7,7 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
    --              -- 2) cabal-install graphviz  (onder windows: cabal install graphviz)
    --              -- 3) er is geen stap 3!
    --              -- 4) build on graphviz-2999.5.0.0
-   import Adl
+   import ADL
    import Data.Fspec
    import Collection (Collection(rd))
    import Calc (positiveIn)
@@ -47,12 +47,12 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
 --                                          , "Orange", "Skyblue", "Plum", "Orange", "Thistle", "Tan", "SpringGreen"]++allcolors
 --         colorCl c    = head [colConj conj | Quad _ ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs, clause<-shifts, c==clause]
          nameConj c   = head [nmConjunct conj | Quad _ ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs, clause<-shifts, c==clause]
-         nmConjunct c = head (["conj"  ++show (i::Int)| (i,conj)  <-zip [1..] conjuncts, conj==c]++error("!Fatal (module Switchboard 46): illegal lookup in nmConjunct: "++showADLcode fSpec c))
---         nameClaus c  = head (["clause"++show (i::Int)| (i,clause)<-zip [1..] clauses, clause==c]++error("!Fatal (module Switchboard 47): illegal lookup in nameClaus: " ++showADLcode fSpec c))
-         namePTerm t  = head (["pos"   ++show (i::Int)| (i,term)  <-zip [1..] posTerms,  term==t]++error("!Fatal (module Switchboard 48): illegal lookup in namePTerm: " ++showADLcode fSpec t))
-         nameNTerm t  = head (["neg"   ++show (i::Int)| (i,term)  <-zip [1..] negTerms,  term==t]++error("!Fatal (module Switchboard 49): illegal lookup in nameNTerm: " ++showADLcode fSpec t))
-         nameINode m  = head (["in_"   ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 49): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
-         nameONode m  = head (["out_"  ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 49): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
+         nmConjunct c = head (["conj"  ++show (i::Int)| (i,conj)  <-zip [1..] conjuncts, conj==c]++error("!Fatal (module Switchboard 50): illegal lookup in nmConjunct: "++showADLcode fSpec c))
+--         nameClaus c  = head (["clause"++show (i::Int)| (i,clause)<-zip [1..] clauses, clause==c]++error("!Fatal (module Switchboard 51): illegal lookup in nameClaus: " ++showADLcode fSpec c))
+         namePTerm t  = head (["pos"   ++show (i::Int)| (i,term)  <-zip [1..] posTerms,  term==t]++error("!Fatal (module Switchboard 52): illegal lookup in namePTerm: " ++showADLcode fSpec t))
+         nameNTerm t  = head (["neg"   ++show (i::Int)| (i,term)  <-zip [1..] negTerms,  term==t]++error("!Fatal (module Switchboard 53): illegal lookup in nameNTerm: " ++showADLcode fSpec t))
+         nameINode m  = head (["in_"   ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 54): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
+         nameONode m  = head (["out_"  ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 55): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
          --DESCR -> The relations from which changes can come
          inMorNodes    = [ DotNode { nodeID         = nameINode m
                                    , nodeAttributes = [Label (StrLabel (showADLcode fSpec (makeInline m)))]

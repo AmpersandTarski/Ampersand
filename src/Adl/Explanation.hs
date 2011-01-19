@@ -1,21 +1,20 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Explanation (Explanation(..),PExplanation(..),PExplObj(..),Explanations,PExplanations,ExplObj(..))
+module ADL.Explanation (Explanation(..),PExplanation(..),PExplObj(..),Explanations,PExplanations,ExplObj(..))
 where
    import Languages                    (Lang)
-   import Adl.MorphismAndDeclaration   (Morphism,Declaration)
-   import Adl.Concept                  (Association(..))
-   import Adl.ConceptDef               (ConceptDef)
-   import Adl.Rule                     (Rule)
-   import Adl.KeyDef                   (KeyDef)
-   import Adl.ObjectDef                (ObjectDef)
-   import CommonClasses                (Identified(..))
+   import ADL.MorphismAndDeclaration   (Relation,Declaration,Association(..),Identified(..))
+   import ADL.Concept                  (Concept(..))
+   import ADL.ConceptDef               (ConceptDef)
+   import ADL.Rule                     (Rule)
+   import ADL.KeyDef                   (KeyDef)
+   import ADL.ObjectDef                (ObjectDef)
    import Data.Explain
 
 -- PExplanation is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
    data PExplObj = PExplConceptDef String
-                 | PExplDeclaration Morphism
+                 | PExplDeclaration (Relation Concept)
                  | PExplRule String
                  | PExplKeyDef String
                  | PExplObjectDef String
@@ -41,8 +40,8 @@ where
     name pe = name (pexObj pe)
 
    data ExplObj = ExplConceptDef ConceptDef
-                | ExplDeclaration Declaration
-                | ExplRule Rule
+                | ExplDeclaration (Declaration Concept)
+                | ExplRule (Rule (Relation Concept))
                 | ExplKeyDef KeyDef
                 | ExplObjectDef ObjectDef
                 | ExplPattern String   -- SJ: To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern

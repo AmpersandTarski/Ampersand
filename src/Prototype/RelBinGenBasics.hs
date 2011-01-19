@@ -106,5 +106,5 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
    
 
    addToLast :: [a] -> [[a]] -> [[a]]
-   addToLast _ [] = error "!Fatal (module RelBinGenBasics 645): addToLast: empty list"
+   addToLast _ [] = error "!Fatal (module RelBinGenBasics 109): addToLast: empty list"
    addToLast s as = (init as)++[last as++s]

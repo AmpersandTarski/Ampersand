@@ -97,7 +97,7 @@ module Prototype.ShowCode (showCode,showCodeHeaders) where
                      ++"=>array("++(showUseVar.snd$ cqtuple rest)++")))",Set.empty)
      PHPAdd1{}
       -> line "addOneTo" addOneTo
-     _ -> error ("cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in ShowCode.hs on line 100)")
+     _ -> error ("!Fatal (module Prototype.ShowCode 100): cannot showCodeAndGetHeaders in Assignment of query "++show quer ++"(inexhaustive patterns in ShowCode.hs on line 100)")
     where
      line str set = ( str++"("++fst (assignment (cqfrom1 rest))++","++fst (assignment (cqfrom2 rest))++")"
                     , snd(assignment (cqfrom1 rest)) `Set.union` snd(assignment (cqfrom2 rest)) `Set.union` set)

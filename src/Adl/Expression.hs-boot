@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
 module Adl.Expression (Expression)
 where
-data Expression
-instance Eq Expression
+data Expression rel
+instance Eq (Expression r)

@@ -118,7 +118,7 @@ data Pattern
          , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
          , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
          , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
---         , testexpr :: [PExpression Morphism (Maybe Sign)]
+--         , testexpr :: [PExpression (Morphism Concept) (Maybe Sign)]
 --         , inftestexpr :: [PExpression Declaration Sign]
          }   --deriving (Show) -- voor debugging
 type Patterns = [Pattern]
@@ -146,12 +146,12 @@ instance Identified ConceptDef where
 ---------------------------------------------------------------- 
 -- | The basic Concept.
 data Concept
-   = C   { cptnm :: String          -- ^The name of this Concept
-         , cptgE :: GenR            -- ^The generalization relation
-         , cptos :: Maybe [String]  -- ^Atoms
+   = C   { cptnm :: a          -- ^The name of this Concept
+         , cptgE :: GenR a     -- ^The generalization relation
+         , cptos :: Maybe [a]  -- ^Atoms
          }
 
-type GenR  = Concept->Concept->Bool  
+type GenR a = Concept->Concept->Bool  
           
 instance Eq Concept where
  C a _ _ == C b _ _ = a==b

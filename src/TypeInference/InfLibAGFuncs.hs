@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 module TypeInference.InfLibAGFuncs where
 {- a module to infer types of expressions of a heterogeneous relation algebra with ISA hierarchy 
  - expressions must be normalised with the function normalise
@@ -34,7 +35,7 @@ module TypeInference.InfLibAGFuncs where
  -}
 
 fatal :: Int -> String -> a
-fatal regel msg = error ("!Fatal (module InfLibAG+Funcs "++show regel++"): "++msg )
+fatal regel msg = error ("!Fatal (module TypeInference.InfLibAGFuncs "++show regel++"): "++msg )
 
 {-GENERATED with uuagc -d -}
 -- ISectList ---------------------------------------------------
@@ -181,7 +182,7 @@ axiomlist _ _ _ = fatal 148 "These axioms cannot be merged into one inf tree."
 
 complement_rule :: InfType -> InfTree -> InfTree
 complement_rule _ (InfExprs Conv_nc tp t) =  InfExprs Conv_c {-(inferred tp,EmptyObject)-} tp t
-complement_rule _ (InfRel dtype tp r i) = case dtype of
+complement_rule _ (InfRel dtyp tp r i) = case dtyp of
    D_rel -> InfRel D_rel_c {-(inferred tp)-} tp r i
    D_rel_h -> InfRel D_rel_c_h {-(inferred tp)-} tp r i
    D_id -> InfRel D_id_c {-(inferred tp)-} tp r i
@@ -445,7 +446,7 @@ alts_mph reldecls isas me =
                                            |Left (c1,c2)<-alts' nm, isarelated c1 ua isas, isarelated c2 ub isas]
      --(article) -> D-Id + D-V
      --constant relations (I and V) have no declaration, use there type as alternative if concepts are defined
-     Morph m (ua,ub) _ -> [Right$TError0 "Concept undefined" c|c<-[ua,ub],not(isdef c)]
+     Morph _ (ua,ub) _ -> [Right$TError0 "Concept undefined" c|c<-[ua,ub],not(isdef c)]
                           ++ [Left ((ua,ub),(ua,ub))|isdef ua, isdef ub]
            where      
            --(article) -> D-Cpt-Rel + D-Cpt-Isa
@@ -479,18 +480,18 @@ thetype (Right _) = fatal 356 "no Left, check is_type_error first before using f
 -}
 
 push_type_abbcac :: (RelAlgExpr,RelAlgExpr) -> Isa -> InfRuleType -> RelAlgType -> AltList -> AltList -> RelAlgObj
-push_type_abbcac _ _ _ _ _ (AltListError err) = fatal 478 "error should have been detected earlier"
-push_type_abbcac _ _ _ _ (AltListError err) _ = fatal 479 "error should have been detected earlier"
-push_type_abbcac (l,r) isas rt (inh_a,inh_c) lalts ralts = 
+push_type_abbcac _ _ _ _ _ (AltListError _) = fatal 482 "error should have been detected earlier"
+push_type_abbcac _ _ _ _ (AltListError _) _ = fatal 483 "error should have been detected earlier"
+push_type_abbcac (_,_) isas rt (inh_a,inh_c) lalts ralts = 
   if length bs==1
   then head bs
-  else fatal 485 "there must be only one b, because alts_abbcbc should have precalculated if there is only one b, otherwise it should have returned an error"
+  else fatal 487 "there must be only one b, because alts_abbcbc should have precalculated if there is only one b, otherwise it should have returned an error"
   where
   --filter the alternatives given the pushed type, GlbTypes are not needed anymore
   --there must be only one b, because alts_abbcbc has precalculated if there is only one b, otherwise it returned an error
   flalts = [(a,b)|((a,b),_)<-alttypes lalts,isarelated a inh_a isas]
   fralts = [(b,c)|((b,c),_)<-alttypes ralts,isarelated c inh_c isas]
-  bs = [infer_abbcac_b isas rt b b' |(a,b)<-flalts,(b',c)<-fralts ,isarelated b b' isas] 
+  bs = [infer_abbcac_b isas rt b b' |(_,b)<-flalts,(b',_)<-fralts ,isarelated b b' isas] 
 --       --TODO CHECK THIS STATEMENT: compositions are inferred from the right resulting in unnecessary composition ambiguities 
 --       --        p.e. r;I;V results in ambiguity of composition I;V while I;V is inferred to push down a type and not (r;I);V
  
@@ -529,7 +530,7 @@ is_b_error _ = False
 ----------------------------------------------------------------------------
 
 final_infer_mph :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> (RelAlgType,InfTree,RelDecl)
-final_infer_mph _ _ _ _ (AltListError err) = fatal 532 "error should have been detected earlier"
+final_infer_mph _ _ _ _ (AltListError _) = fatal 532 "error should have been detected earlier"
 final_infer_mph reldecls me isas (inh_a,inh_b) alts = ((fa,fb),tr,d) 
    where
    --filter the alternatives given the pushed type, GlbTypes are not needed anymore
@@ -537,13 +538,13 @@ final_infer_mph reldecls me isas (inh_a,inh_b) alts = ((fa,fb),tr,d)
    (fa,fb) = if length falts==1
              then (not_universe (fst$head falts) inh_a
                   ,not_universe (snd$head falts) inh_b) --the declared/userdefined type /= Universe
-             else fatal 540 $ "error should have been detected earlier"
+             else fatal 540 "error should have been detected earlier"
    d = if null ds
-       then fatal 405 "the expression has a type error, there is no declaration for this relation."
+       then fatal 542 "the expression has a type error, there is no declaration for this relation."
        else head ds --one declaration is enough, there may be more...
    ds = case me of
-        Morph (DRel nm) _ _ -> [d|d@(RelDecl{dtype=(c1,c2)})<-reldecls
-                                 ,dname d==nm, isarelated fa c1 isas, isarelated fb c2 isas]
+        Morph (DRel nm) _ _ -> [dcl| dcl@(RelDecl{dtype=(c1,c2)})<-reldecls
+                                   , dname dcl==nm, isarelated fa c1 isas, isarelated fb c2 isas]
         Morph IdRel _ _ -> [IDecl]
         Morph VRel _ _ -> [VDecl]
         _ -> fatal 415 "function thedecl expects relation expressions only."
@@ -598,6 +599,7 @@ normalise (Comp x y) = normalise x *.* normalise y
 normalise (RAdd x y) = normalise x *!* normalise y
 normalise (Conv x) = conv$normalise x
 
+complsfirst :: [RelAlgExpr] -> [RelAlgExpr]
 complsfirst xs = [x|x<-xs,iscomplement x]++[x|x<-xs,not(iscomplement x)]
 
 (*^*),(***),(*.*),(*!*),(|-)::RelAlgExpr->RelAlgExpr->RelAlgExpr

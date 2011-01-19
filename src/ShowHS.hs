@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+{-# OPTIONS_GHC -Wall -XUndecidableInstances -XFlexibleContexts -XFlexibleInstances #-}
 module ShowHS (ShowHS(showHS),fSpec2Haskell)
 where
 
@@ -8,10 +8,10 @@ where
    import Data.Plug
    import Data.Fspec
    import Data.List
-   import Adl
+   import ADL
    import qualified UU_Scanner
   --          (Pos(..) 
-   import ShowADL               (showADL)--,showADLcode) -- wenselijk voor foutmeldingen.
+   import ShowADL               (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import Options hiding (services)
    import Version               (versionbanner)
    import FPA                   (FPA(..),FPcompl,fpa)
@@ -24,7 +24,7 @@ where
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
              ++"\n  import Typology"
-             ++"\n  import Adl"
+             ++"\n  import ADL"
              ++"\n  import ShowHS (showHS)"
              ++"\n  import Data.Fspec"
              ++"\n  import Data.Plug"
@@ -65,13 +65,13 @@ where
     showHS flags indent (Just x) = showHS flags indent x
 
    instance ShowHS a => ShowHS (Inheritance a) where
-    showHSname _ = error ("!Fatal (module ShowHS 60): every inheritance is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 68): every inheritance is anonymous with respect to showHS flags.")
     showHS flags indent (Isa ts cs) = "Isa "++showL ["("++showHS flags "" g++","++showHS flags "" s++")"|(g,s)<-ts] ++indent++"    "++ showL (map (showHS flags "") cs)
 
 
    -- | The following is used to showHS flags for signs: (Concept, Concept)
    instance (ShowHS a , ShowHS b) => ShowHS (a,b) where
-    showHSname _ = error ("!Fatal (module ShowHS 66): Tuples of Concepts are anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 74): Tuples of Concepts are anonymous with respect to showHS flags.")
     showHS flags indent (a,b) = "("++showHS flags indent a++","++showHS flags indent b++")"
     
    
@@ -127,25 +127,25 @@ where
                           ])
 
    instance ShowHS PhpValue where
-    showHSname _ = error ("!Fatal (module ShowHS): PhpValue is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 130): PhpValue is anonymous with respect to showHS flags.")
     showHS flags _ phpVal
       = case phpVal of
            PhpNull{}   -> "PhpNull"
            PhpObject{} -> "PhpObject{ objectdf = " ++ showHSname (objectdf phpVal) ++ ", phptype  = " ++ showHS flags "" (phptype phpVal) ++ "}"
 
    instance ShowHS PhpType where
-    showHSname _ = error ("!Fatal (module ShowHS): PhpType is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 137): PhpType is anonymous with respect to showHS flags.")
     showHS _ indent PhpString = indent++"PhpString"
     showHS _ indent PhpInt    = indent++"PhpInt"
     showHS _ indent PhpFloat  = indent++"PhpFloat"
     showHS _ indent PhpArray  = indent++"PhpArray"
 
    instance ShowHS PhpReturn where
-    showHSname _ = error ("!Fatal (module ShowHS): PhpReturn is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 144): PhpReturn is anonymous with respect to showHS flags.")
     showHS flags indent ret = indent++"PhpReturn {retval = "++showHS flags indent (retval ret)++"}"
 
    instance ShowHS PhpAction where
-    showHSname _ = error ("!Fatal (module ShowHS): PhpAction is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 148): PhpAction is anonymous with respect to showHS flags.")
     showHS flags indent act
       = (intercalate (indent ++"    ") 
           [ "PhpAction { action = " ++ showHS flags "" (action act)
@@ -153,7 +153,7 @@ where
           , "          }"
           ])
 
-   instance ShowHS ECArule where
+   instance (ShowHS (Relation c), ShowHS (Expression (Relation c))) => ShowHS (ECArule c) where
     showHSname r = "ecaRule"++show (ecaNum r)
     showHS flags indent r   
       = "ECA (" ++ showHS flags "" (ecaTriggr r)++")" ++
@@ -161,15 +161,15 @@ where
         indent++"    (" ++ showHS flags (indent++"     ")  (ecaAction r)++indent++"    )" ++
         indent++show (ecaNum r)
 
-   instance ShowHS Event where
-    showHSname _ = error ("!Fatal (module ShowHS): \"Event\" is anonymous with respect to showHS flags.")
+   instance (ShowHS (Relation c)) => ShowHS (Event c) where
+    showHSname _ = error ("!Fatal (module ShowHS 165): \"Event\" is anonymous with respect to showHS flags.")
     showHS flags indent e   
       = if take 1 indent == "\n"
         then "On " ++ show (eSrt e)++indent++"   (" ++ showHS flags (indent++"    ") (eMhp e)++indent++"   )"
         else "On " ++ show (eSrt e)++" (" ++ showHS flags "" (eMhp e)++")"
 
-   instance ShowHS PAclause where
-    showHSname _ = error ("!Fatal (module ShowHS): \"PAclause\" is anonymous with respect to showHS flags.")
+   instance (ShowHS r, ShowHS (Expression r)) => ShowHS (PAclause r) where
+    showHSname _ = error ("!Fatal (module ShowHS 172): \"PAclause\" is anonymous with respect to showHS flags.")
     showHS flags indent p   
       = case p of
            Chc{} -> wrap "Chc " (indent ++"    ") (showHS flags) (paCls p)++
@@ -195,7 +195,7 @@ where
               showMotiv ind (conj,rs) = "("++showHS flags ind conj++", "++showHSname rs++")"
 
    instance ShowHS ActionType where
-    showHSname _ = error ("!Fatal (module ShowHS 166): \"ActionType\" is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 198): \"ActionType\" is anonymous with respect to showHS flags.")
     showHS _ indent Create = indent++"Create"
     showHS _ indent Read   = indent++"Read"
     showHS _ indent Update = indent++"Update"
@@ -215,7 +215,7 @@ where
           ])
 
    instance ShowHS SqlType where
-    showHSname _ = error ("!Fatal (module ShowHS 186): SqlType is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 218): SqlType is anonymous with respect to showHS flags.")
     showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i
     showHS _ indent SQLBlob        = indent++"SQLBlob   "
     showHS _ indent SQLPass        = indent++"SQLPass   "
@@ -229,7 +229,7 @@ where
     showHS _ indent SQLBool        = indent++"SQLBool   "
 
    instance ShowHS Quad where
-    showHSname _ = error ("!Fatal (module ShowHS 207): Quad is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 232): Quad is anonymous with respect to showHS flags.")
     showHS flags indent q 
       = (intercalate indent
           [ "Quad{ qMorph   = " ++ showHS flags newindent (qMorph q)
@@ -240,7 +240,7 @@ where
          newindent = indent ++ "                 "
          
    instance ShowHS Clauses where
-    showHSname _ = error ("!Fatal (module ShowHS 218): Clauses is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 243): Clauses is anonymous with respect to showHS flags.")
     showHS flags indent c
       = (intercalate indent
           [ "Clauses{ cl_conjNF = " ++ showHS flags newindent (cl_conjNF c)
@@ -251,7 +251,7 @@ where
          newindent = indent ++ "                     "
          
    instance ShowHS FTheme where
-    showHSname _ = error ("!Fatal (module ShowHS 228): FTheme is anonymous with respect to showHS flags.")
+    showHSname _ = error ("!Fatal (module ShowHS 254): FTheme is anonymous with respect to showHS flags.")
     showHS flags indent tme 
      = intercalate newindent
             ["FTheme{ tconcept   = " ++ showHS flags newindent (tconcept tme)
@@ -313,20 +313,20 @@ where
        indent++" gE = genEq (typology isa')"++
        (if null (plugs fspec) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
         
-        "\n -- ***Services Specified in ADL script***: "++
+        "\n -- ***Services Specified in Ampersand script***: "++
        indent++" serviceS' = "++(if null (serviceS fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceS fspec))++indentB++"]")++
-        "\n -- ***Services Generated by the ADL compiler ***: "++
+        "\n -- ***Services Generated by the Ampersand compiler ***: "++
        indent++" serviceG' = "++(if null (serviceG fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceG fspec))++indentB++"]")++
        (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-patterns fspec ]++"\n")++
 
 -- WHY?  staan hier verschillende lijstjes met services?
--- BECAUSE!  Een ADL-engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
+-- BECAUSE!  Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)
 --          alle services met de hand te verzinnen.
 --          Je kunt natuurlijk ook een services-generator aan het werk zetten, die een aantal services klaarzet bij wijze
 --          van steiger (scaffold). Dat bespaart een hoop werk. De functie serviceG is zo'n generator.
---          Door de gegenereerde services af te drukken, kun je dus heel snel ADL-sourcecode maken met correct-vertaalbare services.
+--          Door de gegenereerde services af te drukken, kun je dus heel snel Ampersand sourcecode maken met correct-vertaalbare services.
 --          Heb je eenmaal een goed werkend pakket services, dan wil je wellicht alleen de door jezelf gespecificeerde services
 --          gebruiken. Dat gebeurt in serviceS.
 
@@ -354,7 +354,7 @@ where
            where indentA = indent ++"                      "
                  indentB = indent ++"              "
                  (envExpr,bindings) = vctxenv fspec
-                 showbinding :: (Declaration,String) -> String
+                 showbinding :: (Declaration Concept,String) -> String
                  showbinding (d,s)= "( "++showHS flags (indentB ++ "  ") d ++
                                     ", "++show s++") "
 
@@ -363,14 +363,14 @@ where
 -- \***********************************************************************
 
    instance ShowHS RoleService where
-    showHSname _ = error ("!Fatal (module ShowHS 365): a RoleService is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 366): a RoleService is anonymous with respect to showHS flags")
     showHS flags ind rs
-     = " RS "++show (rsRole rs)++" "++show (rsServ rs)++" "++showHS flags (ind++"    ") (rsPos rs)
+     = " RS "++show (rsRoles rs)++" "++show (rsServices rs)++" "++showHS flags (ind++"    ") (rsPos rs)
    
    instance ShowHS RoleRelation where
-    showHSname _ = error ("!Fatal (module ShowHS 360): a RoleRelation is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 371): a RoleRelation is anonymous with respect to showHS flags")
     showHS flags ind rr
-     = " RR "++show (rrRole rr)++" "++showHS flags (ind++"    ") (rrRel rr)++" "++showHS flags (ind++"    ") (rrPos rr)
+     = " RR "++show (rrRoles rr)++" "++showHS flags (ind++"    ") (rrRels rr)++" "++showHS flags (ind++"    ") (rrPos rr)
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
@@ -457,7 +457,7 @@ where
        ++ newindent++" -- Einde Fservice "++showHSname fservice
        where
         newindent = indent ++ "        "
-        delt=error("!Fatal (module ShowHS 322): illegal reference to argument of ECA rule")
+        delt=error("!Fatal (module ShowHS 460): illegal reference to argument of ECA rule")
 --        showQ (m, shs,conj,r)
 --         = "" --TODO "\nQuad:\nmorphism: "++showHSname m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
 
@@ -497,7 +497,7 @@ where
             then "(\\d->"++showHSname (fld_onDel fld arg)++" d)"
             else "error(\"!Fatal: reference to undefined delete action in field "++fld_name fld++"\")" )
        ++ indent++"    }"
-       where arg = error ("!Fatal (module ShowHS 360): reference to undefined argument of ECA rule")
+       where arg = error ("!Fatal (module ShowHS 500): reference to undefined argument of ECA rule")
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FSid                          ***
@@ -539,7 +539,7 @@ where
 --       (if null (ptkds   pat) then "" else concat [indent++" "++showHSname k ++indent++"  = "++ showHS flags (indent++"    ") k |k <-ptkds   pat] )
 
    instance ShowHS PExplanation where
-    showHSname _ = error ("!Fatal (module ShowHS 456): a PExplanation is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 542): a PExplanation is anonymous with respect to showHS flags")
     showHS flags _ expla = 
        "PExpl "++showHS flags "" (pexObj expla)++" "
                ++show (pexLang  expla)++" "
@@ -547,7 +547,7 @@ where
                ++show (pexExpl  expla)
 
    instance ShowHS PExplObj where
-    showHSname _ = error ("!Fatal (module ShowHS 464): a PExplObj is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 550): a PExplObj is anonymous with respect to showHS flags")
     showHS flags _ peObj = case peObj of 
              PExplConceptDef str  -> "PExplConceptDef " ++show str
              PExplDeclaration mph -> "PExplDeclaration "++showHS flags "" mph
@@ -559,7 +559,7 @@ where
             
                
    instance ShowHS Explanation where
-    showHSname _ = error ("!Fatal (module ShowHS 476): a Explanation is anonymous with respect to showHS flags")
+    showHSname _ = error ("!Fatal (module ShowHS 562): a Explanation is anonymous with respect to showHS flags")
     showHS flags _ expla = 
        "Expl "++showHS flags "" (explObj expla)++" "
                ++show (explLang  expla)++" "
@@ -567,8 +567,8 @@ where
                ++show (explCont  expla)
 
    instance ShowHS ExplObj where
-    showHSname _ = error ("!Fatal (module ShowHS 484): a ExplObj is anonymous with respect to showHS flags")
-    showHS flags i peObj = case peObj of 
+    showHSname _ = error ("!Fatal (module ShowHS 570): a ExplObj is anonymous with respect to showHS flags")
+    showHS _ {-flags-} _ {-i-} peObj = case peObj of                     -- SJ: names of variables commented out to prevent warnings.
              ExplConceptDef cd  -> "ExplConceptDef " ++showHSname cd
              ExplDeclaration d  -> "ExplDeclaration "++showHSname d
              ExplRule r         -> "ExplRule "       ++showHSname r
@@ -582,7 +582,7 @@ where
 -- \*** Eigenschappen met betrekking tot: Rule                          ***
 -- \***********************************************************************
 
-   instance ShowHS Rule where
+   instance (ShowHS (Expression r)) => ShowHS (Rule r) where
     showHSname r = "rule"++show (runum r)
     showHS flags indent r   
       = case r of
@@ -608,7 +608,7 @@ where
 -- \*** Eigenschappen met betrekking tot: RuleType                      ***
 -- \***********************************************************************
    instance ShowHS RuleType where
-     showHSname _ = error "!Fatal (module ShowHS 431): showHSname undefined for Type 'RuleType'"
+     showHSname _ = error "!Fatal (module ShowHS 611): showHSname undefined for Type 'RuleType'"
      showHS _ _ Truth          = "Truth"
      showHS _ _ Equivalence    = "Equivalence"
      showHS _ _ Implication    = "Implication"
@@ -628,7 +628,7 @@ where
 -- \*** Eigenschappen met betrekking tot: Population                    ***
 -- \***********************************************************************
 
-   instance ShowHS Population where
+   instance (Eq r, Identified r, ShowHS (Relation r)) => ShowHS (Population r) where
     showHSname pop = haskellIdentifier ("pop_"++name mph++name (source mph)++name (target mph))
         where mph = popm pop
     showHS flags indent pop
@@ -657,8 +657,8 @@ where
 -- \*** Eigenschappen met betrekking tot: Expression                    ***
 -- \***********************************************************************
 
-   instance ShowHS Expression where
-    showHSname expr = error ("!Fatal (module ShowHS 560): an expression is anonymous with respect to showHS flags. Detected at: "++ showADL expr)
+   instance ShowHS (Expression (Relation Concept)) where
+    showHSname expr = error ("!Fatal (module ShowHS 661): an expression is anonymous with respect to showHS flags. Detected at: "++ showADL expr)
     showHS flags _ (Tm mph i)   = "Tm ("++showHS flags "" mph++") "
          ++if i<0 then "(" ++ show i++")"
                   else        show i
@@ -683,20 +683,20 @@ where
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
 
-   instance ShowHS Gen where
-    showHSname g = error ("!Fatal (module ShowHS 505): Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
+   instance (Show c, ShowHS c, ShowADL c) => ShowHS (Gen c) where
+    showHSname g = error ("!Fatal (module ShowHS 687): Illegal call to showHSname ("++showADL g++"). A GEN statement gets no definition in Haskell code.")
     showHS flags _ gen = "G ("++showHS flags "" (genfp gen)++") ("++showHS flags "" (gengen gen)++") ("++showHS flags "" (genspc gen)++") "++show (genpat gen)
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Morphism                      ***
+-- \*** Eigenschappen met betrekking tot: Relation Concept            ***
 -- \***********************************************************************
 
-   instance ShowHS Morphism where
-    showHSname mph = error ("!Fatal (module ShowHS 513): Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
+   instance ShowHS (Relation Concept) where
+    showHSname mph = error ("!Fatal (module ShowHS 695): Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
     showHS flags _ mph 
        = case mph of
             Mph{} -> "Mph "++show (mphnm mph)++" "++showPos++" "++showAtts
-                         ++" "++showSgn++" "++show (mphyin mph)++" "++showHSname (mphdcl mph)
+                         ++" "++showSrc++" "++showTrg++" "++show (mphyin mph)++" "++showHSname (mphdcl mph)
             I{}   -> "I "++showAtts++" "++showGen++" "++showSpc++" "++show (mphyin mph)
             V{}   -> "V "++showAtts++" "++showSgn
             Mp1{} -> "Mp1 "++mph1val mph++" "++showAtts++" ("++showHS flags "" (mph1typ mph)++")"
@@ -706,13 +706,15 @@ where
                  showAtts = showL(map (showHS flags "") (mphats mph))
                  showGen  = "("++showHS flags "" (mphgen mph)++")"
                  showSpc  = "("++showHS flags "" (mphspc mph)++")"
+                 showSrc  = "("++showHS flags "" (mphsrc mph)++")"
+                 showTrg  = "("++showHS flags "" (mphtrg mph)++")"
                  showSgn  = "("++showHS flags "" (mphtyp mph)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***
 -- \***********************************************************************
 
-   instance ShowHS Declaration where
+   instance (Eq c, Identified c, ShowHS c) => ShowHS (Declaration c) where
     showHSname d | decusr d  = haskellIdentifier ("rel_"++name d++name (source d)++name (target d)) -- user defined relations
                  | deciss d  = haskellIdentifier ("sgn_"++name d++name (source d)++name (target d)) -- relations generated for signalling
                  | otherwise = haskellIdentifier ("vio_"++name d++name (source d)++name (target d)) -- relations generated per rule
@@ -744,8 +746,8 @@ where
                            ,", despc   = " ++ showHS flags "" (despc d)
                         ])++"}"
           Vs{}      -> (intercalate newIndent
-                        ["Isn{ degen   = " ++ showHS flags "" (degen d)
-                           ,", despc   = " ++ showHS flags "" (despc d)
+                        ["Isn{ desrc   = " ++ showHS flags "" (degen d)
+                           ,", detrg   = " ++ showHS flags "" (despc d)
                         ])++"}"
        where newIndent = indent ++ "   "
 -- \***********************************************************************
@@ -758,28 +760,26 @@ where
      = " Cd ("++showHS flags "" (cdpos cd)++") "++show (name cd)++" "++show (cddef cd)++(if null (cdref cd) then "" else " "++show (cdref cd))
    
 -- \***********************************************************************
--- \*** Eigenschappen met betrekking tot: Concept                       ***
+-- \*** Eigenschappen met betrekking tot: Concept                     ***
 -- \***********************************************************************
 
    instance ShowHS Concept where
-    showHSname c = error ("!Fatal (module ShowHS 577): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
-    showHS a b c = case c of
-                       (DExp e) -> "DExp "++showHS a b e
+    showHSname c = error ("!Fatal (module ShowHS 765): Illegal call to showHSname ("++name c++"). A concept gets no definition in Haskell code.")
+    showHS _ _ c = case c of
                        C{}      -> "C "++show (name c) ++ " gE [] "    -- contents not shown.
                        S        -> "S "
                        Anything -> "Anything "
                        NOthing  -> "NOthing "
-                       (I1 x)   -> "I1 " ++ show x
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: FPA                           ***
 -- \***********************************************************************
    
    instance ShowHS FPcompl where
-    showHSname c = error ("!Fatal (module ShowHS 586): Illegal call to showHSname ("++show c++"). A FPcompl gets no definition in Haskell code.")
+    showHSname c = error ("!Fatal (module ShowHS 776): Illegal call to showHSname ("++show c++"). A FPcompl gets no definition in Haskell code.")
     showHS _ _ c   = show c
 
    instance ShowHS FPA where
-    showHSname c = error ("!Fatal (module ShowHS 595): Illegal call to showHSname ("++show c++"). A FPA gets no definition in Haskell code.")
+    showHSname c = error ("!Fatal (module ShowHS 780): Illegal call to showHSname ("++show c++"). A FPA gets no definition in Haskell code.")
     showHS _ _ (ILGV c) = "ILGV "++show c
     showHS _ _ (KGV  c) = "KGV "++show c
     showHS _ _ (IF   c) = "IF "++show c
@@ -792,7 +792,7 @@ where
 -- \***********************************************************************
    
    instance ShowHS Prop where
-    showHSname p = error ("!Fatal (module ShowHS 605): should not showHS flags the name of multiplicities (Prop): "++show p)
+    showHSname p = error ("!Fatal (module ShowHS 793): should not showHS flags the name of multiplicities (Prop): "++show p)
     showHS _ _ Uni = "Uni"
     showHS _ _ Inj = "Inj"
     showHS _ _ Sur = "Sur"
@@ -807,7 +807,7 @@ where
 -- \***********************************************************************
 
    instance ShowHS FilePos where
-    showHSname p = error ("!Fatal (module ShowHS 621): Illegal call to showHSname ("++show p++"). A position is an anonymous entity in Haskell code.")
+    showHSname p = error ("!Fatal (module ShowHS 808): Illegal call to showHSname ("++show p++"). A position is an anonymous entity in Haskell code.")
     showHS _ _ (FilePos (fn,UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
     showHS _ _ Nowhere
@@ -817,7 +817,7 @@ where
 -- \*** Eigenschappen met betrekking tot: InfTree                       ***
 -- \***********************************************************************
 --   instance ShowHS InfTree where
---    showHSname itree = error ("!Fatal (module ShowHS 714): Illegal call to showHSname ("++show itree++"). An inference tree is an anonymous entity in Haskell code.")
+--    showHSname itree = error ("!Fatal (module ShowHS 818): Illegal call to showHSname ("++show itree++"). An inference tree is an anonymous entity in Haskell code.")
 --    showHS flags indent itree =
 --        case itree of
 --          InfExprs irt (ratype,raobj) itrees -> 
@@ -830,7 +830,7 @@ where
 --       showRaType rat = "RelAlgType{-"++show rat++"-}"
 --
 --   instance ShowHS RelDecl where
---    showHSname d = error ("!Fatal (module ShowHS 728): Illegal call to showHSname ("++show d++"). A declared ruletype is an anonymous entity in Haskell code.")
+--    showHSname d = error ("!Fatal (module ShowHS 831): Illegal call to showHSname ("++show d++"). A declared ruletype is an anonymous entity in Haskell code.")
 --    showHS _ indent d = case d of 
 --                          RelDecl{}-> "RelDecl{ dname  = " ++ show (dname d) ++ indent
 --                                   ++ "        ,dtype  = " ++ showRaType dtype ++ indent
@@ -842,7 +842,7 @@ where
 --
 --
 --   instance ShowHS DeclRuleType where
---    showHSname drt = error ("!Fatal (module ShowHS 731): Illegal call to showHSname ("++show drt++"). A declared ruletype is an anonymous entity in Haskell code.")
+--    showHSname drt = error ("!Fatal (module ShowHS 843): Illegal call to showHSname ("++show drt++"). A declared ruletype is an anonymous entity in Haskell code.")
 --    showHS _ _ drt = case drt of
 --					   D_rel     -> "D_rel"
 --					   D_rel_h   -> "D_rel_h"
@@ -854,7 +854,7 @@ where
 --					   D_v_c     -> "D_v_c"
 --                        
 --   instance ShowHS InfRuleType where
---    showHSname irt = error ("!Fatal (module ShowHS 743): Illegal call to showHSname ("++show irt++"). A inference ruletype is an anonymous entity in Haskell code.")
+--    showHSname irt = error ("!Fatal (module ShowHS 855): Illegal call to showHSname ("++show irt++"). A inference ruletype is an anonymous entity in Haskell code.")
 --    showHS _ _ irt = case irt of
 --					   ISect_cs  -> "ISect_cs"
 --					   ISect_ncs -> "ISect_ncs"

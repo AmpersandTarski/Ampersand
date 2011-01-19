@@ -8,18 +8,18 @@ where
 import Text.Pandoc 
 import TypeInference.InfLibAG (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
 import Data.Fspec   hiding (services)
-import Adl
+import ADL
 import Auxiliaries (sort')
 
 texOnly_proofdoc :: Fspc -> Pandoc
 texOnly_proofdoc    = proofdoc
-texOnly_pandoctree :: Maybe (InfTree, Expression)
+texOnly_pandoctree :: Maybe (InfTree, Expression (Relation Concept))
                       -> Maybe (Concept, Concept)
                       -> [Block]
 texOnly_pandoctree  = pandoctree
-texOnly_writeexpr :: Expression -> String
+texOnly_writeexpr :: Expression (Relation Concept) -> String
 texOnly_writeexpr   = writeexpr
-texOnly_writerule :: Expression -> String
+texOnly_writerule :: Expression (Relation Concept) -> String
 texOnly_writerule   = writerule
 --a document with proofs for the fspec
 proofdoc :: Fspc -> Pandoc
@@ -32,13 +32,13 @@ proofdoc fSpec = Pandoc (Meta [] [] []) b
    obs' od = concat [(oda:obs' oda)|oda<-objats od]
 
 --writes an inference tree as a piece of latex
-pandoctree :: Maybe (InfTree,Expression) -> Maybe (Concept,Concept) -> [Block]
+pandoctree :: Maybe (InfTree,Expression (Relation Concept)) -> Maybe (Concept,Concept) -> [Block]
 pandoctree Nothing _ = [Plain [Str "No inference tree has been calculated."]]
 pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX "\n\\begin{prooftree}\n"]++il ++[TeX "\\end{prooftree}\n"] ++ refs]
    where 
    (il,term,refs,_,_) = pandoctree' tr
-   env :: Expression -> [(Int,(Declaration,[Concept]))]
-   env (Tm mp i) = [(i, (head(decls mp),mphats mp))]
+   env :: Expression (Relation Concept) -> [(Int,(Declaration Concept,[Concept]))]
+   env (Tm mp i) = [(i, (makeDeclaration mp,mphats mp))]
    env (F xs) = concat(map env xs)
    env (Fdx xs) = concat(map env xs)
    env (Fix xs) = concat(map env xs)
@@ -62,14 +62,14 @@ pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX "\n\\begin{prooftree}\n"]++il ++
 
 --REMARK -> Assumes -r\/s and (r\/-s)/\(-r\/s) where originally rules
 --the expression must have the same structure as (normExpr rule)
-writerule :: Expression -> String
+writerule :: Expression (Relation Concept)-> String
 writerule (Fux [Cpx r, s]) = writeexpr r ++ " \\vdash " ++ writeexpr s
 writerule x@(Fix [Fux [r, Cpx s], Fux [Cpx r',s']]) 
      | writeexpr r==writeexpr r' && writeexpr s==writeexpr s' = writeexpr r ++ " \\equiv " ++ writeexpr s
      | otherwise = writeexpr x
 writerule x = writeexpr x
 
-writeexpr :: Expression -> String
+writeexpr :: Expression (Relation Concept) -> String
 writeexpr expr = showExpr (" \\cup ", " \\cap ", " \\dagger ", ";", "*", "+", "-", "(", ")") expr
       where
       showExpr (union',inter,rAdd,rMul,clos0,clos1,_,lpar,rpar) expr' = showchar (insParentheses expr')
@@ -196,7 +196,7 @@ pandoctree' (InfExprs rt ((c1,c2),cb) axs) --(c1,c2) is the inferred type for un
        ,term,concat (iln++axrefs),1,tp)
 --   |elem rt [Union_mix]
   --    = (concat (map (fst.pandoctree') axs),"") --TODO
-   |otherwise=error "TODO 90"
+   |otherwise=error "!Fatal (module Rendering.InfTree2Pandoc 199): TODO 90"
 
 
 tpstr :: RelAlgType -> String

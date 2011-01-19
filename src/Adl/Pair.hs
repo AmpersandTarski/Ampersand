@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XTypeSynonymInstances #-}
-module Adl.Pair    (Paire,Pairs
+module ADL.Pair    (Paire,Pairs
                     , join
                     , srcPaire,trgPaire
                     , flipPair,mkPair
@@ -10,11 +10,11 @@ where
    import Auxiliaries(sort',eqCl)
    import Collection (Collection(isc,uni,rd))
  
-   type Pairs     = [Paire]
+   type Pairs = [Paire]
    srcPaire :: Paire -> String
    trgPaire :: Paire -> String
    mkPair   :: String -> String -> Paire
-   type Paire     = (String,String)
+   type Paire = (String,String)
    mkPair a b = (a,b)
    srcPaire = fst
    trgPaire = snd

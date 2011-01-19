@@ -1,5 +1,6 @@
-module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute) where
- import Adl (Concept(..),Expression(..))
+{-# OPTIONS_GHC -Wall #-}
+module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..)) where
+ import ADL (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (Named(..))
 
@@ -23,7 +24,7 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttrib
                  }
 
  -- | The actual use of a variable. In practice, use Named UseVar.
- -- | Example: the PHP usage $people[$i]["Name"] becomes Named "people" [Right Named "i" [],Left "Name"]
+ -- | Example: the PHP usage $people[$i]["Name"] becomes Named "people" [Right (Named "i" []),Left "Name"]
  data UseVar = UseVar {uvList::[Either String (Named UseVar)]} deriving (Eq)
  instance Show UseVar where
    show (UseVar []) = ""
@@ -35,30 +36,58 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttrib
               -> Named UseVar
  useAttribute s var = var{nObject=UseVar {uvList=varlist++[s]}}
    where varlist=uvList(nObject var)
- 
- 
- 
+
+-- | The following wrapper adds PHP-information to a concept.
+ data PHPconcept
+    = PHPC Concept -- ^Usual concept
+    | PHPexp (Expression (Relation Concept)) -- ^A concept containing pairs representing the population in the expression.
+    | PHPI1  { cpvar :: Named UseVar }
+    deriving (Eq,Show)
+
+ instance Ord PHPconcept where
+  _ <= _ = False
+
+ instance Identified PHPconcept where
+  name (PHPC c)     = name c
+  name (PHPexp _)   = "SomeExpression"
+  name (PHPI1 x)    = nName x
+  
+ instance SpecHierarchy PHPconcept where
+  comparable _ _ = False
+  glb   _ _ = error "!Fatal (module CodeStatement 54): glb undefined"
+  lub   _ _ = error "!Fatal (module CodeStatement 55): lub undefined"
+  
  data CodeQuery
-  =  SQLBinary   {cqexpression::Expression, sqlquery::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually) Will fill target only
-   | SQLComposed {cqsource:: Concept, cqExpressions::[Named Expression], sqlquery::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
-   | PHPPlug     {cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug (must be verified!)
-                 ,cqoutput ::CodeVar      -- ^ the output variable
-                 ,cqphpplug::String       -- ^ the name of the plug
-                 ,cqphpfile::Maybe String -- ^ the file name on where to find this plug
+  =  SQLBinary   { cqexpression ::Expression (Relation PHPconcept)
+                 , sqlquery     ::String } -- ^ get a binary relation from SQL (this can only be one expression). (Used to fill a scalar, usually) Will fill target only
+   | SQLComposed { cqsource     :: Concept
+                 , cqExpressions::[Named (Expression (Relation PHPconcept))]
+                 , sqlquery ::String } -- ^ get a couple of relations from SQL. They all share the same source, and there is one record per source item
+   | PHPPlug     { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug (must be verified!)
+                 , cqoutput ::CodeVar      -- ^ the output variable
+                 , cqphpplug::String       -- ^ the name of the plug
+                 , cqphpfile::Maybe String -- ^ the file name on where to find this plug
                  }
-   | PHPBinCheck {cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug
-                 ,cqreturn ::(CodeQuery,CodeQuery) -- ^ what to return if the plug did not return False
-                 ,cqphpplug::String       -- ^ the name of the plug (must be verified!)
-                 ,cqphpfile::Maybe String -- ^ the file name on where to find this plug
+   | PHPBinCheck { cqinput  ::[CodeQuery]  -- ^ list of arguments passed to the plug
+                 , cqreturn ::(CodeQuery,CodeQuery) -- ^ what to return if the plug did not return False
+                 , cqphpplug::String       -- ^ the name of the plug (must be verified!)
+                 , cqphpfile::Maybe String -- ^ the file name on where to find this plug
                  }
-   | PHPIntersect{cqfrom1::CodeQuery,cqfrom2::CodeQuery}
-   | PHPJoin     {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
-   | PHPIsectComp{cqfrom1::CodeQuery,cqfrom2::CodeQuery} -- ^ cqfrom1 /\ -cqfrom2
-   | PHPDagger   {cqfrom1::CodeQuery,cqfrom2::CodeQuery,cqAll::CodeQuery}
-   | PHPUnion    {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
-   | PHPAdd1     {cqfrom1::CodeQuery,cqfrom2::CodeQuery}
-   | PHPCompl1   {cqtuple::(Named UseVar,Named UseVar),cqfrom::CodeQuery}
-   | CQCompose   {cqFrom::[Named CodeQuery]}-- ^ as SQLComposed: combine different codeQueries by name
+   | PHPIntersect{ cqfrom1::CodeQuery
+                 , cqfrom2::CodeQuery}
+   | PHPJoin     { cqfrom1::CodeQuery
+                 , cqfrom2::CodeQuery}
+   | PHPIsectComp{ cqfrom1::CodeQuery
+                 , cqfrom2::CodeQuery} -- ^ cqfrom1 /\ -cqfrom2
+   | PHPDagger   { cqfrom1::CodeQuery
+                 , cqfrom2::CodeQuery,cqAll::CodeQuery}
+   | PHPUnion    { cqfrom1::CodeQuery
+                 , cqfrom2::CodeQuery}
+   | PHPAdd1     { cqfrom1::CodeQuery
+                 , cqfrom2::CodeQuery}
+   | PHPCompl1   { cqtuple::(Named UseVar,Named UseVar)
+                 , cqfrom ::CodeQuery}
+   | CQCompose   { cqFrom ::[Named CodeQuery]}-- ^ as SQLComposed: combine different codeQueries by name
    | CQPlain     (Named UseVar)             -- ^ simply get some variable and return it
    | CQConstant  {cqQuotedValue::String}    -- ^ a constant such as "Hello world", true, or date()
    deriving (Show,Eq)

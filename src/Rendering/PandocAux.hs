@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module Rendering.PandocAux ( writepandoc
                            , labeledHeader
                            , xrefReference
@@ -18,10 +18,9 @@ module Rendering.PandocAux ( writepandoc
                            )
 where
 import Version          (versionbanner)
-import Adl
+import ADL
 import Picture
 import ShowADL
-import CommonClasses    (showSign)
 import Data.Fspec
 import Strings          (unCap, upCap, preciesEen)
 import Data.Char
@@ -217,7 +216,7 @@ theTemplate flags
                , "% ====================================================================================="
                , "\\usepackage[pdftex,colorlinks=false]{hyperref}"
                ] ++
-               [ "%  -- end of ADL-specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
+               [ "%  -- end of Ampersand specific header. The remainder is PanDoc-specific. run C:>pandoc -D latex  to see the default template."
           {-TODO: disabled while running on icommas.ou.nl (uses MikTex 2.5 i.e. without xetex)
            -    , "$if(xetex)$"
                , "\\usepackage{ifxetex}"
@@ -328,9 +327,9 @@ theTemplate flags
                , "$endfor$"
                , "}"
                ])
-    FPandoc       -> error ("!Fatal (module Rendering.PandocAux 329): No template defined for Pandoc output") 
-    FOpenDocument -> error ("!Fatal (module Rendering.PandocAux 330): No template defined for ODF output") 
-    FHtml         -> error ("!Fatal (module Rendering.PandocAux 331): No template defined for HTML output") 
+    FPandoc       -> error ("!Fatal (module Rendering.PandocAux 330): No template defined for Pandoc output") 
+    FOpenDocument -> error ("!Fatal (module Rendering.PandocAux 331): No template defined for ODF output") 
+    FHtml         -> error ("!Fatal (module Rendering.PandocAux 332): No template defined for HTML output") 
  
 -----Linguistic goodies--------------------------------------
 
@@ -375,10 +374,10 @@ class SymRef a where
 instance SymRef Concept where
   symLabel c = "Concept:"++stripSpecialChars (name c)
 
-instance SymRef Declaration where
+instance SymRef (Declaration Concept) where
   symLabel d = "Decl:"++stripSpecialChars (name d++name (source d)++name (target d))
 
-instance SymRef Rule where
+instance SymRef (Rule (Relation Concept)) where
   symLabel r = "Rule:"++stripSpecialChars (name r)
 
 --   xrefChptReference :: String -> [Inline]
@@ -435,7 +434,7 @@ pandocEquation x
    | not (null x)]
 
 
---DESCR -> pandoc print functions for Adl data structures
+--DESCR -> pandoc print functions for Ampersand data structures
 ---------------------------------------
 -- LaTeX math markup
 ---------------------------------------
@@ -449,12 +448,12 @@ instance ShowMath Concept where
  showMath c = texOnly_Id(name c)
  showMathcode _ c = texOnly_Id(name c)
 
-instance ShowMath Gen where
+instance ShowMath (Gen Concept) where
  showMath g = showMath (genspc g) ++"\\ \\le\\ "++showMath (gengen g)
  showMathcode fSpec g = showMathcode fSpec (genspc g) ++"\\ \\le\\ "++showMathcode fSpec (gengen g)
 
-instance ShowMath Rule where
- showMath r = error ("!Fatal (module Rendering.PandocAux 455): Please supply specification of the context in showMath "++showADL r)
+instance ShowMath (Rule (Relation Concept)) where
+ showMath r = error ("!Fatal (module Rendering.PandocAux 456): Please supply specification of the context in showMath "++showADL r)
  showMathcode fSpec r
   = {- ( if isSignal r
       then "\\verb#RULE # "++texId(name r)++"\\ \\verb# SIGNALS #"
@@ -466,11 +465,11 @@ instance ShowMath Rule where
       Equivalence    -> showMathcode fSpec (rrant r) ++"\\ "++texOnly_equals++"\\ "++showMathcode fSpec (rrcon r)
       Generalization -> showMathcode fSpec (G (pos r) (source (rrcon r)) (source (rrant r)) "")
 
-instance ShowMath Expression where
+instance ShowMath (Expression (Relation Concept)) where
  showMath e           = (showchar.insParentheses) e
  showMathcode fSpec e = (showchar.insParentheses.disambiguate fSpec.mphatsoff) e
 
-showchar :: Expression -> String
+showchar :: Expression (Relation Concept) -> String
 showchar (Tm mph _) = showMath mph
 showchar (Fux [])  = "\\cmpl{\\full}"
 showchar (Fux fs)  = intercalate "\\cup" [showchar f| f<-fs]     -- union
@@ -485,16 +484,19 @@ showchar (K1x e')  = "\\kleeneplus{"++showchar e'++"}"
 showchar (Cpx e')  = "\\cmpl{"++showchar e'++"}"
 showchar (Tc f)   = "("++showchar f++")"
 
-instance ShowMath Morphism where
+instance ShowMath (Relation Concept) where
  showMath mph@(Mph{})
   = if inline mph then mstr else "\\flip{"++mstr++"}"
     where
       mstr  = texOnly_Id(name mph)++
               if null (mphats mph)
-              then (if inline mph && mphtyp mph==(source s, target s) || not (inline mph) && mphtyp mph==(target s,source s) then "" else showSign [a,b])
+              then (if     inline mph  && a==source s && b==target s ||
+                      not (inline mph) && a==target s && b==source s
+                    then "" else showSign [a,b])
               else showSign (mphats mph)
       s     = mphdcl mph
-      (a,b) = mphtyp mph
+      a     = mphsrc mph
+      b     = mphtrg mph
  showMath m@(I{})
   = if null (mphats m) then "\\iden" else "\\ident{"++showSign (mphats m)++"}"
  showMath m@(V{})
@@ -503,7 +505,7 @@ instance ShowMath Morphism where
   = "'"++mph1val m++"'"++(showSign [mph1typ m])
 
 
-instance ShowMath Declaration where
+instance ShowMath (Declaration Concept) where
  showMath decl@(Sgn{})
   = "\\declare{"++name decl++"}{"++name (source decl)++"}{"++name (target decl)++"}"
  showMath Isn{}
@@ -551,7 +553,7 @@ texOnly_Id :: String -> String
 texOnly_Id s = "\\id{"++escape s++"}"
  where escape "" = ""
        escape ('_': str) = "\\_"++escape str
-       escape (s:str)    = s:escape str
+       escape (c:str)    = c:escape str
 
 texOnly_fun :: String
 texOnly_fun = "\\rightarrow"

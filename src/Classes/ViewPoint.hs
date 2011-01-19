@@ -1,54 +1,53 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleContexts -XFlexibleInstances #-}
 module Classes.ViewPoint (ViewPoint(..)) 
 where
-   import Adl.Context                 (Context(..))
-   import Adl.Pattern                 (Pattern(..),Patterns)
-   import Adl.Gen                     (Gen(..),Gens)
-   import Adl.Rule                    (Rule(..),RuleType(..),rulefromProp, ruleviolations,Rules)
-   import Adl.Prop                    (Prop(..))
-   import Adl.ObjectDef               (Service(..),ObjectDef(..),ObjectDefs)
-   import Adl.KeyDef                  (KeyDef(..),KeyDefs)
-   import Adl.MorphismAndDeclaration  (Declarations,mIs,Declaration(..),makeDeclaration)
-   import Adl.Concept                 (Concept(..),Morphic(..),Signaling(..),Association(..))
-   import Adl.ConceptDef              (ConceptDefs)
-   import Adl.Expression              (Expression(..))
-   import Adl.Pair                    (Paire)
-   import Adl.FilePos                 (Numbered(..),FilePos(..))
-   import Classes.Morphical           (Morphical(..))
+   import ADL.Context                 (Context(..))
+   import ADL.Pattern                 (Pattern(..),Patterns)
+   import ADL.Gen                     (Gen(..),Gens)
+   import ADL.Rule                    (Rule(..),RuleType(..),rulefromProp, ruleviolations,Rules)
+   import ADL.Prop                    (Prop(..))
+   import ADL.ObjectDef               (Service(..),ObjectDef(..),ObjectDefs)
+   import ADL.KeyDef                  (KeyDef(..),KeyDefs)
+   import ADL.MorphismAndDeclaration  (Relation, Declaration,Association(..),Relational(..),mIs,Declaration(..),makeDeclaration,Identified(..))
+   import ADL.Concept                 (Concept(..),Signaling(..))
+   import ADL.ConceptDef              (ConceptDefs)
+   import ADL.Expression              (Expression(..))
+   import ADL.Pair                    (Paire)
+   import ADL.FilePos                 (Numbered(..),FilePos(..))
+   import Classes.ConceptStructure           (ConceptStructure(..))
    import Collection                  (Collection(..))
-   import CommonClasses               (Identified(..))
    import Typology                    (Inheritance(..))
 
 -- ViewPoint exists because there are many data structures that behave like an ontology, such as Pattern, Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, signals, declarations, etc.)
 
-   class Morphical a => ViewPoint a where
+   class ConceptStructure a Concept => ViewPoint a where
      objectdef    :: a -> ObjectDef     -- ^ The objectdef that characterizes this viewpoint
      conceptDefs  :: a -> ConceptDefs   -- ^ all concept definitions that are valid within this viewpoint
-     declarations :: a -> Declarations  -- ^ all relations that exist in the scope of this viewpoint.
+     declarations :: a -> [Declaration Concept]  -- ^ all relations that exist in the scope of this viewpoint.
                                         -- ^ These are user defined declarations and all generated declarations,
                                         -- ^ i.e. one declaration for each GEN and one for each signal rule.
-                                        -- ^ Don't confuse declarations with decls, which gives the relations that are
-                                        -- ^ used in a. The function decls is bound in Morphical.)
+                                        -- ^ Don't confuse declarations with mors, which gives the relations that are
+                                        -- ^ used in a.)
      --REMARK: declarations has been split up in two disjoints which used to be combined with `uni` instead of ++
-     rules        :: a -> Rules         -- ^ all rules that are maintained within this viewpoint,
+     rules        :: a -> Rules (Relation Concept) -- ^ all rules that are maintained within this viewpoint,
                                         --   which are not signal-, not multiplicity-, and not key rules.
-     signals      :: a -> Rules         -- ^ all signals that are visible within this viewpoint
+     signals      :: a -> Rules (Relation Concept) -- ^ all signals that are visible within this viewpoint
                                         -- ^ all relations used in signals and rules must have a valid declaration in the same viewpoint.
-     multrules    :: a -> Rules         -- ^ all multiplicityrules that are maintained within this viewpoint.
+     multrules    :: a -> Rules (Relation Concept) -- ^ all multiplicityrules that are maintained within this viewpoint.
      multrules x   = [rulefromProp p d |d<-declarations x, p<-multiplicities d]
-     keyrules     :: a -> Rules         -- all key rules that are maintained within this viewpoint.
+     keyrules     :: a -> Rules (Relation Concept) -- all key rules that are maintained within this viewpoint.
      keyrules x    = [rulefromKey k |k<-keyDefs x]
      objDefs      :: a -> ObjectDefs
      keyDefs      :: a -> KeyDefs       -- ^ all keys that are defined in a
-     gens         :: a -> Gens          -- ^ all generalizations that are valid within this viewpoint
+     gens         :: a -> Gens Concept  -- ^ all generalizations that are valid within this viewpoint
      patterns     :: a -> Patterns      -- ^ all patterns that are used in this viewpoint
      isa          :: a -> Inheritance Concept
      --TODO -> there are more rules than rules+multrules that can be violated
-     violations   :: a -> [(Rule,Paire)] --the violations of rules and multrules of this viewpoint
+     violations   :: a -> [(Rule (Relation Concept),Paire)] --the violations of rules and multrules of this viewpoint
      violations x = [(r,viol) |r<-rules x++multrules x, viol<-ruleviolations r]
      
-   rulefromKey :: KeyDef -> Rule
+   rulefromKey :: KeyDef -> Rule (Relation Concept)
    rulefromKey key
      = Ru
           Implication    -- Implication of Equivalence
@@ -61,18 +60,18 @@ where
           Nothing        -- This rule was not generated from a property of some declaration.
           0              -- Rule number. Will be assigned after enriching the context
           ""             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
-          False          -- This rule was not specified as a rule in the ADL-script, but has been generated by a computer
+          False          -- This rule was not specified as a rule in the Ampersand script, but has been generated by a computer
           False          -- This is not a signal rule
           (Sgn (name key) c c [] [] "" "" "" [] (pos key) 0 False False "" True)         
      where
       c    = kdcpt key
       antc = Fix [F [attexpr,flp attexpr]| attexpr<-[objctx att|att<-kdats key]]
       cons = Tm (mIs c)(-1)
-
+   
    instance ViewPoint a => ViewPoint [a] where
-    objectdef _      = error ("!Fatal (module ViewPoint 71): Cannot make an object from an arbitrary list")
+    objectdef _      = error ("!Fatal (module ViewPoint 73): Cannot make an object from an arbitrary list")
     {- used to be:     Obj { objnm   = ""         --  view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-                           , objpos  = Nowhere    --  position of this definition in the text of the ADL source file (filename, line number and column number)
+                           , objpos  = Nowhere    --  position of this definition in the text of the Ampersand source file (filename, line number and column number)
                            , objctx  = Tm (mIs S) (-1) --  this expression describes the instances of this object, related to their context. 
                            , objctx_proof = Nothing
                            , objats  = []         -- the attributes, which are object definitions themselves.
@@ -146,7 +145,7 @@ where
                        where ts = clear [(gengen g,genspc g)| g<-ptgns pat]
 
 
-   instance ViewPoint Rule where
+   instance ViewPoint (Rule (Relation Concept)) where
     objectdef rule = Obj { objnm   = name rule
                          , objpos  = pos rule
                          , objctx  = Tm (mIs S) (-1)
@@ -168,8 +167,8 @@ where
                      , ptcds = []
                      , ptkds = []
                      , ptxps = []
-                     , testexpr = error ("!Fatal (module ViewPoint 132): Pattern without a defined testexpr") 
-                     , inftestexpr = error ("!Fatal (module ViewPoint 133): Pattern without a defined inftestexpr") 
+                     , testexpr = error ("!Fatal (module ViewPoint 171): Pattern without a defined testexpr") 
+                     , inftestexpr = error ("!Fatal (module ViewPoint 172): Pattern without a defined inftestexpr") 
                      }
                  ]
     isa r      = Isa ts (concs r>-[c| (g,s)<-ts,c<-[g,s]])

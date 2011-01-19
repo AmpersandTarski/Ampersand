@@ -4,10 +4,10 @@ module Prototype.Object(objectServices) where
 --import Char(toUpper)
 import NormalForms (disjNF,simplify)
 import Auxiliaries (eqCl)
-import Adl (target
-           --,Concept(..),Declaration(..),isTrue,makeInline
-           ,ObjectDef(..),Numbered(..),Morphic(..)
-           ,Identified(..),mors,Morphism(..),ViewPoint(..)
+import ADL (target
+           --,Concept(..),Declaration(..),isTrue
+           ,ObjectDef(..),Numbered(..),Relational(..),ConceptStructure(..)
+           ,Identified(..),mors,Relation(..),ViewPoint(..)
            ,Object(..),isIdent,Expression(..),mIs,cptS
            )
 import ShowADL (showADLcode)
@@ -45,7 +45,7 @@ objectServices flags fSpec o
 
 generateService_getEach :: Fspc -> String -> ObjectDef -> [String]
 generateService_getEach fSpec nm o
- = if sql==Nothing then error "Cannot generate getEach code in Object.hs (line 49)"
+ = if sql==Nothing then error "!Fatal (module Prototype.Object 48): Cannot generate getEach code in Object.hs (line 49)"
    else
    ["function getEach"++phpIdentifier nm++"(){"
    ,"  return firstCol(DB_doquer('" ++
@@ -170,7 +170,7 @@ showClasses flags fSpec o
   myName = name o
   doesExistQuer :: [Char] -> String
   doesExistQuer var
-   = if sql==Nothing then error "Cannot check if exists in Object.hs" else fromJust sql
+   = if sql==Nothing then error "!Fatal (module Prototype.Object 173): Cannot check if exists in Object.hs" else fromJust sql
    where expr = if null fs then F [ tm, ctx'] else F (tm:head fs)
          tm   = Tm (Mp1 ("\\''.addSlashes("++var++").'\\'") [] (concept o))(-1)
          ctx' = simplify $ flp (ctx o)
@@ -178,7 +178,7 @@ showClasses flags fSpec o
          sql  = selectExpr fSpec 25 (sqlExprSrc fSpec ctx') "" expr
 saveTransactions :: Options -> Fspc -> ObjectDef -> [String]
 saveTransactions flags fSpec object
-  -- | True = error $ show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec]
+  -- | True = error ("!Fatal (module Prototype.Object 181): "++show [name plug ++ show([(fldname fld,map fldname (requiredFields plug fld))|fld<-fields plug])|PlugSql plug@(TblSQL{})<-plugs fSpec])
  | otherwise
  = [ "function save(){"
    , "  DB_doquer('START TRANSACTION');"
@@ -211,7 +211,7 @@ saveTransactions flags fSpec object
          ]
        | rul <- rules fSpec
        , or (map (\mpm -> elem mpm (mors rul)) -- rule contains an element
-                 (mors object) -- affected mors  ; SJ: mors yields all morphisms inline.
+                 (mors object) -- affected mors  ; SJ: mors yields all relations inline.
            )
        ]
      ) ++
@@ -231,7 +231,7 @@ saveTransactions flags fSpec object
   allAtts :: ObjectDef->[ObjectDef]
   allAtts o = objats o ++ concat (map allAtts (objats o))
   nestTo :: ObjectDef -> (String->[String]) -> [String]
-  nestTo attr fnc = if null nt then error ("!Fatal (module Prototype>Object 228): saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)")
+  nestTo attr fnc = if null nt then error ("!Fatal (module Prototype.Object 234): saveCodeElem: Cannot nestTo "++show attr++" (ObjBinGenObject)")
                     else head nt
     where nt = nestToRecur attr fnc object "$me" 0
   nestToRecur :: ObjectDef -> (String->[String]) -> ObjectDef -> String -> Integer -> [[String]]
@@ -247,7 +247,7 @@ saveTransactions flags fSpec object
                   , ans<-nestToRecur attr fnc a' (mvar) (d+1)]
   --occurences = ((obj,srcfld),(obj/objatt,trgfld)) clustered by (obj,srcfld)
   --REMARK151210 -> a plug attr field always has a srcfld that is a kernel field, i.e. srcfld is always a kernel field (iskey plug srcfld = True)
-  --                as long as fldexpr of attr fields are morphisms, a cluster in occurences is the cluster of a kernel field
+  --                as long as fldexpr of attr fields are relations, a cluster in occurences is the cluster of a kernel field
   --                (cluster of kernel field = all required fields of kernel field [note: some kernel fields may contain NULL])
   --                when fldexpr of attr fields is an univalent and total complex expr e.g. r;s;t with source C
   --                     and I[C] is a kernel fldexpr
@@ -274,7 +274,7 @@ saveTransactions flags fSpec object
     = nestTo a
              (\var->["DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++(fldname f)
                      ++"`='\".addslashes("++var++ maybeId a ++ ").\"'\",5);"])
-  delcode _ [] = error "!Fatal (module Prototype>Object 262): should not occur" -- , but generating no code for no request seems OK
+  delcode _ [] = error "!Fatal (module Prototype.Object 277): should not occur" -- , but generating no code for no request seems OK
   delCodeElem :: PlugSQL->([String],[ObjectDef])
   delCodeElem plug
     = (   concat (map (delcode plug) (fullOccurences plug))
@@ -373,7 +373,7 @@ saveTransactions flags fSpec object
                                 -- niet meer voorkomen, netjes weggefilterd worden
                         else filter ((iskey plug).snd) $ reverse attrs -- eerst de voor de hand liggende
               objkfld --this is the kernel field with instances of $id of this object
-                | null (findkfld++keys) = error ("!Fatal (module Prototype>Object 351): There is no key for this object in plug "++name plug)
+                | null (findkfld++keys) = error ("!Fatal (module Prototype.Object 376): There is no key for this object in plug "++name plug)
                 | otherwise = head (findkfld++keys)
               findkfld = [(svc,fld)|(svc,fld)<-keys,concept attobj==target(fldexpr fld)]
                 -- nunios: Not UNI ObjectS: objects that are not Uni
@@ -442,8 +442,8 @@ saveTransactions flags fSpec object
                    intercalate ", "
                          [ "`"++fldname f++"`="++
                            if fldnull f then "NULL"
-                           else error "!Fatal (module Prototype>Object 410): you cannot use copycutupdinsQuery for objkfld=UNIQUE KEY"
-                         | (o,f)<-attrs, elem f requiresFld
+                           else error "!Fatal (module Prototype.Object 445): you cannot use copycutupdinsQuery for objkfld=UNIQUE KEY"
+                         | (_,f)<-attrs, elem f requiresFld
                          ] ++ " WHERE `"++fldname (snd objkfld)++"`='\".addslashes("++varname var (fst objkfld)++").\"'" ++"\", 5)"
                   , if null copyflds then insQuery var 
                     else copyinsQuery var
@@ -542,7 +542,7 @@ doPhpGet fSpec objVar depth objIn objOut
                           :[or [msubset i' o'|i'<-objats i] -- and at least every attribute of o must be in i
                            |o'<-objats o]) %-}
     --template to do a query => firstline (DB_doquer( quer ));
-    doQuer fl [] = error ("!Fatal (module Prototype>Object 438): doPhpGet: doQuer has no query for "++fl);
+    doQuer fl [] = error ("!Fatal (module Prototype.Object 545): doPhpGet: doQuer has no query for "++fl);
     doQuer firstLine quer 
      = addToLast "\"));" ([ firstLine++"(DB_doquer(\""++head quer] ++ map ((++) (take (12+length firstLine) (repeat ' '))) (tail quer))
     trunc att = att{objats=[]}
@@ -614,7 +614,7 @@ doSqlGet fSpec isArr objIn objOut
    rest = zip [ a | a<-aOuts, a `notElem` [a' | g <- comboGroups, (a',_) <- snd g]]
               [(1::Integer)..]
    --WHY: wordt dit op lengte gesorteerd, waarom zijn langere lijsten belangrijker?
-   --Ik heb het gedisabled omdat het fouten gaf in SELECT queries met morphisms die gekoppeld zijn aan binaire tabellen
+   --Ik heb het gedisabled omdat het fouten gaf in SELECT queries met relations die gekoppeld zijn aan binaire tabellen
    comboGroups'::[((PlugSQL,(ObjectDef,SqlField)),[(ObjectDef,SqlField)])]
    comboGroups'= reduce ({-sort' (length)-} (eqCl fst combos)) 
       where
@@ -635,7 +635,7 @@ doSqlGet fSpec isArr objIn objOut
       , Just e' <-[takeOff (objctx ai) (objctx a)]
       , (plug,fld0,fld1)<-sqlRelPlugs fSpec e'
       ]
-   takeOff :: Expression->Expression->Maybe Expression
+   takeOff :: (Show c, Identified c, ConceptStructure c c) => Expression (Relation c)->Expression (Relation c)->Maybe (Expression (Relation c))
    takeOff (F (a:as)) (F (b:bs)) | disjNF a==disjNF b = takeOff (F as) (F bs)
    takeOff a (F (b:bs)) | disjNF a== disjNF b = Just (F bs)
    takeOff a e' | isIdent a = Just e'
@@ -666,7 +666,7 @@ doSqlGet fSpec isArr objIn objOut
          -- en Debug.trace aan de imports toevoegen
          -- ++ trace ("Geen keyGroup voor "++name objOut) []
          ++ if isOne' objOut then [] 
-            else error ("!Fatal (module Prototype>Object 511): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
+            else error ("!Fatal (module Prototype.Object 669): doSqlGet in ObjBinGenObject: Cannot create keyGroups for " ++name objOut)
          )
    --the list of fields that are selected (SELECT DISTINCT fieldNames FROM (see tbls))
    --based on comboGroups' ++ rest
@@ -690,7 +690,7 @@ doSqlGet fSpec isArr objIn objOut
    tbls =
       let       
       restLines (outAtt,n)
-          = if sql outAtt==Nothing then error ("Cannot get a query for "++(show( objctx outAtt))++" in Object.hs (line 578)")
+          = if sql outAtt==Nothing then error ("!Fatal (module Prototype.Object 693): Cannot get a query for "++(show( objctx outAtt))++" in Object.hs (line 578)")
             else splitLineBreak ((fromJust (sql outAtt)) ++ " AS f"++show n) -- better names?
       sql outAtt = selectExprBrac 
             fSpec (-4)

@@ -6,7 +6,7 @@ module Prototype.Index(htmlindex) where
    import Prototype.RelBinGenSQL(isOne)
    import Version (versionbanner)
 --   import System.FilePath (addExtension)
-   import Adl (name,ObjectDef)
+   import ADL (name,ObjectDef)
    import Data.Fspec
    import Options
    
@@ -16,7 +16,7 @@ module Prototype.Index(htmlindex) where
     = intercalate "\n  "
       ( [ "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         , "<html><head>"
-        , "  <title>"++appname++"- ADL Prototype</title>"
+        , "  <title>"++appname++"- Ampersand Prototype</title>"
         , "  <link href=\"css/reset.css\"  rel=\"stylesheet\" type=\"text/css\" media=\"screen\" />"
         , "  <link href=\"css/screen.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\" />"
         , "</head><body style=\"height:100%;width:100%;\">"

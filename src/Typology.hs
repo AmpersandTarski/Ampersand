@@ -94,15 +94,15 @@ where
     Isa rx cx `isc` Isa ry cy = Isa (rx `isc` ry) (cx `isc` cy)
     Isa rx cx >- Isa ry cy = Isa (rx>-ry) (cx>-cy)
     rd (Isa ts es)            = Isa (rd ts) (rd es)
-    rd' _ (Isa _ _)         = error "!Fatal (module Typology 112): rd' not yet implemented for Isa"
+    rd' _ (Isa _ _)         = error "!Fatal (module Typology 97): rd' not yet implemented for Isa"
 
    instance Collection Typology where
     eleM e (Typ pths) = or [e `elem` p| p<-pths]
     empty = Typ []
     elems (Typ paths) = rd (concat paths)
     Typ px `uni` Typ py = Typ (compress akin (px++py++[init r++r'| r<-px, r'<-py, last r==head r']))
-    Typ _ `isc` Typ _ = error "!Fatal (module Typology 119): intersection not yet implemented"     --TODO
-    Typ _ >-    Typ _ = error "!Fatal (module Typology 120): set difference not yet implemented"  --TODO
+    Typ _ `isc` Typ _ = error "!Fatal (module Typology 104): intersection not yet implemented"     --TODO
+    Typ _ >-    Typ _ = error "!Fatal (module Typology 105): set difference not yet implemented"  --TODO
     rd (Typ pths) = Typ (rd pths)
-    rd' _ (Typ _) = error "!Fatal (module Typology 122): rd' not yet implemented for Typologies"
+    rd' _ (Typ _) = error "!Fatal (module Typology 107): rd' not yet implemented for Typologies"
 

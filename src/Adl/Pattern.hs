@@ -1,27 +1,26 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.Pattern (Pattern(..),Patterns)
+module ADL.Pattern (Pattern(..),Patterns)
 where
-   import Adl.KeyDef                   (KeyDefs)
-   import Adl.Rule                     (Rules)
-   import Adl.Gen                      (Gens)
-   import Adl.Concept                  (Sign)
-   import Adl.MorphismAndDeclaration   (Declarations,Declaration,Morphism)
-   import Adl.ConceptDef               (ConceptDefs)
-   import Adl.Explanation              (PExplanations)
-   import CommonClasses                (Identified(..))
-   import Adl.Expression               (PExpression)
+   import ADL.KeyDef                   (KeyDefs)
+   import ADL.Rule                     (Rules)
+   import ADL.Gen                      (Gens)
+   import ADL.Concept                  (Concept,Sign)
+   import ADL.MorphismAndDeclaration   (Declaration,Relation,Identified(..))
+   import ADL.ConceptDef               (ConceptDefs)
+   import ADL.Explanation              (PExplanations)
+   import ADL.Expression               (PExpression)
    
    type Patterns  = [Pattern]
    data Pattern
       = Pat { ptnm  :: String        -- ^ Name of this pattern
-            , ptrls :: Rules         -- ^ The rules declared in this pattern
-            , ptgns :: Gens          -- ^ The generalizations defined in this pattern
-            , ptdcs :: Declarations  -- ^ The declarations declared in this pattern
+            , ptrls :: Rules (Relation Concept) -- ^ The rules declared in this pattern
+            , ptgns :: Gens Concept  -- ^ The generalizations defined in this pattern
+            , ptdcs :: [Declaration Concept] -- ^ The declarations declared in this pattern
             , ptcds :: ConceptDefs   -- ^ The concept definitions defined in this pattern
             , ptkds :: KeyDefs       -- ^ The key definitions defined in this pattern
             , ptxps :: PExplanations -- ^ The explanations of elements defined in this pattern
-            , testexpr :: [PExpression Morphism (Maybe Sign)]
-            , inftestexpr :: [PExpression Declaration Sign]
+            , testexpr :: [PExpression (Relation Concept) (Maybe Sign)]
+            , inftestexpr :: [PExpression (Declaration Concept) Sign]
             }   --deriving (Show) -- voor debugging
 
 -- \***********************************************************************

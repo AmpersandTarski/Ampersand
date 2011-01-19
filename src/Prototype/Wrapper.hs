@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.Wrapper (objectWrapper) where
 import Data.List
-import Adl
+import ADL
 import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
 import Prototype.RelBinGenSQL(isOne)
 import Data.Fspec
@@ -101,7 +101,7 @@ objectWrapper fSpec serviceObjects o flags
           , "    writeHead(\"<TITLE>Delete geslaagd</TITLE>\");"
           , "    echo 'The "++objectName++" is deleted';"
           , "  }else{  // deze pagina zou onbereikbaar moeten zijn"
-          , "    writeHead(\"<TITLE>No "++objectName++" object selected - " ++ appname ++" - ADL Prototype</TITLE>\");"
+          , "    writeHead(\"<TITLE>No "++objectName++" object selected - " ++ appname ++" - Ampersand Prototype</TITLE>\");"
           , "    ?><i>No "++objectName++" object selected</i><?php "
           , "  }"
           , "}"
@@ -116,7 +116,7 @@ objectWrapper fSpec serviceObjects o flags
    objectId        = phpIdentifier objectName
    appname         = name fSpec
    showObjectCode --display some concept instance in read or edit mode by definition of SERVICE
-    = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - ADL Prototype</TITLE>\""
+    = [ "writeHead(\"<TITLE>"++objectName++" - "++(appname)++" - Ampersand Prototype</TITLE>\""
       , "          .($edit?'<SCRIPT type=\"text/javascript\" src=\"js/edit.js\"></SCRIPT>':'').'<SCRIPT type=\"text/javascript\""
                 ++ " src=\"js/navigate.js\"></SCRIPT>'.\"\\n\" );"
       , "if($edit)"

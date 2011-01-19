@@ -1,28 +1,28 @@
-{-# OPTIONS_GHC -Wall #-}
-module Adl.Gen (Gen(..),Gens)
+{-# OPTIONS_GHC -Wall -XFlexibleInstances -XMultiParamTypeClasses #-}
+module ADL.Gen (Gen(..),Gens)
 where
-   import Adl.FilePos   (FilePos)
-   import Adl.Concept   (Concept,Association(..))
+   import ADL.FilePos                  (FilePos)
+   import ADL.MorphismAndDeclaration   (Association(..))
    
-   type Gens      = [Gen]
-   data Gen       = G { genfp  :: FilePos         -- ^ the position of the GEN-rule
-                      , gengen :: Concept         -- ^ generic concept
-                      , genspc :: Concept         -- ^ specific concept
-                      , genpat :: String          -- ^ pattern of declaration
-                      }
+   type Gens c      = [Gen c]
+   data Gen concept = G { genfp  :: FilePos         -- ^ the position of the GEN-rule
+                        , gengen :: concept         -- ^ generic concept
+                        , genspc :: concept         -- ^ specific concept
+                        , genpat :: String          -- ^ pattern of declaration
+                        }
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Gen                           ***
 -- \***********************************************************************
-   instance Eq Gen where
+   instance Eq c => Eq (Gen c) where
        g == g' = gengen g == gengen g' &&
                  genspc g == genspc g'
 
-   instance Show Gen where
+   instance Show c => Show (Gen c) where
     -- This show is used in error messages. It should therefore not display the term's type
     showsPrec _ g = showString ("GEN "++show (genspc g)++" ISA "++show (gengen g))
    
                       
-   instance Association Gen where
+   instance Eq c => Association (Gen c) c where
     source g = genspc g
     target g = gengen g

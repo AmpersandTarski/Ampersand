@@ -1,8 +1,8 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
 module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),explain2Blocks,format) where
-import Adl hiding (applyM)
+import ADL hiding (applyM)
 import Data.Fspec
 import Options
 import Data.Explain
@@ -14,7 +14,7 @@ import Collection       (Collection ((>-)))
 import Text.Pandoc
 import Char             (toLower)
 
--- The general idea is that an ADL declaration such as:
+-- The general idea is that an Ampersand declaration such as:
 --     EXPLAIN r[A*B] IN ENGLISH
 --     {+ This text explains why r[A*B] exists -}
 -- produces the exact right text in the functional specification
@@ -49,18 +49,18 @@ instance Explainable Concept where
   explForObj x (ExplConceptDef x') = name x == name x'
   explForObj _ _ = False
 
-instance Explainable Declaration where
+instance Explainable (Declaration Concept) where
   autoExplainsOf flags decl = map (toExpl decl) (autoExplains flags decl)
      where 
-       toExpl :: Declaration -> AutoExplain -> Explanation
+       toExpl :: Declaration Concept -> AutoExplain -> Explanation
        toExpl d (Because l econt) = Expl (ExplDeclaration d) l versionbanner econt
   explForObj x (ExplDeclaration x') = x == x'
   explForObj _ _ = False
   
-instance Explainable Rule where
+instance Explainable (Rule (Relation Concept)) where
   autoExplainsOf flags rule = map (toExpl rule) (autoExplains flags rule)
      where
-        toExpl :: Rule -> AutoExplain -> Explanation
+        toExpl :: Rule (Relation Concept) -> AutoExplain -> Explanation
         toExpl r (Because l econt) = Expl ( ExplRule r) l versionbanner econt
   explForObj x (ExplRule x') = x == x'
   explForObj _ _ = False
@@ -94,119 +94,119 @@ explain2Blocks e = explainContent2Blocks (explCont e)
 
 class SelfExplained a where
     -- TODO: Samenvoegen met Explained
-    autoExplains :: Options -> a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Morphism, ..)
+    autoExplains :: Options -> a -> [AutoExplain]  -- List of inner (generated) explanations of the object (like Rule, Relation Concept, ..)
 
-instance SelfExplained Declaration where
+instance (Identified c, Conceptual c) => SelfExplained (Declaration c) where
      autoExplains flags d = [explainParagraph flags{language=Dutch}   dutchInlines] 
                         ++  [explainParagraph flags{language=English} englishInlines]
       where dutchInlines 
-                 | null ([Sym,Asy]         >- multiplicities d) = [Emph [Str (name d)]]
+               | null ([Sym,Asy]         >- multiplicities d) = [Emph [Str (name d)]]
                                                                 ++[Str " is een eigenschap van "]
                                                                 ++[Str ((unCap.plural Dutch .name.source) d)]
                                                                 ++[Str "."]
-		         | null ([Sym,Rfx,Trn]     >- multiplicities d) = [Emph [Str (name d)]]
+	       | null ([Sym,Rfx,Trn]     >- multiplicities d) = [Emph [Str (name d)]]
                                                                 ++[Str " is een equivalentierelatie tussen "]
                                                                 ++[Str ((unCap.plural Dutch .name.source) d)]
                                                                 ++[Str "."]
-		         | null ([Asy,Trn]         >- multiplicities d) = [Emph [Str (name d)]]
+	       | null ([Asy,Trn]         >- multiplicities d) = [Emph [Str (name d)]]
                                                                 ++[Str " is een ordeningsrelatie tussen "]
                                                                 ++[Str ((unCap.plural Dutch .name.source) d)]
                                                                 ++[Str "."]
-		         | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	       | null ([Uni,Tot,Inj,Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
 		                                                                   [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str " en vice versa."]
-		         | null ([Uni,Tot,Inj]     >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str ", maar niet voor elke "]
-		                                                        ++[Str ((unCap.name.target) d)]
-		                                                        ++[Str " hoeft er een "]
-		                                                        ++[Str ((unCap.name.source) d)]
-		                                                        ++[Str " te zijn."]
-		         | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str ", maar elke "]
-		                                                        ++[Str ((unCap.name.target) d)]
-		                                                        ++[Str (" is gerelateerd aan "++preciesEen++" of meer ")]
-		                                                        ++[Str ((unCap.plural Dutch .name.source) d)]
-		                                                        ++[Str "."]
-		         | null ([Uni,    Inj,Sur] >- multiplicities d) = [Str ("Er is precies "++preciesEen++" "++(unCap.name.source) d++" (")]
-		                                                        ++[Math InlineMath "a"]
-		                                                        ++[Str (") voor elke "++(unCap.name.target) d++" (")]
-		                                                        ++[Math InlineMath "b"]
-		                                                        ++[Str ("), waarvoor geldt: " )]
-		                                                        ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
-		                                                        ++[Str (", maar niet voor elke "++(unCap.name.source) d++" hoeft er een "++(unCap.name.target) d++" te zijn.")]
-		         | null ([    Tot,Inj,Sur] >- multiplicities d) = [Str ("Er is precies "++preciesEen++" "++(unCap.name.source) d++" (")]
-		                                                        ++[Math InlineMath "a"]
-		                                                        ++[Str (") voor elke "++(unCap.name.target) d++" (")]
-		                                                        ++[Math InlineMath "b"]
-		                                                        ++[Str ("), waarvoor geldt: " )]
-		                                                        ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
-		                                                        ++[Str (", maar elke "++(unCap.name.source) d++" mag gerelateerd zijn aan meerdere "++(unCap.plural Dutch .name.target) d++".")]
-		         | null ([Uni,Tot        ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str "."]
-		         | null ([Uni,    Inj    ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("ten hoogste "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str " en elke "]
-		                                                        ++[Str ((unCap.name.target) d)]
-		                                                        ++[Str (" is gerelateerd aan ten hoogste "++preciesEen++" ")]
-		                                                        ++[Str ((unCap.name.source) d++".")]
-		                                                        ++[Str "."]
-		         | null ([Uni,        Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("ten hoogste "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str ", terwijl elke "]
-		                                                        ++[Str ((unCap.name.target) d)]
-		                                                        ++[Str (" is gerelateerd aan tenminste "++preciesEen++" ")]
-		                                                        ++[Str ((unCap.name.source) d)]
-		                                                        ++[Str "."]
-		         | null ([    Tot,Inj    ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("tenminste "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str ", terwijl elke "]
-		                                                        ++[Str ((unCap.name.target) d)]
-		                                                        ++[Str (" is gerelateerd aan ten hoogste "++preciesEen++" ")]
-		                                                        ++[Str ((unCap.name.source) d)]
-		                                                        ++[Str "."]
-		         | null ([    Tot,    Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("tenminste "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str (" en elke "++(unCap.name.target) d++" is gerelateerd aan tenminste "++preciesEen++" "++(unCap.name.source) d++".")]
-		         | null ([        Inj,Sur] >- multiplicities d) = [Str ("Er is precies "++preciesEen++" "++(unCap.name.source) d++" (")]
-		                                                        ++[Math InlineMath "a"]
-		                                                        ++[Str (") voor elke "++(unCap.name.target) d++" (")]
-		                                                        ++[Math InlineMath "b"]
-		                                                        ++[Str ("), waarvoor geldt: " )]
-		                                                        ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
-		                                                        ++[Str "."]
-		         | null ([            Sur] >- multiplicities d) = [Str ("Er is tenminste "++preciesEen++" "++(unCap.name.source) d++" (")]
-		                                                        ++[Math InlineMath "a"]
-		                                                        ++[Str (") voor elke "++(unCap.name.target) d++" (")]
-		                                                        ++[Math InlineMath "b"]
-		                                                        ++[Str ("), waarvoor geldt: " )]
-		                                                        ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
-		                                                        ++[Str "."]
-		         | null ([        Inj    ] >- multiplicities d) = [Str ("Er is hooguit "++preciesEen++" "++(unCap.name.source) d++" (")]
-		                                                        ++[Math InlineMath "a"]
-		                                                        ++[Str (") voor elke "++(unCap.name.target) d++" (")]
-		                                                        ++[Math InlineMath "b"]
-		                                                        ++[Str ("), waarvoor geldt: " )]
-		                                                        ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
-		                                                        ++[Str "."]
-		         | null ([    Tot        ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("tenminste "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str "."]
-		         | null ([Uni            ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
-		                                                                   [Str ("nul of "++preciesEen++" "++(unCap.name.target) d)]
-		                                                        ++[Str "."]
-		         | otherwise                                    = [Str "De zin: "]
-		                                                        ++[Quoted DoubleQuote 
-		                                                            (applyM d [Math InlineMath ((var [].source) d)]
-		                                                                      [Math InlineMath ((var [source d].target) d)])
-		                                                          ]
-		                                                        ++[Str (" heeft betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" ")]
-		                                                        ++[Str ((var [].source) d)]
-		                                                        ++[Str (" en een "++(unCap.name.target) d++" ")]
-		                                                        ++[Str ((var [source d].target) d)]
-		                                                        ++[Str "."]
+	                                                      ++[Str " en vice versa."]
+	       | null ([Uni,Tot,Inj]     >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str ", maar niet voor elke "]
+	                                                      ++[Str ((unCap.name.target) d)]
+	                                                      ++[Str " hoeft er een "]
+	                                                      ++[Str ((unCap.name.source) d)]
+	                                                      ++[Str " te zijn."]
+	       | null ([Uni,Tot,    Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str ", maar elke "]
+	                                                      ++[Str ((unCap.name.target) d)]
+	                                                      ++[Str (" is gerelateerd aan "++preciesEen++" of meer ")]
+	                                                      ++[Str ((unCap.plural Dutch .name.source) d)]
+	                                                      ++[Str "."]
+	       | null ([Uni,    Inj,Sur] >- multiplicities d) = [Str ("Er is precies "++preciesEen++" "++(unCap.name.source) d++" (")]
+	                                                      ++[Math InlineMath "a"]
+	                                                      ++[Str (") voor elke "++(unCap.name.target) d++" (")]
+	                                                      ++[Math InlineMath "b"]
+	                                                      ++[Str ("), waarvoor geldt: " )]
+	                                                      ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
+	                                                      ++[Str (", maar niet voor elke "++(unCap.name.source) d++" hoeft er een "++(unCap.name.target) d++" te zijn.")]
+	       | null ([    Tot,Inj,Sur] >- multiplicities d) = [Str ("Er is precies "++preciesEen++" "++(unCap.name.source) d++" (")]
+	                                                      ++[Math InlineMath "a"]
+	                                                      ++[Str (") voor elke "++(unCap.name.target) d++" (")]
+	                                                      ++[Math InlineMath "b"]
+	                                                      ++[Str ("), waarvoor geldt: " )]
+	                                                      ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
+	                                                      ++[Str (", maar elke "++(unCap.name.source) d++" mag gerelateerd zijn aan meerdere "++(unCap.plural Dutch .name.target) d++".")]
+	       | null ([Uni,Tot        ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("precies "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str "."]
+	       | null ([Uni,    Inj    ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("ten hoogste "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str " en elke "]
+	                                                      ++[Str ((unCap.name.target) d)]
+	                                                      ++[Str (" is gerelateerd aan ten hoogste "++preciesEen++" ")]
+	                                                      ++[Str ((unCap.name.source) d++".")]
+	                                                      ++[Str "."]
+	       | null ([Uni,        Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("ten hoogste "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str ", terwijl elke "]
+	                                                      ++[Str ((unCap.name.target) d)]
+	                                                      ++[Str (" is gerelateerd aan tenminste "++preciesEen++" ")]
+	                                                      ++[Str ((unCap.name.source) d)]
+	                                                      ++[Str "."]
+	       | null ([    Tot,Inj    ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("tenminste "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str ", terwijl elke "]
+	                                                      ++[Str ((unCap.name.target) d)]
+	                                                      ++[Str (" is gerelateerd aan ten hoogste "++preciesEen++" ")]
+	                                                      ++[Str ((unCap.name.source) d)]
+	                                                      ++[Str "."]
+	       | null ([    Tot,    Sur] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("tenminste "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str (" en elke "++(unCap.name.target) d++" is gerelateerd aan tenminste "++preciesEen++" "++(unCap.name.source) d++".")]
+	       | null ([        Inj,Sur] >- multiplicities d) = [Str ("Er is precies "++preciesEen++" "++(unCap.name.source) d++" (")]
+	                                                      ++[Math InlineMath "a"]
+	                                                      ++[Str (") voor elke "++(unCap.name.target) d++" (")]
+	                                                      ++[Math InlineMath "b"]
+	                                                      ++[Str ("), waarvoor geldt: " )]
+	                                                      ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
+	                                                      ++[Str "."]
+	       | null ([            Sur] >- multiplicities d) = [Str ("Er is tenminste "++preciesEen++" "++(unCap.name.source) d++" (")]
+	                                                      ++[Math InlineMath "a"]
+	                                                      ++[Str (") voor elke "++(unCap.name.target) d++" (")]
+	                                                      ++[Math InlineMath "b"]
+	                                                      ++[Str ("), waarvoor geldt: " )]
+	                                                      ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
+	                                                      ++[Str "."]
+	       | null ([        Inj    ] >- multiplicities d) = [Str ("Er is hooguit "++preciesEen++" "++(unCap.name.source) d++" (")]
+	                                                      ++[Math InlineMath "a"]
+	                                                      ++[Str (") voor elke "++(unCap.name.target) d++" (")]
+	                                                      ++[Math InlineMath "b"]
+	                                                      ++[Str ("), waarvoor geldt: " )]
+	                                                      ++applyM d [Math InlineMath "b"] [Math InlineMath "a"]
+	                                                      ++[Str "."]
+	       | null ([    Tot        ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("tenminste "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str "."]
+	       | null ([Uni            ] >- multiplicities d) = applyM d [Str ("elke "++(unCap.name.source) d)]
+	                                                                 [Str ("nul of "++preciesEen++" "++(unCap.name.target) d)]
+	                                                      ++[Str "."]
+	       | otherwise                                    = [Str "De zin: "]
+	                                                      ++[Quoted DoubleQuote 
+	                                                          (applyM d [Math InlineMath ((var [].source) d)]
+	                                                                    [Math InlineMath ((var [source d].target) d)])
+	                                                        ]
+	                                                      ++[Str (" heeft betekenis (dus: is waar of niet waar) voor een "++(unCap.name.source) d++" ")]
+	                                                      ++[Str ((var [].source) d)]
+	                                                      ++[Str (" en een "++(unCap.name.target) d++" ")]
+	                                                      ++[Str ((var [source d].target) d)]
+	                                                      ++[Str "."]
 		                                                          
             englishInlines 
 		         | null ([Sym,Asy]         >- multiplicities d) = [Emph [Str (name d)]]
@@ -305,14 +305,14 @@ instance SelfExplained Declaration where
 		                                                        ++[Str (" and "++(unCap.name.target) d++" ")]
 		                                                        ++[Math InlineMath ((var [source d].target) d)]
 		                                                        ++[Str "."]
-            applyM :: Declaration -> [Inline] -> [Inline] -> [Inline]
+            applyM :: Declaration c -> [Inline] -> [Inline] -> [Inline]
             applyM decl a b =
                case decl of
                  Sgn{}     -> if null (prL++prM++prR) 
                                 then a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(decnm decl)] else
                               if null prL
                                 then a++[Space,Str prM,Space]++b++[Space,Str prR]
-                                else [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++[Space,Str prR]
+                                else [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
                               where prL = decprL decl
                                     prM = decprM decl
                                     prR = decprR decl
@@ -325,6 +325,6 @@ instance SelfExplained Declaration where
                       where low idt= if null (name idt) then "x" else [(toLower.head.name) idt]
             
             
-instance SelfExplained Rule where
+instance SelfExplained (Rule r) where
     autoExplains _ r = rrxpl r         -- TODO: to allow explainations in multiple languages, change to:  explain options d@Sgn{} = etc...
             

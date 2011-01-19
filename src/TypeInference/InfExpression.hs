@@ -1,20 +1,21 @@
+{-# OPTIONS_GHC -Wall #-}
 module TypeInference.InfExpression where
 --this module is based on code generated with uuagc
---uuagc is not used because you can't (as far as I know) define DATA PExpression Morphism (Maybe Sign)
+--uuagc is not used because you can't (as far as I know) define DATA PExpression (Relation Concept) (Maybe Sign)
 --you can define the polymorph DATA PExpression a b, but it does not match our expectations
 
-import Adl
+import ADL
 import Data.List (union,nubBy,nub) 
 --TODO -> make an isa aware nub?
 
 --the type containing inh and syn atts
 type InfExpression  = 
-     [Declaration] ->  --decls
+     [Declaration Concept] -> 
      [(Concept,Concept)] -> --isas
      (Maybe Sign) --autocast
      -> SynAtts
 type SynAtts = --synthesized
-     (PExpression Declaration Sign --typedexpr
+     (PExpression (Declaration Concept) Sign --typedexpr
      ,[Sign] --trytype 
                                --if trytype subexpression==ambiguous => autocast if one alternative possible 
                                --else remove impossible alts and return trytype==ambiguous
@@ -27,7 +28,7 @@ type TErr = String
 type ITree = String
 ------------------------------------------------------------
 --uuagc: *_Syn_PExpression functions
-typedexpr :: SynAtts -> PExpression Declaration Sign
+typedexpr :: SynAtts -> PExpression (Declaration Concept) Sign
 typedexpr (infex,_,_,_,_) = infex
 trytype :: SynAtts -> [Sign]
 trytype (_,ttype,_,_,_) = ttype
@@ -38,24 +39,24 @@ prooftree (_,_,_,proof,_) = proof
 ishomo :: SynAtts -> Bool
 ishomo (_,_,_,_,hm) = hm
 
---all the type-correct exprs given a context of decls and isas
-typedexprs :: [Declaration] -> [(Concept,Concept)] -> [PExpression Morphism (Maybe Sign)] -> [PExpression Declaration Sign]
+--all the type-correct exprs given a context of declarations and isas
+typedexprs :: [Declaration Concept] -> [(Concept,Concept)] -> [PExpression (Relation Concept) (Maybe Sign)] -> [PExpression (Declaration Concept) Sign]
 typedexprs ds isas xs = [typedexpr ix|ix<-ixs,(not.inerror)(reltype ix)]
    where ixs = [infer x ds isas Nothing | x<-xs]
---all the type errors given a context of decls and isas
-typeerrors :: [Declaration] -> [(Concept,Concept)] -> [PExpression Morphism (Maybe Sign)] -> [[TErr]]
+--all the type errors given a context of declarations and isas
+typeerrors :: [Declaration Concept] -> [(Concept,Concept)] -> [PExpression (Relation Concept) (Maybe Sign)] -> [[TErr]]
 typeerrors ds isas xs = [err|ix <-[infer x ds isas Nothing | x<-xs],inerror(reltype ix),let Right err = reltype ix]
 ------------------------------------------------------------
 --uuagc: infer=sem_PExpression
 --stop de attributen van een expr in de infer functie met gelijke structuur
 --een attr x van het type PExpression gaat er in als (infer x) = inh atts tuple
-infer :: PExpression Morphism (Maybe Sign) -> InfExpression 
+infer :: PExpression (Relation Concept) (Maybe Sign) -> InfExpression 
 infer me@(MulPExp mop subs usercast )  = infer_MulPExp me mop (map infer subs) usercast
 infer me@(UnPExp uop sub usercast )  = infer_UnPExp me uop (infer sub) usercast 
 infer (TPExp subm usercast )  = infer_TPExp subm usercast 
 
 {-
--- inh: *_  (decls and isa do not change)
+-- inh: *_  (declarations and isa do not change)
 -- syn: _* 
 --
 -- COMMON FUNCTION NAMES
@@ -71,13 +72,13 @@ infer (TPExp subm usercast )  = infer_TPExp subm usercast
 --          the context will not ask for the typed expression if reltype yields a type error
 -}
 
-infer_UnPExp :: PExpression Morphism (Maybe Sign) -> UnOp -> InfExpression  ->  Maybe Sign ->  InfExpression 
+infer_UnPExp :: PExpression (Relation Concept) (Maybe Sign) -> UnOp -> InfExpression  ->  Maybe Sign ->  InfExpression 
 infer_UnPExp me uop sub usercast     decls_ isa_ autocast_ =
     let {--calculate synthesized--}
-        cast = case autocast_ of Nothing -> Nothing; Just x -> Just (tf_inv x)
+        casting = case autocast_ of Nothing -> Nothing; Just x -> Just (tf_inv x)
         ttype = filtercast (ptf (trytype (subtuple Nothing)))
-        rtype = checkcast(lmap tf(reltype (subtuple cast)))         --no type conditions on unpexp i.e. no errors will be discovered here
-        infex = UnPExp uop (typedexpr (subtuple cast)) (thetype rtype)
+        rtype = checkcast(lmap tf(reltype (subtuple casting)))         --no type conditions on unpexp i.e. no errors will be discovered here
+        infex = UnPExp uop (typedexpr (subtuple casting)) (thetype rtype)
         proof = []
         hm =ishomo (subtuple usercast)
     in  (infex,ttype,rtype,proof,hm)                      --return synthesized
@@ -95,7 +96,7 @@ infer_UnPExp me uop sub usercast     decls_ isa_ autocast_ =
              | otherwise = (a,b)
     tf_inv = tf                  --the inverse of tf equals tf,  but you never know which unary operators will be added
 
-infer_MulPExp :: PExpression Morphism (Maybe Sign) -> MulOp -> [InfExpression]  ->  (Maybe Sign) ->  InfExpression 
+infer_MulPExp :: PExpression (Relation Concept) (Maybe Sign) -> MulOp -> [InfExpression]  ->  (Maybe Sign) ->  InfExpression 
 infer_MulPExp me mop subs usercast     decls_ isa_ autocast_ 
  |elem mop [Fc,Fd] =
     let {--calculate synthesized--}
@@ -115,7 +116,7 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
                 else 
                 if null ttype                            --without cast there are potential types, but none of them matches the usercast
                 then Right ["\n\nrelation undefined: " ++ show me ++ "\npossible types are: " ++ show (ttype' Nothing) ]
-                else error ("mismatching autocast?")
+                else error ("!Fatal (module TypeInference.InfExpression 119): mismatching autocast?")
            _ -> Right ["\n\nambiguous relation: " ++ show me ++ "\npossible types are: " ++ show ttype ]
         infex = MulPExp mop (map typedexpr the_subs_tuples) (thetype rtype)
         proof = []
@@ -131,19 +132,19 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
          = [head sub_tplss
            |sub_tplss<-subs_tplss
            ,if length sub_tplss==1 then True 
-            else error ("there are alternatives i.e. ambiguous reltype")
+            else error ("!Fatal (module TypeInference.InfExpression 135): there are alternatives i.e. ambiguous reltype")
            ]
            where (subs_tplss,_) = alts (Just tf) subs
         {--typing functions--}
         ptf :: [[Sign]] -> [Sign]                        --calculate the trytype from the trytypes of the subs 
-        ptf [] = error "there must be subs so there must be trytype lists for them"
+        ptf [] = error "!Fatal (module TypeInference.InfExpression 140): there must be subs so there must be trytype lists for them"
         ptf (tts:ttss) = concat[map (tp a) (cs [b] ttss)|(a,b)<-tts]
            where
            tp a c = (a,c)
            cs bs [] = bs
            cs bs (x:xs) = cs [c|b<-bs,(b',c)<-x,(b*!*b') isa_] xs
         tf | length rtype'==1 = head rtype'
-           | otherwise = error "tf undefined: tf is defined iff length rtype'==1 z"
+           | otherwise = error "!Fatal (module TypeInference.InfExpression 147): tf undefined: tf is defined iff length rtype'==1 z"
         {--error analysis--} 
     in  (infex,ttype,rtype,proof,hm) --return synthesized
  |elem mop [Fi,Fu,Ri,Re] =
@@ -165,11 +166,11 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
         the_subs_tuples = [sub decls_ isa_ (Just tf)| sub<-subs]
         {--typing functions--}
         ptf :: [[Sign]] -> [Sign] --calculate the trytype from the trytypes of the subs 
-        ptf [] = error "there must be subs so there must be trytype lists for them"
+        ptf [] = error "!Fatal (module TypeInference.InfExpression 169): there must be subs so there must be trytype lists for them"
         ptf (tts:[]) = tts --take the trytypes of the last sub as a startpoint and see what will be left of it in the end
         ptf (tts:ttss) = [(x**-**y) isa_|x<-ptf ttss,y<-tts,(x**!!**y) isa_]
         tf | length rtype'==1 = head rtype'
-           | otherwise = error "tf undefined: tf is defined iff length rtype'==1 y"
+           | otherwise = error "!Fatal (module TypeInference.InfExpression 173): tf undefined: tf is defined iff length rtype'==1 y"
         {--error analysis--} 
         --cast is useful if it is isa-related to some element of ttype'
         --NICE TODO FOR LONG REPORT -> if ttype'==[cast] then cast=unnecessary  
@@ -182,7 +183,7 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
                      else concat ["\ntype "++ show t ++ " suits " ++ show (suit t)|t<-ts]
                     )]
            | null ttype = Right ["relation undefined: " ++ show me ++ "\npossible types are: " ++ show (ttype' Nothing) ]
-           | otherwise = error "what?"
+           | otherwise = error "!Fatal (module TypeInference.InfExpression 186): what?"
            where MulPExp _ mesubs _ = me
                  suit t = [x|x<-mesubs, tx<-trytype (infer x decls_ isa_ Nothing),t==tx]
                  ts = (nub.concat)(map trytype (subs_alts Nothing))
@@ -191,9 +192,9 @@ infer_MulPExp me mop subs usercast     decls_ isa_ autocast_
         --TODO, if no sub has null trytype then the there are only amb errors i.e. incompatible comparison
         --if one or more sub has null trytype then forget (in the short report) about the amb subs as they are most likely solved by fixing the sub yielding an error
     in  (infex,ttype,rtype,proof,hm) --return synthesized
- |otherwise = error "there is nothing else"
+ |otherwise = error "!Fatal (module TypeInference.InfExpression 195): there is nothing else"
 
-infer_TPExp :: Morphism  ->  (Maybe Sign) ->  InfExpression 
+infer_TPExp :: Relation Concept  ->  (Maybe Sign) ->  InfExpression 
 infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be added to decls_
     let {--calculate synthesized--}
         ttype = filtercast autocast_ (ptf (ds usercast))     --autocast+usercast instead of Nothing is ok, because there is no subexpression
@@ -204,7 +205,7 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
               _ -> Right ["\n\nambiguous relation: " ++ show (TPExp subm usercast) ++ "\npossible types are: " ++ show ttype ]
         infex  
            | (not.null)(ds (Just tf)) = TPExp (head (ds (Just tf))) (thetype rtype) --TODO if ds (Just tf)>1 then warning of duplicates in long report
-           | otherwise = error "morphism must be bound to some declaration"
+           | otherwise = error "!Fatal (module TypeInference.InfExpression 208): morphism must be bound to some declaration"
         proof = []
         hm = not$foldr (||) False [ isIdent d || null[()|p<-decprps d,elem p [Asy,Rfx,Sym,Trn]] |d<-ds usercast]
         --iff all (ds usercast) are homogeneous, then hm=True i.e. hm applies to ttype, not rtype. implemented: not(d is heterogeneous)
@@ -215,7 +216,7 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
         {--typing functions--}
         ptf = map sign
         tf | length ttype==1 = head ttype  
-           | otherwise = error ("tf undefined: tf is defined iff length ttype==1 x"++ show autocast_)
+           | otherwise = error ("!Fatal (module TypeInference.InfExpression 219): tf undefined: tf is defined iff length ttype==1 x"++ show autocast_)
         {--error analysis--}
         analyseerror 
            | null(ds Nothing) && chkundeclcpt = (\(Right err)-> Right (("relation undeclared: " ++ show (TPExp subm (Nothing::(Maybe Sign)))):err)) undeclcpt
@@ -224,8 +225,8 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
         undeclcpt = case usercast of
              Just (c1,c2) -> if not(elem c1 cpts) || not(elem c2 cpts)
                              then Right ["\n\nunknown concept: "++show x|x<-[c1,c2],not(elem x cpts)]
-                             else error "No undecl cpt -> chkundeclcpt first"
-             Nothing      -> error "No user type -> chkundeclcpt first"
+                             else error "!Fatal (module TypeInference.InfExpression 228): No undecl cpt -> chkundeclcpt first"
+             Nothing      -> error "!Fatal (module TypeInference.InfExpression 229): No user type -> chkundeclcpt first"
         chkundeclcpt = case usercast of --TODO check ook concepts in usercasts op expressies
              Nothing -> False
              Just (c1,c2) -> not(elem c1 cpts) || not(elem c2 cpts)
@@ -236,7 +237,7 @@ infer_TPExp subm usercast     decls_ isa_ autocast_ =  --TODO -> I and V must be
 
 type OnIsa a = [(Concept,Concept)] -> a
 
---cptgE of Concept is still (==), so I can't use the functions order,glb,lub
+--cptgE of Concept is still (==), so I can't use the functions comparable,glb,lub
 (*!*) :: Concept -> Concept -> OnIsa Bool
 (*!*) a b = (\isas -> elem (a,b) isas || elem (b,a) isas)
 (**!!**) :: Sign -> Sign -> OnIsa Bool
@@ -258,15 +259,14 @@ cast _ autocast = autocast
 
 -- The following function has been renamed (used to be (\-/), but sourceGraph couldn't handle this...
 (*-*) :: Concept -> Concept -> OnIsa Concept
-(*-*) a b = (\isas -> if elem (a,b) isas then a else if elem (b,a) isas then b else error ("not a isa b or b isa a"++show (a,b)))
+(*-*) a b = (\isas -> if elem (a,b) isas then a else if elem (b,a) isas then b else error ("!Fatal (module TypeInference.InfExpression 262): not a isa b or b isa a"++show (a,b)))
 (**-**) :: Sign -> Sign -> OnIsa Sign
 (**-**) (a,b) (c,d) = (\isas -> ((a*-*c) isas,(b*-*d) isas))
 
 --TODO -> there exists a prelude function
 jst::Maybe a -> a
 jst (Just x) = x
-jst Nothing = error "check ac/=Nothing"
-
+jst Nothing = error "!Fatal (module TypeInference.InfExpression 269): check ac/=Nothing"
 --duplicates are BOTH/ALL removed, so different then function nub which keeps one of them
 rmdupl::(Eq a)=>[a]->[a]->[a]
 rmdupl _ [] = []
@@ -285,13 +285,13 @@ ss_merge (x:[]) = x
 ss_merge (x:xs) = foldr concatelems x xs 
 concatelems::[[SynAtts]] -> [[SynAtts]] -> [[SynAtts]]
 concatelems [] [] = []
-concatelems [] _ = error "sdfds"
-concatelems _ [] = error "sdfsd"
+concatelems [] _ = error "!Fatal (module TypeInference.InfExpression 288): sdfds"
+concatelems _ [] = error "!Fatal (module TypeInference.InfExpression 289): sdfsd"
 concatelems (x:xs) (y:ys) = (x `Data.List.union` y):(concatelems xs ys)
 
 thetype :: Either Sign [TErr] -> Sign
 thetype (Left t) = t
-thetype (Right x) = error ("no type"++show x)
+thetype (Right x) = error ("!Fatal (module TypeInference.InfExpression 294): no type"++show x)
 inerror :: Either Sign [TErr] -> Bool
 inerror (Left _) = False
 inerror (Right _) = True
@@ -329,20 +329,20 @@ inerror (Right _) = True
 --      otherwise check cause 2 
 --      +> if s does compose to some left part of ss then ss_tplss=comp_alts (take (ok_untill 0) ss) ++ comp_alts (drop (ok_untill 0) ss)
 --2) there is no s_tpl that can be composed to any ss_tpls 
---   "x can be composed to y" => there is a target(x)=source(y)
+--   "x can be composed to y" => there is a target x=source y
 --   if there are alternatives for s i.e. trytype (s with source=a and open target) is not null
 --   then explicitly cast all trytypes (_,b) to tuples of s with source=a and target=b <= interpretation:one tuple=one alternative
 --   otherwise check cause 3
 --3) there are no alternatives for s where source=a
 --   => return the tuple of s with source=a and open target (yielding an error)
 comp_alts :: (Maybe (Concept, Concept)-> [InfExpression]-> [(Concept, Concept)])
-             -> [Declaration] -> [(Concept,Concept)] -> (Maybe Sign) -> [InfExpression] -> ([[SynAtts]],[TErr])
+             -> [Declaration Concept] -> [(Concept,Concept)] -> (Maybe Sign) -> [InfExpression] -> ([[SynAtts]],[TErr])
 comp_alts _ _ _ _ [] = ([],[])
 comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac could be different for ttype and rtype
  --  | null ss = ([s_tpls],s_err)
- --  | length ss==6 && length s_tpls>2= error(show(length ss,length s_tpls,ok_bs,ptf_ss,nubBy (\x y->fst x==fst y) ptf_ss))  
+ --  | length ss==6 && length s_tpls>2= error("!Fatal (module TypeInference.InfExpression 343): "++show(length ss,length s_tpls,ok_bs,ptf_ss,nubBy (\x y->fst x==fst y) ptf_ss))  
    | length sss_tplss==length (s:ss) =(sss_tplss,sss_errs)
-   | otherwise = error (show(length sss_tplss,length (s:ss),sss_errs)++"alternative requires at least one tuple for each s:ss")
+   | otherwise = error ("!Fatal (module TypeInference.InfExpression 345): "++show(length sss_tplss,length (s:ss),sss_errs)++"alternative requires at least one tuple for each s:ss")
    where
    --find the error in ss p.e. s=r,ss=s;t;v. s;ss yields error, but maybe r;s;t does not: ok_untill 0 = 2
    --(take (ok_untill 0) ss) yields no errors
@@ -352,7 +352,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       | null ss = 0
       | n+1==length ss = n+1 
       | null(ttypemerge Nothing (take (n+1) ss)) = n
-      | n>length ss = error "n may not be greater than the length of ss"
+      | n>length ss = error "!Fatal (module TypeInference.InfExpression 355): n may not be greater than the length of ss"
       | otherwise = ok_untill (n+1)
    ok_bs 
       | length ss==ok_untill 0 = nub(map fst ptf_ss) --respect c in case Just (a,c)=ac
@@ -366,11 +366,11 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
    ------------------------------------------------------------------------------------------------------
    (s_tpls,s_err)                      --the alternatives (tuples) for s, possibly yielding an error
     = (handle_error_in_s.handle_no_composition.handle_error_in_ss)
-      --(if length ss==6 then error(show(trytype trystpl,ok_bs,ptf_ss,nubBy (\x y->fst x==fst y) ptf_ss)) else 
+      --(if length ss==6 then error("!Fatal (module TypeInference.InfExpression 369): "++show(trytype trystpl,ok_bs,ptf_ss,nubBy (\x y->fst x==fst y) ptf_ss)) else 
       [s  decls_ isa_ (Just(a,b))
       | (a,b)<-trytype trystpl         --if null (trytype trystpl) then s yields error (see handle_error_in_s)
       , ac==Nothing || (a*!*fst(jst ac)) isa_
-      , (b',c)<-nubBy (\x y->fst x==fst y) ptf_ss                 --if null ptf_ss then there is no composition because ss yields error or null ss, 
+      , (b',_)<-nubBy (\x y->fst x==fst y) ptf_ss                 --if null ptf_ss then there is no composition because ss yields error or null ss, 
                                        --if length ss>1 then maybe s could be composed with (take n<length ss);start n=1;n++
       , (b*!*b') isa_                  --if not null ptf_ss and there is no such b and b' then there is no composition because
                                        --the composition of s and ss is incompatible
@@ -398,7 +398,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       handle_no_composition xs = xs    --there is a composition
       handle_error_in_s [] = case reltype trystpl of
              Right err -> ([],err)
-             _ -> error "expecting type error in s" -- ([trystpl],["error in s"]) --s yields error -> return the tuple that yields the error i.e. trystpl
+             _ -> error "!Fatal (module TypeInference.InfExpression 401): expecting type error in s" -- ([trystpl],["error in s"]) --s yields error -> return the tuple that yields the error i.e. trystpl
       handle_error_in_s xs = (xs,[])        --there is no error in s
    ------------------------------------------------------------------------------------------------------
    --sss_tplss::[[SynAtts]]          --the alternatives (lists of tuples) per subexpression in s:ss
@@ -407,32 +407,32 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       ,s_err++ss_errs)             --error analysis rule: report all errors within a subexpression Ri
                                      --comp_alts is recursive so all Ri will be s_tpls possibly yielding s_err at sometime
    (ss_tplss,ss_errs) 
-     --  | length ss==2 = error (show (null s_tpls,s_err,ptf_ss,ok_bs,s_ss_bs,s_trytypes))
+     --  | length ss==2 = error ("!Fatal (module TypeInference.InfExpression 410): "++show (null s_tpls,s_err,ptf_ss,ok_bs,s_ss_bs,s_trytypes))
       | null ss = ([],[])
-      | null s_tpls && null s_err = error "there must be an alternative or error for s"
-      | not(null s_tpls) && not(null s_err)  = error "there may not be both an alternative and error for s"
+      | null s_tpls && null s_err = error "!Fatal (module TypeInference.InfExpression 412): there must be an alternative or error for s"
+      | not(null s_tpls) && not(null s_err)  = error "!Fatal (module TypeInference.InfExpression 413): there may not be both an alternative and error for s"
       --s yields error -> STEP 1 => no composition error, just error(s) of s and ss
       | null s_tpls && not(null ptf_ss) = --s yields error, ss does not or only amb comp
          (tpls ss_alts_ptf, errs ss_alts_ptf) 
       | null s_tpls && null ptf_ss = --s yields error, ss does too 
-         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "ss has no error1?")
+         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "!Fatal (module TypeInference.InfExpression 418): ss has no error1?")
       --s yields no error
       | null ptf_ss && ok_untill 0==0 = --head ss yields an error  -> STEP 1 => no composition error, just error(s) of ss
-         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "ss has no error2?")
+         (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) then errs ss_alts_no_ptf else error "!Fatal (module TypeInference.InfExpression 421): ss has no error2?")
         --ss yields an error, but there are ok_bs -> STEP2 => error(s) of ss + potential composition error of s and split1 --TODO merge multiple amb errors?
       | null ptf_ss && null s_ss_bs = --incompatible composition of s and split1
          (tpls ss_alts_no_ptf, if not(null(errs ss_alts_no_ptf)) 
                                then ("\n\nincompatible composition\npossible types of " ++ show (typedexpr (head s_tpls))
                                    ++": "++show s_trytypes)
                                     :(errs ss_alts_no_ptf) 
-                               else error ("ss has no error3?"++show(ok_untill 0, ok_bs,s_trytypes,length s_ss_alts_no_ptf)))
+                               else error ("!Fatal (module TypeInference.InfExpression 428): ss has no error3?"++show(ok_untill 0, ok_bs,s_trytypes,length s_ss_alts_no_ptf)))
       | null ptf_ss && length s_ss_bs==1 = -- s and split1 compose
-         (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) then errs s_ss_alts_no_ptf else error "ss has no error4?")
+         (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) then errs s_ss_alts_no_ptf else error "!Fatal (module TypeInference.InfExpression 430): ss has no error4?")
       | null ptf_ss && length s_ss_bs>1 = --ambiguous composition of s and split1 
          (tpls s_ss_alts_no_ptf, if not(null(errs s_ss_alts_no_ptf)) 
                                  then ("\n\nambiguous1_"++show (length ss))
                                       :(errs s_ss_alts_no_ptf) 
-                                 else error "ss has no error5?")
+                                 else error "!Fatal (module TypeInference.InfExpression 435): ss has no error5?")
       --both s and ss yield no error or only amb comp -> STEP2 => potential composition error of s and ss + potential amb.comps in ss --TODO merge multiple amb errors?
       | null s_ss_bs = --incompatible composition of s and ss
          (tpls ss_alts_ptf,  ("\n\nincompatible2_"++show (length ss)):(show (ok_bs,s_trytypes))
@@ -442,7 +442,7 @@ comp_alts ttypemerge decls_ isa_ ac (s:ss) --ttypemerge incorporates ptf; ac cou
       | length s_ss_bs>1 = --ambiguous composition of s and ss, different alternatives may yield the same error => unduplicate
          (tpls s_ss_alts_ptf, ("\n\nambiguous2_"++show (length ss)):(show (ok_bs,s_trytypes))
                               :(errs s_ss_alts_ptf))
-      | otherwise = error "are there other options?"
+      | otherwise = error "!Fatal (module TypeInference.InfExpression 445): are there other options?"
 
    tpls xs = ss_merge (map fst xs)--[x |Left x<-xs] --removes duplicate alternatives
    errs xs = (nub.concat) (map snd xs) --[x |Right x<-xs] --errors of all alternatives on a heap

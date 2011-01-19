@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 --Words inside comments that are written in capitals only, such as TODO, provide information to programmers:
 --     -> TODO                Describes some kind of improvement needed or things to be reexamined
 --                            If reexamination results in the conclusion that its correct, then remove the comment
@@ -15,15 +16,14 @@
 --                            All debug code blocks must be inactive when compiling for a release.
 --     -> RULE                The implementation is correct whenever this rule holds. If the rule does not hold anymore
 --                            then reexamine the implementation.                    
-
 --REMARK -> In any expression, in case of multiple type errors, choose the innermost errors and yield the first one.
 --DESCR ->
---         types are inferred bottom up. First the type of the morphisms is inferred, then the types of the expressions using them are inferred
+--         types are inferred bottom up. First the type of the relations is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 module TypeChecker (typecheck, Error, Errors) where
 
 import Auxiliaries (eqCl)
-import Adl          -- USE -> .MorphismAndDeclaration.makeDeclaration
+import ADL          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 --import Data.List    -- USE -> unionBy
 --import Data.Maybe() -- USE -> fromJust, isNothing
@@ -99,7 +99,7 @@ typecheck arch@(Arch ctxs) = (enriched, checkresult)
 ------------------
 -- Each error is exposed by a NoProof in the Proof-field, which carries the type errors.
 -- Each valid type derivation is given by a Proven in the Proof-fiels, which carries the derivation.
-enrichArch :: Architecture -> (Contexts,[(String,[Block],FilePos,OrigExpr)])
+enrichArch :: Architecture -> (Contexts,[(String,[Block],FilePos,OrigExpr (Relation Concept))])
 enrichArch (Arch ctxs) = ( [enrichedctx | (enrichedctx,_)<-[enrichCtx cx ctxs|cx<-ctxs]]
                             , concat [infresult | (_,infresult)<-[enrichCtx cx ctxs|cx<-ctxs]])
 
@@ -119,21 +119,21 @@ addsgndecls ::Context -> Context
 addsgndecls cx = cx {ctxds=(ctxds cx)++allsgndecls }
   where allsgndecls = [srrel r | r<-rules cx, isSignal r]
 
-data OrigExpr = OrigRule Rule | OrigObjDef Expression | OrigKeyDef Expression | OrigExpl
+data OrigExpr r = OrigRule (Rule r) | OrigObjDef (Expression r) | OrigKeyDef (Expression r) | OrigExpl
 
 -- enrichCtx supplies all information to the parse tree of a single context
 -- that can only be computed after the type checking process.
 -- This consists of:
---   - Rule binding:      This binds type information to expressions and morphisms in Rules and Signals.
---   - ObjectDef binding: Supply type information to expressions and morphisms in ObjectDefs
---   - Key binding:       Supply type information to expressions and morphisms in Keys
---   - Plug binding:      Supply type information to expressions and morphisms in SQL plugs and PHP plugs
---   - population:        All instances supplied by the ADL-script are bound to the right declarations and concepts.
---   - rule generation:   Rules that are derived from multiplicities specified in the ADL-script (UNI,TOT,INJ,SUR,RFX,TRN,SYM,ASY)
---   - rule generation:   Rules that are derived from Keys specified in the ADL-script
+--   - Rule binding:      This binds type information to expressions and relations in Rules and Signals.
+--   - ObjectDef binding: Supply type information to expressions and relations in ObjectDefs
+--   - Key binding:       Supply type information to expressions and relations in Keys
+--   - Plug binding:      Supply type information to expressions and relations in SQL plugs and PHP plugs
+--   - population:        All instances supplied by the Ampersand script are bound to the right declarations and concepts.
+--   - rule generation:   Rules that are derived from multiplicities specified in the Ampersand script (UNI,TOT,INJ,SUR,RFX,TRN,SYM,ASY)
+--   - rule generation:   Rules that are derived from Keys specified in the Ampersand script
 
-enrichCtx :: Context -> Contexts -> (Context,[(String,[Block],FilePos,OrigExpr)])
-enrichCtx cx ctxs = --if zzz then error(show xxx) else
+enrichCtx :: Context -> Contexts -> (Context,[(String,[Block],FilePos,OrigExpr (Relation Concept))])
+enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++show xxx) else
   (postenrich $ 
       cx {ctxisa  = hierarchy, -- 
           ctxwrld = world, --
@@ -165,12 +165,12 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
                            (ctxdecls)   --relations declared in this context only, outside the scope of patterns
                            (ctxcptdefs) --concept defs of this context only
                            (ctxks cx)   --bind keydefs
-                           (ctxsvcs cx) --change mphdcl and mphtyp on morphisms in expressions
+                           (ctxsvcs cx) --change mphdcl and mphtyp on relations in expressions
                            (ctxpops cx) --copy populations
                               -}
   where
   --DESCR -> use this function on all expressions
-  enrich_expr :: Expression -> Either ((Concept,Concept), Expression,InfTree) (String,[Block])
+  enrich_expr :: Expression (Relation Concept) -> Either ((Concept,Concept), Expression (Relation Concept),InfTree) (String,[Block])
   enrich_expr = infertype_and_populate popuMphDecl isas [d| d<-declarations ctxs, decusr d] (Anything,Anything)
   isas = isaRels (concs ctxs) (gens ctxs)
   --DESCR -> enriching ctxwrld
@@ -203,13 +203,13 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
 
 
   --DESCR -> enriching ctxpats
-  ctxpatterns :: [(Pattern,[Either Rule (String,[Block],FilePos,OrigExpr)],[String])]
+  ctxpatterns :: [(Pattern,[Either (Rule (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))],[String])]
   ctxpatterns
-     = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the ADL-script within
+     = [ bindPat p| p<-ctxpats cx ]               -- all rules that are declared in the Ampersand script within
                                                     --     the patterns of this context
   bindPat p@(Pat{}) = (p {ptrls= boundrules ,ptkds= boundkds, ptdcs=addpopu, ptxps=[x |Left x<-pexpls]
                          ,inftestexpr=typedexprs [d| d<-declarations ctxs, decusr d] isas (testexpr p) 
-                                   ++ [error (concat (concat xs)) | let xs=typeerrors [d| d<-declarations ctxs, decusr d] isas (testexpr p),not(null xs)]
+                                   ++ [error ("!Fatal (module TypeChecker 212): "++concat (concat xs)) | let xs=typeerrors [d| d<-declarations ctxs, decusr d] isas (testexpr p),not(null xs)]
                          }
                       ,bindrules
                       ,[err|Right err<-pexpls])
@@ -233,13 +233,13 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   enrichexpl pExpl = case enrichexplobj (pexObj pExpl) of
                        Left _ -> Left pExpl
                        Right str -> Right str
-  
+
   enrichexplobj :: PExplObj -> Either PExplObj String
   enrichexplobj x@(PExplConceptDef{}) = checkPExplobj (concs ctxs) x 
   enrichexplobj (PExplDeclaration mph ) = case enrich_expr (Tm mph (-1)) of
      Left (_,Tm emph _,_) -> Left (PExplDeclaration emph )
      Right (err,_) -> Right ("Explanation for relation "++name mph++" could not be matched to a declaration because "++err)
-     x -> error$ "!Fatal (module Typechecker 225): function enrichexplobj: impossible case."
+     _ -> error$ "!Fatal (module Typechecker 242): function enrichexplobj: impossible case."
   enrichexplobj x@(PExplRule{}) = checkPExplobj ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
   enrichexplobj x@(PExplKeyDef{}) = checkPExplobj (ctxks cx) x
   enrichexplobj x@(PExplObjectDef{}) = checkPExplobj (objDefs cx) x
@@ -257,6 +257,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
     explobj (PExplKeyDef _) = "key definition"
     explobj (PExplObjectDef _) = "service definition"
     explobj (PExplPattern _) = "pattern"
+    explobj (PExplContext _) = "context"
    
   --DESCR -> enriching ctxds
   --         take all declarations from patterns included (not extended) in this context
@@ -265,15 +266,15 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   ctxdecls =  [d{desrc=populate$desrc d, detrg=populate$detrg d} | d@Sgn{}<-popuRels]
   --DESCR -> Determines domain and range population per declaration (i.e. relation)
   --REMARK -> concepts have no population, use ctxdecls instead if needed.
-  popuRels :: Declarations
+  popuRels :: [Declaration Concept]
   popuRels = mygroupby matches (declarations_ctxs)
       where
-      -- REMARK:  Use only declarations that are user defined, because generated declarations (e.g. decls from signal rules)
+      -- REMARK:  Use only declarations that are user defined, because generated declarations (e.g. from signal rules)
       --          are not typechecked yet! Signal rules cannot be populated at this point.
       --          They need to be populated AFTER type checking based on the populations of user defined relation declarations.
       declarations_ctxs = [d|d<-declarations ctxs, decusr d]
       matches = [(p,d) |(p,Left d)<-[(pop,popdeclaration (declarations_ctxs) pop) | cx'<-ctxs, pop<-ctxpops cx']] 
-      mygroupby :: [(Population, Declaration)] -> Declarations -> Declarations
+      mygroupby :: [(Population Concept, Declaration Concept)] -> [Declaration Concept] -> [Declaration Concept]
       mygroupby [] res = res
       mygroupby ((p,d):pds) res = mygroupby pds addxtores
         where 
@@ -289,24 +290,25 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   --DESCR -> Determines source and target population based on domains and ranges of all relations
   --         Source and target need to be provided, because it can differ from the sign of the relation
   --         The morphism (in an expression) refering to this relation determines the type.
-  popuMphDecl :: Morphism -> Morphism
+  popuMphDecl :: Relation Concept -> Relation Concept
   popuMphDecl mp = case mp of
-      Mph{} -> mp { mphtyp=popusign$mphtyp mp
+      Mph{} -> mp { mphsrc = populate (mphsrc mp)
+                  , mphtrg = populate (mphtrg mp)
                   , mphats=map populate (mphats mp)
                   , mphdcl=popudecl$mphdcl mp}
       I{}   -> mp { mphgen=populate$mphgen mp
                   , mphspc=populate$mphspc mp
                   , mphats=map populate (mphats mp)}
-      V{}   -> mp { mphtyp=popusign$mphtyp mp
+      V{}   -> mp { mphsrc = populate (mphsrc mp)
+                  , mphtrg = populate (mphtrg mp)
                   , mphats=map populate (mphats mp)}
       Mp1{} -> mp { mph1typ=populate$mph1typ mp
                   , mphats=map populate (mphats mp)}
-      where popusign (s,t) = (populate s, populate t)
-            --lookup the populated declaration in popuRels
+      where --lookup the populated declaration in popuRels
             popudecl d =
               if null allpopd then d 
               else if length allpopd==1 then head allpopd
-                   else error$ "!Fatal (module Typechecker 275): function popuMphDecl: " ++
+                   else error$ "!Fatal (module Typechecker 311): function popuMphDecl: " ++
                                "More than one declaration matching morphism "++show (mphnm mp)
                              ++" at "++show (mphpos mp)
                              ++".(remark for developer) Remove duplicate signatures from popuRels if you want to allow this."
@@ -320,17 +322,17 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
                       ,cptgE=(\c1 c2 -> elem (c1,c2) isas)}
   populate c       = c
 
-  ctxPatKeys :: [(KeyDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+  ctxPatKeys :: [(KeyDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxPatKeys = [bindKeyDef kd | pat<-ctxpats cx, kd<-ptkds pat]   
 
   --DESCR -> The function bindRule attaches a type to a rule by producing a proof in the type system.
   --REMARK -> The rules are numbered after enriching, see renumber :: Context -> Context
   --          Thus a rule in (cxrls cx) originating from a rule in a pattern, and the original rule
   --          may have different numbers.
-  --          infertype_and_populate :: (Morphism -> Morphism) -> Concepts -> Gens -> Declarations -> Expression -> Either (InfType, Expression) String    popuMphDecl
+  --          infertype_and_populate :: (Relation Concept -> Relation Concept) -> [Concept] -> Gens Concept -> [Declaration Concept] -> Expression (Relation Concept) -> Either (InfType, Expression (Relation Concept)) String    popuMphDecl
 
    --DESCR -> the expression must have the same structure as (normExpr rule)
-  ruleexpr_inv :: Rule -> Expression -> Rule
+  ruleexpr_inv :: Rule (Relation Concept) -> Expression (Relation Concept) -> Rule (Relation Concept)
   ruleexpr_inv rule x
    -- normExpr rule == x 
       = case x of 
@@ -341,9 +343,9 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
         _ -> if rrsrt rule==Truth then rule{rrcon=x} else err
    -- otherwise = err
     where 
-    err = error("!Fatal (module TypeChecker 345): The expression ("++show x++") is not normExpr of rule "++show rule)
+    err = error("!Fatal (module TypeChecker 346): The expression ("++show x++") is not normExpr of rule "++show rule)
 
-  bindRule :: Rule -> Either Rule (String,[Block],FilePos,OrigExpr)
+  bindRule :: Rule (Relation Concept) -> Either (Rule (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))
   bindRule r@(Ru{}) = 
      if null err 
      then Left$ (bindexpr){rrtyp=(populate c1,populate c2),rrtyp_proof=inftree, srrel=signaldecl}
@@ -365,11 +367,11 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
 
-  ctxservices :: [(Service,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+  ctxservices :: [(Service,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxservices = [bindService sv Nothing | sv<-ctxsvcs cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
-  bindService ::  Service -> Maybe Expression -> (Service,[Either Expression (String,[Block],FilePos,OrigExpr)])
+  bindService ::  Service -> Maybe (Expression (Relation Concept)) -> (Service,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])
   bindService svc mbtopexpr = (svc {svObj=od},checkedexprs)
     where 
     (od,checkedexprs) = bindObjDef (svObj svc) mbtopexpr
@@ -377,15 +379,17 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
   
   --DESCR -> enriching ctxobjdefs
   --         bind the expression and nested object defs of all object defs in the context
-  ctxobjdefs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+{- Gerard, deze code wordt niet gebruikt. Kan dit weg?
+  ctxobjdefs :: [(ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxobjdefs = [bindObjDef od Nothing | od<-objDefs cx]
-  ctxsqlplugs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+-}
+  ctxsqlplugs :: [(ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
-  ctxphpplugs :: [(ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+  ctxphpplugs :: [(ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxphpplugs = [bindObjDef plug Nothing | plug<-ctxphp cx]
   --add the upper expression to me and infer me and bind type
   --pass the new upper expression to the children and bindObjDef them
-  bindObjDef ::  ObjectDef -> Maybe Expression -> (ObjectDef,[Either Expression (String,[Block],FilePos,OrigExpr)])
+  bindObjDef ::  ObjectDef -> Maybe (Expression (Relation Concept)) -> (ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])
   bindObjDef od mbtopexpr = (od {objctx=bindexpr, objctx_proof=inftree, objats=bindats},checkedexpr:checkedexprs)
     where 
     expr = case mbtopexpr of
@@ -404,7 +408,7 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
            _ -> objctx od 
       Just _ -> case inf_e of
            Left (_,F [_,x],_) -> x
-           Left _ -> error $ "!Fatal (module TypeChecker 441): function enrichCtx.bindObjDef: " ++
+           Left _ -> error $ "!Fatal (module TypeChecker 411): function enrichCtx.bindObjDef: " ++
                              "Expected a composition expression."++show inf_e++"."
            _ -> objctx od 
     inftree = case inf_e of
@@ -419,9 +423,9 @@ enrichCtx cx ctxs = --if zzz then error(show xxx) else
     checkedexprs = concat [x|(_,x)<-inferats]
   -------end bindObjDef---------------------------------------------------------------
   
-  ctxCtxKeys :: [(KeyDef,[Either Expression (String,[Block],FilePos,OrigExpr)])]
+  ctxCtxKeys :: [(KeyDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxCtxKeys = [bindKeyDef kd | kd<-ctxks cx]   
-  bindKeyDef :: KeyDef -> (KeyDef,[Either Expression (String,[Block],FilePos,OrigExpr)])
+  bindKeyDef :: KeyDef -> (KeyDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])
   bindKeyDef kd = (kd {kdats=bindats},checkedkeydefexprs)
     where
     checkedkeydefexprs = [Left x|Left x<-checkedexprs] ++ [Right (x,block,fp,OrigKeyDef y)|Right (x,block,fp,OrigObjDef y)<-checkedexprs]
@@ -476,7 +480,7 @@ checkObjDefNameUniqueness ctxs = printerrs (checkLabels ods)
         printerrs [] = []
         printerrs (sObs:attObss)
          = [ ( "\nService or plug name " ++ name (head sObs) ++ " is not unique:"++
-               concat ["\n  "++show (pos obj) |obj<-sOb]
+               concat ["\n  "++show (pos obj) |obj<-sOb]++"\n"
              , [])
            | sOb<-sObs, not (null sOb)] 
            ++
@@ -521,7 +525,7 @@ checkPopulations ctxs = [(err,[])|Right err<-[popdeclaration [d| d<-declarations
 ------------------
 
 --DESCR -> If no declaration can be found than an error message is returned
-popdeclaration :: [Declaration] -> Population ->  Either Declaration String
+popdeclaration :: [Declaration Concept] -> Population Concept ->  Either (Declaration Concept) String
 popdeclaration ds p = 
    if length allmatches==1 then Left(head allmatches)
    else if null allmatches
@@ -535,7 +539,7 @@ popdeclaration ds p =
     allmatches = [d|d@(Sgn{})<-ds, matches d (popm p)]
     matches d (Mph{mphnm=popnm, mphats=[c1,c2]}) = popnm==name d && c1==source d && c2==target d
     matches d (Mph{mphnm=popnm, mphats=[]})      = popnm==name d
-    matches _ m = error $ "!Fatal (module Population 24): function popdeclaration: " ++
+    matches _ m = error $ "!Fatal (module TypeChecker 542): function popdeclaration: " ++
                    "Unrecognized population morphism "++show (mphnm m)++" at "++show (mphpos m)++"."
 
 
@@ -559,7 +563,7 @@ type CtxTree = Tree ContextFound
 
 toClassification :: CtxTree -> Classification Context
 toClassification (Node (NotFound cxnm) _) = 
-      error $ "!Fatal (module TypeChecker 615): function toClassification: " ++
+      error $ "!Fatal (module TypeChecker 566): function toClassification: " ++
               "NotFound " ++ cxnm
 toClassification (Node (Found cx) tree)   = Cl cx (map toClassification tree)
 

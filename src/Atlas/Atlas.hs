@@ -1,9 +1,9 @@
-{-# OPTIONS_GHC -Wall #-}  
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}  
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
 --in IIS you can enable windows authentication
 module Atlas.Atlas where
 import Auxiliaries (sort')
-import Adl
+import ADL
 import ShowADL
 import Data.Fspec
 import Options
@@ -112,7 +112,7 @@ initDatabase flags fSpec =
                     conn<-connectODBC "DSN=atlas"
                     --TODO handle connection errors
                     --TODO check if actual MySql tables of atlas correspond to function tables
-                    --delete all existing content of this ADL script of this user
+                    --delete all existing content of this Ampersand script of this user
                     --create the pictures in a folder for this user
                     --TODO -> DELETE only deletes concept tables, but there are no foreign keys, so relation table content will not be removed. Duplicates are allowed in those, so this gives no errors. Meterkast.adl does not clean up at all, because new compiles get new script names.
                     _ <- (if islocalcompile 
@@ -120,7 +120,7 @@ initDatabase flags fSpec =
                              else runMany conn ["DELETE FROM "++tablename x++
                                                 " WHERE user='"++user++"' AND script='"++script++"'" 
                                                                            |x<-tables, iscpttable$tableid x] )
-                    --insert population of this ADL script of this user
+                    --insert population of this Ampersand script of this user
                     _ <- insertpops conn fSpec flags tables pictures
                     --end connection
                     commit conn
@@ -169,10 +169,11 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop x = [map toSql$toUserctx ys x|ys<-rd (pop' x), not(iscpttable x) || noduplis(rd (pop' x))]  
        where noduplis xs = (\is -> if length (rd is)==length is 
                                    then True 
-                                   else error$[c|t<-tables,tableid t==x
+                                   else error ("!Fatal (module Atlas 172): "++
+                                               [c|t<-tables,tableid t==x
                                                 ,c<-"Niet-unieke sleutels in database tabel "++tablename t++": "]
-                                            ++(if x==ATRule then "xxx" 
-                                               else " waarschuw de toolbeheerder (evt. via  de cursusbegeleider).")
+                                               ++(if x==ATRule then "xxx" 
+                                                  else " waarschuw de toolbeheerder (evt. via  de cursusbegeleider)."))
                            )     (map (take 1) xs)
    pop':: ATableId -> [[String]]
    pop' ATAtom = [[x]|(_,x)<-cptsets]
@@ -194,7 +195,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATPattern = [[name x,imgURL pic]| x<-patterns fSpec,pic<-pics, origName pic==name x, pType pic == PTPattern ]
    pop' ATPragmaExample = [[example x]|x@Sgn{}<-declarations fSpec, decusr x] 
    pop' ATProp = [[show x]|x<-[Uni,Tot,Inj,Sur,Rfx,Sym,Asy,Trn]]
-                     --REMARK -> decls from pat instead of fSpec!
+                     --REMARK -> declarations from pat instead of fSpec!
    pop' ATRelation = [[relpred x,expl x,example x,decpat x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATRelVar = [[relpred x,cpttype x]|x@Sgn{}<-declarations fSpec, decusr x]
    pop' ATRule = [[cptrule x,cpttype x,explainRule flags fSpec x,r_pat x]|x<-atlasrules]
@@ -249,7 +250,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    --         multrls are rules defined by a multiplicity, which is recognizable by rrdcl r == Just _
    --         homorules by a homogeneous property
    --         the rule from an ISA declaration (I[spec] |- I[gen]) is not presented as a rule in the atlas
-   --REMARK -> HaskellDB inserts rows in alphatic order => rules are sorted alphatically by pattern on behalf of prevrule/nextrule. We would prefer sorting on filepos at this moment, but scripts will disappear.
+   --REMARK -> HaskellDB inserts rows in alphabetic order => rules are sorted alphatically by pattern on behalf of prevrule/nextrule. We would prefer sorting on filepos at this moment, but scripts will disappear.
    atlasrules = userrules ++ multrls ++ homorules ++ signalrules
 {- De volgende code is vervangen door wat eronder staat.
    userrules = sortonfst [(r_pat x++cptrule x,x)|x@Ru{}<-rules fSpec, rrdcl x==Nothing, not (isaRule x), not(r_pat x=="")]
@@ -278,7 +279,7 @@ placeholders (_:[]) = "?"
 placeholders (_:xs) = "?," ++ placeholders xs
    
 --TODO Hier nog eens goed naar kijken. Welke uitvoer willen we hier eigenlijk genereren?
-explainRule :: Options -> Fspc -> Rule -> String
+explainRule :: Options -> Fspc -> (Rule (Relation Concept)) -> String
 explainRule flags fSpec r = format PlainText ( explain fSpec flags r) 
-explainDecl :: Options -> Fspc -> Declaration -> String
+explainDecl :: Options -> Fspc -> Declaration Concept -> String
 explainDecl flags fSpec d = format PlainText ( explain fSpec flags d)

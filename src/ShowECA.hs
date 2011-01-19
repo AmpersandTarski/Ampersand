@@ -1,22 +1,22 @@
 {-# OPTIONS_GHC -Wall #-}
 module ShowECA (showECA) where
    import Data.Fspec
-   import Adl
-   import ShowADL            (showADLcode)
+   import ADL
+   import ShowADL            (ShowADL(..))
 --   import Collection         (Collection (rd))
    
    class ECA a where 
     showECA :: Fspc -> String -> a -> String
 
-   instance ECA ECArule where
+   instance (Identified c, Eq c, Show c, ShowADL c) => ECA (ECArule c) where
     showECA fSpec indent er = showECA fSpec indent (ecaTriggr er)++" EXECUTE    -- (ECA rule "++show (ecaNum er)++")"++
                               indent++showECA fSpec indent (ecaAction er)
 
-   instance ECA Event where
+   instance (Identified c, Eq c, ShowADL c) => ECA (Event c) where
     showECA fSpec _ (On Ins m') = "ON INSERT Delta IN "++showADLcode fSpec m'
     showECA fSpec _ (On Del m') = "ON DELETE Delta FROM "++showADLcode fSpec m'
 
-   instance ECA PAclause where
+   instance Show r => ECA (PAclause r) where
     showECA _ _ p = show p 
 --     where
 --      showFragm indent pa@Do{}

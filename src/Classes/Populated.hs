@@ -1,12 +1,11 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances #-}
 module Classes.Populated                 (Populated(contents,contents'))
 where
-   import Adl.Concept                    (Association(..),Concept(..))
-   import Adl.Pair                       (Pairs,join,flipPair,mkPair,closPair)
-   import Adl.Expression                 (Expression(..))
-   import Adl.MorphismAndDeclaration     (Morphism(..),Declaration(..)
-                                         ,makeDeclaration,makeInline,inline)
-   import CommonClasses                  (Conceptual(conts),lub)    
+   import ADL.Concept                    (Concept(..), SpecHierarchy(..))
+   import ADL.Pair                       (Pairs,join,flipPair,mkPair,closPair)
+   import ADL.Expression                 (Expression(..))
+   import ADL.MorphismAndDeclaration     (Relation(..),Declaration(..),Association(..)
+                                         ,makeDeclaration,inline)
    import Collection                     (Collection (uni,isc))   
    import Data.Maybe                     (fromJust)
    
@@ -18,33 +17,35 @@ where
                      (Just x)->x
    
    instance Populated Concept where
-    contents c 
-       = case conts c of
+    contents c
+       = case cptos c of
            Nothing->Nothing
            Just c'-> Just [mkPair s s|s<-c']
 
-   instance Populated Declaration where
+   instance Populated (Declaration Concept) where
     contents d 
        = case d of
            Sgn{}     -> if(decplug d) then Nothing else Just$decpopu d
-           Isn{}     -> (case conts (despc d) of
+           Isn{}     -> case contents (despc d) of
                                Nothing -> Nothing
-                               (Just as) -> Just$[mkPair a a |a <-as])
-           Iscompl{} -> (case conts (despc d) of
+                               (Just as) -> Just as
+           Iscompl{} -> case contents (despc d) of
                                Nothing -> Nothing
-                               (Just as) -> Just$[mkPair a a' |a<-as,a'<-as,a/=a'])
-           Vs{}      -> (case conts (despc d) of
-                               Nothing -> Nothing
-                               (Just as) -> Just$[mkPair a a' |a<-as,a'<-as])
+                               (Just as) -> Just$[mkPair a a' |(a,_)<-as,(_,a')<-as,a/=a']
+           Vs{}      -> case (cptos (desrc d), cptos (detrg d)) of
+                               (Just as, Just as') -> Just$[mkPair a a' |a<-as,a'<-as']
+                               _ -> Nothing
 
-   instance Populated Morphism where
+   instance Populated (Relation Concept) where
     contents (Mp1{mph1val=x}) = Just$[mkPair x x]
     contents mph | inline mph = contents (makeDeclaration mph)
-    contents mph | otherwise = case (contents (makeDeclaration (makeInline mph))) of
+    contents mph | otherwise = case (contents (makeDeclaration mph)) of
                                  (Just ps) -> Just$ map flipPair ps
                                  Nothing -> Nothing
 
-   instance Populated Expression where
+--   instance (Populated c,Identified c,SpecHierarchy c,Populated rel) => Populated (Expression rel) where
+   instance (Populated c, SpecHierarchy c, Association rel c, Show c, Show rel, Populated rel)
+              => Populated (Expression rel) where
     contents expr  
        = case expr of
             (Tm x _)  -> contents x
@@ -55,24 +56,21 @@ where
             (Fdx x)  -> if null x 
                          then Nothing -- no terms, cannot return -I of generic type
                          else let (dx,_,_,_)
-                                   = foldr1 dagg [(ct,compl ct st tt,st,tt)
+                                   = foldr1 dagg [(ct,compl ct st tt,Just$map fst st,Just$map fst tt)
                                                  | t<-x, ct<-[contents t]
-                                                 , st<-[conts (source t)], tt<-[conts (target t)] ]
+                                                 , Just st<-[contents (source t)], Just tt<-[contents (target t)] ]
                               in dx
             (Fux x)  -> if (elem Nothing (map contents x)) then Nothing else Just$ foldr uni [] [fromJust$ contents f| f<-x ]
             (Fix x)  -> if null x 
                          then Nothing -- no factors: cannot generate V of generic type
                          else if (elem Nothing (map contents x)) then Nothing else
                           Just$ foldr1 isc [fromJust$ contents f| f<-x ]
-            (K0x x)  -> closPair (contents x) `join`
-                         (case conts (source x `lub` target x) of
-                               Nothing -> Nothing
-                               (Just as) -> Just$[mkPair a a |a <-as])
+            (K0x x)  -> closPair (contents x) `join` contents (source x `lub` target x)
             (K1x x)  -> closPair (contents x)
             (Cpx x)  -> case contents x of
                           Nothing->Nothing
                           (Just c)
-                           ->(case cartesianProduct (conts (source x)) (conts (target x)) of
+                           ->(case cartesianProduct (contents (source x)) (contents (target x)) of
                                 Nothing -> Nothing
                                 (Just cp) -> Just$[apair | apair <-cp, not (apair `elem` c)  ])
          where
@@ -86,10 +84,10 @@ where
                = (Just [mkPair x y| x<-sa, y<-tb, not (mkPair x y `elem` jnab)], Just [mkPair x y| x<-sa, y<-tb, mkPair x y `elem` jnab], Just sa, Just tb)
                  where jnab = join ca cb
              dagg (_, _, _, _) (_, _, _, _) = (Nothing,Nothing,Nothing,Nothing)
-             compl (Just a) (Just sa) (Just ta) = Just$ [mkPair x y|x<-sa, y<-ta, not (mkPair x y `elem` a)]  -- complement van a
+             compl (Just a) (sa) (ta) = Just$ [mkPair (fst x) (fst y)|x<-sa, y<-ta, not (mkPair (fst x) (fst y) `elem` a)]  -- complement van a
              compl _ _ _ = Nothing
-             cartesianProduct :: Maybe [String] -> Maybe [String] -> Maybe Pairs
-             (Just xs) `cartesianProduct` (Just ys) = Just$[ mkPair x y | x<-xs,y<-ys] 
+             cartesianProduct :: Maybe Pairs -> Maybe Pairs -> Maybe Pairs
+             (Just xs) `cartesianProduct` (Just ys) = Just$[ mkPair (fst x) (fst y) | x<-xs,y<-ys] 
              _ `cartesianProduct` _ = Nothing
 
 

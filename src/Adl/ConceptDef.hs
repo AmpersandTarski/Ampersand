@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl.ConceptDef    (ConceptDef(..),ConceptDefs)
+module ADL.ConceptDef    (ConceptDef(..),ConceptDefs)
 where
-   import Adl.FilePos    (FilePos)
-   import CommonClasses  (Identified(..)) 
+   import ADL.FilePos    (FilePos)
+   import ADL.MorphismAndDeclaration  (Identified(..)) 
 
    type ConceptDefs = [ConceptDef]
    data ConceptDef 
-      = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the ADL source (filename, line number and column number).
+      = Cd  { cdpos :: FilePos  -- ^ The position of this definition in the text of the Ampersand source (filename, line number and column number).
             , cdnm  :: String   -- ^ The name of this concept. If there is no such concept, the conceptdefinition is ignored.
-            , cdplug:: Bool     -- ^ Whether the user specifically told ADL n—t to store this concept in the database
+            , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand n—t to store this concept in the database
             , cddef :: String   -- ^ The textual definition of this concept.
             , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
             }   deriving (Show)

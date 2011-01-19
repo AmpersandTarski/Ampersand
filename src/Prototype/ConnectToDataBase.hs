@@ -2,7 +2,7 @@
 module Prototype.ConnectToDataBase (connectToDataBase) 
   where
    import Data.List
-   import Adl
+   import ADL
    import Options
    import Languages
    import ShowADL(showADLcode)
@@ -139,11 +139,10 @@ module Prototype.ConnectToDataBase (connectToDataBase)
            ) ++ "return true;\n  }"
          | rule<-rules fSpec, rule'<-[(conjNF . Cpx . normExpr) rule]]
       where
-       code :: Expression -> [Statement]
+       code :: Expression (Relation Concept) -> [Statement]
        code r = case (getCodeFor fSpec [] [codeVariableForBinary "v" r]) of
-                 Nothing -> error "No codes returned (ConnectToDataBase.hs on line 133)"
+                 Nothing -> error "!Fatal (module ConnectToDataBase 144): No codes returned"
                  Just x  -> x
-       dbError :: Rule -> String
        dbError rule
         = phpShow((langwords!!0)++" ("++show (source rule)++" ")++".$v[0][0]."++phpShow(","++show (target rule)++" ")++".$v[0][1]."++
           phpShow(")\n"++(langwords!!1)++": \""++format PlainText (explain fSpec flags rule)++"\"<BR>")++"" 

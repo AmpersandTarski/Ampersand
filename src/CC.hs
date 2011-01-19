@@ -12,7 +12,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       )
    import Collection  (Collection(..))
    import Auxiliaries (sort)
-   import Adl         (Architecture(..)
+   import ADL         (Architecture(..)
                       ,Concept(..)
                       ,ConceptDef(..)
                       ,Context(..)
@@ -21,7 +21,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       ,Gen(..)
                       ,KeyDef(..)
                       ,Label(..)
-                      ,Morphism(..)
+                      ,Relation(..)
                       ,Service(..),ObjectDef(..),ObjectDefs
                       ,RoleRelation(..),RoleService(..)
                       ,Pairs,Paire,mkPair
@@ -69,7 +69,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    pArchitecture        :: Parser Token Architecture
    pArchitecture = Arch <$> pList1 pContext
 
-   pBind             :: Parser Token (Declaration,String)
+   pBind             :: Parser Token (Declaration Concept,String)
    pBind              = rebuild <$ pKey "BIND" <*> pDeclaration <* pKey "TOPHP" <*> (pConid <|> pString)
                        where rebuild d s = (d,s)
 
@@ -105,12 +105,12 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                               }
 
    data ContextElement = CPat Pattern
-                       | CDcl Declaration
-                       | CRul Rule
+                       | CDcl (Declaration Concept)
+                       | CRul (Rule (Relation Concept))
                        | CCon ConceptDef
                        | CKey KeyDef
                        | Csvc Service
-                       | CPop Morphism Pairs
+                       | CPop (Relation Concept) Pairs
                        | CSqlPlug ObjectDef
                        | CPhpPlug ObjectDef
                        | CXpl PExplanation
@@ -123,7 +123,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                           lang str = case str of
                                       "DUTCH"      -> Dutch
                                       "ENGLISH"    -> English
-                                      _ -> error ("!Fatal (module CC 89): "++if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
+                                      _ -> error ("!Fatal (module CC 129): "++if null str then "must specify a language in pLanguageID" else "language "++str++" is not supported")
 
    pRefID             :: Parser Token String
    pRefID              = (pKey "REF" *> pString) `opt` []
@@ -172,13 +172,13 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                               , inftestexpr = []
                                               } 
 
-   data PatElem      = Pr Rule
-                     | Pg Gen
-                     | Pd Declaration
+   data PatElem      = Pr (Rule (Relation Concept))
+                     | Pg (Gen Concept)
+                     | Pd (Declaration Concept)
                      | Pc ConceptDef
                      | Pk KeyDef
                      | Pe PExplanation
-                     | Ptest (PExpression Morphism (Maybe Sign))
+                     | Ptest (PExpression (Relation Concept) (Maybe Sign))
 
    pPatElem         :: Parser Token PatElem
    pPatElem          = Pr <$> pRuleDef      <|>
@@ -196,7 +196,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    pAlways          :: Parser Token (String, FilePos)
    pAlways           = ( pKey "RULE" *> pADLid_val_pos <* pKey "MAINTAINS" ) `opt` ("",Nowhere)
 
-   pRuleDef         :: Parser Token Rule
+   pRuleDef         :: Parser Token (Rule (Relation Concept))
    pRuleDef          = hc True            <$>   -- This boolean tells whether this rule will be a signal rule or a maintaining rule.
                           pSignal         <*>   -- "RULE m SIGNALS" (or "RULE m MAINTAINS in other cases)
                           pExpr           <*>   -- the antecedent
@@ -258,7 +258,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                , r_sgl = isSg
                                , srrel = emptySignalDeclaration lbl po isSg
                                }
-                         where defd=error ("!Fatal (module CC 222): defd undefined in pRuleDef "++showADL expr)
+                         where defd=error ("!Fatal (module CC 261): defd undefined in pRuleDef "++showADL expr)
                         emptySignalDeclaration lbl po isSg
                          = Sgn lbl         -- decnm
                                cptAnything -- desrc
@@ -276,11 +276,11 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                ""          -- decpat
                                True        -- decplug
                         rulepos (lbl,po) po' = if null lbl then po' else po -- position of the label is preferred. In its absence, take the position of the root operator of this rule's expression.
-                        string2ExplainAllLang :: String -> [AutoExplain]      -- TODO: This is a workaround to cope with the fact that in the current ADL syntax, it cannot be determined in what language the EXPLANATION part of the rule is written in. 
+                        string2ExplainAllLang :: String -> [AutoExplain]      -- TODO: This is a workaround to cope with the fact that in the current Ampersand syntax, it cannot be determined in what language the EXPLANATION part of the rule is written in. 
                         string2ExplainAllLang str = [string2AutoExplain (defaultFlags {language=Dutch}) str]
                                                  ++ [string2AutoExplain (defaultFlags {language=English}) str]
                         
-   pGen             :: Parser Token Gen
+   pGen             :: Parser Token (Gen Concept)
    pGen              = rebuild <$ pKey "GEN" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = G p (cptnew gen ) (cptnew spc ) ""
 
@@ -304,7 +304,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                         g xs = if odd (length cs) then take 1 cs else [] where cs = concat xs
 
                               
-   --Morphisms, or expressions in parentheses are terms with optional pre and post unary operators and optional type directive.
+   --Relations, or expressions in parentheses are terms with optional pre and post unary operators and optional type directive.
    --pExpression parses expressions composed of these terms and (>1)-ary operators.
    --pMorphism has already parsed the first type directive after a morphism without post-operator i.e. r[A*B][C*D] is possible.
      --type correct examples given r::A*B i.e. [Y*Y] is irrelevant.
@@ -316,7 +316,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
         -- -r[Y*Y][A*B]
         -- -r[A*B]~
         -- -r[Y*Y]~[B*A]  
-   pPTerm :: Parser Token (PExpression Morphism (Maybe Sign))
+   pPTerm :: Parser Token (PExpression (Relation Concept) (Maybe Sign))
    pPTerm  = pe <$> preOp <*> (pSpec '(' *> pPExpression <* pSpec ')') <*> postOp
                     <*> pType
          <|> pm <$> preOp <*> pMorphism <*> postOp
@@ -349,70 +349,96 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
            [x] -> Just (x,x) 
            [x,y] -> Just (x,y) 
            _ -> Nothing
-   pPExpression :: Parser Token (PExpression Morphism (Maybe Sign))
+   pPExpression :: Parser Token (PExpression (Relation Concept) (Maybe Sign))
    pPExpression  = foldr pMultOp pPTerm [Re,Ri,Fu,Fi,Fd,Fc] --The order of these operators is relevant (convention p.50 Maddux).
      where 
      pMultOp mop pnext = let g [x]= x
                              g xs = MulPExp mop xs Nothing
                          in g <$> pList1Sep (pKey (showADL mop)) pnext   
 
-   pExpr            :: Parser Token Expression
+   pExpr            :: Parser Token (Expression (Relation Concept))
    pExpr             = f <$> pList1Sep (pKey "\\/") pFactorI
                        where f [x] = x
                              f  xs = Fux xs
 
 
 
-   pFactorI         :: Parser Token Expression
+   pFactorI         :: Parser Token (Expression (Relation Concept))
    pFactorI          = f <$> pList1Sep (pKey "/\\") pFactor
                        where f [x] = x
                              f  xs = Fix xs
 
 
 
-   pFactor          :: Parser Token Expression
+   pFactor          :: Parser Token (Expression (Relation Concept))
    pFactor           = f <$> pList1Sep (pKey "!") pTermD
                        where f [t]     = t
                              f ts      = Fdx ts
 
 
 
-   pTermD           :: Parser Token Expression
+   pTermD           :: Parser Token (Expression (Relation Concept))
    pTermD            = f <$> pList1Sep (pKey ";") pTerm
                        where f [Tc f'] = f'
                              f [t]     = t
                              f ts      = F ts
 
-   pTerm            :: Parser Token Expression
+   pTerm            :: Parser Token (Expression (Relation Concept))
    pTerm             = tm <$> (preStr `opt` []) <*> pMorphism <*> (postStr `opt` [])                            <|>
                        tc <$> (preStr `opt` []) <*> (pSpec '(' *> pExpr <* pSpec ')') <*> (postStr `opt` [])
                        where
-                        tm xs pm ys   = f (Tm pm (-1)) (xs++ys)
-                        tc xs pc ys   = f pc (xs++ys)
+                        tm xs pm ys  = f (Tm pm (-1)) (xs++ys)
+                        tc xs pc ys  = f pc (xs++ys)
                         f t ('~':xs) = flp (f t xs)
                         f t ('*':xs) = K0x (f t xs)
                         f t ('+':xs) = K1x (f t xs)
                         f t ('-':xs) = Cpx (f t xs)
-                        f _ (_:_)    = error ("!Fatal (module CC 357). Consult your dealer!")
+                        f _ (_:_)    = error ("!Fatal (module CC 396). Consult your dealer!")
                         f t []       = t
 
-   pMorphism        :: Parser Token Morphism
+   pMorphism        :: Parser Token (Relation Concept)
    pMorphism         = iden <$ pKey "I" <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)             <|>
                        v'   <$ pKey "V" <*> pTwo                                                                 <|>
                        rebuild <$> pVarid_val_pos <*> pTwo                                                       <|>
                        single  <$> pAtom 
                                <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)
-                       where rebuild (nm,pos') atts = Mph nm pos' (take 2 (atts++atts)) (cptAnything,cptAnything) True
-                                                      (Sgn nm cptAnything cptAnything [] [] "" "" "" [] Nowhere 0 (nm/="") False [] True)
-                             single nm c = Mp1 nm                   -- mph1val
-                                               [c|c/=Anything]      -- mphats 
-                                               c                    -- mph1typ
+                       where rebuild (nm,pos') atts
+                              = Mph  { mphnm = nm                     -- ^ the name of the morphism. This is the same name as
+                                                                      --   the declaration that is bound to the morphism.
+                                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
+                                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
+                                     , mphpos = pos'                  -- ^ the position of the rule in which the morphism occurs
+                                     , mphats = (take 2 (atts++atts))              -- ^ the attributes specified inline
+                                     , mphsrc = cptAnything           -- ^ the source. Together with the target, this forms the type.
+                                     , mphtrg = cptAnything           -- ^ the target. Together with the source, this forms the type.
+                                     , mphyin = True                  -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
+                                     , mphdcl = Sgn { decnm   = nm           -- ^ the declaration bound to this morphism.
+                                                    , desrc   = cptAnything  --   If not mphyin, then target m<=source (mphdcl m) and source m<=target (mphdcl m).
+                                                    , detrg   = cptAnything  --   In this case, we write m~ (pronounce: m-flip or m-wok)
+                                                    , decprps = []           --   If mphyin, then source m<=source (mphdcl m) and target m<=target (mphdcl m).
+                                                    , decprps_calc = []      --   In that case, we write m
+                                                    , decprL  = ""         
+                                                    , decprM  = ""
+                                                    , decprR  = ""
+                                                    , decpopu = []
+                                                    , decfpos = Nowhere
+                                                    , decid   = 0
+                                                    , deciss  = (nm/="")
+                                                    , decusr  = False
+                                                    , decpat  = []
+                                                    , decplug = True
+                                                    }
+                                     }
+                             single nm c = Mp1 { mph1val = nm
+                                               , mphats  = [c|c/=Anything]
+                                               , mph1typ = c
+                                               }     
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a
                              v' []                  = V [] (cptAnything, cptAnything)
                              v' [a]                 = V [c|c/=cptAnything] (c,c) where c=emp a
                              v' [a,b]               = V [c|c<-[emp a,emp b],c/=cptAnything] (emp a,emp b)
-                             v' _  = error ("!Fatal (module CC 376): relation cannot have more than two concepts as type")
+                             v' _  = error ("!Fatal (module CC 415): relation cannot have more than two concepts as type")
                              emp c | c == cptnew ""     = cptAnything
                                    | otherwise          = c
                              pTwo = (one' <$ pSpec '[' <*> pConcept <* pSpec ']'  <|>
@@ -491,14 +517,15 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 
    pService         :: Parser Token Service
    pService          = lbl <$> (pKey "SERVICE" *> pADLid_val_pos) <*>
-                               (pParams `opt` [])                 <*>  -- ^ a list of morphisms, which are editable within this service.
+                               (pParams `opt` [])                 <*>  -- ^ a list of relations, which are editable within this service.
                                (pArgs `opt` [])                   <*>  -- ^ a list of arguments for code generation.
                                (pKey ":" *> pExpr)                <*>  -- ^ the context expression (mostly: I[c])
                                (pAttrs `opt` [])                       -- ^ the subobjects
-                       where lbl :: (String, FilePos) -> [Morphism] -> [[String]] -> Expression -> [ObjectDef] -> Service
+                       where lbl :: (String, FilePos) -> [Relation Concept] -> [[String]] -> Expression (Relation Concept) -> [ObjectDef] -> Service
                              lbl (nm,p) params args expr ats
                               = Serv { svName   = nm
                                      , svParams = params
+                                     , svViols  = []
                                      , svArgs   = args
                                      , svObj    = Obj { objnm        = nm    
                                                       , objpos       = p
@@ -525,7 +552,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    optional a        = Just <$> a <|> pSucceed Nothing
 
 
-   pDeclaration     :: Parser Token Declaration
+   pDeclaration     :: Parser Token (Declaration Concept)
    pDeclaration      = rebuild <$> pVarid 
                                <*> pKey_pos "::" 
                                <*> pConcept 
@@ -546,7 +573,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                      -> Bool
                                      -> [String]
                                      -> Pairs
-                                     -> Declaration
+                                     -> Declaration Concept
                              rebuild nm pos' s fun' t bp1 props bp2 pragma content
                                = Sgn nm s t props' props' (pr!!0) (pr!!1) (pr!!2) content pos' 0 False True [](bp1||bp2)
                                  where pr = pragma++["","",""]
@@ -572,7 +599,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                              f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
                              k "TOT" = Tot
                              k "UNI" = Uni
-                             k s = error ("!Fatal (module CC 499): Unknown property tag has been used: " ++ show s)
+                             k s = error ("!Fatal (module CC 575): Unknown property tag has been used: " ++ show s)
 
    pProp'           :: Parser Token String
    pProp'            = pKey "UNI" <|> pKey "TOT" <|> pKey "PROP"

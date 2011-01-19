@@ -7,7 +7,7 @@ import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
 import TypeChecker(typecheck)
-import Adl
+import ADL
 import Rendering.PandocAux (writepandoc)
 import Text.Pandoc 
  
@@ -29,7 +29,7 @@ parseADL adlstring flags fnFull =
                                                                Nothing   -> contexts
                                         specificName = case contextName flags of
                                                                Just cname -> cname
-                                                               Nothing   -> error ("!Fatal (module Parser 34): Contact your dealer!")   --Nothing is niet aan de orde hier
+                                                               Nothing   -> error ("!Fatal (module Parser 32): Contact your dealer!")   --Nothing is niet aan de orde hier
                 (_, errs)-> if not(null cs) && theme flags==ProofTheme && fspecFormat flags==FLatex
                             then do {maketex;makepdf
                                     ; fail "report written"} --Something must be returned

@@ -1,82 +1,81 @@
 {-# OPTIONS_GHC -Wall #-}
-module Adl ( Architecture(..)
+module ADL ( Architecture(..)
            , Context(..),Contexts,RoleService(..),RoleRelation(..)
            , Pattern(..),Patterns
-           , Rule(..),Rules,consequent, rulefromProp, ruleviolations
+           , Rule(..),mapRule,Rules,consequent, rulefromProp, ruleviolations
            , KeyDef(..),KeyDefs
            , Population(..),Populations
            , ObjectDef(..),ObjectDefs,Service(..),actions
-           , Expression(..),PExpressions,PExpression(..), Expressions,isPos,isNeg,insParentheses,UnOp(..),MulOp(..)
+           , Expression(..),mapExpression,foldlExpression,foldrExpression,PExpressions,PExpression(..)
+           , Expressions,isPos,isNeg,idsOnly,insParentheses,UnOp(..),MulOp(..),isF,isFd,isFi,isFu,isI
            , Gen(..),Gens
-           , Morphism(..),Morphisms,inline,makeMph,makeInline
-           , Declaration(..),Declarations,isSgn
+           , Relation(..),mapMorphism,inline,makeMph
+           , Declaration(..),isSgn
            , ConceptDef(..),ConceptDefs
-           , Concept(..), Sign, GenR, Concepts, v,cptnew,cptS,cptos'
+           , Concept(..), Conceptual(..), SpecHierarchy(..), Sign, GenR, v,cptnew,cptS,cptos'
            , RuleType(..)
+           , mIs
            , Prop(..)
            , isaRule
            , FilePos(..), Numbered(..)
-           , makeDeclaration,mIs,ruleType,applyM
+           , makeDeclaration,ruleType,showSign,applyM
            , antecedent,notCp,cptAnything
            , Object(..)
            , ViewPoint(..)
            , explanationDeclarations
-           , Morphical(..),Signaling(..)
-           , Association(..)
-           , Morphic(..),normExpr
-           , MorphicId(..)
+           , ConceptStructure(..),Signaling(..)
+           , Association(..), Relational(..)
+           , normExpr
            , Populated(..)
            , Substitutive(..)
-           , Identified(..)
+           , Identified(..), uniqueNames
            , Label(..)
            , Paire,Pairs,srcPaire,trgPaire,mkPair
-           , InsDel(..)
-           , ECArule(..)
-           , Event(..)
-           , PAclause(..)
+           , isAll, isChc, isBlk, isNop, isDo, InsDel(..), ECArule(..), Event(..), PAclause(..)
            , PExplanation(..),PExplObj(..), Explanations,ExplObj(..)
            , Explanation(..)
            )
 where
 
-   import Adl.Concept                    (Concept(..),Concepts,cptnew,cptS,cptAnything,cptos' 
+   import ADL.Concept                    (Concept(..),Conceptual(..),cptnew,cptS,cptAnything,cptos' 
                                          ,Sign,GenR()
-                                         ,Association(..)
-                                         ,MorphicId(..),Morphic(..),Signaling(..))
-   import Adl.ConceptDef                 (ConceptDef(..),ConceptDefs)
-   import Adl.Context                    (Context(..),Contexts
+                                         ,SpecHierarchy(..)
+                                         ,Signaling(..))
+   import ADL.ConceptDef                 (ConceptDef(..),ConceptDefs)
+   import ADL.Context                    (Context(..),Contexts
                                          ,RoleService(..),RoleRelation(..)
                                          ,Architecture(..))
-   import Adl.Expression                 (Expression(..),PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
-                                         ,isPos,isNeg,v,notCp,insParentheses)
-   import Adl.FilePos                    (FilePos(..)
+   import ADL.Expression                 (Expression(..),mapExpression,foldlExpression,foldrExpression,PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
+                                         ,isPos,isNeg,idsOnly,isF,isFd,isFi,isFu,isI,v,notCp,insParentheses)
+   import ADL.FilePos                    (FilePos(..)
                                          ,Numbered(..))
-   import Adl.Gen                        (Gen(..),Gens)
-   import Adl.KeyDef                     (KeyDef(..),KeyDefs)
-   import Adl.Label                      (Label(..))
-   import Adl.MorphismAndDeclaration     (Morphism(..),Morphisms
-                                         ,Declaration(..),Declarations
+   import ADL.Gen                        (Gen(..),Gens)
+   import ADL.KeyDef                     (KeyDef(..),KeyDefs)
+   import ADL.Label                      (Label(..))
+   import ADL.MorphismAndDeclaration     (Relation(..),mapMorphism
+                                         ,Association(..),Relational(..)
+                                         ,Declaration(..)
+                                         ,Identified(..),uniqueNames
                                          ,isSgn
                                          ,makeMph,makeDeclaration
-                                         ,inline,makeInline
-                                         ,mIs,applyM)
-   import Adl.ObjectDef                  (ObjectDef(..),ObjectDefs,Service(..),actions)
-   import Adl.ECArule                    (InsDel(..),ECArule(..),Event(..),PAclause(..))
-   import Adl.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
+                                         ,inline
+                                         ,mIs,showSign,applyM)
+   import ADL.ObjectDef                  (ObjectDef(..),ObjectDefs,Service(..),actions)
+   import ADL.ECArule                    (isAll, isChc, isBlk, isNop, isDo, InsDel(..),ECArule(..),Event(..),PAclause(..))
+   import ADL.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          
    import Classes.Populated              (Populated(..))
-   import Adl.Pattern                    (Pattern(..),Patterns)
-   import Adl.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
-   import Adl.Population                 (Population(..),Populations)
-   import Adl.Prop                       (Prop(..))
-   import Adl.Rule                       (Rule(..),Rules
+   import ADL.Pattern                    (Pattern(..),Patterns)
+   import ADL.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
+   import ADL.Population                 (Population(..),Populations)
+   import ADL.Prop                       (Prop(..))
+   import ADL.Rule                       (Rule(..),mapRule,Rules
                                          ,RuleType(..),rulefromProp, isaRule, ruleviolations
                                          ,consequent,antecedent,ruleType
                                          ,normExpr)
-   import Classes.Morphical              (Morphical(..))
+   import Classes.ConceptStructure              (ConceptStructure(..))
    import Classes.Substitutive           (Substitutive(..))
    import Classes.Object                 (Object(..))
    import Classes.ViewPoint              (ViewPoint(..))
    import Classes.Explainable            (explanationDeclarations)
-   import CommonClasses                  (Identified(..))
 

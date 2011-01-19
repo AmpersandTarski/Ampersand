@@ -1,36 +1,29 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleContexts #-}
 module NormalForms (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute)
 where
---   import Adl
    import Strings        (commaEng)
    import Collection     (Collection (..))
    import Auxiliaries    (eqCl,eqClass)
-   import ShowADL        (showADL)
-   import Adl.ECArule    (PAclause(..),isAll,isChc,isBlk,isNop,isDo)
-   import Adl.Expression 
-   import Adl.MorphismAndDeclaration (inline,mIs)
-   import Adl.Concept
-   import CommonClasses
-   import Classes.Morphical
+   import ADL
 {- Normalization of process algebra clauses -}
 
-   normPA :: PAclause -> PAclause
+   normPA :: PAclause (Relation Concept) -> PAclause (Relation Concept)
    normPA expr = expr' 
        where (expr',_,_) = last (proofPA expr)
 
    type Proof a = [(a, [String], String)]
 
-   proofPA :: PAclause -> Proof PAclause
+   proofPA :: PAclause (Relation Concept) -> Proof (PAclause (Relation Concept))
    proofPA expr = ({-reverse.take 3.reverse.-}pPA) expr
     where pPA expr' = case normstepPA expr' of
                        ( _ , []  ,equ) -> [(expr',[]   ,equ)]    -- is dus (expr,[],"<=>")
                        (res,steps,equ) -> [(expr',steps,equ)]++pPA res
 
-   normstepPA :: PAclause -> (PAclause,[String],String)
+   normstepPA :: PAclause (Relation Concept) -> (PAclause (Relation Concept),[String],String)
    normstepPA expr = (res,ss,"<=>")
     where
      (res,ss) = norm expr
-     norm :: PAclause -> (PAclause,[String])
+     norm :: PAclause (Relation Concept) -> (PAclause (Relation Concept),[String])
      norm (Chc [] ms)  = (Blk ms, ["Run out of options"])
      norm (Chc [d] ms) = (d', ["Flatten Singleton"])
                        where d' = case d of
@@ -38,7 +31,7 @@ where
                                     _     -> d{paMotiv = ms} 
 -- BECAUSE? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats. Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter. 
 -- Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
--- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie Adl.ECArule).
+-- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
 -- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
 -- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
 -- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
@@ -60,7 +53,7 @@ where
                        | (not.null) [d| d<-ds, isAll d] = (All (rd [ d' | d<-ds, d'<-if isAll d then let All ops' _ = d in ops' else [d] ]) ms, ["flatten All"])  -- flatten
                        | (not.null) [Blk| Blk{}<-ops] = (Blk{paMotiv = [m| op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
                        | (not.null) [Nop| Nop{}<-ops] = (All [op| op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.morlist.paTo.head) cl|cl<-long]++"together"])
+                       | (not.null) long              = (All ds' ms, ["Take the expressions for "++commaEng "and" [(name.head.(morlist::Expression (Relation Concept)->[Relation Concept]).paTo.head) cl|cl<-long]++"together"])
                        | otherwise = (All ds ms, [])
                        where ds' = [ let p=head cl in
                                      if length cl==1 then p else p{paTo=disjNF (Fux[paDelta c| c<-cl]), paMotiv=concat (map paMotiv cl)}
@@ -69,7 +62,9 @@ where
                              nds  = map norm ds
                              msgs = (concat.map snd) nds
                              ops  = map fst nds
+                             dCls :: [[PAclause (Relation Concept)]]
                              dCls = eqCl to [d| d<-ds, isDo d]
+                             long :: [[PAclause (Relation Concept)]]
                              long = [cl| cl<-dCls, length cl>1]
                              to d@(Do{}) = (paSrt d,paTo d)
                              to _        = error("!Fatal (module NormalForms 70): illegal call of to(d)")
@@ -92,24 +87,30 @@ where
 
 {- Normalization of expressions -}
 
-   simplify :: Expression -> Expression
+   simplify :: (Identified c, Eq c, Show c, ConceptStructure c c) => Expression (Relation c) -> Expression (Relation c)
    simplify expr = expr' 
-       where (expr',_,_) = last (simpProof expr)
+       where (expr',_,_) = last (simpProof shw expr)
+             shw _ = ""
    
-   simpProof :: Expression -> Proof Expression
-   simpProof expr    
+   simpProof :: (Identified c, Eq c, Show c, SpecHierarchy c, ConceptStructure c c) =>
+                (Expression (Relation c) -> String) -> Expression (Relation c) -> Proof (Expression (Relation c))
+   simpProof shw expr    
     = if expr==res
       then [(expr,[],"<=>")]
-      else (expr,steps,equ):simpProof res
-    where (res,steps,equ) = normStep True True expr
+      else (expr,steps,equ):simpProof shw res
+    where (res,steps,equ) = normStep shw True True expr
 
-   normStep :: Bool -> Bool -> Expression -> (Expression,[String],String)
-   normStep eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
+   normStep :: (Identified c, Show c, SpecHierarchy c, ConceptStructure c c) => 
+               (Expression (Relation c) -> String) -> Bool -> Bool ->
+               Expression (Relation c) -> (Expression (Relation c),[String],String) -- This might be generalized to "Expression r" if it weren't for the fact that flip is embedded in the Relation type.
+   normStep shw   -- a function to print an expression. Might be "showADL" or "showADLcode fSpec", or any other...
+            eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
             simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
             expr = (res,ss,equ)
     where
      (res,ss,equ) = nM expr []
-     nM :: Expression -> Expressions -> (Expression,[String],String)
+--     nM :: (Identified c, Show c, SpecHierarchy c, ConceptStructure c c) => 
+--         Expression (Relation c) -> [Expression (Relation c)] -> (Expression (Relation c),[String],String)
      nM (K0x e')      _    = (K0x res', steps, equ')
                              where (res',steps,equ') = nM e' []
      nM (K1x e')      _    = (K1x res', steps, equ')
@@ -127,8 +128,8 @@ where
                              where (res',steps,equ') = nM e' []
      nM (Tc f)       _    = nM f []
      nM (F [t])      _    = nM t []
-     nM (F (k:ks))   rs   | or [isF x|x<-k:ks]      = nM (F [y| x<-k:ks, y<-if isF x then unF x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
-                          | or [isIdent x|x<-k:ks]  = (F [x|x<-k:ks,not (isIdent x)], ["x;I = x"], "<=>")
+     nM (F (k:ks))   rs   | or [isF x|x<-k:ks]  = nM (F [y| x<-k:ks, y<-if isF x then unF x else [x]]) rs  -- haakjes verwijderen o.g.v. associativiteit
+                          | or [isI x|x<-k:ks]  = (F [x|x<-k:ks,not (isI x)], ["x;I = x"], "<=>")
                    -- If only simplification is required, we are done now.
                           | simpl                   = (if isF f then F (t:unF f) else F [t,f], steps++steps', fEqu [equ',equ''])
                           | not eq && length ks>1 && isFd g && length gs>1
@@ -169,9 +170,9 @@ where
                      -- If only simplification is required, we are done now.
                             | simpl                       = (if isFi f then Fix (t:unF f) else Fix [t,f], steps++steps', fEqu [equ',equ''])
                      -- Absorb equals:    r/\r  -->  r
-                            | or [length cl>1|cl<-absor3] = (Fix [head cl| cl<-absor3], [showADL e++"/\\"++showADL e++" = "++showADL e| cl<-absor3, length cl>1, let e=head cl], "<=>")
+                            | or [length cl>1|cl<-absor3] = (Fix [head cl| cl<-absor3], [shw e++"/\\"++shw e++" = "++shw e| cl<-absor3, length cl>1, let e=head cl], "<=>")
                      -- Inconsistency:    r/\-r   -->  False
-                            | not (null incons)           = (Fux [], [showADL (notCp (head incons))++"/\\"++showADL (head incons)++" = V-"], "<=>")
+                            | not (null incons)           = (Fux [], [shw (notCp (head incons))++"/\\"++shw (head incons)++" = V-"], "<=>")
                      -- Inconsistency:    Fu []   -->  False
                             | k==Fux []                    = (Fux [], ["inconsistency"], "<=>")
   -- this is unreachable    | k==Fi []                    = (Fi ks, ["x/\\V = x"], "<=>")
@@ -179,13 +180,13 @@ where
                             | or[x==Fux []|x<-ks]          = (Fux [], ["x/\\V- = V-"], "<=>")
                      -- Absorb if r is antisymmetric:    r/\r~  -->  I    (note that a reflexive r incurs r/\r~ = I)
                             | or [length cl>1|cl<-absor2] = ( Fux [if length cl>1 then Tm (mIs (source e)) (-1) else e| cl<-absor2, let e=head cl]
-                                                            , [showADL e++"/\\"++showADL (flp e)++" = I, because"++showADL e++" is antisymmetric"| cl<-absor2, let e=head cl]
+                                                            , [shw e++"/\\"++shw (flp e)++" = I, because"++shw e++" is antisymmetric"| cl<-absor2, let e=head cl]
                                                             , if and [isRfx (head cl)| cl<-absor2, length cl>1] then "<=>" else "==>"
                                                             )
                      -- Absorb:    (x\\/y)/\\y  -->  y
-                            | isFu k && not (null absor0) = let f'=head absor0 in (Fix ks, ["absorb "++showADL k++" because of "++showADL f'++" ((x\\/y)/\\y = y))"], "<=>")
+                            | isFu k && not (null absor0) = let f'=head absor0 in (Fix ks, ["absorb "++shw k++" because of "++shw f'++" ((x\\/y)/\\y = y))"], "<=>")
                      -- Absorb:    (x\\/-y)/\\y  -->  x/\\y
-                            | isFu k && not (null absor1) = let (ts,f')=head absor1 in (Fix (ts++ks), ["absorb "++showADL f'], "<=>")
+                            | isFu k && not (null absor1) = let (ts,f')=head absor1 in (Fix (ts++ks), ["absorb "++shw f'], "<=>")
                             | otherwise                   = (if isFi f then Fix (t:unF f) else Fix [t,f], steps++steps', fEqu [equ',equ''])
                             where (t,steps, equ')  = nM k []
                                   (f,steps',equ'') = nM (Fix ks) (k:rs)
@@ -200,16 +201,17 @@ where
                      -- If only simplification is required, we are done now.
                             | simpl                       = (if isFu f then Fux (t:unF f) else Fux [t,f], steps++steps', fEqu [equ',equ''])
                      -- Absorb equals:    r\/r  -->  r
-                            | or [length cl>1|cl<-absor3] = (Fux [head cl| cl<-absor3], [showADL e++"\\/"++showADL e++" = "++showADL e| cl<-absor3, length cl>1, let e=head cl], "<=>")
+                            | or [length cl>1|cl<-absor3] = (Fux [head cl| cl<-absor3], [shw e++"\\/"++shw e++" = "++shw e| cl<-absor3, length cl>1, let e=head cl], "<=>")
                      -- Tautology:    r\/-r  -->  V
                             | or [length cl>1|cl<-absor2] = let ncp (Cpx e) = e; ncp e = e in
-                                                            (Fix [], take 1 [if length (morlist e)>1 then "let "++ showADL (ncp e)++" = e. Since -e\\/e = V we get" else showADL (notCp e)++"\\/"++showADL e++" = V"| cl<-absor2, length cl>1, let e=head cl], "<=>")
+                                                            (Fix [], take 1 ["let "++ shw (ncp e)++" = e. Since -e\\/e = V we get"
+                                                                            | cl<-absor2, length cl>1, let e=head cl], "<=>")
                             | k==Fix []                    = (Fix [], ["tautology"], "<=>")
   -- this is unreachable    | k==Fu []                    = (Fu ks, ["x\\/V- = x"], "<=>")
                      -- Tautology:    r\/V  -->  V
                             | or[x==Fix []|x<-ks]          = (Fix [], ["x\\/V = V"], "<=>")
-                            | isFi k && not (null absor0) = let f'=head absor0 in (Fux ks, ["absorb "++showADL k++" because of "++showADL f'++" ((x/\\y)\\/y = y))"], "<=>")
-                            | isFi k && not (null absor1) = let (ts,f')=head absor1 in (Fux (ts++ks), ["absorb "++showADL f'++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
+                            | isFi k && not (null absor0) = let f'=head absor0 in (Fux ks, ["absorb "++shw k++" because of "++shw f'++" ((x/\\y)\\/y = y))"], "<=>")
+                            | isFi k && not (null absor1) = let (ts,f')=head absor1 in (Fux (ts++ks), ["absorb "++shw f'++" ((x/\\y-)\\/y = x\\/y))"], "<=>")
                             | otherwise                   = (if isFu f then Fux (t:unF f) else Fux [t,f], steps++steps', fEqu [equ',equ''])
                             where (t,steps, equ')  = nM k []
                                   (f,steps',equ'') = nM (Fux ks) (k:rs)
@@ -220,8 +222,8 @@ where
      nM (Tm m n) _        | isSym m && not (inline m) =  (Tm (flp m) n,[name m++" is symmetric"],"<=>")
                    -- Equivalence relation:    r  -->  I   if r is reflexive, transitive and symmetric.
                           | isEq && not (isIdent m)   = if isRfx m
-                                                        then (Fix [Tm (mIs (source m)) n], [showADL m++" is an equivalence relation"], "<=>")
-                                                        else (Fix [Tm (mIs (source m)) n], [showADL m++" is transitive and symmetric"], "==>")
+                                                        then (Fix [Tm (mIs (source m)) n], [name m++" is an equivalence relation"], "<=>")
+                                                        else (Fix [Tm (mIs (source m)) n], [name m++" is transitive and symmetric"], "==>")
                                                         where isEq = isTrn m && isSym m
      nM x _               = (x,[],"<=>")
 
@@ -229,7 +231,7 @@ where
    fEqu :: [String] -> String
    fEqu ss = if and [s=="<=>" | s<-ss] then "<=>" else "==>"
 
-   unF :: Expression -> Expressions
+   unF :: Expression r -> Expressions r
    unF (Fix es')  = es'
    unF (Fux es')  = es'
    unF (Fdx es')  = es'
@@ -244,12 +246,12 @@ so  distribute Fi Fu isFi isFu (Fi [r, Fu [s,t]]) = Fu [Fi [r,s], Fi[r,s]]
 and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
 -}
 
-   distribute :: (Expressions -> Expression)
-              -> (Expressions -> Expression)
-              -> (Expression -> Bool)
-              -> (Expression -> Bool)
-              -> Expression
-              -> Expression
+   distribute :: ([Expression r] -> Expression r)
+              -> ([Expression r] -> Expression r)
+              -> (Expression r -> Bool)
+              -> (Expression r -> Bool)
+              -> Expression r
+              -> Expression r
    distribute f g isf isg = dis
     where
      dis x | isf x && null xs      = g [f []]
@@ -282,17 +284,20 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
                  ys = unF k
 -}
 
-   nfProof :: Expression -> Proof Expression
-   nfProof expr = nfPr True expr -- The boolean True means that clauses are derived using <=> derivations.
-   nfPr :: Bool-> Expression-> [(Expression, [String], String)]
-   nfPr eq expr
+   nfProof :: (Identified c, Show c, ConceptStructure c c) =>
+              (Expression (Relation c) -> String) -> Expression (Relation c) -> Proof (Expression (Relation c))
+   nfProof shw expr = nfPr shw True expr -- The boolean True means that clauses are derived using <=> derivations.
+   nfPr :: (Identified c, Show c, ConceptStructure c c) =>
+           (Expression (Relation c) -> String) -> Bool-> Expression (Relation c) -> [(Expression (Relation c), [String], String)]
+   nfPr shw eq expr
     = if expr==res
       then [(expr,[],"<=>")]
-      else (expr,steps,equ):nfPr eq (simplify res)
-    where (res,steps,equ) = normStep eq False expr
+      else (expr,steps,equ):nfPr shw eq (simplify res)
+    where (res,steps,equ) = normStep shw eq False expr
 
-   cfProof :: Expression -> Proof Expression
-   cfProof expr
+   cfProof :: (Identified c, Eq c, Show c, ConceptStructure c c) =>
+              (Expression (Relation c) -> String) -> Expression (Relation c) -> Proof (Expression (Relation c))
+   cfProof shw expr
     = [line| step, line<-init pr]++
       [line| step', line<-init pr']++
       [line| step'', line<-init pr'']++
@@ -301,7 +306,7 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
              [line| step', line<-pr']++
              [line| step'', line<-pr'']
             )]
-      where pr            = nfPr True (simplify expr)
+      where pr            = nfPr shw True (simplify expr)
             (expr',_,_)   = last pr
             step          = simplify expr/=expr' || and [null s| (_,ss,_)<-pr, s<-ss]
             expr''        = simplify (distribute Fux Fix isFu isFi expr')   -- Distribute:    (x/\y)\/z  -->  x\/z /\ y\/z
@@ -309,18 +314,21 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
                              True -> [(expr',["Distribute:    (x/\\y)\\/z  <=>  x\\/z /\\ y\\/z"],"<=>"),(expr'',[],"<=>")]
                              _    -> [(expr',[],"<=>")]
             step'         = expr'/=expr'' || and [null s| (_,ss,_)<-pr', s<-ss]
-            pr''          = nfPr True expr''
+            pr''          = nfPr shw True expr''
             step''        = expr''/=expr''' || and [null s| (_,ss,_)<-pr'', s<-ss]
             (expr''',_,_) = last pr''
 
-   conjNF :: Expression -> Expression
-   conjNF  expr = e where (e,_,_) = last (cfProof expr)
+   conjNF :: (Identified c, Eq c, Show c, ConceptStructure c c) =>
+             Expression (Relation c) -> Expression (Relation c)
+   conjNF expr = e where (e,_,_) = last (cfProof (\_->"") expr)
 
-   disjNF :: Expression -> Expression
-   disjNF  expr = e where (e,_,_) = last (dfProof expr)
+   disjNF :: (Identified c, Eq c, Show c, ConceptStructure c c) =>
+             Expression (Relation c) -> Expression (Relation c)
+   disjNF expr = e where (e,_,_) = last (dfProof (\_->"") expr)
 
-   dfProof :: Expression -> Proof Expression
-   dfProof expr
+   dfProof :: (Identified c, Eq c, Show c, ConceptStructure c c) =>
+              (Expression (Relation c) -> String) -> Expression (Relation c) -> Proof (Expression (Relation c))
+   dfProof shw expr
     = [line| step, line<-init pr]++
       [line| step', line<-init pr']++
       [line| step'', line<-init pr'']++
@@ -329,7 +337,7 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
              [line| step', line<-pr']++
              [line| step'', line<-pr'']
             )]
-      where pr            = nfPr True expr
+      where pr            = nfPr shw True expr
             (expr',_,_)   = last pr
             step          = simplify expr/=simplify expr'
             expr''        = distribute Fix Fux isFi isFu expr'   -- Distribute:    (x\/y)/\z  -->  x/\z \/ y/\z
@@ -337,6 +345,6 @@ and distribute Fu Fi isFu isFi (Fi [r, Fu [s,t]]) = Fi [Fu [r], Fu [s,s]]
                              True -> [(expr',["Distribute:    (x\\/y)/\\z  <=>  x/\\z \\/ y/\\z"],"<=>"),(expr'',[],"<=>")]
                              _    -> [(expr',[],"<=>")]
             step'         = simplify expr'/=simplify expr''
-            pr''          = nfPr True expr''
+            pr''          = nfPr shw True expr''
             step''        = simplify expr''/=simplify expr'''
             (expr''',_,_) = last pr''

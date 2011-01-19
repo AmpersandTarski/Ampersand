@@ -2,9 +2,9 @@
 module Prototype.ObjBinGen  (phpObjServices)
   where
  
-   import CommonClasses
    import Data.Fspec
    --import Data.Plug {- (Plug(..),DataObject(..)) -}
+   import ADL (name)
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)
@@ -20,12 +20,12 @@ module Prototype.ObjBinGen  (phpObjServices)
    import qualified Data.ByteString as Bin
    import UTF8  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-    
+   
    phpObjServices :: Fspc -> Options -> IO()
    phpObjServices fSpec flags
      = writeStaticFiles flags
       >> verboseLn flags "---------------------------"
-      >> verboseLn flags "Generating php Object files with ADL"
+      >> verboseLn flags "Generating php Object files with Ampersand"
       >> verboseLn flags "---------------------------"
       >> write "index.htm"                 (htmlindex fSpec serviceObjects flags)
     --  >> verboseLn flags (show [(name p,[(show e,fldname s,fldname t)|(e,s,t)<-eLkpTbl p])|PlugSql p@(TblSQL{})<-plugs fSpec]) >> error ""

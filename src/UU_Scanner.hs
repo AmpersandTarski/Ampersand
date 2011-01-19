@@ -132,7 +132,7 @@ module UU_Scanner where
       isIdStart c = isLower c || c == '_'
 
       isIdChar c =  isAlphaNum c
---               || c == '\''   -- character literals are not used in ADL. Since this scanner was used for Haskell-type languages, this alternative is commented out...
+--               || c == '\''   -- character literals are not used in Ampersand. Since this scanner was used for Haskell-type languages, this alternative is commented out...
                  || c == '_'
 
       scanIdent p s = let (name,rest) = span isIdChar s
@@ -151,7 +151,7 @@ module UU_Scanner where
           in if null rest || head rest /= '"'
                 then errToken "Unterminated string literal" p fn : doScan (advc swidth p) rest
                 else token TkString s p fn : doScan (advc (swidth+2) p) (tail rest)
-{- In ADL, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
+{- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
       doScan p ('\'':ss)
         = let (s,swidth,rest) = scanAtom ss
@@ -159,7 +159,7 @@ module UU_Scanner where
                 then errToken "Unterminated atom literal" p fn : doScan (advc swidth p) rest
                 else token TkAtom s p fn : doScan (advc (swidth+2) p) (tail rest)
 
-{- character literals are not used in ADL.  doScan p ('\'':ss) is commented out to make room for singleton atoms.
+{- character literals are not used in Ampersand.  doScan p ('\'':ss) is commented out to make room for singleton atoms.
       doScan p ('\'':ss)
         = let (mc,cwidth,rest) = scanChar ss
           in case mc of
@@ -277,7 +277,7 @@ module UU_Scanner where
                                     Just c  -> (Just c,1,xs)
      where cntrChars = [('a','\a'),('b','\b'),('f','\f'),('n','\n'),('r','\r'),('t','\t')
                        ,('v','\v'),('\\','\\'),('"','\"')]
--- character literals are not used in ADL. Since this scanner was used for Haskell-type languages, ('\'','\'') has been removed from cntrChars...
+-- character literals are not used in Ampersand. Since this scanner was used for Haskell-type languages, ('\'','\'') has been removed from cntrChars...
 
    readn base n = foldl (\r x  -> value x + base * r) 0 n
 

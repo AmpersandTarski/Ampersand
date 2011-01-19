@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}  
+{-# OPTIONS_GHC -Wall -XMultiParamTypeClasses #-}  
 module Data.Plug (Plug(..),Plugs
                  ,SqlField(..)
                  ,SqlType(..)
@@ -18,18 +18,17 @@ module Data.Plug (Plug(..),Plugs
                  ,PlugSQL(..),PlugPHP(..)
                  ,DataObject(..))
 where
-import Adl.Concept (Concept(..),Association(..),Signaling(..),cptnew)
-import Adl.MorphismAndDeclaration
-import Adl.Expression (Expression(..))
-import Adl.ObjectDef (ObjectDef(..))
-import Adl.FilePos (FilePos(..))
-import Adl.Pair (Paire)
-import Adl (isSur,isTot,isInj,isUni,flp)
+import ADL ( Concept(..), Signaling(..), cptnew
+           , Relation(..), Association(..), Relational(..), mIs, Identified(..)
+           , Expression(..)
+           , ObjectDef(..)
+           , FilePos(..)
+           , Paire
+           , isSur,isTot,isInj,isUni)
 import Collection((>-))
 import Classes.Object (Object(..))
 import Classes.Populated (contents')
-import Classes.Morphical (Morphical(..))
-import CommonClasses (Identified(..))
+import Classes.ConceptStructure (ConceptStructure(..))
 import FPA (FPA(..),FPAble(..))
 import Auxiliaries (sort',eqClass)
 import Prototype.CodeVariables (CodeVar(..))
@@ -61,7 +60,7 @@ instance Object DataObject where
  attributes (DataObject p@(TblSQL{}))
   = if length mbfld==1 
     then (fld2objdef (head mbfld) []):(dobj2objats ("tbl"++name p) (head mbfld) (mLkpTbl p))
-    else error "!fatal (module Data.Plug 59): cannot find field of dataobject"
+    else error "!fatal (module Data.Plug 63): cannot find field of dataobject"
     where mbfld = [fld|(c,fld)<-cLkpTbl p, c==concept p]
  ctx (DataObject p@(ScalarSQL{}))
   = fldexpr (column p)
@@ -70,18 +69,18 @@ instance Object DataObject where
  ctx (DataObject p@(TblSQL{}))
   = if length mbexpr==1 
     then head mbexpr 
-    else error "!fatal (module Data.Plug 70): cannot find ctx of dataobject"
+    else error "!fatal (module Data.Plug 72): cannot find ctx of dataobject"
     where mbexpr = [fldexpr fld|(c,fld)<-cLkpTbl p, c==concept p] 
  --TODO -> (see tblcontents)
  populations (DataObject p) 
-  = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".")
+  = error ("!TODO (module Data.Plug 76): evaluate population of plug "++name p++".")
 
-dobj2objats::String->SqlField->[(Morphism,SqlField,SqlField)]->[ObjectDef]
-dobj2objats nm fld mlkp = objats(fld2objdef fld (fld2objats fld mlkp))
+dobj2objats::String->SqlField->[(Relation Concept,SqlField,SqlField)]->[ObjectDef]
+dobj2objats _ fld mlkp = objats(fld2objdef fld (fld2objats fld mlkp))
 fld2objdef::SqlField->[ObjectDef]->ObjectDef
 fld2objdef fld ats = Obj (fldname fld) Nowhere (fldexpr fld) Nothing ats []
-fld2objats::SqlField->[(Morphism,SqlField,SqlField)]->[ObjectDef]
-fld2objats fld mlkp = [fld2objdef t (fld2objats t mlkp)|(m,s,t)<-mlkp,fld==s,s/=t]
+fld2objats::SqlField->[(Relation Concept,SqlField,SqlField)]->[ObjectDef]
+fld2objats fld mlkp = [fld2objdef t (fld2objats t mlkp)|(_,s,t)<-mlkp,fld==s,s/=t]
 
 
 ----------------------------------------------
@@ -132,7 +131,7 @@ instance Eq PlugPHP where
 ----------------------------------------------
 data PlugPHP
  = PlugPHP { phpname   :: String       -- ^ the name of the function
-           , phpfile	 :: Maybe String -- ^ the file in which the plug is located (Nothing means it is built in already)
+           , phpfile   :: Maybe String -- ^ the file in which the plug is located (Nothing means it is built in already)
            , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
            , phpOut    :: CodeVar      -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
            , phpSafe   :: Bool         -- ^ whether the input of this plug is verified. False means that the function can be called with non-existant input, such that it does not return false as output or causes undesired side effects
@@ -144,8 +143,8 @@ data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriv
 data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
 type PhpArgs = [(Int,PhpValue)]
 data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
---DO you need on::[Morphism]? makeFspec sets an empty list
-data PhpAction = PhpAction {action::ActionType, on::[Morphism]} deriving (Show)
+--DO you need on::[Relation Concept]? makeFspec sets an empty list
+data PhpAction = PhpAction {action::ActionType, on::[Relation Concept]} deriving (Show)
 data ActionType = Create | Read | Update | Delete deriving (Show)
 
 instance Identified PhpValue where
@@ -166,12 +165,12 @@ instance Identified PhpValue where
 --             i.e. a SqlField -> c
 --             with tblcontents = [[x]|(x,_)<-contents' c].
 --             Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. fldexpr=I[c]
---TblSQL -> stores a related collection of morphisms: a kernel of concepts and attribute morphisms of this kernel
+--TblSQL -> stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
 --           i.e. a list of SqlField given some A -> [target m | m::A*B,isUni m,isTot m, isInj m] 
 --                                                ++ [target m | m::A*B,isUni m, not(isTot m), not(isSur m)]
 --             kernel = A closure of concepts A,B for which there exists a m::A->B[INJ] 
 --                      (m=fldexpr of kernel field holding instances of B, in practice m is I or a makeMph(flipped declaration))
---             attribute morphisms = All concepts B, A in kernel for which there exists a m::A*B[UNI] and m not TOT and SUR
+--             attribute relations = All concepts B, A in kernel for which there exists a m::A*B[UNI] and m not TOT and SUR
 --                      (m=fldexpr of attMor field, in practice m is a makeMph(declaration))
 --           all kernel fields can be related to an imaginary concept ID for the plug (a SqlField with type=SQLID)
 --             i.e. For all kernel fields k1,k2, where concept k1=A, concept k2=B, fldexpr k1=r~, fldexpr k2=s~
@@ -241,10 +240,10 @@ entityconcept p --copy (concept p) to create the entityconcept of the plug, usin
 
 
 data PlugSQL
- = TblSQL { sqlname   :: String
+ = TblSQL  { sqlname   :: String
            , fields    :: [SqlField]
            , cLkpTbl   :: [(Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
-           , mLkpTbl   :: [(Morphism,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug (kernel+attMors)
+           , mLkpTbl   :: [(Relation Concept,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug (kernel+attMors)
            , sqlfpa    :: FPA -- ^ functie punten analyse
            }
  | BinSQL  { --see mor2plug in ADL2Fspec.hs
@@ -253,7 +252,7 @@ data PlugSQL
            , cLkpTbl   :: [(Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then m would be in a TblSQL plug)
                                                 --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                 --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
-           , mLkp      :: Morphism -- the morphism links concepts implemented by this plug
+           , mLkp      :: Relation Concept -- the morphism links concepts implemented by this plug
            , sqlfpa    :: FPA -- ^ functie punten analyse
            }
  | ScalarSQL
@@ -275,7 +274,7 @@ data PlugSQL
 --           The first option has been implemented in instance ObjectPlugSQL i.e. attributes=[], ctx=Tm m (-1)
 instance Object PlugSQL where
  concept p = case p of
-   TblSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 48): empty lookup table for plug "++name p++".")
+   TblSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 277): empty lookup table for plug "++name p++".")
    TblSQL{}             -> --TODO151210-> deze functieimplementatie zou beter moeten matchen met onderstaande beschrijving
                             --        nu wordt aangenomen dat de source van het 1e mph in mLkpTbl de source van de plug is.
                             --a relation between kernel concepts r::A*B is at least [UNI,INJ]
@@ -303,28 +302,29 @@ instance Object PlugSQL where
      f c mms = if null stop                                     -- a path from c to a is not found (yet)
                then f c mms'                                    -- so add another step to the recursion
                else if null (sort' length stop) 
-                    then error "!Fatal (module Data/Plug 306): null (sort' length stop)." 
+                    then error "!Fatal (module Data.Plug 305): null (sort' length stop)." 
                     else F [Tm m (-1)| m<-head (sort' length stop)]  -- pick the shortest path and turn it into an expression.
                where
                  mms' = if elem [] mms 
-                        then error "!Fatal (module Data/Plug 310): null in mms."
+                        then error "!Fatal (module Data.Plug 309): null in mms."
                         else [a:ms | ms<-mms, (a,_,_)<-mLkpTbl p, target a==source (head ms)]
                  stop = if elem [] mms'
-                        then error "!Fatal (module Data/Plug 313): null in mms'."
+                        then error "!Fatal (module Data.Plug 310): null in mms'."
                         else [ms | ms<-mms', source (head ms)==c]  -- contains all found paths from c to a 
  attributes _ = [] --no attributes for BinSQL and ScalarSQL
  ctx p@(BinSQL{}) = Tm (mLkp p) (-1)
  ctx p = Tm (mIs (concept p)) (-1)
- populations p = error ("!TODO (module Data.Plug 42): evaluate population of plug "++name p++".") --TODO -> (see tblcontents)
+ populations p = error ("!TODO (module Data.Plug 317): evaluate population of plug "++name p++".") --TODO -> (see tblcontents)
 
---WHY151210 -> why do I need PlugSQL to be an Association
+{-WHY151210 -> why do I need PlugSQL to be an Association
 --       in other words why do I need a (target p) for BinSQL and ScalarSQL only
 --       (remark: source p=concept p and target PlugSQL{}=error)
-instance Association PlugSQL where
+instance Association PlugSQL Concept where
    source p               = concept p
    target p@(BinSQL{})    = target (mLkp p)
    target p@(ScalarSQL{}) = cLkp p
-   target p               = error ("!Fatal (module Data/Plug 77): cannot compute the target of plug "++name p++", because it is not binary.")
+   target p               = error ("!Fatal (module Data.Plug 326): cannot compute the target of plug "++name p++", because it is not binary.")
+-}
 
 --WHY151210 -> why can only binary plugs be signals?
 instance Signaling PlugSQL where
@@ -332,13 +332,13 @@ instance Signaling PlugSQL where
  isSignal _            = False
 
 data SqlField = Fld { fldname     :: String
-                    , fldexpr     :: Expression
+                    , fldexpr     :: Expression (Relation Concept)
                     , fldtype     :: SqlType
                     , fldnull     :: Bool -- can there be empty field-values?
                     , flduniq     :: Bool -- are all field-values unique?
                     } deriving (Eq, Show)
 fldauto::SqlField->Bool -- is the field auto increment?
-fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f && isIdent (fldexpr f)
+fldauto f = (fldtype f==SQLId) && not (fldnull f) && flduniq f -- && isIdent (fldexpr f)
 
 data SqlType = SQLChar    Int
              | SQLBlob              -- cannot compare, but can show (as a file)
@@ -376,8 +376,8 @@ showSQL (SQLBool     ) = "BOOLEAN"
 --          thus I must check whether fldexpr isUni && isInj && isSur
 iskey :: PlugSQL->SqlField->Bool
 iskey plug@(ScalarSQL{}) f = column plug==f
-iskey plug@(BinSQL{}) f --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\m;m~=I i.e. a key for this plug
-  | isUni(mLkp plug) || isInj(mLkp plug) = error "!Fatal (module Data/Plug 317): BinSQL may not store a univalent or injective mph, use TblSQL instead."
+iskey plug@(BinSQL{}) _ --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\m;m~=I i.e. a key for this plug
+  | isUni(mLkp plug) || isInj(mLkp plug) = error "!Fatal (module Data.Plug 380): BinSQL may not store a univalent or injective mph, use TblSQL instead."
   | otherwise              = False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
 iskey plug@(TblSQL{}) f    = elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
 
@@ -386,11 +386,11 @@ iskey plug@(TblSQL{}) f    = elem f (fields plug) && isUni(fldexpr f) && isInj(f
 --any other target field is an attribute field related to its kernel field
 kernelrels::PlugSQL ->[(SqlField,SqlField)]
 kernelrels plug@(ScalarSQL{}) = [(column plug,column plug)]
-kernelrels (BinSQL{})         = error "!Fatal (module Data/Plug 384): Binary plugs do not know the concept of kernel fields."
+kernelrels (BinSQL{})         = error "!Fatal (module Data.Plug 389): Binary plugs do not know the concept of kernel fields."
 kernelrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,iskey plug tfld] 
 attrels::PlugSQL ->[(SqlField,SqlField)]
 attrels plug@(ScalarSQL{}) = [(column plug,column plug)]
-attrels (BinSQL{})         = error "!Fatal (module Data/Plug 388): Binary plugs do not know the concept of attribute fields."
+attrels (BinSQL{})         = error "!Fatal (module Data.Plug 393): Binary plugs do not know the concept of attribute fields."
 attrels plug@(TblSQL{})    = [(sfld,tfld)|(_,sfld,tfld)<-mLkpTbl plug,not(iskey plug tfld)] 
 
 
@@ -412,7 +412,7 @@ requiredFields plug@(BinSQL{}) _ = [fst(columns plug),snd(columns plug)]
 requiredFields plug@(TblSQL{}) fld 
  = [f|f<-(requiredkeys++requiredatts), not (fldauto f)] 
   where
-  kfld | null findfld = error ("!Fatal (module Data/Plug 338): fld "++fldname fld++" must be in the plug "++name plug++".")
+  kfld | null findfld = error ("!Fatal (module Data.Plug 415): fld "++fldname fld++" must be in the plug "++name plug++".")
        | iskey plug fld = fld
        | otherwise = fst(head findfld) --fld is an attribute field, take its kernel field
   findfld = [(k,maybek)|(_,k,maybek)<-mLkpTbl plug,fld==maybek]
@@ -447,7 +447,7 @@ requires :: PlugSQL -> (SqlField,SqlField) ->Bool
 requires plug (fld1,fld2) = elem fld2 (requiredFields plug fld1)
 
 --composition from srcfld to trgfld
-plugpath :: PlugSQL -> SqlField -> SqlField -> Expression
+plugpath :: PlugSQL -> SqlField -> SqlField -> Expression (Relation Concept)
 plugpath p@(BinSQL{}) srcfld trgfld
   | srcfld==trgfld = let tm=Tm (mLkp p)(-1) --(note: mLkp p is the relation from fst to snd column of BinSQL)
                      in if srcfld==fst(columns p) 
@@ -455,10 +455,10 @@ plugpath p@(BinSQL{}) srcfld trgfld
                         else F [flp tm,tm] --codomain of m
   | srcfld==fst(columns p) && trgfld==snd(columns p) = fldexpr trgfld
   | trgfld==fst(columns p) && srcfld==snd(columns p) = flp(fldexpr srcfld)
-  | otherwise = error ("!Fatal (module Data/Plug 436): BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p))
+  | otherwise = error ("!Fatal (module Data.Plug 458): BinSQL has only two fields:"++show(fldname srcfld,fldname trgfld,name p))
 plugpath p@(ScalarSQL{}) srcfld trgfld
   | srcfld==trgfld = fldexpr trgfld
-  | otherwise = error ("!Fatal (module Data/Plug 437): scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p))
+  | otherwise = error ("!Fatal (module Data.Plug 461): scalarSQL has only one field:"++show(fldname srcfld,fldname trgfld,name p))
 plugpath p@(TblSQL{}) srcfld trgfld  
   | srcfld==trgfld && iskey p trgfld = Tm (mIs (target(fldexpr trgfld))) (-1)
   | srcfld==trgfld && not(iskey p trgfld) = F [flp (fldexpr trgfld),(fldexpr trgfld)] --codomain of m of morAtt
@@ -483,29 +483,29 @@ plugpath p@(TblSQL{}) srcfld trgfld
          else
          if (not.null) (pathsoverIs trgfld srcfld) 
          then flp(F (head (pathsoverIs trgfld srcfld)))
-         else error ("!Fatal (module Data/Plug 455): no kernelpath:"++show(fldname srcfld,fldname trgfld,name p,[(show es,fldname s,fldname t)|(es,s,t)<-eLkpTbl p]))
+         else error ("!Fatal (module Data.Plug 486): no kernelpath:"++show(fldname srcfld,fldname trgfld,name p,[(show es,fldname s,fldname t)|(es,s,t)<-eLkpTbl p]))
   --paths from I to field t
   pathsfromIs t = [(e,es,et)|(e,es,et)<-eLkpTbl p,et==t,not (null e),isIdent(head e)] 
   --paths from s to t over I[X]
   pathsoverIs s t = [flpsrce++(tail trge) 
-                    |(srce,srces,srcet)<-pathsfromIs s
-                    ,(trge,trges,trget)<-pathsfromIs t
+                    |(srce,srces,_)<-pathsfromIs s
+                    ,(trge,trges,_)<-pathsfromIs t
                     ,srces==trges, let F flpsrce= flp(F (tail srce))] 
   
 
---[Expression] implies a 'composition' from SqlField to SqlField which may be empty (no path found) or length==1 (no composition but just head)
+--[Expression (Relation Concept)] implies a 'composition' from SqlField to SqlField which may be empty (no path found) or length==1 (no composition but just head)
 --use plugpath to get the Expression from srcfld to trgfld
-eLkpTbl::PlugSQL -> [([Expression],SqlField,SqlField)]
+eLkpTbl::PlugSQL -> [([Expression (Relation Concept)],SqlField,SqlField)]
 eLkpTbl p = let mst=[(m,s,t)|(m,s,t)<-mLkpTbl p, s/=t] in addIs (eLkpTbl' mst [([Tm m (-1)],s,t)|(m,s,t)<-mst])
   where
   addIs est = let ist=[(i,ifld)|(i,ifld,ifld')<-mLkpTbl p, ifld==ifld']
               in est ++ [((Tm i(-1)):e,ifld,et)|(i,ifld)<-ist,(e,es,et)<-est,es==ifld]
-  eLkpTbl'::[(Morphism,SqlField,SqlField)]->[([Expression],SqlField,SqlField)]->[([Expression],SqlField,SqlField)]
+  eLkpTbl'::[(Relation Concept,SqlField,SqlField)]->[([Expression (Relation Concept)],SqlField,SqlField)]->[([Expression (Relation Concept)],SqlField,SqlField)]
   eLkpTbl' mst est = if null things2add then nub est else recur
     where
     addfront mt = [(e,es,et)|(e,es,et)<-est,mt==es]
     addback  ms = [(e,es,et)|(e,es,et)<-est,ms==et]
-    things2add = [()|(m,ms,mt)<-mst,x<-addfront mt++addback ms]
+    things2add = [()|(_,ms,mt)<-mst,_<-addfront mt++addback ms]
     recur = eLkpTbl'
       [(m,ms,mt)|(m,ms,mt)<-mst,(not.null)(addfront mt),(not.null)(addback ms)] --keep the mst that will not be added to the front or the back (yet)
       (est --keep what you got
@@ -558,30 +558,29 @@ clusterBy f cs xs
    -- + and the head of mergeclusters == head of every cluster in cs' because we mergecluster each time we add one thing to the head of some cluster
    mergeclusters cs' = [Cluster (nub(concat cl))|cl<-eqClass eqhead (map cslist cs')] 
    eqhead c1 c2 
-     | null (c1++c2) = error ("!Fatal (module Data/Plug 418): clusters are not expected to be empty at this point.")
+     | null (c1++c2) = error ("!Fatal (module Data.Plug 561): clusters are not expected to be empty at this point.")
      | otherwise = head c1==head c2
 
---TODO151210 -> revise Morphical SqlField & PlugSQL
+--TODO151210 -> revise ConceptStructure SqlField & PlugSQL
 --   concs f = [target e'|let e'=fldexpr f,isSur e']
 --   concs p = concs     (fields p)
 --   this implies that concs of p are only the targets of kernel fields i.e. kernel concepts  
---   class Morphical describes concs as "the set of all concepts used in data structure a"
+--   class ConceptStructure describes concs as "the set of all concepts used in data structure a"
 --   The question arises (and should be answered in this comment and implemented)
 --      WHAT IS THE DATA STRUCTURE PlugSQL?
---I expect that instance Morphical SqlField is only used for instance Morphical PlugSQL as its implementation 
+--I expect that instance ConceptStructure SqlField is only used for instance ConceptStructure PlugSQL as its implementation 
 --is tailored to the needs of PlugSQL as a data structure, not SqlField as a Data structure!
 --For convenience, I implemented localfunction, which should be removed at revision
-instance Morphical SqlField where
+instance ConceptStructure SqlField Concept where
   concs     f = [target e'|let e'=fldexpr f,isSur e']
   morlist   f = morlist   (fldexpr f)
-  decls     f = decls     (fldexpr f)
-  closExprs f = closExprs (fldexpr f)  
-instance Morphical PlugSQL where
+-- closExprs f = closExprs (fldexpr f)  
+instance ConceptStructure PlugSQL Concept where
   concs     p = concs     (localfunction p)
   mors      p = mors      (localfunction p)
   morlist   p = morlist   (localfunction p)
-  decls     p = decls     (localfunction p)
-  closExprs p = closExprs (localfunction p)
+-- closExprs p = closExprs (localfunction p)
+
 localfunction::PlugSQL -> [SqlField]
 localfunction p@(TblSQL{}) = fields p
 localfunction p@(BinSQL{}) = [fst (columns p),snd (columns p)]
@@ -605,12 +604,12 @@ tblcontents plug@(TblSQL{})
  --where NULL in a kernel field implies NULL in the following kernel fields
  --and the first field is unique and not null
  --(m,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold m or (flp m), s and t are assumed to be different
- | null(fields plug) = error ("!Fatal (module Data/Plug 527): no fields in plug.")
+ | null(fields plug) = error ("!Fatal (module Data.Plug 607): no fields in plug.")
  | flduniq idfld && not(fldnull idfld) && isIdent (fldexpr idfld)
    = let 
      pos fld = case elemIndex fld (fields plug) of 
        Just n  -> n+1
-       Nothing -> error ("!Fatal (module Data/Plug 245): field is expected.")
+       Nothing -> error ("!Fatal (module Data.Plug 612): field is expected.")
      rels fld = [ ((pos s,pos t),xy) | (_,s,t)<-mLkpTbl plug
                 , not(s==t)
                 , fld==s
@@ -621,13 +620,13 @@ tblcontents plug@(TblSQL{})
              (take (length (fields plug)) (idval:[[]|_<-[(1::Int)..]])) --new record for id
              (concat (map rels (fields plug)))  
      | idval<-map fst (contents' (fldexpr idfld))  ]
- | otherwise = error ("!Fatal (module Data/Plug 255): fields are assumed to be in the order kernel+other, starting with an id-field.")
+ | otherwise = error ("!Fatal (module Data.Plug 623): fields are assumed to be in the order kernel+other, starting with an id-field.")
    where idfld = head (fields plug)
 --if x at position n of some record, then position m is replaced by y (position starts at 1, not 0!)
 insertrel::TblRecord->((Int,Int),Paire)->TblRecord
 insertrel rec ((n,m),(x,y))
  | length rec < n || length rec < m 
-   = error ("!Fatal (module Data/Plug 262): cannot take position "++show n++" or "++show m++" of "++show rec++".")
+   = error ("!Fatal (module Data.Plug 629): cannot take position "++show n++" or "++show m++" of "++show rec++".")
  | x==head (drop (n-1) rec) --x at position n of rec
    = (take (m-1) rec)++(y:(drop m rec)) --position m is replaced by y
  | otherwise = rec --unchanged

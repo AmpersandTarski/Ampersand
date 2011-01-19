@@ -20,7 +20,7 @@ import Options
 --It contains:
 -- + classes for all concepts in the data object incl. save and del functions
 -- + getEach functions for the concepts in the plug
---The attributes of the class of some concept are those morphisms that require this concept (all UNI morphisms with source m==concept)
+--The attributes of the class of some concept are those relations that require this concept (all UNI relations with source m==concept)
 --Thus a class may contain other classes.
 --The main purpose of a data class is to save any delta on a class instance initiated from some svc_*.inc.php.
 --The data in a SERVICE is composed of parts from DATAOBJECTS (possibly entire objects).
@@ -31,8 +31,8 @@ import Options
 -- -> is used by classes in which it is contained (one implementation).
 --    -> only if there is a delta on this (sub)class (know the delta on your class so you can take the appropriate actions)
 --
---note: scalars are unions of source or target of certain morphisms
---       -> insert/delete actions may be required after delta on the field of one of these morphisms 
+--note: scalars are unions of source or target of certain relations
+--       -> insert/delete actions may be required after delta on the field of one of these relations 
 --            => scalars require recalculate function or even better, no tabel, but some SELECT DISTINCT query = (I/\m1;m1~\/m2;m2~\/..)
 --      A composition of binaries or just one binary is an association (not uni nor inj) between two kernel fields (maybe scalar)
 --       -> the nature of a change on a binary plug is hard to discover.

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 module Classes.Graphics (Dotable(makePicture)
                         ,GraphvizCommand(..)
                         ,GraphvizOutput(..)
@@ -12,7 +12,7 @@ import Data.GraphViz hiding (addExtension )
 --              -- 3) er is geen stap 3!
 --              -- 4) build on graphviz-2999.8.0.0
 -- Documentation about graphviz package: See http://hackage.haskell.org/package/graphviz
-import Adl 
+import ADL 
 import Data.Fspec (Fspc,Fservice(..))
 import Options
 import Collection (Collection(uni,isc,rd))
@@ -42,7 +42,7 @@ instance Navigatable Concept where
    servicename _ = "Concept" --see Atlas.adl
    itemstring cpt = name cpt --copied from atlas.hs
  
-instance Navigatable Declaration where 
+instance (Eq c, Identified c) => Navigatable (Declaration c) where 
    servicename _ = "Relatiedetails" --see Atlas.adl
    itemstring x@(Sgn{}) = name x ++ "::" ++ name(source x)++"*"++name(target x) --copied from atlas.hs (function relpred+cpttype)
    itemstring x = name x    
@@ -56,23 +56,23 @@ class Identified a => Dotable a where
           makePictureObj flags (name dottable) (picType dottable) (printDotGraph(toDot fSpec flags dottable)) 
 instance Dotable ClassDiag where
    picType _ = PTClassDiagram
-   toDot _ _ _ = error ("!TODO (module Graphics 31): ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd.") 
+   toDot _ _ _ = error ("!TODO (module Graphics 59): ClassDiagram moet nog netjes naar nieuwe Graphviz worden verbouwd.") 
    makePicture flags _ cd =
           makePictureObj flags (name cd) (picType cd) (classdiagram2dot flags cd) 
 instance Dotable Concept where
    picType _ = PTConcept
-   toDot fSpec flags c = dotG flags (name c) cpts dcls idgs
+   toDot fSpec flags c = dotG flags (name c) cpts (map makeDeclaration mrs) idgs
          where 
-          rs   = [r| r<-rules fSpec, c `elem` concs r, not (isaRule r)]
-          ss   = [s| s<-signals fSpec, c `elem` concs s]
-          idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+          rs    = [r| r<-rules fSpec, c `elem` concs r, not (isaRule r)]
+          ss    = [s| s<-signals fSpec, c `elem` concs s]
+          idgs  = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
-          cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
-          cpts'  = concs rs `uni` concs ss
-          dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
-                    , not (isProp d)     -- d is not a property
-                    , decusr d]          -- d is user defined, and consequently not a signal either
+          cpts  = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
+          cpts' = concs rs `uni` concs ss
+          mrs   = [m | m<-mors rs `uni` mors ss
+                     , not (isProp m)                       -- d is not a property
+                     , decusr (makeDeclaration m)]          -- d is user defined, and consequently not a signal either
    
 instance Dotable Pattern where
    picType _ = PTPattern
@@ -84,7 +84,7 @@ instance Dotable Pattern where
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = rd(cpts' ++ [g|(g,_)<-idgs] ++ [s|(_,s)<-idgs])
           cpts'  = concs pat
-          dcls = [d| d@Sgn{}<-declarations pat `uni` decls pat, decusr d]
+          dcls = [d| d@Sgn{}<-declarations pat `uni` map makeDeclaration (mors pat), decusr d]
 
 instance Dotable Fservice where
    picType _ = PTFservice
@@ -92,13 +92,13 @@ instance Dotable Fservice where
          where 
           rs         = [r| r<-rules fSpec, affected r]
           ss         = [s| s<-signals fSpec, affected s]
-          affected r = not (null (decls r `isc` decls svc))
+          affected r = not (null (mors r `isc` mors svc))
           idgs = [(g,s)|(g,s)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
           Isa gs _ = isa fSpec
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts'  = concs rs `uni` concs ss
-          dcls = [d | d@Sgn{}<-decls rs `uni` decls ss
+          dcls = [d | d@Sgn{}<-map makeDeclaration (mors rs `uni` mors ss)
                     , not (isProp   d)    -- d is not a property
                     , decusr d]           -- d is user defined, and consequently not a signal either
 
@@ -106,7 +106,7 @@ instance Dotable SwitchBoard where
    picType _ = PTSwitchBoard
    toDot _ _ s = sbdotGraph s
    
-instance Dotable Rule where
+instance Dotable (Rule (Relation Concept)) where
    picType _ = PTRule
    toDot fSpec flags r = dotG flags (name r) cpts dcls idgs
          where 
@@ -115,7 +115,7 @@ instance Dotable Rule where
 -- TODO: removal of redundant isa edges might be done more efficiently
           cpts = rd$cpts' ++ [g|(g,s)<-gs, elem g cpts' || elem s cpts'] ++ [s|(g,s)<-gs, elem g cpts' || elem s cpts']
           cpts' = concs r
-          dcls = [d | d@Sgn{}<-decls r]
+          dcls = [d | d@Sgn{}<-map makeDeclaration (mors r)]
 
 numberListFrom :: [x] -> Int -> [(x,Int)]    --TODO Deze functie is te generiek om hier in deze module thuis te horen. Verplaatsen naar andere module? 
 numberListFrom xs i = zip xs [i..]
@@ -124,8 +124,8 @@ numberListFrom xs i = zip xs [i..]
 -- Chapter 2: Formation of a graph.
 dotG :: Options            -- ^ the flags 
      -> String             -- ^ the name of the Graph
-     -> Concepts           -- ^ The concepts to draw in the graph
-     -> Declarations       -- ^ The declarations, (the edges in the graph)
+     -> [Concept]           -- ^ The concepts to draw in the graph
+     -> [Declaration Concept]      -- ^ The declarations, (the edges in the graph)
      -> [(Concept, Concept)] -- ^ list of Gen relations 
      -> DotGraph String    -- ^ The resulting DotGraph
 dotG flags graphName cpts dcls idgs
@@ -149,7 +149,7 @@ dotG flags graphName cpts dcls idgs
 
         numberedConcepts     :: [(Concept    , Int)]
         numberedConcepts     = numberListFrom cpts 1
-        numberedDeclarations :: [(Declaration, Int)]
+        numberedDeclarations :: [(Declaration Concept, Int)]
         numberedDeclarations = numberListFrom dcls 1
         numberedIsas         :: [((Concept, Concept), Int)]
         numberedIsas         = numberListFrom idgs 1
@@ -158,7 +158,7 @@ dotG flags graphName cpts dcls idgs
         baseNodeId c 
             = case lookup c numberedConcepts of
                 Just i -> "cpt_"++show i
-                _      -> error ("!Fatal (module Graphics 105): element "++name c++" not found by nodeLabel.")
+                _      -> error ("!Fatal (module Graphics 161): element "++name c++" not found by nodeLabel.")
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept. 
         conceptNodesAndEdges :: 
@@ -173,7 +173,7 @@ dotG flags graphName cpts dcls idgs
         
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         declarationNodesAndEdges ::
-                            (Declaration,Int)  -- ^ tuple contains the declaration and its rank
+                            (Declaration Concept,Int)  -- ^ tuple contains the declaration and its rank
                          -> ([DotNode String],[DotEdge String])   -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         declarationNodesAndEdges (d,n)
              = (    [dclNameNode]    -- node to place the name of the declaration
@@ -212,16 +212,16 @@ constrEdge nodeFrom nodeTo pObj isDirected' flags
 --       http://hackage.haskell.org/packages/archive/graphviz/2999.6.0.0/doc/html/doc-index.html     or
 --       http://hackage.haskell.org/packages/archive/graphviz/latest/doc/html/doc-index.html
 
-data PictureObject = CptOnlyOneNode Concept     -- ^ Node of a concept that serves as connector and shows the name
-                   | CptConnectorNode Concept   -- ^ Node of a concept that serves as connector of relations to that concept
-                   | CptNameNode Concept        -- ^ Node of a concept that shows the name
-                   | CptEdge                    -- ^ Edge of a concept to connect its nodes
-                   | DclOnlyOneEdge Declaration -- ^ Edge of a relation that connects to the source and the target
-                   | DclSrcEdge Declaration     -- ^ Edge of a relation that connects to the source
-                   | DclTgtEdge Declaration     -- ^ Edge of a relation that connects to the target
-                   | DclNameNode Declaration    -- ^ Node of a relation that shows the name
-                   | IsaOnlyOneEdge             -- ^ Edge of an ISA relation without a hinge node
-                   | TotalPicture               -- ^ Graph attributes
+data PictureObject = CptOnlyOneNode Concept             -- ^ Node of a concept that serves as connector and shows the name
+                   | CptConnectorNode Concept           -- ^ Node of a concept that serves as connector of relations to that concept
+                   | CptNameNode Concept                -- ^ Node of a concept that shows the name
+                   | CptEdge                                -- ^ Edge of a concept to connect its nodes
+                   | DclOnlyOneEdge (Declaration Concept) -- ^ Edge of a relation that connects to the source and the target
+                   | DclSrcEdge     (Declaration Concept) -- ^ Edge of a relation that connects to the source
+                   | DclTgtEdge     (Declaration Concept) -- ^ Edge of a relation that connects to the target
+                   | DclNameNode    (Declaration Concept) -- ^ Node of a relation that shows the name
+                   | IsaOnlyOneEdge                         -- ^ Edge of an ISA relation without a hinge node
+                   | TotalPicture                           -- ^ Graph attributes
          
 handleFlags :: PictureObject  -> Options -> [Attribute]
 handleFlags po flags = 
@@ -312,7 +312,7 @@ dotted = Style [SItem Dotted []]
 filled :: Attribute
 filled = Style [SItem Filled []]
 
-crowfootArrowType :: Bool -> Declaration -> ArrowType
+crowfootArrowType :: Bool -> Declaration Concept -> ArrowType
 crowfootArrowType isHead d 
    = AType (case isHead of
                True  -> getCrowfootShape (isUni d) (isTot d)
@@ -334,7 +334,7 @@ crowfootArrowType isHead d
          my_crow :: ( ArrowModifier , ArrowShape )
          my_crow= ( open, Crow )
 
-plainArrowType :: Bool -> Declaration -> ArrowType
+plainArrowType :: Bool -> Declaration Concept -> ArrowType
 plainArrowType isHead d
    = case isHead of 
        True -> if isFunction d

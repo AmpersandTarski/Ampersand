@@ -17,7 +17,7 @@ import UTF8
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 -- | This data constructor is able to hold all kind of information that is useful to 
---   express what the user would like ADL to do. 
+--   express what the user would like Ampersand to do. 
 data Options = Options { contextName   :: Maybe String
                        , showVersion   :: Bool
                        , preVersion    :: String
@@ -70,16 +70,16 @@ data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show)
 allPandocFormats :: [PandocFormat]
 allPandocFormats = [HTML,ReST,LaTeX,Markdown]
 defaultFlags :: Options 
-defaultFlags = Options {genTime       = error ("!Fatal (module Options 71): No monadic options available.")
-                      , dirAtlas      = error ("!Fatal (module Options 72): No monadic options available.")
-                      , dirOutput     = error ("!Fatal (module Options 73): No monadic options available.")
+defaultFlags = Options {genTime       = error ("!Fatal (module Options 73): No monadic options available.")
+                      , dirAtlas      = error ("!Fatal (module Options 74): No monadic options available.")
+                      , dirOutput     = error ("!Fatal (module Options 74): No monadic options available.")
                       , autoid        = False
-                      , dirPrototype  = error ("!Fatal (module Options 74): No monadic options available.")
-                      , dbName        = error ("!Fatal (module Options 75): No monadic options available.")
-                      , logName       = error ("!Fatal (module Options 76): No monadic options available.")
-                      , dirExec       = error ("!Fatal (module Options 77): No monadic options available.")
-                      , preVersion    = error ("!Fatal (module Options 78): No monadic options available.")
-                      , postVersion   = error ("!Fatal (module Options 79): No monadic options available.")
+                      , dirPrototype  = error ("!Fatal (module Options 77): No monadic options available.")
+                      , dbName        = error ("!Fatal (module Options 78): No monadic options available.")
+                      , logName       = error ("!Fatal (module Options 79): No monadic options available.")
+                      , dirExec       = error ("!Fatal (module Options 80): No monadic options available.")
+                      , preVersion    = error ("!Fatal (module Options 81): No monadic options available.")
+                      , postVersion   = error ("!Fatal (module Options 82): No monadic options available.")
                       , theme         = DefaultTheme
                       , contextName   = Nothing
                       , showVersion   = False
@@ -93,7 +93,7 @@ defaultFlags = Options {genTime       = error ("!Fatal (module Options 71): No m
                       , genXML        = False
                       , genFspec      = False 
                       , diag          = False 
-                      , fspecFormat   = error ("Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
+                      , fspecFormat   = error ("!Fatal (module Options 96): Unknown fspec format. Currently supported formats are "++allFspecFormats++".")
                       , genGraphics   = True
                       , useGraphics   = True
                       , flgSwitchboard= False
@@ -107,9 +107,9 @@ defaultFlags = Options {genTime       = error ("!Fatal (module Options 71): No m
                       , blackWhite    = False
                       , showPredExpr  = False
                       , language      = Dutch
-                      , progrName     = error ("!Fatal (module Options 106): No monadic options available.")
-                      , fileName      = error ("!Fatal (module Options 123): no default value for fileName.")
-                      , baseName      = error ("!Fatal (module Options 124): no default value for baseName.")
+                      , progrName     = error ("!Fatal (module Options 110): No monadic options available.")
+                      , fileName      = error ("!Fatal (module Options 111): no default value for fileName.")
+                      , baseName      = error ("!Fatal (module Options 112): no default value for baseName.")
                       , services      = False
                       , test          = False
                       , sqlLogPwdDefd = False
@@ -145,7 +145,7 @@ getOptions =
                       , dbName        = fromMaybe ""        (lookup envdbName       env)
                       , logName       = fromMaybe "ADL.log" (lookup envlogName      env)
                       , dirExec       = case exePath of
-                                          Nothing -> error ("!Fatal (module Options 126): Specify the path location of "++progName++" in your system PATH variable.")
+                                          Nothing -> error ("!Fatal (module Options 148): Specify the path location of "++progName++" in your system PATH variable.")
                                           Just s  -> takeDirectory s
                       , preVersion    = fromMaybe ""        (lookup "CCPreVersion"  env)
                       , postVersion   = fromMaybe ""        (lookup "CCPostVersion" env)
@@ -161,7 +161,7 @@ getOptions =
                                                ++[usageInfo' flags                                   | showHelp    flags]
                             }
           else case fNames of
-                []      -> error ("no file to parse" ++useHelp)
+                []      -> error ("!Fatal (module Options 164): no file to parse" ++useHelp)
                 [fName] -> verboseLn flags ("Checking output directories...")
                         >> checkLogName flags
                         >> checkDirOutput flags
@@ -176,7 +176,7 @@ getOptions =
                                                             ""  -> basename fName
                                                             str -> str
                                         }
-                x:xs    -> error ("too many files: "++ (intercalate ", " (x:xs)) ++useHelp)
+                x:xs    -> error ("!Fatal (module Options 179): too many files: "++ (intercalate ", " (x:xs)) ++useHelp)
        
        where
           basename :: FilePath -> String
@@ -191,7 +191,7 @@ getOptions =
           checkExecOpts :: Options -> IO ()
           checkExecOpts f = do execPath <- findExecutable (progrName f) 
                                when (execPath == Nothing) 
-                                    (error ("!Fatal (module Options 162): Specify the path location of "++(progrName f)++" in your system PATH variable."))
+                                    (error ("!Fatal (module Options 194): Specify the path location of "++(progrName f)++" in your system PATH variable."))
           checkProtoOpts :: Options -> IO ()
           checkProtoOpts f = when (genPrototype f) (createDirectoryIfMissing True (dirPrototype f))
           checkAtlasOpts :: Options -> IO ()
@@ -227,12 +227,12 @@ options = map pp
           , ((Option []        ["verbose"]     (NoArg verboseOpt)          "verbose error message format."), Public)
           , ((Option ['C']     ["context"]     (OptArg contextOpt "name")  "use context with name."), Public)
 
-          , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the ADL file or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
+          , ((Option ['p']     ["proto"]       (OptArg prototypeOpt "dir") ("generate a functional prototype with services defined in the file containing your Ampersand script or generated services (specify -x) (dir overrides "++ envdirPrototype ++ ").") ), Public)
           , ((Option ['d']     ["dbName"]      (ReqArg dbNameOpt "name")   ("the prototype will use database with name (name overrides environment variable "++ envdbName ++ "). when both are't set, defaults to filename (without '.adl')")), Public)
           , ((Option ['t']     ["theme"]       (ReqArg themeOpt "theme")   ("p.e. student")), Public)
           , ((Option ['x']     ["maxServices"] (NoArg maxServicesOpt)      "if specified in combination with -p -f or -s then it uses generated services to generate a prototype, functional spec, or adl file respectively."), Public)
           , ((Option []     ["autoid"] (NoArg autoIdOpt)      "implies forall Concept A => value::A->Datatype [INJ]. where instances of A are autogenerated and hidden behind their value in the GUI of SERVICES."), Public)
-          , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in ADL format. Specify -x to generate services."), Public)
+          , ((Option ['s']     ["services"]    (NoArg servicesOpt)         "generate service specifications in Ampersand syntax. Specify -x to generate services."), Public)
 
           , ((Option ['o']     ["outputDir"]   (ReqArg outputDirOpt "dir") ("default directory for generated files (dir overrides environment variable "++ envdirOutput ++ ").")), Public)
           , ((Option []        ["log"]         (ReqArg logOpt "name")      ("log to file with name (name overrides environment variable "++ envlogName  ++ ").")), Hidden)

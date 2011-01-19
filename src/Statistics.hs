@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Statistics where
 
-   import Adl
+   import ADL
    import Data.Fspec
    import FPA
  -- TODO Deze module moet nog verder worden ingekleurd...
@@ -35,7 +35,7 @@ module Statistics where
    instance Statistics Pattern where
     nServices _ = 0 --TODO -> check correctness
     nPatterns _ = 1
-    nFpoints _  = error "!Fatal (module Statistics 37): function points are not defined for patterns at all."
+    nFpoints _  = error "!Fatal (module Statistics 38): function points are not defined for patterns at all."
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Fservice                         ***
@@ -52,5 +52,5 @@ module Statistics where
     nServices (Obj{objats=[]}) = 2 -- dit is een associatie, en dus een binaire relatie --TODO -> check correctness
     nServices _ = 4 -- dit is een entiteit met ��n of meer attributen. --TODO -> check correctness
     nPatterns _ = 0
-    nFpoints  _ = error "!Fatal (module Statistics 54): function points are not defined for ObjectDefs at all."
+    nFpoints  _ = error "!Fatal (module Statistics 55): function points are not defined for ObjectDefs at all."
 

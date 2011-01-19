@@ -18,9 +18,9 @@ where
 --     -- Wie weet komt dit later dus nog wel een keer....
 
 
--- TODO: Als het ADL bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
+-- TODO: Als het Ampersand bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
-   import Adl
+   import ADL
 --   import Languages
    import ShowADL
 --   import Data.Explain
@@ -57,7 +57,7 @@ where
      mkTag f = Tag "Fspec" [nameToAttr f] 
      mkXmlTree f@(Fspc{})
         = Elem (mkTag f) (
-             [ Elem (simpleTag "Plugs-In-ADL-Script")     (map mkXmlTree (vplugs f))]
+             [ Elem (simpleTag "Plugs-In-Ampersand-Script")     (map mkXmlTree (vplugs f))]
           ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
           ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (patterns f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
@@ -70,7 +70,7 @@ where
           ++ [ still2bdone "Ontology" ] -- ++ [ Elem (simpleTag "Ontology") [mkXmlTree hhh] 
           ++ [ Elem (simpleTag "Explanations")(map mkXmlTree (fSexpls f))]
                  )
-             where violation2XmlTree :: (Rule,Paire) -> XTree
+             where violation2XmlTree :: (Rule (Relation Concept),Paire) -> XTree
                    violation2XmlTree (r,p) = 
                      Elem (Tag "Violation" [] )
                       (
@@ -102,7 +102,7 @@ where
                     , mkAttr "sLevel"   (show (fld_sLevel   f))
                     ])
                ( [ Elem (simpleTag "Expression") [mkXmlTree (fld_expr f)]] ++
-                 [ Elem (simpleTag "Morphism")   [mkXmlTree (fld_mph f)]]
+                 [ Elem (simpleTag "Relation")   [mkXmlTree (fld_mph f)]]
                ) 
 
    instance XML Pattern where
@@ -117,7 +117,7 @@ where
           ++ [ Elem (simpleTag "Explanations") (map mkXmlTree (ptxps pat))|not (null (ptxps pat))] 
            )
 
-   instance XML Rule where
+   instance XML (Rule (Relation Concept)) where
      mkTag r = Tag rtype extraAtts
                  where rtype = if isSignal r then "Signal" else "Rule"
                        extraAtts
@@ -139,14 +139,14 @@ where
                                       [mkXmlTree (antecedent r)]]
                                  ++ [Elem (simpleTag "RHS")
                                       [mkXmlTree (consequent r)]] 
-                     Generalization -> error ("!Fatal (module ShowXMLtiny 136). Consult your dealer!")
+                     Generalization -> error ("!Fatal (module XML/ShowXMLtiny 142). Consult your dealer!")
              )
       where invariantString ::  String
             invariantString = case ruleType r of
                                  Truth -> showADL (consequent r)
                                  Implication -> showADL (antecedent r)++ " |- " ++ showADL (consequent r)
                                  Equivalence -> showADL (antecedent r)++ " = "  ++showADL (consequent r)
-                                 Generalization -> error ("!Fatal (module ShowXMLtiny 143). Consult your dealer!")
+                                 Generalization -> error ("!Fatal (module XML/ShowXMLtiny 149). Consult your dealer!")
    
    instance XML KeyDef where
      mkTag k = Tag "KeyDef" [nameToAttr k]
@@ -167,8 +167,8 @@ where
                       )    --TODO: De directieven moeten waarschijnlijk nog verder uitgewerkt.
 
 
-   instance XML Expression where
-     mkTag _  = error ("!Fatal (module ShowXMLtiny 183): mkTag should not be used for expressions.")
+   instance XML (Expression (Relation Concept)) where
+     mkTag _  = error ("!Fatal (module XML/ShowXMLtiny 171): mkTag should not be used for expressions.")
      mkXmlTree expr 
          = case expr of
                (Tm mph i) | inline mph -> Node (Tag rel ( [mkAttr "Name" (name mph)]
@@ -242,15 +242,15 @@ where
          = Elem (mkTag expl) [PlainText (show (explCont expl))]
 
 
-   instance XML Gen where
+   instance Show c => XML (Gen c) where
      mkTag g = Tag "Gen" ([mkAttr "Generic" (show (gengen g))]
                        ++ [mkAttr "Specific" (show (genspc g))]
                          )
      mkXmlTree g = Node (mkTag g) 
    
 
-   instance XML Morphism where
-     mkTag f = Tag "Morphism" [nameToAttr f] 
+   instance XML (Relation Concept) where
+     mkTag f = Tag "Relation" [nameToAttr f] 
      mkXmlTree mph = Elem (mkTag mph) 
       (case mph of  
           Mph{} ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats mph))]
@@ -262,7 +262,7 @@ where
            ) 
 
 
-   instance XML Declaration where
+   instance XML (Declaration Concept) where
      mkTag d = Tag "Association" ([nameToAttr d]
                                 ++[ mkAttr "type" t]
                                 ++ extraAtts )
@@ -327,11 +327,11 @@ where
         = Node (mkTag f)  
 
 
-   instance XML ECArule where
+   instance XML (ECArule c) where
      mkTag _ = Tag "ECArule" []
      mkXmlTree _ = still2bdone "ECArule"
    
-   instance XML (Declaration->ECArule) where
+   instance XML (Declaration c->ECArule c) where
      mkTag _ = Tag "ECArule" []
      mkXmlTree _ = still2bdone "Declaration->ECArule"
    
@@ -367,7 +367,7 @@ where
    attributesTree atts = [Elem (simpleTag "Attributes") 
                                (map mkXmlTree atts)    |not(null atts)]
 
-   descriptionTree :: Expression -> [XTree]
+   descriptionTree :: Expression (Relation Concept) -> [XTree]
    descriptionTree f = [Elem (simpleTag "Description")
                            [mkXmlTree f] ]
 

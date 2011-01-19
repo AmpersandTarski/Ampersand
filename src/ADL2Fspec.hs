@@ -1,20 +1,18 @@
-{-# OPTIONS_GHC -Wall #-}
-module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode)
+{-# OPTIONS_GHC -Wall -XRankNTypes -XFlexibleContexts #-}
+module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
    import Collection     (Collection(rd,rd',uni,isc,(>-)))
-   import CommonClasses  (ABoolAlg(..),uniqueNames)
-   import Adl
+   import ADL
    import Auxiliaries    (eqCl, eqClass)
    import Data.Fspec
    import Options        (Options(language,genPrototype,theme),DocTheme(..))
-   import NormalForms(conjNF,disjNF,normPA,simplify)
+   import NormalForms    (conjNF,disjNF,normPA,simplify)
    import Data.Plug
    import Data.ADL2Plug
-   import Char
    import ShowADL
    import FPA
    import Languages(plural)
-   
+
    makeFspec :: Options -> Context -> Fspc
    makeFspec flags context = fSpec
     where
@@ -23,23 +21,27 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
             Fspc { fsName       = if genPrototype flags 
                                   then "ctx" ++ (name context) --ctx to get unique name for php if there are (plural) concept names equal to context name
                                   else (name context) 
-                   -- serviceS contains the services defined in the ADL-script.
+                   -- serviceS contains the services defined in the Ampersand script.
                    -- services are meant to create user interfaces, programming interfaces and messaging interfaces.
                    -- A generic user interface (the Lonneker interface) is already available.
                  , vplugs       = definedplugs
                  , plugs        = allplugs
-                 , serviceS     = attributes context -- services specified in the ADL script
+                 , serviceS     = attributes context -- services specified in the Ampersand script
                  , serviceG     = [ o| o<-serviceGen
-                                     , isIdent (objctx o) && source (objctx o)==cptS
+                                     , isI (objctx o) && source (objctx o)==cptS
                                      || not (objctx o `elem` map objctx (serviceS fSpec))]  -- generated services
                  , services     = [ makeFservice context allQuads a | a <-serviceS fSpec++serviceG fSpec]
-                 , roleServices = let lookp sv = if length servFs == 1 then head servFs else
-                                                 error("!Fatal (module ADL2Fspec 40): Mistake in the type checker. It should check that all services have unique names.")
-                                                 where servFs = [s|s<-services fSpec, name s==sv] in
-                                  [(role,svc)| RS rs svcs _<-ctxros context                 -- ^ roleServices says which roles may use which service
-                                             , sv<-svcs, let svc=lookp sv
-                                             , role<-rs]
-                 , mayEdit      = [(role,makeDeclaration m)| RR rs ms _<-ctxmed context     -- ^ mayEdit says which roles may change the population of which relation.
+                 , roleServices = let lookp (RS _ svcs p) sv
+                                       = if length servFs == 1 then head servFs else
+                                         if length servFs == 0
+                                         then error("Mistake in your script "++show p++": "++show (svcs>-map name (services fSpec))++"\ndo not refer to services.")
+                                         else error("!Fatal (module ADL2Fspec 38): All services should have unique names.\nThese dont: "
+                                                    ++show [name (head cl)| cl<-eqCl name (services fSpec),length cl>1]++"\n")
+                                         where servFs = [s|s<-services fSpec, name s==sv]
+                                  in [(role,svc)| rs@(RS roles svcs _) <-ctxros context                 -- ^ roleServices says which roles may use which service
+                                                , sv<-svcs, let svc=lookp rs sv
+                                                , role<-roles]
+                 , mayEdit      = [(role,makeDeclaration m)| RR rs ms _ <-ctxmed context     -- ^ mayEdit says which roles may change the population of which relation.
                                                            , m<-ms, role<-rs]
                  , vrules       = rules context++signals context
                  , grules       = number (length (rules context++signals context)) (multrules context++keyrules context)
@@ -76,12 +78,11 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                          , decpat  = ""
                          , decplug = True
                          } | g<-gens context]
-
-        totals :: Morphisms
+        totals :: [Relation Concept]
         totals
          = rd [ m | q<-quads visible (rules fSpec), isIdent (qMorph q)
                   , (_,hcs)<-cl_conjNF (qClauses q), Fux fus<-hcs
-                  , antc<-[(conjNF.Fix) [notCp f| f<-fus, isNeg f]], isIdent antc
+                  , antc<-[(conjNF.Fix) [notCp f| f<-fus, isNeg f]], isI antc
                   , f<-fus, isPos f
                   , m<-tots f
                   ]
@@ -159,23 +160,21 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         -- Attributen van elk object hebben unieke namen.
 
 --- generation of services:
---  ADL generates services for the purpose of quick prototyping. A script without any mention of services is supplemented
+--  Ampersand generates services for the purpose of quick prototyping. A script without any mention of services is supplemented
 --  by a number of service definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-        cRels = [     morph d | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
-                [flp (morph d)| d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+        cRels = [     makeMph d | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
+                [flp (makeMph d)| d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-        dRels = [     morph d | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
-                [flp (morph d)| d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
-        --  Auxiliaries for generating services:
-        morph d = Mph (name d) (pos d) [] (source d,target d) True d
+        dRels = [     makeMph d | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
+                [flp (makeMph d)| d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute maximally total expressions and maximally injective expressions.
         maxTotExprs = clos cRels
         maxInjExprs = clos dRels
         --    Warshall's transitive closure algorithm, adapted for this purpose:
-        clos :: Morphisms -> Expressions
+        clos :: (SpecHierarchy c, Show c, Identified c) => [Relation c] -> [Expression (Relation c)]
         clos xs
          = f [F [Tm x (-1)]| x<-xs] (rd (map source xs) `isc` rd (map target xs))
            where
@@ -318,15 +317,13 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         ----------------------
 
 
-   editable :: Expression -> Bool   --TODO deze functie staat ook in Calc.hs...
-   editable (Tm Mph{} _)  = True
-   editable (Tm I{} _)    = True
-   editable _           = False
+   editable :: Expression (Relation c) -> Bool   --TODO deze functie staat ook in Calc.hs...
+   editable (Tm Mph{} _) = True
+   editable _            = False
 
-   editMph :: Expression -> Morphism  --TODO deze functie staat ook in Calc.hs...
-   editMph (Tm m@Mph{} _) = m
-   editMph (Tm m@I{} _)   = m
-   editMph e            = error("!Fatal (module ADL2Fspec 425): cannot determine an editable declaration in a composite expression: "++show e)
+   editMph :: (Identified c, Eq c, Show c) => Expression (Relation c) -> (Relation c)  --TODO deze functie staat ook in Calc.hs...
+   editMph (Tm r _) = r
+   editMph e        = error("!Fatal (module ADL2Fspec 325): cannot determine an editable declaration in a composite expression: "++show e)
 
    makeFservice :: Context -> [Quad] -> ObjectDef -> Fservice
    makeFservice context _ object
@@ -379,9 +376,9 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 --        signalRs    = preEmpt (assembleECAs visible (quads visible signalInvs))
         depth :: ObjectDef -> Int
         depth obj   = foldr max 0 [depth o| o<-objats obj]+1
-        trigs :: ObjectDef -> [Declaration->ECArule]
+        trigs :: ObjectDef -> [Declaration Concept->ECArule Concept]
         trigs _  = [] -- [c | editable (objctx obj), c<-nECArules {- ,not (isBlk (ecaAction (c arg))) -} ]
-        arg = error("!Todo (module ADL2Fspec 467): declaratie Delta invullen")
+        arg = error("!Todo (module ADL2Fspec 380): declaratie Delta invullen")
         srvfields = [fld 0 o| o<-objats object]
         fld :: Int -> ObjectDef -> Field
         fld sLevel obj
@@ -390,7 +387,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                , fld_expr     = objctx obj
                , fld_mph      = if editable (objctx obj)
                                 then editMph (objctx obj)
-                                else error("!Fatal (module ADL2Fspec 476): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
+                                else error("!Fatal (module ADL2Fspec 389): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
                , fld_editable = editable (objctx obj)      -- can this field be changed by the user of this service?
                , fld_list     = not (isUni (objctx obj))   -- can there be multiple values in this field?
                , fld_must     = isTot (objctx obj)         -- is this field obligatory?
@@ -398,14 +395,14 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                , fld_sLevel   = sLevel                     -- The (recursive) depth of the current servlet wrt the entire service. This is used for documentation.
                , fld_insAble  = not (null insTrgs)         -- can the user insert in this field?
                , fld_onIns    = case insTrgs of
-                                 []  ->  error("!Fatal (module ADL2Fspec 469): no insert functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 []  ->  error("!Fatal (module ADL2Fspec 397): no insert functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                                  [t] ->  t
-                                 _   ->  error("!Fatal (module ADL2Fspec 471): multiple insert triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 _   ->  error("!Fatal (module ADL2Fspec 399): multiple insert triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                , fld_delAble  = not (null delTrgs)         -- can the user delete this field?
                , fld_onDel    = case delTrgs of
-                                 []  ->  error("!Fatal (module ADL2Fspec 474): no delete functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 []  ->  error("!Fatal (module ADL2Fspec 402): no delete functionality found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                                  [t] ->  t
-                                 _   ->  error("!Fatal (module ADL2Fspec 476): multiple delete triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
+                                 _   ->  error("!Fatal (module ADL2Fspec 404): multiple delete triggers found in field "++objnm obj++" of service "++name obj++" on line: "++show (pos (objctx obj)))
                }
            where triggers = trigs obj
                  insTrgs  = [c | c<-triggers, ecaTriggr (c arg)==On Ins (makeInline (editMph (objctx obj))) ]
@@ -429,10 +426,10 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 --   snd3 (_,b,_) = b
 
    -- Quads embody the "switchboard" of rules. A quad represents a "proto-rule" with the following meaning:
-   -- whenever Morphism m is affected (i.e. tuples in m are inserted or deleted),
+   -- whenever morphism m is affected (i.e. tuples in m are inserted or deleted),
    -- the rule may have to be restored using functionality from one of the clauses.
    -- The rule is carried along for traceability.
-   quads :: (Morphism->Bool) -> Rules  -> [Quad]
+   quads :: (Relation Concept->Bool) -> Rules (Relation Concept) -> [Quad]
    quads visible rs
     = [ Quad m (Clauses [ (conj,allShifts conj)
                         | conj <- conjuncts rule
@@ -448,45 +445,53 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
       ]
 
 -- The function allClauses yields an expression which has constructor Fu in every case.
-   allClauses :: Rule -> Clauses
+   allClauses :: Rule (Relation Concept) -> Clauses
    allClauses rule = Clauses [(conj,allShifts conj)| conj<-conjuncts rule] rule
 
-   allShifts :: Expression -> Expressions
+   allShifts :: Expression (Relation Concept) -> [Expression (Relation Concept)]
+   allShifts conjunct = rd [simplify e'| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
+{- used to be nicer, by normalizing on 'flp'. But that yields overlapping types since january of 2011...
+   Feel free to restore, because I couldn't. (SJ)
    allShifts conjunct = rd [simplify (normFlp e')| e'<-shiftL conjunct++shiftR conjunct, not (isTrue e')]
     where
+       normFlp :: (Identified c, Show c, Relational c c, SpecHierarchy c, ConceptStructure (Expression (Relation c)) c) =>
+                  Expression (Relation c) -> Expression (Relation c)
        normFlp (Fux []) = Fux []
        normFlp (Fux fs) = if length [m| f<-fs, m<-morlist f, inline m] <= length [m| f<-fs, m<-morlist f, not (inline m)]
                          then Fux (map flp fs) else (Fux fs)
-       normFlp _ = error ("!Fatal (module Calc 61): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
+       normFlp _ = error ("!Fatal (module ADL2Fspec 461): normFlp must be applied to Fu expressions only, look for mistakes in shiftL or shiftR")
+-}
 
-   shiftL :: Expression -> Expressions
+   shiftL :: (Conceptual c,Show c,SpecHierarchy c,Identified c,ShowADL (Expression (Relation c))) =>
+             Expression (Relation c) -> [Expression (Relation c)]
    shiftL r
-    | length antss+length conss /= length fus = error ("!Fatal (module Calc 65): shiftL will not handle argument of the form "++showADL r)
+    | length antss+length conss /= length fus = error ("!Fatal (module ADL2Fspec 467): shiftL will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftL doesn't work here.
-    | idsOnly antss                           = [Fux ([Cpx (F [Tm (mIs srcA)(-1)])]++map F conss)]
+    | and (map idsOnly (concat antss))        = [Fux ([Cpx (F [Tm (mIs srcA)(-1)])]++map F conss)]
     | otherwise                               = [Fux ([ Cpx (F (if null ts then id' css else ts))
                                                      | ts<-ass++if null ass then [id' css] else []]++
                                                      [ F (if null ts then id' ass else ts)
                                                      | ts<-css++if null css then [id' ass] else []])
                                                 | (ass,css)<-rd(move antss conss)
-                                                , if null css then error "!Fatal (module Calc 73): null css in shiftL" else True
-                                                , if null ass then error "!Fatal (module Calc 74): null ass in shiftL" else True
+                                                , if null css then error "!Fatal (module ADL2Fspec 475): null css in shiftL" else True
+                                                , if null ass then error "!Fatal (module ADL2Fspec 476): null ass in shiftL" else True
                                                 ]
     where
      Fux fs = disjuncts r
-     fus = filter (not.isIdent) fs
+     fus = filter (not.isI) fs
      antss = [ts | Cpx (F ts)<-fus]
      conss = [ts | F ts<-fus]
-     srcA = -- if null antss  then error ("!Fatal (module Calc 81): empty antecedent in shiftL ("++showHS options "" r++")") else
-            if length (eqClass order [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module Calc 82): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head ants) | ants<-antss])) else
+     srcA = -- if null antss  then error ("!Fatal (module ADL2Fspec 483): empty antecedent in shiftL ("++showHS options "" r++")") else
+            if length (eqClass comparable [ source (head ants) | ants<-antss])>1 then error ("!Fatal (module ADL2Fspec388): shiftL ("++showADL r++")\nin calculation of srcA\n"++show (eqClass comparable [ source (head ants) | ants<-antss])) else
             foldr1 lub [ source (head ants) | ants<-antss]
      id' ass = [Tm (mIs c) (-1)]
       where a = (source.head.head) ass
-            c = if not (a `order` b) then error ("!Fatal (module Calc 86): shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
+            c = if not (a `comparable` b) then error ("!Fatal (module ADL2Fspec 488): shiftL ("++showADL r++")\nass: "++show ass++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b) else
                 a `lub` b
             b = (target.last.last) ass
    -- It is imperative that both ass and css are not empty.
-     move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
+     move :: (Conceptual c,Show c,SpecHierarchy c,Identified c) =>
+             [Expressions (Relation c)] -> [Expressions (Relation c)] -> [([Expressions (Relation c)],[Expressions (Relation c)])]
      move ass [] = [(ass,[])]
      move ass css
       = (ass,css):
@@ -500,32 +505,34 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         else []
         where h=head (map head css); l=head (map last css)
 
-   shiftR :: Expression -> Expressions
+   shiftR :: (Conceptual c,Show c,SpecHierarchy c,Identified c,ShowADL (Expression (Relation c))) =>
+             Expression (Relation c) -> [Expression (Relation c)]
    shiftR r
-    | length antss+length conss /= length fus = error ("!Fatal (module Calc 106): shiftR will not handle argument of the form "++showADL r)
+    | length antss+length conss /= length fus = error ("!Fatal (module ADL2Fspec 510): shiftR will not handle argument of the form "++showADL r)
     | null antss || null conss                = [disjuncts r|not (null fs)] --  shiftR doesn't work here.
-    | idsOnly conss                           = [Fux ([Cpx (F [Tm (mIs srcA)(-1)])]++map F antss)]
+    | and (map idsOnly (concat conss))        = [Fux ([Cpx (F [Tm (mIs srcA)(-1)])]++map F antss)]
     | otherwise                               = [Fux ([ Cpx (F (if null ts then id' css else ts))
                                                      | ts<-ass++if null ass then [id' css] else []]++
                                                      [ F (if null ts then id' ass else ts)
                                                      | ts<-css++if null css then [id' ass] else []])
                                                 | (ass,css)<-rd(move antss conss)]
     where
-     Fux fs = disjuncts r
-     fus = filter (not.isIdent) fs
+     Fux fs = disjuncts r  -- fs is a list of expressions
+     fus = filter (not.isI) fs
      antss = [ts | Cpx (F ts)<-fus]
      conss = [ts | F ts<-fus]
-     srcA = if null conss then error ("!Fatal (module Calc 119): empty consequent in shiftR ("++showADL r++")") else
-            if length (eqClass order [ source (head cons) | cons<-conss])>1
-            then error ("Fatal (module Calc120): shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass order [ source (head cons) | cons<-conss]))
+     srcA = if null conss then error ("!Fatal (module ADL2Fspec 523): empty consequent in shiftR ("++showADL r++")") else
+            if length (eqClass comparable [ source (head cons) | cons<-conss])>1
+            then error ("Fatal (module ADL2Fspec 525): shiftR ("++showADL r++")\nin calculation of srcA\n"++show (eqClass comparable [ source (head cons) | cons<-conss]))
             else foldr1 lub [ source (head cons) | cons<-conss]
      id' css = [Tm (mIs c) (-1)]
       where a = (source.head.head) css
-            c = if not (a `order` b)
-                then error ("!Fatal (module Calc 126): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b ++ ". " )
+            c = if not (a `comparable` b)
+                then error ("!Fatal (module ADL2Fspec 530): shiftR ("++showADL r++")\nass: "++show css++"\nin calculation of c = a `lub` b with a="++show a++" and b="++show b ++ ". " )
                 else a `lub` b
             b = (target.last.last) css
-     move :: [Expressions] -> [Expressions] -> [([Expressions],[Expressions])]
+     move :: (Conceptual c,Show c,SpecHierarchy c,Identified c) =>
+             [Expressions (Relation c)] -> [Expressions (Relation c)] -> [([Expressions (Relation c)],[Expressions (Relation c)])]
      move [] css = [([],css)]
      move ass css
       = (ass,css):
@@ -541,7 +548,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 
 -- Deze functie neemt verschillende clauses samen met het oog op het genereren van code.
 -- Hierdoor kunnen grotere brokken procesalgebra worden gegenereerd.
-   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
+   assembleECAs :: (Relation Concept->Bool) -> [Quad] -> [ECArule Concept]
    assembleECAs visible qs
     = [ecarule i| (ecarule,i) <- zip ecas [(1::Int)..]]
       where
@@ -588,12 +595,12 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 -- maintains something else with that same event e, we can save r' the trouble.
 -- After all, event e will block anyway.
 -- preEmpt tries to simplify ECArules by predicting whether a rule will block.
-   preEmpt :: [ECArule] -> [ECArule]
+   preEmpt :: [ECArule Concept] -> [ECArule Concept]
    preEmpt ers = pr [length ers] (10::Int)
     where
-     pr :: [Int] -> Int -> [ECArule]
+     pr :: [Int] -> Int -> [ECArule Concept]
      pr ls n
-       | n == 0     = error ("!Fatal (module ADL2Fspec 674): too many cascading levels in preEmpt "++show ls)
+       | n == 0     = error ("!Fatal (module ADL2Fspec 602): too many cascading levels in preEmpt "++show ls)
        | (not.null) cascaded = pr (length cascaded:ls)
                                -- ([er{ecaAction=normPA (ecaAction er)}| er<-cascaded] ++uncasced)
                                   (n-1)
@@ -605,7 +612,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
        cascaded = [er{ecaAction=action'}| er<-new, let (c,action') = cascade (eMhp (ecaTriggr er)) (ecaAction er), c]
        uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
-     cascade :: Morphism -> PAclause -> (Bool, PAclause)
+--     cascade :: Relation c -> PAclause (Relation c) -> (Bool, PAclause (Relation c))
      cascade mph (Do srt (Tm to _) _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
       where blkErs = [er| er<-ers
                         , Blk _<-[ecaAction er]
@@ -623,22 +630,22 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
      cascade  _  (Nop m)          = (False, Nop m)
      cascade  _  (Blk m)          = (False, Blk m)
 
-   conjuncts :: Rule -> Expressions
+   conjuncts :: (Show c, Identified c, ConceptStructure c c) => Rule (Relation c) -> Expressions (Relation c)
    conjuncts = fiRule.conjNF.normExpr
     where fiRule (Fix fis) = {- map disjuncts -} fis
           fiRule r        = [ {- disjuncts -} r]
 
 -- The function disjuncts yields an expression which has constructor Fu in every case.
-   disjuncts :: Expression -> Expression
+   disjuncts :: (Show r, Identified r, Eq r) => Expression r -> Expression r
    disjuncts = fuRule
     where fuRule (Fux cps) = (Fux . rd . map cpRule) cps
           fuRule r        = Fux [cpRule r]
-          cpRule (Cpx r)   = Cpx (fRule r)
+          cpRule (Cpx r)  = Cpx (fRule r)
           cpRule r        = fRule r
           fRule (F ts)    = F ts
           fRule  r        = F [r]
 
-   actSem :: InsDel -> Morphism -> Expression -> Expression
+   actSem :: (Show c, Identified c, ConceptStructure c c) => InsDel -> Relation c -> Expression (Relation c) -> Expression (Relation c)
    actSem Ins m (Tm d _) | makeInline m==makeInline d = Tm m (-1)
                        | otherwise                  = Fux[Tm m (-1),Tm d (-1)]
    actSem Ins m delt   = disjNF (Fux[Tm m (-1),delt])
@@ -647,7 +654,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    actSem Del m delt   = conjNF (Fix[Tm m (-1),Cpx delt])
  --  actSem Del m delt = Fi[m,Cp delt]
 
-   delta :: (Concept, Concept) -> Expression
+   delta :: Eq c =>(c, c) -> Expression (Relation c)
    delta (a,b)  = Tm (makeMph (Sgn { decnm   = "Delta"
                                    , desrc   = a
                                    , detrg   = b
@@ -668,21 +675,21 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
 -- TODO: Deze code is onvolledig en misschien zelfs fout....
-   doCode :: (Morphism->Bool)        --  the morphisms that may be changed
-          -> InsDel
-          -> Expression              --  the expression in which a delete or insert takes place
-          -> Expression              --  the delta to be inserted or deleted
-          -> [(Expression,Rules )]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
-          -> PAclause
+   doCode :: (Relation Concept->Bool)                                        --  the relations that may be changed
+             -> InsDel                                                       --  the type of action: Insert or Delete
+             -> Expression (Relation Concept)                                --  the expression in which a delete or insert takes place
+             -> Expression (Relation Concept)                                --  the delta to be inserted or deleted
+             -> [(Expression (Relation Concept),Rules (Relation Concept))]   --  the motivation, consisting of the conjuncts (traced back to their rules) that are being restored by this code fragment.
+             -> PAclause (Relation Concept)
    doCode editAble tOp' expr1 delta1 motive = doCod delta1 tOp' expr1 motive
     where
       doCod deltaX tOp exprX motiv =
         case (tOp, exprX) of
           (_ ,  Fux [])   -> Blk motiv
           (_ ,  Fix [])   -> Nop motiv
-          (_ ,  F [])    -> error ("!Fatal (module Calc 366): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (F [])++",\n"++
+          (_ ,  F [])    -> error ("!Fatal (module ADL2Fspec 689): doCod ("++showADL deltaX++") "++show tOp++" F [],\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
-          (_ ,  Fdx [])   -> error ("!Fatal (module Calc 368): doCod ("++showADL deltaX++") "++show tOp++" "++showADL (Fdx [])++",\n"++
+          (_ ,  Fdx [])   -> error ("!Fatal (module ADL2Fspec 691): doCod ("++showADL deltaX++") "++show tOp++" Fdx [],\n"++
                                      "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
           (_ ,  Fux [t])  -> doCod deltaX tOp t motiv
           (_ ,  Fix [t])  -> doCod deltaX tOp t motiv
@@ -724,10 +731,10 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
           (_  , Fdx ts)   -> doCod deltaX tOp (Cpx (F (map Cpx ts))) motiv
           (_  , K0x x)    -> doCod (deltaK0 deltaX tOp x) tOp x motiv
           (_  , K1x x)    -> doCod (deltaK1 deltaX tOp x) tOp x motiv
-          (_  , Tm m _)  -> -- error ("DIAG ADL2Fspec 824:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
+          (_  , Tm m _)  -> -- error ("DIAG ADL2Fspec 644:\ndoCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"
                                    -- -- ++"\nwith disjNF deltaX:\n "++showADL (disjNF deltaX))
                             (if editAble m then Do tOp exprX (deltaX) motiv else Blk [(Tm m (-1),rd' nr [r|(_,rs)<-motiv, r<-rs])])
-          (_ , _)        -> error ("!Fatal (module Calc 827): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
+          (_ , _)        -> error ("!Fatal (module ADL2Fspec 736): Non-exhaustive patterns in the recursive call doCod ("++showADL deltaX++") "++show tOp++" ("++showADL exprX++"),\n"++
                                    "within function doCode "++show tOp'++" ("++showADL expr1++") ("++showADL delta1++").")
 
    chop :: [t] -> [([t], [t])]

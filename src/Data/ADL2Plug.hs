@@ -1,18 +1,19 @@
 {-# OPTIONS_GHC -Wall #-}  
 module Data.ADL2Plug 
   (mor2plug --make a binary sqlplug for a morphism that is neither inj nor uni
-  ,makeTblPlugs --generate non-binary sqlplugs for morphisms that are at least inj or uni, but not already in some user defined sqlplug
+  ,makeTblPlugs --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
   ,makePhpPlug --make a phpplug from an ObjectDef (user-defined php plug)
   ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
   ,mph2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
 import Collection     (Collection((>-)))
-import Adl
+import ADL
 import Auxiliaries    (eqCl, sort')
 import Data.Plug
 import Prototype.CodeAuxiliaries (Named(..))
 import Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
+import Prototype.CodeStatement (PHPconcept(..))
 import Char
 import FPA
 import Data.Maybe (listToMaybe)
@@ -49,10 +50,10 @@ import Data.List (nub)
 --  + fld1={fldexpr=id,fldnull=not(isTot m),flduniq=isInj m}
 --  + fld2={fldexpr=m ,fldnull=not(isTot (id;m) ,flduniq=isInj (id;m)}
 --  if isTot m then id=I else not(isSur id)
-mor2plug :: Morphism -> [Morphism] -> PlugSQL
+mor2plug :: Relation Concept -> [Relation Concept] -> PlugSQL
 mor2plug  m totals
   | Inj `elem` (multiplicities m) || Uni `elem` (multiplicities m) 
-    = error ("!Fatal (module ADL2Plug 35): unexpected call of mor2plug("++show m++"), because it is injective or univalent.")
+    = error ("!Fatal (module ADL2Plug 55): unexpected call of mor2plug("++show m++"), because it is injective or univalent.")
   | not is_Tot && is_Sur 
     = mor2plug (flp m) totals
   | otherwise
@@ -99,7 +100,7 @@ mor2plug  m totals
 --
 -- WHY151210 -> why sqltype=SQLID if there are any keys around and (isIdent m) and the field does not contain strings?
 --              what is the motivation for this implementation?
-mph2fld :: [KeyDef] -> [Morphism] -> [Morphism] -> Morphism -> SqlField
+mph2fld :: [KeyDef] -> [Relation Concept] -> [Relation Concept] -> Relation Concept -> SqlField
 mph2fld keyds kernel plugAtts m
  = Fld fldName                                      -- fldname : 
        (Tm m (-1))                                  -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
@@ -147,7 +148,7 @@ mph2fld keyds kernel plugAtts m
          target (head kernel) represents the root concept of the plug
    Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
    These relations serve as attributes. Code:  [a| a<-attMors, source a `elem` concs kernel]
-   Then, all these morphisms are made into fields. Code: plugFields = [mph2fld plugMors a| a<-plugMors]
+   Then, all these relations are made into fields. Code: plugFields = [mph2fld plugMors a| a<-plugMors]
    We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
    For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
    By the way, parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities.
@@ -155,7 +156,7 @@ mph2fld keyds kernel plugAtts m
 -}
 --WHY151210 -> why is currentPlugs of type [PlugSQL] and not [Plug]? 
 --             I would expect if there is a PHP plug for some decl, you will not need to store its mph in a sql plug
-makeTblPlugs :: Context -> Declarations -> [PlugSQL] -> [PlugSQL]
+makeTblPlugs :: Context -> [Declaration Concept] -> [PlugSQL] -> [PlugSQL]
 makeTblPlugs context allDecs currentPlugs
  = sort' ((0-).length.tblfields)
     [ if ((foldr (&&) True [isIdent m|(m,_,_)<-attributeLookuptable]) && length conceptLookuptable==1)  
@@ -174,11 +175,11 @@ makeTblPlugs context allDecs currentPlugs
               then error "!Fatal (module ADL2Plug 172): nul mainkernel."
               else target (head mainkernel)               -- one concept from the kernel is designated to "lead" this plug.
           plugAtts              = [a| a<-attMors, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
-          plugMors              = mainkernel++restkernel++plugAtts --all morphisms for which the target is stored in the plug
+          plugMors              = mainkernel++restkernel++plugAtts --all relations for which the target is stored in the plug
           plugFields            = [fld a| a<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable   :: [(Concept,SqlField)]
           conceptLookuptable    = [(target m,fld m)|m<-mainkernel]
-          attributeLookuptable :: [(Morphism,SqlField,SqlField)]
+          attributeLookuptable :: [(Relation Concept,SqlField,SqlField)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
                                   [(m,lookupC (source m),fld m)| m<-plugMors] 
           lookupC cpt           = if null [f|(c',f)<-conceptLookuptable, cpt==c'] 
@@ -187,31 +188,31 @@ makeTblPlugs context allDecs currentPlugs
           fld                   = mph2fld (keyDefs context) mainkernel (restkernel++plugAtts)
     ]
    where   
--- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the ADL-script are excluded from the process.
-    nonCurrDecls = [d| d@Sgn{}<-allDecs >- concat (map decls currentPlugs), decusr d]
+-- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the Ampersand script are excluded from the process.
+    nonCurrMors = [makeMph d| d@Sgn{}<-allDecs >- [makeDeclaration m|m<-mors currentPlugs], decusr d]
 -- For making kernels as large as possible, the univalent and injective declarations will be flipped if that makes them surjective.
 -- kernelMors contains all relations that occur in kernels.
--- note that kernelMors contains no I-relations, because all declarations from nonCurrDecls match @Sgn{}.
+-- note that kernelMors contains no I-relations, because all declarations from nonCurrMors match @Sgn{}.
     kernelMors   = [m|m<-ms, isSur m]++[flp m|m<-ms, not (isSur m), isTot m]
-                      where ms = [makeMph d| d<-nonCurrDecls, isUni d, isInj d]
+                      where ms = [d| d<-nonCurrMors, isUni d, isInj d]
 -- iniKernels contains the set of kernels that would arise if kernelMors were empty. From that starting point, the kernels are computed recursively in code that follows (kernels).
-    iniKernels   = [(c,[])| c<-concs context, c `notElem` map concept currentPlugs]
-    attMors      = [     makeMph d  | d<-nonCurrDecls, isUni d, not (d `elem` decls kernelMors)]++
-                   [flp (makeMph d) | d<-nonCurrDecls, not (isUni d), isInj d, not (d `elem` decls kernelMors)]
+    iniKernels   = [(c,[])| c<-concs context, c `notElem` concs currentPlugs]
+    attMors      = [    m | m<-nonCurrMors, isUni m, not (m `elem` kernelMors)]++
+                   [flp m | m<-nonCurrMors, not (isUni m), isInj m, not (m `elem` kernelMors)]
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
 So the first step is create the kernels ...   -}
 --fst kernels = subset of kernel where no two kernel fields have the same target i.e. cLkpTbl
 --              attMors will link (see mLkpTbl) to these kernel fields
 --snd kernels = complement of (fst kernels) (thus, we will not link attMors to these kernel fields directly)
-    kernels :: [[Morphism]]
+    kernels :: [[Relation Concept]]
     kernels
-     = --error ("Diag ADL2Fspec "++show (kernelMors)++"\n"++show (map fst iniKernels)++"\n"++show (expand iniKernels))++
+     = --error ("Diag ADL2Plug "++show (kernelMors)++"\n"++show (map fst iniKernels)++"\n"++show (expand iniKernels))++
        [ mIs c: ms  -- at least one morphism for each concept in the kernel
        | (c,ms)<-f iniKernels    -- the initial kernels
        ]
        where
-         f :: [(Concept,[Morphism])] -> [(Concept,[Morphism])]
+         f :: [(Concept,[Relation Concept])] -> [(Concept,[Relation Concept])]
          f ks = if ks==nks then merge (reverse ks) else f (merge nks)      -- all r<-kernelMors are surjective, univalent and injective
           where nks = expand ks
          expand ks = [(c, ms++[r|r<-kernelMors, r `notElem` ms, source r `elem` c:concs ms])| (c,ms)<-ks] -- expand a kernel (c,ms) by one step
@@ -240,17 +241,17 @@ So the first step is create the kernels ...   -}
 --mph2fld  (keyDefs context) kernel plugAtts m
 makeSqlPlug :: Context -> ObjectDef -> PlugSQL
 makeSqlPlug context obj
- | null(objats obj) && isIdent(objctx obj)
+ | null(objats obj) && isI(objctx obj)
    = ScalarSQL (name obj) (mph2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
  | null(objats obj) --TODO151210 -> assuming objctx obj is Mph{} if it is not I{}
-   = error "TODO151210 -> implement defining binary plugs in ASCII"
- | isIdent(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
+   = error "!Fatal (module Data.Adl2Plug 230): TODO151210 -> implement defining binary plugs in ASCII"
+ | isI(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
    = TblSQL (name obj)     -- plname (table name)
      plugFields             -- fields
      conceptLookuptable     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      attributeLookuptable   -- mLkpTbl is een lijst met morphismen die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
      (ILGV Eenvoudig)       -- functie punten analyse
- | otherwise = error "!Fatal (module ADL2Plug 204): Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
+ | otherwise = error "!Fatal (module ADL2Plug 237): Implementation expects one concept for plug object (SQLPLUG tblX: I[Concept])."
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
      = source(objctx obj) 
@@ -311,11 +312,11 @@ makePhpPlug obj
    toAttr :: ObjectDef -> CodeVar
    toAttr a = CodeVar{cvIndexed=IndexByName -- TODO, read this from parameters
                      ,cvContent=Right [] -- TODO!! Allow complex objects..
-                     ,cvExpression=objctx a}
+                     ,cvExpression=mapExpression (mapMorphism PHPC) (objctx a)}
    outObj :: CodeVar
    outObj = CodeVar{cvIndexed=IndexByName
                    ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
-                   ,cvExpression=objctx obj}
+                   ,cvExpression=mapExpression (mapMorphism PHPC) (objctx obj)}
    verifiesInput::Bool
    verifiesInput = True   
 

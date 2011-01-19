@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleContexts #-}
 module Calc ( deriveProofs
             , reprAsRule
             , lambda
@@ -11,12 +11,12 @@ module Calc ( deriveProofs
    import Auxiliaries        (sort',eqCl)
    import Strings            (commaEng)
    import Data.List
-   import Adl
+   import ADL
    import Data.Fspec
-   import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode)
+   import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode, editable, editMph)
    import ShowECA
    import ShowHS
-   import ShowADL            (showADL,showADLcode)
+   import ShowADL            (ShowADL(..))
    import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import Options            (Options(..),defaultFlags)
    import Data.Explain
@@ -57,10 +57,10 @@ module Calc ( deriveProofs
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
 --        qs         = vquads fSpec
 --        ecaRs      = assembleECAs visible qs
-        editable (Tm Mph{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
-        editable _             = False
-        editMph (Tm m@Mph{} _) = m       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
-        editMph e              = error("!Fatal (module Calc 230): cannot determine an editable declaration in a composite expression: "++show e)
+--        editable (Tm Mph{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+--        editable _             = False
+--        editMph (Tm m@Mph{} _) = m       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+--        editMph e              = error("!Fatal (module Calc 63): cannot determine an editable declaration in a composite expression: "++show e)
         -- De functie spread verspreidt strings over kolommen met een breedte van n.
         -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.
         -- Hij probeert daarbij zo weinig mogelijk regels te gebruiken,
@@ -109,7 +109,7 @@ module Calc ( deriveProofs
              "\nnormalized action\n "++showECA fSpec "\n  " (normPA (ecaAction ecarule))++
              (if null ds then "" else 
               "\ndelta expression\n "++intercalate "\n " [showADLcode fSpec d| d<-ds]++
-              "\nderivation:\n "++showProof (showADLcode fSpec) (nfProof (head ds))++
+              "\nderivation:\n "++showProof (showADLcode fSpec) (nfProof (showADLcode fSpec) (head ds))++
               "\ndisjunctly normalized delta expression\n "++showADLcode fSpec (disjNF (head ds)))
         else ""
       | (er,i) <- zip ecas [(1::Int)..], let ecarule = er i]++
@@ -133,7 +133,7 @@ module Calc ( deriveProofs
       "\n--------------\n"
       where 
        qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).
-          --   assembleECAs :: (Morphism->Bool) -> [Quad] -> [ECArule]
+          --   assembleECAs :: (Relation Concept->Bool) -> [Quad] -> [ECArule]
        ecaRs = assembleECAs (\_->True) qs  -- the raw (unnormalized) ECA rules.
        mphEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
        visible _ = True -- for computing totality, we take all quads into account.
@@ -223,10 +223,10 @@ module Calc ( deriveProofs
                                   ]
                 , "")
               ] where e = normExpr rule
-                      prf = cfProof e
+                      prf = cfProof (showADLcode fSpec) e
                       (e',_,_) = last prf
-                      conjProof = showProof (showADLcode fSpec) . cfProof
-                      disjProof = showProof (showADLcode fSpec) . dfProof
+                      conjProof = showProof (showADLcode fSpec) . cfProof (showADLcode fSpec)
+                      disjProof = showProof (showADLcode fSpec) . dfProof (showADLcode fSpec)
               --      showPr = showProof (showADLcode fSpec)  -- hoort bij de uitgecommentaarde code hierboven...
        cleanup :: [(String,String)] -> [(String,String)]
        cleanup [x] = [x]
@@ -238,9 +238,9 @@ module Calc ( deriveProofs
 --        {r} DEL m FROM expr {r'}
 -- Dan toetst checkMono of r|-r' waar is op grond van de afleiding uit derivMono.
 -- Als dat waar is, betekent dat dat invariant r waar blijft wanneer actie a wordt uitgevoerd.
-   checkMono :: Expression
+   checkMono :: Expression (Relation Concept)
              -> InsDel
-             -> Morphism
+             -> Relation Concept
              -> Bool
    checkMono expr ev m = simplify expr == simplify (antecedent conclusion) &&
                          simplify (subst (m, actSem ev m (delta (sign m))) expr) ==
@@ -249,24 +249,24 @@ module Calc ( deriveProofs
 
 
 -- The function reprAsRule is used in show-functions, whenever an expression that represents a rule has to be shown to look like a rule.
-   reprAsRule :: Rule -> Expression -> Rule
+   reprAsRule :: Rule (Relation Concept) -> Expression (Relation Concept) -> Rule (Relation Concept)
    reprAsRule r expr = r'{r_usr=False}
     where
      r' = case expr of
-           (Fux []) -> error ("!Fatal (module Calc 439): erroneous call to function reprAsRule r ("++showADL expr++").")
+           (Fux []) -> error ("!Fatal (module Calc 256): erroneous call to function reprAsRule r ("++showADL expr++").")
            (Fux ts) -> if or [isNeg t|t<-ts] 
                       then r { rrsrt = Implication
                              , rrant = Fix [notCp t|t<-ts,isNeg t]
                              , rrcon = Fux [t|t<-ts,isPos t]
                              }
                       else r { rrsrt = Truth
-                             , rrant = error ("!Fatal (module Calc 446): erroneous call to antecedent of r "++showADL expr)
+                             , rrant = error ("!Fatal (module Calc 263): erroneous call to antecedent of r "++showADL expr)
                              , rrcon = Fux ts
                              }  
            _ -> case disjNF expr of
                       e@(Fux{}) -> reprAsRule r e
                       _    -> r { rrsrt = Truth
-                                , rrant = (error ("!Fatal (module Calc 452): erroneous call to antecedent of r "++showADL expr))
+                                , rrant = (error ("!Fatal (module Calc 269): erroneous call to antecedent of r "++showADL expr))
                                 , rrcon = expr
                                 }
                         
@@ -284,23 +284,23 @@ module Calc ( deriveProofs
            rev x = x
 
    showProof :: (expr->String) -> Proof expr -> String
-   showProof sh [(expr,_,_)]        = "\n      "++sh expr++"\n"
-   showProof sh ((expr,ss,equ):prf) = "\n      "++sh expr++
-                                      "\n"++(if null ss then "   "++equ else if null equ then intercalate " " ss else "   "++equ++" { "++intercalate " and " ss++" }")++
-                                      showProof sh prf
-                                      --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
-   showProof _  []                  = ""
+   showProof shw [(expr,_,_)]        = "\n      "++shw expr++"\n"
+   showProof shw ((expr,ss,equ):prf) = "\n      "++shw expr++
+                                       "\n"++(if null ss then "   "++equ else if null equ then intercalate " " ss else "   "++equ++" { "++intercalate " and " ss++" }")++
+                                       showProof shw prf
+                                       --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr 
+   showProof _  []                   = ""
 
 -- De volgende functie levert een afleiding, die bedoeld is om aan te tonen dat een preconditie r deelverzameling is van postconditie r'.
 -- Hiermee hoop je aan te tonen dat een actie {expr} a {expr'} de invariant behoudt, ofwel dat expr|-expr', op basis van monotonie eigenschappen.
 -- Derivmono geeft alleen de afleiding.
-   derivMono :: Expression -> InsDel -> Morphism -> [(Rule, [String], String)]
+   derivMono :: Expression (Relation Concept) -> InsDel -> Relation Concept -> [(Rule (Relation Concept), [String], String)]
    derivMono expr -- preconditie van actie a
              tOp  -- de actie (Ins of Del)
              m'   -- het morfisme, zodat de actie bestaat uit INSERT m' INTO expr of DELETE m' FROM expr
     = f (head (lambda tOp (Tm m'(-1)) expr++[[]])) (start tOp)
     where
-     f:: [(Expression, [String], whatever)] -> (Expression, Expression) -> [(Rule, [String], String)]
+     f :: [(Expression (Relation Concept), [String], whatever)] -> (Expression (Relation Concept), Expression (Relation Concept)) -> [(Rule (Relation Concept), [String], String)]
      f [] (_,_) = []
      f [(e',_,_)] (neg',pos')
       = [(rule (subst (m',neg') e') (subst (m',pos') e'),[],"")]
@@ -313,9 +313,9 @@ module Calc ( deriveProofs
          
      start Ins  = (Tm m'(-1),Fux [Tm m'(-1),delta (sign m')])
      start Del  = (Fix [Tm m'(-1),Cpx (delta (sign m'))],Tm m'(-1))
-     rule :: Expression -> Expression -> Rule
+     rule :: Expression (Relation Concept) -> Expression (Relation Concept) -> Rule (Relation Concept)
      rule neg' pos' | isTrue neg' = Ru { rrsrt = Truth
-                                       , rrant = error ("!Fatal (module Calc 487): illegal reference to antecedent in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , rrant = error ("!Fatal (module Calc 318): illegal reference to antecedent in rule ("++showADL neg'++") |- ("++showADL pos'++")")
                                        , rrfps = Nowhere
                                        , rrcon = pos'
                                        , rrxpl = [string2AutoExplain (defaultFlags {language=Dutch}) ("Waarom wordt deze regel hier aangemaakt? (In Calc.hs, regel 306)")]
@@ -326,8 +326,8 @@ module Calc ( deriveProofs
                                        , runum = 0
                                        , r_pat = ""
                                        , r_usr = False
-                                       , r_sgl = error ("!Fatal (module Calc 496): illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")")
-                                       , srrel = error ("!Fatal (module Calc 497): illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , r_sgl = error ("!Fatal (module Calc 329): illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , srrel = error ("!Fatal (module Calc 330): illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")")
                                        }
                     | otherwise   = Ru { rrsrt = Implication
                                        , rrant = neg'
@@ -341,8 +341,8 @@ module Calc ( deriveProofs
                                        , runum = 0
                                        , r_pat = ""
                                        , r_usr = False
-                                       , r_sgl = error ("!Fatal (module Calc 509): illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")")
-                                       , srrel = error ("!Fatal (module Calc 510): illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , r_sgl = error ("!Fatal (module Calc 344): illegal reference to r_sgl in rule ("++showADL neg'++") |- ("++showADL pos'++")")
+                                       , srrel = error ("!Fatal (module Calc 345): illegal reference to srrel in rule ("++showADL neg'++") |- ("++showADL pos'++")")
                                        }
      showOp expr' = case expr' of
                      F{}      -> ";"
@@ -353,9 +353,9 @@ module Calc ( deriveProofs
                      K0x{}     -> "*"
                      K1x{}     -> "+"
                      Tm mph _   -> if inline mph then "" else "~"
-                     Tc{}     -> error("!Fatal (module Calc 529): call to showOp (Tc x) in module Calc.hs")
+                     Tc{}     -> error("!Fatal (module Calc 356): call to showOp (Tc x) in module Calc.hs")
 
-   positiveIn :: Expression -> Morphism -> Maybe Bool
+   positiveIn :: Expression (Relation Concept) -> Relation Concept -> Maybe Bool
    positiveIn expr m | and result           = Just True   -- all are True, so an insert in m means an insert in expr
                      | and (map not result) = Just False  -- all are False, so a delete from m means an insert in expr
                      | otherwise            = Nothing     -- inconclusive
@@ -371,103 +371,110 @@ module Calc ( deriveProofs
      f (K1x e)   = f e
      f (Tc e)   = f e
 
-   lambda :: InsDel -> Expression -> Expression -> [Proof Expression]
+   lambda :: InsDel -> Expression (Relation Concept) -> Expression (Relation Concept) -> [Proof (Expression (Relation Concept))]
    lambda tOp' e' expr' = [reversePrf[(e'',text,op)
                           | (e'',_,text,op)<-prf]
                           | prf<-lam tOp' e' expr' ]
     where
-       lam tOp e3 expr =
-          case expr of
-              (F [f])   -> lam tOp e3 f
-              (F fs) | e3==expr             -> [[(e3,(\x->x),[],"")]]
-                     | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==")
-                                               :prf
-                                              | prf<-lam tOp e3 (deMrg expr)
-                                              ] -- isNeg is nog niet helemaal correct.
-                     | or[null p|p<-fPrfs (F fs) ] -> []
-                     | otherwise           -> [(expr,(\_->expr),   [derivtext tOp "mono" (first (lc (F fs))) expr],"<--"): (lc (F fs))]        
-              (Fux [f])  -> lam tOp e3 f
-              (Fux fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
-                     | length (const' (Fux fs))>0     -> [(expr,(\_->expr),   [derivtext tOp "mono" (inter' expr) expr],"<--")
-                                                        :prf
-                                                       | prf<-lam tOp e3 (inter' expr)
-                                                       ]
-                     | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)]
-                     | or[null p|p<-fPrfs (Fux fs)] -> []
-                     | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc (Fux fs))) expr],"<--") : (lc (Fux fs))]
-              (Fdx [f])  -> lam tOp e3 f
-              (Fdx fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
-                     | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)] -- isNeg is nog niet helemaal correct.
-                     | or[null p|p<-fPrfs (Fdx fs)] -> []
-                     | otherwise           -> [(expr,(\_->expr),[derivtext tOp "mono" (first (lc (Fdx fs))) expr],"<--"): (lc (Fdx fs))]
-              (Fix [f])  -> lam tOp e3 f
-              (Fix fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
-                     | length (const' (Fix fs))>0     -> [(expr,(\_->expr),      [derivtext tOp "mono" (inter' expr) expr],"<--")
-                                                        :prf
-                                                       | prf<-lam tOp e3 (inter' expr)
-                                                       ]
-                     | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)]
-                     | or[null p|p<-fPrfs (Fix fs)] -> []
-                     | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc expr)) expr],"<--") : (lc expr)]
-              (K0x x)   -> [(expr,(\x'->K0x x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
-              (K1x x)   -> [(expr,(\x'->K1x x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
-              (Cpx x)   -> [(expr,(\x'->Cpx x'),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e3 x]
-              (Tc x)   -> lam tOp e3 x
-              (Tm _ _)  ->  [[(e3,(\x->x),[],"")]]
-
-           where
-             deMrg expr'' = case expr'' of
-                              (F fs)  -> notCp (Fdx [notCp f| f<-fs])
-                              (Fux fs) -> notCp (Fix [notCp f| f<-fs])
-                              (Fdx fs) -> notCp (F  [notCp f| f<-fs])
-                              (Fix fs) -> notCp (Fux [notCp f| f<-fs])
-                              Tm{} -> error ("!Fatal (module Calc 590). deMrg Tm{} is not defined.Consult your dealer!")
-                              Tc{} -> error ("!Fatal (module Calc 591). deMrg Tc{} is not defined.Consult your dealer!")
-                              K0x{} -> error ("!Fatal (module Calc 592). deMrg K0{} is not defined.Consult your dealer!")
-                              K1x{} -> error ("!Fatal (module Calc 593). deMrg K1{} is not defined.Consult your dealer!")
-                              Cpx{} -> error ("!Fatal (module Calc 594). deMrg Cp{} is not defined.Consult your dealer!")
-             fPrfs expr'' = case expr'' of
-                              (F fs)  -> xs fs
-                              (Fux fs) -> xs fs
-                              (Fdx fs) -> xs fs
-                              (Fix fs) -> xs fs
-                              Tm{} -> error ("!Fatal (module Calc 600). fPrfs Tm{} is not defined.Consult your dealer!")
-                              Tc{} -> error ("!Fatal (module Calc 601). fPrfs Tc{} is not defined.Consult your dealer!")
-                              K0x{} -> error ("!Fatal (module Calc 602). fPrfs K0{} is not defined.Consult your dealer!")
-                              K1x{} -> error ("!Fatal (module Calc 603). fPrfs K1{} is not defined.Consult your dealer!")
-                              Cpx{} -> error ("!Fatal (module Calc 604). fPrfs Cp{} is not defined.Consult your dealer!")
-                     where
-                        xs fs = [lam tOp e3 f|f<-fs, isVar f e3]                       
-             lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sort' length (rc expr'')))
-             rc expr'' = remainders (vars expr'') (vars expr'')
-             vars expr'' = map head (fPrfs expr'')
-             const' (Fux fs) = [f|f<-fs, isConst f e3]
-             const' (Fix fs) = [f|f<-fs, isConst f e3]
-             const' expr'' = error ("!Fatal (module Calc 612). 'const'("++ show expr''++")' is not defined.Consult your dealer!")
-             inter' (Fux fs) = Fux [f|f<-fs, isVar f e3]
-             inter' (Fix fs) = Fix [f|f<-fs, isVar f e3]
-             inter' expr'' = error ("!Fatal (module Calc 615). 'inter'("++ show expr''++")' is not defined.Consult your dealer!")
-
-             
-
-
+     lam :: InsDel -> Expression (Relation Concept) -> Expression (Relation Concept) ->
+            [[(Expression (Relation Concept),Expression (Relation Concept) -> Expression (Relation Concept),[String],String)]]
+     lam tOp e3 expr =
+            case expr of
+                (F [f])   -> lam tOp e3 f
+                (F fs) | e3==expr             -> [[(e3,(\x->x),[],"")]]
+                       | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==")
+                                                 :prf
+                                                | prf<-lam tOp e3 (deMrg expr)
+                                                ] -- isNeg is nog niet helemaal correct.
+                       | or[null p|p<-fPrfs (F fs) ] -> []
+                       | otherwise           -> [(expr,(\_->expr),   [derivtext tOp "mono" (first (lc (F fs))) expr],"<--"): (lc (F fs))]        
+                (Fux [f])  -> lam tOp e3 f
+                (Fux fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
+                       | length (const' (Fux fs))>0     -> [(expr,(\_->expr),   [derivtext tOp "mono" (inter' expr) expr],"<--")
+                                                          :prf
+                                                         | prf<-lam tOp e3 (inter' expr)
+                                                         ]
+                       | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)]
+                       | or[null p|p<-fPrfs (Fux fs)] -> []
+                       | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc (Fux fs))) expr],"<--") : (lc (Fux fs))]
+                (Fdx [f])  -> lam tOp e3 f
+                (Fdx fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
+                       | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)] -- isNeg is nog niet helemaal correct.
+                       | or[null p|p<-fPrfs (Fdx fs)] -> []
+                       | otherwise           -> [(expr,(\_->expr),[derivtext tOp "mono" (first (lc (Fdx fs))) expr],"<--"): (lc (Fdx fs))]
+                (Fix [f])  -> lam tOp e3 f
+                (Fix fs)| e3==expr             -> [[(e3,(\x->x),[],"")]]
+                       | length (const' (Fix fs))>0     -> [(expr,(\_->expr),      [derivtext tOp "mono" (inter' expr) expr],"<--")
+                                                          :prf
+                                                         | prf<-lam tOp e3 (inter' expr)
+                                                         ]
+                       | and [isNeg f|f<-fs] -> [(expr,(\x->deMrg x),[derivtext tOp "gelijk" (deMrg expr) expr],"==") :prf| prf<-lam tOp e3 (deMrg expr)]
+                       | or[null p|p<-fPrfs (Fix fs)] -> []
+                       | otherwise           -> [(expr,(\_->expr),      [derivtext tOp "mono" (first (lc expr)) expr],"<--") : (lc expr)]
+                (K0x x)   -> [(expr,(\x'->K0x x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
+                (K1x x)   -> [(expr,(\x'->K1x x'),[derivtext tOp "mono" x expr],"<--") :prf   | prf<-lam tOp e3 x]
+                (Cpx x)   -> [(expr,(\x'->Cpx x'),["omkeren"],"<--") :prf| prf<-lam (inv tOp) e3 x]
+                (Tc x)   -> lam tOp e3 x
+                (Tm _ _)  ->  [[(e3,(\x->x),[],"")]]
+  
+             where
+               deMrg expr'' = case expr'' of
+                                (F fs)  -> notCp (Fdx [notCp f| f<-fs])
+                                (Fux fs) -> notCp (Fix [notCp f| f<-fs])
+                                (Fdx fs) -> notCp (F  [notCp f| f<-fs])
+                                (Fix fs) -> notCp (Fux [notCp f| f<-fs])
+                                Tm{} -> error ("!Fatal (module Calc 426). deMrg Tm{} is not defined.Consult your dealer!")
+                                Tc{} -> error ("!Fatal (module Calc 427). deMrg Tc{} is not defined.Consult your dealer!")
+                                K0x{} -> error ("!Fatal (module Calc 428). deMrg K0{} is not defined.Consult your dealer!")
+                                K1x{} -> error ("!Fatal (module Calc 429). deMrg K1{} is not defined.Consult your dealer!")
+                                Cpx{} -> error ("!Fatal (module Calc 430). deMrg Cp{} is not defined.Consult your dealer!")
+               fPrfs expr'' = case expr'' of
+                                (F fs)  -> xs fs
+                                (Fux fs) -> xs fs
+                                (Fdx fs) -> xs fs
+                                (Fix fs) -> xs fs
+                                Tm{} -> error ("!Fatal (module Calc 436). fPrfs Tm{} is not defined.Consult your dealer!")
+                                Tc{} -> error ("!Fatal (module Calc 437). fPrfs Tc{} is not defined.Consult your dealer!")
+                                K0x{} -> error ("!Fatal (module Calc 438). fPrfs K0{} is not defined.Consult your dealer!")
+                                K1x{} -> error ("!Fatal (module Calc 439). fPrfs K1{} is not defined.Consult your dealer!")
+                                Cpx{} -> error ("!Fatal (module Calc 440). fPrfs Cp{} is not defined.Consult your dealer!")
+                       where
+                          xs fs = [lam tOp e3 f|f<-fs, isVar f e3]                       
+               lc expr'' = longstcomn (vars expr'')++concat (drop (length (rc expr'')-1) (sort' length (rc expr'')))
+               rc expr'' = remainders (vars expr'') (vars expr'')
+               vars expr'' = map head (fPrfs expr'')
+               const' (Fux fs) = [f|f<-fs, isConst f e3]
+               const' (Fix fs) = [f|f<-fs, isConst f e3]
+               const' expr'' = error ("!Fatal (module Calc 448). 'const'("++ show expr''++")' is not defined.Consult your dealer!")
+               inter' (Fux fs) = Fux [f|f<-fs, isVar f e3]
+               inter' (Fix fs) = Fix [f|f<-fs, isVar f e3]
+               inter' expr'' = error ("!Fatal (module Calc 451). 'inter'("++ show expr''++")' is not defined.Consult your dealer!")
  --      lam tOp e f       = []
+
   -- longstcomn determines the longest prefix common to all xs in xss.
-       longstcomn xss | or [null xs| xs<-xss]      = []
-                      | length (eqCl first xss)==1 = head [head prf| prf<-xss]: longstcomn [tail prf| prf<-xss]
-                      | otherwise                  = []
-  -- remainders determines the remainders.
-       remainders _ xss | or [null xs| xs<-xss]      = xss
-                        | length (eqCl first xss)==1 = remainders xss [tail prf| prf<-xss]
-                        | otherwise                  = xss
-       isConst e f = null (decls e `isc` decls f)
-       isVar e f   = not (isConst e f)
-       derivtext tOp "omkeren" e'' expr = sh tOp++showADL e''++" means "++sh (inv tOp)++showADL expr++"."
-       derivtext tOp "mono"    e'' expr = "("++showADL e''++"->"++showADL expr++") is monotonous, so "++sh tOp++showADL e''++" means "++sh tOp++showADL expr++"."
-       derivtext _ str _ _ = str
-       sh Ins  = "insert into "
-       sh Del  = "delete from "
-       inv Ins = Del
-       inv Del = Ins
-       first ((e'',_,_,_):_) = e''
-       first _ = error "!Fatal (module Calc 646): wrong pattern in first"
+     longstcomn :: (Eq a) => [[(a, b, c, d)]] -> [(a, b, c, d)]
+     longstcomn xss | or [null xs| xs<-xss]      = []
+                    | length (eqCl first xss)==1 = head [head prf| prf<-xss]: longstcomn [tail prf| prf<-xss]
+                    | otherwise                  = []
+    -- remainders determines the remainders.
+     remainders :: (Eq a) => [[(a, b, c, d)]] -> [[(a, b, c, d)]] -> [[(a, b, c, d)]]
+     remainders _ xss | or [null xs| xs<-xss]      = xss
+                      | length (eqCl first xss)==1 = remainders xss [tail prf| prf<-xss]
+                      | otherwise                  = xss
+     isConst :: (ConceptStructure a c, ConceptStructure b c) => a->b->Bool
+     isConst e f = null (mors e `isc` mors f)
+     isVar :: (ConceptStructure a c, ConceptStructure b c) => a->b->Bool
+     isVar e f   = not (isConst e f)
+     derivtext :: InsDel -> String -> Expression (Relation Concept) -> Expression (Relation Concept) -> String
+     derivtext tOp "omkeren" e'' expr = sh tOp++showADL e''++" means "++sh (inv tOp)++showADL expr++"."
+     derivtext tOp "mono"    e'' expr = "("++showADL e''++"->"++showADL expr++") is monotonous, so "++sh tOp++showADL e''++" means "++sh tOp++showADL expr++"."
+     derivtext _ str _ _ = str
+     sh :: InsDel -> String
+     sh Ins  = "insert into "
+     sh Del  = "delete from "
+     inv :: InsDel -> InsDel
+     inv Ins = Del
+     inv Del = Ins
+     first :: [(a,b,c,d)] -> a
+     first ((e'',_,_,_):_) = e''
+     first _ = error "!Fatal (module Calc 480): wrong pattern in first"

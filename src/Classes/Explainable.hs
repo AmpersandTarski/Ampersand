@@ -1,13 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module Classes.Explainable (explanationDeclarations) 
 where
-  import Adl.Context                 (Context(..))
-  import Adl.Pattern                 (Pattern(..))
-  import Adl.MorphismAndDeclaration  (makeDeclaration)
-  import CommonClasses               (Identified(..))
+  import ADL.Context                 (Context(..))
+  import ADL.Pattern                 (Pattern(..))
+  import ADL.MorphismAndDeclaration  (makeDeclaration,Identified(..))
   import Data.Explain
   import Options 
-  import Adl.Explanation
+  import ADL.Explanation
   import Classes.ViewPoint
 
 -- For parser data structures (which are: ConceptDef, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
@@ -32,9 +31,9 @@ where
            getByName :: Identified a => String -> [a] -> a 
            getByName str cds = 
               case (filter hasRightName cds) of
-                []  -> error ("!Fatal (module Explainable 36): No definition for '"++str++"'.")
+                []  -> error ("!Fatal (module Explainable 35): No definition for '"++str++"'.")
                 [c] -> c
-                _   -> error ("!Fatal (module Explainable 38): Multiple definitions for '"++str++"'.")
+                _   -> error ("!Fatal (module Explainable 37): Multiple definitions for '"++str++"'.")
              where
                hasRightName cd = name cd == str   
 

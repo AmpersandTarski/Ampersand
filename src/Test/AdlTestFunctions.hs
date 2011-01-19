@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 {-
 USE    -> This module is intended for test purposes only.
-DESCR  -> This module contains compare functions for data types in the Adl domain
-EXTEND -> Other functions intended for tests on or with Adl data types can be added to this module
+DESCR  -> This module contains compare functions for data types in the ADL domain
+EXTEND -> Other functions intended for tests on or with ADL data types can be added to this module
 -}
 module Test.AdlTestFunctions
 where
-   import Adl
+   import ADL
    import Typology                    (Inheritance(Isa))
    import Classification              (Classification)
    import Data.Maybe
@@ -126,10 +126,10 @@ where
           detail = catMaybes [compareSign (srtyp rl1) (srtyp rl2),
                               compareDecl (srrel rl1) (srrel rl2)]
 
-   compareDecls :: Declarations -> Declarations -> Maybe String
+   compareDecls :: [Declaration c] -> [Declaration c] -> Maybe String
    compareDecls dcls1 dcls2
           | detail == [] = Nothing
-          | otherwise    = Just $ "Differences in lists of Declarations:\n" ++
+          | otherwise    = Just $ "Differences in lists of declarations:\n" ++
                                   (foldr (++) [] detail)
           where
           detail :: [String]
@@ -142,7 +142,7 @@ where
                           else Just $ "Declaration " ++ show dcl1 ++ "from LIST1 not in LIST2\n"
                           | dcl1<-dcls1]
 
-   compareGens :: Gens -> Gens -> Maybe String
+   compareGens :: Gens c -> Gens c -> Maybe String
    compareGens gs1 gs2
           | detail == [] = Nothing
           | otherwise    = Just $ "Differences in lists of Gens:\n" ++
@@ -246,14 +246,14 @@ where
    ----------------------------------------------------
 
 
-   compareExpressions :: Expressions -> Expressions -> Maybe String
+   compareExpressions :: Expressions r -> Expressions r -> Maybe String
    compareExpressions es1 es2 
                    | length es1 /= length es2  = Just $ mainerror ++ "Number of expressions differ:\n" ++ printtrace
                    | otherwise                 = detail es1 es2
                    where
                    mainerror = "Difference in lists of Expressions\n"
                    printtrace = "LIST1:\n" ++ show es1 ++ "LIST2:\n" ++ show es2 ++ "\n"
-                   detail :: Expressions -> Expressions -> Maybe String
+                   detail :: Expressions r -> Expressions r -> Maybe String
                    detail [] [] = Nothing
                    detail (x:xs) (y:ys)
                               | detail2 == Nothing = detail xs ys
@@ -274,21 +274,21 @@ where
    compareExpression e1@(Fu{}) e2@(Fu{}) = compareExpressions (es e1) (es e2)
    compareExpression e1 e2 = Just $ "Expression " ++ show e1 ++ " does not equal " ++ show e2 ++ "\n"
 
-   compareMph :: Morphism -> Morphism -> Maybe String
+   compareMph :: Relation Concept -> Relation Concept -> Maybe String
    compareMph m1@(Mph{}) m2@(Mph{})
           | detail == [] = Nothing
-          | otherwise    = Just $ "Morphism " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
+          | otherwise    = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
                                   (foldr (++) [] detail)
           where
           detail :: [String]
           detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
-                              compareSign (mphtyp m1) (mphtyp m2),
+                              compareSign (mphsrc m1,mphtrg m1) (mphsrc m2,mphtrg m2),
                               compareYin (inline m1) (inline m2) -- ,
                               --compareDecl (mphdcl m1) (mphdcl m2)
                               ]
    compareMph m1@(I{}) m2@(I{})
           | detail == [] = Nothing
-          | otherwise    = Just $ "Morphism " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
+          | otherwise    = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
                                   (foldr (++) [] detail)
           where
           detail :: [String]
@@ -298,15 +298,15 @@ where
                               compareYin (inline m1) (inline m2)]
    compareMph m1@(V{}) m2@(V{})
           | detail == [] = Nothing
-          | otherwise    = Just $ "Morphism " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
+          | otherwise    = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
                                   (foldr (++) [] detail)
           where
           detail :: [String]
           detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
                               compareSign (mphtyp m1) (mphtyp m2)]
-   compareMph m1 m2 = Just $ "Morphism " ++ show m1 ++ " does not equal " ++ show m2 ++ "\n"
+   compareMph m1 m2 = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ "\n"
 
-   compareMphAts :: Concepts -> Concepts -> Maybe String
+   compareMphAts :: [Concept] -> [Concept] -> Maybe String
    compareMphAts a1 a2 | a1 == a2  = Nothing
                        | otherwise = Just $ "MphAts " ++ show a1 ++ " do not equal " ++ show a2 ++ "\n"
 

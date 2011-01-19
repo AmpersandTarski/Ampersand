@@ -9,7 +9,7 @@ module Data.Ampersand.Classes.Morphic (
 import Data.Ampersand.Definition
 
 -----------------------------------------------------------
-class Association a c => Morphic a c  where
+class Association r c a => Morphic r c  where
    multiplicities :: a -> [Prop]
    multiplicities _ = []  -- Default, when nothing has been specified, no properties at all...
    flp            :: a -> a
@@ -77,7 +77,7 @@ instance Morphic Declaration Concept where
 
    
 -----------------------------------------------------------
-class Association a c => MorphicId a c where
+class Association r c a => MorphicId r c where
  isIdent        :: a -> Bool  -- > tells whether the argument is equivalent to I
   
 instance MorphicId Declaration Concept where 
@@ -86,7 +86,7 @@ instance MorphicId Declaration Concept where
      _     -> False
 
 -----------------------------------------------------------
-class Association a c => Signaling a c where
+class Association r c a => Signaling r c where
  isSignal       :: a -> Bool  -- > tells whether the argument refers to a signal
     
 instance Signaling Declaration Concept where

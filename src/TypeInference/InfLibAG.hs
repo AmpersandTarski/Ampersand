@@ -428,7 +428,7 @@ sem_RelAlgExpr_Compl sub_  =
               _tp =
                   case _me of
                      Compl (Morph{}) -> _subIrtype
-                     _ -> error "complements on mphs only -> normalize"
+                     _ -> error "!Fatal (module InfLibAG 431): complements on mphs only -> normalize"
               _lhsOrtype =
                   _tp
               _lhsOenv_mph =
@@ -528,13 +528,13 @@ sem_RelAlgExpr_Equiv lsub_ rsub_  =
               _rsubIme :: RelAlgExpr
               _rsubIrtype :: InfType
               _lhsOenv_in =
-                  error "no equivalence rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 531): no equivalence rule symbols -> normalize"
               _lhsOrtype =
-                  error "no equivalence rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 533): no equivalence rule symbols -> normalize"
               _lhsOenv_mph =
-                  error "no equivalence rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 535): no equivalence rule symbols -> normalize"
               _lhsOinftree =
-                  error "no equivalence rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 537): no equivalence rule symbols -> normalize"
               _me =
                   Equiv _lsubIme _rsubIme
               _lhsOme =
@@ -638,13 +638,13 @@ sem_RelAlgExpr_Implic lsub_ rsub_  =
               _rsubIme :: RelAlgExpr
               _rsubIrtype :: InfType
               _lhsOenv_in =
-                  error "no implication rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 641): no implication rule symbols -> normalize"
               _lhsOrtype =
-                  error "no implication rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 643): no implication rule symbols -> normalize"
               _lhsOenv_mph =
-                  error "no implication rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 645): no implication rule symbols -> normalize"
               _lhsOinftree =
-                  error "no implication rule symbols -> normalize"
+                  error "!Fatal (module InfLibAG 647): no implication rule symbols -> normalize"
               _me =
                   Implic _lsubIme _rsubIme
               _lhsOme =

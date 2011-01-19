@@ -1,14 +1,13 @@
-{-# OPTIONS_GHC -Wall #-} --TODO verder opschonen van deze module
+{-# OPTIONS_GHC -Wall -XFlexibleInstances #-} --TODO verder opschonen van deze module
 module PredLogic
            ( PredLogicShow(..), showLatex
            ) 
    where
 
-   import CommonClasses (ABoolAlg(..))
    import Collection (Collection((>-)))
    import Data.List
    import Auxiliaries (eqCl)
-   import Adl
+   import ADL
    import ShowADL
    import Languages (Lang(English,Dutch), plural)
    import Options
@@ -26,9 +25,9 @@ module PredLogic
       Not PredLogic                         |
       Pred String String                    |  -- Pred nm v, with v::type   is equiv. to Mph nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
       Rel PredLogic
-          Morphism
+          (Relation Concept)
           PredLogic                         |
-      Funs String Morphisms
+      Funs String [Relation Concept]
 
 --   predKeyWords flags = 
 --     case language flags of
@@ -40,11 +39,40 @@ module PredLogic
        predLshow (natLangOps flags) (toPredLogic r)
      toPredLogic :: a -> PredLogic
 
-   instance PredLogicShow Rule where
-     toPredLogic = rule2predLogic
+   instance PredLogicShow (Rule (Relation Concept)) where
+    toPredLogic ru = assemble (normRule ru)
+     where 
+   -- normRule is bedoeld om een regel in de juiste vorm te brengen voor assemblage....
+      normRule :: Rule (Relation Concept) -> Rule (Relation Concept)
+      normRule r@(Ru{rrsrt=Truth})
+       = r{rrant=error ("!Fatal (module PredLogic 48): illegal reference to antecedent in normRule ("++showADL r++")")}
+      normRule r@(Ru{rrsrt=Implication,rrant=(F ants),rrcon=c@(F cons)})
+       | and (map idsOnly ants) = r{rrant=F [Tm (mIs idA) (-1)],rrtyp=(idC,idC)}
+       | otherwise              = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
+       where
+        idC = source c `lub` target c `lub` idA
+        idA = foldr lub (target (last ants)) (map source ants)
+        (as,cs) = move ants cons
+        (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
+        move [] cs' = ([(Tm . mIs . source . head) cs' (-1)],cs')
+        move as' cs'
+         | isSur h && isInj h = move (tail as') ([flp h]++cs')
+         | isUni l && isTot l = move (init as') (cs'++[flp l])
+         | otherwise      = (as',cs')
+         where h=head as'; l=last as'
+      normRule r = r
 
-   instance PredLogicShow Expression where
-     toPredLogic = expr2predLogic
+   instance PredLogicShow (Expression (Relation Concept)) where
+     toPredLogic e
+       = case (source(e), target(e)) of
+           (S, S) -> rc
+           (_, S) -> Forall [(s,source(e))] rc
+           (S, _) -> Forall [(s,target(e))] rc
+           (_, _) -> Forall [(s,source(e)),(t,target(e))] rc
+      where
+       [s,t] = mkVar [] [source e, target e]
+       (rc,_) = assembleF [s,t] e s t
+
 
 -- showLatex ought to produce PandDoc mathematics instead of LaTeX source code.
 -- PanDoc, however, does not support mathematics sufficiently, as to date. For this reason we have showLatex.
@@ -64,7 +92,7 @@ module PredLogic
                  _        -> lhs++"\\ "++texOnly_Id (name m)++"\\ "++rhs
             fun m e = texOnly_Id (name m)++"("++e++")"
             implies antc cons = antc++" \\Rightarrow "++cons
-            apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. 
+            apply :: Declaration c -> String -> String -> String    --TODO language afhankelijk maken. 
             apply decl d c =
                case decl of
                  Sgn{}     -> d++"\\ "++texOnly_Id (name decl)++"\\ "++c
@@ -87,12 +115,12 @@ module PredLogic
                                             [Char],
                                             [Char],
                                             [Char],
-                                            Morphism -> String -> String -> String,
+                                            Relation Concept -> String -> String -> String,
                                             a -> [Char] -> [Char],
                                             String -> [(String, Concept)] -> String,
                                             [Char],
                                             [Char],
-                                            Declaration -> String -> String -> String)
+                                            Declaration Concept -> String -> String -> String)
    natLangOps flags
             = case language flags of
 -- parameternamen:         (forallP,     existsP,        impliesP, equivP,             orP,  andP,  notP,  relP, funP, showVarsP, breakP, spaceP)
@@ -104,7 +132,7 @@ module PredLogic
                   implies antc cons = case language flags of 
                                         English  -> "If "++antc++", then "++cons
                                         Dutch    -> "Als "++antc++", dan "++cons
-                  apply :: Declaration -> String -> String -> String    --TODO language afhankelijk maken. 
+                  apply :: Declaration Concept -> String -> String -> String    --TODO language afhankelijk maken. 
                   apply decl d c =
                      case decl of
                        Sgn{}     -> if null (prL++prM++prR) 
@@ -149,12 +177,12 @@ module PredLogic
                 , String                                    -- orP
                 , String                                    -- andP
                 , String                                    -- notP
-                , Morphism -> String -> String -> String    -- relP
-                , Morphism -> String -> String              -- funP
+                , Relation Concept -> String -> String -> String    -- relP
+                , Relation Concept -> String -> String              -- funP
                 , String -> [(String, Concept)] -> String   -- showVarsP
                 , String                                    -- breakP
                 , String                                    -- spaceP
-                , Declaration -> String -> String -> String -- apply
+                , Declaration Concept -> String -> String -> String -- apply
                 ) -> PredLogic -> String
    predLshow (forallP, existsP, impliesP, equivP, orP, andP, notP, relP, funP, showVarsP, breakP, spaceP, apply) e
     = charshow 0 e
@@ -197,30 +225,7 @@ module PredLogic
 --                     fun m x = x++"."++name m
 --                     implies antc cons = "IF "++antc++" THEN "++cons
 
-   rule2predLogic :: Rule -> PredLogic
-   rule2predLogic ru = assemble (normRule ru)
-     where 
-   -- normRule is bedoeld om een regel in de juiste vorm te brengen voor assemblage....
-      normRule :: Rule -> Rule
-      normRule r@(Ru{rrsrt=Truth})
-       = r{rrant=error ("!Fatal (module PredLogic 93): illegal reference to antecedent in normRule ("++showADL r++")")}
-      normRule r@(Ru{rrsrt=Implication,rrant=(F ants),rrcon=c@(F cons)})
-       | idsOnly ants = r{rrant=F [Tm (mIs idA) (-1)],rrtyp=(idC,idC)}
-       | otherwise    = r{rrant=F as,rrcon=F cs,rrtyp=(sac,tac)}
-       where
-        idC = source c `lub` target c `lub` idA
-        idA = foldr lub (target (last ants)) (map source ants)
-        (as,cs) = move ants cons
-        (sac,tac) = (source (head as) `lub` source (head cs), target (last as) `lub` target (last cs))
-        move [] cs' = ([(Tm . mIs . source . head) cs' (-1)],cs')
-        move as' cs'
-         | isSur h && isInj h = move (tail as') ([flp h]++cs')
-         | isUni l && isTot l = move (init as') (cs'++[flp l])
-         | otherwise      = (as',cs')
-         where h=head as'; l=last as'
-      normRule r = r
-
-   assemble :: Rule -> PredLogic
+   assemble :: Rule (Relation Concept) -> PredLogic
    assemble r
       = case ruleType r of
           Equivalence ->  Forall [(s,source(r)),(t,target(r))] (Equiv ra rc)
@@ -228,7 +233,7 @@ module PredLogic
                           then Forall [(s,source(r))] rb
                           else transform (Forall [(s,source(r)),(t,target(r))] (Implies ra rc))
           Truth       ->  Forall [(s,source(r)),(t,target(r))] rc
-          Generalization -> error ("!Fatal (module PredLogic 156): assemble not defined for Generalization. ("++showADL r++")")
+          Generalization -> error ("!Fatal (module PredLogic 236): assemble not defined for Generalization. ("++showADL r++")")
     where
       [s,t] = mkVar [] [source(r), target(r)]
       transform (Forall vs (Implies (Exists es antc) cons)) = Forall (vs++es) (Implies antc cons)
@@ -238,31 +243,21 @@ module PredLogic
            Equivalence -> assembleF [s,t] (antecedent r) s t
            Implication -> assembleF [s,t] (antecedent r) s t
            Truth       -> assembleF [s,t] (consequent r) s t
-           Generalization -> error ("!Fatal (module PredLogic 166): (ra,avars) not defined for Generalization. ("++showADL r++")")
+           Generalization -> error ("!Fatal (module PredLogic 246): (ra,avars) not defined for Generalization. ("++showADL r++")")
       (rb,_    ) = if ruleType r==Implication 
                    then assembleF [s]   (consequent r) s s
-                   else error ("!Fatal (module PredLogic 169): (rb,bvars) not defined. ("++showADL r++")")
+                   else error ("!Fatal (module PredLogic 249): (rb,bvars) not defined. ("++showADL r++")")
       (rc,_    ) =
          case ruleType r of
            Equivalence -> assembleF avars (consequent r) s t
            Implication -> assembleF avars (consequent r) s t
            Truth       -> assembleF [s,t] (consequent r) s t
-           Generalization -> error ("!Fatal (module PredLogic 175): (rc,cvars) not defined for Generalization. ("++showADL r++")")
-   expr2predLogic :: Expression -> PredLogic
-   expr2predLogic e
-    = case (source(e), target(e)) of
-           (S, S) -> rc
-           (_, S) -> Forall [(s,source(e))] rc
-           (S, _) -> Forall [(s,target(e))] rc
-           (_, _) -> Forall [(s,source(e)),(t,target(e))] rc
-     where
-      [s,t] = mkVar [] [source e, target e]
-      (rc,_) = assembleF [s,t] e s t
+           Generalization -> error ("!Fatal (module PredLogic 255): (rc,cvars) not defined for Generalization. ("++showADL r++")")
 
-   assembleF :: [String] -> Expression -> String -> String -> (PredLogic,[String])
+   assembleF :: [String] -> (Expression (Relation Concept)) -> String -> String -> (PredLogic,[String])
    assembleF exclVars (F ts) s t
     = {- debug 
-      if error("!Debug (module PredLogic 145): assembleF exclVars (F ts) s t\nwith "++
+      if error("!Debug (module PredLogic 260): assembleF exclVars (F ts) s t\nwith "++
                "exclVars = "++show exclVars++"\n          "++
                "ics = "++show ics++"\n          "++
                "ivs = "++show ivs++"\n         "++
@@ -273,13 +268,13 @@ module PredLogic
       where
        res       = pars3 exclVars (split ts)  -- levert drietallen (r,s,t)
        frels s' t' = [r v' w|((r,_,_),v',w)<-zip3 res ([s']++ivs) (ivs++[t']) ]
-       ics       = [if v' `order` w then v' `lub` w else error("!Fatal (module PredLogic 156): assembleF")
+       ics       = [if v' `comparable` w then v' `lub` w else error("!Fatal (module PredLogic 271): assembleF")
                    |(v',w)<-zip [s'|(_,s',_)<-tail res] [t'|(_,_,t')<-init res]]
        ivs       = mkVar exclVars ics
 
    assembleF exclVars (Fdx ts) s t
     = {- debug 
-      if error("!Debug (module PredLogic 162): assembleFd exclVars (Fd ts)\nwith "++
+      if error("!Debug (module PredLogic 277): assembleFd exclVars (Fd ts)\nwith "++
                "exclVars = "++show exclVars++"\n          "++
                (if null antc then "" else "ics antc = "++show icsantc++"\n          ")++
                "ics cons = "++show icscons++"\n          "++
@@ -311,7 +306,7 @@ module PredLogic
        icsantc   = ics antc
        ivsantc   = mkVar exclVars (ci:icsantc)
        ivscons   = mkVar exclVars icscons
-       unite v' w = if v' `order` w then v' `lub` w else error("!Fatal (module PredLogic 239): assembleFd")
+       unite v' w = if v' `comparable` w then v' `lub` w else error("!Fatal (module PredLogic 309): assembleFd")
        ci        = ca `unite` cc
        ivs       = ivsantc++ivscons
    assembleF exclVars (Fux fs) s t
@@ -322,7 +317,7 @@ module PredLogic
     = (Not  (fst (assembleF exclVars e s t)), exclVars)
    assembleF exclVars e s t
     = if length (morlist e)==1 then (res, exclVars) else
-      error ("!Fatal (module PredLogic 250): Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showADL e++")")
+      error ("!Fatal (module PredLogic 320): Non-exhaustive patterns in function assembleF "++show exclVars++" ("++showADL e++")")
       where
        res :: PredLogic
        res = case denote e of
@@ -331,7 +326,7 @@ module PredLogic
                Rn   -> if inline  m
                        then Rel (Funs s []) m (Funs t [])
                        else Rel (Funs t []) (flp m) (Funs s [])
-               Wrap -> error ("!Fatal (module PredLogic 258): function res not defined when denote e == Wrap. ")
+               Wrap -> error ("!Fatal (module PredLogic 329): function res not defined when denote e == Wrap. ")
               where m = head (mors e)
 
 
@@ -340,7 +335,7 @@ module PredLogic
 
    data Notation = Flr | Frl | Rn | Wrap deriving Eq   -- yields notations y=r(x)  |  x=r(y)  |  x r y  | exists ... respectively.
 
-   relFun :: [String] -> Expressions -> Expression -> Expressions -> (String->String->PredLogic)
+   relFun :: [String] -> [Expression (Relation Concept)] -> Expression (Relation Concept) -> [Expression (Relation Concept)] -> (String->String->PredLogic)
    relFun exclVars lhs e rhs
      = case e of
          (Tm mph _) -> (\s->(\t->if inline mph
@@ -348,14 +343,14 @@ module PredLogic
                                else Rel (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp mph) (Funs s [m'| t'<-lhs, m'<-mors t'])))
          _        -> (\s->(\t->let (pl,_) = assembleF (exclVars++[s,t]) e s t in pl))       
 
-   pars3 :: [String] -> [Expressions] -> [(String -> String -> PredLogic, Concept, Concept)] 
+   pars3 :: [String] -> [[Expression (Relation Concept)]] -> [(String -> String -> PredLogic, Concept, Concept)] 
    pars3 exclVars (lhs: [e]: rhs: ts)
     | denotes lhs==Flr && denote e==Rn && denotes rhs==Frl
        = ( relFun exclVars lhs e rhs, source (head lhs), target (last rhs)): pars3 exclVars ts
     | otherwise = pars2 exclVars (lhs:[e]:rhs:ts)
    pars3 exclVars ts = pars2 exclVars ts -- for lists shorter than 3
 
-   pars2 :: [String] -> [Expressions]-> [(String -> String -> PredLogic, Concept, Concept)]
+   pars2 :: [String] -> [[Expression (Relation Concept)]]-> [(String -> String -> PredLogic, Concept, Concept)]
    pars2 exclVars (lhs: [e]: ts)
     | denotes lhs==Flr && denote e==Rn
                 = (relFun exclVars lhs e [], source (head lhs), target e): pars3 exclVars ts
@@ -374,19 +369,19 @@ module PredLogic
     | otherwise = pars1 exclVars (lhs:rhs:ts)
    pars2 exclVars ts = pars1 exclVars ts -- for lists shorter than 2
    
-   pars1 :: [String] -> [Expressions] -> [(String -> String -> PredLogic, Concept, Concept)]
+   pars1 :: [String] -> [[Expression (Relation Concept)]] -> [(String -> String -> PredLogic, Concept, Concept)]
    pars1 exclVars expressions
      = case expressions of
          []        -> []
          (lhs: ts) -> (pars0 exclVars lhs, source (head lhs), target (last lhs)): pars3 exclVars ts
 
-   pars0 :: [String] -> Expressions -> String -> String -> PredLogic
+   pars0 :: [String] -> [Expression (Relation Concept)] -> String -> String -> PredLogic
    pars0 exclVars lhs
     | denotes lhs==Flr = (relFun exclVars lhs (Tm (mIs (target (last lhs)))(-1)) [])
     | denotes lhs==Frl = (relFun exclVars [] (Tm (mIs (target (last lhs)))(-1)) lhs)
     | otherwise        = (relFun exclVars [] (let [r]=lhs in r) [])
 
-   denote :: Expression -> Notation
+   denote :: (Expression (Relation Concept)) -> Notation
    denote e = case e of
       (Tm m _)
         | null([Uni,Inj,Tot,Sur] >- multiplicities m)  -> Rn
@@ -394,12 +389,12 @@ module PredLogic
         | (isInj m) && (isSur m)                       -> Frl
         | otherwise                                    -> Rn 
       _                                                -> Rn
-   denotes :: Expressions -> Notation
+   denotes :: [Expression (Relation Concept)] -> Notation
    denotes = denote . head
 
 
 
-   split :: Expressions -> [Expressions]
+   split :: [Expression (Relation Concept)] -> [[Expression (Relation Concept)]]
    split []  = []
    split [t] = [[t]]
    split (t:t':ts)

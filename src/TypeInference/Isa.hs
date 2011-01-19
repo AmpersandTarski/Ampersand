@@ -1,5 +1,6 @@
+{-# OPTIONS_GHC -Wall #-}
 module TypeInference.Isa (isaRels) where
-import Adl  
+import ADL  
 import qualified Data.Set as Set
 
 ---------------------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ fromConcept :: Concept -> Cpt
 fromConcept (C {cptnm = nm}) = Cpt nm
 fromConcept Anything = AllCpt
 fromConcept NOthing = NoCpt
-fromConcept S = StonCpt -- error "TypeChecker.hs function fromConcept: Singleton not supported."
+fromConcept S = StonCpt
    
 toConcept :: Cpt -> Concept
 toConcept (Cpt nm) = cptnew nm
@@ -46,17 +47,16 @@ toConcept NoCpt = NOthing
 toConcept StonCpt = S
 
 ---------------------------------------------------------------------------------------------
-
 --data RelSet a = RelSet [(a,a)] deriving (Show)
 type RelSet a = Set.Set (a,a)
 
-isaRels :: Concepts -> Gens -> [(Concept,Concept)]
+isaRels :: [Concept] -> Gens Concept -> [(Concept,Concept)]
 isaRels cs gs = if null checkrels
                 then [(toConcept spc, toConcept gen)|(spc,gen)<-rs]
-                else error $ show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
-                       ++ " if the order of "++show c2++" and "++show c3 ++ 
-                       " is not specified. Specify the order with a GEN .. ISA .."
-                       |(c1,c2,c3)<-checkrels]
+                else error ( "!Fatal (module TypeInference.Isa 56): "++show ["Concept "++show c1++" cannot be the specific of both "++show c2++" and "++show c3
+                       ++ " if "++show c2++" and "++show c3 ++ 
+                       " are not camparable. Please specify by means of GEN .. ISA .."
+                       |(c1,c2,c3)<-checkrels])
   where
   rs = Set.toList $ isaRelSet (Set.fromList $ (map fromConcept cs))
   checkrels :: [(Cpt,Cpt,Cpt)]
@@ -77,6 +77,25 @@ isaRels cs gs = if null checkrels
          where
          gens2rels = Set.fromList [(fromConcept (genspc g), fromConcept (gengen g)) | g<-gs]
 
+{-
+Hi Stef,
+ 
+I now have a function transitiveclosure_w that replaces transitiveclosure.
+It makes quite a difference for longer paths and more concepts.
+
+I have tested (one run on a bad laptop with arguments [a] = [1..n] and  RelSet a = [(x,x+1) | x<-[1..n]]
+
+Gerard
+-------------------
+n         old (sec)       _w(sec)
+10       0.06             0.02
+20       0.95             0.13
+30       6.02             0.45                
+40       24.5             0.97                
+50       73.6             2.11                
+100     2387            34.8                   
+200        -                615            
+-}
 --DESCR -> duplicated from clos1.Auxiliaries.hs only [a] is provided instead of
 --         computed from range(RelSet a) /\ domain(RelSet a)
 --         [a] contains all possible intermediates on the path
@@ -90,3 +109,18 @@ transitiveclosure_w :: Ord a => [a] -> RelSet a -> RelSet a
 transitiveclosure_w [] r     = r
 transitiveclosure_w (x:xs) r = transitiveclosure_w xs $ r `Set.union` (Set.fromList [(a,b')|(a,b)<-(Set.toList r),b==x,(a',b')<-(Set.toList r),a'==x])
 
+{-
+   --DESCR -> R+ = R \/ R^2 \/ R^3 \/ ...
+   --REMARK -> transitiveclosure must be evaluated completely. We don't know the number of loops up front
+   --          we know that the function is evaluated if
+   transitiveclosure :: Eq a => [a] -> RelSet a -> RelSet a
+   transitiveclosure universe r = geteval $ allCumUnion universe r
+            where
+            --DESCR  -> if a cumUnion n matches a cumUnion n+1 then cumUnion n and higher are
+            --          all equal and the transitiveclosure
+            --REMARK -> transitiveclosure must get a matching set1 and set2 at some point
+            --TODO -> I could implement == for RelSet
+            geteval (set1:set2:sets) | stop set1 set2 = set1
+                                     | otherwise  = geteval (set2:sets)
+            stop (RelSet set1) (RelSet set2) = foldr (&&) True ([elem s2 set1 | s2<-set2]++[elem s1 set2 | s1<-set1])
+-}

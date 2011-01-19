@@ -4,11 +4,10 @@
 
 module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
-   import CommonClasses (  Identified(name))
    import Collection ( Collection((>-),rd) )
    import Data.List
    import Typology (Inheritance(Isa))
-   import Adl  hiding (Association)
+   import ADL  hiding (Association)
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options
@@ -75,7 +74,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
                     | fld<-tblfields plug, fldname fld/="i"]
        lookup' c = if null ps
-                   then error ("!Fatal (module ClassDiagram 84): erroneous lookup for concept "++name c++" in plug list")
+                   then error ("!Fatal (module Rendering.ClassDiagram 77): erroneous lookup for concept "++name c++" in plug list")
                    else head ps
                    where ps = [p|PlugSql p<-plugs fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c'|(c',_)<-cLkpTbl p, c'==c]]
 
@@ -181,7 +180,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
 
  
   -------------------------------
-  --        GENERALIZATIONS:   --       -- ADL statements such as "GEN Dolphin ISA Animal" are called generalization.
+  --        GENERALIZATIONS:   --       -- Ampersand statements such as "GEN Dolphin ISA Animal" are called generalization.
   --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead 
   -------------------------------
           generalizations2dot :: [Generalization] -> [Char]
@@ -271,7 +270,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
                                    ,assocs      :: [Association]      --
                                    ,aggrs       :: [Aggregation]      --
                                    ,geners      :: [Generalization]   --
-                                   ,nameandcpts :: (String,Concepts)}
+                                   ,nameandcpts :: (String,[Concept])}
                             deriving Show
    instance Identified ClassDiag where
       name cd = n

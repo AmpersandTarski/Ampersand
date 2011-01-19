@@ -5,17 +5,17 @@ module Classification (
              , preCl
    ) 
 where
-   import CommonClasses (Identified(..)) 
+   import ADL.MorphismAndDeclaration (Identified(..)) 
    import Collection    (Collection(..))
    import Data.List hiding (insert)
 
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a
    root (Cl c _) = c
-   root Bottom = error ("!Fatal (module Classification 22): root Bottom is not defined.")
+   root Bottom = error ("!Fatal (module Classification 15): root Bottom is not defined.")
    subs :: Classification a -> [Classification a]
    subs (Cl _ cls) = cls
-   subs Bottom = error ("!Fatal (module Classification 25): subs Bottom is not defined.")
+   subs Bottom = error ("!Fatal (module Classification 18): subs Bottom is not defined.")
    preCl :: Classification a -> [a]
    preCl Bottom         = []
    preCl (Cl c cls)     = [c] ++ concat (map preCl cls)
@@ -52,8 +52,8 @@ where
     empty = Bottom
     elems Bottom = []
     elems (Cl r cls) = r: [c| cl<-cls, c<-elems cl]
-    rd  _ = error ("!Fatal (module Classification 76): rd needs a fix....")
-    rd' _ _ = error ("!Fatal (module Classification 77): rd' needs a fix....")
+    rd  _ = error ("!Fatal (module Classification 55): rd needs a fix....")
+    rd' _ _ = error ("!Fatal (module Classification 56): rd' needs a fix....")
     lcl `isc` rcl | length trees==1 = head trees
                   | otherwise       = Bottom
      where trees = makeClassifications (tuples lcl `isc` tuples rcl)
@@ -69,7 +69,7 @@ where
      | root x==root y     = foldl insert x (subs y)
      | aINb && not bINa   = insert y x
      | not aINb && bINa   = insert x y
-     | otherwise          = error "!Fatal (module Classification 93): uni of Collections"
+     | otherwise          = error "!Fatal (module Classification 72): uni of Collections"
      where
       aINb = root x `isDefinedIn` y && not (or [c `isDefinedIn` y|cl<-subs x,c<-elems cl])
       bINa = root y `isDefinedIn` x && not (or [c `isDefinedIn` x|cl<-subs y,c<-elems cl])
@@ -92,7 +92,7 @@ where
    insert wls cls
     | (root cls) `isDefinedIn` wls = update up (root cls==) wls
     | or[c `isDefinedIn` wls|c<-rd[c|cl<-subs cls, c<-elems cl]]
-        = error ("!Fatal (module Classification 116): insert error!")
+        = error ("!Fatal (module Classification 95): insert error!")
     | otherwise                    = Cl (root wls) (subs wls++[cls])
     where up wls' = foldl insert wls' (subs cls)
 
@@ -118,9 +118,5 @@ The precondition is that the graph cycle free.
        maketree roots tuples'' = [ Cl root' (trees tuples'' root')| root'<-roots]
        trees tuples'' root' = maketree (rd [b |(a,b)<-tuples'', root'==a]) [(a,b) |(a,b)<-tuples'', root'/=a]
 
-
-
---   instance Conceptual a => Conceptual (Classification a) where
---    conts = conts . preCl 
 
 

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE Rank2Types, KindSignatures, GeneralizedNewtypeDeriving #-}
 
 module Prototype.CodeAuxiliaries (Named(..),atleastOne,reName,nameFresh,noCollide) where
