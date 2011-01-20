@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances -XMultiParamTypeClasses #-}
-module ADL.MorphismAndDeclaration (Relation(..),Association(..),Relational(..), mapMorphism
+module DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..),Relational(..), mapMorphism
                                   ,Declaration(..),Identified(..),uniqueNames
                                   ,makeDeclaration,makeMph
                                   ,inline
                                   ,isSgn,mIs
                                   ,showSign,applyM)
 where
-   import ADL.FilePos      (FilePos(..),Numbered(..))
-   import ADL.Concept      (Concept(..),Conceptual(..),Signaling(..))
-   import ADL.Prop         (Prop(..),Props,flipProps)
-   import ADL.Pair         (Pairs,flipPair) 
+   import DatabaseDesign.Ampersand.ADL.FilePos      (FilePos(..),Numbered(..))
+   import DatabaseDesign.Ampersand.ADL.Concept      (Concept(..),Conceptual(..),Signaling(..))
+   import DatabaseDesign.Ampersand.ADL.Prop         (Prop(..),Props,flipProps)
+   import DatabaseDesign.Ampersand.ADL.Pair         (Pairs,flipPair) 
    import Data.List
    import Char             (toLower)
    import Collection       (Collection ((>-)))

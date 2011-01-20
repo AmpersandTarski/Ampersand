@@ -1,22 +1,23 @@
 Script         = Context { PatternDef } .
-Context        = CONTEXT ADLid [IN ( DUTCH | ENGLISH )] \n 
+Context        = CONTEXT ADLid [ LangDef ] \n 
                   [ ":" Expr [ Binding ] ] \n
                   { ContextElement }  \n
 				  ENDCONTEXT .
+LangDef        = IN (DUTCH | ENGLISH ) .
 Binding        = BINDING BIND Declaration TOPHP (Conid | String)
                    { "," BIND Declaration TOPHP (Conid | String) } .
 
 ContextElement = ( PatElem
                  | UsePattern
                  | Service
-				 | SQLplug
-				 | Phpplug
+				 | SqlPlug
+				 | PhpPlug
 				 | RoleService
 				 | RoleRelation
 				 | Population
 				 ).
 UsePattern     = USE PATTERN ADLid .
-PatternDef     = PATTERN ADLid [IN ( DUTCH | ENGLISH )] \n
+PatternDef     = PATTERN ADLid [LangDef] \n
                  { PatElem } ENDPATTERN .
 PatElem        = ( RuleDef
                  | Gen
@@ -25,7 +26,7 @@ PatElem        = ( RuleDef
 				 | Keydef
 				 | Explain
 				 ).
-Explain        = PURPOSE ExplObj [IN ( DUTCH | ENGLISH )] [REF String] Expl .
+Explain        = PURPOSE ExplObj [LangDef] [REF String] Expl .
 ExplObj        = ( CONCEPT (Conid | String)
                  | RELATION Morphism 
 			     | RULE ADLid
@@ -34,6 +35,7 @@ ExplObj        = ( CONCEPT (Conid | String)
      		     | PATTERN ADLid
 			     | CONTEXT ADLid
 			     ).
+Expl           = "{+" StringZonderQuotes "+}" 			     
 Population     = POPULATION Morphism CONTAINS Content .
 RuleDef        = (  RULE ADLid   \n
                    ( Expr
@@ -41,11 +43,9 @@ RuleDef        = (  RULE ADLid   \n
 				   | Expr "-|" Expr
 				   | Expr "="  Expr
                    )  \n
-				   { MEANING [IN ( DUTCH | ENGLISH )] Expl }
+				   { MEANING [LangDef] Expl }
                  ).
 Gen            = GEN (Conid | String) ISA (Conid | String) .
-preOp          =  "-" .				 
-postOp         = { ( "~" | "+" | "*") } .
 Term1          = ( PreTerm { ";" PreTerm } 
                  | PreTerm { "!" PreTerm }
 				 ) .
@@ -78,8 +78,8 @@ KeyDef         = KEY LabelProps Concept "("	KeyAtt {"," KeyAtt} ")".
 KeyAtt         = [ LabelProps ] Expr.
 RoleService    = ROLE ADLid { "," ADLid } USES ADLid { "," ADLid } .
 RoleRelation   = ROLE ADLid { "," ADLid } EDITS Morphism { "," Morphism } .
-Sqlplug        = SQLPLUG Obj . 
-Phpplug        = PHPPLUG Obj . 
+SqlPlug        = SQLPLUG Obj . 
+PhpPlug        = PHPPLUG Obj . 
 Service        = SERVICE ADLid \n
                   [ "(" Morphism { "," Morphism } ")" ] \n
                   [ "{" ADLid { ADLid } [ "," ADLid { ADLid } ] "}" ] \n
@@ -93,6 +93,6 @@ Declaration    = Varid "::" Concept ( "*" | "->" ) Concept \n
 Content        = "[" [ Record { ";" Record } ] "]" .
 Record         = "(" String "," String ")". 
 Props          = "[" [ Prop { "," Prop } ] "]" .
-Prop           = ( UNI | INJ |  SUR| TOT | SYM | ASY | TRN | RFX ). 
+Prop           = ( UNI | INJ |  SUR | TOT | SYM | ASY | TRN | RFX ). 
 Pragma         = PRAGMA String { String } . 	
 

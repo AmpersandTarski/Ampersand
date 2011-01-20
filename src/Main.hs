@@ -21,8 +21,13 @@ import System.FilePath        (combine,replaceExtension)
 import UTF8  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
+--import Data.Ampersand.Main
+
 main :: IO ()
 main
+--
+-- = newmain
+--oldmain
  = do flags <- getOptions
       if showVersion flags || showHelp flags
        then mapM_ putStr (helpNVersionTexts flags)

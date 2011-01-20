@@ -8,7 +8,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    import Options        (Options(language,genPrototype,theme),DocTheme(..))
    import NormalForms    (conjNF,disjNF,normPA,simplify)
    import Data.Plug
-   import Data.ADL2Plug
+   import Data.ADL2Plug  (makeSqlPlug,makePhpPlug,makeTblPlugs,mor2plug)
    import ShowADL
    import FPA
    import Languages(plural)

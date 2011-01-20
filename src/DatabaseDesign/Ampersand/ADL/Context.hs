@@ -1,22 +1,22 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL.Context (Context(..),Contexts
+module DatabaseDesign.Ampersand.ADL.Context (Context(..),Contexts
                    ,RoleService(..),RoleRelation(..)
                    ,Architecture(..))
 -- This module exports datatype 'Context', which represents a single context as it emerges after type checking.
 -- This data structure is as accurate a representation of the Ampersand script as possible, with minimal redundancy.
 -- It is type correct, because it is not generated unless the type checker is fully satisfied with the user's script.
 where
-   import ADL.Concept                 (Concept)
-   import ADL.Pattern                 (Patterns)
-   import ADL.Rule                    (Rules)
-   import ADL.MorphismAndDeclaration  (Relation,Declaration,Identified(..))
-   import ADL.KeyDef                  (KeyDefs)
-   import ADL.ObjectDef               (ObjectDefs,Service)
-   import ADL.Explanation             (PExplanations)
-   import ADL.FilePos                 (FilePos(..))
-   import ADL.Population              (Populations)
-   import ADL.ConceptDef              (ConceptDefs)
-   import ADL.Expression              (Expression)
+   import DatabaseDesign.Ampersand.ADL.Concept                 (Concept)
+   import DatabaseDesign.Ampersand.ADL.Pattern                 (Patterns)
+   import DatabaseDesign.Ampersand.ADL.Rule                    (Rules)
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration  (Relation,Declaration,Identified(..))
+   import DatabaseDesign.Ampersand.ADL.KeyDef                  (KeyDefs)
+   import DatabaseDesign.Ampersand.ADL.ObjectDef               (ObjectDefs,Service)
+   import DatabaseDesign.Ampersand.ADL.Explanation             (PExplanations)
+   import DatabaseDesign.Ampersand.ADL.FilePos                 (FilePos(..))
+   import DatabaseDesign.Ampersand.ADL.Population              (Populations)
+   import DatabaseDesign.Ampersand.ADL.ConceptDef              (ConceptDefs)
+   import DatabaseDesign.Ampersand.ADL.Expression              (Expression)
    import Typology                    (Inheritance)
    import Classification              (Classification)
 

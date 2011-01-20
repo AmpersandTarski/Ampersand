@@ -38,22 +38,22 @@ module Ampersand
            )
 where
 
-   import ADL.Concept                    (Concept(..),Conceptual(..),cptnew,cptS,cptAnything,cptos' 
+   import DatabaseDesign.Ampersand.ADL.Concept                    (Concept(..),Conceptual(..),cptnew,cptS,cptAnything,cptos' 
                                          ,Sign,GenR()
                                          ,SpecHierarchy(..)
                                          ,Signaling(..))
-   import ADL.ConceptDef                 (ConceptDef(..),ConceptDefs)
-   import ADL.Context                    (Context(..),Contexts
+   import DatabaseDesign.Ampersand.ADL.ConceptDef                 (ConceptDef(..),ConceptDefs)
+   import DatabaseDesign.Ampersand.ADL.Context                    (Context(..),Contexts
                                          ,RoleService(..),RoleRelation(..)
                                          ,Architecture(..))
-   import ADL.Expression                 (Expression(..),mapExpression,foldlExpression,foldrExpression,PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
+   import DatabaseDesign.Ampersand.ADL.Expression                 (Expression(..),mapExpression,foldlExpression,foldrExpression,PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
                                          ,isPos,isNeg,idsOnly,isF,isFd,isFi,isFu,isI,v,notCp,insParentheses)
-   import ADL.FilePos                    (FilePos(..)
+   import DatabaseDesign.Ampersand.ADL.FilePos                    (FilePos(..)
                                          ,Numbered(..))
-   import ADL.Gen                        (Gen(..),Gens)
-   import ADL.KeyDef                     (KeyDef(..),KeyDefs)
-   import ADL.Label                      (Label(..))
-   import ADL.MorphismAndDeclaration     (Relation(..),mapMorphism
+   import DatabaseDesign.Ampersand.ADL.Gen                        (Gen(..),Gens)
+   import DatabaseDesign.Ampersand.ADL.KeyDef                     (KeyDef(..),KeyDefs)
+   import DatabaseDesign.Ampersand.ADL.Label                      (Label(..))
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration     (Relation(..),mapMorphism
                                          ,Association(..),Relational(..)
                                          ,Declaration(..)
                                          ,Identified(..),uniqueNames
@@ -61,16 +61,16 @@ where
                                          ,makeMph,makeDeclaration
                                          ,inline
                                          ,mIs,showSign,applyM)
-   import ADL.ObjectDef                  (ObjectDef(..),ObjectDefs,Service(..),actions)
-   import ADL.ECArule                    (isAll, isChc, isBlk, isNop, isDo, InsDel(..),ECArule(..),Event(..),PAclause(..))
-   import ADL.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
+   import DatabaseDesign.Ampersand.ADL.ObjectDef                  (ObjectDef(..),ObjectDefs,Service(..),actions)
+   import DatabaseDesign.Ampersand.ADL.ECArule                    (isAll, isChc, isBlk, isNop, isDo, InsDel(..),ECArule(..),Event(..),PAclause(..))
+   import DatabaseDesign.Ampersand.ADL.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          
    import Classes.Populated              (Populated(..))
-   import ADL.Pattern                    (Pattern(..),Patterns)
-   import ADL.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
-   import ADL.Population                 (Population(..),Populations)
-   import ADL.Prop                       (Prop(..))
-   import ADL.Rule                       (Rule(..),mapRule,Rules
+   import DatabaseDesign.Ampersand.ADL.Pattern                    (Pattern(..),Patterns)
+   import DatabaseDesign.Ampersand.ADL.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
+   import DatabaseDesign.Ampersand.ADL.Population                 (Population(..),Populations)
+   import DatabaseDesign.Ampersand.ADL.Prop                       (Prop(..))
+   import DatabaseDesign.Ampersand.ADL.Rule                       (Rule(..),mapRule,Rules
                                          ,RuleType(..),rulefromProp, isaRule, ruleviolations
                                          ,consequent,antecedent,ruleType
                                          ,normExpr)

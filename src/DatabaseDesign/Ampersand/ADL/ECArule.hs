@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL.ECArule (InsDel(..)
+module DatabaseDesign.Ampersand.ADL.ECArule (InsDel(..)
                    ,ECArule(..)
                    ,Event(..)
                    ,PAclause(..)
@@ -10,11 +10,11 @@ module ADL.ECArule (InsDel(..)
                    ,isDo
                    )
 where
-import ADL.Rule                      (Rules)
---import ADL.FilePos                   (nr)
-import ADL.Expression                (Expression)
-import ADL.MorphismAndDeclaration    (Relation,Identified)
-import ADL.Concept                   (Concept)
+import DatabaseDesign.Ampersand.ADL.Rule                      (Rules)
+--import DatabaseDesign.Ampersand.ADL.FilePos                   (nr)
+import DatabaseDesign.Ampersand.ADL.Expression                (Expression)
+import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration    (Relation,Identified)
+import DatabaseDesign.Ampersand.ADL.Concept                   (Concept)
 import Data.List
 
 

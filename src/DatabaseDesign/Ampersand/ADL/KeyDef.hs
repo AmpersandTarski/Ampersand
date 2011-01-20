@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL.KeyDef (KeyDef(..),KeyDefs)
+module DatabaseDesign.Ampersand.ADL.KeyDef (KeyDef(..),KeyDefs)
 where
-   import ADL.FilePos                (FilePos,Numbered(..))
-   import ADL.ObjectDef              (ObjectDefs)
-   import ADL.Concept                (Concept)
-   import ADL.MorphismAndDeclaration (Identified(..))
+   import DatabaseDesign.Ampersand.ADL.FilePos                (FilePos,Numbered(..))
+   import DatabaseDesign.Ampersand.ADL.ObjectDef              (ObjectDefs)
+   import DatabaseDesign.Ampersand.ADL.Concept                (Concept)
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Identified(..))
       
    type KeyDefs = [KeyDef]
    data KeyDef = Kd { kdpos :: FilePos      -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).

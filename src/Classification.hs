@@ -5,7 +5,7 @@ module Classification (
              , preCl
    ) 
 where
-   import ADL.MorphismAndDeclaration (Identified(..)) 
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Identified(..)) 
    import Collection    (Collection(..))
    import Data.List hiding (insert)
 

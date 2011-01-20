@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XMultiParamTypeClasses #-}
-module ADL.Gen (Gen(..),Gens)
+module DatabaseDesign.Ampersand.ADL.Gen (Gen(..),Gens)
 where
-   import ADL.FilePos                  (FilePos)
-   import ADL.MorphismAndDeclaration   (Association(..))
+   import DatabaseDesign.Ampersand.ADL.FilePos                  (FilePos)
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration   (Association(..))
    
    type Gens c      = [Gen c]
    data Gen concept = G { genfp  :: FilePos         -- ^ the position of the GEN-rule

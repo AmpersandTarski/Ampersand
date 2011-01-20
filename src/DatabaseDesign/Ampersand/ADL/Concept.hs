@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL.Concept ( Concept(..),Conceptual(..)
+module DatabaseDesign.Ampersand.ADL.Concept ( Concept(..),Conceptual(..)
                    , Sign,GenR, SpecHierarchy(..)
                    , Signaling(..)
                    , cptnew,cptAnything,cptS,cptos'

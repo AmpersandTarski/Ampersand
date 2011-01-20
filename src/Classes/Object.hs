@@ -7,12 +7,12 @@ module Classes.Object        (Object( concept
                                     )
                              ) 
 where
-   import ADL.Concept                (Concept,cptAnything)
-   import ADL.MorphismAndDeclaration (Relation(..),Association(..))
-   import ADL.ObjectDef              (ObjectDef(..),Service(..))
-   import ADL.Expression             (Expression)
-   import ADL.Population             (Population)
-   import ADL.Context                (Context(..))
+   import DatabaseDesign.Ampersand.ADL.Concept                (Concept,cptAnything)
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..))
+   import DatabaseDesign.Ampersand.ADL.ObjectDef              (ObjectDef(..),Service(..))
+   import DatabaseDesign.Ampersand.ADL.Expression             (Expression)
+   import DatabaseDesign.Ampersand.ADL.Population             (Population)
+   import DatabaseDesign.Ampersand.ADL.Context                (Context(..))
 
    class Object a where
     concept :: a -> Concept                 -- the type of the object

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL.FilePos    ( FilePos(FilePos,Nowhere)
+module DatabaseDesign.Ampersand.ADL.FilePos    ( FilePos(FilePos,Nowhere)
                       , Numbered(nr,pos))
 where
    import UU_Scanner (Pos(Pos))

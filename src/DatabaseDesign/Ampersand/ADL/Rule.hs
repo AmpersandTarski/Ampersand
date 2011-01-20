@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall -XUndecidableInstances -XFlexibleContexts -XMultiParamTypeClasses -XFlexibleInstances #-}
-module ADL.Rule    ( Rule(..),mapRule,Rules
+module DatabaseDesign.Ampersand.ADL.Rule    ( Rule(..),mapRule,Rules
                    , RuleType(..)
                    , consequent, antecedent, ruleType, normExpr, rulefromProp, isaRule, ruleviolations)     
 where
-   import ADL.FilePos                   ( FilePos(..), Numbered(..))
-   import ADL.Concept                   ( Concept(..), Conceptual(..), SpecHierarchy, Signaling(..))
-   import ADL.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), Identified(..), mIs)
-   import ADL.Expression                ( Expression(..), mapExpression, notCp)
-   import ADL.Pair                      ( Pairs)
-   import ADL.Prop
+   import DatabaseDesign.Ampersand.ADL.FilePos                   ( FilePos(..), Numbered(..))
+   import DatabaseDesign.Ampersand.ADL.Concept                   ( Concept(..), Conceptual(..), SpecHierarchy, Signaling(..))
+   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), Identified(..), mIs)
+   import DatabaseDesign.Ampersand.ADL.Expression                ( Expression(..), mapExpression, notCp)
+   import DatabaseDesign.Ampersand.ADL.Pair                      ( Pairs)
+   import DatabaseDesign.Ampersand.ADL.Prop
    import Classes.Populated
    import TypeInference.InfLibAG        ( InfTree(..) )
    import Data.Explain
