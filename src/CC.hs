@@ -12,7 +12,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       )
    import Collection  (Collection(..))
    import Auxiliaries (sort)
-   import ADL         (Architecture(..)
+   import Ampersand   (Architecture(..)
                       ,Concept(..)
                       ,ConceptDef(..)
                       ,Context(..)

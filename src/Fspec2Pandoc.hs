@@ -4,7 +4,7 @@ module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
 import Auxiliaries      (eqCl)
 import Collection       (Collection (..))
-import ADL
+import Ampersand
 import Data.Plug
 import Picture
 import Data.List

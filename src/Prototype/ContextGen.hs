@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.ContextGen where
-  import ADL
+  import Ampersand
   import Data.List
   import Data.Fspec
   import Version (versionbanner)

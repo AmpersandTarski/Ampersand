@@ -20,7 +20,7 @@ where
 
 -- TODO: Als het Ampersand bestand strings bevat met speciale characters als '&' en '"', dan wordt nu nog foute XML-code gegenereerd...
 
-   import ADL
+   import Ampersand
 --   import Languages
    import ShowADL
 --   import Data.Explain

@@ -12,7 +12,7 @@ import Data.GraphViz hiding (addExtension )
 --              -- 3) er is geen stap 3!
 --              -- 4) build on graphviz-2999.8.0.0
 -- Documentation about graphviz package: See http://hackage.haskell.org/package/graphviz
-import ADL 
+import Ampersand 
 import Data.Fspec (Fspc,Fservice(..))
 import Options
 import Collection (Collection(uni,isc,rd))

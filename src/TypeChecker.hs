@@ -23,7 +23,7 @@
 module TypeChecker (typecheck, Error, Errors) where
 
 import Auxiliaries (eqCl)
-import ADL          -- USE -> .MorphismAndDeclaration.makeDeclaration
+import Ampersand          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 --import Data.List    -- USE -> unionBy
 --import Data.Maybe() -- USE -> fromJust, isNothing

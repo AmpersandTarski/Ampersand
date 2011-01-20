@@ -18,7 +18,7 @@ module Data.Plug (Plug(..),Plugs
                  ,PlugSQL(..),PlugPHP(..)
                  ,DataObject(..))
 where
-import ADL ( Concept(..), Signaling(..), cptnew
+import Ampersand ( Concept(..), Signaling(..), cptnew
            , Relation(..), Association(..), Relational(..), mIs, Identified(..)
            , Expression(..)
            , ObjectDef(..)

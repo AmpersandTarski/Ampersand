@@ -14,7 +14,7 @@ module Data.Fspec ( Fspc(..)
                   , datasets
                   )
  where
-   import ADL            hiding (Association)
+   import Ampersand            hiding (Association)
    import Collection                    ((>-))
    import Typology                      (Inheritance(..))
    import Data.Plug                     

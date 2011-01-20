@@ -4,7 +4,7 @@ where
    import Strings        (commaEng)
    import Collection     (Collection (..))
    import Auxiliaries    (eqCl,eqClass)
-   import ADL
+   import Ampersand
 {- Normalization of process algebra clauses -}
 
    normPA :: PAclause (Relation Concept) -> PAclause (Relation Concept)

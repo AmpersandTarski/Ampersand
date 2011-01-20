@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module ShowECA (showECA) where
    import Data.Fspec
-   import ADL
+   import Ampersand
    import ShowADL            (ShowADL(..))
 --   import Collection         (Collection (rd))
    

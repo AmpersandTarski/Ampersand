@@ -14,7 +14,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
   where
    import Char                            (isAlphaNum)
    import Collection                      (Collection(..))
-   import ADL
+   import Ampersand
    import Data.Fspec 
    import Data.List
    import Auxiliaries                     (eqCl)

@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module ADL ( Architecture(..)
+module Ampersand
+           ( Architecture(..)
            , Context(..),Contexts,RoleService(..),RoleRelation(..)
            , Pattern(..),Patterns
            , Rule(..),mapRule,Rules,consequent, rulefromProp, ruleviolations

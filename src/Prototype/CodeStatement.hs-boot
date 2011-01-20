@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.CodeStatement (UseVar(..),PHPconcept(..)) where
- import ADL (Concept,SpecHierarchy,Expression,Relation,Identified)
+ import Ampersand (Concept,SpecHierarchy,Expression,Relation,Identified)
  import Prototype.CodeAuxiliaries (Named)
 
  data PHPconcept

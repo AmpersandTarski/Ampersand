@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.Installer where
-  import ADL
+  import Ampersand
   import Data.List
   import Data.Plug
   import Data.Fspec

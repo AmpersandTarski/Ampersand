@@ -10,7 +10,7 @@ module Prototype.CodeVariables
   ,CodeVarIndexed(..)
   ) where
  import Prototype.CodeAuxiliaries (Named(..),nameFresh,noCollide)
- import ADL (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeMph,Identified(..),source,target,Concept(..))
+ import Ampersand (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeMph,Identified(..),source,target,Concept(..))
  import {-# SOURCE #-} Prototype.CodeStatement (UseVar(..),PHPconcept(..))
 
  -- | A data type containing the description of some variable in the target language.

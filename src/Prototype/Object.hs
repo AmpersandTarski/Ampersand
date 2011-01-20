@@ -4,7 +4,7 @@ module Prototype.Object(objectServices) where
 --import Char(toUpper)
 import NormalForms (disjNF,simplify)
 import Auxiliaries (eqCl)
-import ADL (target
+import Ampersand (target, sign, source
            --,Concept(..),Declaration(..),isTrue
            ,ObjectDef(..),Numbered(..),Relational(..),ConceptStructure(..)
            ,Identified(..),mors,Relation(..),ViewPoint(..)
@@ -593,8 +593,9 @@ doSqlGet fSpec isArr objIn objOut
     --        (if isOne' objOut then "" else sqlExprSrc fSpec (objctx outAtt))
       --      (sqlExprTrg fSpec (objctx outAtt))
         --    (objctx outAtt)
--- | name objOut=="Relationen"
-  --  = error(show(objIn,objOut,combos,comboGroups',comboGroups))
+-- | not(null comboGroups') =  error(show(objIn,objOut,errorprint comboGroups'))
+-- | name objOut=="Relatielijst"
+  --  = error(show(objIn,objOut,errorprint comboGroups', errorprint comboGroups,[(name x,y)|(x,y)<-rest]))
   --  = error(show([((p,(s)),[(t)]) | (p,s,t)<-sqlRelPlugs fSpec (Tm(mIs$target (objctx objIn))(-1))]))
   -- = error (show(selectExprBrac fSpec (-4) [] (sqlExprTrg fSpec (objctx (head aOuts))) (objctx (head aOuts))     ))
  | otherwise
@@ -609,6 +610,8 @@ doSqlGet fSpec isArr objIn objOut
                      (if isOne' objOut then [] else [" WHERE " ++ snd (head tbls)])
                )
    where 
+   errorprint cmbsgrps = [(name plug,xx y,map xx ys)|((plug,y),ys)<-cmbsgrps
+                         , let xx (x,f)=(name x,show(objctx x)++"["++show(sign (objctx x))++"]",fldname f)]
    aOuts = [a|a<-objats objOut]
    rest :: [(ObjectDef,Integer)]
    rest = zip [ a | a<-aOuts, a `notElem` [a' | g <- comboGroups, (a',_) <- snd g]]
@@ -628,13 +631,20 @@ doSqlGet fSpec isArr objIn objOut
                          , let res=[((plug,(ai,sf)),(a,tf))
                                    |((plug,(ai,sf)),(a,tf))<-group,ga/=a]
                          , not (null res)]
-   combos 
-    = [ ((plug,(ai,fld0)),(a,fld1))
-      | ai<-objats objIn++[objIn]
-      , a<-aOuts
-      , Just e' <-[takeOff (objctx ai) (objctx a)]
-      , (plug,fld0,fld1)<-sqlRelPlugs fSpec e'
-      ]
+      combos 
+       = [ ((plug,(ai,fld0)),(a,fld1))
+         | ai<-objats objIn --(see TODO doPhpGet => altijd objats objIn=[])
+         , a<-aOuts
+         , Just e' <-[takeOff (objctx ai) (objctx a)]
+         , (plug,fld0,fld1)<-sqlRelPlugs fSpec e'
+         ]
+         ++
+         [ ((plug,(ai,fld0)),(a,fld1))
+         | ai<-[objIn] 
+         , a<-aOuts
+         , source(objctx ai) == target (objctx a) --just to be sure
+         , (plug,fld0,fld1)<-sqlRelPlugs fSpec (F [objctx ai,objctx a])
+         ]
    takeOff :: (Show c, Identified c, ConceptStructure c c) => Expression (Relation c)->Expression (Relation c)->Maybe (Expression (Relation c))
    takeOff (F (a:as)) (F (b:bs)) | disjNF a==disjNF b = takeOff (F as) (F bs)
    takeOff a (F (b:bs)) | disjNF a== disjNF b = Just (F bs)
@@ -708,7 +718,7 @@ doSqlGet fSpec isArr objIn objOut
           "`='\".addslashes("++name (objIn)++").\"'"
          )
       | (a,n)<-rest
-      , not (isIdent (objctx a))
+      , not (isIdent (objctx a)) --do not join on fldexpr of kernelfields in the same plug
       , let l=restLines (a,n)
       , not (null l)
       , let r=if null$head l then tail l else l

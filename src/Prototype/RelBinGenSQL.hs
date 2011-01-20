@@ -2,7 +2,7 @@
 module Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne'
  ) where 
-   import ADL
+   import Ampersand
    import ShowADL
    import Data.Fspec
    import Data.Plug
@@ -455,8 +455,10 @@ module Prototype.RelBinGenSQL
    --then return (fld0,fld1)
    --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
    sqlPlugFields :: PlugSQL -> Expression (Relation Concept)  -> [(SqlField, SqlField)]
-   sqlPlugFields p e 
-     = nub [(fld0,fld1)
+   sqlPlugFields p e' 
+     = let e= disjNF e'
+       in
+       nub [(fld0,fld1)
            | fld0<-[f|f<-tblfields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
            , fld1<-[f|f<-tblfields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
            , let plugexpr = plugpath p fld0 fld1 --the smallest expression from fld0 to fld1 (both in same plug)
@@ -465,8 +467,9 @@ module Prototype.RelBinGenSQL
                  bs = (isTrue.disjNF) (Fux [Cpx e, F [flp se,te] ])  --       e |- se~;te
                  bt = (isTrue.disjNF) (Fux [Cpx (F [flp se,te]),e])  --       se~;te |- e
            , --reasons why e is equivalent to plugexpr:
-              --e and plugexpr are equivalent if they are equal
+              --because e and plugexpr are equal
               e==plugexpr
+        -- || because1 e fld0 fld1              
            || --OR e is equivalent to plugexpr for some other reason (requires reasoning)
               bs && bt                                               --       e = se~;te
            {- the above should be enough.. but the relation algebra calculations
@@ -497,6 +500,35 @@ module Prototype.RelBinGenSQL
            True 
            ]
      where
+     because1 e fld0 fld1=
+        --if e=r;m1;s;m2;t 
+        --   where
+        --   m1 and m2 are morphisms in p
+        --   optional r, s and t are compositions of (fldexpr kernelfield)s of p (i.e. at least uni+inj(+sur or tot))
+        --           (note: fldexpr kernelfields are assumed to be morphisms)
+        --   r  is stored in p from fldx to fldr (maybe fldx==fldr i.e. r=I)
+        --   m1 is stored in p from fldr to fld1 (maybe fldr==fld1 i.e. m1=I)
+        --   s  is stored in p from fld1 to flds (maybe fld1==flds i.e. s=I)
+        --   m2 is stored in p from flds to fld2 (maybe flds==fld2 i.e. m2=I) 
+        --   t  is stored in p from fld2 to fldt (maybe fld2==fldt i.e. t=I) 
+        --   if p is TblSQL then
+        --      m1 and m2 are at least uni
+        --      r = plugpath p fldx fldr
+        --      s = plugpath p fld1 flds
+        --      t = plugpath p fld2 fldt
+        --   if p is BinSQL then 
+        --      r,s,t = I because BinSQL has no kernel
+        --      m1==m2~ (assuming that BinSQL stores at exactly one morphism and no concepts)
+        --then
+        --   plugpath p fldx fldt =  r;m1;m2;t = r;m1;s;m2;t (TODO)  
+        --   plugpath p fldr fldt =  m1;m2;t   =   m1;s;m2;t (TODO)
+        --   plugpath p fldx fld2 =  r;m1;m2   = r;m1;s;m2   (TODO)
+        --   plugpath p fldr fld2 == m1;m2     =   m1;s;m2   (only m1;m2 IMPLEMENTED)
+        case e of 
+          F [m1,m2] -> let fldrs=map fst (sqlPlugFields p m1)
+                           fld2s=map snd (sqlPlugFields p m2)
+                        in elem fld0 fldrs && elem fld1 fld2s
+          _ -> False   
      -- simplF: replace a;a~ by I if INJ&TOT
      simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
        where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.

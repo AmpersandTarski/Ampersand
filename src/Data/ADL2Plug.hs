@@ -8,7 +8,7 @@ module Data.ADL2Plug
   )
 where
 import Collection     (Collection((>-)))
-import ADL
+import Ampersand
 import Auxiliaries    (eqCl, sort')
 import Data.Plug
 import Prototype.CodeAuxiliaries (Named(..))

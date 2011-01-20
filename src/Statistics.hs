@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Statistics where
 
-   import ADL
+   import Ampersand
    import Data.Fspec
    import FPA
  -- TODO Deze module moet nog verder worden ingekleurd...

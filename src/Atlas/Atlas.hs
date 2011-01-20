@@ -3,7 +3,7 @@
 --in IIS you can enable windows authentication
 module Atlas.Atlas where
 import Auxiliaries (sort')
-import ADL
+import Ampersand
 import ShowADL
 import Data.Fspec
 import Options

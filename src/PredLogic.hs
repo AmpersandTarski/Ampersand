@@ -7,7 +7,7 @@ module PredLogic
    import Collection (Collection((>-)))
    import Data.List
    import Auxiliaries (eqCl)
-   import ADL
+   import Ampersand
    import ShowADL
    import Languages (Lang(English,Dutch), plural)
    import Options

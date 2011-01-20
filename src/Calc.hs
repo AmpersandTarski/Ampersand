@@ -11,7 +11,7 @@ module Calc ( deriveProofs
    import Auxiliaries        (sort',eqCl)
    import Strings            (commaEng)
    import Data.List
-   import ADL
+   import Ampersand
    import Data.Fspec
    import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode, editable, editMph)
    import ShowECA

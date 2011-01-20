@@ -4,7 +4,7 @@ module TypeInference.InfExpression where
 --uuagc is not used because you can't (as far as I know) define DATA PExpression (Relation Concept) (Maybe Sign)
 --you can define the polymorph DATA PExpression a b, but it does not match our expectations
 
-import ADL
+import Ampersand
 import Data.List (union,nubBy,nub) 
 --TODO -> make an isa aware nub?
 

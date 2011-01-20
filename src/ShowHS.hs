@@ -8,7 +8,7 @@ where
    import Data.Plug
    import Data.Fspec
    import Data.List
-   import ADL
+   import Ampersand
    import qualified UU_Scanner
   --          (Pos(..) 
    import ShowADL               (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.

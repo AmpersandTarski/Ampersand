@@ -2,7 +2,7 @@
 module Prototype.ConnectToDataBase (connectToDataBase) 
   where
    import Data.List
-   import ADL
+   import Ampersand
    import Options
    import Languages
    import ShowADL(showADLcode)

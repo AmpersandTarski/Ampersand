@@ -4,7 +4,7 @@ module Prototype.ObjBinGen  (phpObjServices)
  
    import Data.Fspec
    --import Data.Plug {- (Plug(..),DataObject(..)) -}
-   import ADL (name)
+   import Ampersand (name)
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)

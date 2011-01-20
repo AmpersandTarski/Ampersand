@@ -7,7 +7,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Collection ( Collection((>-),rd) )
    import Data.List
    import Typology (Inheritance(Isa))
-   import ADL  hiding (Association)
+   import Ampersand  hiding (Association)
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options

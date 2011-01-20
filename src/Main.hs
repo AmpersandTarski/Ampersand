@@ -11,7 +11,7 @@ import ShowADL                (ShowADL(..))
 import XML.ShowXMLtiny        (showXML)
 import Calc                   (deriveProofs)
 import Prototype.ObjBinGen    (phpObjServices)
-import ADL
+import Ampersand
 import Fspec2Pandoc           (fSpec2Pandoc)
 import Atlas.Atlas
 import Picture
