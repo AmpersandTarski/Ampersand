@@ -2,10 +2,12 @@ name:          Ampersand
 version:       1.1.4
 author:        Stef Joosten
 maintainer:    stef.joosten@ou.nl
-synopsis:      Toolsuite for Rule-based software developement
-description:   The description goes here...( TODO )
+synopsis:      Toolsuite for automated design of business processes.
+description:   You can define your business processes by means of rules, written in Relation Algebra.
+               Ampersand compiles this into functional specifications, which define an information system to support that business process.
+               Behold: a genuine real world application of Relation Algebra, which is being used in industry.
 homepage:      ampersand.sourceforge.net
-category:      Semantic web
+category:      Database Design
 stability:     alpha
 Cabal-Version: >= 1.6
 build-type:    Simple
