@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 --Words inside comments that are written in capitals only, such as TODO, provide information to programmers:
---     -> TODO                Describes some kind of improvement needed or things to be reexamined
+--     ->  TODO                Describes some kind of improvement needed or things to be reexamined
 --                            If reexamination results in the conclusion that its correct, then remove the comment
 --     -> EXTEND              A place indicator defining the properties of potential functionality to be put there
 --                            or properties to be persisted when adjusting functionality
@@ -299,8 +299,7 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
       I{}   -> mp { mphgen=populate$mphgen mp
                   , mphspc=populate$mphspc mp
                   , mphats=map populate (mphats mp)}
-      V{}   -> mp { mphsrc = populate (mphsrc mp)
-                  , mphtrg = populate (mphtrg mp)
+      V{}   -> mp { mphtyp = (populate (fst(mphtyp mp)),populate (snd(mphtyp mp)))
                   , mphats=map populate (mphats mp)}
       Mp1{} -> mp { mph1typ=populate$mph1typ mp
                   , mphats=map populate (mphats mp)}
