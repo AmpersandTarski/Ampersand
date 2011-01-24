@@ -197,8 +197,8 @@ makeTblPlugs context allDecs currentPlugs
                       where ms = [d| d<-nonCurrMors, isUni d, isInj d]
 -- iniKernels contains the set of kernels that would arise if kernelMors were empty. From that starting point, the kernels are computed recursively in code that follows (kernels).
     iniKernels   = [(c,[])| c<-concs context, c `notElem` concs currentPlugs]
-    attMors      = [    m | m<-nonCurrMors, isUni m, not (m `elem` kernelMors)]++
-                   [flp m | m<-nonCurrMors, not (isUni m), isInj m, not (m `elem` kernelMors)]
+    attMors      = [    m | m<-nonCurrMors, isUni m, not (m `elem` kernelMors || (flp m) `elem` kernelMors)]++
+                   [flp m | m<-nonCurrMors, not (isUni m), isInj m, not (m `elem` kernelMors || (flp m) `elem` kernelMors)]
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
 So the first step is create the kernels ...   -}

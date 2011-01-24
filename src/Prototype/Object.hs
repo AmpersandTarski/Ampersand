@@ -135,7 +135,7 @@ showClasses flags fSpec o
                            | a' <- attributes o]
                    ) ++
          ["}\n"]
-         ++ saveTransactions flags fSpec o
+         ++ savefunction flags fSpec o
          ++ (concat
              [ ["function set_"++phpIdentifier (name a)++"($val){"
                ,"  $this->_"++phpIdentifier (name a)++"=$val;"
@@ -750,3 +750,202 @@ splitLineBreak (l:s)
   | null (splitLineBreak s) = [(l:head (splitLineBreak s))]
   | otherwise               =  (l:head (splitLineBreak s)):(tail$splitLineBreak s)
 
+
+--insert a complete record in the plug of this concept (assume there is one plug with one kernelfield that stores this concept)
+--     to insert this->id, all requiredfields must be inserted at the same time, otherwise insert fails
+--     thus binary inserts are not possible for kernelfields
+--update (binary) relations in this instance stored in other tblplugs (not expecting expressions yet)
+--update the binary relations in this instance stored in binplugs (DEL $oldthis->rel, INS $newthis->rel)
+--TODO -> Move start and close transaction to wrapper and session, add rules to check to session
+savefunction :: Options -> Fspc -> ObjectDef -> [String]
+savefunction flags fSpec this
+  | isOne this = ["function save(){}"] --TODO
+  | otherwise 
+  = let thiscpt = target(objctx this)
+        thisinplugs = [(plug,fld)|PlugSql plug@(TblSQL{})<-plugs fSpec, (c,fld)<-cLkpTbl plug,c==thiscpt]
+                      ++ [(plug,column plug)|PlugSql plug@(ScalarSQL{})<-plugs fSpec, cLkp plug==thiscpt]
+        (myplug,idfld) = if not(null thisinplugs) then head thisinplugs 
+                           else error "!Fatal (module Prototype.Object 767):this concept is not stored in any SQL plug."
+        plugkey | null (tblfields myplug) = error "!Fatal (module Prototype.Object 769):no tblfields in plug."
+                | otherwise = head (tblfields myplug) --TODO -> implement KEYs in plug
+        insme :: String -> String
+        insme mevar --e.g. $oldme, $newme, ..
+          = "DB_doquer(\"INSERT IGNORE INTO `"++name myplug
+            ++ "` ("++intercalate "," ["`"++fldname f++"`" | f<-tblfields myplug, not(fldauto f)]
+            ++ ") VALUES (" ++
+            intercalate ", "
+                  [ if fldnull f
+                    then "\".(" ++ "(null!=" ++ mevar ++ "['"++ fldname f ++ "'])"
+                                ++ "?\"'\".addslashes("++ mevar ++ "['"++ fldname f ++ "']).\"'\":\"NULL\").\""
+                    else "'\".addslashes("++mevar ++ "['"++ fldname f ++ "']).\"'"
+                  | f<-tblfields myplug, not(fldauto f)
+                  ] ++ ")\", 5);"
+        inime :: String -> String
+        inime mevar --e.g. $oldme, $newme, ..
+          = mevar ++ " = array("++ intercalate "," ["'"++fldname f++"'=>null" | f<-tblfields myplug, not(fldauto f)] ++ ");"
+        thisme  -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]
+          = "$me = array("++ intercalate "," 
+                   ( ("'"++fldname idfld++"'=>$this->getId()"): --do not forget (objctx this)
+                    ["'"++fldname f++"'=>$this->_"++phpIdentifier (name a)| (f,a)<-thismematch, fldname f/=fldname idfld]
+                   )
+                   ++ ");"
+        thismematch = nubBy (\x y -> fst x == fst y) --TODO -> solve duplicate fields in plugs and remove nubBy
+                   ((idfld,this):[(f,a) 
+                   | f<-tblfields myplug, not(fldauto f)
+                   , a <- attributes this
+                   ,(plug,fld0,fld1)<-sqlRelPlugs fSpec (objctx a)
+                   ,plug==myplug,fld0==idfld, fld1==f]) --REMARK -> only the objctx a from idfld to f (at least UNI) not the flipped one (at least INJ)
+        notreqid_and_notinthis_flds = [fld|fld<-tblfields myplug, not(requires myplug (fld,idfld)), not(elem fld (map fst thismematch))]
+        reqbyid_and_notinthis_flds = [fld|fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
+        reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
+        notinthis_flds =  [fld|fld<-tblfields myplug, not(elem fld (map fst thismematch))]
+    in
+    ["function save(){"]
+    ++ indentBlock 3 (
+    ["global $myerrors;"
+    ,"starttransaction(); //transaction runs untill closed by somebody"
+    ,""
+    ,"//me is a record with a kernelfield for this->id "
+    ,"//this class/service can only create me records (and the identity of concepts in them => kernelfields)"
+    ,"//this->id is an instance of some concept"
+    ,"//$this contains possibly new values from the screen"
+    ,"//one value has one certain relation r with this->id"
+    ,"//at this moment, we assume that r is not an expression, but declared"
+    ,"//r may be stored in me or in some other plug"
+    ,"//not all relations in me have to be in this"
+    ,"//me must be completed with oldme values if this->id is not new."
+    ,"//if me is new, then all required fields for this->id in me must be present to be able to insert this->id"
+    ,"//the me part of this cannot be inserted the binary way, because it is not stored in a binplug"
+    ,"//the other relations in this will be inserted the binary way"
+    ,"//this implies updates of morattfields in other tblplugs than me and del/ins in binplugs where src or trg = this->id"
+    ,"//updates of morattfields will not check whether it was already set in the old situation i.e. overwrite."
+    ]
+    ++ 
+    [inime "$oldme"
+    ,thisme
+    ,inime "$newme"
+    ]
+    ++
+    ["if (!$this->isNew()) {"]
+    ++ indentBlock 3 (
+    ["$oldme = firstRow(DB_doquer(\"SELECT * FROM `"++name myplug++"` WHERE `"++fldname idfld++"`='\".addslashes($this->getId()).\"'\"));"
+    ,"DB_doquer(\"DELETE FROM `"++name myplug++"` WHERE `"++fldname idfld++"`='\".addslashes($this->getId()).\"'\",5);"
+--		    //if there is a change in one of the keys (this->id of me must be the same, because it is used to select oldme)
+--		    // and fields not requiring this->id and not in this exist (see Haskell)
+--		    // then there should be a new record for this => cut this->id, everything requiring id (these maybe fields not in this)
+--		    // thus,the cluster of this->id is cut
+    , if null notreqid_and_notinthis_flds 
+      then "$shouldcut = false;"
+      else "$shouldcut = $oldme[\""++fldname plugkey++"\"]!=$me[\""++fldname plugkey++"\"];"
+--		    // every kernelfield required by this->id, but not requiring this->id back must have changed (and be in this) to be able to cut it ()
+--		    // those values stay in cutoldme and have a UNIQUE INDEX
+--		    // paste (i.e. insert) may still fail, because of UNIQUE INDEX of some kernelfield of this => TODO, now rollback
+--    ,"$allrequiredinthis = true; //hide by haskell, just $cancut=false;"
+    , if null reqbyid_and_notinthis_flds
+      then "$cancut = true;"
+      else "$cancut = false; //" ++ intercalate ", " [fldname fld|fld<-reqbyid_and_notinthis_flds]
+    ,"$cutoldme = false;"
+    ,"if ($shouldcut){"
+    ,"   if ($cancut){"
+    ,"      $cutoldme = array(" 
+               ++ intercalate ", " 
+               [if elem fld notinthis_flds || fld==plugkey
+                then "\""++fldname fld++"\"=>$oldme[\""++fldname fld++"\"]"
+                else "\""++fldname fld++"\"=>null" | fld<-tblfields myplug, not(fldauto fld)]
+               ++");"
+    ,"      foreach ($oldme as $fld => $oldval){"
+    ,"         if (isset($me[$fld]))"
+    ,"            $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
+    ,"         elseif (!isset($cutoldme[$fld]))"
+    ,"            $newme[$fld] = $oldval; //cut old values not in cutoldme"
+    ,"      }"
+    ,"   } else { //should cut but can't because kernelfields will not unique or not all requiredfields for this->id are in this"
+    ,"      rollbacktransaction();"
+    ,"      $myerrors[] = \"xxx\";"
+    ,"      return false;"
+    ,"   }"
+    ,"} else { //no cutting just copy me to newme completed with old values (requires allrequiredinthis)"
+    ,"   foreach ($oldme as $fld => $oldval){"
+    ,"      if (isset($me[$fld]))"
+    ,"         $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
+    ,"      else"
+    ,"         $newme[$fld] = $oldval;"
+    ,"   }"
+    ,"}"
+    ,"if ($cutoldme){ //try INS cutoldme (failure would be strange)"
+    ,"   "++insme "$cutoldme"
+    ,"   if(mysql_affected_rows()==0) {"
+    ,"      rollbacktransaction();"
+    ,"      $myerrors[] = \"yyy\";"
+    ,"      return false;"
+    ,"   }"
+    ,"}"
+    ]) --end indentBlock if(!new)		    
+    ++
+    ["} else {"--else if(new)
+    ,"   foreach ($newme as $fld => $nullval){"
+    ,"      if (isset($me[$fld]))"
+    ,"         $newme[$fld] = $me[$fld]; //the value on the screen is at least in newme"
+    ,"   }"
+    ,"}"] 
+    ++
+    --you have a newme with a newkey that may already exist
+    --if so you may want to merge newme with the record with this key
+    --we only merge if non-null kernelfields do not change (otherwise error)
+    --(the old concept instance attached to the key should be assigned to some other key or deleted first)
+    --otherwise we would delete concept instances (kernelfield holds I of some concept)
+    --attMors in this overwrite the old record
+    --if so than update this key with the values of this and keep the old ones not in this
+    ["$selkey = DB_doquer(\"SELECT * FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\");"
+    ,"if (count($selkey)>0){"
+    ,"   $oldkey = firstRow($selkey);"
+    ,"   if ("++intercalate " && " 
+                ["($oldkey[\""++fldname fld++"\"]==$newme[\""++fldname fld++"\"]"
+                ++ " || !isset($oldkey[\""++fldname fld++"\"])"
+                ++ " || !isset($newme[\""++fldname fld++"\"]))"
+                |fld<-tblfields myplug,not(fldauto fld),iskey myplug fld]
+              ++"){"
+    ,"      DB_doquer(\"DELETE FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\",5);"
+    ,"      foreach ($newme as $fld => $newval){"
+    ,"         if (isset($me[$fld]))"
+    ,"            $newme[$fld] = $newval; //the value on the screen is at least in newme"
+    ,"         else"
+    ,"            $newme[$fld] = $oldkey[$fld];"
+    ,"      }"
+    ,"   } else {"
+    ,"      rollbacktransaction();"
+    ]
+    ++
+    ["      if ($oldkey[\""++fldname fld++"\"]!=$newme[\""++fldname fld++"\"]"
+                ++ " && isset($oldkey[\""++fldname fld++"\"])"
+                ++ " && isset($newme[\""++fldname fld++"\"]))"
+                ++ " $myerrors[] = print_r(array('error'=>\""++ name(target(fldexpr plugkey)) ++" \".$newme['"++fldname plugkey++"'].\" already identifies "
+                ++ name(target(fldexpr fld)) ++ " \".$oldkey['"++fldname fld++"'].\" overwriting it with \".$newme['" ++fldname fld++"'].\""
+                ++ " would delete \".$oldkey['"++fldname fld++"'].\". Please assign it to a different "++ name(target(fldexpr plugkey)) 
+                ++ " or delete it first.\"));"
+    |fld<-tblfields myplug,not(fldauto fld),iskey myplug fld]
+    ++
+    ["      return false;"
+    ,"   }"
+    ,"}"
+    ]
+    ++
+    -- 	    //try INS newme (failure could be some UNIQUE INDEX, but not the UNIQUE KEY)
+    --	    //ins($newme);
+    [insme "$newme"
+    ,"if(mysql_affected_rows()==0) {"
+    ,"   rollbacktransaction();"
+    ,"   $myerrors[] = \"zzz\".print_r($newme).print_r($cutoldme);"
+    ,"   return false;"
+    ,"}"
+    --REMARK -> the rest can be done the binary way!
+    --            //update attribute relations (morAtt) in other records (maybe my, maybe other tblplug) (if attribute already set, then there is a choice: overwrite or not)
+    --	    //    (thus I am a partial function from a kernelfield of another plug to this->Id)
+    --	    //insert binrels of this instance in the BinPlug
+    --	    //, "binrel" => $this->_binrel
+ 
+    --	    //$ctxenv["transaction"]["check"][] = rule(); //add rules, don't know how yet (rule() is a function that needs to be checked before commit)
+    ,"if (closetransaction()) {return $this->getId();} else {$myerrors[] = \"close\"; return false;}"
+    ]) --end indentBlock save()
+    ++
+    ["}"] --end of save() 
