@@ -259,7 +259,7 @@ instance Association Morphism where
 ---------------------------------------------------------------- 
 -- | The basic Relation
 data Relation 
-   = Rel { relnm :: String -- ^The name of the relation
+   = Rel { relnm  :: String -- ^The name of the relation
          , relsrc :: Concept     -- ^Source concept
          , reltrg :: Concept     -- ^Target concept
          , relflp :: Bool  -- ^Whether this relation is flipped

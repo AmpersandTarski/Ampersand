@@ -24,9 +24,9 @@ module PredLogic
       Disj [PredLogic]                      |
       Not PredLogic                         |
       Pred String String                    |  -- Pred nm v, with v::type   is equiv. to Mph nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
-      Rel PredLogic
-          (Relation Concept)
-          PredLogic                         |
+      R PredLogic
+        (Relation Concept)
+        PredLogic                         |
       Funs String [Relation Concept]
 
 --   predKeyWords flags = 
@@ -204,7 +204,7 @@ module PredLogic
                   Funs x ls           -> case ls of
                                             []    -> x
                                             m:ms  -> if isIdent m then charshow i (Funs x ms) else charshow i (Funs (funP m x) ms)
-                  Rel pexpr m pexpr'  -> case (pexpr,pexpr') of
+                  R pexpr m pexpr'   -> case (pexpr,pexpr') of
                                             (Funs l [] , Funs r [])  -> wrap i 5 (apply (makeDeclaration m) l r)
                                             (Funs x [l], Funs r [])  -> wrap i 5 (if isIdent m
                                                                                   then apply (makeDeclaration l) x r
@@ -321,11 +321,11 @@ module PredLogic
       where
        res :: PredLogic
        res = case denote e of
-               Flr  -> Rel (Funs s (mors e)) (mIs (target e)) (Funs t [])
-               Frl  -> Rel (Funs s []) (mIs (source e)) (Funs t (map flp (mors e)))
+               Flr  -> R (Funs s (mors e)) (mIs (target e)) (Funs t [])
+               Frl  -> R (Funs s []) (mIs (source e)) (Funs t (map flp (mors e)))
                Rn   -> if inline  m
-                       then Rel (Funs s []) m (Funs t [])
-                       else Rel (Funs t []) (flp m) (Funs s [])
+                       then R (Funs s []) m (Funs t [])
+                       else R (Funs t []) (flp m) (Funs s [])
                Wrap -> error ("!Fatal (module PredLogic 329): function res not defined when denote e == Wrap. ")
               where m = head (mors e)
 
@@ -339,8 +339,8 @@ module PredLogic
    relFun exclVars lhs e rhs
      = case e of
          (Tm mph _) -> (\s->(\t->if inline mph
-                               then Rel (Funs s [m'| t'<-lhs, m'<-mors t']) mph (Funs t [m'| t'<-reverse rhs, m'<-mors t'])
-                               else Rel (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp mph) (Funs s [m'| t'<-lhs, m'<-mors t'])))
+                               then R (Funs s [m'| t'<-lhs, m'<-mors t']) mph (Funs t [m'| t'<-reverse rhs, m'<-mors t'])
+                               else R (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp mph) (Funs s [m'| t'<-lhs, m'<-mors t'])))
          _        -> (\s->(\t->let (pl,_) = assembleF (exclVars++[s,t]) e s t in pl))       
 
    pars3 :: [String] -> [[Expression (Relation Concept)]] -> [(String -> String -> PredLogic, Concept, Concept)] 

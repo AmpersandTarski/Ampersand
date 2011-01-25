@@ -189,7 +189,7 @@ makeTblPlugs context allDecs currentPlugs
     ]
    where   
 -- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the Ampersand script are excluded from the process.
-    nonCurrMors = [makeMph d| d@Sgn{}<-allDecs >- [makeDeclaration m|m<-mors currentPlugs], decusr d]
+    nonCurrMors = [makeRelation d| d@Sgn{}<-allDecs >- [makeDeclaration m|m<-mors currentPlugs], decusr d]
 -- For making kernels as large as possible, the univalent and injective declarations will be flipped if that makes them surjective.
 -- kernelMors contains all relations that occur in kernels.
 -- note that kernelMors contains no I-relations, because all declarations from nonCurrMors match @Sgn{}.

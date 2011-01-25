@@ -109,7 +109,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
         gPlugs   = makeTblPlugs context savedDecs [p|PlugSql p<-vsqlplugs]
         -- all plugs for relations not touched by definedplugs and gplugs
         relPlugs :: [PlugSQL]
-        relPlugs = [ mor2plug (makeMph d) totals --(see mor2plug in Plug.hs)
+        relPlugs = [ mor2plug (makeRelation d) totals --(see mor2plug in Plug.hs)
                    | d<-savedDecs
                    , not (Inj `elem` multiplicities d)
                    , not (Uni `elem` multiplicities d)]
@@ -164,12 +164,12 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 --  by a number of service definitions that gives a user full access to all data.
 --  Step 1: select and arrange all declarations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-        cRels = [     makeMph d | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
-                [flp (makeMph d)| d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+        cRels = [     makeRelation d | d<-declarations context, not(deciss d), isTot d, not$decplug d]++
+                [flp (makeRelation d)| d<-declarations context, not(deciss d), not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all declarations to obtain a set cRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-        dRels = [     makeMph d | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
-                [flp (makeMph d)| d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+        dRels = [     makeRelation d | d<-declarations context, not(deciss d), isInj d, not$decplug d]++
+                [flp (makeRelation d)| d<-declarations context, not(deciss d), not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute maximally total expressions and maximally injective expressions.
         maxTotExprs = clos cRels
         maxInjExprs = clos dRels
@@ -665,22 +665,22 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
  --  actSem Del m delt = Fi[m,Cp delt]
 
    delta :: Eq c =>(c, c) -> Expression (Relation c)
-   delta (a,b)  = Tm (makeMph (Sgn { decnm   = "Delta"
-                                   , desrc   = a
-                                   , detrg   = b
-                                   , decprps = []
-                                   , decprps_calc = []
-                                   , decprL  = ""
-                                   , decprM  = ""
-                                   , decprR  = ""
-                                   , decpopu = []
-                                   , decfpos = Nowhere
-                                   , decid   = 0
-                                   , deciss  = True
-                                   , decusr  = False
-                                   , decpat  = ""
-                                   , decplug = True
-                                   })) (-1)
+   delta (a,b)  = Tm (makeRelation (Sgn { decnm   = "Delta"
+                                        , desrc   = a
+                                        , detrg   = b
+                                        , decprps = []
+                                        , decprps_calc = []
+                                        , decprL  = ""
+                                        , decprM  = ""
+                                        , decprR  = ""
+                                        , decpopu = []
+                                        , decfpos = Nowhere
+                                        , decid   = 0
+                                        , deciss  = True
+                                        , decusr  = False
+                                        , decpat  = ""
+                                        , decplug = True
+                                        })) (-1)
 
    -- | de functie doCode beschrijft de voornaamste mogelijkheden om een expressie delta' te verwerken in expr (met tOp'==Ins of tOp==Del)
 -- TODO: Vind een wetenschappelijk artikel waar de hier beschreven transformatie uitputtend wordt behandeld.
