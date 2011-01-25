@@ -32,11 +32,11 @@ CONCEPT Vorm "de uiterlijke verschijning waarin de structuur en opmaak zichtbaar
 CONCEPT Werkproces "de uitvoering van de taak of handeling uit hoofde waarvan archiefbescheiden door een overheidsorgaan worden ontvangen of opgemaakt als naar hun aard bestemd om daaronder te berusten" "Rgts"
 
 PATTERN Documenten
-  zaaksdossier :: Document * Procedur PRAGMA "" " zit in het zaaksdossier van "
+  zaaksdossier :: Document * Procedure PRAGMA "" " zit in het zaaksdossier van "
   EXPLANATION "Een zaak levert de samenhang met de andere door het gerecht ontvangen en opgemaakte bescheiden. Daarom zorgt het gerecht ervoor dat van elk van de archiefbescheiden de zaak kan worden vastgesteld (Regeling 12, Artikel 2 lid c). Hiertoe wordt elk ontvangen en opgemaakt document voorzien van een zaaksnummer. De oplossing staat toe dat documenten aan meerdere zaken tegelijk gekoppeld worden, waardoor het kopiëren van documenten in de oplossing onnodig is.".
   type     :: Document -> Documenttype PRAGMA "" " heeft "
   EXPLANATION "Elk document is eenduidig getypeerd. De beschikbare typeringen staan beschreven in het documentair structuurplan zoals bedoeld in de Regeling geordende en toegankelijke staat archiefbescheiden zoals bedoeld in Art 12 van het Archiefbesluit 1995.".
-  zorgdrager :: Procedur -> Orgaan PRAGMA "" " wordt beheerd door " ""
+  zorgdrager :: Procedure -> Orgaan PRAGMA "" " wordt beheerd door " ""
   EXPLANATION "De wet stelt dat er een zorgdrager is, die bij of krachtens de wet belast is met de zorg voor de archiefbescheiden (Artikel 1 lid d. Archiefwet 1995)".
 ENDPATTERN
 
@@ -51,20 +51,20 @@ PATTERN "Zaakregistratie"
        "Een schets van een nieuw primair processysteem voor de bestuursrechtspraak"
  -}
 
-eiser       :: Persoon * Procedur [SUR] PRAGMA "" " is verzoekende partij in "
+eiser       :: Persoon * Procedure [SUR] PRAGMA "" " is verzoekende partij in "
   EXPLANATION "In elke zaak is er een eisende partij. Afhankelijk van de zaaksoort heeft deze verschillende namen, zoals appellant, eiser, verzoeker, indiener, enz." .
 I |- eiser~;eiser
  EXPLANATION "Voor elke procedure moet er tenminste een eisende partij zijn."
-gedaagde    :: Persoon * Procedur PRAGMA "" " is gedaagde in "
+gedaagde    :: Persoon * Procedure [SUR] PRAGMA "" " is gedaagde in "
   EXPLANATION "In elke zaak is er een gedaagde partij. Afhankelijk van de zaaksoort heet deze gedaagde, verdachte, of anderszins.".
-gevoegde    :: Persoon * Procedur PRAGMA "" " neemt als belanghebbende deel in "
+gevoegde    :: Persoon * Procedure PRAGMA "" " neemt als belanghebbende deel in "
   EXPLANATION "In sommige soorten zaken kan een partij zich voegen als belanghebbende".
 -- Partijen kunnen zich laten bijstaan of door een gemachtigde laten vertegenwoordigen. (Art 8:24, lid 1 Awb)
 gemachtigde :: Persoon * Machtiging [SUR] PRAGMA "" " is gemachtigd op grond van "
   EXPLANATION "Een persoon kan zich laten vertegenwoordigen door een gemachtigde; veelal een advocaat. De rechtbank kan van een gemachtigde een schriftelijke machtiging verlangen. (Art 8:24, lid 2 Awb)".
 -- door~;inzake |- eiser \/ gedaagde \/ gevoegde
 -- EXPLANATION "Alle machtigingen in een zaak zijn verleend door iemand die partij is in die zaak"
-inzake      :: Machtiging * Procedur    PRAGMA "" " betreft "
+inzake      :: Machtiging * Procedure    PRAGMA "" " betreft "
   EXPLANATION "Een machtiging kan een zaak betreffen".
 door        :: Machtiging -> Persoon  PRAGMA "" " is verleend door "
   EXPLANATION "Er is altijd één partij die een gegeven machtiging heeft verleend".
@@ -73,11 +73,11 @@ door        :: Machtiging -> Persoon  PRAGMA "" " is verleend door "
 machtiging  :: Document * Machtiging PRAGMA "" " bewijst "
   EXPLANATION "De machtiging is schriftelijk wanneer er een document bestaat dat de machtiging bewijst.".
 
-rechtsgebied :: Procedur -> Rechtsgebied
+rechtsgebied :: Procedure -> Rechtsgebied
   EXPLANATION "Alle zaken hebben een rechtsgebied (bestuursrecht, civiel, straf, familie, enz.)".
-proceduresoort :: Procedur -> Proceduresoort
+proceduresoort :: Procedure -> Proceduresoort
   EXPLANATION "Alle zaken zijn in te delen naar proceduresoort (eerste aanleg, beroep, hoger beroep, enz.)".
-cluster :: Procedur * Cluster PRAGMA "" " behoort tot "
+cluster :: Procedure * Cluster PRAGMA "" " behoort tot "
   EXPLANATION "Een aantal zaken kan worden geclusterd om de inhoudelijke samenhang te bewaken. Vroeger ging daar een elastiekje omheen, zodat ze bijvoorbeeld gezamenlijk kunnen worden ingepland.".
 grond :: Cluster * Tekst [TOT].
 naam :: Cluster -> Tekst.
@@ -86,13 +86,13 @@ ENDPATTERN
 PATTERN Zittingen
 -- Guus Harten: De vastlegging van zaaksinformatie volgt de locatiegebonden organisatie van de bestuursrechtspraak.
 --              Data zijn eigendom van de locatie.
--- dient       :: Procedur * Zitting PRAGMA "" " dient ter "
+-- dient       :: Procedure * Zitting PRAGMA "" " dient ter "
 --   EXPLANATION "Een zaak wordt in een zitting behandeld.".
 -- dient = zaak~;zitting
-KEY zitting: I[Zitting][kamer:kamer,plaats:plaats,datum:geagendeerd]
+-- KEY zitting: I[Zitting][kamer:kamer,plaats:plaats,datum:geagendeerd]
 zitting     :: Behandeling -> Zitting PRAGMA "" " vindt plaats op "
   EXPLANATION "De behandeling vindt dus plaats op een zitting".
-zaak        :: Behandeling -> Procedur PRAGMA "" " behandelt "
+zaak        :: Behandeling -> Procedure PRAGMA "" " behandelt "
   EXPLANATION "Elke behandeling betreft één zaak. Er kunnen dus meerdere zaken in één zitting worden behandeld".
 -- Art 6 RO: Tenzij in deze 	wet anders is bepaald, bestaan de meervoudige kamers uit drie rechterlijke ambtenaren met rechtspraak belast, van wie een als voorzitter optreedt. Indien ook anderen dan rechterlijke ambtenaren deel uitmaken van een meervoudige kamer, treedt een rechterlijk ambtenaar met rechtspraak belast op als voorzitter.
 rechter     :: Zitting * Persoon [TOT] PRAGMA "" " heeft " " als rechter"
@@ -121,7 +121,7 @@ locatie     :: Zitting -> Gerecht PRAGMA "" " vindt plaats bij "
 plaats~;locatie |- hoofdplaats~ \/ neven
 EXPLANATION "Elke zitting vindt plaats in de hoofdvestigingsplaats van een gerecht of een van de nevenvestigingsplaatsen (tekst checken, Artikel 47 lid 2 RO)"
 
-bevoegd :: Procedur * Gerecht
+bevoegd :: Procedure * Gerecht [UNI]
  EXPLANATION "Een zaak wordt behandeld in een gerecht dat daartoe bevoegd is.".
 zaak~;zitting;locatie |- bevoegd
   EXPLANATION "Een bestuurszaak dient bij de rechter die bij de zetel van de gemeente, provincie, waterschap of politieregio hoort, waar tegen bezwaar was ingesteld (voorafgaande aan de procedure bij de bestuursrechter) (art. 8:7 Awb.)"
@@ -301,7 +301,7 @@ type[Actie*Handeling];handeling~;orgaan |- als[Actie*Orgaan]
 
   prio :: Usecase*Moscow [UNI].
   sub :: Usecase*Usecase [ASY].
-  use_case :: Usecase*Handeling.
+  useCase :: Usecase*Handeling.
   mag :: Handeling*Rol PRAGMA "" " mag worden uitgevoerd door "
   EXPLANATION "Om een handeling te mogen uitvoeren, is een rolpermissie benodigd. Bijvoorbeeld: Een secretaresse mag binnengekomen poststukken openen.".
   fase :: Usecase*Fase.
@@ -317,7 +317,7 @@ PATTERN RBAC
 
   login :: Persoon*Sessie [SUR,INJ] PRAGMA "" " is ingelogd in ".
   digid :: Sessie -> DigID          PRAGMA "" " is geautoriseerd op basis van ".
-  digid :: DigID -> Persoon         PRAGMA "" " verwijst rechtsgeldig naar ".
+  digid :: DigID -> Persoon  [INJ]  PRAGMA "" " verwijst rechtsgeldig naar ".
 
   login;digid |- digid~ EXPLANATION "Elke sessie behoort geautoriseerd te zijn op basis van de juiste DigID"
   login;rol |- vervult EXPLANATION "De gebruiker in deze sessie dient in te loggen met een van de rollen die hij of zij vervult."
@@ -444,7 +444,7 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
    ]
 
   SERVICE Brief : I[Document]
-   = [ zaaksdossier : zaaksdossier            -- Procedur
+   = [ zaaksdossier : zaaksdossier            -- Procedure
      , type : type[Document*Documenttype]
      , van : van
      , aan : aan
@@ -454,7 +454,7 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
      ]
 
   SERVICE Betaling : I[Document]
-   = [ zaaksdossier : zaaksdossier            -- Procedur
+   = [ zaaksdossier : zaaksdossier            -- Procedure
      , type : type[Document*Documenttype]
      , van : van
      , aan : aan
@@ -493,7 +493,7 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
   SERVICE "HandelingCompact" : I[Handeling]
    = [ "object Objecttype" : object
      , werkwoord : werkwoord
-     , "usecase" : use_case~
+     , "usecase" : useCase~
         = [ omschrijving : omschrijving
           ]
      , rol : mag
@@ -505,7 +505,7 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
    = [ door : handeling~;orgaan  -- dwz.: er is een wetsartikel, dat een orgaan benoemt om deze handeling te verrichten
      , "object Objecttype" : object
      , werkwoord : werkwoord
-     , "usecase" : use_case~
+     , "usecase" : useCase~
         = [ omschrijving : omschrijving
           , super : sub
           , sub : sub~
@@ -532,7 +532,7 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
         = [ nr : I[Handeling]
           , "Orgaan" : handeling~;orgaan
           , "wet" : handeling~
-          , usecase : use_case~
+          , usecase : useCase~
           , rol : mag
           ]
      ]
@@ -541,8 +541,8 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
   SERVICE Orgaan : I[Orgaan]
    = [ "Handelingen door dit orgaan" : orgaan~;handeling -- (handeling~;orgaan)~
         = [ handeling : I[Handeling]
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      , "Acties" : als~
@@ -551,7 +551,7 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
           , type : type
           ]
      , "Dossiers" : zorgdrager~
-        = [ procedure : I[Procedur]
+        = [ procedure : I[Procedure]
           , rechtsgebied : rechtsgebied
           , proceduresoort : proceduresoort
           ]
@@ -562,8 +562,8 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
    = [ "object Handeling" : object[Handeling*Objecttype]~
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      , "wet" : objecttype~
@@ -602,60 +602,60 @@ POPULATION serviceRol[BuService*Rol] CONTAINS
      ]
 
   SERVICE Moscow : I[Moscow]
-   = [ "prio Handeling" : prio~;use_case
+   = [ "prio Handeling" : prio~;useCase
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , usecase : use_case~
+          , usecase : useCase~
           , rol : mag
           ]
      ]
 
   SERVICE Fase : I[Fase]
-   = [ "fase Handeling" : fase~;use_case
+   = [ "fase Handeling" : fase~;useCase
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      ]
 
   SERVICE Gpstap : I[Gpstap]
-   = [ "categorie Handeling" : categorie~;use_case
+   = [ "categorie Handeling" : categorie~;useCase
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      ]
 
   SERVICE Component : I[Component]
-   = [ "iS_component_objecttype Handeling" : iS_component_objecttype~;use_case
+   = [ "iS_component_objecttype Handeling" : iS_component_objecttype~;useCase
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      ]
 
   SERVICE FormCodes : I[FormCodes]
-   = [ "form Handeling" : form~;use_case
+   = [ "form Handeling" : form~;useCase
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      ]
 
   SERVICE Referentie : I[Referentie]
-   = [ "bron Handeling" : bron~;use_case
+   = [ "bron Handeling" : bron~;useCase
         = [ Handeling : I[Handeling]
           , door : handeling~;orgaan
-          , prio : use_case~;prio
-          , usecase : use_case~
+          , prio : useCase~;prio
+          , usecase : useCase~
           , rol : mag
           ]
      ]
@@ -666,7 +666,7 @@ POPULATION zitting[Behandeling*Zitting] CONTAINS
   ; ("199902238/2","Zitting RvS 84")
   ; ("AWB 07/2481 WRO/1","Zitting RbAms 1094")
   ]
-POPULATION zaak[Behandeling*Procedur] CONTAINS
+POPULATION zaak[Behandeling*Procedure] CONTAINS
   [ ("199902238/1","199902238")
   ; ("199902238/2","199902238")
   ; ("AWB 07/2481 WRO/1","AWB 07/2481 WRO")
@@ -2027,7 +2027,7 @@ POPULATION mag[Handeling*Rol] CONTAINS
   [ ("Registreren soort uitspraak", "Griffier")
   ]
 
-POPULATION use_case[Usecase*Handeling] CONTAINS
+POPULATION useCase[Usecase*Handeling] CONTAINS
   [ ("UC.001","Registreren basisgegevens procedure")
   ; ("UC.002","Opschorten toewijzing")
   ; ("UC.003","Redistribueren procedures")
@@ -3406,7 +3406,7 @@ POPULATION bron[Usecase*Referentie] CONTAINS
   ; ("SUC.012","-")
   ]
 -}
-POPULATION eiser[Persoon*Procedur] CONTAINS
+POPULATION eiser[Persoon*Procedure] CONTAINS
     [ ("de Stichting Katholiek Onderwijs Staphorsteradeel, gevestigd te Staphorst", "199902238")
     ; ("Jan met de Vilten Hoed", "AWB 07/2481 WRO")
     ; ("Mevr. El Amrani", "SBR 02/74331")
@@ -3419,7 +3419,7 @@ POPULATION gemachtigde[Persoon*Machtiging] CONTAINS
     ; ("mr. J.H.A. van der Grinten", "brief 2007/33-9854")
     ; ("mr. M.L.M. Lohman", "brief 2007/33-9910")
     ]
-POPULATION inzake[Machtiging*Procedur] CONTAINS
+POPULATION inzake[Machtiging*Procedure] CONTAINS
     [ ("brief 2000/864821a", "199902238")
     ; ("brief 2000/860338e", "199902238")
     ; ("brief 2007/33-9887", "AWB 07/2481 WRO")
@@ -3433,12 +3433,12 @@ POPULATION door[Machtiging*Persoon] CONTAINS
     ; ("brief 2007/33-9854", "de besloten vennootschap Fountainhead Enterprise B.V., gevestigd te Amsterdam")
     ; ("brief 2007/33-9910", "het dagelijks bestuur van het stadsdeel Zeeburg van de gemeente Amsterdam")
     ]
-POPULATION gedaagde[Persoon*Procedur] CONTAINS
+POPULATION gedaagde[Persoon*Procedure] CONTAINS
     [ ("de Staatssecretaris van Onderwijs, Cultuur en Wetenschappen", "199902238")
     ; ("het dagelijks bestuur van het stadsdeel Zeeburg van de gemeente Amsterdam", "AWB 07/2481 WRO")
     ; ("Gemeente Utrecht", "SBR 02/74331")
     ]
-POPULATION gevoegde[Persoon*Procedur] CONTAINS
+POPULATION gevoegde[Persoon*Procedure] CONTAINS
     [ ("de besloten vennootschap Fountainhead Enterprise B.V., gevestigd te Amsterdam", "AWB 07/2481 WRO")
     ; ("Dhr. Klaas Vreugdenhil", "SBR 02/74331")
     ]
@@ -3486,19 +3486,19 @@ POPULATION kamer[Zitting*Kamer] CONTAINS
     ; ("SBR 2009/05/02", "Enkelvoudige kamer voor de behandeling van bestuursrechtelijke zaken van de Rechtbank Utrecht")
     ]
 
-POPULATION rechtsgebied[Procedur*Rechtsgebied] CONTAINS
+POPULATION rechtsgebied[Procedure*Rechtsgebied] CONTAINS
     [ ("199902238", "Bestuursrecht")
     ; ("AWB 07/2481 WRO", "Bestuursrecht Algemeen")
     ; ("SBR 02/74331", "Bestuursrecht")
     ]
 
-POPULATION proceduresoort[Procedur*Proceduresoort] CONTAINS
+POPULATION proceduresoort[Procedure*Proceduresoort] CONTAINS
     [ ("199902238", "Hoger Beroep")
     ; ("AWB 07/2481 WRO", "Beroep")
     ; ("SBR 02/74331", "Beroep")
     ]
 
-POPULATION zaaksdossier[Document * Procedur] CONTAINS
+POPULATION zaaksdossier[Document * Procedure] CONTAINS
     [ ("doc987384","199902238")
     ; ("doc763820", "AWB 07/2481 WRO")
     ; ("brief 2009/87743", "SBR 02/74331")
@@ -3574,20 +3574,20 @@ POPULATION type[Document * Documenttype] CONTAINS
 --    ; ("betaling1", "Betaling")
     ]
 
-POPULATION zorgdrager[Procedur*Orgaan] CONTAINS
+POPULATION zorgdrager[Procedure*Orgaan] CONTAINS
     [ ("199902238", "Raad van State")
     ; ("AWB 07/2481 WRO", "Rechtbank Amsterdam")
     ; ("SBR 02/74331", "Rechtbank Utrecht")
     ]
 
-POPULATION bevoegd[Procedur*Gerecht] CONTAINS
+POPULATION bevoegd[Procedure*Gerecht] CONTAINS
     [ ("199902238", "Raad van State")
     ; ("AWB 07/2481 WRO", "Rechtbank Amsterdam")
     ; ("SBR 02/74331", "Rechtbank Utrecht")
     ]
 
 
-SERVICE BasisgegevensUC001 : I[Procedur] -- UC001 Registreren basisgegevens procedure
+SERVICE BasisgegevensUC001 : I[Procedure] -- UC001 Registreren basisgegevens procedure
 {- Het aanmaken van een nieuwe procedure middels het registreren van de basisgegevens van een centraal binnengekomen beroepschrift of verzoekschrift om voorlopige voorziening en het automatisch (geen samenhangende procedure aangegeven) of handmatig (wel samenhangende procedure aangegeven) voorlopig/definitief toewijzen van de nieuwe procedure aan een behandelend gerecht.
 -}
    = [ eiser : eiser~;door~/\inzake~
@@ -3620,7 +3620,7 @@ SERVICE BasisgegevensUC001 : I[Procedur] -- UC001 Registreren basisgegevens proc
           ]
      ]
 
-SERVICE Procedure : I[Procedur]
+SERVICE Procedure : I[Procedure]
    = [ eiser : eiser~          -- Persoon
      , "gemachtigde voor eiser" : (eiser~;door~/\inzake~);gemachtigde~
      , gedaagde : gedaagde~          -- Persoon
@@ -3685,8 +3685,8 @@ SERVICE Clusters : I[ONE]
      ]
 
   SERVICE Procedures : I[ONE]
-   = [ Procedures : V[ONE*Procedur]
-        = [ nr : I[Procedur]
+   = [ Procedures : V[ONE*Procedure]
+        = [ nr : I[Procedure]
           , zitting : zaak~;zitting
           , rechtsgebied : rechtsgebied
           , proceduresoort : proceduresoort
@@ -3697,7 +3697,7 @@ SERVICE Clusters : I[ONE]
           ]
      ]
 
-SERVICE nieuweProcedure : I[Procedur]
+SERVICE nieuweProcedure : I[Procedure]
    = [ "zorgdrager voor dossier" : zorgdrager
      , rechtsgebied : rechtsgebied
      , proceduresoort : proceduresoort]
@@ -3711,7 +3711,7 @@ SERVICE nieuweProcedure : I[Procedur]
      , geagendeerd : geagendeerd
      , feitelijkedatum : plaatsgevonden
      , zaken : (zaak~;zitting)~
-        = [ zaaknr : I[Procedur]
+        = [ zaaknr : I[Procedure]
           , eiser : eiser~
           , gedaagde : gedaagde~
           ]
@@ -3752,7 +3752,7 @@ SERVICE nieuweProcedure : I[Procedur]
    = [ Rol : V[ONE*Behandeling]
         = [ rolnr : I[Behandeling]
           , zaak : zaak
-             = [ zaaknr   : I[Procedur]
+             = [ zaaknr   : I[Procedure]
                , gedaagde : gedaagde~
                , eiser    : eiser~
                , gevoegde : gevoegde~
@@ -3833,7 +3833,7 @@ SERVICE nieuweProcedure : I[Procedur]
      , hoofdplaats : hoofdplaats
      , nevenvestigingsplaatsen : neven~
      , teAgenderen : bevoegd~ /\ -(locatie~;zitting~;zaak) -- de rechtbank heeft kennis genomen van de zaak en de zaak staat nog niet op de rol...
-             = [ zaaknr   : I[Procedur]
+             = [ zaaknr   : I[Procedure]
                , gedaagde : gedaagde~
                , eiser    : eiser~
                , gevoegde : gevoegde~
@@ -3931,7 +3931,7 @@ SERVICE RechterlijkeAmbtenaar : I[Persoon]
 
   SERVICE Persoon : I[Persoon]
    = [ "procedure(s)" : eiser\/gedaagde\/gevoegde
-         = [ nr : I[Procedur]
+         = [ nr : I[Procedure]
            , "zorgdrager voor dossier" : zorgdrager
            , rechtsgebied : rechtsgebied
            , proceduresoort : proceduresoort]
@@ -3947,7 +3947,7 @@ SERVICE RechterlijkeAmbtenaar : I[Persoon]
 
 SERVICE Belanghebbende : I[Persoon]
    = [ "procedure(s)" : eiser\/gedaagde\/gevoegde
-         = [ nr : I[Procedur]
+         = [ nr : I[Procedure]
            , "zorgdrager voor dossier" : zorgdrager
            , rechtsgebied : rechtsgebied
            , proceduresoort : proceduresoort]
@@ -3980,7 +3980,7 @@ SERVICE Belanghebbende : I[Persoon]
 
   SERVICE Rechtsgebied : I[Rechtsgebied]
    = [ "Procedures" : rechtsgebied~
-        = [ Procedure : I[Procedur]
+        = [ Procedure : I[Procedure]
           , proceduresoort : proceduresoort
           , "zorgdrager voor dossier": zorgdrager
           ]
@@ -3988,7 +3988,7 @@ SERVICE Belanghebbende : I[Persoon]
 
   SERVICE Proceduresoort : I[Proceduresoort]
    = [ "Procedures" : proceduresoort~
-        = [ Procedure : I[Procedur]
+        = [ Procedure : I[Procedure]
           , rechtsgebied : rechtsgebied
           , "zorgdrager voor dossier": zorgdrager
           ]
