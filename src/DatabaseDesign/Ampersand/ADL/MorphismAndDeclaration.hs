@@ -241,7 +241,7 @@ where
    makeDeclaration m = case m of
                Mph{} -> mphdcl m
                I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WHY?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
-               V{}   -> Vs { desrc = mphsrc  m, detrg = mphtrg  m}
+               V{}   -> Vs { desrc = fst(mphtyp m), detrg = snd(mphtyp m)}
                Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}
     
    inline :: Relation c -> Bool

@@ -754,14 +754,16 @@ splitLineBreak (l:s)
 --insert a complete record in the plug of this concept (assume there is one plug with one kernelfield that stores this concept)
 --     to insert this->id, all requiredfields must be inserted at the same time, otherwise insert fails
 --     thus binary inserts are not possible for kernelfields
---update (binary) relations in this instance stored in other tblplugs (not expecting expressions yet)
+--update (binary) relations in this instance stored in other records (maybe other tblplugs, not expecting expressions yet)
 --update the binary relations in this instance stored in binplugs (DEL $oldthis->rel, INS $newthis->rel)
 --TODO -> Move start and close transaction to wrapper and session, add rules to check to session
+--TODO -> error reporting (Bas uses jQuery somehow, checkout edit.js)
 savefunction :: Options -> Fspc -> ObjectDef -> [String]
 savefunction flags fSpec this
   | isOne this = ["function save(){}"] --TODO
   | otherwise 
   = let thiscpt = target(objctx this)
+        -----------me
         thisinplugs = [(plug,fld)|PlugSql plug@(TblSQL{})<-plugs fSpec, (c,fld)<-cLkpTbl plug,c==thiscpt]
                       ++ [(plug,column plug)|PlugSql plug@(ScalarSQL{})<-plugs fSpec, cLkp plug==thiscpt]
         (myplug,idfld) = if not(null thisinplugs) then head thisinplugs 
@@ -797,8 +799,18 @@ savefunction flags fSpec this
                    ,plug==myplug,fld0==idfld, fld1==f]) --REMARK -> only the objctx a from idfld to f (at least UNI) not the flipped one (at least INJ)
         notreqid_and_notinthis_flds = [fld|fld<-tblfields myplug, not(requires myplug (fld,idfld)), not(elem fld (map fst thismematch))]
         reqbyid_and_notinthis_flds = [fld|fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
-        reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
+        --reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
         notinthis_flds =  [fld|fld<-tblfields myplug, not(elem fld (map fst thismematch))]
+        ---------myatts
+        myattsinthis = [((plug,fld0,fld1),a)
+                   |a<-attributes this, not(elem a (map snd thismematch))
+                   ,(plug@(TblSQL{}),fld0,fld1)<-sqlRelPlugs fSpec (objctx a) --fld0 => src objat (find id), fld1 => trg objat (kernelfld)
+                   ]
+        ---------myassociations
+        myassocinthis = [((plug,fld0,fld1),a)
+                   |a<-attributes this, not(elem a (map snd thismematch))
+                   ,(plug@(BinSQL{}),fld0,fld1)<-sqlRelPlugs fSpec (objctx a) --fld0 => src objat (find id), fld1 => trg objat (assocfld)
+                   ]
     in
     ["function save(){"]
     ++ indentBlock 3 (
@@ -941,10 +953,37 @@ savefunction flags fSpec this
     --REMARK -> the rest can be done the binary way!
     --            //update attribute relations (morAtt) in other records (maybe my, maybe other tblplug) (if attribute already set, then there is a choice: overwrite or not)
     --	    //    (thus I am a partial function from a kernelfield of another plug to this->Id)
+    --	    
+    ,""]
+    ++
+    concat 
+    [["//myatts"
+     ,"//first delete myatt relations (SET to NULL)"
+     ,"DB_doquer(\"UPDATE `"++name plug++"` SET `"++fldname fld0++"`=NULL WHERE `"++fldname fld0++"`='\".addslashes($this->getId()).\"' \");"
+     ,"//then insert myatt relations as defined in this (key=$val is assumed to exist)"
+     ,"foreach ($this->_"++phpIdentifier (name att)++" as $k => $val){"
+     ,"   DB_doquer(\"UPDATE `"++name plug
+                 ++"` SET `"++fldname fld0++"`='\".addslashes($this->getId()).\"' WHERE `"++fldname fld1++"`='\".addslashes($val).\"' \");"
+     ,"}"]
+    |((plug,fld0,fld1),att)<-myattsinthis]
     --	    //insert binrels of this instance in the BinPlug
     --	    //, "binrel" => $this->_binrel
  
     --	    //$ctxenv["transaction"]["check"][] = rule(); //add rules, don't know how yet (rule() is a function that needs to be checked before commit)
+    ++
+    concat 
+    [["//myassociations"
+     ,"//first delete myassociation with fld0=id"
+     ,"DB_doquer(\"DELETE FROM `"++name plug++"` WHERE `"++fldname fld0++"`='\".addslashes($this->getId()).\"' \");"
+     ,"//then insert myassociation for fld0=id as defined in this (key=$val is assumed to exist)"
+     ,"foreach ($this->_"++phpIdentifier (name att)++" as $k => $val){"
+     ,"   DB_doquer(\"INSERT IGNORE INTO  `"++name plug
+                 ++"` ("++fldname fld0++","++fldname fld1
+                 ++") VALUES ('\".addslashes($this->getId()).\"','\".addslashes($val).\"') \");"
+     ,"}"]
+    |((plug,fld0,fld1),att)<-myassocinthis]
+    ++	    
+    [""
     ,"if (closetransaction()) {return $this->getId();} else {$myerrors[] = \"close\"; return false;}"
     ]) --end indentBlock save()
     ++

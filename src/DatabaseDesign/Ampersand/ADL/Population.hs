@@ -11,7 +11,7 @@ where
               }
 
    instance Eq c => Association (Population c) c where
-     source pop = mphsrc (popm pop)
-     target pop = mphtrg (popm pop)
+     source pop = source (popm pop)
+     target pop = target (popm pop)
 
  
