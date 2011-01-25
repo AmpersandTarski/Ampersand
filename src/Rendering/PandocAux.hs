@@ -494,9 +494,9 @@ instance ShowMath (Relation Concept) where
                       not (inline mph) && a==target s && b==source s
                     then "" else showSign [a,b])
               else showSign (mphats mph)
-      s     = mphdcl mph
-      a     = mphsrc mph
-      b     = mphtrg mph
+      s     = makeDeclaration mph
+      a     = source mph
+      b     = target mph
  showMath m@(I{})
   = if null (mphats m) then "\\iden" else "\\ident{"++showSign (mphats m)++"}"
  showMath m@(V{})

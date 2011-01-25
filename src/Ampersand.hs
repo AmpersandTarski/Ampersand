@@ -10,7 +10,7 @@ module Ampersand
            , Expression(..),mapExpression,foldlExpression,foldrExpression,PExpressions,PExpression(..)
            , Expressions,isPos,isNeg,idsOnly,insParentheses,UnOp(..),MulOp(..),isF,isFd,isFi,isFu,isI
            , Gen(..),Gens
-           , Relation(..),mapMorphism,inline,makeMph
+           , Relation(..),mapMorphism,inline,makeRelation
            , Declaration(..),isSgn
            , ConceptDef(..),ConceptDefs
            , Concept(..), Conceptual(..), SpecHierarchy(..), Sign, GenR, v,cptnew,cptS,cptos'
@@ -58,7 +58,7 @@ where
                                          ,Declaration(..)
                                          ,Identified(..),uniqueNames
                                          ,isSgn
-                                         ,makeMph,makeDeclaration
+                                         ,makeRelation,makeDeclaration
                                          ,inline
                                          ,mIs,showSign,applyM)
    import DatabaseDesign.Ampersand.ADL.ObjectDef                  (ObjectDef(..),ObjectDefs,Service(..),actions)

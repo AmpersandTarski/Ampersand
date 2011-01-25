@@ -702,13 +702,13 @@ where
             Mp1{} -> "Mp1 "++mph1val mph++" "++showAtts++" ("++showHS flags "" (mph1typ mph)++")"
   -- WHY wordt mph1val mph zonder quotes afgedrukt?
   -- BECAUSE: mph1val mph wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
-           where showPos  = "("++showHS flags "" (mphpos mph)++")"
+           where showPos  = "("++showHS flags "" (pos mph)++")"
                  showAtts = showL(map (showHS flags "") (mphats mph))
                  showGen  = "("++showHS flags "" (mphgen mph)++")"
                  showSpc  = "("++showHS flags "" (mphspc mph)++")"
-                 showSrc  = "("++showHS flags "" (mphsrc mph)++")"
-                 showTrg  = "("++showHS flags "" (mphtrg mph)++")"
-                 showSgn  = "("++showHS flags "" (mphtyp mph)++")"
+                 showSrc  = "("++showHS flags "" (source mph)++")"
+                 showTrg  = "("++showHS flags "" (target mph)++")"
+                 showSgn  = "("++showHS flags "" (sign   mph)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***

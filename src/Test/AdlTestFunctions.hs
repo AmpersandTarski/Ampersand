@@ -282,7 +282,7 @@ where
           where
           detail :: [String]
           detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
-                              compareSign (mphsrc m1,mphtrg m1) (mphsrc m2,mphtrg m2),
+                              compareSign (source m1,target m1) (source m2,target m2),
                               compareYin (inline m1) (inline m2) -- ,
                               --compareDecl (mphdcl m1) (mphdcl m2)
                               ]
@@ -303,7 +303,7 @@ where
           where
           detail :: [String]
           detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
-                              compareSign (mphtyp m1) (mphtyp m2)]
+                              compareSign (sign m1) (sign m2)]
    compareMph m1 m2 = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ "\n"
 
    compareMphAts :: [Concept] -> [Concept] -> Maybe String

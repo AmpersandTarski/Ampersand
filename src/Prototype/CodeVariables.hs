@@ -10,7 +10,7 @@ module Prototype.CodeVariables
   ,CodeVarIndexed(..)
   ) where
  import Prototype.CodeAuxiliaries (Named(..),nameFresh,noCollide)
- import Ampersand (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeMph,Identified(..),source,target,Concept(..))
+ import Ampersand (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeRelation,Identified(..),source,target,Concept(..))
  import {-# SOURCE #-} Prototype.CodeStatement (UseVar(..),PHPconcept(..))
 
  -- | A data type containing the description of some variable in the target language.
@@ -111,7 +111,7 @@ module Prototype.CodeVariables
  noDaggers c = c
  
  pairSourceExpr :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- pairSourceExpr e = Tm (makeMph (pairSourceDecl e)) (error "!Fatal (module CodeVariables 114): Term number undefined for pairSourceExpr")
+ pairSourceExpr e = Tm (makeRelation (pairSourceDecl e)) (error "!Fatal (module CodeVariables 114): Term number undefined for pairSourceExpr")
  pairSourceDecl :: Expression (Relation Concept) -> Declaration PHPconcept
  pairSourceDecl expr = Sgn { decnm="src", desrc=PHPexp expr, detrg=PHPC (source expr), decplug=True
                            , decprps=[], decprps_calc=[Uni,Tot]
@@ -125,6 +125,6 @@ module Prototype.CodeVariables
                            }
 
  pairTargetExpr :: Expression (Relation Concept) -> Expression (Relation PHPconcept)
- pairTargetExpr e = Tm (makeMph (pairTargetDecl e)) (error "!Fatal (module CodeVariables 128): Term number undefined for pairTargetExpr")
+ pairTargetExpr e = Tm (makeRelation (pairTargetDecl e)) (error "!Fatal (module CodeVariables 128): Term number undefined for pairTargetExpr")
  pairTargetDecl :: Expression (Relation Concept) -> Declaration PHPconcept
  pairTargetDecl e = (pairSourceDecl e){decnm="trg",detrg=PHPC (target e)}

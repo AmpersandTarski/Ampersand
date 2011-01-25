@@ -169,9 +169,9 @@ instance Identified PhpValue where
 --           i.e. a list of SqlField given some A -> [target m | m::A*B,isUni m,isTot m, isInj m] 
 --                                                ++ [target m | m::A*B,isUni m, not(isTot m), not(isSur m)]
 --             kernel = A closure of concepts A,B for which there exists a m::A->B[INJ] 
---                      (m=fldexpr of kernel field holding instances of B, in practice m is I or a makeMph(flipped declaration))
+--                      (m=fldexpr of kernel field holding instances of B, in practice m is I or a makeRelation(flipped declaration))
 --             attribute relations = All concepts B, A in kernel for which there exists a m::A*B[UNI] and m not TOT and SUR
---                      (m=fldexpr of attMor field, in practice m is a makeMph(declaration))
+--                      (m=fldexpr of attMor field, in practice m is a makeRelation(declaration))
 --           all kernel fields can be related to an imaginary concept ID for the plug (a SqlField with type=SQLID)
 --             i.e. For all kernel fields k1,k2, where concept k1=A, concept k2=B, fldexpr k1=r~, fldexpr k2=s~
 --                  You can imagine :

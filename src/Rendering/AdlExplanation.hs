@@ -57,6 +57,15 @@ instance Explainable (Declaration Concept) where
   explForObj x (ExplDeclaration x') = x == x'
   explForObj _ _ = False
   
+instance Explainable (Relation Concept) where
+  autoExplainsOf flags m = map (toExpl decl) (autoExplains flags decl)
+     where
+       decl = makeDeclaration m
+       toExpl :: Declaration Concept -> AutoExplain -> Explanation
+       toExpl d (Because l econt) = Expl (ExplDeclaration d) l versionbanner econt
+  explForObj x (ExplDeclaration x') = makeDeclaration x == x'
+  explForObj _ _ = False
+  
 instance Explainable (Rule (Relation Concept)) where
   autoExplainsOf flags rule = map (toExpl rule) (autoExplains flags rule)
      where

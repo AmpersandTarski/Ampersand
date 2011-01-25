@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances -XMultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..),Relational(..), mapMorphism
                                   ,Declaration(..),Identified(..),uniqueNames
-                                  ,makeDeclaration,makeMph
+                                  ,makeDeclaration,makeRelation
                                   ,inline
                                   ,isSgn,mIs
                                   ,showSign,applyM)
@@ -93,7 +93,7 @@ where
                         , mph1typ :: c               -- ^ the allocated type.
                         }  
 
-   mapMorphism :: (a->b) -> Relation a -> Relation b
+   mapMorphism :: Eq a => (a->b) -> Relation a -> Relation b
    mapMorphism f m@Mph{} = m{ mphats = map f (mphats m)
                             , mphsrc = f (mphsrc m)
                             , mphtrg = f (mphtrg m)
@@ -104,7 +104,7 @@ where
                             , mphgen = f (mphgen m)
                             }
    mapMorphism f m@V  {} = m{ mphats = map f (mphats m)
-                            , mphtyp = let (s, t)=mphtyp m in (f s, f t)
+                            , mphtyp = let (s,t)=sign m in (f s, f t)
                             }
    mapMorphism f m@Mp1{} = m{ mphats  = map f (mphats m)
                             , mph1typ = f (mph1typ m)
@@ -155,7 +155,7 @@ where
     showsPrec _ m = case m of
       Mph{} -> showString (mphnm m++
                (if inline m 
-                then showSign [source m,target m] 
+                then showSign [source m,target m]
                 else showSign [target m,source m]++"~"))
       I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
       V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
@@ -165,29 +165,29 @@ where
     a <= b = source a <= source b && target a <= target b
 
    instance Identified c => Identified (Relation c) where
-    name m = name (makeDeclaration m)
+    name m = name (mphdcl m)
 
    instance (Eq c) => Association (Relation c) c where
-    sign   m@Mph{}               = (mphsrc m, mphtrg m)    -- BECAUSE: (mphsrc m, mphtrg m) represents the actual type of this morphism. Yin takes care of the consistency with the underlying declaration, mphdcl m.
+    sign   m@Mph{}               = (source m, target m)    -- BECAUSE: (source m, target m) represents the actual type of this morphism. Yin takes care of the consistency with the underlying declaration, mphdcl m.
     sign   (I _ g s yin)         = if yin then (s,g) else (g,s)
     sign   (V _ (a,b))           = (a,b)
     sign   m@Mp1{}               = if null (mphats m) then (mph1typ m,mph1typ m) else (head (mphats m),last (mphats m))
     source m@Mph{} = mphsrc m
     source m@I{}   = mphspc m
-    source m@V{}   = let (s,_) = mphtyp m in s
+    source m@V{}   = let (s,_) = sign m in s
     source m@Mp1{} = mph1typ m
     target m@Mph{} = mphtrg m
     target m@I{}   = mphgen m
-    target m@V{}   = let (_,t) = mphtyp m in t
+    target m@V{}   = let (_,t) = sign m in t
     target m@Mp1{} = mph1typ m
 
-   instance Numbered (Relation c) where
+   instance Eq c => Numbered (Relation c) where
     pos m = case m of
              Mph{} ->  mphpos m
              _     ->  Nowhere
     nr m = nr (makeDeclaration m)
 
-   instance Signaling (Relation c) where
+   instance Eq c => Signaling (Relation c) where
     isSignal mph = isSignal (makeDeclaration mph)
 
    instance (Eq c) => Relational (Relation c) c where
@@ -208,8 +208,8 @@ where
     flp mph 
       = case mph of
            Mph{}               -> mph{ mphats = reverse(mphats mph)
-                                     , mphsrc = mphtrg mph
-                                     , mphtrg = mphsrc mph
+                                     , mphsrc = target mph
+                                     , mphtrg = source mph
                                      , mphyin = not (mphyin mph)
                                      }
            V{mphtyp = (s,t)}   -> V  { mphats = reverse(mphats mph)
@@ -237,12 +237,12 @@ where
    mIs :: concept -> Relation concept
    mIs c = I [] c c True
 
-   makeDeclaration :: Relation c -> Declaration c
+   makeDeclaration :: Eq c => Relation c -> Declaration c
    makeDeclaration m = case m of
                Mph{} -> mphdcl m
                I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WHY?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
-               V{}   -> Vs { desrc = fst(mphtyp m), detrg = snd(mphtyp m)}
-               Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}
+               V{}   -> let (s,t) = sign m in Vs { desrc = s, detrg = t}
+               Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}   -- WHY?? This is weird. Is this correct?
     
    inline :: Relation c -> Bool
    inline m =  case m of
@@ -380,19 +380,19 @@ where
                  _     -> False
 
    -- | Deze declaratie is de reden dat Declaration en Relation in precies een module moeten zitten.
---   makeMph :: Declaration Concept -> Relation Concept
-   makeMph :: Eq concept => Declaration concept -> Relation concept
-   makeMph d = Mph { mphnm  = name d
-                   , mphpos = pos d
-                   , mphats = []
-                   , mphsrc = desrc d
-                   , mphtrg = detrg d
-                   , mphyin = True
-                   , mphdcl = d
-                   }
+--   makeRelation :: Declaration Concept -> Relation Concept
+   makeRelation :: Eq concept => Declaration concept -> Relation concept
+   makeRelation d
+    = Mph { mphnm  = name d
+          , mphpos = pos d
+          , mphats = []
+          , mphsrc = desrc d
+          , mphtrg = detrg d
+          , mphyin = True
+          , mphdcl = d
+          }
 
 --   instance SpecHierarchy (Relation Concept) -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.
-
 
    isSgn :: Declaration c -> Bool
    isSgn Sgn{} = True

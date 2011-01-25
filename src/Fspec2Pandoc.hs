@@ -47,6 +47,8 @@ chpintrolabel :: String
 chpintrolabel="chpIntro"
 chpFRlabel :: String
 chpFRlabel="chpFunctionalRequirements"
+chpDiaglabel :: String
+chpDiaglabel="chpDiagnosis"
 chpCAlabel :: String
 chpCAlabel="chpConceptualAnalysis"
 chpPAlabel :: String
@@ -100,8 +102,9 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
           date = [Str (show(genTime flags))]
           
           docContents
-           = ( introduction       level fSpec flags      ++
-               designPrinciples   level fSpec flags      ++
+           = ( introduction  level fSpec flags           ++
+               natLangReqs   level fSpec flags           ++
+               diagnosis     level fSpec flags           ++
                caTxt                                     ++
                (if noProcesses fSpec then [] else paTxt) ++
                daTxt                                     ++
@@ -132,17 +135,24 @@ introduction lev fSpec flags = header ++ introContents (language flags)
         --TODO: different intro for theme flags == "student"
         introContents Dutch = 
          [ Para 
-                [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd ", Quoted  SingleQuote [Str (name fSpec)], Str ". "
-                , Str "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken om afspraken na te leven. "
-                , Str "Een aantal van deze afspraken is als functionele eis gebruikt", Note [Para [Str "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "]], Str " om de onderhavige functionele specificatie samen te stellen. "
+                [ Str "Dit document definieert de functionaliteit van een informatiesysteem genaamd "
+                , Quoted  SingleQuote [Str (name fSpec)], Str ". "
+                , Str "Het definieert business-services in een systeem waarin mensen en applicaties samenwerken "
+                , Str "om afspraken na te leven. "
+                , Str "Veel van deze afspraken volgen uit regels, die de business voortdurend naleeft. "
+                , Str "Een aantal van deze afspraken is gebruikt om de onderhavige functionele specificatie"
+                , Note [Para [Str "Het gebruik van geldende afspraken als functionele eis is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "]]
+                , Str " samen te stellen. "
                 , Str "Deze eisen staan opgesomd in hoofdstuk ", xrefReference chpFRlabel, Str ", geordend op thema. "
-                , Str (name fSpec), Str " ondersteunt het naleven ervan (compliance) vanuit een verzameling business services. "
-                , Str "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt ", Str (name fSpec)
-                , Str " compliance ten aanzien van de eisen uit hoofdstuk ", xrefReference chpFRlabel, Str " ."
+                ]
+          , Para 
+                [ Str "Een diagnose in hoofdstuk ", xrefReference chpDiaglabel
+                , Str " is bedoeld voor de auteurs om gebreken uit hun Ampersand model op te sporen. "
                 ]
           , Para 
                 [ Str "De conceptuele analyse in hoofdstuk ", xrefReference chpCAlabel
-                , Str " is bedoeld voor requirements engineers en architecten om de afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str " te valideren. "
+                , Str " is bedoeld voor requirements engineers en architecten om de afspraken uit hoofdstuk "
+                , xrefReference chpCAlabel, Str " te valideren. "
                 , Str "Tevens is het bedoeld voor testers om eenduidige testgevallen te kunnen bepalen. "
                 , Str "Dit hoofdstuk bevat dan ook een formele representatie van elke afspraak. "
                 , Str "Daarmee ligt de consistentie van alle afspraken vast en is de interpretatie van de eisen eenduidig."
@@ -152,45 +162,54 @@ introduction lev fSpec flags = header ++ introContents (language flags)
                 , Str "De gegevensanalyse in hoofdstuk "
                 , xrefReference chpDAlabel
                 , Str " beschrijft de gegevensverzamelingen waarop het systeem wordt gebouwd. "
-                , Str "Elk volgend hoofdstuk definieert een business service definities van services. "
-                , Str "Deze services ondersteunen gezamenlijk alle afspraken uit hoofdstuk ", xrefReference chpFRlabel
-                , Str ". Deze ondersteuning bestaat uit het voorkomen dat een afspraak wordt overtreden, "
-                , Str "of het signaleren van overtredingen (opdat mensen kunnen ingrijpen), "
-                , Str "of het herstellen van een regel (door automatische acties op de database uit te voeren)."
+                , Str "Elk volgend hoofdstuk definieert één business service. "
+                , Str "Hierdoor kunnen bouwers zich concentreren op één service tegelijk. "
+                , Str "Tezamen ondersteunen deze services alle afspraken uit hoofdstuk ", xrefReference chpFRlabel, Str ". "
+                , Str "Door alle functionaliteit uitsluitend via deze services te ontsluiten waarborgt ", Str (name fSpec)
+                , Str " compliance ten aanzien van de eisen uit hoofdstuk ", xrefReference chpFRlabel, Str " ."
                 ]
          ]
 
         introContents English = 
-         [Para
+         [ Para
                 [Str "This document defines the functionality of an information system called "
-                , Quoted  SingleQuote [Str (name fSpec)] 
-                , Str ". It defines business services in a system where people and applications work together in order to fullfill their commitments. "
-                , Str "Many of these commitments follow from rules that are maintained by the business, the so called business rules. "
-                , Str "A number of these rules have been used to assemble this functional specification. "
+                , Quoted  SingleQuote [Str (name fSpec)], Str ". "
+                , Str "It defines business services in a system where people and applications work together "
+                , Str "in order to fullfill their commitments. "
+                , Str "Many of these commitments follow from rules that are continuously being maintained by the business. "
+                , Str "A number of these rules have been used to assemble this functional specification"
+                , Note [Para [Str "To use agreements as functional requirements characterizes the Ampersand approach, which has been used to produce this document. "]]
+                , Str ". "
                 , Str "Those rules are listed in chapter ", xrefReference chpFRlabel, Str ", ordered by theme. "
-                , Str "Every information system that satisfies this functional specification supports the fulfillment of the commitments. "
-                , Str "In order to achieve this goal ", Str (name fSpec), Str " consists of business services. "
-                , Str "By disclosing all functionality through these services, ", Str (name fSpec)
-                , Str " ensures that users will abide by the rules put forward in chapter ", xrefReference chpFRlabel, Str ". "
+                ]
+          , Para 
+                [ Str "A diagnosis in chapter ", xrefReference chpDiaglabel
+                , Str " is meant to help the authors identify shortcomings in their Ampersand script."
                 ]
           , Para 
                 [ Str "The conceptual analysis in chapter ", xrefReference chpCAlabel
-                , Str " is meant for requirements engineers and architects to validate the requirements from chapter ", xrefReference chpFRlabel
+                , Str " is meant for requirements engineers and architects to validate the requirements from chapter "
+                , xrefReference chpCAlabel, Str ". "
                 , Str "It is also meant for testers to come up with correct test cases. "
                 , Str "Therefore, this chapter contains a formal representation of each commitment. "
-                , Str "It defines the consistency of all commitments, yielding an unambiguous interpretation of all requirements."
+                , Str "It defines the consistency of all commitments, "
+                , Str "yielding an unambiguous interpretation of all requirements."
                 ]
           , Para 
                 [ Str "Chapters that follow have the builders of ", Str (name fSpec), Str " as their intended audience. "
                 , Str "The data analysis in chapter "
                 , xrefReference chpDAlabel
                 , Str " describes the data sets upon which ", Str (name fSpec), Str " is built. "
-                , Str "Each service is described in a self contained way in a chapter of its own, ensuring that builders can focus on building a single service at a time. "
+                , Str "Each subsequent chapter defines one business service. "
+                , Str "Services are described in a self contained way, each one in a chapter of its own. "
+                , Str "This is done to let builders focus on building a single service at a time. "
                 , Str "Together, these services fulfill all commitments from chapter ", xrefReference chpFRlabel, Str ". "
+                , Str "By disclosing all functionality through these services, ", Str (name fSpec)
+                , Str " ensures that users will abide by the rules put forward in chapter ", xrefReference chpFRlabel, Str ". "
                 ]]  
 ------------------------------------------------------------
-designPrinciples :: Int -> Fspc -> Options ->  [Block]
-designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
+natLangReqs :: Int -> Fspc -> Options ->  [Block]
+natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
   where
   header :: [Block]
   header = labeledHeader lev chpFRlabel (case (language flags) of
@@ -201,39 +220,30 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
   dpIntro = 
     case language flags of
         Dutch   -> [ Para
-                     [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str ". "
-                     , Str "Elke afspraak die gebruikers gezamenlijk naleven "
-                     , Str "en door ", Str (name fSpec), Str " moet worden ondersteund, "
-                     , Str "is opgenomen als functionele eis in dit hoofdstuk. "
-                     , Str "Elke eis is voorzien van een nummer, die in volgende hoofdstukken gebruikt wordt om naar deze eis te verwijzen."
-                     ]
-                   , Para
-                     [ Str "Formuleringen in dit hoofdstuk dienen zorgvuldig te worden getoetst met en door "
-                     , Str "al degenen die op welke wijze dan ook de noodzakelijke kennis en voldoende autoriteit bezitten. "
-                     , Str "Zij zijn immers verantwoordelijk voor de geldende regels. "
-                     , Str "De hoofdarchitect is verantwoordelijk voor de onderlinge consistentie van deze afspraken "
-                     , Str "en het bouwbaar zijn van het daaruit afgeleide systeem. "
-                     , Str "Om deze reden schrijft de architect de afspraken zelf op, "
-                     , Str "om ze te laten toetsen door de betrokkenen uit de organisatie. "
-                     , Str "Van het voorliggende document is dit hoofdstuk het enige dat het fiat van gebruikers nodig heeft. "
-                     , Str "Alle hierop volgende hoofdstukken zijn technisch van aard en bedoeld voor bouwers, testers en auditors. "
+                     [ Str "Dit hoofdstuk beschrijft de functionele eisen ten behoeve van ", Str (name fSpec), Str " in natuurlijke taal. "
+                     , Str "Elke functionele eis moet worden (of is al) goedgekeurd door een daartoe aangewezen belanghebbende. "
+                     , Str "Daarom is elke eis met grote zorgvuldigheid geformuleerd. "
+                     , Str "Alle begrippen en basiszinnen, die worden gebruikt in een functionele eis worden in dit hoofdstuk geïntroduceerd. "
+                     , Str "Samen vormen zij een taal, "
+                     , Str "die door de betreffende belanghebbenden is (of wordt) afgesproken ten behoeve van ", Str (name fSpec), Str ". "
+                     , Str "Elke functionele eis kan worden begrepen in termen van deze basiszinnen. "
+                     , Str "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
+                     , Str "delen zij precies voldoende taal om deze functionele eisen op dezelfde manier te begrijpen. "
+                     , Str "Daarom wordt elke basiszin behandeld als volwaardige functionele eis. "
+                     , Str "Alle functionele eisen zijn genummerd omwille van de traceerbaarheid. "
                      ]]
         English -> [ Para
-                     [ Str "This chapter defines the functional requirements of ", Str (name fSpec), Str ". "
-                     , Str "Each requirement users must fulfill "
-                     , Str "by support of ", Str (name fSpec), Str ", "
-                     , Str "serves as a function requirement in this chapter. "
-                     , Str "Each requirement has a unique number, which is used in subsequent chapters for reference."
-                     ]
-                   , Para
-                     [ Str "The precise phrasing of each requirement must therefore be scrutinized "
-                     , Str "with and by those who have the knowledge and who are responsible for the actual rules. "
-                     , Str "The chief architect is responsible for the consistency of all rules "
-                     , Str "and for a buildable design. "
-                     , Str "For this reason, the rules are written by the architect "
-                     , Str "and validated by the appropriate stakeholders. "
-                     , Str "The current chapter requires user approval on behalf of the patron. "
-                     , Str "All following chapters are technical and are meant for builders, testers and auditors. "
+                     [ Str "This chapter defines the functional requirements of ", Str (name fSpec), Str " in natural language. "
+                     , Str "Every functional requirement must be (or has been) signed off by an appropriate stakeholder. "
+                     , Str "Therefore, much care has been given to the appropriate formulation of each requirement. "
+                     , Str "All concepts and basic sentences that are used in functional requirements will be introduced in this chapter. "
+                     , Str "Together, they form a language, "
+                     , Str "which must be (or has been) agreed upon by the stakeholders for the sake of ", Str (name fSpec), Str ". "
+                     , Str "Every functional requirement can be understood in terms of these basic sentences. "
+                     , Str "If all stakeholders agree to use these basic sentences, "
+                     , Str "they share precisely enough language to share their understanding of the functional requirements. "
+                     , Str "That is why basic sentences are treated as any other functional requirement. "
+                     , Str "All functional requirements have been numbered for the sake of traceability. "
                      ]]
   dpRequirements :: [Block]
   dpRequirements = theBlocks
@@ -241,26 +251,26 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
       (theBlocks,_) = aThemeAtATime toBeProcessedStuff ts newCounter 
       ts = rd (map r_pat (vrules fSpec)) --Only process patterns that contain user-defined rules and signals. 
       toBeProcessedStuff = ( allConceptsThatMustBeShown
-                           , allDeclsThatMustBeShown
+                           , allRelsThatMustBeShown
                            , allRulesThatMustBeShown ) 
          where
            allConceptsThatMustBeShown     -- All concepts that have at least one explanation. Explanations are 
                                           -- currently bound to the conceptDefinitions of a concept.   
-              = [(c, Just cd)| c <-concs fSpec
-                             , cd <- vConceptDefs fSpec
-                             , name c == name cd
-                             , not (null (explain fSpec flags cd))
+              = [(c, cd)| c <-concs fSpec
+                        , cd <- vConceptDefs fSpec
+                        , name c == name cd
+                        , not (null (explain fSpec flags cd))
                 ]           
-           allDeclsThatMustBeShown        -- All declarations declared in this specification, but only Sgn is shown,
+           allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
                                           -- and only those declarations that have at least one explanation.
-              = [d| d@Sgn{}<- declarations fSpec
-                  , not (null ( explain fSpec flags d))
+              = [m| m@Mph{}<-mors fSpec
+                  , not (null ( explain fSpec flags m))
                 ]
            allRulesThatMustBeShown         
                = [r| r<-vrules fSpec      -- All *user declared* rules that apply in the entire Fspc, including all signals
                    , r_usr r
                  ]
-      aThemeAtATime :: ([(Concept,Maybe ConceptDef)],[Declaration Concept],[Rule (Relation Concept)]) -- all stuff that still must be processed into the comming sections
+      aThemeAtATime :: ([(Concept,ConceptDef)],[Relation Concept],[Rule (Relation Concept)]) -- all stuff that still must be processed into the comming sections
                     -> [String]          -- the names of the patterns that must be processed into this specification
                     -> Counter           -- unique definition counters
                     -> ([Block],Counter) -- The blocks that define the resulting document and the last used unique definition number
@@ -270,30 +280,32 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
               _   -> (blocksOfOneTheme ++ blocksOfThemes,iPost)
          where
            (x:xs) = themes'
-           (still2doCCDsPre, still2doDclsPre, still2doRulesPre) = still2doPre
+           (still2doCCDsPre, still2doRelsPre, still2doRulesPre) = still2doPre
            (blocksOfOneTheme,iPostFirst) = printOneTheme (Just x) processNow iPre
            (blocksOfThemes,iPost)     = aThemeAtATime stuff2PrintLater xs iPostFirst
-           processNow = (ccds2PrintNow, decls2PrintNow, [r| r<-rules2PrintNow, r_usr r])
+           processNow = (ccds2PrintNow, rels2PrintNow, [r| r<-rules2PrintNow, r_usr r])
            rules2PrintNow =[r| r<-still2doRulesPre, r_pat r == x]
            rules2PrintLater = still2doRulesPre >- rules2PrintNow
-           decls2PrintNow =[d| d<-still2doDclsPre, (d `eleM` map makeDeclaration (mors rules2PrintNow))]
-           decls2PrintLater = still2doDclsPre >- decls2PrintNow
+           rels2PrintNow =[m| m<-still2doRelsPre, (m `eleM` mors rules2PrintNow)]
+           rels2PrintLater = still2doRelsPre >- rels2PrintNow
            ccds2PrintNow = [(c,cd)|(c,cd)<- still2doCCDsPre, c `eleM` (concs rules2PrintNow)]
            ccds2PrintLater = still2doCCDsPre >- ccds2PrintNow
-           stuff2PrintLater = (ccds2PrintLater, decls2PrintLater, rules2PrintLater)
+           stuff2PrintLater = (ccds2PrintLater, rels2PrintLater, rules2PrintLater)
            
-
+-- | printOneTheme tells the story in natural language of a single theme.
+-- | For this purpose, Ampersand authors should take care in composing explanations.
+-- | Each explanation should state the purpose (and nothing else).
       printOneTheme :: Maybe String -- name of the theme to process (if any)
-                    -> ([(Concept,Maybe ConceptDef)],[Declaration Concept],[Rule (Relation Concept)])  -- Stuff to print in this section
+                    -> ([(Concept,ConceptDef)],[Relation Concept],[Rule (Relation Concept)])  -- Stuff to print in this section
                     -> Counter      -- first free number to use for numbered items
                     -> ([Block],Counter)-- the resulting blocks and the last used number.
-      printOneTheme nm (ccds2print, decls2print, rules2print) counters1
-              = ( header' ++ explainsPat ++ concBlocks ++ declBlocks ++ ruleBlocks
+      printOneTheme nm (ccds2print, rels2print, rules2print) counters1
+              = ( header' ++ explainsPat ++ concBlocks ++ relBlocks ++ ruleBlocks
                 , counters4
                 )
            where 
               (concBlocks,counters2) = sctcs ccds2print  counters1
-              (declBlocks,counters3) = sctds decls2print counters2
+              (relBlocks,counters3) = sctds rels2print counters2
               (ruleBlocks,counters4) = sctrs rules2print counters3
               
               header' :: [Block]
@@ -315,12 +327,12 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                       )
                                      ]
                               [p] -> explains2Blocks (explain fSpec flags p)
-                              _   -> error ("!Fatal (module Fspec2Pandoc 318): Multple themes are called '"++themeName++"'.") 
+                              _   -> error ("!Fatal (module Fspec2Pandoc 313): Multiple themes are called '"++themeName++"'.") 
 
               themeName = case nm of
                              Just s -> s
                              Nothing  -> "" 
-              sctcs :: [(Concept,Maybe ConceptDef)] -> Counter -> ([Block],Counter)
+              sctcs :: [(Concept, ConceptDef)] -> Counter -> ([Block],Counter)
               sctcs xs c0
                 = case xs of
                     []  -> ([],c0)
@@ -349,35 +361,30 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                            )
                     
                   where
-                      conceptNamesIntro = [name cpt|(cpt,Just _)<-xs]
-                      singleConceptStuff :: (Concept,Maybe ConceptDef) -> [Block] -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
-                      singleConceptStuff (c,mcd) = case mcd of
-                                                       Nothing -> []     -- If there is no conceptDef, then there is nothing to print, for there also cannot be any explains.
-                                                       Just cd -> explains cd 
-                                                                  ++
-                                                                  [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))]
-                                                                  
-                                                      
+                      conceptNamesIntro = [name cpt|(cpt,_)<-xs]
+                      singleConceptStuff :: (Concept,ConceptDef) -> [Block] -- ^ this function takes a tuple of a concept and -if it exists- its definition. It returns a list of [Blocks] representing the text to print for it.
+                      singleConceptStuff (c,cd) = explains cd  ++
+                                                  [Para (symDefLabel c: makeDefinition flags (name c) (cddef cd))]
                       explains cd = explains2Blocks (explain fSpec flags cd) 
 
--- sctds prints the requirements related to declarations that are introduced in this theme.
-              sctds :: [Declaration Concept] -> Counter -> ([Block],Counter)
+-- sctds prints the requirements related to relations that are introduced in this theme.
+              sctds :: [Relation Concept] -> Counter -> ([Block],Counter)
               sctds xs c0 
                 = case xs of
                     []  -> ([],c0)
                     _   -> (fstBlocks ++ restBlocks,c2)
                   where
                       d':ds' = xs
-                      (fstBlocks,c1) = declBlock d' c0
+                      (fstBlocks,c1) = relBlock d' c0
                       (restBlocks,c2) = sctds ds' c1
-                      declBlock :: Declaration Concept -> Counter -> ([Block],Counter)
-                      declBlock d2 cnt = ([DefinitionList [( [Str (case language flags of
+                      relBlock :: Relation Concept -> Counter -> ([Block],Counter)
+                      relBlock m cnt = ([DefinitionList [( [Str (case language flags of
 				                                                     Dutch   -> "Eis "
 				                                                     English -> "Requirement ")
                                                              ,Str (show(getEisnr cnt))
                                                              ,Str ":"]
-                                                            ,   [[Para ([symReqLabel d2])]
-                                                             ++ explains2Blocks (explain fSpec flags d2)]
+                                                            ,   [[Para ([symReqLabel (makeDeclaration m)])]
+                                                             ++ explains2Blocks (explain fSpec flags m)]
                                                            )
                                                           ]
                                           ]
@@ -406,7 +413,95 @@ designPrinciples lev fSpec flags = header ++ dpIntro ++ dpRequirements
                                          ,incEis cnt)
                       
 
-     
+------------------------------------------------------------
+diagnosis :: Int -> Fspc -> Options ->  [Block]
+diagnosis lev fSpec flags = header ++ diagIntro ++ missingConceptDefs ++ missingRels
+  where
+  header :: [Block]
+  header = labeledHeader lev chpDiaglabel (case (language flags) of
+                                             Dutch   ->  "Diagnose"   
+                                             English ->  "Diagnosis"
+                                         )
+  diagIntro :: [Block]
+  diagIntro = 
+   (case (language flags) of
+      Dutch   -> [Para
+                  [ Str "Dit hoofdstuk geeft een analyse van het Ampersand-script van ", Str (name fSpec), Str ". "
+                  , Str "Deze analyse is bedoeld voor de auteurs van dit script. "
+                  , Str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren. "
+                  ]]
+      English -> [Para
+                  [ Str "This chapter provides an analysis of the Ampersand script of ", Str (name fSpec), Str ". "
+                  , Str "This analysis is intended for the authors of this script. "
+                  , Str "It can be used to complete the script or to improve possible flaws. "
+                  ]]
+   )
+
+
+  missingConceptDefs :: [Block]
+  missingConceptDefs
+   = case (language flags, missing) of
+      (Dutch,[])  -> [Para 
+                       [Str "Alle concepten in dit document zijn voorzien van een definitie."]
+                     ]
+      (Dutch,[c]) -> [Para 
+                       [Str "Het concept ", Quoted SingleQuote [Str (name c)], Str " heeft geen definitie."]
+                     ]
+      (Dutch,xs)  -> [Para 
+                       [Str "De concepten: ", Str (commaEng "and" (map name xs)), Str " hebben geen definitie."]
+                     ]
+      (English,[])  -> [Para 
+                       [Str "All concepts in this document have been provided with a definition."]
+                     ]
+      (English,[c]) -> [Para 
+                       [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " remains without a definition."]
+                     ]
+      (English,xs)  -> [Para 
+                       [Str "Concepts ", Str (commaEng "and" (map name xs)), Str " remain without a definition."]
+                     ]
+   where missing = [c| c <-concs fSpec
+                     , cd <- vConceptDefs fSpec
+                     , name c == name cd
+                     , null (explain fSpec flags cd)
+                   ]++
+                   [c| c <-concs fSpec
+                     , null [cd | cd <- vConceptDefs fSpec, name c == name cd]
+                   ]
+  missingRels :: [Block]
+  missingRels
+   = case (language flags, missing) of
+      (Dutch,[])  -> [Para 
+                       [Str "Alle relaties in dit document zijn voorzien van een uitleg."]
+                     ]
+      (Dutch,[m]) -> [Para 
+                       [ Str "De relatie ", TeX (showMathcode fSpec m)
+                       , Str " wordt nergens uitgelegd. "
+                       , Str "U kunt overwegen om het statement: PURPOSE RELATION ", TeX (showMathcode fSpec m)
+                       , Str " toe te voegen."
+                     ] ]
+      (Dutch,ms)  -> [Para 
+                       [ Str "Relaties ", TeX (commaNL "en" (map (showMathcode fSpec) ms))
+                       , Str " worden niet uitgelegd. "
+                       , Str "U kunt overwegen om PURPOSE RELATION statements toe te voegen."
+                     ] ]
+      (English,[])  -> [Para 
+                         [Str "All relations in this document have been provided with a purpose."]
+                       ]
+      (English,[m]) -> [Para 
+                         [ Str "Relation ", TeX (showMathcode fSpec m)
+                         , Str " remains unexplained. "
+                         , Str "You might consider to add the statement: PURPOSE RELATION "
+                         , TeX (showMathcode fSpec m), Str "."
+                       ] ]
+      (English,ms)  -> [Para 
+                         [ Str "Relations ", TeX (commaEng "and" (map (showMathcode fSpec) ms))
+                         , Str " remain unexplained. "
+                         , Str "You might consider to add PURPOSE RELATION statements."
+                       ] ]
+   where missing = [m| m <-mors fSpec
+                     , null (explain fSpec flags m)
+                   ]
+
 ------------------------------------------------------------
 conceptualAnalysis :: Int -> Fspc -> Options -> ([Block],[Picture])
 conceptualAnalysis lev fSpec flags = (header ++ caIntro ++ caBlocks , pictures)
@@ -607,7 +702,7 @@ dataAnalysis lev fSpec flags
  = ( header ++ daContents ++ daAssociations remainingDecls ++
    [b | p<-datasets fSpec, b<-daPlug p] , classDiagramPicture )
  where 
-  remainingDecls = declarations fSpec >- [d | p<-datasets fSpec, d<-map makeDeclaration (mors p)]
+  remainingDecls = mors fSpec >- [m | p<-datasets fSpec, m<-mors p]
 
   header :: [Block]
   header = labeledHeader lev chpDAlabel (case language flags of
@@ -665,8 +760,8 @@ dataAnalysis lev fSpec flags
 -- First, we document the heterogeneous properties of all relations
 -- Then, the homogeneous poperties are given, and finally
 -- the signals are documented.
-  daAssociations :: [Declaration Concept] -> [Block]
-  daAssociations ds
+  daAssociations :: [Relation Concept] -> [Block]
+  daAssociations ms
    = [ if language flags==Dutch
        then Para [ Str $ upCap (name fSpec)++" heeft de volgende associaties en multipliciteitsrestricties. "
                  ]
@@ -679,13 +774,13 @@ dataAnalysis lev fSpec flags
                  else TeX $ "relation&total&surjective\\\\ \\hline\\hline\n"
                ]++
                [ TeX $ intercalate "&" 
-                                 [ if source d==target d
-                                   then "\\(\\signt{"++name d++"}{"++latexEscShw (source d)++"}\\)"              -- veld
-                                   else "\\(\\signat{"++name d++"}{"++latexEscShw (source d)++"}{"++latexEscShw (target d)++"}\\)"              -- veld
-                                 , if isTot d then "\\(\\surd\\)" else ""
-                                 , if isSur d then "\\(\\surd\\)" else ""
+                                 [ if source m==target m
+                                   then "\\(\\signt{"++name m++"}{"++latexEscShw (source m)++"}\\)"              -- veld
+                                   else "\\(\\signat{"++name m++"}{"++latexEscShw (source m)++"}{"++latexEscShw (target m)++"}\\)"              -- veld
+                                 , if isTot m then "\\(\\surd\\)" else ""
+                                 , if isSur m then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | d@Sgn{}<-ds, decusr d, not (isProp d)
+               | m@Mph{}<-ms, not (isProp m)
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
@@ -736,8 +831,8 @@ dataAnalysis lev fSpec flags
                 else TeX $ "The following signals exist: "++commaEng "and" [texOnly_Id(name d)| d<-sgnls]]
      | length sgnls>1 ]
      where
-      hMults  = [d| d@Sgn{}<-declarations fSpec, homogeneous d, decusr d]
-      sgnls   = [d| d@Sgn{}<-ds, isSignal d] -- all signal declarations are not user defined, so this is disjoint from hMults
+      hMults  = [m| m@Mph{}<- mors fSpec, homogeneous m]
+      sgnls   = [m| m@Mph{}<-ms, isSignal m] -- all signal declarations are not user defined, so this is disjoint from hMults
       keyds   = keyDefs fSpec -- all key definitions
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations

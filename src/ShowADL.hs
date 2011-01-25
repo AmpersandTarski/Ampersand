@@ -421,7 +421,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
        ++ (if null ds                  then "" else "\n"++intercalate "\n"   (map (showADLcode fSpec') ds)                  ++ "\n")
        ++ (if null showADLpops         then "" else "\n"++intercalate "\n\n" showADLpops                                    ++ "\n")
        ++ "\n\nENDCONTEXT"
-       where showADLpops = [ showADLcode fSpec' (Popu{popm=makeMph d, popps=decpopu d})
+       where showADLpops = [ showADLcode fSpec' (Popu{popm=makeRelation d, popps=decpopu d})
                            | d<-declarations fSpec, not (null (decpopu d))]
              ds = [d| d@Sgn{}<-declarations fSpec, decusr d]
 {-
