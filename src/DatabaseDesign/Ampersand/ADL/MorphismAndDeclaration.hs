@@ -164,8 +164,8 @@ where
    instance (Ord c, Association (Relation c) c) => Ord (Relation c) where
     a <= b = source a <= source b && target a <= target b
 
-   instance Identified c => Identified (Relation c) where
-    name m = name (mphdcl m)
+   instance (Identified c, Eq c) => Identified (Relation c) where
+    name m = name (makeDeclaration m)
 
    instance (Eq c) => Association (Relation c) c where
     sign   m@Mph{}               = (source m, target m)    -- BECAUSE: (source m, target m) represents the actual type of this morphism. Yin takes care of the consistency with the underlying declaration, mphdcl m.

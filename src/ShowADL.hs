@@ -336,7 +336,7 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADL m@(Mp1{})
      = "'"++mph1val m++"'"++(showSign [mph1typ m])
     showADLcode _ mph@Mph{}
-     = decnm (mphdcl mph)++
+     = name mph++
        (if null (mphats mph) then "" else showSign (mphats mph))++
        if inline mph then "" else "~"
        -- where dss = [(name.head) cl| cl<-eqCl name (declarations fSpec), length cl>1]
