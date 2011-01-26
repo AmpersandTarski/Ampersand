@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XUndecidableInstances -XFlexibleContexts -XFlexibleInstances #-}
-module ShowHS (ShowHS(showHS),fSpec2Haskell)
+module ShowHS (ShowHS(..),fSpec2Haskell,haskellIdentifier)
 where
 
    import Char                  (isAlphaNum)
@@ -79,79 +79,40 @@ where
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Plug                          ***
 -- \***********************************************************************
-   instance ShowHS Plug where
+   instance ShowHS PlugSQL where
     showHSname plug = haskellIdentifier ("plug_"++name plug)
     showHS flags indent plug   
       = case plug of
-           --TODO151210 -> add instance ShowHS PlugSQL
-           PlugSql p -> (case p of
-               TblSQL{} -> (intercalate indent 
-                           ["let " ++ intercalate (indent++"    ")
-                                                  [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
-                           ,"TblSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
-                           ,"      , fields  = ["++intercalate ", " (map showHSname (fields p))++"]"
-                           ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
-                           ,"      , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl p] ++ "]"
-                           ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
-                           ,"      }"
-                           ])
-               BinSQL{} -> (intercalate indent 
-                           ["let " ++ showHSname (fst (columns p))++indent++"     = "++showHS flags (indent++"       ") (fst (columns p))
-                                   ++ (indent++"    ") ++ showHSname (snd (columns p))++indent++"     = "++showHS flags (indent++"       ") (snd (columns p))
-                                   ++indent++"in"
-                           ,"BinSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
-                           ,"      , columns = ("++(showHSname (fst (columns p)))++ ", " ++ (showHSname (snd (columns p)))++")"
-                           ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl p] ++ "]"
-                           ,"      , mLkp = "++showHS flags "" (mLkp p)
-                           ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
-                           ,"      }"
-                           ])
-               ScalarSQL{} -> (intercalate indent 
-                           ["ScalarSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
-                           ,"         , column = "++showHS flags "" (column p)
-                           ,"         , cLkpTbl = "++showHS flags "" (cLkp p)
-                           ,"         , sqlfpa  = " ++ showHS flags "" (fpa plug)
-                           ,"         }"
-                           ])
-                        )
-           PlugPhp p ->  (intercalate indent 
-                          ["let x = x in -- TODO: This code should be fixed. " -- ++ intercalate (indent++"    ")
-                                  --         [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields p] ++indent++"in"
-                          ,"PlugPhp{ phpname   = " ++ (show.haskellIdentifier.name) plug
-                          ,"       , phpfile   = "++show (phpfile p)
-                          ,"       , phpinArgs = [ "++intercalate (indent++"                   , ") [show cv| cv <-phpinArgs p] ++ "]"
-                          ,"       , phpOut    = "++show (phpOut p)
-                          ,"       , phpSafe   = "++show (phpSafe p)
-                          ,"       , phpfpa    = " ++ showHS flags "" (fpa plug)
-                          ,"       }"
-                          ])
+          TblSQL{} -> (intercalate indent 
+                      ["let " ++ intercalate (indent++"    ")
+                                             [showHSname f++indent++"     = "++showHS flags (indent++"       ") f| f<-fields plug] ++indent++"in"
+                      ,"TblSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"      , fields  = ["++intercalate ", " (map showHSname (fields plug))++"]"
+                      ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"      , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" m++", "++showHSname ms++", "++showHSname mt++")"| (m,ms,mt)<-mLkpTbl plug] ++ "]"
+                      ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ,"      }"
+                      ])
+          BinSQL{} -> (intercalate indent 
+                      ["let " ++ showHSname (fst (columns plug))++indent++"     = "++showHS flags (indent++"       ") (fst (columns plug))
+                              ++ (indent++"    ") ++ showHSname (snd (columns plug))++indent++"     = "++showHS flags (indent++"       ") (snd (columns plug))
+                              ++indent++"in"
+                      ,"BinSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"      , columns = ("++(showHSname (fst (columns plug)))++ ", " ++ (showHSname (snd (columns plug)))++")"
+                      ,"      , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS flags "" c++", "++showHSname cn++")"| (c,cn)<-cLkpTbl plug] ++ "]"
+                      ,"      , mLkp = "++showHS flags "" (mLkp plug)
+                      ,"      , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ,"      }"
+                      ])
+          ScalarSQL{} -> (intercalate indent 
+                      ["ScalarSQL{ sqlname = " ++ (show.haskellIdentifier.name) plug
+                      ,"         , column = "++showHS flags "" (column plug)
+                      ,"         , cLkpTbl = "++showHS flags "" (cLkp plug)
+                      ,"         , sqlfpa  = " ++ showHS flags "" (fpa plug)
+                      ,"         }"
+                      ])
+   
 
-   instance ShowHS PhpValue where
-    showHSname _ = error ("!Fatal (module ShowHS 130): PhpValue is anonymous with respect to showHS flags.")
-    showHS flags _ phpVal
-      = case phpVal of
-           PhpNull{}   -> "PhpNull"
-           PhpObject{} -> "PhpObject{ objectdf = " ++ showHSname (objectdf phpVal) ++ ", phptype  = " ++ showHS flags "" (phptype phpVal) ++ "}"
-
-   instance ShowHS PhpType where
-    showHSname _ = error ("!Fatal (module ShowHS 137): PhpType is anonymous with respect to showHS flags.")
-    showHS _ indent PhpString = indent++"PhpString"
-    showHS _ indent PhpInt    = indent++"PhpInt"
-    showHS _ indent PhpFloat  = indent++"PhpFloat"
-    showHS _ indent PhpArray  = indent++"PhpArray"
-
-   instance ShowHS PhpReturn where
-    showHSname _ = error ("!Fatal (module ShowHS 144): PhpReturn is anonymous with respect to showHS flags.")
-    showHS flags indent ret = indent++"PhpReturn {retval = "++showHS flags indent (retval ret)++"}"
-
-   instance ShowHS PhpAction where
-    showHSname _ = error ("!Fatal (module ShowHS 148): PhpAction is anonymous with respect to showHS flags.")
-    showHS flags indent act
-      = (intercalate (indent ++"    ") 
-          [ "PhpAction { action = " ++ showHS flags "" (action act)
-          , "          , on     = " ++ "["++intercalate ", " (map (showHS flags "") (on act))++"]"
-          , "          }"
-          ])
 
    instance (ShowHS (Relation c), ShowHS (Expression (Relation c))) => ShowHS (ECArule c) where
     showHSname r = "ecaRule"++show (ecaNum r)
@@ -193,13 +154,6 @@ where
            Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
         where ms = paMotiv p
               showMotiv ind (conj,rs) = "("++showHS flags ind conj++", "++showHSname rs++")"
-
-   instance ShowHS ActionType where
-    showHSname _ = error ("!Fatal (module ShowHS 198): \"ActionType\" is anonymous with respect to showHS flags.")
-    showHS _ indent Create = indent++"Create"
-    showHS _ indent Read   = indent++"Read"
-    showHS _ indent Update = indent++"Update"
-    showHS _ indent Delete = indent++"Delete"
 
    instance ShowHS SqlField where
     showHSname sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
@@ -271,8 +225,8 @@ where
     showHS flags indent fspec
      = intercalate (indent ++"    ") 
             ["Fspc{ fsName = " ++ show (name fspec)
-                  ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
-                  ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
+--                  ,wrap ", vplugs        = " indentA (\_->showHSname) (vplugs fspec)
+--                  ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
                   ,     ", serviceS      = serviceS'"
                   ,     ", serviceG      = serviceG'"
                   ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
@@ -311,7 +265,7 @@ where
        
        
        indent++" gE = genEq (typology isa')"++
-       (if null (plugs fspec) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
+--       (if null (plugs fspec) then "" else "\n -- ***PLUGS***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-plugs fspec ]++"\n")++
         
         "\n -- ***Services Specified in Ampersand script***: "++
        indent++" serviceS' = "++(if null (serviceS fspec) then "[]" else
@@ -319,7 +273,7 @@ where
         "\n -- ***Services Generated by the Ampersand compiler ***: "++
        indent++" serviceG' = "++(if null (serviceG fspec) then "[]" else
                                  "[ "++intercalate (indentB++", ") (map (showHS flags indentB) (serviceG fspec))++indentB++"]")++
-       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-patterns fspec ]++"\n")++
+--       (if null (plugs fspec ) then "" else "\n -- ***Patterns***: "++concat [indent++" "++showHSname p++indent++"  = "++showHS flags (indent++"    ") p|p<-patterns fspec ]++"\n")++
 
 -- WHY?  staan hier verschillende lijstjes met services?
 -- BECAUSE!  Een Ampersand engineer besteedt veel tijd om vanuit een kennismodel (lees: een graaf met concepten en relaties)

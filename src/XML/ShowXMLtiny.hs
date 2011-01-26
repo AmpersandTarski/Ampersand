@@ -32,9 +32,9 @@ where
    showXML :: Fspc -> ClockTime -> String
    showXML fSpec now 
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
-              "<tns:ADL xmlns:tns=\"http://www.sig-cc.org/ADL\" "++
+              "<tns:ADL xmlns:tns=\"http://ampersand.sourceforge.net/ADL\" "++
               "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "++
-              "xsi:schemaLocation=\"http://www.sig-cc.org/AdlDocs "++
+              "xsi:schemaLocation=\"http://ampersand.sourceforge.net/AdlDocs "++
               "ADL.xsd \">"++
               "<!-- Generated with "++ versionbanner ++", at "++ show now ++" -->" ++
               showXTree ( mkXmlTree fSpec) ++
@@ -56,9 +56,10 @@ where
    instance XML Fspc where
      mkTag f = Tag "Fspec" [nameToAttr f] 
      mkXmlTree f@(Fspc{})
-        = Elem (mkTag f) (
-             [ Elem (simpleTag "Plugs-In-Ampersand-Script")     (map mkXmlTree (vplugs f))]
-          ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
+        = Elem (mkTag f) ( 
+             []
+--          ++ [ Elem (simpleTag "Plugs-In-Ampersand-Script")     (map mkXmlTree (vplugs f))]
+--          ++ [ Elem (simpleTag "Plugs-also-derived-ones") (map mkXmlTree (plugs f))]
           ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (patterns f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
@@ -335,19 +336,6 @@ where
      mkTag _ = Tag "ECArule" []
      mkXmlTree _ = still2bdone "Declaration->ECArule"
    
-   instance XML Plug where
-     mkTag p = case p of
-                 PlugSql x -> mkTag x
-                 PlugPhp x -> mkTag x
-     mkXmlTree p = case p of
-                 PlugSql x -> mkXmlTree x
-                 PlugPhp x -> mkXmlTree x
-                 
-   instance XML PlugPHP where
-     mkTag p = Tag "PlugPhp" [ nameToAttr p]
-     mkXmlTree p
-      = Elem (mkTag p)
-             [ ] -- TODO
    instance XML PlugSQL where --TODO151210 -> tags for BinSQL and ScalarSQL
      mkTag p = Tag "PlugSql" [ nameToAttr p]
      mkXmlTree p 

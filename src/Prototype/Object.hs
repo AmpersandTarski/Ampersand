@@ -478,7 +478,7 @@ saveTransactions flags fSpec object
 --REMARK: only used for php function save()
 --WHY151210 -> (see also Data.FSpec and Rendering.ClassDiagram) can't a php plug be a (php-)function for saving things?
 objPlugs :: Fspc -> ObjectDef -> [PlugSQL]
-objPlugs fSpec object = [plug|PlugSql plug<-plugs fSpec, not (null (plugAts plug object))]
+objPlugs fSpec object = [plug|InternalPlug plug<-plugInfos fSpec, not (null (plugAts plug object))]
 
 --plugAts returns the source/target fields related to object=>objats for objctx of object=>objats
 --REMARK: only used for php function save()
@@ -764,8 +764,8 @@ savefunction flags fSpec this
   | otherwise 
   = let thiscpt = target(objctx this)
         -----------me
-        thisinplugs = [(plug,fld)|PlugSql plug@(TblSQL{})<-plugs fSpec, (c,fld)<-cLkpTbl plug,c==thiscpt]
-                      ++ [(plug,column plug)|PlugSql plug@(ScalarSQL{})<-plugs fSpec, cLkp plug==thiscpt]
+        thisinplugs = [(plug,fld)|InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==thiscpt]
+                      ++ [(plug,column plug)|InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==thiscpt]
         (myplug,idfld) = if not(null thisinplugs) then head thisinplugs 
                            else error "!Fatal (module Prototype.Object 767):this concept is not stored in any SQL plug."
         plugkey | null (tblfields myplug) = error "!Fatal (module Prototype.Object 769):no tblfields in plug."

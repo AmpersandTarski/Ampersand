@@ -2,7 +2,6 @@
 module Data.ADL2Plug 
   (mor2plug --make a binary sqlplug for a morphism that is neither inj nor uni
   ,makeTblPlugs --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
-  ,makePhpPlug --make a phpplug from an ObjectDef (user-defined php plug)
   ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
   ,mph2fld --create field for TblSQL or ScalarSQL plugs 
   )
@@ -11,12 +10,8 @@ import Collection     (Collection((>-)))
 import Ampersand
 import Auxiliaries    (eqCl, sort')
 import Data.Plug
-import Prototype.CodeAuxiliaries (Named(..))
-import Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
-import Prototype.CodeStatement (PHPconcept(..))
 import Char
 import FPA
-import Data.Maybe (listToMaybe)
 import Data.List (nub)
 
 -----------------------------------------
@@ -239,6 +234,7 @@ So the first step is create the kernels ...   -}
 --              When is an ObjectDef a ScalarPlug or BinPlug?
 --              When do you want to define your own Scalar or BinPlug
 --mph2fld  (keyDefs context) kernel plugAtts m
+
 makeSqlPlug :: Context -> ObjectDef -> PlugSQL
 makeSqlPlug context obj
  | null(objats obj) && isI(objctx obj)
@@ -290,34 +286,5 @@ makeSqlPlug context obj
        ('I':'d':_) -> SQLId 
        ('B':'o':'o':'l':_) -> SQLBool
        _ -> SQLVarchar 255 --TODO number
-
------------------------------------------
---makePhpPlug
------------------------------------------
--- | makePhpPlug is used to make user defined plugs, with PHP functions to get the data from. Note that these plug's cannot be used to store anything.
-makePhpPlug :: ObjectDef -> PlugPHP
-makePhpPlug obj
- = PlugPHP (name obj)    -- plname (function name)
-           inFile        -- the file in which the plug is located (Nothing means BuiltIn)
-           inAttrs       -- the input of this plug (list of arguments)
-           outObj        -- the output of this plug (single object or scalar). If inAttrs does not exist, plug should return false.
-           verifiesInput -- whether the input of this plug is verified
-           (ILGV Eenvoudig) -- the number of function points to be counted for this plug
-  where
-   inFile :: Maybe String
-   inFile = listToMaybe [ str    --objstrs obj = [["FILE=date.plug.php"]]
-                        | x<-objstrs obj, 'F':'I':'L':'E':'=':str<-x ]
-   inAttrs :: [CodeVar]
-   inAttrs = [toAttr attr | attr<-objats obj, (or$ map (elem "PHPARG") (objstrs attr))]
-   toAttr :: ObjectDef -> CodeVar
-   toAttr a = CodeVar{cvIndexed=IndexByName -- TODO, read this from parameters
-                     ,cvContent=Right [] -- TODO!! Allow complex objects..
-                     ,cvExpression=mapExpression (mapMorphism PHPC) (objctx a)}
-   outObj :: CodeVar
-   outObj = CodeVar{cvIndexed=IndexByName
-                   ,cvContent=Right [Named (name attr)$ toAttr attr | attr<-objats obj, notElem ["PHPARGS"] (objstrs attr)]
-                   ,cvExpression=mapExpression (mapMorphism PHPC) (objctx obj)}
-   verifiesInput::Bool
-   verifiesInput = True   
 
 

@@ -6,8 +6,9 @@ module Prototype.GetCode (getCodeFor) where
  import Ampersand (Expression(..),mapExpression,Relation(..),mapMorphism,SpecHierarchy(..),mIs,flp,source,sign,target,Identified(..),Concept(..))
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import Prototype.RelBinGenBasics(zipnum)
- import Data.Fspec (Fspc(plugs))
- import Data.Plug (PlugPHP(..),Plug(..))
+ import Data.Fspec (Fspc(plugInfos))
+ import Data.Plug (makePlug,PlugInfo(..))
+ import Prototype.PlugPHP(phpfile,phpSafe,phpinArgs)
  import Prototype.CodeAuxiliaries(Named(..))
  import Prototype.CodeVariables (newVarFor,freshSingleton,pairSourceExpr,pairTargetExpr,singletonCV)-- manipulating variables
  import Data.Maybe (listToMaybe)
@@ -274,7 +275,7 @@ module Prototype.GetCode (getCodeFor) where
                      ,cqphpplug=name plug
                      ,cqphpfile=phpfile plug
                      }
-      | PlugPhp plug <- plugs fSpec
+      | plug <- [makePlug p | p@ExternalPlug{} <- plugInfos fSpec]
       , phpSafe plug
       , (PHPI1 s,PHPI1 t) <- [sign expr]
       , length (phpinArgs plug)==2

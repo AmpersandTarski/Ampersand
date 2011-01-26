@@ -443,7 +443,7 @@ module Prototype.RelBinGenSQL
    sqlRelPlugs :: Fspc -> Expression (Relation Concept)  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
    sqlRelPlugs fSpec e
     = [ (plug,fld0,fld1)
-      | PlugSql plug<-plugs fSpec
+      | InternalPlug plug<-plugInfos fSpec
       , (fld0,fld1)<-sqlPlugFields plug e
       ]
 
@@ -582,7 +582,7 @@ module Prototype.RelBinGenSQL
                           | otherwise
                 = if null ps then error ("!Fatal (module Prototype.RelBinGenSQL 551): Concept \""++show c++"\" does not occur in fSpec (sqlConcept in module Prototype.RelBinGenSQL)") else
                   head ps
-                  where ps = [plug|PlugSql plug<-plugs fSpec
+                  where ps = [plug|InternalPlug plug<-plugInfos fSpec
                                   , not (null (case plug of ScalarSQL{} -> [c|c==cLkp plug]; _ -> [c'|(c',_)<-cLkpTbl plug, c'==c]))]
 
 

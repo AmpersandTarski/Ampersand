@@ -20,9 +20,10 @@ module Data.Fspec ( Fspc(..)
    import Data.Plug                     
    import Picture                       (Pictures)
    import FPA
+
    data Fspc = Fspc { fsName       :: String                 -- ^ The name of the specification, taken from the Ampersand script
-                    , vplugs       :: Plugs                  -- ^ All plugs defined in the Ampersand script
-                    , plugs        :: Plugs                  -- ^ All plugs (defined and derived)
+                    , vplugInfos   :: PlugInfos              -- ^ All plugs defined in the Ampersand script
+                    , plugInfos    :: PlugInfos              -- ^ All plugs (defined and derived)
                     , serviceS     :: ObjectDefs             -- ^ All services defined in the Ampersand script
                     , serviceG     :: ObjectDefs             -- ^ All services derived from the basic ontology
                     , services     :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
@@ -203,5 +204,5 @@ module Data.Fspec ( Fspc(..)
 	namelijk een entiteit met twee attributen.
    -}
    -- WHY151210 -> can't a php plug be a dataset?
-   datasets fSpec = [p| PlugSql p@(TblSQL{})<-plugs fSpec]
+   datasets fSpec = [] --[p| PlugSql p@(TblSQL{})<-plugs fSpec]
 

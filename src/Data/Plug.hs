@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XMultiParamTypeClasses #-}  
-module Data.Plug (Plug(..),Plugs
+module Data.Plug (Plugable(..), PlugInfo(..), PlugInfos
                  ,SqlField(..)
                  ,SqlType(..)
                  ,showSQL
@@ -8,14 +8,8 @@ module Data.Plug (Plug(..),Plugs
                  ,tblcontents
                  ,entityfield,entityconcept
                  ,fldauto
-                 ,PhpValue(..)
-                 ,PhpType(..)
-                 ,PhpArgs
-                 ,PhpReturn(..)
-                 ,PhpAction(..)
                  ,iskey,kernelrels,attrels,bijectivefields
-                 ,ActionType(..)
-                 ,PlugSQL(..),PlugPHP(..)
+                 ,PlugSQL(..)
                  ,DataObject(..))
 where
 import Ampersand ( Concept(..), Signaling(..), cptnew
@@ -31,9 +25,8 @@ import Classes.Populated (contents')
 import Classes.ConceptStructure (ConceptStructure(..))
 import FPA (FPA(..),FPAble(..))
 import Auxiliaries (sort',eqClass)
-import Prototype.CodeVariables (CodeVar(..))
 import List(elemIndex,nub)
-
+ 
 --a data object is always generated.
 --There is one data object for each generated sql plug.
 --We can rely on a well-formed set of data objects:
@@ -97,58 +90,32 @@ fld2objats fld mlkp = [fld2objdef t (fld2objats t mlkp)|(_,s,t)<-mlkp,fld==s,s/=
 -- + signals::Service*SignalRule.
 --
 --Plugs can currently be implemented in PHP or SQL.
-type Plugs = [Plug]
-data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
+--type Plugs = [Plug]
+--data Plug = PlugSql PlugSQL | PlugPhp PlugPHP deriving (Show,Eq)
+data PlugInfo = InternalPlug PlugSQL 
+              | ExternalPlug ObjectDef
+                deriving (Show, Eq)
+instance Identified PlugInfo where
+  name (InternalPlug psql) = name psql
+  name (ExternalPlug obj)  = name obj
 
-instance FPAble Plug where
-  fpa (PlugSql p) = fpa p
-  fpa (PlugPhp p) = fpa p
+type PlugInfos = [PlugInfo]   
+
+class (FPAble p, Identified p, Eq p, Show p) => Plugable p where
+  makePlug :: PlugInfo -> p
+  
+instance Plugable PlugSQL where
+  
 instance FPAble PlugSQL where
   fpa p = sqlfpa p
-instance FPAble PlugPHP where
-  fpa p = phpfpa p
 
-instance Identified Plug where
-  name (PlugSql p) = name p
-  name (PlugPhp p) = name p
-  rename (PlugSql p) x = PlugSql (rename p x)
-  rename (PlugPhp p) x = PlugPhp (rename p x)
 instance Identified PlugSQL where
   name p = sqlname p
   rename p x = p{sqlname=x}
-instance Identified PlugPHP where
-  name p = phpname p
-  rename p x = p{phpname=x}
 
 --DESCR -> plugs are sorted to optimize some algoritms. 
 instance Eq PlugSQL where
   x==y = name x==name y
-instance Eq PlugPHP where
-  x==y = name x==name y && phpfile x == phpfile y && phpinArgs x == phpinArgs y
-
-----------------------------------------------
---PlugPHP
-----------------------------------------------
-data PlugPHP
- = PlugPHP { phpname   :: String       -- ^ the name of the function
-           , phpfile   :: Maybe String -- ^ the file in which the plug is located (Nothing means it is built in already)
-           , phpinArgs :: [CodeVar]    -- ^ the input of this plug (list of arguments)
-           , phpOut    :: CodeVar      -- ^ the output of this plug. When the input does not exist, the function should return false instead of an object of this type
-           , phpSafe   :: Bool         -- ^ whether the input of this plug is verified. False means that the function can be called with non-existant input, such that it does not return false as output or causes undesired side effects
-           , phpfpa    :: FPA          -- ^ functie punten analyse
-           }
-             deriving (Show)
-
-data PhpValue = PhpNull | PhpObject {objectdf::ObjectDef,phptype::PhpType} deriving (Show)
-data PhpType = PhpString | PhpInt | PhpFloat | PhpArray deriving (Show)
-type PhpArgs = [(Int,PhpValue)]
-data PhpReturn = PhpReturn {retval::PhpValue} deriving (Show)
---DO you need on::[Relation Concept]? makeFspec sets an empty list
-data PhpAction = PhpAction {action::ActionType, on::[Relation Concept]} deriving (Show)
-data ActionType = Create | Read | Update | Delete deriving (Show)
-
-instance Identified PhpValue where
-   name p = case p of {PhpNull -> "0"; PhpObject{objectdf=x} -> objnm x}
 
 
 ----------------------------------------------

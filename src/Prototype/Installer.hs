@@ -49,11 +49,11 @@ module Prototype.Installer where
           , "}\n"
           , "$error=false;"
           , "/*** Create new SQL tables ***/"
-          , "//// Number of plugs: "++(show (length (plugs fSpec)))
+          , "//// Number of plugs: "++(show (length (plugInfos fSpec)))
           , "if($existing==true){"
-          ] ++ indentBlock 2 (concat (map checkPlugexists (plugs fSpec)))
+          ] ++ indentBlock 2 (concat (map checkPlugexists (plugInfos fSpec)))
           ++ ["}"]
-          ++ concat (map plugCode [p| PlugSql p<-plugs fSpec])
+          ++ concat (map plugCode [p| InternalPlug p<-plugInfos fSpec])
           ++ ["mysql_query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');"]
         ) ++
         [ "}" ]

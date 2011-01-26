@@ -11,7 +11,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Auxiliaries (eqCl)
    import Data.Plug
    import Options
-   import Data.Fspec      (Fspc,plugs)
+   import Data.Fspec      (Fspc,plugInfos)
 --   import Data.ClassDiag  
    --TODO -> copied from Auxiliaries because disabled (why disabled?)
    enc :: Bool -> String -> String
@@ -56,11 +56,11 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        isClass  :: PlugSQL -> Bool
        isClass  p = not (null [1::Int|fld<-tblfields p, flduniq fld]) && not (null [1::Int|fld<-tblfields p, not (flduniq fld)])
        classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
-                    | PlugSql plug <- plugs fSpec, isClass plug
+                    | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
        assocs'    = [ OOAssoc (nm source s) (multiplicity s) "" (nm target t) (multiplicity t) (name m)
-                    | PlugSql plug@(BinSQL{}) <-plugs fSpec, not (isSignal plug)
+                    | InternalPlug plug@(BinSQL{}) <-plugInfos fSpec, not (isSignal plug)
                     , let m=mLkp plug
                     , let (s,t)=columns plug
                     ]
@@ -76,7 +76,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        lookup' c = if null ps
                    then error ("!Fatal (module Rendering.ClassDiagram 77): erroneous lookup for concept "++name c++" in plug list")
                    else head ps
-                   where ps = [p|PlugSql p<-plugs fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c'|(c',_)<-cLkpTbl p, c'==c]]
+                   where ps = [p|InternalPlug p<-plugInfos fSpec, case p of ScalarSQL{} -> c==cLkp p; _ -> c `elem` [c'|(c',_)<-cLkpTbl p, c'==c]]
 
    classdiagram2dot :: Options -> ClassDiag -> String
    classdiagram2dot flags cd@(OOclassdiagram cs' as' rs' gs' (_, concspat))
