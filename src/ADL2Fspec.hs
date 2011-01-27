@@ -66,7 +66,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                          , desrc   = source g
                          , detrg   = target g
                          , decprps = [Uni,Tot,Inj]
-                         , decprps_calc = []
+                         , decprps_calc = [Uni,Tot,Inj]
                          , decprL  = ""
                          , decprM  = "is a"
                          , decprR  = ""
@@ -76,7 +76,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                          , deciss  = True
                          , decusr  = False
                          , decpat  = ""
-                         , decplug = True
+                         , decplug = False
                          } | g<-gens context]
         totals :: [Relation Concept]
         totals
@@ -115,7 +115,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                    , not (Uni `elem` multiplicities d)]
         -- declarations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
         -- WHAT -> is a BYPLUG?
-        savedDecs= (filter (not.decplug) allDecs)
+        savedDecs= filter (not.decplug) allDecs
 
         --TODO151210 -> Plug A is overbodig, want A zit al in plug r
 --CONTEXT Temp

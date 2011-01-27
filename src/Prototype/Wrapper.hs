@@ -384,6 +384,7 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
     | otherwise --uniAtt
       = let
         gotoP = gotoPages att (idvar ++ "['id']")
+        echobit= "htmlspecialchars("++idvar ++ "['id'])"
         content 
          = [ indentBlock 2 c
            | (a,n)<-zip (objats att) [(0::Integer)..]
@@ -395,16 +396,27 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
         in
         (if null gotoP then []
          else if length gotoP == 1
-              then [ "if(!$edit){"
-                   , "  echo '"
-                   , "<A HREF=\""++(fst$head gotoP)++"\">';"
-                   , "  echo '<DIV class=\"GotoArrow\">&rarr;</DIV></A>';"
-                   , "}" ]
-              else [ "if(!$edit){"
-                   , "  echo '"
-                   , "<DIV class=\"GotoArrow\" id=\"To"++path++"\">&rArr;</DIV>';"]
+              then ["if(!$edit) echo '"
+                   ,"<A HREF=\""++(fst$head gotoP)++"\">'."++echobit++".'</A>';"
+                   ,"else echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';"]
+              else ["if(!$edit){"
+                   ,"  echo '"
+                   ,"<A class=\"GotoLink\" id=\"To"++path++"\">';"
+                   ,"  echo "++echobit++".'</A>';"]
                    ++ indentBlock 2 (gotoDiv gotoP path) ++
-                   [ "}" ]
+                   [ "} else echo '<DIV CLASS=\"item UI"++cls++"\" ID=\""++path++"\">'."++echobit++".'</DIV>';" ]
+              --if length gotoP == 1
+          --    then [ "if(!$edit){"
+            --       , "  echo '"
+              --     , "<A HREF=\""++(fst$head gotoP)++"\">';"
+                   --, "  echo '<DIV class=\"GotoArrow\">&rarr;</DIV></A>';"
+                --   , "  echo 'htmlspecialchars("++var++")</A>';"
+                  -- , "}" ]
+--              else [ "if(!$edit){"
+  --                 , "  echo '"
+    --               , "<DIV class=\"GotoArrow\" id=\"To"++path++"\">&rArr;</DIV>';"]
+      --             ++ indentBlock 2 (gotoDiv gotoP path) ++
+        --           [ "}" ]
         )++
         ["echo '"
         ,"<DIV>';"]

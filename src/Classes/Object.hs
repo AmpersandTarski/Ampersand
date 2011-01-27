@@ -5,32 +5,41 @@ module Classes.Object        (Object( concept
                                     , populations
                                     , extends
                                     )
+                             ,foldedattributes
                              ) 
 where
-   import DatabaseDesign.Ampersand.ADL.Concept                (Concept,cptAnything)
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..))
-   import DatabaseDesign.Ampersand.ADL.ObjectDef              (ObjectDef(..),Service(..))
-   import DatabaseDesign.Ampersand.ADL.Expression             (Expression)
-   import DatabaseDesign.Ampersand.ADL.Population             (Population)
-   import DatabaseDesign.Ampersand.ADL.Context                (Context(..))
+import DatabaseDesign.Ampersand.ADL.Concept                (Concept,cptAnything)
+import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..))
+import DatabaseDesign.Ampersand.ADL.ObjectDef              (ObjectDef(..),Service(..))
+import DatabaseDesign.Ampersand.ADL.Expression             (Expression(..))
+import DatabaseDesign.Ampersand.ADL.Population             (Population)
+import DatabaseDesign.Ampersand.ADL.Context                (Context(..))
 
-   class Object a where
-    concept :: a -> Concept                 -- the type of the object
-    attributes :: a -> [ObjectDef]          -- the objects defined within the object
-    ctx :: a -> Expression (Relation Concept) -- the context expression
-    populations :: a -> [Population Concept]        -- the populations in the object (for now: use for contexts only)
-    extends :: a -> [String]                -- the objects of which this is is extension (for now: use for contexts only)
-    extends _ = []                          -- empty unless specified otherwise.
+class Object a where
+ concept :: a -> Concept                 -- the type of the object
+ attributes :: a -> [ObjectDef]          -- the objects defined within the object    
+ ctx :: a -> Expression (Relation Concept) -- the context expression
+ populations :: a -> [Population Concept]        -- the populations in the object (for now: use for contexts only)
+ extends :: a -> [String]                -- the objects of which this is is extension (for now: use for contexts only)
+ extends _ = []                          -- empty unless specified otherwise.
 
-   instance Object Context where
-    concept _      = cptAnything
-    attributes c   = [svObj s| s<-ctxsvcs c]
-    ctx        _   = error ("!Fatal (module Classes.Object 28): Cannot evaluate the context expression of the current context (yet)")
-    populations  c = ctxpops c
-    extends c      = ctxon c
+instance Object Context where
+ concept _      = cptAnything
+ attributes c   = [svObj s| s<-ctxsvcs c]
+ ctx        _   = error ("!Fatal (module Classes.Object 28): Cannot evaluate the context expression of the current context (yet)")
+ populations  c = ctxpops c
+ extends c      = ctxon c
 
-   instance Object ObjectDef where
-    concept obj = target (objctx obj)
-    attributes obj = objats obj
-    ctx obj = objctx obj
-    populations  _ = []
+instance Object ObjectDef where
+ concept obj = target (objctx obj)
+ attributes obj = objats obj
+ ctx obj = objctx obj
+ populations  _ = []
+
+--the attributes of obj as a list of expressions with source = concept obj
+foldedattributes :: Object a => a -> [Expression (Relation Concept)]
+foldedattributes obj 
+   = (ctx obj):[f (ctx obj) x |xs<-map foldedattributes (attributes obj),x<-xs]
+   where f::Expression r -> Expression r -> Expression r
+         f x (F xs) = F (x:xs)
+         f x x' = F [x,x']

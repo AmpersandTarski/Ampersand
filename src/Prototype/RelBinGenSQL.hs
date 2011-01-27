@@ -455,7 +455,7 @@ module Prototype.RelBinGenSQL
    --then return (fld0,fld1)
    --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
    sqlPlugFields :: PlugSQL -> Expression (Relation Concept)  -> [(SqlField, SqlField)]
-   sqlPlugFields p e' 
+   sqlPlugFields p e'
      = let e= disjNF e'
        in
        nub [(fld0,fld1)
@@ -468,7 +468,7 @@ module Prototype.RelBinGenSQL
                  bt = (isTrue.disjNF) (Fux [Cpx (F [flp se,te]),e])  --       se~;te |- e
            , --reasons why e is equivalent to plugexpr:
               --because e and plugexpr are equal
-              e==plugexpr
+              show e==show plugexpr
         -- || because1 e fld0 fld1              
            || --OR e is equivalent to plugexpr for some other reason (requires reasoning)
               bs && bt                                               --       e = se~;te

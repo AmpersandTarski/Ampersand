@@ -14,6 +14,7 @@ import ShowADL (showADLcode)
 import Collection (Collection (rd,rd',(>-),uni))
 import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
 import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
+import Classes.Object (foldedattributes)
 import Data.Fspec
 import Data.Plug
 import Data.Maybe
@@ -34,7 +35,12 @@ objectServices flags fSpec o
     , showADLcode fSpec o
     , " *********/"
     , ""
-    ] ++ showClasses flags fSpec o ++
+    ]
+    ++
+    showClasses flags fSpec o
+    ++
+    concat[showClasses flags fSpec att|att<-attributes o,(not.null)(attributes att)]
+    ++
     ( if isOne o  -- If the current object is the universal singleton...
       then []
       else generateService_getEach fSpec (name o) o ++
@@ -135,7 +141,7 @@ showClasses flags fSpec o
                            | a' <- attributes o]
                    ) ++
          ["}\n"]
-         ++ savefunction flags fSpec o
+         ++ savefunction flags fSpec "save" 0 o
          ++ (concat
              [ ["function set_"++phpIdentifier (name a)++"($val){"
                ,"  $this->_"++phpIdentifier (name a)++"=$val;"
@@ -167,7 +173,7 @@ showClasses flags fSpec o
          ) ++
    [ "}\n" ]
  where
-  myName = name o
+  myName = phpIdentifier(name o)
   doesExistQuer :: [Char] -> String
   doesExistQuer var
    = if sql==Nothing then error "!Fatal (module Prototype.Object 173): Cannot check if exists in Object.hs" else fromJust sql
@@ -758,15 +764,17 @@ splitLineBreak (l:s)
 --update the binary relations in this instance stored in binplugs (DEL $oldthis->rel, INS $newthis->rel)
 --TODO -> Move start and close transaction to wrapper and session, add rules to check to session
 --TODO -> error reporting (Bas uses jQuery somehow, checkout edit.js)
-savefunction :: Options -> Fspc -> ObjectDef -> [String]
-savefunction flags fSpec this
-  | isOne this = ["function save(){}"] --TODO
+--TODO -> block inserts with plugid=NULL or ""
+--the php name of the save function (uniqfnm) is fnm+depth except when depth=0 then it is "save"
+savefunction :: Options -> Fspc -> String -> Int -> ObjectDef -> [String]
+savefunction flags fSpec fnm depth this
+  | isOne this = ["function "++uniqfnm fnm depth++"{}"] --TODO
   | otherwise 
   = let thiscpt = target(objctx this)
         -----------me
-        thisinplugs = [(plug,fld)|InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==thiscpt]
-                      ++ [(plug,column plug)|InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==thiscpt]
-        (myplug,idfld) = if not(null thisinplugs) then head thisinplugs 
+        inplugs cpt = [(plug,fld)|InternalPlug plug@(TblSQL{})<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]
+                      ++ [(plug,column plug)|InternalPlug plug@(ScalarSQL{})<-plugInfos fSpec, cLkp plug==cpt]
+        (myplug,idfld) = if not(null (inplugs thiscpt)) then head (inplugs thiscpt)
                            else error "!Fatal (module Prototype.Object 767):this concept is not stored in any SQL plug."
         plugkey | null (tblfields myplug) = error "!Fatal (module Prototype.Object 769):no tblfields in plug."
                 | otherwise = head (tblfields myplug) --TODO -> implement KEYs in plug
@@ -787,35 +795,62 @@ savefunction flags fSpec this
           = mevar ++ " = array("++ intercalate "," ["'"++fldname f++"'=>null" | f<-tblfields myplug, not(fldauto f)] ++ ");"
         thisme  -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]
           = "$me = array("++ intercalate "," 
-                   ( ("'"++fldname idfld++"'=>$this->getId()"): --do not forget (objctx this)
-                    ["'"++fldname f++"'=>$this->_"++phpIdentifier (name a)| (f,a)<-thismematch, fldname f/=fldname idfld]
-                   )
-                   ++ ");"
-        thismematch = nubBy (\x y -> fst x == fst y) --TODO -> solve duplicate fields in plugs and remove nubBy
-                   ((idfld,this):[(f,a) 
-                   | f<-tblfields myplug, not(fldauto f)
-                   , a <- attributes this
-                   ,(plug,fld0,fld1)<-sqlRelPlugs fSpec (objctx a)
-                   ,plug==myplug,fld0==idfld, fld1==f]) --REMARK -> only the objctx a from idfld to f (at least UNI) not the flipped one (at least INJ)
+                             ["'"++fldname fld++"'=>"++arrayattpath att e| (fld,(att,e))<-thismematch]
+                   ++ ");" 
+        thismematch = nubBy (\x y -> fst x == fst y) 
+                      --TODO -> identical expressions stored in plugs do not need to be saved twice, but in edit mode they are not synced on the screen (yet)
+                   ((idfld,(this,objctx this)):
+                    [(f,(a,e)) 
+                    | f<-tblfields myplug, not(fldauto f)
+                    , a <- attributes this
+                    , e <- foldedattributes a
+                    ,(plug,fld0,fld1)<-sqlRelPlugs fSpec e
+                    ,plug==myplug,fld0==idfld, fld1==f]) --REMARK -> only the objctx a from idfld to f (at least UNI) not the flipped one (at least INJ)
+        arrayattpath att e --e is the foldedattribute in att for which we want the php array path
+           | att==this = "$this->getId()"
+           --if att has no attributes then $this->_att is a value (not an array)
+           | null(attributes att) = "$this->_"++phpIdentifier (name att)
+           --if att has attributes then $this->_att is an array with at least 'id' for the target of objctx att
+           | objctx att==e  = "$this->_"++phpIdentifier (name att)++"['id']"
+           | otherwise  = "$this->_"++phpIdentifier (name att)++"['"++phpIdentifier (name (head (attributes att)))++"']"
         notreqid_and_notinthis_flds = [fld|fld<-tblfields myplug, not(requires myplug (fld,idfld)), not(elem fld (map fst thismematch))]
         reqbyid_and_notinthis_flds = [fld|fld<-requiredFields myplug idfld, not(elem fld (map fst thismematch))]
-        --reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
+        reqbyid_and_notreqid_flds = [fld|fld<-requiredFields myplug idfld, not(requires myplug (fld,idfld))]
         notinthis_flds =  [fld|fld<-tblfields myplug, not(elem fld (map fst thismematch))]
         ---------myatts
         myattsinthis = [((plug,fld0,fld1),a)
-                   |a<-attributes this, not(elem a (map snd thismematch))
+                   |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
                    ,(plug@(TblSQL{}),fld0,fld1)<-sqlRelPlugs fSpec (objctx a) --fld0 => src objat (find id), fld1 => trg objat (kernelfld)
                    ]
         ---------myassociations
         myassocinthis = [((plug,fld0,fld1),a)
-                   |a<-attributes this, not(elem a (map snd thismematch))
+                   |a<-attributes this, not(elem (a,objctx a) (map snd thismematch))
                    ,(plug@(BinSQL{}),fld0,fld1)<-sqlRelPlugs fSpec (objctx a) --fld0 => src objat (find id), fld1 => trg objat (assocfld)
                    ]
+        myattflds = [(attfld,cfld,p)
+                    |(attfld,_)<-thismematch
+                    ,not(iskey myplug attfld)
+                    ,(p,cfld)<-inplugs (target (fldexpr attfld))]
+        checkinstances mevar attflds
+         = [["//check the existence of attributes"
+            ,"if(isset("++var++") && count(DB_doquer(\"SELECT `"++fldname cfld++"` FROM `"++name p
+                                                 ++"` WHERE `"++fldname cfld++"`='\".addslashes("++var++").\"'\")) != 1){"
+            ,"   DB_doquer(\"INSERT IGNORE INTO `"++name p++"` (`"++fldname cfld++"`) VALUES ('\".addslashes("++var++").\"')\", 5);"
+            ,"   if(mysql_affected_rows()==0) {"
+            ,"      rollbacktransaction();"
+            ,"      $myerrors[] = print_r(array('cannotaddmorattconcept'=>'zzz')).print_r("++mevar++");"
+            ,"      return false;"
+            ,"   }"
+            ,"}"]
+           |(attfld,cfld,p)<-attflds, let var=mevar++"['"++fldname attfld++"']"]
     in
-    ["function save(){"]
+    --save functions for attributes of this with attributes
+ --   concat [savefunction flags fSpec (attfuncnm att) (depth+1) att | att<-attfuncs]
+ --   ++ --save function for this
+    ["function "++uniqfnm fnm depth++"{"]
     ++ indentBlock 3 (
     ["global $myerrors;"
-    ,"starttransaction(); //transaction runs untill closed by somebody"
+    ,if depth==0 then "starttransaction(); //transaction runs untill closed by somebody" else ""
     ,""
     ,"//me is a record with a kernelfield for this->id "
     ,"//this class/service can only create me records (and the identity of concepts in them => kernelfields)"
@@ -832,7 +867,9 @@ savefunction flags fSpec this
     ,"//this implies updates of morattfields in other tblplugs than me and del/ins in binplugs where src or trg = this->id"
     ,"//updates of morattfields will not check whether it was already set in the old situation i.e. overwrite."
     ]
-    ++ 
+    ++
+ --   map runfunc attfuncs
+ --   ++ 
     [inime "$oldme"
     ,thisme
     ,inime "$newme"
@@ -861,7 +898,8 @@ savefunction flags fSpec this
     ,"   if ($cancut){"
     ,"      $cutoldme = array(" 
                ++ intercalate ", " 
-               [if elem fld notinthis_flds || fld==plugkey
+               --the old record keeps the old plugkey + fields not in this + fields in this required by but not requiring the id of this 
+               [if elem fld notinthis_flds || fld==plugkey || elem fld reqbyid_and_notreqid_flds
                 then "\""++fldname fld++"\"=>$oldme[\""++fldname fld++"\"]"
                 else "\""++fldname fld++"\"=>null" | fld<-tblfields myplug, not(fldauto fld)]
                ++");"
@@ -873,7 +911,7 @@ savefunction flags fSpec this
     ,"      }"
     ,"   } else { //should cut but can't because kernelfields will not unique or not all requiredfields for this->id are in this"
     ,"      rollbacktransaction();"
-    ,"      $myerrors[] = \"xxx\";"
+    ,"      $myerrors[] = print_r(array('xxx'=>'xxx'));"
     ,"      return false;"
     ,"   }"
     ,"} else { //no cutting just copy me to newme completed with old values (requires allrequiredinthis)"
@@ -888,11 +926,12 @@ savefunction flags fSpec this
     ,"   "++insme "$cutoldme"
     ,"   if(mysql_affected_rows()==0) {"
     ,"      rollbacktransaction();"
-    ,"      $myerrors[] = \"yyy\";"
+    ,"      $myerrors[] = print_r(array('yyy'=>'yyy'));"
     ,"      return false;"
     ,"   }"
-    ,"}"
-    ]) --end indentBlock if(!new)		    
+    ]
+    ++ concat (checkinstances "$cutoldme" myattflds)
+    ++ ["}"]) --end indentBlock if(!new)		    
     ++
     ["} else {"--else if(new)
     ,"   foreach ($newme as $fld => $nullval){"
@@ -947,7 +986,7 @@ savefunction flags fSpec this
     [insme "$newme"
     ,"if(mysql_affected_rows()==0) {"
     ,"   rollbacktransaction();"
-    ,"   $myerrors[] = \"zzz\".print_r($newme).print_r($cutoldme);"
+    ,"   $myerrors[] = print_r(array('zzz'=>'zzz')).print_r($newme).print_r($cutoldme);"
     ,"   return false;"
     ,"}"
     --REMARK -> the rest can be done the binary way!
@@ -955,6 +994,7 @@ savefunction flags fSpec this
     --	    //    (thus I am a partial function from a kernelfield of another plug to this->Id)
     --	    
     ,""]
+    ++ concat (checkinstances "$newme" myattflds)
     ++
     concat 
     [["//myatts"
@@ -984,7 +1024,8 @@ savefunction flags fSpec this
     |((plug,fld0,fld1),att)<-myassocinthis]
     ++	    
     [""
-    ,"if (closetransaction()) {return $this->getId();} else {$myerrors[] = \"close\"; return false;}"
-    ]) --end indentBlock save()
+    ,if depth==0 then "if (closetransaction()) {return $this->getId();} else {$myerrors[] = print_r(array('close'=>'close')); return false;}" else ""
+    ]) --end indentBlock save() for this
     ++
-    ["}"] --end of save() 
+    ["}"] --end of save() for this
+    where uniqfnm fnm depth = if depth==0 then "save()" else phpIdentifier(fnm++show depth)++"()"
