@@ -6,8 +6,8 @@ versionbanner :: String
 versionbanner = "Ampersand vs. "++versionNumber 
 
 versionNumber :: String
-versionNumber = "1.1.0.834" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
+versionNumber = "1.1.0.835" -- #1.#2.#3.#4 : #1 major version; #2 student release version; #3 production fix version (normally 0 ); #4 SVN revision number.
 {-
 SVN Version text:
-editing in prototype 
+Changing the word "Morphism" to "Relation"
 -}

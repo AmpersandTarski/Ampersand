@@ -104,11 +104,11 @@ module Prototype.RelBinGenSQL
                         , src''<-[quote$sqlExprSrc fSpec l]
                         , trg''<-[noCollideUnlessTm' l [src''] (quote$sqlExprTrg fSpec l)]
                         ]++
-                        [Just$ "isect0."++src'++" = "++mph1val m -- sorce and target are equal because this is the case with Mp1
+                        [Just$ "isect0."++src'++" = "++rel1val m -- sorce and target are equal because this is the case with Mp1
                         | (Tm m@(Mp1{}) _) <- mp1Tm
                         ]++
-                        [Just$ "isect0."++src'++" = "++mph1val m1 -- sorce and target are unequal
-                          ++ " AND isect0."++trg'++" = "++mph1val m2 -- sorce and target are unequal
+                        [Just$ "isect0."++src'++" = "++rel1val m1 -- sorce and target are unequal
+                          ++ " AND isect0."++trg'++" = "++rel1val m2 -- sorce and target are unequal
                         | (F ((Tm m1@(Mp1{}) _):(Tm (V _ _)_):(Tm m2@(Mp1{})_):[])) <- mp1Tm
                         ]++
                         [if isI l
@@ -136,12 +136,12 @@ module Prototype.RelBinGenSQL
      =  selectExpr fSpec i src trg (F ((F (s1:s2:s3:[])):fx))
 
    selectExpr _ _ src trg (F ((Tm sr@(Mp1{})_):((Tm (V _ _)_):((Tm tr@(Mp1{})_):[])))) -- this will occur quite often because of doSubsExpr
-     = Just$ "SELECT "++mph1val sr++" AS "++src++", "++mph1val tr++" AS "++trg
+     = Just$ "SELECT "++rel1val sr++" AS "++src++", "++rel1val tr++" AS "++trg
 
    selectExpr fSpec i src trg (F (e'@(Tm sr@(Mp1{})_):(f:fx)))
       = selectGeneric i ("fst."++src',src) ("fst."++trg',trg)
                         (selectExprBrac fSpec i src' trg' (F (f:fx))+++" AS fst")
-                        (Just$"fst."++src'++" = "++mph1val sr)
+                        (Just$"fst."++src'++" = "++rel1val sr)
                         where src' = quote$sqlExprSrc fSpec e'
                               trg' = noCollideUnlessTm' (F (f:fx)) [src'] (quote$sqlExprTrg fSpec (F (f:fx)))
 
@@ -388,21 +388,21 @@ module Prototype.RelBinGenSQL
                    -> Relation Concept
                    -> Maybe String
 
-   selectExprMorph fSpec i src trg mph@V{}
+   selectExprMorph fSpec i src trg rel@V{}
     = selectGeneric i (src',src) (trg',trg)
-                      (quote (sqlConcept fSpec (source mph)) +++ " AS vfst, "++quote (sqlConcept fSpec (target mph)) ++ " AS vsnd")
+                      (quote (sqlConcept fSpec (source rel)) +++ " AS vfst, "++quote (sqlConcept fSpec (target rel)) ++ " AS vsnd")
                       (src'+++" IS NOT NULL AND "++trg'++" IS NOT NULL")
-    where src'="vfst."++sqlAttConcept fSpec (source mph)
-          trg'="vsnd."++sqlAttConcept fSpec (target mph)
-   selectExprMorph _ _ src trg mph@Mp1{}
+    where src'="vfst."++sqlAttConcept fSpec (source rel)
+          trg'="vsnd."++sqlAttConcept fSpec (target rel)
+   selectExprMorph _ _ src trg rel@Mp1{}
     | src == ""&&trg=="" = error ("!Fatal (module Prototype.RelBinGenSQL 398): Source and target are \"\", use selectExists' for this purpose")
-    | src == ""  = Just$ "SELECT "++mph1val mph++" AS "++trg
-    | trg == ""  = Just$ "SELECT "++mph1val mph++" AS "++src
-    | src == trg = Just$ "SELECT "++mph1val mph++" AS "++src
-    | otherwise  = Just$ "SELECT "++mph1val mph++" AS "++src++", "++mph1val mph++" AS "++trg
-   selectExprMorph fSpec i src trg mph -- made for both Mph and I
+    | src == ""  = Just$ "SELECT "++rel1val rel++" AS "++trg
+    | trg == ""  = Just$ "SELECT "++rel1val rel++" AS "++src
+    | src == trg = Just$ "SELECT "++rel1val rel++" AS "++src
+    | otherwise  = Just$ "SELECT "++rel1val rel++" AS "++src++", "++rel1val rel++" AS "++trg
+   selectExprMorph fSpec i src trg rel -- made for both Rel and I
     = listToMaybe [selectGeneric i (quote s,src) (quote t,trg) (quote p) "1"
-                  | (p,s,t)<-sqlRelPlugNames fSpec (Tm mph (-1))
+                  | (p,s,t)<-sqlRelPlugNames fSpec (Tm rel (-1))
                   ]
                   
 
@@ -566,8 +566,8 @@ module Prototype.RelBinGenSQL
       ses (K1x e)   = ses e
       ses (Tc e)    = ses e
       ses (Tm m n)  = case m of
-                       Mp1{} -> "Mp"++(name (mph1typ m))
-                       V{} -> ses (Tm I{mphats=[],mphgen=source m,mphspc=source m,mphyin=True} n)
+                       Mp1{} -> "Mp"++(name (rel1typ m))
+                       V{} -> ses (Tm I{relats=[],relgen=source m,relspc=source m,relyin=True} n)
                        _ -> head ([s|(_,s,_)<-sqlRelPlugNames fSpec (Tm m n)]++[show m])
    sqlExprTrg :: Fspc->Expression (Relation Concept) -> String
    sqlExprTrg fSpec e' = sqlExprSrc fSpec (flp e')

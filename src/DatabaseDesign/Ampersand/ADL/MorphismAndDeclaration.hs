@@ -66,48 +66,48 @@ where
     isIdent :: Conceptual c => r -> Bool  -- > tells whether the argument is equivalent to I
 
    data Relation c = 
-                   Mph  { mphnm :: String            -- ^ the name of the morphism. This is the same name as
+                   Rel  { relnm :: String            -- ^ the name of the morphism. This is the same name as
                                                      --   the declaration that is bound to the morphism.
-                                                     --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
-                                                     --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
-                        , mphpos :: FilePos          -- ^ the position of the rule in which the morphism occurs
-                        , mphats :: [c]              -- ^ the attributes specified inline
-                        , mphsrc :: c                -- ^ the source. Together with the target, this forms the type.
-                        , mphtrg :: c                -- ^ the target. Together with the source, this forms the type.
-                        , mphyin :: Bool             -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
-                        , mphdcl :: Declaration c  -- ^ the declaration bound to this morphism.
-                                                     --   If not mphyin, then target m<=source (mphdcl m) and source m<=target (mphdcl m). In this case, we write m~ (pronounce: m-flip or m-wok)
-                                                     --   If mphyin, then source m<=source (mphdcl m) and target m<=target (mphdcl m). In this case, we write m
+                                                     --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration reldcl ....
+                                                     --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn reldcl.
+                        , relpos :: FilePos          -- ^ the position of the rule in which the morphism occurs
+                        , relats :: [c]              -- ^ the attributes specified inline
+                        , relsrc :: c                -- ^ the source. Together with the target, this forms the type.
+                        , reltrg :: c                -- ^ the target. Together with the source, this forms the type.
+                        , relyin :: Bool             -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
+                        , reldcl :: Declaration c  -- ^ the declaration bound to this morphism.
+                                                     --   If not relyin, then target m<=source (reldcl m) and source m<=target (reldcl m). In this case, we write m~ (pronounce: m-flip or m-wok)
+                                                     --   If relyin, then source m<=source (reldcl m) and target m<=target (reldcl m). In this case, we write m
                         }
-                  | I   { mphats :: [c]              -- ^ the (optional) attribute specified inline. Ampersand syntax allows at most one concept in this list.
-                        , mphgen :: c                -- ^ the generic concept  
-                        , mphspc :: c                -- ^ the specific concept
-                        , mphyin :: Bool             -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
+                  | I   { relats :: [c]              -- ^ the (optional) attribute specified inline. Ampersand syntax allows at most one concept in this list.
+                        , relgen :: c                -- ^ the generic concept  
+                        , relspc :: c                -- ^ the specific concept
+                        , relyin :: Bool             -- ^ the 'yin' factor. If true, the specific concept is source and the generic concept is target. If false, the other way around.
                         } 
-                  | V   { mphats :: [c]              -- ^ the (optional) attributes specified inline.
-                        , mphtyp :: (c,c)            -- ^ the allocated type.
+                  | V   { relats :: [c]              -- ^ the (optional) attributes specified inline.
+                        , reltyp :: (c,c)            -- ^ the allocated type.
                         }
                   -- | Een Mp1 is een deelverzameling van I, zou dus vervangen moeten worden voor I van een Mp1-type
-                  | Mp1 { mph1val :: String          -- ^ the value of the one morphism
-                        , mphats  :: [c]             -- ^ the (optional) attribute specified inline. Ampersand syntax allows at most one concept in this list.
-                        , mph1typ :: c               -- ^ the allocated type.
+                  | Mp1 { rel1val :: String          -- ^ the value of the one morphism
+                        , relats  :: [c]             -- ^ the (optional) attribute specified inline. Ampersand syntax allows at most one concept in this list.
+                        , rel1typ :: c               -- ^ the allocated type.
                         }  
 
    mapMorphism :: Eq a => (a->b) -> Relation a -> Relation b
-   mapMorphism f m@Mph{} = m{ mphats = map f (mphats m)
-                            , mphsrc = f (mphsrc m)
-                            , mphtrg = f (mphtrg m)
-                            , mphdcl = mapDeclaration f (mphdcl m)
+   mapMorphism f m@Rel{} = m{ relats = map f (relats m)
+                            , relsrc = f (relsrc m)
+                            , reltrg = f (reltrg m)
+                            , reldcl = mapDeclaration f (reldcl m)
                             }
-   mapMorphism f m@I  {} = m{ mphats = map f (mphats m)
-                            , mphspc = f (mphspc m)
-                            , mphgen = f (mphgen m)
+   mapMorphism f m@I  {} = m{ relats = map f (relats m)
+                            , relspc = f (relspc m)
+                            , relgen = f (relgen m)
                             }
-   mapMorphism f m@V  {} = m{ mphats = map f (mphats m)
-                            , mphtyp = let (s,t)=sign m in (f s, f t)
+   mapMorphism f m@V  {} = m{ relats = map f (relats m)
+                            , reltyp = let (s,t)=sign m in (f s, f t)
                             }
-   mapMorphism f m@Mp1{} = m{ mphats  = map f (mphats m)
-                            , mph1typ = f (mph1typ m)
+   mapMorphism f m@Mp1{} = m{ relats  = map f (relats m)
+                            , rel1typ = f (rel1typ m)
                             }
 
    class Identified a where
@@ -142,7 +142,7 @@ where
    
    instance Eq c => Eq (Relation c) where
  --   m == m' = name m==name m' && source m==source m' && target m==target m' && yin==yin'
-    Mph nm _ _ a b yin _ == Mph nm' _ _ a' b' yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
+    Rel nm _ _ a b yin _ == Rel nm' _ _ a' b' yin' _ = nm==nm' && yin==yin' && a==a' && b==b'
     I _ g s yin          == I _ g' s' yin'           = if yin==yin' then g==g' && s==s' else g==s' && s==g'
     V _ (a,b)            == V _ (a',b')              = a==a' && b==b'
     Mp1 s _ c            == Mp1 s' _ c'              = s==s' && c==c'
@@ -153,13 +153,13 @@ where
 
    instance (Identified c, Eq c, Show c) => Show (Relation c) where
     showsPrec _ m = case m of
-      Mph{} -> showString (mphnm m++
+      Rel{} -> showString (relnm m++
                (if inline m 
                 then showSign [source m,target m]
                 else showSign [target m,source m]++"~"))
-      I{}   -> showString ("I"++ if null (mphats m) then "" else show (mphats m))
-      V{}   -> showString ("V"++ if null (mphats m) then "" else show (mphats m))
-      Mp1{} -> showString ("Mp1 "++show (mph1val m)++" "++ if null (mphats m) then "" else show (mphats m))
+      I{}   -> showString ("I"++ if null (relats m) then "" else show (relats m))
+      V{}   -> showString ("V"++ if null (relats m) then "" else show (relats m))
+      Mp1{} -> showString ("Mp1 "++show (rel1val m)++" "++ if null (relats m) then "" else show (relats m))
 
    instance (Ord c, Association (Relation c) c) => Ord (Relation c) where
     a <= b = source a <= source b && target a <= target b
@@ -168,70 +168,70 @@ where
     name m = name (makeDeclaration m)
 
    instance (Eq c) => Association (Relation c) c where
-    sign   m@Mph{}               = (source m, target m)    -- BECAUSE: (source m, target m) represents the actual type of this morphism. Yin takes care of the consistency with the underlying declaration, mphdcl m.
+    sign   m@Rel{}               = (source m, target m)    -- BECAUSE: (source m, target m) represents the actual type of this morphism. Yin takes care of the consistency with the underlying declaration, reldcl m.
     sign   (I _ g s yin)         = if yin then (s,g) else (g,s)
     sign   (V _ (a,b))           = (a,b)
-    sign   m@Mp1{}               = if null (mphats m) then (mph1typ m,mph1typ m) else (head (mphats m),last (mphats m))
-    source m@Mph{} = mphsrc m
-    source m@I{}   = mphspc m
+    sign   m@Mp1{}               = if null (relats m) then (rel1typ m,rel1typ m) else (head (relats m),last (relats m))
+    source m@Rel{} = relsrc m
+    source m@I{}   = relspc m
     source m@V{}   = let (s,_) = sign m in s
-    source m@Mp1{} = mph1typ m
-    target m@Mph{} = mphtrg m
-    target m@I{}   = mphgen m
+    source m@Mp1{} = rel1typ m
+    target m@Rel{} = reltrg m
+    target m@I{}   = relgen m
     target m@V{}   = let (_,t) = sign m in t
-    target m@Mp1{} = mph1typ m
+    target m@Mp1{} = rel1typ m
 
    instance Eq c => Numbered (Relation c) where
     pos m = case m of
-             Mph{} ->  mphpos m
+             Rel{} ->  relpos m
              _     ->  Nowhere
     nr m = nr (makeDeclaration m)
 
    instance Eq c => Signaling (Relation c) where
-    isSignal mph = isSignal (makeDeclaration mph)
+    isSignal rel = isSignal (makeDeclaration rel)
 
    instance (Eq c) => Relational (Relation c) c where
-    multiplicities mph 
-      = case mph of
-           Mph{mphyin = True}  -> multiplicities (mphdcl mph)
-           Mph{mphyin = False} -> flipProps (multiplicities (mphdcl mph))
+    multiplicities rel 
+      = case rel of
+           Rel{relyin = True}  -> multiplicities (reldcl rel)
+           Rel{relyin = False} -> flipProps (multiplicities (reldcl rel))
            V {}                -> [Tot]
                                 ++[Sur]
-                                ++[Inj| isSingleton (source mph)]
-                                ++[Uni| isSingleton (target mph)]
-                                ++[Asy| homogeneous mph, isSingleton (source mph)]
-                                ++[Sym| homogeneous mph]
-                                ++[Rfx| homogeneous mph]
-                                ++[Trn| homogeneous mph]
+                                ++[Inj| isSingleton (source rel)]
+                                ++[Uni| isSingleton (target rel)]
+                                ++[Asy| homogeneous rel, isSingleton (source rel)]
+                                ++[Sym| homogeneous rel]
+                                ++[Rfx| homogeneous rel]
+                                ++[Trn| homogeneous rel]
            I{}                 -> [Inj,Sur,Uni,Tot,Sym,Asy,Trn,Rfx]
            Mp1{}               -> [Inj,Uni,Sym,Asy,Trn]
-    flp mph 
-      = case mph of
-           Mph{}               -> mph{ mphats = reverse(mphats mph)
-                                     , mphsrc = target mph
-                                     , mphtrg = source mph
-                                     , mphyin = not (mphyin mph)
+    flp rel 
+      = case rel of
+           Rel{}               -> rel{ relats = reverse(relats rel)
+                                     , relsrc = target rel
+                                     , reltrg = source rel
+                                     , relyin = not (relyin rel)
                                      }
-           V{mphtyp = (s,t)}   -> V  { mphats = reverse(mphats mph)
-                                     , mphtyp = (t,s)
+           V{reltyp = (s,t)}   -> V  { relats = reverse(relats rel)
+                                     , reltyp = (t,s)
                                      }
-           I{}                 -> mph{ mphyin = not (mphyin mph)}
-           Mp1{}               -> mph
-    isProp mph = case mph of
-           Mph{}               -> null ([Asy,Sym]>-multiplicities (mphdcl mph))
-           V{}                 -> homogeneous mph && isSingleton (source mph)
+           I{}                 -> rel{ relyin = not (relyin rel)}
+           Mp1{}               -> rel
+    isProp rel = case rel of
+           Rel{}               -> null ([Asy,Sym]>-multiplicities (reldcl rel))
+           V{}                 -> homogeneous rel && isSingleton (source rel)
            I{}                 -> True
            Mp1{}               -> True
-    isNot mph  = isNot (makeDeclaration mph)   -- > tells whether the argument is equivalent to I-
-    isTrue mph = case mph of
-           Mph{}               -> False
+    isNot rel  = isNot (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
+    isTrue rel = case rel of
+           Rel{}               -> False
            V{}                 -> True
            I{}                 -> False
            Mp1{}               -> False
     isFalse _   = False
-    isIdent mph = case mph of
+    isIdent rel = case rel of
                    I{}   -> True       -- > tells whether the argument is equivalent to I
-                   V{}   -> source mph == target mph && isSingleton (source mph)
+                   V{}   -> source rel == target rel && isSingleton (source rel)
                    _     -> False
    
    mIs :: concept -> Relation concept
@@ -239,15 +239,15 @@ where
 
    makeDeclaration :: Eq c => Relation c -> Declaration c
    makeDeclaration m = case m of
-               Mph{} -> mphdcl m
-               I{}   -> Isn{ despc = mphspc  m, degen = mphgen  m}   -- WHY?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
+               Rel{} -> reldcl m
+               I{}   -> Isn{ despc = relspc  m, degen = relgen  m}   -- WHY?? Stef, waarom wordt de yin hier niet gebruikt?? Is dat niet gewoon FOUT?
                V{}   -> let (s,t) = sign m in Vs { desrc = s, detrg = t}
-               Mp1{} -> Isn{ despc = mph1typ m, degen = mph1typ m}   -- WHY?? This is weird. Is this correct?
+               Mp1{} -> Isn{ despc = rel1typ m, degen = rel1typ m}   -- WHY?? This is weird. Is this correct?
     
    inline :: Relation c -> Bool
    inline m =  case m of
-                Mph{} -> mphyin m
-                I{}   -> True    --WHY? Stef, wat is de reden van de mphyin bij I{} ?? Verwijderen of in werking stellen. Nu is het half, en dus fout!
+                Rel{} -> relyin m
+                I{}   -> True    --WHY? Stef, wat is de reden van de relyin bij I{} ?? Verwijderen of in werking stellen. Nu is het half, en dus fout!
                 V{}   -> True
                 Mp1{} -> True
 
@@ -383,13 +383,13 @@ where
 --   makeRelation :: Declaration Concept -> Relation Concept
    makeRelation :: Eq concept => Declaration concept -> Relation concept
    makeRelation d
-    = Mph { mphnm  = name d
-          , mphpos = pos d
-          , mphats = []
-          , mphsrc = desrc d
-          , mphtrg = detrg d
-          , mphyin = True
-          , mphdcl = d
+    = Rel { relnm  = name d
+          , relpos = pos d
+          , relats = []
+          , relsrc = desrc d
+          , reltrg = detrg d
+          , relyin = True
+          , reldcl = d
           }
 
 --   instance SpecHierarchy (Relation Concept) -- SJ  2007/09/14: This is used solely for drawing conceptual graphs.

@@ -207,14 +207,14 @@ where
            h (x,y) | x==y = (x,y)
                    | otherwise = error ("!Fatal (module Rule 208): Bad homogeneous rule, the relation must be homogeneous.")
            r:: Expression (Relation Concept)
-           r = Tm mph (-1)
-               where mph = Mph { mphnm  = name d
-                               , mphpos = pos d
-                               , mphats = []
-                               , mphsrc = desrc d
-                               , mphtrg = detrg d
-                               , mphyin = True
-                               , mphdcl = d
+           r = Tm rel (-1)
+               where rel = Rel { relnm  = name d
+                               , relpos = pos d
+                               , relats = []
+                               , relsrc = desrc d
+                               , reltrg = detrg d
+                               , relyin = True
+                               , reldcl = d
                                }
    rulefromProp _ _ = error ("!Fatal (module Rule 219): Properties can only be set on user-defined declarations.")
 

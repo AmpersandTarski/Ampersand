@@ -23,7 +23,7 @@ module PredLogic
       Conj [PredLogic]                      |
       Disj [PredLogic]                      |
       Not PredLogic                         |
-      Pred String String                    |  -- Pred nm v, with v::type   is equiv. to Mph nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
+      Pred String String                    |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
       R PredLogic
         (Relation Concept)
         PredLogic                         |
@@ -338,9 +338,9 @@ module PredLogic
    relFun :: [String] -> [Expression (Relation Concept)] -> Expression (Relation Concept) -> [Expression (Relation Concept)] -> (String->String->PredLogic)
    relFun exclVars lhs e rhs
      = case e of
-         (Tm mph _) -> (\s->(\t->if inline mph
-                               then R (Funs s [m'| t'<-lhs, m'<-mors t']) mph (Funs t [m'| t'<-reverse rhs, m'<-mors t'])
-                               else R (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp mph) (Funs s [m'| t'<-lhs, m'<-mors t'])))
+         (Tm rel _) -> (\s->(\t->if inline rel
+                               then R (Funs s [m'| t'<-lhs, m'<-mors t']) rel (Funs t [m'| t'<-reverse rhs, m'<-mors t'])
+                               else R (Funs t [m'| t'<-reverse rhs, m'<-mors t']) (flp rel) (Funs s [m'| t'<-lhs, m'<-mors t'])))
          _        -> (\s->(\t->let (pl,_) = assembleF (exclVars++[s,t]) e s t in pl))       
 
    pars3 :: [String] -> [[Expression (Relation Concept)]] -> [(String -> String -> PredLogic, Concept, Concept)] 

@@ -165,7 +165,7 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
                            (ctxdecls)   --relations declared in this context only, outside the scope of patterns
                            (ctxcptdefs) --concept defs of this context only
                            (ctxks cx)   --bind keydefs
-                           (ctxsvcs cx) --change mphdcl and mphtyp on relations in expressions
+                           (ctxsvcs cx) --change reldcl and reltyp on relations in expressions
                            (ctxpops cx) --copy populations
                               -}
   where
@@ -236,9 +236,9 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
 
   enrichexplobj :: PExplObj -> Either PExplObj String
   enrichexplobj x@(PExplConceptDef{}) = checkPExplobj (concs ctxs) x 
-  enrichexplobj (PExplDeclaration mph ) = case enrich_expr (Tm mph (-1)) of
-     Left (_,Tm emph _,_) -> Left (PExplDeclaration emph )
-     Right (err,_) -> Right ("Explanation for relation "++name mph++" could not be matched to a declaration because "++err)
+  enrichexplobj (PExplDeclaration rel ) = case enrich_expr (Tm rel (-1)) of
+     Left (_,Tm erel _,_) -> Left (PExplDeclaration erel )
+     Right (err,_) -> Right ("Explanation for relation "++name rel++" could not be matched to a declaration because "++err)
      _ -> error$ "!Fatal (module Typechecker 242): function enrichexplobj: impossible case."
   enrichexplobj x@(PExplRule{}) = checkPExplobj ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
   enrichexplobj x@(PExplKeyDef{}) = checkPExplobj (ctxks cx) x
@@ -292,24 +292,24 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
   --         The morphism (in an expression) refering to this relation determines the type.
   popuMphDecl :: Relation Concept -> Relation Concept
   popuMphDecl mp = case mp of
-      Mph{} -> mp { mphsrc = populate (mphsrc mp)
-                  , mphtrg = populate (mphtrg mp)
-                  , mphats=map populate (mphats mp)
-                  , mphdcl=popudecl$mphdcl mp}
-      I{}   -> mp { mphgen=populate$mphgen mp
-                  , mphspc=populate$mphspc mp
-                  , mphats=map populate (mphats mp)}
-      V{}   -> mp { mphtyp = (populate (fst(mphtyp mp)),populate (snd(mphtyp mp)))
-                  , mphats=map populate (mphats mp)}
-      Mp1{} -> mp { mph1typ=populate$mph1typ mp
-                  , mphats=map populate (mphats mp)}
+      Rel{} -> mp { relsrc = populate (relsrc mp)
+                  , reltrg = populate (reltrg mp)
+                  , relats=map populate (relats mp)
+                  , reldcl=popudecl$reldcl mp}
+      I{}   -> mp { relgen=populate$relgen mp
+                  , relspc=populate$relspc mp
+                  , relats=map populate (relats mp)}
+      V{}   -> mp { reltyp = (populate (fst(reltyp mp)),populate (snd(reltyp mp)))
+                  , relats=map populate (relats mp)}
+      Mp1{} -> mp { rel1typ=populate$rel1typ mp
+                  , relats=map populate (relats mp)}
       where --lookup the populated declaration in popuRels
             popudecl d =
               if null allpopd then d 
               else if length allpopd==1 then head allpopd
                    else error$ "!Fatal (module Typechecker 311): function popuMphDecl: " ++
-                               "More than one declaration matching morphism "++show (mphnm mp)
-                             ++" at "++show (mphpos mp)
+                               "More than one declaration matching morphism "++show (relnm mp)
+                             ++" at "++show (relpos mp)
                              ++".(remark for developer) Remove duplicate signatures from popuRels if you want to allow this."
                where allpopd = [popd|popd<-rd popuRels, d==popd] 
   --DESCR -> Add population to concept
@@ -432,7 +432,7 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
                    (Obj {objats=kdats kd,
                          objnm=kdlbl kd,
                          objpos=kdpos kd,
-                         objctx=Tm (I [kdcpt kd] (kdcpt kd) (kdcpt kd) True) (-1), --REMARK -> mIs is not used because it does not set mphats
+                         objctx=Tm (I [kdcpt kd] (kdcpt kd) (kdcpt kd) True) (-1), --REMARK -> mIs is not used because it does not set relats
                          objctx_proof=Nothing,
                          objstrs=[[]]}) Nothing
 
@@ -528,18 +528,18 @@ popdeclaration :: [Declaration Concept] -> Population Concept ->  Either (Declar
 popdeclaration ds p = 
    if length allmatches==1 then Left(head allmatches)
    else if null allmatches
-        then Right$"A relation is missing for population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
+        then Right$"A relation is missing for population of " ++ show (popm p) ++ " at " ++ show (relpos$popm p) 
                 ++ "."
-        else Right$"Population of " ++ show (popm p) ++ " at " ++ show (mphpos$popm p) 
+        else Right$"Population of " ++ show (popm p) ++ " at " ++ show (relpos$popm p) 
                 ++ "can be related to multiple relation declarations:\n" 
                 ++ concat [show x ++ "\n"|x<-allmatches]
                 ++ "Define the type of the population."
     where
     allmatches = [d|d@(Sgn{})<-ds, matches d (popm p)]
-    matches d (Mph{mphnm=popnm, mphats=[c1,c2]}) = popnm==name d && c1==source d && c2==target d
-    matches d (Mph{mphnm=popnm, mphats=[]})      = popnm==name d
+    matches d (Rel{relnm=popnm, relats=[c1,c2]}) = popnm==name d && c1==source d && c2==target d
+    matches d (Rel{relnm=popnm, relats=[]})      = popnm==name d
     matches _ m = error $ "!Fatal (module TypeChecker 542): function popdeclaration: " ++
-                   "Unrecognized population morphism "++show (mphnm m)++" at "++show (mphpos m)++"."
+                   "Unrecognized population morphism "++show (relnm m)++" at "++show (relpos m)++"."
 
 
 --DESCR -> function elem provided with own equality function

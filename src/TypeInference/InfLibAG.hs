@@ -40,14 +40,14 @@ infer reldecls isas certaintype root_expr
                     then Right$TErrorU "The source of the expression is the universal set" inftree 
                     else if  y==Universe
                          then Right$TErrorU "The target of the expression is the universal set" inftree
-                         else Left ((x,y), env_mph, inftree)
+                         else Left ((x,y), env_rel, inftree)
       Right err -> Right err
   |not(null homoerrors) = head homoerrors
   |not(null fixhomo) && not(null fixattempts) = head ([Left x|Left x<-fixattempts] ++ [Right err|Right err<-fixattempts])
   |otherwise = fatal 186 "is there any other option?"
   where
   inftree = inftree_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
-  env_mph = [(m,t,d)|(m,Left t,d)<-env_mph_Syn_RelAlgExpr (agtree (head alltypes))] --finalize by pushing the type down again
+  env_rel = [(m,t,d)|(m,Left t,d)<-env_rel_Syn_RelAlgExpr (agtree (head alltypes))] --finalize by pushing the type down again
   env_in = env_in_Syn_RelAlgExpr (agtree (Universe,Universe)) --no type is pushed down yet
   rtype = rtype_Syn_RelAlgExpr (agtree (head alltypes)) --finalize by pushing the type down again
   alltypes =  if certaintype==(Universe,Universe) 
@@ -58,14 +58,14 @@ infer reldecls isas certaintype root_expr
   altwithcertaintype = [t|t<-map fst (alttypes env_in),t==certaintype]
   agtree push = wrap_RelAlgExpr (sem_RelAlgExpr$normalise$root_expr)$Inh_RelAlgExpr reldecls isas NoListOf push
   fixhomo = [(i,specific a b isas)
-            |(Morph _ _ i,(a,b),d)<-env_mph
+            |(Morph _ _ i,(a,b),d)<-env_rel
             ,case d of 
                  IDecl->True
                  RelDecl{} -> ishomo d
                  _ -> False
             ,isarelated a b isas,a/=b]
   homoerrors = [Right$TError6 "Type is not homogeneous" (a,b) m d
-               |(m,(a,b),d)<-env_mph
+               |(m,(a,b),d)<-env_rel
                ,case d of 
                     IDecl->True
                     RelDecl{} -> ishomo d
@@ -162,7 +162,7 @@ result2 :: T_RelAlgExpr -> [(RelAlgExpr, InfType, RelDecl)]
 --result = front_Syn_Tree (wrap_Tree test Inh_Tree)
 result0 test = env_in_Syn_RelAlgExpr (wrap_RelAlgExpr test (Inh_RelAlgExpr testdecls testisa NoListOf (Universe,Universe)  ) ) 
 result1 test = rtype_Syn_RelAlgExpr (wrap_RelAlgExpr test (Inh_RelAlgExpr testdecls testisa NoListOf (Universe,Universe)  ) ) 
-result2 test = env_mph_Syn_RelAlgExpr (wrap_RelAlgExpr test (Inh_RelAlgExpr testdecls testisa NoListOf (Universe,Universe)  ) ) 
+result2 test = env_rel_Syn_RelAlgExpr (wrap_RelAlgExpr test (Inh_RelAlgExpr testdecls testisa NoListOf (Universe,Universe)  ) ) 
 -}
 -- ISectList ---------------------------------------------------
 -- cata
@@ -177,14 +177,14 @@ type T_ISectList  = ([RelDecl]) ->
                     RelAlgType ->
                     ( AltList,([(RelAlgExpr,InfType,RelDecl)]),InfTree,ISectList,InfType)
 data Inh_ISectList  = Inh_ISectList {env_decls_Inh_ISectList :: [RelDecl],env_isa_Inh_ISectList :: Isa,listof_Inh_ISectList :: ListOf,type_down_Inh_ISectList :: RelAlgType}
-data Syn_ISectList  = Syn_ISectList {env_in_Syn_ISectList :: AltList,env_mph_Syn_ISectList :: [(RelAlgExpr,InfType,RelDecl)],inftree_Syn_ISectList :: InfTree,me_Syn_ISectList :: ISectList,rtype_Syn_ISectList :: InfType}
+data Syn_ISectList  = Syn_ISectList {env_in_Syn_ISectList :: AltList,env_rel_Syn_ISectList :: [(RelAlgExpr,InfType,RelDecl)],inftree_Syn_ISectList :: InfTree,me_Syn_ISectList :: ISectList,rtype_Syn_ISectList :: InfType}
 wrap_ISectList :: T_ISectList  ->
                   Inh_ISectList  ->
                   Syn_ISectList 
 wrap_ISectList sem (Inh_ISectList _lhsIenv_decls _lhsIenv_isa _lhsIlistof _lhsItype_down )  =
-    (let ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype) =
+    (let ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype) =
              (sem _lhsIenv_decls _lhsIenv_isa _lhsIlistof _lhsItype_down )
-     in  (Syn_ISectList _lhsOenv_in _lhsOenv_mph _lhsOinftree _lhsOme _lhsOrtype ))
+     in  (Syn_ISectList _lhsOenv_in _lhsOenv_rel _lhsOinftree _lhsOme _lhsOrtype ))
 sem_ISectList_Cons :: T_RelAlgExpr  ->
                       T_ISectList  ->
                       T_ISectList 
@@ -195,7 +195,7 @@ sem_ISectList_Cons hd_ tl_  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: ISectList
               _hdOenv_decls :: ([RelDecl])
@@ -207,12 +207,12 @@ sem_ISectList_Cons hd_ tl_  =
               _tlOlistof :: ListOf
               _tlOtype_down :: RelAlgType
               _hdIenv_in :: AltList
-              _hdIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _hdIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _hdIinftree :: InfTree
               _hdIme :: RelAlgExpr
               _hdIrtype :: InfType
               _tlIenv_in :: AltList
-              _tlIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _tlIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _tlIinftree :: InfTree
               _tlIme :: ISectList
               _tlIrtype :: InfType
@@ -228,8 +228,8 @@ sem_ISectList_Cons hd_ tl_  =
                   if (not.null)(alttypes _env)
                   then Left _lhsItype_down
                   else Right(alterror _env)
-              _lhsOenv_mph =
-                  _hdIenv_mph ++ _tlIenv_mph
+              _lhsOenv_rel =
+                  _hdIenv_rel ++ _tlIenv_rel
               _hdax =
                   headofaxiomlist _rt _tp _hdIinftree
               _lhsOinftree =
@@ -256,11 +256,11 @@ sem_ISectList_Cons hd_ tl_  =
                   _lhsIlistof
               _tlOtype_down =
                   _lhsItype_down
-              ( _hdIenv_in,_hdIenv_mph,_hdIinftree,_hdIme,_hdIrtype) =
+              ( _hdIenv_in,_hdIenv_rel,_hdIinftree,_hdIme,_hdIrtype) =
                   (hd_ _hdOenv_decls _hdOenv_isa _hdOlistof _hdOtype_down )
-              ( _tlIenv_in,_tlIenv_mph,_tlIinftree,_tlIme,_tlIrtype) =
+              ( _tlIenv_in,_tlIenv_rel,_tlIinftree,_tlIme,_tlIrtype) =
                   (tl_ _tlOenv_decls _tlOenv_isa _tlOlistof _tlOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_ISectList_Nil :: T_ISectList 
 sem_ISectList_Nil  =
     (\ _lhsIenv_decls
@@ -269,14 +269,14 @@ sem_ISectList_Nil  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: ISectList
               _lhsOenv_in =
                   AltList []
               _lhsOrtype =
                   fatal 45 "undefined rtype on Nil of ISect-/UnionList"
-              _lhsOenv_mph =
+              _lhsOenv_rel =
                   []
               _lhsOinftree =
                   fatal 47 "undefined inftree on Nil of ISect-/UnionList"
@@ -284,7 +284,7 @@ sem_ISectList_Nil  =
                   []
               _lhsOme =
                   _me
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 -- RelAlgExpr --------------------------------------------------
 -- cata
 sem_RelAlgExpr :: RelAlgExpr  ->
@@ -314,14 +314,14 @@ type T_RelAlgExpr  = ([RelDecl]) ->
                      RelAlgType ->
                      ( AltList,([(RelAlgExpr,InfType,RelDecl)]),InfTree,RelAlgExpr,InfType)
 data Inh_RelAlgExpr  = Inh_RelAlgExpr {env_decls_Inh_RelAlgExpr :: [RelDecl],env_isa_Inh_RelAlgExpr :: Isa,listof_Inh_RelAlgExpr :: ListOf,type_down_Inh_RelAlgExpr :: RelAlgType}
-data Syn_RelAlgExpr  = Syn_RelAlgExpr {env_in_Syn_RelAlgExpr :: AltList,env_mph_Syn_RelAlgExpr :: [(RelAlgExpr,InfType,RelDecl)],inftree_Syn_RelAlgExpr :: InfTree,me_Syn_RelAlgExpr :: RelAlgExpr,rtype_Syn_RelAlgExpr :: InfType}
+data Syn_RelAlgExpr  = Syn_RelAlgExpr {env_in_Syn_RelAlgExpr :: AltList,env_rel_Syn_RelAlgExpr :: [(RelAlgExpr,InfType,RelDecl)],inftree_Syn_RelAlgExpr :: InfTree,me_Syn_RelAlgExpr :: RelAlgExpr,rtype_Syn_RelAlgExpr :: InfType}
 wrap_RelAlgExpr :: T_RelAlgExpr  ->
                    Inh_RelAlgExpr  ->
                    Syn_RelAlgExpr 
 wrap_RelAlgExpr sem (Inh_RelAlgExpr _lhsIenv_decls _lhsIenv_isa _lhsIlistof _lhsItype_down )  =
-    (let ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype) =
+    (let ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype) =
              (sem _lhsIenv_decls _lhsIenv_isa _lhsIlistof _lhsItype_down )
-     in  (Syn_RelAlgExpr _lhsOenv_in _lhsOenv_mph _lhsOinftree _lhsOme _lhsOrtype ))
+     in  (Syn_RelAlgExpr _lhsOenv_in _lhsOenv_rel _lhsOinftree _lhsOme _lhsOrtype ))
 sem_RelAlgExpr_Comp :: T_RelAlgExpr  ->
                        T_RelAlgExpr  ->
                        T_RelAlgExpr 
@@ -334,7 +334,7 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
               _lsubOtype_down :: RelAlgType
               _rsubOtype_down :: RelAlgType
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _lsubOenv_decls :: ([RelDecl])
@@ -344,12 +344,12 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
               _rsubOenv_isa :: Isa
               _rsubOlistof :: ListOf
               _lsubIenv_in :: AltList
-              _lsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lsubIinftree :: InfTree
               _lsubIme :: RelAlgExpr
               _lsubIrtype :: InfType
               _rsubIenv_in :: AltList
-              _rsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _rsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _rsubIinftree :: InfTree
               _rsubIme :: RelAlgExpr
               _rsubIrtype :: InfType
@@ -377,8 +377,8 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
                   if (not.null)(alttypes _env)
                   then Left(_a,_c)
                   else Right(alterror _env)
-              _lhsOenv_mph =
-                  _lsubIenv_mph ++ _rsubIenv_mph
+              _lhsOenv_rel =
+                  _lsubIenv_rel ++ _rsubIenv_rel
               _lhsOinftree =
                   InfExprs _rt (inferred _tp,_b) [_lsubIinftree,_rsubIinftree]
               _me =
@@ -397,11 +397,11 @@ sem_RelAlgExpr_Comp lsub_ rsub_  =
                   _lhsIenv_isa
               _rsubOlistof =
                   _lhsIlistof
-              ( _lsubIenv_in,_lsubIenv_mph,_lsubIinftree,_lsubIme,_lsubIrtype) =
+              ( _lsubIenv_in,_lsubIenv_rel,_lsubIinftree,_lsubIme,_lsubIrtype) =
                   (lsub_ _lsubOenv_decls _lsubOenv_isa _lsubOlistof _lsubOtype_down )
-              ( _rsubIenv_in,_rsubIenv_mph,_rsubIinftree,_rsubIme,_rsubIrtype) =
+              ( _rsubIenv_in,_rsubIenv_rel,_rsubIinftree,_rsubIme,_rsubIrtype) =
                   (rsub_ _rsubOenv_decls _rsubOenv_isa _rsubOlistof _rsubOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_Compl :: T_RelAlgExpr  ->
                         T_RelAlgExpr 
 sem_RelAlgExpr_Compl sub_  =
@@ -411,7 +411,7 @@ sem_RelAlgExpr_Compl sub_  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _subOenv_decls :: ([RelDecl])
@@ -419,7 +419,7 @@ sem_RelAlgExpr_Compl sub_  =
               _subOlistof :: ListOf
               _subOtype_down :: RelAlgType
               _subIenv_in :: AltList
-              _subIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _subIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _subIinftree :: InfTree
               _subIme :: RelAlgExpr
               _subIrtype :: InfType
@@ -428,11 +428,11 @@ sem_RelAlgExpr_Compl sub_  =
               _tp =
                   case _me of
                      Compl (Morph{}) -> _subIrtype
-                     _ -> error "!Fatal (module InfLibAG 431): complements on mphs only -> normalize"
+                     _ -> error "!Fatal (module InfLibAG 431): complements on rels only -> normalize"
               _lhsOrtype =
                   _tp
-              _lhsOenv_mph =
-                  _subIenv_mph
+              _lhsOenv_rel =
+                  _subIenv_rel
               _lhsOinftree =
                   complement_rule _tp _subIinftree
               _me =
@@ -447,9 +447,9 @@ sem_RelAlgExpr_Compl sub_  =
                   _lhsIlistof
               _subOtype_down =
                   _lhsItype_down
-              ( _subIenv_in,_subIenv_mph,_subIinftree,_subIme,_subIrtype) =
+              ( _subIenv_in,_subIenv_rel,_subIinftree,_subIme,_subIrtype) =
                   (sub_ _subOenv_decls _subOenv_isa _subOlistof _subOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_Conv :: T_RelAlgExpr  ->
                        T_RelAlgExpr 
 sem_RelAlgExpr_Conv sub_  =
@@ -460,14 +460,14 @@ sem_RelAlgExpr_Conv sub_  =
          (let _lhsOenv_in :: AltList
               _subOtype_down :: RelAlgType
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _subOenv_decls :: ([RelDecl])
               _subOenv_isa :: Isa
               _subOlistof :: ListOf
               _subIenv_in :: AltList
-              _subIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _subIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _subIinftree :: InfTree
               _subIme :: RelAlgExpr
               _subIrtype :: InfType
@@ -479,8 +479,8 @@ sem_RelAlgExpr_Conv sub_  =
                   _tp
               _tp =
                   Left _lhsItype_down
-              _lhsOenv_mph =
-                  _subIenv_mph
+              _lhsOenv_rel =
+                  _subIenv_rel
               _lhsOinftree =
                   InfExprs Conv_nc (inferred _tp,EmptyObject) [_subIinftree]
               _me =
@@ -493,9 +493,9 @@ sem_RelAlgExpr_Conv sub_  =
                   _lhsIenv_isa
               _subOlistof =
                   _lhsIlistof
-              ( _subIenv_in,_subIenv_mph,_subIinftree,_subIme,_subIrtype) =
+              ( _subIenv_in,_subIenv_rel,_subIinftree,_subIme,_subIrtype) =
                   (sub_ _subOenv_decls _subOenv_isa _subOlistof _subOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_Equiv :: T_RelAlgExpr  ->
                         T_RelAlgExpr  ->
                         T_RelAlgExpr 
@@ -506,7 +506,7 @@ sem_RelAlgExpr_Equiv lsub_ rsub_  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _lsubOenv_decls :: ([RelDecl])
@@ -518,12 +518,12 @@ sem_RelAlgExpr_Equiv lsub_ rsub_  =
               _rsubOlistof :: ListOf
               _rsubOtype_down :: RelAlgType
               _lsubIenv_in :: AltList
-              _lsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lsubIinftree :: InfTree
               _lsubIme :: RelAlgExpr
               _lsubIrtype :: InfType
               _rsubIenv_in :: AltList
-              _rsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _rsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _rsubIinftree :: InfTree
               _rsubIme :: RelAlgExpr
               _rsubIrtype :: InfType
@@ -531,7 +531,7 @@ sem_RelAlgExpr_Equiv lsub_ rsub_  =
                   error "!Fatal (module InfLibAG 531): no equivalence rule symbols -> normalize"
               _lhsOrtype =
                   error "!Fatal (module InfLibAG 533): no equivalence rule symbols -> normalize"
-              _lhsOenv_mph =
+              _lhsOenv_rel =
                   error "!Fatal (module InfLibAG 535): no equivalence rule symbols -> normalize"
               _lhsOinftree =
                   error "!Fatal (module InfLibAG 537): no equivalence rule symbols -> normalize"
@@ -555,11 +555,11 @@ sem_RelAlgExpr_Equiv lsub_ rsub_  =
                   _lhsIlistof
               _rsubOtype_down =
                   _lhsItype_down
-              ( _lsubIenv_in,_lsubIenv_mph,_lsubIinftree,_lsubIme,_lsubIrtype) =
+              ( _lsubIenv_in,_lsubIenv_rel,_lsubIinftree,_lsubIme,_lsubIrtype) =
                   (lsub_ _lsubOenv_decls _lsubOenv_isa _lsubOlistof _lsubOtype_down )
-              ( _rsubIenv_in,_rsubIenv_mph,_rsubIinftree,_rsubIme,_rsubIrtype) =
+              ( _rsubIenv_in,_rsubIenv_rel,_rsubIinftree,_rsubIme,_rsubIrtype) =
                   (rsub_ _rsubOenv_decls _rsubOenv_isa _rsubOlistof _rsubOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_ISect :: T_ISectList  ->
                         T_RelAlgExpr 
 sem_RelAlgExpr_ISect sublst_  =
@@ -570,14 +570,14 @@ sem_RelAlgExpr_ISect sublst_  =
          (let _sublstOlistof :: ListOf
               _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _sublstOenv_decls :: ([RelDecl])
               _sublstOenv_isa :: Isa
               _sublstOtype_down :: RelAlgType
               _sublstIenv_in :: AltList
-              _sublstIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _sublstIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _sublstIinftree :: InfTree
               _sublstIme :: ISectList
               _sublstIrtype :: InfType
@@ -589,8 +589,8 @@ sem_RelAlgExpr_ISect sublst_  =
                   _sublstIenv_in
               _lhsOrtype =
                   _sublstIrtype
-              _lhsOenv_mph =
-                  _sublstIenv_mph
+              _lhsOenv_rel =
+                  _sublstIenv_rel
               _lhsOinftree =
                   _sublstIinftree
               _me =
@@ -603,9 +603,9 @@ sem_RelAlgExpr_ISect sublst_  =
                   _lhsIenv_isa
               _sublstOtype_down =
                   _lhsItype_down
-              ( _sublstIenv_in,_sublstIenv_mph,_sublstIinftree,_sublstIme,_sublstIrtype) =
+              ( _sublstIenv_in,_sublstIenv_rel,_sublstIinftree,_sublstIme,_sublstIrtype) =
                   (sublst_ _sublstOenv_decls _sublstOenv_isa _sublstOlistof _sublstOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_Implic :: T_RelAlgExpr  ->
                          T_RelAlgExpr  ->
                          T_RelAlgExpr 
@@ -616,7 +616,7 @@ sem_RelAlgExpr_Implic lsub_ rsub_  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _lsubOenv_decls :: ([RelDecl])
@@ -628,12 +628,12 @@ sem_RelAlgExpr_Implic lsub_ rsub_  =
               _rsubOlistof :: ListOf
               _rsubOtype_down :: RelAlgType
               _lsubIenv_in :: AltList
-              _lsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lsubIinftree :: InfTree
               _lsubIme :: RelAlgExpr
               _lsubIrtype :: InfType
               _rsubIenv_in :: AltList
-              _rsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _rsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _rsubIinftree :: InfTree
               _rsubIme :: RelAlgExpr
               _rsubIrtype :: InfType
@@ -641,7 +641,7 @@ sem_RelAlgExpr_Implic lsub_ rsub_  =
                   error "!Fatal (module InfLibAG 641): no implication rule symbols -> normalize"
               _lhsOrtype =
                   error "!Fatal (module InfLibAG 643): no implication rule symbols -> normalize"
-              _lhsOenv_mph =
+              _lhsOenv_rel =
                   error "!Fatal (module InfLibAG 645): no implication rule symbols -> normalize"
               _lhsOinftree =
                   error "!Fatal (module InfLibAG 647): no implication rule symbols -> normalize"
@@ -665,11 +665,11 @@ sem_RelAlgExpr_Implic lsub_ rsub_  =
                   _lhsIlistof
               _rsubOtype_down =
                   _lhsItype_down
-              ( _lsubIenv_in,_lsubIenv_mph,_lsubIinftree,_lsubIme,_lsubIrtype) =
+              ( _lsubIenv_in,_lsubIenv_rel,_lsubIinftree,_lsubIme,_lsubIrtype) =
                   (lsub_ _lsubOenv_decls _lsubOenv_isa _lsubOlistof _lsubOtype_down )
-              ( _rsubIenv_in,_rsubIenv_mph,_rsubIinftree,_rsubIme,_rsubIrtype) =
+              ( _rsubIenv_in,_rsubIenv_rel,_rsubIinftree,_rsubIme,_rsubIrtype) =
                   (rsub_ _rsubOenv_decls _rsubOenv_isa _rsubOlistof _rsubOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_Morph :: RelAlgMorph ->
                         RelAlgType ->
                         Int ->
@@ -681,15 +681,15 @@ sem_RelAlgExpr_Morph rel_ usertype_ locid_  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _lhsOenv_in =
                   _env
               _env =
-                  alts_mph _lhsIenv_decls _lhsIenv_isa _me
+                  alts_rel _lhsIenv_decls _lhsIenv_isa _me
               __tup2 =
-                  final_infer_mph _lhsIenv_decls _me _lhsIenv_isa _lhsItype_down _env
+                  final_infer_rel _lhsIenv_decls _me _lhsIenv_isa _lhsItype_down _env
               (_t,_,_) =
                   __tup2
               (_,_tree,_) =
@@ -700,7 +700,7 @@ sem_RelAlgExpr_Morph rel_ usertype_ locid_  =
                   if (not.null)(alttypes _env)
                   then Left _t
                   else Right(alterror _env)
-              _lhsOenv_mph =
+              _lhsOenv_rel =
                   [( _me, Left _t, _d                                               )]
               _lhsOinftree =
                   _tree
@@ -708,7 +708,7 @@ sem_RelAlgExpr_Morph rel_ usertype_ locid_  =
                   Morph rel_ usertype_ locid_
               _lhsOme =
                   _me
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_RAdd :: T_RelAlgExpr  ->
                        T_RelAlgExpr  ->
                        T_RelAlgExpr 
@@ -721,7 +721,7 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
               _lsubOtype_down :: RelAlgType
               _rsubOtype_down :: RelAlgType
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _lsubOenv_decls :: ([RelDecl])
@@ -731,12 +731,12 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
               _rsubOenv_isa :: Isa
               _rsubOlistof :: ListOf
               _lsubIenv_in :: AltList
-              _lsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lsubIinftree :: InfTree
               _lsubIme :: RelAlgExpr
               _lsubIrtype :: InfType
               _rsubIenv_in :: AltList
-              _rsubIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _rsubIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _rsubIinftree :: InfTree
               _rsubIme :: RelAlgExpr
               _rsubIrtype :: InfType
@@ -764,8 +764,8 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
                   if (not.null)(alttypes _env)
                   then Left(_a,_c)
                   else Right(alterror _env)
-              _lhsOenv_mph =
-                  _lsubIenv_mph ++ _rsubIenv_mph
+              _lhsOenv_rel =
+                  _lsubIenv_rel ++ _rsubIenv_rel
               _lhsOinftree =
                   InfExprs _rt (inferred _tp,_b) [_lsubIinftree,_rsubIinftree]
               _me =
@@ -784,11 +784,11 @@ sem_RelAlgExpr_RAdd lsub_ rsub_  =
                   _lhsIenv_isa
               _rsubOlistof =
                   _lhsIlistof
-              ( _lsubIenv_in,_lsubIenv_mph,_lsubIinftree,_lsubIme,_lsubIrtype) =
+              ( _lsubIenv_in,_lsubIenv_rel,_lsubIinftree,_lsubIme,_lsubIrtype) =
                   (lsub_ _lsubOenv_decls _lsubOenv_isa _lsubOlistof _lsubOtype_down )
-              ( _rsubIenv_in,_rsubIenv_mph,_rsubIinftree,_rsubIme,_rsubIrtype) =
+              ( _rsubIenv_in,_rsubIenv_rel,_rsubIinftree,_rsubIme,_rsubIrtype) =
                   (rsub_ _rsubOenv_decls _rsubOenv_isa _rsubOlistof _rsubOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_RelAlgExpr_Union :: T_UnionList  ->
                         T_RelAlgExpr 
 sem_RelAlgExpr_Union sublst_  =
@@ -799,14 +799,14 @@ sem_RelAlgExpr_Union sublst_  =
          (let _sublstOlistof :: ListOf
               _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: RelAlgExpr
               _sublstOenv_decls :: ([RelDecl])
               _sublstOenv_isa :: Isa
               _sublstOtype_down :: RelAlgType
               _sublstIenv_in :: AltList
-              _sublstIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _sublstIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _sublstIinftree :: InfTree
               _sublstIme :: UnionList
               _sublstIrtype :: InfType
@@ -818,8 +818,8 @@ sem_RelAlgExpr_Union sublst_  =
                   _sublstIenv_in
               _lhsOrtype =
                   _sublstIrtype
-              _lhsOenv_mph =
-                  _sublstIenv_mph
+              _lhsOenv_rel =
+                  _sublstIenv_rel
               _lhsOinftree =
                   _sublstIinftree
               _me =
@@ -832,9 +832,9 @@ sem_RelAlgExpr_Union sublst_  =
                   _lhsIenv_isa
               _sublstOtype_down =
                   _lhsItype_down
-              ( _sublstIenv_in,_sublstIenv_mph,_sublstIinftree,_sublstIme,_sublstIrtype) =
+              ( _sublstIenv_in,_sublstIenv_rel,_sublstIinftree,_sublstIme,_sublstIrtype) =
                   (sublst_ _sublstOenv_decls _sublstOenv_isa _sublstOlistof _sublstOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 -- UnionList ---------------------------------------------------
 -- cata
 sem_UnionList :: UnionList  ->
@@ -848,14 +848,14 @@ type T_UnionList  = ([RelDecl]) ->
                     RelAlgType ->
                     ( AltList,([(RelAlgExpr,InfType,RelDecl)]),InfTree,UnionList,InfType)
 data Inh_UnionList  = Inh_UnionList {env_decls_Inh_UnionList :: [RelDecl],env_isa_Inh_UnionList :: Isa,listof_Inh_UnionList :: ListOf,type_down_Inh_UnionList :: RelAlgType}
-data Syn_UnionList  = Syn_UnionList {env_in_Syn_UnionList :: AltList,env_mph_Syn_UnionList :: [(RelAlgExpr,InfType,RelDecl)],inftree_Syn_UnionList :: InfTree,me_Syn_UnionList :: UnionList,rtype_Syn_UnionList :: InfType}
+data Syn_UnionList  = Syn_UnionList {env_in_Syn_UnionList :: AltList,env_rel_Syn_UnionList :: [(RelAlgExpr,InfType,RelDecl)],inftree_Syn_UnionList :: InfTree,me_Syn_UnionList :: UnionList,rtype_Syn_UnionList :: InfType}
 wrap_UnionList :: T_UnionList  ->
                   Inh_UnionList  ->
                   Syn_UnionList 
 wrap_UnionList sem (Inh_UnionList _lhsIenv_decls _lhsIenv_isa _lhsIlistof _lhsItype_down )  =
-    (let ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype) =
+    (let ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype) =
              (sem _lhsIenv_decls _lhsIenv_isa _lhsIlistof _lhsItype_down )
-     in  (Syn_UnionList _lhsOenv_in _lhsOenv_mph _lhsOinftree _lhsOme _lhsOrtype ))
+     in  (Syn_UnionList _lhsOenv_in _lhsOenv_rel _lhsOinftree _lhsOme _lhsOrtype ))
 sem_UnionList_Cons :: T_RelAlgExpr  ->
                       T_UnionList  ->
                       T_UnionList 
@@ -866,7 +866,7 @@ sem_UnionList_Cons hd_ tl_  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: UnionList
               _hdOenv_decls :: ([RelDecl])
@@ -878,12 +878,12 @@ sem_UnionList_Cons hd_ tl_  =
               _tlOlistof :: ListOf
               _tlOtype_down :: RelAlgType
               _hdIenv_in :: AltList
-              _hdIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _hdIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _hdIinftree :: InfTree
               _hdIme :: RelAlgExpr
               _hdIrtype :: InfType
               _tlIenv_in :: AltList
-              _tlIenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _tlIenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _tlIinftree :: InfTree
               _tlIme :: UnionList
               _tlIrtype :: InfType
@@ -899,8 +899,8 @@ sem_UnionList_Cons hd_ tl_  =
                   if (not.null)(alttypes _env)
                   then Left _lhsItype_down
                   else Right(alterror _env)
-              _lhsOenv_mph =
-                  _hdIenv_mph ++ _tlIenv_mph
+              _lhsOenv_rel =
+                  _hdIenv_rel ++ _tlIenv_rel
               _hdax =
                   headofaxiomlist _rt _tp _hdIinftree
               _lhsOinftree =
@@ -927,11 +927,11 @@ sem_UnionList_Cons hd_ tl_  =
                   _lhsIlistof
               _tlOtype_down =
                   _lhsItype_down
-              ( _hdIenv_in,_hdIenv_mph,_hdIinftree,_hdIme,_hdIrtype) =
+              ( _hdIenv_in,_hdIenv_rel,_hdIinftree,_hdIme,_hdIrtype) =
                   (hd_ _hdOenv_decls _hdOenv_isa _hdOlistof _hdOtype_down )
-              ( _tlIenv_in,_tlIenv_mph,_tlIinftree,_tlIme,_tlIrtype) =
+              ( _tlIenv_in,_tlIenv_rel,_tlIinftree,_tlIme,_tlIrtype) =
                   (tl_ _tlOenv_decls _tlOenv_isa _tlOlistof _tlOtype_down )
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))
 sem_UnionList_Nil :: T_UnionList 
 sem_UnionList_Nil  =
     (\ _lhsIenv_decls
@@ -940,14 +940,14 @@ sem_UnionList_Nil  =
        _lhsItype_down ->
          (let _lhsOenv_in :: AltList
               _lhsOrtype :: InfType
-              _lhsOenv_mph :: ([(RelAlgExpr,InfType,RelDecl)])
+              _lhsOenv_rel :: ([(RelAlgExpr,InfType,RelDecl)])
               _lhsOinftree :: InfTree
               _lhsOme :: UnionList
               _lhsOenv_in =
                   AltList []
               _lhsOrtype =
                   fatal 45 "undefined rtype on Nil of ISect-/UnionList"
-              _lhsOenv_mph =
+              _lhsOenv_rel =
                   []
               _lhsOinftree =
                   fatal 47 "undefined inftree on Nil of ISect-/UnionList"
@@ -955,4 +955,4 @@ sem_UnionList_Nil  =
                   []
               _lhsOme =
                   _me
-          in  ( _lhsOenv_in,_lhsOenv_mph,_lhsOinftree,_lhsOme,_lhsOrtype)))
+          in  ( _lhsOenv_in,_lhsOenv_rel,_lhsOinftree,_lhsOme,_lhsOrtype)))

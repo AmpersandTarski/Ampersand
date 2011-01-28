@@ -275,16 +275,16 @@ where
    compareExpression e1 e2 = Just $ "Expression " ++ show e1 ++ " does not equal " ++ show e2 ++ "\n"
 
    compareMph :: Relation Concept -> Relation Concept -> Maybe String
-   compareMph m1@(Mph{}) m2@(Mph{})
+   compareMph m1@(Rel{}) m2@(Rel{})
           | detail == [] = Nothing
           | otherwise    = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ ":\n" ++
                                   (foldr (++) [] detail)
           where
           detail :: [String]
-          detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
+          detail = catMaybes [compareMphAts (relats m1) (relats m2),
                               compareSign (source m1,target m1) (source m2,target m2),
                               compareYin (inline m1) (inline m2) -- ,
-                              --compareDecl (mphdcl m1) (mphdcl m2)
+                              --compareDecl (reldcl m1) (reldcl m2)
                               ]
    compareMph m1@(I{}) m2@(I{})
           | detail == [] = Nothing
@@ -292,9 +292,9 @@ where
                                   (foldr (++) [] detail)
           where
           detail :: [String]
-          detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
-                              compareConcept (mphgen m1) (mphgen m2),
-                              compareConcept (mphspc m1) (mphspc m2),
+          detail = catMaybes [compareMphAts (relats m1) (relats m2),
+                              compareConcept (relgen m1) (relgen m2),
+                              compareConcept (relspc m1) (relspc m2),
                               compareYin (inline m1) (inline m2)]
    compareMph m1@(V{}) m2@(V{})
           | detail == [] = Nothing
@@ -302,7 +302,7 @@ where
                                   (foldr (++) [] detail)
           where
           detail :: [String]
-          detail = catMaybes [compareMphAts (mphats m1) (mphats m2),
+          detail = catMaybes [compareMphAts (relats m1) (relats m2),
                               compareSign (sign m1) (sign m2)]
    compareMph m1 m2 = Just $ "Relation " ++ show m1 ++ " does not equal " ++ show m2 ++ "\n"
 

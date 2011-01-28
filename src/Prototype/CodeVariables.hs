@@ -11,22 +11,10 @@ module Prototype.CodeVariables
   ) where
  import Prototype.CodeAuxiliaries (Named(..),nameFresh,noCollide)
  import Ampersand (Expression(..),Declaration(..),Relation(..), mIs, Prop(..),makeRelation,Identified(..),source,target,Concept(..))
- import {-# SOURCE #-} Prototype.CodeStatement (UseVar(..),PHPconcept(..))
+ import Prototype.CodeStatement (UseVar(..),CodeVar(..),CodeVarIndexed(..),PHPconcept(..))
 
  -- | A data type containing the description of some variable in the target language.
  -- | see for example the singletonCV, or codeVariableForBinary
- data CodeVar = CodeVar
-  { cvIndexed :: CodeVarIndexed
-    -- | Content can either be a CodeVar, intended for indexed stuff: $var[$i] returns a codeVar,
-    --                    OR  [Named CodeVar], intended for objects/associative arrays: $var["nName"] is a codeVar 
-  , cvContent :: Either CodeVar [Named CodeVar] 
-  , cvExpression :: Expression (Relation PHPconcept)
-  } deriving (Eq)
- data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
- 
- instance Show CodeVar where
-   show (CodeVar i c e) = show i++" "++show c++" '"++show e++"'"
- 
  singletonCV :: CodeVar
  singletonCV
   = CodeVar { cvIndexed    = NotIndexed

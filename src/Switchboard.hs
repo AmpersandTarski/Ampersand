@@ -51,8 +51,8 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
 --         nameClaus c  = head (["clause"++show (i::Int)| (i,clause)<-zip [1..] clauses, clause==c]++error("!Fatal (module Switchboard 51): illegal lookup in nameClaus: " ++showADLcode fSpec c))
          namePTerm t  = head (["pos"   ++show (i::Int)| (i,term)  <-zip [1..] posTerms,  term==t]++error("!Fatal (module Switchboard 52): illegal lookup in namePTerm: " ++showADLcode fSpec t))
          nameNTerm t  = head (["neg"   ++show (i::Int)| (i,term)  <-zip [1..] negTerms,  term==t]++error("!Fatal (module Switchboard 53): illegal lookup in nameNTerm: " ++showADLcode fSpec t))
-         nameINode m  = head (["in_"   ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 54): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
-         nameONode m  = head (["out_"  ++show (i::Int)| (i,mph)  <-zip [1..] rels,  makeInline m==mph]++error("!Fatal (module Switchboard 55): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
+         nameINode m  = head (["in_"   ++show (i::Int)| (i,rel)  <-zip [1..] rels,  makeInline m==rel]++error("!Fatal (module Switchboard 54): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
+         nameONode m  = head (["out_"  ++show (i::Int)| (i,rel)  <-zip [1..] rels,  makeInline m==rel]++error("!Fatal (module Switchboard 55): illegal lookup in nameNTerm: " ++showADLcode fSpec m))
          --DESCR -> The relations from which changes can come
          inMorNodes    = [ DotNode { nodeID         = nameINode m
                                    , nodeAttributes = [Label (StrLabel (showADLcode fSpec (makeInline m)))]

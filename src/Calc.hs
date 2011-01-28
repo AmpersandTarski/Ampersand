@@ -57,9 +57,9 @@ module Calc ( deriveProofs
         invariants = [rule| rule<-rules fSpec, not (null (map makeInline (mors rule) `isc` vis))]
 --        qs         = vquads fSpec
 --        ecaRs      = assembleECAs visible qs
---        editable (Tm Mph{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+--        editable (Tm Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
 --        editable _             = False
---        editMph (Tm m@Mph{} _) = m       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
+--        editMph (Tm m@Rel{} _) = m       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2Fspec.hs, maar is daar ANDERS(!)...
 --        editMph e              = error("!Fatal (module Calc 63): cannot determine an editable declaration in a composite expression: "++show e)
         -- De functie spread verspreidt strings over kolommen met een breedte van n.
         -- Deze functie garandeert dat alle strings worden afgedrukt in de aangegeven volgorde.
@@ -135,12 +135,12 @@ module Calc ( deriveProofs
        qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).
           --   assembleECAs :: (Relation Concept->Bool) -> [Quad] -> [ECArule]
        ecaRs = assembleECAs (\_->True) qs  -- the raw (unnormalized) ECA rules.
-       mphEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+       relEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
        visible _ = True -- for computing totality, we take all quads into account.
        ecas
         = [ ECA (On ev m) delt act
-          | mphEq <- mphEqCls
-          , let (m,_,_,_) = head mphEq
+          | relEq <- relEqCls
+          , let (m,_,_,_) = head relEq
           , let Tm delt _ = delta (sign m)
           , ev<-[Ins,Del]
           , let act = All [ Chc [ (if isTrue  clause'   then Nop else
@@ -164,11 +164,11 @@ module Calc ( deriveProofs
                                                else conjNF (notCp negs)
                                 ]
                                 [(conj,causes)]  -- to supply motivations on runtime
-                          | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
+                          | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-relEq]
                           , let causes          = rd' nr (map thd3 conjEq)
                           , let (shifts,conj,_) = head conjEq
                           ]
-                          [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
+                          [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
           ]
        fst4 (w,_,_,_) = w
        snd3 (_,y,_) = y
@@ -352,7 +352,7 @@ module Calc ( deriveProofs
                      Cpx{}     -> "-"
                      K0x{}     -> "*"
                      K1x{}     -> "+"
-                     Tm mph _   -> if inline mph then "" else "~"
+                     Tm rel _   -> if inline rel then "" else "~"
                      Tc{}     -> error("!Fatal (module Calc 356): call to showOp (Tc x) in module Calc.hs")
 
    positiveIn :: Expression (Relation Concept) -> Relation Concept -> Maybe Bool
@@ -365,7 +365,7 @@ module Calc ( deriveProofs
      f (Fdx fus) = concat (map f fus)
      f (Fix fus) = concat (map f fus)
      f (Fux fus) = concat (map f fus)
-     f (Tm mph _) = [ True | makeInline mph==makeInline m ]
+     f (Tm rel _) = [ True | makeInline rel==makeInline m ]
      f (Cpx e)   = [ not b| b<- f e]
      f (K0x e)   = f e
      f (K1x e)   = f e

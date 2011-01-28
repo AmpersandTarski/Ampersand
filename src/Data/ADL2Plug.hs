@@ -3,7 +3,7 @@ module Data.ADL2Plug
   (mor2plug --make a binary sqlplug for a morphism that is neither inj nor uni
   ,makeTblPlugs --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
   ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
-  ,mph2fld --create field for TblSQL or ScalarSQL plugs 
+  ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
 import Collection     (Collection((>-)))
@@ -39,8 +39,8 @@ import Data.List (nub)
 -- REMARK -> because m cannot be INJ or UNI, m must be a BinSQL and cannot be a ScalarSQL or TblSQL
 -- REMARK -> a BinSQL has the same meaning as a TblSQL with mLkpTbl=[(m,fld1,fld2)]
 --  i.e. fldexpr fld2 holds the relation from fld1 to fld2, which is m
---       and the rule (fldexpr fld1)~;(fldexpr fld1);m = m holds (see comments mph2fld)
---  to get this meaning, fld1 and fld2 cannot be constructed with mph2fld, because fld1 is not a kernel field!
+--       and the rule (fldexpr fld1)~;(fldexpr fld1);m = m holds (see comments rel2fld)
+--  to get this meaning, fld1 and fld2 cannot be constructed with rel2fld, because fld1 is not a kernel field!
 --  let id::(source m)->(source m)[INJ] such that id=I /\ m;m~:
 --  + fld1={fldexpr=id,fldnull=not(isTot m),flduniq=isInj m}
 --  + fld2={fldexpr=m ,fldnull=not(isTot (id;m) ,flduniq=isInj (id;m)}
@@ -77,7 +77,7 @@ mor2plug  m totals
    is_Sur = Sur `elem` (multiplicities m) || flp m `elem` totals
 
 -----------------------------------------
---mph2fld
+--rel2fld
 -----------------------------------------
 -- Each morphism yields one field f1 in the plug...
 -- m is the relation from some kernel field k1 to f1
@@ -95,8 +95,8 @@ mor2plug  m totals
 --
 -- WHY151210 -> why sqltype=SQLID if there are any keys around and (isIdent m) and the field does not contain strings?
 --              what is the motivation for this implementation?
-mph2fld :: [KeyDef] -> [Relation Concept] -> [Relation Concept] -> Relation Concept -> SqlField
-mph2fld keyds kernel plugAtts m
+rel2fld :: [KeyDef] -> [Relation Concept] -> [Relation Concept] -> Relation Concept -> SqlField
+rel2fld keyds kernel plugAtts m
  = Fld fldName                                      -- fldname : 
        (Tm m (-1))                                  -- fldexpr : De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
        (if isSQLId then SQLId else SQLVarchar 255)  -- fldtype :
@@ -143,20 +143,20 @@ mph2fld keyds kernel plugAtts m
          target (head kernel) represents the root concept of the plug
    Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
    These relations serve as attributes. Code:  [a| a<-attMors, source a `elem` concs kernel]
-   Then, all these relations are made into fields. Code: plugFields = [mph2fld plugMors a| a<-plugMors]
+   Then, all these relations are made into fields. Code: plugFields = [rel2fld plugMors a| a<-plugMors]
    We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
    For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
    By the way, parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities.
    This parameter was added to makePlugs to avoid recomputation of the extra multiplicities.
 -}
 --WHY151210 -> why is currentPlugs of type [PlugSQL] and not [Plug]? 
---             I would expect if there is a PHP plug for some decl, you will not need to store its mph in a sql plug
+--             I would expect if there is a PHP plug for some decl, you will not need to store its rel in a sql plug
 makeTblPlugs :: Context -> [Declaration Concept] -> [PlugSQL] -> [PlugSQL]
 makeTblPlugs context allDecs currentPlugs
  = sort' ((0-).length.tblfields)
     [ if ((foldr (&&) True [isIdent m|(m,_,_)<-attributeLookuptable]) && length conceptLookuptable==1)  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
-      ScalarSQL (name c) (mph2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
+      ScalarSQL (name c) (rel2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
       else
       TblSQL (name c)               -- plname
              plugFields             -- fields
@@ -164,7 +164,7 @@ makeTblPlugs context allDecs currentPlugs
              attributeLookuptable   -- mLkpTbl
              (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
-    , let mainkernel = [m|cl<-eqCl target kernel,not(null cl), let m=head cl] --the part of the kernel for concept lookups (cLkpTbl) and linking mphs to (mLkpTbl)
+    , let mainkernel = [m|cl<-eqCl target kernel,not(null cl), let m=head cl] --the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
           restkernel = kernel >- mainkernel --the complement of mainkernel
           c = if null mainkernel
               then error "!Fatal (module ADL2Plug 172): nul mainkernel."
@@ -180,7 +180,7 @@ makeTblPlugs context allDecs currentPlugs
           lookupC cpt           = if null [f|(c',f)<-conceptLookuptable, cpt==c'] 
                                   then error "!Fatal (module ADL2Plug 182): null cLkptable."
                                   else head [f|(c',f)<-conceptLookuptable, cpt==c']
-          fld                   = mph2fld (keyDefs context) mainkernel (restkernel++plugAtts)
+          fld                   = rel2fld (keyDefs context) mainkernel (restkernel++plugAtts)
     ]
    where   
 -- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the Ampersand script are excluded from the process.
@@ -233,13 +233,13 @@ So the first step is create the kernels ...   -}
 --              a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug (i.e. fldnull=False)
 --              When is an ObjectDef a ScalarPlug or BinPlug?
 --              When do you want to define your own Scalar or BinPlug
---mph2fld  (keyDefs context) kernel plugAtts m
+--rel2fld  (keyDefs context) kernel plugAtts m
 
 makeSqlPlug :: Context -> ObjectDef -> PlugSQL
 makeSqlPlug context obj
  | null(objats obj) && isI(objctx obj)
-   = ScalarSQL (name obj) (mph2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
- | null(objats obj) --TODO151210 -> assuming objctx obj is Mph{} if it is not I{}
+   = ScalarSQL (name obj) (rel2fld [] [mIs c] [] (mIs c)) c (ILGV Eenvoudig)
+ | null(objats obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
    = error "!Fatal (module Data.Adl2Plug 230): TODO151210 -> implement defining binary plugs in ASCII"
  | isI(objctx obj) --TODO151210 -> a kernel may have more than one concept that is uni,tot,inj,sur with some imaginary ID of the plug
    = TblSQL (name obj)     -- plname (table name)
@@ -251,20 +251,20 @@ makeSqlPlug context obj
   where       
    c   -- one concept from the kernel is designated to "lead" this plug, this is user-defined.
      = source(objctx obj) 
-   mphs --fields are user-defined as one deep objats with objctx=m. note: type incorrect or non-morphism objats are ignored
-     = [(m,sqltp att)|att<-objats obj, (Tm m@(Mph{}) _)<-[objctx att],source m==c]   
+   rels --fields are user-defined as one deep objats with objctx=m. note: type incorrect or non-morphism objats are ignored
+     = [(m,sqltp att)|att<-objats obj, (Tm m@(Rel{}) _)<-[objctx att],source m==c]   
    kernel --I[c] and every non-homogeneous m or m~ which is at least uni,inj,sur are kernel fields 
           --REMARK -> homogeneous m or m~ which are at least uni,inj,sur are inefficient in a way
           --          if also TOT than m=I => duplicates, 
           --          otherwise if m would be implemented as GEN (target m) ISA C then (target m) could become a kernel field
      = [(mIs c,sqltp obj)] 
-       ++ [(m,tp)|(m,tp)<-mphs,source m/=target m,isUni m, isInj m, isSur m]
-       ++ [(flp m,tp)|(m,tp)<-mphs,source m/=target m,isUni m, isInj m, isTot m, not (isSur m)]
-   attMors --all user-defined non-kernel fields are attributes of (mph2fld (objctx c))
-     = (mphs >- kernel) >- [(flp m,tp)|(m,tp)<-kernel] --note: m<-mphs where m=objctx obj are ignored (objctx obj=I)
+       ++ [(m,tp)|(m,tp)<-rels,source m/=target m,isUni m, isInj m, isSur m]
+       ++ [(flp m,tp)|(m,tp)<-rels,source m/=target m,isUni m, isInj m, isTot m, not (isSur m)]
+   attMors --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))
+     = (rels >- kernel) >- [(flp m,tp)|(m,tp)<-kernel] --note: m<-rels where m=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attMors
    plugFields            = [fld m tp| (m,tp)<-plugMors] 
-   fld m tp              = (mph2fld (keyDefs context) (map fst kernel) (map fst attMors) m){fldtype=tp} --redefine sqltype
+   fld m tp              = (rel2fld (keyDefs context) (map fst kernel) (map fst attMors) m){fldtype=tp} --redefine sqltype
    conceptLookuptable    = [(target m,fld m tp)|(m,tp)<-kernel]
    attributeLookuptable  = [(m,lookupC (source m),fld m tp)| (m,tp)<-plugMors] 
    lookupC cpt           = if null [f|(c',f)<-conceptLookuptable, cpt==c'] 

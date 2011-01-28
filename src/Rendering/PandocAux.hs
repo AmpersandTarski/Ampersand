@@ -467,10 +467,10 @@ instance ShowMath (Rule (Relation Concept)) where
 
 instance ShowMath (Expression (Relation Concept)) where
  showMath e           = (showchar.insParentheses) e
- showMathcode fSpec e = (showchar.insParentheses.disambiguate fSpec.mphatsoff) e
+ showMathcode fSpec e = (showchar.insParentheses.disambiguate fSpec.relatsoff) e
 
 showchar :: Expression (Relation Concept) -> String
-showchar (Tm mph _) = showMath mph
+showchar (Tm rel _) = showMath rel
 showchar (Fux [])  = "\\cmpl{\\full}"
 showchar (Fux fs)  = intercalate "\\cup" [showchar f| f<-fs]     -- union
 showchar (Fix [])  = "\\full"
@@ -485,24 +485,24 @@ showchar (Cpx e')  = "\\cmpl{"++showchar e'++"}"
 showchar (Tc f)   = "("++showchar f++")"
 
 instance ShowMath (Relation Concept) where
- showMath mph@(Mph{})
-  = if inline mph then mstr else "\\flip{"++mstr++"}"
+ showMath rel@(Rel{})
+  = if inline rel then mstr else "\\flip{"++mstr++"}"
     where
-      mstr  = texOnly_Id(name mph)++
-              if null (mphats mph)
-              then (if     inline mph  && a==source s && b==target s ||
-                      not (inline mph) && a==target s && b==source s
+      mstr  = texOnly_Id(name rel)++
+              if null (relats rel)
+              then (if     inline rel  && a==source s && b==target s ||
+                      not (inline rel) && a==target s && b==source s
                     then "" else showSign [a,b])
-              else showSign (mphats mph)
-      s     = makeDeclaration mph
-      a     = source mph
-      b     = target mph
+              else showSign (relats rel)
+      s     = makeDeclaration rel
+      a     = source rel
+      b     = target rel
  showMath m@(I{})
-  = if null (mphats m) then "\\iden" else "\\ident{"++showSign (mphats m)++"}"
+  = if null (relats m) then "\\iden" else "\\ident{"++showSign (relats m)++"}"
  showMath m@(V{})
-  = if null (mphats m) then "\\full" else "\\fullt{"++showSign (mphats m)++"}"
+  = if null (relats m) then "\\full" else "\\fullt{"++showSign (relats m)++"}"
  showMath m@(Mp1{})
-  = "'"++mph1val m++"'"++(showSign [mph1typ m])
+  = "'"++rel1val m++"'"++(showSign [rel1typ m])
 
 
 instance ShowMath (Declaration Concept) where

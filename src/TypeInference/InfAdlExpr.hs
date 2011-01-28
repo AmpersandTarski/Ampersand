@@ -2,7 +2,7 @@
 {-
 TODO -> detect composition over universe
            RULE testUinverse2 MAINTAINS I[Order];V;V;V;I[Order]
-        usage of a Concept in mphats, which is not in any declaration (and thus (B,Universe) not in isas)
+        usage of a Concept in relats, which is not in any declaration (and thus (B,Universe) not in isas)
            RULE testUinverse3 MAINTAINS I;I[B]
  -
  - InfAdlExpr errors: 
@@ -52,8 +52,8 @@ infertype_and_populate populate isas ds (pushx,pushy) ex_in =
     Right err -> Right (printterror ds uniqex err,errortrees (infertype_and_populate populate isas ds) ds uniqex err)
   where
   inferfromscript = infer (map fromDcl ds) (fromCptCpts isas) (fromCpt pushx, fromCpt pushy)
-  Left ((expr_src,expr_trg),env_mph,inftree) = inf_expr
-  (uniqex,_) = uniquemphs 0 ex_in --give each morphism an identifier within the scope of this expression
+  Left ((expr_src,expr_trg),env_rel,inftree) = inf_expr
+  (uniqex,_) = uniquerels 0 ex_in --give each morphism an identifier within the scope of this expression
   inf_expr = inferfromscript (fromExpr uniqex)
   enrich_expr (F exs) = F$map enrich_expr exs
   enrich_expr (Fdx exs) = Fdx$map enrich_expr exs
@@ -68,50 +68,50 @@ infertype_and_populate populate isas ds (pushx,pushy) ex_in =
    --use the identifier to get the type of the morphism and the declaration from the morphism binding
    --lookup the original declaration from the script by name, source and target
    --set the type of the morphism with the inferred type and bind the corresponding declaration to it
-   ts = [(toCpt x,toCpt y,d') | (Morph _ _ i', (x,y),d')<-env_mph, i==i']
+   ts = [(toCpt x,toCpt y,d') | (Morph _ _ i', (x,y),d')<-env_rel, i==i']
    (ec1,ec2,d) = if null ts then (NOthing,NOthing,d) else head ts
    typedmp = case mp of
-      Mph{} -> if inline mp 
-               then mp {mphsrc=ec1,mphtrg=ec2,mphdcl=toDcl}
-               else mp {mphsrc=ec2,mphtrg=ec1,mphdcl=toDcl}
-      I{} -> mp {mphgen=ec1, mphspc=ec1}
-      V{} -> mp {mphtyp=(ec1,ec2)}
-      Mp1{} -> mp {mph1typ=ec1}
+      Rel{} -> if inline mp 
+               then mp {relsrc=ec1,reltrg=ec2,reldcl=toDcl}
+               else mp {relsrc=ec2,reltrg=ec1,reldcl=toDcl}
+      I{} -> mp {relgen=ec1, relspc=ec1}
+      V{} -> mp {reltyp=(ec1,ec2)}
+      Mp1{} -> mp {rel1typ=ec1}
    toDcl = if null ds' then fatal 69 "could not find original declaration."
            else head ds'
       where ds' = [d'|d'<-ds, name d'==dname d, dtype d==(fromCpt(source d'),fromCpt(target d'))]
 
 --DESCR -> if you need an identifier for relations within the scope of an expression 
-uniquemphs :: Int -> Expression (Relation c) -> (Expression (Relation c), Int)
-uniquemphs i (Tm mp _) = (Tm mp (i+1),i+1)
-uniquemphs i (F []) = (F [],i)
-uniquemphs i (F (ex:rexs)) = (F (lft:rghts),ri)
+uniquerels :: Int -> Expression (Relation c) -> (Expression (Relation c), Int)
+uniquerels i (Tm mp _) = (Tm mp (i+1),i+1)
+uniquerels i (F []) = (F [],i)
+uniquerels i (F (ex:rexs)) = (F (lft:rghts),ri)
    where
-   (lft,li) = uniquemphs i ex
-   (F rghts,ri) = (uniquemphs li (F rexs))
-uniquemphs i (Fdx []) = (Fdx [],i)
-uniquemphs i (Fdx (ex:rexs)) = (Fdx (lft:rghts),ri)
+   (lft,li) = uniquerels i ex
+   (F rghts,ri) = (uniquerels li (F rexs))
+uniquerels i (Fdx []) = (Fdx [],i)
+uniquerels i (Fdx (ex:rexs)) = (Fdx (lft:rghts),ri)
    where
-   (lft,li) = uniquemphs i ex
-   (Fdx rghts,ri) = (uniquemphs li (Fdx rexs))
-uniquemphs i (Fix []) = (Fix [],i)
-uniquemphs i (Fix (ex:rexs)) = (Fix (lft:rghts),ri)
+   (lft,li) = uniquerels i ex
+   (Fdx rghts,ri) = (uniquerels li (Fdx rexs))
+uniquerels i (Fix []) = (Fix [],i)
+uniquerels i (Fix (ex:rexs)) = (Fix (lft:rghts),ri)
    where
-   (lft,li) = uniquemphs i ex
-   (Fix rghts,ri) = (uniquemphs li (Fix rexs))
-uniquemphs i (Fux []) = (Fux [],i)
-uniquemphs i (Fux (ex:rexs)) = (Fux (lft:rghts),ri)
+   (lft,li) = uniquerels i ex
+   (Fix rghts,ri) = (uniquerels li (Fix rexs))
+uniquerels i (Fux []) = (Fux [],i)
+uniquerels i (Fux (ex:rexs)) = (Fux (lft:rghts),ri)
    where
-   (lft,li) = uniquemphs i ex
-   (Fux rghts,ri) = (uniquemphs li (Fux rexs))
-uniquemphs i (Cpx ex) = (Cpx sb, si)
-   where (sb,si) = uniquemphs i ex
-uniquemphs i (Tc ex) = (Tc sb, si)
-   where (sb,si) = uniquemphs i ex
-uniquemphs i (K0x ex) = (K0x sb, si)
-   where (sb,si) = uniquemphs i ex
-uniquemphs i (K1x ex) = (K1x sb, si)
-   where (sb,si) = uniquemphs i ex
+   (lft,li) = uniquerels i ex
+   (Fux rghts,ri) = (uniquerels li (Fux rexs))
+uniquerels i (Cpx ex) = (Cpx sb, si)
+   where (sb,si) = uniquerels i ex
+uniquerels i (Tc ex) = (Tc sb, si)
+   where (sb,si) = uniquerels i ex
+uniquerels i (K0x ex) = (K0x sb, si)
+   where (sb,si) = uniquerels i ex
+uniquerels i (K1x ex) = (K1x sb, si)
+   where (sb,si) = uniquerels i ex
 
 
 fromCptCpts :: [(Concept,Concept)] -> Isa
@@ -137,18 +137,18 @@ fromMphats :: [Concept] -> RelAlgType
 fromMphats [] = (Universe,Universe)
 fromMphats [c1] = (fromCpt c1,fromCpt c1)
 fromMphats [c1,c2] = (fromCpt c1,fromCpt c2)
-fromMphats _ = fatal 94 "too many mphats"
+fromMphats _ = fatal 94 "too many relats"
  
 --REMARK -> there will never be a Flip, because it is parsed flippedwise. The Flip is still implemented for other parse trees than the current Ampersand parse tree.
 fromExpr :: Expression (Relation Concept) -> RelAlgExpr
-fromExpr (Tm mp@(Mph{mphyin=False}) i) = 
-   Conv (Morph morph ((\(x,y)->(y,x))$fromMphats (mphats mp)) i)
+fromExpr (Tm mp@(Rel{relyin=False}) i) = 
+   Conv (Morph morph ((\(x,y)->(y,x))$fromMphats (relats mp)) i)
    where morph = DRel{rname=name mp}
 fromExpr (Tm mp i) = 
-   Morph morph (fromMphats (mphats mp)) i
+   Morph morph (fromMphats (relats mp)) i
    where 
    morph = case mp of
-     Mph{} -> DRel{rname=name mp}
+     Rel{} -> DRel{rname=name mp}
      I{} -> IdRel
      V{} -> VRel
      Mp1{} -> IdRel

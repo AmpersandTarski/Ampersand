@@ -22,7 +22,7 @@ where
            toExplObj :: PExplObj -> ExplObj
            toExplObj pe = case pe of 
              PExplConceptDef str  -> ExplConceptDef (getByName str (conceptDefs ue))
-             PExplDeclaration mph -> ExplDeclaration (makeDeclaration mph)
+             PExplDeclaration rel -> ExplDeclaration (makeDeclaration rel)
              PExplRule str        -> ExplRule (getByName str (rules ue++signals ue))
              PExplKeyDef str      -> ExplKeyDef (getByName str (keyDefs ue))
              PExplObjectDef str   -> ExplObjectDef (getByName str (objDefs ue))

@@ -10,7 +10,7 @@
   -- Question (SJC): If STRING is the code produced by showADLcode fSpec, would STRING == showADL (parse STRING) (context (parse STRING)) be true?
   -- Answer (SJ):   No, not for every STRING. Yet, for every fSpec we want  semantics fSpec == semantics (parse (showADLcode fSpec fSpec)).
   --                Note that 'parse' and 'semantics' do not exist in this shape, so the actual expression is slightly more complicated.
-module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
+module ShowADL ( ShowADL(..), disambiguate, relatsoff)
   where
    import Char                            (isAlphaNum)
    import Collection                      (Collection(..))
@@ -47,16 +47,16 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
    --TODO -> remove application of double complement rule from the parser
    --TODO -> remove removal of brackets on ; expression from the parser
 
-   mphatson :: Eq c => Expression (Relation c) -> Expression (Relation c)
-   mphatson = mapExpression f
+   relatson :: Eq c => Expression (Relation c) -> Expression (Relation c)
+   relatson = mapExpression f
     where f m = case m of
-                 Mph{mphats=[]}->if inline m then m{mphats=[source m,target m]} else  m{mphats=[target m,source m]}
+                 Rel{relats=[]}->if inline m then m{relats=[source m,target m]} else  m{relats=[target m,source m]}
                  _ -> m
 
-   mphatsoff :: Expression (Relation c) -> Expression (Relation c)
-   mphatsoff = mapExpression f
+   relatsoff :: Expression (Relation c) -> Expression (Relation c)
+   relatsoff = mapExpression f
     where f m = case m of
-                 Mph{} -> m{mphats=[]}
+                 Rel{} -> m{relats=[]}
                  _     -> m
 
 
@@ -213,15 +213,15 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 
 -- The function 'disambiguate' must ensure that an expression, when printed, can be parsed with no ambiguity.
 -- Besides, it must be readable as well.
--- The effect is that the mphats attribute of all relations in an expression will be set,
+-- The effect is that the relats attribute of all relations in an expression will be set,
 -- if otherwise there would be multiple interpretations possible.
--- In the absence of disambiguity, the mphats attribute remains empty.
+-- In the absence of disambiguity, the relats attribute remains empty.
 -- This is done by looking at the concept sets between two adjacent terms.
 -- Internal to this definition, type information has been given for documentation purposes.
 -- Since fSpec is specific for Concept, the type for disambiguate is specific to Expression (Relation Concept).
 -- One call to 'declarations fSpec' is the only reason why the type of disambiguate is specific for Concept.
    disambiguate :: Fspc -> Expression (Relation Concept) -> Expression (Relation Concept)
-   disambiguate _   (Tm mph i)  = Tm mph i
+   disambiguate _   (Tm rel i)  = Tm rel i
    disambiguate fSpec (Fux fs)  = Fux [disambiguate fSpec f| f<-fs]
    disambiguate fSpec (Fix fs)  = Fix [disambiguate fSpec f| f<-fs]
    disambiguate _     (Fdx [])  = Fdx []
@@ -267,16 +267,16 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
 --      pn :: [(Expression (Relation Concept),[Concept],Expression (Relation Concept))] -> [Expression (Relation Concept)]
         pn [] = error("!Fatal (module ShowADL 265): calling pn with empty list")
         pn [(s,_,t)] = [s,Tm (mIs (target s `lub` source t)) (-1)]
-        pn iss = [s|(s,_,_)<-lss]++[mphatson s|(s,_,_)<-[head rss]]++[s|(s,_,_)<-tail rss]
+        pn iss = [s|(s,_,_)<-lss]++[relatson s|(s,_,_)<-[head rss]]++[s|(s,_,_)<-tail rss]
                  where lss = take halfway iss
                        rss = drop halfway iss
                        halfway = length iss `div` 2
 -- The following function is used to force the type of a relation to be printed.
 --      types :: Expression (Relation Concept) -> [[Concept]]
-        types (Tm mph _) = if null (mphats mph)
-                           then rd [ if inline mph then [source d,target d] else [target d,source d]
-                                   | d<-declarations fSpec, name mph==name d]   -- Note: fSpec is specific for Concept, so this is the only reason why the type of disamb is specific to Expression (Relation Concept)
-                           else [mphats mph]
+        types (Tm rel _) = if null (relats rel)
+                           then rd [ if inline rel then [source d,target d] else [target d,source d]
+                                   | d<-declarations fSpec, name rel==name d]   -- Note: fSpec is specific for Concept, so this is the only reason why the type of disamb is specific to Expression (Relation Concept)
+                           else [relats rel]
         types (Fux fs)   = foldr isc [] [types f| f<-fs]
         types (Fix fs)   = foldr isc [] [types f| f<-fs]
         types (Fdx ts')  = types (F ts') -- a nifty trick to save code. After all, the type computation is identical to F...
@@ -303,9 +303,9 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADLcode fSpec expr  = showExpr (" \\/ ", "/\\", "!", ";", "*", "+", "-", "(", ")") expr
       where
        showExpr (union',inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr'
-        = (showchar.insParentheses.disambiguate fSpec.mphatsoff) expr'
+        = (showchar.insParentheses.disambiguate fSpec.relatsoff) expr'
          where
-          showchar (Tm mph _) = showADLcode fSpec mph
+          showchar (Tm rel _) = showADLcode fSpec rel
           showchar (Fux [])   = "-V"
           showchar (Fux fs)   = intercalate union' [showchar f| f<-fs]
           showchar (Fix [])   = "V"
@@ -320,13 +320,13 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
           showchar (Tc f)     = lpar++showchar f++rpar
 
    instance (Eq c, Identified c, ShowADL c) => ShowADL (Relation c) where
-    showADL m@Mph{}
+    showADL m@Rel{}
      = ({- if take 5 nm=="Clos_" then drop 5 nm++"*" else -} decnm s)++
-       (if null (mphats m)
+       (if null (relats m)
             then (if       inline m && source m==source s && target m==target s
                     || not(inline m)&& source m==target s && target m==source s
                   then "" else showSign [source m,target m])
-            else showSign (mphats m))++
+            else showSign (relats m))++
        if inline m then "" else "~"
        where s = makeDeclaration m
     showADL (I atts g s yin)
@@ -334,18 +334,18 @@ module ShowADL ( ShowADL(..), disambiguate, mphatsoff)
     showADL (V atts _)
      = "V"++if null atts then "" else showSign atts
     showADL m@(Mp1{})
-     = "'"++mph1val m++"'"++(showSign [mph1typ m])
-    showADLcode _ mph@Mph{}
-     = name mph++
-       (if null (mphats mph) then "" else showSign (mphats mph))++
-       if inline mph then "" else "~"
+     = "'"++rel1val m++"'"++showSign [rel1typ m]
+    showADLcode _ rel@Rel{}
+     = name rel++
+       (if null (relats rel) then "" else showSign (relats rel))++
+       if inline rel then "" else "~"
        -- where dss = [(name.head) cl| cl<-eqCl name (declarations fSpec), length cl>1]
     showADLcode _ (I atts g s yin)
      = "I"++if null atts then showSign [g,s] else showSign atts++if g==s then "" else if yin then "" else "~"
     showADLcode _ (V atts (a,b))
      = "V"++if null atts then showSign [a,b] else showSign atts
     showADLcode _ m@(Mp1{})
-     = "'"++mph1val m++"'"++(showSign [mph1typ m])
+     = "'"++rel1val m++"'"++(showSign [rel1typ m])
 
    instance (Identified c, Conceptual c) => ShowADL (Declaration c) where
     showADL decl@Sgn{}

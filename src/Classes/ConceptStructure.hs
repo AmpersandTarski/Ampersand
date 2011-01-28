@@ -92,12 +92,12 @@ where
 --  closExprs obj = closExprs (objctx obj) `uni` closExprs (objats obj)
 
    instance (Conceptual c, SpecHierarchy c) => ConceptStructure (Relation c) c where
-    concs mph   = rd [source mph,target mph]
-    mors mph    = [mph]
-    morlist mph = [mph]
-    genE mph    = case mph of
+    concs rel   = rd [source rel,target rel]
+    mors rel    = [rel]
+    morlist rel = [rel]
+    genE rel    = case rel of
                        Mp1{} -> error ("!Fatal (module ConceptStructure 101): not defined: 'genE Mp1{}'")
-                       _     -> order (source mph)
+                       _     -> order (source rel)
 --  closExprs _ = []
 
    instance (Conceptual c, SpecHierarchy c) => ConceptStructure (Declaration c) c where
@@ -143,10 +143,10 @@ where
 
    instance (Conceptual c, SpecHierarchy c) => ConceptStructure (Gen c) c where
     concs g     = rd [gengen g,genspc g]  
-    mors g      = [I{ mphats=[]
-                    , mphgen = gengen g
-                    , mphspc = genspc g
-                    , mphyin = True
+    mors g      = [I{ relats=[]
+                    , relgen = gengen g
+                    , relspc = genspc g
+                    , relyin = True
                     }]                         
     morlist g   = mors g
     genE g      = order (genspc g)

@@ -137,7 +137,7 @@ module Data.Fspec ( Fspc(..)
    data Field  = Att { fld_name      :: String                 -- The name of this field
                      , fld_sub       :: Fields                 -- all sub-fields
                      , fld_expr      :: Expression (Relation Concept)  -- The expression by which this field is attached to the service
-                     , fld_mph       :: Relation Concept               -- The morphism to which the database table is attached.
+                     , fld_rel       :: Relation Concept               -- The morphism to which the database table is attached.
                      , fld_editable  :: Bool                   -- can this field be changed by the user of this service?
                      , fld_list      :: Bool                   -- can there be multiple values in this field?
                      , fld_must      :: Bool                   -- is this field obligatory?

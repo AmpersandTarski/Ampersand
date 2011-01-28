@@ -21,7 +21,7 @@ module TypeInference.InfLibAGFuncs where
      me:SELF --copy of myself to investigate me
      env_in:AltList
      rtype:InfType
-     env_mph:{[(RelAlgExpr,InfType,RelDecl)]}
+     env_rel:{[(RelAlgExpr,InfType,RelDecl)]}
    ]
  - 
  - env_decls and env_isa need to be derived from the script
@@ -30,7 +30,7 @@ module TypeInference.InfLibAGFuncs where
  -
  - env_in contains all the possible types, given env_decls and env_isa, before pushing down the type, or a type error
  - rtype contains the inferred type of the expression or a type error in the expression
- - env_mph contains a (relation,inferred type+declaration) binding for all relations in the type if there is no type error (in rtype)
+ - env_rel contains a (relation,inferred type+declaration) binding for all relations in the type if there is no type error (in rtype)
  - me is a helper attribute containing <this> node
  -}
 
@@ -415,8 +415,8 @@ alts_compl me xs = case me of
      Compl (Morph{}) -> xs
      _ -> fatal 286 "Complements on relations only -> normalize"
 
-alts_mph :: [RelDecl] -> Isa -> RelAlgExpr -> AltList
-alts_mph reldecls isas me = 
+alts_rel :: [RelDecl] -> Isa -> RelAlgExpr -> AltList
+alts_rel reldecls isas me = 
    if null alts
    then AltListError$TError1 "Relation undefined" me
    else if null declerrs
@@ -456,7 +456,7 @@ alts_mph reldecls isas me =
                      else if elem c [x|d@(RelDecl{})<-reldecls,x<-[fst(dtype d),snd(dtype d)]]
                           then fatal 270 ("Missing identity of defined object in isas: "++show (c,c))
                           else False
-     _ -> fatal 312 "function alts_mph expects relation expressions only."
+     _ -> fatal 312 "function alts_rel expects relation expressions only."
 
 --------------------------------------------------------------------------------
 --inherit push_type
@@ -513,15 +513,15 @@ is_b_error _ = False
 -}
 
 ----------------------------------------------------------------------------
---synthesize rtype and env_mph
+--synthesize rtype and env_rel
 --There is one alternative in the env_in of the root expression
 --This type has been pushed down to the relations without type errors while inferring the b's.
---final_infer_mph can now determine the final type of all relations, by matching the alternatives
---of the relation to the inherited type. This type will be added to the relation type binding env_mph.
+--final_infer_rel can now determine the final type of all relations, by matching the alternatives
+--of the relation to the inherited type. This type will be added to the relation type binding env_rel.
 --Like all expressions the type of the relation expression will be represented by rtype.
 --More complex expressions can infer there final type based on the rtype of their subexpressions.
 --
---In final_infer_mph we can still discover one sort of type error as a result of a violation of the homogenity
+--In final_infer_rel we can still discover one sort of type error as a result of a violation of the homogenity
 --property. This is only possible with the abbcac-like inference rules, while a and c have different bindings.
 --in all other inference rules there are only a's and b's. 
 --p.e. B isa A, C isa A, I[B];I[A];I[C] => isarelated B C isas = False
@@ -529,9 +529,9 @@ is_b_error _ = False
 --discovered during checking of the possible alternatives of the expression.
 ----------------------------------------------------------------------------
 
-final_infer_mph :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> (RelAlgType,InfTree,RelDecl)
-final_infer_mph _ _ _ _ (AltListError _) = fatal 532 "error should have been detected earlier"
-final_infer_mph reldecls me isas (inh_a,inh_b) alts = ((fa,fb),tr,d) 
+final_infer_rel :: [RelDecl] -> RelAlgExpr -> Isa -> RelAlgType -> AltList -> (RelAlgType,InfTree,RelDecl)
+final_infer_rel _ _ _ _ (AltListError _) = fatal 532 "error should have been detected earlier"
+final_infer_rel reldecls me isas (inh_a,inh_b) alts = ((fa,fb),tr,d) 
    where
    --filter the alternatives given the pushed type, GlbTypes are not needed anymore
    falts = [(a,b)|((a,b),_)<-alttypes alts, isarelated a inh_a isas, isarelated b inh_b isas]

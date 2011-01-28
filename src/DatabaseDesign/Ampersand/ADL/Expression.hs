@@ -169,7 +169,7 @@ instance Show r => Show (Expression r) where
     showExpr (union,inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr' = showchar (insParentheses expr')
       where
    --    wrap i j str = if i<=j then str else lpar++str++rpar
-       showchar (Tm mph _) = show mph
+       showchar (Tm rel _) = show rel
        showchar (Fux []) = "-V"
        showchar (Fux fs) = intercalate union [showchar f| f<-fs]
        showchar (Fix []) = "V"
@@ -189,7 +189,7 @@ insParentheses expr = insPar 0 expr
        wrap :: Integer -> Integer -> Expression r -> Expression r
        wrap i j e' = if i<=j then e' else Tc e'
        insPar :: Integer -> Expression r -> Expression r
-       insPar _ (Tm mph i) = Tm mph i
+       insPar _ (Tm rel i) = Tm rel i
        insPar i (Fux fs)  = wrap i 4 (Fux [insPar 4 f| f<-fs])
        insPar i (Fix fs)  = wrap i 5 (Fix [insPar 5 f| f<-fs])
        insPar i (Fdx ts)  = wrap i 6 (Fdx [insPar 6 t| t<-ts])
@@ -200,7 +200,7 @@ insParentheses expr = insPar 0 expr
        insPar i (Tc f)   = insPar i f
 
 instance (SpecHierarchy c,Association r c,Show c,Show r) => Association (Expression r) c where
- source (Tm mph _) = source mph
+ source (Tm rel _) = source rel
  source (Tc f)     = source f
  source (F  [])    = error ("!Fatal (module Expression 208): source (F [])")
  source (F  ts)    = source (head ts)
@@ -214,7 +214,7 @@ instance (SpecHierarchy c,Association r c,Show c,Show r) => Association (Express
  source (K1x e')   = source e'
  source (Cpx e')   = source e'
 
- target (Tm mph _) = target mph
+ target (Tm rel _) = target rel
  target (Tc f)     = target f
  target (F  [])    = error ("!Fatal (module Expression 222): type of target (F []) is Anything")
  target (F  ts)    = target (last ts)
@@ -228,7 +228,7 @@ instance (SpecHierarchy c,Association r c,Show c,Show r) => Association (Express
  target (K1x e')   = target e'
  target (Cpx e')   = target e'
 
- sign (Tm mph _)   = sign mph
+ sign (Tm rel _)   = sign rel
  sign (Tc f)       = sign f
  sign (F ts)       = if null ts 
                      then error ("!Fatal (module Expression 237): no terms in sign (F "++show ts++")")
@@ -249,7 +249,7 @@ instance (SpecHierarchy c,Association r c,Show c,Show r) => Association (Express
  sign (Cpx e')     = sign e'
 
 instance (Numbered r) => Numbered (Expression r) where
- pos (Tm mph _)  = pos mph
+ pos (Tm rel _)  = pos rel
  pos (Tc f)  = pos f
  pos (F ts)  = if not (null ts) then pos (head ts) else error "!Fatal (module Expression 257): Please submit a complete bug report to your dealer"
  pos (Fdx ts) = if not (null ts) then pos (head ts) else error "!Fatal (module Expression 258): Please submit a complete bug report to your dealer"
@@ -280,7 +280,7 @@ idsOnly e' = and [isIdent m'| m'<-mors e'] -- > tells whether all the arguments 
 
 instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => Relational (Expression r) c where
  multiplicities expr = case expr of
-     (Tm mph _)-> multiplicities mph
+     (Tm rel _)-> multiplicities rel
      (Tc f)    -> multiplicities f
      (F ts)    -> foldr isc [Uni,Tot,Sur,Inj] (map multiplicities ts) -- homogene multiplicities can be used and deduced by and from rules: many rules are multiplicities (TODO)
      (Fdx _)   -> [] -- many rules with Fd in it are multiplicities (TODO). Solve perhaps by defining relation a = (Fd ts)
@@ -291,7 +291,7 @@ instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => R
      (Cpx e')  -> [p|p<-multiplicities e', p==Sym]
 
  flp expr = case expr of
-     (Tm mph i)-> Tm (flp mph) i
+     (Tm rel i)-> Tm (flp rel) i
      (Tc f)    -> Tc (flp f)
      (F ts)    -> F (map flp (reverse ts))
      (Fdx ts)  -> Fdx (map flp (reverse ts))
@@ -302,7 +302,7 @@ instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => R
      (Cpx e')  -> Cpx (flp e')
 
  isNot expr = case expr of        -- > tells whether the argument is equivalent to I-
-     (Tm mph _)  -> isNot mph    
+     (Tm rel _)  -> isNot rel    
      (Tc f)      -> isNot f
      (F [])      -> False
      (F [t])     -> isNot t        
@@ -332,7 +332,7 @@ instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => R
      (K0x e')   -> isTrue (K1x e')
      (K1x e')   -> isTrue e' -- als elk elem van (source e) in een cykel (in e) zit, dan ook is K0 ook True (TODO)
      (Cpx e')   -> isFalse e'
-     (Tm mph _) -> isTrue mph
+     (Tm rel _) -> isTrue rel
      (Tc f)     -> isTrue f
 
  isFalse expr = case expr of
@@ -344,7 +344,7 @@ instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => R
      (K0x _)    -> False
      (K1x e')   -> isFalse e'
      (Cpx e')   -> isTrue e'
-     (Tm mph _) -> isFalse mph
+     (Tm rel _) -> isFalse rel
      (Tc f)     -> isFalse f
 
  isProp expr = case expr of
@@ -356,7 +356,7 @@ instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => R
      (K0x e')   -> isProp e'
      (K1x e')   -> isProp e'
      (Cpx e')   -> isTrue e'
-     (Tm mph _) -> isProp mph
+     (Tm rel _) -> isProp rel
      (Tc f)     -> isProp f
 
  isIdent expr = case expr of
@@ -369,7 +369,7 @@ instance (SpecHierarchy c, Show c, Show r, Association r c, Relational r c) => R
      (K0x e')   -> isIdent e' || isFalse e'
      (K1x e')   -> isIdent e'
      (Cpx e')   -> isImin e'
-     (Tm mph _) -> isIdent mph
+     (Tm rel _) -> isIdent rel
      (Tc f)     -> isIdent f
    where
     isImin expr' = case expr' of

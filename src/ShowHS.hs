@@ -431,9 +431,9 @@ where
                        [showHS flags (indent++"                       ") att| att<-fld_sub  fld]
                        ++indent++"                     ]" )
        ++ indent++"    , fld_expr     = "++showHS flags (indent++"                       ") (fld_expr fld)
-       ++ indent++"    , fld_mph      = "++
+       ++ indent++"    , fld_rel      = "++
           ( if fld_editable fld
-            then showHS flags (indent++"      ") (fld_mph     fld)
+            then showHS flags (indent++"      ") (fld_rel     fld)
             else "error(\"!Fatal: reference to undefined editrelation in field "++fld_name fld++"\")" )
        ++ indent++"    , fld_editable = "++show (fld_editable fld)
        ++ indent++"    , fld_list     = "++show (fld_list     fld)
@@ -504,7 +504,7 @@ where
     showHSname _ = error ("!Fatal (module ShowHS 550): a PExplObj is anonymous with respect to showHS flags")
     showHS flags _ peObj = case peObj of 
              PExplConceptDef str  -> "PExplConceptDef " ++show str
-             PExplDeclaration mph -> "PExplDeclaration "++showHS flags "" mph
+             PExplDeclaration rel -> "PExplDeclaration "++showHS flags "" rel
              PExplRule str        -> "PExplRule "       ++show str
              PExplKeyDef str      -> "PExplKeyDef "     ++show str
              PExplObjectDef str   -> "PExplObjectDef "  ++show str
@@ -583,8 +583,8 @@ where
 -- \***********************************************************************
 
    instance (Eq r, Identified r, ShowHS (Relation r)) => ShowHS (Population r) where
-    showHSname pop = haskellIdentifier ("pop_"++name mph++name (source mph)++name (target mph))
-        where mph = popm pop
+    showHSname pop = haskellIdentifier ("pop_"++name rel++name (source rel)++name (target rel))
+        where rel = popm pop
     showHS flags indent pop
      = "Popu ("++showHS flags "" (popm pop)++")"++indent++"     [ "++intercalate (indent++"     , ") (map show (popps pop))++indent++"     ]"
    
@@ -613,7 +613,7 @@ where
 
    instance ShowHS (Expression (Relation Concept)) where
     showHSname expr = error ("!Fatal (module ShowHS 661): an expression is anonymous with respect to showHS flags. Detected at: "++ showADL expr)
-    showHS flags _ (Tm mph i)   = "Tm ("++showHS flags "" mph++") "
+    showHS flags _ (Tm rel i)   = "Tm ("++showHS flags "" rel++") "
          ++if i<0 then "(" ++ show i++")"
                   else        show i
     showHS flags indent (Tc f)   = showHS flags indent f
@@ -646,23 +646,23 @@ where
 -- \***********************************************************************
 
    instance ShowHS (Relation Concept) where
-    showHSname mph = error ("!Fatal (module ShowHS 695): Illegal call to showHSname ("++showADL mph++"). A morphism gets no definition in Haskell code.")
-    showHS flags _ mph 
-       = case mph of
-            Mph{} -> "Mph "++show (mphnm mph)++" "++showPos++" "++showAtts
-                         ++" "++showSrc++" "++showTrg++" "++show (mphyin mph)++" "++showHSname (mphdcl mph)
-            I{}   -> "I "++showAtts++" "++showGen++" "++showSpc++" "++show (mphyin mph)
+    showHSname rel = error ("!Fatal (module ShowHS 695): Illegal call to showHSname ("++showADL rel++"). A morphism gets no definition in Haskell code.")
+    showHS flags _ rel 
+       = case rel of
+            Rel{} -> "Rel "++show (relnm rel)++" "++showPos++" "++showAtts
+                         ++" "++showSrc++" "++showTrg++" "++show (relyin rel)++" "++showHSname (reldcl rel)
+            I{}   -> "I "++showAtts++" "++showGen++" "++showSpc++" "++show (relyin rel)
             V{}   -> "V "++showAtts++" "++showSgn
-            Mp1{} -> "Mp1 "++mph1val mph++" "++showAtts++" ("++showHS flags "" (mph1typ mph)++")"
-  -- WHY wordt mph1val mph zonder quotes afgedrukt?
-  -- BECAUSE: mph1val mph wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
-           where showPos  = "("++showHS flags "" (pos mph)++")"
-                 showAtts = showL(map (showHS flags "") (mphats mph))
-                 showGen  = "("++showHS flags "" (mphgen mph)++")"
-                 showSpc  = "("++showHS flags "" (mphspc mph)++")"
-                 showSrc  = "("++showHS flags "" (source mph)++")"
-                 showTrg  = "("++showHS flags "" (target mph)++")"
-                 showSgn  = "("++showHS flags "" (sign   mph)++")"
+            Mp1{} -> "Mp1 "++rel1val rel++" "++showAtts++" ("++showHS flags "" (rel1typ rel)++")"
+  -- WHY wordt rel1val rel zonder quotes afgedrukt?
+  -- BECAUSE: rel1val rel wordt door een lambda gebonden in de omgeving van Mp1. Het is dus een haskell identifier en niet een haskell string.
+           where showPos  = "("++showHS flags "" (pos rel)++")"
+                 showAtts = showL(map (showHS flags "") (relats rel))
+                 showGen  = "("++showHS flags "" (relgen rel)++")"
+                 showSpc  = "("++showHS flags "" (relspc rel)++")"
+                 showSrc  = "("++showHS flags "" (source rel)++")"
+                 showTrg  = "("++showHS flags "" (target rel)++")"
+                 showSgn  = "("++showHS flags "" (sign   rel)++")"
    
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Declaration                   ***

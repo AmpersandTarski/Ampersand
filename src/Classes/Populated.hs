@@ -37,9 +37,9 @@ where
                                _ -> Nothing
 
    instance Populated (Relation Concept) where
-    contents (Mp1{mph1val=x}) = Just$[mkPair x x]
-    contents mph | inline mph = contents (makeDeclaration mph)
-    contents mph | otherwise = case (contents (makeDeclaration mph)) of
+    contents (Mp1{rel1val=x}) = Just$[mkPair x x]
+    contents rel | inline rel = contents (makeDeclaration rel)
+    contents rel | otherwise = case (contents (makeDeclaration rel)) of
                                  (Just ps) -> Just$ map flipPair ps
                                  Nothing -> Nothing
 

@@ -243,7 +243,7 @@ instance Object PlugSQL where
  concept p = case p of
    TblSQL{mLkpTbl = []} -> error ("!Fatal (module Data.Plug 277): empty lookup table for plug "++name p++".")
    TblSQL{}             -> --TODO151210-> deze functieimplementatie zou beter moeten matchen met onderstaande beschrijving
-                            --        nu wordt aangenomen dat de source van het 1e mph in mLkpTbl de source van de plug is.
+                            --        nu wordt aangenomen dat de source van het 1e rel in mLkpTbl de source van de plug is.
                             --a relation between kernel concepts r::A*B is at least [UNI,INJ]
                             --to be able to point out one concept to be the source we are looking for one without NULLs in its field
                             -- i.e. there is a concept A such that
@@ -344,7 +344,7 @@ showSQL (SQLBool     ) = "BOOLEAN"
 iskey :: PlugSQL->SqlField->Bool
 iskey plug@(ScalarSQL{}) f = column plug==f
 iskey plug@(BinSQL{}) _ --mLkp is not uni or inj by definition of BinSQL, if mLkp total then the (fldexpr srcfld)=I/\m;m~=I i.e. a key for this plug
-  | isUni(mLkp plug) || isInj(mLkp plug) = error "!Fatal (module Data.Plug 380): BinSQL may not store a univalent or injective mph, use TblSQL instead."
+  | isUni(mLkp plug) || isInj(mLkp plug) = error "!Fatal (module Data.Plug 380): BinSQL may not store a univalent or injective rel, use TblSQL instead."
   | otherwise              = False --binary does not have key, but I could do a SELECT DISTINCT iff f==fst(columns plug) && (isTot(mLkp plug)) 
 iskey plug@(TblSQL{}) f    = elem f (fields plug) && isUni(fldexpr f) && isInj(fldexpr f) && isSur(fldexpr f)
 

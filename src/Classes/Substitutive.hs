@@ -12,23 +12,23 @@ where
  --   subst (_,_) _ = error "!Fatal (module Classes.Substitutive 11): Unable to substitute"
 
    instance Substitutive e r => Substitutive [e] r where
-    subst (mph,f) xs = map (subst (mph,f)) xs
+    subst (rel,f) xs = map (subst (rel,f)) xs
 
    instance (Eq r, Show c, Show r, SpecHierarchy c, Relational r c) => Substitutive (Expression r) r where
-    subst (mph,f) t@(Tm mph' _) |     mph==mph' = f
-                              | flp mph==mph' = flp f 
+    subst (rel,f) t@(Tm rel' _) |     rel==rel' = f
+                              | flp rel==rel' = flp f 
                               | otherwise = t
-    subst (mph,f) f'          = subs f'
+    subst (rel,f) f'          = subs f'
      where
-       subs (F ts)     = F  (subst (mph,f) ts)
-       subs (Fdx ts)   = Fdx (subst (mph,f) ts)
-       subs (Fux fs)   = Fux (subst (mph,f) fs)
-       subs (Fix fs)   = Fix (subst (mph,f) fs)
-       subs (K0x e')   = K0x (subst (mph,f) e')
-       subs (K1x e')   = K1x (subst (mph,f) e')
-       subs (Cpx e')   = Cpx (subst (mph,f) e')
-       subs (Tc f'')   = Tc (subst (mph,f) f'')
-       subs e'         = subst (mph,f) e'
+       subs (F ts)     = F  (subst (rel,f) ts)
+       subs (Fdx ts)   = Fdx (subst (rel,f) ts)
+       subs (Fux fs)   = Fux (subst (rel,f) fs)
+       subs (Fix fs)   = Fix (subst (rel,f) fs)
+       subs (K0x e')   = K0x (subst (rel,f) e')
+       subs (K1x e')   = K1x (subst (rel,f) e')
+       subs (Cpx e')   = Cpx (subst (rel,f) e')
+       subs (Tc f'')   = Tc (subst (rel,f) f'')
+       subs e'         = subst (rel,f) e'
 
    instance (Show r, Association r Concept, Substitutive (Expression r) r) => Substitutive (Rule r) r where
     subst (m',f) r

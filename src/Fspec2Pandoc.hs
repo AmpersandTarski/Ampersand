@@ -263,7 +263,7 @@ natLangReqs lev fSpec flags = header ++ dpIntro ++ dpRequirements
                 ]           
            allRelsThatMustBeShown         -- All relations used in this specification, that are used in rules.
                                           -- and only those declarations that have at least one explanation.
-              = [m| m@Mph{}<-mors fSpec
+              = [m| m@Rel{}<-mors fSpec
                   , not (null ( explain fSpec flags m))
                 ]
            allRulesThatMustBeShown         
@@ -780,7 +780,7 @@ dataAnalysis lev fSpec flags
                                  , if isTot m then "\\(\\surd\\)" else ""
                                  , if isSur m then "\\(\\surd\\)" else ""
                                  ]++"\\\\\n"
-               | m@Mph{}<-ms, not (isProp m)
+               | m@Rel{}<-ms, not (isProp m)
                ]++
                [ TeX $ "\\hline\n\\end{tabular}"
                ]
@@ -831,8 +831,8 @@ dataAnalysis lev fSpec flags
                 else TeX $ "The following signals exist: "++commaEng "and" [texOnly_Id(name d)| d<-sgnls]]
      | length sgnls>1 ]
      where
-      hMults  = [m| m@Mph{}<- mors fSpec, homogeneous m]
-      sgnls   = [m| m@Mph{}<-ms, isSignal m] -- all signal declarations are not user defined, so this is disjoint from hMults
+      hMults  = [m| m@Rel{}<- mors fSpec, homogeneous m]
+      sgnls   = [m| m@Rel{}<-ms, isSignal m] -- all signal declarations are not user defined, so this is disjoint from hMults
       keyds   = keyDefs fSpec -- all key definitions
 -- The properties of various declations are documented in different tables.
 -- First, we document the heterogeneous properties of all relations

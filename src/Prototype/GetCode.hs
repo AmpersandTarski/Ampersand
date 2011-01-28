@@ -39,7 +39,7 @@ module Prototype.GetCode (getCodeFor) where
      -- We try to find a singleton, those values we know already
      [ code |
        code<-case e of
-        (Tm (V{mphtyp=(_,t)}) _) -- source is al automatisch een singleton
+        (Tm (V{reltyp=(_,t)}) _) -- source is al automatisch een singleton
          -> getAllTarget t
         _ -> error ("!Fatal (module GetCode 43): please fix getCodeForSingle, so that it will find objects holding expressions such as "++show e)
      ]
@@ -305,7 +305,7 @@ module Prototype.GetCode (getCodeFor) where
  changeSource c (Cpx x ) = F [Tm (mIs c)(-1),Cpx x]    -- TODO: is dit correct?
  changeSource c (Tm m i) = Tm m' i
   where m' = case m of
-               Mph{} -> m{mphsrc=c}
+               Rel{} -> m{relsrc=c}
                I{} -> I [] c c True
-               V{mphtyp=(_,t)} -> V [] (c,t)
+               V{reltyp=(_,t)} -> V [] (c,t)
                Mp1{} -> error "!Fatal (module GetCode 310): changeSource in getAllInExpr should compare whether the source of this Mp1 is equal to c, and either return -V (Nothing) or return the original Mp1. Currently, an error is placed here since I (SJC) don't think this will occur. I would rather see a I of type PHPI1 here."

@@ -98,7 +98,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                               , ctxps   = [e| CXpl e<-ces]
                               , ctxros  = [r| CRos r<-ces]
                               , ctxmed  = [r| CMed r<-ces]
-                              , ctxpops = [Popu mph prs| CPop mph prs<-ces]
+                              , ctxpops = [Popu rel prs| CPop rel prs<-ces]
                               , ctxsql  = [plug| CSqlPlug plug<-ces]
                               , ctxphp  = [plug| CPhpPlug plug<-ces]
                               , ctxenv  = env
@@ -345,7 +345,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
          t'   = if t==Nothing && mtp/=Nothing 
                 then if (even.length) [()|Co<-pUnOp post] then mtp else fmap (\(x,y)->(y,x)) mtp 
                 else t
-         mtp = case mphats m of 
+         mtp = case relats m of 
            [x] -> Just (x,x) 
            [x,y] -> Just (x,y) 
            _ -> Nothing
@@ -403,19 +403,19 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                        single  <$> pAtom 
                                <*> ((pSpec '[' *> pConcept <* pSpec ']') `opt` cptAnything)
                        where rebuild (nm,pos') atts
-                              = Mph  { mphnm = nm                     -- ^ the name of the morphism. This is the same name as
+                              = Rel  { relnm = nm                     -- ^ the name of the morphism. This is the same name as
                                                                       --   the declaration that is bound to the morphism.
-                                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration mphdcl ....
-                                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn mphdcl.
-                                     , mphpos = pos'                  -- ^ the position of the rule in which the morphism occurs
-                                     , mphats = (take 2 (atts++atts))              -- ^ the attributes specified inline
-                                     , mphsrc = cptAnything           -- ^ the source. Together with the target, this forms the type.
-                                     , mphtrg = cptAnything           -- ^ the target. Together with the source, this forms the type.
-                                     , mphyin = True                  -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
-                                     , mphdcl = Sgn { decnm   = nm           -- ^ the declaration bound to this morphism.
-                                                    , desrc   = cptAnything  --   If not mphyin, then target m<=source (mphdcl m) and source m<=target (mphdcl m).
+                                                                      --    VRAAG: Waarom zou je dit attribuut opnemen? De naam van het morphisme is immers altijd gelijk aan de naam van de Declaration reldcl ....
+                                                                      --    ANTWOORD: Tijdens het parsen, tot het moment dat de declaration aan het morphism is gekoppeld, moet de naam van het morphism bekend zijn. Nadat het morphisme gebonden is aan een declaration moet de naam van het morphisme gelijk zijn aan de naam van zijn reldcl.
+                                     , relpos = pos'                  -- ^ the position of the rule in which the morphism occurs
+                                     , relats = (take 2 (atts++atts))              -- ^ the attributes specified inline
+                                     , relsrc = cptAnything           -- ^ the source. Together with the target, this forms the type.
+                                     , reltrg = cptAnything           -- ^ the target. Together with the source, this forms the type.
+                                     , relyin = True                  -- ^ the 'yin' factor. If true, a declaration is bound in the same direction as the morphism. If false, binding occurs in the opposite direction.
+                                     , reldcl = Sgn { decnm   = nm           -- ^ the declaration bound to this morphism.
+                                                    , desrc   = cptAnything  --   If not relyin, then target m<=source (reldcl m) and source m<=target (reldcl m).
                                                     , detrg   = cptAnything  --   In this case, we write m~ (pronounce: m-flip or m-wok)
-                                                    , decprps = []           --   If mphyin, then source m<=source (mphdcl m) and target m<=target (mphdcl m).
+                                                    , decprps = []           --   If relyin, then source m<=source (reldcl m) and target m<=target (reldcl m).
                                                     , decprps_calc = []      --   In that case, we write m
                                                     , decprL  = ""         
                                                     , decprM  = ""
@@ -429,9 +429,9 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                                     , decplug = True
                                                     }
                                      }
-                             single nm c = Mp1 { mph1val = nm
-                                               , mphats  = [c|c/=Anything]
-                                               , mph1typ = c
+                             single nm c = Mp1 { rel1val = nm
+                                               , relats  = [c|c/=Anything]
+                                               , rel1typ = c
                                                }     
                              iden a | a ==cptAnything = I [] cptAnything cptAnything True
                                     | otherwise       = I [c|c/=cptAnything] c c True where c=emp a

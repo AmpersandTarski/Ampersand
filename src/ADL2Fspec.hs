@@ -328,7 +328,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
 
 
    editable :: Expression (Relation c) -> Bool   --TODO deze functie staat ook in Calc.hs...
-   editable (Tm Mph{} _) = True
+   editable (Tm Rel{} _) = True
    editable _            = False
 
    editMph :: (Identified c, Eq c, Show c) => Expression (Relation c) -> (Relation c)  --TODO deze functie staat ook in Calc.hs...
@@ -395,7 +395,7 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
          = Att { fld_name     = objnm obj
                , fld_sub      = [fld (sLevel +1) o| o<-objats obj]
                , fld_expr     = objctx obj
-               , fld_mph      = if editable (objctx obj)
+               , fld_rel      = if editable (objctx obj)
                                 then editMph (objctx obj)
                                 else error("!Fatal (module ADL2Fspec 389): cannot edit a composite expression: "++show (objctx obj)++"\nPlease test editability of field "++objnm obj++" by means of fld_editable first!")
                , fld_editable = editable (objctx obj)      -- can this field be changed by the user of this service?
@@ -562,11 +562,11 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
    assembleECAs visible qs
     = [ecarule i| (ecarule,i) <- zip ecas [(1::Int)..]]
       where
-       mphEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
+       relEqCls = eqCl fst4 [(m,shifts,conj,cl_rule ccrs)| Quad m ccrs<-qs, (conj,shifts)<-cl_conjNF ccrs]
        ecas
         = [ ECA (On ev m) delt act
-          | mphEq <- mphEqCls
-          , let (m,_,_,_) = head mphEq
+          | relEq <- relEqCls
+          , let (m,_,_,_) = head relEq
           , let Tm delt _ = delta (sign m)
           , ev<-[Ins,Del]
           , let act = All [ Chc [ (if isTrue  clause'   then Nop else
@@ -590,11 +590,11 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
                                                else conjNF (notCp negs)
                                 ]
                                 [(conj,causes)]  -- to supply motivations on runtime
-                          | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-mphEq]
+                          | conjEq <- eqCl snd3 [(shifts,conj,rule)| (_,shifts,conj,rule)<-relEq]
                           , let causes          = rd' nr (map thd3 conjEq)
                           , let (shifts,conj,_) = head conjEq
                           ]
-                          [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 mphEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
+                          [(conj,rd' nr [r|(_,_,_,r)<-cl])| cl<-eqCl thd4 relEq, let (_,_,conj,_) = head cl]  -- to supply motivations on runtime
           ]
        fst4 (w,_,_,_) = w
        snd3 (_,y,_) = y
@@ -623,20 +623,20 @@ module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembl
        uncasced = [er|                   er<-new, let (c,_)      = cascade (eMhp (ecaTriggr er)) (ecaAction er), not c]
 -- cascade inserts a block on the place where a Do component exists that matches the blocking event.
 --     cascade :: Relation c -> PAclause (Relation c) -> (Bool, PAclause (Relation c))
-     cascade mph (Do srt (Tm to _) _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
+     cascade rel (Do srt (Tm to _) _ _) | (not.null) blkErs = (True, ecaAction (head blkErs))
       where blkErs = [er| er<-ers
                         , Blk _<-[ecaAction er]
                         , let t = ecaTriggr er
                         , eSrt t==srt
                         , makeInline (eMhp t) == makeInline to
-                        , makeInline mph      /= makeInline to
+                        , makeInline rel      /= makeInline to
                         ]
      cascade  _  c@Do{}           = (False, c)
-     cascade mph (New c clause m) = ((fst.cascade mph.clause) "dummystr", New c (\str->(snd.cascade mph.clause) str) m)
-     cascade mph (Rmv c clause m) = ((fst.cascade mph.clause) "dummystr", Rmv c (\str->(snd.cascade mph.clause) str) m)
-     cascade mph (Sel c e cl m)   = ((fst.cascade mph.cl) "dummystr",     Sel c e (\str->(snd.cascade mph.cl) str)   m)
-     cascade mph (Chc ds m)       = (or (map (fst.cascade mph) ds), Chc (map (snd.cascade mph) ds) m)
-     cascade mph (All ds m)       = (or (map (fst.cascade mph) ds), All (map (snd.cascade mph) ds) m)
+     cascade rel (New c clause m) = ((fst.cascade rel.clause) "dummystr", New c (\str->(snd.cascade rel.clause) str) m)
+     cascade rel (Rmv c clause m) = ((fst.cascade rel.clause) "dummystr", Rmv c (\str->(snd.cascade rel.clause) str) m)
+     cascade rel (Sel c e cl m)   = ((fst.cascade rel.cl) "dummystr",     Sel c e (\str->(snd.cascade rel.cl) str)   m)
+     cascade rel (Chc ds m)       = (or (map (fst.cascade rel) ds), Chc (map (snd.cascade rel) ds) m)
+     cascade rel (All ds m)       = (or (map (fst.cascade rel) ds), All (map (snd.cascade rel) ds) m)
      cascade  _  (Nop m)          = (False, Nop m)
      cascade  _  (Blk m)          = (False, Blk m)
 

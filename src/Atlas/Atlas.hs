@@ -187,8 +187,8 @@ insertpops conn fSpec flags (tbl:tbls) pics =
    pop' ATHomoRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags fSpec x,r_pat x])$rrdcl x |x@Ru{}<-homorules]
    --pop' ATIsa = [[show x,show(genspc x), show(gengen x),name p]|p<-patterns fSpec, x<-gens p]
    pop' ATPicture = [[imgURL pic]|pic<-pics]
-   pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Mph{})<-mors x]
-   pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Mph{})<-mors x]
+   pop' ATMorphisms = [[cptrule x, mphpred y]|x<-userrules, y@(Rel{})<-mors x]
+   pop' ATMorphismsSignal = [[cptrule x, mphpred y]|x<-signalrules, y@(Rel{})<-mors x]
    pop' ATMultRule = [(\(Just (p,d))->[cptrule x,show p,relpred d,cpttype x,explainRule flags fSpec x,r_pat x])$rrdcl x |x@Ru{}<-multrls]
    pop' ATPair = [[show y]| x@Sgn{}<-declarations fSpec, decusr x, y<-contents' x]
               ++ [[show y]| r<-userrules, x<-subexprs r, y<-contents' x]
@@ -228,7 +228,7 @@ insertpops conn fSpec flags (tbl:tbls) pics =
                           | otherwise = prevrule r (r'':rs)
    relpred x@(Sgn{}) = name x ++ "::" ++ cpttype x 
    relpred x = name x
-   mphpred x@(Mph{}) = relpred (mphdcl x) 
+   mphpred x@(Rel{}) = relpred (makeDeclaration x) 
    mphpred x = name x
    example d = if null (contents' d) then  applyM d "x" "y" 
                else applyM d (fst$head$contents' d) (snd$head$contents' d)

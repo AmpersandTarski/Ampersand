@@ -432,7 +432,7 @@ data PExplObj
 instance Identified PExplObj where
   name pe = case pe of 
      PExplConceptDef str -> str
-     PExplDeclaration mph -> name mph
+     PExplDeclaration rel -> name rel
      PExplRule str -> str
      PExplKeyDef str -> str
      PExplObjectDef str -> str

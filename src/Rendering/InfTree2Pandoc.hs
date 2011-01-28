@@ -38,7 +38,7 @@ pandoctree (Just (tr,x)) jt = orig++[Plain$[TeX "\n\\begin{prooftree}\n"]++il ++
    where 
    (il,term,refs,_,_) = pandoctree' tr
    env :: Expression (Relation Concept) -> [(Int,(Declaration Concept,[Concept]))]
-   env (Tm mp i) = [(i, (makeDeclaration mp,mphats mp))]
+   env (Tm mp i) = [(i, (makeDeclaration mp,relats mp))]
    env (F xs) = concat(map env xs)
    env (Fdx xs) = concat(map env xs)
    env (Fix xs) = concat(map env xs)
@@ -74,7 +74,7 @@ writeexpr expr = showExpr (" \\cup ", " \\cap ", " \\dagger ", ";", "*", "+", "-
       where
       showExpr (union',inter,rAdd,rMul,clos0,clos1,_,lpar,rpar) expr' = showchar (insParentheses expr')
          where
-         showchar (Tm mph _)  = name mph++if inline mph then "" else "^{\\smile}"
+         showchar (Tm rel _)  = name rel++if inline rel then "" else "^{\\smile}"
          showchar (Fux []) = "-V"
          showchar (Fux fs) = intercalate' union' fs
          showchar (Fix []) = "V"
@@ -116,7 +116,7 @@ pandoctree' (InfRel dt tp@(c1,c2) _ i)
      ,TeX ("\\UnaryInfC{$\\Gamma \\models "++term ++"["++tpstr tp++"]$}\n")
      ],term,[],1,(c1,c2))
    where 
-   r' =  show i --TODO: dit zou een placeholder voor een format string kunnen worden. i=unieke identificatie van mph in expressie
+   r' =  show i --TODO: dit zou een placeholder voor een format string kunnen worden. i=unieke identificatie van rel in expressie
    --tpstr = ltxstr(if elem dt [D_rel_c_h,D_rel_h,D_id,D_id_c] then show c1 else show c1++"*"++ show c2)
    term = if elem dt [D_rel_c_h,D_rel_c,D_id_c,D_v_c] then "\\overline{"++r'++"}" else r'
    dtrel = case dt of D_id -> D_rel_h;  D_id_c -> D_rel_c_h; D_v -> D_rel;  D_v_c -> D_rel_c; _->dt;

@@ -103,7 +103,7 @@ where
                     , mkAttr "sLevel"   (show (fld_sLevel   f))
                     ])
                ( [ Elem (simpleTag "Expression") [mkXmlTree (fld_expr f)]] ++
-                 [ Elem (simpleTag "Relation")   [mkXmlTree (fld_mph f)]]
+                 [ Elem (simpleTag "Relation")   [mkXmlTree (fld_rel f)]]
                ) 
 
    instance XML Pattern where
@@ -172,23 +172,23 @@ where
      mkTag _  = error ("!Fatal (module XML/ShowXMLtiny 171): mkTag should not be used for expressions.")
      mkXmlTree expr 
          = case expr of
-               (Tm mph i) | inline mph -> Node (Tag rel ( [mkAttr "Name" (name mph)]
-                                                      ++[mkAttr "Source" (name(source mph))]
-                                                      ++[mkAttr "Target" (name(target mph))]
+               (Tm rel i) | inline rel -> Node (Tag rl ( [mkAttr "Name" (name rel)]
+                                                      ++[mkAttr "Source" (name(source rel))]
+                                                      ++[mkAttr "Target" (name(target rel))]
                                               )        ) 
-                        | otherwise -> Elem (simpleTag flip') [mkXmlTree (Tm (flp mph) i)]
+                        | otherwise -> Elem (simpleTag flip') [mkXmlTree (Tm (flp rel) i)]
                (Fux [])  -> Elem (simpleTag compl) 
-                                [ Node (Tag rel [mkAttr "Name" "V"])]
+                                [ Node (Tag rl [mkAttr "Name" "V"])]
                (Fux [f]) -> mkXmlTree f
                (Fux fs)  -> Elem (simpleTag union') (map mkXmlTree fs)
-               (Fix [])  -> Node (Tag rel [mkAttr "Name" "V"])
+               (Fix [])  -> Node (Tag rl [mkAttr "Name" "V"])
                (Fix [f]) -> mkXmlTree f
                (Fix fs)  -> Elem (simpleTag inter) (map mkXmlTree fs)
                (Fdx [])  -> Elem (simpleTag compl) 
-                                [ Node (Tag rel [mkAttr "Name" "I"])]
+                                [ Node (Tag rl [mkAttr "Name" "I"])]
                (Fdx [f]) -> mkXmlTree f
                (Fdx fs)  -> Elem (simpleTag rAdd) (map mkXmlTree fs)
-               (F  [])  -> Node (Tag rel [mkAttr "Name" "I"])
+               (F  [])  -> Node (Tag rl [mkAttr "Name" "I"])
                (F  [f]) -> mkXmlTree f
                (F  fs)  -> Elem (simpleTag rMul) (map mkXmlTree fs)
                (K0x f)   -> Elem (simpleTag clos0) [mkXmlTree f]
@@ -196,7 +196,7 @@ where
                (Cpx f)   -> Elem (simpleTag compl) [mkXmlTree f]
                (Tc f)   -> mkXmlTree f
       where
-      (union',inter,rAdd,rMul,clos0,clos1,compl,flip',rel)
+      (union',inter,rAdd,rMul,clos0,clos1,compl,flip',rl)
        = ("CONJ","DISJ","RADD","RMUL","CLS0","CLS1","CMPL","CONV","REL")
 
 
@@ -252,11 +252,11 @@ where
 
    instance XML (Relation Concept) where
      mkTag f = Tag "Relation" [nameToAttr f] 
-     mkXmlTree mph = Elem (mkTag mph) 
-      (case mph of  
-          Mph{} ->  [Elem (simpleTag "Attributes")(map mkXmlTree (mphats mph))]
-                    ++[Elem (simpleTag "Source") [mkXmlTree (source mph)]]
-                    ++[Elem (simpleTag "Target") [mkXmlTree (target mph)]]                  
+     mkXmlTree rel = Elem (mkTag rel) 
+      (case rel of  
+          Rel{} ->  [Elem (simpleTag "Attributes")(map mkXmlTree (relats rel))]
+                    ++[Elem (simpleTag "Source") [mkXmlTree (source rel)]]
+                    ++[Elem (simpleTag "Target") [mkXmlTree (target rel)]]                  
           I{}   ->  [still2bdone "Morphism_I"]
           V{}   ->  [still2bdone "Morphism_V"]
           Mp1{} ->  [still2bdone "Morphism_ONE"]

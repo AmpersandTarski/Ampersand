@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..)) where
+module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),CodeVar(..),CodeVarIndexed(..),useAttribute,PHPconcept(..)) where
  import Ampersand (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
- import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (Named(..))
 
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.
@@ -22,7 +21,18 @@ module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttrib
    | Forget      { preknowledge :: [Named CodeVar] -- ^ variables we used to know (before this statement)
                  , postknowledge:: [Named CodeVar] -- ^ variables we still know (not cleaned up)
                  }
-
+ data CodeVar = CodeVar
+  { cvIndexed :: CodeVarIndexed
+    -- | Content can either be a CodeVar, intended for indexed stuff: $var[$i] returns a codeVar,
+    --                    OR  [Named CodeVar], intended for objects/associative arrays: $var["nName"] is a codeVar 
+  , cvContent :: Either CodeVar [Named CodeVar] 
+  , cvExpression :: Expression (Relation PHPconcept)
+  } deriving (Eq)
+ data CodeVarIndexed = Indexed | NotIndexed | IndexByName deriving (Eq,Show)
+ 
+ instance Show CodeVar where
+   show (CodeVar i c e) = show i++" "++show c++" '"++show e++"'"
+ 
  -- | The actual use of a variable. In practice, use Named UseVar.
  -- | Example: the PHP usage $people[$i]["Name"] becomes Named "people" [Right (Named "i" []),Left "Name"]
  data UseVar = UseVar {uvList::[Either String (Named UseVar)]} deriving (Eq)
