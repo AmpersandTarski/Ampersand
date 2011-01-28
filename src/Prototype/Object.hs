@@ -764,7 +764,7 @@ splitLineBreak (l:s)
 --update the binary relations in this instance stored in binplugs (DEL $oldthis->rel, INS $newthis->rel)
 --TODO -> Move start and close transaction to wrapper and session, add rules to check to session
 --TODO -> error reporting (Bas uses jQuery somehow, checkout edit.js)
---TODO -> block inserts with plugid=NULL or ""
+--TODO -> block inserts with plugid=NULL or "" (or suggest a new page if transactions can be larger than one page)
 --the php name of the save function (uniqfnm) is fnm+depth except when depth=0 then it is "save"
 savefunction :: Options -> Fspc -> String -> Int -> ObjectDef -> [String]
 savefunction flags fSpec fnm depth this
@@ -778,21 +778,19 @@ savefunction flags fSpec fnm depth this
                            else error "!Fatal (module Prototype.Object 767):this concept is not stored in any SQL plug."
         plugkey | null (tblfields myplug) = error "!Fatal (module Prototype.Object 769):no tblfields in plug."
                 | otherwise = head (tblfields myplug) --TODO -> implement KEYs in plug
-        insme :: String -> String
-        insme mevar --e.g. $oldme, $newme, ..
-          = "DB_doquer(\"INSERT IGNORE INTO `"++name myplug
-            ++ "` ("++intercalate "," ["`"++fldname f++"`" | f<-tblfields myplug, not(fldauto f)]
+        insme :: String -> PlugSQL -> String
+        insme mevar plug --e.g. $oldme, $newme, ..
+          = "DB_doquer(\"INSERT INTO `"++name plug
+            ++ "` ("++intercalate "," ["`"++fldname f++"`" | f<-tblfields plug, not(fldauto f)]
             ++ ") VALUES (" ++
             intercalate ", "
-                  [ if fldnull f
-                    then "\".(" ++ "(null!=" ++ mevar ++ "['"++ fldname f ++ "'])"
+                  [ "\".(" ++ "(null!=" ++ mevar ++ "['"++ fldname f ++ "'])"
                                 ++ "?\"'\".addslashes("++ mevar ++ "['"++ fldname f ++ "']).\"'\":\"NULL\").\""
-                    else "'\".addslashes("++mevar ++ "['"++ fldname f ++ "']).\"'"
-                  | f<-tblfields myplug, not(fldauto f)
+                  | f<-tblfields plug, not(fldauto f)
                   ] ++ ")\", 5);"
-        inime :: String -> String
-        inime mevar --e.g. $oldme, $newme, ..
-          = mevar ++ " = array("++ intercalate "," ["'"++fldname f++"'=>null" | f<-tblfields myplug, not(fldauto f)] ++ ");"
+        inime :: String -> PlugSQL -> String
+        inime mevar plug --e.g. $oldme, $newme, ..
+          = mevar ++ " = array("++ intercalate "," ["'"++fldname f++"'=>null" | f<-tblfields plug, not(fldauto f)] ++ ");"
         thisme  -- $me holds the values on the screen (i.e. $this) stored in myplug ["private $_"++phpIdentifier (name a)++";"| a <- attributes o]
           = "$me = array("++ intercalate "," 
                              ["'"++fldname fld++"'=>"++arrayattpath att e| (fld,(att,e))<-thismematch]
@@ -835,10 +833,13 @@ savefunction flags fSpec fnm depth this
          = [["//check the existence of attributes"
             ,"if(isset("++var++") && count(DB_doquer(\"SELECT `"++fldname cfld++"` FROM `"++name p
                                                  ++"` WHERE `"++fldname cfld++"`='\".addslashes("++var++").\"'\")) != 1){"
-            ,"   DB_doquer(\"INSERT IGNORE INTO `"++name p++"` (`"++fldname cfld++"`) VALUES ('\".addslashes("++var++").\"')\", 5);"
-            ,"   if(mysql_affected_rows()==0) {"
+            ,"   " ++ inime "$rec" p
+            ,"   $rec['"++fldname cfld++"']="++var++";"
+            ,"   "++ insme "$rec" p
+            ,"   if(mysql_errno()!=0) {"
+            ,"      $err = mysql_error();"
             ,"      rollbacktransaction();"
-            ,"      $myerrors[] = print_r(array('cannotaddmorattconcept'=>'zzz')).print_r("++mevar++");"
+            ,"      $myerrors[] = print_r(array('observation'=>'you try to set an attribute to a new instance '."++var++".' of concept "++show(target(fldexpr cfld))++".','erroranalysis'=>'you can only refer to existing instances of "++show(target(fldexpr cfld))++" on this page, because it has required attributes that are not or cannot be specified on this page.','suggestion'=>'first create '."++var++".' on a page that can create instances of "++show(target(fldexpr cfld))++".','sqlerror'=>$err)).print_r("++mevar++");"
             ,"      return false;"
             ,"   }"
             ,"}"]
@@ -870,9 +871,9 @@ savefunction flags fSpec fnm depth this
     ++
  --   map runfunc attfuncs
  --   ++ 
-    [inime "$oldme"
+    [inime "$oldme" myplug
     ,thisme
-    ,inime "$newme"
+    ,inime "$newme" myplug
     ]
     ++
     ["if (!$this->isNew()) {"]
@@ -923,10 +924,11 @@ savefunction flags fSpec fnm depth this
     ,"   }"
     ,"}"
     ,"if ($cutoldme){ //try INS cutoldme (failure would be strange)"
-    ,"   "++insme "$cutoldme"
-    ,"   if(mysql_affected_rows()==0) {"
+    ,"   "++insme "$cutoldme" myplug
+    ,"   if(mysql_errno()!=0) {"
+    ,"      $err = mysql_error();"
     ,"      rollbacktransaction();"
-    ,"      $myerrors[] = print_r(array('yyy'=>'yyy'));"
+    ,"      $myerrors[] = print_r(array('yyy'=>'yyy','error'=>$err));"
     ,"      return false;"
     ,"   }"
     ]
@@ -981,12 +983,13 @@ savefunction flags fSpec fnm depth this
     ,"}"
     ]
     ++
-    -- 	    //try INS newme (failure could be some UNIQUE INDEX, but not the UNIQUE KEY)
+    -- 	    //try INS newme (failure could be some UNIQUE INDEX or a missing required field, but not the UNIQUE KEY)
     --	    //ins($newme);
-    [insme "$newme"
-    ,"if(mysql_affected_rows()==0) {"
+    [insme "$newme" myplug
+    ,"if(mysql_errno()!=0) {"
+    ,"   $err = mysql_error();"
     ,"   rollbacktransaction();"
-    ,"   $myerrors[] = print_r(array('zzz'=>'zzz')).print_r($newme).print_r($cutoldme);"
+    ,"   $myerrors[] = print_r(array('observation'=>'sql error while saving instance.'.$this->getId(),'erroranalysis'=>'you may have missing required fields','sqlerror'=>$err)).print_r($newme);"
     ,"   return false;"
     ,"}"
     --REMARK -> the rest can be done the binary way!
