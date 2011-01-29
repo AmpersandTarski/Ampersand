@@ -134,6 +134,9 @@ where
     name Anything   = "Anything"
     name NOthing    = "NOthing"
 
+   instance Show Concept where
+    showsPrec _ c = showString (name c)
+
 
 -- \***********************************************************************
 -- \*** Eigenschappen met betrekking tot: Relation                      ***

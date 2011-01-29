@@ -99,8 +99,8 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                               , ctxros  = [r| CRos r<-ces]
                               , ctxmed  = [r| CMed r<-ces]
                               , ctxpops = [Popu rel prs| CPop rel prs<-ces]
-                              , ctxsql  = [plug| CSqlPlug plug<-ces]
-                              , ctxphp  = [plug| CPhpPlug plug<-ces]
+                              , ctxsql  = [plug| CSqlPlug plug<-ces]  -- user defined SQL plugs
+                              , ctxphp  = [plug| CPhpPlug plug<-ces]  -- user defined PHP plugs
                               , ctxenv  = env
                               }
 
@@ -137,8 +137,8 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                          PExplDeclaration <$ pKey "RELATION"   <*> pMorphism            <|>
                          PExplRule        <$ pKey "RULE"       <*> pADLid               <|>
                          PExplKeyDef      <$ pKey "KEY"        <*> pADLid               <|>  
-                         PExplObjectDef   <$ pKey "SERVICE"    <*> pADLid               <|>
                          PExplPattern     <$ pKey "PATTERN"    <*> pADLid               <|>
+                         PExplService     <$ pKey "SERVICE"    <*> pADLid               <|>
                          PExplContext     <$ pKey "CONTEXT"    <*> pADLid
 
 
@@ -535,6 +535,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                                                       , objstrs      = args
                                                       }
                                      , svPos    = p
+                                     , svExpl   = ""
                                      }
                              pParams = pSpec '(' *> pList1Sep (pSpec ',') pMorphism <* pSpec ')' 
                              pArgs = pSpec '{' *> pList1Sep (pSpec ',') (pList1 pADLid) <* pSpec '}'

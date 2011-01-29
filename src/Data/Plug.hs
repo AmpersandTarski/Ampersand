@@ -6,7 +6,7 @@ module Data.Plug (Plugable(..), PlugInfo(..), PlugInfos
                  ,requiredFields,requires,plugpath,eLkpTbl
                  ,tblfields
                  ,tblcontents
-                 ,entityfield,entityconcept
+                 ,entityfield
                  ,fldauto
                  ,iskey,kernelrels,attrels,bijectivefields
                  ,PlugSQL(..)
@@ -15,9 +15,9 @@ where
 import Ampersand ( Concept(..), Signaling(..), cptnew
            , Relation(..), Association(..), Relational(..), mIs, Identified(..)
            , Expression(..)
-           , ObjectDef(..)
            , FilePos(..)
            , Paire
+           , ObjectDef(..)
            , isSur,isTot,isInj,isUni)
 import Collection((>-))
 import Classes.Object (Object(..))
@@ -122,7 +122,7 @@ instance Eq PlugSQL where
 --PlugSQL
 ----------------------------------------------
 --TblSQL, BinSQL, and ScalarSQL hold different entities.
---BinSQL -> (see the only constructor function mor2plug in ADL2Plug for detailed comments)
+--BinSQL -> (see the only constructor function rel2plug in ADL2Plug for detailed comments)
 --          stores one morphism m in two ordered columns
 --          i.e. a tuple of SqlField -> (source m,target m) with (fldexpr=I/\m;m~, fldexpr=m) 
 --            (note: if m TOT then (I/\m;m~ = I). Thus, the concept (source m) is stored in this plug too)
@@ -203,17 +203,19 @@ entityconcept :: PlugSQL -> Concept
 entityconcept p@(BinSQL{}) --create the entityconcept of the plug, and an instance of ID for each instance of mLkp
   = (cptnew "ID"){cptos=Just [show idnr | (idnr,_)<-zip [(1::Int)..] (contents' (mLkp p))]}  
 entityconcept p --copy (concept p) to create the entityconcept of the plug, using instances of (concept p) as instances of ID
-  = (concept p){cptnm=name(concept p)++ "ID"} 
+  = case concept p of
+     C{} -> (concept p){cptnm=name(concept p)++ "ID"} 
+     _   ->  error ("!Fatal (module Data.Plug 208): entityconcept error in PlugSQL: "++name p++".")
 
 
 data PlugSQL
  = TblSQL  { sqlname   :: String
            , fields    :: [SqlField]
            , cLkpTbl   :: [(Concept,SqlField)]           -- lookup table that links all kernel concepts to fields in the plug
-           , mLkpTbl   :: [(Relation Concept,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug (kernel+attMors)
+           , mLkpTbl   :: [(Relation Concept,SqlField,SqlField)] -- lookup table that links concepts to column names in the plug (kernel+attRels)
            , sqlfpa    :: FPA -- ^ functie punten analyse
            }
- | BinSQL  { --see mor2plug in ADL2Fspec.hs
+ | BinSQL  { --see rel2plug in ADL2Fspec.hs
              sqlname   :: String
            , columns   :: (SqlField,SqlField)
            , cLkpTbl   :: [(Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then m would be in a TblSQL plug)

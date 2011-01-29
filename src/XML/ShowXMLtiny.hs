@@ -83,7 +83,7 @@ where
      mkTag _ = Tag "Fservice" [] 
      mkXmlTree f
         = Elem (mkTag f) (  
-             [ Elem (simpleTag "Service")   [mkXmlTree (fsv_objectdef f)]] 
+             [ Elem (simpleTag "Service")   [mkXmlTree (fsv_svcdef f)]] 
           ++ [ Elem (simpleTag "INSRelations") (map mkXmlTree (fsv_insrels f))|not (null (fsv_insrels  f))] 
           ++ [ Elem (simpleTag "DELRelations") (map mkXmlTree (fsv_delrels f))|not (null (fsv_delrels  f))] 
           ++ [ Elem (simpleTag "Rules")     (map mkXmlTree (fsv_rules      f))|not (null (fsv_rules    f))] 
@@ -156,6 +156,13 @@ where
                           ++ attributesTree (kdats k)
                         )
 
+
+   instance XML Service where
+     mkTag x = Tag "Service" [ nameToAttr x]
+     mkXmlTree x
+           = Elem (mkTag x) []
+                      --TODO: moet nog verder uitgewerkt.
+
    
    instance XML ObjectDef where
      mkTag x = Tag "ObjectDef" [ nameToAttr x]
@@ -210,8 +217,8 @@ where
 --                PExplDeclaration{} -> Tag "ExplDeclaration" atts
 --                PExplRule{}        -> Tag "ExplRule"        atts
 --                PExplKeyDef{}      -> Tag "ExplKeyDef"      atts
---                PExplObjectDef{}   -> Tag "ExplObjectDef"   atts
 --                PExplPattern{}     -> Tag "ExplPattern"     atts
+--                PExplService{}     -> Tag "ExplService"     atts
 --                PExplContext{}     -> Tag "ExplContext"     atts
            where
             atts ::  [XAtt]
@@ -231,8 +238,8 @@ where
 --                ExplDeclaration d     lang ref _ -> Tag "ExplDeclaration" (atts (name d++name(source d)++name(target d)) lang ref)
 --                ExplRule        r     lang ref _ -> Tag "ExplRule"        (atts (name r) lang ref)
 --                ExplKeyDef      k     lang ref _ -> Tag "ExplKeyDef"      (atts (name k) lang ref)
---                ExplObjectDef   o     lang ref _ -> Tag "ExplObjectDef"   (atts (name o) lang ref)
 --                ExplPattern     pname lang ref _ -> Tag "ExplPattern"     (atts pname lang ref)
+--                ExplService     cname lang ref _ -> Tag "ExplService"     (atts cname lang ref)
 --                ExplContext     cname lang ref _ -> Tag "ExplContext"     (atts cname lang ref)
 --           where
 --            atts :: String -> Lang -> String -> [XAtt]

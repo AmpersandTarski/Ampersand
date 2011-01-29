@@ -242,8 +242,8 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
      _ -> error$ "!Fatal (module Typechecker 242): function enrichexplobj: impossible case."
   enrichexplobj x@(PExplRule{}) = checkPExplobj ([r|r<-ctxrs cx]++[r|p<-ctxpats cx,r<-ptrls p]) x
   enrichexplobj x@(PExplKeyDef{}) = checkPExplobj (ctxks cx) x
-  enrichexplobj x@(PExplObjectDef{}) = checkPExplobj (objDefs cx) x
   enrichexplobj x@(PExplPattern{}) = checkPExplobj (ctxpats cx) x 
+  enrichexplobj x@(PExplService{}) = checkPExplobj (ctxsvcs cx) x
   enrichexplobj x@(PExplContext{}) = checkPExplobj [cx] x
 
   checkPExplobj :: (Identified a) => [a] -> PExplObj -> Either PExplObj String
@@ -255,8 +255,8 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
     explobj (PExplDeclaration _) = "declaration"
     explobj (PExplRule _) = "rule"
     explobj (PExplKeyDef _) = "key definition"
-    explobj (PExplObjectDef _) = "service definition"
     explobj (PExplPattern _) = "pattern"
+    explobj (PExplService _) = "service definition"
     explobj (PExplContext _) = "context"
    
   --DESCR -> enriching ctxds
@@ -366,15 +366,13 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
      signaldecl = (srrel r){desrc=c1, detrg=c2}
 
 
+-- ctxservices enriches the user defined services with type information...
   ctxservices :: [(Service,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxservices = [bindService sv Nothing | sv<-ctxsvcs cx]
-  --add the upper expression to me and infer me and bind type
-  --pass the new upper expression to the children and bindObjDef them
-  bindService ::  Service -> Maybe (Expression (Relation Concept)) -> (Service,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])
-  bindService svc mbtopexpr = (svc {svObj=od},checkedexprs)
-    where 
-    (od,checkedexprs) = bindObjDef (svObj svc) mbtopexpr
-  -------end bindService---------------------------------------------------------------
+   where
+     bindService svc mbtopexpr = (svc {svObj=od},checkedexprs)
+      where 
+       (od,checkedexprs) = bindObjDef (svObj svc) mbtopexpr
   
   --DESCR -> enriching ctxobjdefs
   --         bind the expression and nested object defs of all object defs in the context
@@ -382,8 +380,10 @@ enrichCtx cx ctxs = --if zzz then error("!Fatal (module TypeChecker 136): "++sho
   ctxobjdefs :: [(ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxobjdefs = [bindObjDef od Nothing | od<-objDefs cx]
 -}
+-- ctxsqlplugs enriches the user defined SQL plugs with type information...
   ctxsqlplugs :: [(ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxsqlplugs = [bindObjDef plug Nothing | plug<-ctxsql cx]
+-- ctxphpplugs enriches the user defined PHP plugs with type information...
   ctxphpplugs :: [(ObjectDef,[Either (Expression (Relation Concept)) (String,[Block],FilePos,OrigExpr (Relation Concept))])]
   ctxphpplugs = [bindObjDef plug Nothing | plug<-ctxphp cx]
   --add the upper expression to me and infer me and bind type

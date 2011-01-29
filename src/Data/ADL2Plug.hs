@@ -1,7 +1,7 @@
-{-# OPTIONS_GHC -Wall #-}  
+{-# OPTIONS_GHC -Wall -XFlexibleContexts #-}  
 module Data.ADL2Plug 
-  (mor2plug --make a binary sqlplug for a morphism that is neither inj nor uni
-  ,makeTblPlugs --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
+  (rel2plug --make a binary sqlplug for a morphism that is neither inj nor uni
+  ,makeEntities --generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
   ,makeSqlPlug --make a sqlplug from an ObjectDef (user-defined sql plug)
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
@@ -15,9 +15,9 @@ import FPA
 import Data.List (nub)
 
 -----------------------------------------
---mor2plug
+--rel2plug
 -----------------------------------------
--- mor2plug creates associations (BinSQL) between plugs that represent wide tables.
+-- rel2plug creates associations (BinSQL) between plugs that represent wide tables.
 -- Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
 --
 -- this concerns relations that are not univalent nor injective, i.e. flduniq=False for both columns
@@ -45,12 +45,12 @@ import Data.List (nub)
 --  + fld1={fldexpr=id,fldnull=not(isTot m),flduniq=isInj m}
 --  + fld2={fldexpr=m ,fldnull=not(isTot (id;m) ,flduniq=isInj (id;m)}
 --  if isTot m then id=I else not(isSur id)
-mor2plug :: Relation Concept -> [Relation Concept] -> PlugSQL
-mor2plug  m totals
+rel2plug :: Relation Concept -> [Relation Concept] -> PlugSQL
+rel2plug  m totals
   | Inj `elem` (multiplicities m) || Uni `elem` (multiplicities m) 
-    = error ("!Fatal (module ADL2Plug 55): unexpected call of mor2plug("++show m++"), because it is injective or univalent.")
+    = error ("!Fatal (module ADL2Plug 55): unexpected call of rel2plug("++show m++"), because it is injective or univalent.")
   | not is_Tot && is_Sur 
-    = mor2plug (flp m) totals
+    = rel2plug (flp m) totals
   | otherwise
     = BinSQL (name m)                                                    -- plname
               (srcFld,trgFld)                                             -- columns
@@ -133,26 +133,28 @@ rel2fld keyds kernel plugAtts m
     | otherwise = null [()|k<-kernel,target k==source x, isTot x, isIdent k || not(maybenull k)]
 
 -----------------------------------------
---makeTblPlugs
+--makeEntities  (formerly called: makeTblPlugs)
 -----------------------------------------
-{- makeTblPlugs computes a set of plugs to obtain wide tables with little redundancy.
+{- makeEntities computes a set of plugs to obtain wide tables with little redundancy.
+   It computes entities with their attributes, which is the essence of the data model generator.
+   It is based on the principle that each concept is represented in one plug, and each relation in at most one plug.
    First, we determine the kernels for all plugs.
-   A kernel is a set of univalent, injective, and surjective relations, with one root concept.
-   The root of a kernel is the concept that is either the source of a relation in the kernel, or that relation is reachable from the source by a surjective path.
-   Code: kernels represents the relations of the plug (which are all univalent, injective, and surjective)
-         target (head kernel) represents the root concept of the plug
+   For that, we collect all relations that are univalent, injective, and surjective (the kernel relations).
+   By the way, that includes all isa-relations, since they are univalent, injective, and surjective by themselves.
+   Two concepts of those relations end up in the same entity iff
+   there is a path between them in the concept graph of the kernel relations.
+   Of all concepts in an entity, one most generic concept is designated as root.
    Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
-   These relations serve as attributes. Code:  [a| a<-attMors, source a `elem` concs kernel]
+   These relations serve as attributes. Code:  [a| a<-attRels, source a `elem` concs kernel]
    Then, all these relations are made into fields. Code: plugFields = [rel2fld plugMors a| a<-plugMors]
    We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
    For the fun of it, we sort the plugs on length, the longest first. Code:   sort' ((0-).length.fields)
-   By the way, parameter allDecs contains all relations that are declared in context, enriched with extra multiplicities.
-   This parameter was added to makePlugs to avoid recomputation of the extra multiplicities.
+   By the way, parameter allRels contains all relations that are declared in context, enriched with extra multiplicities.
+   This parameter allRels was added to makePlugs to avoid recomputation of the extra multiplicities.
+   The parameter exclusions was added in order to exclude certain concepts and relations from the process.
 -}
---WHY151210 -> why is currentPlugs of type [PlugSQL] and not [Plug]? 
---             I would expect if there is a PHP plug for some decl, you will not need to store its rel in a sql plug
-makeTblPlugs :: Context -> [Declaration Concept] -> [PlugSQL] -> [PlugSQL]
-makeTblPlugs context allDecs currentPlugs
+makeEntities :: ConceptStructure a Concept => Context -> [Relation Concept] -> [a] -> [PlugSQL]
+makeEntities context allRels exclusions
  = sort' ((0-).length.tblfields)
     [ if ((foldr (&&) True [isIdent m|(m,_,_)<-attributeLookuptable]) && length conceptLookuptable==1)  
       then --the TblSQL could be a scalar tabel, which is a table that only stores the identity of one concept
@@ -164,12 +166,13 @@ makeTblPlugs context allDecs currentPlugs
              attributeLookuptable   -- mLkpTbl
              (ILGV Eenvoudig)       -- plfpa
     | kernel<-kernels
-    , let mainkernel = [m|cl<-eqCl target kernel,not(null cl), let m=head cl] --the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
+    , let mainkernel = [m|cl<-eqCl target kernel, let m=head cl] -- ^ the part of the kernel for concept lookups (cLkpTbl) and linking rels to (mLkpTbl)
+                                                                 -- ^ note that eqCl guarantees that cl is not empty.
           restkernel = kernel >- mainkernel --the complement of mainkernel
           c = if null mainkernel
-              then error "!Fatal (module ADL2Plug 172): nul mainkernel."
+              then error "!Fatal (module ADL2Plug 172): null mainkernel."
               else target (head mainkernel)               -- one concept from the kernel is designated to "lead" this plug.
-          plugAtts              = [a| a<-attMors, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
+          plugAtts              = [a| a<-attRels, source a `elem` concs mainkernel] --plugAtts link directly to some kernelfield
           plugMors              = mainkernel++restkernel++plugAtts --all relations for which the target is stored in the plug
           plugFields            = [fld a| a<-plugMors]      -- Each field comes from a relation.
           conceptLookuptable   :: [(Concept,SqlField)]
@@ -183,23 +186,25 @@ makeTblPlugs context allDecs currentPlugs
           fld                   = rel2fld (keyDefs context) mainkernel (restkernel++plugAtts)
     ]
    where   
--- The first step is to determine which plugs to generate. All concepts and declarations that are used in plugs in the Ampersand script are excluded from the process.
-    nonCurrMors = [makeRelation d| d@Sgn{}<-allDecs >- [makeDeclaration m|m<-mors currentPlugs] {-, decusr d-}]
--- For making kernels as large as possible, the univalent and injective declarations will be flipped if that makes them surjective.
+-- The first step is to determine which entities to generate.
+-- All concepts and relations mentioned in exclusions are excluded from the process.
+    rels = [rel| rel <- allRels>-mors exclusions, not (isIdent rel)]
+-- For making kernels as large as possible, the univalent and injective declarations are flipped if that makes them surjective.
 -- kernelMors contains all relations that occur in kernels.
--- note that kernelMors contains no I-relations, because all declarations from nonCurrMors match @Sgn{}.
     kernelMors   = [m|m<-ms, isSur m]++[flp m|m<-ms, not (isSur m), isTot m]
-                      where ms = [d| d<-nonCurrMors, isUni d, isInj d]
--- iniKernels contains the set of kernels that would arise if kernelMors were empty. From that starting point, the kernels are computed recursively in code that follows (kernels).
-    iniKernels   = [(c,[])| c<-concs context, c `notElem` concs currentPlugs]
-    attMors      = [    m | m<-nonCurrMors, isUni m, not (m `elem` kernelMors || (flp m) `elem` kernelMors)]++
-                   [flp m | m<-nonCurrMors, not (isUni m), isInj m, not (m `elem` kernelMors || (flp m) `elem` kernelMors)]
+                      where ms = [d| d<-rels, isUni d, isInj d]
+-- iniKernels contains the set of kernels that would arise if kernelMors were empty.
+-- From that starting point, the kernels are computed recursively in code that follows (kernels).
+    iniKernels   = [(c,[])| c<-concs rels]
+-- attRels contains all relations that will be attribute of a kernel.
+    attRels      = [m| m<-rs, isUni m] ++ [flp m | m<-rs, not (isUni m), isInj m]
+                   where rs = rels>-(kernelMors++map flp kernelMors)
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
 So the first step is create the kernels ...   -}
 --fst kernels = subset of kernel where no two kernel fields have the same target i.e. cLkpTbl
---              attMors will link (see mLkpTbl) to these kernel fields
---snd kernels = complement of (fst kernels) (thus, we will not link attMors to these kernel fields directly)
+--              attRels will link (see mLkpTbl) to these kernel fields
+--snd kernels = complement of (fst kernels) (thus, we will not link attRels to these kernel fields directly)
     kernels :: [[Relation Concept]]
     kernels
      = --error ("Diag ADL2Plug "++show (kernelMors)++"\n"++show (map fst iniKernels)++"\n"++show (expand iniKernels))++
@@ -260,11 +265,11 @@ makeSqlPlug context obj
      = [(mIs c,sqltp obj)] 
        ++ [(m,tp)|(m,tp)<-rels,source m/=target m,isUni m, isInj m, isSur m]
        ++ [(flp m,tp)|(m,tp)<-rels,source m/=target m,isUni m, isInj m, isTot m, not (isSur m)]
-   attMors --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))
+   attRels --all user-defined non-kernel fields are attributes of (rel2fld (objctx c))
      = (rels >- kernel) >- [(flp m,tp)|(m,tp)<-kernel] --note: m<-rels where m=objctx obj are ignored (objctx obj=I)
-   plugMors              = kernel++attMors
+   plugMors              = kernel++attRels
    plugFields            = [fld m tp| (m,tp)<-plugMors] 
-   fld m tp              = (rel2fld (keyDefs context) (map fst kernel) (map fst attMors) m){fldtype=tp} --redefine sqltype
+   fld m tp              = (rel2fld (keyDefs context) (map fst kernel) (map fst attRels) m){fldtype=tp} --redefine sqltype
    conceptLookuptable    = [(target m,fld m tp)|(m,tp)<-kernel]
    attributeLookuptable  = [(m,lookupC (source m),fld m tp)| (m,tp)<-plugMors] 
    lookupC cpt           = if null [f|(c',f)<-conceptLookuptable, cpt==c'] 

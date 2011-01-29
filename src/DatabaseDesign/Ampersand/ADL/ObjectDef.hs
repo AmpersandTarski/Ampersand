@@ -15,7 +15,13 @@ where
                        , svArgs   :: [[String]]
                        , svObj    :: ObjectDef
                        , svPos    :: FilePos
-                       }
+                       , svExpl   :: String
+                       } deriving Show
+
+   instance Identified Service where
+    name svc = svName svc
+   instance Numbered Service where
+    pos svc = svPos svc
 
    type ObjectDefs = [ObjectDef]
    data ObjectDef = Obj { objnm   :: String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.

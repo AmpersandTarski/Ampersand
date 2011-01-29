@@ -9,8 +9,8 @@ module Prototype.InterfaceDef where
   import Options(Options(language))
   import Version (versionbanner)
    
-  interfaceDef :: Fspc -> [ObjectDef] -> Options -> String
-  interfaceDef fspc serviceObjects flags = intercalate "\n"
+  interfaceDef :: Fspc -> [Service] -> Options -> String
+  interfaceDef fspc svcs flags = intercalate "\n"
      (
         [ "<?php"
         , "// interfaceDef.inc.php"
@@ -132,8 +132,8 @@ module Prototype.InterfaceDef where
                 , "  "++name o++""
                 , "</a>"
                 ]
-                | o<-serviceObjects
+                | svc<-svcs, let o=svObj svc
                 , isOne o
-                , let svctitle = case language flags of Dutch -> "Toon alle "++name o; English -> "Show all " ++name o
-                , let svcref="<?php echo serviceref('"++name o++"');?>\" TITLE=\""++svctitle++"\" class=\"menuItem\">"
+                , let svctitle = case language flags of Dutch -> "Toon alle "++name svc; English -> "Show all " ++name svc
+                , let svcref="<?php echo serviceref('"++name svc++"');?>\" TITLE=\""++svctitle++"\" class=\"menuItem\">"
                 ]

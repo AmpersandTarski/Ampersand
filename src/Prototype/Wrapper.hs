@@ -8,9 +8,9 @@ import Data.Fspec
 import Version (versionbanner)
 import Options        (Options(autoid))
 
---serviceObjects is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
-objectWrapper :: Fspc -> [ObjectDef] ->  ObjectDef -> Options -> String
-objectWrapper fSpec serviceObjects o flags
+--svcs is needed to determine whether some instance of a concept has a wrapper web page (*.php) to display it i.e. does it become a HTTP-link
+objectWrapper :: Fspc -> [Service] ->  Service -> Options -> String
+objectWrapper fSpec svcs svc flags
  = intercalate "\n" $
    [ "<?php // generated with "++versionbanner ]
   ++
@@ -112,6 +112,7 @@ objectWrapper fSpec serviceObjects o flags
    , "?>"
    ]
    where
+   o               = svObj svc
    objectName      = name o
    objectId        = phpIdentifier objectName
    appname         = name fSpec
@@ -137,7 +138,7 @@ objectWrapper fSpec serviceObjects o flags
              ]
         else ["?><H1>"++objectName++"</H1>"] --the context element is a constant, it is nicer to display the svclabel (objectName)
       ) --END: display/edit the identifier of some concept instance
-     ++ concat [attributeWrapper serviceObjects objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
+     ++ concat [attributeWrapper svcs objectId (show n) (length(objats o)>1) a | (a,n)<-zip (objats o) [(0::Integer)..]]
      ++  --(see attributeWrapper below)
       ["<?php"
       ,"if($edit) echo '</FORM>';"
@@ -165,13 +166,13 @@ novalue = "<I>Nothing</I>"
 
 -----------------------------------------
 --display/edit the instances related to the identifier of some concept instance (objectId) by definition of SERVICE (att0)
---serviceObjects is nodig voor GoToPages
+--svcs is nodig voor GoToPages
 -- "$" ++ objectId is de instantie van de class die je op het scherm ziet
 --path0 is een op atts gezipt nummertje. Er wordt een wrapper gemaakt voor iedere [wrapper (show n) att0|(att0,n)<-atts o]
 --siblingatt0s bepaalt of er meer dan 1 (wrapper att0) is. Deze info is nodig om te bepalen of CLASS = '.. UI of UI_*'.
 --att0 is de huidige subservice
-attributeWrapper::[ObjectDef]->String->String->Bool->ObjectDef->[String]
-attributeWrapper serviceObjects objectId path0 siblingatt0s att0
+attributeWrapper::[Service]->String->String->Bool->ObjectDef->[String]
+attributeWrapper svcs objectId path0 siblingatt0s att0
  = let 
    cls0 | siblingatt0s = "_"++phpIdentifier (name att0) 
         | otherwise    = ""
@@ -244,17 +245,17 @@ attributeWrapper serviceObjects objectId path0 siblingatt0s att0
    --gotoPages returns the list of suitable service links for an (objctxatt) in edit or read mode and a name for it
    gotoPages :: ObjectDef->String->[(String,String)]
    gotoPages att idvar 
-     = [ ("'.serviceref('"++name serv++"',false,$edit, array('"++(phpIdentifier$name serv)++"'=>urlencode("++idvar++"))).'"
-         ,name serv)
-       | serv<-serviceObjects
-       , target (objctx serv) == target (objctx att)
+     = [ ("'.serviceref('"++name svc++"',false,$edit, array('"++(phpIdentifier$name svc)++"'=>urlencode("++idvar++"))).'"
+         ,name svc)
+       | svc<-svcs
+       , target (objctx (svObj svc)) == target (objctx att)
        ]
    --gotoPagesNew like gotoPages only in new mode
    gotoPagesNew att
-     = [ ("'.serviceref('"++name serv++"',$edit).'"
-         ,"new "++ name serv)
-       | serv<-serviceObjects
-       , target (objctx serv) == target (objctx att)
+     = [ ("'.serviceref('"++name svc++"',$edit).'"
+         ,"new "++ name svc)
+       | svc<-svcs
+       , target (objctx (svObj svc)) == target (objctx att)
        ]
    --In case there is more than one gotoPage, gotoDiv generates suitable code for a gotoPage
    gotoDiv gotoP path

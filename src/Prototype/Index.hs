@@ -6,13 +6,13 @@ module Prototype.Index(htmlindex) where
    import Prototype.RelBinGenSQL(isOne)
    import Version (versionbanner)
 --   import System.FilePath (addExtension)
-   import Ampersand (name,ObjectDef)
+   import Ampersand (name,Service(..))
    import Data.Fspec
    import Options
    
    
-   htmlindex :: Fspc -> [ObjectDef] -> Options -> [Char]
-   htmlindex fSpec serviceObjects flags
+   htmlindex :: Fspc -> [Service] -> Options -> [Char]
+   htmlindex fSpec svcs flags
     = intercalate "\n  "
       ( [ "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         , "<html><head>"
@@ -26,10 +26,14 @@ module Prototype.Index(htmlindex) where
         , "    <li class=\"buttons\">Use services:"
         , "      <ul>"
         ] ++ indentBlock 8 (concat
-                     [ ["<li><a href=\""++name fSpec++".php?content="++name o++(if isOne o then "" else "&new=1")++"\">"
-                             ,(if isOne o then "  " else "  New ")++name o
-                             ,"</a></li>"]
-                           | o <- serviceObjects
+                           [ if isOne (svObj svc)
+                             then ["<li><a href=\""++name fSpec++".php?content="++name svc++"\">"
+                                  ,"  "++name svc
+                                  ,"</a></li>"]
+                             else ["<li><a href=\""++name fSpec++".php?content="++name svc++"&new=1\">"
+                                  ,"  New "++name svc
+                                  ,"</a></li>"]
+                           | svc <- svcs
                            ]
                            ) ++
         [ "      </ul>"

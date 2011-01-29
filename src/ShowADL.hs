@@ -110,16 +110,16 @@ module ShowADL ( ShowADL(..), disambiguate, relatsoff)
          ExplDeclaration d -> "RELATION "++showADL d
          ExplRule r        -> "RULE "++name r
          ExplKeyDef kd     -> "KEY "++name kd
-         ExplObjectDef od  -> "SERVICE "++name od
          ExplPattern str   -> "PATTERN "++str
+         ExplService str   -> "SERVICE "++str
          ExplContext str   -> "CONTEXT "++str
       showADLcode fSpec e = case e of
          ExplConceptDef cd -> "CONCEPT "++name cd
          ExplDeclaration d -> "RELATION "++showADLcode fSpec d
          ExplRule r        -> "RULE "++name r
          ExplKeyDef kd     -> "KEY "++name kd
-         ExplObjectDef od  -> "SERVICE "++name od
          ExplPattern str   -> "PATTERN "++str
+         ExplService str   -> "SERVICE "++str
          ExplContext str   -> "CONTEXT "++str 
 
    instance ShowADL ExplainContent where

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -XFlexibleContexts -XUndecidableInstances #-}
 module DatabaseDesign.Ampersand.ADL.Concept ( Concept(..),Conceptual(..)
                    , Sign,GenR, SpecHierarchy(..)
                    , Signaling(..)
@@ -28,9 +28,6 @@ where
    Anything == Anything = True
    NOthing == NOthing = True
    _ == _ = False
-
-  instance Show Concept where
-   showsPrec _ c = showString (cptnm c)
 
   instance Ord Concept where
    NOthing <= _  = False
@@ -62,7 +59,7 @@ where
                   | otherwise = False
    order _ = (<=)
 
-  instance SpecHierarchy Concept where
+  instance Show Concept => SpecHierarchy Concept where
    glb a b | b <= a = b
            | a <= b = a
            | otherwise = error ("!Fatal (module Concept 68): glb undefined: a="++show a++", b="++show b)

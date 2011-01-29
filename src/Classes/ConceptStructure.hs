@@ -91,6 +91,12 @@ where
     morlist   obj = morlist (objctx obj)++morlist (objats obj)
 --  closExprs obj = closExprs (objctx obj) `uni` closExprs (objats obj)
 
+   instance ConceptStructure Service Concept where
+    concs     svc = concs (svObj svc)
+    mors      svc = mors (svObj svc)
+    morlist   svc = morlist (svObj svc)
+--  closExprs svc = closExprs (svObj svc)
+
    instance (Conceptual c, SpecHierarchy c) => ConceptStructure (Relation c) c where
     concs rel   = rd [source rel,target rel]
     mors rel    = [rel]

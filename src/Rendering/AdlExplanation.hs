@@ -78,12 +78,12 @@ instance Explainable KeyDef where
   explForObj x (ExplKeyDef x') = x == x'
   explForObj _ _ = False
 
-instance Explainable ObjectDef where
-  explForObj x (ExplObjectDef x') = x == x'
-  explForObj _ _ = False
-
 instance Explainable Pattern where
   explForObj x (ExplPattern str) = name x == str
+  explForObj _ _ = False
+
+instance Explainable Service where
+  explForObj x (ExplService str) = name x == str
   explForObj _ _ = False
 
 instance Explainable Context where

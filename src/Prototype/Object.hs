@@ -947,7 +947,7 @@ savefunction flags fSpec fnm depth this
     --we only merge if non-null kernelfields do not change (otherwise error)
     --(the old concept instance attached to the key should be assigned to some other key or deleted first)
     --otherwise we would delete concept instances (kernelfield holds I of some concept)
-    --attMors in this overwrite the old record
+    --attRels in this overwrite the old record
     --if so than update this key with the values of this and keep the old ones not in this
     ["$selkey = DB_doquer(\"SELECT * FROM `"++name myplug++"` WHERE `"++fldname plugkey++"`='\".addslashes($newme['"++fldname plugkey++"']).\"'\");"
     ,"if (count($selkey)>0){"

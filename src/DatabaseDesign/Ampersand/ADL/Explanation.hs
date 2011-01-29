@@ -17,23 +17,24 @@ where
                  | PExplDeclaration (Relation Concept)
                  | PExplRule String
                  | PExplKeyDef String
-                 | PExplObjectDef String
                  | PExplPattern String
+                 | PExplService String
                  | PExplContext String
+
    instance Identified PExplObj where
      name pe = case pe of 
         PExplConceptDef str -> str
         PExplDeclaration rel -> name rel
         PExplRule str -> str
         PExplKeyDef str -> str
-        PExplObjectDef str -> str
         PExplPattern str -> str
+        PExplService str -> str
         PExplContext str -> str
-        
-   data PExplanation = PExpl {pexObj  :: PExplObj
-                             ,pexLang :: Lang
-                             ,pexRefID:: String
-                             ,pexExpl :: String
+
+   data PExplanation = PExpl { pexObj   :: PExplObj
+                             , pexLang  :: Lang
+                             , pexRefID :: String
+                             , pexExpl  :: String
                              }
 
    instance Identified PExplanation where
@@ -43,8 +44,8 @@ where
                 | ExplDeclaration (Declaration Concept)
                 | ExplRule (Rule (Relation Concept))
                 | ExplKeyDef KeyDef
-                | ExplObjectDef ObjectDef
                 | ExplPattern String   -- SJ: To avoid a compile time loop, the name of the pattern is used rather than the entire pattern. Hence, for patterns the PExplPattern is identical to the ExplPattern
+                | ExplService String   -- SJ: To avoid a compile time loop, the name of the service is used rather than the entire service. Hence, for services the PExplService is identical to the ExplService
                 | ExplContext String   -- SJ: To avoid a compile time loop, the name of the context is used rather than the entire context. Hence, for contexts the PExplContext is identical to the ExplContext
                   deriving Show        --handy for XML creation
                   
@@ -54,8 +55,8 @@ where
        ExplDeclaration d -> name d ++name (source d)++name (target d)
        ExplRule r        -> name r
        ExplKeyDef kd     -> name kd
-       ExplObjectDef od  -> name od
        ExplPattern str   -> str
+       ExplService str   -> str
        ExplContext str   -> str
 
 

@@ -29,14 +29,14 @@ module Calc ( deriveProofs
         concat ["\n   Clause: "++showADLcode fSpec clause| clause<-shifts]
        | (conj, shifts)<-cl_conjNF cl]
 
--- testService :: Fspc -> ObjectDef -> String
+-- testService :: Fspc -> Service -> String
 -- Deze functie is bedoeld om te bedenken hoe services moeten worden afgeleid uit een vers vertaalde ObjectDef.
 -- Nadat deze goed werkt kunnen de bewijsgenerator en de codegenerator worden gemaakt.
-   testService :: Fspc -> ObjectDef -> String
-   testService fSpec object
-    = "\nService "++ objnm object++"("++intercalate ", " [showADL m++":"++name (target m)| m<-rels]++")\n"++
+   testService :: Fspc -> Service -> String
+   testService fSpec svc
+    = "\nService "++ name svc++"("++intercalate ", " [showADL m++":"++name (target m)| m<-rels]++")\n"++
       " - The parameters correspond to editable fields in a UI-service.\n   "++
-      showADLcode fSpec object++"\n"++
+      showADLcode fSpec svc++"\n"++
       " - Invariants:\n   "++intercalate "\n   " [showADLcode fSpec rule    | rule<-invariants]++"\n"++
       " - Derivation of clauses for ECA-rules:"   ++
       concat [showClause fSpec (allClauses rule) | rule<-invariants]++"\n"++
@@ -50,7 +50,7 @@ module Calc ( deriveProofs
 --        showQ i (m, shs,conj,r)
 --         = "\nQuad "++show i++":\nmorphism: "++showADLcode fSpec m++":\nshifts: "++concat ["\n"++showADLcode fSpec s|s<-shs]++"\nconjunct: "++showADLcode fSpec conj++"\nrule: "++showADLcode fSpec r++""
 --TODO: Deze code komt ook voor in ADL2Fspec.hs. Dat lijkt dubbelop, en derhalve niet goed.
-        rels = rd (recur object)
+        rels = rd (recur (svObj svc))
          where recur obj = [editMph (objctx o)| o<-objats obj, editable (objctx o)]++[m| o<-objats obj, m<-recur o]
         vis        = rd (map makeInline rels++map (mIs.target) rels)
 --        visible m  = makeInline m `elem` vis
@@ -72,7 +72,6 @@ module Calc ( deriveProofs
                f stored (cs:css) = if length stored > n then stored: f cs css else
                                    if length new <= n then f new css else stored: f cs css
                                    where new = stored++str++cs
-
 
 
 
@@ -125,11 +124,11 @@ module Calc ( deriveProofs
       | rule<-rules fSpec]++
       "\n--------------\n"++ -- TODO: make an ontological analysis, which explains the delete behaviour.
       "Ontological analysis: \n  "++
-      intercalate "\n\n  " [name o++"("++intercalate ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes o]++"):\n  "
-                     | o<-serviceS fSpec]++
+      intercalate "\n\n  " [name svc++"("++intercalate ", " [name a++"["++(name.target.ctx) a++"]"|a<-attributes (svObj svc)]++"):\n  "
+                     | svc<-serviceS fSpec]++
       "\n--------------\n"++
       "Analyzing services: \n     "++
-      intercalate "\n     " [testService fSpec o| o<-take 1 (serviceG fSpec)]++
+      intercalate "\n     " [testService fSpec svc| svc<-take 1 (serviceG fSpec)]++
       "\n--------------\n"
       where 
        qs = vquads fSpec  -- the quads that are derived for this fSpec specify horn clauses, meant to maintain rule r, to be called when morphism m is affected (m is in r).

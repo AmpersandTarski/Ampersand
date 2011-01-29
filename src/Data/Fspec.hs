@@ -24,8 +24,8 @@ module Data.Fspec ( Fspc(..)
    data Fspc = Fspc { fsName       :: String                 -- ^ The name of the specification, taken from the Ampersand script
                     , vplugInfos   :: PlugInfos              -- ^ All plugs defined in the Ampersand script
                     , plugInfos    :: PlugInfos              -- ^ All plugs (defined and derived)
-                    , serviceS     :: ObjectDefs             -- ^ All services defined in the Ampersand script
-                    , serviceG     :: ObjectDefs             -- ^ All services derived from the basic ontology
+                    , serviceS     :: [Service]              -- ^ All services defined in the Ampersand script
+                    , serviceG     :: [Service]              -- ^ All services derived from the basic ontology
                     , services     :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , roleServices :: [(String,Fservice)]    -- ^ the relation saying which roles may use which service
                     , mayEdit      :: [(String,Declaration Concept)] -- ^ the relation saying which roles may change the population of which relation.
@@ -57,7 +57,7 @@ module Data.Fspec ( Fspc(..)
     objectdef    fSpec = Obj { objnm   = name fSpec
                              , objpos  = Nowhere
                              , objctx  = Tm (mIs S) (-1)
-                             , objats  = serviceS fSpec ++ serviceG fSpec
+                             , objats  = map svObj (serviceS fSpec ++ serviceG fSpec)
                              , objstrs = []
                              , objctx_proof = Nothing
                              }
@@ -66,7 +66,7 @@ module Data.Fspec ( Fspc(..)
     declarations fSpec = vrels fSpec
     rules        fSpec = [r| r<-vrules fSpec, not (isSignal r)]
     signals      fSpec = [r| r<-vrules fSpec,      isSignal r ]
-    objDefs      fSpec = serviceS fSpec ++ serviceG fSpec
+    objDefs      fSpec = map svObj (serviceS fSpec ++ serviceG fSpec)
     keyDefs      fSpec = vkeys fSpec
     gens         fSpec = vgens fSpec
     patterns     fSpec = vpatterns fSpec
@@ -78,7 +78,7 @@ module Data.Fspec ( Fspc(..)
    --         The coding process that uses an Fservice takes care of language specific issues, and renders it to the final product.
    type Fservices = [Fservice]
    data Fservice = Fservice 
-                     { fsv_objectdef :: ObjectDef              -- The service declaration that was specified by the programmer,
+                     { fsv_svcdef    :: Service                -- The service declaration that was specified by the programmer,
                                                                -- and which has been type checked by the compiler.
                      , fsv_insrels   :: [Relation Concept]     -- The relations into which a user of this service may insert elements
                      , fsv_delrels   :: [Relation Concept]     -- The relations from which a user of this service may remove elements
@@ -95,16 +95,15 @@ module Data.Fspec ( Fspc(..)
 
    instance Show Fservice where
     showsPrec _ svc@(Fservice{})
-     = showString ("\n!Diagnosis error (module Fspec 97): empty show(Fservice)"
-                   ++show (fsv_objectdef svc)++"\n"
-                   ++show (fsv_insrels   svc)++"\n"
-                   ++show (fsv_delrels   svc)++"\n"
-                   ++show (fsv_rules     svc)++"\n"
---                   ++show [e delt| e<-fsv_ecaRules svc]++"\n"  -- levert een lastige infinite loop op
-                   ++show (fsv_signals   svc)++"\n"
---                   ++show (fsv_fields    svc)++"\n"
-                   ++show (fsv_creating  svc)++"\n"
-                   ++show (fsv_deleting  svc)++"\n"
+     = showString (show (fsv_svcdef    svc)++"\n"++
+                   show (fsv_insrels   svc)++"\n"++
+                   show (fsv_delrels   svc)++"\n"++
+                   show (fsv_rules     svc)++"\n"++
+--                 show [e delt| e<-fsv_ecaRules svc]++"\n"++  -- levert een lastige infinite loop op
+                   show (fsv_signals   svc)++"\n"++
+--                 show (fsv_fields    svc)++"\n"++
+                   show (fsv_creating  svc)++"\n"++
+                   show (fsv_deleting  svc)++"\n"
                   ) -- where delt::Declaration Concept; delt = error "!Fatal (module Fspec 107): Undef declaration"
 
 
@@ -116,13 +115,13 @@ module Data.Fspec ( Fspc(..)
 --  closExprs svc = closExprs (rules svc++signals svc)     -- The closure expressions of this Fservice
 
    instance ViewPoint Fservice where
-    objectdef    svc = fsv_objectdef svc
+    objectdef    svc = svObj (fsv_svcdef svc)
     conceptDefs   _  = []                                  -- The set of all concept definitions in this Fservice
     declarations  _  = []                                  -- Currently, no declarations are made within a service.
     --REMARK: in the fspec we do not distinguish between the disjoint relation declarations and rule declarations (yet?).
     rules        svc = [r| r<-fsv_rules svc]
     signals      svc = [r| r<-fsv_signals svc]
-    objDefs      svc = [fsv_objectdef svc]
+    objDefs      svc = [svObj (fsv_svcdef svc)]
     keyDefs       _  = []
     gens          _  = []
     patterns      _  = []
@@ -185,7 +184,7 @@ module Data.Fspec ( Fspc(..)
      name fspc = fsName fspc
 
    instance Identified Fservice where
-     name fservice = name (fsv_objectdef fservice)
+     name fservice = name (fsv_svcdef fservice)
 
    instance Identified FSid where
     name (FS_id nm) = nm

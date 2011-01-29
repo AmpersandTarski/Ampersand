@@ -25,8 +25,8 @@ where
              PExplDeclaration rel -> ExplDeclaration (makeDeclaration rel)
              PExplRule str        -> ExplRule (getByName str (rules ue++signals ue))
              PExplKeyDef str      -> ExplKeyDef (getByName str (keyDefs ue))
-             PExplObjectDef str   -> ExplObjectDef (getByName str (objDefs ue))
              PExplPattern str     -> ExplPattern str
+             PExplService str     -> ExplService str
              PExplContext str     -> ExplContext str
            getByName :: Identified a => String -> [a] -> a 
            getByName str cds = 

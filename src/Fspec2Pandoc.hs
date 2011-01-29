@@ -1033,16 +1033,17 @@ serviceChap lev fSpec flags svc
   header = labeledHeader lev ("chpSvc"++svcname) ("Service: " ++ svcname)
   svcIntro :: [Block]
   svcIntro
-   = case (language flags) of
+   = explains2Blocks (explain fSpec flags (fsv_svcdef svc)) ++
+     case (language flags) of
       Dutch ->   [ Para
-                    ([ Str $ "Service "++svcname++" werkt vanuit een instantie van "++name (target (objctx (fsv_objectdef svc)))++"." ]++
-                     f (objctx (fsv_objectdef svc))++
+                    ([ Str $ "Service "++svcname++" werkt vanuit een instantie van "++(name.target.objctx.svObj.fsv_svcdef) svc++"." ]++
+                     (f.objctx.svObj.fsv_svcdef) svc++
                      [ Str $ svcInsDelConcepts ]++
                      [ Str $ svcAutoRules ] )
                  ]
       English -> [ Para
-                    ([ Str $ "Service "++svcname++" operates from one instance of "++name (target (objctx (fsv_objectdef svc)))++"." ]++
-                     f (objctx (fsv_objectdef svc))++
+                    ([ Str $ "Service "++svcname++" operates from one instance of "++(name.target.objctx.svObj.fsv_svcdef) svc++"." ]++
+                     (f.objctx.svObj.fsv_svcdef) svc++
                      [ Str $ svcInsDelConcepts ]++
                      [ Str $ svcAutoRules ] )
                  ]
@@ -1119,7 +1120,7 @@ serviceChap lev fSpec flags svc
           , flds
           ]
      where flds :: Block
-           flds = BulletList [recur (objctx (fsv_objectdef svc)) f| f<-fsv_fields svc]
+           flds = BulletList [recur ((objctx.svObj.fsv_svcdef) svc) f| f<-fsv_fields svc]
             where recur :: Expression (Relation Concept) -> Field -> [Block]
                   recur e f | null (fld_sub f) = fld e f
                             | otherwise        = fld e f ++

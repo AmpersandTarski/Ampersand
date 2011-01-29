@@ -28,7 +28,7 @@ proofdoc fSpec = Pandoc (Meta [] [] []) b
    b = concat$
        [pandoctree(rrtyp_proof r) Nothing|r<-rules fSpec]
      ++[pandoctree(objctx_proof x) Nothing|od<-obs,x<-obs' od]
-   obs = serviceS fSpec ++ concat [kdats k|k<-vkeys fSpec]
+   obs = map svObj (serviceS fSpec) ++ concat [kdats k|k<-vkeys fSpec]
    obs' od = concat [(oda:obs' oda)|oda<-objats od]
 
 --writes an inference tree as a piece of latex

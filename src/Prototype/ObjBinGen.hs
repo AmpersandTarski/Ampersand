@@ -4,7 +4,7 @@ module Prototype.ObjBinGen  (phpObjServices)
  
    import Data.Fspec
    --import Data.Plug {- (Plug(..),DataObject(..)) -}
-   import Ampersand (name)
+   import Ampersand (name,Service(..))
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)
@@ -27,11 +27,11 @@ module Prototype.ObjBinGen  (phpObjServices)
       >> verboseLn flags "---------------------------"
       >> verboseLn flags "Generating php Object files with Ampersand"
       >> verboseLn flags "---------------------------"
-      >> write "index.htm"                 (htmlindex fSpec serviceObjects flags)
+      >> write "index.htm"                 (htmlindex fSpec svcs flags)
     --  >> verboseLn flags (show [(name p,[(show e,fldname s,fldname t)|(e,s,t)<-eLkpTbl p])|PlugSql p@(TblSQL{})<-plugs fSpec]) >> error ""
       >> write "Installer.php"             (installer fSpec flags)
       >> write (name fSpec++".php")        (contextGen fSpec)
-      >> write "interfaceDef.inc.php"      (interfaceDef fSpec serviceObjects flags)
+      >> write "interfaceDef.inc.php"      (interfaceDef fSpec svcs flags)
       >> write "connectToDataBase.inc.php" (connectToDataBase fSpec flags)
       >> (if sqlLogPwdDefd flags then -- if either login or password for SQL has been specified then make a dbsettings file
              verboseLn flags ("  Writing username and password: dbsettings.php")
@@ -46,13 +46,13 @@ module Prototype.ObjBinGen  (phpObjServices)
   --       ]
       >> verboseLn flags ("Includable files for all objects:")
       >> sequence_
-         [ write (addExtension (name o) ".inc.php") (objectServices flags fSpec o)
-         | o <- serviceObjects
+         [ write (addExtension (name svc) ".inc.php") (objectServices flags fSpec (svObj svc))
+         | svc <- svcs
          ]
       >> verboseLn flags ("Wrapper files for all objects:")
       >> sequence_
-         [ write (addExtension (name o) ".php") (objectWrapper fSpec serviceObjects o flags)
-         | o <- serviceObjects
+         [ write (addExtension (name svc) ".php") (objectWrapper fSpec svcs svc flags)
+         | svc <- svcs
          ]
       >> verboseLn flags ("\n")
       where
@@ -65,9 +65,7 @@ module Prototype.ObjBinGen  (phpObjServices)
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
-       --TODO -> moet dit niet ooit vervangen worden door (services fSpec)?
-       --JA..
-       serviceObjects = map fsv_objectdef (services fSpec)
+       svcs = map fsv_svcdef (services fSpec)
 
    data StaticFile = SF { relFP         :: [FilePath] -- relative path including basename and extension
                         , isBinary      :: Bool

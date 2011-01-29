@@ -42,9 +42,9 @@ where
             , ctxmed   :: [RoleRelation]            -- ^ The assignment of roles to ObjectDefs.
                                                     -- ^ If r is an element of rrRoles (ctxmed ctx) and p is an element of rrRels (ctxmed ctx), then role r may edit relation p.
             , ctxpops  :: Populations Concept       -- ^ The populations defined in this context
-            , ctxsql   :: ObjectDefs  --a list of sqlplugs
-            , ctxphp   :: ObjectDefs  --a list of phpplugs
-            , ctxenv   :: (Expression (Relation Concept),[(Declaration Concept,String)]) --an expression on the context with unbound relations, to be bound in this environment
+            , ctxsql   :: ObjectDefs                -- ^ user defined sqlplugs, taken from the Ampersand script
+            , ctxphp   :: ObjectDefs                -- ^ user defined phpplugs, taken from the Ampersand script
+            , ctxenv   :: (Expression (Relation Concept),[(Declaration Concept,String)]) -- ^ an expression on the context with unbound relations, to be bound in this environment
             }               --deriving (Show) -- voor debugging
 
 -- A RoleService rs means that any role in 'rsRoles rs' may use any ObjectDef mentioned in 'rsServices rs'
