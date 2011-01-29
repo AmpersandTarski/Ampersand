@@ -500,6 +500,7 @@ module Prototype.RelBinGenSQL
            True 
            ]
      where
+     {- is because1 obsolete? Please remove if it is, otherwise explain why we need it in the future...
      because1 e fld0 fld1=
         --if e=r;m1;s;m2;t 
         --   where
@@ -529,6 +530,7 @@ module Prototype.RelBinGenSQL
                            fld2s=map snd (sqlPlugFields p m2)
                         in elem fld0 fldrs && elem fld1 fld2s
           _ -> False   
+     -}
      -- simplF: replace a;a~ by I if INJ&TOT
      simplF ks = simplify ( if null fs || null (head fs) then replF ks else replF $ head fs )
        where fs = [m' | F m' <- [simplify $ F ks]] -- if null, replF will probably not do a lot.

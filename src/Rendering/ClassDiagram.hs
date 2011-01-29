@@ -55,7 +55,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        --WHY151210 -> (see also datasets in Data.Fspec.hs) can't a php plug be a class?
        isClass  :: PlugSQL -> Bool
        isClass  p = not (null [1::Int|fld<-tblfields p, flduniq fld]) && not (null [1::Int|fld<-tblfields p, not (flduniq fld)])
-       classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-drop 1 (attrs plug)] [] -- drop the I field.
+       classes'   = [ OOClass (name (concept plug)) [ OOAttr a atype fNull| (a,atype,fNull)<-attrs plug] [] -- drop the I field.
                     | InternalPlug plug <- plugInfos fSpec, isClass plug
                     , not (null (attrs plug))
                     ]
@@ -72,7 +72,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
        aggrs'     = []
        geners'    = rd [ OOGener ((name.fst.head) gs) (map (name.snd) gs)| let Isa pcs _ = isa fSpec, gs<-eqCl fst pcs]
        attrs plug = [ (fldname fld,if null([Sym,Asy]>-multiplicities (fldexpr fld)) then "Bool" else  name (target (fldexpr fld)), fldnull fld)
-                    | fld<-tblfields plug, fldname fld/="i"]
+                    | fld<-tblfields plug, not (null([Inj,Uni]>-multiplicities (fldexpr fld)))]
        lookup' c = if null ps
                    then error ("!Fatal (module Rendering.ClassDiagram 77): erroneous lookup for concept "++name c++" in plug list")
                    else head ps

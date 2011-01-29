@@ -585,11 +585,13 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
 
    -- | pProps is bedoeld voor gebruik in relatie-declaraties.
    pProps           :: Parser Token [Prop]
-   pProps            = pSpec '['  *> pListSep (pSpec ',') pProp <* pSpec ']'
+   pProps            = (f.concat) <$> (pSpec '[' *> pListSep (pSpec ',') pProp <* pSpec ']')
+                       where f ps = rd (ps ++ concat [[Uni, Tot]| null ([Sym, Asy]>-ps)])
 
-   pProp            :: Parser Token Prop
-   pProp             = k Uni "UNI" <|> k Inj "INJ" <|> k Sur "SUR" <|> k Tot "TOT"
-                       <|> k Sym "SYM" <|> k Asy "ASY" <|> k Trn "TRN" <|> k Rfx "RFX"
+   pProp            :: Parser Token [Prop]
+   pProp             = k [Uni] "UNI" <|> k [Inj] "INJ" <|> k [Sur] "SUR" <|> k [Tot] "TOT"
+                       <|> k [Sym] "SYM" <|> k [Asy] "ASY" <|> k [Trn] "TRN" <|> k [Rfx] "RFX"
+                       <|> k [Sym, Asy] "PROP"
                        where k obj str = f <$> pKey str where f _ = obj
 
    -- | De pProps' is identiek aan pProps, maar werkt alleen op UNI en TOT. Ze is bedoeld voor de Service definities.
@@ -597,7 +599,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
    pProps'          :: Parser Token [Prop]
    pProps'           = f <$> pList pProp'
                        where f :: [String] -> [Prop]
-                             f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy]]
+                             f ps = [k p | p<-ps, p/="PROP"]++[p' | p<-ps, p=="PROP", p'<-[Sym, Asy, Uni, Inj]]
                              k "TOT" = Tot
                              k "UNI" = Uni
                              k s = error ("!Fatal (module CC 575): Unknown property tag has been used: " ++ show s)

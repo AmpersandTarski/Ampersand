@@ -197,7 +197,8 @@ makeEntities context allRels exclusions
 -- From that starting point, the kernels are computed recursively in code that follows (kernels).
     iniKernels   = [(c,[])| c<-concs rels]
 -- attRels contains all relations that will be attribute of a kernel.
-    attRels      = [m| m<-rs, isUni m] ++ [flp m | m<-rs, not (isUni m), isInj m]
+    attRels      = [m| m<-rs, isUni m] ++ [flp m | m<-rs, not (isUni m), isInj m] ++
+                   [m| m<-rs, isSym m && isAsy m] -- ^ the boolean properties
                    where rs = rels>-(kernelMors++map flp kernelMors)
 {- The second step is to make kernels for all plugs. In principle, every concept would yield one plug.
 However, if two concepts are mutually connected through a surjective, univalent and injective relation, they are combined in one plug.
