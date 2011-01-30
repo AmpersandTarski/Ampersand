@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts -XFlexibleInstances #-}
-module Classes.ViewPoint (ViewPoint(..)) 
+module DatabaseDesign.Ampersand.Classes.ViewPoint (ViewPoint(..)) 
 where
    import DatabaseDesign.Ampersand.ADL1.Context                 (Context(..))
    import DatabaseDesign.Ampersand.ADL1.Pattern                 (Pattern(..),Patterns)
@@ -14,7 +14,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression              (Expression(..))
    import DatabaseDesign.Ampersand.ADL1.Pair                    (Paire)
    import DatabaseDesign.Ampersand.Input.ADL1.FilePos                 (Numbered(..),FilePos(..))
-   import Classes.ConceptStructure                 (ConceptStructure(..))
+   import DatabaseDesign.Ampersand.Classes.ConceptStructure                 (ConceptStructure(..))
    import DatabaseDesign.Ampersand.Core.Basics                 (Collection(..), Identified(..))
    import DatabaseDesign.Ampersand.Core.Basics                 (Inheritance(..))
 

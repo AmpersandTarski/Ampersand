@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XMultiParamTypeClasses -XFlexibleContexts -XUndecidableInstances -XFlexibleInstances #-}
-module Classes.ConceptStructure          (ConceptStructure(concs
+module DatabaseDesign.Ampersand.Classes.ConceptStructure          (ConceptStructure(concs
                                                           ,mors
                                                           ,morlist
                                                           ,genE

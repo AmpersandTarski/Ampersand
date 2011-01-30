@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Explainable (explanationDeclarations) 
+module DatabaseDesign.Ampersand.Classes.Explainable (explanationDeclarations) 
 where
   import DatabaseDesign.Ampersand.ADL1.Context                 (Context(..))
   import DatabaseDesign.Ampersand.ADL1.Pattern                 (Pattern(..))
@@ -7,7 +7,7 @@ where
   import Data.Explain
   import Options 
   import DatabaseDesign.Ampersand.ADL1.Explanation
-  import Classes.ViewPoint
+  import DatabaseDesign.Ampersand.Classes.ViewPoint
 
 -- For parser data structures (which are: ConceptDef, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)
 -- the function <explanations :: a -> [Explanation]> gives all explanations that are declared directly in <a>, but not in possible components of <a>.

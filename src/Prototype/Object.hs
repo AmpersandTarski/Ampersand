@@ -14,7 +14,7 @@ import ShowADL (showADLcode)
 import DatabaseDesign.Ampersand.Core.Basics (Collection (rd,rd',(>-),uni))
 import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
 import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
-import Classes.Object (foldedattributes)
+import DatabaseDesign.Ampersand.Classes.Object (foldedattributes)
 import Data.Fspec
 import Data.Plug
 import Data.Maybe

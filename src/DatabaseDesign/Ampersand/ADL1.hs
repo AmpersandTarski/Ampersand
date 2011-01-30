@@ -38,6 +38,7 @@ module DatabaseDesign.Ampersand.ADL1
            )
 where
 
+   import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.Concept                    (Concept(..),Conceptual(..),cptnew,cptS,cptAnything,cptos' 
                                          ,Sign,GenR()
                                          ,SpecHierarchy(..)
@@ -65,7 +66,6 @@ where
    import DatabaseDesign.Ampersand.ADL1.ECArule                    (isAll, isChc, isBlk, isNop, isDo, InsDel(..),ECArule(..),Event(..),PAclause(..))
    import DatabaseDesign.Ampersand.ADL1.Pair                       (Paire,Pairs,srcPaire,trgPaire,mkPair)
                                          
-   import Classes.Populated              (Populated(..))
    import DatabaseDesign.Ampersand.ADL1.Pattern                    (Pattern(..),Patterns)
    import DatabaseDesign.Ampersand.ADL1.Explanation                (Explanation(..), PExplanation(..),PExplObj(..),Explanations,ExplObj(..))
    import DatabaseDesign.Ampersand.ADL1.Population                 (Population(..),Populations)
@@ -74,9 +74,4 @@ where
                                          ,RuleType(..),rulefromProp, isaRule, ruleviolations
                                          ,consequent,antecedent,ruleType
                                          ,normExpr)
-   import Classes.ConceptStructure              (ConceptStructure(..))
-   import Classes.Substitutive           (Substitutive(..))
-   import Classes.Object                 (Object(..))
-   import Classes.ViewPoint              (ViewPoint(..))
-   import Classes.Explainable            (explanationDeclarations)
 

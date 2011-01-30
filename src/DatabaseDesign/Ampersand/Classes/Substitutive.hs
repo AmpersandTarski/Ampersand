@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XMultiParamTypeClasses -XUndecidableInstances -XFlexibleContexts -XFlexibleInstances #-}
-module Classes.Substitutive  (Substitutive(subst))
+module DatabaseDesign.Ampersand.Classes.Substitutive  (Substitutive(subst))
 where
    import DatabaseDesign.Ampersand.ADL1.Expression                   (Expression(..))
    import DatabaseDesign.Ampersand.ADL1.Concept                      (Concept(..), SpecHierarchy(..))

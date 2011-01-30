@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classes.Object        (Object( concept
-                                    , attributes
-                                    , ctx
-                                    , populations
-                                    , extends
-                                    )
-                             ,foldedattributes
-                             ) 
+module DatabaseDesign.Ampersand.Classes.Object
+        (Object( concept
+               , attributes
+               , ctx
+               , populations
+               , extends
+               , foldedattributes
+        )      )
 where
 import DatabaseDesign.Ampersand.ADL1.Concept                (Concept,cptAnything)
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..))
@@ -22,7 +22,12 @@ class Object a where
  populations :: a -> [Population Concept]        -- the populations in the object (for now: use for contexts only)
  extends :: a -> [String]                -- the objects of which this is is extension (for now: use for contexts only)
  extends _ = []                          -- empty unless specified otherwise.
-
+ foldedattributes ::  a -> [Expression (Relation Concept)] --the attributes of obj as a list of expressions with source = concept obj
+ foldedattributes obj 
+      = (ctx obj):[f (ctx obj) x |xs<-map foldedattributes (attributes obj),x<-xs]
+      where f::Expression r -> Expression r -> Expression r
+            f x (F xs) = F (x:xs)
+            f x x' = F [x,x'] 
 instance Object Context where
  concept _      = cptAnything
  attributes c   = [svObj s| s<-ctxsvcs c]
@@ -36,10 +41,5 @@ instance Object ObjectDef where
  ctx obj = objctx obj
  populations  _ = []
 
---the attributes of obj as a list of expressions with source = concept obj
-foldedattributes :: Object a => a -> [Expression (Relation Concept)]
-foldedattributes obj 
-   = (ctx obj):[f (ctx obj) x |xs<-map foldedattributes (attributes obj),x<-xs]
-   where f::Expression r -> Expression r -> Expression r
-         f x (F xs) = F (x:xs)
-         f x x' = F [x,x']
+
+

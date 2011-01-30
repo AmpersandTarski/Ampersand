@@ -9,7 +9,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Expression                ( Expression(..), mapExpression, notCp)
    import DatabaseDesign.Ampersand.ADL1.Pair                      ( Pairs)
    import DatabaseDesign.Ampersand.ADL1.Prop
-   import Classes.Populated
+   import DatabaseDesign.Ampersand.Classes.Populated (contents)
    import TypeInference.InfLibAG        ( InfTree(..) )
    import Data.Explain
    import Languages  

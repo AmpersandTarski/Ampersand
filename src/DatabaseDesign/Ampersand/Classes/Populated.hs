@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances #-}
-module Classes.Populated                 (Populated(contents,contents'))
+module DatabaseDesign.Ampersand.Classes.Populated                 (Populated(contents,contents'))
 where
    import DatabaseDesign.Ampersand.ADL1.Concept                    (Concept(..), SpecHierarchy(..))
    import DatabaseDesign.Ampersand.ADL1.Pair                       (Pairs,join,flipPair,mkPair,closPair)
