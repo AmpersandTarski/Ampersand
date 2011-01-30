@@ -8,7 +8,7 @@ where
    import Data.Fspec
    import Data.List
    import DatabaseDesign.Ampersand.ADL1
-   import qualified UU_Scanner
+   import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
   --          (Pos(..) 
    import ShowADL               (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import Options hiding (services)
@@ -777,7 +777,7 @@ where
 
    instance ShowHS FilePos where
     showHSname p = error ("!Fatal (module ShowHS 808): Illegal call to showHSname ("++show p++"). A position is an anonymous entity in Haskell code.")
-    showHS _ _ (FilePos (fn,UU_Scanner.Pos l c,sym))
+    showHS _ _ (FilePos (fn,DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner.Pos l c,sym))
       = "FilePos ("++show fn++",Pos "++show l++" "++show c++","++show sym++")"
     showHS _ _ Nowhere
       = "Nowhere"

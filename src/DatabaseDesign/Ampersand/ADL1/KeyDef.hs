@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.KeyDef (KeyDef(..),KeyDefs)
 where
-   import DatabaseDesign.Ampersand.ADL1.FilePos                (FilePos,Numbered(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                (FilePos,Numbered(..))
    import DatabaseDesign.Ampersand.ADL1.ObjectDef              (ObjectDefs)
    import DatabaseDesign.Ampersand.ADL1.Concept                (Concept)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Identified(..))

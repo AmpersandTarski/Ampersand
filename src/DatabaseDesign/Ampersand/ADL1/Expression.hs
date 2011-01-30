@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.ADL1.Expression (Expression(..),PExpression(..),
                       ,isPos,isNeg,idsOnly,notCp,insParentheses)
 where
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation(..),Declaration(..),Association(..),Relational(..),Identified(..))
-import DatabaseDesign.Ampersand.ADL1.FilePos                 (Numbered(..))
+import DatabaseDesign.Ampersand.Input.ADL1.FilePos           (Numbered(..))
 import DatabaseDesign.Ampersand.ADL1.Concept                 (Concept(..), Conceptual(..), SpecHierarchy(..) ,Sign)
 import DatabaseDesign.Ampersand.ADL1.Prop                    (Prop(..))
 import DatabaseDesign.Ampersand.Core.Basics                  (Collection (..))

@@ -11,7 +11,7 @@ module DatabaseDesign.Ampersand.ADL1.ECArule (InsDel(..)
                    )
 where
 import DatabaseDesign.Ampersand.ADL1.Rule                      (Rules)
---import DatabaseDesign.Ampersand.ADL1.FilePos                   (nr)
+--import DatabaseDesign.Ampersand.Input.ADL1.FilePos                   (nr)
 import DatabaseDesign.Ampersand.ADL1.Expression                (Expression)
 import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    (Relation,Identified)
 import DatabaseDesign.Ampersand.ADL1.Concept                   (Concept)

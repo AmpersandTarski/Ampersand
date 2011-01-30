@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.ConceptDef    (ConceptDef(..),ConceptDefs)
 where
-   import DatabaseDesign.Ampersand.ADL1.FilePos    (FilePos)
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos    (FilePos)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Identified(..)) 
 
    type ConceptDefs = [ConceptDef]

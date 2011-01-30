@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XMultiParamTypeClasses #-}
 module DatabaseDesign.Ampersand.ADL1.Gen (Gen(..),Gens)
 where
-   import DatabaseDesign.Ampersand.ADL1.FilePos                  (FilePos)
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                  (FilePos)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Association(..))
    
    type Gens c      = [Gen c]

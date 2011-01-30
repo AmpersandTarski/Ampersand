@@ -1,8 +1,9 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL1.FilePos    ( FilePos(FilePos,Nowhere)
+module DatabaseDesign.Ampersand.Input.ADL1.FilePos
+       ( FilePos(FilePos,Nowhere)
                       , Numbered(nr,pos))
 where
-   import UU_Scanner (Pos(Pos))
+   import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner (Pos(Pos))
 
    data FilePos = FilePos ( String, Pos, String)
                 | Nowhere 

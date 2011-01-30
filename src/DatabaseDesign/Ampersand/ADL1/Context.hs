@@ -13,7 +13,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.KeyDef                  (KeyDefs)
    import DatabaseDesign.Ampersand.ADL1.ObjectDef               (ObjectDefs,Service)
    import DatabaseDesign.Ampersand.ADL1.Explanation             (PExplanations)
-   import DatabaseDesign.Ampersand.ADL1.FilePos                 (FilePos(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                 (FilePos(..))
    import DatabaseDesign.Ampersand.ADL1.Population              (Populations)
    import DatabaseDesign.Ampersand.ADL1.ConceptDef              (ConceptDefs)
    import DatabaseDesign.Ampersand.ADL1.Expression              (Expression)

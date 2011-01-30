@@ -1,6 +1,7 @@
 {-# OPTIONS -fglasgow-exts  #-}
 {-# LANGUAGE UndecidableInstances #-}
-module UU_Parsing (parseIO,Symbol(..),pPacked
+module DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing 
+       (parseIO,Symbol(..),pPacked
                       ,Parser
                       ,pList,pListSep,pList1,pList1Sep,pSym
                       ,opt

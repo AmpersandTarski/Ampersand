@@ -6,7 +6,7 @@ module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Associ
                                   ,isSgn,mIs
                                   ,showSign,applyM)
 where
-   import DatabaseDesign.Ampersand.ADL1.FilePos      (FilePos(..),Numbered(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos      (FilePos(..),Numbered(..))
    import DatabaseDesign.Ampersand.ADL1.Concept      (Concept(..),Conceptual(..),Signaling(..))
    import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),Props,flipProps)
    import DatabaseDesign.Ampersand.ADL1.Pair         (Pairs,flipPair) 

@@ -1,15 +1,18 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XFlexibleContexts #-}
 {-# LANGUAGE FlexibleContexts #-}
-module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
-   import UU_Scanner  ( Token(..),TokenType(..),noPos
-                      , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
-   import UU_Parsing  (Parser
-                      , (<$>) , (<$), (<*>), (<*) , (*>), (<|>)
-                      ,pList,pListSep,pList1,pList1Sep,pSym
-                      ,pSucceed
-                      ,opt, Sequence,Alternative, IsParser
-                      )
+module DatabaseDesign.Ampersand.Input.ADL1.CC 
+   (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
+   import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
+            ( Token(..),TokenType(..),noPos
+            , pKey,pConid,pString,pSpec,pAtom,pExpl,pVarid,pComma)
+   import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing
+            (Parser
+            , (<$>) , (<$), (<*>), (<*) , (*>), (<|>)
+            ,pList,pListSep,pList1,pList1Sep,pSym
+            ,pSucceed
+            ,opt, Sequence,Alternative, IsParser
+            )
    import DatabaseDesign.Ampersand.Core.Basics  (Collection(..))
    import DatabaseDesign.Ampersand.Core.Basics (sort)
    import DatabaseDesign.Ampersand.ADL1   (Architecture(..)

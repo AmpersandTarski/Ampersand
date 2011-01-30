@@ -48,7 +48,7 @@ where
                                          ,Architecture(..))
    import DatabaseDesign.Ampersand.ADL1.Expression                 (Expression(..),mapExpression,foldlExpression,foldrExpression,PExpressions,PExpression(..),Expressions,UnOp(..),MulOp(..)
                                          ,isPos,isNeg,idsOnly,isF,isFd,isFi,isFu,isI,v,notCp,insParentheses)
-   import DatabaseDesign.Ampersand.ADL1.FilePos                    (FilePos(..)
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                    (FilePos(..)
                                          ,Numbered(..))
    import DatabaseDesign.Ampersand.ADL1.Gen                        (Gen(..),Gens)
    import DatabaseDesign.Ampersand.ADL1.KeyDef                     (KeyDef(..),KeyDefs)

@@ -1,21 +1,21 @@
 {-# OPTIONS_GHC -Wall #-}
-module Parser (parseADL)where
+module DatabaseDesign.Ampersand.Input.ADL1.Parser (parseADL1)where
 
 
-import CC (pArchitecture,keywordstxt, keywordsops, specialchars, opchars)
+import DatabaseDesign.Ampersand.Input.ADL1.CC (pArchitecture,keywordstxt, keywordsops, specialchars, opchars)
 import Options
-import UU_Scanner(scan,initPos)
-import UU_Parsing(parseIO)
+import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner(scan,initPos)
+import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing(parseIO)
 import TypeChecker(typecheck)
 import DatabaseDesign.Ampersand.ADL1
 import Rendering.PandocAux (writepandoc)
 import Text.Pandoc 
  
-parseADL :: String      -- ^ The string to be parsed
+parseADL1 :: String      -- ^ The string to be parsed
          -> Options     -- ^ flags to be taken into account
          -> String      -- ^ The name of the .adl file (used for error messages)
          -> IO(Context) -- ^ The IO monad with the context. 
-parseADL adlstring flags fnFull =
+parseADL1 adlstring flags fnFull =
     do { slRes <- parseIO pArchitecture (scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
        ; case typecheck slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
                 ( []      ,[]) -> ioError(userError ("no context encountered in input file.\n"))

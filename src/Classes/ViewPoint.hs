@@ -13,7 +13,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.ConceptDef              (ConceptDefs)
    import DatabaseDesign.Ampersand.ADL1.Expression              (Expression(..))
    import DatabaseDesign.Ampersand.ADL1.Pair                    (Paire)
-   import DatabaseDesign.Ampersand.ADL1.FilePos                 (Numbered(..),FilePos(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                 (Numbered(..),FilePos(..))
    import Classes.ConceptStructure                 (ConceptStructure(..))
    import DatabaseDesign.Ampersand.Core.Basics                 (Collection(..), Identified(..))
    import DatabaseDesign.Ampersand.Core.Basics                 (Inheritance(..))

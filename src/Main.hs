@@ -2,7 +2,7 @@
 module Main where
 
 import Options                (getOptions,Options(..),verboseLn,verbose,DocTheme(..),FspecFormat(..) )
-import Parser                 (parseADL)
+import DatabaseDesign.Ampersand.Input                 (parseADL1)
 import ADL2Fspec              (makeFspec)
 import Control.Monad
 import Data.Fspec   hiding (services)
@@ -42,7 +42,7 @@ parseFile flags
       = let fnFull = fileName flags in
         do verbose flags "Parsing... "
            adlText <- readFile fnFull
-           parseADL adlText flags fnFull 
+           parseADL1 adlText flags fnFull 
 
 calculate :: Options -> Context -> IO(Fspc)
 calculate flags context = do verboseLn flags "Calculating..."

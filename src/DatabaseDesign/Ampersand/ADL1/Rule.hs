@@ -3,7 +3,7 @@ module DatabaseDesign.Ampersand.ADL1.Rule    ( Rule(..),mapRule,Rules
                    , RuleType(..)
                    , consequent, antecedent, ruleType, normExpr, rulefromProp, isaRule, ruleviolations)     
 where
-   import DatabaseDesign.Ampersand.ADL1.FilePos                   ( FilePos(..), Numbered(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                   ( FilePos(..), Numbered(..))
    import DatabaseDesign.Ampersand.ADL1.Concept                   ( Concept(..), Conceptual(..), SpecHierarchy, Signaling(..))
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), Identified(..), mIs)
    import DatabaseDesign.Ampersand.ADL1.Expression                ( Expression(..), mapExpression, notCp)
