@@ -9,10 +9,9 @@ import System             (system, ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
 import System.Directory
 import Languages
-import Strings (spacesToUnderscores)
 import Control.Monad
 import Data.GraphViz
-import UTF8  
+import DatabaseDesign.Ampersand.Core.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
 type Pictures = [Picture]

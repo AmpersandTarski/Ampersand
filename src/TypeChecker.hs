@@ -22,7 +22,6 @@
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 module TypeChecker (typecheck, Error, Errors) where
 
-import Auxiliaries (eqCl)
 import Ampersand          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 --import Data.List    -- USE -> unionBy
@@ -30,8 +29,6 @@ import Ampersand          -- USE -> .MorphismAndDeclaration.makeDeclaration
 import Data.Tree    -- USE -> data Tree a
 --import qualified Data.Set as Set --
 
-import Classification --USE -> cast from data.Tree to Classification for enrichment
-import Typology --USE -> Isa structure for enrichment
 
 --import TypeInference.Input
 import TypeInference.Isa
@@ -39,7 +36,7 @@ import TypeInference.InfAdlExpr
 import TypeInference.InfExpression
 import TypeInference.InfLibAG (InfTree)
 import ShowADL
-import Collection     ( Collection(..) )
+import DatabaseDesign.Ampersand.Core.Basics
 import Text.Pandoc (Block)
 
 ---------------

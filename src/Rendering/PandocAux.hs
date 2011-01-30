@@ -22,7 +22,6 @@ import Ampersand
 import Picture
 import ShowADL
 import Data.Fspec
-import Strings          (unCap, upCap, preciesEen)
 import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:
@@ -33,7 +32,7 @@ import Text.Pandoc
                           -- 3) Het kan zijn dat dit nog niet werkt, zie http://groups.google.com/group/pandoc-discuss/browse_thread/thread/a8fc3a627aeec7f2
                           --    als dat het geval is, kan deze module worden overruled in Generators.hs    
                           -- Built on pandoc 1.6                             
-import UTF8  
+import DatabaseDesign.Ampersand.Core.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Languages        (Lang(..),plural)
 import Options hiding (services) --importing (Options(..),FspecFormat(..))

@@ -27,7 +27,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 UTF-8 aware string IO functions that will work with GHC 6.10 or 6.12.
 -}
-module UTF8 ( readFile
+module DatabaseDesign.Ampersand.Core.Basics.UTF8
+           ( readFile
             , writeFile
             , getContents
             , putStr

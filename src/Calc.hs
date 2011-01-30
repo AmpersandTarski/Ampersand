@@ -7,9 +7,9 @@ module Calc ( deriveProofs
             , positiveIn) 
   where
 
-   import Collection         (Collection (isc,rd,rd'))
-   import Auxiliaries        (sort',eqCl)
-   import Strings            (commaEng)
+   import DatabaseDesign.Ampersand.Core.Basics         (Collection (isc,rd,rd'))
+   import DatabaseDesign.Ampersand.Core.Basics        (sort',eqCl)
+   import DatabaseDesign.Ampersand.Core.Basics            (commaEng)
    import Data.List
    import Ampersand
    import Data.Fspec

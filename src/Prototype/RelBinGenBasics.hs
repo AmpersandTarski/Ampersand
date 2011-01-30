@@ -6,7 +6,7 @@ module Prototype.RelBinGenBasics(phpIdentifier,naming,commentBlock,strReplace
  ,cChain,filterEmpty,phpIndent
  ) where
    import Char(isAlphaNum,isDigit)
-   import Auxiliaries (naming)
+   import DatabaseDesign.Ampersand.Core.Basics (naming)
    import Data.Maybe
    import Data.List
    

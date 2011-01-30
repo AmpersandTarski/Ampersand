@@ -15,8 +15,8 @@ module Data.Fspec ( Fspc(..)
                   )
  where
    import Ampersand            hiding (Association)
-   import Collection                    ((>-))
-   import Typology                      (Inheritance(..))
+   import DatabaseDesign.Ampersand.Core.Basics                    ((>-))
+   import DatabaseDesign.Ampersand.Core.Basics                      (Inheritance(..))
    import Data.Plug                     
    import Picture                       (Pictures)
    import FPA

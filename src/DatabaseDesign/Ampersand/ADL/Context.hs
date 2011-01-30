@@ -17,8 +17,8 @@ where
    import DatabaseDesign.Ampersand.ADL.Population              (Populations)
    import DatabaseDesign.Ampersand.ADL.ConceptDef              (ConceptDefs)
    import DatabaseDesign.Ampersand.ADL.Expression              (Expression)
-   import Typology                    (Inheritance)
-   import Classification              (Classification)
+   import DatabaseDesign.Ampersand.Core.Basics                 (Inheritance)
+   import DatabaseDesign.Ampersand.Core.Basics                 (Classification)
 
 
    -- | Architecture of Ampersand consists of a set of contexts

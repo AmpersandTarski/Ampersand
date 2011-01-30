@@ -11,10 +11,8 @@ where
    import DatabaseDesign.Ampersand.ADL.Prop         (Prop(..),Props,flipProps)
    import DatabaseDesign.Ampersand.ADL.Pair         (Pairs,flipPair) 
    import Data.List
-   import Char             (toLower)
-   import Collection       (Collection ((>-)))
-   import Auxiliaries      (eqCl)
-
+   import DatabaseDesign.Ampersand.Core.Basics       (Collection ((>-)),Identified(..),uniqueNames)
+   
   -- in the following class, variable rel is a relation type and concept is a concept type.
   -- For example: instance Association (Declaration Concept) Concept
    class Eq concept => Association rel concept | rel->concept where
@@ -110,23 +108,6 @@ where
                             , rel1typ = f (rel1typ m)
                             }
 
-   class Identified a where
-    name   :: a->String
-    rename :: a->String->a
-    rename x _ = error ("!Fatal (module MorphismAndDeclaration 114): some Identified element named " ++ name x ++ " cannot be renamed.")
-
-   --the function uniqueNames ensures case-insensitive unique names like sql plug names
-   uniqueNames :: (Identified a) => [String]->[a]->[a]
-   uniqueNames taken xs
-    = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
-         , p <-if name (head cl) `elem` taken || length cl>1
-               then [rename p (name p++show i)| (p,i)<-zip cl [(1::Int)..]]
-               else cl
-      ]
-
-   instance Identified a => Identified [a] where
-    name [] = ""
-    name (i:_) = name i
 
    instance Identified Concept where
     name (C {cptnm = nm}) = nm

@@ -7,10 +7,10 @@ import Data.Fspec
 import Options
 import Data.Explain
 import Data.List
-import Strings          (unCap,upCap,preciesEen)
+import DatabaseDesign.Ampersand.Core.Basics          (unCap,upCap,preciesEen)
 import Version (versionbanner)
 import Languages        (Lang(..),plural)
-import Collection       (Collection ((>-)))
+import DatabaseDesign.Ampersand.Core.Basics       (Collection ((>-)))
 import Text.Pandoc
 import Char             (toLower)
 

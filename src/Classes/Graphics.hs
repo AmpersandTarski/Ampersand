@@ -6,22 +6,13 @@ module Classes.Graphics (Dotable(makePicture)
 -- TODO url links for atlas
 
 import Data.GraphViz hiding (addExtension )
---     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
---              -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
---              -- 2) cabal-install graphviz  (onder windows: cabal install graphviz)
---              -- 3) er is geen stap 3!
---              -- 4) build on graphviz-2999.8.0.0
--- Documentation about graphviz package: See http://hackage.haskell.org/package/graphviz
 import Ampersand 
 import Data.Fspec (Fspc,Fservice(..))
 import Options
-import Collection (Collection(uni,isc,rd))
-import Typology (Inheritance(..))
+import DatabaseDesign.Ampersand.Core.Basics (Inheritance(..),Collection(uni,isc,rd))
 import Picture
 import Switchboard
 import Rendering.ClassDiagram
---import System.FilePath   -- (replaceExtension,takeBaseName, (</>) )
---import Strings
 
 class Identified a => Navigatable a where
    servicename :: a -> String

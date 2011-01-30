@@ -13,11 +13,11 @@
 module ShowADL ( ShowADL(..), disambiguate, relatsoff)
   where
    import Char                            (isAlphaNum)
-   import Collection                      (Collection(..))
+   import DatabaseDesign.Ampersand.Core.Basics       (Collection(..))
    import Ampersand
    import Data.Fspec 
    import Data.List
-   import Auxiliaries                     (eqCl)
+   import DatabaseDesign.Ampersand.Core.Basics                     (eqCl)
    import Data.Explain
  
    class ShowADL a where

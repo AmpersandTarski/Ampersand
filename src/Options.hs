@@ -13,7 +13,7 @@ import Time
 import Control.Monad
 import Version(versionNumber)
 import Maybe
-import UTF8  
+import DatabaseDesign.Ampersand.Core.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 -- | This data constructor is able to hold all kind of information that is useful to 

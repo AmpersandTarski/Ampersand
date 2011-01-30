@@ -19,12 +19,12 @@ import Ampersand ( Concept(..), Signaling(..), cptnew
            , Paire
            , ObjectDef(..)
            , isSur,isTot,isInj,isUni)
-import Collection((>-))
+import DatabaseDesign.Ampersand.Core.Basics((>-))
 import Classes.Object (Object(..))
 import Classes.Populated (contents')
 import Classes.ConceptStructure (ConceptStructure(..))
 import FPA (FPA(..),FPAble(..))
-import Auxiliaries (sort',eqClass)
+import DatabaseDesign.Ampersand.Core.Basics (sort',eqClass)
 import List(elemIndex,nub)
  
 --a data object is always generated.

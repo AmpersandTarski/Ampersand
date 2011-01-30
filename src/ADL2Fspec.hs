@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall -XRankNTypes -XFlexibleContexts #-}
 module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
-   import Collection     (Collection(rd,rd',uni,isc,(>-)))
+   import DatabaseDesign.Ampersand.Core.Basics     (Collection(rd,rd',uni,isc,(>-)))
    import Ampersand
-   import Auxiliaries    (eqCl, eqClass)
+   import DatabaseDesign.Ampersand.Core.Basics    (eqCl, eqClass)
    import Data.Fspec
    import Options        (Options(language,genPrototype,theme),DocTheme(..))
    import NormalForms    (conjNF,disjNF,normPA,simplify)

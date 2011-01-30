@@ -4,11 +4,9 @@
 
 module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
-   import Collection ( Collection((>-),rd) )
    import Data.List
-   import Typology (Inheritance(Isa))
+   import DatabaseDesign.Ampersand.Core.Basics
    import Ampersand  hiding (Association)
-   import Auxiliaries (eqCl)
    import Data.Plug
    import Options
    import Data.Fspec      (Fspc,plugInfos)
@@ -246,9 +244,6 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    indent _ "" = ""
    indent n ('\n':str) = "\n" ++ (spaces n) ++ (indent n str)
    indent n (c:str) = c : indent n str
-
-   spaces :: Int -> String
-   spaces n = replicate n ' '
 
    onlyignorechars:: String -> Bool
    onlyignorechars "" = True

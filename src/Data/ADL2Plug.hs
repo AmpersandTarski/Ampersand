@@ -6,9 +6,9 @@ module Data.ADL2Plug
   ,rel2fld --create field for TblSQL or ScalarSQL plugs 
   )
 where
-import Collection     (Collection((>-)))
+import DatabaseDesign.Ampersand.Core.Basics     (Collection((>-)))
 import Ampersand
-import Auxiliaries    (eqCl, sort')
+import DatabaseDesign.Ampersand.Core.Basics    (eqCl, sort')
 import Data.Plug
 import Char
 import FPA

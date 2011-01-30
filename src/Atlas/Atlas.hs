@@ -2,14 +2,12 @@
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
 --in IIS you can enable windows authentication
 module Atlas.Atlas where
-import Auxiliaries (sort')
 import Ampersand
 import ShowADL
 import Data.Fspec
 import Options
 import Rendering.AdlExplanation
-import Typology 
-import Collection     ( Collection (rd) ) 
+import DatabaseDesign.Ampersand.Core.Basics 
 import Database.HDBC.ODBC 
 import Database.HDBC
 import Picture

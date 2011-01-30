@@ -118,7 +118,7 @@ module UU_Parsing (parseIO,Symbol(..),pPacked
    --import PrelGHC
    --import IOExts
    import System.IO.Unsafe
-   import UTF8  
+   import DatabaseDesign.Ampersand.Core.Basics  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
    btLookup :: BinSearchTree (a -> Ordering) (Maybe b) -> a -> Maybe b

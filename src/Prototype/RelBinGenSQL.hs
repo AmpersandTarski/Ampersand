@@ -12,7 +12,7 @@ module Prototype.RelBinGenSQL
    import Data.Maybe
    import Char(isDigit,digitToInt,intToDigit)
    import Data.List
--- import Collection (Collection(rd))
+-- import DatabaseDesign.Ampersand.Core.Basics (Collection(rd))
    
    -- isOne: het is niet voldoende om alleen te controleren of: source (ctx o) == ONE
    -- De service op V[ONE*SomeConcept] moet immers nog voor ieder SomeConcept iets aanbieden

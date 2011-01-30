@@ -18,7 +18,7 @@ module Prototype.ObjBinGen  (phpObjServices)
    import System.Directory
    import Options hiding (services)
    import qualified Data.ByteString as Bin
-   import UTF8  
+   import DatabaseDesign.Ampersand  
    import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
    
    phpObjServices :: Fspc -> Options -> IO()

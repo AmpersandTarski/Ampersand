@@ -1,14 +1,16 @@
 {-# OPTIONS_GHC -Wall #-}
-module Classification (
+module DatabaseDesign.Ampersand.Core.Basics.Classification (
                Classification(Cl)
              , root
              , preCl
+             , Identified(..),uniqueNames
    ) 
 where
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Identified(..)) 
-   import Collection    (Collection(..))
+   import DatabaseDesign.Ampersand.Core.Basics.Collection    (Collection(..))
    import Data.List hiding (insert)
-
+   import Char             (toLower)
+   import DatabaseDesign.Ampersand.Core.Basics.Auxiliaries   (eqCl)
+   
    data Classification a = Cl a [Classification a] | Bottom
    root :: Classification a -> a
    root (Cl c _) = c
@@ -118,5 +120,22 @@ The precondition is that the graph cycle free.
        maketree roots tuples'' = [ Cl root' (trees tuples'' root')| root'<-roots]
        trees tuples'' root' = maketree (rd [b |(a,b)<-tuples'', root'==a]) [(a,b) |(a,b)<-tuples'', root'/=a]
 
+   class Identified a where
+    name   :: a->String
+    rename :: a->String->a
+    rename x _ = error ("!Fatal (module MorphismAndDeclaration 114): some Identified element named " ++ name x ++ " cannot be renamed.")
+
+   --the function uniqueNames ensures case-insensitive unique names like sql plug names
+   uniqueNames :: (Identified a) => [String]->[a]->[a]
+   uniqueNames taken xs
+    = [p | cl<-eqCl (map toLower.name) xs  -- each equivalence class cl contains (identified a) with the same map toLower (name p)
+         , p <-if name (head cl) `elem` taken || length cl>1
+               then [rename p (name p++show i)| (p,i)<-zip cl [(1::Int)..]]
+               else cl
+      ]
+
+   instance Identified a => Identified [a] where
+    name [] = ""
+    name (i:_) = name i
 
 

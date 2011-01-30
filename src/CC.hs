@@ -10,8 +10,8 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       ,pSucceed
                       ,opt, Sequence,Alternative, IsParser
                       )
-   import Collection  (Collection(..))
-   import Auxiliaries (sort)
+   import DatabaseDesign.Ampersand.Core.Basics  (Collection(..))
+   import DatabaseDesign.Ampersand.Core.Basics (sort)
    import Ampersand   (Architecture(..)
                       ,Concept(..)
                       ,ConceptDef(..)
@@ -42,7 +42,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       )
    import ShowADL     (showADL)
    import Languages
-   import Strings     (trim)
+   import DatabaseDesign.Ampersand.Core.Basics     (trim)
    import Options     (defaultFlags, Options(..))
    import Data.Explain(AutoExplain,string2AutoExplain)
    keywordstxt :: [String]

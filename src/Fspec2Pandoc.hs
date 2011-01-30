@@ -2,14 +2,14 @@
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
 module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
-import Auxiliaries      (eqCl)
-import Collection       (Collection (..))
+import DatabaseDesign.Ampersand.Core.Basics      (eqCl)
+import DatabaseDesign.Ampersand.Core.Basics       (Collection (..))
 import Ampersand
 import Data.Plug
 import Picture
 import Data.List
 import Data.Fspec
-import Strings          (upCap, commaNL, commaEng, preciesEen)
+import DatabaseDesign.Ampersand.Core.Basics          (upCap, commaNL, commaEng, preciesEen)
 import Text.Pandoc  
 import Version          (versionbanner)
 import Languages        (Lang(..))

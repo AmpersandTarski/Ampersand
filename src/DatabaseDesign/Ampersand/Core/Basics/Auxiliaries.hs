@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Auxiliaries
+module DatabaseDesign.Ampersand.Core.Basics.Auxiliaries
    ( sort
    , eqCl 
    , eqClass

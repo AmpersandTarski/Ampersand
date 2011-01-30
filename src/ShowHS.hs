@@ -3,8 +3,7 @@ module ShowHS (ShowHS(..),fSpec2Haskell,haskellIdentifier)
 where
 
    import Char                  (isAlphaNum)
-   import Strings               (unCap)
-   import Typology              (Inheritance(..))
+   import DatabaseDesign.Ampersand.Core.Basics
    import Data.Plug
    import Data.Fspec
    import Data.List
@@ -23,7 +22,6 @@ where
              ++"\n{-Generated code by "++versionbanner++" at "++show (genTime flags)++"-}"
              ++"\nmodule Main where"
              ++"\n  import UU_Scanner"
-             ++"\n  import Typology"
              ++"\n  import ADL"
              ++"\n  import ShowHS (showHS)"
              ++"\n  import Data.Fspec"
@@ -31,7 +29,7 @@ where
              ++"\n  import FPA"
              ++"\n  import Options (getOptions)"
              ++"\n  import TypeInference.InfLibAGFuncs"
-             ++"\n  import UTF8"  
+             ++"\n  import DatabaseDesign.Ampersand.Core.Basics"  
              ++"\n  import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
              ++"\n"
              ++"\n  main :: IO ()"

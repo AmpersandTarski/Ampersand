@@ -8,9 +8,9 @@ import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration  (Relation(..),Declar
 import DatabaseDesign.Ampersand.ADL.FilePos                 (Numbered(..))
 import DatabaseDesign.Ampersand.ADL.Concept                 (Concept(..), Conceptual(..), SpecHierarchy(..) ,Sign)
 import DatabaseDesign.Ampersand.ADL.Prop                    (Prop(..))
-import Collection                  (Collection (..))
+import DatabaseDesign.Ampersand.Core.Basics                  (Collection (..))
 import Data.List hiding (union)
-import Auxiliaries                 (eqClass, sord')
+import DatabaseDesign.Ampersand.Core.Basics                 (eqClass, sord')
 
 type Expressions rel = [Expression rel]
 data Expression rel

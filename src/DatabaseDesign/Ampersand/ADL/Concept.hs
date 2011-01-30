@@ -5,7 +5,7 @@ module DatabaseDesign.Ampersand.ADL.Concept ( Concept(..),Conceptual(..)
                    , cptnew,cptAnything,cptS,cptos'
                    ) 
 where
-  import Typology       (Typologic)
+  import DatabaseDesign.Ampersand.Core.Basics       (Typologic)
 
 -- The following definition of concept is used in the type checker only.
 -- It is called Concept, meaning "type checking concept"

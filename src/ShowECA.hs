@@ -3,7 +3,7 @@ module ShowECA (showECA) where
    import Data.Fspec
    import Ampersand
    import ShowADL            (ShowADL(..))
---   import Collection         (Collection (rd))
+--   import DatabaseDesign.Ampersand.Core.Basics         (Collection (rd))
    
    class ECA a where 
     showECA :: Fspc -> String -> a -> String

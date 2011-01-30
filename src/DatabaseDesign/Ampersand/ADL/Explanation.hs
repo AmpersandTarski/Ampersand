@@ -7,7 +7,6 @@ where
    import DatabaseDesign.Ampersand.ADL.ConceptDef               (ConceptDef)
    import DatabaseDesign.Ampersand.ADL.Rule                     (Rule)
    import DatabaseDesign.Ampersand.ADL.KeyDef                   (KeyDef)
-   import DatabaseDesign.Ampersand.ADL.ObjectDef                (ObjectDef)
    import Data.Explain
 
 -- PExplanation is a parse-time constructor. It contains the name of the object it explains.

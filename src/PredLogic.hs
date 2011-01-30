@@ -4,9 +4,8 @@ module PredLogic
            ) 
    where
 
-   import Collection (Collection((>-)))
    import Data.List
-   import Auxiliaries (eqCl)
+   import DatabaseDesign.Ampersand.Core.Basics (Collection((>-)),eqCl)
    import Ampersand
    import ShowADL
    import Languages (Lang(English,Dutch), plural)

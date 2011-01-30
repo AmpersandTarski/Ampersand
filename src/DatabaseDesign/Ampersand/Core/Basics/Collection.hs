@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module Collection
+module DatabaseDesign.Ampersand.Core.Basics.Collection
   (  Collection ( eleM
                 , uni
                 , isc

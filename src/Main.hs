@@ -18,7 +18,7 @@ import Picture
 import Rendering.InfTree2Pandoc (texOnly_proofdoc)
 import Rendering.PandocAux (writepandoc)
 import System.FilePath        (combine,replaceExtension)
-import UTF8  
+import DatabaseDesign.Ampersand.Core.Basics  
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 
 --import Data.Ampersand.Main

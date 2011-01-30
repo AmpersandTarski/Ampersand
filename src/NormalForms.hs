@@ -1,9 +1,7 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts #-}
 module NormalForms (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute)
 where
-   import Strings        (commaEng)
-   import Collection     (Collection (..))
-   import Auxiliaries    (eqCl,eqClass)
+   import DatabaseDesign.Ampersand.Core.Basics    (Collection (..),commaEng,eqCl,eqClass)
    import Ampersand
 {- Normalization of process algebra clauses -}
 

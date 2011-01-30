@@ -3,7 +3,7 @@
 module Prototype.Object(objectServices) where
 --import Char(toUpper)
 import NormalForms (disjNF,simplify)
-import Auxiliaries (eqCl)
+import DatabaseDesign.Ampersand.Core.Basics (eqCl)
 import Ampersand (target, sign, source
            --,Concept(..),Declaration(..),isTrue
            ,ObjectDef(..),Numbered(..),Relational(..),ConceptStructure(..)
@@ -11,7 +11,7 @@ import Ampersand (target, sign, source
            ,Object(..),isIdent,Expression(..),mIs,cptS
            )
 import ShowADL (showADLcode)
-import Collection (Collection (rd,rd',(>-),uni))
+import DatabaseDesign.Ampersand.Core.Basics (Collection (rd,rd',(>-),uni))
 import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
 import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
 import Classes.Object (foldedattributes)

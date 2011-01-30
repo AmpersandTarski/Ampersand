@@ -9,7 +9,7 @@ import Text.Pandoc
 import TypeInference.InfLibAG (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
 import Data.Fspec   hiding (services)
 import Ampersand
-import Auxiliaries (sort')
+import DatabaseDesign.Ampersand.Core.Basics (sort')
 
 texOnly_proofdoc :: Fspc -> Pandoc
 texOnly_proofdoc    = proofdoc
