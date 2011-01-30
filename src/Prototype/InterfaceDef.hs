@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.InterfaceDef where
-  import Ampersand
+  import DatabaseDesign.Ampersand.ADL1
   import Data.List
   import Data.Fspec
   import Prototype.RelBinGenBasics(commentBlock, indentBlock)

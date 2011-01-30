@@ -11,7 +11,7 @@ module Calc ( deriveProofs
    import DatabaseDesign.Ampersand.Core.Basics        (sort',eqCl)
    import DatabaseDesign.Ampersand.Core.Basics            (commaEng)
    import Data.List
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
    import Data.Fspec
    import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode, editable, editMph)
    import ShowECA

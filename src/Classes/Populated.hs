@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances #-}
 module Classes.Populated                 (Populated(contents,contents'))
 where
-   import DatabaseDesign.Ampersand.ADL.Concept                    (Concept(..), SpecHierarchy(..))
-   import DatabaseDesign.Ampersand.ADL.Pair                       (Pairs,join,flipPair,mkPair,closPair)
-   import DatabaseDesign.Ampersand.ADL.Expression                 (Expression(..))
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration     (Relation(..),Declaration(..),Association(..)
+   import DatabaseDesign.Ampersand.ADL1.Concept                    (Concept(..), SpecHierarchy(..))
+   import DatabaseDesign.Ampersand.ADL1.Pair                       (Pairs,join,flipPair,mkPair,closPair)
+   import DatabaseDesign.Ampersand.ADL1.Expression                 (Expression(..))
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration     (Relation(..),Declaration(..),Association(..)
                                          ,makeDeclaration,inline)
    import DatabaseDesign.Ampersand.Core.Basics                     (Collection (uni,isc))   
    import Data.Maybe                     (fromJust)

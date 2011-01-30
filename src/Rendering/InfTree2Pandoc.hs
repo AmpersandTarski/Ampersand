@@ -8,7 +8,7 @@ where
 import Text.Pandoc 
 import TypeInference.InfLibAG (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
 import Data.Fspec   hiding (services)
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Core.Basics (sort')
 
 texOnly_proofdoc :: Fspc -> Pandoc

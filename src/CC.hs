@@ -12,7 +12,7 @@ module CC (pArchitecture, keywordstxt, keywordsops, specialchars, opchars) where
                       )
    import DatabaseDesign.Ampersand.Core.Basics  (Collection(..))
    import DatabaseDesign.Ampersand.Core.Basics (sort)
-   import Ampersand   (Architecture(..)
+   import DatabaseDesign.Ampersand.ADL1   (Architecture(..)
                       ,Concept(..)
                       ,ConceptDef(..)
                       ,Context(..)

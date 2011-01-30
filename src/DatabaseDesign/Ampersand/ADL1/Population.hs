@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances -XMultiParamTypeClasses -XUndecidableInstances #-}
-module DatabaseDesign.Ampersand.ADL.Population (Population(..),Populations) 
+module DatabaseDesign.Ampersand.ADL1.Population (Population(..),Populations) 
 where
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration   (Relation(..), Association(..))
-   import DatabaseDesign.Ampersand.ADL.Pair                     (Pairs)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Relation(..), Association(..))
+   import DatabaseDesign.Ampersand.ADL1.Pair                     (Pairs)
    
    type Populations concept = [Population concept]
    data Population concept = Popu

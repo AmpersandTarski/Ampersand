@@ -14,7 +14,7 @@ module ShowADL ( ShowADL(..), disambiguate, relatsoff)
   where
    import Char                            (isAlphaNum)
    import DatabaseDesign.Ampersand.Core.Basics       (Collection(..))
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
    import Data.Fspec 
    import Data.List
    import DatabaseDesign.Ampersand.Core.Basics                     (eqCl)

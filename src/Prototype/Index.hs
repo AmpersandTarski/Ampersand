@@ -6,7 +6,7 @@ module Prototype.Index(htmlindex) where
    import Prototype.RelBinGenSQL(isOne)
    import Version (versionbanner)
 --   import System.FilePath (addExtension)
-   import Ampersand (name,Service(..))
+   import DatabaseDesign.Ampersand.ADL1 (name,Service(..))
    import Data.Fspec
    import Options
    

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL.Prop (Prop(..),Props
+module DatabaseDesign.Ampersand.ADL1.Prop (Prop(..),Props
                 ,flipProps)
 where
 

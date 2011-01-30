@@ -1,12 +1,14 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module Classes.Graphics (Dotable(makePicture)
-                        ,GraphvizCommand(..)
-                        ,GraphvizOutput(..)
-                        ,runGraphvizCommand) where
+module DatabaseDesign.Ampersand.Misc.Graphics 
+          (Dotable(makePicture)
+    --      ,GraphvizCommand(..)
+    --      ,GraphvizOutput(..)
+    --      ,runGraphvizCommand) 
+    )where
 -- TODO url links for atlas
 
 import Data.GraphViz hiding (addExtension )
-import Ampersand 
+import DatabaseDesign.Ampersand.ADL1 
 import Data.Fspec (Fspc,Fservice(..))
 import Options
 import DatabaseDesign.Ampersand.Core.Basics (Inheritance(..),Collection(uni,isc,rd))

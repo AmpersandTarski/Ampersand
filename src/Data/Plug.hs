@@ -12,7 +12,7 @@ module Data.Plug (Plugable(..), PlugInfo(..), PlugInfos
                  ,PlugSQL(..)
                  ,DataObject(..))
 where
-import Ampersand ( Concept(..), Signaling(..), cptnew
+import DatabaseDesign.Ampersand.ADL1 ( Concept(..), Signaling(..), cptnew
            , Relation(..), Association(..), Relational(..), mIs, Identified(..)
            , Expression(..)
            , FilePos(..)

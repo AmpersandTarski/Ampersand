@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts -XUndecidableInstances #-}
-module DatabaseDesign.Ampersand.ADL.Concept ( Concept(..),Conceptual(..)
+module DatabaseDesign.Ampersand.ADL1.Concept ( Concept(..),Conceptual(..)
                    , Sign,GenR, SpecHierarchy(..)
                    , Signaling(..)
                    , cptnew,cptAnything,cptS,cptos'

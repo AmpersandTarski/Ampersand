@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XFlexibleInstances -XFlexibleContexts -XUndecidableInstances -XMultiParamTypeClasses #-}
-module DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..),Relational(..), mapMorphism
+module DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..),Relational(..), mapMorphism
                                   ,Declaration(..),Identified(..),uniqueNames
                                   ,makeDeclaration,makeRelation
                                   ,inline
                                   ,isSgn,mIs
                                   ,showSign,applyM)
 where
-   import DatabaseDesign.Ampersand.ADL.FilePos      (FilePos(..),Numbered(..))
-   import DatabaseDesign.Ampersand.ADL.Concept      (Concept(..),Conceptual(..),Signaling(..))
-   import DatabaseDesign.Ampersand.ADL.Prop         (Prop(..),Props,flipProps)
-   import DatabaseDesign.Ampersand.ADL.Pair         (Pairs,flipPair) 
+   import DatabaseDesign.Ampersand.ADL1.FilePos      (FilePos(..),Numbered(..))
+   import DatabaseDesign.Ampersand.ADL1.Concept      (Concept(..),Conceptual(..),Signaling(..))
+   import DatabaseDesign.Ampersand.ADL1.Prop         (Prop(..),Props,flipProps)
+   import DatabaseDesign.Ampersand.ADL1.Pair         (Pairs,flipPair) 
    import Data.List
    import DatabaseDesign.Ampersand.Core.Basics       (Collection ((>-)),Identified(..),uniqueNames)
    

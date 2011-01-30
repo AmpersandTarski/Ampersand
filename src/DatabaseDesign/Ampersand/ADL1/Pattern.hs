@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL.Pattern (Pattern(..),Patterns)
+module DatabaseDesign.Ampersand.ADL1.Pattern (Pattern(..),Patterns)
 where
-   import DatabaseDesign.Ampersand.ADL.KeyDef                   (KeyDefs)
-   import DatabaseDesign.Ampersand.ADL.Rule                     (Rules)
-   import DatabaseDesign.Ampersand.ADL.Gen                      (Gens)
-   import DatabaseDesign.Ampersand.ADL.Concept                  (Concept,Sign)
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration   (Declaration,Relation,Identified(..))
-   import DatabaseDesign.Ampersand.ADL.ConceptDef               (ConceptDefs)
-   import DatabaseDesign.Ampersand.ADL.Explanation              (PExplanations)
-   import DatabaseDesign.Ampersand.ADL.Expression               (PExpression)
+   import DatabaseDesign.Ampersand.ADL1.KeyDef                   (KeyDefs)
+   import DatabaseDesign.Ampersand.ADL1.Rule                     (Rules)
+   import DatabaseDesign.Ampersand.ADL1.Gen                      (Gens)
+   import DatabaseDesign.Ampersand.ADL1.Concept                  (Concept,Sign)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Declaration,Relation,Identified(..))
+   import DatabaseDesign.Ampersand.ADL1.ConceptDef               (ConceptDefs)
+   import DatabaseDesign.Ampersand.ADL1.Explanation              (PExplanations)
+   import DatabaseDesign.Ampersand.ADL1.Expression               (PExpression)
    
    type Patterns  = [Pattern]
    data Pattern

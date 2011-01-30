@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall -XFunctionalDependencies -XMultiParamTypeClasses -XUndecidableInstances -XFlexibleContexts -XFlexibleInstances #-}
 module Classes.Substitutive  (Substitutive(subst))
 where
-   import DatabaseDesign.Ampersand.ADL.Expression                   (Expression(..))
-   import DatabaseDesign.Ampersand.ADL.Concept                      (Concept(..), SpecHierarchy(..))
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration       (Relational(..), Association(..))
-   import DatabaseDesign.Ampersand.ADL.Rule                         (Rule(..),RuleType(Truth))
+   import DatabaseDesign.Ampersand.ADL1.Expression                   (Expression(..))
+   import DatabaseDesign.Ampersand.ADL1.Concept                      (Concept(..), SpecHierarchy(..))
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration       (Relational(..), Association(..))
+   import DatabaseDesign.Ampersand.ADL1.Rule                         (Rule(..),RuleType(Truth))
    
    class Substitutive exp rel where
  -- precondition: sign f `comparable` sign m

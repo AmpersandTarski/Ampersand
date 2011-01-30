@@ -11,9 +11,9 @@ import ShowADL                (ShowADL(..))
 import XML.ShowXMLtiny        (showXML)
 import Calc                   (deriveProofs)
 import Prototype.ObjBinGen    (phpObjServices)
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import Fspec2Pandoc           (fSpec2Pandoc)
-import Atlas.Atlas
+import DatabaseDesign.Ampersand.Output
 import Picture
 import Rendering.InfTree2Pandoc (texOnly_proofdoc)
 import Rendering.PandocAux (writepandoc)

@@ -22,7 +22,7 @@
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
 module TypeChecker (typecheck, Error, Errors) where
 
-import Ampersand          -- USE -> .MorphismAndDeclaration.makeDeclaration
+import DatabaseDesign.Ampersand.ADL1          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
 --import Data.List    -- USE -> unionBy
 --import Data.Maybe() -- USE -> fromJust, isNothing

@@ -2,7 +2,7 @@
 module Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne'
  ) where 
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
    import ShowADL
    import Data.Fspec
    import Data.Plug

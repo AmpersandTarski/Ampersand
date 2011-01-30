@@ -6,7 +6,7 @@ module PredLogic
 
    import Data.List
    import DatabaseDesign.Ampersand.Core.Basics (Collection((>-)),eqCl)
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
    import ShowADL
    import Languages (Lang(English,Dutch), plural)
    import Options

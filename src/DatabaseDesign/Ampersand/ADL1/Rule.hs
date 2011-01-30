@@ -1,14 +1,14 @@
 {-# OPTIONS_GHC -Wall -XUndecidableInstances -XFlexibleContexts -XMultiParamTypeClasses -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.ADL.Rule    ( Rule(..),mapRule,Rules
+module DatabaseDesign.Ampersand.ADL1.Rule    ( Rule(..),mapRule,Rules
                    , RuleType(..)
                    , consequent, antecedent, ruleType, normExpr, rulefromProp, isaRule, ruleviolations)     
 where
-   import DatabaseDesign.Ampersand.ADL.FilePos                   ( FilePos(..), Numbered(..))
-   import DatabaseDesign.Ampersand.ADL.Concept                   ( Concept(..), Conceptual(..), SpecHierarchy, Signaling(..))
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), Identified(..), mIs)
-   import DatabaseDesign.Ampersand.ADL.Expression                ( Expression(..), mapExpression, notCp)
-   import DatabaseDesign.Ampersand.ADL.Pair                      ( Pairs)
-   import DatabaseDesign.Ampersand.ADL.Prop
+   import DatabaseDesign.Ampersand.ADL1.FilePos                   ( FilePos(..), Numbered(..))
+   import DatabaseDesign.Ampersand.ADL1.Concept                   ( Concept(..), Conceptual(..), SpecHierarchy, Signaling(..))
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration    ( Relation(..), Declaration(..), Association(..) ,Relational(..), Identified(..), mIs)
+   import DatabaseDesign.Ampersand.ADL1.Expression                ( Expression(..), mapExpression, notCp)
+   import DatabaseDesign.Ampersand.ADL1.Pair                      ( Pairs)
+   import DatabaseDesign.Ampersand.ADL1.Prop
    import Classes.Populated
    import TypeInference.InfLibAG        ( InfTree(..) )
    import Data.Explain

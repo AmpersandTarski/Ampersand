@@ -27,7 +27,7 @@ TODO -> detect composition over universe
  -}
 module TypeInference.InfAdlExpr(infertype_and_populate) where
 import TypeInference.InfLibAG
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import ShowADL
 import Text.Pandoc
 import Rendering.InfTree2Pandoc (texOnly_pandoctree,texOnly_writeexpr,texOnly_writerule)

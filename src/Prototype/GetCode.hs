@@ -3,7 +3,7 @@ module Prototype.GetCode (getCodeFor) where
  import Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),useAttribute,PHPconcept(..))
  import Prototype.CodeVariables (CodeVar(..))
  import Prototype.CodeAuxiliaries (atleastOne,nameFresh,reName,noCollide)
- import Ampersand (Expression(..),mapExpression,Relation(..),mapMorphism,SpecHierarchy(..),mIs,flp,source,sign,target,Identified(..),Concept(..))
+ import DatabaseDesign.Ampersand.ADL1 (Expression(..),mapExpression,Relation(..),mapMorphism,SpecHierarchy(..),mIs,flp,source,sign,target,Identified(..),Concept(..))
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import Prototype.RelBinGenBasics(zipnum)
  import Data.Fspec (Fspc(plugInfos))

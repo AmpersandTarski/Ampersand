@@ -18,7 +18,7 @@ module Rendering.PandocAux ( writepandoc
                            )
 where
 import Version          (versionbanner)
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import Picture
 import ShowADL
 import Data.Fspec

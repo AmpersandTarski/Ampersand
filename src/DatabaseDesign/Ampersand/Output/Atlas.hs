@@ -1,8 +1,10 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}  
 --running PHP in IIS on the php.exe of XAMPP requires setting "cgi.force_redirect = 0" in the php.ini
 --in IIS you can enable windows authentication
-module Atlas.Atlas where
-import Ampersand
+module DatabaseDesign.Ampersand.Output.Atlas 
+   (fillAtlas)
+where
+import DatabaseDesign.Ampersand.ADL1
 import ShowADL
 import Data.Fspec
 import Options
@@ -12,7 +14,7 @@ import Database.HDBC.ODBC
 import Database.HDBC
 import Picture
 ------
-import Classes.Graphics
+import DatabaseDesign.Ampersand.Misc.Graphics (makePicture)
 
 data ATable = ATable {tableid::ATableId, tablename::String, columns::[String]} deriving (Show)
 data ATableId = 

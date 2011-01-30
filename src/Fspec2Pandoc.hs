@@ -4,7 +4,7 @@ module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
 import DatabaseDesign.Ampersand.Core.Basics      (eqCl)
 import DatabaseDesign.Ampersand.Core.Basics       (Collection (..))
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import Data.Plug
 import Picture
 import Data.List
@@ -19,7 +19,7 @@ import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs..
 import Rendering.AdlExplanation (explain,explain2Blocks)
 import Rendering.ClassDiagram
 import Switchboard      (switchboard1)
-import Classes.Graphics (makePicture)
+import DatabaseDesign.Ampersand.Misc.Graphics (makePicture)
 import FPA
 import Statistics
 import Rendering.PandocAux

@@ -7,7 +7,7 @@ import Options
 import UU_Scanner(scan,initPos)
 import UU_Parsing(parseIO)
 import TypeChecker(typecheck)
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import Rendering.PandocAux (writepandoc)
 import Text.Pandoc 
  

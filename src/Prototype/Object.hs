@@ -4,7 +4,7 @@ module Prototype.Object(objectServices) where
 --import Char(toUpper)
 import NormalForms (disjNF,simplify)
 import DatabaseDesign.Ampersand.Core.Basics (eqCl)
-import Ampersand (target, sign, source
+import DatabaseDesign.Ampersand.ADL1 (target, sign, source
            --,Concept(..),Declaration(..),isTrue
            ,ObjectDef(..),Numbered(..),Relational(..),ConceptStructure(..)
            ,Identified(..),mors,Relation(..),ViewPoint(..)

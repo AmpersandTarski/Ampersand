@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.Installer where
-  import Ampersand
+  import DatabaseDesign.Ampersand.ADL1
   import Data.List
   import Data.Plug
   import Data.Fspec

@@ -7,7 +7,7 @@ module Switchboard(switchboard1,SwitchBoard(..)) where
    --              -- 2) cabal-install graphviz  (onder windows: cabal install graphviz)
    --              -- 3) er is geen stap 3!
    --              -- 4) build on graphviz-2999.5.0.0
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
    import Data.Fspec
    import DatabaseDesign.Ampersand.Core.Basics (Collection(rd))
    import Calc (positiveIn)

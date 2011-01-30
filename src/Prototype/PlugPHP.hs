@@ -11,7 +11,7 @@ module Prototype.PlugPHP
                  ,makePhpPlug --make a phpplug from an ObjectDef (user-defined php plug)
                  )
 where
-import Ampersand ( Concept(..)
+import DatabaseDesign.Ampersand.ADL1 ( Concept(..)
            , Relation(..), Identified(..)
            , ObjectDef(..),mapExpression,mapMorphism
            )

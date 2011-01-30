@@ -8,12 +8,12 @@ module Classes.Object        (Object( concept
                              ,foldedattributes
                              ) 
 where
-import DatabaseDesign.Ampersand.ADL.Concept                (Concept,cptAnything)
-import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration (Relation(..),Association(..))
-import DatabaseDesign.Ampersand.ADL.ObjectDef              (ObjectDef(..),Service(..))
-import DatabaseDesign.Ampersand.ADL.Expression             (Expression(..))
-import DatabaseDesign.Ampersand.ADL.Population             (Population)
-import DatabaseDesign.Ampersand.ADL.Context                (Context(..))
+import DatabaseDesign.Ampersand.ADL1.Concept                (Concept,cptAnything)
+import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration (Relation(..),Association(..))
+import DatabaseDesign.Ampersand.ADL1.ObjectDef              (ObjectDef(..),Service(..))
+import DatabaseDesign.Ampersand.ADL1.Expression             (Expression(..))
+import DatabaseDesign.Ampersand.ADL1.Population             (Population)
+import DatabaseDesign.Ampersand.ADL1.Context                (Context(..))
 
 class Object a where
  concept :: a -> Concept                 -- the type of the object

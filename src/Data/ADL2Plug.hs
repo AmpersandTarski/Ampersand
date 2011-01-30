@@ -7,7 +7,7 @@ module Data.ADL2Plug
   )
 where
 import DatabaseDesign.Ampersand.Core.Basics     (Collection((>-)))
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import DatabaseDesign.Ampersand.Core.Basics    (eqCl, sort')
 import Data.Plug
 import Char

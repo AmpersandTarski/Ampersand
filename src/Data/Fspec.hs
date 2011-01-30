@@ -14,7 +14,7 @@ module Data.Fspec ( Fspc(..)
                   , datasets
                   )
  where
-   import Ampersand            hiding (Association)
+   import DatabaseDesign.Ampersand.ADL1            hiding (Association)
    import DatabaseDesign.Ampersand.Core.Basics                    ((>-))
    import DatabaseDesign.Ampersand.Core.Basics                      (Inheritance(..))
    import Data.Plug                     

@@ -6,7 +6,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import Char (isAlphaNum,ord,isUpper,toUpper)
    import Data.List
    import DatabaseDesign.Ampersand.Core.Basics
-   import Ampersand  hiding (Association)
+   import DatabaseDesign.Ampersand.ADL1  hiding (Association)
    import Data.Plug
    import Options
    import Data.Fspec      (Fspc,plugInfos)

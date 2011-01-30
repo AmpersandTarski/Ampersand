@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module Classes.Explainable (explanationDeclarations) 
 where
-  import DatabaseDesign.Ampersand.ADL.Context                 (Context(..))
-  import DatabaseDesign.Ampersand.ADL.Pattern                 (Pattern(..))
-  import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration  (makeDeclaration,Identified(..))
+  import DatabaseDesign.Ampersand.ADL1.Context                 (Context(..))
+  import DatabaseDesign.Ampersand.ADL1.Pattern                 (Pattern(..))
+  import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (makeDeclaration,Identified(..))
   import Data.Explain
   import Options 
-  import DatabaseDesign.Ampersand.ADL.Explanation
+  import DatabaseDesign.Ampersand.ADL1.Explanation
   import Classes.ViewPoint
 
 -- For parser data structures (which are: ConceptDef, Declaration, Population, Rule, Gen, KeyDef, ObjectDef, Pattern and Context)

@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL.Explanation (Explanation(..),PExplanation(..),PExplObj(..),Explanations,PExplanations,ExplObj(..))
+module DatabaseDesign.Ampersand.ADL1.Explanation (Explanation(..),PExplanation(..),PExplObj(..),Explanations,PExplanations,ExplObj(..))
 where
    import Languages                    (Lang)
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration   (Relation,Declaration,Association(..),Identified(..))
-   import DatabaseDesign.Ampersand.ADL.Concept                  (Concept(..))
-   import DatabaseDesign.Ampersand.ADL.ConceptDef               (ConceptDef)
-   import DatabaseDesign.Ampersand.ADL.Rule                     (Rule)
-   import DatabaseDesign.Ampersand.ADL.KeyDef                   (KeyDef)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration   (Relation,Declaration,Association(..),Identified(..))
+   import DatabaseDesign.Ampersand.ADL1.Concept                  (Concept(..))
+   import DatabaseDesign.Ampersand.ADL1.ConceptDef               (ConceptDef)
+   import DatabaseDesign.Ampersand.ADL1.Rule                     (Rule)
+   import DatabaseDesign.Ampersand.ADL1.KeyDef                   (KeyDef)
    import Data.Explain
 
 -- PExplanation is a parse-time constructor. It contains the name of the object it explains.

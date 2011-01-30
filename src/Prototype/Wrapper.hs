@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.Wrapper (objectWrapper) where
 import Data.List
-import Ampersand
+import DatabaseDesign.Ampersand.ADL1
 import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
 import Prototype.RelBinGenSQL(isOne)
 import Data.Fspec

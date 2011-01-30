@@ -2,7 +2,7 @@
 module ADL2Fspec (makeFspec,actSem, delta, allClauses, conjuncts, quads, assembleECAs, preEmpt, doCode, editable, editMph)
   where
    import DatabaseDesign.Ampersand.Core.Basics     (Collection(rd,rd',uni,isc,(>-)))
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
    import DatabaseDesign.Ampersand.Core.Basics    (eqCl, eqClass)
    import Data.Fspec
    import Options        (Options(language,genPrototype,theme),DocTheme(..))

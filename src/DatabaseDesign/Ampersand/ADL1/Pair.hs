@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XTypeSynonymInstances #-}
-module DatabaseDesign.Ampersand.ADL.Pair    (Paire,Pairs
+module DatabaseDesign.Ampersand.ADL1.Pair    (Paire,Pairs
                     , join
                     , srcPaire,trgPaire
                     , flipPair,mkPair

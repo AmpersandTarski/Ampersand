@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL.ObjectDef (Service(..),ObjectDef(..),ObjectDefs,actions)
+module DatabaseDesign.Ampersand.ADL1.ObjectDef (Service(..),ObjectDef(..),ObjectDefs,actions)
 where
-   import DatabaseDesign.Ampersand.ADL.FilePos                 (FilePos,Numbered(..))
-   import DatabaseDesign.Ampersand.ADL.Concept                 (Concept)
-   import DatabaseDesign.Ampersand.ADL.Expression              (Expression)
-   import DatabaseDesign.Ampersand.ADL.Rule                    (Rule)
-   import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration  (Relation,Identified(..)) 
+   import DatabaseDesign.Ampersand.ADL1.FilePos                 (FilePos,Numbered(..))
+   import DatabaseDesign.Ampersand.ADL1.Concept                 (Concept)
+   import DatabaseDesign.Ampersand.ADL1.Expression              (Expression)
+   import DatabaseDesign.Ampersand.ADL1.Rule                    (Rule)
+   import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation,Identified(..)) 
    import TypeInference.InfLibAG      (InfTree)
    
      

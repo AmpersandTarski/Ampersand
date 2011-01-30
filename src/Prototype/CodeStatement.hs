@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 module Prototype.CodeStatement (Statement(..),CodeQuery(..),UseVar(..),CodeVar(..),CodeVarIndexed(..),useAttribute,PHPconcept(..)) where
- import Ampersand (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
+ import DatabaseDesign.Ampersand.ADL1 (Concept(..),SpecHierarchy(..),Expression(..),Relation(..),Identified(..))
  import Prototype.CodeAuxiliaries (Named(..))
 
  -- | An abstract statement: this is the intermediate structure for going from an expression to an imperative program.

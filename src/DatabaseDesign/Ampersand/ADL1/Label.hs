@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module DatabaseDesign.Ampersand.ADL.Label (Label(..))
+module DatabaseDesign.Ampersand.ADL1.Label (Label(..))
 where
-   import DatabaseDesign.Ampersand.ADL.FilePos  (FilePos)
+   import DatabaseDesign.Ampersand.ADL1.FilePos  (FilePos)
    
    data Label = Lbl { lblnm   :: String
                     , lblpos  :: FilePos

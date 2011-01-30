@@ -2,7 +2,7 @@
 module NormalForms (conjNF,disjNF,normPA,nfProof,cfProof,dfProof,proofPA,simplify,distribute)
 where
    import DatabaseDesign.Ampersand.Core.Basics    (Collection (..),commaEng,eqCl,eqClass)
-   import Ampersand
+   import DatabaseDesign.Ampersand.ADL1
 {- Normalization of process algebra clauses -}
 
    normPA :: PAclause (Relation Concept) -> PAclause (Relation Concept)

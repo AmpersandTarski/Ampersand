@@ -1,13 +1,13 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts -XUndecidableInstances -XFlexibleInstances -XMultiParamTypeClasses #-}
-module DatabaseDesign.Ampersand.ADL.Expression (Expression(..),PExpression(..),UnOp(..),MulOp(..),Expressions,PExpressions
+module DatabaseDesign.Ampersand.ADL1.Expression (Expression(..),PExpression(..),UnOp(..),MulOp(..),Expressions,PExpressions
                       ,mapExpression,foldlExpression,foldrExpression
                       ,isF,isFd,isFi,isFu,isI,v
                       ,isPos,isNeg,idsOnly,notCp,insParentheses)
 where
-import DatabaseDesign.Ampersand.ADL.MorphismAndDeclaration  (Relation(..),Declaration(..),Association(..),Relational(..),Identified(..))
-import DatabaseDesign.Ampersand.ADL.FilePos                 (Numbered(..))
-import DatabaseDesign.Ampersand.ADL.Concept                 (Concept(..), Conceptual(..), SpecHierarchy(..) ,Sign)
-import DatabaseDesign.Ampersand.ADL.Prop                    (Prop(..))
+import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation(..),Declaration(..),Association(..),Relational(..),Identified(..))
+import DatabaseDesign.Ampersand.ADL1.FilePos                 (Numbered(..))
+import DatabaseDesign.Ampersand.ADL1.Concept                 (Concept(..), Conceptual(..), SpecHierarchy(..) ,Sign)
+import DatabaseDesign.Ampersand.ADL1.Prop                    (Prop(..))
 import DatabaseDesign.Ampersand.Core.Basics                  (Collection (..))
 import Data.List hiding (union)
 import DatabaseDesign.Ampersand.Core.Basics                 (eqClass, sord')
