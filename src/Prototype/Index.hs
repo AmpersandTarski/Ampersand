@@ -7,7 +7,7 @@ module Prototype.Index(htmlindex) where
    import Version (versionbanner)
 --   import System.FilePath (addExtension)
    import DatabaseDesign.Ampersand.ADL1 (name,Service(..))
-   import Data.Fspec
+   import DatabaseDesign.Ampersand.Fspec
    import Options
    
    

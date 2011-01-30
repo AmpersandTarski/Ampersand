@@ -4,7 +4,7 @@ import Data.List
 import DatabaseDesign.Ampersand.ADL1
 import Prototype.RelBinGenBasics(indentBlock,phpIdentifier,commentBlock,addToLast)
 import Prototype.RelBinGenSQL(isOne)
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec
 import Version (versionbanner)
 import Options        (Options(autoid))
 

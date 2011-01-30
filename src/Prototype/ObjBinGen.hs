@@ -2,9 +2,9 @@
 module Prototype.ObjBinGen  (phpObjServices)
   where
  
-   import Data.Fspec
+   import DatabaseDesign.Ampersand.Fspec
    --import Data.Plug {- (Plug(..),DataObject(..)) -}
-   import DatabaseDesign.Ampersand.ADL1 (name,Service(..))
+   import DatabaseDesign.Ampersand.ADL1 (Service(..))
    import Prototype.ConnectToDataBase   (connectToDataBase)
    import Prototype.Object              (objectServices)
    import Prototype.Wrapper             (objectWrapper)
@@ -65,7 +65,7 @@ module Prototype.ObjBinGen  (phpObjServices)
                     ++", $DB_pass='"++addSlashes (sqlPwd flags)++"'"
                     ++") or exit(\"Username / password are probably incorrect. Try deleting dbsettings.php\"); $DB_debug = 3; ?>"
        targetDir = dirPrototype flags
-       svcs = map fsv_svcdef (services fSpec)
+       svcs = serviceS fSpec++ serviceG fSpec--Was (voor ontvlechting): map fsv_svcdef (fServices fSpec)
 
    data StaticFile = SF { relFP         :: [FilePath] -- relative path including basename and extension
                         , isBinary      :: Bool

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
-module DatabaseDesign.Ampersand.Misc.Graphics 
+module DatabaseDesign.Ampersand.Fspec.Graphics 
           (Dotable(makePicture)
     --      ,GraphvizCommand(..)
     --      ,GraphvizOutput(..)
@@ -9,11 +9,11 @@ module DatabaseDesign.Ampersand.Misc.Graphics
 
 import Data.GraphViz hiding (addExtension )
 import DatabaseDesign.Ampersand.ADL1 
-import Data.Fspec (Fspc,Fservice(..))
+import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc,Fservice)
+import DatabaseDesign.Ampersand.Fspec.Switchboard
 import Options
 import DatabaseDesign.Ampersand.Core.Basics (Inheritance(..),Collection(uni,isc,rd))
 import Picture
-import Switchboard
 import Rendering.ClassDiagram
 
 class Identified a => Navigatable a where

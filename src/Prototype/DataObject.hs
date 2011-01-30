@@ -7,10 +7,9 @@ import Adl (
            ,Identified(..)
            ,Object(..),Expression(..), Concept, FilePos(..)
            )
-import ShowADL (showADLcode)
 import Prototype.RelBinGenSQL(sqlExprTrg,selectExpr)
 import Prototype.RelBinGenBasics(indentBlock,phpIdentifier)
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec
 import Data.Plug
 import Data.List  hiding (group)
 import Version (versionbanner)

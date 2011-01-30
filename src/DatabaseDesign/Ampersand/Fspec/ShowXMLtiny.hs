@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS -XTypeSynonymInstances -XFlexibleInstances #-}
-module XML.ShowXMLtiny (showXML)
+module DatabaseDesign.Ampersand.Fspec.ShowXMLtiny (showXML)
 where
 --   import Text.XML.HaXml
 --     --Als de compiler hierover struikelt, dan moet je xml installeren. Dat is overigens in de volgende 3 stappen:
@@ -22,13 +22,13 @@ where
 
    import DatabaseDesign.Ampersand.ADL1
 --   import Languages
-   import ShowADL
+   import DatabaseDesign.Ampersand.Fspec.ShowADL 
 --   import Data.Explain
-   import Data.Fspec
+   import DatabaseDesign.Ampersand.Fspec.Fspec
    import Time(ClockTime)
    import Version(versionbanner)
    import Data.Plug
-   import XML.TinyXML
+   import Data.TinyXML
    showXML :: Fspc -> ClockTime -> String
    showXML fSpec now 
             = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ++
@@ -63,7 +63,7 @@ where
           ++ [ Elem (simpleTag "Patterns") (map mkXmlTree (patterns f))] 
           ++ [ Elem (simpleTag "ServiceS") (map mkXmlTree (serviceS f))] 
           ++ [ Elem (simpleTag "ServiceG") (map mkXmlTree (serviceG f))] 
-          ++ [ Elem (simpleTag "Services") (map mkXmlTree (services f))] 
+          ++ [ Elem (simpleTag "Services") (map mkXmlTree (fServices f))] 
           ++ [ Elem (simpleTag "Rules")    (map mkXmlTree (vrules f))] 
           ++ [ Elem (simpleTag "GRules")   (map mkXmlTree (grules f))] 
           ++ [ Elem (simpleTag "Declarations")(map mkXmlTree (vrels f))] 

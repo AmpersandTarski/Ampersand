@@ -5,16 +5,14 @@ module DatabaseDesign.Ampersand.Output.Atlas
    (fillAtlas)
 where
 import DatabaseDesign.Ampersand.ADL1
-import ShowADL
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec
 import Options
 import Rendering.AdlExplanation
 import DatabaseDesign.Ampersand.Core.Basics 
 import Database.HDBC.ODBC 
 import Database.HDBC
-import Picture
+import Picture 
 ------
-import DatabaseDesign.Ampersand.Misc.Graphics (makePicture)
 
 data ATable = ATable {tableid::ATableId, tablename::String, columns::[String]} deriving (Show)
 data ATableId = 

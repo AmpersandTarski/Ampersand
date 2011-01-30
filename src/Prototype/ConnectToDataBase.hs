@@ -5,12 +5,11 @@ module Prototype.ConnectToDataBase (connectToDataBase)
    import DatabaseDesign.Ampersand.ADL1
    import Options
    import Languages
-   import ShowADL(showADLcode)
    import Rendering.AdlExplanation (explain,ExplainOutputFormat(..),format)
    import NormalForms (conjNF)
    import Prototype.RelBinGenBasics(phpShow,pDebug)
    import Version (versionbanner)
-   import Data.Fspec
+   import DatabaseDesign.Ampersand.Fspec
    import Prototype.Code
 
    connectToDataBase :: Fspc -> Options -> String

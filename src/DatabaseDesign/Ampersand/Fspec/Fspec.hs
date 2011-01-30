@@ -7,11 +7,12 @@ In the future, other ways of 'filling' Fspc are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show Fspc.
 -}
-module Data.Fspec ( Fspc(..)
+module DatabaseDesign.Ampersand.Fspec.Fspec 
+          ( Fspc(..)
                   , Fservice(..), Field(..), Clauses(..), Quad(..)
                   , FSid(..)
                   , FTheme(..)
-                  , datasets
+                  , datasets, toService
                   )
  where
    import DatabaseDesign.Ampersand.ADL1            hiding (Association)
@@ -26,7 +27,7 @@ module Data.Fspec ( Fspc(..)
                     , plugInfos    :: PlugInfos              -- ^ All plugs (defined and derived)
                     , serviceS     :: [Service]              -- ^ All services defined in the Ampersand script
                     , serviceG     :: [Service]              -- ^ All services derived from the basic ontology
-                    , services     :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
+                    , fServices    :: Fservices              -- ^ generated: One Fservice for every ObjectDef in serviceG and serviceS 
                     , roleServices :: [(String,Fservice)]    -- ^ the relation saying which roles may use which service
                     , mayEdit      :: [(String,Declaration Concept)] -- ^ the relation saying which roles may change the population of which relation.
                     , vrules       :: Rules (Relation Concept) -- ^ All rules that apply in the entire Fspc, including all signals
@@ -92,7 +93,9 @@ module Data.Fspec ( Fspc(..)
                      , fsv_fpa       :: FPA                    -- function point assessment of this service
                      , fsv_expls     :: Explanations           -- The explanations of everything that is used in this service.
                      }
-
+   toService :: Fservice -> Service
+   toService  = fsv_svcdef 
+   
    instance Show Fservice where
     showsPrec _ svc@(Fservice{})
      = showString (show (fsv_svcdef    svc)++"\n"++

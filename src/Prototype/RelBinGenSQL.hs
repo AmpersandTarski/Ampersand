@@ -3,8 +3,7 @@ module Prototype.RelBinGenSQL
  (sqlRelPlugs,sqlExprTrg,sqlExprSrc,sqlPlugFields,selectExpr,selectExprBrac,isOne,isOne'
  ) where 
    import DatabaseDesign.Ampersand.ADL1
-   import ShowADL
-   import Data.Fspec
+   import DatabaseDesign.Ampersand.Fspec
    import Data.Plug
    import NormalForms (disjNF,simplify)
    import Prototype.RelBinGenBasics (zipnum,Concatable(..),(+++),quote

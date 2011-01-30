@@ -3,7 +3,7 @@
 --        In that case it's not a Rendering module and it needs to be replaced
 module Rendering.AdlExplanation(explain,ExplainOutputFormat(..),explain2Blocks,format) where
 import DatabaseDesign.Ampersand.ADL1 hiding (applyM)
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec
 import Options
 import Data.Explain
 import Data.List

@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -Wall -XFlexibleContexts #-}
-module Calc ( deriveProofs
-            , reprAsRule
-            , lambda
-            , checkMono
-            , showProof
+module DatabaseDesign.Ampersand.Fspec.ToFspec.Calc ( deriveProofs
+        --    , reprAsRule
+        --    , lambda
+        --    , checkMono
+        --    , showProof
             , positiveIn) 
   where
 
@@ -12,11 +12,11 @@ module Calc ( deriveProofs
    import DatabaseDesign.Ampersand.Core.Basics            (commaEng)
    import Data.List
    import DatabaseDesign.Ampersand.ADL1
-   import Data.Fspec
-   import ADL2Fspec          (actSem, delta, allClauses, conjuncts, assembleECAs, preEmpt, doCode, editable, editMph)
-   import ShowECA
-   import ShowHS
-   import ShowADL            (ShowADL(..))
+   import DatabaseDesign.Ampersand.Fspec.Fspec(Fspc(..),Clauses(..),Quad(..))
+   import DatabaseDesign.Ampersand.Fspec.ShowADL (ShowADL(..))
+   import DatabaseDesign.Ampersand.Fspec.ShowECA (showECA)
+   import DatabaseDesign.Ampersand.Fspec.ShowHS  (showHS)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.ADL2Fspec
    import NormalForms        (conjNF,disjNF,nfProof,cfProof,dfProof,simplify, normPA) --,proofPA) -- proofPA may be used to test derivations of PAclauses.
    import Options            (Options(..),defaultFlags)
    import Data.Explain

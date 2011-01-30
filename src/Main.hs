@@ -3,16 +3,10 @@ module Main where
 
 import Options                (getOptions,Options(..),verboseLn,verbose,DocTheme(..),FspecFormat(..) )
 import DatabaseDesign.Ampersand.Input                 (parseADL1)
-import ADL2Fspec              (makeFspec)
 import Control.Monad
-import Data.Fspec   hiding (services)
-import ShowHS                 (fSpec2Haskell)
-import ShowADL                (ShowADL(..))
-import XML.ShowXMLtiny        (showXML)
-import Calc                   (deriveProofs)
+import DatabaseDesign.Ampersand.Fspec
 import Prototype.ObjBinGen    (phpObjServices)
 import DatabaseDesign.Ampersand.ADL1
-import Fspec2Pandoc           (fSpec2Pandoc)
 import DatabaseDesign.Ampersand.Output
 import Picture
 import Rendering.PandocAux (writepandoc)

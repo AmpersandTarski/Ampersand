@@ -9,7 +9,7 @@ where
 import Text.Pandoc 
 import DatabaseDesign.Ampersand.TypeInference
        (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
-import Data.Fspec   hiding (services)
+import DatabaseDesign.Ampersand.Fspec
 import DatabaseDesign.Ampersand.ADL1 
                         (Declaration(..)
                         ,Expression(..),insParentheses

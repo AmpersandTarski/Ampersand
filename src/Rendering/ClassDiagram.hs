@@ -9,7 +9,7 @@ module Rendering.ClassDiagram (ClassDiag(..), cdAnalysis,classdiagram2dot) where
    import DatabaseDesign.Ampersand.ADL1  hiding (Association)
    import Data.Plug
    import Options
-   import Data.Fspec      (Fspc,plugInfos)
+   import DatabaseDesign.Ampersand.Fspec.Fspec      (Fspc,plugInfos)
 --   import Data.ClassDiag  
    --TODO -> copied from Auxiliaries because disabled (why disabled?)
    enc :: Bool -> String -> String

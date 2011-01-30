@@ -1,16 +1,16 @@
 {-# OPTIONS_GHC -Wall -XUndecidableInstances -XFlexibleContexts -XFlexibleInstances #-}
-module ShowHS (ShowHS(..),fSpec2Haskell,haskellIdentifier)
+module DatabaseDesign.Ampersand.Fspec.ShowHS (ShowHS(..),fSpec2Haskell,haskellIdentifier)
 where
 
    import Char                  (isAlphaNum)
    import DatabaseDesign.Ampersand.Core.Basics
    import Data.Plug
-   import Data.Fspec
+   import DatabaseDesign.Ampersand.Fspec.Fspec
+   import DatabaseDesign.Ampersand.Fspec.ShowADL       (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import Data.List
    import DatabaseDesign.Ampersand.ADL1
    import qualified DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner
   --          (Pos(..) 
-   import ShowADL               (ShowADL(..))--,showADLcode) -- wenselijk voor foutmeldingen.
    import Options hiding (services)
    import Version               (versionbanner)
    import FPA                   (FPA(..),FPcompl,fpa)
@@ -24,7 +24,7 @@ where
              ++"\n  import UU_Scanner"
              ++"\n  import ADL"
              ++"\n  import ShowHS (showHS)"
-             ++"\n  import Data.Fspec"
+             ++"\n  import DatabaseDesign.Ampersand.Fspec.Fspec"
              ++"\n  import Data.Plug"
              ++"\n  import FPA"
              ++"\n  import Options (getOptions)"
@@ -227,7 +227,7 @@ where
 --                  ,wrap ", plugs         = " indentA (\_->showHSname) (plugs fspec)
                   ,     ", serviceS      = serviceS'"
                   ,     ", serviceG      = serviceG'"
-                  ,wrap ", services      = " indentA (\_->showHSname) (services fspec)
+                  ,wrap ", fServices   = " indentA (\_->showHSname) (fServices fspec)
              --   ,wrap ", roleServices  = " indentA (showHS flags)   (roleServices fspec)
              --   ,wrap ", mayEdit       = " indentA (showHS flags)   (mayEdit fspec)
                   ,     ", roleServices  = " ++
@@ -288,9 +288,9 @@ where
 --             else concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<- (uni (serviceS fspec)  (serviceG fspec)) ]++"\n")++
 -- 
         
-       (if null (services fspec ) then "" else
+       (if null (fServices fspec ) then "" else
         "\n -- ***Declarations of Services ***: "++
-        concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-services fspec ]++"\n")++
+        concat [indent++" "++showHSname s++indent++"  = "++showHS flags (indent++"    ") s|s<-fServices fspec ]++"\n")++
        (if null (vrules   fspec ) then "" else
         "\n -- ***User defined of RULES ***: "++
         concat [indent++" "++showHSname r++indent++"  = "++showHS flags (indent++"    ") r|r<-vrules   fspec ]++"\n")++        

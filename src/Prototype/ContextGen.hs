@@ -2,7 +2,7 @@
 module Prototype.ContextGen where
   import DatabaseDesign.Ampersand.ADL1
   import Data.List
-  import Data.Fspec
+  import DatabaseDesign.Ampersand.Fspec
   import Version (versionbanner)
    
   contextGen :: Fspc -> String

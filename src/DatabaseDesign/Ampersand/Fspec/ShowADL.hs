@@ -10,12 +10,13 @@
   -- Question (SJC): If STRING is the code produced by showADLcode fSpec, would STRING == showADL (parse STRING) (context (parse STRING)) be true?
   -- Answer (SJ):   No, not for every STRING. Yet, for every fSpec we want  semantics fSpec == semantics (parse (showADLcode fSpec fSpec)).
   --                Note that 'parse' and 'semantics' do not exist in this shape, so the actual expression is slightly more complicated.
-module ShowADL ( ShowADL(..), disambiguate, relatsoff)
+module DatabaseDesign.Ampersand.Fspec.ShowADL
+    ( ShowADL(..), disambiguate, relatsoff)
   where
    import Char                            (isAlphaNum)
    import DatabaseDesign.Ampersand.Core.Basics       (Collection(..))
    import DatabaseDesign.Ampersand.ADL1
-   import Data.Fspec 
+   import DatabaseDesign.Ampersand.Fspec.Fspec (Fspc(..))
    import Data.List
    import DatabaseDesign.Ampersand.Core.Basics                     (eqCl)
    import Data.Explain
@@ -303,7 +304,7 @@ module ShowADL ( ShowADL(..), disambiguate, relatsoff)
     showADLcode fSpec expr  = showExpr (" \\/ ", "/\\", "!", ";", "*", "+", "-", "(", ")") expr
       where
        showExpr (union',inter,rAdd,rMul,clos0,clos1,compl,lpar,rpar) expr'
-        = (showchar.insParentheses.disambiguate fSpec.relatsoff) expr'
+        = (showchar.insParentheses.disambiguate fSpec.relatsoff) expr'  
          where
           showchar (Tm rel _) = showADLcode fSpec rel
           showchar (Fux [])   = "-V"

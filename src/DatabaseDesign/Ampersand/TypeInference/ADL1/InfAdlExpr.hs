@@ -30,7 +30,7 @@ module DatabaseDesign.Ampersand.TypeInference.ADL1.InfAdlExpr
 where
 import DatabaseDesign.Ampersand.TypeInference.InfLibAG
 import DatabaseDesign.Ampersand.ADL1
-import ShowADL
+import DatabaseDesign.Ampersand.Fspec.ShowADL
 import Text.Pandoc
 import DatabaseDesign.Ampersand.Output.InfTree2Pandoc
          (texOnly_pandoctree,texOnly_writeexpr,texOnly_writerule)

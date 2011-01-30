@@ -20,8 +20,8 @@ where
 import Version          (versionbanner)
 import DatabaseDesign.Ampersand.ADL1
 import Picture
-import ShowADL
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec
+import DatabaseDesign.Ampersand.Fspec.ShowADL(disambiguate,relatsoff)
 import Data.Char
 import Text.Pandoc
   --Als de compiler hierover struikelt, dan moet je pandoc installeren. Dat is overigens in de volgende 3 stappen:

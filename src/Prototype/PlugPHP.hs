@@ -21,7 +21,7 @@ import Prototype.CodeVariables (CodeVar(..),CodeVarIndexed(..))
 import Prototype.CodeStatement (PHPconcept(..))
 import Data.Maybe (listToMaybe)
 import Data.Plug
-import ShowHS
+import DatabaseDesign.Ampersand.Fspec
 import Data.List
 ----------------------------------------------
 --PlugPHP

@@ -1,17 +1,14 @@
 {-# OPTIONS_GHC -Wall #-}
-module Switchboard(switchboard1,SwitchBoard(..)) where
+module DatabaseDesign.Ampersand.Fspec.Switchboard
+    (switchboard1,SwitchBoard(..)) where
  
    import Data.GraphViz
-   --     --Als de compiler hierover struikelt, dan moet je graphviz installeren. Dat is overigens in de volgende 3 stappen:
-   --              -- 1) Eerst installeer je Cabal (zie http://www.haskell.org/cabal/) en dan roep je op je command line: 
-   --              -- 2) cabal-install graphviz  (onder windows: cabal install graphviz)
-   --              -- 3) er is geen stap 3!
-   --              -- 4) build on graphviz-2999.5.0.0
-   import DatabaseDesign.Ampersand.ADL1
-   import Data.Fspec
    import DatabaseDesign.Ampersand.Core.Basics (Collection(rd))
-   import Calc (positiveIn)
-   import ShowADL
+   import DatabaseDesign.Ampersand.ADL1
+   import DatabaseDesign.Ampersand.Fspec.Fspec
+   import DatabaseDesign.Ampersand.Fspec.ShowADL (showADLcode)
+   import DatabaseDesign.Ampersand.Fspec.ToFspec.Calc (positiveIn)
+ 
 
    data SwitchBoard = SwitchBoard { sbName :: String
                                   , sbdotGraph :: DotGraph String

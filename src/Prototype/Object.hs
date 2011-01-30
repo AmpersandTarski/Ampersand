@@ -10,12 +10,10 @@ import DatabaseDesign.Ampersand.ADL1 (target, sign, source
            ,Identified(..),mors,Relation(..),ViewPoint(..)
            ,Object(..),isIdent,Expression(..),mIs,cptS
            )
-import ShowADL (showADLcode)
 import DatabaseDesign.Ampersand.Core.Basics (Collection (rd,rd',(>-),uni))
 import Prototype.RelBinGenSQL(sqlExprSrc,sqlExprTrg,sqlRelPlugs,selectExprBrac,isOne,isOne',selectExpr,sqlPlugFields)
 import Prototype.RelBinGenBasics(naming,indentBlock,addToLast,phpIdentifier,addSlashes,commentBlock)
-import DatabaseDesign.Ampersand.Classes.Object (foldedattributes)
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec
 import Data.Plug
 import Data.Maybe
 import Data.List  hiding (group)

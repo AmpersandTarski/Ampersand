@@ -2,7 +2,7 @@
 module Prototype.InterfaceDef where
   import DatabaseDesign.Ampersand.ADL1
   import Data.List
-  import Data.Fspec
+  import DatabaseDesign.Ampersand.Fspec
   import Prototype.RelBinGenBasics(commentBlock, indentBlock)
   import Prototype.RelBinGenSQL(isOne)
   import Languages(Lang(..))

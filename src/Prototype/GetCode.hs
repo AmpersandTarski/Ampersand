@@ -6,7 +6,7 @@ module Prototype.GetCode (getCodeFor) where
  import DatabaseDesign.Ampersand.ADL1 (Expression(..),mapExpression,Relation(..),mapMorphism,SpecHierarchy(..),mIs,flp,source,sign,target,Identified(..),Concept(..))
  import Prototype.RelBinGenSQL(selectExpr,sqlExprTrg,sqlExprSrc)
  import Prototype.RelBinGenBasics(zipnum)
- import Data.Fspec (Fspc(plugInfos))
+ import DatabaseDesign.Ampersand.Fspec (Fspc(plugInfos))
  import Data.Plug (makePlug,PlugInfo(..))
  import Prototype.PlugPHP(phpfile,phpSafe,phpinArgs)
  import Prototype.CodeAuxiliaries(Named(..))

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 --TODO -> May be we can look at GetText function for help with internationalization. Brian O'Sullivan is working (has started) on an internationalization library. Maybe some day...
-module Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
+module DatabaseDesign.Ampersand.Output.Fspec2Pandoc (fSpec2Pandoc)--,laTeXtemplate)
 where
 import DatabaseDesign.Ampersand.Core.Basics      (eqCl)
 import DatabaseDesign.Ampersand.Core.Basics       (Collection (..))
@@ -8,7 +8,7 @@ import DatabaseDesign.Ampersand.ADL1
 import Data.Plug
 import Picture
 import Data.List
-import Data.Fspec
+import DatabaseDesign.Ampersand.Fspec.Fspec
 import DatabaseDesign.Ampersand.Core.Basics          (upCap, commaNL, commaEng, preciesEen)
 import Text.Pandoc  
 import Version          (versionbanner)
@@ -18,8 +18,8 @@ import Options hiding   (services) --importing (Options(..),FspecFormat(..),DocT
 import NormalForms      (conjNF) -- ,proofPA)  Dit inschakelen voor het bewijs...
 import Rendering.AdlExplanation (explain,explain2Blocks)
 import Rendering.ClassDiagram
-import Switchboard      (switchboard1)
-import DatabaseDesign.Ampersand.Misc.Graphics (makePicture)
+import DatabaseDesign.Ampersand.Fspec.Switchboard      (switchboard1)
+import DatabaseDesign.Ampersand.Fspec.Graphics (makePicture)
 import FPA
 import Statistics
 import Rendering.PandocAux
@@ -112,13 +112,13 @@ fSpec2Pandoc fSpec flags = ( Pandoc meta docContents , pictures )
                if studentversion then fpAnalysis level fSpec flags else [] ++
                glossary level fSpec flags 
                )
-             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
+             where svcs = [serviceChap level fSpec flags svc | svc  <-fServices fSpec,not studentversion]
                    (caTxt,_) = conceptualAnalysis level fSpec flags
                    paTxt     = processAnalysis    level fSpec flags
                    (daTxt,_) = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
           pictures = [daPic]++caPics++[p| (_,pics)<-svcs, p<-pics] 
-             where svcs = [serviceChap level fSpec flags svc | svc  <-services fSpec,not studentversion]
+             where svcs = [serviceChap level fSpec flags svc | svc  <-fServices fSpec,not studentversion]
                    (_,caPics) = conceptualAnalysis level fSpec flags
                    (_,daPic)  = dataAnalysis       level fSpec flags
                    studentversion = theme flags == StudentTheme
@@ -691,7 +691,7 @@ processAnalysis lev fSpec flags
                ]
      ]
      where
-      rolelessSvs  = [ svc | svc<-services fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
+      rolelessSvs  = [ svc | svc<-fServices fSpec, not (name svc `elem` (rd.map (name.snd)) (roleServices fSpec)) ]
       rolelessRels = [ d | d<-declarations fSpec, not (d `elem` (rd.map snd) (mayEdit fSpec)) ]
 
 ------------------------------------------------------------
@@ -1237,7 +1237,7 @@ fpAnalysis lev fSpec flags = header ++ caIntro ++ fpa2Blocks
                 ,Para $ 
                   [ TeX $ "\\begin{tabular}{|l|l|r|}\\hline \n" ++
                           intercalate "&" ["service", "analysis", "points"] ++"\\\\\\hline\n"++
-                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-services fSpec] ++
+                          intercalate "\\\\\n" [ intercalate "&" [name svc, latexEscShw (fsv_fpa svc), (latexEscShw.fPoints.fsv_fpa) svc] | svc<-fServices fSpec] ++
                           "\\\\\\hline\\end{tabular}" ]
                 ]            
       _      -> [Plain $ 

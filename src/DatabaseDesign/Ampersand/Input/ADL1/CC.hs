@@ -43,7 +43,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.CC
                       ,flp
                       ,cptS
                       )
-   import ShowADL     (showADL)
+   import DatabaseDesign.Ampersand.Fspec     (showADL)
    import Languages
    import DatabaseDesign.Ampersand.Core.Basics     (trim)
    import Options     (defaultFlags, Options(..))
