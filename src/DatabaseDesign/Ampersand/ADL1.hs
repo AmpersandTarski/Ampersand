@@ -37,7 +37,6 @@ module DatabaseDesign.Ampersand.ADL1
            , Explanation(..)
            )
 where
-
    import DatabaseDesign.Ampersand.Classes
    import DatabaseDesign.Ampersand.ADL1.Concept                    (Concept(..),Conceptual(..),cptnew,cptS,cptAnything,cptos' 
                                          ,Sign,GenR()
@@ -74,4 +73,3 @@ where
                                          ,RuleType(..),rulefromProp, isaRule, ruleviolations
                                          ,consequent,antecedent,ruleType
                                          ,normExpr)
-

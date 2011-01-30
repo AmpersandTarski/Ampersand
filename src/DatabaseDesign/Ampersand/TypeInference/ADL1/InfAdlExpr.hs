@@ -25,12 +25,15 @@ TODO -> detect composition over universe
                        " are not comparable. Specify the order with a GEN .. ISA .."
                        |(c1,c2,c3)<-checkrels])
  -}
-module TypeInference.InfAdlExpr(infertype_and_populate) where
-import TypeInference.InfLibAG
+module DatabaseDesign.Ampersand.TypeInference.ADL1.InfAdlExpr
+     (infertype_and_populate) 
+where
+import DatabaseDesign.Ampersand.TypeInference.InfLibAG
 import DatabaseDesign.Ampersand.ADL1
 import ShowADL
 import Text.Pandoc
-import Rendering.InfTree2Pandoc (texOnly_pandoctree,texOnly_writeexpr,texOnly_writerule)
+import DatabaseDesign.Ampersand.Output.InfTree2Pandoc
+         (texOnly_pandoctree,texOnly_writeexpr,texOnly_writerule)
 
 fatal :: Int -> String -> a
 fatal regel msg = error ("!Fatal (module TypeInference.InfLibAdlExpr "++show regel++"): "++msg )

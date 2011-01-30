@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.InfLibAGFuncs where
+module DatabaseDesign.Ampersand.TypeInference.InfLibAGFuncs where
 {- a module to infer types of expressions of a heterogeneous relation algebra with ISA hierarchy 
  - expressions must be normalised with the function normalise
  - the relation variables in the expression are bound to a declaration with a type

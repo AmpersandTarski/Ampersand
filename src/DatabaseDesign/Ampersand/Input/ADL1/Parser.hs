@@ -6,7 +6,7 @@ import DatabaseDesign.Ampersand.Input.ADL1.CC (pArchitecture,keywordstxt, keywor
 import Options
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Scanner(scan,initPos)
 import DatabaseDesign.Ampersand.Input.ADL1.UU_Parsing(parseIO)
-import TypeChecker(typecheck)
+import DatabaseDesign.Ampersand.Input.ADL1.TypeChecker (typecheckAdl1)
 import DatabaseDesign.Ampersand.ADL1
 import Rendering.PandocAux (writepandoc)
 import Text.Pandoc 
@@ -17,7 +17,7 @@ parseADL1 :: String      -- ^ The string to be parsed
          -> IO(Context) -- ^ The IO monad with the context. 
 parseADL1 adlstring flags fnFull =
     do { slRes <- parseIO pArchitecture (scan keywordstxt keywordsops specialchars opchars fnFull initPos adlstring)
-       ; case typecheck slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
+       ; case typecheckAdl1 slRes of        -- this results in a list of contexts and a list of errors. Now we will inspect the result:
                 ( []      ,[]) -> ioError(userError ("no context encountered in input file.\n"))
                 ( contexts,[]) -> case filteredContexts  of
                                     []   -> ioError(userError ("context "++specificName ++" was not encountered in input file.\n"))

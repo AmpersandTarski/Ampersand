@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.Isa (isaRels) where
-import DatabaseDesign.Ampersand.ADL1  
+module DatabaseDesign.Ampersand.TypeInference.ADL1.Isa (isaRels) where
+import DatabaseDesign.Ampersand.ADL1  (Concept(..),Gen(..),Gens,cptnew)
 import qualified Data.Set as Set
 
 ---------------------------------------------------------------------------------------------

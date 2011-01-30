@@ -15,7 +15,6 @@ import DatabaseDesign.Ampersand.ADL1
 import Fspec2Pandoc           (fSpec2Pandoc)
 import DatabaseDesign.Ampersand.Output
 import Picture
-import Rendering.InfTree2Pandoc (texOnly_proofdoc)
 import Rendering.PandocAux (writepandoc)
 import System.FilePath        (combine,replaceExtension)
 import DatabaseDesign.Ampersand.Core.Basics  

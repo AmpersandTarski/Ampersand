@@ -10,7 +10,7 @@ where
    import DatabaseDesign.Ampersand.ADL1.Pair                      ( Pairs)
    import DatabaseDesign.Ampersand.ADL1.Prop
    import DatabaseDesign.Ampersand.Classes.Populated (contents)
-   import TypeInference.InfLibAG        ( InfTree(..) )
+   import DatabaseDesign.Ampersand.TypeInference.InfLibAG        ( InfTree(..) )
    import Data.Explain
    import Languages  
    import Options (defaultFlags,Options(..))

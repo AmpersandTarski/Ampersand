@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
-module TypeInference.InfExpression where
+module DatabaseDesign.Ampersand.TypeInference.ADL1.InfExpression (
+    typedexprs, typeerrors
+)where
 --this module is based on code generated with uuagc
 --uuagc is not used because you can't (as far as I know) define DATA PExpression (Relation Concept) (Maybe Sign)
 --you can define the polymorph DATA PExpression a b, but it does not match our expectations

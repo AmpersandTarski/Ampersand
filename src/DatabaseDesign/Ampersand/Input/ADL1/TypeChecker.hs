@@ -20,7 +20,7 @@
 --DESCR ->
 --         types are inferred bottom up. First the type of the relations is inferred, then the types of the expressions using them are inferred
 --         subexpressions are evaluated from left to right if applicable (thus only for the union, intersection, semicolon, and dagger)
-module TypeChecker (typecheck, Error, Errors) where
+module DatabaseDesign.Ampersand.Input.ADL1.TypeChecker (typecheckAdl1, Error, Errors) where
 
 import DatabaseDesign.Ampersand.ADL1          -- USE -> .MorphismAndDeclaration.makeDeclaration
                     --        and of course many data types
@@ -31,10 +31,10 @@ import Data.Tree    -- USE -> data Tree a
 
 
 --import TypeInference.Input
-import TypeInference.Isa
-import TypeInference.InfAdlExpr
-import TypeInference.InfExpression
-import TypeInference.InfLibAG (InfTree)
+import DatabaseDesign.Ampersand.TypeInference.ADL1.Isa (isaRels)
+import DatabaseDesign.Ampersand.TypeInference.ADL1.InfAdlExpr (infertype_and_populate)
+import DatabaseDesign.Ampersand.TypeInference.ADL1.InfExpression (typedexprs,typeerrors)
+import DatabaseDesign.Ampersand.TypeInference.InfLibAG (InfTree)
 import ShowADL
 import DatabaseDesign.Ampersand.Core.Basics
 import Text.Pandoc (Block)
@@ -52,8 +52,8 @@ type Error = (String,[Block])
 --REMARK -> After type checking not only the types are bound to expressions, but also other
 --          enrichment functionality is implemented
 --USE   -> This is the only function needed outside of the TypeChecker
-typecheck :: Architecture -> (Contexts, Errors)
-typecheck arch@(Arch ctxs) = (enriched, checkresult)  
+typecheckAdl1 :: Architecture -> (Contexts, Errors)
+typecheckAdl1 arch@(Arch ctxs) = (enriched, checkresult)  
    where
    --EXTEND -> put extra checking rules of the Architecture object here
    --DESCR  -> check ctx name uniqueness, if that's ok then check the contexts

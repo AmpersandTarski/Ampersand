@@ -3,7 +3,7 @@
 -- UUAGC 0.9.14 (src/TypeInference/InfLibAG)
 
 
-module TypeInference.InfLibAG 
+module DatabaseDesign.Ampersand.TypeInference.InfLibAG 
   (infer
   ,RelAlgExpr(..)
   ,RelAlgMorph(..)
@@ -17,7 +17,7 @@ module TypeInference.InfLibAG
   ,InfRuleType(..)
   ) where
 
-import TypeInference.InfLibAGFuncs
+import DatabaseDesign.Ampersand.TypeInference.InfLibAGFuncs
 
 --step1: infer an expression with certaintype=(Universe,Universe)
 --step2: if ambiguous then you can pick an alternative from the error and infer again with a certaintype

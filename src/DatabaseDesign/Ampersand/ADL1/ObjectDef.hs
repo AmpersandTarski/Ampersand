@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -Wall #-}
 module DatabaseDesign.Ampersand.ADL1.ObjectDef (Service(..),ObjectDef(..),ObjectDefs,actions)
 where
-   import DatabaseDesign.Ampersand.Input.ADL1.FilePos                 (FilePos,Numbered(..))
+   import DatabaseDesign.Ampersand.Input.ADL1.FilePos           (FilePos,Numbered(..))
    import DatabaseDesign.Ampersand.ADL1.Concept                 (Concept)
    import DatabaseDesign.Ampersand.ADL1.Expression              (Expression)
    import DatabaseDesign.Ampersand.ADL1.Rule                    (Rule)
    import DatabaseDesign.Ampersand.ADL1.MorphismAndDeclaration  (Relation,Identified(..)) 
-   import TypeInference.InfLibAG      (InfTree)
+   import DatabaseDesign.Ampersand.TypeInference.InfLibAG       (InfTree)
    
      
    data Service = Serv { svName   :: String

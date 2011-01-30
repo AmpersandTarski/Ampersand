@@ -1,14 +1,29 @@
 {-# OPTIONS_GHC -Wall #-}
-module Rendering.InfTree2Pandoc (texOnly_proofdoc
-                                ,texOnly_pandoctree
-                                ,texOnly_writeexpr
-                                ,texOnly_writerule
-                                ) 
+module DatabaseDesign.Ampersand.Output.InfTree2Pandoc
+    (texOnly_proofdoc
+    ,texOnly_pandoctree
+    ,texOnly_writeexpr
+    ,texOnly_writerule
+    ) 
 where
 import Text.Pandoc 
-import TypeInference.InfLibAG (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
+import DatabaseDesign.Ampersand.TypeInference
+       (InfTree(..),InfRuleType(..),DeclRuleType(..),RelAlgType)
 import Data.Fspec   hiding (services)
-import DatabaseDesign.Ampersand.ADL1
+import DatabaseDesign.Ampersand.ADL1 
+                        (Declaration(..)
+                        ,Expression(..),insParentheses
+                        ,Relation(..)
+                        ,Concept(..)
+                        ,Rule(..)
+                        ,ObjectDef(..)
+                        ,Service(..)
+                        ,KeyDef(..)
+                        ,Identified(..)
+                        ,Association(..)
+                        ,makeDeclaration,inline
+                        )
+import DatabaseDesign.Ampersand.Classes
 import DatabaseDesign.Ampersand.Core.Basics (sort')
 
 texOnly_proofdoc :: Fspc -> Pandoc
