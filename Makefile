@@ -32,7 +32,7 @@ adl: bin/adl$(EXE)
 
 bin/adl$(EXE): $(SOURCES) $(OUT) bin
 	ghc $(FLAGS) -o $@ src/Main.hs
-	cp src/Rendering/customheader.tex bin/customheader.tex
+	cp src/DatabaseDesign/Ampersand/Output/customheader.tex bin/customheader.tex
 	strip $@
 
 out:
